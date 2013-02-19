@@ -1,0 +1,397 @@
+2013-02-14  Jason Merrill  <jason@redhat.com>
+
+	* testsuite/18_support/quick_exit/quick_exit.cc: #if out the whole
+	test if unsupported.
+
+2013-02-13  Marc Glisse  <marc.glisse@inria.fr>
+
+	PR libstdc++/56111
+	* include/std/complex (complex): Undefine.
+	* include/c_compatibility/complex.h (complex): Only undefine if
+	<complex> has been included.
+	* testsuite/26_numerics/complex/56111.cc: New testcase.
+
+2013-02-13  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/bits/hashtable_policy.h (_Hash_code_base): Restore
+	default constructor protected.
+	* include/bits/hashtable.h: static assert that _Hash_code_base has
+	a default constructor available through inheritance.
+
+2013-02-12  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/c_std/cstdlib (at_quick_exit, quick_exit): Provide in
+	C++11 mode.
+
+2013-02-12  Julian Brown  <julian@codesourcery.com>
+
+	* testsuite/22_locale/time_get/get_weekday/char/38081-1.cc (test01):
+	Don't expect dots after abbreviated weekday names for ru_RU for
+	glibc versions >= 2.17.
+	* testsuite/22_locale/time_get/get_weekday/char/38081-2.cc (test01):
+	Likewise.
+
+2013-02-12  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/bits/random.tcc (__transform): Remove.
+	(__normalize): Add.
+	(discrete_distribution<>::param_type::_M_initialize): Adjust.
+	(piecewise_constant_distribution<>::param_type::_M_initialize):
+	Likewise.
+	(piecewise_linear_distribution<>::param_type::_M_initialize):
+	Likewise.
+
+2013-02-11  Benjamin Kosnik  <bkoz@redhat.com>
+
+	* src/c++11/Makefile.am (hashtable_c++0x.lo, hashtable_c++0x.o):
+	Use -fimplicit-templates.
+	* src/c++11/Makefile.in: Regenerate.
+	* src/c++11/hashtable_c++0x.cc: Remove instantiation for
+	std::lower_bound template.
+
+2013-02-11  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/c_std/cstdlib (at_quick_exit, quick_exit): Do not declare.
+	* include/c_global/cstdlib (at_quick_exit, quick_exit): Declare only
+	in C++11 mode and if available in the underlying C library.
+	* testsuite/18_support/quick_exit/quick_exit.cc: Compile with
+	-std=gnu++11; check _GLIBCXX_HAVE_AT_QUICK_EXIT and
+	_GLIBCXX_HAVE_QUICK_EXIT.
+
+2013-02-11  Benjamin Kosnik  <bkoz@redhat.com>
+
+	* doc/html/*: Regenerate.
+
+2013-02-11  Jason Merrill  <jason@redhat.com>
+
+	* linkage.m4 (GLIBCXX_CHECK_STDLIB_DECL_AND_LINKAGE): New.
+	(GLIBCXX_CHECK_STDLIB_SUPPORT): Check for atexit and at_quick_exit.
+	* config.h.in, configure: Regenerate.
+	* include/c_std/cstdlib: Add atexit and at_quick_exit.
+	* include/c_global/cstdlib: Add atexit and at_quick_exit.
+	* testsuite/18_support/quick_exit/quick_exit.cc: New.
+
+2013-02-11  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/56282
+	Revert:
+	2013-02-06  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	PR libstdc++/56193
+	* include/bits/basic_ios.h: Replace operator void*() const
+	with explicit operator bool() const in C++11 and greater.
+	* testsuite/27_io/basic_ios/pr56193.cc: New file.
+
+2013-02-10  François Dumont  <fdumont@gcc.gnu.org>
+	    Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* doc/xml/manual/containers.xml: Add section on unordered containers.
+	* doc/xml/manual/using.xml: Fix incomplete sentence.
+
+2013-02-10  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/56267
+	* include/bits/hashtable.h (__cache_default): Check if hash function
+	is copy assignable.
+	* testsuite/23_containers/unordered_set/56267.cc: New.
+	* testsuite/23_containers/unordered_set/instantiation_neg.cc: Adjust
+	dg-error line number.
+	* testsuite/23_containers/unordered_set/
+	not_default_constructible_hash_neg.cc: Likewise.
+
+	PR libstdc++/56278
+	* include/bits/hashtable_policy.h (_Hash_code_base): Make default
+	constructor public.
+	* testsuite/23_containers/unordered_set/56278.cc: New.
+
+2013-02-09  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/tr1/bessel_function.tcc (__cyl_bessel_ij_series): Code
+	simplification.
+
+2013-02-08  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	PR libstdc++/56216
+	* include/tr1/special_function_util.h: Remove spurious const
+	from numeric arguments.
+	* include/tr1/riemann_zeta.tcc: Likewise.
+	* include/tr1/exp_integral.tcc: Likewise.
+	* include/tr1/bessel_function.tcc: Likewise.
+	* include/tr1/hypergeometric.tcc: Likewise.
+	* include/tr1/modified_bessel_func.tcc: Likewise.
+	* include/tr1/poly_laguerre.tcc: Likewise.
+	* include/tr1/gamma.tcc: Likewise.
+	* include/tr1/legendre_function.tcc: Likewise.
+	* include/tr1/poly_hermite.tcc: Likewise.
+	* include/tr1/ell_integral.tcc: Likewise.
+	* include/tr1/bessel_function.tcc (__cyl_bessel_ij_series):
+	If argument is zero return function value.
+	* testsuite/tr1/5_numerical_facilities/special_functions/
+	08_cyl_bessel_i/pr56216.cc: New.
+
+2013-02-07  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* testsuite/27_io/basic_ios/pr56193.cc: Tweak.
+
+2013-02-06  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	PR libstdc++/56193
+	* include/bits/basic_ios.h: Replace operator void*() const
+	with explicit operator bool() const in C++11 and greater.
+	* testsuite/27_io/basic_ios/pr56193.cc: New file.
+
+2013-02-04  Dodji Seketeli  <dodji@redhat.com>
+
+	Add missing explicit instantiation for std::lower_bound template
+	* libstdc++-v3/src/c++11/hashtable_c++0x.cc (namespace std): Add
+	missing instantiation for std::lower_bound template.
+
+2013-02-04  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/bits/functional_hash.h (std::__is_fast_hash<>): New.
+	* include/bits/basic_string.h: Specialize previous to mark
+	std::hash for string types as slow.
+	* include/bits/hashtable.h (__cache_default): Replace is_integral
+	with __is_fast_hash.
+	* src/c++11/hash_c++0x.cc: Add type_traits include.
+	* testsuite/23_containers/unordered_set/instantiation_neg.cc:
+	Adapt dg-error line number.
+	* testsuite/23_containers/unordered_set/
+	not_default_constructible_hash_neg.cc: Likewise.
+
+2013-02-04  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/56202 (again)
+	* include/bits/random.tcc (binomial_distribution<>::
+	_M_waiting(_UniformRandomNumberGenerator&, _IntType)): Fix thinko
+	in previous commit.
+
+	* include/bits/random.h: Fix comment typo.
+
+2013-02-04  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/56202
+	* include/bits/random.tcc (binomial_distribution<>::
+	_M_waiting(_UniformRandomNumberGenerator&, _IntType)): Avoid
+	division by zero.
+
+2013-02-03  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	Update copyright years.
+	* testsuite/23_containers/deque/requirements/dr438/assign_neg.cc,
+	testsuite/23_containers/deque/requirements/dr438/constructor_1_neg.cc,
+	testsuite/23_containers/deque/requirements/dr438/constructor_2_neg.cc,
+	testsuite/23_containers/deque/requirements/dr438/insert_neg.cc,
+	testsuite/23_containers/list/requirements/dr438/assign_neg.cc,
+	testsuite/23_containers/list/requirements/dr438/constructor_1_neg.cc,
+	testsuite/23_containers/list/requirements/dr438/constructor_2_neg.cc,
+	testsuite/23_containers/list/requirements/dr438/insert_neg.cc,
+	testsuite/23_containers/vector/requirements/dr438/assign_neg.cc,
+	testsuite/23_containers/vector/requirements/dr438/constructor_1_neg.cc,
+	testsuite/23_containers/vector/requirements/dr438/constructor_2_neg.cc,
+	testsuite/23_containers/vector/requirements/dr438/insert_neg.cc,
+	testsuite/29_atomics/atomic/cons/assign_neg.cc,
+	testsuite/29_atomics/atomic/cons/copy_neg.cc,
+	testsuite/29_atomics/atomic_integral/cons/assign_neg.cc,
+	testsuite/29_atomics/atomic_integral/cons/copy_neg.cc,
+	testsuite/29_atomics/atomic_integral/operators/bitwise_neg.cc,
+	testsuite/29_atomics/atomic_integral/operators/decrement_neg.cc,
+	testsuite/29_atomics/atomic_integral/operators/increment_neg.cc:
+	Update lines in dg error matches.
+
+2013-02-03  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* config/os/mingw32/ctype_inline.h: Fix copyright typo.
+
+2013-02-01  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/bits/hashtable_policy.h
+	(_Prime_rehash_policy::_M_next_bkt)
+	(_Prime_rehash_policy::_M_need_rehash): Move definition...
+	* src/c++11/hashtable_c++0x.cc: ... here.
+	* src/shared/hashtable-aux.cc: Remove c++config.h include.
+	* config/abi/gnu.ver (GLIBCXX_3.4.18): Export _Prime_rehash_policy
+	symbols.
+
+2013-01-29  Jason Merrill  <jason@redhat.com>
+
+	PR libstdc++/54314
+	* config/abi/pre/gnu.ver: Don't export construction vtables.
+	* config/abi/pre/gnu-versioned-namespace.ver: Likewise.
+
+2013-01-28  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/56112
+	* include/bits/hashtable_policy.h (insert(_Pair&&)): Use _M_emplace
+	to construct value_type explicitly before trying to extract the key.
+	* testsuite/23_containers/unordered_map/cons/56112.cc: New.
+
+2013-01-28  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/bits/hashtable_policy.h (_Local_iterator_base): Use
+	_Hashtable_ebo_helper to embed functors into the local_iterator
+	when necessary. Pass information about functors involved in hash
+	code by copy.
+	* include/bits/hashtable.h (__cache_default): Do not cache for
+	builtin integral types unless the hash functor is not noexcept
+	qualified or is not default constructible. Adapt static assertions
+	and local iterator instantiations.
+	* include/debug/unordered_set
+	(std::__debug::unordered_set<>::erase): Detect local iterators to
+	invalidate using contained node rather than generating a dummy
+	local_iterator instance.
+	(std::__debug::unordered_multiset<>::erase): Likewise.
+	* include/debug/unordered_map
+	(std::__debug::unordered_map<>::erase): Likewise.
+	(std::__debug::unordered_multimap<>::erase): Likewise.
+	* testsuite/performance/23_containers/insert_erase/41975.cc: Test
+	std::tr1 and std versions of unordered_set regardless of any
+	macro. Add test on default cache behavior.
+	* testsuite/performance/23_containers/insert/54075.cc: Likewise.
+	* testsuite/23_containers/unordered_set/instantiation_neg.cc:
+	Adapt line number.
+	* testsuite/23_containers/unordered_set/
+	not_default_constructible_hash_neg.cc: New.
+	* testsuite/23_containers/unordered_set/buckets/swap.cc: New.
+
+2013-01-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/56085
+	* include/std/complex (pow(const complex<>&, int)): Avoid __n
+	signed overflow.
+
+2013-01-22  Jakub Jelinek  <jakub@redhat.com>
+
+	* testsuite/29_atomics/atomic_flag/test_and_set/explicit-hle.cc:
+	Tightten scan-assembler-times regexps, add dg-additional-options for
+	ia32, add -g0 -fno-exceptions -fno-asynchronous-unwind-tables to
+	dg-options.
+
+2013-01-12  Andi Kleen  <ak@linux.intel.com>
+	    Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/55233
+	* include/bits/atomic_base.h (__memory_order_modifier): Add
+	__memory_order_mask, __memory_order_modifier_mask,
+	__memory_order_hle_acquire, __memory_order_hle_release.
+	(operator|,operator&): Add.
+	(__cmpexch_failure_order):  Rename to __cmpexch_failure_order2.
+	(__cmpexch_failure_order): Add.
+	(clear, store, load, compare_exchange_weak, compare_exchange_strong):
+	Handle flags.
+	* testsuite/29_atomics/atomic_flag/test_and_set/explicit-hle.cc:
+	Add.
+
+2013-01-19  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/55861
+	* include/std/future (_State_base::_S_check(const shared_ptr<T>&)):
+	Fix return type.
+	(__basic_future::_M_get_result()): Const qualify.
+	(shared_future::get()): Likewise.
+	* testsuite/30_threads/shared_future/members/get.cc: Use const
+	objects.
+
+2013-01-16  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/55043 (again)
+	* include/bits/alloc_traits.h (allocator_traits::construct): Disable
+	unless construction would be well-formed.
+	(__allow_copy_cons, __check_copy_constructible): Define.
+	* include/bits/unordered_map.h (__check_copy_constructible): Use as
+	base class so copy constructor will be deleted if appropriate.
+	(is_copy_constructible): Remove specialization.
+	* include/bits/unordered_set.h: Likewise.
+	* include/debug/unordered_map.h: Undo previous commit. Default copy
+	and move constructors.
+	* include/debug/unordered_set.h: Likewise.
+	* include/profile/unordered_map.h: Undo previous commit.
+	* include/profile/unordered_set.h: Likewise.
+	* testsuite/23_containers/unordered_map/55043.cc: Fix test.
+	* testsuite/23_containers/unordered_multimap/55043.cc: Likewise.
+	* testsuite/23_containers/unordered_multiset/55043.cc: Likewise.
+	* testsuite/23_containers/unordered_set/55043.cc: Likewise.
+	* testsuite/23_containers/unordered_map/requirements/53339.cc: XFAIL,
+	cannot support incomplete types.
+	* testsuite/23_containers/unordered_multimap/requirements/53339.cc:
+	Likewise.
+
+2013-01-16  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/55043
+	* include/std/unordered_map: Include alloc_traits.h
+	* include/std/unordered_set: Likewise.
+	* include/bits/alloc_traits.h: Define __is_copy_insertable.
+	* include/bits/unordered_map.h: Use it.
+	* include/bits/unordered_set.h: Likewise.
+	* include/debug/unordered_map.h: Likewise.
+	* include/debug/unordered_set.h: Likewise.
+	* include/profile/unordered_map.h: Likewise.
+	* include/profile/unordered_set.h: Likewise.
+	* include/bits/hashtable.h: Fix comment typos.
+	* testsuite/23_containers/unordered_map/55043.cc: New.
+	* testsuite/23_containers/unordered_multimap/55043.cc: New.
+	* testsuite/23_containers/unordered_multiset/55043.cc: New.
+	* testsuite/23_containers/unordered_set/55043.cc: New.
+
+2013-01-03  Janis Johnson  <janisjo@codesourcery.com>
+
+	* testsuite/lib/gdb-test.exp (gdb_batch_check): Catch error running
+	gdb command.
+
+2013-01-08  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* doc/xml/manual/status_cxx2011.xml: Document that N3189 is missing.
+
+2013-01-08  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/55908
+	* include/std/functional (_Mem_fn::operator()): Fix constraints to
+	avoid ambiguity.
+	* testsuite/20_util/function_objects/mem_fn/55908.cc: New.
+	* testsuite/20_util/bind/ref_neg.cc: Adjust dg-error line numbers.
+
+2013-01-08  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libstdc++/55594
+	* acinclude.m4 (GLIBCXX_CHECK_ASSEMBLER_HWCAP): Restrict test to
+	Solaris targets.
+	* configure: Regenerate.
+
+2013-01-07  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/55847
+	* src/c++11/shared_ptr.cc (bad_weak_ptr::what()): Correct string.
+	* testsuite/20_util/shared_ptr/cons/weak_ptr_expired.cc: Verify
+	string.
+
+	PR libstdc++/55728
+	* include/std/functional (bad_function_call::what()): Declare.
+	* src/c++11/functional.cc (bad_function_call::what()): Define.
+	* config/abi/pre/gnu.ver (bad_function_call::what()): Export.
+	* testsuite/20_util/bad_function_call/what.cc: New.
+
+2013-01-06  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* include/bits/unordered_map.h: Fix typo in comments.
+	* doc/xml/manual/status_cxx2011.xml: Add implementation-defined bucket
+	counts for unordered associative containers.
+
+2013-01-06  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* doc/xml/manual/abi.xml: Update library and symbol versions.
+
+2013-01-06  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* include/ext/pb_ds/detail/splay_tree_/insert_fn_imps.hpp: Fix typo
+	in copyright years.
+	* testsuite/22_locale/time_get/get_weekday/wchar_t/3.cc: Likewise.
+
+
+Copyright (C) 2013 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.

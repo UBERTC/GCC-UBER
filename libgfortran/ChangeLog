@@ -1,0 +1,55 @@
+2013-02-19  John David Anglin  <dave.anglin@nrc-cnrc.gc.ca>
+
+	PR target/56347
+	* acinclude.m4 (LIBGFOR_CHECK_FOR_BROKEN_POWF): Remove check for
+	broken powf.
+	* configure.ac (LIBGFOR_CHECK_FOR_BROKEN_POWF): Likewise.
+	* intrinsics/c99_functions.c: Likewise.
+	* configure: Rebuilt.
+	* config.h.in: Rebuilt.
+
+2013-02-06  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/55978
+	* runtime/in_pack_generic.c (internal_pack): Return if base_addr is
+	NULL.
+
+2013-01-23  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	* io/file_pos.c (unformatted_backspace): Use __builtin_bswapXX
+	instead of reverse_memcpy.
+	* io/io.h (reverse_memcpy): Remove prototype.
+	* io/transfer.c (reverse_memcpy): Make static, move towards
+	beginning of file.
+	(bswap_array): New function.
+	(unformatted_read): Use bswap_array to byte swap the data
+	in-place.
+	(unformatted_write): Use a larger temp buffer and bswap_array.
+	(us_read): Use __builtin_bswapXX instead of reverse_memcpy.
+	(write_us_marker): Likewise.
+
+2013-01-14  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	Update copyright years.
+
+2013-01-06  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/54678
+	* intrinsics/env.c (get_environment_variable_i8): Don't use
+	uninitialized variable.
+
+2013-01-02  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libfortran/55818
+	* io/list_read.c (read_real): Do not call hit_eof when EOF can be
+	treated as a value separator.
+	(parse_real): Likewise.
+	(read_logical): Likewise.
+	(read_character): Likewise.
+	(read_complex): Likewise.
+
+Copyright (C) 2013 Free Software Foundation, Inc.
+
+Copying and distribution of this file, with or without modification,
+are permitted in any medium without royalty provided the copyright
+notice and this notice are preserved.
