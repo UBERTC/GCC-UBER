@@ -71,7 +71,8 @@ along with GCC; see the file COPYING3.  If not see
 
 #undef SUBTARGET_ASM_SPEC
 #define SUBTARGET_ASM_SPEC \
-  "%{!mno-abicalls:%{mplt:-call_nonpic;:-KPIC}}"
+  "%{!mno-abicalls:%{mplt:-call_nonpic;:-KPIC}} " \
+  LINUX_OR_ANDROID_CC ("", ANDROID_ASM_SPEC)
 
 /* The MIPS assembler has different syntax for .set. We set it to
    .dummy to trap any errors.  */
