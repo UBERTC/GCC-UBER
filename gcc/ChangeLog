@@ -1,5 +1,15 @@
 2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r197207.
+	2013-03-28   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* config/aarch64/aarch64.md (*and<mode>3_compare0): New pattern.
+	(*andsi3_compare0_uxtw): New pattern.
+	(*and_<SHIFT:optab><mode>3_compare0): New pattern.
+	(*and_<SHIFT:optab>si3_compare0_uxtw): New pattern.
+
+2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r197153.
 	2013-03-27  Terry Guo  <terry.guo@arm.com>
 
