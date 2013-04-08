@@ -1,3 +1,12 @@
+2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	Backport from trunk r196856.
+	2013-03-21   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* config/aarch64/aarch64-elf.h (REGISTER_PREFIX): Remove.
+	* config/aarch64/aarch64.c (aarch64_print_operand): Remove all
+	occurrence of REGISTER_PREFIX as its empty string.
+
 2013-03-29  Paolo Carlini  <paolo.carlini@oracle.com>
 
 	PR lto/56777
