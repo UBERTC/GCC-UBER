@@ -20417,7 +20417,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 for ac_header in endian.h execinfo.h float.h fp.h ieeefp.h inttypes.h \
 locale.h machine/endian.h machine/param.h nan.h stdint.h stdlib.h string.h \
 strings.h sys/ipc.h sys/isa_defs.h sys/machine.h sys/param.h \
-sys/resource.h sys/sem.h sys/stat.h sys/time.h sys/types.h unistd.h \
+sys/resource.h sys/sdt.h sys/sem.h sys/stat.h sys/time.h sys/types.h unistd.h \
 wchar.h wctype.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -26472,7 +26472,12 @@ $as_echo_n "checking for \"/dev/random\" and \"/dev/urandom\" for TR1 random_dev
 else
 
     if test -r /dev/random && test -r /dev/urandom; then
-      glibcxx_cv_random_tr1=yes;
+  ## For MSys environment the test above is detect as false-positive
+  ## on mingw-targets.  So disable it explicit for them.
+      case ${target_os} in
+	*mingw*) glibcxx_cv_random_tr1=no ;;
+	*) glibcxx_cv_random_tr1=yes ;;
+      esac
     else
       glibcxx_cv_random_tr1=no;
     fi
@@ -26699,6 +26704,18 @@ $as_echo "$gcc_cv_have_tls" >&6; }
 $as_echo "#define HAVE_TLS 1" >>confdefs.h
 
   fi
+
+  for ac_func in __cxa_thread_atexit_impl
+do :
+  ac_fn_c_check_func "$LINENO" "__cxa_thread_atexit_impl" "ac_cv_func___cxa_thread_atexit_impl"
+if test "x$ac_cv_func___cxa_thread_atexit_impl" = x""yes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE___CXA_THREAD_ATEXIT_IMPL 1
+_ACEOF
+
+fi
+done
+
 
   # For iconv support.
 

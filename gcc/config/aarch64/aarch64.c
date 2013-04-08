@@ -2926,9 +2926,10 @@ aarch64_classify_address (struct aarch64_address_info *info,
     case CONST:
     case SYMBOL_REF:
     case LABEL_REF:
-      /* load literal: pc-relative constant pool entry.  */
+      /* load literal: pc-relative constant pool entry.  Only supported
+         for SI mode or larger.  */
       info->type = ADDRESS_SYMBOLIC;
-      if (outer_code != PARALLEL)
+      if (outer_code != PARALLEL && GET_MODE_SIZE (mode) >= 4)
 	{
 	  rtx sym, addend;
 
@@ -3086,7 +3087,7 @@ aarch64_select_cc_mode (RTX_CODE code, rtx x, rtx y)
   if ((GET_MODE (x) == SImode || GET_MODE (x) == DImode)
       && y == const0_rtx
       && (code == EQ || code == NE || code == LT || code == GE)
-      && (GET_CODE (x) == PLUS || GET_CODE (x) == MINUS))
+      && (GET_CODE (x) == PLUS || GET_CODE (x) == MINUS || GET_CODE (x) == AND))
     return CC_NZmode;
 
   /* A compare with a shifted operand.  Because of canonicalization,
@@ -5986,7 +5987,7 @@ static aarch64_simd_mangle_map_entry aarch64_simd_mangle_map[] = {
 
 /* Implement TARGET_MANGLE_TYPE.  */
 
-const char *
+static const char *
 aarch64_mangle_type (const_tree type)
 {
   /* The AArch64 ABI documents say that "__va_list" has to be
@@ -6586,7 +6587,7 @@ aarch64_simd_dup_constant (rtx vals)
    constants (for vec_init) or CONST_VECTOR, efficiently into a
    register.  Returns an RTX to copy into the register, or NULL_RTX
    for a PARALLEL that can not be converted into a CONST_VECTOR.  */
-rtx
+static rtx
 aarch64_simd_make_constant (rtx vals)
 {
   enum machine_mode mode = GET_MODE (vals);
@@ -7088,7 +7089,7 @@ aarch64_float_const_representable_p (rtx x)
   /* This represents our current view of how many bits
      make up the mantissa.  */
   int point_pos = 2 * HOST_BITS_PER_WIDE_INT - 1;
-  int sign, exponent;
+  int exponent;
   unsigned HOST_WIDE_INT mantissa, mask;
   HOST_WIDE_INT m1, m2;
   REAL_VALUE_TYPE r, m;
@@ -7105,8 +7106,7 @@ aarch64_float_const_representable_p (rtx x)
       || REAL_VALUE_MINUS_ZERO (r))
     return false;
 
-  /* Extract sign and exponent.  */
-  sign = REAL_VALUE_NEGATIVE (r) ? 1 : 0;
+  /* Extract exponent.  */
   r = real_value_abs (&r);
   exponent = REAL_EXP (&r);
 

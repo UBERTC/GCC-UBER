@@ -2541,6 +2541,10 @@ modify_all_vtables (tree t, tree virtuals)
   tree binfo = TYPE_BINFO (t);
   tree *fnsp;
 
+  /* Mangle the vtable name before entering dfs_walk (c++/51884).  */
+  if (TYPE_CONTAINS_VPTR_P (t))
+    get_vtable_decl (t, false);
+
   /* Update all of the vtables.  */
   dfs_walk_once (binfo, dfs_modify_vtables, NULL, t);
 
@@ -3010,11 +3014,10 @@ add_implicitly_declared_members (tree t, tree* access_decls,
     {
       tree using_decl = TREE_VALUE (*access_decls);
       tree decl = USING_DECL_DECLS (using_decl);
-      if (DECL_SELF_REFERENCE_P (decl))
+      if (DECL_NAME (using_decl) == ctor_identifier)
 	{
 	  /* declare, then remove the decl */
-	  tree ctor_list = lookup_fnfields_slot (TREE_TYPE (decl),
-						 ctor_identifier);
+	  tree ctor_list = decl;
 	  location_t loc = input_location;
 	  input_location = DECL_SOURCE_LOCATION (using_decl);
 	  if (ctor_list)

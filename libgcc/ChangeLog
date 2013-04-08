@@ -1,3 +1,88 @@
+2013-03-26  Robert Mason  <rbmj@verizon.net>
+
+	PR target/54805
+
+	Backport from mainline:
+	2013-03-20  Robert Mason  <rbmj@verizon.net>
+
+	* config/vxlib-tls.c (__gthread_get_tsd_data,)
+	(__gthread_set_tsd_data, __gthread_enter_tsd_dtor_context,)
+	(__gthread_leave_tsd_dtor_context): Add prototypes.
+	(tls_delete_hook): Update.
+
+2013-03-26  Walter Lee  <walt@tilera.com>
+
+	Backport from mainline:
+	2013-03-26  Walter Lee  <walt@tilera.com>
+	
+	* config/tilegx/t-crtstuff: Add -fno-asynchronous-unwind-tables
+	-mcmodel=large to CRTSTUFF_T_CFLAGS_S variable.
+
+2013-03-22  Release Manager
+
+	* GCC 4.8.0 released.
+
+2013-03-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/53265
+	* unwind-dw2.c (execute_cfa_program): Avoid
+	-Waggressive-array-optimizations warnings for DW_CFA_GNU_window_save
+	on targets with DWARF_FRAME_REGISTERS < 32.
+
+2013-03-13  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/49880
+	* config/sh/lib1funcs.S (sdivsi3_i4, udivsi3_i4): Enable for SH2A.
+	(sdivsi3, udivsi3): Remove SH4 check and always compile these functions.
+
+2013-03-07  Sriraman Tallam  <tmsriram@google.com>
+
+	* config/i386/cpuinfo.c (get_intel_cpu): Fix cpuid codes for
+	sandybridge processors.
+
+2013-03-06  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/56529
+	* config/sh/lib1funcs.S (udivsi3_i4i, sdivsi3_i4i): Add __SH2A__ to
+	inclusion list.
+
+2013-03-04  Edgar E. Iglesias <edgar.iglesias@gmail.com>
+
+	* config/microblaze/crti.S: Setup stack protection at entry
+
+2013-03-04  Georg-Johann Lay  <avr@gjlay.de>
+
+	* config/avr/lib1funcs.S (__ashrdi3, __lshrdi3, __ashldi3)
+	(__rotldi3): Shift bytewise if applicable.
+
+2013-03-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/sync-cache.c
+	(__aarch64_sync_cache_range): Silence warnings.
+
+2013-02-25  Catherine Moore  <clm@codesourcery.com>
+
+	Revert:
+	2013-02-24  Catherine Moore  <clm@codesourcery.com>
+	    Joseph Myers  <joseph@codesourcery.com>
+	    Chao-ying Fu  <fu@mips.com>
+
+	* config/mips/mips16.S:  Don't build for microMIPS.
+	* config/mips/linux-unwind.h: Handle microMIPS frame.
+	* config/mips/crtn.S (fini, init): New labels.
+
+2013-02-24  Catherine Moore  <clm@codesourcery.com>
+	    Joseph Myers  <joseph@codesourcery.com>
+	    Chao-ying Fu  <fu@mips.com>
+
+	* config/mips/mips16.S:  Don't build for microMIPS.
+	* config/mips/linux-unwind.h: Handle microMIPS frame.
+	* config/mips/crtn.S (fini, init): New labels.
+
+2012-02-19  Edgar E. Iglesias  <edgar.iglesias@gmail.com>
+	* config/microblaze/modsi3.S (modsi3): Fix case with 0x80000000 
+	as dividend.
+
 2013-02-16  Alan Modra  <amodra@gmail.com>
 
 	PR target/55431

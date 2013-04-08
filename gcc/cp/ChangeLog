@@ -1,3 +1,275 @@
+2013-03-29  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56774
+	PR c++/35722
+	* pt.c (unify_pack_expansion): Fix indexing.
+
+2013-03-28  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56728
+	* semantics.c (cxx_eval_indirect_ref): Use the folded operand if
+	we still think this might be constant.
+
+2013-03-27  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56749
+	* semantics.c (finish_qualified_id_expr): Return early
+	for enum scope.
+
+2013-03-26  Jason Merrill  <jason@redhat.com>
+
+	PR c++/45282
+	* typeck2.c (build_m_component_ref): Handle prvalue object.
+
+2013-03-25  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56699
+	* semantics.c (maybe_resolve_dummy): Make sure that the enclosing
+	class is derived from the type of the object.
+
+	PR c++/56692
+	* search.c (lookup_base): Handle NULL_TREE.
+
+2013-03-25  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/56722
+	* decl.c (cp_finish_decl): Check DECL_LANG_SPECIFIC before
+	DECL_TEMPLATE_INSTANTIATION.
+
+2013-03-25  Jason Merrill  <jason@redhat.com>
+
+	PR c++/52014
+	* semantics.c (lambda_expr_this_capture): Don't capture 'this' in
+	unevaluated context.
+
+2013-03-23  Jason Merrill  <jason@redhat.com>
+
+	PR c++/54359
+	* parser.c (cp_parser_direct_declarator): Fix late return
+	for out-of-class defn of member function.
+
+2013-03-22  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/56582
+	* semantics.c (cxx_eval_array_reference): Check for negative index.
+
+2013-03-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56646
+	* parser.c (cp_parser_late_return_type_opt): Save and restore
+	current_class_ptr/ref.
+
+	N3276
+	PR c++/52748
+	* cp-tree.h (tsubst_flags): Add tf_decltype.
+	* call.c (build_cxx_call): Don't build a temporary if it's set.
+	(build_over_call): Make sure it's only passed to build_cxx_call.
+	* parser.c (cp_parser_primary_expression): Add decltype_p parm.
+	(cp_parser_unary_expression): Likewise.
+	(cp_parser_cast_expression): Likewise.
+	(cp_parser_binary_expression): Likewise.
+	(cp_parser_assignment_expression): Likewise.
+	(cp_parser_postfix_expression): Likewise.  Pass tf_decltype.
+	(cp_parser_explicit_instantiation): Add decltype_p.  Force a
+	temporary for a call on the LHS of a comma.
+	(cp_parser_decltype): Pass true to decltype_p parms.
+	* pt.c (tsubst) [DECLTYPE_TYPE]: Pass tf_decltype.
+	(tsubst_copy_and_build): Pass tf_decltype down only for
+	CALL_EXPR and the RHS of COMPOUND_EXPR.
+	* tree.c (build_cplus_new): Call complete_type_or_maybe_complain.
+
+	DR 657
+	* pt.c (tsubst_function_type): Call abstract_virtuals_error_sfinae.
+	(tsubst_arg_types): Likewise.
+
+	PR c++/54277
+	* semantics.c (lambda_capture_field_type): Don't build a
+	magic decltype for pointer types.
+	(lambda_proxy_type): Likewise.
+	(finish_non_static_data_member): Get the quals from
+	the object.
+
+	PR c++/52374
+	* pt.c (tsubst_qualified_id): Use current_nonlambda_class_type.
+
+	PR c++/54764
+	PR c++/55972
+	* name-lookup.h (tag_scope): Add ts_lambda.
+	* semantics.c (begin_lambda_type): Use it.
+	* decl.c (xref_tag_1): Set CLASSTYPE_LAMBDA_EXPR.
+	* pt.c (check_default_tmpl_args): Ignore lambdas.
+	(push_template_decl_real): Handle lambdas.
+	* tree.c (no_linkage_check): Adjust lambda check.
+
+	PR c++/56039
+	* tree.c (strip_typedefs_expr): Complain about lambda, don't abort.
+
+	PR c++/56447
+	PR c++/55532
+	* pt.c (instantiate_class_template_1): Instantiate lambda capture
+	list here.
+	(tsubst_copy_and_build): Not here.
+
+2013-03-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2013-03-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/56607
+	* typeck.c (cp_build_binary_op): When calling warn_for_div_by_zero,
+	pass op1 through maybe_constant_value first.
+
+	* tree.c (cp_tree_equal): Fix a pasto.
+
+2013-03-22  Release Manager
+
+	* GCC 4.8.0 released.
+
+2013-03-14  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56614
+	* decl.c (local_variable_p_walkfn): Check DECL_ARTIFICIAL again.
+
+	PR c++/56346
+	* decl.c (register_dtor_fn): Pass null to __cxa_thread_atexit
+	dso_handle parm on targets without __cxa_atexit.
+
+2013-03-11  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56567
+	* typeck.c (check_return_expr): Disallow returning init list here.
+	* semantics.c (apply_deduced_return_type): Not here.
+
+2013-03-08  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/51412
+	* cxx-pretty-print.c (pp_cxx_expression): Handle LAMBDA_EXPR.
+	* error.c (dump_expr): Likewise.
+
+2013-03-08  Jason Merrill  <jason@redhat.com>
+
+	PR c++/51884
+	* class.c (modify_all_vtables): Mangle the vtable name before
+	entering dfs_walk.
+
+	* semantics.c (lambda_expr_this_capture): In unevaluated context,
+	just return the nearest 'this'.
+
+	PR c++/51494
+	PR c++/52183
+	PR c++/56222
+	* tree.c (maybe_dummy_object): Don't capture 'this'.
+	* semantics.c (maybe_resolve_dummy): New.
+	(finish_non_static_data_member): Use it.
+	(finish_qualified_id_expr): Don't test is_dummy_object.
+	* cp-tree.h: Declare maybe_resolve_dummy.
+	* call.c (build_new_method_call_1): Use it.
+
+	PR c++/56567
+	* semantics.c (apply_deduced_return_type): Don't allow returning
+	std::initializer_list.
+
+2013-03-06  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/56534
+	* parser.c (cp_parser_elaborated_type_specifier): Don't call
+	check_elaborated_type_specifier when TREE_CODE (decl) != TYPE_DECL.
+	* decl.c (check_elaborated_type_specifier): Tidy.
+
+2013-03-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/56543
+	* tree.c (strip_typedefs): Don't copy args if they are NULL.
+
+2013-03-05  Jakub Jelinek  <jakub@redhat.com>
+
+	* parser.c (cp_parser_braced_list): For {} initialize
+	*non_constant_p to false.
+
+2013-03-04  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56464
+	PR c++/54383
+	* semantics.c (lambda_expr_this_capture): Handle NSDMI
+	and non-class scopes.
+
+2013-03-01  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* decl.c (grokdeclarator): Remove dead code.
+
+2013-02-28  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56481
+	* semantics.c (potential_constant_expression_1): Use
+	cxx_eval_outermost_constant_expr rather than maybe_constant_value.
+
+	PR c++/56243
+	* call.c (build_over_call): Avoid virtual lookup in a template.
+
+2013-02-27  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56358
+	PR c++/56323
+	* name-lookup.c (do_class_using_decl): Use ctor_identifier instead
+	of the base name for inheriting ctors.
+	(push_class_level_binding_1): Remove inheriting ctor handling.
+	* pt.c (tsubst_decl) [USING_DECL]: Likewise.
+	* class.c (add_implicitly_declared_members): Adjust.
+
+2013-02-26  David Binderman  <dcb314@hotmail.com>
+
+	PR c++/55632
+	* decl.c (grokdeclarator): Tidy publicp assignment.
+
+2013-02-25  Aldy Hernandez  <aldyh@redhat.com>
+
+	PR c++/56419
+	* semantics.c (begin_transaction_stmt): Set TREE_SIDE_EFFECTS.
+	(build_transaction_expr): Same.
+
+2013-02-25  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56377
+	* pt.c (fn_type_unification): Wait to call push_tinst_level until
+	we know what args we're looking at.
+
+	PR c++/56438
+	* semantics.c (potential_constant_expression_1): In C++98, a cast
+	to non-integral type can't be a constant expression.
+
+2013-02-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/56403
+	* init.c (build_zero_init_1): Use RECORD_OR_UNION_CODE_P instead
+	of CLASS_TYPE_P.
+
+2013-02-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/40405
+	* pt.c (push_template_decl_real): Set DECL_INTERFACE_KNOWN
+	if we got the wrong number of template parms.
+
+	PR c++/56377
+	* pt.c (fn_type_unification): Use explicit args in template
+	instantiation context.
+
+	PR c++/56359
+	* call.c (can_convert_arg): Discard access checks.
+
+	PR c++/56395
+	* tree.c (strip_typedefs): Strip typedefs from TYPENAME_TYPE template
+	args.
+
+2013-02-20  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/56373
+	* tree.c (maybe_warn_zero_as_null_pointer_constant): Add.
+	* cvt.c (ocp_convert): Use the latter.
+	(cp_convert_to_pointer): Likewise.
+	* decl.c (check_default_argument): Likewise.
+	* typeck.c (cp_build_binary_op): Likewise.
+	* cp-tree.h (maybe_warn_zero_as_null_pointer_constant): Declare.
+
 2013-02-15  Jonathan Wakely  <jwakely.gcc@gmail.com>
 	    Paolo Carlini  <paolo.carlini@oracle.com>
 

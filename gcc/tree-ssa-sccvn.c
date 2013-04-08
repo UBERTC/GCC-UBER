@@ -3498,8 +3498,13 @@ visit_use (tree use)
 		     We can value number 2 calls to the same function with the
 		     same vuse and the same operands which are not subsequent
 		     the same, because there is no code in the program that can
-		     compare the 2 values.  */
-		  || gimple_vdef (stmt)))
+		     compare the 2 values...  */
+		  || (gimple_vdef (stmt)
+		      /* ... unless the call returns a pointer which does
+		         not alias with anything else.  In which case the
+			 information that the values are distinct are encoded
+			 in the IL.  */
+		      && !(gimple_call_return_flags (stmt) & ERF_NOALIAS))))
 	    changed = visit_reference_op_call (lhs, stmt);
 	  else
 	    changed = defs_to_varying (stmt);
@@ -3954,18 +3959,17 @@ free_scc_vn (void)
   XDELETE (optimistic_info);
 }
 
-/* Set *ID if we computed something useful in RESULT.  */
+/* Set *ID according to RESULT.  */
 
 static void
 set_value_id_for_result (tree result, unsigned int *id)
 {
-  if (result)
-    {
-      if (TREE_CODE (result) == SSA_NAME)
-	*id = VN_INFO (result)->value_id;
-      else if (is_gimple_min_invariant (result))
-	*id = get_or_alloc_constant_value_id (result);
-    }
+  if (result && TREE_CODE (result) == SSA_NAME)
+    *id = VN_INFO (result)->value_id;
+  else if (result && is_gimple_min_invariant (result))
+    *id = get_or_alloc_constant_value_id (result);
+  else
+    *id = get_next_value_id ();
 }
 
 /* Set the value ids in the valid hash tables.  */

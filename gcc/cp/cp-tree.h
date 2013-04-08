@@ -4190,6 +4190,9 @@ enum tsubst_flags {
 				    conversion might be permissible,
 				    not actually performing the
 				    conversion.  */
+  tf_decltype = 1 << 7,          /* We are the operand of decltype.
+				    Used to implement the special rules
+				    for calls in decltype (5.2.2/11).  */
   tf_partial = 1 << 8,		 /* Doing initial explicit argument
 				    substitution in fn_type_unification.  */
   /* Convenient substitution flags combinations.  */
@@ -5722,6 +5725,7 @@ extern bool is_capture_proxy			(tree);
 extern bool is_normal_capture_proxy             (tree);
 extern void register_capture_members		(tree);
 extern tree lambda_expr_this_capture            (tree);
+extern tree maybe_resolve_dummy			(tree);
 extern tree nonlambda_method_basetype		(void);
 extern void maybe_add_lambda_conv_op            (tree);
 extern bool is_lambda_ignored_entity            (tree);
@@ -5834,6 +5838,7 @@ extern bool cast_valid_in_integral_constant_expression_p (tree);
 extern bool cxx_type_hash_eq			(const_tree, const_tree);
 
 extern void cxx_print_statistics		(void);
+extern bool maybe_warn_zero_as_null_pointer_constant (tree, location_t);
 
 /* in ptree.c */
 extern void cxx_print_xnode			(FILE *, tree, int);

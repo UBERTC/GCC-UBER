@@ -7884,6 +7884,7 @@ expand_cond_expr_using_cmove (tree treeop0 ATTRIBUTE_UNUSED,
   tree type = TREE_TYPE (treeop1);
   int unsignedp = TYPE_UNSIGNED (type);
   enum machine_mode mode = TYPE_MODE (type);
+  enum machine_mode orig_mode = mode;
 
   /* If we cannot do a conditional move on the mode, try doing it
      with the promoted mode. */
@@ -7949,7 +7950,7 @@ expand_cond_expr_using_cmove (tree treeop0 ATTRIBUTE_UNUSED,
       rtx seq = get_insns ();
       end_sequence ();
       emit_insn (seq);
-      return temp;
+      return convert_modes (orig_mode, mode, temp, 0);
     }
 
   /* Otherwise discard the sequence and fall back to code with
@@ -9551,6 +9552,7 @@ expand_expr_real_1 (tree exp, rtx target, enum machine_mode tmode,
 	set_mem_addr_space (temp, as);
 	align = get_object_alignment (exp);
 	if (modifier != EXPAND_WRITE
+	    && modifier != EXPAND_MEMORY
 	    && mode != BLKmode
 	    && align < GET_MODE_ALIGNMENT (mode)
 	    /* If the target does not have special handling for unaligned
@@ -9639,6 +9641,7 @@ expand_expr_real_1 (tree exp, rtx target, enum machine_mode tmode,
 	if (TREE_THIS_VOLATILE (exp))
 	  MEM_VOLATILE_P (temp) = 1;
 	if (modifier != EXPAND_WRITE
+	    && modifier != EXPAND_MEMORY
 	    && mode != BLKmode
 	    && align < GET_MODE_ALIGNMENT (mode))
 	  {

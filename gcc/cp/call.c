@@ -6696,6 +6696,10 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
       /* else continue to get conversion error.  */
     }
 
+  /* N3276 magic doesn't apply to nested calls.  */
+  int decltype_flag = (complain & tf_decltype);
+  complain &= ~tf_decltype;
+
   /* Find maximum size of vector to hold converted arguments.  */
   parmlen = list_length (parm);
   nargs = vec_safe_length (args) + (first_arg != NULL_TREE ? 1 : 0);
@@ -7033,7 +7037,10 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
   if (!already_used)
     mark_used (fn);
 
-  if (DECL_VINDEX (fn) && (flags & LOOKUP_NONVIRTUAL) == 0)
+  if (DECL_VINDEX (fn) && (flags & LOOKUP_NONVIRTUAL) == 0
+      /* Don't mess with virtual lookup in fold_non_dependent_expr; virtual
+	 functions can't be constexpr.  */
+      && !in_template_function ())
     {
       tree t;
       tree binfo = lookup_base (TREE_TYPE (TREE_TYPE (argarray[0])),
@@ -7064,7 +7071,7 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
 	return error_mark_node;
     }
 
-  return build_cxx_call (fn, nargs, argarray, complain);
+  return build_cxx_call (fn, nargs, argarray, complain|decltype_flag);
 }
 
 /* Build and return a call to FN, using NARGS arguments in ARGARRAY.
@@ -7106,12 +7113,20 @@ build_cxx_call (tree fn, int nargs, tree *argarray,
   if (VOID_TYPE_P (TREE_TYPE (fn)))
     return fn;
 
-  fn = require_complete_type_sfinae (fn, complain);
-  if (fn == error_mark_node)
-    return error_mark_node;
+  /* 5.2.2/11: If a function call is a prvalue of object type: if the
+     function call is either the operand of a decltype-specifier or the
+     right operand of a comma operator that is the operand of a
+     decltype-specifier, a temporary object is not introduced for the
+     prvalue. The type of the prvalue may be incomplete.  */
+  if (!(complain & tf_decltype))
+    {
+      fn = require_complete_type_sfinae (fn, complain);
+      if (fn == error_mark_node)
+	return error_mark_node;
 
-  if (MAYBE_CLASS_TYPE_P (TREE_TYPE (fn)))
-    fn = build_cplus_new (TREE_TYPE (fn), fn, complain);
+      if (MAYBE_CLASS_TYPE_P (TREE_TYPE (fn)))
+	fn = build_cplus_new (TREE_TYPE (fn), fn, complain);
+    }
   return convert_from_reference (fn);
 }
 
@@ -7624,6 +7639,7 @@ build_new_method_call_1 (tree instance, tree fns, vec<tree, va_gc> **args,
       else
 	{
 	  fn = cand->fn;
+	  call = NULL_TREE;
 
 	  if (!(flags & LOOKUP_NONVIRTUAL)
 	      && DECL_PURE_VIRTUAL_P (fn)
@@ -7641,12 +7657,26 @@ build_new_method_call_1 (tree instance, tree fns, vec<tree, va_gc> **args,
 	  if (TREE_CODE (TREE_TYPE (fn)) == METHOD_TYPE
 	      && is_dummy_object (instance_ptr))
 	    {
-	      if (complain & tf_error)
-		error ("cannot call member function %qD without object",
-		       fn);
-	      call = error_mark_node;
+	      instance = maybe_resolve_dummy (instance);
+	      if (instance == error_mark_node)
+		call = error_mark_node;
+	      else if (!is_dummy_object (instance))
+		{
+		  /* We captured 'this' in the current lambda now that
+		     we know we really need it.  */
+		  instance_ptr = build_this (instance);
+		  cand->first_arg = instance_ptr;
+		}
+	      else
+		{
+		  if (complain & tf_error)
+		    error ("cannot call member function %qD without object",
+			   fn);
+		  call = error_mark_node;
+		}
 	    }
-	  else
+
+	  if (call != error_mark_node)
 	    {
 	      /* Optimize away vtable lookup if we know that this
 		 function can't be overridden.  We need to check if
@@ -8765,11 +8795,18 @@ can_convert_arg (tree to, tree from, tree arg, int flags,
 
   /* Get the high-water mark for the CONVERSION_OBSTACK.  */
   p = conversion_obstack_alloc (0);
+  /* We want to discard any access checks done for this test,
+     as we might not be in the appropriate access context and
+     we'll do the check again when we actually perform the
+     conversion.  */
+  push_deferring_access_checks (dk_deferred);
 
   t  = implicit_conversion (to, from, arg, /*c_cast_p=*/false,
 			    flags, complain);
   ok_p = (t && !t->bad_p);
 
+  /* Discard the access checks now.  */
+  pop_deferring_access_checks ();
   /* Free all the conversions we allocated.  */
   obstack_free (&conversion_obstack, p);
 

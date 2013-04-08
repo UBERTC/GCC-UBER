@@ -6111,7 +6111,8 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
       tree d_init;
       if (init == NULL_TREE)
 	{
-	  if (DECL_TEMPLATE_INSTANTIATION (decl)
+	  if (DECL_LANG_SPECIFIC (decl)
+	      && DECL_TEMPLATE_INSTANTIATION (decl)
 	      && !DECL_TEMPLATE_INSTANTIATED (decl))
 	    {
 	      /* init is null because we're deferring instantiating the
@@ -6758,10 +6759,9 @@ register_dtor_fn (tree decl)
      "__aeabi_atexit"), and DECL is a class object, we can just pass the
      destructor to "__cxa_atexit"; we don't have to build a temporary
      function to do the cleanup.  */
-  ob_parm = (DECL_THREAD_LOCAL_P (decl)
-	     || (flag_use_cxa_atexit
-		 && !targetm.cxx.use_atexit_for_cxa_atexit ()));
-  dso_parm = ob_parm;
+  dso_parm = (flag_use_cxa_atexit
+	      && !targetm.cxx.use_atexit_for_cxa_atexit ());
+  ob_parm = (DECL_THREAD_LOCAL_P (decl) || dso_parm);
   use_dtor = ob_parm && CLASS_TYPE_P (type);
   if (use_dtor)
     {
@@ -6825,7 +6825,7 @@ register_dtor_fn (tree decl)
 	 before passing it in, to avoid spurious errors.  */
       addr = build_nop (ptr_type_node, addr);
     }
-  else if (ob_parm)
+  else
     /* Since the cleanup functions we build ignore the address
        they're given, there's no reason to pass the actual address
        in, and, in general, it's cheaper to pass NULL than any
@@ -6835,6 +6835,10 @@ register_dtor_fn (tree decl)
   if (dso_parm)
     arg2 = cp_build_addr_expr (get_dso_handle_node (),
 			       tf_warning_or_error);
+  else if (ob_parm)
+    /* Just pass NULL to the dso handle parm if we don't actually
+       have a DSO handle on this target.  */
+    arg2 = null_pointer_node;
   else
     arg2 = NULL_TREE;
 
@@ -8599,7 +8603,6 @@ grokdeclarator (const cp_declarator *declarator,
   int explicit_int = 0;
   int explicit_char = 0;
   int defaulted_int = 0;
-  tree dependent_name = NULL_TREE;
 
   tree typedef_decl = NULL_TREE;
   const char *name = NULL;
@@ -9195,12 +9198,6 @@ grokdeclarator (const cp_declarator *declarator,
       staticp = 0;
     }
   friendp = decl_spec_seq_has_spec_p (declspecs, ds_friend);
-
-  if (dependent_name && !friendp)
-    {
-      error ("%<%T::%D%> is not a valid declarator", ctype, dependent_name);
-      return error_mark_node;
-    }
 
   /* Issue errors about use of storage classes for parameters.  */
   if (decl_context == PARM)
@@ -10634,9 +10631,8 @@ grokdeclarator (const cp_declarator *declarator,
 	      }
 	  }
 
-	/* Record presence of `static'.  */
+	/* Record whether the function is public.  */
 	publicp = (ctype != NULL_TREE
-		   || storage_class == sc_extern
 		   || storage_class != sc_static);
 
 	decl = grokfndecl (ctype, type, original_name, parms, unqualified_id,
@@ -10808,9 +10804,8 @@ static tree
 local_variable_p_walkfn (tree *tp, int *walk_subtrees,
 			 void * /*data*/)
 {
-  /* Check DECL_NAME to avoid including temporaries.  We don't check
-     DECL_ARTIFICIAL because we do want to complain about 'this'.  */
-  if (local_variable_p (*tp) && DECL_NAME (*tp))
+  if (local_variable_p (*tp)
+      && (!DECL_ARTIFICIAL (*tp) || DECL_NAME (*tp) == this_identifier))
     return *tp;
   else if (TYPE_P (*tp))
     *walk_subtrees = 0;
@@ -10861,15 +10856,10 @@ check_default_argument (tree decl, tree arg)
   --cp_unevaluated_operand;
 
   if (warn_zero_as_null_pointer_constant
-      && c_inhibit_evaluation_warnings == 0
       && TYPE_PTR_OR_PTRMEM_P (decl_type)
       && null_ptr_cst_p (arg)
-      && !NULLPTR_TYPE_P (TREE_TYPE (arg)))
-    {
-      warning (OPT_Wzero_as_null_pointer_constant,
-	       "zero as null pointer constant");
-      return nullptr_node;
-    }
+      && maybe_warn_zero_as_null_pointer_constant (arg, input_location))
+    return nullptr_node;
 
   /* [dcl.fct.default]
 
@@ -11725,9 +11715,6 @@ check_elaborated_type_specifier (enum tag_types tag_code,
 {
   tree type;
 
-  if (decl == error_mark_node)
-    return error_mark_node;
-
   /* In the case of:
 
        struct S { struct S *p; };
@@ -11906,11 +11893,12 @@ lookup_and_check_tag (enum tag_types tag_code, tree name,
 
 static tree
 xref_tag_1 (enum tag_types tag_code, tree name,
-            tag_scope scope, bool template_header_p)
+            tag_scope orig_scope, bool template_header_p)
 {
   enum tree_code code;
   tree t;
   tree context = NULL_TREE;
+  tag_scope scope;
 
   gcc_assert (TREE_CODE (name) == IDENTIFIER_NODE);
 
@@ -11929,6 +11917,11 @@ xref_tag_1 (enum tag_types tag_code, tree name,
     default:
       gcc_unreachable ();
     }
+
+  if (orig_scope == ts_lambda)
+    scope = ts_current;
+  else
+    scope = orig_scope;
 
   /* In case of anonymous name, xref_tag is only called to
      make type node and push name.  Name lookup is not required.  */
@@ -12003,6 +11996,10 @@ xref_tag_1 (enum tag_types tag_code, tree name,
 	{
 	  t = make_class_type (code);
 	  TYPE_CONTEXT (t) = context;
+	  if (orig_scope == ts_lambda)
+	    /* Remember that we're declaring a lambda to avoid bogus errors
+	       in push_template_decl.  */
+	    CLASSTYPE_LAMBDA_EXPR (t) = error_mark_node;
 	  t = pushtag (name, t, scope);
 	}
     }

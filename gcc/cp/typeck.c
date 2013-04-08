@@ -4015,7 +4015,7 @@ cp_build_binary_op (location_t location,
 	{
 	  enum tree_code tcode0 = code0, tcode1 = code1;
 
-	  warn_for_div_by_zero (location, op1);
+	  warn_for_div_by_zero (location, maybe_constant_value (op1));
 
 	  if (tcode0 == COMPLEX_TYPE || tcode0 == VECTOR_TYPE)
 	    tcode0 = TREE_CODE (TREE_TYPE (TREE_TYPE (op0)));
@@ -4051,7 +4051,7 @@ cp_build_binary_op (location_t location,
 
     case TRUNC_MOD_EXPR:
     case FLOOR_MOD_EXPR:
-      warn_for_div_by_zero (location, op1);
+      warn_for_div_by_zero (location, maybe_constant_value (op1));
 
       if (code0 == VECTOR_TYPE && code1 == VECTOR_TYPE
 	  && TREE_CODE (TREE_TYPE (type0)) == INTEGER_TYPE
@@ -4293,12 +4293,9 @@ cp_build_binary_op (location_t location,
 				       delta0,
 				       integer_one_node,
 				       complain);
-	      
-	      if ((complain & tf_warning)
-		  && c_inhibit_evaluation_warnings == 0
-		  && !NULLPTR_TYPE_P (TREE_TYPE (op1)))
-		warning (OPT_Wzero_as_null_pointer_constant,
-			 "zero as null pointer constant");
+
+	      if (complain & tf_warning)
+		maybe_warn_zero_as_null_pointer_constant (op1, input_location);
 
 	      e2 = cp_build_binary_op (location,
 				       EQ_EXPR, e2, integer_zero_node,
@@ -8137,6 +8134,11 @@ check_return_expr (tree retval, bool *no_warning)
 		 current_function_auto_return_pattern);
 	  inform (input_location, "only plain %<auto%> return type can be "
 		  "deduced to %<void%>");
+	  type = error_mark_node;
+	}
+      else if (retval && BRACE_ENCLOSED_INITIALIZER_P (retval))
+	{
+	  error ("returning initializer list");
 	  type = error_mark_node;
 	}
       else
