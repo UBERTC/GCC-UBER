@@ -1,5 +1,15 @@
 2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r196858.
+	2013-03-21   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* config/aarch64/aarch64-simd.md (simd_fabd): New Attribute.
+	(abd<mode>_3): New pattern.
+	(aba<mode>_3): New pattern.
+	(fabd<mode>_3): New pattern.
+
+2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r196856.
 	2013-03-21   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
 
