@@ -1,6 +1,14 @@
 2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
-	Backport from trunk r19858.
+	Backport from trunk r196876.
+	2013-03-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/arm/neon-for-64bits-1.c: New tests.
+	* gcc.target/arm/neon-for-64bits-2.c: Likewise.
+
+2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	Backport from trunk r196858.
 	2013-03-21   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
 
 	* gcc.target/aarch64/vect.c: Test and result vector added
