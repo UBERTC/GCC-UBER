@@ -1,3 +1,7 @@
+2013-04-09  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	* GCC Linaro 4.8-2013.04 released.
+
 2013-03-27  Paolo Carlini  <paolo.carlini@oracle.com>
 
 	PR libstdc++/55977 (partial, std::vector and std::deque bits)

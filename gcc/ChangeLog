@@ -1,3 +1,11 @@
+2013-04-09  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	* GCC Linaro 4.8-2013.04 released.
+	
+	* LINARO-VERSION: New file.
+	* configure.ac: Add Linaro version string.
+	* configure: Regenerate.
+
 2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
 	Backport of trunk r197346.
