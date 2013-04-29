@@ -1,0 +1,86 @@
+2013-04-09  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	* GCC Linaro 4.8-2013.04 released.
+
+2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	Backport from trunk r197052.
+	2013-03-25  Kyrylo Tkachov  <kyrylo.tkachov at arm.com>
+
+	* gcc.target/arm/vseleqdf.c: New test.
+	* gcc.target/arm/vseleqsf.c: Likewise.
+	* gcc.target/arm/vselgedf.c: Likewise.
+	* gcc.target/arm/vselgesf.c: Likewise.
+	* gcc.target/arm/vselgtdf.c: Likewise.
+	* gcc.target/arm/vselgtsf.c: Likewise.
+	* gcc.target/arm/vselledf.c: Likewise.
+	* gcc.target/arm/vsellesf.c: Likewise.
+	* gcc.target/arm/vselltdf.c: Likewise.
+	* gcc.target/arm/vselltsf.c: Likewise.
+	* gcc.target/arm/vselnedf.c: Likewise.
+	* gcc.target/arm/vselnesf.c: Likewise.
+	* gcc.target/arm/vselvcdf.c: Likewise.
+	* gcc.target/arm/vselvcsf.c: Likewise.
+	* gcc.target/arm/vselvsdf.c: Likewise.
+	* gcc.target/arm/vselvssf.c: Likewise.
+
+2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	Backport from trunk r197051.
+	2013-03-25  Kyrylo Tkachov  <kyrylo.tkachov at arm.com>
+
+	* gcc.target/aarch64/atomic-comp-swap-release-acquire.c: Move test
+	body from here...
+	* gcc.target/aarch64/atomic-comp-swap-release-acquire.x: ... to here.
+	* gcc.target/aarch64/atomic-op-acq_rel.c: Move test body from here...
+	* gcc.target/aarch64/atomic-op-acq_rel.x: ... to here.
+	* gcc.target/aarch64/atomic-op-acquire.c: Move test body from here...
+	* gcc.target/aarch64/atomic-op-acquire.x: ... to here.
+	* gcc.target/aarch64/atomic-op-char.c: Move test body from here...
+	* gcc.target/aarch64/atomic-op-char.x: ... to here.
+	* gcc.target/aarch64/atomic-op-consume.c: Move test body from here...
+	* gcc.target/aarch64/atomic-op-consume.x: ... to here.
+	* gcc.target/aarch64/atomic-op-int.c: Move test body from here...
+	* gcc.target/aarch64/atomic-op-int.x: ... to here.
+	* gcc.target/aarch64/atomic-op-relaxed.c: Move test body from here...
+	* gcc.target/aarch64/atomic-op-relaxed.x: ... to here.
+	* gcc.target/aarch64/atomic-op-release.c: Move test body from here...
+	* gcc.target/aarch64/atomic-op-release.x: ... to here.
+	* gcc.target/aarch64/atomic-op-seq_cst.c: Move test body from here...
+	* gcc.target/aarch64/atomic-op-seq_cst.x: ... to here.
+	* gcc.target/aarch64/atomic-op-short.c: Move test body from here...
+	* gcc.target/aarch64/atomic-op-short.x: ... to here.
+	* gcc.target/arm/atomic-comp-swap-release-acquire.c: New test.
+	* gcc.target/arm/atomic-op-acq_rel.c: Likewise.
+	* gcc.target/arm/atomic-op-acquire.c: Likewise.
+	* gcc.target/arm/atomic-op-char.c: Likewise.
+	* gcc.target/arm/atomic-op-consume.c: Likewise.
+	* gcc.target/arm/atomic-op-int.c: Likewise.
+	* gcc.target/arm/atomic-op-relaxed.c: Likewise.
+	* gcc.target/arm/atomic-op-release.c: Likewise.
+	* gcc.target/arm/atomic-op-seq_cst.c: Likewise.
+	* gcc.target/arm/atomic-op-short.c: Likewise.
+
+2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	Backport from trunk r196876.
+	2013-03-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/arm/neon-for-64bits-1.c: New tests.
+	* gcc.target/arm/neon-for-64bits-2.c: Likewise.
+
+2013-04-08  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	Backport from trunk r196858.
+	2013-03-21   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* gcc.target/aarch64/vect.c: Test and result vector added
+	for sabd and saba instructions.
+	* gcc.target/aarch64/vect-compile.c: Check for sabd and saba
+	instructions in assembly.
+	* gcc.target/aarch64/vect.x: Add sabd and saba test functions.
+	* gcc.target/aarch64/vect-fp.c: Test and result vector added
+	for fabd instruction.
+	* gcc.target/aarch64/vect-fp-compile.c: Check for fabd
+	instruction in assembly.
+	* gcc.target/aarch64/vect-fp.x: Add fabd test function.

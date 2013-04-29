@@ -1,7 +1,3 @@
-2013-04-09  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
-
-	* GCC Linaro 4.8-2013.04 released.
-
 2013-03-25  Ian Lance Taylor  <iant@google.com>
 
 	* alloc.c: #include <sys/types.h>.
