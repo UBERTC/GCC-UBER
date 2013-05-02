@@ -1,5 +1,12 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport of trunk r197513.
+	2013-04-05  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* doc/invoke.texi (ARM Options): Document cortex-a53 support.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport of trunk r197489-197491.
 	2013-04-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
