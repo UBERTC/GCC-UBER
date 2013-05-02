@@ -1224,19 +1224,19 @@ aarch64_builtin_vectorized_function (tree fndecl, tree type_out, tree type_in)
    && in_mode == N##Fmode && in_n == C)
 	case BUILT_IN_FLOOR:
 	case BUILT_IN_FLOORF:
-	  return AARCH64_FIND_FRINT_VARIANT (frintm);
+	  return AARCH64_FIND_FRINT_VARIANT (floor);
 	case BUILT_IN_CEIL:
 	case BUILT_IN_CEILF:
-	  return AARCH64_FIND_FRINT_VARIANT (frintp);
+	  return AARCH64_FIND_FRINT_VARIANT (ceil);
 	case BUILT_IN_TRUNC:
 	case BUILT_IN_TRUNCF:
-	  return AARCH64_FIND_FRINT_VARIANT (frintz);
+	  return AARCH64_FIND_FRINT_VARIANT (btrunc);
 	case BUILT_IN_ROUND:
 	case BUILT_IN_ROUNDF:
-	  return AARCH64_FIND_FRINT_VARIANT (frinta);
+	  return AARCH64_FIND_FRINT_VARIANT (round);
 	case BUILT_IN_NEARBYINT:
 	case BUILT_IN_NEARBYINTF:
-	  return AARCH64_FIND_FRINT_VARIANT (frinti);
+	  return AARCH64_FIND_FRINT_VARIANT (nearbyint);
 	case BUILT_IN_SQRT:
 	case BUILT_IN_SQRTF:
 	  return AARCH64_FIND_FRINT_VARIANT (sqrt);
@@ -1245,9 +1245,51 @@ aarch64_builtin_vectorized_function (tree fndecl, tree type_out, tree type_in)
   (out_mode == N##Imode && out_n == C \
    && in_mode == N##Fmode && in_n == C)
 	case BUILT_IN_LFLOOR:
-	  return AARCH64_FIND_FRINT_VARIANT (fcvtms);
+	case BUILT_IN_IFLOORF:
+	  {
+	    tree new_tree = NULL_TREE;
+	    if (AARCH64_CHECK_BUILTIN_MODE (2, D))
+	      new_tree =
+		aarch64_builtin_decls[AARCH64_SIMD_BUILTIN_lfloorv2dfv2di];
+	    else if (AARCH64_CHECK_BUILTIN_MODE (4, S))
+	      new_tree =
+		aarch64_builtin_decls[AARCH64_SIMD_BUILTIN_lfloorv4sfv4si];
+	    else if (AARCH64_CHECK_BUILTIN_MODE (2, S))
+	      new_tree =
+		aarch64_builtin_decls[AARCH64_SIMD_BUILTIN_lfloorv2sfv2si];
+	    return new_tree;
+	  }
 	case BUILT_IN_LCEIL:
-	  return AARCH64_FIND_FRINT_VARIANT (fcvtps);
+	case BUILT_IN_ICEILF:
+	  {
+	    tree new_tree = NULL_TREE;
+	    if (AARCH64_CHECK_BUILTIN_MODE (2, D))
+	      new_tree =
+		aarch64_builtin_decls[AARCH64_SIMD_BUILTIN_lceilv2dfv2di];
+	    else if (AARCH64_CHECK_BUILTIN_MODE (4, S))
+	      new_tree =
+		aarch64_builtin_decls[AARCH64_SIMD_BUILTIN_lceilv4sfv4si];
+	    else if (AARCH64_CHECK_BUILTIN_MODE (2, S))
+	      new_tree =
+		aarch64_builtin_decls[AARCH64_SIMD_BUILTIN_lceilv2sfv2si];
+	    return new_tree;
+	  }
+	case BUILT_IN_LROUND:
+	case BUILT_IN_IROUNDF:
+	  {
+	    tree new_tree = NULL_TREE;
+	    if (AARCH64_CHECK_BUILTIN_MODE (2, D))
+	      new_tree =
+		aarch64_builtin_decls[AARCH64_SIMD_BUILTIN_lroundv2dfv2di];
+	    else if (AARCH64_CHECK_BUILTIN_MODE (4, S))
+	      new_tree =
+		aarch64_builtin_decls[AARCH64_SIMD_BUILTIN_lroundv4sfv4si];
+	    else if (AARCH64_CHECK_BUILTIN_MODE (2, S))
+	      new_tree =
+		aarch64_builtin_decls[AARCH64_SIMD_BUILTIN_lroundv2sfv2si];
+	    return new_tree;
+	  }
+
 	default:
 	  return NULL_TREE;
       }
@@ -1271,6 +1313,11 @@ aarch64_fold_builtin (tree fndecl, int n_args ATTRIBUTE_UNUSED, tree *args,
     {
       BUILTIN_VDQF (UNOP, abs, 2)
 	return fold_build1 (ABS_EXPR, type, args[0]);
+	break;
+      VAR1 (UNOP, floatv2si, 2, v2sf)
+      VAR1 (UNOP, floatv4si, 2, v4sf)
+      VAR1 (UNOP, floatv2di, 2, v2df)
+	return fold_build1 (FLOAT_EXPR, type, args[0]);
 	break;
       default:
 	break;
