@@ -1,5 +1,13 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r198412.
+	2013-04-29  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (store_minmaxsi): Use only when
+	optimize_insn_for_size_p.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk 198394,198396-198400,198402-198404.
 	2013-04-29  James Greenhalgh  <james.greenhalgh@arm.com>
 
