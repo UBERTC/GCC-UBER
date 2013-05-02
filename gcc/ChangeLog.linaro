@@ -1,5 +1,27 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r197530,197921.
+	2013-04-12  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/arm.c (gen_operands_ldrd_strd): Initialize "base".
+
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/constraints.md (q): New constraint.
+	* config/arm/ldrdstrd.md: New file.
+	* config/arm/arm.md (ldrdstrd.md) New include.
+	(arm_movdi): Use "q" instead of "r" constraint
+	for double-word memory access.
+	(movdf_soft_insn): Likewise.
+	* config/arm/vfp.md (movdi_vfp): Likewise.
+	* config/arm/t-arm (MD_INCLUDES): Add ldrdstrd.md.
+        * config/arm/arm-protos.h (gen_operands_ldrd_strd): New declaration.
+	* config/arm/arm.c (gen_operands_ldrd_strd): New function.
+	(mem_ok_for_ldrd_strd): Likewise.
+	(output_move_double): Update assertion.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport of trunk r197518-197522,197526-197528.
 	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
 

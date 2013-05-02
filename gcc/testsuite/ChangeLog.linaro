@@ -1,5 +1,13 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r197530,197921.
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* gcc.target/arm/peep-ldrd-1.c: New test.
+	* gcc.target/arm/peep-strd-1.c: Likewise.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r197523.
 	2013-04-05  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
