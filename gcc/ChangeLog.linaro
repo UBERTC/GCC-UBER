@@ -1,5 +1,69 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r198136-198137,198142,198176.
+	2013-04-23  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* coretypes.h (gimple_stmt_iterator): Add struct to make
+	compatible with C.
+
+	2013-04-22  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* coretypes.h (gimple_stmt_iterator_d): Forward declare.
+	(gimple_stmt_iterator): New typedef.
+	* gimple.h (gimple_stmt_iterator): Rename to...
+	(gimple_stmt_iterator_d): ... This.
+	* doc/tm.texi.in (TARGET_FOLD_BUILTIN): Detail restriction that
+	trees be valid for GIMPLE and GENERIC.
+	(TARGET_GIMPLE_FOLD_BUILTIN): New.
+	* gimple-fold.c (gimple_fold_call): Call target hook
+	gimple_fold_builtin.
+	* hooks.c (hook_bool_gsiptr_false): New.
+	* hooks.h (hook_bool_gsiptr_false): New.
+	* target.def (fold_stmt): New.
+	* doc/tm.texi: Regenerate.
+
+	2013-04-22  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-builtins.c
+	(CF): Remove.
+	(CF0, CF1, CF2, CF3, CF4, CF10): New.
+	(VAR<1-12>): Add MAP parameter.
+	(BUILTIN_*): Likewise.
+	* config/aarch64/aarch64-simd-builtins.def: Set MAP parameter.
+	* config/aarch64/aarch64-simd.md (aarch64_sshl_n<mode>): Remove.
+	(aarch64_ushl_n<mode>): Likewise.
+	(aarch64_sshr_n<mode>): Likewise.
+	(aarch64_ushr_n<mode>): Likewise.
+	(aarch64_<maxmin><mode>): Likewise.
+	(aarch64_sqrt<mode>): Likewise.
+	* config/aarch64/arm_neon.h (vshl<q>_n_*): Use new builtin names.
+	(vshr<q>_n_*): Likewise.
+
+	2013-04-22  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-builtins.c
+	(aarch64_simd_builtin_type_mode): Handle SF types.
+	(sf_UP): Define.
+	(BUILTIN_GPF): Define.
+	(aarch64_init_simd_builtins): Handle SF types.
+	* config/aarch64/aarch64-simd-builtins.def (frecpe): Add support.
+	(frecps): Likewise.
+	(frecpx): Likewise.
+	* config/aarch64/aarch64-simd.md
+	(simd_types): Update simd_frcp<esx> to simd_frecp<esx>.
+	(aarch64_frecpe<mode>): New.
+	(aarch64_frecps<mode>): Likewise.
+	* config/aarch64/aarch64.md (unspec): Add UNSPEC_FRECP<ESX>.
+	(v8type): Add frecp<esx>.
+	(aarch64_frecp<FRECP:frecp_suffix><mode>): New.
+	(aarch64_frecps<mode>): Likewise.
+	* config/aarch64/iterators.md (FRECP): New.
+	(frecp_suffix): Likewise.
+	* config/aarch64/arm_neon.h
+	(vrecp<esx><qsd>_<fd><32, 64>): Convert to using builtins.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r198030.
 	2013-04-17  Greta Yorsh  <Greta.Yorsh at arm.com>
 

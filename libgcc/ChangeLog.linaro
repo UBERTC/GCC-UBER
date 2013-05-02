@@ -1,3 +1,13 @@
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	Backport from trunk r198090.
+	2013-04-19  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* config/aarch64/sfp-machine.h (_FP_W_TYPE): Change to define
+	as 'unsigned long long' instead of 'unsigned long'.
+	(_FP_WS_TYPE): Change to define as 'signed long long' instead of
+	'signed long'.
+
 2013-04-09  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
 	* GCC Linaro 4.8-2013.04 released.

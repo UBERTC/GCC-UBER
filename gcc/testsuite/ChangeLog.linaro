@@ -1,5 +1,13 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r198136-198137,198142,198176
+	2013-04-22  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/vrecps.c: New.
+	* gcc.target/aarch64/vrecpx.c: Likewise.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r198019-198020.
 	2013-04-16   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
 
