@@ -1,5 +1,17 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r198298.
+	2013-04-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* lib/target-supports.exp
+	(check_effective_target_arm_neon_fp16_ok_nocache): New procedure.
+	(check_effective_target_arm_neon_fp16_ok): Likewise.
+	(add_options_for_arm_neon_fp16): Likewise.
+	* gcc.target/arm/neon/vcvtf16_f32.c: New test. Generated.
+	* gcc.target/arm/neon/vcvtf32_f16.c: Likewise.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r198136-198137,198142,198176
 	2013-04-22  James Greenhalgh  <james.greenhalgh@arm.com>
 
