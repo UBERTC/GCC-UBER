@@ -4468,17 +4468,6 @@ vabds_f32 (float32_t a, float32_t b)
   return result;
 }
 
-__extension__ static __inline float32x2_t __attribute__ ((__always_inline__))
-vabs_f32 (float32x2_t a)
-{
-  float32x2_t result;
-  __asm__ ("fabs %0.2s,%1.2s"
-           : "=w"(result)
-           : "w"(a)
-           : /* No clobbers */);
-  return result;
-}
-
 __extension__ static __inline int8x8_t __attribute__ ((__always_inline__))
 vabs_s8 (int8x8_t a)
 {
@@ -4506,28 +4495,6 @@ vabs_s32 (int32x2_t a)
 {
   int32x2_t result;
   __asm__ ("abs %0.2s,%1.2s"
-           : "=w"(result)
-           : "w"(a)
-           : /* No clobbers */);
-  return result;
-}
-
-__extension__ static __inline float32x4_t __attribute__ ((__always_inline__))
-vabsq_f32 (float32x4_t a)
-{
-  float32x4_t result;
-  __asm__ ("fabs %0.4s,%1.4s"
-           : "=w"(result)
-           : "w"(a)
-           : /* No clobbers */);
-  return result;
-}
-
-__extension__ static __inline float64x2_t __attribute__ ((__always_inline__))
-vabsq_f64 (float64x2_t a)
-{
-  float64x2_t result;
-  __asm__ ("fabs %0.2d,%1.2d"
            : "=w"(result)
            : "w"(a)
            : /* No clobbers */);
@@ -19717,6 +19684,26 @@ vtbx4_p8 (poly8x8_t r, poly8x8x4_t tab, uint8x8_t idx)
 
 /* Start of optimal implementations in approved order.  */
 
+/* vabs  */
+
+__extension__ static __inline float32x2_t __attribute__ ((__always_inline__))
+vabs_f32 (float32x2_t __a)
+{
+  return __builtin_aarch64_absv2sf (__a);
+}
+
+__extension__ static __inline float32x4_t __attribute__ ((__always_inline__))
+vabsq_f32 (float32x4_t __a)
+{
+  return __builtin_aarch64_absv4sf (__a);
+}
+
+__extension__ static __inline float64x2_t __attribute__ ((__always_inline__))
+vabsq_f64 (float64x2_t __a)
+{
+  return __builtin_aarch64_absv2df (__a);
+}
+
 /* vadd */
 
 __extension__ static __inline int64x1_t __attribute__ ((__always_inline__))
@@ -19729,6 +19716,27 @@ __extension__ static __inline uint64x1_t __attribute__ ((__always_inline__))
 vaddd_u64 (uint64x1_t __a, uint64x1_t __b)
 {
   return __a + __b;
+}
+
+__extension__ static __inline float32_t __attribute__ ((__always_inline__))
+vaddv_f32 (float32x2_t __a)
+{
+  float32x2_t t = __builtin_aarch64_addvv2sf (__a);
+  return vget_lane_f32 (t, 0);
+}
+
+__extension__ static __inline float32_t __attribute__ ((__always_inline__))
+vaddvq_f32 (float32x4_t __a)
+{
+  float32x4_t t = __builtin_aarch64_addvv4sf (__a);
+  return vgetq_lane_f32 (t, 0);
+}
+
+__extension__ static __inline float64_t __attribute__ ((__always_inline__))
+vaddvq_f64 (float64x2_t __a)
+{
+  float64x2_t t = __builtin_aarch64_addvv2df (__a);
+  return vgetq_lane_f64 (t, 0);
 }
 
 /* vceq */

@@ -1,5 +1,50 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r198302-198306,198316.
+	2013-04-25  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-simd.md
+	(aarch64_simd_bsl<mode>_internal): Rewrite RTL to not use UNSPEC_BSL.
+	(aarch64_simd_bsl<mode>): Likewise.
+	* config/aarch64/iterators.md (unspec): Remove UNSPEC_BSL.
+
+	2013-04-25  James Greenhalgh  <jame.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-simd.md (neg<mode>2): Use VDQ iterator.
+
+	2013-04-25  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-builtins.c
+	(aarch64_fold_builtin): New.
+	* config/aarch64/aarch64-protos.h (aarch64_fold_builtin): New.
+	* config/aarch64/aarch64.c (TARGET_FOLD_BUILTIN): Define.
+	* config/aarch64/aarch64-simd-builtins.def (abs): New.
+	* config/aarch64/arm_neon.h
+	(vabs<q>_<f32, 64>): Implement using __builtin_aarch64_fabs.
+
+	2013-04-25  James Greenhalgh  <james.greenhalgh@arm.com>
+	    Tejas Belagod  <tejas.belagod@arm.com>
+
+	* config/aarch64/aarch64-builtins.c
+	(aarch64_gimple_fold_builtin): New.
+	* config/aarch64/aarch64-protos.h (aarch64_gimple_fold_builtin): New.
+	* config/aarch64/aarch64-simd-builtins.def (addv): New.
+	* config/aarch64/aarch64-simd.md (addpv4sf): New.
+	(addvv4sf): Update.
+	* config/aarch64/aarch64.c (TARGET_GIMPLE_FOLD_BUILTIN): Define.
+
+	2013-04-25  Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* config/aarch64/aarch64.md 
+	(*cmp_swp_<optab><ALLX:mode>_shft_<GPI:mode>): New pattern.
+
+	2013-04-25  Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* config/aarch64/aarch64.md (*ngc<mode>): New pattern.
+	(*ngcsi_uxtw): New pattern.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk 198298.
 	2013-04-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
             Julian Brown  <julian@codesourcery.com>

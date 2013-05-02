@@ -1,5 +1,23 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r198302-198306,198316.
+	2013-04-25  James Greenhalgh  <james.greenhalgh@arm.com>
+	    Tejas Belagod  <tejas.belagod@arm.com>
+
+	* gcc.target/aarch64/vaddv-intrinsic.c: New.
+	* gcc.target/aarch64/vaddv-intrinsic-compile.c: Likewise.
+	* gcc.target/aarch64/vaddv-intrinsic.x: Likewise.
+
+	2013-04-25  Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* gcc.target/aarch64/cmp.c: New.
+
+	2013-04-25  Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* gcc.target/aarch64/ngc.c: New.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r198298.
 	2013-04-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
