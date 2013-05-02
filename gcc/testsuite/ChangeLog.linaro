@@ -1,5 +1,22 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r197523.
+	2013-04-05  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* lib/target-supports.exp (add_options_for_arm_v8_neon):
+	Add -march=armv8-a when we use v8 NEON.
+	(check_effective_target_vect_call_btruncf): Remove arm-*-*-*.
+	(check_effective_target_vect_call_ceilf): Likewise.
+	(check_effective_target_vect_call_floorf): Likewise.
+	(check_effective_target_vect_call_roundf): Likewise.
+	(check_vect_support_and_set_flags): Remove check for arm_v8_neon.
+	* gcc.target/arm/vect-rounding-btruncf.c: New testcase.
+	* gcc.target/arm/vect-rounding-ceilf.c: Likewise.
+	* gcc.target/arm/vect-rounding-floorf.c: Likewise.
+	* gcc.target/arm/vect-rounding-roundf.c: Likewise.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r197518-197522,197516-197528.
 	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
 
