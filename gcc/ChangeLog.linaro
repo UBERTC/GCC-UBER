@@ -1,5 +1,26 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r198004,198029.
+	2013-04-17  Greta Yorsh  <Greta.Yorsh at arm.com>
+
+	* config/arm/arm.c (use_return_insn): Return 0 for targets that
+	can benefit from using a sequence of LDRD instructions in epilogue
+	instead of a single LDM instruction.
+
+	2013-04-16  Greta Yorsh  <Greta.Yorsh at arm.com>
+
+	* config/arm/arm.c (emit_multi_reg_push): New declaration
+	for an existing function.
+	(arm_emit_strd_push): New function.
+	(arm_expand_prologue): Used here.
+	(arm_emit_ldrd_pop): New function.
+	(arm_expand_epilogue): Used here.
+	(arm_get_frame_offsets): Update condition.
+	(arm_emit_multi_reg_pop): Add a special case for load of a single
+	register with writeback.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r197965.
 	2013-04-15  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
