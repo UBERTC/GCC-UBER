@@ -1,5 +1,58 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport of trunk r197518-197522,197526-197528.
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/arm.md (arm_smax_insn): Convert define_insn into
+	define_insn_and_split.
+	(arm_smin_insn,arm_umaxsi3,arm_uminsi3): Likewise.
+
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/arm.md (arm_ashldi3_1bit): Convert define_insn into
+	define_insn_and_split.
+        (arm_ashrdi3_1bit,arm_lshrdi3_1bit): Likewise.
+	(shiftsi3_compare): New pattern.
+	(rrx): New pattern.
+	* config/arm/unspecs.md (UNSPEC_RRX): New.
+
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/arm.md (negdi_extendsidi): New pattern.
+	(negdi_zero_extendsidi): Likewise.
+
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/arm.md (andsi_iorsi3_notsi): Convert define_insn into
+	define_insn_and_split.
+	(arm_negdi2,arm_abssi2,arm_neg_abssi2): Likewise.
+	(arm_cmpdi_insn,arm_cmpdi_unsigned): Likewise.
+
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/arm.md (arm_subdi3): Convert define_insn into
+	define_insn_and_split.
+	(subdi_di_zesidi,subdi_di_sesidi): Likewise.
+	(subdi_zesidi_di,subdi_sesidi_di,subdi_zesidi_zesidi): Likewise.
+
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/arm.md (subsi3_carryin): New pattern.
+	(subsi3_carryin_const): Likewise.
+	(subsi3_carryin_compare,subsi3_carryin_compare_const): Likewise.
+	(subsi3_carryin_shift,rsbsi3_carryin_shift): Likewise.
+
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/arm.md (incscc,arm_incscc,decscc,arm_decscc): Delete.
+
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/arm.md (addsi3_carryin_<optab>): Set attribute predicable.
+	(addsi3_carryin_alt2_<optab>,addsi3_carryin_shift_<optab>): Likewise.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport of trunk r197517.
 	2013-04-05  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 

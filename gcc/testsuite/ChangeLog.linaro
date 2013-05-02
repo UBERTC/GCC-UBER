@@ -1,5 +1,15 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r197518-197522,197516-197528.
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* gcc.target/arm/negdi-1.c: New test.
+	* gcc.target/arm/negdi-2.c: Likewise.
+	* gcc.target/arm/negdi-3.c: Likewise.
+	* gcc.target/arm/negdi-4.c: Likewise.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r197489-197491.
 	2013-04-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
