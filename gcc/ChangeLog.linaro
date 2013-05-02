@@ -1,5 +1,12 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r197807.
+	2013-04-11   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* config/aarch64/aarch64.h (REVERSIBLE_CC_MODE): Define.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r197642.
 	2013-04-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
