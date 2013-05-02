@@ -43,6 +43,7 @@
 #endif
 #include <limits.h>
 #include <errno.h>
+#include <asm/page.h>
 
 #ifndef HAVE_STRTOULL
 # define strtoull(ptr, eptr, base) strtoul (ptr, eptr, base)
