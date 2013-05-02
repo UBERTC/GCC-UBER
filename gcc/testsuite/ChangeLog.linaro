@@ -1,4 +1,14 @@
-2013-05-02  Matthew Gretton-Dann <matthew.gretton-dann@linaro.org>
+2013-05-02  Matthew Gretton-Dann   <matthew.gretton-dann@linaro.org>
+
+	Backport from trunk r198019.
+	2013-04-16   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* gcc.target/aarch64/adds1.c: New.
+	* gcc.target/aarch64/adds2.c: New.
+	* gcc.target/aarch64/subs1.c: New.
+	* gcc.target/aarch64/subs2.c: New.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
 	Backport from trunk r198394,198396-198400,198402-198404,198406.
 	2013-04-29  James Greenhalgh  <james.greenhalgh@arm.com>
@@ -53,18 +63,11 @@
 
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
-	Backport from trunk r198019-198020.
+	Backport from trunk r198020.
 	2013-04-16   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
 
 	* gcc.target/aarch64/adds3.c: New.
 	* gcc.target/aarch64/subs3.c: New.
-
-	2013-04-16   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
-
-	* gcc.target/aarch64/adds1.c: New.
-	* gcc.target/aarch64/adds2.c: New.
-	* gcc.target/aarch64/subs1.c: New.
-	* gcc.target/aarch64/subs2.c: New.
 
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
