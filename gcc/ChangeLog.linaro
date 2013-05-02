@@ -1,5 +1,15 @@
 2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r198030.
+	2013-04-17  Greta Yorsh  <Greta.Yorsh at arm.com>
+
+	* config/arm/arm.md (movsicc_insn): Convert define_insn into
+	define_insn_and_split.
+	(and_scc,ior_scc,negscc): Likewise.
+	(cmpsi2_addneg, subsi3_compare): Convert to named patterns.
+
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r198019-198020.
 	2013-04-16   Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
 
