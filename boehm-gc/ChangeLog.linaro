@@ -1,3 +1,16 @@
+2013-05-02  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
+	Backport from trunk r197770.
+
+	2013-03-16  Yvan Roux <yvan.roux@linaro.org>
+
+	* include/private/gcconfig.h (AARCH64): New macro (defined only if
+	__aarch64__).
+	(mach_type_known): Update comment adding ARM AArch64 target.
+	(NOSYS, mach_type_known,CPP_WORDSZ, MACH_TYPE, ALIGNMENT, HBLKSIZE,
+	OS_TYPE, LINUX_STACKBOTTOM, USE_GENERIC_PUSH_REGS, DYNAMIC_LOADING,
+	DATASTART, DATAEND, STACKBOTTOM): Define for AArch64.
+
 2013-04-09  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
 	* GCC Linaro 4.8-2013.04 released.
