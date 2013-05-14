@@ -1,5 +1,12 @@
 2013-05-14  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
+	Backport from trunk r198574-198575.
+	2013-05-03  Vidya Praveen <vidyapraveen@arm.com>
+
+	* gcc.target/aarch64/fabd.c: New file.
+
+2013-05-14  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+
 	Backport from trunk r198490-198496.
 	2013-05-01  James Greenhalgh  <james.greenhalgh@arm.com>
 

@@ -44,7 +44,7 @@
 ; simd_dup              duplicate element.
 ; simd_dupgp            duplicate general purpose register.
 ; simd_ext              bitwise extract from pair.
-; simd_fabd             floating absolute difference and accumulate.
+; simd_fabd             floating point absolute difference.
 ; simd_fadd             floating point add/sub.
 ; simd_fcmp             floating point compare.
 ; simd_fcvti            floating point convert to integer.
@@ -554,6 +554,17 @@
   "fabd\t%0.<Vtype>, %1.<Vtype>, %2.<Vtype>"
   [(set_attr "simd_type" "simd_fabd")
    (set_attr "simd_mode" "<MODE>")]
+)
+
+(define_insn "*fabd_scalar<mode>3"
+  [(set (match_operand:GPF 0 "register_operand" "=w")
+        (abs:GPF (minus:GPF
+                 (match_operand:GPF 1 "register_operand" "w")
+                 (match_operand:GPF 2 "register_operand" "w"))))]
+  "TARGET_SIMD"
+  "fabd\t%<s>0, %<s>1, %<s>2"
+  [(set_attr "simd_type" "simd_fabd")
+   (set_attr "mode" "<MODE>")]
 )
 
 (define_insn "and<mode>3"
