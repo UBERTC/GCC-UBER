@@ -21,7 +21,7 @@
 
 ; Main data types used by the insntructions
 
-(define_attr "simd_mode" "unknown,none,V8QI,V16QI,V4HI,V8HI,V2SI,V4SI,V2DI,V2SF,V4SF,V2DF,OI,CI,XI,DI,DF,SI,HI,QI"
+(define_attr "simd_mode" "unknown,none,V8QI,V16QI,V4HI,V8HI,V2SI,V4SI,V2DI,V2SF,V4SF,V2DF,OI,CI,XI,DI,DF,SI,SF,HI,QI"
   (const_string "unknown"))
 
 
@@ -1683,11 +1683,13 @@
 	  (match_operator 3 "comparison_operator"
 	    [(match_operand:VDQ 4 "register_operand")
 	     (match_operand:VDQ 5 "nonmemory_operand")])
-	  (match_operand:VDQ 1 "register_operand")
-	  (match_operand:VDQ 2 "register_operand")))]
+	  (match_operand:VDQ 1 "nonmemory_operand")
+	  (match_operand:VDQ 2 "nonmemory_operand")))]
   "TARGET_SIMD"
 {
   int inverse = 0, has_zero_imm_form = 0;
+  rtx op1 = operands[1];
+  rtx op2 = operands[2];
   rtx mask = gen_reg_rtx (<MODE>mode);
 
   switch (GET_CODE (operands[3]))
@@ -1728,12 +1730,12 @@
 
     case LTU:
     case GEU:
-      emit_insn (gen_aarch64_cmhs<mode> (mask, operands[4], operands[5]));
+      emit_insn (gen_aarch64_cmgeu<mode> (mask, operands[4], operands[5]));
       break;
 
     case LEU:
     case GTU:
-      emit_insn (gen_aarch64_cmhi<mode> (mask, operands[4], operands[5]));
+      emit_insn (gen_aarch64_cmgtu<mode> (mask, operands[4], operands[5]));
       break;
 
     case NE:
@@ -1746,11 +1748,26 @@
     }
 
   if (inverse)
-    emit_insn (gen_aarch64_simd_bsl<mode> (operands[0], mask, operands[2],
-				    operands[1]));
-  else
-    emit_insn (gen_aarch64_simd_bsl<mode> (operands[0], mask, operands[1],
-				    operands[2]));
+    {
+      op1 = operands[2];
+      op2 = operands[1];
+    }
+
+    /* If we have (a = (b CMP c) ? -1 : 0);
+       Then we can simply move the generated mask.  */
+
+    if (op1 == CONSTM1_RTX (<V_cmp_result>mode)
+	&& op2 == CONST0_RTX (<V_cmp_result>mode))
+      emit_move_insn (operands[0], mask);
+    else
+      {
+	if (!REG_P (op1))
+	  op1 = force_reg (<MODE>mode, op1);
+	if (!REG_P (op2))
+	  op2 = force_reg (<MODE>mode, op2);
+	emit_insn (gen_aarch64_simd_bsl<mode> (operands[0], mask,
+					       op1, op2));
+      }
 
   DONE;
 })
@@ -1761,12 +1778,14 @@
 	  (match_operator 3 "comparison_operator"
 	    [(match_operand:VDQF 4 "register_operand")
 	     (match_operand:VDQF 5 "nonmemory_operand")])
-	  (match_operand:VDQF 1 "register_operand")
-	  (match_operand:VDQF 2 "register_operand")))]
+	  (match_operand:VDQF 1 "nonmemory_operand")
+	  (match_operand:VDQF 2 "nonmemory_operand")))]
   "TARGET_SIMD"
 {
   int inverse = 0;
   int swap_bsl_operands = 0;
+  rtx op1 = operands[1];
+  rtx op2 = operands[2];
   rtx mask = gen_reg_rtx (<V_cmp_result>mode);
   rtx tmp = gen_reg_rtx (<V_cmp_result>mode);
 
@@ -1888,11 +1907,27 @@
     }
 
   if (swap_bsl_operands)
-    emit_insn (gen_aarch64_simd_bsl<mode> (operands[0], mask, operands[2],
-				    operands[1]));
-  else
-    emit_insn (gen_aarch64_simd_bsl<mode> (operands[0], mask, operands[1],
-				    operands[2]));
+    {
+      op1 = operands[2];
+      op2 = operands[1];
+    }
+
+    /* If we have (a = (b CMP c) ? -1 : 0);
+       Then we can simply move the generated mask.  */
+
+    if (op1 == CONSTM1_RTX (<V_cmp_result>mode)
+	&& op2 == CONST0_RTX (<V_cmp_result>mode))
+      emit_move_insn (operands[0], mask);
+    else
+      {
+	if (!REG_P (op1))
+	  op1 = force_reg (<MODE>mode, op1);
+	if (!REG_P (op2))
+	  op2 = force_reg (<MODE>mode, op2);
+	emit_insn (gen_aarch64_simd_bsl<mode> (operands[0], mask,
+					       op1, op2));
+      }
+
   DONE;
 })
 
@@ -1902,8 +1937,8 @@
 	  (match_operator 3 "comparison_operator"
 	    [(match_operand:VALL 4 "register_operand")
 	     (match_operand:VALL 5 "nonmemory_operand")])
-	  (match_operand:VALL 1 "register_operand")
-	  (match_operand:VALL 2 "register_operand")))]
+	  (match_operand:VALL 1 "nonmemory_operand")
+	  (match_operand:VALL 2 "nonmemory_operand")))]
   "TARGET_SIMD"
 {
   emit_insn (gen_aarch64_vcond_internal<mode> (operands[0], operands[1],
@@ -1912,6 +1947,22 @@
   DONE;
 })
 
+(define_expand "vcond<v_cmp_result><mode>"
+  [(set (match_operand:<V_cmp_result> 0 "register_operand")
+	(if_then_else:<V_cmp_result>
+	  (match_operator 3 "comparison_operator"
+	    [(match_operand:VDQF 4 "register_operand")
+	     (match_operand:VDQF 5 "nonmemory_operand")])
+	  (match_operand:<V_cmp_result> 1 "nonmemory_operand")
+	  (match_operand:<V_cmp_result> 2 "nonmemory_operand")))]
+  "TARGET_SIMD"
+{
+  emit_insn (gen_aarch64_vcond_internal<v_cmp_result> (
+						operands[0], operands[1],
+						operands[2], operands[3],
+						operands[4], operands[5]));
+  DONE;
+})
 
 (define_expand "vcondu<mode><mode>"
   [(set (match_operand:VDQ 0 "register_operand")
@@ -1919,8 +1970,8 @@
 	  (match_operator 3 "comparison_operator"
 	    [(match_operand:VDQ 4 "register_operand")
 	     (match_operand:VDQ 5 "nonmemory_operand")])
-	  (match_operand:VDQ 1 "register_operand")
-	  (match_operand:VDQ 2 "register_operand")))]
+	  (match_operand:VDQ 1 "nonmemory_operand")
+	  (match_operand:VDQ 2 "nonmemory_operand")))]
   "TARGET_SIMD"
 {
   emit_insn (gen_aarch64_vcond_internal<mode> (operands[0], operands[1],
@@ -3146,48 +3197,198 @@
 )
 
 
-;; cm(eq|ge|le|lt|gt)
+;; cm(eq|ge|gt|lt|le)
+;; Note, we have constraints for Dz and Z as different expanders
+;; have different ideas of what should be passed to this pattern.
 
-(define_insn "aarch64_cm<cmp><mode>"
+(define_insn "aarch64_cm<optab><mode>"
   [(set (match_operand:<V_cmp_result> 0 "register_operand" "=w,w")
-        (unspec:<V_cmp_result>
-	  [(match_operand:VSDQ_I_DI 1 "register_operand" "w,w")
-	   (match_operand:VSDQ_I_DI 2 "aarch64_simd_reg_or_zero" "w,Z")]
-          VCMP_S))]
+	(neg:<V_cmp_result>
+	  (COMPARISONS:<V_cmp_result>
+	    (match_operand:VDQ 1 "register_operand" "w,w")
+	    (match_operand:VDQ 2 "aarch64_simd_reg_or_zero" "w,ZDz")
+	  )))]
   "TARGET_SIMD"
   "@
-  cm<cmp>\t%<v>0<Vmtype>, %<v>1<Vmtype>, %<v>2<Vmtype>
-  cm<cmp>\t%<v>0<Vmtype>, %<v>1<Vmtype>, #0"
+  cm<n_optab>\t%<v>0<Vmtype>, %<v><cmp_1><Vmtype>, %<v><cmp_2><Vmtype>
+  cm<optab>\t%<v>0<Vmtype>, %<v>1<Vmtype>, #0"
   [(set_attr "simd_type" "simd_cmp")
    (set_attr "simd_mode" "<MODE>")]
 )
 
-;; cm(hs|hi|tst)
+(define_insn_and_split "aarch64_cm<optab>di"
+  [(set (match_operand:DI 0 "register_operand" "=w,w,r")
+	(neg:DI
+	  (COMPARISONS:DI
+	    (match_operand:DI 1 "register_operand" "w,w,r")
+	    (match_operand:DI 2 "aarch64_simd_reg_or_zero" "w,ZDz,r")
+	  )))]
+  "TARGET_SIMD"
+  "@
+  cm<n_optab>\t%d0, %d<cmp_1>, %d<cmp_2>
+  cm<optab>\t%d0, %d1, #0
+  #"
+  "reload_completed
+   /* We need to prevent the split from
+      happening in the 'w' constraint cases.  */
+   && GP_REGNUM_P (REGNO (operands[0]))
+   && GP_REGNUM_P (REGNO (operands[1]))"
+  [(set (reg:CC CC_REGNUM)
+    (compare:CC
+      (match_dup 1)
+      (match_dup 2)))
+  (set (match_dup 0)
+    (neg:DI
+      (COMPARISONS:DI
+	(match_operand 3 "cc_register" "")
+	(const_int 0))))]
+  {
+    enum machine_mode mode = SELECT_CC_MODE (<CMP>, operands[1], operands[2]);
+    rtx cc_reg = aarch64_gen_compare_reg (<CMP>, operands[1], operands[2]);
+    rtx comparison = gen_rtx_<CMP> (mode, operands[1], operands[2]);
+    emit_insn (gen_cstoredi_neg (operands[0], comparison, cc_reg));
+    DONE;
+  }
+  [(set_attr "simd_type" "simd_cmp")
+   (set_attr "simd_mode" "DI")]
+)
 
-(define_insn "aarch64_cm<cmp><mode>"
+;; cm(hs|hi)
+
+(define_insn "aarch64_cm<optab><mode>"
   [(set (match_operand:<V_cmp_result> 0 "register_operand" "=w")
-        (unspec:<V_cmp_result>
-	  [(match_operand:VSDQ_I_DI 1 "register_operand" "w")
-	   (match_operand:VSDQ_I_DI 2 "register_operand" "w")]
-          VCMP_U))]
+	(neg:<V_cmp_result>
+	  (UCOMPARISONS:<V_cmp_result>
+	    (match_operand:VDQ 1 "register_operand" "w")
+	    (match_operand:VDQ 2 "register_operand" "w")
+	  )))]
   "TARGET_SIMD"
-  "cm<cmp>\t%<v>0<Vmtype>, %<v>1<Vmtype>, %<v>2<Vmtype>"
+  "cm<n_optab>\t%<v>0<Vmtype>, %<v><cmp_1><Vmtype>, %<v><cmp_2><Vmtype>"
   [(set_attr "simd_type" "simd_cmp")
    (set_attr "simd_mode" "<MODE>")]
 )
 
-;; fcm(eq|ge|le|lt|gt)
-
-(define_insn "aarch64_cm<cmp><mode>"
-  [(set (match_operand:<V_cmp_result> 0 "register_operand" "=w,w")
-	(unspec:<V_cmp_result>
-	  [(match_operand:VDQF 1 "register_operand" "w,w")
-	   (match_operand:VDQF 2 "aarch64_simd_reg_or_zero" "w,Dz")]
-	   VCMP_S))]
+(define_insn_and_split "aarch64_cm<optab>di"
+  [(set (match_operand:DI 0 "register_operand" "=w,r")
+	(neg:DI
+	  (UCOMPARISONS:DI
+	    (match_operand:DI 1 "register_operand" "w,r")
+	    (match_operand:DI 2 "aarch64_simd_reg_or_zero" "w,r")
+	  )))]
   "TARGET_SIMD"
   "@
-  fcm<cmp>\t%<v>0<Vmtype>, %<v>1<Vmtype>, %<v>2<Vmtype>
-  fcm<cmp>\t%<v>0<Vmtype>, %<v>1<Vmtype>, 0"
+  cm<n_optab>\t%d0, %d<cmp_1>, %d<cmp_2>
+  #"
+  "reload_completed
+   /* We need to prevent the split from
+      happening in the 'w' constraint cases.  */
+   && GP_REGNUM_P (REGNO (operands[0]))
+   && GP_REGNUM_P (REGNO (operands[1]))"
+  [(set (reg:CC CC_REGNUM)
+    (compare:CC
+      (match_dup 1)
+      (match_dup 2)))
+  (set (match_dup 0)
+    (neg:DI
+      (UCOMPARISONS:DI
+	(match_operand 3 "cc_register" "")
+	(const_int 0))))]
+  {
+    enum machine_mode mode = SELECT_CC_MODE (<CMP>, operands[1], operands[2]);
+    rtx cc_reg = aarch64_gen_compare_reg (<CMP>, operands[1], operands[2]);
+    rtx comparison = gen_rtx_<CMP> (mode, operands[1], operands[2]);
+    emit_insn (gen_cstoredi_neg (operands[0], comparison, cc_reg));
+    DONE;
+  }
+  [(set_attr "simd_type" "simd_cmp")
+   (set_attr "simd_mode" "DI")]
+)
+
+;; cmtst
+
+(define_insn "aarch64_cmtst<mode>"
+  [(set (match_operand:<V_cmp_result> 0 "register_operand" "=w")
+	(neg:<V_cmp_result>
+	  (ne:<V_cmp_result>
+	    (and:VDQ
+	      (match_operand:VDQ 1 "register_operand" "w")
+	      (match_operand:VDQ 2 "register_operand" "w"))
+	    (vec_duplicate:<V_cmp_result> (const_int 0)))))]
+  "TARGET_SIMD"
+  "cmtst\t%<v>0<Vmtype>, %<v>1<Vmtype>, %<v>2<Vmtype>"
+  [(set_attr "simd_type" "simd_cmp")
+   (set_attr "simd_mode" "<MODE>")]
+)
+
+(define_insn_and_split "aarch64_cmtstdi"
+  [(set (match_operand:DI 0 "register_operand" "=w,r")
+	(neg:DI
+	  (ne:DI
+	    (and:DI
+	      (match_operand:DI 1 "register_operand" "w,r")
+	      (match_operand:DI 2 "register_operand" "w,r"))
+	    (const_int 0))))]
+  "TARGET_SIMD"
+  "@
+  cmtst\t%d0, %d1, %d2
+  #"
+  "reload_completed
+   /* We need to prevent the split from
+      happening in the 'w' constraint cases.  */
+   && GP_REGNUM_P (REGNO (operands[0]))
+   && GP_REGNUM_P (REGNO (operands[1]))"
+   [(set (reg:CC_NZ CC_REGNUM)
+	(compare:CC_NZ
+	 (and:DI (match_dup 1)
+		  (match_dup 2))
+	 (const_int 0)))
+  (set (match_dup 0)
+    (neg:DI
+      (ne:DI
+	(match_operand 3 "cc_register" "")
+	(const_int 0))))]
+  {
+    rtx and_tree = gen_rtx_AND (DImode, operands[1], operands[2]);
+    enum machine_mode mode = SELECT_CC_MODE (NE, and_tree, const0_rtx);
+    rtx cc_reg = aarch64_gen_compare_reg (NE, and_tree, const0_rtx);
+    rtx comparison = gen_rtx_NE (mode, and_tree, const0_rtx);
+    emit_insn (gen_cstoredi_neg (operands[0], comparison, cc_reg));
+    DONE;
+  }
+  [(set_attr "simd_type" "simd_cmp")
+   (set_attr "simd_mode" "DI")]
+)
+
+;; fcm(eq|ge|gt|le|lt)
+
+(define_insn "aarch64_cm<optab><mode>"
+  [(set (match_operand:<V_cmp_result> 0 "register_operand" "=w,w")
+	(neg:<V_cmp_result>
+	  (COMPARISONS:<V_cmp_result>
+	    (match_operand:VALLF 1 "register_operand" "w,w")
+	    (match_operand:VALLF 2 "aarch64_simd_reg_or_zero" "w,YDz")
+	  )))]
+  "TARGET_SIMD"
+  "@
+  fcm<n_optab>\t%<v>0<Vmtype>, %<v><cmp_1><Vmtype>, %<v><cmp_2><Vmtype>
+  fcm<optab>\t%<v>0<Vmtype>, %<v>1<Vmtype>, 0"
+  [(set_attr "simd_type" "simd_fcmp")
+   (set_attr "simd_mode" "<MODE>")]
+)
+
+;; fac(ge|gt)
+;; Note we can also handle what would be fac(le|lt) by
+;; generating fac(ge|gt).
+
+(define_insn "*aarch64_fac<optab><mode>"
+  [(set (match_operand:<V_cmp_result> 0 "register_operand" "=w")
+	(neg:<V_cmp_result>
+	  (FAC_COMPARISONS:<V_cmp_result>
+	    (abs:VALLF (match_operand:VALLF 1 "register_operand" "w"))
+	    (abs:VALLF (match_operand:VALLF 2 "register_operand" "w"))
+  )))]
+  "TARGET_SIMD"
+  "fac<n_optab>\t%<v>0<Vmtype>, %<v><cmp_1><Vmtype>, %<v><cmp_2><Vmtype>"
   [(set_attr "simd_type" "simd_fcmp")
    (set_attr "simd_mode" "<MODE>")]
 )
