@@ -2837,7 +2837,7 @@ extract_range_from_binary_expr_1 (value_range_t *vr,
 
 	      if (uns)
 		{
-		  low_bound = bound;
+		  low_bound = bound.zext (prec);
 		  high_bound = complement.zext (prec);
 		  if (tree_to_double_int (vr0.max).ult (low_bound))
 		    {
@@ -4895,7 +4895,13 @@ register_edge_assert_for_2 (tree name, edge e, gimple_stmt_iterator bsi,
 	      new_comp_code = comp_code == EQ_EXPR ? LE_EXPR : GT_EXPR;
 	    }
 	  else if (comp_code == LT_EXPR || comp_code == GE_EXPR)
-	    new_val = val2;
+	    {
+	      double_int minval
+		= double_int::min_value (prec, TYPE_UNSIGNED (TREE_TYPE (val)));
+	      new_val = val2;
+	      if (minval == tree_to_double_int (new_val))
+		new_val = NULL_TREE;
+	    }
 	  else
 	    {
 	      double_int maxval

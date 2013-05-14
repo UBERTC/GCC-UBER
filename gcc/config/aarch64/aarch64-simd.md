@@ -1794,6 +1794,7 @@
   "TARGET_SIMD"
 {
   int inverse = 0;
+  int use_zero_form = 0;
   int swap_bsl_operands = 0;
   rtx op1 = operands[1];
   rtx op2 = operands[2];
@@ -1806,12 +1807,16 @@
   switch (GET_CODE (operands[3]))
     {
     case GE:
+    case GT:
     case LE:
+    case LT:
     case EQ:
-      if (!REG_P (operands[5])
-	  && (operands[5] != CONST0_RTX (<MODE>mode)))
-	operands[5] = force_reg (<MODE>mode, operands[5]);
-      break;
+      if (operands[5] == CONST0_RTX (<MODE>mode))
+	{
+	  use_zero_form = 1;
+	  break;
+	}
+      /* Fall through.  */
     default:
       if (!REG_P (operands[5]))
 	operands[5] = force_reg (<MODE>mode, operands[5]);
@@ -1862,7 +1867,26 @@
 	 a GT b -> a GT b
 	 a LE b -> b GE a
 	 a LT b -> b GT a
-	 a EQ b -> a EQ b  */
+	 a EQ b -> a EQ b
+	 Note that there also exist direct comparison against 0 forms,
+	 so catch those as a special case.  */
+      if (use_zero_form)
+	{
+	  inverse = 0;
+	  switch (GET_CODE (operands[3]))
+	    {
+	    case LT:
+	      base_comparison = gen_aarch64_cmlt<mode>;
+	      break;
+	    case LE:
+	      base_comparison = gen_aarch64_cmle<mode>;
+	      break;
+	    default:
+	      /* Do nothing, other zero form cases already have the correct
+		 base_comparison.  */
+	      break;
+	    }
+	}
 
       if (!inverse)
 	emit_insn (base_comparison (mask, operands[4], operands[5]));

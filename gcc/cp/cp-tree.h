@@ -107,8 +107,10 @@ c-common.h, not after.
 	  or FIELD_DECL).
       IDENTIFIER_TYPENAME_P (in IDENTIFIER_NODE)
       DECL_TINFO_P (in VAR_DECL)
+      FUNCTION_REF_QUALIFIED (in FUNCTION_TYPE, METHOD_TYPE)
    5: C_IS_RESERVED_WORD (in IDENTIFIER_NODE)
       DECL_VTABLE_OR_VTT_P (in VAR_DECL)
+      FUNCTION_RVALUE_QUALIFIED (in FUNCTION_TYPE, METHOD_TYPE)
    6: IDENTIFIER_REPO_CHOSEN (in IDENTIFIER_NODE)
       DECL_CONSTRUCTION_VTABLE_P (in VAR_DECL)
       TYPE_MARKED_P (in _TYPE)
@@ -420,9 +422,11 @@ typedef enum cpp0x_warn_str
   /* inheriting constructors */
   CPP0X_INHERITING_CTORS,
   /* C++11 attributes */
-  CPP0X_ATTRIBUTES
+  CPP0X_ATTRIBUTES,
+  /* ref-qualified member functions */
+  CPP0X_REF_QUALIFIER
 } cpp0x_warn_str;
-  
+
 /* The various kinds of operation used by composite_pointer_type. */
 
 typedef enum composite_pointer_operation
@@ -2501,6 +2505,14 @@ struct GTY((variable_size)) lang_decl {
 
 /* 1 iff VAR_DECL node NODE is virtual table or VTT.  */
 #define DECL_VTABLE_OR_VTT_P(NODE) TREE_LANG_FLAG_5 (VAR_DECL_CHECK (NODE))
+
+/* 1 iff FUNCTION_TYPE or METHOD_TYPE has a ref-qualifier (either & or &&). */
+#define FUNCTION_REF_QUALIFIED(NODE) \
+  TREE_LANG_FLAG_4 (FUNC_OR_METHOD_CHECK (NODE))
+
+/* 1 iff FUNCTION_TYPE or METHOD_TYPE has &&-ref-qualifier.  */
+#define FUNCTION_RVALUE_QUALIFIED(NODE) \
+  TREE_LANG_FLAG_5 (FUNC_OR_METHOD_CHECK (NODE))
 
 /* Returns 1 iff VAR_DECL is a construction virtual table.
    DECL_VTABLE_OR_VTT_P will be true in this case and must be checked
@@ -4665,6 +4677,23 @@ enum virt_specifier
 
 typedef int cp_virt_specifiers;
 
+/* Wherever there is a function-cv-qual, there could also be a ref-qualifier:
+
+   [dcl.fct]
+   The return type, the parameter-type-list, the ref-qualifier, and
+   the cv-qualifier-seq, but not the default arguments or the exception
+   specification, are part of the function type.
+
+   REF_QUAL_NONE    Ordinary member function with no ref-qualifier
+   REF_QUAL_LVALUE  Member function with the &-ref-qualifier
+   REF_QUAL_RVALUE  Member function with the &&-ref-qualifier */
+
+enum cp_ref_qualifier {
+  REF_QUAL_NONE = 0,
+  REF_QUAL_LVALUE = 1,
+  REF_QUAL_RVALUE = 2
+};
+
 /* A storage class.  */
 
 typedef enum cp_storage_class {
@@ -4826,6 +4855,8 @@ struct cp_declarator {
       cp_cv_quals qualifiers;
       /* The virt-specifiers for the function.  */
       cp_virt_specifiers virt_specifiers;
+      /* The ref-qualifier for the function.  */
+      cp_ref_qualifier ref_qualifier;
       /* The exception-specification for the function.  */
       tree exception_specification;
       /* The late-specified return type, if any.  */
@@ -5174,14 +5205,15 @@ extern tree cxx_maybe_build_cleanup		(tree, tsubst_flags_t);
 
 /* in decl2.c */
 extern bool check_java_method			(tree);
-extern tree build_memfn_type			(tree, tree, cp_cv_quals);
+extern tree build_memfn_type			(tree, tree, cp_cv_quals, cp_ref_qualifier);
+extern tree build_pointer_ptrmemfn_type	(tree);
 extern tree change_return_type			(tree, tree);
 extern void maybe_retrofit_in_chrg		(tree);
 extern void maybe_make_one_only			(tree);
 extern bool vague_linkage_p			(tree);
 extern void grokclassfn				(tree, tree,
 						 enum overload_flags);
-extern tree grok_array_decl			(location_t, tree, tree);
+extern tree grok_array_decl			(location_t, tree, tree, bool);
 extern tree delete_sanity			(tree, tree, bool, int, tsubst_flags_t);
 extern tree check_classfn			(tree, tree, tree);
 extern void check_member_template		(tree);
@@ -5285,7 +5317,8 @@ extern tree get_type_value			(tree);
 extern tree build_zero_init			(tree, tree, bool);
 extern tree build_value_init			(tree, tsubst_flags_t);
 extern tree build_value_init_noctor		(tree, tsubst_flags_t);
-extern tree build_offset_ref			(tree, tree, bool);
+extern tree build_offset_ref			(tree, tree, bool,
+						 tsubst_flags_t);
 extern tree build_new				(vec<tree, va_gc> **, tree, tree,
 						 vec<tree, va_gc> **, int,
                                                  tsubst_flags_t);
@@ -5645,7 +5678,8 @@ extern tree finish_call_expr			(tree, vec<tree, va_gc> **, bool,
 extern tree finish_increment_expr		(tree, enum tree_code);
 extern tree finish_this_expr			(void);
 extern tree finish_pseudo_destructor_expr       (tree, tree, tree);
-extern tree finish_unary_op_expr		(location_t, enum tree_code, tree);
+extern tree finish_unary_op_expr		(location_t, enum tree_code, tree,
+						 tsubst_flags_t);
 extern tree finish_compound_literal		(tree, tree, tsubst_flags_t);
 extern tree finish_fname			(tree);
 extern void finish_translation_unit		(void);
@@ -5679,7 +5713,7 @@ extern void add_typedef_to_current_template_for_access_check (tree, tree,
 							      location_t);
 extern void check_accessibility_of_qualified_id (tree, tree, tree);
 extern tree finish_qualified_id_expr		(tree, tree, bool, bool,
-						 bool, bool);
+						 bool, bool, tsubst_flags_t);
 extern void simplify_aggr_init_expr		(tree *);
 extern void finalize_nrv			(tree *, tree, tree);
 extern void note_decl_for_pch			(tree);
@@ -5780,6 +5814,7 @@ extern void diagnose_non_constexpr_vec_init	(tree);
 extern tree hash_tree_cons			(tree, tree, tree);
 extern tree hash_tree_chain			(tree, tree);
 extern tree build_qualified_name		(tree, tree, tree, bool);
+extern tree build_ref_qualified_type		(tree, cp_ref_qualifier);
 extern int is_overloaded_fn			(tree);
 extern tree dependent_name			(tree);
 extern tree get_fns				(tree);
@@ -5937,7 +5972,8 @@ extern tree build_ptrmemfunc			(tree, tree, int, bool,
 						 tsubst_flags_t);
 extern int cp_type_quals			(const_tree);
 extern int type_memfn_quals			(const_tree);
-extern tree apply_memfn_quals			(tree, cp_cv_quals);
+extern cp_ref_qualifier type_memfn_rqual	(const_tree);
+extern tree apply_memfn_quals			(tree, cp_cv_quals, cp_ref_qualifier);
 extern bool cp_has_mutable_p			(const_tree);
 extern bool at_least_as_qualified_p		(const_tree, const_tree);
 extern void cp_apply_type_quals_to_decl		(int, tree);

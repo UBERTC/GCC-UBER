@@ -1,3 +1,432 @@
+2013-05-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/56205
+	* gcc.dg/tree-ssa/stdarg-6.c: Add cleanup-tree-dump "stdarg".
+
+2013-05-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/57130
+	* gcc.c-torture/execute/pr57130.c: New test.
+
+2013-05-03  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2013-04-25  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/57066
+        * gcc.dg/torture/builtin-logb-1.c: Adjust testcase.
+
+2013-05-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/57131
+	* gcc.c-torture/execute/pr57131.c: New test.
+
+2013-05-02  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from mainline
+	PR target/57091
+	* gcc.target/i386/pr57091.c: New test.
+
+2013-05-02  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from mainline
+	2013-04-29  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/57097
+	* gcc.target/i386/pr57097.c: New test.
+
+2013-05-02  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from mainline
+	2013-04-24  Vladimir Makarov  <vmakarov@redhat.com>
+
+        PR rtl-optimizations/57046
+        * gcc.target/i386/pr57046.c: New test.
+
+2013-05-02  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from mainline
+	2013-04-22  Vladimir Makarov  <vmakarov@redhat.com>
+
+        PR target/57018
+        * gcc.target/i386/pr57018.c: New test.
+
+2013-05-02  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from mainline
+	2013-04-18  Jakub Jelinek  <jakub@redhat.com>
+
+        PR rtl-optimization/56999
+        * g++.dg/opt/pr56999.C: New test.
+
+2013-05-02  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from mainline
+	2013-04-19  Vladimir Makarov  <vmakarov@redhat.com>
+
+        PR rtl-optimization/56847
+        * gcc.dg/pr56847.c: New test.
+
+2013-05-02  Ian Bolton  <ian.bolton@arm.com>
+
+	Backport from mainline (fix to botched commit)
+	2013-04-04  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* gcc.target/aarch64/inc/asm-adder-clobber-lr.c: Remove duplication.
+	* gcc.target/aarch64/inc/asm-adder-no-clobber-lr.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-1.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-2.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-3.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-4.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-5.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-6.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-7.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-8.c: Likewise.
+
+	Backport from mainline
+	2013-03-28  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/aarch64/inc/asm-adder-clobber-lr.c: New test.
+	* gcc.target/aarch64/inc/asm-adder-no-clobber-lr.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-1.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-2.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-3.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-4.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-5.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-6.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-7.c: Likewise.
+	* gcc.target/aarch64/test-framepointer-8.c: Likewise.
+
+2013-05-01  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/57092
+	* g++.dg/cpp0x/decltype53.C: New.
+
+2013-04-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57104
+	* gcc.dg/pr57104.c: New test.
+
+2013-04-30  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-04-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/44578
+	* gcc.target/i386/pr44578.c: New test.
+
+	Backport from mainline
+	2013-04-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/57098
+	* gcc.target/i386/pr57098.c: New test.
+
+2013-04-29  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/56450
+	* g++.dg/cpp0x/decltype52.C: New.
+
+2013-04-29  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/57103
+	* gcc.dg/autopar/pr57103.c: New testcase.
+
+2013-04-29  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/57108
+	* gcc.target/sh/pr57108.c: New test.
+
+2013-04-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57083
+	* gcc.dg/torture/pr57083.c: New test.
+
+2013-04-28  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk:
+
+	PR fortran/51825
+	* gfortran.dg/namelist_77.f90: New test.
+	* gfortran.dg/namelist_78.f90: New test.
+
+2013-04-28  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/56786
+	* gfortran.dg/namelist_81.f90:  New test.
+
+2013-04-27  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk:
+
+	PR fortran/52512
+	* gfortran.dg/namelist_79.f90: New test.
+
+2013-04-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/56866
+	* gcc.c-torture/execute/pr56866.c: New test.
+	* gcc.target/i386/pr56866.c: New test.
+
+2013-04-26  Janus Weil  <janus@gcc.gnu.org>
+
+	Backports from trunk:
+
+	PR fortran/56968
+	* gfortran.dg/proc_ptr_41.f90: New.
+
+	PR fortran/56814
+	* gfortran.dg/proc_ptr_42.f90: New.
+
+	PR fortran/53685
+	PR fortran/57022
+	* gfortran.dg/transfer_check_4.f90: New.
+
+2013-04-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/57003
+	* gcc.target/i386/pr57003.c: New test.
+
+2013-04-25  Ian Bolton  <ian.bolton@arm.com>
+
+	Backported from mainline.
+	2013-03-22  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/aarch64/movk.c: New test.
+
+2013-04-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/56970
+	* g++.dg/cpp0x/sfinae45.C: New.
+
+2013-04-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backported from mainline.
+	PR rtl-optimization/56605
+	* gcc.target/powerpc/pr56605.c: New.
+
+2013-04-22  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2013-04-22  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/56990
+	* gcc.dg/pr56990.c: New test.
+
+2013-04-22  Thomas Koenig  <tkoenig@gcc.gnu.org>
+	    Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/56872
+	* gfortran.dg/array_constructor_45.f90:  New test.
+	* gfortran.dg/array_constructor_46.f90:  New test.
+	* gfortran.dg/array_constructor_47.f90:  New test.
+	* gfortran.dg/array_constructor_40.f90:  Adjust number of
+	while loops.
+
+2013-04-18  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/56816
+	* gfortran.dg/select_type_33.f03: New test.
+
+2013-04-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/56984
+	* gcc.c-torture/compile/pr56984.c: New test.
+
+	PR rtl-optimization/56992
+	* gcc.dg/pr56992.c: New test.
+
+2013-04-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-04-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	* g++.dg/ipa/devirt-c-7.C: Require nonpic effective target.
+	* gcc.c-torture/execute/pr33992.x: Remove.
+	* gcc.c-torture/execute/pr33992.c (foo): Declare as static.
+	* gcc.dg/uninit-pred-5_a.c (foo): Ditto.
+	* gcc.dg/uninit-pred-5_b.c (foo): Ditto.
+
+	Backport from mainline
+	2013-03-27  Alexander Ivchenko  <alexander.ivchenko@intel.com>
+
+	* g++.dg/ipa/ivinline-1.C: Add target nonpic.
+	* g++.dg/ipa/ivinline-2.C: Likewise.
+	* g++.dg/ipa/ivinline-3.C: Likewise.
+	* g++.dg/ipa/ivinline-4.C: Likewise.
+	* g++.dg/ipa/ivinline-5.C: Likewise.
+	* g++.dg/ipa/ivinline-7.C: Likewise.
+	* g++.dg/ipa/ivinline-8.C: Likewise.
+	* g++.dg/ipa/ivinline-9.C: Likewise.
+	* g++.dg/cpp0x/noexcept03.C: Likewise.
+	* gcc.dg/const-1.c: Likewise.
+	* gcc.dg/ipa/pure-const-1.c: Likewise.
+	* gcc.dg/noreturn-8.c: Likewise.
+	* gcc.target/i386/mmx-1.c: Likewise.
+	* gcc.dg/tree-ssa/ipa-split-5.c: Likewise.
+	* gcc.dg/tree-ssa/loadpre6.c: Likewise.
+	* gcc.c-torture/execute/pr33992.x: New file.
+
+2013-04-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/56962
+	* gcc.c-torture/execute/pr56962.c: New test.
+
+2013-04-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/pr56890-1.c: New test.
+	* gcc.dg/pr56890-2.c: Likewise.
+
+2013-04-12  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/56903
+	* gcc.target/i386/pr56903.c: New test.
+
+2013-04-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/56918
+	PR tree-optimization/56920
+	* gcc.dg/vect/pr56918.c: New test.
+	* gcc.dg/vect/pr56920.c: New test.
+
+2013-04-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/56895
+	* g++.dg/template/arrow4.C: New test.
+
+2013-04-11  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/56913
+	* g++.dg/cpp0x/sfinae44.C: New.
+
+2013-04-11  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backported from mainline.
+	2013-04-11  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/vect-fcm.x: Add check for zero forms of
+	inverse operands.
+	* gcc.target/aarch64/vect-fcm-eq-d.c: Check that new zero form
+	loop is vectorized.
+	* gcc.target/aarch64/vect-fcm-eq-f.c: Likewise.
+	* gcc.target/aarch64/vect-fcm-ge-d.c: Check that new zero form
+	loop is vectorized and that the correct instruction is generated.
+	* gcc.target/aarch64/vect-fcm-ge-f.c: Likewise.
+	* gcc.target/aarch64/vect-fcm-gt-d.c: Likewise.
+	* gcc.target/aarch64/vect-fcm-gt-f.c: Likewise.
+
+2013-04-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/56899
+	* gcc.c-torture/execute/pr56899.c: New test.
+
+2013-04-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/56895
+	* g++.dg/template/arrow3.C: New test.
+
+	Backported from mainline
+	2013-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/56883
+	* c-c++-common/gomp/pr56883.c: New test.
+
+2013-04-08  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/56782
+	Backport from trunk.
+	* gfortran.dg/array_constructor_44.f90:  New test.
+
+2013-04-08  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.c-torture/execute/pr56837.c: New test.
+
+2013-04-04  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline:
+	2013-04-04  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/48186
+	* gcc.dg/pr48186.c: New test.
+
+2013-04-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline:
+	2013-03-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/56720
+	* gcc.target/arm/neon-vcond-gt.c: New test.
+	* gcc.target/arm/neon-vcond-ltgt.c: Likewise.
+	* gcc.target/arm/neon-vcond-unordered.c: Likewise.
+
+2013-04-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/56837
+	* g++.dg/torture/pr56837.C: New testcase.
+
+2013-04-03  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline:
+	2013-04-03  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/55702
+	* gcc.dg/pr55702.c: New test.
+
+2013-04-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/56819
+	* g++.dg/debug/pr56819.C: New test.
+
+2013-04-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/56817
+	* g++.dg/torture/pr56817.C: New testcase.
+
+2013-04-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/55964
+	* gcc.dg/torture/pr55964-2.c: New testcase.
+
+2013-04-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/56501
+	* gcc.dg/torture/pr56501.c: New testcase.
+
+2013-04-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/56407
+	* gcc.dg/torture/pr56407.c: New testcase.
+
+2013-04-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/56745
+	* gcc.c-torture/compile/pr56745.c: New test.
+
+2013-04-02  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline:
+	2013-03-28  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/56735
+	* gfortran.dg/namelist_80.f90: New.
+
+2013-04-02  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline:
+	2013-03-29  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/56737
+	* testsuite/gfortran.dg/fmt_cache_3.f90: New.
+
+2013-04-02  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/56768
+	* g++.dg/torture/pr56768.C: New testcase.
+
+2013-04-01  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/55951
+	* g++.dg/ext/desig5.C: New.
+
 2013-03-29  Kirill Yukhin  <kirill.yukhin@intel.com>
 
 	* gcc.target/i386/avx2-vbroadcastsi128-1.c: Fix intrinsic name.
@@ -6,7 +435,7 @@
 2013-03-28  Tejas Belagod  <tejas.belagod@arm.com>
 
 	PR middle-end/56694
-	* g++.dg/torture/pr56694.C: Fix test case to build on bare-metal 
+	* g++.dg/torture/pr56694.C: Fix test case to build on bare-metal
 	targets.
 
 2013-03-25  Paolo Carlini  <paolo.carlini@oracle.com>
@@ -78,8 +507,8 @@
 
 2013-03-15  Tobias Burnus  <burnus@net-b.de>
 
-	PR fortran/56615                                                                                                                
-	* gfortran.dg/transfer_intrinsic_5.f90: New.                                                                                    
+	PR fortran/56615
+	* gfortran.dg/transfer_intrinsic_5.f90: New.
 
 2013-03-15  Kai Tietz  <ktietz@redhat.com>
 
@@ -245,8 +674,7 @@
 
 2013-03-06  Kai Tietz  <ktietz@redhat.com>
 
-	* gcc.dg/lto/20090914-2_0.c: Skip for mingw and cygwin
-	targets.
+	* gcc.dg/lto/20090914-2_0.c: Skip for mingw and cygwin targets.
 	* gcc.dg/lto/20091013-1_1.c: Set x64-mingw as xfail.
 	* gcc.dg/lto/20091013-1_2.c: Likewise.
 	* gcc.dg/pr31490.c: Adjust for LLP64 targets.
@@ -708,8 +1136,10 @@
 
 	Avoid instrumenting duplicated memory access in the same basic block
 	* c-c++-common/asan/no-redundant-instrumentation-1.c: New test.
-	* testsuite/c-c++-common/asan/no-redundant-instrumentation-2.c: Likewise.
-	* testsuite/c-c++-common/asan/no-redundant-instrumentation-3.c: Likewise.
+	* testsuite/c-c++-common/asan/no-redundant-instrumentation-2.c:
+	Likewise.
+	* testsuite/c-c++-common/asan/no-redundant-instrumentation-3.c:
+	Likewise.
 	* testsuite/c-c++-common/asan/inc.c: Likewise.
 
 2013-02-12  Vladimir Makarov  <vmakarov@redhat.com>
@@ -721,8 +1151,7 @@
 	    Tobias Burnus  <burnus@net-b.de>
 
 	PR testsuite/56082
-	* gfortran.dg/bind_c_bool_1.f90 (sub): Change kind=4
-	to kind=2.
+	* gfortran.dg/bind_c_bool_1.f90 (sub): Change kind=4 to kind=2.
 
 2013-02-12  Richard Biener  <rguenther@suse.de>
 
@@ -929,7 +1358,8 @@
 2013-02-06  Janus Weil  <janus@gcc.gnu.org>
 
 	PR fortran/55978
-	* gfortran.dg/class_optional_2.f90: Uncomment some cases which work now.
+	* gfortran.dg/class_optional_2.f90: Uncomment some cases
+	which work now.
 
 2013-02-06  Jakub Jelinek  <jakub@redhat.com>
 
