@@ -1,3 +1,11 @@
+2013-05-28  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r199241.
+	2013-05-23  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-simd.md
+	(aarch64_cm<optab>di): Add clobber of CC_REGNUM to unsplit pattern.
+
 2013-05-23  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r198970.
