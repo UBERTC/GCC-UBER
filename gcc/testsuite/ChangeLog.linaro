@@ -1,3 +1,14 @@
+2013-05-28  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r198499-198500.
+	2013-05-01  James Greenhalgh  <james.greenhalgh@arm.com>
+	* gcc.target/aarch64/vect-vaddv.c: New.
+
+	2013-05-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/vect-vmaxv.c: New.
+	* gcc.target/aarch64/vect-vfmaxv.c: Likewise.
+
 2013-05-23  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r198970.
