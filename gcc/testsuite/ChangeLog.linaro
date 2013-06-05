@@ -1,5 +1,12 @@
 2013-05-28  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r198680.
+	2013-05-07  Sofiane Naci  <sofiane.naci@arm.com>
+
+	* gcc.target/aarch64/scalar_intrinsics.c: Update.
+
+2013-05-28  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r198499-198500.
 	2013-05-01  James Greenhalgh  <james.greenhalgh@arm.com>
 	* gcc.target/aarch64/vect-vaddv.c: New.
