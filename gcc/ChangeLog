@@ -1,3 +1,313 @@
+2013-06-03  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline.
+	2013-04-25  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_print_operand): Fix asm_fprintf
+	format specifier in 'X' case.
+
+2013-05-31  Richard Henderson  <rth@redhat.com>
+
+	PR target/56742
+	* config/i386/i386.c (ix86_seh_fixup_eh_fallthru): New.
+	(ix86_reorg): Call it.
+
+2012-05-31  Jakub Jelinek  <jakub@redhat.com>
+
+	* BASE-VER: Set to 4.8.2.
+	* DEV-PHASE: Set to prerelease.
+
+2013-05-31  Release Manager
+
+	* GCC 4.8.1 released.
+
+2013-05-24  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	Backport from mainline
+	2013-05-02  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+        PR target/56732
+	* config/arm/arm.c (arm_expand_epilogue): Check really_return before
+	generating simple_return for naked functions.
+
+2013-05-24  Alexander Ivchenko  <alexander.ivchenko@intel.com>
+
+	PR tree-ssa/57385
+	* tree-ssa-sccvn.c (fully_constant_vn_reference_p): Check
+	that index is not negative.
+
+2013-05-23  Martin Jambor  <mjambor@suse.cz>
+
+	PR middle-end/57347
+	* tree.h (contains_bitfld_component_ref_p): Declare.
+	* tree-sra.c (contains_bitfld_comp_ref_p): Move...
+	* tree.c (contains_bitfld_component_ref_p): ...here.  Adjust its caller.
+	* ipa-prop.c (determine_known_aggregate_parts): Check that LHS does
+	not access a bit-field.  Assert all final offsets are byte-aligned.
+
+2013-05-23  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/57341
+	* ira.c (validate_equiv_mem_from_store): Use anti_dependence
+	instead of true_dependence.
+
+2013-05-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/57344
+	* expmed.c (store_split_bit_field): If op0 is a REG or
+	SUBREG of a REG, don't lower unit.  Handle unit not being
+	always BITS_PER_WORD.
+
+2013-05-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/57356
+	* config/i386/i386.md (*movti_internal_rex64): Emit movaps/movups
+	for non-sse2 targets.
+	(*movti_internal): Simplify mode attribute calculation.
+
+2013-05-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-05-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57318
+	* tree-ssa-loop-ivcanon.c (tree_estimate_loop_size): Do not
+	estimate stmts with side-effects as likely eliminated.
+
+	2013-05-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57330
+	* cgraph.c (cgraph_redirect_edge_call_stmt_to_callee): Properly
+	preserve the call stmts fntype.
+
+	2013-05-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57303
+	* tree-ssa-sink.c (statement_sink_location): Properly handle
+	self-assignments.
+
+2013-05-21  Magnus Granberg  <baldrick@free.fr>
+
+	PR plugins/56754
+	* Makefile.in (PLUGIN_HEADERS): Add $(TARGET_H).
+
+2013-05-21  Eric Botcazou  <ebotcazou@adacore.com>
+
+	Backport from mainline
+	2013-05-14  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/sparc/sp64-elf.h (CPP_SUBTARGET_SPEC): Delete.
+	* config/sparc/openbsd64.h (CPP_SUBTARGET_SPEC): Likewise.
+
+2013-05-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/57281
+	PR rtl-optimization/57300
+	* config/i386/i386.md (extendsidi2_1 dead reg splitter): Remove.
+	(extendsidi2_1 peephole2s): Add instead 2 new peephole2s, that undo
+	what the other splitter did if the registers are dead.
+
+2013-05-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-05-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/driver-i386.c (host_detect_local_cpu): Determine
+	cache parameters using detect_caches_amd also for CYRIX,
+	NSC and TM2 signatures.
+
+	2013-05-16  Uros Bizjak  <ubizjak@gmail.com>
+		    Dzianis Kahanovich  <mahatma@eu.by>
+
+	PR target/45359
+	PR target/46396
+	* config/i386/driver-i386.c (host_detect_local_cpu): Detect
+	VIA/Centaur processors and determine their cache parameters
+	using detect_caches_amd.
+
+	2013-05-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (ix86_option_override_internal): Update
+	processor_alias_table for missing PTA_PRFCHW and PTA_FXSR flags.  Add
+	PTA_POPCNT to corei7 entry. Do not enable SSE prefetch on
+	non-SSE 3dNow! targets.  Enable TARGET_PRFCHW for TARGET_3DNOW targets.
+	* config/i386/i386.md (prefetch): Enable for TARGET_PRFCHW instead
+	of TARGET_3DNOW.
+	(*prefetch_3dnow): Enable for TARGET_PRFCHW only.
+
+2013-05-17  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.c (SANITIZER_SPEC): Reject -fsanitize=address -fsanitize=thread
+	linking.
+
+	PR tree-optimization/57051
+	* fold-const.c (const_binop) <case VEC_LSHIFT_EXPR,
+	case VEC_RSHIFT_EXPR>: Fix BYTES_BIG_ENDIAN handling.
+
+2013-05-16  Jakub Jelinek  <jakub@redhat.com>
+
+	* omp-low.c (extract_omp_for_data): For collapsed loops,
+	if at least one of the loops is known at compile time to
+	iterate zero times, set count to 0.
+	(expand_omp_regimplify_p): New function.
+	(expand_omp_for_generic): For collapsed loops, if at least
+	one of the loops isn't known to iterate at least once,
+	add runtime check with setting count to 0.
+	(expand_omp_for_static_nochunk, expand_omp_for_static_chunk):
+	For unsigned types if it isn't known at compile time that
+	the loop will iterate at least once, add runtime check to bypass
+	the whole loop if initial condition isn't true.
+
+2013-05-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/57251
+	* expr.c (expand_expr_real_2) <case WIDEN_MULT_EXPR>: Handle
+	the case when both op0 and op1 have VOIDmode.
+
+2013-05-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57230
+	* tree-ssa-strlen.c (handle_char_store): Add missing integer_zerop
+	check.
+
+2013-05-12  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* config/epiphany/epiphany.c (epiphany_init): Check size of
+	NUM_MODES_FOR_MODE_SWITCHING.
+	(epiphany_expand_prologue):
+	Remove CONFIG_REGNUM initial value handling code.
+	(epiphany_optimize_mode_switching): Handle EPIPHANY_MSW_ENTITY_CONFIG.
+	(epiphany_mode_needed, epiphany_mode_entry_exit): Likewise.
+	(emit_set_fp_mode, epiphany_mode_after): Likewise.
+	(epiphany_mode_needed) <Handle EPIPHANY_MSW_ENTITY_AND>:
+	Don't return 1 for FP_MODE_NONE.
+	* config/epiphany/epiphany.h (NUM_MODES_FOR_MODE_SWITCHING):
+	Add value for EPIPHANY_MSW_ENTITY_CONFIG.
+	(EPIPHANY_MSW_ENTITY_CONFIG, EPIPHANY_MSW_ENTITY_NUM): Define.
+	* config/epiphany/epiphany.md (save_config): New pattern.
+
+2013-05-10  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/arm/t-rtems-eabi: Remove mthumb/march=armv7 multilib.
+	Add mthumb/march=armv7-a multilib.
+	Add mthumb/march=armv7-r multilib.
+	Add mthumb/march=armv7-a/mfpu=neon/mfloat-abi=hard multilib.
+
+2013-05-10  Ralf Corsépius  <ralf.corsepius@rtems.org>
+
+	PR target/57237
+	* config/v850/t-rtems: Add more multilibs.
+
+2013-05-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57214
+	* tree-ssa-loop-ivcanon.c (propagate_constants_for_unrolling): Do
+	not propagate from SSA names that occur in abnormal PHI nodes.
+
+2013-05-10  Alan Modra  <amodra@gmail.com>
+
+	PR target/55033
+	* varasm.c (default_elf_select_section): Move !DECL_P check..
+	(get_named_section): ..to here before calling get_section_name.
+	Adjust assertion.
+	(default_section_type_flags): Add DECL_P check.
+	* config/i386/winnt.c (i386_pe_section_type_flags): Likewise.
+	* config/rs6000/rs6000.c (rs6000_xcoff_section_type_flags): Likewise.
+
+2013-05-09  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	* config/epiphany/epiphany.c (epiphany_expand_prologue):
+	When using gen_stack_adjust_str with a register offset, add a
+	REG_FRAME_RELATED_EXPR note.
+
+2013-05-09  Martin Jambor  <mjambor@suse.cz>
+
+        PR middle-end/56988
+        * ipa-prop.h (ipa_agg_replacement_value): New flag by_ref.
+        * ipa-cp.c (find_aggregate_values_for_callers_subset): Fill in the
+	by_ref flag of ipa_agg_replacement_value structures.
+        (known_aggs_to_agg_replacement_list): Likewise.
+        * ipa-prop.c (write_agg_replacement_chain): Stream by_ref flag.
+        (read_agg_replacement_chain): Likewise.
+        (ipcp_transform_function): Also check that by_ref flags match.
+
+2013-05-08  Diego Novillo  <dnovillo@google.com>
+
+	PR bootstrap/54659
+
+	Revert:
+
+	2012-08-17  Diego Novillo  <dnovillo@google.com>
+
+		PR bootstrap/54281
+		* configure.ac: Add libintl.h to AC_CHECK_HEADERS list.
+		* config.in: Regenerate.
+		* configure: Regenerate.
+		* intl.h: Always include libintl.h if HAVE_LIBINTL_H is
+		set.
+
+2013-05-08  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR tree-optimization/57200
+	* tree-ssa-loop-niter.c (do_warn_aggressive_loop_optimizations):
+	Only call inform if the preceding warning_at returns true.
+
+2013-05-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57149
+	* tree-ssa-uninit.c (uninit_undefined_value_p): New inline.
+	(can_skip_redundant_opnd, compute_uninit_opnds_pos,
+	collect_phi_def_edges, execute_late_warn_uninitialized): Use
+	uninit_undefined_value_p instead of ssa_undefined_value_p.
+
+	PR debug/57184
+	* expr.c (expand_expr_addr_expr_1): Handle COMPOUND_LITERAL_EXPR
+	for modifier == EXPAND_INITIALIZER.
+
+2013-05-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-05-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57185
+	* tree-parloops.c (add_field_for_reduction): Handle anonymous
+	SSA names properly.
+
+	2013-04-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57000
+	* tree-ssa-reassoc.c (pass_reassoc): Add TODO_update_ssa_only_virtuals.
+
+2013-05-06  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from trunk
+	2013-05-03  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/57150
+	* config/rs6000/rs6000.h (HARD_REGNO_CALLER_SAVE_MODE): Use DFmode
+	to save TFmode registers and DImode to save TImode registers for
+	caller save operations.
+	(HARD_REGNO_CALL_PART_CLOBBERED): TFmode and TDmode do not need to
+	mark being partially clobbered since they only use the first
+	double word.
+
+	* config/rs6000/rs6000.c (rs6000_init_hard_regno_mode_ok): TFmode
+	and TDmode only use the upper 64-bits of each VSX register.
+
+2013-05-06  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/57108
+	* config/sh/sh.md (tstsi_t_zero_extract_eq): Use QIHISIDI mode iterator.
+
+2013-05-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-05-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/57106
+	* config/i386/i386.c (add_parameter_dependencies): Add dependence
+	between "first_arg" and "insn", not "last" and "insn".
+
 2013-05-03  Jakub Jelinek  <jakub@redhat.com>
 
 	PR rtl-optimization/57130

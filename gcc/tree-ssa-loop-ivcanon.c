@@ -257,8 +257,10 @@ tree_estimate_loop_size (struct loop *loop, edge exit, edge edge_to_cancel, stru
 
 	  /* Look for reasons why we might optimize this stmt away. */
 
+	  if (gimple_has_side_effects (stmt))
+	    ;
 	  /* Exit conditional.  */
-	  if (exit && body[i] == exit->src
+	  else if (exit && body[i] == exit->src
 		   && stmt == last_stmt (exit->src))
 	    {
 	      if (dump_file && (dump_flags & TDF_DETAILS))
@@ -1085,8 +1087,9 @@ propagate_constants_for_unrolling (basic_block bb)
       tree lhs;
 
       if (is_gimple_assign (stmt)
+	  && gimple_assign_rhs_code (stmt) == INTEGER_CST
 	  && (lhs = gimple_assign_lhs (stmt), TREE_CODE (lhs) == SSA_NAME)
-	  && gimple_assign_rhs_code (stmt) == INTEGER_CST)
+	  && !SSA_NAME_OCCURS_IN_ABNORMAL_PHI (lhs))
 	{
 	  propagate_into_all_uses (lhs, gimple_assign_rhs1 (stmt));
 	  gsi_remove (&gsi, true);

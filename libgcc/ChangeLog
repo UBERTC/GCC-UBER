@@ -1,3 +1,13 @@
+2013-05-31  Richard Henderson  <rth@redhat.com>
+
+	PR target/49146
+	* unwind-dw2.c (UNWIND_COLUMN_IN_RANGE): New macro.
+	(execute_cfa_program): Use it when storing to fs->regs.
+
+2013-05-31  Release Manager
+
+	* GCC 4.8.1 released.
+
 2013-04-11  Julian Brown  <julian@codesourcery.com>
 
 	* config/arm/linux-atomic.c (SUBWORD_SYNC_OP, SUBWORD_VAL_CAS)

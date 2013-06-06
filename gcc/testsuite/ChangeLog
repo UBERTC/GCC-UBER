@@ -1,3 +1,165 @@
+2013-05-31  Janus Weil  <janus@gcc.gnu.org>
+	    Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/57217
+	* gfortran.dg/typebound_override_4.f90: New.
+
+2013-05-31  Release Manager
+
+	* GCC 4.8.1 released.
+
+2013-05-26  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/specs/last_bit.ads: New test.
+
+2013-05-24  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	Backport from mainline
+	2013-05-02  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	PR target/56732
+	* gcc.target/arm/pr56732-1.c: New test.
+
+2013-05-24  Alexander Ivchenko  <alexander.ivchenko@intel.com>
+
+	PR tree-ssa/57385
+	* gcc.dg/tree-ssa/pr57385.c: New test.
+
+2013-05-23  Martin Jambor  <mjambor@suse.cz>
+
+	PR middle-end/57347
+	* gcc.dg/ipa/pr57347.c: New test.
+
+2013-05-23  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/57341
+	* gcc.dg/torture/pr57341.c: New testcase.
+
+2013-05-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/57344
+	* gcc.c-torture/execute/pr57344-1.c: New test.
+	* gcc.c-torture/execute/pr57344-2.c: New test.
+	* gcc.c-torture/execute/pr57344-3.c: New test.
+	* gcc.c-torture/execute/pr57344-4.c: New test.
+
+2013-05-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-05-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57330
+	* gcc.dg/torture/pr57330.c: New testcase.
+
+	2013-05-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57303
+	* gcc.dg/torture/pr57303.c: New testcase.
+
+2013-05-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57321
+	* gcc.c-torture/execute/pr57321.c: New test.
+
+2013-05-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/57281
+	PR rtl-optimization/57300
+	* gcc.dg/pr57300.c: New test.
+	* gcc.c-torture/execute/pr57281.c: New test.
+
+2013-05-16  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/56782 - Regression with empty pack expansions
+	* g++.dg/cpp0x/variadic142.C: New test file.
+
+2013-05-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/57274
+	* c-c++-common/Wsequence-point-1.c: New test.
+
+	PR middle-end/57251
+	* gcc.dg/torture/pr57251.c: New test.
+
+2013-05-13  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/57264
+	* gcc.target/i386/pr57264.c: New test.
+
+2013-05-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57230
+	* gcc.dg/strlenopt-23.c: New test.
+
+2013-05-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57214
+	* gcc.dg/torture/pr57214.c: New testcase.
+
+2013-05-09  Martin Jambor  <mjambor@suse.cz>
+
+        PR middle-end/56988
+        * gcc.dg/ipa/pr56988.c: New test.
+
+2013-05-08  Marc Glisse  <marc.glisse@inria.fr>
+
+	* c-c++-common/vector-scalar-2.c: New testcase.
+
+2013-05-07  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline
+	2013-05-02  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/57142
+	* gfortran.dg/size_kind_2.f90: New.
+	* gfortran.dg/size_kind_3.f90: New.
+
+2013-05-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57149
+	* gcc.dg/pr57149.c: New test.
+
+	PR debug/57184
+	* gcc.dg/pr57184.c: New test.
+
+2013-05-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-05-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57185
+	* gcc.dg/autopar/pr57185.c: New testcase.
+
+	2013-04-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57000
+	* gcc.dg/tree-ssa/reassoc-27.c: New testcase.
+
+2013-05-07  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/specs/array3.ads: New test.
+
+2013-05-06  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from trunk
+	2013-05-03  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/57150
+	* gcc.target/powerpc/pr57150.c: New file.
+
+2013-05-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-05-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/57106
+	* gcc.target/i386/pr57106.c: New test.
+
+2013-05-06  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/57183
+	* g++.dg/cpp0x/auto38.C: New.
+
 2013-05-04  Jakub Jelinek  <jakub@redhat.com>
 
 	PR tree-optimization/56205

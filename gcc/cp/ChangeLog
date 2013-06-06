@@ -1,3 +1,115 @@
+2013-05-31  Jason Merrill  <jason@redhat.com>
+
+	PR c++/57319
+	* class.c (vbase_has_user_provided_move_assign): New.
+	* method.c (synthesized_method_walk): Check it.
+	* cp-tree.h: Declare it.
+
+	PR c++/56930
+	* call.c (convert_like_real): Use cp_convert_and_check.
+	* cvt.c (cp_convert_and_check): Use maybe_constant_value.
+	* semantics.c (cxx_eval_constant_expression): Handle LTGT_EXPR.
+	(potential_constant_expression_1): Handle OMP_ATOMIC*.
+
+2013-05-31  Release Manager
+
+	* GCC 4.8.1 released.
+
+2013-05-24  Jason Merrill  <jason@redhat.com>
+
+	PR c++/57388
+	* tree.c (build_ref_qualified_type): Clear
+	FUNCTION_RVALUE_QUALIFIED for lvalue ref-qualifier.
+
+	PR c++/57016
+	* pt.c (instantiation_dependent_r) [TRAIT_EXPR]: Only check type2
+	if there is one.
+
+2013-05-20  Jason Merrill  <jason@redhat.com>
+
+	PR c++/57325
+	* tree.c (build_cplus_array_type): Copy layout info if element
+	type is complete.
+
+	PR c++/57317
+	* decl2.c (determine_visibility): Use PRIMARY_TEMPLATE_P to decide
+	whether a template has its own args.
+
+2013-05-16  Jason Merrill  <jason@redhat.com>
+
+	PR c++/57279
+	* decl.c (grokdeclarator): Allow member function qualifiers in
+	TYPENAME context in C++11 mode.
+
+2013-05-16  Dodji Seketeli  <dodji@redhat.com>
+
+	PR c++/56782 - Regression with empty pack expansions
+	* pt.c (use_pack_expansion_extra_args_p): When at least a
+	parameter pack has an empty argument pack, and another parameter
+	pack has no argument pack at all, use the PACK_EXPANSION_EXTRA
+	mechanism.
+
+2013-05-14  Jason Merrill  <jason@redhat.com>
+
+	PR c++/57243
+	* parser.c (cp_parser_range_for): Call complete_type.
+
+	PR c++/57041
+	* pt.c (tsubst_copy_and_build): Don't recur into a designator.
+
+2013-05-13  Jason Merrill  <jason@redhat.com>
+
+	PR c++/56998
+	* semantics.c (potential_constant_expression_1): Make sure the
+	called function is potentially constant.
+
+	PR c++/57041
+	* decl.c (reshape_init_class): Handle error_mark_node.
+
+	PR c++/57254
+	* typeck.c (merge_types): Propagate ref-qualifier
+	in METHOD_TYPE case.
+
+	PR c++/57253
+	* decl.c (grokdeclarator): Apply ref-qualifier
+	in the TYPENAME case.
+
+	PR c++/57252
+	* decl.c (decls_match): Compare ref-qualifiers.
+
+	PR c++/57196
+	* pt.c (convert_template_argument): Use dependent_template_arg_p,
+	not uses_template_parms.
+
+2013-05-10  Jason Merrill  <jason@redhat.com>
+
+	PR c++/57047
+	* semantics.c (cxx_fold_indirect_ref): Fix thinko.
+
+2013-05-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/57222
+	* pt.c (lookup_template_class_1): Handle getting a template
+	template parameter as D1.
+
+2013-05-08  Jason Merrill  <jason@redhat.com>
+
+	PR c++/57068
+	* decl.c (grokdeclarator): Warn about ref-qualifiers here.
+	* parser.c (cp_parser_ref_qualifier_seq_opt): Not here.
+	* error.c (maybe_warn_cpp0x): s/0x/11/.
+
+2013-05-08  Marc Glisse  <marc.glisse@inria.fr>
+
+	* typeck.c (cp_build_binary_op): Call save_expr before
+	build_vector_from_val.
+
+2013-05-06  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/57183
+	* decl.c (cp_finish_decl): After do_auto_deduction copy the
+	qualifers with cp_apply_type_quals_to_decl.
+
 2013-05-01  Paolo Carlini  <paolo.carlini@oracle.com>
 
 	PR c++/57092
