@@ -409,7 +409,7 @@
      case 4: return "ins\t%0.d[0], %1";
      case 5: return "mov\t%0, %1";
      case 6:
-	return aarch64_output_simd_mov_immediate (&operands[1],
+	return aarch64_output_simd_mov_immediate (operands[1],
 						  <MODE>mode, 64);
      default: gcc_unreachable ();
      }
@@ -436,9 +436,9 @@
     case 4: return "#";
     case 5: return "#";
     case 6:
-	return aarch64_output_simd_mov_immediate (&operands[1],
-						  <MODE>mode, 128);
-    default: gcc_unreachable ();
+	return aarch64_output_simd_mov_immediate (operands[1], <MODE>mode, 128);
+    default:
+	gcc_unreachable ();
     }
 }
   [(set_attr "simd_type" "simd_load1,simd_store1,simd_move,simd_movgp,simd_insgp,simd_move,simd_move_imm")
