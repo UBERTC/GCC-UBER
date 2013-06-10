@@ -1,3 +1,84 @@
+2013-06-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk
+	r198890,199254,199259,199260,199293,199407,199408,199454,199544,199545.
+
+	2013-05-31  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_load_symref_appropriately):
+	Remove un-necessary braces.
+
+	2013-05-31  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_classify_symbol):
+	Use SYMBOL_TINY_ABSOLUTE for AARCH64_CMODEL_TINY_PIC.
+
+	2013-05-30  Ian Bolton  <ian.bolton@arm.com>
+
+	* config/aarch64/aarch64.md (insv<mode>): New define_expand.
+	(*insv_reg<mode>): New define_insn.
+
+	2012-05-29  Chris Schlumberger-Socha <chris.schlumberger-socha@arm.com>
+	    Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64-protos.h (aarch64_symbol_type): Define
+	SYMBOL_TINY_ABSOLUTE.
+	* config/aarch64/aarch64.c (aarch64_load_symref_appropriately): Handle
+	SYMBOL_TINY_ABSOLUTE.
+	(aarch64_expand_mov_immediate): Likewise.
+	(aarch64_classify_symbol): Likewise.
+	(aarch64_mov_operand_p): Remove ATTRIBUTE_UNUSED.
+	Permit SYMBOL_TINY_ABSOLUTE.
+	* config/aarch64/predicates.md (aarch64_mov_operand): Permit CONST.
+
+	2013-05-29  Chris Schlumberger-Socha <chris.schlumberger-socha@arm.com>
+	    Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_classify_symbol): Remove comment.
+	Refactor if/switch.  Replace gcc_assert with if.
+
+	2013-05-24  Ian Bolton  <ian.bolton@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_print_operand): Change the
+	X format specifier to only display bottom 16 bits.
+	* config/aarch64/aarch64.md (insv_imm<mode>): Allow any size of
+	immediate to match for operand 2, since it will be masked.
+
+	2013-05-23  Chris Schlumberger-Socha <chris.schlumberger-socha@arm.com>
+	    Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.md (*movdi_aarch64): Replace Usa with S.
+	* config/aarch64/constraints.md (Usa): Remove.
+	* doc/md.texi (AArch64 Usa): Remove.
+
+	2013-05-23  Chris Schlumberger-Socha <chris.schlumberger-socha@arm.com>
+	    Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64-protos.h (aarch64_mov_operand_p): Define.
+	* config/aarch64/aarch64.c (aarch64_mov_operand_p): Define.
+	* config/aarch64/predicates.md (aarch64_const_address): Remove.
+	(aarch64_mov_operand): Use aarch64_mov_operand_p.
+
+	2013-05-23  Vidya Praveen <vidyapraveen@arm.com>
+
+	* config/aarch64/aarch64-simd.md (clzv4si2): Support for CLZ
+	instruction (AdvSIMD).
+	* config/aarch64/aarch64-builtins.c
+	(aarch64_builtin_vectorized_function): Handler for BUILT_IN_CLZ.
+	* config/aarch64/aarch-simd-builtins.def: Entry for CLZ.
+
+	2013-05-14  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-simd.md
+	(aarch64_vcond_internal<mode>): Rename to...
+	(aarch64_vcond_internal<mode><mode>): ...This, for integer modes.
+	(aarch64_vcond_internal<VDQF_COND:mode><VDQF:mode>): ...This for
+	float modes. Clarify all iterator modes.
+	(vcond<mode><mode>): Use new name for vcond expanders.
+	(vcond<v_cmp_result><mode>): Likewise.
+	(vcondu<mode><mode>: Likewise.
+	* config/aarch64/iterators.md (VDQF_COND): New.
+
 2013-05-29  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r198928,198973,199203.

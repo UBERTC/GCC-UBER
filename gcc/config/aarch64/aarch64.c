@@ -524,13 +524,15 @@ aarch64_load_symref_appropriately (rtx dest, rtx imm,
 	return;
       }
 
+    case SYMBOL_TINY_ABSOLUTE:
+      emit_insn (gen_rtx_SET (Pmode, dest, imm));
+      return;
+
     case SYMBOL_SMALL_GOT:
       {
 	rtx tmp_reg = dest;
 	if (can_create_pseudo_p ())
-	  {
-	    tmp_reg =  gen_reg_rtx (Pmode);
-	  }
+	  tmp_reg =  gen_reg_rtx (Pmode);
 	emit_move_insn (tmp_reg, gen_rtx_HIGH (Pmode, imm));
 	emit_insn (gen_ldr_got_small (dest, tmp_reg, imm));
 	return;
@@ -786,6 +788,7 @@ aarch64_expand_mov_immediate (rtx dest, rtx imm)
 
         case SYMBOL_SMALL_TPREL:
 	case SYMBOL_SMALL_ABSOLUTE:
+	case SYMBOL_TINY_ABSOLUTE:
 	  aarch64_load_symref_appropriately (dest, imm, sty);
 	  return;
 
@@ -3408,13 +3411,13 @@ aarch64_print_operand (FILE *f, rtx x, char code)
       break;
 
     case 'X':
-      /* Print integer constant in hex.  */
+      /* Print bottom 16 bits of integer constant in hex.  */
       if (GET_CODE (x) != CONST_INT)
 	{
 	  output_operand_lossage ("invalid operand for '%%%c'", code);
 	  return;
 	}
-      asm_fprintf (f, "0x%wx", UINTVAL (x));
+      asm_fprintf (f, "0x%wx", UINTVAL (x) & 0xffff);
       break;
 
     case 'w':
@@ -4996,6 +4999,7 @@ aarch64_classify_tls_symbol (rtx x)
 
 /* Return the method that should be used to access SYMBOL_REF or
    LABEL_REF X in context CONTEXT.  */
+
 enum aarch64_symbol_type
 aarch64_classify_symbol (rtx x,
 			 enum aarch64_symbol_context context ATTRIBUTE_UNUSED)
@@ -5009,6 +5013,8 @@ aarch64_classify_symbol (rtx x,
 
 	case AARCH64_CMODEL_TINY_PIC:
 	case AARCH64_CMODEL_TINY:
+	  return SYMBOL_TINY_ABSOLUTE;
+
 	case AARCH64_CMODEL_SMALL_PIC:
 	case AARCH64_CMODEL_SMALL:
 	  return SYMBOL_SMALL_ABSOLUTE;
@@ -5018,48 +5024,42 @@ aarch64_classify_symbol (rtx x,
 	}
     }
 
-  gcc_assert (GET_CODE (x) == SYMBOL_REF);
-
-  switch (aarch64_cmodel)
+  if (GET_CODE (x) == SYMBOL_REF)
     {
-    case AARCH64_CMODEL_LARGE:
-      return SYMBOL_FORCE_TO_MEM;
-
-    case AARCH64_CMODEL_TINY:
-    case AARCH64_CMODEL_SMALL:
-
-      /* This is needed to get DFmode, TImode constants to be loaded off
-         the constant pool.  Is it necessary to dump TImode values into
-         the constant pool.  We don't handle TImode constant loads properly
-         yet and hence need to use the constant pool.  */
-      if (CONSTANT_POOL_ADDRESS_P (x))
+      if (aarch64_cmodel == AARCH64_CMODEL_LARGE
+	  || CONSTANT_POOL_ADDRESS_P (x))
 	return SYMBOL_FORCE_TO_MEM;
 
       if (aarch64_tls_symbol_p (x))
 	return aarch64_classify_tls_symbol (x);
 
-      if (SYMBOL_REF_WEAK (x))
-	return SYMBOL_FORCE_TO_MEM;
+      switch (aarch64_cmodel)
+	{
+	case AARCH64_CMODEL_TINY:
+	  if (SYMBOL_REF_WEAK (x))
+	    return SYMBOL_FORCE_TO_MEM;
+	  return SYMBOL_TINY_ABSOLUTE;
 
-      return SYMBOL_SMALL_ABSOLUTE;
+	case AARCH64_CMODEL_SMALL:
+	  if (SYMBOL_REF_WEAK (x))
+	    return SYMBOL_FORCE_TO_MEM;
+	  return SYMBOL_SMALL_ABSOLUTE;
 
-    case AARCH64_CMODEL_TINY_PIC:
-    case AARCH64_CMODEL_SMALL_PIC:
+	case AARCH64_CMODEL_TINY_PIC:
+	  if (!aarch64_symbol_binds_local_p (x))
+	    return SYMBOL_SMALL_GOT;
+	  return SYMBOL_TINY_ABSOLUTE;
 
-      if (CONSTANT_POOL_ADDRESS_P (x))
-	return SYMBOL_FORCE_TO_MEM;
+	case AARCH64_CMODEL_SMALL_PIC:
+	  if (!aarch64_symbol_binds_local_p (x))
+	    return SYMBOL_SMALL_GOT;
+	  return SYMBOL_SMALL_ABSOLUTE;
 
-      if (aarch64_tls_symbol_p (x))
-	return aarch64_classify_tls_symbol (x);
-
-      if (!aarch64_symbol_binds_local_p (x))
-	return SYMBOL_SMALL_GOT;
-
-      return SYMBOL_SMALL_ABSOLUTE;
-
-    default:
-      gcc_unreachable ();
+	default:
+	  gcc_unreachable ();
+	}
     }
+
   /* By default push everything into the constant pool.  */
   return SYMBOL_FORCE_TO_MEM;
 }
@@ -6433,6 +6433,25 @@ aarch64_simd_imm_scalar_p (rtx x, enum machine_mode mode ATTRIBUTE_UNUSED)
     }
 
   return true;
+}
+
+bool
+aarch64_mov_operand_p (rtx x,
+		       enum aarch64_symbol_context context,
+		       enum machine_mode mode)
+{
+  if (GET_CODE (x) == HIGH
+      && aarch64_valid_symref (XEXP (x, 0), GET_MODE (XEXP (x, 0))))
+    return true;
+
+  if (CONST_INT_P (x) && aarch64_move_imm (INTVAL (x), mode))
+    return true;
+
+  if (GET_CODE (x) == SYMBOL_REF && mode == DImode && CONSTANT_ADDRESS_P (x))
+    return true;
+
+  return aarch64_classify_symbolic_expression (x, context)
+    == SYMBOL_TINY_ABSOLUTE;
 }
 
 /* Return a const_int vector of VAL.  */

@@ -1,3 +1,32 @@
+2013-06-03  Christophe Lyon  <christophe.lyon@linaro.org>
+	Backport from trunk r198890,199254,199294,199454.
+
+	2013-05-30  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/aarch64/insv_1.c: New test.
+
+	2013-05-24  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/aarch64/scalar_intrinsics.c
+	(force_simd): Use a valid instruction.
+	(test_vdupd_lane_s64): Pass a valid lane argument.
+	(test_vdupd_lane_u64): Likewise.
+
+	2013-05-23  Vidya Praveen <vidyapraveen@arm.com>
+
+	* gcc.target/aarch64/vect-clz.c: New file.
+
+	2013-05-14  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/vect-fcm.x: Add cases testing
+	FLOAT cmp FLOAT ? INT : INT.
+	* gcc.target/aarch64/vect-fcm-eq-d.c: Define IMODE.
+	* gcc.target/aarch64/vect-fcm-eq-f.c: Likewise.
+	* gcc.target/aarch64/vect-fcm-ge-d.c: Likewise.
+	* gcc.target/aarch64/vect-fcm-ge-f.c: Likewise.
+	* gcc.target/aarch64/vect-fcm-gt-d.c: Likewise.
+	* gcc.target/aarch64/vect-fcm-gt-f.c: Likewise.
+
 2013-05-29  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r198928.
