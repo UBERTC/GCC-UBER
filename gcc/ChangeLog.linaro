@@ -1,3 +1,27 @@
+2013-06-06  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	Backport from mainline (r199438, r199439)
+	2013-05-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* config/arm/arm.c (arm_add_cfa_adjust_cfa_note): New added.
+	(arm_emit_multi_reg_pop): Add REG_CFA_ADJUST_CFA notes.
+	(arm_emit_vfp_multi_reg_pop): Likewise.
+	(thumb2_emit_ldrd_pop): Likewise.
+	(arm_expand_epilogue): Add misc REG_CFA notes.
+	(arm_unwind_emit): Skip REG_CFA_ADJUST_CFA and REG_CFA_RESTORE.
+
+	2013-05-30  Bernd Schmidt  <bernds@codesourcery.com>
+		    Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* config/arm/arm-protos.h: Add and update function protos.
+	* config/arm/arm.c (use_simple_return_p): New added.
+	(thumb2_expand_return): Check simple_return flag.
+	* config/arm/arm.md: Add simple_return and conditional simple_return.
+	* config/arm/iterators.md: Add iterator for return and simple_return.
+	* gcc.dg/shrink-wrap-alloca.c: New added.
+	* gcc.dg/shrink-wrap-pretend.c: New added.
+	* gcc.dg/shrink-wrap-sibcall.c: New added.
+
 2013-06-06  Kugan Vivekanandarajah  <kuganv@linaro.org>
 
 	Backport from mainline r198879:
