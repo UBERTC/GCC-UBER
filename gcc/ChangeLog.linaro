@@ -1,3 +1,12 @@
+2013-06-06  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	Backport from mainline r198879:
+
+	2013-05-14  Chung-Lin Tang  <cltang@codesourcery.com>
+	PR target/42017
+	* config/arm/arm.h (EPILOGUE_USES): Only return true
+	for LR_REGNUM after epilogue_completed.
+
 2013-06-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r199652,199653,199656,199657,199658.
