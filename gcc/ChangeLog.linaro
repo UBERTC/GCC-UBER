@@ -1,3 +1,13 @@
+2013-06-20  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r198683.
+	2013-05-07  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* config/arm/arm.c (arm_asan_shadow_offset): New function.
+	(TARGET_ASAN_SHADOW_OFFSET): Define.
+	* config/arm/linux-eabi.h (ASAN_CC1_SPEC): Define.
+	(LINUX_OR_ANDROID_CC): Add ASAN_CC1_SPEC.
+
 2013-06-11  Rob Savoye  <rob.savoye@linaro.org>
 
         GCC Linaro gcc-linaro-4.8-2013.06 released.

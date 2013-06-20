@@ -1,3 +1,22 @@
+2013-06-20  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r198683.
+	2013-05-07  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* lib/target-supports.exp (check_effective_target_hw): New
+	function.
+	* c-c++-common/asan/clone-test-1.c: Call
+	check_effective_target_hw.
+	* c-c++-common/asan/rlimit-mmap-test-1.c: Likewise.
+	* c-c++-common/asan/heap-overflow-1.c: Update regexps to accept
+	possible decorations.
+	* c-c++-common/asan/null-deref-1.c: Likewise.
+	* c-c++-common/asan/stack-overflow-1.c: Likewise.
+	* c-c++-common/asan/strncpy-overflow-1.c: Likewise.
+	* c-c++-common/asan/use-after-free-1.c: Likewise.
+	* g++.dg/asan/deep-thread-stack-1.C: Likewise.
+	* g++.dg/asan/large-func-test-1.C: Likewise.
+
 2013-06-11  Rob Savoye  <rob.savoye@linaro.org>
 
         GCC Linaro gcc-linaro-4.8-2013.06 released.
