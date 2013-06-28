@@ -1,5 +1,12 @@
 2013-06-20  Rob Savoye  <rob.savoye@linaro.org>
 
+	Backport from trunk 200152
+	2013-06-17  Sofiane Naci  <sofiane.naci@arm.com>
+
+	* gcc.target/aarch64/scalar_intrinsics.c: Update.
+
+2013-06-20  Rob Savoye  <rob.savoye@linaro.org>
+
 	Backport from trunk 200148
 	2013-06-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
