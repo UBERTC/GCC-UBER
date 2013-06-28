@@ -1,5 +1,13 @@
 2013-06-20  Rob Savoye  <rob.savoye@linaro.org>
 
+	Backport from trunk 200148
+	2013-06-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/arm/unaligned-memcpy-2.c (dest): Initialize to
+	ensure alignment.
+
+2013-06-20  Rob Savoye  <rob.savoye@linaro.org>
+
 	Backport from trunk 199533
 	2013-05-31  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 
