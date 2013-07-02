@@ -1,5 +1,13 @@
 2013-07-02  Rob Savoye  <rob.savoye@linaro.org>
 
+	Backport from trunk 200096
+
+	2013-06-14  Vidya Praveen <vidyapraveen@arm.com>
+
+	* gcc.target/aarch64/vect_smlal_1.c: New file.
+
+2013-07-02  Rob Savoye  <rob.savoye@linaro.org>
+
 	Backport from trunk 200019
 	2013-06-12  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
 

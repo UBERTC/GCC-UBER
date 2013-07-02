@@ -1,5 +1,17 @@
 2013-07-02  Rob Savoye  <rob.savoye@linaro.org>
 
+	Backport from trunk 200096
+
+	2013-06-14  Vidya Praveen <vidyapraveen@arm.com>
+
+	* config/aarch64/aarch64-simd.md (aarch64_<su>mlal_lo<mode>):
+	New pattern.
+	(aarch64_<su>mlal_hi<mode>, aarch64_<su>mlsl_lo<mode>): Likewise.
+	(aarch64_<su>mlsl_hi<mode>, aarch64_<su>mlal<mode>): Likewise.
+	(aarch64_<su>mlsl<mode>): Likewise.
+
+2013-07-02  Rob Savoye  <rob.savoye@linaro.org>
+
 	Backport from trunk 200062
 
 	2013-06-13  Bin Cheng  <bin.cheng@arm.com>
