@@ -1,3 +1,11 @@
+2013-07-02  Rob Savoye  <rob.savoye@linaro.org>
+	Backport from trunk 199810
+
+	2013-06-07  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (anddi3_insn): Remove duplicate alternatives.
+	Clean up alternatives.
+
 2013-06-20  Rob Savoye  <rob.savoye@linaro.org>
 
 	Backport from trunk 200152
