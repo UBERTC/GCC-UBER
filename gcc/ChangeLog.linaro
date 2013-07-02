@@ -1,12 +1,4 @@
 2013-07-02  Rob Savoye  <rob.savoye@linaro.org>
-
-	Backport from trunk 200061
-	2013-06-13  Bin Cheng  <bin.cheng@arm.com>
-
-	* rtlanal.c (noop_move_p): Check the code to be executed for
-	COND_EXEC.
-
-2013-07-02  Rob Savoye  <rob.savoye@linaro.org>
 	Backport from trunk 199810
 
 	2013-06-07  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
