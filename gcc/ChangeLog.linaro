@@ -1,3 +1,48 @@
+2013-07-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r199640, 199705, 199733, 199734, 199739.
+	2013-06-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* rtl.def: Add extra fourth optional field to define_cond_exec.
+	* gensupport.c (process_one_cond_exec): Process attributes from
+	define_cond_exec.
+	* doc/md.texi: Document fourth field in define_cond_exec.
+
+	2013-06-05  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (enabled_for_depr_it): New attribute.
+	(predicable_short_it): Likewise.
+	(predicated): Likewise.
+	(enabled): Handle above.
+	(define_cond_exec): Set predicated attribute to yes.
+
+	2013-06-06  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/sync.md (atomic_loaddi_1):
+	Disable predication for arm_restrict_it.
+	(arm_load_exclusive<mode>): Likewise.
+	(arm_load_exclusivesi): Likewise.
+	(arm_load_exclusivedi): Likewise.
+	(arm_load_acquire_exclusive<mode>): Likewise.
+	(arm_load_acquire_exclusivesi): Likewise.
+	(arm_load_acquire_exclusivedi): Likewise.
+	(arm_store_exclusive<mode>): Likewise.
+	(arm_store_exclusive<mode>): Likewise.
+	(arm_store_release_exclusivedi): Likewise.
+	(arm_store_release_exclusive<mode>): Likewise.
+
+	2013-06-06  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm-ldmstm.ml: Set "predicable_short_it" to "no"
+	where appropriate.
+	* config/arm/ldmstm.md: Regenerate.
+
+	2013-06-06  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm-fixed.md (add<mode>3,usadd<mode>3,ssadd<mode>3,
+	sub<mode>3, ussub<mode>3, sssub<mode>3, arm_ssatsihi_shift,
+	arm_usatsihi): Adjust alternatives for arm_restrict_it.
+
 2013-07-02  Rob Savoye  <rob.savoye@linaro.org>
 
 	Backport from trunk 200096
