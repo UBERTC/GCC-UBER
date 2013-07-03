@@ -9746,6 +9746,10 @@ get_temp_from_expr (gfc_expr *e, gfc_namespace *ns)
 
   /* Add the attributes and the arrayspec to the temporary.  */
   tmp->n.sym->attr = gfc_expr_attr (e);
+  tmp->n.sym->attr.function = 0;
+  tmp->n.sym->attr.result = 0;
+  tmp->n.sym->attr.flavor = FL_VARIABLE;
+
   if (as)
     {
       tmp->n.sym->as = gfc_copy_array_spec (as);
@@ -9759,6 +9763,7 @@ get_temp_from_expr (gfc_expr *e, gfc_namespace *ns)
 
   gfc_set_sym_referenced (tmp->n.sym);
   gfc_add_flavor (&tmp->n.sym->attr, FL_VARIABLE, name, NULL);
+  gfc_commit_symbol (tmp->n.sym);
   e = gfc_lval_expr_from_sym (tmp->n.sym);
 
   /* Should the lhs be a section, use its array ref for the
