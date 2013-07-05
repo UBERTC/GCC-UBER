@@ -1,5 +1,37 @@
 2013-07-03  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Revert backport from trunk r198928,198973,199203.
+	2013-05-22  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/19599
+	PR target/57340
+	* config/arm/arm.c (any_sibcall_uses_r3): Rename to ..
+	(any_sibcall_could_use_r3): this and handle indirect calls.
+	(arm_get_frame_offsets): Rename use of any_sibcall_uses_r3.
+
+	2013-05-16  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/19599
+	* config/arm/arm.c (arm_function_ok_for_sibcall): Add check
+	for NULL decl.
+
+	2013-05-15  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/19599
+	* config/arm/predicates.md (call_insn_operand): New predicate.
+	* config/arm/constraints.md ("Cs", "Ss"):  New constraints.
+	* config/arm/arm.md (*call_insn, *call_value_insn): Match only
+	if insn is not a tail call.
+	(*sibcall_insn, *sibcall_value_insn): Adjust for tailcalling through
+	registers.
+	* config/arm/arm.h (enum reg_class): New caller save register class.
+	(REG_CLASS_NAMES): Likewise.
+	(REG_CLASS_CONTENTS): Likewise.
+	* config/arm/arm.c (arm_function_ok_for_sibcall): Allow tailcalling
+	without decls.
+
+2013-07-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Revert backport from mainline (r199438, r199439)
 	2013-05-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
 

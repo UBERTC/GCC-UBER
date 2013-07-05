@@ -1,5 +1,14 @@
 2013-07-03  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Revert backport from trunk r198928.
+	2013-05-15  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/19599
+	* gcc.target/arm/pr40887.c: Adjust testcase.
+	* gcc.target/arm/pr19599.c: New test.
+
+2013-07-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Revert backport from trunk 199439, 199533
 	2013-05-31  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 
