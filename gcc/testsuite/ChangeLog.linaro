@@ -1,3 +1,16 @@
+2013-07-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Revert backport from trunk 199439, 199533
+	2013-05-31  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* gcc.dg/shrink-wrap-alloca.c: Use __builtin_alloca.
+
+	2013-05-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* gcc.dg/shrink-wrap-alloca.c: New added.
+	* gcc.dg/shrink-wrap-pretend.c: New added.
+	* gcc.dg/shrink-wrap-sibcall.c: New added.
+
 2013-07-02  Rob Savoye  <rob.savoye@linaro.org>
 
 	Backport from trunk 200096
@@ -59,6 +72,15 @@
 2013-06-11  Rob Savoye  <rob.savoye@linaro.org>
 
         GCC Linaro gcc-linaro-4.8-2013.06 released.
+
+2013-06-06  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	Backport from mainline r199439.
+	2013-05-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* gcc.dg/shrink-wrap-alloca.c: New added.
+	* gcc.dg/shrink-wrap-pretend.c: New added.
+	* gcc.dg/shrink-wrap-sibcall.c: New added.
 
 2013-06-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
