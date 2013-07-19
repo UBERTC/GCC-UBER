@@ -1,3 +1,12 @@
+2013-07-19  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
+	
+	Backport from trunk r201005.
+	2013-07-17  Yvan Roux  <yvan.roux@linaro.org>
+
+	PR target/57909
+	* config/arm/arm.c (gen_movmem_ldrd_strd): Fix unaligned load/store
+	usage in HI mode.
+
 2013-07-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	GCC Linaro 4.8-2013.07 released.
