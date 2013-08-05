@@ -1,3 +1,11 @@
+2013-07-22  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r200521.
+	2013-06-28  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* testsuite/libgomp.fortran/strassen.f90:
+	Add dg-skip-if aarch64_tiny.
+
 2013-07-19  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
         GCC Linaro 4.8-2013.07-1 released.
