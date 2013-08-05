@@ -1,5 +1,18 @@
 2013-08-05  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r200532, r200565.
+	2013-06-28  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_cannot_force_const_mem): Adjust
+	layout.
+
+	2013-06-29  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* config/aarch64/aarch64.c: Remove junk from the beginning of the
+	file.
+
+2013-08-05  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r200531.
 	2013-06-28  Marcus Shawcroft  <marcus.shawcroft@arm.com>
 
