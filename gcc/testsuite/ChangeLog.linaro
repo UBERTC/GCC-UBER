@@ -1,3 +1,11 @@
+2013-07-21  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r200204.
+	2013-06-19  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* gcc.dg/torture/stackalign/builtin-apply-2.c: set
+	STACK_ARGUMENTS_SIZE with 0 if __aarch64__ is defined.
+
 2013-07-19  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
         GCC Linaro 4.8-2013.07-1 released.
