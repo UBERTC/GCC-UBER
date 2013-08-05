@@ -1,5 +1,12 @@
 2013-08-05  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r200922.
+	2013-07-12  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* gcc.target/aarch64/vect-movi.c: New.
+
+2013-08-05  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r200720.
 	2013-07-05  Marcus Shawcroft  <marcus.shawcroft@arm.com>
 

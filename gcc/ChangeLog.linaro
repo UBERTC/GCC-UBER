@@ -1,5 +1,17 @@
 2013-08-05  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r200922.
+	2013-07-12  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* config/aarch64/aarch64-protos.h
+	(aarch64_simd_immediate_valid_for_move): Remove.
+	* config/aarch64/aarch64.c (simd_immediate_info): New member.
+	(aarch64_simd_valid_immediate): Recognize idioms for shifting ones
+	cases.
+	(aarch64_output_simd_mov_immediate): Print the correct shift specifier.
+
+2013-08-05  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r200670.
 	2013-07-04  Tejas Belagod  <tejas.belagod@arm.com>
 
