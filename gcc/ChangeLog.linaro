@@ -1,5 +1,15 @@
 2013-08-05  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r200637.
+	2013-07-03  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* config/aarch64/aarch64.h (enum arm_abi_type): Remove.
+	(ARM_ABI_AAPCS64): Ditto.
+	(arm_abi): Ditto.
+	(ARM_DEFAULT_ABI): Ditto.
+
+2013-08-05  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r200532, r200565.
 	2013-06-28  Marcus Shawcroft  <marcus.shawcroft@arm.com>
 
