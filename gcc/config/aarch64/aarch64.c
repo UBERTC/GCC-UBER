@@ -706,10 +706,10 @@ aarch64_split_simd_move (rtx dst, rtx src)
 }
 
 static rtx
-aarch64_force_temporary (rtx x, rtx value)
+aarch64_force_temporary (enum machine_mode mode, rtx x, rtx value)
 {
   if (can_create_pseudo_p ())
-    return force_reg (Pmode, value);
+    return force_reg (mode, value);
   else
     {
       x = aarch64_emit_move (x, value);
@@ -721,15 +721,16 @@ aarch64_force_temporary (rtx x, rtx value)
 static rtx
 aarch64_add_offset (enum machine_mode mode, rtx temp, rtx reg, HOST_WIDE_INT offset)
 {
-  if (!aarch64_plus_immediate (GEN_INT (offset), DImode))
+  if (!aarch64_plus_immediate (GEN_INT (offset), mode))
     {
       rtx high;
       /* Load the full offset into a register.  This
          might be improvable in the future.  */
       high = GEN_INT (offset);
       offset = 0;
-      high = aarch64_force_temporary (temp, high);
-      reg = aarch64_force_temporary (temp, gen_rtx_PLUS (Pmode, high, reg));
+      high = aarch64_force_temporary (mode, temp, high);
+      reg = aarch64_force_temporary (mode, temp,
+				     gen_rtx_PLUS (mode, high, reg));
     }
   return plus_constant (mode, reg, offset);
 }
@@ -768,7 +769,7 @@ aarch64_expand_mov_immediate (rtx dest, rtx imm)
 	      && targetm.cannot_force_const_mem (mode, imm))
 	    {
 	      gcc_assert(can_create_pseudo_p ());
-	      base = aarch64_force_temporary (dest, base);
+	      base = aarch64_force_temporary (mode, dest, base);
 	      base = aarch64_add_offset (mode, NULL, base, INTVAL (offset));
 	      aarch64_emit_move (dest, base);
 	      return;
@@ -785,7 +786,7 @@ aarch64_expand_mov_immediate (rtx dest, rtx imm)
 	  if (offset != const0_rtx)
 	    {
 	      gcc_assert(can_create_pseudo_p ());
-	      base = aarch64_force_temporary (dest, base);
+	      base = aarch64_force_temporary (mode, dest, base);
 	      base = aarch64_add_offset (mode, NULL, base, INTVAL (offset));
 	      aarch64_emit_move (dest, base);
 	      return;
