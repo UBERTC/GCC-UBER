@@ -1,3 +1,10 @@
+2013-08-05  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r200720.
+	2013-07-05  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* gcc.dg/pr57518.c: Adjust scan-rtl-dump-not pattern.
+
 2013-07-21  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r200204.
