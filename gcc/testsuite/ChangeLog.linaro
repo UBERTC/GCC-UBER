@@ -1,5 +1,23 @@
 2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r199439,199533,201326.
+
+	2013-05-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* gcc.dg/shrink-wrap-alloca.c: New added.
+	* gcc.dg/shrink-wrap-pretend.c: New added.
+	* gcc.dg/shrink-wrap-sibcall.c: New added.
+
+	2013-05-31  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* gcc.dg/shrink-wrap-alloca.c: Use __builtin_alloca.
+
+	2013-07-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* gcc.target/arm/pr57637.c: New testcase.
+
+2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r198928,198973,199203,201240,201241.
 	2013-05-15  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
 

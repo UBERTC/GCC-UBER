@@ -1,5 +1,34 @@
 2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r199438,199439,201326.
+
+	2013-05-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* config/arm/arm.c (arm_add_cfa_adjust_cfa_note): New added.
+	(arm_emit_multi_reg_pop): Add REG_CFA_ADJUST_CFA notes.
+	(arm_emit_vfp_multi_reg_pop): Likewise.
+	(thumb2_emit_ldrd_pop): Likewise.
+	(arm_expand_epilogue): Add misc REG_CFA notes.
+	(arm_unwind_emit): Skip REG_CFA_ADJUST_CFA and REG_CFA_RESTORE.
+
+	2013-05-30  Bernd Schmidt  <bernds@codesourcery.com>
+	    Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* config/arm/arm-protos.h: Add and update function protos.
+	* config/arm/arm.c (use_simple_return_p): New added.
+	(thumb2_expand_return): Check simple_return flag.
+	* config/arm/arm.md: Add simple_return and conditional simple_return.
+	* config/arm/iterators.md: Add iterator for return and simple_return.
+
+	2013-07-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	PR rtl-optimization/57637
+	* function.c (move_insn_for_shrink_wrap): Also check the
+	GEN set of the LIVE problem for the liveness analysis
+	if it exists, otherwise give up.
+
+2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r198928,198973,199203,201240,201241,201307.
 	2013-05-15  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
 
