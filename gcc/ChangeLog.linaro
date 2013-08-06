@@ -1,5 +1,27 @@
 2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r200596,201067,201083.
+	2013-07-02  Ian Bolton  <ian.bolton@arm.com>
+
+	* config/aarch64/aarch64-simd.md (absdi2): Support abs for
+	DI mode.
+
+	2013-07-19  Ian Bolton  <ian.bolton@arm.com>
+
+	* config/aarch64/arm_neon.h (vabs_s64): New function
+
+	2013-07-20  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-builtins.c
+	(aarch64_fold_builtin): Fold abs in all modes.
+	* config/aarch64/aarch64-simd-builtins.def
+	(abs): Enable for all modes.
+	* config/aarch64/arm_neon.h
+	(vabs<q>_s<8,16,32,64): Rewrite using builtins.
+	(vabs_f64): Add missing intrinsic.
+
+2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r198735,198831,199959.
 	2013-05-09  Sofiane Naci  <sofiane.naci@arm.com>
 

@@ -1,5 +1,21 @@
 2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r200596,201067,201083.
+	2013-07-02  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/aarch64/abs_1.c: New test.
+
+	2013-07-19  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/aarch64/scalar_intrinsics.c (test_vabs_s64): Added
+	new testcase.
+
+	2013-07-20  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/vabs_intrinsic_1.c: New file.
+
+2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r198864.
 	2013-05-07  Ian Bolton  <ian.bolton@arm.com>
 
