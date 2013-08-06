@@ -1,3 +1,12 @@
+2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r198928,198973,199203,201240,201241.
+	2013-05-15  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/19599
+	* gcc.target/arm/pr40887.c: Adjust testcase.
+	* gcc.target/arm/pr19599.c: New test.
+
 2013-08-05  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r200922.
