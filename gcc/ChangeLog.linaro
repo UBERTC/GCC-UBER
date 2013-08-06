@@ -1,5 +1,42 @@
 2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r198735,198831,199959.
+	2013-05-09  Sofiane Naci  <sofiane.naci@arm.com>
+
+	* config/aarch64/aarch64.md: New movtf split.
+	(*movtf_aarch64): Update.
+	(aarch64_movdi_tilow): Handle TF modes and rename to
+	aarch64_movdi_<mode>low.
+	(aarch64_movdi_tihigh): Handle TF modes and rename to
+	aarch64_movdi_<mode>high
+	(aarch64_movtihigh_di): Handle TF modes and rename to
+	aarch64_mov<mode>high_di
+	(aarch64_movtilow_di): Handle TF modes and rename to
+	aarch64_mov<mode>low_di
+	(aarch64_movtilow_tilow): Remove spurious whitespace.
+	* config/aarch64/aarch64.c (aarch64_split_128bit_move): Handle TFmode
+	splits.
+	(aarch64_print_operand): Update.
+
+	2013-05-13  Sofiane Naci  <sofiane.naci@arm.com>
+
+	* config/aarch64/aarch64-simd.md (aarch64_simd_mov<mode>): Group
+	similar switch cases.
+	(aarch64_simd_mov): Rename to aarch64_split_simd_mov. Update.
+	(aarch64_simd_mov_to_<mode>low): Delete.
+	(aarch64_simd_mov_to_<mode>high): Delete.
+	(move_lo_quad_<mode>): Add w<-r alternative.
+	(aarch64_simd_move_hi_quad_<mode>): Likewise.
+	(aarch64_simd_mov_from_*): Update type attribute.
+	* config/aarch64/aarch64.c (aarch64_split_simd_move): Refacror switch
+	statement.
+
+	2013-06-11  Sofiane Naci  <sofiane.naci@arm.com>
+
+	* config/aarch64/aarch64-simd.md (move_lo_quad_<mode>): Update.
+
+2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r199438,199439,201326.
 
 	2013-05-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>

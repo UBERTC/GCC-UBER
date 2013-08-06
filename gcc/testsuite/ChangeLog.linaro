@@ -1,5 +1,13 @@
 2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r198864.
+	2013-05-07  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/aarch64/ands_1.c: New test.
+	* gcc.target/aarch64/ands_2.c: Likewise
+
+2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r199439,199533,201326.
 
 	2013-05-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
