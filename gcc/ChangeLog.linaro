@@ -1,3 +1,11 @@
+2013-08-07  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r201237.
+	2013-07-25  Terry Guo  <terry.guo@arm.com>
+
+	* config/arm/arm.c (thumb1_size_rtx_costs): Assign proper cost for
+	shift_add/shift_sub0/shift_sub1 RTXs.
+
 2013-08-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r200596,201067,201083.
