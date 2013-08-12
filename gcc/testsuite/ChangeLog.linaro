@@ -1,5 +1,13 @@
 2013-08-07  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r199720
+	2013-06-06  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* gcc.dg/vect/no-section-anchors-vect-68.c:
+	Add dg-skip-if aarch64_tiny.
+
+2013-08-07  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r201237.
 	2013-07-25  Terry Guo  <terry.guo@arm.com>
 
