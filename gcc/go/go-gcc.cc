@@ -1242,20 +1242,41 @@ Gcc_backend::non_zero_size_type(tree type)
   switch (TREE_CODE(type))
     {
     case RECORD_TYPE:
-      {
-	if (go_non_zero_struct == NULL_TREE)
-	  {
-	    type = make_node(RECORD_TYPE);
-	    tree field = build_decl(UNKNOWN_LOCATION, FIELD_DECL,
-				    get_identifier("dummy"),
-				    boolean_type_node);
-	    DECL_CONTEXT(field) = type;
-	    TYPE_FIELDS(type) = field;
-	    layout_type(type);
-	    go_non_zero_struct = type;
-	  }
-	return go_non_zero_struct;
-      }
+      if (TYPE_FIELDS(type) != NULL_TREE)
+	{
+	  tree ns = make_node(RECORD_TYPE);
+	  tree field_trees = NULL_TREE;
+	  tree *pp = &field_trees;
+	  for (tree field = TYPE_FIELDS(type);
+	       field != NULL_TREE;
+	       field = DECL_CHAIN(field))
+	    {
+	      tree ft = TREE_TYPE(field);
+	      if (field == TYPE_FIELDS(type))
+		ft = non_zero_size_type(ft);
+	      tree f = build_decl(DECL_SOURCE_LOCATION(field), FIELD_DECL,
+				  DECL_NAME(field), ft);
+	      DECL_CONTEXT(f) = ns;
+	      *pp = f;
+	      pp = &DECL_CHAIN(f);
+	    }
+	  TYPE_FIELDS(ns) = field_trees;
+	  layout_type(ns);
+	  return ns;
+	}
+
+      if (go_non_zero_struct == NULL_TREE)
+	{
+	  type = make_node(RECORD_TYPE);
+	  tree field = build_decl(UNKNOWN_LOCATION, FIELD_DECL,
+				  get_identifier("dummy"),
+				  boolean_type_node);
+	  DECL_CONTEXT(field) = type;
+	  TYPE_FIELDS(type) = field;
+	  layout_type(type);
+	  go_non_zero_struct = type;
+	}
+      return go_non_zero_struct;
 
     case ARRAY_TYPE:
       {
@@ -1500,10 +1521,11 @@ Gcc_backend::immutable_struct_set_init(Bvariable* var, const std::string&,
 	TREE_PUBLIC(decl) = 1;
     }
   else
-    {
-      make_decl_one_only(decl, DECL_ASSEMBLER_NAME(decl));
-      resolve_unique_section(decl, 1, 0);
-    }
+    make_decl_one_only(decl, DECL_ASSEMBLER_NAME(decl));
+
+  // These variables are often unneeded in the final program, so put
+  // them in their own section so that linker GC can discard them.
+  resolve_unique_section(decl, 1, 1);
 
   rest_of_decl_compilation(decl, 1, 0);
 }
