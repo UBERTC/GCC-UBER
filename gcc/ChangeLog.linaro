@@ -1,5 +1,12 @@
 2013-08-26  Kugan Vivekanandarajah  <kuganv@linaro.org>
 
+	Backport from trunk r201341.
+	2013-07-30  Richard Earnshaw  <rearnsha@arm.com>
+
+	* arm.md (mulhi3): New expand pattern.
+
+2013-08-26  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
 	Backport from trunk r201501.
 	2013-08-05  Richard Earnshaw  <rearnsha@arm.com>
 
