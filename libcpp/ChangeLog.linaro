@@ -1,10 +1,18 @@
+2013-09-05  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r201566.
+	2013-08-07  Richard Earnshaw  <rearnsha@arm.com>
+
+	* configure.ac: Set need_64bit_hwint for all arm targets.
+	* configure: Regenerated.
+
 2013-08-14  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	GCC Linaro 4.8-2013.08 released.
 
 2013-07-19  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
-        GCC Linaro 4.8-2013.07-1 released.
+	GCC Linaro 4.8-2013.07-1 released.
 
 2013-07-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
@@ -12,7 +20,7 @@
 
 2013-06-11  Rob Savoye  <rob.savoye@linaro.org>
 
-        GCC Linaro gcc-linaro-4.8-2013.06 released.
+	GCC Linaro gcc-linaro-4.8-2013.06 released.
 
 2013-05-14  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 

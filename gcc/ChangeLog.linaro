@@ -1,3 +1,11 @@
+2013-09-05  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r201342.
+	2013-07-30  Richard Earnshaw  <rearnsha@arm.com>
+
+	* config.gcc (arm): Require 64-bit host-wide-int for all ARM target
+	configs.
+
 2013-09-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r199527,199792,199814.
