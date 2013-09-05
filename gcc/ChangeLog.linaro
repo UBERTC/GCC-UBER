@@ -1,3 +1,11 @@
+2013-09-05  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r201589.
+	2013-08-08  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR target/58065
+	* config/arm/arm.h (MALLOC_ABI_ALIGNMENT): Define.
+
 2013-09-03  Venkataramanan Kumar  <venkataramanan.kumar@linaro.org>
 
 	Backport from trunk
