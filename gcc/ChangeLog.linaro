@@ -1,5 +1,37 @@
 2013-09-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r199527,199792,199814.
+	2013-05-31  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/56315
+	* config/arm/arm.c (const_ok_for_dimode_op): Handle IOR.
+	* config/arm/arm.md (*iordi3_insn): Change to insn_and_split.
+	* config/arm/neon.md (iordi3_neon): Remove.
+	(neon_vorr<mode>): Generate iordi3 instead of iordi3_neon.
+	* config/arm/predicates.md (imm_for_neon_logic_operand):
+	Move to earlier in the file.
+	(neon_logic_op2): Likewise.
+	(arm_iordi_operand_neon): New predicate.
+
+	2013-06-07  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/constraints.md (Df): New constraint.
+	* config/arm/arm.md (iordi3_insn): Use Df constraint instead of De.
+	Correct length attribute for last two alternatives.
+
+	2013-06-07  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/56315
+	* config/arm/arm.md (*xordi3_insn): Change to insn_and_split.
+	(xordi3): Change operand 2 constraint to arm_xordi_operand.
+	* config/arm/arm.c (const_ok_for_dimode_op): Handle XOR.
+	* config/arm/constraints.md (Dg): New constraint.
+	* config/arm/neon.md (xordi3_neon): Remove.
+	(neon_veor<mode>): Generate xordi3 instead of xordi3_neon.
+	* config/arm/predicates.md (arm_xordi_operand): New predicate.
+
+2013-09-05  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r201599.
 	2013-08-08  Richard Earnshaw  <rearnsha@arm.com>
 
