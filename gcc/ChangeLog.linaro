@@ -1,5 +1,14 @@
 2013-09-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r201599.
+	2013-08-08  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR target/57431
+	* arm/neon.md (neon_vld1_dupdi): New expand pattern.
+	(neon_vld1_dup<mode> VD iterator): Iterate over VD not VDX.
+
+2013-09-05  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r201589.
 	2013-08-08  Bernd Edlinger  <bernd.edlinger@hotmail.de>
 
