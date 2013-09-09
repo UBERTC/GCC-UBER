@@ -1,3 +1,11 @@
+2013-09-09  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	Backport from trunk r201412.
+	2013-08-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (minmax_arithsi_non_canon): Emit canonical RTL form
+	when subtracting a constant.
+
 2013-09-05  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r201249.
