@@ -1,3 +1,10 @@
+2013-09-06  Venkataramanan Kumar  <venkataramanan.kumar@linaro.org>
+
+	Backport from trunk r201411.
+	2013-08-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/arm/pr46972-2.c: New test.
+
 2013-09-05  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r201267.

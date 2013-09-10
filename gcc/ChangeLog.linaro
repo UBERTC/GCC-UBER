@@ -1,3 +1,19 @@
+2013-09-10  Venkataramanan Kumar  <venkataramanan.kumar@linaro.org>
+
+	Backport from trunk r200197, 201411.
+	2013-06-19  Richard Earnshaw  <rearnsha@arm.com>
+
+	arm.md (split for eq(reg, 0)): Add variants for ARMv5 and Thumb2.
+	(peepholes for eq(reg, not-0)): Ensure condition register is dead after
+	pattern.  Use more efficient sequences on ARMv5 and Thumb2.
+
+	2013-08-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (peepholes for eq (reg1) (reg2/imm)):
+	Generate canonical plus rtx with negated immediate instead of minus
+	where appropriate.
+	* config/arm/arm.c (thumb2_reorg): Handle ADCS <Rd>, <Rn> case.
+
 2013-09-10  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r200593,201024,201025,201122,201124,201126.
