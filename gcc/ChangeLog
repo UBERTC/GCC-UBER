@@ -1,3 +1,180 @@
+2013-09-19  Jakub Jelinek  <jakub@redhat.com>
+
+	* omp-low.c (expand_omp_sections): Always pass len - 1 to
+	GOMP_sections_start, even if !exit_reachable.
+
+2013-09-18  Richard Earnshaw  <rearnsha@arm.com>
+
+	* arm.c (arm_expand_prologue): Validate architecture supports
+	LDRD/STRD before accepting tuning preferences.
+	(arm_expand_epilogue): Likewise.
+
+2013-09-18  Daniel Morris  <danielm@ecoscentric.com>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/58458
+	* doc/implement-cxx.texi: Fix references to the C++ standards.
+
+2013-09-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR tree-optimization/58088
+	* fold-const.c (mask_with_trailing_zeros): New function.
+	(fold_binary_loc): Make sure we don't recurse infinitely
+	when the X in (X & C1) | C2 is a tree of the form (Y * K1) & K2.
+	Use mask_with_trailing_zeros where appropriate.
+
+2013-09-14  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/58382
+	* config/pa/pa.c (pa_expand_prologue): Change mode in gen_rtx_POST_INC
+	calls to word_mode.
+
+2013-09-13  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/58314
+	* config/sh/sh.md (mov<mode>_reg_reg): Allow memory reloads.
+
+2013-09-11  Andi Kleen  <ak@linux.intel.com>
+
+	Backport from mainline
+	* doc/extend.texi: Use __atomic_store_n instead of
+	__atomic_store in HLE example.
+
+2013-09-11  Andi Kleen  <ak@linux.intel.com>
+
+	Backport from mainline
+	* doc/extend.texi: Dont use __atomic_clear in HLE
+	example.  Fix typo.
+
+2013-09-11  Andi Kleen  <ak@linux.intel.com>
+
+	Backport from mainline
+	* doc/extend.texi: Document that __atomic_clear and
+	  __atomic_test_and_set should only be used with bool.
+
+2013-09-11  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/58377
+	* passes.c (init_optimization_passes): Split critical edges
+	before late uninit warning pass in the -Og pipeline.
+
+2013-09-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/58385
+	* fold-const.c (build_range_check): If both low and high are NULL,
+	use omit_one_operand_loc to preserve exp side-effects.
+
+2013-09-10  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR target/58361
+	* arm/vfp.md (combine_vcvt_f32_<FCVTI32typename>): Fix pattern to
+	support conditional execution.
+	(combine_vcvt_f64_<FCVTI32typename>): Likewise.
+
+2013-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/58365
+	* cfgcleanup.c (merge_memattrs): Also clear MEM_READONLY_P
+	resp. MEM_NOTRAP_P if they differ, or set MEM_VOLATILE_P if
+	it differs.
+
+2013-09-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/58364
+	* tree-ssa-reassoc.c (init_range_entry): For BIT_NOT_EXPR on
+	BOOLEAN_TYPE, only invert in_p and continue with arg0 if
+	the current range can't be an unconditional true or false.
+
+2013-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/57735
+	Backport from mainline
+	2013-04-30  Richard Sandiford  <rsandifo@linux.vnet.ibm.com>
+
+	* explow.c (plus_constant): Pass "mode" to immed_double_int_const.
+	Use gen_int_mode rather than GEN_INT.
+
+2013-09-09  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-08-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57521
+	* tree-if-conv.c (if_convertible_bb_p): Verify that at least
+	one edge is non-critical.
+	(find_phi_replacement_condition): Make sure to use a non-critical
+	edge.  Cleanup and remove old bug workarounds.
+	(bb_postdominates_preds): Remove.
+	(if_convertible_loop_p_1): Do not compute post-dominators.
+	(combine_blocks): Do not free post-dominators.
+	(main_tree_if_conversion): Likewise.
+
+2013-09-09  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-09-03  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/57656
+	* fold-const.c (negate_expr_p): Fix division case.
+	(negate_expr): Likewise.
+
+2013-09-09  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-08-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57685
+	* tree-vrp.c (register_edge_assert_for_1): Recurse only for
+	single-use operands to avoid exponential complexity.
+
+2013-09-09  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-08-30  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58223
+	* tree-loop-distribution.c (has_anti_dependence): Rename to ...
+	(has_anti_or_output_dependence): ... this and adjust to also
+	look for output dependences.
+	(mark_nodes_having_upstream_mem_writes): Adjust.
+	(rdg_flag_uses): Likewise.
+
+2013-09-03  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-08-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58246
+	* tree-ssa-dce.c (mark_aliased_reaching_defs_necessary_1): Properly
+	handle the dominance check inside a basic-block.
+
+2013-09-03  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-08-30  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58228
+	* tree-vect-data-refs.c (vect_analyze_data_ref_access): Do not
+	allow invariant loads in nested loop vectorization.
+
+2013-09-03  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-08-30  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58010
+	* tree-vect-loop.c (vect_create_epilog_for_reduction): Remove
+	assert that we have a loop-closed PHI.
+
+2013-09-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-08-31  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/alpha/alpha.c (alpha_emit_conditional_move): Update
+	"cmp" RTX before signed_comparison_operator check to account
+	for "code" changes.
+
 2013-09-01  John David Anglin  <danglin@gcc.gnu.org>
 
 	* config/pa/pa.md: Allow "const 0" operand 1 in "scc" insns.

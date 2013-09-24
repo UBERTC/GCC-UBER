@@ -2288,9 +2288,7 @@ Type::is_backend_type_size_known(Gogo* gogo)
       }
 
     case TYPE_NAMED:
-      // Begin converting this type to the backend representation.
-      // This will create a placeholder if necessary.
-      this->get_backend(gogo);
+      this->named_type()->convert(gogo);
       return this->named_type()->is_named_backend_type_size_known();
 
     case TYPE_FORWARD:
@@ -3390,10 +3388,7 @@ Function_type::do_get_backend(Gogo* gogo)
   // When we do anything with a function value other than call it, it
   // is represented as a pointer to a struct whose first field is the
   // actual function.  So that is what we return as the type of a Go
-  // function.  The function stored in the first field always that
-  // takes one additional trailing argument: the closure pointer.  For
-  // a top-level function, this additional argument will only be
-  // passed when invoking the function indirectly, via the struct.
+  // function.
 
   Location loc = this->location();
   Btype* struct_type =
@@ -3415,15 +3410,9 @@ Function_type::do_get_backend(Gogo* gogo)
     }
 
   std::vector<Backend::Btyped_identifier> bparameters;
-  size_t last;
-  if (this->parameters_ == NULL)
+  if (this->parameters_ != NULL)
     {
-      bparameters.resize(1);
-      last = 0;
-    }
-  else
-    {
-      bparameters.resize(this->parameters_->size() + 1);
+      bparameters.resize(this->parameters_->size());
       size_t i = 0;
       for (Typed_identifier_list::const_iterator p = this->parameters_->begin();
 	   p != this->parameters_->end();
@@ -3433,12 +3422,8 @@ Function_type::do_get_backend(Gogo* gogo)
 	  bparameters[i].btype = p->type()->get_backend(gogo);
 	  bparameters[i].location = p->location();
 	}
-      last = i;
+      go_assert(i == bparameters.size());
     }
-  go_assert(last + 1 == bparameters.size());
-  bparameters[last].name = "$closure";
-  bparameters[last].btype = ptr_struct_type;
-  bparameters[last].location = loc;
 
   std::vector<Backend::Btyped_identifier> bresults;
   if (this->results_ != NULL)
@@ -3840,7 +3825,7 @@ Function_type::copy_with_receiver(Type* receiver_type) const
 // closure parameter.
 
 Function_type*
-Function_type::copy_with_closure(Type* closure_type) const
+Function_type::copy_with_names() const
 {
   Typed_identifier_list* new_params = new Typed_identifier_list();
   const Typed_identifier_list* orig_params = this->parameters_;
@@ -3858,8 +3843,6 @@ Function_type::copy_with_closure(Type* closure_type) const
 						 p->location()));
 	}
     }
-  new_params->push_back(Typed_identifier("closure.0", closure_type,
-					 this->location_));
 
   const Typed_identifier_list* orig_results = this->results_;
   Typed_identifier_list* new_results;
@@ -4243,6 +4226,11 @@ Struct_field::is_embedded_builtin(Gogo* gogo) const
 // share method tables.
 
 Struct_type::Identical_structs Struct_type::identical_structs;
+
+// A hash table used to merge method sets for identical unnamed
+// structs.
+
+Struct_type::Struct_method_tables Struct_type::struct_method_tables;
 
 // Traversal.
 
@@ -4708,9 +4696,24 @@ Struct_type::interface_method_table(Gogo* gogo,
 				    const Interface_type* interface,
 				    bool is_pointer)
 {
+  std::pair<Struct_type*, Struct_type::Struct_method_table_pair*>
+    val(this, NULL);
+  std::pair<Struct_type::Struct_method_tables::iterator, bool> ins =
+    Struct_type::struct_method_tables.insert(val);
+
+  Struct_method_table_pair* smtp;
+  if (!ins.second)
+    smtp = ins.first->second;
+  else
+    {
+      smtp = new Struct_method_table_pair();
+      smtp->first = NULL;
+      smtp->second = NULL;
+      ins.first->second = smtp;
+    }
+
   return Type::interface_method_table(gogo, this, interface, is_pointer,
-				      &this->interface_method_tables_,
-				      &this->pointer_interface_method_tables_);
+				      &smtp->first, &smtp->second);
 }
 
 // Convert struct fields to the backend representation.  This is not

@@ -1,3 +1,19 @@
+2013-09-18  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/58457
+	* class.c (instantiate_type): Loosen a bit the gcc_assert.
+
+2013-09-13  Jason Merrill  <jason@redhat.com>
+
+	PR c++/58273
+	* pt.c (any_type_dependent_elements_p): Actually check for
+	type-dependence, not value-dependence.
+
+2013-09-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/58325
+	* init.c (build_vec_delete): Call mark_rvalue_use on base.
+
 2013-08-20  Jason Merrill  <jason@redhat.com>
 
 	PR c++/58119
