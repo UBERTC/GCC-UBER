@@ -1,3 +1,11 @@
+2013-10-01  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	Backport from trunk r203059,203116.
+	2013-10-01  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	PR Target/58578
+	* gcc.target/arm/pr58578.c: New test.
+
 2013-09-10  Christophe Lyon  <christophe.lyon@linaro.org>
 
         GCC Linaro 4.8-2013.09 released.
