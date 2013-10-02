@@ -1,3 +1,11 @@
+2013-10-01  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r201250.
+	2013-07-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (arm_addsi3, addsi3_carryin_<optab>,
+	addsi3_carryin_alt2_<optab>): Correct output template.
+
 2013-10-01  Kugan Vivekanandarajah  <kuganv@linaro.org>
 
 	Backport from trunk r203059,203116.
