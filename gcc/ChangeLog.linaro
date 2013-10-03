@@ -1,5 +1,22 @@
 2013-10-03  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r201260,202400.
+	2013-07-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+            Richard Earnshaw  <richard.earnshaw@arm.com>
+
+	* combine.c (simplify_comparison): Re-canonicalize operands
+	where appropriate.
+	* config/arm/arm.md (movcond_addsi): New splitter.
+
+	2013-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_select_cc_mode): Return CC_SWP for
+	comparison with negated operand.
+	* config/aarch64/aarch64.md (compare_neg<mode>): Match canonical
+	RTL form.
+
+2013-10-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r202164.
 	2013-09-02  Bin Cheng  <bin.cheng@arm.com>
 

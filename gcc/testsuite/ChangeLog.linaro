@@ -1,5 +1,12 @@
 2013-10-03  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r202400.
+	2013-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/cmn-neg.c: New test.
+
+2013-10-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r202164.
 	2013-09-02  Bin Cheng  <bin.cheng@arm.com>
 
