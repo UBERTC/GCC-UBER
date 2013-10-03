@@ -1,5 +1,19 @@
 2013-10-03  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r201923,201927.
+	2013-08-22  Julian Brown  <julian@codesourcery.com>
+
+	* configure.ac: Add aarch64 to list of arches which use "nop" in
+	debug_line test.
+	* configure: Regenerate.
+
+	2013-08-22  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* configure.ac: Add backslashes missing from the last change.
+	* configure: Regenerate.
+
+2013-10-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r202023,202108.
 	2013-08-27  Tejas Belagod  <tejas.belagod@arm.com>
 
