@@ -1,3 +1,10 @@
+2013-10-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r202164.
+	2013-09-02  Bin Cheng  <bin.cheng@arm.com>
+
+	* gcc.target/arm/ivopts-orig_biv-inc.c: New testcase.
+
 2013-10-01  Kugan Vivekanandarajah  <kuganv@linaro.org>
 
 	Backport from trunk r203059,203116.

@@ -1,5 +1,13 @@
 2013-10-03  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r202164.
+	2013-09-02  Bin Cheng  <bin.cheng@arm.com>
+
+	* tree-ssa-loop-ivopts.c (set_autoinc_for_original_candidates):
+	Find auto-increment use both before and after candidate.
+
+2013-10-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r202279.
 	2013-09-05  Richard Earnshaw  <rearnsha@arm.com>
 
