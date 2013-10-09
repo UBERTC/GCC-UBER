@@ -17917,7 +17917,8 @@ arm_get_frame_offsets (void)
           if (! any_sibcall_could_use_r3 ()
 	      && arm_size_return_regs () <= 12
 	      && (offsets->saved_regs_mask & (1 << 3)) == 0
-              && (TARGET_THUMB2 || !current_tune->prefer_ldrd_strd))
+              && (TARGET_THUMB2
+		  || !(TARGET_LDRD && current_tune->prefer_ldrd_strd)))
 	    {
 	      reg = 3;
 	    }

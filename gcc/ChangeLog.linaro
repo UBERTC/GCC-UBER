@@ -1,3 +1,13 @@
+2013-10-08  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r202702.
+	2013-09-18  Richard Earnshaw  <rearnsha@arm.com>
+
+	* arm.c (arm_get_frame_offsets): Validate architecture supports
+	LDRD/STRD before accepting the tuning preference.
+	(arm_expand_prologue): Likewise.
+	(arm_expand_epilogue): Likewise.
+
 2013-10-04  Venkataramanan.Kumar  <venkataramanan.kumar@linaro.org>
 
 	Backport from trunk r203028.
