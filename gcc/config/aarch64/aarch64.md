@@ -842,7 +842,7 @@
    fmov\\t%s0, %s1"
   [(set_attr "v8type" "move,alu,load1,load1,store1,store1,fmov,fmov,fmov")
    (set_attr "mode" "SI")
-   (set_attr "fp" "*,*,*,*,*,*,yes,yes,yes")]
+   (set_attr "fp" "*,*,*,yes,*,yes,yes,yes,yes")]
 )
 
 (define_insn "*movdi_aarch64"
@@ -867,7 +867,7 @@
    movi\\t%d0, %1"
   [(set_attr "v8type" "move,move,move,alu,load1,load1,store1,store1,adr,adr,fmov,fmov,fmov,fmov")
    (set_attr "mode" "DI")
-   (set_attr "fp" "*,*,*,*,*,*,*,*,*,*,yes,yes,yes,*")
+   (set_attr "fp" "*,*,*,*,*,yes,*,yes,*,*,yes,yes,yes,*")
    (set_attr "simd" "*,*,*,*,*,*,*,*,*,*,*,*,*,yes")]
 )
 
@@ -2806,6 +2806,35 @@
   [(set_attr "v8type" "logic")
    (set_attr "mode" "<MODE>")])
 
+(define_insn "*and_one_cmpl<mode>3_compare0"
+  [(set (reg:CC_NZ CC_REGNUM)
+	(compare:CC_NZ
+	 (and:GPI (not:GPI
+		   (match_operand:GPI 1 "register_operand" "r"))
+		  (match_operand:GPI 2 "register_operand" "r"))
+	 (const_int 0)))
+   (set (match_operand:GPI 0 "register_operand" "=r")
+	(and:GPI (not:GPI (match_dup 1)) (match_dup 2)))]
+  ""
+  "bics\\t%<w>0, %<w>2, %<w>1"
+  [(set_attr "v8type" "logics")
+   (set_attr "mode" "<MODE>")])
+
+;; zero_extend version of above
+(define_insn "*and_one_cmplsi3_compare0_uxtw"
+  [(set (reg:CC_NZ CC_REGNUM)
+	(compare:CC_NZ
+	 (and:SI (not:SI
+		  (match_operand:SI 1 "register_operand" "r"))
+		 (match_operand:SI 2 "register_operand" "r"))
+	 (const_int 0)))
+   (set (match_operand:DI 0 "register_operand" "=r")
+	(zero_extend:DI (and:SI (not:SI (match_dup 1)) (match_dup 2))))]
+  ""
+  "bics\\t%w0, %w2, %w1"
+  [(set_attr "v8type" "logics")
+   (set_attr "mode" "SI")])
+
 (define_insn "*<LOGICAL:optab>_one_cmpl_<SHIFT:optab><mode>3"
   [(set (match_operand:GPI 0 "register_operand" "=r")
 	(LOGICAL:GPI (not:GPI
@@ -2817,6 +2846,43 @@
   "<LOGICAL:nlogical>\\t%<w>0, %<w>3, %<w>1, <SHIFT:shift> %2"
   [(set_attr "v8type" "logic_shift")
    (set_attr "mode" "<MODE>")])
+
+(define_insn "*and_one_cmpl_<SHIFT:optab><mode>3_compare0"
+  [(set (reg:CC_NZ CC_REGNUM)
+	(compare:CC_NZ
+	 (and:GPI (not:GPI
+		   (SHIFT:GPI
+		    (match_operand:GPI 1 "register_operand" "r")
+		    (match_operand:QI 2 "aarch64_shift_imm_<mode>" "n")))
+		  (match_operand:GPI 3 "register_operand" "r"))
+	 (const_int 0)))
+   (set (match_operand:GPI 0 "register_operand" "=r")
+	(and:GPI (not:GPI
+		  (SHIFT:GPI
+		   (match_dup 1) (match_dup 2))) (match_dup 3)))]
+  ""
+  "bics\\t%<w>0, %<w>3, %<w>1, <SHIFT:shift> %2"
+  [(set_attr "v8type" "logics_shift")
+   (set_attr "mode" "<MODE>")])
+
+;; zero_extend version of above
+(define_insn "*and_one_cmpl_<SHIFT:optab>si3_compare0_uxtw"
+  [(set (reg:CC_NZ CC_REGNUM)
+	(compare:CC_NZ
+	 (and:SI (not:SI
+		  (SHIFT:SI
+		   (match_operand:SI 1 "register_operand" "r")
+		   (match_operand:QI 2 "aarch64_shift_imm_si" "n")))
+		 (match_operand:SI 3 "register_operand" "r"))
+	 (const_int 0)))
+   (set (match_operand:DI 0 "register_operand" "=r")
+	(zero_extend:DI (and:SI
+			 (not:SI
+			  (SHIFT:SI (match_dup 1) (match_dup 2))) (match_dup 3))))]
+  ""
+  "bics\\t%w0, %w3, %w1, <SHIFT:shift> %2"
+  [(set_attr "v8type" "logics_shift")
+   (set_attr "mode" "SI")])
 
 (define_insn "clz<mode>2"
   [(set (match_operand:GPI 0 "register_operand" "=r")
@@ -3187,6 +3253,21 @@
      || (UINTVAL (operands[2]) + UINTVAL (operands[1])
 	 > GET_MODE_BITSIZE (<MODE>mode)))"
   "bfi\\t%<w>0, %<w>3, %2, %1"
+  [(set_attr "v8type" "bfm")
+   (set_attr "mode" "<MODE>")]
+)
+
+(define_insn "*extr_insv_lower_reg<mode>"
+  [(set (zero_extract:GPI (match_operand:GPI 0 "register_operand" "+r")
+			  (match_operand 1 "const_int_operand" "n")
+			  (const_int 0))
+	(zero_extract:GPI (match_operand:GPI 2 "register_operand" "+r")
+			  (match_dup 1)
+			  (match_operand 3 "const_int_operand" "n")))]
+  "!(UINTVAL (operands[1]) == 0
+     || (UINTVAL (operands[3]) + UINTVAL (operands[1])
+	 > GET_MODE_BITSIZE (<MODE>mode)))"
+  "bfxil\\t%<w>0, %<w>2, %3, %1"
   [(set_attr "v8type" "bfm")
    (set_attr "mode" "<MODE>")]
 )

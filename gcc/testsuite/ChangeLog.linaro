@@ -1,3 +1,23 @@
+2013-10-09  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r198526,200595,200597.
+	2013-05-02  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/aarch64/bics_1.c: New test.
+	* gcc.target/aarch64/bics_2.c: Likewise.
+
+	2013-07-02  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/aarch64/bfxil_1.c: New test.
+	* gcc.target/aarch64/bfxil_2.c: Likewise.
+
+	2013-07-02  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/config/aarch64/insv_1.c: Update to show it doesn't work
+	on big endian.
+	* gcc.target/config/aarch64/insv_2.c: New test for big endian.
+	* lib/target-supports.exp: Define aarch64_little_endian.
+
 2013-10-03  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r202400.
