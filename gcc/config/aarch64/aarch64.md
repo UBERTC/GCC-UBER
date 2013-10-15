@@ -1463,7 +1463,7 @@
 )
 
 (define_insn "*add_<shift>_<mode>"
-  [(set (match_operand:GPI 0 "register_operand" "=rk")
+  [(set (match_operand:GPI 0 "register_operand" "=r")
 	(plus:GPI (ASHIFT:GPI (match_operand:GPI 1 "register_operand" "r")
 			      (match_operand:QI 2 "aarch64_shift_imm_<mode>" "n"))
 		  (match_operand:GPI 3 "register_operand" "r")))]
@@ -1475,7 +1475,7 @@
 
 ;; zero_extend version of above
 (define_insn "*add_<shift>_si_uxtw"
-  [(set (match_operand:DI 0 "register_operand" "=rk")
+  [(set (match_operand:DI 0 "register_operand" "=r")
 	(zero_extend:DI
 	 (plus:SI (ASHIFT:SI (match_operand:SI 1 "register_operand" "r")
 		             (match_operand:QI 2 "aarch64_shift_imm_si" "n"))
@@ -1487,7 +1487,7 @@
 )
 
 (define_insn "*add_mul_imm_<mode>"
-  [(set (match_operand:GPI 0 "register_operand" "=rk")
+  [(set (match_operand:GPI 0 "register_operand" "=r")
 	(plus:GPI (mult:GPI (match_operand:GPI 1 "register_operand" "r")
 			    (match_operand:QI 2 "aarch64_pwr_2_<mode>" "n"))
 		  (match_operand:GPI 3 "register_operand" "r")))]
@@ -1810,7 +1810,7 @@
 )
 
 (define_insn "*sub_<shift>_<mode>"
-  [(set (match_operand:GPI 0 "register_operand" "=rk")
+  [(set (match_operand:GPI 0 "register_operand" "=r")
 	(minus:GPI (match_operand:GPI 3 "register_operand" "r")
 		   (ASHIFT:GPI
 		    (match_operand:GPI 1 "register_operand" "r")
@@ -1823,7 +1823,7 @@
 
 ;; zero_extend version of above
 (define_insn "*sub_<shift>_si_uxtw"
-  [(set (match_operand:DI 0 "register_operand" "=rk")
+  [(set (match_operand:DI 0 "register_operand" "=r")
 	(zero_extend:DI
          (minus:SI (match_operand:SI 3 "register_operand" "r")
 		   (ASHIFT:SI
@@ -1836,7 +1836,7 @@
 )
 
 (define_insn "*sub_mul_imm_<mode>"
-  [(set (match_operand:GPI 0 "register_operand" "=rk")
+  [(set (match_operand:GPI 0 "register_operand" "=r")
 	(minus:GPI (match_operand:GPI 3 "register_operand" "r")
 		   (mult:GPI
 		    (match_operand:GPI 1 "register_operand" "r")
@@ -1849,7 +1849,7 @@
 
 ;; zero_extend version of above
 (define_insn "*sub_mul_imm_si_uxtw"
-  [(set (match_operand:DI 0 "register_operand" "=rk")
+  [(set (match_operand:DI 0 "register_operand" "=r")
 	(zero_extend:DI
          (minus:SI (match_operand:SI 3 "register_operand" "r")
 		   (mult:SI

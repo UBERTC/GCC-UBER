@@ -7064,25 +7064,12 @@ s390_chunkify_start (void)
 	 or a casesi jump, check all potential targets.  */
       else if (GET_CODE (insn) == JUMP_INSN)
 	{
-          rtx pat = PATTERN (insn);
-	  if (GET_CODE (pat) == PARALLEL && XVECLEN (pat, 0) > 2)
-	    pat = XVECEXP (pat, 0, 0);
-
-          if (GET_CODE (pat) == SET)
-            {
-	      rtx label = JUMP_LABEL (insn);
-	      if (label)
-		{
-	          if (s390_find_pool (pool_list, label)
-		      != s390_find_pool (pool_list, insn))
-		    bitmap_set_bit (far_labels, CODE_LABEL_NUMBER (label));
-		}
-            }
-	  else if (GET_CODE (pat) == PARALLEL
-		   && XVECLEN (pat, 0) == 2
-		   && GET_CODE (XVECEXP (pat, 0, 0)) == SET
-		   && GET_CODE (XVECEXP (pat, 0, 1)) == USE
-		   && GET_CODE (XEXP (XVECEXP (pat, 0, 1), 0)) == LABEL_REF)
+	  rtx pat = PATTERN (insn);
+	  if (GET_CODE (pat) == PARALLEL
+	      && XVECLEN (pat, 0) == 2
+	      && GET_CODE (XVECEXP (pat, 0, 0)) == SET
+	      && GET_CODE (XVECEXP (pat, 0, 1)) == USE
+	      && GET_CODE (XEXP (XVECEXP (pat, 0, 1), 0)) == LABEL_REF)
 	    {
 	      /* Find the jump table used by this casesi jump.  */
 	      rtx vec_label = XEXP (XEXP (XVECEXP (pat, 0, 1), 0), 0);
@@ -7104,8 +7091,23 @@ s390_chunkify_start (void)
 			bitmap_set_bit (far_labels, CODE_LABEL_NUMBER (label));
 		    }
 		}
+	      continue;
 	    }
-        }
+
+	  if (GET_CODE (pat) == PARALLEL)
+	    pat = XVECEXP (pat, 0, 0);
+
+	  if (GET_CODE (pat) == SET)
+	    {
+	      rtx label = JUMP_LABEL (insn);
+	      if (label)
+		{
+		  if (s390_find_pool (pool_list, label)
+		      != s390_find_pool (pool_list, insn))
+		    bitmap_set_bit (far_labels, CODE_LABEL_NUMBER (label));
+		}
+	    }
+	}
     }
 
   /* Insert base register reload insns before every pool.  */
@@ -7511,8 +7513,10 @@ s390_register_info (int clobbered_regs[])
     {
       cfun_frame_layout.fpr_bitmap = 0;
       cfun_frame_layout.high_fprs = 0;
-      if (TARGET_64BIT)
-	for (i = 24; i < 32; i++)
+      for (i = 16; i <= 31; i++)
+	{
+	  if (call_really_used_regs[i])
+	    continue;
 	  /* During reload we have to use the df_regs_ever_live infos
 	     since reload is marking FPRs used as spill slots there as
 	     live before actually making the code changes.  Without
@@ -7524,8 +7528,10 @@ s390_register_info (int clobbered_regs[])
 	      && !global_regs[i])
 	    {
 	      cfun_set_fpr_bit (i - 16);
-	      cfun_frame_layout.high_fprs++;
+	      if (i >= 24)
+		cfun_frame_layout.high_fprs++;
 	    }
+	}
     }
 
   for (i = 0; i < 16; i++)
@@ -7555,6 +7561,7 @@ s390_register_info (int clobbered_regs[])
 	|| TARGET_TPF_PROFILING
 	|| cfun_save_high_fprs_p
 	|| get_frame_size () > 0
+	|| (reload_completed && cfun_frame_layout.frame_size > 0)
 	|| cfun->calls_alloca
 	|| cfun->stdarg);
 
@@ -7653,11 +7660,6 @@ s390_register_info (int clobbered_regs[])
 	    cfun_set_fpr_bit (i);
 	}
     }
-
-  if (!TARGET_64BIT)
-    for (i = 2; i < 4; i++)
-      if (df_regs_ever_live_p (i + 16) && !global_regs[i + 16])
-	cfun_set_fpr_bit (i);
 }
 
 /* Fill cfun->machine with info about frame of current function.  */
