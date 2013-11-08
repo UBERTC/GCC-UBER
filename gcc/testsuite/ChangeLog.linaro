@@ -1,3 +1,13 @@
+2013-11-04  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	Backport from trunk r204336
+	2013-11-03  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	* gcc.target/arm/neon-vcond-gt.c: Scan for vbsl or vbit or vbif.
+	* gcc.target/arm/neon-vcond-ltgt.c: Scan for vbsl or vbit or vbif.
+	* gcc.target/arm/neon-vcond-unordered.c: Scan for vbsl or vbit or
+	vbif.
+
 2013-10-15  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	GCC Linaro 4.8-2013.10 released.
