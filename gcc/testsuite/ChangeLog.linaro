@@ -1,3 +1,10 @@
+2013-11-05  Zhenqiang Chen <zhenqiang.chen@linaro.org>
+
+ 	Backport from trunk r204247.
+ 	2013-10-31  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+ 	 * gcc.target/arm/lp1243022.c: New test.
+
 2013-11-04  Kugan Vivekanandarajah  <kuganv@linaro.org>
 
 	Backport from trunk r204336

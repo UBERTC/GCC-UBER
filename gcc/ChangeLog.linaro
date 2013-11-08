@@ -1,3 +1,22 @@
+2013-11-05  Zhenqiang Chen <zhenqiang.chen@linaro.org>
+
+	Backport from trunk r203267, r203603 and r204247.
+	2013-10-08  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	PR target/58423
+	* config/arm/arm.c (arm_emit_ldrd_pop): Attach
+	RTX_FRAME_RELATED_P on INSN.
+
+	2013-10-15  Matthew Gretton-Dann  <matthew.gretton-dann@arm.com>
+	    Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/arm/t-aprofile: New file.
+	* config.gcc: Handle --with-multilib-list option.
+
+	2013-10-31  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* lower-subreg.c (resolve_simple_move): Copy REG_INC note.
+
 2013-10-17  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r200956

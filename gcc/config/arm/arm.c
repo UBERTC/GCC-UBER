@@ -17607,8 +17607,8 @@ arm_emit_ldrd_pop (unsigned long saved_regs_mask)
               mem = gen_frame_mem (DImode, stack_pointer_rtx);
 
             tmp = gen_rtx_SET (DImode, gen_rtx_REG (DImode, j), mem);
-            RTX_FRAME_RELATED_P (tmp) = 1;
             tmp = emit_insn (tmp);
+	    RTX_FRAME_RELATED_P (tmp) = 1;
 
             /* Generate dwarf info.  */
 
@@ -17636,8 +17636,8 @@ arm_emit_ldrd_pop (unsigned long saved_regs_mask)
               mem = gen_frame_mem (SImode, stack_pointer_rtx);
 
             tmp = gen_rtx_SET (SImode, gen_rtx_REG (SImode, j), mem);
-            RTX_FRAME_RELATED_P (tmp) = 1;
             tmp = emit_insn (tmp);
+	    RTX_FRAME_RELATED_P (tmp) = 1;
 
             /* Generate dwarf info.  */
             REG_NOTES (tmp) = alloc_reg_note (REG_CFA_RESTORE,
@@ -17661,8 +17661,9 @@ arm_emit_ldrd_pop (unsigned long saved_regs_mask)
                          plus_constant (Pmode,
                                         stack_pointer_rtx,
                                         offset));
-      RTX_FRAME_RELATED_P (tmp) = 1;
-      emit_insn (tmp);
+      tmp = emit_insn (tmp);
+      arm_add_cfa_adjust_cfa_note (tmp, offset,
+				   stack_pointer_rtx, stack_pointer_rtx);
       offset = 0;
     }
 
@@ -17685,6 +17686,8 @@ arm_emit_ldrd_pop (unsigned long saved_regs_mask)
                               gen_rtx_REG (SImode, PC_REGNUM),
                               NULL_RTX);
       REG_NOTES (par) = dwarf;
+      arm_add_cfa_adjust_cfa_note (par, UNITS_PER_WORD,
+				   stack_pointer_rtx, stack_pointer_rtx);
     }
 }
 
