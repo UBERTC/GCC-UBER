@@ -1,3 +1,11 @@
+2013-11-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Revert backport from trunk r197526.
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* config/arm/arm.md (negdi_extendsidi): New pattern.
+	(negdi_zero_extendsidi): Likewise.
+
 2013-11-05  Zhenqiang Chen <zhenqiang.chen@linaro.org>
 
 	Backport from trunk r203267, r203603 and r204247.

@@ -1,3 +1,13 @@
+2013-11-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Revert backport from trunk r197526.
+	2013-04-05  Greta Yorsh  <Greta.Yorsh@arm.com>
+
+	* gcc.target/arm/negdi-1.c: New test.
+	* gcc.target/arm/negdi-2.c: Likewise.
+	* gcc.target/arm/negdi-3.c: Likewise.
+	* gcc.target/arm/negdi-4.c: Likewise.
+
 2013-11-05  Zhenqiang Chen <zhenqiang.chen@linaro.org>
 
  	Backport from trunk r204247.
