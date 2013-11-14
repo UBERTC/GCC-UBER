@@ -2983,7 +2983,7 @@ ix86_option_override_internal (bool main_args_p)
       {"bdver3", PROCESSOR_BDVER3, CPU_BDVER3,
 	PTA_64BIT | PTA_MMX | PTA_SSE | PTA_SSE2 | PTA_SSE3
 	| PTA_SSE4A | PTA_CX16 | PTA_ABM | PTA_SSSE3 | PTA_SSE4_1
-	| PTA_SSE4_2 | PTA_AES | PTA_PCLMUL | PTA_AVX
+	| PTA_SSE4_2 | PTA_AES | PTA_PCLMUL | PTA_AVX | PTA_FMA4
 	| PTA_XOP | PTA_LWP | PTA_BMI | PTA_TBM | PTA_F16C
 	| PTA_FMA | PTA_PRFCHW | PTA_FXSR | PTA_XSAVE 
 	| PTA_XSAVEOPT},
@@ -7235,9 +7235,15 @@ ix86_function_value_regno_p (const unsigned int regno)
   switch (regno)
     {
     case AX_REG:
+    case DX_REG:
       return true;
+    case DI_REG:
+    case SI_REG:
+      return TARGET_64BIT && ix86_abi != MS_ABI;
 
-    case FIRST_FLOAT_REG:
+      /* Complex values are returned in %st(0)/%st(1) pair.  */
+    case ST0_REG:
+    case ST1_REG:
       /* TODO: The function should depend on current function ABI but
        builtins.c would need updating then. Therefore we use the
        default ABI.  */
@@ -7245,10 +7251,12 @@ ix86_function_value_regno_p (const unsigned int regno)
 	return false;
       return TARGET_FLOAT_RETURNS_IN_80387;
 
-    case FIRST_SSE_REG:
+      /* Complex values are returned in %xmm0/%xmm1 pair.  */
+    case XMM0_REG:
+    case XMM1_REG:
       return TARGET_SSE;
 
-    case FIRST_MMX_REG:
+    case MM0_REG:
       if (TARGET_MACHO || TARGET_64BIT)
 	return false;
       return TARGET_MMX;
@@ -13817,8 +13825,6 @@ put_condition_code (enum rtx_code code, enum machine_mode mode, bool reverse,
 	 Those same assemblers have the same but opposite lossage on cmov.  */
       if (mode == CCmode)
 	suffix = fp ? "nbe" : "a";
-      else if (mode == CCCmode)
-	suffix = "b";
       else
 	gcc_unreachable ();
       break;
@@ -13840,8 +13846,12 @@ put_condition_code (enum rtx_code code, enum machine_mode mode, bool reverse,
 	}
       break;
     case LTU:
-      gcc_assert (mode == CCmode || mode == CCCmode);
-      suffix = "b";
+      if (mode == CCmode)
+	suffix = "b";
+      else if (mode == CCCmode)
+	suffix = "c";
+      else
+	gcc_unreachable ();
       break;
     case GE:
       switch (mode)
@@ -13861,20 +13871,20 @@ put_condition_code (enum rtx_code code, enum machine_mode mode, bool reverse,
 	}
       break;
     case GEU:
-      /* ??? As above.  */
-      gcc_assert (mode == CCmode || mode == CCCmode);
-      suffix = fp ? "nb" : "ae";
+      if (mode == CCmode)
+	suffix = fp ? "nb" : "ae";
+      else if (mode == CCCmode)
+	suffix = "nc";
+      else
+	gcc_unreachable ();
       break;
     case LE:
       gcc_assert (mode == CCmode || mode == CCGCmode || mode == CCNOmode);
       suffix = "le";
       break;
     case LEU:
-      /* ??? As above.  */
       if (mode == CCmode)
 	suffix = "be";
-      else if (mode == CCCmode)
-	suffix = fp ? "nb" : "ae";
       else
 	gcc_unreachable ();
       break;
@@ -18486,12 +18496,7 @@ ix86_cc_mode (enum rtx_code code, rtx op0, rtx op1)
 	return CCmode;
     case GTU:			/* CF=0 & ZF=0 */
     case LEU:			/* CF=1 | ZF=1 */
-      /* Detect overflow checks.  They need just the carry flag.  */
-      if (GET_CODE (op0) == MINUS
-	  && rtx_equal_p (op1, XEXP (op0, 0)))
-	return CCCmode;
-      else
-	return CCmode;
+      return CCmode;
       /* Codes possibly doable only with sign flag when
          comparing against zero.  */
     case GE:			/* SF=OF   or   SF=0 */
@@ -21740,6 +21745,21 @@ counter_mode (rtx count_exp)
   return SImode;
 }
 
+/* Copy the address to a Pmode register.  This is used for x32 to
+   truncate DImode TLS address to a SImode register. */
+
+static rtx
+ix86_copy_addr_to_reg (rtx addr)
+{
+  if (GET_MODE (addr) == Pmode)
+    return copy_addr_to_reg (addr);
+  else
+    {
+      gcc_assert (GET_MODE (addr) == DImode && Pmode == SImode);
+      return gen_rtx_SUBREG (SImode, copy_to_mode_reg (DImode, addr), 0);
+    }
+}
+
 /* When SRCPTR is non-NULL, output simple loop to move memory
    pointer to SRCPTR to DESTPTR via chunks of MODE unrolled UNROLL times,
    overall size is COUNT specified in bytes.  When SRCPTR is NULL, output the
@@ -22728,8 +22748,8 @@ ix86_expand_movmem (rtx dst, rtx src, rtx count_exp, rtx align_exp,
   gcc_assert (alg != no_stringop);
   if (!count)
     count_exp = copy_to_mode_reg (GET_MODE (count_exp), count_exp);
-  destreg = copy_addr_to_reg (XEXP (dst, 0));
-  srcreg = copy_addr_to_reg (XEXP (src, 0));
+  destreg = ix86_copy_addr_to_reg (XEXP (dst, 0));
+  srcreg = ix86_copy_addr_to_reg (XEXP (src, 0));
   switch (alg)
     {
     case libcall:
@@ -23119,7 +23139,7 @@ ix86_expand_setmem (rtx dst, rtx count_exp, rtx val_exp, rtx align_exp,
   gcc_assert (alg != no_stringop);
   if (!count)
     count_exp = copy_to_mode_reg (counter_mode (count_exp), count_exp);
-  destreg = copy_addr_to_reg (XEXP (dst, 0));
+  destreg = ix86_copy_addr_to_reg (XEXP (dst, 0));
   switch (alg)
     {
     case libcall:

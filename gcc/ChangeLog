@@ -1,3 +1,163 @@
+2013-11-10  Karlson2k  <k2k@narod.ru>
+	    Kai Tietz  <ktietz@redhat.com>
+
+	Merged from trunk
+	PR plugins/52872
+	* configure.ac: Adding for exported symbols check
+	and for rdynamic-check executable-extension.
+	* configure: Regenerated.
+
+2013-11-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/59034
+	* config/i386/i386.md (push peepholer/splitter): Use Pmode
+	with stack_pointer_rtx.
+
+2013-11-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/t-rtems (MULTILIB_MATCHES): Fix option typos.
+
+2013-11-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/58984
+	* ipa-prop.c (ipa_load_from_parm_agg_1): Add SIZE_P argument,
+	set *SIZE_P if non-NULL on success.
+	(ipa_load_from_parm_agg, ipa_analyze_indirect_call_uses): Adjust
+	callers.
+	(ipcp_transform_function): Likewise.  Punt if size of access
+	is different from TYPE_SIZE on v->value's type.
+
+2013-11-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2013-10-12  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/58690
+	* config/i386/i386.c (ix86_copy_addr_to_reg): New function.
+	(ix86_expand_movmem): Replace copy_addr_to_reg with
+	ix86_copy_addr_to_reg.
+	(ix86_expand_setmem): Likewise.
+
+2013-10-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-08-08  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	PR rtl-optimization/58079
+	* combine.c (combine_simplify_rtx): Avoid using SUBST if
+	simplify_comparison has widened a comparison with an integer.
+
+2013-10-29  Martin Jambor  <mjambor@suse.cz>
+
+	PR middle-end/58789
+	Backport from mainline
+        2013-05-09  Martin Jambor  <mjambor@suse.cz>
+
+	PR lto/57084
+	* gimple-fold.c (canonicalize_constructor_val): Call
+	cgraph_get_create_real_symbol_node instead of cgraph_get_create_node.
+
+	Backport from mainline
+	2013-03-16  Jan Hubicka  <jh@suse.cz>
+
+	* cgraph.h (cgraph_get_create_real_symbol_node): Declare.
+	* cgraph.c (cgraph_get_create_real_symbol_node): New function.
+	* cgrpahbuild.c: Use cgraph_get_create_real_symbol_node instead
+	of cgraph_get_create_node.
+	* ipa-prop.c (ipa_make_edge_direct_to_target): Likewise.
+
+2013-10-28  Tom de Vries  <tom@codesourcery.com>
+
+	* cfgexpand.c (gimple_expand_cfg): Remove test for parm_birth_insn.
+	Don't commit insertions after NOTE_INSN_FUNCTION_BEG.
+
+2013-10-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-10-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/58779
+	* config/i386/i386.c (put_condition_code) <case GTU, case LEU>:
+	Remove CCCmode handling.
+	<case LTU>: Return 'c' suffix for CCCmode.
+	<case GEU>: Return 'nc' suffix for CCCmode.
+	(ix86_cc_mode) <case GTU, case LEU>: Do not generate overflow checks.
+	* config/i386/i386.md (*sub<mode>3_cconly_overflow): Remove.
+	(*sub<mode>3_cc_overflow): Ditto.
+	(*subsi3_zext_cc_overflow): Ditto.
+
+2013-10-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-10-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/58792
+	* config/i386/i386.c (ix86_function_value_regno): Add DX_REG,
+	ST1_REG and XMM1_REG for 32bit and 64bit targets.  Also add DI_REG
+	and SI_REG for 64bit SYSV ABI targets.
+
+2013-08-25  Richard Henderson  <rth@twiddle.net>
+
+	PR rtl/58542
+	* optabs.c (maybe_emit_atomic_exchange): Use create_input_operand
+	instead of create_convert_operand_to.
+	(maybe_emit_sync_lock_test_and_set): Likewise.
+	(expand_atomic_compare_and_swap): Likewise.
+	(maybe_emit_compare_and_swap_exchange_loop): Don't convert_modes.
+
+2013-10-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/58831
+	* alias.c (init_alias_analysis): At the beginning of each iteration, set
+	the reg_seen[N] bit if static_reg_base_value[N] is non-null.
+
+2013-10-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* recog.c (search_ofs): New static variable moved from...
+	(peep2_find_free_register): ...here.
+	(peephole2_optimize): Initialize it.
+
+2013-10-24  David Edelsohn  <dje.gcc@gmail.com>
+
+	Backport from mainline
+	2013-10-23  David Edelsohn  <dje.gcc@gmail.com>
+
+	PR target/58838
+	* config/rs6000/rs6000.md (mulsi3_internal1 and splitter): Add
+	TARGET_32BIT final condition.
+	(mulsi3_internal2 and splitter): Same.
+
+2013-10-23  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/58805
+	* tree-ssa-tail-merge.c (stmt_local_def): Add gimple_vdef check.
+
+2013-10-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-06-24  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57488
+	* tree-ssa-pre.c (insert): Clear NEW sets before each iteration.
+
+2013-10-16  Ganesh Gopalasubramanian  <Ganesh.Gopalasubramanian@amd.com>
+
+	Backport from mainline
+	2013-10-16  Ganesh Gopalasubramanian
+	            <Ganesh.Gopalasubramanian@amd.com>
+
+	* config/i386/i386.c (ix86_option_override_internal): Enable FMA4
+	for AMD bdver3.
+
+2013-10-16  Jakub Jelinek  <jakub@redhat.com>
+
+	* BASE-VER: Set to 4.8.3.
+	* DEV-PHASE: Set to prerelease.
+
+2013-10-16  Release Manager
+
+	* GCC 4.8.2 released.
+
 2013-10-12  James Greenhalgh  <james.greenhalgh@arm.com>
 
 	Backport from mainline.
@@ -635,7 +795,7 @@
 2013-07-31  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
 
 	Backport from mainline
-        2013-03-27  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
+	2013-03-27  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
 
 	* config/s390/s390.h (TARGET_FLT_EVAL_METHOD): Define.
 

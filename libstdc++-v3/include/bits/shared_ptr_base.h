@@ -391,7 +391,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     public:
       template<typename... _Args>
 	_Sp_counted_ptr_inplace(_Alloc __a, _Args&&... __args)
-	: _M_impl(__a), _M_storage()
+	: _M_impl(__a)
 	{
 	  _M_impl._M_ptr = static_cast<_Tp*>(static_cast<void*>(&_M_storage));
 	  // _GLIBCXX_RESOLVE_LIB_DEFECTS
@@ -819,7 +819,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	: _M_ptr(__r.get()), _M_refcount()
 	{
 	  __glibcxx_function_requires(_ConvertibleConcept<_Tp1*, _Tp*>)
-	  auto __tmp = std::__addressof(*__r.get());
+	  auto __tmp = __r.get();
 	  _M_refcount = __shared_count<_Lp>(std::move(__r));
 	  __enable_shared_from_this_helper(_M_refcount, __tmp, __tmp);
 	}

@@ -1,3 +1,25 @@
+2013-11-10  Kai Tietz  <ktietz@redhat.com>
+
+	Back-merged from trunk
+	* config/i386/cygming-crtbegin.c (__gcc_register_frame):
+	Increment load-count on use of LIBGCC_SONAME DLL.
+	(hmod_libgcc): New static variable to hold handle of
+	LIBGCC_SONAME DLL.
+	(__gcc_deregister_frame): Decrement load-count of
+	LIBGCC_SONAME DLL.
+
+2013-11-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/sfp-exceptions.c (__sfp_handle_exceptions): Handle
+	FP_EX_DENORM.  Store result to volatile location after SSE division
+	to close interrupt window.  Remove unneeded fwait after x87
+	division since interrupt window will be closed by emitted fstp.
+	Rewrite FP_EX_INEXACT handling.
+
+2013-10-16  Release Manager
+
+	* GCC 4.8.2 released.
+
 2013-08-01  Maxim Kuvyrkov  <maxim@kugelworks.com>
 
 	Backport from trunk: Fix licenses on several libgcc files.

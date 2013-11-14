@@ -1,3 +1,126 @@
+2013-11-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2013-11-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/59034
+	* gcc.target/i386/pr59034-1.c: New test.
+	* gcc.target/i386/pr59034-2.c: Likewise.
+
+2013-11-06  Wei Mi  <wmi@google.com>
+
+	PR regression/58985
+	* testsuite/gcc.dg/pr57518.c: Add subreg in regexp pattern.
+
+2013-11-05  Steven G. Kargl <kargl@gcc.gnu.org>
+
+	PR fortran/58989
+	* gfortran.dg/reshape_6.f90: New test.
+
+2013-11-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/58984
+	* gcc.c-torture/execute/pr58984.c: New test.
+
+2013-11-04  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2013-11-04  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/58979
+	* g++.dg/diagnostic/pr58979.C: New test.
+
+2013-11-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2013-10-12  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/58690
+	* gcc.target/i386/pr58690.c: New test
+
+2013-11-02  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from mainline
+	2013-09-23  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/58355
+	* gfortran.dg/extends_15.f90: New.
+
+2013-10-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-08-08  Richard Sandiford  <rdsandiford@googlemail.com>
+
+	PR rtl-optimization/58079
+	* gcc.dg/torture/pr58079.c: New test.
+
+2013-10-28  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.target/arm/require-pic-register-loc.c: New test.
+
+2013-10-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-10-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/58779
+	* gcc.target/i386/pr30315.c: Remove MINUSCC, DECCC, MINUSCCONLY
+	and MINUSCCZEXT defines. Update scan-assembler dg directive.
+	* gcc.dg/torture/pr58779.c: New test.
+
+2013-10-25  Richard Henderson  <rth@redhat.com>
+
+	PR rtl/58542
+	* gcc.dg/atomic-store-6.c: New.
+
+2013-10-25  Tom de Vries  <tom@codesourcery.com>
+
+	PR c++/58282
+	* g++.dg/tm/noexcept-6.C: New test.
+
+2013-10-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.c-torture/execute/pr58831.c: New test.
+
+2013-10-23  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/58805
+	* gcc.dg/pr58805.c: New test.
+
+2013-10-23  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/torture/pr58830.c: New testcase.
+
+	Backport from mainline
+	2013-06-24  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57488
+	* gcc.dg/torture/pr57488.c: New testcase.
+
+2013-10-19  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	* gcc.target/sh/pr54089-3.c: Fix test for load of constant 31.
+
+2013-10-17  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/58596
+	* g++.dg/cpp0x/lambda/lambda-nsdmi5.C: New
+
+2013-10-16  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/58633
+	* g++.dg/cpp0x/decltype57.C: New.
+	* g++.dg/cpp0x/enum18.C: Revert r174385 changes.
+
+2013-10-16  Release Manager
+
+	* GCC 4.8.2 released.
+
+2013-10-14  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* gcc.dg/torture/pr58670.c (ASM_STR) [__i386__ || __x86_64__]: Use
+	btsl.
+
 2013-10-10  Jakub Jelinek  <jakub@redhat.com>
 
 	PR middle-end/58670
@@ -30,9 +153,9 @@
 	Backport from mainline
 	2013-06-27  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
 
-        * gcc.target/s390/htm-1.c: New file.
-        * gcc.target/s390/htm-nofloat-1.c: New file.
-        * gcc.target/s390/htm-xl-intrin-1.c: New file.
+	* gcc.target/s390/htm-1.c: New file.
+	* gcc.target/s390/htm-nofloat-1.c: New file.
+	* gcc.target/s390/htm-xl-intrin-1.c: New file.
 
 2013-10-04  Tobias Burnus  <burnus@net-b.de>
 
@@ -298,8 +421,8 @@
 	Backport from mainline
 	2013-08-12  Perez Read  <netfirewall@gmail.com>
 
-        PR target/58132
-        * gcc.target/i386/movabs-1.c: New test.
+	PR target/58132
+	* gcc.target/i386/movabs-1.c: New test.
 
 2013-08-11  Janus Weil  <janus@gcc.gnu.org>
 
@@ -614,8 +737,8 @@
 
 2013-05-09  Martin Jambor  <mjambor@suse.cz>
 
-        PR middle-end/56988
-        * gcc.dg/ipa/pr56988.c: New test.
+	PR middle-end/56988
+	* gcc.dg/ipa/pr56988.c: New test.
 
 2013-05-08  Marc Glisse  <marc.glisse@inria.fr>
 
@@ -692,7 +815,7 @@
 	2013-04-25  Marek Polacek  <polacek@redhat.com>
 
 	PR tree-optimization/57066
-        * gcc.dg/torture/builtin-logb-1.c: Adjust testcase.
+	* gcc.dg/torture/builtin-logb-1.c: Adjust testcase.
 
 2013-05-02  Jakub Jelinek  <jakub@redhat.com>
 
@@ -718,32 +841,32 @@
 	Backport from mainline
 	2013-04-24  Vladimir Makarov  <vmakarov@redhat.com>
 
-        PR rtl-optimizations/57046
-        * gcc.target/i386/pr57046.c: New test.
+	PR rtl-optimizations/57046
+	* gcc.target/i386/pr57046.c: New test.
 
 2013-05-02  Vladimir Makarov  <vmakarov@redhat.com>
 
 	Backport from mainline
 	2013-04-22  Vladimir Makarov  <vmakarov@redhat.com>
 
-        PR target/57018
-        * gcc.target/i386/pr57018.c: New test.
+	PR target/57018
+	* gcc.target/i386/pr57018.c: New test.
 
 2013-05-02  Vladimir Makarov  <vmakarov@redhat.com>
 
 	Backport from mainline
 	2013-04-18  Jakub Jelinek  <jakub@redhat.com>
 
-        PR rtl-optimization/56999
-        * g++.dg/opt/pr56999.C: New test.
+	PR rtl-optimization/56999
+	* g++.dg/opt/pr56999.C: New test.
 
 2013-05-02  Vladimir Makarov  <vmakarov@redhat.com>
 
 	Backport from mainline
 	2013-04-19  Vladimir Makarov  <vmakarov@redhat.com>
 
-        PR rtl-optimization/56847
-        * gcc.dg/pr56847.c: New test.
+	PR rtl-optimization/56847
+	* gcc.dg/pr56847.c: New test.
 
 2013-05-02  Ian Bolton  <ian.bolton@arm.com>
 
