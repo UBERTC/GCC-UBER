@@ -1,3 +1,60 @@
+2013-11-05 Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* doc/xml/manual/status_cxx2011.xml: Document aligned_union as
+	missing.
+	* doc/xml/manual/spine.xml: Update copyright years.
+	* doc/html/*: Regenerate.
+
+2013-10-30  Chris Studholme  <cvs@cs.utoronto.ca>
+
+	PR libstdc++/58912
+	* include/bits/shared_ptr_base.h (_Sp_counted_ptr_inplace): Remove
+	unnecessary initialization of storage buffer.
+
+2013-10-20  Chris Jefferson  <chris@bubblescope.net>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/58800
+	* include/bits/stl_algo.h (__unguarded_partition_pivot): Change
+	__last - 2 to __last - 1.
+	* testsuite/25_algorithms/nth_element/58800.cc: New
+
+2013-09-30  Chris Jefferson  <chris@bubblescope.net>
+
+	PR libstdc++/58437
+	* include/bits/stl_algo.h (__move_median_first): Rename to
+	__move_median_to_first, change to take an addition argument.
+	(__unguarded_partition_pivot): Adjust.
+	* testsuite/performance/25_algorithms/sort.cc: New.
+	* testsuite/performance/25_algorithms/sort_heap.cc: Likewise.
+	* testsuite/performance/25_algorithms/stable_sort.cc: Likewise.
+
+2013-09-26  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	Backport from mainline
+
+	2013-01-19  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	PR libstdc++/55861
+	* include/std/future (_State_base::_S_check(const shared_ptr<T>&)):
+	Fix return type.
+
+2013-09-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR libstdc++/58302
+	* include/bits/random.tcc (negative_binomial_distribution<>::
+	operator()(_UniformRandomNumberGenerator&, const param_type&):
+	Fix typo in template argument.
+	* testsuite/26_numerics/random/negative_binomial_distribution/
+	operators/58302.cc: New.
+
+2013-08-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	* src/c++98/compatibility.cc (_ZTIe): Use
+	reinterpret_cast<const cast *> to avoid -Wcast-qual warnings.
+	(_ZTIPe): Ditto.
+	(ZTIPKe): Ditto.
+
 2013-05-15  Jonathan Wakely  <jwakely.gcc@gmail.com>
 
 	* include/bits/basic_string.h (getline): Fix doxygen comments.

@@ -1,3 +1,245 @@
+2013-11-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-11-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (ix86_decompose_address): Use REG_P instead of
+	ix86_address_subreg_operand.  Move subreg checks to
+	ix86_validate_address_register.  Move address override check to
+	ix86_legitimate_address_p.
+	(ix86_validate_address_register): New function.
+	(ix86_legitimate_address_p): Call ix86_validate_address_register
+	to validate base and index registers.  Add address override check
+	from ix86_decompose_address.
+	(ix86_decompose_address): Remove.
+
+	Backport from mainline
+	2013-11-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/59153
+	* config/i386/i386.c (ix86_address_subreg_operand): Do not
+	reject non-integer subregs.
+	(ix86_decompose_address): Do not reject invalid CONST_INT RTXes.
+	Move check for invalid x32 constant addresses ...
+	(ix86_legitimate_address_p): ... here.
+
+	Bacport from mainline
+	2012-03-13  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (ix86_decompose_address): Prevent %fs:(%reg)
+	addresses only when %reg is not in word mode.
+
+2013-11-10  Karlson2k  <k2k@narod.ru>
+	    Kai Tietz  <ktietz@redhat.com>
+
+	Merged from trunk
+	PR plugins/52872
+	* configure.ac: Adding for exported symbols check
+	and for rdynamic-check executable-extension.
+	* configure: Regenerated.
+
+2013-11-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/59034
+	* config/i386/i386.md (push peepholer/splitter): Use Pmode
+	with stack_pointer_rtx.
+
+2013-11-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/t-rtems (MULTILIB_MATCHES): Fix option typos.
+
+2013-10-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-10-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/58779
+	* config/i386/i386.c (put_condition_code) <case GTU, case LEU>:
+	Remove CCCmode handling.
+	<case LTU>: Return 'c' suffix for CCCmode.
+	<case GEU>: Return 'nc' suffix for CCCmode.
+	(ix86_cc_mode) <case GTU, case LEU>: Do not generate overflow checks.
+	* config/i386/i386.md (*sub<mode>3_cconly_overflow): Remove.
+	(*sub<mode>3_cc_overflow): Ditto.
+	(*subsi3_zext_cc_overflow): Ditto.
+
+2013-10-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-10-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/58792
+	* config/i386/i386.c (ix86_function_value_regno): Add DX_REG,
+	ST1_REG and XMM1_REG for 32bit and 64bit targets.  Also add DI_REG
+	and SI_REG for 64bit SYSV ABI targets.
+
+2013-10-25  Richard Henderson  <rth@twiddle.net>
+
+	PR rtl/58542
+	* optabs.c (maybe_emit_atomic_exchange): Use create_input_operand
+	instead of create_convert_operand_to.
+	(maybe_emit_sync_lock_test_and_set): Likewise.
+	(expand_atomic_compare_and_swap): Likewise.
+	(maybe_emit_compare_and_swap_exchange_loop): Don't convert_modes.
+
+2013-10-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/58831
+	* alias.c (init_alias_analysis): At the beginning of each iteration,
+	set the reg_seen[N] flag if static_reg_base_value[N] is non-null.
+
+2013-10-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* recog.c (search_ofs): New static variable moved from...
+	(peep2_find_free_register): ...here.
+	(peephole2_optimize): Initialize it.
+
+2013-10-02  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config.gcc (hppa*64*-*-linux*): Don't add pa/t-linux to tmake_file.
+
+2013-09-23  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* tree-ssa-ccp.c (insert_clobber_before_stack_restore): Recurse on copy
+	assignment statements.
+
+2013-09-20  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.md: In "scc" insn patterns, change output template to
+	handle const0_rtx in reg_or_0_operand operands.
+
+2013-09-18  Daniel Morris  <danielm@ecoscentric.com>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/58458
+	* doc/implement-cxx.texi: Fix references to the C++ standards.
+
+2013-09-14  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/58382
+	* config/pa/pa.c (pa_expand_prologue): Change mode in gen_rtx_POST_INC
+	calls to word_mode.
+
+2013-09-12  Terry Guo  <terry.guo@arm.com>
+
+	Backport from mainline
+	2012-09-17  Richard Guenther  <rguenther@suse.de>
+
+	PR lto/54598
+	* tree-streamer-in.c (unpack_ts_real_cst_value_fields): Use ggc'ed
+	FIXED_VALUE_TYPE instead of struct fixed_value.
+
+2013-09-10  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR target/58361
+	* arm/vfp.md (combine_vcvt_f32_<FCVTI32typename>): Fix pattern to
+	support conditional execution.
+	(combine_vcvt_f64_<FCVTI32typename>): Likewise.
+
+2013-09-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-08-31  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/alpha/alpha.c (alpha_emit_conditional_move): Update
+	"cmp" RTX before signed_comparison_operator check to account
+	for "code" changes.
+
+2013-09-01  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.md: Allow "const 0" operand 1 in "scc" insns.
+
+2013-09-01  Iain Sandoe  <iain@codesourcery.com>
+
+	Backported from 4.8
+	2012-06-19  Steven Bosscher  <steven@gcc.gnu.org>
+
+	* doc/tm.texi.in (TARGET_OBJC_DECLARE_UNRESOLVED_CLASS_REFERENCE,
+	TARGET_OBJC_DECLARE_CLASS_DEFINITION): Add @hooks.
+	(ASM_DECLARE_CLASS_REFERENCE, ASM_DECLARE_UNRESOLVED_REFERENCE):
+	Remove.
+	* doc/tm.texi: Regenerate.
+	* config/darwin.h (ASM_OUTPUT_LABELREF): Remove special case for
+	.objc_class_name_*.
+	* config/darwin-c.c: Include target.h.
+	(darwin_objc_declare_unresolved_class_reference): New function.
+	(darwin_objc_declare_class_definition): New function.
+	(TARGET_OBJC_DECLARE_UNRESOLVED_CLASS_REFERENCE): Define.
+	(TARGET_OBJC_DECLARE_CLASS_DEFINITION): Define.
+
+2013-09-01  Iain Sandoe  <iain@codesourcery.com>
+
+	Backport from mainline:
+	2013-07-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (nonlocal_goto_receiver): Delete insn if
+	it is not needed after split.
+
+	2013-07-20  Iain Sandoe  <iain@codesourcery.com>
+
+	PR target/51784
+	* config/i386/i386.c (output_set_got) [TARGET_MACHO]: Adjust to emit a
+	second label for nonlocal goto receivers. Don't output pic base labels
+	unless we're producing PIC; mark that action unreachable().
+	(ix86_save_reg): If the function contains a nonlocal label, save the
+	PIC base reg.
+	* config/darwin-protos.h (machopic_should_output_picbase_label): New.
+	* gcc/config/darwin.c (emitted_pic_label_num): New GTY.
+	(update_pic_label_number_if_needed): New.
+	(machopic_output_function_base_name): Adjust for nonlocal receiver
+	case.
+	(machopic_should_output_picbase_label): New.
+	* config/i386/i386.md (enum unspecv): UNSPECV_NLGR: New.
+	(nonlocal_goto_receiver): New insn and split.
+
+2013-08-28  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-08-27  Christian Widmer  <shadow@umbrox.de>
+
+	PR target/57927
+	* config/i386/driver-i386.c (host_detect_local_cpu): Add detection
+	of Ivy Bridge processors.
+
+2013-08-21  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR target/56979
+	* arm.c (aapcs_vfp_allocate): Decompose the argument if the
+	suggested mode for the assignment isn't compatible with the
+	registers required.
+
+2013-08-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-08-12  Perez Read  <netfirewall@gmail.com>
+
+	PR target/58132
+	* config/i386/i386.md (*movabs<mode>_1):  Add <ptrsize> PTR before
+	operand 0 for intel asm alternative.
+	(*movabs<mode>_2): Ditto for operand 1.
+
+2013-08-13  Marek Polacek  <polacek@redhat.com>
+
+	Backport from 4.8:
+	2013-0813  Marek Polacek  <polacek@redhat.com>
+		   Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57980
+	* tree-tailcall.c (process_assignment): Return false
+	when not dealing with integers or floats.
+
+2013-08-12  David Edelsohn  <dje.gcc@gmail.com>
+
+	Backport from mainline
+	2013-02-14  Steven Bosscher  <steven@gcc.gnu.org>
+
+	* collect2-aix.h: Define F_LOADONLY.
+
+2013-08-02  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/sparc/sparc.c (sparc_emit_membar_for_model) <SMM_TSO>: Add
+	the implied StoreLoad barrier for atomic operations if before.
+
 2013-07-11  Georg-Johann Lay  <avr@gjlay.de>
 
 	Backport from 2013-07-11 trunk r200901.

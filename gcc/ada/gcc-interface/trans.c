@@ -2232,7 +2232,10 @@ can_equal_min_or_max_val_p (tree val, tree type, bool max)
   if (TREE_CODE (val) != INTEGER_CST)
     return true;
 
-  return tree_int_cst_equal (val, min_or_max_val) == 1;
+  if (max)
+    return tree_int_cst_lt (val, min_or_max_val) == 0;
+  else
+    return tree_int_cst_lt (min_or_max_val, val) == 0;
 }
 
 /* Return true if VAL (of type TYPE) can equal the minimum value of TYPE.
@@ -3434,6 +3437,8 @@ Subprogram_Body_to_gnu (Node_Id gnat_node)
   if (gnu_cico_list)
     {
       tree gnu_retval;
+
+      VEC_pop (tree, gnu_return_var_stack);
 
       add_stmt (gnu_result);
       add_stmt (build1 (LABEL_EXPR, void_type_node,
