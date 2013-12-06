@@ -1,5 +1,14 @@
 2013-12-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r204737.
+	2013-11-13  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* config/aarch64/aarch64.h (FRAME_GROWS_DOWNWARD): Define to 1.
+	* config/aarch64/aarch64.c (aarch64_initial_elimination_offset):
+	Update offset calculations.
+
+2013-12-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r203327.
 	2013-10-09  Zhenqiang Chen  <zhenqiang.chen@arm.com>
 
