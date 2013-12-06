@@ -1,3 +1,12 @@
+2013-12-06  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r202872.
+	2013-09-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* lib/target-supports.exp (check_effective_target_arm_cond_exec):
+	New Procedure
+	* gcc.target/arm/minmax_minus.c: Check for cond_exec target.
+
 2013-12-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r203327.
