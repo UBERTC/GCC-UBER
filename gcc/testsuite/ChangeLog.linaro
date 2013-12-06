@@ -1,3 +1,10 @@
+2013-12-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r203327.
+	2013-10-09  Zhenqiang Chen  <zhenqiang.chen@arm.com>
+
+	* gcc.dg/tree-ssa/phi-opt-11.c: New test.
+
 2013-12-06  Charles Baylis  <charles.baylis@linaro.org>
 
 	Backport from trunk r203799.
