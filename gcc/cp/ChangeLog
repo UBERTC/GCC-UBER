@@ -1,3 +1,30 @@
+2013-11-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/59297
+	* semantics.c (finish_omp_atomic): Call finish_expr_stmt
+	rather than add_stmt.
+
+2013-11-23  Easwaran Raman  <eraman@google.com>
+
+	PR c++/59031
+	* call.c (build_new_method_call_1): Comnpare function context
+	with BASELINK_BINFO type rather than instance type before
+	marking the call with LOOKUP_NONVIRTUAL.
+
+2013-10-31  Jason Merrill  <jason@redhat.com>
+
+	PR c++/58162
+	* parser.c (cp_parser_late_parse_one_default_arg): Set
+	TARGET_EXPR_DIRECT_INIT_P.
+
+2013-11-11  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* cvt.c (cp_convert_to_pointer): Call build_ptrmemfunc before
+	maybe_warn_zero_as_null_pointer_constant to avoid duplicate
+	-Wzero-as-null-pointer-constant diagnostics.
+
+	* typeck.c (build_ptrmemfunc): Use cp_build_c_cast.
+
 2013-10-25  Tom de Vries  <tom@codesourcery.com>
 
 	PR c++/58282

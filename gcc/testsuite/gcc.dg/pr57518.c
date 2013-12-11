@@ -2,8 +2,7 @@
 
 /* { dg-do compile } */
 /* { dg-options "-O2 -fdump-rtl-ira" } */
-/* { dg-final { scan-rtl-dump-not "REG_EQUIV\[^\n\]*mem\[^\n\]*\"ip\"\[^\n\]*subreg" "ira" } } */
-
+/* { dg-final { scan-rtl-dump-not "REG_EQUIV\[^\n\]*mem\[^\n\]*\"ip\".*subreg" "ira" } } */
 
 char ip[10];
 int total;

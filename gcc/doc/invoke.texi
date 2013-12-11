@@ -930,7 +930,7 @@ See RS/6000 and PowerPC Options.
 -mvis2  -mno-vis2  -mvis3  -mno-vis3 @gol
 -mcbcond -mno-cbcond @gol
 -mfmaf  -mno-fmaf  -mpopc  -mno-popc @gol
--mfix-at697f}
+-mfix-at697f -mfix-ut699}
 
 @emph{SPU Options}
 @gccoptlist{-mwarn-reloc -merror-reloc @gol
@@ -11413,8 +11413,11 @@ before execution begins.
 
 @item -mpic-register=@var{reg}
 @opindex mpic-register
-Specify the register to be used for PIC addressing.  The default is R10
-unless stack-checking is enabled, when R9 is used.
+Specify the register to be used for PIC addressing.
+For standard PIC base case, the default will be any suitable register
+determined by compiler.  For single PIC base case, the default is
+@samp{R9} if target is EABI based or stack-checking is enabled,
+otherwise the default is @samp{R10}.
 
 @item -mpoke-function-name
 @opindex mpoke-function-name
@@ -19148,10 +19151,10 @@ the rules of the ABI@.
 Set the instruction set, register set, and instruction scheduling parameters
 for machine type @var{cpu_type}.  Supported values for @var{cpu_type} are
 @samp{v7}, @samp{cypress}, @samp{v8}, @samp{supersparc}, @samp{hypersparc},
-@samp{leon}, @samp{sparclite}, @samp{f930}, @samp{f934}, @samp{sparclite86x},
-@samp{sparclet}, @samp{tsc701}, @samp{v9}, @samp{ultrasparc},
-@samp{ultrasparc3}, @samp{niagara}, @samp{niagara2}, @samp{niagara3},
-and @samp{niagara4}.
+@samp{leon}, @samp{leon3}, @samp{sparclite}, @samp{f930}, @samp{f934},
+@samp{sparclite86x}, @samp{sparclet}, @samp{tsc701}, @samp{v9},
+@samp{ultrasparc}, @samp{ultrasparc3}, @samp{niagara}, @samp{niagara2},
+@samp{niagara3} and @samp{niagara4}.
 
 Native Solaris and GNU/Linux toolchains also support the value @samp{native},
 which selects the best architecture option for the host processor.
@@ -19170,7 +19173,7 @@ implementations.
 cypress
 
 @item v8
-supersparc, hypersparc, leon
+supersparc, hypersparc, leon, leon3
 
 @item sparclite
 f930, f934, sparclite86x
@@ -19232,10 +19235,11 @@ option @option{-mcpu=@var{cpu_type}} does.
 The same values for @option{-mcpu=@var{cpu_type}} can be used for
 @option{-mtune=@var{cpu_type}}, but the only useful values are those
 that select a particular CPU implementation.  Those are @samp{cypress},
-@samp{supersparc}, @samp{hypersparc}, @samp{leon}, @samp{f930}, @samp{f934},
-@samp{sparclite86x}, @samp{tsc701}, @samp{ultrasparc}, @samp{ultrasparc3},
-@samp{niagara}, @samp{niagara2}, @samp{niagara3} and @samp{niagara4}.  With
-native Solaris and GNU/Linux toolchains, @samp{native} can also be used.
+@samp{supersparc}, @samp{hypersparc}, @samp{leon}, @samp{leon3}, @samp{f930},
+@samp{f934}, @samp{sparclite86x}, @samp{tsc701}, @samp{ultrasparc},
+@samp{ultrasparc3}, @samp{niagara}, @samp{niagara2}, @samp{niagara3} and
+@samp{niagara4}.  With native Solaris and GNU/Linux toolchains, @samp{native}
+can also be used.
 
 @item -mv8plus
 @itemx -mno-v8plus
@@ -19304,6 +19308,11 @@ later.
 @opindex mfix-at697f
 Enable the documented workaround for the single erratum of the Atmel AT697F
 processor (which corresponds to erratum #13 of the AT697E processor).
+
+@item -mfix-ut699
+@opindex mfix-ut699
+Enable the documented workarounds for the floating-point errata and the data
+cache nullify errata of the UT699 processor.
 @end table
 
 These @samp{-m} options are supported in addition to the above

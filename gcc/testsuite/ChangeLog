@@ -1,3 +1,186 @@
+2013-11-30  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from mainline
+	2013-11-04  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/57445
+	* gfortran.dg/optional_class_1.f90 : New test
+
+2013-11-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/59280
+	* c-c++-common/pr59280.c: New test.
+
+2013-11-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/59297
+	* g++.dg/gomp/pr59297.C: New test.
+
+2013-11-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2013-11-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/arm/vrinta-ce.c: New testcase.
+
+2013-11-28  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-11-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/56788
+	* config/i386/i386.c (bdesc_multi_arg) <IX86_BUILTIN_VFRCZSS>:
+	Declare as MULTI_ARG_1_SF instruction.
+	<IX86_BUILTIN_VFRCZSD>: Decleare as MULTI_ARG_1_DF instruction.
+	* config/i386/sse.md (*xop_vmfrcz<mode>2): Rename
+	from *xop_vmfrcz_<mode>.
+	* config/i386/xopintrin.h (_mm_frcz_ss): Use __builtin_ia32_movss
+	to merge scalar result with __A.
+	(_mm_frcz_sd): Use __builtin_ia32_movsd to merge scalar
+	result with __A.
+
+2013-11-28  Terry Guo  <terry.guo@arm.com>
+
+	Backport mainline r205391
+	2013-11-26  Terry Guo  <terry.guo@arm.com>
+
+	* gcc.target/arm/thumb1-pic-high-reg.c: New case.
+	* gcc.target/arm/thumb1-pic-single-base.c: New case.
+
+2013-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2013-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/59014
+	* gcc.c-torture/execute/pr59014-2.c: New test.
+
+	2013-11-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/59014
+	* gcc.c-torture/execute/pr59014.c: New test.
+
+2013-11-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.c-torture/execute/20131127-1.c: New test.
+
+2013-11-25  Vidya Praveen  <vidyapraveen@arm.com>
+
+	Backport from mainline
+	2013-10-21  Vidya Praveen  <vidyapraveen@arm.com>
+
+	* gcc.dg/20050922-1.c: Remove stdlib.h and declare abort().
+	* gcc.dg/20050922-1.c: Remove stdlib.h and declare abort() and exit().
+
+2013-11-20  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	* gcc.target/s390/htm-1.c: Rename to ...
+	* gcc/testsuite/gcc.target/s390/htm-builtins-compile-1.c: ... this
+	one.
+	* gcc.target/s390/htm-xl-intrin-1.c: Rename to ...
+	* gcc.target/s390/htm-builtins-compile-3.c: ... this one.
+	* gcc.target/s390/htm-builtins-compile-2.c: New testcase.
+	* gcc.target/s390/htm-builtins-1.c: New testcase.
+	* gcc.target/s390/htm-builtins-2.c: New testcase.
+	* gcc.target/s390/s390.exp: Add check for htm machine.
+
+2013-11-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57517
+	* gfortran.fortran-torture/compile/pr57517.f90: New testcase.
+	* gcc.dg/torture/pr57517.c: Likewise.
+
+2013-11-19  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-11-05  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/58941
+	* gcc.dg/torture/pr58941.c: New testcase.
+
+2013-11-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-10-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58794
+	* c-c++-common/torture/pr58794-1.c: New testcase.
+	* c-c++-common/torture/pr58794-2.c: Likewise.
+
+	2013-10-21  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/58742
+	* c-c++-common/fold-divmul-1.c: New testcase.
+
+	2013-11-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58653
+	* gcc.dg/tree-ssa/predcom-6.c: New testcase.
+	* gcc.dg/tree-ssa/predcom-7.c: Likewise.
+
+	PR tree-optimization/59047
+	* gcc.dg/torture/pr59047.c: New testcase.
+
+	2013-10-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58143
+	* gcc.dg/torture/pr58143-1.c: New testcase.
+	* gcc.dg/torture/pr58143-2.c: Likewise.
+	* gcc.dg/torture/pr58143-3.c: Likewise.
+
+2013-11-17  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from mainline
+	2013-11-07  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/58471
+	* gfortran.dg/constructor_9.f90: New.
+
+2013-11-16  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from mainline
+	2013-09-20  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/58099
+	* gfortran.dg/proc_ptr_43.f90: New.
+
+2013-11-16  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/58771
+	* gfortran.dg/derived_external_function_1.f90 : New test
+
+2013-11-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-11-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/59021
+	* gcc.target/i386/pr59021.c: New test.
+
+2013-11-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/59101
+	* gcc.c-torture/execute/pr59101.c: New test.
+
+2013-11-11  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2013-11-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/58970
+	* gcc.c-torture/compile/pr58970-1.c: New test.
+	* gcc.c-torture/compile/pr58970-2.c: New test.
+
+	2013-11-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/58997
+	* gcc.c-torture/compile/pr58997.c: New test.
+
+2013-11-10  Wei Mi  <wmi@google.com>
+
+	* testsuite/gcc.dg/pr57518.c: Backport regex fix from r200720.
+
 2013-11-07  H.J. Lu  <hongjiu.lu@intel.com>
 
 	Backport from mainline
