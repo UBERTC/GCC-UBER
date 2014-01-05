@@ -1,5 +1,9 @@
 2013-12-21  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	* LINARO-VERSION: Bump version.
+
+2013-12-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
        GCC Linaro 4.8-2013.12 released.
 
 2013-12-06  Christophe Lyon  <christophe.lyon@linaro.org>
