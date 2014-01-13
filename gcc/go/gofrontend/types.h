@@ -1138,6 +1138,13 @@ class Type
 			  Function_type* equal_fntype, Named_object** hash_fn,
 			  Named_object** equal_fn);
 
+  void
+  write_named_hash(Gogo*, Named_type*, Function_type* hash_fntype,
+		   Function_type* equal_fntype);
+
+  void
+  write_named_equal(Gogo*, Named_type*);
+
   // Build a composite literal for the uncommon type information.
   Expression*
   uncommon_type_constructor(Gogo*, Type* uncommon_type,
@@ -1789,6 +1796,12 @@ class Function_type : public Type
   // interface method is attached to a named or struct type.
   Function_type*
   copy_with_receiver(Type*) const;
+
+  // Return a copy of this type with the receiver treated as the first
+  // parameter.  If WANT_POINTER_RECEIVER is true, the receiver is
+  // forced to be a pointer.
+  Function_type*
+  copy_with_receiver_as_param(bool want_pointer_receiver) const;
 
   // Return a copy of this type ignoring any receiver and using dummy
   // names for all parameters.  This is used for thunks for method
