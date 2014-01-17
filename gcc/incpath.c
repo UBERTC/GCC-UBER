@@ -148,20 +148,22 @@ add_standard_paths (const char *sysroot, const char *iprefix,
 	      if (!filename_ncmp (p->fname, cpp_GCC_INCLUDE_DIR, len))
 		{
 		  char *str = concat (iprefix, p->fname + len, NULL);
-		  if (p->multilib == 1 && imultilib)
-		    str = reconcat (str, str, dir_separator_str,
-				    imultilib, NULL);
-		  else if (p->multilib == 2)
+		  if (p->multilib && imultilib)
+                    {
+		      str = reconcat (str, str, dir_separator_str,
+				      imultilib, NULL);
+		      add_path (str, SYSTEM, p->cxx_aware, false);
+		    }
+		  else
+		    add_path (str, SYSTEM, p->cxx_aware, false);
+
+		  if (p->multilib && imultiarch)
 		    {
-		      if (!imultiarch)
-			{
-			  free (str);
-			  continue;
-			}
+                      char *str = concat (iprefix, p->fname + len, NULL);
 		      str = reconcat (str, str, dir_separator_str,
 				      imultiarch, NULL);
+		      add_path (str, SYSTEM, p->cxx_aware, false);
 		    }
-		  add_path (str, SYSTEM, p->cxx_aware, false);
 		}
 	    }
 	}
@@ -171,7 +173,7 @@ add_standard_paths (const char *sysroot, const char *iprefix,
     {
       if (!p->cplusplus || cxx_stdinc)
 	{
-	  char *str;
+	  char *str, *str2;
 
 	  /* Should this directory start with the sysroot?  */
 	  if (sysroot && p->add_sysroot)
@@ -215,19 +217,20 @@ add_standard_paths (const char *sysroot, const char *iprefix,
 	  else
 	    str = update_path (p->fname, p->component);
 
-	  if (p->multilib == 1 && imultilib)
-	    str = reconcat (str, str, dir_separator_str, imultilib, NULL);
-	  else if (p->multilib == 2)
+	  str2 = xstrdup(str);
+	  if (p->multilib && imultilib)
 	    {
-	      if (!imultiarch)
-		{
-		  free (str);
-		  continue;
-		}
-	      str = reconcat (str, str, dir_separator_str, imultiarch, NULL);
+	      str = reconcat (str, str, dir_separator_str, imultilib, NULL);
+	      add_path (str, SYSTEM, p->cxx_aware, false);
 	    }
+	  else
+	    add_path (str, SYSTEM, p->cxx_aware, false);
 
-	  add_path (str, SYSTEM, p->cxx_aware, false);
+	  if (p->multilib && imultiarch)
+	    {
+	      str2 = reconcat (str2, str2, dir_separator_str, imultiarch, NULL);
+	      add_path (str2, SYSTEM, p->cxx_aware, false);
+	    }
 	}
     }
 }

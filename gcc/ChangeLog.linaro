@@ -1,3 +1,11 @@
+2014-01-16  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	Linaro local patch for armv4t multilib support.
+	* gcc/config/arm/t-mlibs: New file.
+	* config.gcc: Add t-mlibs.
+	* incpath.c (add_standard_paths): Try multilib path first.
+	* gcc.c (for_each_path): Likewise.
+
 2013-12-21  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	* LINARO-VERSION: Bump version.

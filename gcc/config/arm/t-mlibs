@@ -1,0 +1,21 @@
+# A set of predefined MULTILIB for different ARM targets.
+# Through the configure option --with-multilib-list, user can customize the
+# final MULTILIB implementation.
+
+comma := ,
+space :=
+space +=
+
+MULTILIB_OPTIONS   = marm
+MULTILIB_DIRNAMES  = arm
+MULTILIB_OPTIONS  += march=armv4t
+MULTILIB_DIRNAMES += armv4t
+MULTILIB_OPTIONS  += mfloat-abi=soft
+MULTILIB_DIRNAMES += soft
+
+MULTILIB_EXCEPTIONS =
+
+MULTILIB_REQUIRED = marm/march=armv4t/mfloat-abi=soft
+
+MULTILIB_OSDIRNAMES = marm/march.armv4t/mfloat-abi.soft=!arm-linux-gnueabi
+
