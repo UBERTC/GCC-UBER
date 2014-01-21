@@ -1,3 +1,15 @@
+2014-01-21  Zhenqiang Chen <zhenqiang.chen@linaro.org>
+
+	Backport from trunk r200103
+	2013-06-15  Jeff Law  <law@redhat.com>
+
+	* gimple.h (gimple_can_coalesce_p): Prototype.
+	* tree-ssa-coalesce.c (gimple_can_coalesce_p): New function.
+	(create_outofssa_var_map, coalesce_partitions): Use it.
+	* tree-ssa-uncprop.c (uncprop_into_successor_phis): Similarly.
+	* tree-ssa-live.c (var_map_base_init): Use TYPE_CANONICAL
+	if it's available.
+
 2014-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	gcc/
