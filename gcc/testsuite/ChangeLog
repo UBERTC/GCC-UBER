@@ -1,3 +1,20 @@
+2013-11-28  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2013-11-27  Uros Bizjak  <ubizjak@gmail.com>
+		    Ganesh Gopalasubramanian  <Ganesh.Gopalasubramanian@amd.com>
+
+	PR target/56788
+	* gcc.target/i386/xop-frczX.c: New test.
+
+2013-11-25  Vidya Praveen  <vidyapraveen@arm.com>
+
+	Backport from mainline
+	2013-10-21  Vidya Praveen  <vidyapraveen@arm.com>
+
+	* gcc.dg/20050922-1.c: Remove stdlib.h and declare abort().
+	* gcc.dg/20050922-1.c: Remove stdlib.h and declare abort() and exit().
+
 2013-11-17  Paul Thomas  <pault@gcc.gnu.org>
 
 	PR fortran/58771
