@@ -3589,7 +3589,7 @@ struct GTY(()) tree_optimization_option {
 
   /* Target optabs for this set of optimization options.  This is of
      type `struct target_optabs *'.  */
-  unsigned char *GTY ((atomic)) optabs;
+  void *GTY ((atomic)) optabs;
 
   /* The value of this_target_optabs against which the optabs above were
      generated.  */
@@ -5854,6 +5854,7 @@ extern tree fold_call_expr (location_t, tree, bool);
 extern tree fold_builtin_fputs (location_t, tree, tree, bool, bool, tree);
 extern tree fold_builtin_strcpy (location_t, tree, tree, tree, tree);
 extern tree fold_builtin_strncpy (location_t, tree, tree, tree, tree, tree);
+extern tree fold_builtin_strcat (location_t, tree, tree, tree);
 extern tree fold_builtin_memory_chk (location_t, tree, tree, tree, tree, tree, tree, bool,
 				     enum built_in_function);
 extern tree fold_builtin_stxcpy_chk (location_t, tree, tree, tree, tree, tree, bool,

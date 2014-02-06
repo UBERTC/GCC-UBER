@@ -623,16 +623,22 @@ parm_preserved_before_stmt_p (struct param_analysis_info *parm_ainfo,
   if (parm_ainfo && parm_ainfo->parm_modified)
     return false;
 
-  gcc_checking_assert (gimple_vuse (stmt) != NULL_TREE);
-  ao_ref_init (&refd, parm_load);
-  /* We can cache visited statements only when parm_ainfo is available and when
-     we are looking at a naked load of the whole parameter.  */
-  if (!parm_ainfo || TREE_CODE (parm_load) != PARM_DECL)
-    visited_stmts = NULL;
+  if (optimize)
+    {
+      gcc_checking_assert (gimple_vuse (stmt) != NULL_TREE);
+      ao_ref_init (&refd, parm_load);
+      /* We can cache visited statements only when parm_ainfo is available and
+     when we are looking at a naked load of the whole parameter.  */
+      if (!parm_ainfo || TREE_CODE (parm_load) != PARM_DECL)
+	visited_stmts = NULL;
+      else
+	visited_stmts = &parm_ainfo->parm_visited_statements;
+      walk_aliased_vdefs (&refd, gimple_vuse (stmt), mark_modified, &modified,
+			  visited_stmts);
+    }
   else
-    visited_stmts = &parm_ainfo->parm_visited_statements;
-  walk_aliased_vdefs (&refd, gimple_vuse (stmt), mark_modified, &modified,
-		      visited_stmts);
+    modified = true;
+
   if (parm_ainfo && modified)
     parm_ainfo->parm_modified = true;
   return !modified;
@@ -1466,6 +1472,9 @@ ipa_compute_jump_functions (struct cgraph_node *node,
 {
   struct cgraph_edge *cs;
 
+  if (!optimize)
+    return;
+
   for (cs = node->callees; cs; cs = cs->next_callee)
     {
       struct cgraph_node *callee = cgraph_function_or_thunk_node (cs->callee,
@@ -1851,8 +1860,7 @@ ipa_analyze_stmt_uses (struct cgraph_node *node, struct ipa_node_params *info,
    passed in DATA.  */
 
 static bool
-visit_ref_for_mod_analysis (gimple stmt ATTRIBUTE_UNUSED,
-			     tree op, void *data)
+visit_ref_for_mod_analysis (gimple, tree op, tree, void *data)
 {
   struct ipa_node_params *info = (struct ipa_node_params *) data;
 
