@@ -1321,7 +1321,7 @@ vect_peeling_hash_insert (loop_vec_info loop_vinfo, struct data_reference *dr,
       *new_slot = slot;
     }
 
-  if (!supportable_dr_alignment && !flag_vect_cost_model)
+  if (!supportable_dr_alignment && unlimited_cost_model ())
     slot->count += VECT_MAX_COST;
 }
 
@@ -1431,7 +1431,7 @@ vect_peeling_hash_choose_best_peeling (loop_vec_info loop_vinfo,
    res.peel_info.dr = NULL;
    res.body_cost_vec = stmt_vector_for_cost();
 
-   if (flag_vect_cost_model)
+   if (!unlimited_cost_model ())
      {
        res.inside_cost = INT_MAX;
        res.outside_cost = INT_MAX;
@@ -1661,7 +1661,7 @@ vect_enhance_data_refs_alignment (loop_vec_info loop_vinfo)
                  vectorization factor.
                  We do this automtically for cost model, since we calculate cost
                  for every peeling option.  */
-              if (!flag_vect_cost_model)
+              if (unlimited_cost_model ())
                 possible_npeel_number = vf /nelements;
 
               /* Handle the aligned case. We may decide to align some other
@@ -1669,7 +1669,7 @@ vect_enhance_data_refs_alignment (loop_vec_info loop_vinfo)
               if (DR_MISALIGNMENT (dr) == 0)
                 {
                   npeel_tmp = 0;
-                  if (!flag_vect_cost_model)
+                  if (unlimited_cost_model ())
                     possible_npeel_number++;
                 }
 
@@ -1919,6 +1919,30 @@ vect_enhance_data_refs_alignment (loop_vec_info loop_vinfo)
 
       if (do_peeling)
         {
+          unsigned max_allowed_peel
+            = PARAM_VALUE (PARAM_VECT_MAX_PEELING_FOR_ALIGNMENT);
+          if (max_allowed_peel != (unsigned)-1)
+            {
+              unsigned max_peel = npeel;
+              if (max_peel == 0)
+                {
+                  gimple dr_stmt = DR_STMT (dr0);
+                  stmt_vec_info vinfo = vinfo_for_stmt (dr_stmt);
+                  tree vtype = STMT_VINFO_VECTYPE (vinfo);
+                  max_peel = TYPE_VECTOR_SUBPARTS (vtype) - 1;
+                }
+              if (max_peel > max_allowed_peel)
+                {
+                  do_peeling = false;
+                  if (dump_enabled_p ())
+                    dump_printf_loc (MSG_NOTE, vect_location,
+                        "Disable peeling, max peels reached: %d\n", max_peel);
+                }
+            }
+        }
+
+      if (do_peeling)
+        {
 	  stmt_info_for_cost *si;
 	  void *data = LOOP_VINFO_TARGET_COST_DATA (loop_vinfo);
 
@@ -1972,16 +1996,14 @@ vect_enhance_data_refs_alignment (loop_vec_info loop_vinfo)
   /* (2) Versioning to force alignment.  */
 
   /* Try versioning if:
-     1) flag_tree_vect_loop_version is TRUE
-     2) optimize loop for speed
-     3) there is at least one unsupported misaligned data ref with an unknown
+     1) optimize loop for speed
+     2) there is at least one unsupported misaligned data ref with an unknown
         misalignment, and
-     4) all misaligned data refs with a known misalignment are supported, and
-     5) the number of runtime alignment checks is within reason.  */
+     3) all misaligned data refs with a known misalignment are supported, and
+     4) the number of runtime alignment checks is within reason.  */
 
   do_versioning =
-	flag_tree_vect_loop_version
-	&& optimize_loop_nest_for_speed_p (loop)
+	optimize_loop_nest_for_speed_p (loop)
 	&& (!loop->inner); /* FORNOW */
 
   if (do_versioning)

@@ -191,4 +191,13 @@ enum fp_contract_mode {
   FP_CONTRACT_FAST = 2
 };
 
+/* Vectorizer cost-model.  */
+enum vect_cost_model {
+  VECT_COST_MODEL_UNLIMITED = 0,
+  VECT_COST_MODEL_CHEAP = 1,
+  VECT_COST_MODEL_DYNAMIC = 2,
+  VECT_COST_MODEL_DEFAULT = 3
+};
+
+
 #endif /* ! GCC_FLAG_TYPES_H */

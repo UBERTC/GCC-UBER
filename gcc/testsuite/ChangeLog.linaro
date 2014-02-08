@@ -1,3 +1,12 @@
+2014-02-01  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r203057.
+	2013-10-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR tree-optimization/58556
+	* gcc.dg/tree-ssa/gen-vect-26.c: Use dynamic vector cost model.
+	* gcc.dg/tree-ssa/gen-vect-28.c: Likewise.
+
 2014-01-21  Zhenqiang Chen <zhenqiang.chen@linaro.org>
 
 	Backport from trunk r205509 and r200103
