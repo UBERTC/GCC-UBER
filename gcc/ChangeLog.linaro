@@ -1,3 +1,260 @@
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206518
+	2014-01-10 Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (arm_init_iwmmxt_builtins): Skip
+	non-iwmmxt builtins.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206151
+	2013-12-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/neon.ml (crypto_intrinsics): Add vceq_64 and vtst_p64.
+	* config/arm/arm_neon.h: Regenerate.
+	* config/arm/neon-docgen.ml: Add vceq_p64 and vtst_p64.
+	* doc/arm-neon-intrinsics.texi: Regenerate.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206149
+	2013-12-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm_acle.h: Add underscores before variables.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206132
+	2013-12-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/neon-docgen.ml: Add crypto intrinsics documentation.
+	* doc/arm-neon-intrinsics.texi: Regenerate.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206131
+	2013-12-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/neon-testgen.ml (effective_target): Handle "CRYPTO".
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206130
+	2013-12-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	 * config/arm/arm.c (enum arm_builtins): Add crypto builtins.
+	 (arm_init_neon_builtins): Handle crypto builtins.
+	 (bdesc_2arg): Likewise.
+	 (bdesc_1arg): Likewise.
+	 (bdesc_3arg): New table.
+	 (arm_expand_ternop_builtin): New function.
+	 (arm_expand_unop_builtin): Handle sha1h explicitly.
+	 (arm_expand_builtin): Handle ternary builtins.
+	 * config/arm/arm.h (TARGET_CPU_CPP_BUILTINS):
+	 Define __ARM_FEATURE_CRYPTO.
+	 * config/arm/arm.md: Include crypto.md.
+	 (is_neon_type): Add crypto types.
+	 * config/arm/arm_neon_builtins.def: Add TImode reinterprets.
+	 * config/arm/crypto.def: New.
+	 * config/arm/crypto.md: Likewise.
+	 * config/arm/iterators.md (CRYPTO_UNARY): New int iterator.
+	 (CRYPTO_BINARY): Likewise.
+	 (CRYPTO_TERNARY): Likewise.
+	 (CRYPTO_SELECTING): Likewise.
+	 (crypto_pattern): New int attribute.
+	 (crypto_size_sfx): Likewise.
+	 (crypto_mode): Likewise.
+	 (crypto_type): Likewise.
+	 * config/arm/neon-gen.ml: Handle poly64_t and poly128_t types.
+	 Handle crypto intrinsics.
+	 * config/arm/neon.ml: Add support for poly64 and polt128 types
+	 and intrinsics. Define crypto intrinsics.
+	 * config/arm/neon.md (neon_vreinterpretti<mode>): New pattern.
+	 (neon_vreinterpretv16qi<mode>): Use VQXMOV mode iterator.
+	 (neon_vreinterpretv8hi<mode>): Likewise.
+	 (neon_vreinterpretv4si<mode>): Likewise.
+	 (neon_vreinterpretv4sf<mode>): Likewise.
+	 (neon_vreinterpretv2di<mode>): Likewise.
+	 * config/arm/unspecs.md (UNSPEC_AESD, UNSPEC_AESE, UNSPEC_AESIMC,
+	 UNSPEC_AESMC, UNSPEC_SHA1C, UNSPEC_SHA1M, UNSPEC_SHA1P, UNSPEC_SHA1H,
+	 UNSPEC_SHA1SU0, UNSPEC_SHA1SU1, UNSPEC_SHA256H, UNSPEC_SHA256H2,
+	 UNSPEC_SHA256SU0, UNSPEC_SHA256SU1, VMULLP64): Define.
+	 * config/arm/arm_neon.h: Regenerate.
+
+	Modifications needed to backport into linaro-4_8-branch:
+	* config/arm/arm.md (attribute neon_type): neon_crypto_aes,
+	neon_crypto_sha1_xor, neon_crypto_sha1_fast,
+	neon_crypto_sha1_slow, neon_crypto_sha256_fast,
+	neon_crypto_sha256_slow, neon_mul_d_long: New.
+	instead of:
+	* config/arm/arm.md: Include crypto.md.
+	(is_neon_type): Add crypto types.
+
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206128
+	2013-12-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* Makefile.in (TEXI_GCC_FILES): Add arm-acle-intrinsics.texi.
+	* config.gcc (extra_headers): Add arm_acle.h.
+	* config/arm/arm.c (FL_CRC32): Define.
+	(arm_have_crc): Likewise.
+	(arm_option_override): Set arm_have_crc.
+	(arm_builtins): Add CRC32 builtins.
+	(bdesc_2arg): Likewise.
+	(arm_init_crc32_builtins): New function.
+	(arm_init_builtins): Initialise CRC32 builtins.
+	(arm_file_start): Handle architecture extensions.
+	* config/arm/arm.h (TARGET_CPU_CPP_BUILTINS): Define __ARM_FEATURE_CRC32.
+	Define __ARM_32BIT_STATE.
+	(TARGET_CRC32): Define.
+	* config/arm/arm-arches.def: Add armv8-a+crc.
+	* config/arm/arm-tables.opt: Regenerate.
+	* config/arm/arm.md (type): Add crc.
+	(<crc_variant>): New insn.
+	* config/arm/arm_acle.h: New file.
+	* config/arm/iterators.md (CRC): New int iterator.
+	(crc_variant, crc_mode): New int attributes.
+	* confg/arm/unspecs.md (UNSPEC_CRC32B, UNSPEC_CRC32H, UNSPEC_CRC32W,
+	UNSPEC_CRC32CB, UNSPEC_CRC32CH, UNSPEC_CRC32CW): New unspecs.
+	* doc/invoke.texi: Document -march=armv8-a+crc option.
+	* doc/extend.texi: Document ACLE intrinsics.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206120
+	2013-12-19  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* config/aarch64/aarch64-builtins.c (aarch64_init_simd_builtins):
+	Define builtin types for poly64_t poly128_t.
+	(TYPES_BINOPP, aarch64_types_binopp_qualifiers): New.
+	* aarch64/aarch64-simd-builtins.def: Update builtins table.
+	* config/aarch64/aarch64-simd.md (aarch64_crypto_pmulldi,
+	aarch64_crypto_pmullv2di): New.
+	* config/aarch64/aarch64.c (aarch64_simd_mangle_map): Update table for
+	poly64x2_t mangler.
+	* config/aarch64/arm_neon.h (poly64x2_t, poly64_t, poly128_t): Define.
+	(vmull_p64, vmull_high_p64): New.
+	* config/aarch64/iterators.md (UNSPEC_PMULL<2>): New.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206119
+	2013-12-19  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* config/aarch64/aarch64-simd-builtins.def: Update builtins table.
+	* config/aarch64/aarch64-simd.md (aarch64_crypto_sha256h<sha256_op>v4si,
+	aarch64_crypto_sha256su0v4si, aarch64_crypto_sha256su1v4si): New.
+	* config/aarch64/arm_neon.h (vsha256hq_u32, vsha256h2q_u32,
+	vsha256su0q_u32, vsha256su1q_u32): New.
+	* config/aarch64/iterators.md (UNSPEC_SHA256H<2>, UNSPEC_SHA256SU<01>):
+	New.
+	(CRYPTO_SHA256): New int iterator.
+	(sha256_op): New int attribute.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206118
+	2013-12-19  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* config/aarch64/aarch64-simd-builtins.def: Update builtins table.
+	* config/aarch64/aarch64-builtins.c (aarch64_types_ternopu_qualifiers,
+	TYPES_TERNOPU): New.
+	* config/aarch64/aarch64-simd.md (aarch64_crypto_sha1hsi,
+	aarch64_crypto_sha1su1v4si, aarch64_crypto_sha1<sha1_op>v4si,
+	aarch64_crypto_sha1su0v4si): New.
+	* config/aarch64/arm_neon.h (vsha1cq_u32, sha1mq_u32, vsha1pq_u32,
+	vsha1h_u32, vsha1su0q_u32, vsha1su1q_u32): New.
+	* config/aarch64/iterators.md (UNSPEC_SHA1<CPMH>, UNSPEC_SHA1SU<01>):
+	New.
+	(CRYPTO_SHA1): New int iterator.
+	(sha1_op): New int attribute.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206117
+	2013-12-19  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* config/aarch64/aarch64-simd-builtins.def: Update builtins table.
+	* config/aarch64/aarch64-builtins.c (aarch64_types_binopu_qualifiers,
+	TYPES_BINOPU): New.
+	* config/aarch64/aarch64-simd.md (aarch64_crypto_aes<aes_op>v16qi,
+	aarch64_crypto_aes<aesmc_op>v16qi): New.
+	* config/aarch64/arm_neon.h (vaeseq_u8, vaesdq_u8, vaesmcq_u8,
+	vaesimcq_u8): New.
+	* config/aarch64/iterators.md (UNSPEC_AESE, UNSPEC_AESD, UNSPEC_AESMC,
+	UNSPEC_AESIMC): New.
+	(CRYPTO_AES, CRYPTO_AESMC): New int iterators.
+	(aes_op, aesmc_op): New int attributes.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206115
+	2013-12-19  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* config/arm/types.md (neon_mul_d_long, crypto_aes, crypto_sha1_xor,
+	crypto_sha1_fast, crypto_sha1_slow, crypto_sha256_fast,
+	crypto_sha256_slow): New.
+
+	Modifications needed to backport into linaro-4_8-branch:
+	* config/aarch64/aarch64-simd.md (attribute simd_type):
+	(simd_mul_d_long, simd_crypto_aes, simd_crypto_sha1_xor,
+	simd_crypto_sha1_fast, simd_crypto_sha1_slow, simd_crypto_sha256_fast,
+	simd_crypto_sha256_slow) : New.
+	instead of the above change.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r206114
+	2013-12-19  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* config/aarch64/aarch64.h (TARGET_CRYPTO): New.
+	(__ARM_FEATURE_CRYPTO): Define if TARGET_CRYPTO is true.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r205384.
+	2013-11-26  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-builtins.c
+	(aarch64_type_qualifiers): Add qualifier_poly.
+	(aarch64_build_scalar_type): Also build Poly types.
+	(aarch64_build_vector_type): Likewise.
+	(aarch64_build_type): Likewise.
+	(aarch64_build_signed_type): New.
+	(aarch64_build_unsigned_type): Likewise.
+	(aarch64_build_poly_type): Likewise.
+	(aarch64_init_simd_builtins): Also handle Poly types.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r205383.
+	2013-11-26  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-builtins.c
+	(VAR1): Use new naming scheme for aarch64_builtins.
+	(aarch64_builtin_vectorized_function): Use new
+	aarch64_builtins names.
+
+2014-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r205092.
+	2013-11-20  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc/config/aarch64/aarch64-builtins.c
+	(aarch64_simd_itype): Remove.
+	(aarch64_simd_builtin_datum): Remove itype, add
+	qualifiers pointer.
+	(VAR1): Use qualifiers.
+	(aarch64_build_scalar_type): New.
+	(aarch64_build_vector_type): Likewise.
+	(aarch64_build_type): Likewise.
+	(aarch64_init_simd_builtins): Refactor, remove special cases,
+	consolidate main loop.
+	(aarch64_simd_expand_args): Likewise.
+
 2014-02-01  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r202875,202980.

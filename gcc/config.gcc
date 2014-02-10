@@ -325,7 +325,7 @@ am33_2.0-*-linux*)
 	;;
 arm*-*-*)
 	cpu_type=arm
-	extra_headers="mmintrin.h arm_neon.h"
+	extra_headers="mmintrin.h arm_neon.h arm_acle.h"
 	target_type_format_char='%'
 	c_target_objs="arm-c.o"
 	cxx_target_objs="arm-c.o"

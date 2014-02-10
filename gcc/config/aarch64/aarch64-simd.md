@@ -21,7 +21,7 @@
 
 ; Main data types used by the insntructions
 
-(define_attr "simd_mode" "unknown,none,V8QI,V16QI,V4HI,V8HI,V2SI,V4SI,V2DI,V2SF,V4SF,V2DF,OI,CI,XI,DI,DF,SI,SF,HI,QI"
+(define_attr "simd_mode" "unknown,none,V8QI,V16QI,V4HI,V8HI,V2SI,V4SI,V2DI,V2SF,V4SF,V2DF,OI,CI,XI,TI,DI,DF,SI,SF,HI,QI"
   (const_string "unknown"))
 
 
@@ -195,6 +195,7 @@
    simd_move,\
    simd_move_imm,\
    simd_mul,\
+   simd_mul_d_long,\
    simd_mul_elt,\
    simd_mull,\
    simd_mull_elt,\
@@ -235,6 +236,12 @@
    simd_trn,\
    simd_uzp,\
    simd_zip,\
+   simd_crypto_aes,\
+   simd_crypto_sha1_xor,\
+   simd_crypto_sha1_fast,\
+   simd_crypto_sha1_slow,\
+   simd_crypto_sha256_fast,\
+   simd_crypto_sha256_slow,\
    none"
   (const_string "none"))
 
@@ -4174,3 +4181,125 @@
    (set_attr "simd_mode" "<MODE>")]
 )
 
+;; aes
+
+(define_insn "aarch64_crypto_aes<aes_op>v16qi"
+  [(set (match_operand:V16QI 0 "register_operand" "=w")
+        (unspec:V16QI [(match_operand:V16QI 1 "register_operand" "0")
+		       (match_operand:V16QI 2 "register_operand" "w")]
+         CRYPTO_AES))]
+  "TARGET_SIMD && TARGET_CRYPTO"
+  "aes<aes_op>\\t%0.16b, %2.16b"
+  [(set_attr "simd_type" "simd_crypto_aes")
+   (set_attr "simd_mode" "V16QI")])
+
+(define_insn "aarch64_crypto_aes<aesmc_op>v16qi"
+  [(set (match_operand:V16QI 0 "register_operand" "=w")
+	(unspec:V16QI [(match_operand:V16QI 1 "register_operand" "w")]
+	 CRYPTO_AESMC))]
+  "TARGET_SIMD && TARGET_CRYPTO"
+  "aes<aesmc_op>\\t%0.16b, %1.16b"
+  [(set_attr "simd_type" "simd_crypto_aes")
+   (set_attr "simd_mode" "V16QI")])
+
+;; sha1
+
+(define_insn "aarch64_crypto_sha1hsi"
+  [(set (match_operand:SI 0 "register_operand" "=w")
+        (unspec:SI [(match_operand:SI 1
+                       "register_operand" "w")]
+         UNSPEC_SHA1H))]
+  "TARGET_SIMD && TARGET_CRYPTO"
+  "sha1h\\t%s0, %s1"
+  [(set_attr "simd_type" "simd_crypto_sha1_fast")
+   (set_attr "simd_mode" "SI")])
+
+(define_insn "aarch64_crypto_sha1su1v4si"
+  [(set (match_operand:V4SI 0 "register_operand" "=w")
+        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "0")
+                      (match_operand:V4SI 2 "register_operand" "w")]
+         UNSPEC_SHA1SU1))]
+  "TARGET_SIMD && TARGET_CRYPTO"
+  "sha1su1\\t%0.4s, %2.4s"
+  [(set_attr "simd_type" "simd_crypto_sha1_fast")
+   (set_attr "simd_mode" "V4SI")])
+
+(define_insn "aarch64_crypto_sha1<sha1_op>v4si"
+  [(set (match_operand:V4SI 0 "register_operand" "=w")
+        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "0")
+                      (match_operand:SI 2 "register_operand" "w")
+                      (match_operand:V4SI 3 "register_operand" "w")]
+         CRYPTO_SHA1))]
+  "TARGET_SIMD && TARGET_CRYPTO"
+  "sha1<sha1_op>\\t%q0, %s2, %3.4s"
+  [(set_attr "simd_type" "simd_crypto_sha1_slow")
+   (set_attr "simd_mode" "V4SI")])
+
+(define_insn "aarch64_crypto_sha1su0v4si"
+  [(set (match_operand:V4SI 0 "register_operand" "=w")
+        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "0")
+                      (match_operand:V4SI 2 "register_operand" "w")
+                      (match_operand:V4SI 3 "register_operand" "w")]
+         UNSPEC_SHA1SU0))]
+  "TARGET_SIMD && TARGET_CRYPTO"
+  "sha1su0\\t%0.4s, %2.4s, %3.4s"
+  [(set_attr "simd_type" "simd_crypto_sha1_xor")
+   (set_attr "simd_mode" "V4SI")])
+
+
+;; sha256
+
+(define_insn "aarch64_crypto_sha256h<sha256_op>v4si"
+  [(set (match_operand:V4SI 0 "register_operand" "=w")
+        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "0")
+                      (match_operand:V4SI 2 "register_operand" "w")
+                      (match_operand:V4SI 3 "register_operand" "w")]
+         CRYPTO_SHA256))]
+  "TARGET_SIMD && TARGET_CRYPTO"
+  "sha256h<sha256_op>\\t%q0, %q2, %3.4s"
+  [(set_attr "simd_type" "simd_crypto_sha256_slow")
+   (set_attr "simd_mode" "V4SI")])
+
+(define_insn "aarch64_crypto_sha256su0v4si"
+  [(set (match_operand:V4SI 0 "register_operand" "=w")
+        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "0")
+                      (match_operand:V4SI 2 "register_operand" "w")]
+         UNSPEC_SHA256SU0))]
+  "TARGET_SIMD &&TARGET_CRYPTO"
+  "sha256su0\\t%0.4s, %2.4s"
+  [(set_attr "simd_type" "simd_crypto_sha256_fast")
+   (set_attr "simd_mode" "V4SI")])
+
+(define_insn "aarch64_crypto_sha256su1v4si"
+  [(set (match_operand:V4SI 0 "register_operand" "=w")
+        (unspec:V4SI [(match_operand:V4SI 1 "register_operand" "0")
+                      (match_operand:V4SI 2 "register_operand" "w")
+                      (match_operand:V4SI 3 "register_operand" "w")]
+         UNSPEC_SHA256SU1))]
+  "TARGET_SIMD &&TARGET_CRYPTO"
+  "sha256su1\\t%0.4s, %2.4s, %3.4s"
+  [(set_attr "simd_type""simd_crypto_sha256_slow")
+   (set_attr "simd_mode" "V4SI")])
+
+
+;; pmull
+
+(define_insn "aarch64_crypto_pmulldi"
+  [(set (match_operand:TI 0 "register_operand" "=w")
+        (unspec:TI  [(match_operand:DI 1 "register_operand" "w")
+		     (match_operand:DI 2 "register_operand" "w")]
+		    UNSPEC_PMULL))]
+ "TARGET_SIMD && TARGET_CRYPTO"
+ "pmull\\t%0.1q, %1.1d, %2.1d"
+  [(set_attr "simd_type" "simd_mul_d_long")
+   (set_attr "simd_mode" "TI")])
+
+(define_insn "aarch64_crypto_pmullv2di"
+ [(set (match_operand:TI 0 "register_operand" "=w")
+       (unspec:TI [(match_operand:V2DI 1 "register_operand" "w")
+		   (match_operand:V2DI 2 "register_operand" "w")]
+		  UNSPEC_PMULL2))]
+  "TARGET_SIMD && TARGET_CRYPTO"
+  "pmull2\\t%0.1q, %1.2d, %2.2d"
+  [(set_attr "simd_type" "simd_mul_d_long")
+   (set_attr "simd_mode" "TI")])

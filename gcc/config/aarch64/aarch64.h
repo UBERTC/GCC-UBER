@@ -49,6 +49,8 @@
 	    break;					\
 	}						\
 							\
+      if (TARGET_CRYPTO)				\
+	builtin_define ("__ARM_FEATURE_CRYPTO");	\
     } while (0)
 
 
@@ -173,6 +175,8 @@ extern unsigned long aarch64_isa_flags;
 extern unsigned long aarch64_tune_flags;
 #define AARCH64_TUNE_SLOWMUL       (aarch64_tune_flags & AARCH64_FL_SLOWMUL)
 
+/* Crypto is an optional feature.  */
+#define TARGET_CRYPTO AARCH64_ISA_CRYPTO
 
 /* Standard register usage.  */
 
