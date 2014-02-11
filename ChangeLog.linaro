@@ -4,7 +4,7 @@
 
 2013-12-21  Christophe Lyon  <christophe.lyon@linaro.org>
 
-       GCC Linaro 4.8-2013.12 released.
+	GCC Linaro 4.8-2013.12 released.
 
 2013-12-06  Michael Collison  <michael.collison@linaro.org>
 
@@ -16,7 +16,7 @@
 
 2013-11-14  Christophe Lyon  <christophe.lyon@linaro.org>
 
-       GCC Linaro 4.8-2013.11 released.
+	GCC Linaro 4.8-2013.11 released.
 
 2013-10-15  Christophe Lyon  <christophe.lyon@linaro.org>
 
@@ -24,7 +24,7 @@
 
 2013-09-10  Christophe Lyon  <christophe.lyon@linaro.org>
 
-        GCC Linaro 4.8-2013.09 released.
+	GCC Linaro 4.8-2013.09 released.
 
 2013-08-14  Christophe Lyon  <christophe.lyon@linaro.org>
 
@@ -32,25 +32,15 @@
 
 2013-07-19  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
-        GCC Linaro 4.8-2013.07-1 released.
-
-2013-07-09  Christophe Lyon  <christophe.lyon@linaro.org>
-
-	gcc/
-        * LINARO-VERSION: Bump version.
+	GCC Linaro 4.8-2013.07-1 released.
 
 2013-07-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	GCC Linaro 4.8-2013.07 released.
 
-2013-06-18  Rob Savoye  <rob.savoye@linaro.org>
-
-	gcc/
-        * LINARO-VERSION: Bump version.
-
 2013-06-11  Rob Savoye  <rob.savoye@linaro.org>
 
-        GCC Linaro gcc-linaro-4.8-2013.06 released.
+	GCC Linaro gcc-linaro-4.8-2013.06 released.
 
 2013-05-14  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
@@ -58,4 +48,4 @@
 
 2013-04-09  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
-	* GCC Linaro 4.8-2013.04 released.
+	GCC Linaro 4.8-2013.04 released.

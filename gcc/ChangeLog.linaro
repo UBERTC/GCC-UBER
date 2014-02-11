@@ -300,12 +300,12 @@
 
 2014-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
 
-	gcc/
 	* LINARO-VERSION: Bump version.
 
 2014-01-17  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	GCC Linaro 4.8-2014.01 released.
+	* LINARO-VERSION: Update.
 
 2014-01-16  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
 
@@ -321,7 +321,8 @@
 
 2013-12-21  Christophe Lyon  <christophe.lyon@linaro.org>
 
-       GCC Linaro 4.8-2013.12 released.
+	GCC Linaro 4.8-2013.12 released.
+	* LINARO-VERSION: Update.
 
 2013-12-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
@@ -348,7 +349,8 @@
 
 2013-11-14  Christophe Lyon  <christophe.lyon@linaro.org>
 
-       GCC Linaro 4.8-2013.11 released.
+	GCC Linaro 4.8-2013.11 released.
+	* LINARO-VERSION: Update.
 
 2013-11-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
@@ -399,6 +401,7 @@
 2013-10-15  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	GCC Linaro 4.8-2013.10 released.
+	* LINARO-VERSION: Update.
 
 2013-10-09  Christophe Lyon  <christophe.lyon@linaro.org>
 
@@ -505,7 +508,7 @@
 
 	Backport from trunk r201260,202400.
 	2013-07-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
-            Richard Earnshaw  <richard.earnshaw@arm.com>
+	    Richard Earnshaw  <richard.earnshaw@arm.com>
 
 	* combine.c (simplify_comparison): Re-canonicalize operands
 	where appropriate.
@@ -576,7 +579,8 @@
 
 2013-09-10  Christophe Lyon  <christophe.lyon@linaro.org>
 
-        GCC Linaro 4.8-2013.09 released.
+	GCC Linaro 4.8-2013.09 released.
+	* LINARO-VERSION: Update.
 
 2013-09-10  Venkataramanan Kumar  <venkataramanan.kumar@linaro.org>
 
@@ -1066,6 +1070,7 @@
 2013-08-14  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	GCC Linaro 4.8-2013.08 released.
+	* LINARO-VERSION: Update.
 
 2013-08-08  Christophe Lyon  <christophe.lyon@linaro.org>
 
@@ -1768,7 +1773,8 @@
 
 2013-07-19  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
-        GCC Linaro 4.8-2013.07-1 released.
+	GCC Linaro 4.8-2013.07-1 released.
+	* LINARO-VERSION: Update.
 
 2013-07-19  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
@@ -1779,9 +1785,14 @@
 	* config/arm/arm.c (gen_movmem_ldrd_strd): Fix unaligned load/store
 	usage in HI mode.
 
+2013-07-09  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* LINARO-VERSION: Bump version.
+
 2013-07-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	GCC Linaro 4.8-2013.07 released.
+	* LINARO-VERSION: Update.
 
 2013-07-03  Christophe Lyon  <christophe.lyon@linaro.org>
 
@@ -1952,9 +1963,14 @@
 	* config/arm/linux-eabi.h (ASAN_CC1_SPEC): Define.
 	(LINUX_OR_ANDROID_CC): Add ASAN_CC1_SPEC.
 
+2013-06-18  Rob Savoye  <rob.savoye@linaro.org>
+
+	* LINARO-VERSION: Bump version.
+
 2013-06-11  Rob Savoye  <rob.savoye@linaro.org>
 
-        GCC Linaro gcc-linaro-4.8-2013.06 released.
+	GCC Linaro gcc-linaro-4.8-2013.06 released.
+	* LINARO-VERSION: Update.
 
 2013-06-06  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
 
@@ -2298,6 +2314,7 @@
 2013-05-14  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
 	GCC Linaro 4.8-2013.05 released.
+	* LINARO-VERSION: Update.
 
 2013-05-14  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
@@ -2567,7 +2584,7 @@
 
 	Backport from trunk 198298.
 	2013-04-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
-            Julian Brown  <julian@codesourcery.com>
+	    Julian Brown  <julian@codesourcery.com>
 
 	* config/arm/arm.c (neon_builtin_type_mode): Add T_V4HF.
 	(TB_DREG): Add T_V4HF.
@@ -2766,7 +2783,7 @@
 	(movdf_soft_insn): Likewise.
 	* config/arm/vfp.md (movdi_vfp): Likewise.
 	* config/arm/t-arm (MD_INCLUDES): Add ldrdstrd.md.
-        * config/arm/arm-protos.h (gen_operands_ldrd_strd): New declaration.
+	* config/arm/arm-protos.h (gen_operands_ldrd_strd): New declaration.
 	* config/arm/arm.c (gen_operands_ldrd_strd): New function.
 	(mem_ok_for_ldrd_strd): Likewise.
 	(output_move_double): Update assertion.
@@ -2784,7 +2801,7 @@
 
 	* config/arm/arm.md (arm_ashldi3_1bit): Convert define_insn into
 	define_insn_and_split.
-        (arm_ashrdi3_1bit,arm_lshrdi3_1bit): Likewise.
+	(arm_ashrdi3_1bit,arm_lshrdi3_1bit): Likewise.
 	(shiftsi3_compare): New pattern.
 	(rrx): New pattern.
 	* config/arm/unspecs.md (UNSPEC_RRX): New.
@@ -2884,8 +2901,7 @@
 
 2013-04-09  Matthew Gretton-Dann  <matthew.gretton-dann@linaro.org>
 
-	* GCC Linaro 4.8-2013.04 released.
-	
+	GCC Linaro 4.8-2013.04 released.
 	* LINARO-VERSION: New file.
 	* configure.ac: Add Linaro version string.
 	* configure: Regenerate.
