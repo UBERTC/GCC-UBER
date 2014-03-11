@@ -2501,7 +2501,8 @@ finish_fname (tree id)
   tree decl;
 
   decl = fname_decl (input_location, C_RID_CODE (id), id);
-  if (processing_template_decl && current_function_decl)
+  if (processing_template_decl && current_function_decl
+      && decl != error_mark_node)
     decl = DECL_NAME (decl);
   return decl;
 }
@@ -3853,7 +3854,7 @@ expand_or_defer_fn_1 (tree fn)
 	     linkage of all functions, and as that causes writes to
 	     the data mapped in from the PCH file, it's advantageous
 	     to mark the functions at this point.  */
-	  if (!DECL_IMPLICIT_INSTANTIATION (fn))
+	  if (!DECL_IMPLICIT_INSTANTIATION (fn) || DECL_DEFAULTED_FN (fn))
 	    {
 	      /* This function must have external linkage, as
 		 otherwise DECL_INTERFACE_KNOWN would have been

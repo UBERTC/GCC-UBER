@@ -1419,6 +1419,8 @@ register_specialization (tree spec, tree tmpl, tree args, bool is_friend,
 		    = DECL_DECLARED_INLINE_P (fn);
 		  DECL_SOURCE_LOCATION (clone)
 		    = DECL_SOURCE_LOCATION (fn);
+		  DECL_DELETED_FN (clone)
+		    = DECL_DELETED_FN (fn);
 		}
 	      check_specialization_namespace (tmpl);
 
@@ -3823,7 +3825,6 @@ template_parm_to_arg (tree t)
 	  SET_NON_DEFAULT_TEMPLATE_ARGS_COUNT
 	    (vec, TREE_VEC_LENGTH (vec));
 #endif
-	  t = convert_from_reference (t);
 	  TREE_VEC_ELT (vec, 0) = make_pack_expansion (t);
 
 	  t  = make_node (NONTYPE_ARGUMENT_PACK);
@@ -6678,6 +6679,8 @@ coerce_template_parms (tree parms,
           /* Store this argument.  */
           if (arg == error_mark_node)
             lost++;
+	  if (lost)
+	    break;
           TREE_VEC_ELT (new_inner_args, parm_idx) = arg;
 
 	  /* We are done with all of the arguments.  */
@@ -9113,6 +9116,10 @@ tsubst_template_arg (tree t, tree args, tsubst_flags_t complain, tree in_decl)
 		       /*integral_constant_expression_p=*/true);
       if (!(complain & tf_warning))
 	--c_inhibit_evaluation_warnings;
+      /* Preserve the raw-reference nature of T.  */
+      if (TREE_TYPE (t) && TREE_CODE (TREE_TYPE (t)) == REFERENCE_TYPE
+	  && REFERENCE_REF_P (r))
+	r = TREE_OPERAND (r, 0);
     }
   return r;
 }
@@ -12696,27 +12703,43 @@ tsubst_omp_for_iterator (tree t, int i, tree declv, tree initv,
   tsubst_expr ((NODE), args, complain, in_decl,	\
 	       integral_constant_expression_p)
   tree decl, init, cond, incr;
-  bool init_decl;
 
   init = TREE_VEC_ELT (OMP_FOR_INIT (t), i);
   gcc_assert (TREE_CODE (init) == MODIFY_EXPR);
   decl = TREE_OPERAND (init, 0);
   init = TREE_OPERAND (init, 1);
-  /* Do this before substituting into decl to handle 'auto'.  */
-  init_decl = (init && TREE_CODE (init) == DECL_EXPR);
-  init = RECUR (init);
-  decl = RECUR (decl);
-  if (init_decl)
+  tree decl_expr = NULL_TREE;
+  if (init && TREE_CODE (init) == DECL_EXPR)
     {
-      gcc_assert (!processing_template_decl);
-      init = DECL_INITIAL (decl);
-      DECL_INITIAL (decl) = NULL_TREE;
+      /* We need to jump through some hoops to handle declarations in the
+	 for-init-statement, since we might need to handle auto deduction,
+	 but we need to keep control of initialization.  */
+      decl_expr = init;
+      init = DECL_INITIAL (DECL_EXPR_DECL (init));
+      decl = tsubst_decl (decl, args, complain);
     }
+  else
+    decl = RECUR (decl);
+  init = RECUR (init);
+
+  tree auto_node = type_uses_auto (TREE_TYPE (decl));
+  if (auto_node && init)
+    TREE_TYPE (decl)
+      = do_auto_deduction (TREE_TYPE (decl), init, auto_node);
 
   gcc_assert (!type_dependent_expression_p (decl));
 
   if (!CLASS_TYPE_P (TREE_TYPE (decl)))
     {
+      if (decl_expr)
+	{
+	  /* Declare the variable, but don't let that initialize it.  */
+	  tree init_sav = DECL_INITIAL (DECL_EXPR_DECL (decl_expr));
+	  DECL_INITIAL (DECL_EXPR_DECL (decl_expr)) = NULL_TREE;
+	  RECUR (decl_expr);
+	  DECL_INITIAL (DECL_EXPR_DECL (decl_expr)) = init_sav;
+	}
+
       cond = RECUR (TREE_VEC_ELT (OMP_FOR_COND (t), i));
       incr = TREE_VEC_ELT (OMP_FOR_INCR (t), i);
       if (TREE_CODE (incr) == MODIFY_EXPR)
@@ -12733,7 +12756,13 @@ tsubst_omp_for_iterator (tree t, int i, tree declv, tree initv,
       return;
     }
 
-  if (init && !init_decl)
+  if (decl_expr)
+    {
+      /* Declare and initialize the variable.  */
+      RECUR (decl_expr);
+      init = NULL_TREE;
+    }
+  else if (init)
     {
       tree c;
       for (c = *clauses; c ; c = OMP_CLAUSE_CHAIN (c))
@@ -16589,9 +16618,11 @@ unify (tree tparms, tree targs, tree parm, tree arg, int strict,
 	  if (TREE_CODE (arg) != BOUND_TEMPLATE_TEMPLATE_PARM
 	      && !CLASSTYPE_SPECIALIZATION_OF_PRIMARY_TEMPLATE_P (arg))
 	    return unify_template_deduction_failure (explain_p, parm, arg);
-
 	  {
 	    tree parmvec = TYPE_TI_ARGS (parm);
+	    /* An alias template name is never deduced.  */
+	    if (TYPE_ALIAS_P (arg))
+	      arg = strip_typedefs (arg);
 	    tree argvec = INNERMOST_TEMPLATE_ARGS (TYPE_TI_ARGS (arg));
 	    tree full_argvec = add_to_template_args (targs, argvec);
 	    tree parm_parms 
@@ -18566,6 +18597,10 @@ void
 maybe_instantiate_noexcept (tree fn)
 {
   tree fntype, spec, noex, clone;
+
+  /* Don't instantiate a noexcept-specification from template context.  */
+  if (processing_template_decl)
+    return;
 
   if (DECL_CLONED_FUNCTION_P (fn))
     fn = DECL_CLONED_FUNCTION (fn);
