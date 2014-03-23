@@ -1,3 +1,43 @@
+2014-02-26  Fabien Chêne  <fabien@gcc.gnu.org>
+        PR c++/37140
+        * parser.c (cp_parser_nonclass_name): Call strip_using_decl and
+	move the code handling dependent USING_DECLs...
+        * name-lookup.c (strip_using_decl): ...Here.
+
+2014-02-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/60248
+	* mangle.c (mangle_decl): Don't make an alias for a TYPE_DECL.
+
+2014-02-20  Kai Tietz  <ktietz@redhat.com>
+
+	PR c++/58873
+	* parser.c (cp_parser_functional_cast): Treat NULL_TREE
+	valued type argument as error_mark_node.
+
+	PR c++/58835
+	* semantics.c (finish_fname): Handle error_mark_node.
+
+2014-02-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/60046
+	* pt.c (maybe_instantiate_noexcept): Don't instantiate exception
+	spec from template context.
+
+2014-01-31  Jason Merrill  <jason@redhat.com>
+
+	PR c++/57043
+	* pt.c (fn_type_unification): Don't do DEDUCE_EXACT check
+	during partial ordering.
+
+2014-01-27  Jason Merrill  <jason@redhat.com>
+
+	PR c++/54652
+	* decl.c (duplicate_decls): Always use oldtype for TYPE_DECL.
+
+	PR c++/58639
+	* call.c (build_aggr_conv): Reject value-initialization of reference.
+
 2013-10-25  Tom de Vries  <tom@codesourcery.com>
 
 	PR c++/58282

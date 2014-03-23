@@ -1,3 +1,24 @@
+2014-03-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/51483
+	* back_end.ads (Register_Type_Proc): Add 'precision' parameter.
+	* cstand.adb (Register_Float_Type): Add 'precision' parameter and use
+	it to set the RM size.  Use directly 'size' for the Esize.
+	* gcc-interface/gigi.h (enumerate_modes): Add integer parameter.
+	* gcc-interface/misc.c (enumerate_modes): Likewise.  Do not register
+	types for vector modes, pass the size in addition to the precision.
+
+2014-01-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/59772
+	* gcc-interface/cuintp.c (build_cst_from_int): Use 32-bit integer type
+	as intermediate type.
+	(UI_To_gnu): Likewise.
+
+2013-12-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/Make-lang.in (ada/doctools/xgnatugn): Use gnatmake.
+
 2013-10-19  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gcc-interface/utils.c (gnat_set_type_context): New function.
