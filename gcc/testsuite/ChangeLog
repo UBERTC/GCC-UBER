@@ -1,3 +1,150 @@
+2014-03-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2014-03-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/60700
+	* gcc.target/i386/pr60700.c: New test.
+
+2014-03-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/60700
+	Backport from mainline
+	2013-07-30  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* gcc.target/arm/pr57637.c: New testcase.
+
+2014-04-28  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/60522
+	* gfortran.dg/where_4.f90:  New test case.
+
+2014-03-26  Martin Jambor  <mjambor@suse.cz>
+
+      PR ipa/60419
+      * g++.dg/ipa/pr60419.C: New test.
+
+2014-03-26  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.c-torture/execute/20140326-1.c: New test.
+
+2014-03-20  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/60543
+	PR fortran/60283
+	* gfortran.dg/implicit_pure_4.f90: New.
+
+2014-03-17  Mikael Pettersson  <mikpelinux@gmail.com>
+	    Committed by Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline:
+
+	2013-06-16  Joern Rennecke <joern.rennecke@embecosm.com>
+
+	PR rtl-optimization/57425
+	PR rtl-optimization/57569
+	* gcc.dg/torture/pr57425-1.c, gcc.dg/torture/pr57425-2.c: New files.
+	* gcc.dg/torture/pr57425-3.c, gcc.dg/torture/pr57569.c: Likewise.
+
+2014-03-17  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-03-11  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60429
+	PR tree-optimization/60485
+	* gcc.dg/pr60485-1.c: New testcase.
+	* gcc.dg/pr60485-2.c: Likewise.
+
+2014-03-15  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	Backport from mainline
+	PR libfortran/60128
+	* gfortran.dg/fmt_en.f90: New test.
+
+2014-03-15  Jerry DeLisle  <jvdelisle@gcc.gnu>
+
+	Backport from mainline
+	PR libfortran/58324
+	* gfortran.dg/list_read_12.f90: New test.
+
+2014-03-13  Joey Ye  <joey.ye@arm.com>
+
+	Backport from mainline
+	2014-03-12  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/60454
+	* gcc.c-torture/execute/pr60454.c: New test.
+
+2014-03-08  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/60450
+	* gfortran.dg/shape_8.f90: New.
+
+2014-03-06  Jakub Jelinek  <jakub@redhat.com>
+
+	Backport from mainline
+	2014-02-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/37743
+	* g++.dg/ext/builtin-bswap1.C: New test.
+	* c-c++-common/pr37743.c: New test.
+
+	PR preprocessor/58844
+	* c-c++-common/cpp/pr58844-1.c: New test.
+	* c-c++-common/cpp/pr58844-2.c: New test.
+
+	2014-02-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/43546
+	* gcc.target/i386/pr43546.c: New test.
+
+	2014-02-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/60101
+	* c-c++-common/pr60101.c: New test.
+
+	2014-02-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/52370
+	* gfortran.dg/pr52370.f90: New test.
+
+	PR debug/59776
+	* gcc.dg/guality/pr59776.c: New test.
+
+	2014-02-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR preprocessor/56824
+	* gcc.dg/pr56824.c: New test.
+
+	2014-02-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/60062
+	* gcc.c-torture/execute/pr60062.c: New test.
+	* gcc.c-torture/execute/pr60072.c: New test.
+
+	2014-02-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR ipa/60026
+	* c-c++-common/torture/pr60026.c: New test.
+
+	2014-02-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/57499
+	* g++.dg/torture/pr57499.C: New test.
+
+	2014-03-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR preprocessor/60400
+	* c-c++-common/cpp/pr60400.c: New test.
+	* c-c++-common/cpp/pr60400-1.h: New file.
+	* c-c++-common/cpp/pr60400-2.h: New file.
+
+2014-03-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60382
+	* gcc.dg/vect/pr60382.c: New testcase.
+
 2014-03-02  Mikael Morin  <mikael@gcc.gnu.org>
 
 	PR fortran/60341

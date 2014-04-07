@@ -1,3 +1,58 @@
+2014-03-29  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/60677
+	* trans-intrinsic.c (gfc_conv_intrinsic_ichar): Enlarge argument
+	list buffer.
+
+2014-03-28  Mikael Morin  <mikael@gcc.gnu.org>
+	    Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/60576
+	* trans-expr.c (gfc_conv_derived_to_class): Avoid
+	generation of out-of-bounds range expr.
+
+2014-03-28  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/60522
+	* frontend-passes.c (cfe_code):  Do not walk subtrees
+	for WHERE.
+
+2014-03-20  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/60543
+	PR fortran/60283
+	* gfortran.h (gfc_unset_implicit_pure): New prototype.
+	* resolve.c (gfc_unset_implicit_pure): New.
+	(resolve_structure_cons, resolve_function,
+	pure_subroutine, resolve_ordinary_assign): Use it.
+	* decl.c (match_old_style_init, gfc_match_data,
+	match_pointer_init, variable_decl): Ditto.
+	* expr.c (gfc_check_pointer_assign): Ditto.
+	* intrinsic.c (gfc_intrinsic_sub_interface): Ditto.
+	* io.c (match_vtag, gfc_match_open, gfc_match_close,
+	match_filepos, gfc_match_inquire, gfc_match_print,
+	gfc_match_wait, check_io_constraints): Ditto.
+	* match.c (gfc_match_critical, gfc_match_stopcode,
+	lock_unlock_statement, sync_statement, gfc_match_allocate,
+	gfc_match_deallocate): Ditto.
+	* parse.c (decode_omp_directive): Ditto.
+	* symbol.c (gfc_add_save): Ditto.
+
+2014-03-08  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/60450
+	* simplify.c (gfc_simplify_shape): Only clear shape if it was really
+	created successfully.
+
+2014-03-06  Jakub Jelinek  <jakub@redhat.com>
+
+	Backport from mainline
+	2014-02-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/52370
+	* trans-decl.c (gfc_build_dummy_array_decl): Set TREE_NO_WARNING
+	on decl if sym->attr.optional.
+
 2014-03-02  Mikael Morin  <mikael@gcc.gnu.org>
 
 	PR fortran/60341

@@ -1,3 +1,78 @@
+2014-03-26  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/59548
+	* include/debug/safe_unordered_base.h (_Safe_unordered_container_base):
+	Define copy and move constructors that handle iterators correctly.
+	* testsuite/23_containers/unordered_map/59548.cc: New.
+
+2014-03-25  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60658
+	* include/bits/atomic_base.h (__atomic_base<_PTp*>::is_lock_free()):
+	Use sizeof pointer type not the element type.
+	* testsuite/29_atomics/atomic/60658.cc: New.
+
+2014-03-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60564
+	* include/std/future (__future_base::_Task_state<>): Change
+	constructors to template functions using perfect forwarding.
+	(__create_task_state): Use decayed type as stored task.
+	(packaged_task::packaged_task(_Fn&&)): Forward instead of moving.
+	* testsuite/30_threads/packaged_task/60564.cc: New.
+
+2014-03-12  Roland McGrath  <mcgrathr@google.com>
+	    Mark Seaborn  <mseaborn@google.com>
+
+	PR libstdc++/59392
+	* libsupc++/eh_call.cc (__cxa_call_unexpected): Call __do_catch with
+	the address of a null pointer, not with a null pointer to pointer.
+	Copy comment for this case from eh_personality.cc:__cxa_call_unexpected.
+	* testsuite/18_support/bad_exception/59392.cc: New file.
+
+2014-03-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline.
+	2014-01-09  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/59680
+	* src/c++11/thread.cc (__sleep_for): Fix call to ::sleep.
+
+2014-03-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline.
+	2014-01-27  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/59215
+	* include/bits/shared_ptr_base.h
+	(_Sp_counted_base<_S_atomic>::_M_add_ref_lock()): Use relaxed atomic
+	load.
+
+2014-03-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline.
+
+	2014-01-09  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/59738
+	* include/bits/stl_vector.h (vector<>::_M_move_assign): Restore
+	support for non-Movable types.
+
+	2014-01-08  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/bits/stl_vector.h (std::vector<>::_M_move_assign): Pass
+	*this allocator instance when building temporary vector instance
+	so that *this allocator does not get moved.
+	* testsuite/23_containers/vector/allocator/move.cc (test01): Add
+	check on a vector iterator.
+	* testsuite/23_containers/vector/allocator/move_assign.cc
+	(test02): Likewise.
+	(test03): New, test with a non-propagating allocator.
+
+	2013-11-15  Jonathan Wakely  <jwakely.gcc@gmail.com>
+
+	* testsuite/23_containers/vector/allocator/move.cc: New
+
 2014-01-27  Jason Merrill  <jason@redhat.com>
 
 	Core DR 475

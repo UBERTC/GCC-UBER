@@ -5176,7 +5176,12 @@ ix86_function_regparm (const_tree type, const_tree decl)
   /* Use register calling convention for local functions when possible.  */
   if (decl
       && TREE_CODE (decl) == FUNCTION_DECL
-      && optimize
+      /* Caller and callee must agree on the calling convention, so
+	 checking here just optimize means that with
+	 __attribute__((optimize (...))) caller could use regparm convention
+	 and callee not, or vice versa.  Instead look at whether the callee
+	 is optimized or not.  */
+      && opt_for_fn (decl, optimize)
       && !(profile_flag && !flag_fentry))
     {
       /* FIXME: remove this CONST_CAST when cgraph.[ch] is constified.  */
@@ -35048,7 +35053,7 @@ x86_output_mi_thunk (FILE *file,
 	{
 	  tmp = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, fnaddr), UNSPEC_GOTPCREL);
 	  tmp = gen_rtx_CONST (Pmode, tmp);
-	  fnaddr = gen_rtx_MEM (Pmode, tmp);
+	  fnaddr = gen_const_mem (Pmode, tmp);
 	}
     }
   else
@@ -35068,8 +35073,9 @@ x86_output_mi_thunk (FILE *file,
 	  output_set_got (tmp, NULL_RTX);
 
 	  fnaddr = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, fnaddr), UNSPEC_GOT);
-	  fnaddr = gen_rtx_PLUS (Pmode, fnaddr, tmp);
-	  fnaddr = gen_rtx_MEM (Pmode, fnaddr);
+	  fnaddr = gen_rtx_CONST (Pmode, fnaddr);
+	  fnaddr = gen_rtx_PLUS (Pmode, tmp, fnaddr);
+	  fnaddr = gen_const_mem (Pmode, fnaddr);
 	}
     }
 
