@@ -1,3 +1,12 @@
+2014-04-07  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r202663
+	2013-09-17  Cong Hou  <congh@google.com>
+
+	* gcc.dg/vect/vect-reduc-dot-s16c.c: Add a test case with dot product
+	on two arrays with short and int types. This should not be recognized
+	as a dot product pattern.
+
 2014-04-02  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
 
 	Backport from trunk r208511
