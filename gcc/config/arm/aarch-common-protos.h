@@ -1,4 +1,7 @@
-/* Copyright (C) 2011-2013 Free Software Foundation, Inc.
+/* Function prototypes for instruction scheduling dependeoncy routines,
+   defined in aarch-common.c
+
+   Copyright (C) 1991-2013 Free Software Foundation, Inc.
    Contributed by ARM Ltd.
 
    This file is part of GCC.
@@ -17,13 +20,17 @@
    along with GCC; see the file COPYING3.  If not see
    <http://www.gnu.org/licenses/>.  */
 
-/* Before using #include to read this file, define a macro:
 
-      AARCH64_ARCH(NAME, CORE, ARCH, FLAGS)
+#ifndef GCC_AARCH_COMMON_PROTOS_H
+#define GCC_AARCH_COMMON_PROTOS_H
 
-   The NAME is the name of the architecture, represented as a string
-   constant.  The CORE is the identifier for a core representative of
-   this architecture.  ARCH is the architecture revision.  FLAGS are
-   the flags implied by the architecture.  */
+extern int arm_early_load_addr_dep (rtx, rtx);
+extern int arm_early_store_addr_dep (rtx, rtx);
+extern int arm_mac_accumulator_is_mul_result (rtx, rtx);
+extern int arm_mac_accumulator_is_result (rtx, rtx);
+extern int arm_no_early_alu_shift_dep (rtx, rtx);
+extern int arm_no_early_alu_shift_value_dep (rtx, rtx);
+extern int arm_no_early_mul_dep (rtx, rtx);
+extern int arm_no_early_store_addr_dep (rtx, rtx);
 
-AARCH64_ARCH("armv8-a",	      cortexa53,	     8,  AARCH64_FL_FOR_ARCH8)
+#endif /* GCC_AARCH_COMMON_PROTOS_H */

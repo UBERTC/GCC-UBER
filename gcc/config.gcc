@@ -312,7 +312,7 @@ aarch64*-*-*)
 	cpu_type=aarch64
 	need_64bit_hwint=yes
 	extra_headers="arm_neon.h"
-	extra_objs="aarch64-builtins.o"
+	extra_objs="aarch64-builtins.o aarch-common.o"
 	target_has_targetm_common=yes
 	;;
 alpha*-*-*)
@@ -326,6 +326,7 @@ am33_2.0-*-linux*)
 arm*-*-*)
 	cpu_type=arm
 	extra_headers="mmintrin.h arm_neon.h arm_acle.h"
+	extra_objs="aarch-common.o"
 	target_type_format_char='%'
 	c_target_objs="arm-c.o"
 	cxx_target_objs="arm-c.o"
@@ -498,6 +499,9 @@ then
 fi
 
 case ${target} in
+aarch64*-*-*)
+	tm_p_file="${tm_p_file} arm/aarch-common-protos.h"
+	;;
 i[34567]86-*-*)
 	if test "x$with_abi" != x; then
 		echo "This target does not support --with-abi."
@@ -538,7 +542,11 @@ x86_64-*-*)
 	fi
 	tm_file="vxworks-dummy.h ${tm_file}"
 	;;
-arm*-*-* | mips*-*-* | sh*-*-* | sparc*-*-*)
+arm*-*-*)
+	tm_p_file="${tm_p_file} arm/aarch-common-protos.h"
+	tm_file="vxworks-dummy.h ${tm_file}"
+	;;
+mips*-*-* | sh*-*-* | sparc*-*-*)
 	tm_file="vxworks-dummy.h ${tm_file}"
 	;;
 esac

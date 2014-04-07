@@ -25,7 +25,7 @@
          CRYPTO_UNARY))]
   "TARGET_CRYPTO"
   "<crypto_pattern>.<crypto_size_sfx>\\t%q0, %q1"
-  [(set_attr "neon_type" "<crypto_type>")]
+  [(set_attr "type" "<crypto_type>")]
 )
 
 (define_insn "crypto_<crypto_pattern>"
@@ -35,7 +35,7 @@
          CRYPTO_BINARY))]
   "TARGET_CRYPTO"
   "<crypto_pattern>.<crypto_size_sfx>\\t%q0, %q2"
-  [(set_attr "neon_type" "<crypto_type>")]
+  [(set_attr "type" "<crypto_type>")]
 )
 
 (define_insn "crypto_<crypto_pattern>"
@@ -46,7 +46,7 @@
          CRYPTO_TERNARY))]
   "TARGET_CRYPTO"
   "<crypto_pattern>.<crypto_size_sfx>\\t%q0, %q2, %q3"
-  [(set_attr "neon_type" "<crypto_type>")]
+  [(set_attr "type" "<crypto_type>")]
 )
 
 (define_insn "crypto_sha1h"
@@ -58,7 +58,7 @@
            UNSPEC_SHA1H)))]
   "TARGET_CRYPTO"
   "sha1h.32\\t%q0, %q1"
-  [(set_attr "neon_type" "neon_crypto_sha1_fast")]
+  [(set_attr "type" "crypto_sha1_fast")]
 )
 
 (define_insn "crypto_vmullp64"
@@ -68,7 +68,7 @@
          UNSPEC_VMULLP64))]
   "TARGET_CRYPTO"
   "vmull.p64\\t%q0, %P1, %P2"
-  [(set_attr "neon_type" "neon_mul_d_long")]
+  [(set_attr "type" "neon_mul_d_long")]
 )
 
 (define_insn "crypto_<crypto_pattern>"
@@ -82,5 +82,5 @@
          CRYPTO_SELECTING))]
   "TARGET_CRYPTO"
   "<crypto_pattern>.<crypto_size_sfx>\\t%q0, %q2, %q3"
-  [(set_attr "neon_type" "<crypto_type>")]
+  [(set_attr "type" "<crypto_type>")]
 )

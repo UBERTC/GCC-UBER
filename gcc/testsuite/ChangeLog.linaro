@@ -1,5 +1,15 @@
 2014-04-07  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r204784
+	2013-11-14  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/cpu-diagnostics-2.c: Change "-mcpu="
+	to "cortex-a53".
+	* gcc.target/aarch64/cpu-diagnostics-3.c: Change "-mcpu="
+	to "cortex-a53".
+
+2014-04-07  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r202663
 	2013-09-17  Cong Hou  <congh@google.com>
 
