@@ -1,3 +1,7 @@
+2014-04-08  Yvan Roux  <yvan.roux@linaro.org>
+
+	* LINARO-VERSION: Bump version.
+
 2014-04-07  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.8-2014.04 released.
@@ -2008,7 +2012,7 @@
 	(arm_expand_epilogue_apcs_frame): call arm_add_cfa_adjust_cfa_note.
 	(arm_unwind_emit): Allow REG_CFA_DEF_CFA.
 
-2014-02-14  Yvan Roux  <yvan.roux@linaro.org>
+2014-03-14  Yvan Roux  <yvan.roux@linaro.org>
 
 	* LINARO-VERSION: Bump version.
 
