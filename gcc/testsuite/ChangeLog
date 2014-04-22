@@ -1,3 +1,68 @@
+2014-04-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-14  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/55022
+	* gcc.dg/graphite/pr55022.c: New testcase.
+
+2014-04-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-17  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/60849
+	* g++.dg/opt/pr60849.C: New testcase.
+
+2014-04-22   Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-17   Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60841
+	* gcc.dg/vect/pr60841.c: New testcase.
+
+2014-04-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-17  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60836
+	* g++.dg/vect/pr60836.cc: New testcase.
+
+2014-04-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-14  Richard Biener  <rguenther@suse.de>
+		Marc Glisse  <marc.glisse@inria.fr>
+
+	PR c/60819
+	* gcc.target/i386/vec-may_alias.c: New testcase.
+
+2014-04-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59817
+	PR tree-optimization/60453
+	* gfortran.dg/graphite/pr59817.f: New testcase.
+	* gcc.dg/graphite/pr59817-1.c: Likewise.
+	* gcc.dg/graphite/pr59817-2.c: Likewise.
+
+2014-04-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/60823
+	* c-c++-common/gomp/pr60823-1.c: New test.
+	* c-c++-common/gomp/pr60823-2.c: New test.
+	* c-c++-common/gomp/pr60823-3.c: New test.
+
+	Backported from mainline
+	2014-04-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/60844
+	* gcc.dg/pr60844.c: New test.
+
 2014-04-22  Release Manager
 
 	* GCC 4.9.0 released.

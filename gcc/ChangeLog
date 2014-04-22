@@ -1,3 +1,97 @@
+2014-04-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-14  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/55022
+	* fold-const.c (negate_expr_p): Don't negate directional rounding
+	division.
+	(fold_negate_expr): Likewise.
+
+2014-04-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-17  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/60849
+	* tree-ssa-propagate.c (valid_gimple_rhs_p): Only allow effective
+	boolean results for comparisons.
+
+2014-04-22   Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-17   Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60841
+	* tree-vect-data-refs.c (vect_analyze_data_refs): Count stmts.
+	* tree-vect-loop.c (vect_analyze_loop_2): Pass down number
+	of stmts to SLP build.
+	* tree-vect-slp.c (vect_slp_analyze_bb_1): Likewise.
+	(vect_analyze_slp): Likewise.
+	(vect_analyze_slp_instance): Likewise.
+	(vect_build_slp_tree): Limit overall SLP tree growth.
+	* tree-vectorizer.h (vect_analyze_data_refs,
+	vect_analyze_slp): Adjust prototypes.
+
+2014-04-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-17  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60836
+	* tree-vect-loop.c (vect_create_epilog_for_reduction): Force
+	initial PHI args to be gimple values.
+
+2014-04-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59817
+	PR tree-optimization/60453
+	* graphite-scop-detection.c (graphite_can_represent_scev): Complete
+	recursion to catch all CHRECs in the scalar evolution and restrict
+	the predicate for the remains appropriately.
+
+2014-04-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/60823
+	* omp-low.c (ipa_simd_modify_function_body): Go through
+	all SSA_NAMEs and for those refering to vector arguments
+	which are going to be replaced adjust SSA_NAME_VAR and,
+	if it is a default definition, change it into a non-default
+	definition assigned at the beginning of function from new_decl.
+	(ipa_simd_modify_stmt_ops): Rewritten.
+	* tree-dfa.c (set_ssa_default_def): When removing default def,
+	check for NULL loc instead of NULL *loc.
+
+2014-04-22  Lin Zuojian  <manjian2006@gmail.com>
+
+	PR middle-end/60281
+	* asan.c (asan_emit_stack_protection): Force the base to align to
+	appropriate bits if STRICT_ALIGNMENT.  Set shadow_mem align to
+	appropriate bits if STRICT_ALIGNMENT.
+	* cfgexpand.c (expand_stack_vars): Set base_align appropriately
+	when asan is on.
+	(expand_used_vars): Leave a space in the stack frame for alignment
+	if STRICT_ALIGNMENT.
+
+2014-04-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2014-04-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/60844
+	* tree-ssa-reassoc.c (reassoc_remove_stmt): New function.
+	(propagate_op_to_single_use, remove_visited_stmt_chain,
+	linearize_expr, repropagate_negates, reassociate_bb): Use it
+	instead of gsi_remove.
+
+2014-04-22  Jakub Jelinek  <jakub@redhat.com>
+
+	* BASE-VER: Set to 4.9.1.
+	* DEV-PHASE: Set to prerelease.
+
 2014-04-22  Release Manager
 
 	* GCC 4.9.0 released.
