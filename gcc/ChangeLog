@@ -1,3 +1,57 @@
+2014-04-22  Release Manager
+
+	* GCC 4.9.0 released.
+
+2014-04-18  Richard Henderson  <rth@redhat.com>
+
+	* config/aarch64/aarch64.c (aarch64_register_move_cost): Pass a mode
+	to GET_MODE_SIZE, not a reg_class_t.
+
+2014-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/60847
+	Forward port from 4.8 branch
+	2013-07-19  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* config/i386/bmiintrin.h (_blsi_u32): New.
+	(_blsi_u64): Ditto.
+	(_blsr_u32): Ditto.
+	(_blsr_u64): Ditto.
+	(_blsmsk_u32): Ditto.
+	(_blsmsk_u64): Ditto.
+	(_tzcnt_u32): Ditto.
+	(_tzcnt_u64): Ditto.
+
+2014-04-15  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/60839
+	Revert the following patch
+
+	2014-04-02  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/60735
+	* config/rs6000/rs6000.c (rs6000_hard_regno_mode_ok): If we have
+	software floating point or no floating point registers, do not
+	allow any type in the FPRs.  Eliminate a test for SPE SIMD types
+	in GPRs that occurs after we tested for GPRs that would never be
+	true.
+
+	* config/rs6000/rs6000.md (mov<mode>_softfloat32, FMOVE64):
+	Rewrite tests to use TARGET_DOUBLE_FLOAT and TARGET_E500_DOUBLE,
+	since the FMOVE64 type is DFmode/DDmode.  If TARGET_E500_DOUBLE,
+	specifically allow DDmode, since that does not use the SPE SIMD
+	instructions.
+
+2014-04-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR plugins/59335
+	* Makefile.in (PLUGIN_HEADERS): Add various headers that have been
+	added in 4.9.
+
+2014-04-14  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* doc/invoke.texi (free): Document AArch64.
+
 2013-04-11  Jakub Jelinek  <jakub@redhat.com>
 
 	* DEV-PHASE: Set to prerelease.
