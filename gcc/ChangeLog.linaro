@@ -1,0 +1,5 @@
+2014-04-22  Yvan Roux  <yvan.roux@linaro.org>
+
+	GCC Linaro 4.9-2014.04 released.
+	* LINARO-VERSION: New file.
+	* configure.ac: Add Linaro version string.
