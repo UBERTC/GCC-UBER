@@ -1,3 +1,10 @@
+2014-05-13  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209889.
+	2014-04-29  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* gcc.target/aarch64/fcsel_1.c: New test case.
+
 2014-04-22  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.9-2014.04 released.

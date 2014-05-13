@@ -1,5 +1,12 @@
 2014-05-13  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209889.
+	2014-04-29  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* config/aarch64/aarch64.md (mov<mode>cc): New for GPF.
+
+2014-05-13  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209556.
 	2014-04-22  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
 
