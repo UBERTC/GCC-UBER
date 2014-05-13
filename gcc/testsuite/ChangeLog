@@ -1,3 +1,144 @@
+2014-05-02  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/60930
+	* gcc.dg/torture/pr60930.c:  New test.
+
+2014-04-30  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from mainline
+	2014-04-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/pack01.c: New test to test the new pack and
+	unpack builtin functionss for 128-bit types.
+	* gcc.target/powerpc/pack02.c: Likewise.
+	* gcc.target/powerpc/pack03.c: Likewise.
+	* gcc.target/powerpc/extend-divide-1.c: New test to test extended
+	divide builtin functionss.
+	* gcc.target/powerpc/extend-divide-2.c: Likewise.
+	* gcc.target/powerpc/bcd-1.c: New test for the new BCD builtin
+	functions.
+	* gcc.target/powerpc/bcd-2.c: Likewise.
+	* gcc.target/powerpc/bcd-3.c: Likewise.
+	* gcc.target/powerpc/dfp-builtin-1.c: New test for the new DFP
+	builtin functionss.
+	* gcc.target/powerpc/dfp-builtin-2.c: Likewise.
+
+2014-04-29  Pat Haugen  <pthaugen@us.ibm.com>
+
+	Backport from mainline
+	2014-04-17  Pat Haugen  <pthaugen@us.ibm.com>
+
+	* gcc.target/powerpc/ti_math1.c: New.
+	* gcc.target/powerpc/ti_math2.c: New.
+
+2014-04-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/60971
+	* c-c++-common/turtore/pr60971.c: New test.
+
+2014-04-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.dg/tree-ssa/alias-30.c (dg-options): Dump only fre1 details.
+	* gcc.dg/vect/pr60505.c: Cleanup vect tree dump.
+	* g++.dg/ipa/devirt-27.C (dg-options): Remove -fdump-ipa-devirt.
+
+2014-04-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	* c-c++-common/gomp/pr60823-2.c: Require effective target
+	vect_simd_clones.
+
+2014-04-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/60960
+	* gcc.c-torture/execute/pr60960.c: New test.
+
+2014-04-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.c-torture/execute/20140425-1.c: New test.
+
+2014-04-25  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/60912
+	* g++.dg/opt/pr60912.C: New testcase.
+
+2014-04-25  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/60911
+	* gcc.dg/lto/pr60911_0.c: New testcase.
+
+2014-04-24  Jakub Jelinek  <jakub@redhat.com>
+
+	* c-c++-common/gomp/atomic-16.c: Remove all dg-error directives.
+	Replace load with read and store with write.
+
+2014-04-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-04-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/60909
+	* gcc.target/i386/pr60909-1.c: New test.
+	* gcc.target/i386/pr60909-2.c: Ditto.
+
+2014-04-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60903
+	* gcc.dg/torture/pr60903.c: New testcase.
+
+2014-04-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-14  Richard Biener  <rguenther@suse.de>
+
+	PR lto/60720
+	* gcc.dg/lto/pr60720_0.c: New testcase.
+	* gcc.dg/lto/pr60720_1.c: Likewise.
+
+2014-04-23  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/60895
+	* g++.dg/torture/pr60895.C: New testcase.
+
+2014-04-23  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/60891
+	* gcc.dg/torture/pr60891.c: New testcase.
+
+2014-04-22  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2014-04-21  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/60735
+	* gcc.target/powerpc/pr60735.c: New test.  Insure _Decimal64 does
+	not cause errors if -mspe.
+
+2014-04-22  Tobias Burnus  <burnus@net-b.de>
+
+	Backport from mainline
+	2014-04-11  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/58880
+	PR fortran/60495
+	* gfortran.dg/finalize_25.f90: New.
+
+2014-04-22  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2014-04-22  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/pr60868.c: New testcase.
+
+2014-04-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/59073
+	* c-c++-common/gomp/pr59073.c: New test.
+
+2014-04-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.dg/vmx/merge-vsx.c: Add V4SI and V4SF tests.
+	* gcc.dg/vmx/merge-vsx-be-order.c: Likewise.
+
 2014-04-22  Richard Biener  <rguenther@suse.de>
 
 	Backport from mainline
@@ -116,7 +257,7 @@
 2014-04-12  Jerry DeLisle  <jvdelisle@gcc.gnu>
 
 	PR libfortran/60810
-	gfortran.dg/arrayio_13.f90: New test.
+	* gfortran.dg/arrayio_13.f90: New test.
 
 2014-04-11  Steve Ellcey  <sellcey@mips.com>
 	    Jakub Jelinek  <jakub@redhat.com>
@@ -200,8 +341,7 @@
 
 2014-04-08  Jason Merrill  <jason@redhat.com>
 
-	* lib/gcc-dg.exp (dg-build-dso): Reset dg-do-what-default to
-	compile.
+	* lib/gcc-dg.exp (dg-build-dso): Reset dg-do-what-default to compile.
 
 2014-04-08  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
 
@@ -321,10 +461,10 @@
 2014-04-04  Martin Jambor  <mjambor@suse.cz>
 
 	PR ipa/60640
-        * g++.dg/ipa/pr60640-1.C: New test.
-        * g++.dg/ipa/pr60640-2.C: Likewise.
-        * g++.dg/ipa/pr60640-3.C: Likewise.
-        * g++.dg/ipa/pr60640-4.C: Likewise.
+	* g++.dg/ipa/pr60640-1.C: New test.
+	* g++.dg/ipa/pr60640-2.C: Likewise.
+	* g++.dg/ipa/pr60640-3.C: Likewise.
+	* g++.dg/ipa/pr60640-4.C: Likewise.
 
 2014-04-04  Jeff Law  <law@redhat.com>
 
@@ -436,7 +576,7 @@
 
 2014-04-01  Fabien Chêne  <fabien@gcc.gnu.org>
 
-        * g++.dg/init/ctor4.C: Adjust.
+	* g++.dg/init/ctor4.C: Adjust.
 	* g++.dg/init/ctor4-1.C: New.
 	* g++.dg/cpp0x/defaulted2.C: Adjust.
 
@@ -524,8 +664,8 @@
 
 2014-03-27  Jeff Law  <law@redhat.com>
 
-       PR target/60648
-       * g++.dg/pr60648.C: New test.
+	PR target/60648
+	* g++.dg/pr60648.C: New test.
 
 2014-03-28  Adam Butcher  <adam@jessamine.co.uk>
 
@@ -558,14 +698,13 @@
 
 2014-03-28  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
 
-	* gcc.dg/tree-ssa/ssa-dom-thread-4.c: Remove s390 special
-          option.
+	* gcc.dg/tree-ssa/ssa-dom-thread-4.c: Remove s390 special option.
 	* lib/target-supports.exp: Return true for s390
-          in check_effective_logical_op_short_circuit.
+	in check_effective_logical_op_short_circuit.
 
 2014-03-28  Kirill Yukhin  <kirill.yukhin@intel.com>
 
-        * gcc.target/i386/avx512f-vshuff32x4-2.c: Fix initialization
+	* gcc.target/i386/avx512f-vshuff32x4-2.c: Fix initialization
 	of second source operand.
 	* gcc.target/i386/avx512f-vshuff64x2-2.c: Ditto.
 	* gcc.target/i386/avx512f-vshufi32x4-2.c: Ditto.
@@ -700,8 +839,8 @@
 
 2014-03-24  Marek Polacek  <polacek@redhat.com>
 
-	* c-c++-common/ubsan/div-by-zero-4.c: Don't include limits.h.  Define
-	INT_MIN.
+	* c-c++-common/ubsan/div-by-zero-4.c: Don't include limits.h.
+	Define INT_MIN.
 	* c-c++-common/ubsan/overflow-1.c: Check for unwanted output.
 	* c-c++-common/ubsan/overflow-add-1.c: Likewise.
 	* c-c++-common/ubsan/overflow-mul-1.c: Likewise.
@@ -786,8 +925,7 @@
 2014-03-21  Tobias Burnus  <burnus@net-b.de>
 
 	PR fortran/60599
-	* lib/gcc-dg.exp (scan-module): Uncompress .mod files for
-	reading.
+	* lib/gcc-dg.exp (scan-module): Uncompress .mod files for reading.
 
 2014-03-20  Jakub Jelinek  <jakub@redhat.com>
 
@@ -1605,8 +1743,7 @@
 
 2014-02-19  Paul Pluzhnikov  <ppluzhnikov@google.com>
 
-	* gcc.dg/vect/no-vfa-vect-depend-2.c (main1): Fix buffer
-	overflow.
+	* gcc.dg/vect/no-vfa-vect-depend-2.c (main1): Fix buffer overflow.
 
 2014-02-19  Jakub Jelinek  <jakub@redhat.com>
 
@@ -1915,8 +2052,7 @@
 
 2014-02-10  Jakub Jelinek  <jakub@redhat.com>
 
-	* gcc.dg/vect/pr59984.c: Require effective target
-	vect_simd_clones.
+	* gcc.dg/vect/pr59984.c: Require effective target vect_simd_clones.
 
 2014-02-09  Paul Thomas  <pault@gcc.gnu.org>
 
@@ -3163,8 +3299,8 @@
 	* gfortran.dg/vect/fast-math-mgrid-resid.f: Change
 	-fdump-tree-optimized to -fdump-tree-pcom-details in dg-options and
 	cleanup-tree-dump from optimized to pcom.  Remove scan-tree-dump-times
-	for vect_\[^\\n\]*\\+, add scan-tree-dump-times for no suitable chains and
-	Executing predictive commoning without unrolling.
+	for vect_\[^\\n\]*\\+, add scan-tree-dump-times for no suitable
+	chains and Executing predictive commoning without unrolling.
 
 2014-01-14  Kirill Yukhin  <kirill.yukhin@intel.com>
 

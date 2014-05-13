@@ -1,3 +1,41 @@
+2014-05-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/59476
+	* python/libstdcxx/v6/printers.py (get_value_from_Rb_tree_node): New
+	function to handle both C++03 and C++11 _Rb_tree_node implementations.
+	(StdRbtreeIteratorPrinter, StdMapPrinter, StdSetPrinter): Use it.
+	* testsuite/libstdc++-prettyprinters/simple.cc: Update comment to
+	refer to...
+	* testsuite/libstdc++-prettyprinters/simple11.cc: New.
+
+	PR libstdc++/61036
+	* include/bits/shared_ptr_base.h (__shared_ptr::__shared_ptr(_Tp1*)):
+	Check the correct type in the static assertion.
+	* testsuite/20_util/shared_ptr/cons/61036.cc: New.
+
+2014-04-27  Lars Gullik Bjønnes  <larsbj@gullik.org>
+
+	PR libstdc++/60710
+	* include/experimental/optional (operator!=): Implement in terms of
+	operator==.
+	* testsuite/experimental/optional/relops/1.cc: Remove operator!=.
+	* testsuite/experimental/optional/relops/2.cc: Likewise.
+	* testsuite/experimental/optional/relops/3.cc: Likewise.
+	* testsuite/experimental/optional/relops/4.cc: Likewise.
+	* testsuite/experimental/optional/relops/5.cc: Likewise.
+	* testsuite/experimental/optional/relops/6.cc: Likewise.
+
+2014-04-27  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60497
+	* include/std/tuple (get): Qualify calls to prevent ADL.
+	* testsuite/20_util/tuple/60497.cc: New.
+
+	* include/std/tuple (tuple_element_t): Define.
+	* testsuite/20_util/tuple/tuple_element.cc: Change to compile-only
+	test.
+	* testsuite/20_util/tuple/tuple_element_t.cc: New.
+
 2014-04-22  Release Manager
 
 	* GCC 4.9.0 released.

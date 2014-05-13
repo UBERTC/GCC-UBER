@@ -1,3 +1,384 @@
+2014-05-03  Joey Ye  <joey.ye@arm.com>
+
+	Backport from mainline r209463
+	2014-04-17  Joey Ye  <joey.ye@arm.com>
+
+	* opts.c (OPT_fif_conversion, OPT_fif_conversion2): Disable for Og.
+
+2014-05-03  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Back port from mainline
+	PR target/61026
+	* config/sh/sh.c: Include stdlib headers before everything else.
+
+2014-05-02  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/60930
+	* gimple-ssa-strength-reduction.c (create_mul_imm_cand):  Reject
+	creating a multiply candidate by folding two constant
+	multiplicands when the result overflows.
+
+2014-05-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* gimplify.c (gimplify_adjust_omp_clauses_1): Handle
+	GOVD_FIRSTPRIVATE | GOVD_LASTPRIVATE.
+	(gimplify_adjust_omp_clauses): Simd region is never
+	directly nested in combined parallel.  Instead, for linear
+	with copyin/copyout, if in combined for simd loop, make decl
+	firstprivate/lastprivate on OMP_FOR.
+	* omp-low.c (expand_omp_for_generic, expand_omp_for_static_nochunk,
+	expand_omp_for_static_chunk): When setting endvar, also set
+	fd->loop.v to the same value.
+
+2014-05-02  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Back port from mainline
+	2014-04-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.h (TARGET_CPU_CPP_BUILTINS): Check
+	TARGET_SIMD rather than TARGET_GENERAL_REGS_ONLY.
+	(TARGET_SIMD): Take AARCH64_ISA_SIMD into account.
+	(TARGET_FLOAT): Take AARCH64_ISA_FP into account.
+	(TARGET_CRYPTO): Take TARGET_SIMD into account.
+
+2014-04-30  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from mainline
+	2014-04-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* doc/extend.texi (PowerPC Built-in Functions): Document new
+	powerpc extended divide, bcd, pack/unpack 128-bit, builtin
+	functions.
+	(PowerPC AltiVec/VSX Built-in Functions): Likewise.
+
+	* config/rs6000/predicates.md (const_0_to_3_operand): New
+	predicate to match 0..3 integer constants.
+
+	* config/rs6000/rs6000-builtin.def (BU_DFP_MISC_1): Add new macros
+	to support adding miscellaneous builtin functions.
+	(BU_DFP_MISC_2): Likewise.
+	(BU_P7_MISC_1): Likewise.
+	(BU_P7_MISC_2): Likewise.
+	(BU_P8V_MISC_3): Likewise.
+	(BU_MISC_1): Likewise.
+	(BU_MISC_2): Likewise.
+	(DIVWE): Add extended divide builtin functions.
+	(DIVWEO): Likewise.
+	(DIVWEU): Likewise.
+	(DIVWEUO): Likewise.
+	(DIVDE): Likewise.
+	(DIVDEO): Likewise.
+	(DIVDEU): Likewise.
+	(DIVDEUO): Likewise.
+	(DXEX): Add decimal floating-point builtin functions.
+	(DXEXQ): Likewise.
+	(DDEDPD): Likewise.
+	(DDEDPDQ): Likewise.
+	(DENBCD): Likewise.
+	(DENBCDQ): Likewise.
+	(DIEX): Likewise.
+	(DIEXQ): Likewise.
+	(DSCLI): Likewise.
+	(DSCLIQ): Likewise.
+	(DSCRI): Likewise.
+	(DSCRIQ): Likewise.
+	(CDTBCD): Add new BCD builtin functions.
+	(CBCDTD): Likewise.
+	(ADDG6S): Likewise.
+	(BCDADD): Likewise.
+	(BCDADD_LT): Likewise.
+	(BCDADD_EQ): Likewise.
+	(BCDADD_GT): Likewise.
+	(BCDADD_OV): Likewise.
+	(BCDSUB): Likewise.
+	(BCDSUB_LT): Likewise.
+	(BCDSUB_EQ): Likewise.
+	(BCDSUB_GT): Likewise.
+	(BCDSUB_OV): Likewise.
+	(PACK_TD): Add new pack/unpack 128-bit type builtin functions.
+	(UNPACK_TD): Likewise.
+	(PACK_TF): Likewise.
+	(UNPACK_TF): Likewise.
+	(UNPACK_TF_0): Likewise.
+	(UNPACK_TF_1): Likewise.
+	(PACK_V1TI): Likewise.
+	(UNPACK_V1TI): Likewise.
+
+	* config/rs6000/rs6000.c (rs6000_builtin_mask_calculate): Add
+	support for decimal floating point builtin functions.
+	(rs6000_expand_ternop_builtin): Add checks for the new builtin
+	functions that take constant arguments.
+	(rs6000_invalid_builtin): Add decimal floating point builtin
+	support.
+	(rs6000_init_builtins): Setup long double, _Decimal64, and
+	_Decimal128 types for new builtin functions.
+	(builtin_function_type): Set the unsigned flags appropriately for
+	the new builtin functions.
+	(rs6000_opt_masks): Add support for decimal floating point builtin
+	functions.
+
+	* config/rs6000/rs6000.h (RS6000_BTM_DFP): Add support for decimal
+	floating point builtin functions.
+	(RS6000_BTM_COMMON): Likewise.
+	(RS6000_BTI_long_double): Likewise.
+	(RS6000_BTI_dfloat64): Likewise.
+	(RS6000_BTI_dfloat128): Likewise.
+	(long_double_type_internal_node): Likewise.
+	(dfloat64_type_internal_node): Likewise.
+	(dfloat128_type_internal_node): Likewise.
+
+	* config/rs6000/altivec.h (UNSPEC_BCDADD): Add support for ISA
+	2.07 bcd arithmetic instructions.
+	(UNSPEC_BCDSUB): Likewise.
+	(UNSPEC_BCD_OVERFLOW): Likewise.
+	(UNSPEC_BCD_ADD_SUB): Likewise.
+	(bcd_add_sub): Likewise.
+	(BCD_TEST): Likewise.
+	(bcd<bcd_add_sub>): Likewise.
+	(bcd<bcd_add_sub>_test): Likewise.
+	(bcd<bcd_add_sub>_test2): Likewise.
+	(bcd<bcd_add_sub>_<code>): Likewise.
+	(peephole2 for combined bcd ops): Likewise.
+
+	* config/rs6000/dfp.md (UNSPEC_DDEDPD): Add support for new
+	decimal floating point builtin functions.
+	(UNSPEC_DENBCD): Likewise.
+	(UNSPEC_DXEX): Likewise.
+	(UNSPEC_DIEX): Likewise.
+	(UNSPEC_DSCLI): Likewise.
+	(UNSPEC_DSCRI): Likewise.
+	(D64_D128): Likewise.
+	(dfp_suffix): Likewise.
+	(dfp_ddedpd_<mode>): Likewise.
+	(dfp_denbcd_<mode>): Likewise.
+	(dfp_dxex_<mode>): Likewise.
+	(dfp_diex_<mode>): Likewise.
+	(dfp_dscli_<mode>): Likewise.
+	(dfp_dscri_<mode>): Likewise.
+
+	* config/rs6000/rs6000.md (UNSPEC_ADDG6S): Add support for new BCD
+	builtin functions.
+	(UNSPEC_CDTBCD): Likewise.
+	(UNSPEC_CBCDTD): Likewise.
+	(UNSPEC_DIVE): Add support for new extended divide builtin
+	functions.
+	(UNSPEC_DIVEO): Likewise.
+	(UNSPEC_DIVEU): Likewise.
+	(UNSPEC_DIVEUO): Likewise.
+	(UNSPEC_UNPACK_128BIT): Add support for new builtin functions to
+	pack/unpack 128-bit types.
+	(UNSPEC_PACK_128BIT): Likewise.
+	(idiv_ldiv): New mode attribute to set the 32/64-bit divide type.
+	(udiv<mode>3): Use idiv_ldiv mode attribute.
+	(div<mode>3): Likewise.
+	(addg6s): Add new BCD builtin functions.
+	(cdtbcd): Likewise.
+	(cbcdtd): Likewise.
+	(UNSPEC_DIV_EXTEND): Add support for new extended divide
+	instructions.
+	(div_extend): Likewise.
+	(div<div_extend>_<mode>"): Likewise.
+	(FP128_64): Add support for new builtin functions to pack/unpack
+	128-bit types.
+	(unpack<mode>): Likewise.
+	(unpacktf_0): Likewise.
+	(unpacktf_1): Likewise.
+	(unpack<mode>_dm): Likewise.
+	(unpack<mode>_nodm): Likewise.
+	(pack<mode>): Likewise.
+	(unpackv1ti): Likewise.
+	(packv1ti): Likewise.
+
+2014-04-29  Pat Haugen  <pthaugen@us.ibm.com>
+
+	Backport from mainline
+	2014-04-17  Pat Haugen  <pthaugen@us.ibm.com>
+
+	* config/rs6000/rs6000.md (addti3, subti3): New.
+
+2014-04-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/60971
+	* tree-tailcall.c (process_assignment): Reject conversions which
+	reduce precision.
+
+2014-04-29  Nick Clifton  <nickc@redhat.com>
+
+	* config/msp430/msp430.md (umulsidi): Fix typo.
+	(mulhisi3): Enable even inside interrupt handlers.
+	* config/msp430/msp430.c (msp430_print_operand): %O: Allow for the
+	bigger return address pushed in large mode.
+
+2014-04-28  Pat Haugen  <pthaugen@us.ibm.com>
+
+	* config/rs6000/sync.md (AINT mode_iterator): Move definition.
+	(loadsync_<mode>): Change mode.
+	(load_quadpti, store_quadpti): New.
+	(atomic_load<mode>, atomic_store<mode>): Add support for TI mode.
+	* config/rs6000/rs6000.md (unspec enum): Add UNSPEC_LSQ.
+
+2014-04-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* configure.ac: Tweak GAS check for LEON instructions on SPARC.
+	* configure: Regenerate.
+	* config/sparc/sparc.opt (muser-mode): New option.
+	* config/sparc/sync.md (atomic_compare_and_swap<mode>_1): Do not enable
+	for LEON3.
+	(atomic_compare_and_swap_leon3_1): New instruction for LEON3.
+	* doc/invoke.texi (SPARC options): Document -muser-mode.
+
+2014-04-26  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	* doc/install.texi (Building with profile feedback): Remove
+	outdated sentence.
+
+2014-04-26  Tom de Vries  <tom@codesourcery.com>
+
+	* config/i386/i386.md (define_expand "ldexpxf3"): Fix out-of-bounds
+	array accesses.
+
+2014-04-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/60960
+	* tree-vect-generic.c (expand_vector_operation): Only call
+	expand_vector_divmod if type's mode satisfies VECTOR_MODE_P.
+
+2014-04-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/60941
+	* config/sparc/sparc.md (ashlsi3_extend): Delete.
+
+2014-04-25  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/60912
+	* tree-ssa-structalias.c (ipa_pta_execute): Compute direct
+	call stmt use/clobber sets during stmt walk instead of
+	walking the possibly incomplete set of caller edges.
+
+2014-04-25  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/60911
+	* passes.c (apply_ipa_transforms): Inline into only caller ...
+	(execute_one_pass): ... here.  Properly bring in function
+	bodies for nodes we want to apply IPA transforms to.
+
+2014-04-24  Jakub Jelinek  <jakub@redhat.com>
+
+	* tree.h (OMP_CLAUSE_LINEAR_GIMPLE_SEQ): Define.
+	* gimplify.c (omp_is_private): Change last argument's type to int.
+	Only diagnose lastprivate if the simd argument is 1, only diagnose
+	linear if the simd argument is 2.
+	(gimplify_omp_for): Adjust omp_is_private callers.  When adding
+	lastprivate or private, add the clause to OMP_FOR_CLAUSES.  Pass
+	GOVD_EXPLICIT to omp_add_variable.  For simd with collapse == 1
+	create OMP_CLAUSE_LINEAR rather than OMP_CLAUSE_PRIVATE for var.
+	If var != decl and decl is in OMP_CLAUSE_LINEAR, gimplify decl
+	increment to OMP_CLAUSE_LINEAR_GIMPLE_SEQ.
+	* omp-low.c (scan_sharing_clauses, lower_lastprivate_clauses): Handle
+	OMP_CLAUSE_LINEAR_GIMPLE_SEQ.
+	* tree-nested.c (convert_nonlocal_omp_clauses,
+	convert_local_omp_clauses): Handle OMP_CLAUSE_LINEAR.
+
+2014-04-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-04-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/60909
+	* config/i386/i386.c (ix86_expand_builtin)
+	<case IX86_BUILTIN_RDRAND{16,32,64}_STEP>: Use temporary
+	register for target RTX.
+	<case IX86_BUILTIN_RDSEED{16,32,64}_STEP>: Ditto.
+
+2014-04-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60903
+	* tree-ssa-loop-im.c (analyze_memory_references): Remove
+	commented code block.
+	(execute_sm_if_changed): Properly apply IRREDUCIBLE_LOOP
+	loop flags to newly created BBs and edges.
+
+2014-04-23  Nick Clifton  <nickc@redhat.com>
+
+	* config/msp430/msp430.c (msp430_handle_option): Move function
+	to msp430-common.c
+	(msp430_option_override): Simplify mcu and mcpu option handling.
+	(msp430_is_f5_mcu): Rename to msp430_use_f5_series_hwmult.  Add
+	support for -mhwmult command line option.
+	(has_32bit_hwmult): Rename to use_32bit_hwmult.  Add support for
+	-mhwmult command line option.
+	(msp430_hwmult_enabled): Delete.
+	(msp43o_output_labelref): Add support for -mhwmult command line
+	option.
+	* config/msp430/msp430.md (mulhisi3, umulhisi3, mulsidi3)
+	(umulsidi3): Likewise.
+	* config/msp430/msp430.opt (mmcu): Add Report attribute.
+	(mcpu, mlarge, msmall): Likewise.
+	(mhwmult): New option.
+	* config/msp430/msp430-protos.h (msp430_hwmult_enabled): Remove
+	prototype.
+	(msp430_is_f5_mcu): Remove prototype.
+	(msp430_use_f5_series_hwmult): Add prototype.
+	* config/msp430/msp430-opts.h: New file.
+	* common/config/msp430: New directory.
+	* common/config/msp430/msp430-common.c: New file.
+	* config.gcc (msp430): Remove target_has_targetm_common.
+	* doc/invoke.texi: Document -mhwmult command line option.
+
+2014-04-23  Nick Clifton  <nickc@redhat.com>
+
+	* config/i386/cygwin.h (ENDFILE_SPEC): Include
+	default-manifest.o if it can be found in the search path.
+	* config/i386/mingw32.h (ENDFILE_SPEC): Likewise.
+
+2014-04-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-04-14  Richard Biener  <rguenther@suse.de>
+
+	PR lto/60720
+	* lto-streamer-out.c (wrap_refs): New function.
+	(lto_output): Wrap symbol references in global initializes in
+	type-preserving MEM_REFs.
+
+2014-04-23  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/60895
+	* tree-inline.c (declare_return_variable): Use mark_addressable.
+
+2014-04-23  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/60891
+	* loop-init.c (loop_optimizer_init): Make sure to apply
+	LOOPS_MAY_HAVE_MULTIPLE_LATCHES before fixing up loops.
+
+2014-04-22  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2014-04-21  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/60735
+	* config/rs6000/rs6000.md (mov<mode>_softfloat32, FMOVE64 case):
+	If mode is DDmode and TARGET_E500_DOUBLE allow move.
+
+	* config/rs6000/rs6000.c (rs6000_debug_reg_global): Print some
+	more debug information for E500 if -mdebug=reg.
+
+2014-04-22  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2014-04-22  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/60868
+	* config/i386/i386.c (ix86_expand_set_or_movmem): Call counter_mode
+	on count_exp to get mode.
+
+2014-04-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/vsx.md (vsx_xxmrghw_<mode>): Adjust for
+	little-endian.
+	(vsx_xxmrglw_<mode>): Likewise.
+
 2014-04-22  Richard Biener  <rguenther@suse.de>
 
 	Backport from mainline
@@ -153,8 +534,7 @@
 2014-04-11  Tobias Burnus  <burnus@net-b.de>
 
 	PR other/59055
-	* doc/bugreport.texi (Bugs): Remove nodes pointing to the
-	nirvana.
+	* doc/bugreport.texi (Bugs): Remove nodes pointing to the nirvana.
 	* doc/gcc.texi (Service): Update description in the @menu
 	* doc/invoke.texi (Option Summary): Remove misplaced and
 	duplicated @menu.
@@ -180,15 +560,14 @@
 2014-04-11  Jakub Jelinek  <jakub@redhat.com>
 
 	PR rtl-optimization/60663
-	* cse.c (cse_insn): Set src_volatile on ASM_OPERANDS in
-	PARALLEL.
+	* cse.c (cse_insn): Set src_volatile on ASM_OPERANDS in PARALLEL.
 
 2014-04-10  Jan Hubicka  <hubicka@ucw.cz>
 	    Jakub Jelinek  <jakub@redhat.com>
 
 	PR lto/60567
-	* ipa.c (function_and_variable_visibility): Copy forced_by_abi flag from
-	decl_node to node.
+	* ipa.c (function_and_variable_visibility): Copy forced_by_abi
+	flag from decl_node to node.
 
 2014-04-10  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
 
@@ -306,9 +685,10 @@
 
 2014-04-05  Pitchumani Sivanupandi  <Pitchumani.S@atmel.com>
 
-	* config/avr/avr-arch.h (avr_mcu_t): Add dev_attribute field to have device
-	specific ISA/ feature information. Remove short_sp and errata_skip ds.
-	Add avr_device_specific_features enum to have device specific info.
+	* config/avr/avr-arch.h (avr_mcu_t): Add dev_attribute field to have
+	device specific ISA/ feature information. Remove short_sp and
+	errata_skip ds.  Add avr_device_specific_features enum to have device
+	specific info.
 	* config/avr/avr-c.c (avr_cpu_cpp_builtins): use dev_attribute to check
 	errata_skip. Add __AVR_ISA_RMW__ builtin macro if RMW ISA available.
 	* config/avr/avr-devices.c (avr_mcu_types): Update AVR_MCU macro for
@@ -376,21 +756,21 @@
 2014-04-04  Martin Jambor  <mjambor@suse.cz>
 
 	PR ipa/60640
-        * cgraph.h (cgraph_clone_node): New parameter added to declaration.
-        Adjust all callers.
+	* cgraph.h (cgraph_clone_node): New parameter added to declaration.
+	Adjust all callers.
 	* cgraph.c (clone_of_p): Also return true if thunks match.
 	(verify_edge_corresponds_to_fndecl): Removed extraneous call to
 	cgraph_function_or_thunk_node and an obsolete comment.
-        * cgraphclones.c (build_function_type_skip_args): Moved upwards in the
-        file.
-        (build_function_decl_skip_args): Likewise.
+	* cgraphclones.c (build_function_type_skip_args): Moved upwards in the
+	file.
+	(build_function_decl_skip_args): Likewise.
 	(set_new_clone_decl_and_node_flags): New function.
-        (duplicate_thunk_for_node): Likewise.
-        (redirect_edge_duplicating_thunks): Likewise.
-        (cgraph_clone_node): New parameter args_to_skip, pass it to
-        redirect_edge_duplicating_thunks which is called instead of
-        cgraph_redirect_edge_callee.
-        (cgraph_create_virtual_clone): Pass args_to_skip to cgraph_clone_node,
+	(duplicate_thunk_for_node): Likewise.
+	(redirect_edge_duplicating_thunks): Likewise.
+	(cgraph_clone_node): New parameter args_to_skip, pass it to
+	redirect_edge_duplicating_thunks which is called instead of
+	cgraph_redirect_edge_callee.
+	(cgraph_create_virtual_clone): Pass args_to_skip to cgraph_clone_node,
 	moved setting of a lot of flags to set_new_clone_decl_and_node_flags.
 
 2014-04-04  Jeff Law  <law@redhat.com>
@@ -428,8 +808,8 @@
 
 	PR tree-optimization/60505
 	* tree-vectorizer.h (struct _stmt_vec_info): Add th field as the
-	threshold of number of iterations below which no vectorization will be
-	done.
+	threshold of number of iterations below which no vectorization
+	will be done.
 	* tree-vect-loop.c (new_loop_vec_info):
 	Initialize LOOP_VINFO_COST_MODEL_THRESHOLD.
 	* tree-vect-loop.c (vect_analyze_loop_operations):
@@ -441,8 +821,7 @@
 
 2014-04-03  Richard Biener  <rguenther@suse.de>
 
-	* tree-streamer.h (struct streamer_tree_cache_d): Add next_idx
-	member.
+	* tree-streamer.h (struct streamer_tree_cache_d): Add next_idx member.
 	(streamer_tree_cache_create): Adjust.
 	* tree-streamer.c (streamer_tree_cache_add_to_node_array): Adjust
 	to allow optional nodes array.
@@ -453,8 +832,7 @@
 	* lto-streamer-out.c (create_output_block): Avoid maintaining
 	the node array in the writer cache.
 	(DFS_write_tree): Remove assertion.
-	(produce_asm_for_decls): Free the out decl state hash table
-	early.
+	(produce_asm_for_decls): Free the out decl state hash table early.
 	* lto-streamer-in.c (lto_data_in_create): Adjust for
 	streamer_tree_cache_create prototype change.
 
@@ -475,24 +853,6 @@
 	(Weffc++): Remove Scott's numbering, merge lists and reference
 	Wnon-virtual-dtor.
 
-	c-family/
-
-	cp/
-	* class.c (accessible_nvdtor_p): New.
-	(check_bases): Don't check base destructor here ...
-	(check_bases_and_members): ... check them here.  Trigger on
-	Wnon-virtual-dtor flag.
-	(finish_struct_1): Use accessible_nvdtor_p.
-
-	testsuite/
-	* g++.dg/warn/Wnvdtor.C: Add non-polymorphic case.
-	* g++.dg/warn/Wnvdtor-2.C: New.
-	* g++.dg/warn/Wnvdtor-3.C: New.
-	* g++.dg/warn/Wnvdtor-4.C: New.
-	* g++.dg/warn/Weff1.C: Delete.
-	* g++.old-deja/g++.benjamin/15309-1.C: Delete.
-	* g++.old-deja/g++.benjamin/15309-2.C: Delete.
-
 2014-04-03  Nick Clifton  <nickc@redhat.com>
 
 	* config/rl78/rl78-expand.md (movqi): Handle (SUBREG (SYMBOL_REF))
@@ -508,8 +868,8 @@
 2014-04-02  Jan Hubicka  <hubicka@ucw.cz>
 
 	PR ipa/60659
-	* ipa-devirt.c (get_polymorphic_call_info): Do not ICE on type inconsistent
-	code and instead mark the context inconsistent.
+	* ipa-devirt.c (get_polymorphic_call_info): Do not ICE on type
+	inconsistent code and instead mark the context inconsistent.
 	(possible_polymorphic_call_targets): For inconsistent contexts
 	return empty complete list.
 
@@ -613,8 +973,7 @@
 
 2014-04-01  Richard Biener  <rguenther@suse.de>
 
-	* gimple.h (struct gimple_statement_base): Align subcode to
-	16 bits.
+	* gimple.h (struct gimple_statement_base): Align subcode to 16 bits.
 
 2014-04-01  Sebastian Huber  <sebastian.huber@embedded-brains.de>
 
