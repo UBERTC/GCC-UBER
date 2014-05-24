@@ -1,3 +1,188 @@
+2014-05-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-08-30  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58228
+	* tree-vect-data-refs.c (vect_analyze_data_ref_access): Do not
+	allow invariant loads in nested loop vectorization.
+
+	2013-09-26  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58539
+	* tree-vect-loop.c (vect_create_epilog_for_reduction): Honor
+	the fact that debug statements are not taking part in loop-closed
+	SSA construction.
+
+2014-05-22  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR target/61208
+	* arm.md (arm_cmpdi_unsigned): Fix length calculation for Thumb2.
+
+2014-05-20  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	Backport from mainline r210325
+	2014-05-12  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	PR target/60991
+	* config/avr/avr.c (avr_out_store_psi): Use correct constant
+	to restore Y.
+
+2014-05-13  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-03-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60382
+	* tree-vect-loop.c (vect_is_simple_reduction_1): Do not consider
+	dead PHIs a reduction.
+
+2014-05-09  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2014-05-09 trunk r210267
+
+	PR target/61055
+	* config/avr/avr.md (cc): Add new attribute set_vzn.
+	(addqi3, negqi2) [cc]:
+	Set cc insn attribute to set_vzn instead of set_zn for alternatives
+	with INC, DEC or NEG.
+	* config/avr/avr.c (avr_notice_update_cc): Handle SET_VZN.
+	(avr_out_plus_1): ADIW sets cc0 to CC_SET_CZN.
+	INC, DEC set cc0 to CC_CLOBBER.
+
+2014-05-08  Charles Baylis  <charles.baylis@linaro.org>
+
+	Backport from mainline
+	2014-04-07  Charles Baylis  <charles.baylis@linaro.org>
+
+	PR target/60609
+	* config/arm/arm.h (ASM_OUTPUT_CASE_END): Remove.
+	(LABEL_ALIGN_AFTER_BARRIER): Align barriers which occur after
+	ADDR_DIFF_VEC.
+
+2014-05-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2013-10-21  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/58809
+	* fold-const.c (fold_range_test): Return 0 if the type is not
+	an integral type.
+
+	2013-12-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/59011
+	* gimplify.c (nonlocal_vla_vars): New variable.
+	(gimplify_var_or_parm_decl): Put VAR_DECLs for VLAs into
+	nonlocal_vla_vars chain.
+	(gimplify_body): Call declare_vars on nonlocal_vla_vars chain
+	if outer_bind has DECL_INITIAL (current_function_decl) block.
+
+	2013-11-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/59014
+	* tree-vrp.c (register_edge_assert_for_1): Don't look
+	through conversions from non-integral types or through
+	narrowing conversions.
+
+	2013-11-14  Jakub Jelinek  <jakub@redhat.com>
+		    Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/59101
+	* config/i386/i386.md (*anddi_2): Only allow CCZmode if
+	operands[2] satisfies_constraint_Z that might have bit 31 set.
+
+	2013-09-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/58564
+	* fold-const.c (fold_ternary_loc): For A < 0 : <sign bit of A> : 0
+	optimization, punt if sign_bit_p looked through any zero extension.
+
+	2013-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/58365
+	* cfgcleanup.c (merge_memattrs): Also clear MEM_READONLY_P
+	resp. MEM_NOTRAP_P if they differ, or set MEM_VOLATILE_P if
+	it differs.
+
+	2013-08-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/58277
+	* tree-ssa-strlen.c (strlen_enter_block): If do_invalidate gave up
+	after seeing too many stmts with vdef in between dombb and current
+	bb, invalidate everything.
+
+	2013-08-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/58209
+	* tree-tailcall.c (find_tail_calls): Give up for pointer result types
+	if m or a is non-NULL.
+
+	2013-07-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/57777
+	* config/i386/predicates.md (vsib_address_operand): Disallow
+	SYMBOL_REF or LABEL_REF in parts.disp if TARGET_64BIT && flag_pic.
+
+	2013-06-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/57623
+	* config/i386/i386.md (bmi_bextr_<mode>): Swap predicates and
+	constraints of operand 1 and 2.
+
+	PR target/57623
+	* config/i386/i386.md (bmi2_bzhi_<mode>3): Swap AND arguments
+	to match RTL canonicalization.  Swap predicates and
+	constraints of operand 1 and 2.
+
+2014-05-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-11-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59164
+	* tree-vect-loop.c (vect_analyze_loop_operations): Adjust
+	check whether we can create an epilogue loop to reflect the
+	cases where we create one.
+
+2014-05-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-11-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59334
+	* tree-ssa-dce.c (eliminate_unnecessary_stmts): Fix bug
+	in previous commit.
+
+	2013-11-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59330
+	* tree-ssa-dce.c (eliminate_unnecessary_stmts): Simplify
+	and fix delayed marking of free calls not necessary.
+
+	2014-01-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59715
+	* tree-cfg.h (split_critical_edges): Declare.
+	* tree-cfg.c (split_critical_edges): Export.
+	* tree-ssa-sink.c (execute_sink_code): Split critical edges.
+
+2014-05-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57864
+	* tree-ssa-pre.c (phi_translate_1): Backport NAME case
+	simplification from mainline.  Do not lookup the VN
+	value-number here.
+
+2014-05-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-08-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58246
+	* tree-ssa-dce.c (mark_aliased_reaching_defs_necessary_1): Properly
+	handle the dominance check inside a basic-block.
+
 2014-05-06  Richard Biener  <rguenther@suse.de>
 
 	Backport from mainline

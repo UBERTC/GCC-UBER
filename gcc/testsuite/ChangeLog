@@ -1,3 +1,145 @@
+2014-05-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-08-30  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58228
+	* gcc.dg/torture/pr58228.c: New testcase.
+
+	2013-09-26  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58539
+	* gcc.dg/torture/pr58539.c: New testcase.
+
+2014-05-20  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	Backport from mainline r210325
+	2014-05-12  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	PR target/60991
+	* gcc.target/avr/pr60991.c: New testcase.
+
+2014-05-13  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-03-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60382
+	* gcc.dg/vect/pr60382.c: New testcase.
+
+2014-05-09  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2014-05-09 trunk r210267
+
+	PR target/61055
+	* gcc.target/avr/torture/pr61055.c: New test.
+
+2014-05-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2013-10-21  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/58809
+	* gcc.dg/gomp/pr58809.c: New test.
+
+	2013-12-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/59011
+	* gcc.dg/pr59011.c: New test.
+
+	2013-11-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/59297
+	* g++.dg/gomp/pr59297.C: New test.
+
+	2013-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/59014
+	* gcc.c-torture/execute/pr59014-2.c: New test.
+
+	2013-11-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/59014
+	* gcc.c-torture/execute/pr59014.c: New test.
+
+	2013-11-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/59101
+	* gcc.c-torture/execute/pr59101.c: New test.
+
+	2013-09-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/58564
+	* gcc.c-torture/execute/pr58564.c: New test.
+
+	2013-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/58365
+	* gcc.c-torture/execute/pr58365.c: New test.
+
+	2013-09-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/58325
+	* g++.dg/warn/Wunused-var-21.C: New test.
+
+	2013-08-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/58277
+	* gcc.c-torture/execute/pr58277-1.c: New test.
+	* gcc.c-torture/execute/pr58277-2.c: New test.
+
+	2013-08-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/58209
+	* gcc.c-torture/execute/pr58209.c: New test.
+
+	2013-07-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/57777
+	* gcc.target/i386/pr57777.c: New test.
+
+	2013-06-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/57623
+	* gcc.target/i386/bmi-bextr-3.c: New test.
+
+	PR target/57623
+	* gcc.target/i386/bmi2-bzhi-1.c: New test.
+
+2014-05-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-11-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59164
+	* gcc.dg/torture/pr59164.c: New testcase.
+
+2014-05-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-11-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59330
+	* gcc.dg/torture/pr59330.c: New testcase.
+
+	2014-01-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59715
+	* gcc.dg/torture/pr59715.c: New testcase.
+
+2014-05-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57864
+	* gcc.dg/torture/pr57864.c: New testcase.
+
+2014-05-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-08-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/58246
+	* gcc.dg/torture/pr58246.c: New testcase.
+
 2014-05-06  Richard Biener  <rguenther@suse.de>
 
 	Backport from mainline
