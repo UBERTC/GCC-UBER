@@ -1,5 +1,12 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209706.
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Handle BSWAP.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209701, 209702, 209703, 209704, 209705.
 	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
