@@ -1713,8 +1713,6 @@ aarch64_layout_frame (void)
   if (reload_completed && cfun->machine->frame.laid_out)
     return;
 
-  cfun->machine->frame.fp_lr_offset = 0;
-
   /* First mark all the registers that really need to be saved...  */
   for (regno = R0_REGNUM; regno <= R30_REGNUM; regno++)
     cfun->machine->frame.reg_offset[regno] = -1;
@@ -1764,14 +1762,12 @@ aarch64_layout_frame (void)
     {
       cfun->machine->frame.reg_offset[R29_REGNUM] = offset;
       offset += UNITS_PER_WORD;
-      cfun->machine->frame.fp_lr_offset = UNITS_PER_WORD;
     }
 
   if (cfun->machine->frame.reg_offset[R30_REGNUM] != -1)
     {
       cfun->machine->frame.reg_offset[R30_REGNUM] = offset;
       offset += UNITS_PER_WORD;
-      cfun->machine->frame.fp_lr_offset += UNITS_PER_WORD;
     }
 
   cfun->machine->frame.padding0 =
@@ -4147,32 +4143,31 @@ aarch64_initial_elimination_offset (unsigned from, unsigned to)
 		+ crtl->outgoing_args_size
 		+ cfun->machine->saved_varargs_size);
 
-   frame_size = AARCH64_ROUND_UP (frame_size, STACK_BOUNDARY / BITS_PER_UNIT);
-   offset = frame_size;
+  frame_size = AARCH64_ROUND_UP (frame_size, STACK_BOUNDARY / BITS_PER_UNIT);
+  offset = frame_size;
 
-   if (to == HARD_FRAME_POINTER_REGNUM)
-     {
-       if (from == ARG_POINTER_REGNUM)
-	 return offset - crtl->outgoing_args_size;
+  if (to == HARD_FRAME_POINTER_REGNUM)
+    {
+      if (from == ARG_POINTER_REGNUM)
+	return offset - crtl->outgoing_args_size;
 
-       if (from == FRAME_POINTER_REGNUM)
-	 return cfun->machine->frame.saved_regs_size + get_frame_size ();
-     }
+      if (from == FRAME_POINTER_REGNUM)
+	return cfun->machine->frame.saved_regs_size + get_frame_size ();
+    }
 
-   if (to == STACK_POINTER_REGNUM)
-     {
-       if (from == FRAME_POINTER_REGNUM)
-         {
-           HOST_WIDE_INT elim = crtl->outgoing_args_size
-                              + cfun->machine->frame.saved_regs_size
-                              + get_frame_size ()
-                              - cfun->machine->frame.fp_lr_offset;
-           elim = AARCH64_ROUND_UP (elim, STACK_BOUNDARY / BITS_PER_UNIT);
-           return elim;
-         }
-     }
+  if (to == STACK_POINTER_REGNUM)
+    {
+      if (from == FRAME_POINTER_REGNUM)
+	{
+	  HOST_WIDE_INT elim = crtl->outgoing_args_size
+	    + cfun->machine->frame.saved_regs_size
+	    + get_frame_size ();
+	  elim = AARCH64_ROUND_UP (elim, STACK_BOUNDARY / BITS_PER_UNIT);
+	  return elim;
+	}
+    }
 
-   return offset;
+  return offset;
 }
 
 

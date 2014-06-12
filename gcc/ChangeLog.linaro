@@ -1,5 +1,20 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209627, 209636.
+	2014-04-22  Renlin  <renlin.li@arm.com>
+		    Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.h (aarch64_frame): Delete "fp_lr_offset".
+	* config/aarch64/aarch64.c (aarch64_layout_frame)
+	(aarch64_initial_elimination_offset): Likewise.
+
+	2014-04-22  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_initial_elimination_offset):
+	Fix indentation.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209618.
 	2014-04-22  Renlin Li  <Renlin.Li@arm.com>
 
