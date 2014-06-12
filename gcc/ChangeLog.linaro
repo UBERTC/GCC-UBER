@@ -1,5 +1,51 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209701, 209702, 209703, 209704, 209705.
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (arm_rev16si2): New pattern.
+	(arm_rev16si2_alt): Likewise.
+	* config/arm/arm.c (arm_new_rtx_costs): Handle rev16 case.
+
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+	* config/aarch64/aarch64.md (rev16<mode>2): New pattern.
+	(rev16<mode>2_alt): Likewise.
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Handle rev16 case.
+	* config/arm/aarch-common.c (aarch_rev16_shright_mask_imm_p): New.
+	(aarch_rev16_shleft_mask_imm_p): Likewise.
+	(aarch_rev16_p_1): Likewise.
+	(aarch_rev16_p): Likewise.
+	* config/arm/aarch-common-protos.h (aarch_rev16_p): Declare extern.
+	(aarch_rev16_shright_mask_imm_p): Likewise.
+	(aarch_rev16_shleft_mask_imm_p): Likewise.
+
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/aarch-common-protos.h (alu_cost_table): Add rev field.
+	* config/arm/aarch-cost-tables.h (generic_extra_costs): Specify
+	rev cost.
+	(cortex_a53_extra_costs): Likewise.
+	(cortex_a57_extra_costs): Likewise.
+	* config/arm/arm.c (cortexa9_extra_costs): Likewise.
+	(cortexa7_extra_costs): Likewise.
+	(cortexa8_extra_costs): Likewise.
+	(cortexa12_extra_costs): Likewise.
+	(cortexa15_extra_costs): Likewise.
+	(v7m_extra_costs): Likewise.
+	(arm_new_rtx_costs): Handle BSWAP.
+
+	2013-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (cortexa8_extra_costs): New table.
+	(arm_cortex_a8_tune): New tuning struct.
+	* config/arm/arm-cores.def (cortex-a8): Use cortex_a8 tuning struct.
+
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (arm_new_rtx_costs): Handle FMA.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209659.
 	2014-04-22  Richard Henderson  <rth@redhat.com>
 

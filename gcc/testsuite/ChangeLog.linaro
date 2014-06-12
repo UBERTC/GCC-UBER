@@ -1,5 +1,16 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209704, 209705.
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/arm/rev16.c: New test.
+
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/rev16_1.c: New test.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209642.
 	2014-04-22  Alex Velenko  <Alex.Velenko@arm.com>
 
