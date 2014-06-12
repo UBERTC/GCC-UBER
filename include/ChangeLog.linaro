@@ -1,3 +1,10 @@
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209649.
+	2014-04-22  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	* longlong.h: Merge from glibc.
+
 2014-05-14  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.9-2014.05 released.
