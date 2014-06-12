@@ -1,5 +1,13 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209640.
+	2014-04-22  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* gcc.target/aarch64/vqneg_s64_1.c: New testcase.
+	* gcc.target/aarch64/vqabs_s64_1.c: New testcase.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209613, 209614.
 	2014-04-22  Ian Bolton  <ian.bolton@arm.com>
 
