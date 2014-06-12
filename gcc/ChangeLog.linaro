@@ -1,5 +1,13 @@
 2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209806.
+	2014-04-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (arm_cortex_a8_tune): Initialise
+	T16-related fields.
+
+2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209742, 209749.
 	2014-04-24  Alan Lawrence  <alan.lawrence@arm.com>
 
