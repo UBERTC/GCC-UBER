@@ -1,5 +1,12 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209642.
+	2014-04-22  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* gcc.target/aarch64/vreinterpret_f64_1.c: New.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209640.
 	2014-04-22  Alex Velenko  <Alex.Velenko@arm.com>
 
