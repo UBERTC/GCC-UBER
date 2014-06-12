@@ -1,3 +1,11 @@
+2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209747.
+	2014-04-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* configure.ac: Quote usage of ac_cv_func_clock_gettime in if test.
+	* configure: Regenerate.
+
 2014-05-14  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.9-2014.05 released.
