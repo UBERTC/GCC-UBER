@@ -1,5 +1,14 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209713.
+	2014-04-23  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* gcc.target/aarch64/vdup_lane_1.c: New testcase.
+	* gcc.target/aarch64/vdup_lane_2.c: New testcase.
+	* gcc.target/aarch64/vdup_n_1.c: New testcase.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209704, 209705.
 	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
