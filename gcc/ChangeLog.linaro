@@ -1,3 +1,14 @@
+2014-06-04  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211211.
+	2014-06-04  Bin Cheng  <bin.cheng@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_classify_address)
+	(aarch64_legitimize_reload_address): Support full addressing modes
+	for vector modes.
+	* config/aarch64/aarch64.md (mov<mode>, movmisalign<mode>)
+	(*aarch64_simd_mov<mode>, *aarch64_simd_mov<mode>): Relax predicates.
+
 2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r209906.
