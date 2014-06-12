@@ -1,5 +1,13 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209710.
+	2014-04-23  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/arm/arm.c (arm_cortex_a57_tune): Initialize all fields.
+	(arm_cortex_a12_tune): Likewise.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209706.
 	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
