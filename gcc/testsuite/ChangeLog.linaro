@@ -1,6 +1,11 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
-	Backport from trunk r209613.
+	Backport from trunk r209613, 209614.
+	2014-04-22  Ian Bolton  <ian.bolton@arm.com>
+
+	* gcc.target/arm/anddi_notdi-1.c: New test.
+	* gcc.target/arm/iordi_notdi-1.c: New test case.
+
 	2014-04-22  Ian Bolton  <ian.bolton@arm.com>
 
 	* gcc.target/arm/iordi_notdi-1.c: New test.

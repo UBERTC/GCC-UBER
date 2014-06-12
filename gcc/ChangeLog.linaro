@@ -1,6 +1,11 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
-	Backport from trunk r209613.
+	Backport from trunk r209613, r209614.
+	2014-04-22  Ian Bolton  <ian.bolton@arm.com>
+
+	* config/arm/arm.md (*anddi_notdi_zesidi): New pattern.
+	* config/arm/thumb2.md (*iordi_notdi_zesidi): New pattern.
+
 	2014-04-22  Ian Bolton  <ian.bolton@arm.com>
 
 	* config/arm/thumb2.md (*iordi_notdi_di): New pattern.
@@ -59,7 +64,6 @@
 	* LINARO-VERSION: Bump version.
 
 2014-05-14  Yvan Roux  <yvan.roux@linaro.org>
-
 	GCC Linaro 4.9-2014.05 released.
 	* LINARO-VERSION: Update.
 
