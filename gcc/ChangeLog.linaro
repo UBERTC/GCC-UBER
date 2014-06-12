@@ -1,5 +1,14 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209712.
+	2014-04-23 Venkataramanan Kumar  <venkataramanan.kumar@linaro.org>
+
+	* config/aarch64/aarch64.md (stack_protect_set, stack_protect_test)
+	(stack_protect_set_<mode>, stack_protect_test_<mode>): Add
+	machine descriptions for Stack Smashing Protector.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209711.
 	2014-04-23  Richard Earnshaw  <rearnsha@arm.com>
 
