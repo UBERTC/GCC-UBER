@@ -1,3 +1,193 @@
+2014-05-29  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/60834
+	Backport from mainline
+	* gfortran.dg/associate_16.f90:  New test.
+
+2014-05-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	Backport from mainline
+	2014-05-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/overflow_fixed.adb: New test.
+
+2014-05-28  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-05-28  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/61045
+	* gcc.dg/pr61045.c: New testcase.
+
+	2014-05-05  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/61010
+	* gcc.dg/torture/pr61010.c: New testcase.
+
+	2014-04-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/60979
+	* gcc.dg/graphite/pr60979.c: New testcase.
+
+2014-05-28  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* lib/clearcap.exp: New file.
+	* gcc.dg/vect/vect.exp: Load clearcap.exp.
+	Remove clearcap_ldflags handling.
+	Call clearcap-init, clearcap-finish.
+	* gcc.target/i386/i386.exp: Likewise.
+	* gcc.target/i386/clearcap.map: Move to ../config/sol2-clearcap.map.
+	* gcc.target/i386/clearcapv2.map: Move to
+	../config/sol2-clearcapv2.map.
+	* gcc.target/x86_64/abi/avx/abi-avx.exp: Likewise.
+	* gcc.target/x86_64/abi/avx512f/abi-avx512f.exp: Likewise.
+
+2014-05-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/aliasing1.adb (dg-final): Robustify pattern matching.
+
+2014-05-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	* c-c++-common/cilk-plus/AN/pr61191.c: Fix dg-error directives.
+
+2014-05-26  Igor Zamyatin  <igor.zamyatin@intel.com>
+
+	PR c/61191
+	* c-c++-common/cilk-plus/AN/pr61191.c: Check for correct handling of
+	the case with syntax error.
+
+2014-05-22  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* gcc.target/powerpc/htm-ttest.c: New test.
+
+2014-05-21  Igor Zamyatin  <igor.zamyatin@intel.com>
+
+	PR c++/60189
+	* c-c++-common/cilk-plus/CK/invalid_sync.cc: New test.
+
+2014-05-18  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR middle-end/58094
+	* g++.dg/ipa/devirt-11.C: Be lax about number of devirtualizations.
+
+2014-05-18  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/enum3.adb: New test.
+
+2014-04-16  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/60854
+	* g++.dg/torture/pr60854.C: New testcase.
+
+2014-05-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	* g++.dg/pr60969.C: Compile for all ilp32 x86 targets.
+	(dg-options): Add -mfpmath=387.
+	(dg-final): Check that no MMX registers are used.
+
+2014-05-16  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/60969
+	* g++.dg/pr60969.C: New.
+
+2014-05-15  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61085
+	* g++.dg/ipa/pr61085.C: New test.
+
+2014-05-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/61158
+	* gcc.dg/pr61158.c: New test.
+
+2014-05-14  Matthias Klose  <doko@ubuntu.com>
+
+	PR driver/61106
+	* gcc-dg/unused-8a.c: Remove.
+
+2014-05-13  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* lib/target-support.exp (check_dfp_hw_available): New function.
+	(is-effective-target): Check $arg for dfp_hw.
+	(is-effective-target-keyword): Likewise.
+	* gcc.target/powerpc/pack03.c: (dg-require-effective-target):
+	Change target to dfp_hw.
+
+2014-05-13  Jeff Law  <law@redhat.com>
+
+	Backports from mainline
+
+	2014-05-08  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/61009
+	* g++.dg/tree-ssa/pr61009.C: New test.
+
+	2014-04-23  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/60902
+	* gcc.target/i386/pr60902.c: New test.
+
+2014-05-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/61060
+	* gcc.dg/pr61060.c: New test.
+
+2014-05-12  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	Backport from mainline
+	2014-05-12  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	PR target/60991
+	* gcc.target/avr/pr60991.c: New testcase.
+
+2014-05-10  Jerry DeLisle  <jvdelisle@gcc.gnu>
+
+	Backport from trunk.
+	PR libfortran/61049
+	* gfortran.dg/list_read_13.f: New test.
+
+2014-05-09  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2014-05-09 trunk r210267
+
+	PR target/61055
+	* gcc.target/avr/torture/pr61055.c: New test.
+
+2014-05-08  Matthias Klose  <doko@ubuntu.com>
+
+	PR driver/61106
+	* gcc-dg/unused-8a.c: New.
+	* gcc-dg/unused-8b.c: Likewise.
+
+2014-05-07  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/61083
+	* g++.dg/cpp0x/sfinae50.C: New.
+
+2014-05-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57864
+	* gcc.dg/torture/pr57864.c: New testcase.
+
+2014-05-06  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/60999
+	* g++.dg/cpp0x/nsdmi-template9.C: New.
+	* g++.dg/cpp0x/nsdmi-template10.C: Likewise.
+
+2014-05-04  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/60965
+	* g++.dg/ipa/devirt-31.C: New testcase.
+	* g++.dg/ipa/devirt-11.C: Adjust testcase.
+
+2014-05-04  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* gcc.target/powerpc/pack02.c (dg-options): Add -mhard-float.
+	(dg-require-effective-target): Change target to powerpc_fprs.
+	* gcc.target/powerpc/pack03.c (dg-options): Add -mhard-dfp.
+	(dg-require-effective-target): Change target to dfprt.
+
 2014-05-02  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
 
 	PR tree-optimization/60930
