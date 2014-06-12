@@ -1,5 +1,13 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209618.
+	2014-04-22  Renlin Li  <Renlin.Li@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_print_operand_address): Adjust
+	the output asm format.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209617.
 	2014-04-22  James Greenhalgh  <james.greenhalgh@arm.com>
 
