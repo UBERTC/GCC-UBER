@@ -1,5 +1,12 @@
 2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209808.
+	2014-04-25  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/arm/tail-long-call.c: New test.
+
+2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209749.
 	2014-04-24  Alan Lawrence  <alan.lawrence@arm.com>
 
