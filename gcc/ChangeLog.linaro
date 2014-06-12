@@ -1,5 +1,16 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209617.
+	2014-04-22  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-simd.md
+	(aarch64_cm<optab>di): Always split.
+	(*aarch64_cm<optab>di): New.
+	(aarch64_cmtstdi): Always split.
+	(*aarch64_cmtstdi): New.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209615.
 	2014-04-22  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
 
