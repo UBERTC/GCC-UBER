@@ -1,5 +1,14 @@
 2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209613.
+	2014-04-22  Ian Bolton  <ian.bolton@arm.com>
+
+	* config/arm/thumb2.md (*iordi_notdi_di): New pattern.
+	(*iordi_notzesidi_di): Likewise.
+	(*iordi_notsesidi_di): Likewise.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209561.
 	2014-04-22  Ian Bolton  <ian.bolton@arm.com>
 
