@@ -1,3 +1,20 @@
+2014-05-22  Release Manager
+
+	* GCC 4.8.3 released.
+
+2014-04-11  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	* intrinsic.texi (RANDOM_SEED): Improve example.
+
+2014-04-10  Jakub Jelinek  <jakub@redhat.com>
+
+	Backport from mainline
+	2014-03-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/60603
+	* cpp.c (gfc_cpp_init): Restore cb_change_file call to
+	<built-in>.
+
 2014-03-29  Mikael Morin  <mikael@gcc.gnu.org>
 
 	PR fortran/60677

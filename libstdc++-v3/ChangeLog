@@ -1,3 +1,57 @@
+2014-05-22  Release Manager
+
+	* GCC 4.8.3 released.
+
+2014-05-08  Joshua Gay  <jgay@gnu.org>
+
+	PR libstdc++/61117
+	* doc/xml/faq.xml (faq.license.what_restrictions): Replace "open
+	source" with "free software".
+	* doc/html/faq.html: Likewise.
+
+2014-05-08  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/iostream: Fix URL in comment.
+	* src/c++98/ios_init.cc: Fix path in comment.
+
+2014-05-06  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2014-04-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60594
+	* include/std/functional (function::_Callable): Exclude own type
+	from the callable checks.
+	* testsuite/20_util/function/60594.cc: New.
+
+2014-04-27  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60497
+	* include/std/tuple (get): Qualify calls to prevent ADL.
+	* testsuite/20_util/tuple/60497.cc: New.
+
+2012-04-05  Dominique d'Humieres  <dominiq@lps.ens.fr>
+	    Jack Howarth <howarth@bromo.med.uc.edu>
+
+	PR target/54407
+	* 30_threads/condition_variable/54185.cc: Skip for darwin < 11.
+
+2014-04-04  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2013-11-15  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* configure: Regenerate.
+
+2014-04-04  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r204808:
+
+	2013-11-14  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* scripts/extract_symvers.in: Ignore <localentry: > fields
+	in readelf --symbols output.
+
 2014-03-26  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR libstdc++/59548

@@ -1,3 +1,22 @@
+2014-05-22  Release Manager
+
+	* GCC 4.8.3 released.
+
+2014-04-04  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2013-11-15  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* configure: Regenerate.
+
+2014-04-01  Dominique d'Humieres <dominiq@lps.ens.fr>
+
+	Backport from mainline
+	2014-02-20  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libgcj/55637
+	* testsuite/libjava.lang/sourcelocation.xfail: New file.
+
 2014-03-11  Uros Bizjak  <ubizjak@gmail.com>
 
 	* java/lang/natObject.cc (_Jv_MonitorEnter): Add missing parenthesis
