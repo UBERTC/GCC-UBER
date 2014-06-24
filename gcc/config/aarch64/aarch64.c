@@ -9513,9 +9513,6 @@ aarch64_modes_tieable_p (enum machine_mode mode1, enum machine_mode mode2)
 #undef TARGET_FIXED_CONDITION_CODE_REGS
 #define TARGET_FIXED_CONDITION_CODE_REGS aarch64_fixed_condition_code_regs
 
-#undef TARGET_FLAGS_REGNUM
-#define TARGET_FLAGS_REGNUM CC_REGNUM
-
 struct gcc_target targetm = TARGET_INITIALIZER;
 
 #include "gt-aarch64.h"

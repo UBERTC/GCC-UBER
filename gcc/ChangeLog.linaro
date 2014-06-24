@@ -1,3 +1,13 @@
+2014-06-24  Yvan Roux  <yvan.roux@linaro.org>
+
+	Revert:
+	2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209643.
+	2014-04-22  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/aarch64/aarch64.c (TARGET_FLAGS_REGNUM): Define.
+
 2014-06-13  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r210493, 210494, 210495, 210496, 210497, 210498,
