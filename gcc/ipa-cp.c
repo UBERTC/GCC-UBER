@@ -433,6 +433,8 @@ determine_versionability (struct cgraph_node *node)
   else if (!opt_for_fn (node->decl, optimize)
 	   || !opt_for_fn (node->decl, flag_ipa_cp))
     reason = "non-optimized function";
+  else if (node->tm_clone)
+    reason = "transactional memory clone";
   else if (lookup_attribute ("omp declare simd", DECL_ATTRIBUTES (node->decl)))
     {
       /* Ideally we should clone the SIMD clones themselves and create
@@ -2482,7 +2484,8 @@ cgraph_edge_brings_value_p (struct cgraph_edge *cs,
 			    struct ipcp_value_source *src)
 {
   struct ipa_node_params *caller_info = IPA_NODE_REF (cs->caller);
-  struct ipa_node_params *dst_info = IPA_NODE_REF (cs->callee);
+  cgraph_node *real_dest = cgraph_function_node (cs->callee);
+  struct ipa_node_params *dst_info = IPA_NODE_REF (real_dest);
 
   if ((dst_info->ipcp_orig_node && !dst_info->is_all_contexts_clone)
       || caller_info->node_dead)

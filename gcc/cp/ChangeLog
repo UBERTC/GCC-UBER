@@ -1,3 +1,56 @@
+2014-06-24  Jakub Jelinek  <jakub@redhat.com>
+
+	* parser.c (cp_parser_omp_for_loop): For
+	#pragma omp parallel for simd move lastprivate clause from parallel
+	to for rather than simd.
+
+2014-06-20  Jason Merrill  <jason@redhat.com>
+
+	PR c++/59296
+	* call.c (add_function_candidate): Avoid special 'this' handling
+	if we have a ref-qualifier.
+
+	PR c++/61556
+	* call.c (build_over_call): Call build_this in template path.
+
+2014-06-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/59296
+	* call.c (add_function_candidate): Set LOOKUP_NO_RVAL_BIND
+	|LOOKUP_NO_TEMP_BIND for ref-qualifier handling.
+
+	PR c++/61507
+	* pt.c (resolve_overloaded_unification): Preserve
+	ARGUMENT_PACK_EXPLICIT_ARGS.
+
+2014-06-18  Jason Merrill  <jason@redhat.com>
+
+	PR c++/60605
+	* pt.c (check_default_tmpl_args): Check DECL_LOCAL_FUNCTION_P.
+
+2014-06-18  Siva Chandra Reddy  <sivachandra@google.com>
+
+        PR debug/57519
+        * class.c (handle_using_decl): Pass the correct scope to
+        cp_emit_debug_info_for_using.
+
+2014-06-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/61343
+	* decl.c (check_initializer): Maybe clear
+	DECL_INITIALIZED_BY_CONSTANT_EXPRESSION_P.
+
+2014-06-04  Igor Zamyatin  <igor.zamyatin@intel.com>
+
+	PR c/58942
+	* c-c++-common/cilk-plus/AN/pr58942.c: Check for correct handling of
+	the case with a pointer.
+
+2014-06-02  Jason Merrill  <jason@redhat.com>
+
+	PR c++/61134
+	* pt.c (pack_deducible_p): Handle canonicalization.
+
 2014-05-21  Igor Zamyatin  <igor.zamyatin@intel.com>
 
 	PR c/60189

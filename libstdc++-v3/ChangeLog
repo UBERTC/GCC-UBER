@@ -1,3 +1,84 @@
+2014-06-23  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/61532
+	* testsuite/20_util/make_signed/requirements/typedefs-1.cc: Do not
+	apply the signed specifier to wchar_t.
+	* testsuite/20_util/make_signed/requirements/typedefs-2.cc: Likewise.
+	* testsuite/20_util/make_unsigned/requirements/typedefs-1.cc: Do not
+	apply the unsigned specifier to wchar_t.
+	* testsuite/20_util/make_unsigned/requirements/typedefs-2.cc:
+	Likewise.
+
+2014-06-13  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	PR libstdc++/60326
+	* include/std/type_traits (__make_unsigned, __make_signed): Define
+	specializations for wchar_t, char16_t and char32_t.
+	* testsuite/20_util/make_signed/requirements/typedefs-4.cc: New.
+	* testsuite/20_util/make_unsigned/requirements/typedefs-1.cc: Correct
+	test for make_unsigned<volatile wchar_t>.
+	* testsuite/20_util/make_unsigned/requirements/typedefs-2.cc:
+	Likewise.
+	* testsuite/20_util/declval/requirements/1_neg.cc: Adjust dg-error
+	line number.
+	* testsuite/20_util/make_signed/requirements/typedefs_neg.cc:
+	Likewise.
+	* testsuite/20_util/make_unsigned/requirements/typedefs_neg.cc:
+	Likewise.
+
+	Backport from mainline
+	PR libstdc++/61269
+	* include/std/type_traits: Move include outside namespace std.
+	* testsuite/20_util/declval/requirements/1_neg.cc: Adjust dg-error.
+	* testsuite/20_util/make_signed/requirements/typedefs_neg.cc: Likewise.
+	* testsuite/20_util/make_unsigned/requirements/typedefs_neg.cc:
+	Likewise.
+
+	* include/std/tuple (tuple_size<cv _Tp>): Implement LWG 2313.
+	(get<_Tp>(tuple<_Types...>&&)): Use forward instead of move.
+	* testsuite/20_util/tuple/element_access/get_by_type.cc: Test rvalues.
+
+2014-06-07  Ed Smith-Rowland  <3dw4rd@verizon.net>
+
+	Backport from mainline
+	DR 2344 - std::quoted doesn't respect padding
+	* include/std/iomanip: Allow for padding in quoted inserters.
+	* testsuite/27_io/manipulators/standard/char/dr2344.cc: New.
+	* testsuite/27_io/manipulators/standard/wchar_t/dr2344.cc: New.
+
+2014-06-03  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/regex_executor.tcc (_Executor<>::_M_main): Move instead
+	of copying.
+
+2014-06-03  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2014-04-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60734
+	* include/bits/stl_tree.h (_Rb_tree::_M_end): Fix invalid cast.
+
+	Backport from mainline
+	2014-04-24  Tim Shen  <timshen91@gmail.com>
+
+	* include/bits/regex_automaton.tcc (_StateSeq<>::_M_clone()):
+	Do _M_alt before _M_next.
+	* testsuite/28_regex/basic_regex/multiple_quantifiers.cc: Add testcases.
+
+	Backport from mainline
+	2014-05-20  Tim Shen  <timshen91@gmail.com>
+
+	PR libstdc++/61227
+	* include/bits/regex_compiler.h
+	(_BracketMatcher<>::_M_add_character_class): Add negative character
+	class support.
+	* include/bits/regex_compiler.tcc (_BracketMatcher<>::_M_apply):
+	Likewise.
+	* testsuite/28_regex/algorithms/regex_match/ecma/char/quoted_char.cc:
+	Add more testcases.
+
 2014-05-29  Jonathan Wakely  <jwakely@redhat.com>
 
 	* include/tr2/bool_set: Use UTF-8 for accented characters.

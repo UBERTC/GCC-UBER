@@ -1509,11 +1509,19 @@ scan_sharing_clauses (tree clauses, omp_context *ctx)
 	  break;
 
 	case OMP_CLAUSE_SHARED:
+	  decl = OMP_CLAUSE_DECL (c);
 	  /* Ignore shared directives in teams construct.  */
 	  if (gimple_code (ctx->stmt) == GIMPLE_OMP_TEAMS)
-	    break;
+	    {
+	      /* Global variables don't need to be copied,
+		 the receiver side will use them directly.  */
+	      tree odecl = maybe_lookup_decl_in_outer_ctx (decl, ctx);
+	      if (is_global_var (odecl))
+		break;
+	      insert_decl_map (&ctx->cb, decl, odecl);
+	      break;
+	    }
 	  gcc_assert (is_taskreg_ctx (ctx));
-	  decl = OMP_CLAUSE_DECL (c);
 	  gcc_assert (!COMPLETE_TYPE_P (TREE_TYPE (decl))
 		      || !is_variable_sized (decl));
 	  /* Global variables don't need to be copied,
@@ -3383,24 +3391,20 @@ lower_rec_input_clauses (tree clauses, gimple_seq *ilist, gimple_seq *dlist,
 						OMP_CLAUSE__LOOPTEMP_);
 		      gcc_assert (c);
 		      tree l = OMP_CLAUSE_DECL (c);
-		      if (fd->collapse == 1)
-			{
-			  tree n1 = fd->loop.n1;
-			  tree step = fd->loop.step;
-			  tree itype = TREE_TYPE (l);
-			  if (POINTER_TYPE_P (itype))
-			    itype = signed_type_for (itype);
-			  l = fold_build2 (MINUS_EXPR, itype, l, n1);
-			  if (TYPE_UNSIGNED (itype)
-			      && fd->loop.cond_code == GT_EXPR)
-			    l = fold_build2 (TRUNC_DIV_EXPR, itype,
-					     fold_build1 (NEGATE_EXPR,
-							  itype, l),
-					     fold_build1 (NEGATE_EXPR,
-							  itype, step));
-			  else
-			    l = fold_build2 (TRUNC_DIV_EXPR, itype, l, step);
-			}
+		      tree n1 = fd->loop.n1;
+		      tree step = fd->loop.step;
+		      tree itype = TREE_TYPE (l);
+		      if (POINTER_TYPE_P (itype))
+			itype = signed_type_for (itype);
+		      l = fold_build2 (MINUS_EXPR, itype, l, n1);
+		      if (TYPE_UNSIGNED (itype)
+			  && fd->loop.cond_code == GT_EXPR)
+			l = fold_build2 (TRUNC_DIV_EXPR, itype,
+					 fold_build1 (NEGATE_EXPR, itype, l),
+					 fold_build1 (NEGATE_EXPR,
+						      itype, step));
+		      else
+			l = fold_build2 (TRUNC_DIV_EXPR, itype, l, step);
 		      t = fold_build2 (MULT_EXPR, stept,
 				       fold_convert (stept, l), t);
 		      if (POINTER_TYPE_P (TREE_TYPE (x)))

@@ -1,3 +1,363 @@
+2014-06-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/61570
+	* config/i386/driver-i386.c (host_detect_local_cpu): For unknown
+	model family 6 CPU with has_longmode never use a CPU without
+	64-bit support.
+
+	* gimplify.c (gimplify_omp_for): For #pragma omp for simd iterator
+	not mentioned in clauses use private clause if the iterator is
+	declared in #pragma omp for simd, and when adding lastprivate
+	instead, add it to the outer #pragma omp for too.  Diagnose
+	if the variable is private in outer context.  For simd collapse > 1
+	loops, replace all iterators with temporaries.
+	* omp-low.c (lower_rec_input_clauses): Handle LINEAR clause the
+	same even in collapse > 1 loops.
+
+2014-06-23  Alan Modra  <amodra@gmail.com>
+
+	PR bootstrap/61583
+	* tree-vrp.c (remove_range_assertions): Do not set is_unreachable
+	to zero on debug statements.
+
+2014-06-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64-simd.md (aarch64_sqdmulh_lane<mode>):
+	New expander.
+	(aarch64_sqrdmulh_lane<mode>): Likewise.
+	(aarch64_sq<r>dmulh_lane<mode>): Rename to...
+	(aarch64_sq<r>dmulh_lane<mode>_interna): ...this.
+	(aarch64_sqdmulh_laneq<mode>): New expander.
+	(aarch64_sqrdmulh_laneq<mode>): Likewise.
+	(aarch64_sq<r>dmulh_laneq<mode>): Rename to...
+	(aarch64_sq<r>dmulh_laneq<mode>_internal): ...this.
+	(aarch64_sqdmulh_lane<mode>): New expander.
+	(aarch64_sqrdmulh_lane<mode>): Likewise.
+	(aarch64_sq<r>dmulh_lane<mode>): Rename to...
+	(aarch64_sq<r>dmulh_lane<mode>_internal): ...this.
+	(aarch64_sqdmlal_lane<mode>): Add lane flip for big-endian.
+	(aarch64_sqdmlal_laneq<mode>): Likewise.
+	(aarch64_sqdmlsl_lane<mode>): Likewise.
+	(aarch64_sqdmlsl_laneq<mode>): Likewise.
+	(aarch64_sqdmlal2_lane<mode>): Likewise.
+	(aarch64_sqdmlal2_laneq<mode>): Likewise.
+	(aarch64_sqdmlsl2_lane<mode>): Likewise.
+	(aarch64_sqdmlsl2_laneq<mode>): Likewise.
+	(aarch64_sqdmull_lane<mode>): Likewise.
+	(aarch64_sqdmull_laneq<mode>): Likewise.
+	(aarch64_sqdmull2_lane<mode>): Likewise.
+	(aarch64_sqdmull2_laneq<mode>): Likewise.
+
+2014-06-20  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61540
+	* ipa-prop.c (impossible_devirt_target): New function.
+	(try_make_edge_direct_virtual_call): Use it, also instead of
+	asserting.
+
+2014-06-20  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61211
+	* cgraph.c (clone_of_p): Allow skipped_branch to deal with
+	expanded clones.
+
+2014-06-20  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Backport from mainline
+
+	2014-06-20  Julian Brown  <julian@codesourcery.com>
+	            Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* config/arm/arm.c (arm_output_mi_thunk): Fix offset for
+	TARGET_THUMB1_ONLY. Add comments.
+
+2014-06-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-06-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (decide_alg): Correctly handle
+	maximum size of stringop algorithm.
+
+2014-06-18  Richard Henderson  <rth@redhat.com>
+
+	PR target/61545
+	* config/aarch64/aarch64.md (tlsdesc_small): Clobber CC_REGNUM.
+
+2014-06-17  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	PR target/61483
+	* config/aarch64/aarch64.c (aarch64_layout_arg): Add new local
+	variable 'size'; calculate 'size' right in the front; use
+	'size' to compute 'nregs' (when 'allocate_ncrn != 0') and
+	pcum->aapcs_stack_words.
+
+2014-06-17  Nick Clifton  <nickc@redhat.com>
+
+	* config/msp430/msp430.md (mulhisi3): Add a NOP after the DINT.
+	(umulhi3, mulsidi3, umulsidi3): Likewise.
+
+2014-06-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-06-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61423
+	* config/i386/i386.md (*floatunssi<mode>2_i387_with_xmm): New
+	define_insn_and_split pattern, merged from *floatunssi<mode>2_1
+	and corresponding splitters.  Zero extend general register
+	or memory input operand to XMM temporary.  Enable for
+	TARGET_SSE2 and TARGET_INTER_UNIT_MOVES_TO_VEC only.
+	(floatunssi<mode>2): Update expander predicate.
+
+2014-06-16  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/61325
+	* lra-constraints.c (valid_address_p): Add forward declaration.
+	(simplify_operand_subreg): Check address validity before and after
+	alter_reg of memory subreg.
+
+2014-06-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR plugins/45078
+	* config.gcc (arm*-*-linux-*): Include vxworks-dummy.h in tm_file.
+
+2014-06-13  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+
+	2014-06-13  Peter Bergner  <bergner@vnet.ibm.com>
+	PR target/61415
+	* config/rs6000/rs6000-builtin.def (BU_MISC_1): Delete.
+	(BU_MISC_2): Rename to ...
+	(BU_LDBL128_2): ... this.
+	* config/rs6000/rs6000.h (RS6000_BTM_LDBL128): New define.
+	(RS6000_BTM_COMMON): Add RS6000_BTM_LDBL128.
+	* config/rs6000/rs6000.c (rs6000_builtin_mask_calculate): Handle
+	RS6000_BTM_LDBL128.
+	(rs6000_invalid_builtin): Add long double 128-bit builtin support.
+	(rs6000_builtin_mask_names): Add RS6000_BTM_LDBL128.
+	* config/rs6000/rs6000.md (unpacktf_0): Remove define)expand.
+	(unpacktf_1): Likewise.
+	* doc/extend.texi (__builtin_longdouble_dw0): Remove documentation.
+	(__builtin_longdouble_dw1): Likewise.
+	* doc/sourcebuild.texi (longdouble128): Document.
+
+2014-06-13  Jeff Law  <law@redhat.com>
+
+	Backports from mainline:
+	2014-06-13  Jeff Law  <law@redhat.com>
+
+	PR rtl-optimization/61094
+	PR rtl-optimization/61446
+	* ree.c (combine_reaching_defs): Get the mode for the copy from
+	the extension insn rather than the defining insn.
+
+	2014-06-02  Jeff Law  <law@redhat.com>
+
+	PR rtl-optimization/61094
+	* ree.c (combine_reaching_defs): Do not reextend an insn if it
+	was marked as do_no_reextend.  If a copy is needed to eliminate
+	an extension, then mark it as do_not_reextend.
+
+2014-06-13  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61186
+	* ipa-devirt.c (possible_polymorphic_call_targets): Store NULL to
+	cache_token if returning early.
+
+2014-06-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/61486
+	* gimplify.c (struct gimplify_omp_ctx): Add distribute field.
+	(gimplify_adjust_omp_clauses): Don't or in GOVD_LASTPRIVATE
+	if outer combined construct is distribute.
+	(gimplify_omp_for): For OMP_DISTRIBUTE set
+	gimplify_omp_ctxp->distribute.
+	* omp-low.c (scan_sharing_clauses) <case OMP_CLAUSE_SHARED>: For
+	GIMPLE_OMP_TEAMS, if decl isn't global in outer context, record
+	mapping into decl map.
+
+2014-06-12  Jeff Law  <law@redhat.com>
+
+	Backports from mainline:
+
+	2014-06-12  Jeff Law  <law@redhat.com>
+
+        PR tree-optimization/61009
+	* tree-ssa-threadedge.c (thread_through_normal_block): Correct return
+	value when we stop processing a block due to problematic PHIs.
+
+	2014-06-05  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/61289
+	* tree-ssa-threadedge.c (invalidate_equivalences): Remove SRC_MAP and
+	DST_MAP parameters.   Invalidate by walking all the SSA_NAME_VALUES
+	looking for those which match LHS.  All callers changed.
+	(record_temporary_equivalences_from_phis): Remove SRC_MAP and DST_MAP
+	parameters and code which manipulated them.  All callers changed.
+	(record_temporary_equivalences_from_stmts_at_dest): Remove SRC_MAP
+	and DST_MAP parameters.  Simplify invalidation code by just calling
+	invalidate_equivalences.  All callers changed.
+	(thread_across_edge): Simplify now that we don't need to maintain
+	the map of equivalences to invalidate.
+
+2014-06-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* tree-core.h (DECL_NONALIASED): Use proper spelling in comment.
+
+2014-06-12  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2014-05-14 trunk r210418
+	* config/avr/avr.h (REG_CLASS_CONTENTS): Use unsigned suffix for
+	shifted values to avoid build warning.
+
+2014-06-12  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2014-05-09 trunk r210272
+
+	* config/avr/avr-fixed.md (round<mode>3): Use -1U instead of -1 in
+	unsigned int initializers for regno_in, regno_out.
+
+	Backport from 2014-06-12 trunk r211491
+
+	PR target/61443
+	* config/avr/avr.md (push<mode>1): Avoid (subreg(mem)) when
+	loading from address spaces.
+
+2014-06-12  Alan Modra  <amodra@gmail.com>
+
+	PR target/61300
+	* doc/tm.texi.in (INCOMING_REG_PARM_STACK_SPACE): Document.
+	* doc/tm.texi: Regenerate.
+	* function.c (INCOMING_REG_PARM_STACK_SPACE): Provide default.
+	Use throughout in place of REG_PARM_STACK_SPACE.
+	* config/rs6000/rs6000.c (rs6000_reg_parm_stack_space): Add
+	"incoming" param.  Pass to rs6000_function_parms_need_stack.
+	(rs6000_function_parms_need_stack): Add "incoming" param, ignore
+	prototype_p when incoming.  Use function decl when incoming
+	to handle K&R style functions.
+	* config/rs6000/rs6000.h (REG_PARM_STACK_SPACE): Adjust.
+	(INCOMING_REG_PARM_STACK_SPACE): Define.
+
+2014-06-11  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61452
+	* tree-ssa-sccvn.c (visit_phi): Remove pointless setting of
+	expr and has_constants in case we found a leader.
+	(simplify_binary_expression): Always valueize operands first.
+	(simplify_unary_expression): Likewise.
+
+2014-06-11  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/61456
+	* tree-ssa-alias.c (nonoverlapping_component_refs_of_decl_p):
+	Do not use the main variant for the type comparison.
+
+2014-06-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* doc/arm-acle-intrinsics.texi: Specify when CRC32 intrinsics are
+	available.
+	Simplify description of __crc32d and __crc32cd intrinsics.
+	* doc/extend.texi (ARM ACLE Intrinsics): Remove comment about CRC32
+	availability.
+
+2014-06-07  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* tree-ssa-tail-merge.c (same_succ_hash): Hash the static chain of a
+	call statement, if any.
+	(gimple_equal_p) <GIMPLE_CALL>: Compare the static chain of the call
+	statements, if any.  Tidy up.
+
+2014-06-06  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2014-06-06  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/61431
+	* config/rs6000/vsx.md (VSX_LE): Split VSX_D into 2 separate
+	iterators, VSX_D that handles 64-bit types, and VSX_LE that
+	handles swapping the two 64-bit double words on little endian
+	systems.  Include V1TImode and optionally TImode in VSX_LE so that
+	these types are properly swapped.  Change all of the insns and
+	splits that do the 64-bit swaps to use VSX_LE.
+	(vsx_le_perm_load_<mode>): Likewise.
+	(vsx_le_perm_store_<mode>): Likewise.
+	(splitters for little endian memory operations): Likewise.
+	(vsx_xxpermdi2_le_<mode>): Likewise.
+	(vsx_lxvd2x2_le_<mode>): Likewise.
+	(vsx_stxvd2x2_le_<mode>): Likewise.
+
+2014-06-06  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/61325
+	* lra-constraints.c (process_address_1): Check scale equal to one
+	to prevent transformation: base + scale * index => base + new_reg.
+
+2014-06-05  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61393
+	* ipa-cp.c (determine_versionability): Pretend that tm_clones are
+	not versionable.
+
+2014-06-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61383
+	* tree-ssa-ifcombine.c (bb_no_side_effects_p): Make sure
+	stmts can't trap.
+
+2014-06-02  Jason Merrill  <jason@redhat.com>
+
+	PR c++/61020
+	* varpool.c (ctor_for_folding): Handle uninitialized vtables.
+
+2014-06-03  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61160
+	* ipa-cp.c (cgraph_edge_brings_value_p): Handle edges leading to
+	thunks.
+
+2014-06-03  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2014-05-14  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/60866
+	* sel-sched-ir (sel_init_new_insn): New parameter old_seqno.
+	Default it to -1.  Pass it down to init_simplejump_data.
+	(init_simplejump_data): New parameter old_seqno.  Pass it down
+	to get_seqno_for_a_jump.
+	(get_seqno_for_a_jump): New parameter old_seqno.  Use it for
+	initializing new jump seqno as a last resort.  Add comment.
+	(sel_redirect_edge_and_branch): Save old seqno of the conditional
+	jump and pass it down to sel_init_new_insn.
+	(sel_redirect_edge_and_branch_force): Likewise.
+
+2014-06-03  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2014-05-14  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/60901
+	* config/i386/i386.c (ix86_dependencies_evaluation_hook): Check that
+	bb predecessor belongs to the same scheduling region.  Adjust comment.
+
+2014-06-03  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-06-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61239
+	* config/i386/i386.c (ix86_expand_vec_perm) [case V32QImode]: Use
+	GEN_INT (-128) instead of GEN_INT (128) to set MSB of QImode constant.
+
+2014-05-29  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/61325
+	* lra-constraints.c (process_address): Rename to
+	process_address_1.
+	(process_address): New function.
+
 2014-05-29  Uros Bizjak  <ubizjak@gmail.com>
 
 	Backport from mainline
@@ -1922,10 +2282,10 @@
 
 	PR tree-optimization/60577
 	* tree-core.h (struct tree_base): Document nothrow_flag use
-	in VAR_DECL_NONALIASED.
-	* tree.h (VAR_DECL_NONALIASED): New.
+	in DECL_NONALIASED.
+	* tree.h (DECL_NONALIASED): New.
 	(may_be_aliased): Adjust.
-	* coverage.c (build_var): Set VAR_DECL_NONALIASED.
+	* coverage.c (build_var): Set DECL_NONALIASED.
 
 2014-03-20  Eric Botcazou  <ebotcazou@adacore.com>
 
