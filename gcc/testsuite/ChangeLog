@@ -1,3 +1,314 @@
+2014-07-09  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	PR c++/58155 - -Wliteral-suffix warns about tokens which are skipped
+	g++.dg/cpp0x/pr58155.C: New.
+
+2014-07-09  Alan Lawrence  <alan.lawrence@arm.com>
+
+	Backport r211369 from trunk.
+	2014-06-09  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR target/61062
+	* gcc.target/arm/pr48252.c (main): Expect same result as endian-neutral.
+
+2014-07-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/61673
+	* gcc.c-torture/execute/pr61673.c: New test.
+
+2014-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61680
+	* gcc.dg/vect/pr61680.c: New testcase.
+
+	PR tree-optimization/61681
+	* gcc.dg/torture/pr61681.c: New testcase.
+
+2014-07-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+        Backport r211502 from mainline.
+        2014-06-10  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR target/59843
+	* gcc.dg/vect/vect-singleton_1.c: New file.
+
+2014-07-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/61725
+	* gcc.dg/tree-ssa/vrp93.c: New test.
+	* gcc.c-torture/execute/pr61725.c: New test.
+
+2014-07-07  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/61459
+	PR fortran/58883
+	* gfortran.dg/allocatable_function_8.f90 : New test
+
+2014-07-07  Dominique d'Humieres <dominiq@lps.ens.fr>
+	    Mikael Morin <mikael@gcc.gnu.org>
+
+	PR fortran/41936
+	* gfortran.dg/class_array_15.f03: Check memory leaks.
+
+2014-07-06  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from mainline.
+	PR libgfortran/61640
+	* gfortran.dg/arrayio_16.f90: New test.
+
+2014-07-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/61654
+	* g++.dg/opt/pr61654.C: New test.
+
+	PR tree-optimization/61684
+	* gcc.c-torture/compile/pr61684.c: New test.
+
+	PR c++/61382
+	Backport from mainline
+	2014-06-05  Andreas Schwab  <schwab@suse.de>
+
+	* g++.dg/cpp0x/initlist86.C (main): Initialize i.
+
+2014-07-02  Jakub Jelinek  <jakub@redhat.com>
+	    Fritz Reese  <Reese-Fritz@zai.com>
+
+	* gfortran.dg/oldstyle_5.f: New test.
+
+2014-07-01  Paul Pluzhnikov  <ppluzhnikov@google.com>
+
+	PR c++/58753
+	PR c++/58930
+	PR c++/58704
+
+	Backported from mainline
+	2014-05-20  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* g++.dg/cpp0x/nsdmi-template11.C: New.
+	* g++.dg/cpp0x/nsdmi-template12.C: Likewise.
+	* g++.dg/cpp0x/nsdmi-template13.C: Likewise.
+
+2014-06-28  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	PR c++/58781
+	PR c++/60249
+	PR c++/59867
+	* testsuite/g++.dg/cpp0x/pr58781.C: New.
+	* testsuite/g++.dg/cpp0x/pr60249.C: New.
+	* testsuite/g++.dg/cpp1y/pr59867.C: New.
+
+2014-06-30  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gfortran.dg/round_4.f90: Skip for powerpc*-*-linux* since the
+	test requires greater precision than the current PowerPC long
+	double implementation supports.
+
+2014-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2014-06-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57233
+	PR tree-optimization/61299
+	* gcc.dg/pr57233.c: New test.
+	* gcc.target/i386/pr57233.c: New test.
+	* gcc.target/i386/sse2-pr57233.c: New test.
+	* gcc.target/i386/avx-pr57233.c: New test.
+	* gcc.target/i386/avx2-pr57233.c: New test.
+	* gcc.target/i386/avx512f-pr57233.c: New test.
+	* gcc.target/i386/xop-pr57233.c: New test.
+
+	2014-06-24  Jakub Jelinek  <jakub@redhat.com>
+
+	* gfortran.dg/gomp/udr2.f90 (f7, f9): Add !$omp parallel with
+	reduction clause.
+	* gfortran.dg/gomp/udr4.f90 (f4): Likewise.
+	Remove Label is never defined expected error.
+	* gfortran.dg/gomp/udr8.f90: New test.
+
+	2014-06-18  Jakub Jelinek  <jakub@redhat.com>
+
+	* gfortran.dg/gomp/declare-simd-1.f90: New test.
+	* gfortran.dg/gomp/depend-1.f90: New test.
+	* gfortran.dg/gomp/target1.f90: New test.
+	* gfortran.dg/gomp/target2.f90: New test.
+	* gfortran.dg/gomp/target3.f90: New test.
+	* gfortran.dg/gomp/udr4.f90: Adjust expected diagnostics.
+	* gfortran.dg/openmp-define-3.f90: Expect _OPENMP 201307 instead of
+	201107.
+
+	2014-06-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/60928
+	* gfortran.dg/gomp/allocatable_components_1.f90: Remove dg-error
+	directives.
+	* gfortran.dg/gomp/associate1.f90: New test.
+	* gfortran.dg/gomp/intentin1.f90: New test.
+	* gfortran.dg/gomp/openmp-simd-1.f90: New test.
+	* gfortran.dg/gomp/openmp-simd-2.f90: New test.
+	* gfortran.dg/gomp/openmp-simd-3.f90: New test.
+	* gfortran.dg/gomp/proc_ptr_2.f90: New test.
+
+	2014-06-09  Jakub Jelinek  <jakub@redhat.com>
+
+	* gfortran.dg/gomp/udr6.f90 (f1, f2, f3): Use complex(kind=8)
+	instead of complex(kind=16).
+
+	2014-06-06  Jakub Jelinek  <jakub@redhat.com>
+
+	* gfortran.dg/gomp/allocatable_components_1.f90: Adjust for
+	reduction clause diagnostic changes.
+	* gfortran.dg/gomp/appendix-a/a.31.3.f90: Likewise.
+	* gfortran.dg/gomp/reduction1.f90: Likewise.
+	* gfortran.dg/gomp/reduction3.f90: Likewise.
+	* gfortran.dg/gomp/udr1.f90: New test.
+	* gfortran.dg/gomp/udr2.f90: New test.
+	* gfortran.dg/gomp/udr3.f90: New test.
+	* gfortran.dg/gomp/udr4.f90: New test.
+	* gfortran.dg/gomp/udr5.f90: New test.
+	* gfortran.dg/gomp/udr6.f90: New test.
+	* gfortran.dg/gomp/udr7.f90: New test.
+
+	2014-05-12  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/60127
+	* gfortran.dg/gomp/omp_do_concurrent.f90: New.
+
+	2014-05-11  Jakub Jelinek  <jakub@redhat.com>
+
+	* gfortran.dg/gomp/affinity-1.f90: New test.
+
+2014-06-30  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* gcc.dg/typeof-2.c: New testcase.
+
+2014-06-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/vqdmulhh_lane_s16.c: New test.
+	* gcc.target/aarch64/vqdmulhs_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqrdmulhh_lane_s16.c: Likewise.
+	* gcc.target/aarch64/vqrdmulhs_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmlal_high_lane_s16.c: New test.
+	* gcc.target/aarch64/vqdmlal_high_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmlal_high_laneq_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmlal_high_laneq_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmlal_lane_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmlal_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmlal_laneq_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmlal_laneq_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmlalh_lane_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmlals_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmlsl_high_lane_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmlsl_high_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmlsl_high_laneq_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmlsl_high_laneq_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmlsl_lane_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmlsl_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmlsl_laneq_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmlslh_lane_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmlsls_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmulh_laneq_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmulh_laneq_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmulhq_laneq_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmulhq_laneq_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmull_high_lane_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmull_high_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmull_high_laneq_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmull_high_laneq_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmull_lane_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmull_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmull_laneq_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmull_laneq_s32.c: Likewise.
+	* gcc.target/aarch64/vqdmullh_lane_s16.c: Likewise.
+	* gcc.target/aarch64/vqdmulls_lane_s32.c: Likewise.
+	* gcc.target/aarch64/vqrdmulh_laneq_s16.c: Likewise.
+	* gcc.target/aarch64/vqrdmulh_laneq_s32.c: Likewise.
+	* gcc.target/aarch64/vqrdmulhq_laneq_s16.c: Likewise.
+	* gcc.target/aarch64/vqrdmulhq_laneq_s32.c: Likewise.
+	* gcc.target/aarch64/vector_intrinsics.c: Simplify arm_neon.h include.
+	(test_vqdmlal_high_lane_s16): Fix parameter type.
+	(test_vqdmlal_high_lane_s32): Likewise.
+	(test_vqdmull_high_lane_s16): Likewise.
+	(test_vqdmull_high_lane_s32): Likewise.
+	(test_vqdmlsl_high_lane_s32): Likewise.
+	(test_vqdmlsl_high_lane_s16): Likewise.
+	* gcc.target/aarch64/scalar_intrinsics.c (test_vqdmlalh_lane_s16):
+	Fix argument type.
+	(test_vqdmlals_lane_s32): Likewise.
+	(test_vqdmlslh_lane_s16): Likewise.
+	(test_vqdmlsls_lane_s32): Likewise.
+	(test_vqdmulhh_lane_s16): Likewise.
+	(test_vqdmulhs_lane_s32): Likewise.
+	(test_vqdmullh_lane_s16): Likewise.
+	(test_vqdmulls_lane_s32): Likewise.
+	(test_vqrdmulhh_lane_s16): Likewise.
+	(test_vqrdmulhs_lane_s32): Likewise.
+
+2014-06-30  Igor Zamyatin  <igor.zamyatin@intel.com>
+
+	PR middle-end/57541
+	* c-c++-common/cilk-plus/AN/pr57541.c: New case added.
+	* c-c++-common/cilk-plus/AN/pr57541-2.c: New test.
+
+2014-06-30  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2014-06-11  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/61306
+	* gcc.c-torture/execute/pr61306-1.c: New test.
+	* gcc.c-torture/execute/pr61306-2.c: Likewise.
+	* gcc.c-torture/execute/pr61306-3.c: Likewise.
+
+2014-06-27  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from mainline.
+	PR libgfortran/61499
+	* gfortran.dg/arrayio_15.f90: New test.
+
+2014-06-27  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gfortran.dg/nint_2.f90: Don't XFAIL for powerpc64le-*-linux*.
+
+2014-06-27  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/61614
+	* g++.dg/ext/complit14.C: New.
+
+2014-06-27  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61160
+	* g++.dg/ipa/pr61160-2.C: New test.
+	* g++.dg/ipa/pr61160-3.C: Likewise.
+
+2014-06-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-06-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61586
+	* gcc.target/alpha/pr61586.c: New test.
+
+2014-06-26  Adam Butcher  <adam@jessamine.co.uk>
+
+	PR c++/61537
+	* g++.dg/template/pr61537.C: New testcase.
+
+2014-06-26  Martin Jambor  <mjambor@suse.cz>
+
+	* g++.dg/ipa/pr60600.C: Fix typo.
+	* g++.dg/ipa/devirt-25.C: Likewise.
+	* g++.dg/ipa/pr61540.C: Likewise.
+
+2014-06-26  Martin Jambor  <mjambor@suse.cz>
+
+	* g++.dg/ipa/pr61540.C: Remove dumping test.
+
+2014-06-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gfortran.dg/default_format_denormal_2.f90:  Remove xfail for
+	powerpc*-*-linux*.
+
 2014-06-23  Alan Modra  <amodra@gmail.com>
 
 	* gcc.dg/pr61583.c: New.
@@ -5,7 +316,7 @@
 2014-06-20  Martin Jambor  <mjambor@suse.cz>
 
 	PR ipa/61540
-        * g++.dg/ipa/pr61540.C: New test.
+	* g++.dg/ipa/pr61540.C: New test.
 
 2014-06-17  Yufeng Zhang  <yufeng.zhang@arm.com>
 

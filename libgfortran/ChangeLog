@@ -1,3 +1,20 @@
+2014-07-06  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk.
+	PR libgfortran/61640
+	* io/list_read.c (next_char_internal): Adjust the read length to
+	a single wide character. (eat_spaces): Add missing paren. 
+	* io/unix.c (mem_read4): Use the correct mem_alloc function for
+	wide character internal reads.
+
+2014-06-27  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk.
+	PR libgfortran/61499
+	* io/list_read.c (eat_spaces): Use a 'for' loop instead of
+	'while' loop to skip the loop if there are no bytes left in the
+	string. Only seek if actual spaces can be skipped.
+
 2014-06-07  Jerry DeLisle  <jvdelisle@gcc.gnu>
 
 	Backport from trunk.

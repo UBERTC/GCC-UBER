@@ -206,7 +206,7 @@ static conversion *maybe_handle_ref_bind (conversion **);
 static void maybe_handle_implicit_object (conversion **);
 static struct z_candidate *add_candidate
 	(struct z_candidate **, tree, tree, const vec<tree, va_gc> *, size_t,
-	 conversion **, tree, tree, int, struct rejection_reason *);
+	 conversion **, tree, tree, int, struct rejection_reason *, int);
 static tree source_type (conversion *);
 static void add_warning (struct z_candidate *, struct z_candidate *);
 static bool reference_compatible_p (tree, tree);
@@ -520,7 +520,6 @@ struct z_candidate {
      sequence from the type returned by FN to the desired destination
      type.  */
   conversion *second_conv;
-  int viable;
   struct rejection_reason *reason;
   /* If FN is a member function, the binfo indicating the path used to
      qualify the name of FN at the call site.  This path is used to
@@ -538,6 +537,10 @@ struct z_candidate {
   tree explicit_targs;
   candidate_warning *warnings;
   z_candidate *next;
+  int viable;
+
+  /* The flags active in add_candidate.  */
+  int flags;
 };
 
 /* Returns true iff T is a null pointer constant in the sense of
@@ -886,7 +889,9 @@ build_aggr_conv (tree type, tree ctor, int flags, tsubst_flags_t complain)
   if (ctor == error_mark_node)
     return NULL;
 
-  flags |= LOOKUP_NO_NARROWING;
+  /* The conversions within the init-list aren't affected by the enclosing
+     context; they're always simple copy-initialization.  */
+  flags = LOOKUP_IMPLICIT|LOOKUP_NO_NARROWING;
 
   for (; field; field = next_initializable_field (DECL_CHAIN (field)))
     {
@@ -959,6 +964,8 @@ build_array_conv (tree type, tree ctor, int flags, tsubst_flags_t complain)
 	return NULL;
     }
 
+  flags = LOOKUP_IMPLICIT|LOOKUP_NO_NARROWING;
+
   FOR_EACH_CONSTRUCTOR_VALUE (CONSTRUCTOR_ELTS (ctor), i, val)
     {
       conversion *sub
@@ -1002,6 +1009,8 @@ build_complex_conv (tree type, tree ctor, int flags,
 
   if (len != 2)
     return NULL;
+
+  flags = LOOKUP_IMPLICIT|LOOKUP_NO_NARROWING;
 
   FOR_EACH_CONSTRUCTOR_VALUE (CONSTRUCTOR_ELTS (ctor), i, val)
     {
@@ -1810,7 +1819,8 @@ add_candidate (struct z_candidate **candidates,
 	       tree fn, tree first_arg, const vec<tree, va_gc> *args,
 	       size_t num_convs, conversion **convs,
 	       tree access_path, tree conversion_path,
-	       int viable, struct rejection_reason *reason)
+	       int viable, struct rejection_reason *reason,
+	       int flags)
 {
   struct z_candidate *cand = (struct z_candidate *)
     conversion_obstack_alloc (sizeof (struct z_candidate));
@@ -1825,6 +1835,7 @@ add_candidate (struct z_candidate **candidates,
   cand->viable = viable;
   cand->reason = reason;
   cand->next = *candidates;
+  cand->flags = flags;
   *candidates = cand;
 
   return cand;
@@ -2064,7 +2075,7 @@ add_function_candidate (struct z_candidate **candidates,
 
  out:
   return add_candidate (candidates, fn, orig_first_arg, args, len, convs,
-			access_path, conversion_path, viable, reason);
+			access_path, conversion_path, viable, reason, flags);
 }
 
 /* Create an overload candidate for the conversion function FN which will
@@ -2166,7 +2177,7 @@ add_conv_candidate (struct z_candidate **candidates, tree fn, tree obj,
     }
 
   return add_candidate (candidates, totype, first_arg, arglist, len, convs,
-			access_path, conversion_path, viable, reason);
+			access_path, conversion_path, viable, reason, flags);
 }
 
 static void
@@ -2241,7 +2252,7 @@ build_builtin_candidate (struct z_candidate **candidates, tree fnname,
 		 num_convs, convs,
 		 /*access_path=*/NULL_TREE,
 		 /*conversion_path=*/NULL_TREE,
-		 viable, reason);
+		 viable, reason, flags);
 }
 
 static bool
@@ -3059,7 +3070,7 @@ add_template_candidate_real (struct z_candidate **candidates, tree tmpl,
   return cand;
  fail:
   return add_candidate (candidates, tmpl, first_arg, arglist, nargs, NULL,
-			access_path, conversion_path, 0, reason);
+			access_path, conversion_path, 0, reason, flags);
 }
 
 
@@ -7231,7 +7242,11 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
 	return error_mark_node;
     }
 
-  return build_cxx_call (fn, nargs, argarray, complain|decltype_flag);
+  tree call = build_cxx_call (fn, nargs, argarray, complain|decltype_flag);
+  if (TREE_CODE (call) == CALL_EXPR
+      && (cand->flags & LOOKUP_LIST_INIT_CTOR))
+    CALL_EXPR_LIST_INIT_P (call) = true;
+  return call;
 }
 
 /* Build and return a call to FN, using NARGS arguments in ARGARRAY.
@@ -7273,6 +7288,11 @@ build_cxx_call (tree fn, int nargs, tree *argarray,
 	  || bif == BUILT_IN_CILKPLUS_SEC_REDUCE
 	  || bif == BUILT_IN_CILKPLUS_SEC_REDUCE_MUTATING)
 	{ 
+	  if (call_expr_nargs (fn) == 0)
+	    {
+	      error_at (EXPR_LOCATION (fn), "Invalid builtin arguments");
+	      return error_mark_node;
+	    }
 	  /* for bif == BUILT_IN_CILKPLUS_SEC_REDUCE_ALL_ZERO or
 	     BUILT_IN_CILKPLUS_SEC_REDUCE_ANY_ZERO or
 	     BUILT_IN_CILKPLUS_SEC_REDUCE_ANY_NONZERO or 

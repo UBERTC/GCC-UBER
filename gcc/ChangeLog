@@ -1,3 +1,352 @@
+2014-07-09  Alan Lawrence  <alan.lawrence@arm.com>
+
+	Backport r211369 from trunk.
+	2014-06-09  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR target/61062
+	* config/arm/arm_neon.h (vtrn_s8, vtrn_s16, vtrn_u8, vtrn_u16, vtrn_p8,
+	vtrn_p16, vtrn_s32, vtrn_f32, vtrn_u32, vtrnq_s8, vtrnq_s16, vtrnq_s32,
+	vtrnq_f32, vtrnq_u8, vtrnq_u16, vtrnq_u32, vtrnq_p8, vtrnq_p16, vzip_s8,
+	vzip_s16, vzip_u8, vzip_u16, vzip_p8, vzip_p16, vzip_s32, vzip_f32,
+	vzip_u32, vzipq_s8, vzipq_s16, vzipq_s32, vzipq_f32, vzipq_u8,
+	vzipq_u16, vzipq_u32, vzipq_p8, vzipq_p16, vuzp_s8, vuzp_s16, vuzp_s32,
+	vuzp_f32, vuzp_u8, vuzp_u16, vuzp_u32, vuzp_p8, vuzp_p16, vuzpq_s8,
+	vuzpq_s16, vuzpq_s32, vuzpq_f32, vuzpq_u8, vuzpq_u16, vuzpq_u32,
+	vuzpq_p8, vuzpq_p16): Correct mask for bigendian.
+
+
+2014-07-09  Alan Lawrence  <alan.lawrence@arm.com>
+
+	Backport r210219 from trunk.
+	2014-05-08  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/arm/arm_neon.h: Update comment.
+	* config/arm/neon-docgen.ml: Delete.
+	* config/arm/neon-gen.ml: Delete.
+	* doc/arm-neon-intrinsics.texi: Update comment.
+
+2014-07-09  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	Backport r211775 from trunk.
+	2014-06-18  Terry Guo  <terry.guo@arm.com>
+
+	PR target/61544
+	* config/arm/arm.c (thumb1_reorg): Move to next basic block if we
+	reach the head.
+
+2014-07-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/61673
+	* combine.c (simplify_comparison): Test just mode's sign bit
+	in tmode rather than the sign bit and any bits above it.
+
+2014-07-08  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport r212298 from trunk.
+	2014-07-04  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-simd.md (move_lo_quad_internal_<mode>): New.
+	(move_lo_quad_internal_be_<mode>): Likewise.
+	(move_lo_quad_<mode>): Convert to define_expand.
+	(aarch64_simd_move_hi_quad_<mode>): Gate on BYTES_BIG_ENDIAN.
+	(aarch64_simd_move_hi_quad_be_<mode>): New.
+	(move_hi_quad_<mode>): Use appropriate insn for BYTES_BIG_ENDIAN.
+	(aarch64_combinez<mode>): Gate on BYTES_BIG_ENDIAN.
+	(aarch64_combinez_be<mode>): New.
+	(aarch64_combine<mode>): Convert to define_expand.
+	(aarch64_combine_internal<mode>): New.
+	(aarch64_simd_combine<mode>): Remove bogus RTL description.
+
+2014-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61680
+	* tree-vect-data-refs.c (vect_analyze_data_ref_dependence):
+	Handle properly all read-write dependences with group accesses.
+
+	PR tree-optimization/61681
+	* tree-ssa-structalias.c (find_what_var_points_to): Expand
+	NONLOCAL inside ESCAPED.
+
+2014-07-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	Backport r211502 from mainline.
+	2014-06-10  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR target/59843
+	* config/aarch64/aarch64-modes.def: Add V1DFmode.
+	* config/aarch64/aarch64.c (aarch64_vector_mode_supported_p):
+	Support V1DFmode.
+
+2014-07-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/61725
+	* tree-vrp.c (extract_range_basic): Don't assume vr0 is unsigned
+	range, use range_includes_zerop_p instead of integer_zerop on
+	vr0->min, only use log2 of max if min is not negative.
+
+2014-07-06  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/install.texi (Specific, aarch64*-*-*): Fix markup.  Reword a bit.
+
+2014-07-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/61654
+	* cgraphunit.c (expand_thunk): Call free_dominance_info.
+
+	PR tree-optimization/61684
+	* tree-ssa-ifcombine.c (recognize_single_bit_test): Make sure
+	rhs1 of conversion is a SSA_NAME before using SSA_NAME_DEF_STMT on it.
+
+2014-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2014-06-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57233
+	PR tree-optimization/61299
+	* tree-vect-generic.c (get_compute_type, count_type_subparts): New
+	functions.
+	(expand_vector_operations_1): Use them.  If {L,R}ROTATE_EXPR
+	would be lowered to scalar shifts, check if corresponding
+	shifts and vector BIT_IOR_EXPR are supported and don't lower
+	or lower just to narrower vector type in that case.
+	* expmed.c (expand_shift_1): Fix up handling of vector
+	shifts and rotates.
+
+	2014-06-25  Jakub Jelinek  <jakub@redhat.com>
+
+	* langhooks-def.h (LANG_HOOKS_OMP_CLAUSE_LINEAR_CTOR): Define.
+	(LANG_HOOKS_DECLS): Add it.
+	* gimplify.c (gimplify_omp_for): Make sure OMP_CLAUSE_LINEAR_STEP
+	has correct type.
+	* tree.h (OMP_CLAUSE_LINEAR_ARRAY): Define.
+	* langhooks.h (struct lang_hooks_for_decls): Add
+	omp_clause_linear_ctor hook.
+	* omp-low.c (lower_rec_input_clauses): Set max_vf even if
+	OMP_CLAUSE_LINEAR_ARRAY is set.  Don't fold_convert
+	OMP_CLAUSE_LINEAR_STEP.  For OMP_CLAUSE_LINEAR_ARRAY in
+	combined simd loop use omp_clause_linear_ctor hook.
+
+	2014-06-24  Jakub Jelinek  <jakub@redhat.com>
+
+	* gimplify.c (gimplify_scan_omp_clauses) <case OMP_CLAUSE_MAP,
+	OMP_CLAUSE_TO, OMP_CLAUSE_FROM): Make sure OMP_CLAUSE_SIZE is
+	non-NULL.
+	<case OMP_CLAUSE_ALIGNED>: Gimplify OMP_CLAUSE_ALIGNED_ALIGNMENT.
+	(gimplify_adjust_omp_clauses_1): Make sure OMP_CLAUSE_SIZE is
+	non-NULL.
+	(gimplify_adjust_omp_clauses): Likewise.
+	* omp-low.c (lower_rec_simd_input_clauses,
+	lower_rec_input_clauses, expand_omp_simd): Handle non-constant
+	safelen the same as safelen(1).
+	* tree-nested.c (convert_nonlocal_omp_clauses,
+	convert_local_omp_clauses): Handle OMP_CLAUSE_ALIGNED.  For
+	OMP_CLAUSE_{MAP,TO,FROM} if not decl use walk_tree.
+	(convert_nonlocal_reference_stmt, convert_local_reference_stmt):
+	Fixup handling of GIMPLE_OMP_TARGET.
+	(convert_tramp_reference_stmt, convert_gimple_call): Handle
+	GIMPLE_OMP_TARGET.
+
+	2014-06-18  Jakub Jelinek  <jakub@redhat.com>
+
+	* gimplify.c (omp_notice_variable): If n is non-NULL
+	and no flags change in ORT_TARGET region, don't jump to
+	do_outer.
+	(struct gimplify_adjust_omp_clauses_data): New type.
+	(gimplify_adjust_omp_clauses_1): Adjust for data being
+	a struct gimplify_adjust_omp_clauses_data pointer instead
+	of tree *.  Pass pre_p as a new argument to
+	lang_hooks.decls.omp_finish_clause hook.
+	(gimplify_adjust_omp_clauses): Add pre_p argument, adjust
+	splay_tree_foreach to pass both list_p and pre_p.
+	(gimplify_omp_parallel, gimplify_omp_task, gimplify_omp_for,
+	gimplify_omp_workshare, gimplify_omp_target_update): Adjust
+	gimplify_adjust_omp_clauses callers.
+	* langhooks.c (lhd_omp_finish_clause): New function.
+	* langhooks-def.h (lhd_omp_finish_clause): New prototype.
+	(LANG_HOOKS_OMP_FINISH_CLAUSE): Define to lhd_omp_finish_clause.
+	* langhooks.h (struct lang_hooks_for_decls): Add a new
+	gimple_seq * argument to omp_finish_clause hook.
+	* omp-low.c (scan_sharing_clauses): Call scan_omp_op on
+	non-DECL_P OMP_CLAUSE_DECL if ctx->outer.
+	(scan_omp_parallel, lower_omp_for): When adding
+	_LOOPTEMP_ clause var, add it to outer ctx's decl_map
+	as identity.
+	* tree-core.h (OMP_CLAUSE_MAP_TO_PSET): New map kind.
+	* tree-nested.c (convert_nonlocal_omp_clauses,
+	convert_local_omp_clauses): Handle various OpenMP 4.0 clauses.
+	* tree-pretty-print.c (dump_omp_clause): Handle
+	OMP_CLAUSE_MAP_TO_PSET.
+
+	2014-06-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/60928
+	* omp-low.c (lower_rec_input_clauses) <case OMP_CLAUSE_LASTPRIVATE>:
+	Set lastprivate_firstprivate even if omp_private_outer_ref
+	langhook returns true.
+	<case OMP_CLAUSE_REDUCTION>: When calling omp_clause_default_ctor
+	langhook, call unshare_expr on new_var and call
+	build_outer_var_ref to get the last argument.
+
+	2014-05-11  Jakub Jelinek  <jakub@redhat.com>
+
+	* tree.h (OMP_CLAUSE_LINEAR_STMT): Define.
+	* tree.c (omp_clause_num_ops): Increase OMP_CLAUSE_LINEAR
+	number of operands to 3.
+	(walk_tree_1): Walk all operands of OMP_CLAUSE_LINEAR.
+	* tree-nested.c (convert_nonlocal_omp_clauses,
+	convert_local_omp_clauses): Handle OMP_CLAUSE_DEPEND.
+	* gimplify.c (gimplify_scan_omp_clauses): Handle
+	OMP_CLAUSE_LINEAR_STMT.
+	* omp-low.c (lower_rec_input_clauses): Fix typo.
+	(maybe_add_implicit_barrier_cancel, lower_omp_1): Add
+	cast between Fortran boolean_type_node and C _Bool if
+	needed.
+
+2014-06-30  Jason Merrill  <jason@redhat.com>
+
+	PR c++/51253
+	PR c++/61382
+	* gimplify.c (gimplify_arg): Non-static.
+	* gimplify.h: Declare it.
+
+2014-06-30  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	Backport from Mainline
+	2014-06-30  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	PR target/61633
+	* config/aarch64/aarch64.md (*aarch64_ashr_sisd_or_int_<mode>3):
+	Add alternative; make early clobber.  Adjust both split patterns
+	to use operand 0 as the working register.
+
+2014-06-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/iterators.md (VCOND): Handle SI and HI modes.
+	Update comments.
+	(VCONQ): Make comment more helpful.
+	(VCON): Delete.
+	* config/aarch64/aarch64-simd.md
+	(aarch64_sqdmulh_lane<mode>):
+	Use VCOND for operands 2.  Update lane checking and flipping logic.
+	(aarch64_sqrdmulh_lane<mode>): Likewise.
+	(aarch64_sq<r>dmulh_lane<mode>_internal): Likewise.
+	(aarch64_sqdmull2<mode>): Remove VCON, use VQ_HSI mode iterator.
+	(aarch64_sqdml<SBINQOPS:as>l_lane<mode>_internal, VD_HSI): Change mode
+	attribute of operand 3 to VCOND.
+	(aarch64_sqdml<SBINQOPS:as>l_lane<mode>_internal, SD_HSI): Likewise.
+	(aarch64_sqdml<SBINQOPS:as>l2_lane<mode>_internal): Likewise.
+	(aarch64_sqdmull_lane<mode>_internal, VD_HSI): Likewise.
+	(aarch64_sqdmull_lane<mode>_internal, SD_HSI): Likewise.
+	(aarch64_sqdmull2_lane<mode>_internal): Likewise.
+	(aarch64_sqdml<SBINQOPS:as>l_laneq<mode>_internal, VD_HSI: New
+	define_insn.
+	(aarch64_sqdml<SBINQOPS:as>l_laneq<mode>_internal, SD_HSI): Likewise.
+	(aarch64_sqdml<SBINQOPS:as>l2_laneq<mode>_internal): Likewise.
+	(aarch64_sqdmull_laneq<mode>_internal, VD_HSI): Likewise.
+	(aarch64_sqdmull_laneq<mode>_internal, SD_HSI): Likewise.
+	(aarch64_sqdmull2_laneq<mode>_internal): Likewise.
+	(aarch64_sqdmlal_lane<mode>): Change mode attribute of penultimate
+	operand to VCOND.  Update lane flipping and bounds checking logic.
+	(aarch64_sqdmlal2_lane<mode>): Likewise.
+	(aarch64_sqdmlsl_lane<mode>): Likewise.
+	(aarch64_sqdmull_lane<mode>): Likewise.
+	(aarch64_sqdmull2_lane<mode>): Likewise.
+	(aarch64_sqdmlal_laneq<mode>):
+	Replace VCON usage with VCONQ.
+	Emit aarch64_sqdmlal_laneq<mode>_internal insn.
+	(aarch64_sqdmlal2_laneq<mode>): Emit
+	aarch64_sqdmlal2_laneq<mode>_internal insn.
+	Replace VCON with VCONQ.
+	(aarch64_sqdmlsl2_lane<mode>): Replace VCON with VCONQ.
+	(aarch64_sqdmlsl2_laneq<mode>): Likewise.
+	(aarch64_sqdmull_laneq<mode>): Emit
+	aarch64_sqdmull_laneq<mode>_internal insn.
+	Replace VCON with VCONQ.
+	(aarch64_sqdmull2_laneq<mode>): Emit
+	aarch64_sqdmull2_laneq<mode>_internal insn.
+	(aarch64_sqdmlsl_laneq<mode>): Replace VCON usage with VCONQ.
+	* config/aarch64/arm_neon.h (vqdmlal_high_lane_s16): Change type
+	of 3rd argument to int16x4_t.
+	(vqdmlalh_lane_s16): Likewise.
+	(vqdmlslh_lane_s16): Likewise.
+	(vqdmull_high_lane_s16): Likewise.
+	(vqdmullh_lane_s16): Change type of 2nd argument to int16x4_t.
+	(vqdmlal_lane_s16): Don't create temporary int16x8_t value.
+	(vqdmlsl_lane_s16): Likewise.
+	(vqdmull_lane_s16): Don't create temporary int16x8_t value.
+	(vqdmlal_high_lane_s32): Change type 3rd argument to int32x2_t.
+	(vqdmlals_lane_s32): Likewise.
+	(vqdmlsls_lane_s32): Likewise.
+	(vqdmull_high_lane_s32): Change type 2nd argument to int32x2_t.
+	(vqdmulls_lane_s32): Likewise.
+	(vqdmlal_lane_s32): Don't create temporary int32x4_t value.
+	(vqdmlsl_lane_s32): Likewise.
+	(vqdmull_lane_s32): Don't create temporary int32x4_t value.
+	(vqdmulhh_lane_s16): Change type of second argument to int16x4_t.
+	(vqrdmulhh_lane_s16): Likewise.
+	(vqdmlsl_high_lane_s16): Likewise.
+	(vqdmulhs_lane_s32): Change type of second argument to int32x2_t.
+	(vqdmlsl_high_lane_s32): Likewise.
+	(vqrdmulhs_lane_s32): Likewise.
+
+2014-06-30  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from Mainline
+	2014-06-20  Jakub Jelinek  <jakub@redhat.com>
+	2014-06-11  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/61306
+	* tree-ssa-math-opts.c (struct symbolic_number): Store type of
+	expression instead of its size.
+	(do_shift_rotate): Adapt to change in struct symbolic_number. Return
+	false to prevent optimization when the result is unpredictable due to
+	arithmetic right shift of signed type with highest byte is set.
+	(verify_symbolic_number_p): Adapt to change in struct symbolic_number.
+	(find_bswap_1): Likewise. Return NULL to prevent optimization when the
+	result is unpredictable due to sign extension.
+	(find_bswap): Adapt to change in struct symbolic_number.
+
+2014-06-27  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61160
+	* cgraphclones.c (duplicate_thunk_for_node): Removed parameter
+	args_to_skip, use those from node instead.  Copy args_to_skip and
+	combined_args_to_skip from node to the new thunk.
+	(redirect_edge_duplicating_thunks): Removed parameter args_to_skip.
+	(cgraph_create_virtual_clone): Moved computation of
+	combined_args_to_skip...
+	(cgraph_clone_node): ...here, simplify it to bitmap_ior..
+
+2014-06-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-06-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61586
+	* config/alpha/alpha.c (alpha_handle_trap_shadows): Handle BARRIER RTX.
+
+2014-06-26  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/61542
+	* config/rs6000/vsx.md (vsx_extract_v4sf): Fix bug with element
+	extraction other than index 3.
+
+2014-06-26  Marc Glisse  <marc.glisse@inria.fr>
+
+	PR target/61503
+	* config/i386/i386.md (x86_64_shrd, x86_shrd,
+	ix86_rotr<dwi>3_doubleword): Replace ashiftrt with lshiftrt.
+
+2014-06-26  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	* ipa-prop.c (ipa_impossible_devirt_target): No longer static,
+	renamed to ipa_impossible_devirt_target.  Fix typo.
+	* ipa-prop.h (ipa_impossible_devirt_target): Declare.
+	* ipa-cp.c (ipa_get_indirect_edge_target_1): Use
+	ipa_impossible_devirt_target.
+
 2014-06-24  Jakub Jelinek  <jakub@redhat.com>
 
 	PR target/61570
@@ -184,7 +533,7 @@
 
 	2014-06-12  Jeff Law  <law@redhat.com>
 
-        PR tree-optimization/61009
+	PR tree-optimization/61009
 	* tree-ssa-threadedge.c (thread_through_normal_block): Correct return
 	value when we stop processing a block due to problematic PHIs.
 

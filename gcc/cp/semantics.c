@@ -2600,7 +2600,6 @@ finish_compound_literal (tree type, tree compound_literal,
   if ((!at_function_scope_p () || CP_TYPE_CONST_P (type))
       && TREE_CODE (type) == ARRAY_TYPE
       && !TYPE_HAS_NONTRIVIAL_DESTRUCTOR (type)
-      && !cp_unevaluated_operand
       && initializer_constant_valid_p (compound_literal, type))
     {
       tree decl = create_temporary_var (type);
@@ -3867,6 +3866,7 @@ simplify_aggr_init_expr (tree *tp)
 				    aggr_init_expr_nargs (aggr_init_expr),
 				    AGGR_INIT_EXPR_ARGP (aggr_init_expr));
   TREE_NOTHROW (call_expr) = TREE_NOTHROW (aggr_init_expr);
+  CALL_EXPR_LIST_INIT_P (call_expr) = CALL_EXPR_LIST_INIT_P (aggr_init_expr);
 
   if (style == ctor)
     {
@@ -5283,6 +5283,8 @@ finish_omp_clauses (tree clauses)
 			  break;
 			}
 		    }
+		  else
+		    t = fold_convert (TREE_TYPE (OMP_CLAUSE_DECL (c)), t);
 		}
 	      OMP_CLAUSE_LINEAR_STEP (c) = t;
 	    }
