@@ -1,5 +1,12 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r210861.
+	2014-05-23  Jiong Wang   <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/tail_indirect_call_1.c: New.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211314.
 	2014-06-06  James Greenhalgh  <james.greenhalgh@arm.com>
 
