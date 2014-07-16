@@ -1,5 +1,17 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r210996.
+	2014-05-27  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64.md (stack_protect_set_<mode>):
+	Use <w> for the register in assembly template.
+	(stack_protect_test): Use the mode of operands[0] for the
+	result.
+	(stack_protect_test_<mode>): Use <w> for the register
+	in assembly template.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r210967.
 	2014-05-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
