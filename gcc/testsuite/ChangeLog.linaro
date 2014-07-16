@@ -1,5 +1,78 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r210152, 211059.
+	2014-05-29  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/arm/simd/vextQf32_1.c: New file.
+	* gcc.target/arm/simd/vextQp16_1.c: New file.
+	* gcc.target/arm/simd/vextQp8_1.c: New file.
+	* gcc.target/arm/simd/vextQs16_1.c: New file.
+	* gcc.target/arm/simd/vextQs32_1.c: New file.
+	* gcc.target/arm/simd/vextQs64_1.c: New file.
+	* gcc.target/arm/simd/vextQs8_1.c: New file.
+	* gcc.target/arm/simd/vextQu16_1.c: New file.
+	* gcc.target/arm/simd/vextQu32_1.c: New file.
+	* gcc.target/arm/simd/vextQu64_1.c: New file.
+	* gcc.target/arm/simd/vextQu8_1.c: New file.
+	* gcc.target/arm/simd/vextQp64_1.c: New file.
+	* gcc.target/arm/simd/vextf32_1.c: New file.
+	* gcc.target/arm/simd/vextp16_1.c: New file.
+	* gcc.target/arm/simd/vextp8_1.c: New file.
+	* gcc.target/arm/simd/vexts16_1.c: New file.
+	* gcc.target/arm/simd/vexts32_1.c: New file.
+	* gcc.target/arm/simd/vexts64_1.c: New file.
+	* gcc.target/arm/simd/vexts8_1.c: New file.
+	* gcc.target/arm/simd/vextu16_1.c: New file.
+	* gcc.target/arm/simd/vextu32_1.c: New file.
+	* gcc.target/arm/simd/vextu64_1.c: New file.
+	* gcc.target/arm/simd/vextu8_1.c: New file.
+	* gcc.target/arm/simd/vextp64_1.c: New file.
+
+	2014-05-07  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/simd/ext_f32.x: New file.
+	* gcc.target/aarch64/simd/ext_f32_1.c: New file.
+	* gcc.target/aarch64/simd/ext_p16.x: New file.
+	* gcc.target/aarch64/simd/ext_p16_1.c: New file.
+	* gcc.target/aarch64/simd/ext_p8.x: New file.
+	* gcc.target/aarch64/simd/ext_p8_1.c: New file.
+	* gcc.target/aarch64/simd/ext_s16.x: New file.
+	* gcc.target/aarch64/simd/ext_s16_1.c: New file.
+	* gcc.target/aarch64/simd/ext_s32.x: New file.
+	* gcc.target/aarch64/simd/ext_s32_1.c: New file.
+	* gcc.target/aarch64/simd/ext_s64.x: New file.
+	* gcc.target/aarch64/simd/ext_s64_1.c: New file.
+	* gcc.target/aarch64/simd/ext_s8.x: New file.
+	* gcc.target/aarch64/simd/ext_s8_1.c: New file.
+	* gcc.target/aarch64/simd/ext_u16.x: New file.
+	* gcc.target/aarch64/simd/ext_u16_1.c: New file.
+	* gcc.target/aarch64/simd/ext_u32.x: New file.
+	* gcc.target/aarch64/simd/ext_u32_1.c: New file.
+	* gcc.target/aarch64/simd/ext_u64.x: New file.
+	* gcc.target/aarch64/simd/ext_u64_1.c: New file.
+	* gcc.target/aarch64/simd/ext_u8.x: New file.
+	* gcc.target/aarch64/simd/ext_u8_1.c: New file.
+	* gcc.target/aarch64/simd/ext_f64.c: New file.
+	* gcc.target/aarch64/simd/extq_f32.x: New file.
+	* gcc.target/aarch64/simd/extq_f32_1.c: New file.
+	* gcc.target/aarch64/simd/extq_p16.x: New file.
+	* gcc.target/aarch64/simd/extq_p16_1.c: New file.
+	* gcc.target/aarch64/simd/extq_p8.x: New file.
+	* gcc.target/aarch64/simd/extq_p8_1.c: New file.
+	* gcc.target/aarch64/simd/extq_s16.x: New file.
+	* gcc.target/aarch64/simd/extq_s16_1.c: New file.
+	* gcc.target/aarch64/simd/extq_s32.x: New file.
+	* gcc.target/aarch64/simd/extq_s32_1.c: New file.
+	* gcc.target/aarch64/simd/extq_s64.x: New file.
+	* gcc.target/aarch64/simd/extq_s64_1.c: New file.
+	* gcc.target/aarch64/simd/extq_s8.x: New file.
+	* gcc.target/aarch64/simd/extq_s8_1.c: New file.
+	* gcc.target/aarch64/simd/extq_u16.x: New file.
+	* gcc.target/aarch64/simd/extq_u16_1.c: New file.
+	* gcc.target/aarch64/simd/extq_u32.x: New file.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209940, `r209943, r209947.
 	2014-04-30  Alan Lawrence  <alan.lawrence@arm.com>
 
