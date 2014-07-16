@@ -1,5 +1,18 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r211408, 211416.
+	2014-06-10  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_save_or_restore_fprs): Fix
+	REG_CFA_RESTORE mode.
+
+	2014-06-10  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_save_or_restore_fprs)
+	(aarch64_save_or_restore_callee_save_registers): Fix layout.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211418.
 	2014-06-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
