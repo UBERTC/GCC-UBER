@@ -1,5 +1,12 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r211371.
+	2014-06-09  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/arm/arm-modes.def: Remove XFmode.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211268.
 	2014-06-05  Marcus Shawcroft  <marcus.shawcroft@arm.com>
 
