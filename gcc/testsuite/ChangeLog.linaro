@@ -1,5 +1,18 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209794, 209858.
+	2014-04-25  Marek Polacek  <polacek@redhat.com>
+
+	PR c/60114
+	* gcc.dg/pr60114.c: New test.
+
+	2014-04-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR c/60983
+	* gcc.dg/pr60114.c: Use signed chars.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r210861.
 	2014-05-23  Jiong Wang   <jiong.wang@arm.com>
 
@@ -96,7 +109,7 @@
 
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
-	Backport from trunk r209940, `r209943, r209947.
+	Backport from trunk r209940, r209943, r209947.
 	2014-04-30  Alan Lawrence  <alan.lawrence@arm.com>
 
 	* gcc.target/arm/simd/vuzpqf32_1.c: New file.

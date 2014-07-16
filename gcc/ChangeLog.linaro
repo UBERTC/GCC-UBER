@@ -1,5 +1,1213 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209794.
+	2014-04-25  Marek Polacek  <polacek@redhat.com>
+
+	PR c/60114
+	* c-parser.c (c_parser_initelt): Pass input_location to
+	process_init_element.
+	(c_parser_initval): Pass loc to process_init_element.
+	* c-tree.h (process_init_element): Adjust declaration.
+	* c-typeck.c (push_init_level): Pass input_location to
+	process_init_element.
+	(pop_init_level): Likewise.
+	(set_designator): Likewise.
+	(output_init_element): Add location_t parameter.  Pass loc to
+	digest_init.
+	(output_pending_init_elements): Pass input_location to
+	output_init_element.
+	(process_init_element): Add location_t parameter.  Pass loc to
+	output_init_element.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211771.
+	2014-06-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* genattrtab.c (n_bypassed): New variable.
+	(process_bypasses): Initialise n_bypassed.
+	Count number of bypassed reservations.
+	(make_automaton_attrs): Allocate space for bypassed reservations
+	rather than number of bypasses.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r210861.
+	2014-05-23  Jiong Wang   <jiong.wang@arm.com>
+
+	* config/aarch64/predicates.md (aarch64_call_insn_operand): New
+	predicate.
+	* config/aarch64/constraints.md ("Ucs", "Usf"):  New constraints.
+	* config/aarch64/aarch64.md (*sibcall_insn, *sibcall_value_insn):
+	Adjust for tailcalling through registers.
+	* config/aarch64/aarch64.h (enum reg_class): New caller save
+	register class.
+	(REG_CLASS_NAMES): Likewise.
+	(REG_CLASS_CONTENTS): Likewise.
+	* config/aarch64/aarch64.c (aarch64_function_ok_for_sibcall):
+	Allow tailcalling without decls.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211314.
+	2014-06-06  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-protos.h (aarch64_expand_movmem): New.
+	* config/aarch64/aarch64.c (aarch64_move_pointer): New.
+	(aarch64_progress_pointer): Likewise.
+	(aarch64_copy_one_part_and_move_pointers): Likewise.
+	(aarch64_expand_movmen): Likewise.
+	* config/aarch64/aarch64.h (MOVE_RATIO): Set low.
+	* config/aarch64/aarch64.md (movmem<mode>): New.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211185, 211186.
+	2014-06-03  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc/config/aarch64/aarch64-builtins.c
+	(aarch64_types_binop_uus_qualifiers,
+	aarch64_types_shift_to_unsigned_qualifiers,
+	aarch64_types_unsigned_shiftacc_qualifiers): Define.
+	* gcc/config/aarch64/aarch64-simd-builtins.def (uqshl, uqrshl, uqadd,
+	uqsub, usqadd, usra_n, ursra_n, uqshrn_n, uqrshrn_n, usri_n, usli_n,
+	sqshlu_n, uqshl_n): Update qualifiers.
+	* gcc/config/aarch64/arm_neon.h (vqadd_u8, vqadd_u16, vqadd_u32,
+	vqadd_u64, vqaddq_u8, vqaddq_u16, vqaddq_u32, vqaddq_u64, vqsub_u8,
+	vqsub_u16, vqsub_u32, vqsub_u64, vqsubq_u8, vqsubq_u16, vqsubq_u32,
+	vqsubq_u64, vqaddb_u8, vqaddh_u16, vqadds_u32, vqaddd_u64, vqrshl_u8,
+	vqrshl_u16, vqrshl_u32, vqrshl_u64, vqrshlq_u8, vqrshlq_u16,
+	vqrshlq_u32, vqrshlq_u64, vqrshlb_u8, vqrshlh_u16, vqrshls_u32,
+	vqrshld_u64, vqrshrn_n_u16, vqrshrn_n_u32, vqrshrn_n_u64,
+	vqrshrnh_n_u16, vqrshrns_n_u32, vqrshrnd_n_u64, vqshl_u8, vqshl_u16,
+	vqshl_u32, vqshl_u64, vqshlq_u8, vqshlq_u16, vqshlq_u32, vqshlq_u64,
+	vqshlb_u8, vqshlh_u16, vqshls_u32, vqshld_u64, vqshl_n_u8, vqshl_n_u16,
+	vqshl_n_u32, vqshl_n_u64, vqshlq_n_u8, vqshlq_n_u16, vqshlq_n_u32,
+	vqshlq_n_u64, vqshlb_n_u8, vqshlh_n_u16, vqshls_n_u32, vqshld_n_u64,
+	vqshlu_n_s8, vqshlu_n_s16, vqshlu_n_s32, vqshlu_n_s64, vqshluq_n_s8,
+	vqshluq_n_s16, vqshluq_n_s32, vqshluq_n_s64, vqshlub_n_s8,
+	vqshluh_n_s16, vqshlus_n_s32, vqshlud_n_s64, vqshrn_n_u16,
+	vqshrn_n_u32, vqshrn_n_u64, vqshrnh_n_u16, vqshrns_n_u32,
+	vqshrnd_n_u64, vqsubb_u8, vqsubh_u16, vqsubs_u32, vqsubd_u64,
+	vrsra_n_u8, vrsra_n_u16, vrsra_n_u32, vrsra_n_u64, vrsraq_n_u8,
+	vrsraq_n_u16, vrsraq_n_u32, vrsraq_n_u64, vrsrad_n_u64, vsli_n_u8,
+	vsli_n_u16, vsli_n_u32,vsli_n_u64, vsliq_n_u8, vsliq_n_u16,
+	vsliq_n_u32, vsliq_n_u64, vslid_n_u64, vsqadd_u8, vsqadd_u16,
+	vsqadd_u32, vsqadd_u64, vsqaddq_u8, vsqaddq_u16, vsqaddq_u32,
+	vsqaddq_u64, vsqaddb_u8, vsqaddh_u16, vsqadds_u32, vsqaddd_u64,
+	vsra_n_u8, vsra_n_u16, vsra_n_u32, vsra_n_u64, vsraq_n_u8,
+	vsraq_n_u16, vsraq_n_u32, vsraq_n_u64, vsrad_n_u64, vsri_n_u8,
+	vsri_n_u16, vsri_n_u32, vsri_n_u64, vsriq_n_u8, vsriq_n_u16,
+	vsriq_n_u32, vsriq_n_u64, vsrid_n_u64): Remove casts.
+
+	2014-06-03  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc/config/aarch64/aarch64-builtins.c
+	(aarch64_types_binop_ssu_qualifiers): New static data.
+	(TYPES_BINOP_SSU): Define.
+	* gcc/config/aarch64/aarch64-simd-builtins.def (suqadd, ushl, urshl,
+	urshr_n, ushll_n): Use appropriate unsigned qualifiers.	47
+	* gcc/config/aarch64/arm_neon.h (vrshl_u8, vrshl_u16, vrshl_u32,
+	vrshl_u64, vrshlq_u8, vrshlq_u16, vrshlq_u32, vrshlq_u64, vrshld_u64,
+	vrshr_n_u8, vrshr_n_u16, vrshr_n_u32, vrshr_n_u64, vrshrq_n_u8,	50
+	vrshrq_n_u16, vrshrq_n_u32, vrshrq_n_u64, vrshrd_n_u64, vshll_n_u8,
+	vshll_n_u16, vshll_n_u32, vuqadd_s8, vuqadd_s16, vuqadd_s32,	52
+	vuqadd_s64, vuqaddq_s8, vuqaddq_s16, vuqaddq_s32, vuqaddq_s64,	53
+	vuqaddb_s8, vuqaddh_s16, vuqadds_s32, vuqaddd_s64): Add signedness
+	suffix to builtin function name, remove cast.	55
+	(vshl_s8, vshl_s16, vshl_s32, vshl_s64, vshl_u8, vshl_u16, vshl_u32,
+	vshl_u64, vshlq_s8, vshlq_s16, vshlq_s32, vshlq_s64, vshlq_u8,	57
+	vshlq_u16, vshlq_u32, vshlq_u64, vshld_s64, vshld_u64): Remove cast.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211408, 211416.
+	2014-06-10  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_save_or_restore_fprs): Fix
+	REG_CFA_RESTORE mode.
+
+	2014-06-10  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_save_or_restore_fprs)
+	(aarch64_save_or_restore_callee_save_registers): Fix layout.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211418.
+	2014-06-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64-simd.md (move_lo_quad_<mode>):
+	Change second alternative type to f_mcr.
+	* config/aarch64/aarch64.md (*movsi_aarch64): Change 11th
+	and 12th alternatives' types to f_mcr and f_mrc.
+	(*movdi_aarch64): Same for 12th and 13th alternatives.
+	(*movsf_aarch64): Change 9th alternatives' type to mov_reg.
+	(aarch64_movtilow_tilow): Change type to fmov.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211371.
+	2014-06-09  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/arm/arm-modes.def: Remove XFmode.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211268.
+	2014-06-05  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_expand_prologue): Update stack
+	layout comment.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211129.
+	2014-06-02  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/61154
+	* config/arm/arm.h (TARGET_SUPPORTS_WIDE_INT): Define.
+	* config/arm/arm.md (mov64 splitter): Replace const_double_operand
+	with immediate_operand.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211073.
+	2014-05-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/thumb2.md (*thumb2_movhi_insn): Set type of movw
+	to mov_imm.
+	* config/arm/vfp.md (*thumb2_movsi_vfp): Likewise.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211050.
+	2014-05-29  Richard Earnshaw <rearnsha@arm.com>
+	Richard Sandiford  <rdsandiford@googlemail.com>
+
+	* arm/iterators.md (shiftable_ops): New code iterator.
+	(t2_binop0, arith_shift_insn): New code attributes.
+	* arm/predicates.md (shift_nomul_operator): New predicate.
+	* arm/arm.md (insn_enabled): Delete.
+	(enabled): Remove insn_enabled test.
+	(*arith_shiftsi): Delete.  Replace with ...
+	(*<arith_shift_insn>_multsi): ... new pattern.
+	(*<arith_shift_insn>_shiftsi): ... new pattern.
+	* config/arm/arm.c (arm_print_operand): Handle operand format 'b'.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r210996.
+	2014-05-27  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64.md (stack_protect_set_<mode>):
+	Use <w> for the register in assembly template.
+	(stack_protect_test): Use the mode of operands[0] for the
+	result.
+	(stack_protect_test_<mode>): Use <w> for the register
+	in assembly template.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r210967.
+	2014-05-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/neon.md (neon_bswap<mode>): New pattern.
+	* config/arm/arm.c (neon_itype): Add NEON_BSWAP.
+	(arm_init_neon_builtins): Handle NEON_BSWAP.
+	Define required type nodes.
+	(arm_expand_neon_builtin): Handle NEON_BSWAP.
+	(arm_builtin_vectorized_function): Handle BUILTIN_BSWAP builtins.
+	* config/arm/arm_neon_builtins.def (bswap): Define builtins.
+	* config/arm/iterators.md (VDQHSD): New mode iterator.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r210471.
+	2014-05-15  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (arm_option_override): Use the SCHED_PRESSURE_MODEL
+	enum name for PARAM_SCHED_PRESSURE_ALGORITHM.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r210369.
+	2014-05-13  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (neon_itype): Remove NEON_RESULTPAIR.
+	(arm_init_neon_builtins): Remove handling of NEON_RESULTPAIR.
+	Remove associated type declarations and initialisations.
+	(arm_expand_neon_builtin): Likewise.
+	(neon_emit_pair_result_insn): Delete.
+	* config/arm/arm_neon_builtins (vtrn, vzip, vuzp): Delete.
+	* config/arm/neon.md (neon_vtrn<mode>): Delete.
+	(neon_vzip<mode>): Likewise.
+	(neon_vuzp<mode>): Likewise.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211058, 211177.
+	2014-05-29  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-builtins.c (aarch64_types_binopv_qualifiers,
+	TYPES_BINOPV): New static data.
+	* config/aarch64/aarch64-simd-builtins.def (im_lane_bound): New builtin.
+	* config/aarch64/aarch64-simd.md (aarch64_ext, aarch64_im_lane_boundsi):
+	New patterns.
+	* config/aarch64/aarch64.c (aarch64_expand_vec_perm_const_1): Match
+	patterns for EXT.
+	(aarch64_evpc_ext): New function.
+
+	* config/aarch64/iterators.md (UNSPEC_EXT): New enum element.
+
+	* config/aarch64/arm_neon.h (vext_f32, vext_f64, vext_p8, vext_p16,
+	vext_s8, vext_s16, vext_s32, vext_s64, vext_u8, vext_u16, vext_u32,
+	vext_u64, vextq_f32, vextq_f64, vextq_p8, vextq_p16, vextq_s8,
+	vextq_s16, vextq_s32, vextq_s64, vextq_u8, vextq_u16, vextq_u32,
+	vextq_u64): Replace __asm with __builtin_shuffle and im_lane_boundsi.
+
+	2014-06-03  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_evpc_ext): allow and handle
+	location == 0.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209797.
+	2014-04-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/aarch-common.c (aarch_rev16_shright_mask_imm_p):
+	Use HOST_WIDE_INT_C for mask literal.
+	(aarch_rev16_shleft_mask_imm_p): Likewise.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211148.
+	2014-06-02  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64-linux.h (GLIBC_DYNAMIC_LINKER):
+	/lib/ld-linux32-aarch64.so.1 is used for ILP32.
+	(LINUX_TARGET_LINK_SPEC): Update linker script for ILP32.
+	file whose name depends on -mabi= and -mbig-endian.
+	* config/aarch64/t-aarch64-linux (MULTILIB_OSDIRNAMES): Handle LP64
+	better and handle ilp32 too.
+	(MULTILIB_OPTIONS): Delete.
+	(MULTILIB_DIRNAMES): Delete.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r210828, r211103.
+	2014-05-31  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	* config/arm/arm.c (TARGET_ATOMIC_ASSIGN_EXPAND_FENV): New define.
+	(arm_builtins) : Add ARM_BUILTIN_GET_FPSCR and ARM_BUILTIN_SET_FPSCR.
+	(bdesc_2arg) : Add description for builtins __builtins_arm_set_fpscr
+	and __builtins_arm_get_fpscr.
+	(arm_init_builtins) : Initialize builtins __builtins_arm_set_fpscr and
+	__builtins_arm_get_fpscr.
+	(arm_expand_builtin) : Expand builtins __builtins_arm_set_fpscr and
+	__builtins_arm_ldfpscr.
+	(arm_atomic_assign_expand_fenv): New function.
+	* config/arm/vfp.md (set_fpscr): New pattern.
+	(get_fpscr) : Likewise.
+	* config/arm/unspecs.md (unspecv): Add VUNSPEC_GET_FPSCR and
+	VUNSPEC_SET_FPSCR.
+	* doc/extend.texi (AARCH64 Built-in Functions) : Document
+	__builtins_arm_set_fpscr, __builtins_arm_get_fpscr.
+
+	2014-05-23  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	* config/aarch64/aarch64.c (TARGET_ATOMIC_ASSIGN_EXPAND_FENV): New
+	define.
+	* config/aarch64/aarch64-protos.h (aarch64_atomic_assign_expand_fenv):
+	New function declaration.
+	* config/aarch64/aarch64-builtins.c (aarch64_builtins) : Add
+	AARCH64_BUILTIN_GET_FPCR, AARCH64_BUILTIN_SET_FPCR.
+	AARCH64_BUILTIN_GET_FPSR and AARCH64_BUILTIN_SET_FPSR.
+	(aarch64_init_builtins) : Initialize builtins
+	__builtins_aarch64_set_fpcr, __builtins_aarch64_get_fpcr.
+	__builtins_aarch64_set_fpsr and __builtins_aarch64_get_fpsr.
+	(aarch64_expand_builtin) : Expand builtins __builtins_aarch64_set_fpcr
+	__builtins_aarch64_get_fpcr, __builtins_aarch64_get_fpsr,
+	and __builtins_aarch64_set_fpsr.
+	(aarch64_atomic_assign_expand_fenv): New function.
+	* config/aarch64/aarch64.md (set_fpcr): New pattern.
+	(get_fpcr) : Likewise.
+	(set_fpsr) : Likewise.
+	(get_fpsr) : Likewise.
+	(unspecv): Add UNSPECV_GET_FPCR and UNSPECV_SET_FPCR, UNSPECV_GET_FPSR
+	 and UNSPECV_SET_FPSR.
+	* doc/extend.texi (AARCH64 Built-in Functions) : Document
+	__builtins_aarch64_set_fpcr, __builtins_aarch64_get_fpcr.
+	__builtins_aarch64_set_fpsr and __builtins_aarch64_get_fpsr.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r210355.
+	2014-05-13  Ian Bolton  <ian.bolton@arm.com>
+
+	* config/aarch64/aarch64-protos.h
+	(aarch64_hard_regno_caller_save_mode): New prototype.
+	* config/aarch64/aarch64.c (aarch64_hard_regno_caller_save_mode):
+	New function.
+	* config/aarch64/aarch64.h (HARD_REGNO_CALLER_SAVE_MODE): New macro.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209943.
+	2014-04-30  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/arm_neon.h (vuzp1_f32, vuzp1_p8, vuzp1_p16, vuzp1_s8,
+	vuzp1_s16, vuzp1_s32, vuzp1_u8, vuzp1_u16, vuzp1_u32, vuzp1q_f32,
+	vuzp1q_f64, vuzp1q_p8, vuzp1q_p16, vuzp1q_s8, vuzp1q_s16, vuzp1q_s32,
+	vuzp1q_s64, vuzp1q_u8, vuzp1q_u16, vuzp1q_u32, vuzp1q_u64, vuzp2_f32,
+	vuzp2_p8, vuzp2_p16, vuzp2_s8, vuzp2_s16, vuzp2_s32, vuzp2_u8,
+	vuzp2_u16, vuzp2_u32, vuzp2q_f32, vuzp2q_f64, vuzp2q_p8, vuzp2q_p16,
+	vuzp2q_s8, vuzp2q_s16, vuzp2q_s32, vuzp2q_s64, vuzp2q_u8, vuzp2q_u16,
+	vuzp2q_u32, vuzp2q_u64): Replace temporary asm with __builtin_shuffle.
+
+2014-06-26  Yvan Roux  <yvan.roux@linaro.org>
+
+	* LINARO-VERSION: Bump version.
+
+2014-06-25  Yvan Roux  <yvan.roux@linaro.org>
+
+	GCC Linaro 4.9-2014.06-1 released.
+	* LINARO-VERSION: Update.
+
+2014-06-24  Yvan Roux  <yvan.roux@linaro.org>
+
+	Revert:
+	2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209643.
+	2014-04-22  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/aarch64/aarch64.c (TARGET_FLAGS_REGNUM): Define.
+
+2014-06-13  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r210493, 210494, 210495, 210496, 210497, 210498,
+	210499, 210500, 210501, 210502, 210503, 210504, 210505, 210506, 210507,
+	210508, 210509, 210510, 210512, 211205, 211206.
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-protos.h (scale_addr_mode_cost): New.
+	(cpu_addrcost_table): Use it.
+	* config/aarch64/aarch64.c (generic_addrcost_table): Initialize it.
+	(aarch64_address_cost): Rewrite using aarch64_classify_address,
+	move it.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.c (cortexa57_addrcost_table): New.
+	(cortexa57_vector_cost): Likewise.
+	(cortexa57_tunings): Use them.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs_wrapper): New.
+	(TARGET_RTX_COSTS): Call it.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_build_constant): Conditionally
+	emit instructions, return number of instructions which would
+	be emitted.
+	(aarch64_add_constant): Update call to aarch64_build_constant.
+	(aarch64_output_mi_thunk): Likewise.
+	(aarch64_rtx_costs): Estimate cost of a CONST_INT, cost
+	a CONST_DOUBLE.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_strip_shift_or_extend): Rename
+	to...
+	(aarch64_strip_extend): ...this, don't strip shifts, check RTX is
+	well formed.
+	(aarch64_rtx_mult_cost): New.
+	(aarch64_rtx_costs): Use it, refactor as appropriate.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Set default costs.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philip Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Improve costing
+	for SET RTX.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Use address
+	costs when costing loads and stores to memory.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Improve cost for
+	logical operations.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Cost
+	ZERO_EXTEND and SIGN_EXTEND better.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Improve costs for
+	rotates and shifts.
+
+	2014-03-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_arith_op_extract_p): New.
+	(aarch64_rtx_costs): Improve costs for SIGN/ZERO_EXTRACT.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Improve costs for
+	DIV/MOD.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Cost comparison
+	operators.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Cost FMA,
+	FLOAT_EXTEND, FLOAT_TRUNCATE, ABS, SMAX, and SMIN.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+		    Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Cost TRUNCATE.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Cost SYMBOL_REF,
+	HIGH, LO_SUM.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Handle the case
+	where we were unable to cost an RTX.
+
+	2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_mult_cost): Fix FNMUL case.
+
+	2014-06-03  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64.c (aarch64_if_then_else_costs): New function.
+	(aarch64_rtx_costs): Use aarch64_if_then_else_costs.
+
+	2014-06-03  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64.c (aarch64_if_then_else_costs): Allow non
+	comparisons for OP0.
+
+2014-06-13  Yvan Roux  <yvan.roux@linaro.org>
+
+	* LINARO-VERSION: Bump version.
+
+2014-06-12  Yvan Roux  <yvan.roux@linaro.org>
+
+	GCC Linaro 4.9-2014.06 released.
+	* LINARO-VERSION: Update.
+
+2014-06-04  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211211.
+	2014-06-04  Bin Cheng  <bin.cheng@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_classify_address)
+	(aarch64_legitimize_reload_address): Support full addressing modes
+	for vector modes.
+	* config/aarch64/aarch64.md (mov<mode>, movmisalign<mode>)
+	(*aarch64_simd_mov<mode>, *aarch64_simd_mov<mode>): Relax predicates.
+
+2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209906.
+	2014-04-29  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/arm_neon.h (vzip1_f32, vzip1_p8, vzip1_p16, vzip1_s8,
+	vzip1_s16, vzip1_s32, vzip1_u8, vzip1_u16, vzip1_u32, vzip1q_f32,
+	vzip1q_f64, vzip1q_p8, vzip1q_p16, vzip1q_s8, vzip1q_s16, vzip1q_s32,
+	vzip1q_s64, vzip1q_u8, vzip1q_u16, vzip1q_u32, vzip1q_u64, vzip2_f32,
+	vzip2_p8, vzip2_p16, vzip2_s8, vzip2_s16, vzip2_s32, vzip2_u8,
+	vzip2_u16, vzip2_u32, vzip2q_f32, vzip2q_f64, vzip2q_p8, vzip2q_p16,
+	vzip2q_s8, vzip2q_s16, vzip2q_s32, vzip2q_s64, vzip2q_u8, vzip2q_u16,
+	vzip2q_u32, vzip2q_u64): Replace inline __asm__ with __builtin_shuffle.
+
+2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209897.
+	2014-04-29  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* calls.c (initialize_argument_information): Always treat
+	PUSH_ARGS_REVERSED as 1, simplify code accordingly.
+	(expand_call): Likewise.
+	(emit_library_call_calue_1): Likewise.
+	* expr.c (PUSH_ARGS_REVERSED): Do not define.
+	(emit_push_insn): Always treat PUSH_ARGS_REVERSED as 1, simplify
+	code accordingly.
+
+2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209880.
+	2014-04-28  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-builtins.c
+	(aarch64_types_storestruct_lane_qualifiers): New.
+	(TYPES_STORESTRUCT_LANE): Likewise.
+	* config/aarch64/aarch64-simd-builtins.def (st2_lane): New.
+	(st3_lane): Likewise.
+	(st4_lane): Likewise.
+	* config/aarch64/aarch64-simd.md (vec_store_lanesoi_lane<mode>): New.
+	(vec_store_lanesci_lane<mode>): Likewise.
+	(vec_store_lanesxi_lane<mode>): Likewise.
+		(aarch64_st2_lane<VQ:mode>): Likewise.
+	(aarch64_st3_lane<VQ:mode>): Likewise.
+	(aarch64_st4_lane<VQ:mode>): Likewise.
+	* config/aarch64/aarch64.md (unspec): Add UNSPEC_ST{2,3,4}_LANE.
+	* config/aarch64/arm_neon.h
+		(__ST2_LANE_FUNC): Rewrite using builtins, update use points to
+	use new macro arguments.
+	(__ST3_LANE_FUNC): Likewise.
+	(__ST4_LANE_FUNC): Likewise.
+	* config/aarch64/iterators.md (V_TWO_ELEM): New.
+	(V_THREE_ELEM): Likewise.
+	(V_FOUR_ELEM): Likewise.
+
+2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209878.
+	2014-04-28  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-protos.h (aarch64_modes_tieable_p): New.
+	* config/aarch64/aarch64.c
+	(aarch64_cannot_change_mode_class): Weaken conditions.
+	(aarch64_modes_tieable_p): New.
+	* config/aarch64/aarch64.h (MODES_TIEABLE_P): Use it.
+
+2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209808.
+	2014-04-25  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/arm/predicates.md (call_insn_operand): Add long_call check.
+	* config/arm/arm.md (sibcall, sibcall_value): Force the address to
+	reg for long_call.
+	* config/arm/arm.c (arm_function_ok_for_sibcall): Remove long_call
+	restriction.
+
+2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209806.
+	2014-04-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (arm_cortex_a8_tune): Initialise
+	T16-related fields.
+
+2014-05-25  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209742, 209749.
+	2014-04-24  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_evpc_tbl): Enable for bigendian.
+
+	2014-04-24  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_evpc_tbl): Reverse order of elements
+	for big-endian.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209736.
+	2014-04-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64-builtins.c
+	(aarch64_builtin_vectorized_function): Handle BUILT_IN_BSWAP16,
+	BUILT_IN_BSWAP32, BUILT_IN_BSWAP64.
+	* config/aarch64/aarch64-simd.md (bswap<mode>): New pattern.
+	* config/aarch64/aarch64-simd-builtins.def: Define vector bswap
+	builtins.
+	* config/aarch64/iterator.md (VDQHSD): New mode iterator.
+	(Vrevsuff): New mode attribute.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209712.
+	2014-04-23 Venkataramanan Kumar  <venkataramanan.kumar@linaro.org>
+
+	* config/aarch64/aarch64.md (stack_protect_set, stack_protect_test)
+	(stack_protect_set_<mode>, stack_protect_test_<mode>): Add
+	machine descriptions for Stack Smashing Protector.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209711.
+	2014-04-23  Richard Earnshaw  <rearnsha@arm.com>
+
+	* aarch64.md (<optab>_rol<mode>3): New pattern.
+	(<optab>_rolsi3_uxtw): Likewise.
+	* aarch64.c (aarch64_strip_shift): Handle ROTATE and ROTATERT.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209710.
+	2014-04-23  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/arm/arm.c (arm_cortex_a57_tune): Initialize all fields.
+	(arm_cortex_a12_tune): Likewise.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209706.
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Handle BSWAP.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209701, 209702, 209703, 209704, 209705.
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (arm_rev16si2): New pattern.
+	(arm_rev16si2_alt): Likewise.
+	* config/arm/arm.c (arm_new_rtx_costs): Handle rev16 case.
+
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+	* config/aarch64/aarch64.md (rev16<mode>2): New pattern.
+	(rev16<mode>2_alt): Likewise.
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Handle rev16 case.
+	* config/arm/aarch-common.c (aarch_rev16_shright_mask_imm_p): New.
+	(aarch_rev16_shleft_mask_imm_p): Likewise.
+	(aarch_rev16_p_1): Likewise.
+	(aarch_rev16_p): Likewise.
+	* config/arm/aarch-common-protos.h (aarch_rev16_p): Declare extern.
+	(aarch_rev16_shright_mask_imm_p): Likewise.
+	(aarch_rev16_shleft_mask_imm_p): Likewise.
+
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/aarch-common-protos.h (alu_cost_table): Add rev field.
+	* config/arm/aarch-cost-tables.h (generic_extra_costs): Specify
+	rev cost.
+	(cortex_a53_extra_costs): Likewise.
+	(cortex_a57_extra_costs): Likewise.
+	* config/arm/arm.c (cortexa9_extra_costs): Likewise.
+	(cortexa7_extra_costs): Likewise.
+	(cortexa8_extra_costs): Likewise.
+	(cortexa12_extra_costs): Likewise.
+	(cortexa15_extra_costs): Likewise.
+	(v7m_extra_costs): Likewise.
+	(arm_new_rtx_costs): Handle BSWAP.
+
+	2013-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (cortexa8_extra_costs): New table.
+	(arm_cortex_a8_tune): New tuning struct.
+	* config/arm/arm-cores.def (cortex-a8): Use cortex_a8 tuning struct.
+
+	2014-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (arm_new_rtx_costs): Handle FMA.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209659.
+	2014-04-22  Richard Henderson  <rth@redhat.com>
+
+	* config/aarch64/aarch64 (addti3, subti3): New expanders.
+	(add<GPI>3_compare0): Remove leading * from name.
+	(add<GPI>3_carryin): Likewise.
+	(sub<GPI>3_compare0): Likewise.
+	(sub<GPI>3_carryin): Likewise.
+	(<su_optab>mulditi3): New expander.
+	(multi3): New expander.
+	(madd<GPI>): Remove leading * from name.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209645.
+	2014-04-22  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64.c (aarch64_load_symref_appropriately):
+	Handle TLS for ILP32.
+	* config/aarch64/aarch64.md (tlsie_small): Rename to ...
+	(tlsie_small_<mode>): this and handle PTR.
+	(tlsie_small_sidi): New pattern.
+	(tlsle_small): Change to an expand to handle ILP32.
+	(tlsle_small_<mode>): New pattern.
+	(tlsdesc_small): Rename to ...
+	(tlsdesc_small_<mode>): this and handle PTR.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209643.
+	2014-04-22  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/aarch64/aarch64.c (TARGET_FLAGS_REGNUM): Define.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209641, 209642.
+	2014-04-22  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* config/aarch64/aarch64-builtins.c (TYPES_REINTERP): Removed.
+	(aarch64_types_signed_unsigned_qualifiers): Qualifier added.
+	(aarch64_types_signed_poly_qualifiers): Likewise.
+	(aarch64_types_unsigned_signed_qualifiers): Likewise.
+	(aarch64_types_poly_signed_qualifiers): Likewise.
+	(TYPES_REINTERP_SS): Type macro added.
+	(TYPES_REINTERP_SU): Likewise.
+	(TYPES_REINTERP_SP): Likewise.
+	(TYPES_REINTERP_US): Likewise.
+	(TYPES_REINTERP_PS): Likewise.
+	(aarch64_fold_builtin): New expression folding added.
+	* config/aarch64/aarch64-simd-builtins.def (REINTERP):
+	Declarations removed.
+	(REINTERP_SS): Declarations added.
+	(REINTERP_US): Likewise.
+	(REINTERP_PS): Likewise.
+	(REINTERP_SU): Likewise.
+	(REINTERP_SP): Likewise.
+	* config/aarch64/arm_neon.h (vreinterpret_p8_f64): Implemented.
+	(vreinterpretq_p8_f64): Likewise.
+	(vreinterpret_p16_f64): Likewise.
+	(vreinterpretq_p16_f64): Likewise.
+	(vreinterpret_f32_f64): Likewise.
+	(vreinterpretq_f32_f64): Likewise.
+	(vreinterpret_f64_f32): Likewise.
+	(vreinterpret_f64_p8): Likewise.
+	(vreinterpret_f64_p16): Likewise.
+	(vreinterpret_f64_s8): Likewise.
+	(vreinterpret_f64_s16): Likewise.
+	(vreinterpret_f64_s32): Likewise.
+	(vreinterpret_f64_s64): Likewise.
+	(vreinterpret_f64_u8): Likewise.
+	(vreinterpret_f64_u16): Likewise.
+	(vreinterpret_f64_u32): Likewise.
+	(vreinterpret_f64_u64): Likewise.
+	(vreinterpretq_f64_f32): Likewise.
+	(vreinterpretq_f64_p8): Likewise.
+	(vreinterpretq_f64_p16): Likewise.
+	(vreinterpretq_f64_s8): Likewise.
+	(vreinterpretq_f64_s16): Likewise.
+	(vreinterpretq_f64_s32): Likewise.
+	(vreinterpretq_f64_s64): Likewise.
+	(vreinterpretq_f64_u8): Likewise.
+	(vreinterpretq_f64_u16): Likewise.
+	(vreinterpretq_f64_u32): Likewise.
+	(vreinterpretq_f64_u64): Likewise.
+	(vreinterpret_s64_f64): Likewise.
+	(vreinterpretq_s64_f64): Likewise.
+	(vreinterpret_u64_f64): Likewise.
+	(vreinterpretq_u64_f64): Likewise.
+	(vreinterpret_s8_f64): Likewise.
+	(vreinterpretq_s8_f64): Likewise.
+	(vreinterpret_s16_f64): Likewise.
+	(vreinterpretq_s16_f64): Likewise.
+	(vreinterpret_s32_f64): Likewise.
+	(vreinterpretq_s32_f64): Likewise.
+	(vreinterpret_u8_f64): Likewise.
+	(vreinterpretq_u8_f64): Likewise.
+	(vreinterpret_u16_f64): Likewise.
+	(vreinterpretq_u16_f64): Likewise.
+	(vreinterpret_u32_f64): Likewise.
+	(vreinterpretq_u32_f64): Likewise.
+
+	2014-04-22  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* config/aarch64/aarch64/aarch64-builtins.c (TYPES_REINTERP): Removed.
+	* config/aarch64/aarch64/aarch64-simd-builtins.def (REINTERP): Removed.
+	(vreinterpret_p8_s8): Likewise.
+	* config/aarch64/aarch64/arm_neon.h (vreinterpret_p8_s8): Uses cast.
+	(vreinterpret_p8_s16): Likewise.
+	(vreinterpret_p8_s32): Likewise.
+	(vreinterpret_p8_s64): Likewise.
+	(vreinterpret_p8_f32): Likewise.
+	(vreinterpret_p8_u8): Likewise.
+	(vreinterpret_p8_u16): Likewise.
+	(vreinterpret_p8_u32): Likewise.
+	(vreinterpret_p8_u64): Likewise.
+	(vreinterpret_p8_p16): Likewise.
+	(vreinterpretq_p8_s8): Likewise.
+	(vreinterpretq_p8_s16): Likewise.
+	(vreinterpretq_p8_s32): Likewise.
+	(vreinterpretq_p8_s64): Likewise.
+	(vreinterpretq_p8_f32): Likewise.
+	(vreinterpretq_p8_u8): Likewise.
+	(vreinterpretq_p8_u16): Likewise.
+	(vreinterpretq_p8_u32): Likewise.
+	(vreinterpretq_p8_u64): Likewise.
+	(vreinterpretq_p8_p16): Likewise.
+	(vreinterpret_p16_s8): Likewise.
+	(vreinterpret_p16_s16): Likewise.
+	(vreinterpret_p16_s32): Likewise.
+	(vreinterpret_p16_s64): Likewise.
+	(vreinterpret_p16_f32): Likewise.
+	(vreinterpret_p16_u8): Likewise.
+	(vreinterpret_p16_u16): Likewise.
+	(vreinterpret_p16_u32): Likewise.
+	(vreinterpret_p16_u64): Likewise.
+	(vreinterpret_p16_p8): Likewise.
+	(vreinterpretq_p16_s8): Likewise.
+	(vreinterpretq_p16_s16): Likewise.
+	(vreinterpretq_p16_s32): Likewise.
+	(vreinterpretq_p16_s64): Likewise.
+	(vreinterpretq_p16_f32): Likewise.
+	(vreinterpretq_p16_u8): Likewise.
+	(vreinterpretq_p16_u16): Likewise.
+	(vreinterpretq_p16_u32): Likewise.
+	(vreinterpretq_p16_u64): Likewise.
+	(vreinterpretq_p16_p8): Likewise.
+	(vreinterpret_f32_s8): Likewise.
+	(vreinterpret_f32_s16): Likewise.
+	(vreinterpret_f32_s32): Likewise.
+	(vreinterpret_f32_s64): Likewise.
+	(vreinterpret_f32_u8): Likewise.
+	(vreinterpret_f32_u16): Likewise.
+	(vreinterpret_f32_u32): Likewise.
+	(vreinterpret_f32_u64): Likewise.
+	(vreinterpret_f32_p8): Likewise.
+	(vreinterpret_f32_p16): Likewise.
+	(vreinterpretq_f32_s8): Likewise.
+	(vreinterpretq_f32_s16): Likewise.
+	(vreinterpretq_f32_s32): Likewise.
+	(vreinterpretq_f32_s64): Likewise.
+	(vreinterpretq_f32_u8): Likewise.
+	(vreinterpretq_f32_u16): Likewise.
+	(vreinterpretq_f32_u32): Likewise.
+	(vreinterpretq_f32_u64): Likewise.
+	(vreinterpretq_f32_p8): Likewise.
+	(vreinterpretq_f32_p16): Likewise.
+	(vreinterpret_s64_s8): Likewise.
+	(vreinterpret_s64_s16): Likewise.
+	(vreinterpret_s64_s32): Likewise.
+	(vreinterpret_s64_f32): Likewise.
+	(vreinterpret_s64_u8): Likewise.
+	(vreinterpret_s64_u16): Likewise.
+	(vreinterpret_s64_u32): Likewise.
+	(vreinterpret_s64_u64): Likewise.
+	(vreinterpret_s64_p8): Likewise.
+	(vreinterpret_s64_p16): Likewise.
+	(vreinterpretq_s64_s8): Likewise.
+	(vreinterpretq_s64_s16): Likewise.
+	(vreinterpretq_s64_s32): Likewise.
+	(vreinterpretq_s64_f32): Likewise.
+	(vreinterpretq_s64_u8): Likewise.
+	(vreinterpretq_s64_u16): Likewise.
+	(vreinterpretq_s64_u32): Likewise.
+	(vreinterpretq_s64_u64): Likewise.
+	(vreinterpretq_s64_p8): Likewise.
+	(vreinterpretq_s64_p16): Likewise.
+	(vreinterpret_u64_s8): Likewise.
+	(vreinterpret_u64_s16): Likewise.
+	(vreinterpret_u64_s32): Likewise.
+	(vreinterpret_u64_s64): Likewise.
+	(vreinterpret_u64_f32): Likewise.
+	(vreinterpret_u64_u8): Likewise.
+	(vreinterpret_u64_u16): Likewise.
+	(vreinterpret_u64_u32): Likewise.
+	(vreinterpret_u64_p8): Likewise.
+	(vreinterpret_u64_p16): Likewise.
+	(vreinterpretq_u64_s8): Likewise.
+	(vreinterpretq_u64_s16): Likewise.
+	(vreinterpretq_u64_s32): Likewise.
+	(vreinterpretq_u64_s64): Likewise.
+	(vreinterpretq_u64_f32): Likewise.
+	(vreinterpretq_u64_u8): Likewise.
+	(vreinterpretq_u64_u16): Likewise.
+	(vreinterpretq_u64_u32): Likewise.
+	(vreinterpretq_u64_p8): Likewise.
+	(vreinterpretq_u64_p16): Likewise.
+	(vreinterpret_s8_s16): Likewise.
+	(vreinterpret_s8_s32): Likewise.
+	(vreinterpret_s8_s64): Likewise.
+	(vreinterpret_s8_f32): Likewise.
+	(vreinterpret_s8_u8): Likewise.
+	(vreinterpret_s8_u16): Likewise.
+	(vreinterpret_s8_u32): Likewise.
+	(vreinterpret_s8_u64): Likewise.
+	(vreinterpret_s8_p8): Likewise.
+	(vreinterpret_s8_p16): Likewise.
+	(vreinterpretq_s8_s16): Likewise.
+	(vreinterpretq_s8_s32): Likewise.
+	(vreinterpretq_s8_s64): Likewise.
+	(vreinterpretq_s8_f32): Likewise.
+	(vreinterpretq_s8_u8): Likewise.
+	(vreinterpretq_s8_u16): Likewise.
+	(vreinterpretq_s8_u32): Likewise.
+	(vreinterpretq_s8_u64): Likewise.
+	(vreinterpretq_s8_p8): Likewise.
+	(vreinterpretq_s8_p16): Likewise.
+	(vreinterpret_s16_s8): Likewise.
+	(vreinterpret_s16_s32): Likewise.
+	(vreinterpret_s16_s64): Likewise.
+	(vreinterpret_s16_f32): Likewise.
+	(vreinterpret_s16_u8): Likewise.
+	(vreinterpret_s16_u16): Likewise.
+	(vreinterpret_s16_u32): Likewise.
+	(vreinterpret_s16_u64): Likewise.
+	(vreinterpret_s16_p8): Likewise.
+	(vreinterpret_s16_p16): Likewise.
+	(vreinterpretq_s16_s8): Likewise.
+	(vreinterpretq_s16_s32): Likewise.
+	(vreinterpretq_s16_s64): Likewise.
+	(vreinterpretq_s16_f32): Likewise.
+	(vreinterpretq_s16_u8): Likewise.
+	(vreinterpretq_s16_u16): Likewise.
+	(vreinterpretq_s16_u32): Likewise.
+	(vreinterpretq_s16_u64): Likewise.
+	(vreinterpretq_s16_p8): Likewise.
+	(vreinterpretq_s16_p16): Likewise.
+	(vreinterpret_s32_s8): Likewise.
+	(vreinterpret_s32_s16): Likewise.
+	(vreinterpret_s32_s64): Likewise.
+	(vreinterpret_s32_f32): Likewise.
+	(vreinterpret_s32_u8): Likewise.
+	(vreinterpret_s32_u16): Likewise.
+	(vreinterpret_s32_u32): Likewise.
+	(vreinterpret_s32_u64): Likewise.
+	(vreinterpret_s32_p8): Likewise.
+	(vreinterpret_s32_p16): Likewise.
+	(vreinterpretq_s32_s8): Likewise.
+	(vreinterpretq_s32_s16): Likewise.
+	(vreinterpretq_s32_s64): Likewise.
+	(vreinterpretq_s32_f32): Likewise.
+	(vreinterpretq_s32_u8): Likewise.
+	(vreinterpretq_s32_u16): Likewise.
+	(vreinterpretq_s32_u32): Likewise.
+	(vreinterpretq_s32_u64): Likewise.
+	(vreinterpretq_s32_p8): Likewise.
+	(vreinterpretq_s32_p16): Likewise.
+	(vreinterpret_u8_s8): Likewise.
+	(vreinterpret_u8_s16): Likewise.
+	(vreinterpret_u8_s32): Likewise.
+	(vreinterpret_u8_s64): Likewise.
+	(vreinterpret_u8_f32): Likewise.
+	(vreinterpret_u8_u16): Likewise.
+	(vreinterpret_u8_u32): Likewise.
+	(vreinterpret_u8_u64): Likewise.
+	(vreinterpret_u8_p8): Likewise.
+	(vreinterpret_u8_p16): Likewise.
+	(vreinterpretq_u8_s8): Likewise.
+	(vreinterpretq_u8_s16): Likewise.
+	(vreinterpretq_u8_s32): Likewise.
+	(vreinterpretq_u8_s64): Likewise.
+	(vreinterpretq_u8_f32): Likewise.
+	(vreinterpretq_u8_u16): Likewise.
+	(vreinterpretq_u8_u32): Likewise.
+	(vreinterpretq_u8_u64): Likewise.
+	(vreinterpretq_u8_p8): Likewise.
+	(vreinterpretq_u8_p16): Likewise.
+	(vreinterpret_u16_s8): Likewise.
+	(vreinterpret_u16_s16): Likewise.
+	(vreinterpret_u16_s32): Likewise.
+	(vreinterpret_u16_s64): Likewise.
+	(vreinterpret_u16_f32): Likewise.
+	(vreinterpret_u16_u8): Likewise.
+	(vreinterpret_u16_u32): Likewise.
+	(vreinterpret_u16_u64): Likewise.
+	(vreinterpret_u16_p8): Likewise.
+	(vreinterpret_u16_p16): Likewise.
+	(vreinterpretq_u16_s8): Likewise.
+	(vreinterpretq_u16_s16): Likewise.
+	(vreinterpretq_u16_s32): Likewise.
+	(vreinterpretq_u16_s64): Likewise.
+	(vreinterpretq_u16_f32): Likewise.
+	(vreinterpretq_u16_u8): Likewise.
+	(vreinterpretq_u16_u32): Likewise.
+	(vreinterpretq_u16_u64): Likewise.
+	(vreinterpretq_u16_p8): Likewise.
+	(vreinterpretq_u16_p16): Likewise.
+	(vreinterpret_u32_s8): Likewise.
+	(vreinterpret_u32_s16): Likewise.
+	(vreinterpret_u32_s32): Likewise.
+	(vreinterpret_u32_s64): Likewise.
+	(vreinterpret_u32_f32): Likewise.
+	(vreinterpret_u32_u8): Likewise.
+	(vreinterpret_u32_u16): Likewise.
+	(vreinterpret_u32_u64): Likewise.
+	(vreinterpret_u32_p8): Likewise.
+	(vreinterpret_u32_p16): Likewise.
+	(vreinterpretq_u32_s8): Likewise.
+	(vreinterpretq_u32_s16): Likewise.
+	(vreinterpretq_u32_s32): Likewise.
+	(vreinterpretq_u32_s64): Likewise.
+	(vreinterpretq_u32_f32): Likewise.
+	(vreinterpretq_u32_u8): Likewise.
+	(vreinterpretq_u32_u16): Likewise.
+	(vreinterpretq_u32_u64): Likewise.
+	(vreinterpretq_u32_p8): Likewise.
+	(vreinterpretq_u32_p16): Likewise.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209640.
+	2014-04-22  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* gcc/config/aarch64/aarch64-simd.md (aarch64_s<optab><mode>):
+	Pattern extended.
+	* config/aarch64/aarch64-simd-builtins.def (sqneg): Iterator
+	extended.
+	(sqabs): Likewise.
+	* config/aarch64/arm_neon.h (vqneg_s64): New intrinsic.
+	(vqnegd_s64): Likewise.
+	(vqabs_s64): Likewise.
+	(vqabsd_s64): Likewise.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209627, 209636.
+	2014-04-22  Renlin  <renlin.li@arm.com>
+		    Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.h (aarch64_frame): Delete "fp_lr_offset".
+	* config/aarch64/aarch64.c (aarch64_layout_frame)
+	(aarch64_initial_elimination_offset): Likewise.
+
+	2014-04-22  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_initial_elimination_offset):
+	Fix indentation.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209618.
+	2014-04-22  Renlin Li  <Renlin.Li@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_print_operand_address): Adjust
+	the output asm format.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209617.
+	2014-04-22  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-simd.md
+	(aarch64_cm<optab>di): Always split.
+	(*aarch64_cm<optab>di): New.
+	(aarch64_cmtstdi): Always split.
+	(*aarch64_cmtstdi): New.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209615.
+	2014-04-22  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/arm/arm.c (arm_hard_regno_mode_ok): Loosen
+	restrictions on core registers for DImode values in Thumb2.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209613, r209614.
+	2014-04-22  Ian Bolton  <ian.bolton@arm.com>
+
+	* config/arm/arm.md (*anddi_notdi_zesidi): New pattern.
+	* config/arm/thumb2.md (*iordi_notdi_zesidi): New pattern.
+
+	2014-04-22  Ian Bolton  <ian.bolton@arm.com>
+
+	* config/arm/thumb2.md (*iordi_notdi_di): New pattern.
+	(*iordi_notzesidi_di): Likewise.
+	(*iordi_notsesidi_di): Likewise.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209561.
+	2014-04-22  Ian Bolton  <ian.bolton@arm.com>
+
+	* config/arm/arm-protos.h (tune_params): New struct members.
+	* config/arm/arm.c: Initialise tune_params per processor.
+	(thumb2_reorg): Suppress conversion from t32 to t16 when optimizing
+	for speed, based on new tune_params.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209559.
+	2014-04-22  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* config/aarch64/aarch64-builtins.c (BUILTIN_VDQF_DF): Macro
+	added.
+	* config/aarch64/aarch64-simd-builtins.def (frintn): Use added
+	macro.
+	* config/aarch64/aarch64-simd.md (<frint_pattern>): Comment
+	corrected.
+	* config/aarch64/aarch64.md (<frint_pattern>): Likewise.
+	* config/aarch64/arm_neon.h (vrnd_f64): Added.
+	(vrnda_f64): Likewise.
+	(vrndi_f64): Likewise.
+	(vrndm_f64): Likewise.
+	(vrndn_f64): Likewise.
+	(vrndp_f64): Likewise.
+	(vrndx_f64): Likewise.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209419.
+	2014-04-15  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/60663
+	* config/arm/arm.c (arm_new_rtx_costs): Improve ASM_OPERANDS case,
+	avoid 0 cost.
+
+2014-05-23  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209457.
+	2014-04-16  Andrew  Pinski  <apinski@cavium.com>
+
+	* config/host-linux.c (TRY_EMPTY_VM_SPACE): Change aarch64 ilp32
+	definition.
+
+2014-05-19  Yvan Roux  <yvan.roux@linaro.org>
+
+	* LINARO-VERSION: Bump version.
+
+2014-05-14  Yvan Roux  <yvan.roux@linaro.org>
+	GCC Linaro 4.9-2014.05 released.
+	* LINARO-VERSION: Update.
+
+2014-05-13  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209889.
+	2014-04-29  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* config/aarch64/aarch64.md (mov<mode>cc): New for GPF.
+
+2014-05-13  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r209556.
+	2014-04-22  Zhenqiang Chen  <zhenqiang.chen@linaro.org>
+
+	* config/arm/arm.c (arm_print_operand, thumb_exit): Make sure
+	GET_MODE_SIZE argument is enum machine_mode.
+
+2014-04-28  Yvan Roux  <yvan.roux@linaro.org>
+
+	* LINARO-VERSION: Bump version.
+
+2014-04-22  Yvan Roux  <yvan.roux@linaro.org>
+
+	GCC Linaro 4.9-2014.04 released.
+	* LINARO-VERSION: New file.
+	* configure.ac: Add Linaro version string.
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211771.
 	2014-06-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
