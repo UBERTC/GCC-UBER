@@ -1,5 +1,14 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r211073.
+	2014-05-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/thumb2.md (*thumb2_movhi_insn): Set type of movw
+	to mov_imm.
+	* config/arm/vfp.md (*thumb2_movsi_vfp): Likewise.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211050.
 	2014-05-29  Richard Earnshaw <rearnsha@arm.com>
 	Richard Sandiford  <rdsandiford@googlemail.com>
