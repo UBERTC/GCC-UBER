@@ -1,5 +1,13 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r210471.
+	2014-05-15  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (arm_option_override): Use the SCHED_PRESSURE_MODEL
+	enum name for PARAM_SCHED_PRESSURE_ALGORITHM.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r210369.
 	2014-05-13  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
