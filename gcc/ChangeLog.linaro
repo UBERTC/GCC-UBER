@@ -1,5 +1,15 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r211129.
+	2014-06-02  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/61154
+	* config/arm/arm.h (TARGET_SUPPORTS_WIDE_INT): Define.
+	* config/arm/arm.md (mov64 splitter): Replace const_double_operand
+	with immediate_operand.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211073.
 	2014-05-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
