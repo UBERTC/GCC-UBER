@@ -1,5 +1,13 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r211268.
+	2014-06-05  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_expand_prologue): Update stack
+	layout comment.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211129.
 	2014-06-02  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
 
