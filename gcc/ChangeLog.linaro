@@ -1,5 +1,14 @@
 2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209797.
+	2014-04-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/aarch-common.c (aarch_rev16_shright_mask_imm_p):
+	Use HOST_WIDE_INT_C for mask literal.
+	(aarch_rev16_shleft_mask_imm_p): Likewise.
+
+2014-07-16  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211148.
 	2014-06-02  Andrew Pinski  <apinski@cavium.com>
 
