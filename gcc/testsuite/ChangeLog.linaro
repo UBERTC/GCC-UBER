@@ -1,5 +1,12 @@
 2014-07-17  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r211887.
+	2014-06-23  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/scalar_shift_1.c: Fix expected assembler.
+
+2014-07-17  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211441.
 	2014-06-11  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 

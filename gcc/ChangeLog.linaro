@@ -1,5 +1,18 @@
 2014-07-17  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r211887, r211899.
+	2014-06-23  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.md (addsi3_aarch64): Set "simd" attr to
+	"yes" where needed.
+
+	2014-06-23  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.md (*addsi3_aarch64): Add alternative in
+	vector registers.
+
+2014-07-17  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211440.
 	2014-06-11  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
