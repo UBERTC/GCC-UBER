@@ -1,5 +1,10 @@
 2014-07-17  Yvan Roux  <yvan.roux@linaro.org>
 
+	GCC Linaro 4.9-2014.07-1 released.
+	* LINARO-VERSION: Update.
+
+2014-07-17  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211887, r211899.
 	2014-06-23  James Greenhalgh  <james.greenhalgh@arm.com>
 
