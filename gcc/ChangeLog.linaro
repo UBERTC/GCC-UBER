@@ -1,6 +1,10 @@
+2014-07-19  Yvan Roux  <yvan.roux@linaro.org>
+
+	* LINARO-VERSION: Bump version.
+
 2014-07-17  Yvan Roux  <yvan.roux@linaro.org>
 
-	GCC Linaro 4.9-2014.07-1 released.
+	GCC Linaro 4.9-2014.07 released.
 	* LINARO-VERSION: Update.
 
 2014-07-17  Yvan Roux  <yvan.roux@linaro.org>
