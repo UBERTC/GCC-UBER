@@ -1,3 +1,8 @@
+2014-07-24  Yvan Roux  <yvan.roux@linaro.org>
+
+	GCC Linaro 4.9-2014.07-1 released.
+	* LINARO-VERSION: Update.
+
 2014-07-20  Yvan Roux  <yvan.roux@linaro.org>
 
 	Revert:
