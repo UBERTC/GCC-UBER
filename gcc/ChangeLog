@@ -1,3 +1,22 @@
+2014-06-12  Release Manager
+
+	* GCC 4.7.4 released.
+
+2014-06-04  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2013-05-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/57230
+	* tree-ssa-strlen.c (handle_char_store): Add missing integer_zerop
+	check.
+
+2014-05-28  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/61044
+	* doc/extend.texi (Local Labels): Note that label differences are
+	not supported for AVR.
+
 2014-05-23  Richard Biener  <rguenther@suse.de>
 
 	Backport from mainline
