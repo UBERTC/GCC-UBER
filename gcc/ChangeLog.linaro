@@ -1,5 +1,19 @@
 2014-08-10 Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r212142, r212225.
+	2014-07-02  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_expand_vec_perm): Delete unused
+	variable i.
+
+	2014-06-30  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-simd.md (vec_perm): Enable for bigendian.
+	* config/aarch64/aarch64.c (aarch64_expand_vec_perm): Remove assert
+	against bigendian and adjust indices.
+
+2014-08-10 Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211779.
 	2014-06-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
