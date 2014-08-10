@@ -1,5 +1,19 @@
 2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r212752.
+	2014-07-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/arm_neon.h (vmlal_high_lane_s16): Fix type.
+	(vmlal_high_lane_s32): Likewise.
+	(vmlal_high_lane_u16): Likewise.
+	(vmlal_high_lane_u32): Likewise.
+	(vmlsl_high_lane_s16): Likewise.
+	(vmlsl_high_lane_s32): Likewise.
+	(vmlsl_high_lane_u16): Likewise.
+	(vmlsl_high_lane_u32): Likewise.
+
+2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r212512.
 	2014-07-14  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
