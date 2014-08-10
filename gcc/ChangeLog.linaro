@@ -1,5 +1,12 @@
 2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r212358.
+	2014-07-08  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (cortexa5_extra_costs): New table.
+	(arm_cortex_a5_tune): Use cortexa5_extra_costs.
+
+2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212296.
 	2014-07-04  Tom de Vries  <tom@codesourcery.com>
