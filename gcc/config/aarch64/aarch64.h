@@ -523,11 +523,32 @@ extern enum aarch64_processor aarch64_tune;
 struct GTY (()) aarch64_frame
 {
   HOST_WIDE_INT reg_offset[FIRST_PSEUDO_REGISTER];
+
+  /* The number of extra stack bytes taken up by register varargs.
+     This area is allocated by the callee at the very top of the
+     frame.  This value is rounded up to a multiple of
+     STACK_BOUNDARY.  */
+  HOST_WIDE_INT saved_varargs_size;
+
   HOST_WIDE_INT saved_regs_size;
   /* Padding if needed after the all the callee save registers have
      been saved.  */
   HOST_WIDE_INT padding0;
   HOST_WIDE_INT hardfp_offset;	/* HARD_FRAME_POINTER_REGNUM */
+
+  /* Offset from the base of the frame (incomming SP) to the
+     hard_frame_pointer.  This value is always a multiple of
+     STACK_BOUNDARY.  */
+  HOST_WIDE_INT hard_fp_offset;
+
+  /* The size of the frame.  This value is the offset from base of the
+   * frame (incomming SP) to the stack_pointer.  This value is always
+   * a multiple of STACK_BOUNDARY.  */
+
+  unsigned wb_candidate1;
+  unsigned wb_candidate2;
+
+  HOST_WIDE_INT frame_size;
 
   bool laid_out;
 };
@@ -535,11 +556,6 @@ struct GTY (()) aarch64_frame
 typedef struct GTY (()) machine_function
 {
   struct aarch64_frame frame;
-
-  /* The number of extra stack bytes taken up by register varargs.
-     This area is allocated by the callee at the very top of the frame.  */
-  HOST_WIDE_INT saved_varargs_size;
-
 } machine_function;
 #endif
 

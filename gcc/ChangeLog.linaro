@@ -1,5 +1,157 @@
 2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r211270, r211271, r211273, r211275, r212943,
+	r212945, r212946, r212947, r212949, r212950, r212951, r212952, r212954,
+	r212955, r212956, r212957, r212958, r212976, r212996, r212997, r212999,
+	r213000.
+	2014-07-24  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_popwb_single_reg): New function.
+	(aarch64_expand_epilogue): Optimize epilogue when !frame_pointer_needed.
+
+	2014-07-24  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_pushwb_single_reg): New function.
+	(aarch64_expand_prologue): Optimize prologue when !frame_pointer_needed.
+
+	2014-07-24  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_restore_callee_saves)
+	(aarch64_save_callee_saves): New parameter "skip_wb".
+	(aarch64_expand_prologue, aarch64_expand_epilogue): Update call site.
+
+	2014-07-24  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.h (frame): New fields "wb_candidate1" and
+	"wb_candidate2".
+	* config/aarch64/aarch64.c (aarch64_layout_frame): Initialize above.
+
+	2014-07-24  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_expand_epilogue): Don't
+	subtract outgoing area size when restoring stack_pointer_rtx.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_popwb_pair_reg)
+	(aarch64_gen_loadwb_pair): New helper function.
+	(aarch64_expand_epilogue): Simplify code using new helper functions.
+	* config/aarch64/aarch64.md (loadwb_pair<GPF:mode>_<P:mode>): Define.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_pushwb_pair_reg)
+	(aarch64_gen_storewb_pair): New helper function.
+	(aarch64_expand_prologue): Simplify code using new helper functions.
+	* config/aarch64/aarch64.md (storewb_pair<GPF:mode>_<P:mode>): Define.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.md: (aarch64_save_or_restore_callee_saves):
+	Rename to aarch64_save_callee_saves, remove restore code.
+	(aarch64_restore_callee_saves): New function.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_save_or_restore_fprs): Deleted.
+	(aarch64_save_callee_saves): New function to handle reg save
+	for both core and vectore regs.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_gen_load_pair)
+	(aarch64_gen_store_pair): New helper function.
+	(aarch64_save_or_restore_callee_save_registers)
+	(aarch64_save_or_restore_fprs): Use new helper functions.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_next_callee_save): New function.
+	(aarch64_save_or_restore_callee_save_registers)
+	(aarch64_save_or_restore_fprs): Use aarch64_next_callee_save.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c
+	(aarch64_save_or_restore_callee_save_registers)
+	(aarch64_save_or_restore_fprs): Hoist calculation of register rtx.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c
+	(aarch64_save_or_restore_callee_save_registers)
+	(aarch64_save_or_restore_fprs): Remove 'increment'.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c
+	(aarch64_save_or_restore_callee_save_registers)
+	(aarch64_save_or_restore_fprs): Use register offset in
+	cfun->machine->frame.reg_offset.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c
+	(aarch64_save_or_restore_callee_save_registers)
+	(aarch64_save_or_restore_fprs): Remove base_rtx.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c
+	(aarch64_save_or_restore_callee_save_registers): Rename 'offset'
+	to 'start_offset'.  Remove local variable 'start_offset'.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_save_or_restore_fprs): Change
+	type to HOST_WIDE_INT.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_expand_prologue)
+	(aarch64_save_or_restore_fprs)
+	(aarch64_save_or_restore_callee_save_registers): GNU-Stylize code.
+
+	2014-06-05  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.h (aarch64_frame): Add hard_fp_offset and
+	frame_size.
+	* config/aarch64/aarch64.c (aarch64_layout_frame): Initialize
+	aarch64_frame hard_fp_offset and frame_size.
+	(aarch64_expand_prologue): Use aarch64_frame hard_fp_offset and
+	frame_size; remove original_frame_size.
+	(aarch64_expand_epilogue, aarch64_final_eh_return_addr): Likewise.
+	(aarch64_initial_elimination_offset): Remove frame_size and
+	offset.  Use aarch64_frame frame_size.
+
+	2014-06-05  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+		    Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_layout_frame): Correct
+	initialization of R30 offset.  Update offset.  Iterate core
+	regisers upto X30.  Remove X29, X30 specific code.
+
+	2014-06-05  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+		    Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.c (SLOT_NOT_REQUIRED, SLOT_REQUIRED): Define.
+	(aarch64_layout_frame): Use SLOT_NOT_REQUIRED and SLOT_REQUIRED.
+	(aarch64_register_saved_on_entry): Adjust test.
+
+	2014-06-05  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+
+	* config/aarch64/aarch64.h (machine_function): Move
+	saved_varargs_size from here...
+	(aarch64_frameGTY): ... to here.
+
+	* config/aarch64/aarch64.c (aarch64_expand_prologue)
+	(aarch64_expand_epilogue, aarch64_final_eh_return_addr)
+	(aarch64_initial_elimination_offset)
+	(aarch64_setup_incoming_varargs): Adjust location of
+	saved_varargs_size.
+
+2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r212753.
 	2014-07-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
