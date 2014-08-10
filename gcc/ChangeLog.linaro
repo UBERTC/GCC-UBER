@@ -1,3 +1,10 @@
+2014-08-10 Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r211779.
+	2014-06-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm_neon.h (vadd_f32): Change #ifdef to __FAST_MATH.
+
 2014-07-30  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r211503.
