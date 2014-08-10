@@ -1,3 +1,12 @@
+2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+
+
+	Backport from trunk r212296.
+	2014-07-04  Tom de Vries  <tom@codesourcery.com>
+
+	* config/aarch64/aarch64-simd.md
+	(define_insn "vec_unpack_trunc_<mode>"): Fix constraint.
+
 2014-08-10 Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212142, r212225.
