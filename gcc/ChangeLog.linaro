@@ -1,5 +1,14 @@
 2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r213555.
+	2014-08-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/61713
+	* gcc/optabs.c (expand_atomic_test_and_set): Do not try to emit
+	move to subtarget in serial version if result is ignored.
+
+2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213376.
 	2014-07-31  Charles Baylis  <charles.baylis@linaro.org>
 
