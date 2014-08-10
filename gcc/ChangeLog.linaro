@@ -1,5 +1,15 @@
 2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r213376.
+	2014-07-31  Charles Baylis  <charles.baylis@linaro.org>
+
+	PR target/61948
+	* config/arm/neon.md (ashldi3_neon): Don't emit arm_ashldi3_1bit unless
+	constraints are satisfied.
+	(<shift>di3_neon): Likewise.
+
+2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211270, r211271, r211273, r211275, r212943,
 	r212945, r212946, r212947, r212949, r212950, r212951, r212952, r212954,
 	r212955, r212956, r212957, r212958, r212976, r212996, r212997, r212999,

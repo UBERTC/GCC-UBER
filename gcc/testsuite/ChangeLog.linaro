@@ -1,4 +1,11 @@
 2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+	Backport from trunk r213376.
+	2014-07-31  Charles Baylis  <charles.baylis@linaro.org>
+
+	PR target/61948
+	* gcc.target/arm/pr61948.c: New test case.
+
+2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212959, r212976, r212999, r213000.
 	2014-07-24  Jiong Wang  <jiong.wang@arm.com>
