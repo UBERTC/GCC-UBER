@@ -1,3 +1,13 @@
+2014-08-11  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r204251
+	2013-10-31  Richard Sandiford  <rsandifo@linux.vnet.ibm.com>
+	Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/58543
+	* asan.c (asan_clear_shadow): Allocate a new vreg for temporary
+	shadow pointer to avoid clobbering the main one.
+
 2014-04-08  Yvan Roux  <yvan.roux@linaro.org>
 
 	* LINARO-VERSION: Bump version.
