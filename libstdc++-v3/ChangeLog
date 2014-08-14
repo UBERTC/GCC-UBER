@@ -1,3 +1,108 @@
+2014-08-09  François Dumont  <fdumont@gcc.gnu.org>
+
+	PR libstdc++/61667
+	* include/bits/hashtable.h (_Hashtable<>::__rehash_policy): Use
+	_M_need_rehash to initialize the rehash policy and check if a rehash is
+	needed.
+	* testsuite/23_containers/unordered_map/modifiers/61667.cc: New.
+
+2014-08-04  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backported from mainline
+	2014-07-29  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/61946
+	* include/ext/rope (rope::rope(char_producer<_CharT>*, size_t, bool,
+	const allocator_type&)): Pass non-const allocator to
+	_S_new_RopeFunction.
+	* testsuite/ext/rope/61946.cc: New.
+
+2014-08-04  Zifei Tong  <zifeitong@gmail.com>
+
+	* libsupc++/atexit_thread.cc (HAVE___CXA_THREAD_ATEXIT_IMPL): Add
+	_GLIBCXX_ prefix to macro.
+
+2014-08-04  Samuel Bronson  <naesten@gmail.com>
+
+	Backport r212453 from trunk
+	2014-07-11  Samuel Bronson  <naesten@gmail.com>
+		    Matthias Klose  <doko@ubuntu.com>
+
+	PR libstdc++/58962
+	* python/libstdcxx/v6/printers.py: Port to Python 2+3
+	(imap): New compat function.
+	(izip): Likewise.
+	(Iterator): New mixin to allow writing iterators in Python 3 style
+	regardless of which version we're running on.
+	[Python3] (long) New compat alias for "int".
+	* testsuite/lib/gdb-test.exp: Port to Python 2+3 (print syntax)
+
+	Backport r210625 from trunk
+	2014-05-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	* python/libstdcxx/v6/printers.py: Use Python3 raise syntax.
+
+2014-08-04  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backported from mainline
+	2014-06-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/61390
+	* include/ext/pb_ds/detail/bin_search_tree_/traits.hpp
+	(bin_search_tree_traits): Do not redeclare template-parameters.
+	* testsuite/util/testsuite_iterators.h (test_container): Likewise.
+
+	Backported from mainline
+	2014-06-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/condition_variable (condition_variable_any::_Unlock): Do
+	not swallow __forced_unwind.
+	* include/std/future (__future_base::_Task_setter): Likewise.
+	(__future_base::_Async_state_impl): Turn __forced_unwind into broken
+	promise and rethrow.
+	* include/std/mutex (try_lock): Likewise.
+	* testsuite/30_threads/async/forced_unwind.cc: New.
+	* testsuite/30_threads/packaged_task/forced_unwind.cc: New.
+
+	Backported from mainline
+	2014-06-01  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/61374
+	* include/experimental/string_view (operator basic_string): Correct
+	order of arguments.
+	(to_string): Replace with member function.
+	Add inline specifiers. Remove unused header. Remove _S_empty_rep and
+	allow _M_str to be null.
+	* testsuite/experimental/string_view/cons/char/1.cc: Adjust to new
+	default constructor semantics.
+	* testsuite/experimental/string_view/cons/wchar_t/1.cc: Likewise.
+	* testsuite/experimental/string_view/operations/copy/char/1.cc: Fix
+	copyright dates. Remove unused header.
+	* testsuite/experimental/string_view/operations/copy/wchar_t/1.cc:
+	Likewise.
+	* testsuite/experimental/string_view/operations/data/char/1.cc:
+	Fix copyright dates. Adjust to new default constructor semantics.
+	* testsuite/experimental/string_view/operations/data/wchar_t/1.cc:
+	Likewise.
+	* testsuite/experimental/string_view/operations/to_string/1.cc: New.
+
+	Backported from mainline
+	2014-04-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/atomic_base.h (__atomic_base<_PTp*>::_M_type_size): Add
+	const to constexpr member functions.
+
+2014-07-29  Ed Smith-Rowland  <3dw4rd@verizon.net>
+
+	PR libstdc++/60037 - SIGFPE in std::generate_canonical<unsigned int...>
+	* include/bits/random.h (_Adaptor): static_assert for non floating-point
+	result type.
+	* include/bits/random.tcc (generate_canonical): Ditto.
+	* include/ext/random.tcc (hypergeometric_distribution::operator()):
+	Use double as a rng result type.
+	* testsuite/26_numerics/random/pr60037-neg.cc: New.
+	* testsuite/ext/random/hypergeometric_distribution/pr60037.cc: New.
+
 2014-07-16  Release Manager
 
 	* GCC 4.9.1 released.

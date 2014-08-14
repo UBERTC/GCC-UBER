@@ -1,17 +1,277 @@
+2014-08-08  Guozhi Wei  <carrot@google.com>
+
+	* config/rs6000/rs6000.md (*movdi_internal64): Add a new constraint.
+
+2014-08-07  Ilya Tocar  <ilya.tocar@intel.com>
+
+	* config/i386/sse.md (vec_extract_lo_<mode><mask_name>): Fix
+	constraint.
+
+2014-08-06  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR debug/61923
+	* haifa-sched.c (advance_one_cycle): Fix dump.
+	(schedule_block): Don't advance cycle if we are already at the
+	beginning of the cycle.
+
+2014-08-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61320
+	* tree-ssa-loop-ivopts.c (may_be_unaligned_p): Properly
+	handle misaligned loads.
+
+2014-08-04  Rohit  <rohitarulraj@freescale.com>
+
+	PR target/60102
+	* config/rs6000/rs6000.c
+	(rs6000_reg_names): Add SPE high register names.
+	(alt_reg_names): Likewise.
+	(rs6000_dwarf_register_span): For SPE high registers, replace
+	dwarf register numbers with GCC hard register numbers.
+	(rs6000_init_dwarf_reg_sizes_extra): Likewise.
+	(rs6000_dbx_register_number): For SPE high registers, return dwarf
+	register number for the corresponding GCC hard register number.
+	* config/rs6000/rs6000.h
+	(FIRST_PSEUDO_REGISTER): Update based on 32 newly added GCC hard
+	register numbers for SPE high registers.
+	(DWARF_FRAME_REGISTERS):  Likewise.
+	(DWARF_REG_TO_UNWIND_COLUMN): Likewise.
+	(DWARF_FRAME_REGNUM): Likewise.
+	(FIXED_REGISTERS): Likewise.
+	(CALL_USED_REGISTERS): Likewise.
+	(CALL_REALLY_USED_REGISTERS): Likewise.
+	(REG_ALLOC_ORDER): Likewise.
+	(enum reg_class): Likewise.
+	(REG_CLASS_NAMES): Likewise.
+	(REG_CLASS_CONTENTS): Likewise.
+	(SPE_HIGH_REGNO_P): New macro to identify SPE high registers.
+
+2014-08-01  Vladimir Makarov  <vmakarov@redhat.com>
+
+	* lra-constraints.c (remove_inheritance_pseudos): Process
+	destination pseudo too.
+
+2014-08-01  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2014-06-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/61375
+	* tree-ssa-math-opts.c (find_bswap_or_nop_1): Cancel optimization if
+	symbolic number cannot be represented in an unsigned HOST_WIDE_INT.
+	(execute_optimize_bswap): Cancel optimization if CHAR_BIT != 8.
+
+2014-08-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61964
+	* tree-ssa-tail-merge.c (gimple_equal_p): Handle non-SSA LHS solely
+	by structural equality.
+
+2014-07-31  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2014-07-31  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/61844
+	* config/sh/sh.c (sh_legitimate_address_p,
+	sh_legitimize_reload_address): Handle reg+reg address modes when
+	ALLOW_INDEXED_ADDRESS is false.
+	* config/sh/predicates.md (general_movsrc_operand,
+	general_movdst_operand): Likewise.
+
+2014-07-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-07-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/61656
+	* config/i386/i386.c (classify_argument): Don't merge classes above
+	number of words.
+
+2014-07-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/alpha/elf.h: Define TARGET_UNWIND_TABLES_DEFAULT.
+
+2014-07-24  Kyle McMartin  <kyle@redhat.com>
+
+        * config/aarch64/aarch64-linux.h (TARGET_ASM_FILE_END): Define.
+
+2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* config/rs6000/rs6000-protos.h (rs6000_special_adjust_field_align_p):
+	Add prototype.
+	* config/rs6000/rs6000.c (rs6000_special_adjust_field_align_p): New
+	function.  Issue -Wpsabi warning if future GCC releases will use
+	different field alignment rules for this type.
+	* config/rs6000/sysv4.h (ADJUST_FIELD_ALIGN): Call it.
+	* config/rs6000/linux64.h (ADJUST_FIELD_ALIGN): Likewise.
+	* config/rs6000/freebsd64.h (ADJUST_FIELD_ALIGN): Likewise.
+
+2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* config/rs6000/rs6000.c (rs6000_function_arg_boundary): Issue
+	-Wpsabi note when encountering a type where future GCC releases
+	will apply different alignment requirements.
+
+2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* config/rs6000/rs6000.c (rs6000_function_arg): If a float argument
+	does not fit fully into floating-point registers, and there is still
+	space in the register parameter area, issue -Wpsabi note that the ABI
+	will change in a future GCC release.
+
+2014-07-23  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/arm/t-rtems-eabi: Add
+	mthumb/march=armv7-r/mfpu=vfpv3-d16/mfloat-abi=hard,
+	mthumb/march=armv7-m/mfpu=fpv4-sp-d16/mfloat-abi=hard,
+	mbig-endian/mthumb/march=armv7-r, and
+	mbig-endian/mthumb/march=armv7-r/mfpu=vfpv3-d16/mfloat-abi=hard
+	multilibs.
+
+2014-07-23  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+	    Chris Johns <chrisj@rtems.org>
+	    Joel Sherrill <joel.sherrill@oarcorp.com>
+
+	* config.gcc: Add nios2-*-rtems*.
+	* config/nios2/rtems.h: New file.
+	* gcc/config/nios2/t-rtems: New file.
+
+2014-07-21  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* config/rs6000/sysv4.h (LIBASAN_EARLY_SPEC): Define.
+	(LIBTSAN_EARLY_SPEC): Likewise.
+
+2014-07-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-07-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61855
+	* config/i386/avx512fintrin.h: Move constants for mantissa extraction
+	out of #ifdef __OPTIMIZE__.
+
+2014-07-20  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* expr.c (store_field): Handle VOIDmode for calls that return values
+	in multiple locations.
+
+2014-07-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* toplev.c (output_stack_usage): Adjust the location of the warning.
+
+2014-07-19  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/sync.md (*membar_storeload_leon3): New insn.
+	(*membar_storeload): Disable for LEON3.
+
+2014-07-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-07-16  David Wohlferd  <dw@LimeGreenSocks.com>
+
+	PR target/61662
+	* config/i386/ia32intrin.h: Use __LP64__ to determine size of long.
+
+2014-07-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-07-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61794
+	* config/i386/sse.md (avx512f_vextract<shuffletype>32x4_1_maskm):
+	Fix instruction constraint.
+	(<mask_codefor>avx512f_vextract<shuffletype>32x4_1<mask_name>): Ditto.
+
+2014-07-17  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-07-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61779
+	* tree-ssa-copy.c (copy_prop_visit_cond_stmt): Always try
+	simplifying a condition.
+
+2014-07-17  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/61801
+	* sched-deps.c (sched_analyze_2): For ASM_OPERANDS and ASM_INPUT
+	don't set reg_pending_barrier if it appears in a debug-insn.
+
+2014-07-17  Hans-Peter Nilsson  <hp@axis.com>
+
+	Backport from trunk.
+	PR target/61737.
+	* config/cris/cris.c (TARGET_LEGITIMATE_CONSTANT_P)
+	(TARGET_CANNOT_FORCE_CONST_MEM): Define.
+	(cris_cannot_force_const_mem, cris_legitimate_constant_p): New
+	functions.
+	(cris_print_index, cris_print_operand, cris_constant_index_p)
+	(cris_side_effect_mode_ok): Replace CONSTANT_P with CRIS_CONSTANT_P.
+	(cris_address_cost): Ditto last CONSTANT_P.
+	(cris_symbol_type_of): Rename from cris_pic_symbol_type_of.  All
+	callers changed.  Yield cris_offsettable_symbol for non-PIC
+	constant symbolic expressions including labels.  Yield cris_unspec
+	for all unspecs.
+	(cris_expand_pic_call_address): New parameter MARKERP.  Set its
+	target to pic_offset_table_rtx for calls that will likely go
+	through PLT, const0_rtx when they can't.  All callers changed.
+	Assert flag_pic.  Use CONSTANT_P, not CONSTANT_ADDRESS_P, for
+	symbolic expressions to be PICified.  Remove second, redundant,
+	assert on can_create_pseudo_p returning non-zero.  Use
+	replace_equiv_address_nv, not replace_equiv_address, for final
+	operand update.
+	* config/cris/cris.md ("movsi"): Move variable t to pattern
+	toplevel. Adjust assert for new cris_symbol_type member.  Use
+	CONSTANT_P instead of CONSTANT_ADDRESS_P.
+	("*movsi_internal") <case 9>: Make check for valid unspec operands
+	for lapc stricter.
+	<case CRIS_UNSPEC_PCREL, CRIS_UNSPEC_PLT_PCREL>: Clear condition codes.
+	("call", "call_value"): Use second incoming operand as a marker
+	for pic-offset-table-register being used.
+	("*expanded_call_non_v32", "*expanded_call_v32")
+	("*expanded_call_value_non_v32", "*expanded_call_value_v32"): For
+	second incoming operand to CALL, match cris_call_type_marker.
+	("*expanded_call_value_side"): Ditto.  Disable before reload_completed.
+	("*expanded_call_side"): Ditto.  Fix typo in comment.
+	(moverside, movemside peepholes): Check for CRIS_CONSTANT_P, not
+	CONSTANT_P.
+	* config/cris/predicates.md ("cris_call_type_marker"): New predicate.
+	* config/cris/cris.h (CRIS_CONSTANT_P): New macro.
+	(enum cris_symbol_type): Rename from cris_pic_symbol_type.  All
+	users changed.  Add members cris_offsettable_symbol and cris_unspec.
+	(cris_symbol_type): Rename from cris_pic_symbol_type.
+	* config/cris/constraints.md ("T"): Use CRIS_CONSTANT_P, not
+	just CONSTANT_P.
+	* config/cris/cris-protos.h (cris_symbol_type_of,
+	cris_expand_pic_call_address): Adjust prototypes.
+	(cris_legitimate_constant_p): New prototype.
+
+	* config.gcc (crisv32-*-linux* | cris-*-linux*): Do not override
+	an existing tmake_file.  Don't add t-slibgcc and t-linux.
+
+2014-07-16  Jakub Jelinek  <jakub@redhat.com>
+
+	* omp-low.c (create_omp_child_function): Don't set DECL_NAMELESS
+	on the FUNCTION_DECL.
+
+	* BASE-VER: Set to 4.9.1.
+	* DEV-PHASE: Set to prerelease.
+
 2014-07-16  Release Manager
 
 	* GCC 4.9.1 released.
 
 2014-07-10  Cary Coutant  <ccoutant@google.com>
 
-        Backport from trunk at r212211.
+	Backport from trunk at r212211.
 
 	* dwarf2out.c (remove_addr_table_entry): Remove unnecessary hash table
-        lookup.
+	lookup.
 	(resolve_addr_in_expr): When replacing the rtx in a location list
-        entry, get a new address table entry.
+	entry, get a new address table entry.
 	(dwarf2out_finish): Call index_location_lists even if there are no
-        addr_index_table entries yet.
+	addr_index_table entries yet.
 
 2014-07-10  Tom G. Christensen  <tgc@jupiterrise.com>
 
@@ -33,13 +293,13 @@
 	PR target/61062
 	* config/arm/arm_neon.h (vtrn_s8, vtrn_s16, vtrn_u8, vtrn_u16, vtrn_p8,
 	vtrn_p16, vtrn_s32, vtrn_f32, vtrn_u32, vtrnq_s8, vtrnq_s16, vtrnq_s32,
-	vtrnq_f32, vtrnq_u8, vtrnq_u16, vtrnq_u32, vtrnq_p8, vtrnq_p16, vzip_s8,
-	vzip_s16, vzip_u8, vzip_u16, vzip_p8, vzip_p16, vzip_s32, vzip_f32,
-	vzip_u32, vzipq_s8, vzipq_s16, vzipq_s32, vzipq_f32, vzipq_u8,
-	vzipq_u16, vzipq_u32, vzipq_p8, vzipq_p16, vuzp_s8, vuzp_s16, vuzp_s32,
-	vuzp_f32, vuzp_u8, vuzp_u16, vuzp_u32, vuzp_p8, vuzp_p16, vuzpq_s8,
-	vuzpq_s16, vuzpq_s32, vuzpq_f32, vuzpq_u8, vuzpq_u16, vuzpq_u32,
-	vuzpq_p8, vuzpq_p16): Correct mask for bigendian.
+	vtrnq_f32, vtrnq_u8, vtrnq_u16, vtrnq_u32, vtrnq_p8, vtrnq_p16,
+	vzip_s8, vzip_s16, vzip_u8, vzip_u16, vzip_p8, vzip_p16, vzip_s32,
+	vzip_f32, vzip_u32, vzipq_s8, vzipq_s16, vzipq_s32, vzipq_f32,
+	vzipq_u8, vzipq_u16, vzipq_u32, vzipq_p8, vzipq_p16, vuzp_s8, vuzp_s16,
+	vuzp_s32, vuzp_f32, vuzp_u8, vuzp_u16, vuzp_u32, vuzp_p8, vuzp_p16,
+	vuzpq_s8, vuzpq_s16, vuzpq_s32, vuzpq_f32, vuzpq_u8, vuzpq_u16,
+	vuzpq_u32, vuzpq_p8, vuzpq_p16): Correct mask for bigendian.
 
 
 2014-07-09  Alan Lawrence  <alan.lawrence@arm.com>
@@ -157,11 +417,9 @@
 	2014-06-24  Jakub Jelinek  <jakub@redhat.com>
 
 	* gimplify.c (gimplify_scan_omp_clauses) <case OMP_CLAUSE_MAP,
-	OMP_CLAUSE_TO, OMP_CLAUSE_FROM): Make sure OMP_CLAUSE_SIZE is
-	non-NULL.
+	OMP_CLAUSE_TO, OMP_CLAUSE_FROM): Make sure OMP_CLAUSE_SIZE is non-NULL.
 	<case OMP_CLAUSE_ALIGNED>: Gimplify OMP_CLAUSE_ALIGNED_ALIGNMENT.
-	(gimplify_adjust_omp_clauses_1): Make sure OMP_CLAUSE_SIZE is
-	non-NULL.
+	(gimplify_adjust_omp_clauses_1): Make sure OMP_CLAUSE_SIZE is non-NULL.
 	(gimplify_adjust_omp_clauses): Likewise.
 	* omp-low.c (lower_rec_simd_input_clauses,
 	lower_rec_input_clauses, expand_omp_simd): Handle non-constant
@@ -176,9 +434,8 @@
 
 	2014-06-18  Jakub Jelinek  <jakub@redhat.com>
 
-	* gimplify.c (omp_notice_variable): If n is non-NULL
-	and no flags change in ORT_TARGET region, don't jump to
-	do_outer.
+	* gimplify.c (omp_notice_variable): If n is non-NULL and no flags
+	change in ORT_TARGET region, don't jump to do_outer.
 	(struct gimplify_adjust_omp_clauses_data): New type.
 	(gimplify_adjust_omp_clauses_1): Adjust for data being
 	a struct gimplify_adjust_omp_clauses_data pointer instead
@@ -196,14 +453,12 @@
 	gimple_seq * argument to omp_finish_clause hook.
 	* omp-low.c (scan_sharing_clauses): Call scan_omp_op on
 	non-DECL_P OMP_CLAUSE_DECL if ctx->outer.
-	(scan_omp_parallel, lower_omp_for): When adding
-	_LOOPTEMP_ clause var, add it to outer ctx's decl_map
-	as identity.
+	(scan_omp_parallel, lower_omp_for): When adding _LOOPTEMP_ clause var,
+	add it to outer ctx's decl_map as identity.
 	* tree-core.h (OMP_CLAUSE_MAP_TO_PSET): New map kind.
 	* tree-nested.c (convert_nonlocal_omp_clauses,
 	convert_local_omp_clauses): Handle various OpenMP 4.0 clauses.
-	* tree-pretty-print.c (dump_omp_clause): Handle
-	OMP_CLAUSE_MAP_TO_PSET.
+	* tree-pretty-print.c (dump_omp_clause): Handle OMP_CLAUSE_MAP_TO_PSET.
 
 	2014-06-10  Jakub Jelinek  <jakub@redhat.com>
 
@@ -227,8 +482,7 @@
 	OMP_CLAUSE_LINEAR_STMT.
 	* omp-low.c (lower_rec_input_clauses): Fix typo.
 	(maybe_add_implicit_barrier_cancel, lower_omp_1): Add
-	cast between Fortran boolean_type_node and C _Bool if
-	needed.
+	cast between Fortran boolean_type_node and C _Bool if needed.
 
 2014-06-30  Jason Merrill  <jason@redhat.com>
 
@@ -279,8 +533,7 @@
 	(aarch64_sqdmlsl_lane<mode>): Likewise.
 	(aarch64_sqdmull_lane<mode>): Likewise.
 	(aarch64_sqdmull2_lane<mode>): Likewise.
-	(aarch64_sqdmlal_laneq<mode>):
-	Replace VCON usage with VCONQ.
+	(aarch64_sqdmlal_laneq<mode>): Replace VCON usage with VCONQ.
 	Emit aarch64_sqdmlal_laneq<mode>_internal insn.
 	(aarch64_sqdmlal2_laneq<mode>): Emit
 	aarch64_sqdmlal2_laneq<mode>_internal insn.
