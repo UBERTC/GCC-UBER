@@ -1,3 +1,220 @@
+2014-08-10  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/61999
+	* gfortran.dg/dot_product_3.f90:  New test case.
+
+2014-08-07  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR tree-optimization/60707
+	* gfortran.dg/pr45636.f90: xfail on 32-bit hppa*-*-*.
+
+2014-08-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/61801
+	* gcc.target/i386/pr61801.c: Rewritten.
+
+2014-08-01  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2014-06-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/61375
+	* gcc.c-torture/execute/pr61375-1.c: New test.
+
+2014-08-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61964
+	* gcc.dg/torture/pr61964.c: New testcase.
+	* gcc.dg/pr51879-18.c: XFAIL.
+
+2014-07-28  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/61801
+	* gcc.target/i386/pr61801.c: Fix testcase.
+
+2014-07-28  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/61801
+	* gcc.target/i386/pr61801.c: New testcase.
+
+2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	Backport from mainline:
+	2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* gcc.target/powerpc/ppc64-abi-warn-3.c: New test.
+
+	* gcc.c-torture/execute/20050316-1.x: Add -Wno-psabi.
+	* gcc.c-torture/execute/20050604-1.x: Add -Wno-psabi.
+	* gcc.c-torture/execute/20050316-3.x: New file.  Add -Wno-psabi.
+	* gcc.c-torture/execute/pr23135.x: Likewise.
+
+2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	Backport from mainline:
+	2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* gcc.target/powerpc/ppc64-abi-warn-2.c: New test.
+
+2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	Backport from mainline:
+	2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* gcc.target/powerpc/ppc64-abi-warn-1.c: New test.
+
+2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	Backport from mainline:
+	2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* g++.dg/compat/struct-layout-1.exp: Load g++-dg.exp.
+
+2014-07-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/stack-usage-2.c: Adjust.
+
+2014-07-19  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/61780
+	* gfortran.dg/dependency_44.f90 : New test
+
+2014-07-10  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/opt39.adb: New test.
+
+2014-07-08  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/61459
+	PR fortran/58883
+	* gfortran.dg/allocatable_function_8.f90 : New test
+
+2014-07-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/61684
+	* gcc.c-torture/compile/pr61684.c: New test.
+
+2014-07-02  Jakub Jelinek  <jakub@redhat.com>
+	    Fritz Reese  <Reese-Fritz@zai.com>
+
+	* gfortran.dg/oldstyle_5.f: New test.
+
+2014-06-30  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2014-06-11  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/61306
+	* gcc.c-torture/execute/pr61306-1.c: New test.
+	* gcc.c-torture/execute/pr61306-2.c: Likewise.
+	* gcc.c-torture/execute/pr61306-3.c: Likewise.
+
+2014-06-27  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gfortran.dg/nint_2.f90: Don't XFAIL for powerpc64le-*-linux*.
+
+2014-06-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-06-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61586
+	* gcc.target/alpha/pr61586.c: New test.
+
+2014-06-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gfortran.dg/default_format_denormal_2.f90:  Remove xfail for
+	powerpc*-*-linux*.
+
+2014-06-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-06-13  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR rtl-optimization/61094
+	PR rtl-optimization/61446
+	* gcc.target/i386/pr61446.c : New.
+
+	Backport from mainline
+	2014-06-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61423
+	* gcc.target/i386/pr61423.c: New test.
+
+2014-06-17  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	Backport from mainline
+
+	PR target/61483
+	* gcc.target/aarch64/aapcs64/type-def.h (struct hfa_fx2_t): New type.
+	* gcc.target/aarch64/aapcs64/va_arg-13.c: New test.
+	* gcc.target/aarch64/aapcs64/va_arg-14.c: Ditto.
+	* gcc.target/aarch64/aapcs64/va_arg-15.c: Ditto.
+
+2014-06-15  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/45187
+	* gfortran.dg/cray_pointers_10.f90: New file.
+
+2014-06-13  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+
+	2014-06-13  Peter Bergner  <bergner@vnet.ibm.com>
+	PR target/61415
+	* lib/target-supports.exp (check_effective_target_longdouble128): New.
+	* gcc.target/powerpc/pack02.c: Use it.
+	* gcc.target/powerpc/tfmode_off.c: Likewise.
+
+2014-06-12  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2014-06-12 trunk r211491
+
+	PR target/61443
+	* gcc.target/avr/torture/pr61443.c: New test.
+
+2014-06-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61383
+	* gcc.dg/torture/pr61383-1.c: New testcase.
+
+2014-06-03  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2014-05-14  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/60866
+	* gcc.dg/pr60866.c: New test.
+
+2014-06-03  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2014-05-14  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/60901
+	* gcc.target/i386/pr60901.c: New test.
+
+2014-05-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	Backport from mainline
+	2014-05-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/overflow_fixed.adb: New test.
+
+2014-05-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/aliasing1.adb (dg-final): Robustify pattern matching.
+
+2014-05-22  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2014-05-22  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* gcc.target/powerpc/htm-ttest.c: New test.
+
 2014-05-22  Release Manager
 
 	* GCC 4.8.3 released.

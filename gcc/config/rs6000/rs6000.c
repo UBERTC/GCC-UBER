@@ -3014,7 +3014,8 @@ rs6000_builtin_mask_calculate (void)
 	  | ((TARGET_CRYPTO)		    ? RS6000_BTM_CRYPTO	   : 0)
 	  | ((TARGET_HTM)		    ? RS6000_BTM_HTM	   : 0)
 	  | ((TARGET_DFP)		    ? RS6000_BTM_DFP	   : 0)
-	  | ((TARGET_HARD_FLOAT)	    ? RS6000_BTM_HARD_FLOAT : 0));
+	  | ((TARGET_HARD_FLOAT)	    ? RS6000_BTM_HARD_FLOAT : 0)
+	  | ((TARGET_LONG_DOUBLE_128)	    ? RS6000_BTM_LDBL128 : 0));
 }
 
 /* Override command line options.  Mostly we process the processor type and
@@ -5861,6 +5862,34 @@ rs6000_data_alignment (tree type, unsigned int align, enum data_align how)
   return align;
 }
 
+/* Previous GCC releases forced all vector types to have 16-byte alignment.  */
+
+bool
+rs6000_special_adjust_field_align_p (tree field, unsigned int computed)
+{
+  if (TARGET_ALTIVEC && TREE_CODE (TREE_TYPE (field)) == VECTOR_TYPE)
+    {
+      if (computed != 128)
+	{
+	  static bool warned;
+	  if (!warned && warn_psabi)
+	    {
+	      warned = true;
+	      inform (input_location,
+		      "the layout of aggregates containing vectors with"
+		      " %d-byte alignment will change in a future GCC release",
+		      computed / BITS_PER_UNIT);
+	    }
+	}
+      /* GCC 4.8/4.9 Note: To avoid any ABI change on a release branch, we
+	 keep the special treatment of vector types, but warn if there will
+	 be differences in future GCC releases.  */
+      return true;
+    }
+
+  return false;
+}
+
 /* AIX increases natural record alignment to doubleword if the first
    field is an FP double while the FP fields remain word aligned.  */
 
@@ -6109,7 +6138,8 @@ mem_operand_gpr (rtx op, enum machine_mode mode)
     return false;
 
   extra = GET_MODE_SIZE (mode) - UNITS_PER_WORD;
-  gcc_assert (extra >= 0);
+  if (extra < 0)
+    extra = 0;
 
   if (GET_CODE (addr) == LO_SUM)
     /* For lo_sum addresses, we must allow any offset except one that
@@ -9198,14 +9228,51 @@ rs6000_function_arg_boundary (enum machine_mode mode, const_tree type)
 	   || (type && TREE_CODE (type) == VECTOR_TYPE
 	       && int_size_in_bytes (type) >= 16))
     return 128;
-  else if (((TARGET_MACHO && rs6000_darwin64_abi)
-	    || DEFAULT_ABI == ABI_ELFv2
-            || (DEFAULT_ABI == ABI_AIX && !rs6000_compat_align_parm))
- 	   && mode == BLKmode
-	   && type && TYPE_ALIGN (type) > 64)
+
+  /* Aggregate types that need > 8 byte alignment are quadword-aligned
+     in the parameter area in the ELFv2 ABI, and in the AIX ABI unless
+     -mcompat-align-parm is used.  */
+  if (((DEFAULT_ABI == ABI_AIX && !rs6000_compat_align_parm)
+       || DEFAULT_ABI == ABI_ELFv2)
+      && type && TYPE_ALIGN (type) > 64)
+    {
+      /* "Aggregate" means any AGGREGATE_TYPE except for single-element
+         or homogeneous float/vector aggregates here.  We already handled
+         vector aggregates above, but still need to check for float here. */
+      bool aggregate_p = (AGGREGATE_TYPE_P (type)
+			  && !SCALAR_FLOAT_MODE_P (elt_mode));
+
+      /* We used to check for BLKmode instead of the above aggregate type
+	 check.  Warn when this results in any difference to the ABI.  */
+      if (aggregate_p != (mode == BLKmode))
+	{
+	  static bool warned;
+	  if (!warned && warn_psabi)
+	    {
+	      warned = true;
+	      inform (input_location,
+		      "the ABI of passing aggregates with %d-byte alignment"
+		      " will change in a future GCC release",
+		      (int) TYPE_ALIGN (type) / BITS_PER_UNIT);
+	    }
+	}
+
+      /* GCC 4.8/4.9 Note: To avoid any ABI change on a release branch, we
+	 keep using the BLKmode check, but warn if there will be differences
+	 in future GCC releases.  */
+      if (mode == BLKmode)
+	return 128;
+    }
+
+  /* Similar for the Darwin64 ABI.  Note that for historical reasons we
+     implement the "aggregate type" check as a BLKmode check here; this
+     means certain aggregate types are in fact not aligned.  */
+  if (TARGET_MACHO && rs6000_darwin64_abi
+      && mode == BLKmode
+      && type && TYPE_ALIGN (type) > 64)
     return 128;
-  else
-    return PARM_BOUNDARY;
+
+  return PARM_BOUNDARY;
 }
 
 /* The offset in words to the start of the parameter save area.  */
@@ -10243,6 +10310,7 @@ rs6000_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
 	  rtx r, off;
 	  int i, k = 0;
 	  unsigned long n_fpreg = (GET_MODE_SIZE (elt_mode) + 7) >> 3;
+	  int fpr_words;
 
 	  /* Do we also need to pass this argument in the parameter
 	     save area?  */
@@ -10269,6 +10337,37 @@ rs6000_function_arg (cumulative_args_t cum_v, enum machine_mode mode,
 	      r = gen_rtx_REG (fmode, cum->fregno + i * n_fpreg);
 	      off = GEN_INT (i * GET_MODE_SIZE (elt_mode));
 	      rvec[k++] = gen_rtx_EXPR_LIST (VOIDmode, r, off);
+	    }
+
+	  /* If there were not enough FPRs to hold the argument, the rest
+	     usually goes into memory.  However, if the current position
+	     is still within the register parameter area, a portion may
+	     actually have to go into GPRs.
+
+	     Note that it may happen that the portion of the argument
+	     passed in the first "half" of the first GPR was already
+	     passed in the last FPR as well.
+
+	     For unnamed arguments, we already set up GPRs to cover the
+	     whole argument in rs6000_psave_function_arg, so there is
+	     nothing further to do at this point.
+
+	     GCC 4.8/4.9 Note: This was implemented incorrectly in earlier
+	     GCC releases.  To avoid any ABI change on the release branch,
+	     we retain that original implementation here, but warn if we
+	     encounter a case where the ABI will change in the future.  */
+	  fpr_words = (i * GET_MODE_SIZE (elt_mode)) / (TARGET_32BIT ? 4 : 8);
+	  if (i < n_elts && align_words + fpr_words < GP_ARG_NUM_REG
+	      && cum->nargs_prototype > 0)
+            {
+	      static bool warned;
+	      if (!warned && warn_psabi)
+		{
+		  warned = true;
+		  inform (input_location,
+			  "the ABI of passing homogeneous float aggregates"
+			  " will change in a future GCC release");
+		}
 	    }
 
 	  return rs6000_finish_function_arg (mode, rvec, k);
@@ -10497,35 +10596,65 @@ rs6000_parm_needs_stack (cumulative_args_t args_so_far, tree type)
    list, or passes any parameter in memory.  */
 
 static bool
-rs6000_function_parms_need_stack (tree fun)
+rs6000_function_parms_need_stack (tree fun, bool incoming)
 {
-  function_args_iterator args_iter;
-  tree arg_type;
+  tree fntype, result;
   CUMULATIVE_ARGS args_so_far_v;
   cumulative_args_t args_so_far;
 
   if (!fun)
     /* Must be a libcall, all of which only use reg parms.  */
     return false;
+
+  fntype = fun;
   if (!TYPE_P (fun))
-    fun = TREE_TYPE (fun);
+    fntype = TREE_TYPE (fun);
 
   /* Varargs functions need the parameter save area.  */
-  if (!prototype_p (fun) || stdarg_p (fun))
+  if ((!incoming && !prototype_p (fntype)) || stdarg_p (fntype))
     return true;
 
-  INIT_CUMULATIVE_INCOMING_ARGS (args_so_far_v, fun, NULL_RTX);
+  INIT_CUMULATIVE_INCOMING_ARGS (args_so_far_v, fntype, NULL_RTX);
   args_so_far = pack_cumulative_args (&args_so_far_v);
 
-  if (aggregate_value_p (TREE_TYPE (fun), fun))
+  /* When incoming, we will have been passed the function decl.
+     It is necessary to use the decl to handle K&R style functions,
+     where TYPE_ARG_TYPES may not be available.  */
+  if (incoming)
     {
-      tree type = build_pointer_type (TREE_TYPE (fun));
-      rs6000_parm_needs_stack (args_so_far, type);
+      gcc_assert (DECL_P (fun));
+      result = DECL_RESULT (fun);
+    }
+  else
+    result = TREE_TYPE (fntype);
+
+  if (result && aggregate_value_p (result, fntype))
+    {
+      if (!TYPE_P (result))
+	result = TREE_TYPE (result);
+      result = build_pointer_type (result);
+      rs6000_parm_needs_stack (args_so_far, result);
     }
 
-  FOREACH_FUNCTION_ARGS (fun, arg_type, args_iter)
-    if (rs6000_parm_needs_stack (args_so_far, arg_type))
-      return true;
+  if (incoming)
+    {
+      tree parm;
+
+      for (parm = DECL_ARGUMENTS (fun);
+	   parm && parm != void_list_node;
+	   parm = TREE_CHAIN (parm))
+	if (rs6000_parm_needs_stack (args_so_far, TREE_TYPE (parm)))
+	  return true;
+    }
+  else
+    {
+      function_args_iterator args_iter;
+      tree arg_type;
+
+      FOREACH_FUNCTION_ARGS (fntype, arg_type, args_iter)
+	if (rs6000_parm_needs_stack (args_so_far, arg_type))
+	  return true;
+    }
 
   return false;
 }
@@ -10537,7 +10666,7 @@ rs6000_function_parms_need_stack (tree fun)
    all parameters in registers.  */
 
 int
-rs6000_reg_parm_stack_space (tree fun)
+rs6000_reg_parm_stack_space (tree fun, bool incoming)
 {
   int reg_parm_stack_space;
 
@@ -10555,7 +10684,7 @@ rs6000_reg_parm_stack_space (tree fun)
     case ABI_ELFv2:
       /* ??? Recomputing this every time is a bit expensive.  Is there
 	 a place to cache this information?  */
-      if (rs6000_function_parms_need_stack (fun))
+      if (rs6000_function_parms_need_stack (fun, incoming))
 	reg_parm_stack_space = TARGET_64BIT ? 64 : 32;
       else
 	reg_parm_stack_space = 0;
@@ -13544,11 +13673,15 @@ rs6000_invalid_builtin (enum rs6000_builtins fncode)
   else if ((fnmask & (RS6000_BTM_DFP | RS6000_BTM_P8_VECTOR))
 	   == (RS6000_BTM_DFP | RS6000_BTM_P8_VECTOR))
     error ("Builtin function %s requires the -mhard-dfp and"
-	   "-mpower8-vector options", name);
+	   " -mpower8-vector options", name);
   else if ((fnmask & RS6000_BTM_DFP) != 0)
     error ("Builtin function %s requires the -mhard-dfp option", name);
   else if ((fnmask & RS6000_BTM_P8_VECTOR) != 0)
     error ("Builtin function %s requires the -mpower8-vector option", name);
+  else if ((fnmask & (RS6000_BTM_HARD_FLOAT | RS6000_BTM_LDBL128))
+	   == (RS6000_BTM_HARD_FLOAT | RS6000_BTM_LDBL128))
+    error ("Builtin function %s requires the -mhard-float and"
+	   " -mlong-double-128 options", name);
   else if ((fnmask & RS6000_BTM_HARD_FLOAT) != 0)
     error ("Builtin function %s requires the -mhard-float option", name);
   else
@@ -31413,6 +31546,7 @@ static struct rs6000_opt_mask const rs6000_builtin_mask_names[] =
   { "htm",		 RS6000_BTM_HTM,	false, false },
   { "hard-dfp",		 RS6000_BTM_DFP,	false, false },
   { "hard-float",	 RS6000_BTM_HARD_FLOAT,	false, false },
+  { "long-double-128",	 RS6000_BTM_LDBL128,	false, false },
 };
 
 /* Option variables that we want to support inside attribute((target)) and

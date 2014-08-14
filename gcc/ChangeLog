@@ -1,3 +1,363 @@
+2014-08-01  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2014-06-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/61375
+	* tree-ssa-math-opts.c (find_bswap_or_nop_1): Cancel optimization if
+	symbolic number cannot be represented in an unsigned HOST_WIDE_INT.
+	(execute_optimize_bswap): Cancel optimization if CHAR_BIT != 8.
+
+2014-08-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61964
+	* tree-ssa-tail-merge.c (gimple_operand_equal_value_p): New
+	function merged from trunk.
+	(gimple_equal_p): Handle non-SSA LHS solely by structural
+	equality.
+
+2014-07-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/alpha/elf.h: Define TARGET_UNWIND_TABLES_DEFAULT.
+
+2014-07-24  Kyle McMartin  <kyle@redhat.com>
+
+	* config/aarch64/aarch64-linux.h (TARGET_ASM_FILE_END): Define.
+
+2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* config/rs6000/rs6000-protos.h (rs6000_special_adjust_field_align_p):
+	Add prototype.
+	* config/rs6000/rs6000.c (rs6000_special_adjust_field_align_p): New
+	function.  Issue -Wpsabi warning if future GCC releases will use
+	different field alignment rules for this type.
+	* config/rs6000/sysv4.h (ADJUST_FIELD_ALIGN): Call it.
+	* config/rs6000/linux64.h (ADJUST_FIELD_ALIGN): Likewise.
+	* config/rs6000/freebsd64.h (ADJUST_FIELD_ALIGN): Likewise.
+
+2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* config/rs6000/rs6000.c (rs6000_function_arg_boundary): Issue
+	-Wpsabi note when encountering a type where future GCC releases
+	will apply different alignment requirements.
+
+2014-07-24  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* config/rs6000/rs6000.c (rs6000_function_arg): If a float argument
+	does not fit fully into floating-point registers, and there is still
+	space in the register parameter area, issue -Wpsabi note that the ABI
+	will change in a future GCC release.
+
+2014-07-23  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/arm/t-rtems-eabi: Add
+	mthumb/march=armv7-r/mfpu=vfpv3-d16/mfloat-abi=hard,
+	mthumb/march=armv7-m/mfpu=fpv4-sp-d16/mfloat-abi=hard,
+	mbig-endian/mthumb/march=armv7-r, and
+	mbig-endian/mthumb/march=armv7-r/mfpu=vfpv3-d16/mfloat-abi=hard
+	multilibs.
+
+2014-07-21  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* config/rs6000/sysv4.h (LIBASAN_EARLY_SPEC): Define.
+	(LIBTSAN_EARLY_SPEC): Likewise.
+	(STATIC_LIBASAN_LIBS): Likewise.
+	(STATIC_LIBTSAN_LIBS): Likewise.
+
+2014-07-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* toplev.c (output_stack_usage): Adjust the location of the warning.
+
+2014-07-19  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/sync.md (*membar_storeload_leon3): New insn.
+	(*membar_storeload): Disable for LEON3.
+
+2014-07-17  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/61801
+	* sched-deps.c (sched_analyze_2): For ASM_OPERANDS and
+	ASM_INPUT don't set reg_pending_barrier if it appears in a
+	debug-insn.
+
+2014-07-16  Jakub Jelinek  <jakub@redhat.com>
+
+	* omp-low.c (create_omp_child_function): Don't set DECL_NAMELESS
+	on the FUNCTION_DECL.
+
+2014-07-10  Tom G. Christensen  <tgc@jupiterrise.com>
+
+	* doc/install.texi: Remove links to defunct package providers for
+	Solaris.
+
+2014-07-10  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR middle-end/53590
+	* function.c (allocate_struct_function): Revert r188667 change.
+
+2014-07-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/61684
+	* tree-ssa-ifcombine.c (recognize_single_bit_test): Make sure
+	rhs1 of conversion is a SSA_NAME before using SSA_NAME_DEF_STMT on it.
+
+2014-06-30  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from Mainline
+	2014-06-20  Jakub Jelinek  <jakub@redhat.com>
+	2014-06-11  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/61306
+	* tree-ssa-math-opts.c (struct symbolic_number): Store type of
+	expression instead of its size.
+	(do_shift_rotate): Adapt to change in struct symbolic_number. Return
+	false to prevent optimization when the result is unpredictable due to
+	arithmetic right shift of signed type with highest byte is set.
+	(verify_symbolic_number_p): Adapt to change in struct symbolic_number.
+	(find_bswap_1): Likewise. Return NULL to prevent optimization when the
+	result is unpredictable due to sign extension.
+	(find_bswap): Adapt to change in struct symbolic_number.
+
+2014-06-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-06-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61586
+	* config/alpha/alpha.c (alpha_handle_trap_shadows): Handle BARRIER RTX.
+
+2014-06-26  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/61542
+	* config/rs6000/vsx.md (vsx_extract_v4sf): Fix bug with element
+	extraction other than index 3.
+
+2014-06-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/61570
+	* config/i386/driver-i386.c (host_detect_local_cpu): For unknown
+	model family 6 CPU with has_longmode never use a CPU without
+	64-bit support.
+
+2014-06-20  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Backport from mainline
+
+	2014-06-20  Julian Brown  <julian@codesourcery.com>
+	            Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* config/arm/arm.c (arm_output_mi_thunk): Fix offset for
+	TARGET_THUMB1_ONLY. Add comments.
+
+2014-06-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-06-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61423
+	* config/i386/i386.md (*floatunssi<mode>2_i387_with_xmm): New
+	define_insn_and_split pattern, merged from *floatunssi<mode>2_1
+	and corresponding splitters.  Zero extend general register
+	or memory input operand to XMM temporary.  Enable for
+	TARGET_SSE2 and TARGET_INTER_UNIT_MOVES_TO_VEC only.
+	(floatunssi<mode>2): Update expander predicate.
+
+2014-06-18  Richard Henderson  <rth@redhat.com>
+
+	PR target/61545
+	* config/aarch64/aarch64.md (tlsdesc_small): Clobber CC_REGNUM.
+
+2014-06-17  Nagaraju Mekala <nagaraju.mekala@xilinx.com>
+
+	Revert on gcc-4_8-branch.
+	* config/microblaze/microblaze.md: Add movsi4_rev insn pattern.
+	* config/microblaze/predicates.md: Add reg_or_mem_operand predicate.
+
+2014-06-17  Yufeng Zhang  <yufeng.zhang@arm.com>
+
+	Backport from mainline
+
+	PR target/61483
+	* config/aarch64/aarch64.c (aarch64_layout_arg): Add new local
+	variable 'size'; calculate 'size' right in the front; use
+	'size' to compute 'nregs' (when 'allocate_ncrn != 0') and
+	pcum->aapcs_stack_words.
+
+2014-06-13  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+
+	2014-06-13  Peter Bergner  <bergner@vnet.ibm.com>
+	PR target/61415
+	* config/rs6000/rs6000-builtin.def (BU_MISC_1): Delete.
+	(BU_MISC_2): Rename to ...
+	(BU_LDBL128_2): ... this.
+	* config/rs6000/rs6000.h (RS6000_BTM_LDBL128): New define.
+	(RS6000_BTM_COMMON): Add RS6000_BTM_LDBL128.
+	* config/rs6000/rs6000.c (rs6000_builtin_mask_calculate): Handle
+	RS6000_BTM_LDBL128.
+	(rs6000_invalid_builtin): Add long double 128-bit builtin support.
+	(rs6000_builtin_mask_names): Add RS6000_BTM_LDBL128.
+	* config/rs6000/rs6000.md (unpacktf_0): Remove define)expand.
+	(unpacktf_1): Likewise.
+	* doc/extend.texi (__builtin_longdouble_dw0): Remove documentation.
+	(__builtin_longdouble_dw1): Likewise.
+	* doc/sourcebuild.texi (longdouble128): Document.
+
+2014-06-13  Jason Merrill  <jason@redhat.com>
+
+	PR c++/60731
+	* common.opt (-fno-gnu-unique): Add.
+	* config/elfos.h (USE_GNU_UNIQUE_OBJECT): Check it.
+
+2014-06-12  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2014-05-09 trunk r210272
+
+	* config/avr/avr-fixed.md (round<mode>3): Use -1U instead of -1 in
+	unsigned int initializers for regno_in, regno_out.
+
+	Backport from 2014-05-14 trunk r210418
+	* config/avr/avr.h (REG_CLASS_CONTENTS): Use unsigned suffix for
+	shifted values to avoid build warning.
+
+	Backport from 2014-06-12 trunk r211491
+
+	PR target/61443
+	* config/avr/avr.md (push<mode>1): Avoid (subreg(mem)) when
+	loading from address spaces.
+
+2014-06-12  Alan Modra  <amodra@gmail.com>
+
+	PR target/61300
+	* doc/tm.texi.in (INCOMING_REG_PARM_STACK_SPACE): Document.
+	* doc/tm.texi: Regenerate.
+	* function.c (INCOMING_REG_PARM_STACK_SPACE): Provide default.
+	Use throughout in place of REG_PARM_STACK_SPACE.
+	* config/rs6000/rs6000.c (rs6000_reg_parm_stack_space): Add
+	"incoming" param.  Pass to rs6000_function_parms_need_stack.
+	(rs6000_function_parms_need_stack): Add "incoming" param, ignore
+	prototype_p when incoming.  Use function decl when incoming
+	to handle K&R style functions.
+	* config/rs6000/rs6000.h (REG_PARM_STACK_SPACE): Adjust.
+	(INCOMING_REG_PARM_STACK_SPACE): Define.
+
+2014-06-06  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2014-06-06  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/61431
+	* config/rs6000/vsx.md (VSX_LE): Split VSX_D into 2 separate
+	iterators, VSX_D that handles 64-bit types, and VSX_LE that
+	handles swapping the two 64-bit double words on little endian
+	systems.  Include V1TImode and optionally TImode in VSX_LE so that
+	these types are properly swapped.  Change all of the insns and
+	splits that do the 64-bit swaps to use VSX_LE.
+	(vsx_le_perm_load_<mode>): Likewise.
+	(vsx_le_perm_store_<mode>): Likewise.
+	(splitters for little endian memory operations): Likewise.
+	(vsx_xxpermdi2_le_<mode>): Likewise.
+	(vsx_lxvd2x2_le_<mode>): Likewise.
+	(vsx_stxvd2x2_le_<mode>): Likewise.
+
+2014-06-05  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61393
+	* ipa-cp.c (determine_versionability): Pretend that tm_clones are
+	not versionable.
+
+2014-06-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61383
+	* tree-ssa-ifcombine.c (bb_no_side_effects_p): Make sure
+	stmts can't trap.
+
+2014-06-03  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2014-05-14  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/60866
+	* sel-sched-ir (sel_init_new_insn): New parameter old_seqno.
+	Default it to -1.  Pass it down to init_simplejump_data.
+	(init_simplejump_data): New parameter old_seqno.  Pass it down
+	to get_seqno_for_a_jump.
+	(get_seqno_for_a_jump): New parameter old_seqno.  Use it for
+	initializing new jump seqno as a last resort.  Add comment.
+	(sel_redirect_edge_and_branch): Save old seqno of the conditional
+	jump and pass it down to sel_init_new_insn.
+	(sel_redirect_edge_and_branch_force): Likewise.
+
+2014-06-03  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2014-05-14  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/60901
+	* config/i386/i386.c (ix86_dependencies_evaluation_hook): Check that
+	bb predecessor belongs to the same scheduling region.  Adjust comment.
+
+2014-06-03  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-06-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/61239
+	* config/i386/i386.c (ix86_expand_vec_perm) [case V32QImode]: Use
+	GEN_INT (-128) instead of GEN_INT (128) to set MSB of QImode constant.
+
+2014-05-28  Guozhi Wei  <carrot@google.com>
+
+	PR target/61202
+	* config/aarch64/arm_neon.h (vqdmulh_n_s16): Change the last operand's
+	constraint.
+	(vqdmulhq_n_s16): Likewise.
+
+2014-05-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	Backport from mainline
+	2014-05-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* double-int.c (div_and_round_double) <ROUND_DIV_EXPR>: Use the proper
+	predicate to detect a negative quotient.
+
+2014-05-28  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/61044
+	* doc/extend.texi (Local Labels): Note that label differences are
+	not supported for AVR.
+
+2014-05-26  Michael Tautschnig  <mt@debian.org>
+
+	PR target/61249
+	* doc/extend.texi (X86 Built-in Functions): Fix parameter lists of
+	__builtin_ia32_vfrczs[sd] and __builtin_ia32_mpsadbw256.
+
+2014-05-23  Alan Modra  <amodra@gmail.com>
+
+	PR target/61231
+	* config/rs6000/rs6000.c (mem_operand_gpr): Handle SImode.
+	* config/rs6000/rs6000.md (extendsidi2_lfiwax, extendsidi2_nocell):
+	Use "Y" constraint rather than "m".
+
+2014-05-22  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2014-05-22  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* config/rs6000/htm.md (ttest): Use correct shift value to get CR0.
+
+2014-05-22  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR target/61208
+	* arm.md (arm_cmpdi_unsigned): Fix length calculation for Thumb2.
+
+2013-05-22  Richard Biener  <rguenther@suse.de>
+
+	* BASE-VER: Set to 4.8.4.
+	* DEV-PHASE: Set to prerelease.
+
 2014-05-22  Release Manager
 
 	* GCC 4.8.3 released.

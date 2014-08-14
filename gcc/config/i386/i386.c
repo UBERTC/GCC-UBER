@@ -20505,7 +20505,7 @@ ix86_expand_vec_perm (rtx operands[])
 	  t1 = gen_reg_rtx (V32QImode);
 	  t2 = gen_reg_rtx (V32QImode);
 	  t3 = gen_reg_rtx (V32QImode);
-	  vt2 = GEN_INT (128);
+	  vt2 = GEN_INT (-128);
 	  for (i = 0; i < 32; i++)
 	    vec[i] = vt2;
 	  vt = gen_rtx_CONST_VECTOR (V32QImode, gen_rtvec_v (32, vec));
@@ -24640,13 +24640,17 @@ ix86_dependencies_evaluation_hook (rtx head, rtx tail)
 	      {
 		edge e;
 		edge_iterator ei;
-		/* Assume that region is SCC, i.e. all immediate predecessors
-	           of non-head block are in the same region.  */
+
+		/* Regions are SCCs with the exception of selective
+		   scheduling with pipelining of outer blocks enabled.
+		   So also check that immediate predecessors of a non-head
+		   block are in the same region.  */
 		FOR_EACH_EDGE (e, ei, bb->preds)
 		  {
 		    /* Avoid creating of loop-carried dependencies through
-		       using topological odering in region.  */
-		    if (BLOCK_TO_BB (bb->index) > BLOCK_TO_BB (e->src->index))
+		       using topological ordering in the region.  */
+		    if (rgn == CONTAINING_RGN (e->src->index)
+			&& BLOCK_TO_BB (bb->index) > BLOCK_TO_BB (e->src->index))
 		      add_dependee_for_func_arg (first_arg, e->src); 
 		  }
 	      }
