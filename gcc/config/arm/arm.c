@@ -24350,8 +24350,8 @@ static const struct builtin_description bdesc_2arg[] =
   {0, CODE_FOR_##L, "__builtin_arm_"#L, ARM_BUILTIN_##U, \
    UNKNOWN, 0},
 
-  FP_BUILTIN (set_fpscr, GET_FPSCR)
-  FP_BUILTIN (get_fpscr, SET_FPSCR)
+  FP_BUILTIN (get_fpscr, GET_FPSCR)
+  FP_BUILTIN (set_fpscr, SET_FPSCR)
 #undef FP_BUILTIN
 
 #define CRC32_BUILTIN(L, U) \
@@ -24869,7 +24869,7 @@ arm_init_builtins (void)
   if (TARGET_CRC32)
     arm_init_crc32_builtins ();
 
-  if (TARGET_VFP)
+  if (TARGET_VFP && TARGET_HARD_FLOAT)
     {
       tree ftype_set_fpscr
 	= build_function_type_list (void_type_node, unsigned_type_node, NULL);
@@ -31565,7 +31565,7 @@ arm_atomic_assign_expand_fenv (tree *hold, tree *clear, tree *update)
   tree new_fenv_var, reload_fenv, restore_fnenv;
   tree update_call, atomic_feraiseexcept, hold_fnclex;
 
-  if (!TARGET_VFP)
+  if (!TARGET_VFP || !TARGET_HARD_FLOAT)
     return;
 
   /* Generate the equivalent of :
