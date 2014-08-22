@@ -1,5 +1,20 @@
 2014-08-22  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r212927, r213304.
+	2014-07-30  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/arm/arm.c (arm_get_frame_offsets): Adjust condition for
+	Thumb2.
+
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/arm/arm.c (arm_get_frame_offsets): If both r3 and other
+	callee-saved registers are available for padding purpose
+	and r3 is not mandatory, then prefer use those callee-saved
+	instead of r3.
+
+2014-08-22  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211717, r213692.
 	2014-08-07  Kugan Vivekanandarajah  <kuganv@linaro.org>
 

@@ -1,3 +1,12 @@
+2014-08-22  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r212927.
+	2014-07-23  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.dg/ira-shrinkwrap-prep-1.c (target): Add arm_nothumb.
+	* gcc.dg/ira-shrinkwrap-prep-2.c (target): Likewise.
+	* gcc.dg/pr10474.c (target): Likewise.
+
 2014-08-14  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.9-2014.08 released.
