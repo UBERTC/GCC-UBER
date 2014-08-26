@@ -1,5 +1,14 @@
 2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r213630.
+	2014-08-05  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (clzsi2): Set predicable_short_it attr to no.
+	(rbitsi2): Likewise.
+	(*arm_rev): Set predicable and predicable_short_it attributes.
+
+2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213557.
 	2014-08-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 		    James Greenhalgh  <james.greenhalgh@arm.com>
