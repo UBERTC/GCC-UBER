@@ -1,5 +1,12 @@
 2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r213701.
+	2014-08-07  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.dg/pr61756.c: Remove arm-specific dg-options.
+
+2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213488, r213489.
 	2014-08-01  Jiong Wang  <jiong.wang@arm.com>
 
