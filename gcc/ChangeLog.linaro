@@ -1,5 +1,13 @@
 2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r213713.
+	2014-08-07  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (*cmov<mode>): Set type attribute to fcsel.
+	* config/arm/types.md (f_sels, f_seld): Delete.
+
+2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213711.
 	2014-08-07  Ian Bolton  <ian.bolton@arm.com>
 		    Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
