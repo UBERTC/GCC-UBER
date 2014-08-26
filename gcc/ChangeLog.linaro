@@ -1,5 +1,16 @@
 2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r213557.
+	2014-08-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+		    James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* doc/md.texi (clrsb): Document.
+	(clz): Change reference to x into operand 1.
+	(ctz): Likewise.
+	(popcount): Likewise.
+
+2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213551, r213556.
 	2014-08-04  Ramana Radhakrishnan <ramana.radhakrishnan@arm.com>
 		    Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
