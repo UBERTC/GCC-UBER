@@ -1,5 +1,12 @@
 2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r213490.
+	2014-08-01  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-simd-builtins.def (dup_lane, get_lane): Delete.
+
+2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213488.
 	2014-08-01  Jiong Wang <jiong.wang@arm.com>
 
