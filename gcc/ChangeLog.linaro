@@ -1,5 +1,14 @@
 2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r213711.
+	2014-08-07  Ian Bolton  <ian.bolton@arm.com>
+		    Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_expand_mov_immediate):
+	Use MOVN when one of the half-words is 0xffff.
+
+2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213632.
 	2014-08-05  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
