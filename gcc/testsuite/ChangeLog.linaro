@@ -1,3 +1,10 @@
+2014-08-26  venkataramanan kumar  <venkataramanan.kumar@linaro.org>
+
+	Backport from trunk r205807.
+	2013-12-09  Richard Earnshaw  <rearnsha@arm.com>
+
+	* gcc.target/arm/ldrd-strd-offset.c: New.
+
 2014-08-14  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.8-2014.08 released.
