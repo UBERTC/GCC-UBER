@@ -311,6 +311,7 @@ m32c*-*-*)
         ;;
 aarch64*-*-*)
 	cpu_type=aarch64
+	need_64bit_hwint=yes
 	extra_headers="arm_neon.h arm_acle.h"
 	extra_objs="aarch64-builtins.o aarch-common.o"
 	target_has_targetm_common=yes

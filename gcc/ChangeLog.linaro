@@ -1,3 +1,10 @@
+2014-08-29  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Fix backport from trunk 211440:
+	* config.gcc (aarch64*-*-*): Restore need_64bit_hwint=yes.
+
+	This is necessary to build aarch64* compilers on i686 host.
+
 2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r213627.
