@@ -141,22 +141,12 @@
 ; to share pipeline descriptions.
 (include "../arm/types.md")
 
-;; It is important to set the fp or simd attributes to yes when a pattern
-;; alternative uses the FP or SIMD register files, usually signified by use of
-;; the 'w' constraint.  This will ensure that the alternative will be
-;; disabled when compiling with -mgeneral-regs-only or with the +nofp/+nosimd
-;; architecture extensions.  If all the alternatives in a pattern use the
-;; FP or SIMD registers then the pattern predicate should include TARGET_FLOAT
-;; or TARGET_SIMD.
-
 ;; Attribute that specifies whether or not the instruction touches fp
-;; registers.  When this is set to yes for an alternative, that alternative
-;; will be disabled when !TARGET_FLOAT.
+;; registers.
 (define_attr "fp" "no,yes" (const_string "no"))
 
 ;; Attribute that specifies whether or not the instruction touches simd
-;; registers.  When this is set to yes for an alternative, that alternative
-;; will be disabled when !TARGET_SIMD.
+;; registers.
 (define_attr "simd" "no,yes" (const_string "no"))
 
 (define_attr "length" ""
@@ -1916,8 +1906,7 @@
 							     GEN_INT (63)))));
     DONE;
   }
-  [(set_attr "type" "alu_sreg")
-   (set_attr "simd" "no,yes")]
+  [(set_attr "type" "alu_reg")]
 )
 
 (define_insn "neg<mode>2"
@@ -3687,7 +3676,7 @@
         (match_operand:TX 1 "register_operand" "w"))
    (clobber (match_operand:DI 2 "register_operand" "=&r"))
   ]
-  "TARGET_FLOAT"
+  ""
   {
     rtx op0 = simplify_gen_subreg (TImode, operands[0], <MODE>mode, 0);
     rtx op1 = simplify_gen_subreg (TImode, operands[1], <MODE>mode, 0);
@@ -3705,7 +3694,7 @@
 (define_insn "aarch64_movdi_<mode>low"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (truncate:DI (match_operand:TX 1 "register_operand" "w")))]
-  "TARGET_FLOAT && (reload_completed || reload_in_progress)"
+  "reload_completed || reload_in_progress"
   "fmov\\t%x0, %d1"
   [(set_attr "type" "f_mrc")
    (set_attr "length" "4")
@@ -3716,7 +3705,7 @@
         (truncate:DI
 	  (lshiftrt:TX (match_operand:TX 1 "register_operand" "w")
 		       (const_int 64))))]
-  "TARGET_FLOAT && (reload_completed || reload_in_progress)"
+  "reload_completed || reload_in_progress"
   "fmov\\t%x0, %1.d[1]"
   [(set_attr "type" "f_mrc")
    (set_attr "length" "4")
@@ -3726,7 +3715,7 @@
   [(set (zero_extract:TX (match_operand:TX 0 "register_operand" "+w")
                          (const_int 64) (const_int 64))
         (zero_extend:TX (match_operand:DI 1 "register_operand" "r")))]
-  "TARGET_FLOAT && (reload_completed || reload_in_progress)"
+  "reload_completed || reload_in_progress"
   "fmov\\t%0.d[1], %x1"
   [(set_attr "type" "f_mcr")
    (set_attr "length" "4")
@@ -3735,7 +3724,7 @@
 (define_insn "aarch64_mov<mode>low_di"
   [(set (match_operand:TX 0 "register_operand" "=w")
         (zero_extend:TX (match_operand:DI 1 "register_operand" "r")))]
-  "TARGET_FLOAT && (reload_completed || reload_in_progress)"
+  "reload_completed || reload_in_progress"
   "fmov\\t%d0, %x1"
   [(set_attr "type" "f_mcr")
    (set_attr "length" "4")
@@ -3743,9 +3732,9 @@
 
 (define_insn "aarch64_movtilow_tilow"
   [(set (match_operand:TI 0 "register_operand" "=w")
-        (zero_extend:TI
+        (zero_extend:TI 
 	  (truncate:DI (match_operand:TI 1 "register_operand" "w"))))]
-  "TARGET_FLOAT && (reload_completed || reload_in_progress)"
+  "reload_completed || reload_in_progress"
   "fmov\\t%d0, %d1"
   [(set_attr "type" "fmov")
    (set_attr "length" "4")
