@@ -1,3 +1,10 @@
+2014-09-03  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r213659.
+	2014-08-06  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/vdup_n_2.c: New test.
+
 2014-08-26  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r213701.
@@ -26,21 +33,23 @@
 
 	GCC Linaro 4.9-2014.08 released.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213555.
 	2014-08-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	PR target/61713
 	* gcc.dg/pr61756.c: New test.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213376.
 	2014-07-31  Charles Baylis  <charles.baylis@linaro.org>
 
 	PR target/61948
 	* gcc.target/arm/pr61948.c: New test case.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212959, r212976, r212999, r213000.
 	2014-07-24  Jiong Wang  <jiong.wang@arm.com>
@@ -90,7 +99,7 @@
 	* gcc.target/aarch64/test_frame_14.c: Likewise.
 	* gcc.target/aarch64/test_frame_15.c: Likewise.
 
-2014-08-10 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-10  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212023, r212024.
 	2014-06-26  Vidya Praveen  <vidyapraveen@arm.com>

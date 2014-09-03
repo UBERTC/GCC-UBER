@@ -1,3 +1,11 @@
+2014-09-03  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r213659.
+	2014-08-06  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_evpc_dup): Enable for bigendian.
+	(aarch64_expand_vec_perm_const): Check for dup before zip.
+
 2014-09-02  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r213651.
@@ -215,7 +223,7 @@
 	TARGET_HARD_FLOAT.
 	(get_fpscr) : Likewise.
 
-2014-08-22 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-22  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212989, r213628.
 	2014-08-05  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
@@ -238,7 +246,7 @@
 	GCC Linaro 4.9-2014.08 released.
 	* LINARO-VERSION: Update.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212912, r212913.
 	2014-07-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
@@ -251,7 +259,7 @@
 	* config/aarch64/aarch64.md: Delete UNSPEC_CLS.
 	(clrsb<mode>2): Use clrsb RTL code instead of UNSPEC_CLS.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r213555.
 	2014-08-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
@@ -260,7 +268,7 @@
 	* gcc/optabs.c (expand_atomic_test_and_set): Do not try to emit
 	move to subtarget in serial version if result is ignored.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r213376.
 	2014-07-31  Charles Baylis  <charles.baylis@linaro.org>
@@ -270,7 +278,7 @@
 	constraints are satisfied.
 	(<shift>di3_neon): Likewise.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r211270, r211271, r211273, r211275, r212943,
 	r212945, r212946, r212947, r212949, r212950, r212951, r212952, r212954,
@@ -422,7 +430,7 @@
 	(aarch64_setup_incoming_varargs): Adjust location of
 	saved_varargs_size.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212753.
 	2014-07-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
@@ -430,7 +438,7 @@
 	* config/aarch64/aarch64.c (aarch64_frint_unspec_p): New function.
 	(aarch64_rtx_costs): Handle FIX, UNSIGNED_FIX, UNSPEC.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212752.
 	2014-07-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
@@ -444,7 +452,7 @@
 	(vmlsl_high_lane_u16): Likewise.
 	(vmlsl_high_lane_u32): Likewise.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212512.
 	2014-07-14  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
@@ -457,7 +465,7 @@
 	* config/arm/cortex-m4.md (cortex_m4_alu): Likewise.
 	* config/arm/cortex-r4.md (cortex_r4_alu): Likewise.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212358.
 	2014-07-08  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
@@ -465,7 +473,7 @@
 	* config/arm/arm.c (cortexa5_extra_costs): New table.
 	(arm_cortex_a5_tune): Use cortexa5_extra_costs.
 
-2014-08-11 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212296.
 	2014-07-04  Tom de Vries  <tom@codesourcery.com>
@@ -473,7 +481,7 @@
 	* config/aarch64/aarch64-simd.md
 	(define_insn "vec_unpack_trunc_<mode>"): Fix constraint.
 
-2014-08-10 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-10  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r212142, r212225.
 	2014-07-02  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
@@ -487,7 +495,7 @@
 	* config/aarch64/aarch64.c (aarch64_expand_vec_perm): Remove assert
 	against bigendian and adjust indices.
 
-2014-08-10 Yvan Roux  <yvan.roux@linaro.org>
+2014-08-10  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r211779.
 	2014-06-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
@@ -1958,6 +1966,7 @@
 	* LINARO-VERSION: Bump version.
 
 2014-05-14  Yvan Roux  <yvan.roux@linaro.org>
+
 	GCC Linaro 4.9-2014.05 released.
 	* LINARO-VERSION: Update.
 
