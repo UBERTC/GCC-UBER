@@ -1,5 +1,14 @@
 2014-09-03  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r214503.
+	2014-08-26  Evandro Menezes <e.menezes@samsung.com>
+
+	* config/arm/aarch64/aarch64.c (generic_addrcost_table): Delete
+	qi cost; add di cost.
+	(cortexa57_addrcost_table): Likewise.
+
+2014-09-03  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213659.
 	2014-08-06  Alan Lawrence  <alan.lawrence@arm.com>
 
