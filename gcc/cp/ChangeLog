@@ -1,3 +1,46 @@
+2014-08-26  Jason Merrill  <jason@redhat.com>
+
+	PR c++/58624
+	* pt.c (tsubst_copy_and_build) [VAR_DECL]: Use TLS wrapper.
+	* semantics.c (finish_id_expression): Don't call TLS wrapper in a
+	template.
+
+2014-08-25  Jason Merrill  <jason@redhat.com>
+
+	PR c++/62129
+	* class.c (outermost_open_class): New.
+	* cp-tree.h: Declare it.
+	* decl.c (maybe_register_incomplete_var): Use it.
+	(complete_vars): Handle any constant variable.
+	* expr.c (cplus_expand_constant): Handle CONSTRUCTOR.
+
+2014-08-22  Igor Zamyatin  <igor.zamyatin@intel.com>
+
+	PR other/62008
+	* cp-array-notation.c (build_array_notation_ref): Added correct
+	handling of case with incorrect array.
+
+2014-08-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/61214
+	PR tree-optimization/62091
+	* decl2.c (decl_needed_p): Return true for virtual functions when
+	devirtualizing.
+
+	Backport:
+	PR c++/61566
+	* pt.c (instantiate_class_template_1): Ignore lambda on
+	CLASSTYPE_DECL_LIST.
+	(push_template_decl_real): A lambda is not primary.
+	* lambda.c (maybe_add_lambda_conv_op): Distinguish between being
+	currently in a function and the lambda living in a function.
+
+	Backport:
+	PR c++/60417
+	* init.c (build_vec_init): Set CONSTRUCTOR_IS_DIRECT_INIT on
+	init-list for trailing elements.
+	* typeck2.c (process_init_constructor_array): Likewise.
+
 2014-08-07  Jason Merrill  <jason@redhat.com>
 
 	PR c++/61959

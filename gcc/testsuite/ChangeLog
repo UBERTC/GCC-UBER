@@ -1,3 +1,187 @@
+2014-09-03  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/62015
+	* g++.dg/ipa/pr62015.C: New test.
+
+2014-09-03  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61986
+	* gcc.dg/ipa/pr61986.c: New test.
+
+2014-09-03  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2014-09-02  Marek Polacek  <polacek@redhat.com>
+
+	PR fortran/62270
+	* gfortran.dg/pointer_intent_7.f90: Adjust dg-error.
+
+2014-09-03  Marek Polacek  <polacek@redhat.com>
+
+	PR c/62294
+	* gcc.dg/pr56724-1.c: New test.
+	* gcc.dg/pr56724-2.c: New test.
+	* gcc.dg/pr62294.c: New test.
+	* gcc.dg/pr62294.h: New file.
+
+2014-09-01  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2014-09-01  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/62312
+	* gcc.c-torture/compile/pr62312.c: New.
+
+2014-09-01  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	Backport from mainline
+	2014-09-01  Maciej W. Rozycki  <macro@codesourcery.com>
+
+	* gcc.dg/tree-ssa/loop-19.c: Exclude classic FPU Power targets.
+
+2014-08-27  Guozhi Wei  <carrot@google.com>
+
+	PR target/62262
+	* gcc.target/aarch64/pr62262.c: New test.
+
+2014-08-26  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* gfortran.dg/bessel_7.f90: Bump allowed precision to avoid
+	failure on s390*-*-linux-gnu.
+
+2014-08-24  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2014-08-24  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/61996
+	* gcc.target/sh/pr61996.c: New.
+
+2014-08-22  Igor Zamyatin  <igor.zamyatin@intel.com>
+
+	PR other/62008
+	* c-c++-common/cilk-plus/AN/pr62008.c: New test.
+
+2014-08-21  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/62214
+	* gfortran.dg/array_assignment_5.f90:  New test.
+
+2014-08-20  Martin Jambor  <mjambor@suse.cz>
+	    Wei Mi  <wmi@google.com>
+
+	PR ipa/60449
+	PR middle-end/61776
+	* testsuite/gcc.dg/lto/pr60449_1.c: New test.
+	* testsuite/gcc.dg/lto/pr60449_0.c: New test.
+	* testsuite/gcc.dg/pr61776.c: New test.
+
+2014-08-19  Janis Johnson  <janisjo@codesourcery.com>
+
+	Backport from mainline:
+	2014-08-19  Janis Johnson  <janisjo@codesourcery.com>
+
+	* lib/target-supports.exp
+	(check_effective_target_arm_v8_neon_ok_nocache): Add
+	"-march-armv8-a" to compile flags.
+
+2014-08-15  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/62142
+	* gfortran.dg/realloc_on_assign_24.f90:  New test.
+
+2014-08-15  Tom de Vries  <tom@codesourcery.com>
+
+	Backport from mainline:
+	2014-08-14  Tom de Vries  <tom@codesourcery.com>
+
+	PR rtl-optimization/62004
+	PR rtl-optimization/62030
+	* gcc.dg/pr62004.c: New test.
+	* gcc.dg/pr62030.c: Same.
+	* gcc.target/mips/pr62030-octeon.c: Same.
+
+2014-08-15  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/62106
+	* gfortran.dg/array_constructor_49.f90:  New test.
+
+2014-08-15  Jakub Jelinek  <jakub@redhat.com>
+	    Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/62131
+	* gfortran.dg/gomp/pr62131.f90: New test.
+
+2014-08-14  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2014-08-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/61713
+	* gcc.dg/pr61756.c: New test.
+
+2014-08-14  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2014-08-12  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR middle-end/62103
+	* gcc.c-torture/execute/bitfld-6.c: New test.
+
+2014-08-12  Felix Yang  <fei.yang0953@gmail.com>
+
+	PR tree-optimization/62073
+	* gcc.dg/vect/pr62073.c: New test.
+
+2014-08-12  Janis Johnson  <janisjo@codesourcery.com>
+
+	Backport from mainline
+	2014-08-12  Janis Johnson  <janisjo@codesourcery.com>
+
+	* lib/target/supports.exp
+	(check_effective_target_arm_v8_neon_ok_nocache): Check for armv8
+	or later.
+
+	* gcc.dg/pr59418.c: Don't add ARM options for a Thumb1 multilib.
+
+	* gcc.target/arm/neon-vext-execute.c: Skip if the test won't run
+	on Neon hardware.
+
+	* gcc.target/arm/pr48784.c: Skip for thumb1 multilib.
+	* gcc.target/arm/pr59985.c: Likewise.
+
+2014-08-12  Igor Zamyatin  <igor.zamyatin@intel.com>
+
+	PR other/61962
+	* c-c++-common/cilk-plus/AN/pr61962.c: New test.
+
+2014-08-12  Ganesh Gopalasubramanian <Ganesh.Gopalasubramanian@amd.com>
+
+	Backport from mainline
+	2014-06-16  Ganesh Gopalasubramanian
+		    <Ganesh.Gopalasubramanian@amd.com>
+
+	* gcc.target/i386/xop-imul64-vector.c: Remove the check for
+	vpmacsdql instruction.
+
+2014-08-11  Janis Johnson  <janisjo@codesourcery.com>
+
+	Backport from mainline
+	2014-08-11  Janis Johnson  <janisjo@codesourcery.com>
+
+	* lib/target-supports.exp (check_effective_target_arm_thumb1_ok,
+	check_effective_target_arm_thumb2_ok): Test with code that passes
+	an argument and returns a result.
+
+	* gcc.target/arm/frame-pointer-1.c: Skip if Thumb is not supported.
+	* gcc.target/arm/pr56184.C: Likewise.
+	* gcc.target/arm/pr59896.c: Likewise.
+	* gcc.target/arm/stack-red-zone.c: Likewise.
+	* gcc.target/arm/thumb-find-work-register.c: Likewise.
+
 2014-08-10  Thomas Koenig  <tkoenig@gcc.gnu.org>
 
 	Backport from trunk

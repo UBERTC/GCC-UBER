@@ -1233,6 +1233,13 @@ add_or_update_dep_1 (dep_t new_dep, bool resolved_p,
       switch (ask_dependency_caches (new_dep))
 	{
 	case DEP_PRESENT:
+	  dep_t present_dep;
+	  sd_iterator_def sd_it;
+      
+	  present_dep = sd_find_dep_between_no_cache (DEP_PRO (new_dep),
+						      DEP_CON (new_dep),
+						      resolved_p, &sd_it);
+	  DEP_MULTIPLE (present_dep) = 1;
 	  return DEP_PRESENT;
 
 	case DEP_CHANGED:

@@ -3258,12 +3258,13 @@ ix86_option_override_internal (bool main_args_p,
 	| PTA_FMA | PTA_PRFCHW | PTA_FXSR | PTA_XSAVE 
 	| PTA_XSAVEOPT | PTA_FSGSBASE},
      {"bdver4", PROCESSOR_BDVER4, CPU_BDVER4,
-        PTA_64BIT | PTA_MMX | PTA_SSE | PTA_SSE2 | PTA_SSE3
-        | PTA_SSE4A | PTA_CX16 | PTA_ABM | PTA_SSSE3 | PTA_SSE4_1
-        | PTA_SSE4_2 | PTA_AES | PTA_PCLMUL | PTA_AVX | PTA_AVX2 
+	PTA_64BIT | PTA_MMX | PTA_SSE | PTA_SSE2 | PTA_SSE3
+	| PTA_SSE4A | PTA_CX16 | PTA_ABM | PTA_SSSE3 | PTA_SSE4_1
+	| PTA_SSE4_2 | PTA_AES | PTA_PCLMUL | PTA_AVX | PTA_AVX2 
 	| PTA_FMA4 | PTA_XOP | PTA_LWP | PTA_BMI | PTA_BMI2 
 	| PTA_TBM | PTA_F16C | PTA_FMA | PTA_PRFCHW | PTA_FXSR 
-	| PTA_XSAVE | PTA_XSAVEOPT | PTA_FSGSBASE},
+	| PTA_XSAVE | PTA_XSAVEOPT | PTA_FSGSBASE | PTA_RDRND
+	| PTA_MOVBE},
       {"btver1", PROCESSOR_BTVER1, CPU_GENERIC,
 	PTA_64BIT | PTA_MMX |  PTA_SSE  | PTA_SSE2 | PTA_SSE3
 	| PTA_SSSE3 | PTA_SSE4A |PTA_ABM | PTA_CX16 | PTA_PRFCHW
@@ -45095,8 +45096,10 @@ ix86_expand_sse2_mulvxdi3 (rtx op0, rtx op1, rtx op2)
       /* t4: ((B*E)+(A*F))<<32, ((D*G)+(C*H))<<32 */
       emit_insn (gen_ashlv2di3 (t4, t3, GEN_INT (32)));
 
-      /* op0: (((B*E)+(A*F))<<32)+(B*F), (((D*G)+(C*H))<<32)+(D*H) */
-      emit_insn (gen_xop_pmacsdql (op0, op1, op2, t4));
+      /* Multiply lower parts and add all */
+      t5 = gen_reg_rtx (V2DImode);
+      emit_insn (gen_vec_widen_umult_even_v4si (t5, gen_lowpart (V4SImode, op1), gen_lowpart (V4SImode, op2)));
+      op0 = expand_binop (mode, add_optab, t5, t4, op0, 1, OPTAB_DIRECT);
     }
   else
     {
