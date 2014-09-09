@@ -1,3 +1,12 @@
+2014-09-09  Venkataramanan Kumar  <venkataramanan.kumar@linaro.org>
+
+	Backport from trunk r215004.
+	2014-09-07 Venkataramanan Kumar <venkataramanan.kumar@linaro.org>
+
+	PR target/63190
+	* config/aarch64/aarch64.md (stack_protect_test_<mode>) Add register
+	constraint for operand0 and remove write only modifier from operand3.
+
 2014-09-09  Michael Collison  <michael.collison@linaro.org>
 
 	Backport from trunk r212178
