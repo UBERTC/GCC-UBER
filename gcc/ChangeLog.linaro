@@ -1,5 +1,13 @@
 2014-10-03  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r214947.
+	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-builtins.c (enum aarch64_type_qualifiers):
+	Remove qualifier_const_pointer, update comment.
+
+2014-10-03  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r214940.
 	2014-09-05  James Greenhalgh  <james.greenhalgh@arm.com>
 
