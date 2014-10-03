@@ -1,5 +1,13 @@
 2014-10-03  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r214959.
+	2014-09-05  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/cortex-a53.md (cortex_a53_fpalu): Add f_rints, f_rintd,
+	f_minmaxs, f_minmaxd types.
+
+2014-10-03  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r214947.
 	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
 
