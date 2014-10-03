@@ -1,5 +1,13 @@
 2014-10-03  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r214940.
+	2014-09-05  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.md (sibcall_value_insn): Give operand 1
+	DImode.
+
+2014-10-03  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213090.
 	2014-07-26  Andrew Pinski  <apinski@cavium.com>
 
