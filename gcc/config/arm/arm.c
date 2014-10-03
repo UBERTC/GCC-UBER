@@ -17490,24 +17490,7 @@ arm_reorg (void)
 
 /* Routines to output assembly language.  */
 
-/* If the rtx is the correct value then return the string of the number.
-   In this way we can ensure that valid double constants are generated even
-   when cross compiling.  */
-const char *
-fp_immediate_constant (rtx x)
-{
-  REAL_VALUE_TYPE r;
-
-  if (!fp_consts_inited)
-    init_fp_table ();
-
-  REAL_VALUE_FROM_CONST_DOUBLE (r, x);
-
-  gcc_assert (REAL_VALUES_EQUAL (r, value_fp0));
-  return "0";
-}
-
-/* As for fp_immediate_constant, but value is passed directly, not in rtx.  */
+/* Return string representation of passed in real value.  */
 static const char *
 fp_const_from_val (REAL_VALUE_TYPE *r)
 {
@@ -17598,14 +17581,22 @@ arm_output_multireg_pop (rtx *operands, bool return_pc, rtx cond, bool reverse,
 /* Output the assembly for a store multiple.  */
 
 const char *
-vfp_output_fstmd (rtx * operands)
+vfp_output_vstmd (rtx * operands)
 {
   char pattern[100];
   int p;
   int base;
   int i;
+  rtx addr_reg = REG_P (XEXP (operands[0], 0))
+		   ? XEXP (operands[0], 0)
+		   : XEXP (XEXP (operands[0], 0), 0);
+  bool push_p =  REGNO (addr_reg) == SP_REGNUM;
 
-  strcpy (pattern, "fstmfdd%?\t%m0!, {%P1");
+  if (push_p)
+    strcpy (pattern, "vpush%?.64\t{%P1");
+  else
+    strcpy (pattern, "vstmdb%?.64\t%m0!, {%P1");
+
   p = strlen (pattern);
 
   gcc_assert (REG_P (operands[1]));
@@ -18412,19 +18403,19 @@ output_move_vfp (rtx *operands)
   switch (GET_CODE (addr))
     {
     case PRE_DEC:
-      templ = "f%smdb%c%%?\t%%0!, {%%%s1}%s";
+      templ = "v%smdb%%?.%s\t%%0!, {%%%s1}%s";
       ops[0] = XEXP (addr, 0);
       ops[1] = reg;
       break;
 
     case POST_INC:
-      templ = "f%smia%c%%?\t%%0!, {%%%s1}%s";
+      templ = "v%smia%%?.%s\t%%0!, {%%%s1}%s";
       ops[0] = XEXP (addr, 0);
       ops[1] = reg;
       break;
 
     default:
-      templ = "f%s%c%%?\t%%%s0, %%1%s";
+      templ = "v%sr%%?.%s\t%%%s0, %%1%s";
       ops[0] = reg;
       ops[1] = mem;
       break;
@@ -18432,7 +18423,7 @@ output_move_vfp (rtx *operands)
 
   sprintf (buff, templ,
 	   load ? "ld" : "st",
-	   dp ? 'd' : 's',
+	   dp ? "64" : "32",
 	   dp ? "P" : "",
 	   integer_p ? "\t%@ int" : "");
   output_asm_insn (buff, ops);
@@ -22072,15 +22063,12 @@ arm_print_operand (FILE *stream, rtx x, int code)
 	  break;
 
 	case CONST_DOUBLE:
-          if (TARGET_NEON)
-            {
-              char fpstr[20];
-              real_to_decimal (fpstr, CONST_DOUBLE_REAL_VALUE (x),
-			       sizeof (fpstr), 0, 1);
-              fprintf (stream, "#%s", fpstr);
-            }
-          else
-	    fprintf (stream, "#%s", fp_immediate_constant (x));
+	  {
+            char fpstr[20];
+            real_to_decimal (fpstr, CONST_DOUBLE_REAL_VALUE (x),
+			      sizeof (fpstr), 0, 1);
+            fprintf (stream, "#%s", fpstr);
+	  }
 	  break;
 
 	default:

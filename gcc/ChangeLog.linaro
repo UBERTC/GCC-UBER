@@ -1,5 +1,99 @@
 2014-10-03  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215050, r215051, r215052, r215053, r215054,
+	r215055, r215056.
+	2014-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (vfp_pop_multiple_with_writeback): Use vldm
+	mnemonic instead of fldmfdd.
+	* config/arm/arm.c (vfp_output_fstmd): Rename to...
+	(vfp_output_vstmd): ... This.  Convert output to UAL syntax.
+	Output vpush when address register is SP.
+	* config/arm/arm-protos.h (vfp_output_fstmd): Rename to...
+	(vfp_output_vstmd): ... This.
+	* config/arm/vfp.md (push_multi_vfp): Update call to
+	vfp_output_vstmd.
+
+	2014-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/vfp.md (*movcc_vfp): Use UAL syntax.
+
+	2014-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/vfp.md (*sqrtsf2_vfp): Use UAL assembly syntax.
+	(*sqrtdf2_vfp): Likewise.
+	(*cmpsf_vfp): Likewise.
+	(*cmpsf_trap_vfp): Likewise.
+	(*cmpdf_vfp): Likewise.
+	(*cmpdf_trap_vfp): Likewise.
+
+	2014-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/vfp.md (*extendsfdf2_vfp): Use UAL assembly syntax.
+	(*truncdfsf2_vfp): Likewise.
+	(*truncsisf2_vfp): Likewise.
+	(*truncsidf2_vfp): Likewise.
+	(fixuns_truncsfsi2): Likewise.
+	(fixuns_truncdfsi2): Likewise.
+	(*floatsisf2_vfp): Likewise.
+	(*floatsidf2_vfp): Likewise.
+	(floatunssisf2): Likewise.
+	(floatunssidf2): Likewise.
+
+	2014-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/vfp.md (*mulsf3_vfp): Use UAL assembly syntax.
+	(*muldf3_vfp): Likewise.
+	(*mulsf3negsf_vfp): Likewise.
+	(*muldf3negdf_vfp): Likewise.
+	(*mulsf3addsf_vfp): Likewise.
+	(*muldf3adddf_vfp): Likewise.
+	(*mulsf3subsf_vfp): Likewise.
+	(*muldf3subdf_vfp): Likewise.
+	(*mulsf3negsfaddsf_vfp): Likewise.
+	(*fmuldf3negdfadddf_vfp): Likewise.
+	(*mulsf3negsfsubsf_vfp): Likewise.
+	(*muldf3negdfsubdf_vfp): Likewise.
+
+	2014-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/vfp.md (*abssf2_vfp): Use UAL assembly syntax.
+	(*absdf2_vfp): Likewise.
+	(*negsf2_vfp): Likewise.
+	(*negdf2_vfp): Likewise.
+	(*addsf3_vfp): Likewise.
+	(*adddf3_vfp): Likewise.
+	(*subsf3_vfp): Likewise.
+	(*subdf3_vfp): Likewise.
+	(*divsf3_vfp): Likewise.
+	(*divdf3_vfp): Likewise.
+
+	2014-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (output_move_vfp): Use UAL syntax for load/store
+	multiple.
+	(arm_print_operand): Don't convert real values to decimal
+	representation in default case.
+	(fp_immediate_constant): Delete.
+	* config/arm/arm-protos.h (fp_immediate_constant): Likewise.
+	* config/arm/vfp.md (*arm_movsi_vfp): Convert to VFP moves to UAL
+	syntax.
+	(*thumb2_movsi_vfp): Likewise.
+	(*movdi_vfp): Likewise.
+	(*movdi_vfp_cortexa8): Likewise.
+	(*movhf_vfp_neon): Likewise.
+	(*movhf_vfp): Likewise.
+	(*movsf_vfp): Likewise.
+	(*thumb2_movsf_vfp): Likewise.
+	(*movdf_vfp): Likewise.
+	(*thumb2_movdf_vfp): Likewise.
+	(*movsfcc_vfp): Likewise.
+	(*thumb2_movsfcc_vfp): Likewise.
+	(*movdfcc_vfp): Likewise.
+	(*thumb2_movdfcc_vfp): Likewise.
+
+2014-10-03  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r214959.
 	2014-09-05  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
