@@ -1,5 +1,14 @@
 2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215136.
+	2014-09-10  Xinliang David Li  <davidxl@google.com>
+
+	PR target/63209
+	* config/arm/arm.md (movcond_addsi): Handle case where source
+	and target operands are the same.
+
+2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215086.
 	2014-09-09  Marcus Shawcroft  <marcus.shawcroft@arm.com>
 	Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>

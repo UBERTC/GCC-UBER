@@ -1,5 +1,13 @@
 2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215136.
+	2014-09-10  Xinliang David Li  <davidxl@google.com>
+
+	PR target/63209
+	* gcc.c-torture/execute/pr63209.c: New test.
+
+2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215067.
 	2014-09-09  Jiong Wang  <jiong.wang@arm.com>
 
