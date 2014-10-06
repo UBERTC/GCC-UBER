@@ -1,3 +1,13 @@
+2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r215101.
+	2014-09-10  Tony Wang  <tony.wang@arm.com>
+
+	PR target/56846
+	* libsupc++/eh_personality.cc (PERSONALITY_FUNCTION):
+	Return with CONTINUE_UNWINDING when the state pattern
+	contains: _US_VIRTUAL_UNWIND_FRAME | _US_FORCE_UNWIND
+
 2014-09-10  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.9-2014.09 released.
