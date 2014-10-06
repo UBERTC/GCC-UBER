@@ -1,3 +1,10 @@
+2014-10-06  venkataramanan kumar  <venkataramanan.kumar@linaro.org>
+
+	Backport from trunk r214943.
+	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/simd/vrbit_1.c: New test.
+
 2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r215385.
