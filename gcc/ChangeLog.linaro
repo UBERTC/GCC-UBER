@@ -1,5 +1,16 @@
 2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215086.
+	2014-09-09  Marcus Shawcroft  <marcus.shawcroft@arm.com>
+	Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	 * config/aarch64/aarch64-elf-raw.h (ENDFILE_SPEC): Add crtfastmath.o.
+         * config/aarch64/aarch64-linux.h (GNU_USER_TARGET_MATH_ENDFILE_SPEC):
+	Define.
+        (ENDFILE_SPEC): Define and use GNU_USER_TARGET_MATH_ENDFILE_SPEC.
+
+2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215067.
 	2014-09-09  Jiong Wang  <jiong.wang@arm.com>
 
