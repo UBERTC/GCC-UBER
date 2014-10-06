@@ -1,3 +1,11 @@
+2014-10-06  Kugan Vivekanandarajah  <kugan.vivekanandarajah@linaro.org>
+
+	Backport from trunk r214944.
+	2014-09-05  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/cortex-a53.md (cortex_a53_alu_shift): Add alu_ext,
+	alus_ext.
+
 2014-10-06  Venkataramanan Kumar  <venkataramanan.kumar@linaro.org>
 
 	Backport from trunk r214943.
