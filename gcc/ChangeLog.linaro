@@ -1,3 +1,12 @@
+2014-10-06  Charles Baylis  <charles.baylis@linaro.org>
+
+	Backport from trunk r214945.
+	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-builtins.c (aarch64_simd_expand_args): Replace
+	varargs with pointer parameter.
+	(aarch64_simd_expand_builtin): pass pointer into previous.
+
 2014-10-06  Kugan Vivekanandarajah  <kugan.vivekanandarajah@linaro.org>
 
 	Backport from trunk r214944.
