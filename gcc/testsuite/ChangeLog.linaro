@@ -1,5 +1,13 @@
 2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215385.
+	2014-09-19  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.dg/ssp-3.c: New.
+	* gcc.dg/ssp-4.c: Likewise.
+
+2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215136.
 	2014-09-10  Xinliang David Li  <davidxl@google.com>
 

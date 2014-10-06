@@ -1,5 +1,13 @@
 2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215385.
+	2014-09-19  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.md (stack_protect_test_<mode>): Mark
+	scratch register as written.
+
+2014-10-06  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215346.
 	2014-09-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
