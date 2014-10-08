@@ -1,5 +1,15 @@
 2014-10-08  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215471.
+	2014-09-22  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/geniterators.sh: New.
+	* config/aarch64/iterators.md (VDQF_DF): New.
+	* config/aarch64/t-aarch64: Generate aarch64-builtin-iterators.h.
+	* config/aarch64/aarch64-builtins.c (BUILTIN_*) Remove.
+
+2014-10-08  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215206, r215207, r215208.
 	2014-09-12  Wilco Dijkstra  <wilco.dijkstra@arm.com>
 
