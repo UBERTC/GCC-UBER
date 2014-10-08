@@ -1,3 +1,31 @@
+2014-10-08  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r214825, r214826, r215085.
+	2014-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/arm/vect-lceilf_1.c: Make input and output arrays global
+	and 16-byte aligned.
+	* gcc.target/arm/vect-lfloorf_1.c: Likewise.
+	* gcc.target/arm/vect-lroundf_1.c: Likewise.
+	* gcc.target/arm/vect-rounding-btruncf.c: Likewise.
+	* gcc.target/arm/vect-rounding-ceilf.c: Likewise.
+	* gcc.target/arm/vect-rounding-floorf.c: Likewise.
+	* gcc.target/arm/vect-rounding-roundf.c: Likewise.
+
+	2014-09-02  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/62275
+	* gcc.target/arm/vect-lceilf_1.c: New test.
+	* gcc.target/arm/vect-lfloorf_1.c: Likewise.
+	* gcc.target/arm/vect-lroundf_1.c: Likewise.
+
+	2014-09-02  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/62275
+	* gcc.target/arm/lceil-vcvt_1.c: New test.
+	* gcc.target/arm/lfloor-vcvt_1.c: Likewise.
+	* gcc.target/arm/lround-vcvt_1.c: Likewise.
+
 2014-10-06  Venkataramanan Kumar  <venkataramanan.kumar@linaro.org>
 
 	Backport from trunk r214943.
