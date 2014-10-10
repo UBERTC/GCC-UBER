@@ -1,3 +1,28 @@
+2014-10-10  Yvan Roux  <yvan.roux@linaro.org>
+
+	Revert:
+	2014-10-08  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r215206, r215207, r215208.
+	2014-09-12  Wilco Dijkstra  <wilco.dijkstra@arm.com>
+
+	* gcc/config/aarch64/aarch64.c (cortexa57_regmove_cost): New cost table
+	for A57.
+	(cortexa53_regmove_cost): New cost table for A53.  Increase GP2FP/FP2GP
+	cost to spilling from integer to FP registers.
+
+	2014-09-12  Wilco Dijkstra  <wilco.dijkstra@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_register_move_cost): Fix Q register
+	move handling.
+	(generic_regmove_cost): Undo raised FP2FP move cost as Q register moves
+	are now handled correctly.
+
+	2014-09-12  Wilco Dijkstra  <wilco.dijkstra@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_register_move_cost): Add cost
+	handling of CALLER_SAVE_REGS and POINTER_REGS.
+
 2014-10-08  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r214825, r214826.

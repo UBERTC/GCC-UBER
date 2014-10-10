@@ -218,27 +218,10 @@ static const struct cpu_regmove_cost generic_regmove_cost =
   NAMED_PARAM (GP2GP, 1),
   NAMED_PARAM (GP2FP, 2),
   NAMED_PARAM (FP2GP, 2),
-  NAMED_PARAM (FP2FP, 2)
-};
-
-static const struct cpu_regmove_cost cortexa57_regmove_cost =
-{
-  NAMED_PARAM (GP2GP, 1),
-  /* Avoid the use of slow int<->fp moves for spilling by setting
-     their cost higher than memmov_cost.  */
-  NAMED_PARAM (GP2FP, 5),
-  NAMED_PARAM (FP2GP, 5),
-  NAMED_PARAM (FP2FP, 2)
-};
-
-static const struct cpu_regmove_cost cortexa53_regmove_cost =
-{
-  NAMED_PARAM (GP2GP, 1),
-  /* Avoid the use of slow int<->fp moves for spilling by setting
-     their cost higher than memmov_cost.  */
-  NAMED_PARAM (GP2FP, 5),
-  NAMED_PARAM (FP2GP, 5),
-  NAMED_PARAM (FP2FP, 2)
+  /* We currently do not provide direct support for TFmode Q->Q move.
+     Therefore we need to raise the cost above 2 in order to have
+     reload handle the situation.  */
+  NAMED_PARAM (FP2FP, 4)
 };
 
 /* Generic costs for vector insn classes.  */
@@ -298,7 +281,7 @@ static const struct tune_params cortexa53_tunings =
 {
   &cortexa53_extra_costs,
   &generic_addrcost_table,
-  &cortexa53_regmove_cost,
+  &generic_regmove_cost,
   &generic_vector_cost,
   NAMED_PARAM (memmov_cost, 4),
   NAMED_PARAM (issue_rate, 2)
@@ -308,7 +291,7 @@ static const struct tune_params cortexa57_tunings =
 {
   &cortexa57_extra_costs,
   &cortexa57_addrcost_table,
-  &cortexa57_regmove_cost,
+  &generic_regmove_cost,
   &cortexa57_vector_cost,
   NAMED_PARAM (memmov_cost, 4),
   NAMED_PARAM (issue_rate, 3)
@@ -5910,13 +5893,6 @@ aarch64_register_move_cost (enum machine_mode mode,
   const struct cpu_regmove_cost *regmove_cost
     = aarch64_tune_params->regmove_cost;
 
-  /* Caller save and pointer regs are equivalent to GENERAL_REGS.  */
-  if (to == CALLER_SAVE_REGS || to == POINTER_REGS)
-    to = GENERAL_REGS;
-
-  if (from == CALLER_SAVE_REGS || from == POINTER_REGS)
-    from = GENERAL_REGS;
-
   /* Moving between GPR and stack cost is the same as GP2GP.  */
   if ((from == GENERAL_REGS && to == STACK_REG)
       || (to == GENERAL_REGS && from == STACK_REG))
@@ -5939,7 +5915,7 @@ aarch64_register_move_cost (enum machine_mode mode,
      secondary reload.  A general register is used as a scratch to move
      the upper DI value and the lower DI value is moved directly,
      hence the cost is the sum of three moves. */
-  if (! TARGET_SIMD && GET_MODE_SIZE (mode) == 16)
+  if (! TARGET_SIMD && GET_MODE_SIZE (mode) == 128)
     return regmove_cost->GP2FP + regmove_cost->FP2GP + regmove_cost->FP2FP;
 
   return regmove_cost->FP2FP;
