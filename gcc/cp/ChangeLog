@@ -1,3 +1,75 @@
+2014-10-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/63415
+	* pt.c (value_dependent_expression_p) [CONSTRUCTOR]: Check the type.
+	(iterative_hash_template_arg): Likewise.
+
+	PR c++/63437
+	* cp-tree.h (REF_PARENTHESIZED_P): Also allow INDIRECT_REF.
+	* semantics.c (force_paren_expr): And set it.
+	* typeck.c (check_return_expr): And handle it.
+
+2014-10-08  Jason Merrill  <jason@redhat.com>
+
+	PR c++/63405
+	* pt.c (tsubst_pack_expansion): Limit simple expansion to type packs.
+
+2014-09-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/63249
+	* semantics.c (handle_omp_array_sections_1): Call mark_rvalue_use
+	on low_bound and length.
+
+2014-09-22  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/62219
+	* pt.c (check_default_tmpl_args): Check LAMBDA_FUNCTION_P.
+
+2014-09-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/61465
+	* call.c (convert_like_real) [ck_identity]: Call mark_rvalue_use
+	after pulling out an element from a CONSTRUCTOR.
+
+2014-09-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/63248
+	* semantics.c (finish_omp_clauses): Don't call cp_omp_mappable_type
+	on type of type dependent expressions, and don't call it if
+	handle_omp_array_sections has kept TREE_LIST because something
+	was type dependent.
+	* pt.c (tsubst_expr) <case OMP_TARGET, case OMP_TARGET_DATA>:
+	Use keep_next_level, begin_omp_structured_block and
+	finish_omp_structured_block instead of push_stmt_list and
+	pop_stmt_list.
+
+2014-09-10  Jason Merrill  <jason@redhat.com>
+
+	PR c++/63139
+	* pt.c (tsubst_pack_expansion): Simplify substitution into T....
+
+2014-09-09  Jason Merrill  <jason@redhat.com>
+
+	PR lto/53808
+	PR c++/61659
+	* decl2.c (note_comdat_fn): New.
+	(set_comdat): New.
+	(cp_write_global_declarations): Call set_comdat.
+	* method.c (implicitly_declare_fn): Call note_comdat_fn.
+	* pt.c (tsubst_decl) [FUNCTION_DECL]: Likewise.
+	* decl2.c (mark_needed): Mark clones.
+	(import_export_decl): Not here.
+
+	PR c++/61214
+	PR c++/62224
+	* decl2.c (decl_needed_p): Revert virtual functions change.
+
+2014-09-05  Jason Merrill  <jason@redhat.com>
+
+	PR c++/62659
+	* semantics.c (potential_constant_expression_1): Handle un-folded
+	pointer to member constants.
+
 2014-08-26  Jason Merrill  <jason@redhat.com>
 
 	PR c++/58624

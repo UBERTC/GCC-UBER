@@ -1,3 +1,532 @@
+2014-10-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/63379
+	* tree-vect-slp.c (vect_get_constant_vectors): Do not compute
+	a neutral operand for min/max when it is not a reduction chain.
+
+2014-10-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2014-10-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* configure.ac: Add --enable-fix-cortex-a53-835769 option.
+	* configure: Regenerate.
+	* config/aarch64/aarch64.c (aarch64_override_options): Handle
+	TARGET_FIX_ERR_A53_835769_DEFAULT.
+	* config/aarch64/aarch64.opt (mfix-cortex-a53-835769): Set Init
+	value to 2.
+	* doc/install.texi (aarch64*-*-*): Document new
+	--enable-fix-cortex-a53-835769 option.
+
+2014-10-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2014-10-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+	            Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/aarch64/aarch64.h (FINAL_PRESCAN_INSN): Define.
+	(ADJUST_INSN_LENGTH): Define.
+	* config/aarch64/aarch64.opt (mfix-cortex-a53-835769): New option.
+	* config/aarch64/aarch64.c (is_mem_p): New function.
+	(is_memory_op): Likewise.
+	(aarch64_prev_real_insn): Likewise.
+	(is_madd_op): Likewise.
+	(dep_between_memop_and_curr): Likewise.
+	(aarch64_madd_needs_nop): Likewise.
+	(aarch64_final_prescan_insn): Likewise.
+	* doc/invoke.texi (AArch64 Options): Document -mfix-cortex-a53-835769
+	and -mno-fix-cortex-a53-835769 options.
+
+2014-10-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/63380
+	* tree-ssa-tail-merge.c (stmt_local_def): Exclude stmts that
+	may trap.
+
+2014-10-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61969
+	* tree-nrv.c (pass_nrv::execute): Properly test for automatic
+	variables.
+
+2014-10-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-10-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR rtl-optimization/57003
+	* regcprop.c (copyprop_hardreg_forward_1): If ksvd.ignore_set_reg,
+	also check CALL_INSN_FUNCTION_USAGE for clobbers again after
+	killing regs_invalidated_by_call.
+
+2014-10-08  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2014-10-08  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/52941
+	* config/sh/sync.md (atomic_exchangesi_hard, atomic_exchange<mode>_hard,
+	atomic_fetch_<fetchop_name>si_hard,
+	atomic_fetch_<fetchop_name><mode>_hard, atomic_fetch_nandsi_hard,
+	atomic_fetch_nand<mode>_hard, atomic_<fetchop_name>_fetchsi_hard,
+	atomic_<fetchop_name>_fetch<mode>_hard, atomic_nand_fetchsi_hard,
+	atomic_nand_fetch<mode>_hard): Add missing set of T_REG.
+
+2014-10-03  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/61144
+	* varpool.c (ctor_for_folding): Do not fold WEAK symbols.
+
+2014-10-03  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/62121
+	* ipa-devirt.c (restrict_to_inner_class): Do not ICE when type is
+	unknown.
+
+2014-10-03  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR lto/62026
+	* lto-streamer-out.c (lto_output): Handle thunks correctly.
+	* cgraphclones.c (duplicate_thunk_for_node): Get thunk's arguments.
+
+2014-10-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libgomp/61200
+	* omp-low.c (taskreg_contexts): New variable.
+	(scan_omp_parallel): Push newly created context into taskreg_contexts
+	vector and move record layout code to finish_taskreg_scan.
+	(scan_omp_task): Likewise.
+	(finish_taskreg_scan): New function.
+	(execute_lower_omp): Call finish_taskreg_scan on all taskreg_contexts
+	vector elements and release it.
+
+2014-10-02  Martin Jambor  <mjambor@suse.cz>
+
+	PR tree-optimization/63375
+	* tree-sra.c (build_access_from_expr_1): Disqualify volatile
+	references.
+
+2014-10-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/63342
+	* dwarf2out.c (loc_list_from_tree): Handle TARGET_MEM_REF and
+	SSA_NAME.
+
+	PR target/63428
+	* config/i386/i386.c (expand_vec_perm_pshufb): Fix up rperm[0]
+	argument to avx2_permv2ti.
+
+	PR c++/63306
+	Backported from mainline
+	2014-08-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	PR regression/61510
+	* cgraphunit.c (analyze_functions): Use get_create rather than get
+	for decls which are clones of abstract functions.
+
+2014-10-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2014-09-18  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR debug/63285
+	* haifa-sched.c (schedule_block): Advance cycle at the end of BB
+	if advance != 0.
+
+	2014-09-10  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR tree-optimization/63186
+	* ipa-split.c (test_nonssa_use): Skip nonforced labels.
+	(mark_nonssa_use): Likewise.
+	(verify_non_ssa_vars): Verify all header blocks for label
+	definitions.
+
+2014-10-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2014-10-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (*store_minmaxsi): Disable for arm_restrict_it.
+
+2014-10-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2014-09-30  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (fmodxf3): Enable for flag_finite_math_only only.
+	(fmod<mode>3): Ditto.
+	(fpremxf4_i387): Ditto.
+	(reminderxf3): Ditto.
+	(reminder<mode>3): Ditto.
+	(fprem1xf4_i387): Ditto.
+
+2014-09-30  David Malcolm  <dmalcolm@redhat.com>
+
+	PR plugins/63410
+	* Makefile.in (PLUGIN_HEADERS): Add pass-instances.def.
+
+2014-09-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR inline-asm/63282
+	* ifcvt.c (dead_or_predicable): Don't call redirect_jump_1
+	or invert_jump_1 if jump isn't any_condjump_p.
+
+2014-09-29  James Clarke  <jrtc27@jrtc27.com>
+	    Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR target/61407
+	* config/darwin-c.c (version_as_macro): Added extra 0 for OS X 10.10
+	and above.
+	* config/darwin-driver.c (darwin_find_version_from_kernel): Removed
+	kernel version check to avoid incrementing it after every major OS X
+	release.
+	(darwin_default_min_version): Avoid static memory buffer.
+
+2014-09-29  Charles Baylis  <charles.baylis@linaro.org>
+
+	Backport from mainline r212303
+	PR target/49423
+	* config/arm/arm-protos.h (arm_legitimate_address_p,
+	arm_is_constant_pool_ref): Add prototypes.
+	* config/arm/arm.c (arm_legitimate_address_p): Remove static.
+	(arm_is_constant_pool_ref) New function.
+	* config/arm/arm.md (unaligned_loadhis, arm_zero_extendhisi2_v6,
+	arm_zero_extendqisi2_v6): Use Uh constraint for memory operand.
+	(arm_extendhisi2, arm_extendhisi2_v6): Use Uh constraint for memory
+	operand and remove pool_range and neg_pool_range attributes.
+	(arm_extendqihi_insn, arm_extendqisi, arm_extendqisi_v6): Remove
+	pool_range and neg_pool_range attributes.
+	* config/arm/constraints.md (Uh): New constraint. (Uq): Don't allow
+	constant pool references.
+
+2014-09-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/63247
+	* omp-low.c (lower_omp_target): For OMP_CLAUSE_MAP_POINTER
+	of ARRAY_TYPE, if not OMP_CLAUSE_MAP_ZERO_BIAS_ARRAY_SECTION
+	use the alignment of avar rather than ovar.
+
+2014-09-28  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.c (pa_output_function_epilogue): Only update
+	last_address when a nonnote insn is found.
+
+2014-09-25  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2014-09-25  Nick Clifton  <nickc@redhat.com>
+	2014-09-25  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/62218
+	* config/sh/sync.md (atomic_fetch_nand<mode>_soft_imask,
+	atomic_test_and_set_soft_imask): Fix typo in instruction sequence.
+
+2014-09-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r215559
+	2014-09-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/63335
+	* config/rs6000/rs6000-c.c (altivec_build_resolved_builtin):
+	Exclude VSX_BUILTIN_XVCMPGEDP_P from special handling.
+
+2014-09-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/63341
+	* tree-vectorizer.h (vect_create_data_ref_ptr,
+	vect_create_addr_base_for_vector_ref): Add another tree argument
+	defaulting to NULL_TREE.
+	* tree-vect-data-refs.c (vect_create_data_ref_ptr): Add byte_offset
+	argument, pass it down to vect_create_addr_base_for_vector_ref.
+	(vect_create_addr_base_for_vector_ref): Add byte_offset argument,
+	add that to base_offset too if non-NULL.
+	* tree-vect-stmts.c (vectorizable_load): Add byte_offset variable,
+	for dr_explicit_realign_optimized set it to vector byte size
+	- 1 instead of setting offset, pass byte_offset down to
+	vect_create_data_ref_ptr.
+
+2014-09-23  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2014-09-23  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.md (f32_vsx): New mode attributes to
+	refine the constraints used on 32/64-bit floating point moves.
+	(f32_av): Likewise.
+	(f64_vsx): Likewise.
+	(f64_dm): Likewise.
+	(f64_av): Likewise.
+	(BOOL_REGS_OUTPUT): Use wt constraint for TImode instead of wa.
+	(BOOL_REGS_OP1): Likewise.
+	(BOOL_REGS_OP2): Likewise.
+	(BOOL_REGS_UNARY): Likewise.
+	(mov<mode>_hardfloat, SFmode/SDmode): Tighten down constraints for
+	32/64-bit floating point moves.  Do not use wa, instead use ww/ws
+	for moves involving VSX registers.  Do not use constraints that
+	target VSX registers for decimal types.
+	(mov<mode>_hardfloat32, DFmode/DDmode): Likewise.
+	(mov<mode>_hardfloat64, DFmode/DDmode): Likewise.
+
+2014-09-22  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2014-05-21  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/61272
+	* ubsan.c (is_ubsan_builtin_p): Turn assert into a condition.
+
+2014-09-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/63328
+	* omp-low.c (ipa_simd_modify_stmt_ops): For debug stmts
+	insert a debug source bind stmt setting DEBUG_EXPR_DECL
+	instead of a normal gimple assignment stmt.
+
+2014-09-19  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk:
+	2014-09-19  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/predicates.md (fusion_gpr_mem_load): Move testing
+	for base_reg_operand to be common between LO_SUM and PLUS.
+	(fusion_gpr_mem_combo): New predicate to match a fused address
+	that combines the addis and memory offset address.
+
+	* config/rs6000/rs6000-protos.h (fusion_gpr_load_p): Change
+	calling signature.
+	(emit_fusion_gpr_load): Likewise.
+
+	* config/rs6000/rs6000.c (fusion_gpr_load_p): Change calling
+	signature to pass each argument separately, rather than
+	using an operands array.  Rewrite the insns found by peephole2 to
+	be a single insn, rather than hoping the insns will still be
+	together when the peephole pass is done.  Drop being called via a
+	normal peephole.
+	(emit_fusion_gpr_load): Change calling signature to be called from
+	the fusion_gpr_load_<mode> insns with a combined memory address
+	instead of the peephole pass passing the addis and offset
+	separately.
+
+	* config/rs6000/rs6000.md (UNSPEC_FUSION_GPR): New unspec for GPR
+	fusion.
+	(power8 fusion peephole): Drop support for doing power8 via a
+	normal peephole that was created by the peephole2 pass.
+	(power8 fusion peephole2): Create a new insn with the fused
+	address, so that the fused operation is kept together after
+	register allocation is done.
+	(fusion_gpr_load_<mode>): Likewise.
+
+2014-09-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/62017
+	* asan.c (transform_statements): Don't instrument clobber statements.
+
+2014-09-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/63284
+	* tree-cfgcleanup.c (fixup_noreturn_call): Don't split block
+	if there are only debug stmts after the noreturn call, instead
+	remove the debug stmts.
+
+2014-09-17  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config.gcc (*-*-rtems*): Default to 'rtems' thread model.
+	Enable selection of 'posix' or no thread model.
+
+2014-09-16  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/61853
+	* config/pa/pa.c (pa_function_value): Directly handle aggregates
+	that fit exactly in a word or double word.
+
+2014-09-15  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	* doc/install.texi (Options specification): add
+	--disable-libsanitizer item.
+
+2014-09-12  DJ Delorie  <dj@redhat.com>
+
+	* config/msp430/msp430.md (extendhipsi2): Use 20-bit form of RLAM/RRAM.
+	(extend_and_shift1_hipsi2): Likewise.
+	(extend_and_shift2_hipsi2): Likewise.
+
+2014-09-12  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/61654
+	* cgraph.h (cgraph_analyze_function): Declare.
+	* cgraphunit.c: (analyze_function): Remove forward declaration,
+	rename to cgraph_analyze_function, made external.
+	* cgraphclones.c (duplicate_thunk_for_node): Copy arguments of the
+        new decl properly.  Analyze the new thunk if it is expanded.
+
+2014-09-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2014-09-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/63228
+	* config/i386/i386.c (ix86_option_override_internal): Also turn
+	off OPTION_MASK_ABI_X32 for -m16.
+
+2014-09-11  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline.
+	2014-09-11  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/arm_neon.h (vmull_high_lane_s16): Fix argument
+	types.
+	(vmull_high_lane_s32): Likewise.
+	(vmull_high_lane_u16): Likewise.
+	(vmull_high_lane_u32): Likewise.
+
+2014-09-11  Alan Lawrence  <alan.lawrence@arm.com>
+
+	Backport r214946 from mainline
+	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.md (adddi3_aarch64): Set type to neon_add.
+
+2014-09-11  Alan Lawrence  <alan.lawrence@arm.com>
+
+	Backport r214953 from mainline
+	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/arm_neon.h (int32x1_t, int16x1_t, int8x1_t,
+	uint32x1_t, uint16x1_t, uint8x1_t): Remove typedefs.
+
+	(vqabsb_s8, vqabsh_s16, vqabss_s32, vqaddb_s8, vqaddh_s16, vqadds_s32,
+	vqaddb_u8, vqaddh_u16, vqadds_u32, vqdmlalh_s16, vqdmlalh_lane_s16,
+	vqdmlals_s32, vqdmlslh_s16, vqdmlslh_lane_s16, vqdmlsls_s32,
+	vqdmulhh_s16, vqdmulhh_lane_s16, vqdmulhs_s32, vqdmulhs_lane_s32,
+	vqdmullh_s16, vqdmullh_lane_s16, vqdmulls_s32, vqdmulls_lane_s32,
+	vqmovnh_s16, vqmovns_s32, vqmovnd_s64, vqmovnh_u16, vqmovns_u32,
+	vqmovnd_u64, vqmovunh_s16, vqmovuns_s32, vqmovund_s64, vqnegb_s8,
+	vqnegh_s16, vqnegs_s32, vqrdmulhh_s16, vqrdmulhh_lane_s16,
+	vqrdmulhs_s32, vqrdmulhs_lane_s32, vqrshlb_s8, vqrshlh_s16,
+	vqrshls_s32, vqrshlb_u8, vqrshlh_u16, vqrshls_u32, vqrshrnh_n_s16,
+	vqrshrns_n_s32, vqrshrnd_n_s64, vqrshrnh_n_u16, vqrshrns_n_u32,
+	vqrshrnd_n_u64, vqrshrunh_n_s16, vqrshruns_n_s32, vqrshrund_n_s64,
+	vqshlb_s8, vqshlh_s16, vqshls_s32, vqshlb_u8, vqshlh_u16, vqshls_u32,
+	vqshlb_n_s8, vqshlh_n_s16, vqshls_n_s32, vqshlb_n_u8, vqshlh_n_u16,
+	vqshls_n_u32, vqshlub_n_s8, vqshluh_n_s16, vqshlus_n_s32,
+	vqshrnh_n_s16, vqshrns_n_s32, vqshrnd_n_s64, vqshrnh_n_u16,
+	vqshrns_n_u32, vqshrnd_n_u64, vqshrunh_n_s16, vqshruns_n_s32,
+	vqshrund_n_s64, vqsubb_s8, vqsubh_s16, vqsubs_s32, vqsubb_u8,
+	vqsubh_u16, vqsubs_u32, vsqaddb_u8, vsqaddh_u16, vsqadds_u32,
+	vuqaddb_s8, vuqaddh_s16, vuqadds_s32): Replace all int{32,16,8}x1_t
+	with int{32,16,8}_t.
+
+2014-09-11  Jason Merrill  <jason@redhat.com>
+
+	PR c++/58678
+	* ipa-devirt.c (ipa_devirt): Don't check DECL_COMDAT.
+
+2014-09-11  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2014-09-11 trunk r215152.
+
+	PR target/63223
+	* config/avr/avr.md (*tablejump.3byte-pc): New insn.
+	(*tablejump): Restrict to !AVR_HAVE_EIJMP_EICALL.  Add void clobber.
+	(casesi): Expand to *tablejump.3byte-pc if AVR_HAVE_EIJMP_EICALL.
+
+2014-09-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2014-09-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/vsx.md (vsx_fmav4sf4): Use correct constraints for
+	V2DF, V4SF, DF, and DI modes.
+	(vsx_fmav2df2): Likewise.
+	(vsx_float_fix_<mode>2): Likewise.
+	(vsx_reduc_<VEC_reduc_name>_v2df_scalar): Likewise.
+
+2014-09-10  Xinliang David Li  <davidxl@google.com>
+
+	Backport from mainline
+	PR target/63209
+	* config/arm/arm.md (movcond_addsi): Handle case where source
+	and target operands are the same.
+
+2014-09-10  Alan Modra  <amodra@gmail.com>
+
+	PR debug/60655
+	* dwarf2out.c (mem_loc_descriptor <PLUS>): Return NULL if addend
+	can't be output.
+
+2014-09-09  Bill Schmidt  <wschmidt@us.ibm.com>
+
+	Backported from mainline
+	2014-09-04  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/vsx.md (*vsx_extract_<mode>_load): Always match
+	selection of 0th memory doubleword, regardless of endianness.
+
+2014-09-09  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline
+	2014-09-09  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* doc/invoke.texi (-march): Use GNU/Linux rather than Linux.
+	(-mtune): Likewise.
+	(-mcpu): Likewise.
+
+2014-09-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/61214
+	PR c++/62224
+	* gimple-fold.c (can_refer_decl_in_current_unit_p): Don't allow
+	reference to a DECL_EXTERNAL COMDAT.
+
+2014-09-09  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/61672
+	* emit-rtl.h (mem_attrs_eq_p): Declare.
+	* emit-rtl.c (mem_attrs_eq_p): Export.  Handle NULL mem-attrs.
+	* cse.c (exp_equiv_p): Use mem_attrs_eq_p.
+	* cfgcleanup.c (merge_memattrs): Likewise.
+	Include emit-rtl.h.
+
+	2014-08-11  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62075
+	* tree-vect-slp.c (vect_detect_hybrid_slp_stmts): Properly
+	handle uses in patterns.
+
+	2014-08-14  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/62079
+	* recog.c (peephole2_optimize): If peep2_do_cleanup_cfg
+	run cleanup_cfg.
+
+	2014-08-26  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62175
+	* tree-ssa-loop-niter.c (expand_simple_operations): Do not
+	expand possibly trapping operations.
+
+2014-09-08  DJ Delorie  <dj@redhat.com>
+
+	* doc/invoke.texi (MSP430 Options): Add -minrt.
+
+2014-09-05  Easwaran Raman  <eraman@google.com>
+
+	Backport from mainline
+	PR rtl-optimization/62146
+	* ifcvt.c (dead_or_predicable): Make removal of REG_EQUAL note of
+	hoisted instruction unconditional.
+
+2014-09-04  Guozhi Wei  <carrot@google.com>
+
+	PR target/62040
+	* config/aarch64/iterators.md (VQ_NO2E, VQ_2E): New iterators.
+	* config/aarch64/aarch64-simd.md (move_lo_quad_internal_<mode>): Split
+	it into two patterns.
+	(move_lo_quad_internal_be_<mode>): Likewise.
+
 2014-09-03  Martin Jambor  <mjambor@suse.cz>
 
 	PR ipa/62015

@@ -4208,9 +4208,12 @@ pa_output_function_epilogue (FILE *file, HOST_WIDE_INT size ATTRIBUTE_UNUSED)
     {
       last_address = extra_nop ? 4 : 0;
       insn = get_last_nonnote_insn ();
-      last_address += INSN_ADDRESSES (INSN_UID (insn));
-      if (INSN_P (insn))
-	last_address += insn_default_length (insn);
+      if (insn)
+	{
+	  last_address += INSN_ADDRESSES (INSN_UID (insn));
+	  if (INSN_P (insn))
+	    last_address += insn_default_length (insn);
+	}
       last_address = ((last_address + FUNCTION_BOUNDARY / BITS_PER_UNIT - 1)
 		      & ~(FUNCTION_BOUNDARY / BITS_PER_UNIT - 1));
     }
@@ -9313,6 +9316,12 @@ pa_function_value (const_tree valtype,
       || TREE_CODE (valtype) == COMPLEX_TYPE
       || TREE_CODE (valtype) == VECTOR_TYPE)
     {
+      HOST_WIDE_INT valsize = int_size_in_bytes (valtype);
+
+      /* Handle aggregates that fit exactly in a word or double word.  */
+      if ((valsize & (UNITS_PER_WORD - 1)) == 0)
+	return gen_rtx_REG (TYPE_MODE (valtype), 28);
+
       if (TARGET_64BIT)
 	{
           /* Aggregates with a size less than or equal to 128 bits are
@@ -9321,7 +9330,7 @@ pa_function_value (const_tree valtype,
 	     memory.  */
 	  rtx loc[2];
 	  int i, offset = 0;
-	  int ub = int_size_in_bytes (valtype) <= UNITS_PER_WORD ? 1 : 2;
+	  int ub = valsize <= UNITS_PER_WORD ? 1 : 2;
 
 	  for (i = 0; i < ub; i++)
 	    {
@@ -9333,7 +9342,7 @@ pa_function_value (const_tree valtype,
 
 	  return gen_rtx_PARALLEL (BLKmode, gen_rtvec_v (ub, loc));
 	}
-      else if (int_size_in_bytes (valtype) > UNITS_PER_WORD)
+      else if (valsize > UNITS_PER_WORD)
 	{
 	  /* Aggregates 5 to 8 bytes in size are returned in general
 	     registers r28-r29 in the same manner as other non

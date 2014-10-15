@@ -4337,6 +4337,9 @@ dead_or_predicable (basic_block test_bb, basic_block merge_bb,
   old_dest = JUMP_LABEL (jump);
   if (other_bb != new_dest)
     {
+      if (!any_condjump_p (jump))
+	goto cancel;
+
       if (JUMP_P (BB_END (dest_edge->src)))
 	new_dest_label = JUMP_LABEL (BB_END (dest_edge->src));
       else if (new_dest == EXIT_BLOCK_PTR_FOR_FN (cfun))
@@ -4387,17 +4390,14 @@ dead_or_predicable (basic_block test_bb, basic_block merge_bb,
       insn = head;
       do
 	{
-	  rtx note, set;
+	  rtx note;
 
 	  if (! INSN_P (insn))
 	    continue;
 	  note = find_reg_note (insn, REG_EQUAL, NULL_RTX);
 	  if (! note)
 	    continue;
-	  set = single_set (insn);
-	  if (!set || !function_invariant_p (SET_SRC (set))
-	      || !function_invariant_p (XEXP (note, 0)))
-	    remove_note (insn, note);
+	  remove_note (insn, note);
 	} while (insn != end && (insn = NEXT_INSN (insn)));
 
       /* PR46315: when moving insns above a conditional branch, the REG_EQUAL
