@@ -1,3 +1,29 @@
+2014-10-30  David Edelsohn
+
+	Backported from mainline.
+	2014-10-30  David Edelsohn  <dje.gcc@gmail.com>
+
+	* configure.host (aix4.3+, 5+): Do not use -G in link command.
+
+2014-10-30  Release Manager
+
+	* GCC 4.9.2 released.
+
+2014-10-18  François Dumont  <fdumont@gcc.gnu.org>
+	    Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/63500
+	* include/debug/functions.h (__foreign_iterator_aux2): Do not check for
+	foreign iterators if input iterators returns rvalue reference.
+	* testsuite/23_containers/vector/63500.cc: New.
+
+2014-10-14  Kai Tietz  <ktietz@redhat.com>
+
+	PR libstdc++/57440
+	* config/os/mingw32/os_defines.h (_GTHREAD_USE_MUTEX_INIT_FUNC):
+	Define to avoid leak.
+	* config/os/mingw32-w64/os_defines.h: Likewise.
+
 2014-10-08  Edward Smith-Rowland  <3dw4rd@verizon.net>
 
 	Implement SD-6: SG10 Feature Test Recommendations

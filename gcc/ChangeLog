@@ -1,3 +1,333 @@
+2014-10-31  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64-elf-raw.h (CA53_ERR_835769_SPEC): Define.
+	(LINK_SPEC): Include CA53_ERR_835769_SPEC.
+	* config/aarch64/aarch64-linux.h (CA53_ERR_835769_SPEC): Define.
+	(LINK_SPEC): Include CA53_ERR_835769_SPEC.
+
+2014-10-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/63697
+	* tree-vrp.c (simplify_internal_call_using_ranges): For subcode ==
+	MINUS_EXPR, check overflow on vr0.min - vr1.max and vr0.max - vr1.min
+	instead of vr0.min - vr1.min and vr0.max - vr1.max.
+
+2014-10-30  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR63633
+	* config/avr/avr-protos.h (regmask): New inline function.
+	(avr_fix_inputs, avr_emit3_fix_outputs): New protos.
+	* config/avr/avr.c (avr_fix_operands, avr_move_fixed_operands)
+	(avr_fix_inputs, avr_emit3_fix_outputs): New functions.
+	* config/avr/avr-fixed.md (mulqq3_nomul, muluqq3_nomul)
+	(mul<ALL2QA>3, mul<ALL4A>3, <usdiv><ALL1Q>3, <usdiv><ALL2QA>3)
+	(<usdiv><ALL4A>3, round<ALL124QA>3): Fix input operands.
+	* config/avr/avr-dimode.md (add<ALL8>3, sub<ALL8>3)
+	(<ss_addsub><ALL8S>3, <us_addsub><ALL8U>3, cbranch<ALL8>4)
+	(<di_shifts><ALL8>3, <any_extend>mulsidi3): Fix input operands.
+	* config/avr/avr.md (mulqi3_call, mulhi3_call, mulsi3, mulpsi3)
+	(mulu<QIHI>si3, muls<QIHI>si3, mulohisi3, <any_extend>mulhisi3)
+	(usmulhisi3, <any_extend>mulhi3_highpart, mulsqipsi3)
+	(fmul, fmuls, fmulsu): Fix operands.  Turn insn into expander as
+	needed.
+
+2014-10-30  Jakub Jelinek  <jakub@redhat.com>
+
+	* BASE-VER: Set to 4.9.3.
+	* DEV-PHASE: Set to prerelease.
+
+2014-10-30  Release Manager
+
+	* GCC 4.9.2 released.
+
+2014-10-29  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_madd_needs_nop): Restore
+	recog state after aarch64_prev_real_insn call.
+
+2014-10-27  Guozhi Wei  <carrot@google.com>
+
+	PR tree-optimization/63530
+	tree-vect-data-refs.c (vect_create_addr_base_for_vector_ref): Set
+	pointer alignment according to DR_MISALIGNMENT.
+
+2014-10-25  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/63638
+	* asan.c (enum asan_check_flags): Fixed ASAN_CHECK_LAST.
+
+2014-10-24  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	PR bootstrap/63632
+	* collect2.c (main): Filter out -fno-lto.
+
+2014-10-22  Richard Biener  <rguenther@suse.de>
+	    Tobias Burnus <burnus@net-b.de>
+
+	PR lto/63603
+	* gcc.c (LINK_COMMAND_SPEC): Add %{fno-lto}.
+
+2014-10-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/63563
+	* tree-vect-data-refs.c (vect_analyze_data_ref_accesses): Bail out
+	if either dra or drb stmts are not normal loads/stores.
+
+2014-10-17  Jakub Jelinek  <jakub@redhat.com>
+
+	* asan.c (instrument_derefs): Allow instrumentation of odd-sized
+	accesses even for -fsanitize=address.
+	(execute_sanopt): Only allow use_calls for -fsanitize=kernel-address.
+
+	PR tree-optimization/63302
+	* tree-ssa-reassoc.c (optimize_range_tests_xor,
+	optimize_range_tests_diff): Use !integer_pow2p () instead of
+	tree_log2 () < 0.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	* asan.c (instrument_derefs): Enable unaligned path for KASan.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-10-03  Yury Gribov  <y.gribov@samsung.com>
+
+	* asan.c (asan_finish_file): Disable __asan_init calls for KASan;
+	don't emit empty ctors.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-09-01  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/61897
+	PR sanitizer/62140
+
+	* asan.c (asan_mem_ref_get_end): Handle non-ptroff_t lengths.
+	(build_check_stmt): Likewise.
+	(instrument_strlen_call): Likewise.
+	(asan_expand_check_ifn): Likewise and fix types.
+	(maybe_cast_to_ptrmode): New function.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-08-18  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/62089
+
+	* asan.c (instrument_derefs): Fix bitfield check.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-08-11  Yury Gribov  <y.gribov@samsung.com>
+
+	* asan.c (asan_check_flags): New enum.
+	(build_check_stmt_with_calls): Removed function.
+	(build_check_stmt): Split inlining logic to
+	asan_expand_check_ifn.
+	(instrument_derefs): Rename parameter.
+	(instrument_mem_region_access): Rename parameter.
+	(instrument_strlen_call): Likewise.
+	(asan_expand_check_ifn): New function.
+	(asan_instrument): Remove old code.
+	(pass_sanopt::execute): Change handling of
+	asan-instrumentation-with-call-threshold.
+	(asan_clear_shadow): Fix formatting.
+	(asan_function_start): Likewise.
+	(asan_emit_stack_protection): Likewise.
+	* doc/invoke.texi (asan-instrumentation-with-call-threshold):
+	Update description.
+	* internal-fn.c (expand_ASAN_CHECK): New function.
+	* internal-fn.def (ASAN_CHECK): New internal function.
+	* params.def (PARAM_ASAN_INSTRUMENTATION_WITH_CALL_THRESHOLD):
+	Update description.
+	(PARAM_ASAN_USE_AFTER_RETURN): Likewise.
+	* tree.c: Small comment fix.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-08-11  Yury Gribov  <y.gribov@samsung.com>
+
+	* gimple.c (gimple_call_fnspec): Support internal functions.
+	(gimple_call_return_flags): Use const.
+	* Makefile.in (GTFILES): Add internal-fn.h to list of GC files.
+	* internal-fn.def: Add fnspec information.
+	* internal-fn.h (internal_fn_fnspec): New function.
+	(init_internal_fns): Declare new function.
+	* internal-fn.c (internal_fn_fnspec_array): New global variable.
+	(init_internal_fns): New function.
+	* tree-core.h: Update macro call.
+	* tree.c (build_common_builtin_nodes): Initialize internal fns.
+
+	Backport from mainline
+	2014-08-12  Yury Gribov  <y.gribov@samsung.com>
+
+	* internal-fn.c (init_internal_fns): Fix off-by-one.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-07-31  Yury Gribov  <y.gribov@samsung.com>
+
+	* doc/cpp.texi (__SANITIZE_ADDRESS__): Updated description.
+	* doc/invoke.texi (-fsanitize=kernel-address): Describe new option.
+	* flag-types.h (SANITIZE_USER_ADDRESS, SANITIZE_KERNEL_ADDRESS):
+	New enums.
+	* gcc.c (sanitize_spec_function): Support new option.
+	(SANITIZER_SPEC): Remove now redundant check.
+	* opts.c (common_handle_option): Support new option.
+	(finish_options): Check for incompatibilities.
+	* toplev.c (process_options): Split userspace-specific checks.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-06-24  Max Ostapenko  <m.ostapenko@partner.samsung.com>
+
+	* asan.c (instrument_strlen_call): Do not instrument first byte in strlen
+	if already instrumented.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-06-16  Yury Gribov  <y.gribov@samsung.com>
+
+	* asan.c (check_func): New function.
+	(maybe_create_ssa_name): Likewise.
+	(build_check_stmt_with_calls): Likewise.
+	(use_calls_p): Likewise.
+	(report_error_func): Change interface.
+	(build_check_stmt): Allow non-integer lengths; add support
+	for new parameter.
+	(asan_instrument): Likewise.
+	(instrument_mem_region_access): Moved code to
+	build_check_stmt.
+	(instrument_derefs): Likewise.
+	(instrument_strlen_call): Likewise.
+	* cfgcleanup.c (old_insns_match_p): Add support for new
+	functions.
+	* doc/invoke.texi: Describe new parameter.
+	* params.def: Define new parameter.
+	* params.h: Likewise.
+	* sanitizer.def: Describe new builtins.
+
+	Backport from mainline
+	2014-06-16  Yury Gribov  <y.gribov@samsung.com>
+
+	* asan.c (build_check_stmt): Fix maybe-uninitialized warning.
+
+	Backport from mainline
+	2014-06-18  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/61530
+
+	* asan.c (build_check_stmt): Add condition.
+
+	Backport from mainline
+	2014-06-18  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/61547
+
+	* asan.c (instrument_strlen_call): Fixed instrumentation of
+	trailing byte.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-05-30  Jakub Jelinek  <jakub@redhat.com>
+
+	* asan.c (report_error_func): Add SLOW_P argument, use
+	BUILT_IN_ASAN_*_N if set.
+	(build_check_stmt): Likewise.
+	(instrument_derefs): If T has insufficient alignment,
+	force same handling as for odd sizes.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-05-30  Jakub Jelinek  <jakub@redhat.com>
+
+	* sanitizer.def (BUILT_IN_ASAN_REPORT_LOAD_N,
+	BUILT_IN_ASAN_REPORT_STORE_N): New.
+	* asan.c (struct asan_mem_ref): Change access_size type to
+	HOST_WIDE_INT.
+	(asan_mem_ref_init, asan_mem_ref_new, get_mem_refs_of_builtin_call,
+	update_mem_ref_hash_table): Likewise.
+	(asan_mem_ref_hasher::hash): Hash in a HWI.
+	(report_error_func): Change size_in_bytes argument to HWI.
+	Use *_N builtins if size_in_bytes is larger than 16 or not power of
+	two.
+	(build_shadow_mem_access): New function.
+	(build_check_stmt): Use it.  Change size_in_bytes argument to HWI.
+	Handle size_in_bytes not power of two or larger than 16.
+	(instrument_derefs): Don't give up if size_in_bytes is not
+	power of two or is larger than 16.
+
+2014-10-15  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/63448
+	* lra-int.h (LRA_MAX_CONSTRAINT_ITERATION_NUMBER): Remove.
+	(LRA_MAX_ASSIGNMENT_ITERATION_NUMBER): New.
+	(LRA_MAX_INHERITANCE_PASSES): Use it.
+	(lra_constraint_iter_after_spill): Remove.
+	(lra_assignment_iter): New.
+	(lra_assignment_iter_after_spill): New.
+	* lra-assigns.c (lra_assignment_iter): New.
+	(lra_assignment_iter_after_spill): New.
+	(former_reload_pseudo_spill_p): New.
+	(spill_for): Set up former_reload_pseudo_spill_p.
+	(setup_live_pseudos_and_spill_after_risky): Ditto.
+	(assign_by_spills): Ditto.
+	(lra_assign): Increment lra_assignment_iter.  Print the iteration
+	number.  Reset former_reload_pseudo_spill_p.  Check
+	lra_assignment_iter_after_spill.
+	* lra.c (lra): Remove lra_constraint_iter_after_spill.  Initialize
+	lra_assignment_iter and lra_assignment_iter_after_spill.
+	* lra-constraints.c (lra_constraint_iter_after_spill): Remove.
+	(lra_constraints): Remove code with
+	lra_assignment_iter_after_spill.
+
+2014-10-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* stor-layout.c (self_referential_size): Do not promote arguments.
+
+2014-10-15  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-08-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62031
+	* tree-data-ref.c (dr_analyze_indices): Do not set
+	DR_UNCONSTRAINED_BASE.
+	(dr_may_alias_p): All indirect accesses have to go the
+	formerly DR_UNCONSTRAINED_BASE path.
+	* tree-data-ref.h (struct indices): Remove
+	unconstrained_base member.
+	(DR_UNCONSTRAINED_BASE): Remove.
+
+2014-10-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r215880
+	2014-10-03  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000-c.c (altivec_resolve_overloaded_builtin):
+	Issue a warning message when vec_lvsl or vec_lvsr is used with a
+	little endian target.
+
+	Backport from mainline r215882
+	2014-10-03  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* altivec.md (altivec_lvsl): New define_expand.
+	(altivec_lvsl_direct): Rename define_insn from altivec_lvsl.
+	(altivec_lvsr): New define_expand.
+	(altivec_lvsr_direct): Rename define_insn from altivec_lvsr.
+	* rs6000.c (rs6000_expand_builtin): Change to use
+	altivec_lvs[lr]_direct; remove commented-out code.
+
 2014-10-10  Richard Biener  <rguenther@suse.de>
 
 	PR tree-optimization/63379
@@ -1212,7 +1542,7 @@
 	* omp-low.c (create_omp_child_function): Don't set DECL_NAMELESS
 	on the FUNCTION_DECL.
 
-	* BASE-VER: Set to 4.9.1.
+	* BASE-VER: Set to 4.9.2.
 	* DEV-PHASE: Set to prerelease.
 
 2014-07-16  Release Manager

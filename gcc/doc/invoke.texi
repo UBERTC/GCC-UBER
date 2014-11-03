@@ -5286,6 +5286,11 @@ more details.  The run-time behavior can be influenced using the
 @url{https://code.google.com/p/address-sanitizer/wiki/Flags#Run-time_flags} for
 a list of supported options.
 
+@item -fsanitize=kernel-address
+@opindex fsanitize=kernel-address
+Enable AddressSanitizer for Linux kernel.
+See @uref{http://code.google.com/p/address-sanitizer/wiki/AddressSanitizerForKernel} for more details.
+
 @item -fsanitize=thread
 @opindex fsanitize=thread
 Enable ThreadSanitizer, a fast data race detector.
@@ -10133,6 +10138,12 @@ Enable detection of use-after-return.  This kind of protection
 is enabled by default when using @option{-fsanitize=address} option.
 To disable use-after-return detection use 
 @option{--param asan-use-after-return=0}.
+
+@item asan-instrumentation-with-call-threshold
+If number of memory accesses in function being instrumented
+is greater or equal to this number, use callbacks instead of inline checks.
+E.g. to disable inline code use
+@option{--param asan-instrumentation-with-call-threshold=0}.
 
 @end table
 @end table

@@ -1,3 +1,209 @@
+2014-10-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/63697
+	* c-c++-common/ubsan/overflow-sub-3.c: New test.
+
+2014-10-30  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR63633
+	* gcc.target/avr/torture/pr63633-ice-mult.c: New test.
+
+2014-10-30  Release Manager
+
+	* GCC 4.9.2 released.
+
+2014-10-29  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/madd_after_asm_1.c: New test.
+
+2014-10-27  Guozhi Wei  <carrot@google.com>
+
+	PR tree-optimization/63530
+	gcc.dg/vect/pr63530.c: New test.
+
+2014-10-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/entry_queues2.adb: New test.
+
+2014-10-25  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/63638
+    	* c-c++-common/asan/pr63638.c: New test.
+
+2014-10-24  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	PR bootstrap/63632
+	* g++.dg/torture/pr63632.C: New test.
+
+2014-10-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/63563
+	* gcc.target/i386/pr63563.c: New test.
+
+2014-10-20  Yury Gribov  <y.gribov@samsung.com>
+
+	Backported from mainline
+	2014-05-30  Jakub Jelinek  <jakub@redhat.com>
+
+	* c-c++-common/asan/misalign-1.c: New test.
+	* c-c++-common/asan/misalign-2.c: New test.
+
+2014-10-17  Jakub Jelinek  <jakub@redhat.com>
+
+	* c-c++-common/asan/instrument-with-calls-1.c: Add
+	-fno-sanitize=address -fsanitize=kernel-address to dg-options.
+	* c-c++-common/asan/instrument-with-calls-2.c: Likewise.
+
+	PR tree-optimization/63302
+	* gcc.c-torture/execute/pr63302.c: New test.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-09-01  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/61897
+	PR sanitizer/62140
+
+	* c-c++-common/asan/pr62140-1.c: New test.
+	* c-c++-common/asan/pr62140-2.c: New test.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-08-18  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/62089
+
+	* c-c++-common/asan/pr62089.c: New test.
+	* c-c++-common/asan/bitfield-1.c: New test.
+	* c-c++-common/asan/bitfield-2.c: New test.
+	* c-c++-common/asan/bitfield-3.c: New test.
+	* c-c++-common/asan/bitfield-4.c: New test.
+
+	Backport from mainline
+	2014-08-28  Yury Gribov  <y.gribov@samsung.com>
+
+	* c-c++-common/asan/pr62089.c: Fix test on 32-bit platforms.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-08-11  Yury Gribov  <y.gribov@samsung.com>
+
+	* c-c++-common/asan/inc.c: Update test.
+	* c-c++-common/asan/instrument-with-calls-2.c: Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-1.c: Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-2.c: Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-3.c: Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-4.c: Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-5.c: Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-6.c: Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-7.c: Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-8.c: Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-9.c: Likewise.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-06-24  Max Ostapenko  <m.ostapenko@partner.samsung.com>
+
+	* c-c++-common/asan/no-redundant-instrumentation-9.c: New test.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-06-16  Yury Gribov  <y.gribov@samsung.com>
+
+	* c-c++-common/asan/instrument-with-calls-1.c: New test.
+	* c-c++-common/asan/instrument-with-calls-2.c: Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-1.c: Update
+	test patterns.
+	* c-c++-common/asan/no-redundant-instrumentation-2.c:
+	Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-4.c:
+	Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-5.c:
+	Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-6.c:
+	Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-7.c:
+	Likewise.
+	* c-c++-common/asan/no-redundant-instrumentation-8.c:
+	Likewise.
+
+	Backport from mainline
+	2014-06-18  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/61530
+
+	* c-c++-common/asan/pr61530.c: New test.
+
+	Backport from mainline
+	2014-06-18  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/61547
+
+	* c-c++-common/asan/strlen-overflow-1.c: New test.
+
+2014-10-16  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2014-05-14  Yury Gribov  <y.gribov@samsung.com>
+
+	PR sanitizer/61100
+
+	* c-c++-common/asan/asan-interface-1.c: New test.
+	* lib/asan-dg.exp (asan_include_flags): New function.
+	(asan_init): Call asan_include_flags to obtain path
+	to sanitizer headers.
+
+2014-10-15  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/63448
+	* gcc.target/i386/pr63448.c: New test.
+
+2014-10-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/opt41.adb: New test.
+	* gnat.dg/opt41_pkg.ad[sb]: New helper.
+
+2014-10-15  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-08-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62031
+	* gcc.dg/torture/pr62031.c: New testcase.
+
+2014-10-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r215880
+	2014-10-03  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* g++.dg/ext/altivec-2.C: Compile with -Wno-deprecated to avoid
+	failing with the new warning message.
+	* gcc.dg/vmx/3c-01a.c: Likewise.
+	* gcc.dg/vmx/ops-long-1.c: Likewise.
+	* gcc.dg/vmx/ops.c: Likewise.
+	* gcc.target/powerpc/altivec-20.c: Likewise.
+	* gcc.target/powerpc/altivec-6.c: Likewise.
+	* gcc.target/powerpc/altivec-vec-merge.c: Likewise.
+	* gcc.target/powerpc/vsx-builtin-8.c: Likewise.
+	* gcc.target/powerpc/warn-lvsl-lvsr.c: New test.
+
+	Backport from mainline r215882
+	2014-10-03  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/lvsl-lvsr.c: New test.
+
+	Backport from mainline r216017
+	2014-10-08  Pat Haugen  <pthaugen@us.ibm.com>
+
+	* gcc.dg/vmx/3c-01a.c: Add default options from vmx.exp.
+	* gcc.dg/vmx/ops.c: Likewise.
+	* gcc.dg/vmx/ops-long-1.c: Likewise.
+
 2014-10-11  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from mainline r216117.

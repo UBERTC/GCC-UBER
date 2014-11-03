@@ -1,3 +1,19 @@
+2014-10-30  Release Manager
+
+	* GCC 4.9.2 released.
+
+2014-10-26  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/linux-unwind.h (pa32_read_access_ok): New function.
+	(pa32_fallback_frame_state): Use pa32_read_access_ok to check if
+	memory read accesses are ok.
+
+2014-10-22  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/63223
+	* config/avr/lib1funcs.S (__do_global_dtors): Reverse execution
+	order to first...last.
+
 2014-09-18  Joseph Myers  <joseph@codesourcery.com>
 
 	* config/i386/sfp-machine.h (FP_TRAPPING_EXCEPTIONS): Treat clear
