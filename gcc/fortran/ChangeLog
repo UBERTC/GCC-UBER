@@ -1,3 +1,21 @@
+2014-10-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/59488
+	* trans-openmp.c (gfc_omp_predetermined_sharing): Return
+	OMP_CLAUSE_DEFAULT_SHARED for parameters or vtables.
+
+2014-09-03  Marek Polacek  <polacek@redhat.com>
+
+	Backport from trunk
+	PR fortran/62270
+	* interface.c (compare_parameter): Fix condition.
+
+2014-08-21  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/62214
+	* gfortran.dg/array_assignment_5.f90:  New test.
+
 2014-08-10  Thomas Koenig  <tkoenig@gcc.gnu.org>
 
 	Backport from trunk
