@@ -1,3 +1,23 @@
+2014-11-13  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r216229, r216230.
+	2014-10-14  Andrew Pinski  <apinski@cavium.com>
+
+	* explow.c (convert_memory_address_addr_space): Rename to ...
+	(convert_memory_address_addr_space_1): This.  Add in_const argument.
+	Inside a CONST RTL, permute the conversion and addition of constant
+	for zero and sign extended pointers.
+	(convert_memory_address_addr_space): New function.
+
+	2014-10-14  Andrew Pinski  <apinski@cavium.com>
+
+	Revert:
+	2011-08-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+        PR middle-end/49721
+        * explow.c (convert_memory_address_addr_space): Also permute the
+        conversion and addition of constant for zero-extend.
+
 2014-10-24  Yvan Roux  <yvan.roux@linaro.org>
 
 	* LINARO-VERSION: Bump version.
