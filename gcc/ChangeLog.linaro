@@ -1,3 +1,13 @@
+2014-11-14  Yvan Roux  <yvan.roux@linaro.org>
+
+	Add Linaro release macros (Linaro only patch.)
+
+	* Makefile.in (LINAROVER, LINAROVER_C, LINAROVER_S): Define.
+	(CFLAGS-cppbuiltin.o): Add LINAROVER macro definition.
+	(cppbuiltin.o): Depend on $(LINAROVER).
+	* cppbuiltin.c (parse_linarover): New.
+	(define_GNUC__): Define __LINARO_RELEASE__ and __LINARO_SPIN__ macros.
+
 2014-11-13  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r216229, r216230.
