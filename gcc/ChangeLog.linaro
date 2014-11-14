@@ -1,5 +1,10 @@
 2014-11-14  Yvan Roux  <yvan.roux@linaro.org>
 
+	GCC Linaro 4.9-2014.11 released.
+	* LINARO-VERSION: Update.
+
+2014-11-14  Yvan Roux  <yvan.roux@linaro.org>
+
 	Add Linaro release macros (Linaro only patch.)
 
 	* Makefile.in (LINAROVER, LINAROVER_C, LINAROVER_S): Define.
