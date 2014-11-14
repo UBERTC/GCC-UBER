@@ -800,10 +800,12 @@ BASEVER     := $(srcdir)/BASE-VER  # 4.x.y
 DEVPHASE    := $(srcdir)/DEV-PHASE # experimental, prerelease, ""
 DATESTAMP   := $(srcdir)/DATESTAMP # YYYYMMDD or empty
 REVISION    := $(srcdir)/REVISION  # [BRANCH revision XXXXXX]
+LINAROVER   := $(srcdir)/LINARO-VERSION # M.x-YYYY.MM[-S][~dev]
 
 BASEVER_c   := $(shell cat $(BASEVER))
 DEVPHASE_c  := $(shell cat $(DEVPHASE))
 DATESTAMP_c := $(shell cat $(DATESTAMP))
+LINAROVER_c := $(shell cat $(LINAROVER))
 
 ifeq (,$(wildcard $(REVISION)))
 REVISION_c  :=
@@ -824,6 +826,7 @@ DEVPHASE_s  := "\"$(if $(DEVPHASE_c), ($(DEVPHASE_c)))\""
 DATESTAMP_s := "\"$(if $(DEVPHASE_c), $(DATESTAMP_c))\""
 PKGVERSION_s:= "\"@PKGVERSION@\""
 BUGURL_s    := "\"@REPORT_BUGS_TO@\""
+LINAROVER_s := "\"$(LINAROVER_c)\""
 
 PKGVERSION  := @PKGVERSION@
 BUGURL_TEXI := @REPORT_BUGS_TEXI@
@@ -4017,10 +4020,9 @@ PREPROCESSOR_DEFINES = \
   -DSTANDARD_EXEC_PREFIX=\"$(libdir)/gcc/\" \
   @TARGET_SYSTEM_ROOT_DEFINE@
 
-CFLAGS-cppbuiltin.o += $(PREPROCESSOR_DEFINES) -DBASEVER=$(BASEVER_s)
-cppbuiltin.o: cppbuiltin.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) \
-	$(TARGET_H) $(TARGET_DEF) $(TREE_H) $(CPP_ID_DATA_H) \
-	cppbuiltin.h version.h Makefile
+CFLAGS-cppbuiltin.o += $(PREPROCESSOR_DEFINES) -DBASEVER=$(BASEVER_s) \
+	-DLINAROVER=$(LINAROVER_s)
+cppbuiltin.o: $(BASEVER) $(LINAROVER)
 
 CFLAGS-cppdefault.o += $(PREPROCESSOR_DEFINES)
 cppdefault.o: cppdefault.c $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) \
