@@ -1,5 +1,14 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r217971.
+	2014-11-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	* params.def (PARAM_MAX_COMPLETELY_PEELED_INSNS): Increase to 200.
+	* config/i386/i386.c (ix86_option_override_internal): Do not increase
+	PARAM_MAX_COMPLETELY_PEELED_INSNS.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r216524.
 	2014-10-21  Andrew Pinski  <apinski@cavium.com>
 
