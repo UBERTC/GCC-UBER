@@ -1,5 +1,12 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215129.
+	2014-09-10  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/vstN_1.c: New test.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215126.
 	2014-09-10  Alan Lawrence  <alan.lawrence@arm.com>
 
