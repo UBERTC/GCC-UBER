@@ -1,5 +1,12 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Fix Backport from trunk r216524 (committed at r218379).
+	Add missing file: config/aarch64/aarch64-cost-tables.h
+
+	* config/aarch64/aarch64-cost-tables.h: New file.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r217076.
 	2014-11-04  Michael Collison <michael.collison@linaro.org>
 
