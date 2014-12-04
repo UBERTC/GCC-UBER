@@ -1,5 +1,14 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215540.
+	2014-09-24  Zhenqiang Chen  <zhenqiang.chen@arm.com>
+
+	PR rtl-optimization/63210
+	* ira-color.c (assign_hard_reg): Ignore conflict cost if the
+	HARD_REGNO is not available for CONFLICT_A.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215046.
 	2014-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
