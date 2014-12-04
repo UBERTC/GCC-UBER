@@ -1,5 +1,18 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r216544.
+	2014-10-22  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/pic-constantpool1.c: Add explicit declaration.
+	* gcc.target/aarch64/pic-symrefplus.c: Likewise.
+	* gcc.target/aarch64/reload-valid-spoff.c: Likewise.
+	* gcc.target/aarch64/vect.x: Likewise.
+	* gcc.target/aarch64/vect-ld1r.x: Add return type.
+	* gcc.target/aarch64/vect-fmax-fmin.c: Likewise.
+	* gcc.target/aarch64/vect-fp.c: Likewise.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r216543.
 	2014-10-22  Jiong Wang  <jiong.wang@arm.com>
 
