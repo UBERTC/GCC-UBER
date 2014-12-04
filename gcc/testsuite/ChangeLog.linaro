@@ -1,5 +1,13 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r214950.
+	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/vget_high_1.c: New test.
+	* gcc.target/aarch64/vget_low_1.c: Likewise.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r214948.
 	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
 

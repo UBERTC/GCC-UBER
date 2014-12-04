@@ -1,5 +1,16 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r214952.
+	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/arm_neon.h (__GET_HIGH): New macro.
+	(vget_high_f32, vget_high_f64, vget_high_p8, vget_high_p16,
+	vget_high_s8, vget_high_s16, vget_high_s32, vget_high_s64,
+	vget_high_u8, vget_high_u16, vget_high_u32, vget_high_u64):
+	Remove temporary __asm__ and reimplement.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r214948, r214949.
 	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
 
