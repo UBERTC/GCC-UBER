@@ -1,5 +1,13 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r216336.
+	2014-10-16  Richard Earnshaw  <rearnsha@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_legitimize_address): New function.
+	(TARGET_LEGITIMIZE_ADDRESS): Redefine.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r216253.
 	2014-10-15  Renlin Li <renlin.li@arm.com>
 
