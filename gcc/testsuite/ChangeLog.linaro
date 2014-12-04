@@ -1,5 +1,16 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215473.
+	2014-09-22  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* lib/target-supports.exp (check_effective_target_whole_vector_shift):
+	New.
+
+	* gcc.dg/vect/vect-reduc-mul_1.c: New test.
+	* gcc.dg/vect/vect-reduc-mul_2.c: New test.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215177.
 	2014-09-11  Alan Lawrence  <alan.lawrence@arm.com>
 
