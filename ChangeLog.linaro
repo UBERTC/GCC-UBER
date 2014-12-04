@@ -1,3 +1,11 @@
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r215865.
+	2014-10-03  Jing Yu  <jingyu@google.com>
+
+	* configure.ac: Add aarch64 to list of targets that support gold.
+	* configure: Regenerate.
+
 2014-11-14  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.9-2014.11 released.
