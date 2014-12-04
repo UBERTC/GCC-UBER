@@ -1,5 +1,14 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r217014.
+	2014-11-02  Michael Collison  <michael.collison@linaro.org>
+
+	* config/arm/arm.h (CLZ_DEFINED_VALUE_AT_ZERO) : Update
+	to support vector modes.
+	(CTZ_DEFINED_VALUE_AT_ZERO): Ditto.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r216996, r216998, r216999, r217001, r217002, r217003,
 	r217004, r217742.
 	2014-11-18  James Greenhalgh  <james.greenhalgh@arm.com>
