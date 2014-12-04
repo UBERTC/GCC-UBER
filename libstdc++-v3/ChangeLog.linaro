@@ -1,3 +1,12 @@
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r216444.
+	2014-10-19  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	* testsuite/lib/libstdc++.exp (v3-copy-file): New proc split from ...
+	(v3-copy-files): ... this.  Update.
+	(check_v3_target_fileio): Fix race on cin_unget-1.txt file.
+
 2014-11-14  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.9-2014.11 released.
