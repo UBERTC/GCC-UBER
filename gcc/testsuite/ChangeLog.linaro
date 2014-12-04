@@ -1,5 +1,12 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215078.
+	2014-09-09  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/vldN_dup_1.c: New test.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215077.
 	2014-09-09  Alan Lawrence  <alan.lawrence@arm.com>
 
