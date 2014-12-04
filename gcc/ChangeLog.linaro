@@ -1,5 +1,13 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r214008.
+	2014-08-15  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_expand_mov_immediate): Move
+	one_match > zero_match case to just before simple_sequence.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213382.
 	2014-07-31  James Greenhalgh  <james.greenhalgh@arm.com>
 
