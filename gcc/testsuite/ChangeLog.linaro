@@ -1,5 +1,12 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215077.
+	2014-09-09  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/vld1-vst1_1.c: Rewrite to test all variants.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215072.
 	2014-09-09  Alan Lawrence  <alan.lawrence@arm.com>
 
