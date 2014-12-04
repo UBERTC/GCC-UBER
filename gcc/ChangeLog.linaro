@@ -1,5 +1,109 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r216996, r216998, r216999, r217001, r217002, r217003,
+	r217004, r217742.
+	2014-11-18  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	PR target/63937
+	* target.def (use_by_pieces_infrastructure_p): Take unsigned
+	HOST_WIDE_INT as the size parameter.
+	* targhooks.c (default_use_by_pieces_infrastructure_p): Likewise.
+	* targhooks.h (default_use_by_pieces_infrastructure_p): Likewise.
+	* config/arc/arc.c (arc_use_by_pieces_infrastructure_p)): Likewise.
+	* config/mips/mips.c (mips_use_by_pieces_infrastructure_p)): Likewise.
+	* config/s390/s390.c (s390_use_by_pieces_infrastructure_p)): Likewise.
+	* config/sh/sh.c (sh_use_by_pieces_infrastructure_p)): Likewise.
+	* config/aarch64/aarch64.c
+	(aarch64_use_by_pieces_infrastructure_p)): Likewise.
+	* doc/tm.texi: Regenerate.
+
+	2014-11-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* doc/tm.texi.in (MOVE_BY_PIECES_P): Remove.
+	(CLEAR_BY_PIECES_P): Likewise.
+	(SET_BY_PIECES_P): Likewise.
+	(STORE_BY_PIECES_P): Likewise.
+	* doc/tm.texi: Regenerate.
+	* system.h: Poison MOVE_BY_PIECES_P, CLEAR_BY_PIECES_P,
+	SET_BY_PIECES_P, STORE_BY_PIECES_P.
+	* expr.c (MOVE_BY_PIECES_P): Remove.
+	(CLEAR_BY_PIECES_P): Likewise.
+	(SET_BY_PIECES_P): Likewise.
+	(STORE_BY_PIECES_P): Likewise.
+	(can_move_by_pieces): Rewrite in terms of
+	targetm.use_by_pieces_infrastructure_p.
+	(emit_block_move_hints): Likewise.
+	(can_store_by_pieces): Likewise.
+	(store_by_pieces): Likewise.
+	(clear_storage_hints): Likewise.
+	(emit_push_insn): Likewise.
+	(expand_constructor): Likewise.
+
+	2014-11-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64.c
+	(aarch64_use_by_pieces_infrastructre_p): New.
+	(TARGET_USE_BY_PIECES_INFRASTRUCTURE): Likewise.
+	* config/aarch64/aarch64.h (STORE_BY_PIECES_P): Delete.
+
+	2014-11-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/mips/mips.h (MOVE_BY_PIECES_P): Remove.
+	(STORE_BY_PIECES_P): Likewise.
+	* config/mips/mips.c (TARGET_USE_BY_PIECES_INFRASTRUCTURE_P): New.
+	(mips_move_by_pieces_p): Rename to...
+	(mips_use_by_pieces_infrastructure_p): ...this, use new hook
+	parameters, use the default hook implementation as a
+	fall-back.
+
+	2014-11-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/sh/sh.c (TARGET_USE_BY_PIECES_INFRASTRUCTURE_P): New.
+	(sh_use_by_pieces_infrastructure_p): Likewise.
+	* config/sh/sh.h (MOVE_BY_PIECES_P): Remove.
+	(STORE_BY_PIECES_P): Likewise.
+	(SET_BY_PIECES_P): Likewise.
+
+	2014-11-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/arc/arc.c (TARGET_USE_BY_PIECES_INFRASTRUCTURE_P): New.
+	(arc_use_by_pieces_infrastructure_p): Likewise.
+	* confir/arc/arc.h (MOVE_BY_PIECES_P): Delete.
+	(CAN_MOVE_BY_PIECES): Likewise.
+
+	2014-11-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/s390/s390.c (s390_use_by_pieces_infrastructure_p): New.
+	(TARGET_USE_BY_PIECES_INFRASTRUCTURE_P): Likewise.
+	* config/s390/s390.h (MOVE_BY_PIECES_P): Remove.
+	(CLEAR_BY_PIECES): Likewise.
+	(SET_BY_PIECES): Likewise.
+	(STORE_BY_PIECES): Likewise.
+
+	2014-11-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* target.def (use_by_pieces_infrastructure_p): New.
+	* doc/tm.texi.in (MOVE_BY_PIECES_P): Describe that this macro
+	is deprecated.
+	(STORE_BY_PIECES_P): Likewise.
+	(CLEAR_BY_PIECES_P): Likewise.
+	(SET_BY_PIECES_P): Likewise.
+	(TARGET_MOVE_BY_PIECES_PROFITABLE_P): Add hook.
+	* doc/tm.texi: Regenerate.
+	* expr.c (MOVE_BY_PIECES_P): Rewrite in terms of
+	TARGET_USE_BY_PIECES_INFRASTRUCTURE_P.
+	(STORE_BY_PIECES_P): Likewise.
+	(CLEAR_BY_PIECES_P): Likewise.
+	(SET_BY_PIECES_P): Likewise.
+	(STORE_MAX_PIECES): Move to...
+	* defaults.h (STORE_MAX_PIECES): ...here.
+	* targhooks.c (get_move_ratio): New.
+	(default_use_by_pieces_infrastructure_p): Likewise.
+	* targhooks.h (default_use_by_pieces_infrastructure_p): New.
+	* target.h (by_pieces_operation): New.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r216765.
 	2014-10-27  Jiong Wang <jiong.wang@arm.com>
 

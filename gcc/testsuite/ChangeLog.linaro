@@ -1,5 +1,13 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r217742.
+	2014-11-18  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	PR target/63937
+	* gcc.dg/memset-2.c: New.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r216638.
 	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
 
