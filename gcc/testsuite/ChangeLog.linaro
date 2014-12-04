@@ -1,4 +1,11 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+ 
+	Backport from trunk r215071.
+	2014-09-09  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/simd/int_comparisons_1.c: Tighten regexp.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r215540.
 	2014-09-24  Zhenqiang Chen  <zhenqiang.chen@arm.com>
