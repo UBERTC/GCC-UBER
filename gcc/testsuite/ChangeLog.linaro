@@ -1,5 +1,13 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r216638.
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* lib/wrapper.exp ({tool}_maybe_build_wrapper): Clear
+	wrap_compile_flags before setting it.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r216544.
 	2014-10-22  Jiong Wang  <jiong.wang@arm.com>
 
