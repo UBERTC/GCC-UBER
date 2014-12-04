@@ -1,5 +1,13 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r216765.
+	2014-10-27  Jiong Wang <jiong.wang@arm.com>
+
+	PR target/63442
+	* optabs.c (prepare_cmp_insn): Use "ret_mode" instead of "word_mode".
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r216630.
 	2014-10-24  Felix Yang  <felix.yang@huawei.com>
 	Jiji Jiang  <jiangjiji@huawei.com>
