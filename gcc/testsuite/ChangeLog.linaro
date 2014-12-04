@@ -1,5 +1,14 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r214948.
+	2014-09-05  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/simd/int_comparisons.x: New file.
+	* gcc.target/aarch64/simd/int_comparisons_1.c: New test.
+	* gcc.target/aarch64/simd/int_comparisons_2.c: Ditto.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r213382.
 	2014-07-31  James Greenhalgh  <james.greenhalgh@arm.com>
 
