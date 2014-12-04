@@ -1,5 +1,13 @@
 2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r215475.
+	2014-09-22  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.dg/vect/vect-reduc-or_1.c: New test.
+	* gcc.dg/vect/vect-reduc-or_2.c: Likewise.
+
+2014-12-04  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r215473.
 	2014-09-22  Alan Lawrence  <alan.lawrence@arm.com>
 
