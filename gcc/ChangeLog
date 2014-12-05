@@ -1,3 +1,353 @@
+2014-12-04  Tobias Burnus  <burnus@net-b.de>
+
+	* configure.ac
+	(ac_has_isl_schedule_constraints_compute_schedule):
+	New check.
+	* graphite-clast-to-gimple.c: For ISL 0.14, include deprecate headers.
+	* graphite-interchange.c: Ditto.
+	* graphite-poly.c: Ditto.
+	* graphite-sese-to-poly.c: Ditto.
+	* graphite-optimize-isl.c (getScheduleForBandList): Ditto.
+	Conditionally use ISL 0.13+ functions.
+	* config.in: Regenerate.
+	* configure: Regenerate.
+
+2014-12-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/56493
+	* convert.c (convert_to_real, convert_to_expr, convert_to_complex):
+	Handle COMPOUND_EXPR.
+
+2014-12-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/59708
+	* expmed.c (expand_widening_mult): Return const0_rtx if
+	coeff is 0.
+
+2014-12-03  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/64153
+	* ipa-inline-analysis.c (evaluate_conditions_for_known_args): Check
+	type sizes before view_converting.
+
+2014-12-03  Shanyao Chen  <chenshanyao@huawei.com>
+
+	Backport from mainline
+	2014-11-20  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/59593
+	* config/arm/arm.md (*movhi_insn): Use right formatting
+	for immediate.
+
+	2014-11-19  Felix Yang  <felix.yang@huawei.com>
+		    Shanyao Chen  <chenshanyao@huawei.com>
+
+	PR target/59593
+	* config/arm/arm.md (define_attr "arch"): Add v6t2.
+	(define_attr "arch_enabled"): Add test for the above.
+	(*movhi_insn_arch4): Add new alternative.
+
+2014-12-03  Renlin Li  <Renlin.Li@arm.com>
+
+	Backported from mainline
+	2014-12-03  Renlin Li  <Renlin.Li@arm.com>
+
+	PR middle-end/63762
+	PR target/63661
+	* ira.c (ira): Update preferred class.
+
+2014-12-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/64113
+	* config/alpha/alpha.md (call_value_osf_tlsgd): Do not split insn
+	using post-reload splitter.  Use peephole2 pass instead.
+	(call_value_osf_tlsldm): Ditto.
+	(TLS_CALL): New int iterator.
+	(tls): New int attribute.
+	(call_value_osf_<tls>): Merge insn pattern from call_value_osf_tlsgd
+	and call_value_tlsldm using TLS_CALL int iterator.
+
+2014-12-02  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	PR target/64115
+	* config/rs6000/rs6000.c (rs6000_delegitimize_address): Remove
+	invalid UNSPEC_TOCREL sanity check under ENABLE_CHECKING.
+
+2014-12-01  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/64111
+	* tree.c (int_cst_hash_hash): Use TYPE_UID instead of
+	htab_hash_pointer to not break PCH.
+
+2014-12-01  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/63551
+	* ipa-inline-analysis.c (evaluate_conditions_for_known_args): Convert
+	value of the argument to the type of the value in the condition.
+
+2014-11-28  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2014-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/64067
+	* expr.c (expand_expr_addr_expr_1) <case COMPOUND_LITERAL_EXPR>:
+	Handle it by returning address of COMPOUND_LITERAL_EXPR_DECL
+	not only if modifier is EXPAND_INITIALIZER, but whenever
+	COMPOUND_LITERAL_EXPR_DECL is non-NULL and TREE_STATIC.
+
+	2014-11-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/63915
+	* tree-vect-stmts.c (vectorizable_simd_clone_call): Pass
+	true instead of false as last argument to gsi_replace.
+
+	PR sanitizer/63913
+	* ubsan.c: Include tree-eh.h.
+	(instrument_bool_enum_load): Handle loads that can throw.
+
+	2014-10-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/63659
+	* ree.c (update_reg_equal_equiv_notes): New function.
+	(combine_set_extension, transform_ifelse): Use it.
+
+2014-11-28  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	Backport from mainline.
+        2014-11-28  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+        * config/arm/t-aprofile (MULTILIB_MATCHES): New entry for
+        -march=armv8-a+crc.
+
+2014-11-26  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/63738
+	* tree-data-ref.c (split_constant_offset_1): Do not follow
+	SSA edges for SSA names with SSA_NAME_OCCURS_IN_ABNORMAL_PHI.
+
+2014-11-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-11-26  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62238
+	* tree-predcom.c (ref_at_iteration): Unshare the expression
+	before gimplifying it.
+
+	2014-11-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61927
+	* tree-vect-loop.c (vect_analyze_loop_2): Revert ordering
+	of group and pattern analysis to the one in GCC 4.8.
+
+	2014-11-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/63605
+	* fold-const.c (fold_binary_loc): Properly use element_precision
+	for types that may not be scalar.
+
+	2014-10-28  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/63665
+	* fold-const.c (fold_comparison): Properly guard simplifying
+	against INT_MAX/INT_MIN with !TYPE_OVERFLOW_WRAPS.
+
+2014-11-25  Rohit  <rohitarulraj@freescale.com>
+
+	PR bootstrap/63703
+	* config/rs6000/darwin.h (REGISTER_NAMES): Update based on 32 newly
+	added GCC hard register numbers for SPE high registers.
+
+2014-11-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2014-11-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/53976
+	* config/sh/sh_optimize_sett_clrt.cc
+	(sh_optimize_sett_clrt::find_last_ccreg_values): Return bool instead
+	of void.  Abort at complex edges.
+	(sh_optimize_sett_clrt::execute): Do nothing if find_last_ccreg_values
+	returned false.
+
+2014-11-22  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2014-11-22  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/63783
+	PR target/51244
+	* config/sh/sh_treg_combine.cc (sh_treg_combine::make_not_reg_insn):
+	Do not emit bitwise not insn.  Emit logical not insn sequence instead.
+	Adjust related comments throughout the file.
+
+2014-11-22  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2014-11-20  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/60111
+	* config/sh/sh.c: Use signed char for signed field.
+
+2014-11-21  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/63673
+	* config/rs6000/rs6000-c.c (altivec_overloaded_builtins): Allow
+	the base pointer of vec_vsx_ld and vec_vsx_st to take a pointer to
+	double.
+
+2014-11-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61750
+	* tree-ssa-forwprop.c (simplify_vce): Verify type sizes
+	match for the resulting VIEW_CONVERT_EXPR.
+
+2014-11-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/63947
+	* config/i386/i386.c (put_condition_code) <case LTU, case GEU>:
+	Output "b" and "nb" suffix for FP mode.
+
+2014-11-19  Tom de Vries  <tom@codesourcery.com>
+
+	Backport from mainline
+	PR tree-optimization/62167
+	* tree-ssa-tail-merge.c (stmt_local_def): Handle statements with vuse
+	conservatively.
+	(gimple_equal_p): Don't use vn_valueize to compare for lhs equality of
+	assigns.
+
+2014-11-16  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/tm.texi.in (TARGET_FLAGS_REGNUM): Move around.
+	* doc/tm.texi: Regenerate.
+
+2014-11-14  Felix Yang  <felix.yang@huawei.com>
+
+	Backport from mainline
+	2014-11-14  Felix Yang  <felix.yang@huawei.com>
+		    Jiji Jiang  <jiangjiji@huawei.com>
+
+	* config/aarch64/aarch64-simd.md (*aarch64_simd_ld1r<mode>): Use
+	VALL mode iterator instead of VALLDI.
+
+2014-11-13  Teresa Johnson  <tejohnson@google.com>
+
+	PR tree-optimization/63841
+	* tree-ssa-strlen.c (strlen_optimize_stmt): Ignore clobbers.
+
+2014-11-13  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from mainline
+	2014-11-02  Michael Collison  <michael.collison@linaro.org>
+
+	* config/arm/arm.h (CLZ_DEFINED_VALUE_AT_ZERO) : Update
+	to support vector modes.
+	(CTZ_DEFINED_VALUE_AT_ZERO): Ditto.
+
+2014-11-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/tm.texi.in (SELECT_CC_MODE): Update example.
+	(REVERSIBLE_CC_MODE): Fix example.
+	(REVERSE_CONDITION): Fix typo.
+	* doc/tm.texi: Regenerate.
+
+2014-11-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR ipa/63838
+	* ipa-pure-const.c (propagate_nothrow): Walk w->indirect_calls
+	chain instead of node->indirect_calls.
+
+2014-11-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/61535
+	* config/sparc/sparc.c (function_arg_vector_value): Deal with vectors
+	smaller than 8 bytes.
+	(sparc_function_arg_1): Tweak.
+	(sparc_function_value_1): Tweak.
+
+2014-11-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/arm/arm.c (arm_set_return_address): Mark the store as frame
+	related, if any.
+	(thumb_set_return_address): Likewise.
+
+2014-11-07  Daniel Hellstrom  <daniel@gaisler.com>
+
+	* config.gcc (sparc-*-rtems*): Clean away unused t-elf.
+	* config/sparc/t-rtems: Add leon3v7 and muser-mode multilibs.
+
+2014-11-07  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2014-10-23  Marek Polacek  <polacek@redhat.com>
+
+	* c-ubsan.c (ubsan_instrument_shift): Perform the MINUS_EXPR
+	in unsigned type.
+
+2014-11-06  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.md (trap): New insn.  Add "trap" to attribute type.
+	Don't allow trap insn in in_branch_delay, in_nullified_branch_delay
+	or in_call_delay.
+
+2014-11-06  Daniel Hellstrom  <daniel@gaisler.com>
+
+	* config.gcc (sparc*-*-*): Accept mcpu=leon3v7 processor.
+	* doc/invoke.texi (SPARC options): Add mcpu=leon3v7 comment.
+	* config/sparc/leon.md (leon3_load, leon_store, leon_fp_*): Handle
+	leon3v7 as leon3.
+	* config/sparc/sparc-opts.h (enum processor_type): Add LEON3V7.
+	* config/sparc/sparc.c (sparc_option_override): Add leon3v7 support.
+	* config/sparc/sparc.h (TARGET_CPU_leon3v7): New define.
+	* config/sparc/sparc.md (cpu): Add leon3v7.
+	* config/sparc/sparc.opt (enum processor_type): Add leon3v7.
+
+2014-11-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/63538
+	* config/i386/i386.c (in_large_data_p): Reject automatic variables.
+	(ix86_encode_section_info): Do not check for non-automatic varibles
+	when setting SYMBOL_FLAG_FAR_ADDR flag.
+	(x86_64_elf_select_section): Do not check ix86_cmodel here.
+	(x86_64_elf_unique_section): Ditto.
+	(x86_elf_aligned_common): Emit tab before .largecomm.
+
+2014-11-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2014-10-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	* varasm.c (const_alias_set): Remove.
+	(init_varasm_once): Remove initialization of const_alias_set.
+	(build_constant_desc): Do not set alias set to const_alias_set.
+
+	Backport from mainline:
+	2014-10-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR rtl-optimization/63475
+	* alias.c (true_dependence_1): Always use get_addr to extract
+	true address operands from x_addr and mem_addr.  Use extracted
+	address operands to check for references with alignment ANDs.
+	Use extracted address operands with find_base_term and
+	base_alias_check. For noncanonicalized operands call canon_rtx with
+	extracted address operand.
+	(write_dependence_1): Ditto.
+	(may_alias_p): Ditto.  Remove unused calls to canon_rtx.
+
+	Backport from mainline:
+	2014-10-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR rtl-optimization/63483
+	* alias.c (true_dependence_1): Do not exit early for MEM_READONLY_P
+	references when alignment ANDs are involved.
+	(write_dependence_p): Ditto.
+	(may_alias_p): Ditto.
+
+2014-10-31  DJ Delorie  <dj@redhat.com>
+
+	* expmed.c (strict_volatile_bitfield_p): Fix off-by-one error.
+
 2014-10-31  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	* config/aarch64/aarch64-elf-raw.h (CA53_ERR_835769_SPEC): Define.
@@ -188,8 +538,8 @@
 	Backport from mainline
 	2014-06-24  Max Ostapenko  <m.ostapenko@partner.samsung.com>
 
-	* asan.c (instrument_strlen_call): Do not instrument first byte in strlen
-	if already instrumented.
+	* asan.c (instrument_strlen_call): Do not instrument first byte in
+	strlen if already instrumented.
 
 2014-10-16  Yury Gribov  <y.gribov@samsung.com>
 
