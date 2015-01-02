@@ -2188,8 +2188,12 @@ Common Negative(fuse-ld=gold)
 Use the bfd linker instead of the default linker
 
 fuse-ld=gold
-Common Negative(fuse-ld=bfd)
+Common Negative(fuse-ld=mcld)
 Use the gold linker instead of the default linker
+
+fuse-ld=mcld
+Common Negative(fuse-ld=bfd)
+Use the mcld linker instead of the default linker
 
 fuse-linker-plugin
 Common Undocumented
@@ -2237,33 +2241,13 @@ ftree-slp-vectorize
 Common Report Var(flag_tree_slp_vectorize) Init(2) Optimization
 Enable basic block vectorization (SLP) on trees
 
-fvect-cost-model=
-Common Joined RejectNegative Enum(vect_cost_model) Var(flag_vect_cost_model) Init(VECT_COST_MODEL_DEFAULT)
-Specifies the cost model for vectorization
- 
-Enum
-Name(vect_cost_model) Type(enum vect_cost_model) UnknownError(unknown vectorizer cost model %qs)
-
-EnumValue
-Enum(vect_cost_model) String(unlimited) Value(VECT_COST_MODEL_UNLIMITED)
-
-EnumValue
-Enum(vect_cost_model) String(dynamic) Value(VECT_COST_MODEL_DYNAMIC)
-
-EnumValue
-Enum(vect_cost_model) String(cheap) Value(VECT_COST_MODEL_CHEAP)
-
 fvect-cost-model
-Common RejectNegative Alias(fvect-cost-model=,dynamic)
-Enables the dynamic vectorizer cost model.  Preserved for backward compatibility.
-
-fno-vect-cost-model
-Common RejectNegative Alias(fvect-cost-model=,unlimited)
-Enables the unlimited vectorizer cost model.  Preserved for backward compatibility.
+Common Report Var(flag_vect_cost_model) Optimization
+Enable use of cost model in vectorization
 
 ftree-vect-loop-version
-Common Ignore
-Does nothing. Preserved for backward compatibility.
+Common Report Var(flag_tree_vect_loop_version) Init(1) Optimization
+Enable loop versioning when doing loop vectorization on trees
 
 ftree-scev-cprop
 Common Report Var(flag_tree_scev_cprop) Init(1) Optimization

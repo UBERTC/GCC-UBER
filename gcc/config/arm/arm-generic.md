@@ -114,9 +114,7 @@
 
 (define_insn_reservation "mult" 16
   (and (eq_attr "generic_sched" "yes")
-       (and (eq_attr "ldsched" "no")
-	    (ior (eq_attr "mul32" "yes")
-		 (eq_attr "mul64" "yes"))))
+       (and (eq_attr "ldsched" "no") (eq_attr "type" "mult")))
   "core*16")
 
 (define_insn_reservation "mult_ldsched_strongarm" 3
@@ -124,8 +122,7 @@
        (and (eq_attr "ldsched" "yes") 
 	    (and (eq_attr "tune"
 		  "strongarm,strongarm110,strongarm1100,strongarm1110")
-		 (ior (eq_attr "mul32" "yes")
-		      (eq_attr "mul64" "yes")))))
+	         (eq_attr "type" "mult"))))
   "core*2")
 
 (define_insn_reservation "mult_ldsched" 4
@@ -133,17 +130,13 @@
        (and (eq_attr "ldsched" "yes") 
 	    (and (eq_attr "tune"
 		  "!strongarm,strongarm110,strongarm1100,strongarm1110")
-	         (ior (eq_attr "mul32" "yes")
-		      (eq_attr "mul64" "yes")))))
+	         (eq_attr "type" "mult"))))
   "core*4")
 
 (define_insn_reservation "multi_cycle" 32
   (and (eq_attr "generic_sched" "yes")
        (and (eq_attr "core_cycles" "multi")
-            (and (eq_attr "type" "!load_byte,load1,load2,load3,load4,\
-                                  store1,store2,store3,store4")
-		 (not (ior (eq_attr "mul32" "yes")
-			   (eq_attr "mul64" "yes"))))))
+            (eq_attr "type" "!mult,load_byte,load1,load2,load3,load4,store1,store2,store3,store4")))
   "core*32")
 
 (define_insn_reservation "single_cycle" 1

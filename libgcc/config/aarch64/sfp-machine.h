@@ -24,8 +24,8 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #define _FP_W_TYPE_SIZE		64
-#define _FP_W_TYPE		unsigned long long
-#define _FP_WS_TYPE		signed long long
+#define _FP_W_TYPE		unsigned long
+#define _FP_WS_TYPE		signed long
 #define _FP_I_TYPE		int
 
 typedef int TItype __attribute__ ((mode (TI)));

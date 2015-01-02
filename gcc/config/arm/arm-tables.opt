@@ -250,9 +250,6 @@ EnumValue
 Enum(processor_type) String(cortex-a15) Value(cortexa15)
 
 EnumValue
-Enum(processor_type) String(cortex-a53) Value(cortexa53)
-
-EnumValue
 Enum(processor_type) String(cortex-r4) Value(cortexr4)
 
 EnumValue
@@ -260,9 +257,6 @@ Enum(processor_type) String(cortex-r4f) Value(cortexr4f)
 
 EnumValue
 Enum(processor_type) String(cortex-r5) Value(cortexr5)
-
-EnumValue
-Enum(processor_type) String(cortex-r7) Value(cortexr7)
 
 EnumValue
 Enum(processor_type) String(cortex-m4) Value(cortexm4)
@@ -359,13 +353,10 @@ EnumValue
 Enum(arm_arch) String(armv8-a) Value(23)
 
 EnumValue
-Enum(arm_arch) String(armv8-a+crc) Value(24)
+Enum(arm_arch) String(iwmmxt) Value(24)
 
 EnumValue
-Enum(arm_arch) String(iwmmxt) Value(25)
-
-EnumValue
-Enum(arm_arch) String(iwmmxt2) Value(26)
+Enum(arm_arch) String(iwmmxt2) Value(25)
 
 Enum
 Name(arm_fpu) Type(int)

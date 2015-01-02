@@ -139,37 +139,12 @@
   VUNSPEC_ATOMIC_OP	; Represent an atomic operation.
   VUNSPEC_LL		; Represent a load-register-exclusive.
   VUNSPEC_SC		; Represent a store-register-exclusive.
-  VUNSPEC_LAX		; Represent a load-register-acquire-exclusive.
-  VUNSPEC_SLX		; Represent a store-register-release-exclusive.
-  VUNSPEC_LDA		; Represent a store-register-acquire.
-  VUNSPEC_STL		; Represent a store-register-release.
 ])
 
 ;; Enumerators for NEON unspecs.
 (define_c_enum "unspec" [
   UNSPEC_ASHIFT_SIGNED
   UNSPEC_ASHIFT_UNSIGNED
-  UNSPEC_CRC32B
-  UNSPEC_CRC32H
-  UNSPEC_CRC32W
-  UNSPEC_CRC32CB
-  UNSPEC_CRC32CH
-  UNSPEC_CRC32CW
-  UNSPEC_AESD
-  UNSPEC_AESE
-  UNSPEC_AESIMC
-  UNSPEC_AESMC
-  UNSPEC_SHA1C
-  UNSPEC_SHA1M
-  UNSPEC_SHA1P
-  UNSPEC_SHA1H
-  UNSPEC_SHA1SU0
-  UNSPEC_SHA1SU1
-  UNSPEC_SHA256H
-  UNSPEC_SHA256H2
-  UNSPEC_SHA256SU0
-  UNSPEC_SHA256SU1
-  UNSPEC_VMULLP64
   UNSPEC_LOAD_COUNT
   UNSPEC_VABD
   UNSPEC_VABDL

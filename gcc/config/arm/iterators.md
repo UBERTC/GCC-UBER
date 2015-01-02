@@ -201,20 +201,6 @@
 (define_int_iterator NEON_VRINT [UNSPEC_NVRINTP UNSPEC_NVRINTZ UNSPEC_NVRINTM
                               UNSPEC_NVRINTX UNSPEC_NVRINTA UNSPEC_NVRINTN])
 
-(define_int_iterator CRC [UNSPEC_CRC32B UNSPEC_CRC32H UNSPEC_CRC32W
-                          UNSPEC_CRC32CB UNSPEC_CRC32CH UNSPEC_CRC32CW])
-
-(define_int_iterator CRYPTO_UNARY [UNSPEC_AESMC UNSPEC_AESIMC])
-
-(define_int_iterator CRYPTO_BINARY [UNSPEC_AESD UNSPEC_AESE
-                                    UNSPEC_SHA1SU1 UNSPEC_SHA256SU0])
-
-(define_int_iterator CRYPTO_TERNARY [UNSPEC_SHA1SU0 UNSPEC_SHA256H
-                                     UNSPEC_SHA256H2 UNSPEC_SHA256SU1])
-
-(define_int_iterator CRYPTO_SELECTING [UNSPEC_SHA1C UNSPEC_SHA1M
-                                       UNSPEC_SHA1P])
-
 ;;----------------------------------------------------------------------------
 ;; Mode attributes
 ;;----------------------------------------------------------------------------
@@ -369,12 +355,6 @@
                              (DI   "64") (V2DI  "64")
                  (V2SF "32") (V4SF  "32")])
 
-(define_mode_attr V_elem_ch [(V8QI "b")  (V16QI "b")
-                             (V4HI "h") (V8HI  "h")
-                             (V2SI "s") (V4SI  "s")
-                             (DI   "d") (V2DI  "d")
-                             (V2SF "s") (V4SF  "s")])
-
 ;; Element sizes for duplicating ARM registers to all elements of a vector.
 (define_mode_attr VD_dup [(V8QI "8") (V4HI "16") (V2SI "32") (V2SF "32")])
 
@@ -411,7 +391,7 @@
 (define_mode_attr scalar_mul_constraint [(V4HI "x") (V2SI "t") (V2SF "t")
                                          (V8HI "x") (V4SI "t") (V4SF "t")])
 
-;; Predicates used for setting type for neon instructions
+;; Predicates used for setting neon_type
 
 (define_mode_attr Is_float_mode [(V8QI "false") (V16QI "false")
                  (V4HI "false") (V8HI "false")
@@ -472,14 +452,6 @@
 (define_mode_attr vfp_type [(SF "s") (DF "d")])
 (define_mode_attr vfp_double_cond [(SF "") (DF "&& TARGET_VFP_DOUBLE")])
 
-;; Mode attribute used to build the "type" attribute.
-(define_mode_attr q [(V8QI "") (V16QI "_q")
-                     (V4HI "") (V8HI "_q")
-                     (V2SI "") (V4SI "_q")
-                     (V2SF "") (V4SF "_q")
-                     (DI "")   (V2DI "_q")
-                     (DF "")   (V2DF "_q")])
-
 ;;----------------------------------------------------------------------------
 ;; Code attributes
 ;;----------------------------------------------------------------------------
@@ -487,10 +459,6 @@
 ;; Assembler mnemonics for vqh_ops and vqhs_ops iterators.
 (define_code_attr VQH_mnem [(plus "vadd") (smin "vmin") (smax "vmax")
                 (umin "vmin") (umax "vmax")])
-
-;; Type attributes for vqh_ops and vqhs_ops iterators.
-(define_code_attr VQH_type [(plus "add") (smin "minmax") (smax "minmax")
-                (umin "minmax") (umax "minmax")])
 
 ;; Signs of above, where relevant.
 (define_code_attr VQH_sign [(plus "i") (smin "s") (smax "s") (umin "u")
@@ -532,54 +500,3 @@
 (define_int_attr nvrint_variant [(UNSPEC_NVRINTZ "z") (UNSPEC_NVRINTP "p")
                                 (UNSPEC_NVRINTA "a") (UNSPEC_NVRINTM "m")
                                 (UNSPEC_NVRINTX "x") (UNSPEC_NVRINTN "n")])
-
-(define_int_attr crc_variant [(UNSPEC_CRC32B "crc32b") (UNSPEC_CRC32H "crc32h")
-                        (UNSPEC_CRC32W "crc32w") (UNSPEC_CRC32CB "crc32cb")
-                        (UNSPEC_CRC32CH "crc32ch") (UNSPEC_CRC32CW "crc32cw")])
-
-(define_int_attr crc_mode [(UNSPEC_CRC32B "QI") (UNSPEC_CRC32H "HI")
-                        (UNSPEC_CRC32W "SI") (UNSPEC_CRC32CB "QI")
-                        (UNSPEC_CRC32CH "HI") (UNSPEC_CRC32CW "SI")])
-
-(define_int_attr crypto_pattern [(UNSPEC_SHA1H "sha1h") (UNSPEC_AESMC "aesmc")
-                          (UNSPEC_AESIMC "aesimc") (UNSPEC_AESD "aesd")
-                          (UNSPEC_AESE "aese") (UNSPEC_SHA1SU1 "sha1su1")
-                          (UNSPEC_SHA256SU0 "sha256su0") (UNSPEC_SHA1C "sha1c")
-                          (UNSPEC_SHA1M "sha1m") (UNSPEC_SHA1P "sha1p")
-                          (UNSPEC_SHA1SU0 "sha1su0") (UNSPEC_SHA256H "sha256h")
-                          (UNSPEC_SHA256H2 "sha256h2")
-                          (UNSPEC_SHA256SU1 "sha256su1")])
-
-(define_int_attr crypto_type
- [(UNSPEC_AESE "crypto_aes") (UNSPEC_AESD "crypto_aes")
- (UNSPEC_AESMC "crypto_aes") (UNSPEC_AESIMC "crypto_aes")
- (UNSPEC_SHA1C "crypto_sha1_slow") (UNSPEC_SHA1P "crypto_sha1_slow")
- (UNSPEC_SHA1M "crypto_sha1_slow") (UNSPEC_SHA1SU1 "crypto_sha1_fast")
- (UNSPEC_SHA1SU0 "crypto_sha1_xor") (UNSPEC_SHA256H "crypto_sha256_slow")
- (UNSPEC_SHA256H2 "crypto_sha256_slow") (UNSPEC_SHA256SU0 "crypto_sha256_fast")
- (UNSPEC_SHA256SU1 "crypto_sha256_slow")])
-
-(define_int_attr crypto_size_sfx [(UNSPEC_SHA1H "32") (UNSPEC_AESMC "8")
-                          (UNSPEC_AESIMC "8") (UNSPEC_AESD "8")
-                          (UNSPEC_AESE "8") (UNSPEC_SHA1SU1 "32")
-                          (UNSPEC_SHA256SU0 "32") (UNSPEC_SHA1C "32")
-                          (UNSPEC_SHA1M "32") (UNSPEC_SHA1P "32")
-                          (UNSPEC_SHA1SU0 "32") (UNSPEC_SHA256H "32")
-                          (UNSPEC_SHA256H2 "32") (UNSPEC_SHA256SU1 "32")])
-
-(define_int_attr crypto_mode [(UNSPEC_SHA1H "V4SI") (UNSPEC_AESMC "V16QI")
-                          (UNSPEC_AESIMC "V16QI") (UNSPEC_AESD "V16QI")
-                          (UNSPEC_AESE "V16QI") (UNSPEC_SHA1SU1 "V4SI")
-                          (UNSPEC_SHA256SU0 "V4SI") (UNSPEC_SHA1C "V4SI")
-                          (UNSPEC_SHA1M "V4SI") (UNSPEC_SHA1P "V4SI")
-                          (UNSPEC_SHA1SU0 "V4SI") (UNSPEC_SHA256H "V4SI")
-                          (UNSPEC_SHA256H2 "V4SI") (UNSPEC_SHA256SU1 "V4SI")])
-
-;; Both kinds of return insn.
-(define_code_iterator returns [return simple_return])
-(define_code_attr return_str [(return "") (simple_return "simple_")])
-(define_code_attr return_simple_p [(return "false") (simple_return "true")])
-(define_code_attr return_cond_false [(return " && USE_RETURN_INSN (FALSE)")
-                               (simple_return " && use_simple_return_p ()")])
-(define_code_attr return_cond_true [(return " && USE_RETURN_INSN (TRUE)")
-                               (simple_return " && use_simple_return_p ()")])

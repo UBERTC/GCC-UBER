@@ -1,6 +1,4 @@
-/* { dg-require-effective-target vect_int }
-   { dg-skip-if "AArch64 tiny code model does not support programs larger than 1MiB" {aarch64_tiny} {"*"} {""} }
- */
+/* { dg-require-effective-target vect_int } */
 
 #include <stdarg.h>
 #include "tree-vect.h"

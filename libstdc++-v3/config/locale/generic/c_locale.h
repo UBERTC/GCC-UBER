@@ -59,7 +59,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   {
     char* __old = std::setlocale(LC_NUMERIC, 0);
     char* __sav = 0;
-    if (__builtin_strcmp(__old, "C"))
+    if (__old && __builtin_strcmp(__old, "C"))
       {
 	const size_t __len = __builtin_strlen(__old) + 1;
 	__sav = new char[__len];

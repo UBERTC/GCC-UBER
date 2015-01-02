@@ -49,14 +49,8 @@ extern char arm_arch_name[];
            builtin_define ("__ARM_FEATURE_QBIT");	\
         if (TARGET_ARM_SAT)				\
            builtin_define ("__ARM_FEATURE_SAT");	\
-        if (TARGET_CRYPTO)				\
-	   builtin_define ("__ARM_FEATURE_CRYPTO");	\
 	if (unaligned_access)				\
 	  builtin_define ("__ARM_FEATURE_UNALIGNED");	\
-	if (TARGET_CRC32)				\
-	  builtin_define ("__ARM_FEATURE_CRC32");	\
-	if (TARGET_32BIT)				\
-	  builtin_define ("__ARM_32BIT_STATE");		\
 	if (TARGET_ARM_FEATURE_LDREX)				\
 	  builtin_define_with_int_value (			\
 	    "__ARM_FEATURE_LDREX", TARGET_ARM_FEATURE_LDREX);	\
@@ -189,11 +183,6 @@ extern arm_cc arm_current_cc;
 
 #define ARM_INVERSE_CONDITION_CODE(X)  ((arm_cc) (((int)X) ^ 1))
 
-/* The maximaum number of instructions that is beneficial to
-   conditionally execute. */
-#undef MAX_CONDITIONAL_EXECUTE
-#define MAX_CONDITIONAL_EXECUTE arm_max_conditional_execute ()
-
 extern int arm_target_label;
 extern int arm_ccfsm_state;
 extern GTY(()) rtx arm_target_insn;
@@ -280,8 +269,6 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 #define TARGET_LDRD			(arm_arch5e && ARM_DOUBLEWORD_ALIGN \
                                          && !TARGET_THUMB1)
 
-#define TARGET_CRC32			(arm_arch_crc)
-
 /* The following two macros concern the ability to execute coprocessor
    instructions for VFPv3 or NEON.  TARGET_VFP3/TARGET_VFPD32 are currently
    only ever tested when we know we are generating for VFP hardware; we need
@@ -363,15 +350,9 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 #define TARGET_HAVE_LDREXD	(((arm_arch6k && TARGET_ARM) || arm_arch7) \
 				 && arm_arch_notm)
 
-/* Nonzero if this chip supports load-acquire and store-release.  */
-#define TARGET_HAVE_LDACQ	(TARGET_ARM_ARCH >= 8)
-
 /* Nonzero if integer division instructions supported.  */
 #define TARGET_IDIV		((TARGET_ARM && arm_arch_arm_hwdiv) \
 				 || (TARGET_THUMB2 && arm_arch_thumb_hwdiv))
-
-/* Should NEON be used for 64-bits bitops.  */
-#define TARGET_PREFER_NEON_64BITS (prefer_neon_for_64bits)
 
 /* True iff the full BPABI is being used.  If TARGET_BPABI is true,
    then TARGET_AAPCS_BASED must be true -- but the converse does not
@@ -558,13 +539,6 @@ extern int arm_arch_arm_hwdiv;
 /* Nonzero if chip supports integer division instruction in Thumb mode.  */
 extern int arm_arch_thumb_hwdiv;
 
-/* Nonzero if we should use Neon to handle 64-bits operations rather
-   than core registers.  */
-extern int prefer_neon_for_64bits;
-
-/* Nonzero if chip supports the ARMv8 CRC instructions.  */
-extern int arm_arch_crc;
-
 #ifndef TARGET_DEFAULT
 #define TARGET_DEFAULT  (MASK_APCS_FRAME)
 #endif
@@ -655,8 +629,6 @@ extern int arm_arch_crc;
 #define EMPTY_FIELD_BOUNDARY  32
 
 #define BIGGEST_ALIGNMENT (ARM_DOUBLEWORD_ALIGN ? DOUBLEWORD_ALIGNMENT : 32)
-
-#define MALLOC_ABI_ALIGNMENT  BIGGEST_ALIGNMENT
 
 /* XXX Blah -- this macro is used directly by libobjc.  Since it
    supports no vector modes, cut out the complexity and fall back
@@ -1068,7 +1040,7 @@ extern int arm_arch_crc;
 /* Modes valid for Neon D registers.  */
 #define VALID_NEON_DREG_MODE(MODE) \
   ((MODE) == V2SImode || (MODE) == V4HImode || (MODE) == V8QImode \
-   || (MODE) == V4HFmode || (MODE) == V2SFmode || (MODE) == DImode)
+   || (MODE) == V2SFmode || (MODE) == DImode)
 
 /* Modes valid for Neon Q registers.  */
 #define VALID_NEON_QREG_MODE(MODE) \
@@ -1158,7 +1130,6 @@ enum reg_class
   STACK_REG,
   BASE_REGS,
   HI_REGS,
-  CALLER_SAVE_REGS,
   GENERAL_REGS,
   CORE_REGS,
   VFP_D0_D7_REGS,
@@ -1185,7 +1156,6 @@ enum reg_class
   "STACK_REG",		\
   "BASE_REGS",		\
   "HI_REGS",		\
-  "CALLER_SAVE_REGS",	\
   "GENERAL_REGS",	\
   "CORE_REGS",		\
   "VFP_D0_D7_REGS",	\
@@ -1211,7 +1181,6 @@ enum reg_class
   { 0x00002000, 0x00000000, 0x00000000, 0x00000000 }, /* STACK_REG */	\
   { 0x000020FF, 0x00000000, 0x00000000, 0x00000000 }, /* BASE_REGS */	\
   { 0x00005F00, 0x00000000, 0x00000000, 0x00000000 }, /* HI_REGS */	\
-  { 0x0000100F, 0x00000000, 0x00000000, 0x00000000 }, /* CALLER_SAVE_REGS */ \
   { 0x00005FFF, 0x00000000, 0x00000000, 0x00000000 }, /* GENERAL_REGS */ \
   { 0x00007FFF, 0x00000000, 0x00000000, 0x00000000 }, /* CORE_REGS */	\
   { 0xFFFF0000, 0x00000000, 0x00000000, 0x00000000 }, /* VFP_D0_D7_REGS  */ \
@@ -1674,7 +1643,7 @@ typedef struct
    frame.  */
 #define EXIT_IGNORE_STACK 1
 
-#define EPILOGUE_USES(REGNO) (epilogue_completed && (REGNO) == LR_REGNUM)
+#define EPILOGUE_USES(REGNO) ((REGNO) == LR_REGNUM)
 
 /* Determine if the epilogue should be output as RTL.
    You should override this if you define FUNCTION_EXTRA_EPILOGUE.  */
@@ -2113,9 +2082,10 @@ extern int making_const_table;
    ? reverse_condition_maybe_unordered (code) \
    : reverse_condition (code))
 
-/* The arm5 clz instruction returns 32.  */
-#define CLZ_DEFINED_VALUE_AT_ZERO(MODE, VALUE)  ((VALUE) = 32, 1)
-#define CTZ_DEFINED_VALUE_AT_ZERO(MODE, VALUE)  ((VALUE) = 32, 1)
+#define CLZ_DEFINED_VALUE_AT_ZERO(MODE, VALUE) \
+  ((VALUE) = GET_MODE_UNIT_BITSIZE (MODE))
+#define CTZ_DEFINED_VALUE_AT_ZERO(MODE, VALUE) \
+  ((VALUE) = GET_MODE_UNIT_BITSIZE (MODE))
 
 #define CC_STATUS_INIT \
   do { cfun->machine->thumb1_cc_insn = NULL_RTX; } while (0)

@@ -73,19 +73,19 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #undef CPLUSPLUS_CPP_SPEC
 #define CPLUSPLUS_CPP_SPEC "-D_GNU_SOURCE %(cpp)"
 
-#define GNU_USER_TARGET_LIB_SPEC_LESS_PTHREAD \
-   "%{shared:-lc} \
-   %{!shared:%{mieee-fp:-lieee} %{profile:-lc_p}%{!profile:-lc}}"
-
 #define GNU_USER_TARGET_LIB_SPEC \
-  "%{pthread:-lpthread} "\
-  GNU_USER_TARGET_LIB_SPEC_LESS_PTHREAD
-
+  "%{pthread:-lpthread} \
+   %{shared:-lc} \
+   %{!shared:%{mieee-fp:-lieee} %{profile:-lc_p}%{!profile:-lc}}"
 #undef  LIB_SPEC
 #define LIB_SPEC GNU_USER_TARGET_LIB_SPEC
 
 #if defined(HAVE_LD_EH_FRAME_HDR)
+#ifdef USE_EH_FRAME_HDR_FOR_STATIC
+#define LINK_EH_SPEC "--eh-frame-hdr "
+#else
 #define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+#endif
 #endif
 
 #undef LINK_GCC_C_SEQUENCE_SPEC

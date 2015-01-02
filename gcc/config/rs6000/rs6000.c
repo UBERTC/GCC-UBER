@@ -60,6 +60,7 @@
 #include "opts.h"
 #include "tree-vectorizer.h"
 #include "dumpfile.h"
+#include "real.h"
 #if TARGET_XCOFF
 #include "xcoffout.h"  /* get declarations of xcoff_*_section_name */
 #endif
@@ -6877,24 +6878,6 @@ rs6000_delegitimize_address (rtx orig_x)
   if (GET_CODE (y) == UNSPEC
       && XINT (y, 1) == UNSPEC_TOCREL)
     {
-#ifdef ENABLE_CHECKING
-      if (REG_P (XVECEXP (y, 0, 1))
-	  && REGNO (XVECEXP (y, 0, 1)) == TOC_REGISTER)
-	{
-	  /* All good.  */
-	}
-      else if (GET_CODE (XVECEXP (y, 0, 1)) == DEBUG_EXPR)
-	{
-	  /* Weirdness alert.  df_note_compute can replace r2 with a
-	     debug_expr when this unspec is in a debug_insn.
-	     Seen in gcc.dg/pr51957-1.c  */
-	}
-      else
-	{
-	  debug_rtx (orig_x);
-	  abort ();
-	}
-#endif
       y = XVECEXP (y, 0, 0);
 
 #ifdef HAVE_AS_TLS
@@ -31031,6 +31014,23 @@ rs6000_expand_interleave (rtx target, rtx op0, rtx op1, bool highp)
     }
 
   rs6000_do_expand_vec_perm (target, op0, op1, vmode, nelt, perm);
+}
+
+/* Scale a V2DF vector SRC by two to the SCALE and place in TGT.  */
+void
+rs6000_scale_v2df (rtx tgt, rtx src, int scale)
+{
+  HOST_WIDE_INT hwi_scale (scale);
+  REAL_VALUE_TYPE r_pow;
+  rtvec v = rtvec_alloc (2);
+  rtx elt;
+  rtx scale_vec = gen_reg_rtx (V2DFmode);
+  (void)real_powi (&r_pow, DFmode, &dconst2, hwi_scale);
+  elt = CONST_DOUBLE_FROM_REAL_VALUE (r_pow, DFmode);
+  RTVEC_ELT (v, 0) = elt;
+  RTVEC_ELT (v, 1) = elt;
+  rs6000_expand_vector_init (scale_vec, gen_rtx_PARALLEL (V2DFmode, v));
+  emit_insn (gen_mulv2df3 (tgt, src, scale_vec));
 }
 
 /* Return an RTX representing where to find the function value of a

@@ -83,9 +83,6 @@
 ;; Vector Float modes.
 (define_mode_iterator VDQF [V2SF V4SF V2DF])
 
-;; Modes suitable to use as the return type of a vcond expression.
-(define_mode_iterator VDQF_COND [V2SF V2SI V4SF V4SI V2DF V2DI])
-
 ;; All Float modes.
 (define_mode_iterator VALLF [V2SF V4SF V2DF SF DF])
 
@@ -128,14 +125,8 @@
 ;; Vector modes except double int.
 (define_mode_iterator VDQIF [V8QI V16QI V4HI V8HI V2SI V4SI V2SF V4SF V2DF])
 
-;; Vector modes for Q and H types.
-(define_mode_iterator VDQQH [V8QI V16QI V4HI V8HI])
-
 ;; Vector modes for H and S types.
 (define_mode_iterator VDQHS [V4HI V8HI V2SI V4SI])
-
-;; Vector modes for Q, H and S types.
-(define_mode_iterator VDQQHS [V8QI V16QI V4HI V8HI V2SI V4SI])
 
 ;; Vector and scalar integer modes for H and S
 (define_mode_iterator VSDQ_HSI [V4HI V8HI V2SI V4SI HI SI])
@@ -172,15 +163,10 @@
  [
     UNSPEC_ASHIFT_SIGNED	; Used in aarch-simd.md.
     UNSPEC_ASHIFT_UNSIGNED	; Used in aarch64-simd.md.
-    UNSPEC_FMAX		; Used in aarch64-simd.md.
-    UNSPEC_FMAXNMV	; Used in aarch64-simd.md.
     UNSPEC_FMAXV	; Used in aarch64-simd.md.
-    UNSPEC_FMIN		; Used in aarch64-simd.md.
-    UNSPEC_FMINNMV	; Used in aarch64-simd.md.
     UNSPEC_FMINV	; Used in aarch64-simd.md.
     UNSPEC_FADDV	; Used in aarch64-simd.md.
-    UNSPEC_SADDV	; Used in aarch64-simd.md.
-    UNSPEC_UADDV	; Used in aarch64-simd.md.
+    UNSPEC_ADDV		; Used in aarch64-simd.md.
     UNSPEC_SMAXV	; Used in aarch64-simd.md.
     UNSPEC_SMINV	; Used in aarch64-simd.md.
     UNSPEC_UMAXV	; Used in aarch64-simd.md.
@@ -237,6 +223,9 @@
     UNSPEC_SSHLL	; Used in aarch64-simd.md.
     UNSPEC_USHLL	; Used in aarch64-simd.md.
     UNSPEC_ADDP		; Used in aarch64-simd.md.
+    UNSPEC_FMAX		; Used in aarch64-simd.md.
+    UNSPEC_FMIN		; Used in aarch64-simd.md.
+    UNSPEC_BSL		; Used in aarch64-simd.md.
     UNSPEC_TBL		; Used in vector permute patterns.
     UNSPEC_CONCAT	; Used in vector permute patterns.
     UNSPEC_ZIP1		; Used in vector permute patterns.
@@ -245,22 +234,6 @@
     UNSPEC_UZP2		; Used in vector permute patterns.
     UNSPEC_TRN1		; Used in vector permute patterns.
     UNSPEC_TRN2		; Used in vector permute patterns.
-    UNSPEC_AESE		; Used in aarch64-simd.md.
-    UNSPEC_AESD         ; Used in aarch64-simd.md.
-    UNSPEC_AESMC        ; Used in aarch64-simd.md.
-    UNSPEC_AESIMC       ; Used in aarch64-simd.md.
-    UNSPEC_SHA1C	; Used in aarch64-simd.md.
-    UNSPEC_SHA1M        ; Used in aarch64-simd.md.
-    UNSPEC_SHA1P        ; Used in aarch64-simd.md.
-    UNSPEC_SHA1H        ; Used in aarch64-simd.md.
-    UNSPEC_SHA1SU0      ; Used in aarch64-simd.md.
-    UNSPEC_SHA1SU1      ; Used in aarch64-simd.md.
-    UNSPEC_SHA256H      ; Used in aarch64-simd.md.
-    UNSPEC_SHA256H2     ; Used in aarch64-simd.md.
-    UNSPEC_SHA256SU0    ; Used in aarch64-simd.md.
-    UNSPEC_SHA256SU1    ; Used in aarch64-simd.md.
-    UNSPEC_PMULL        ; Used in aarch64-simd.md.
-    UNSPEC_PMULL2       ; Used in aarch64-simd.md.
 ])
 
 ;; -------------------------------------------------------------------
@@ -270,9 +243,6 @@
 ;; In GPI templates, a string like "%<w>0" will expand to "%w0" in the
 ;; 32-bit version and "%x0" in the 64-bit version.
 (define_mode_attr w [(QI "w") (HI "w") (SI "w") (DI "x") (SF "s") (DF "d")])
-
-;; For constraints used in scalar immediate vector moves
-(define_mode_attr hq [(HI "h") (QI "q")])
 
 ;; For scalar usage of vector/FP registers
 (define_mode_attr v [(QI "b") (HI "h") (SI "s") (DI "d")
@@ -346,7 +316,6 @@
                           (V2SI "s") (V4SI  "s")
 			  (V2DI "d") (V2SF  "s")
 			  (V4SF "s") (V2DF  "d")
-			  (SF   "s") (DF  "d")
 			  (QI "b")   (HI "h")
 			  (SI "s")   (DI "d")])
 
@@ -408,8 +377,7 @@
 ;; Double modes of vector modes (lower case).
 (define_mode_attr Vdbl [(V8QI "v16qi") (V4HI "v8hi")
 			(V2SI "v4si")  (V2SF "v4sf")
-			(SI   "v2si")  (DI   "v2di")
-			(DF   "v2df")])
+			(SI   "v2si")  (DI   "v2di")])
 
 ;; Narrowed modes for VDN.
 (define_mode_attr VNARROWD [(V4HI "V8QI") (V2SI "V4HI")
@@ -463,15 +431,6 @@
                         (DI   "x") (V2DI "x")
                         (V2SF "s") (V4SF "s")
                         (V2DF "d")])
-
-;; Corresponding core element mode for each vector mode.  This is a
-;; variation on <vw> mapping FP modes to GP regs.
-(define_mode_attr vwcore  [(V8QI "w") (V16QI "w")
-			   (V4HI "w") (V8HI "w")
-			   (V2SI "w") (V4SI "w")
-			   (DI   "x") (V2DI "x")
-			   (V2SF "w") (V4SF "w")
-			   (V2DF "x")])
 
 ;; Double vector types for ALLX.
 (define_mode_attr Vallxd [(QI "8b") (HI "4h") (SI "2s")])
@@ -532,24 +491,6 @@
 (define_mode_attr fcvt_target [(V2DF "v2di") (V4SF "v4si") (V2SF "v2si")])
 (define_mode_attr FCVT_TARGET [(V2DF "V2DI") (V4SF "V4SI") (V2SF "V2SI")])
 
-;; Defined to '_fp' for types whose element type is a float type.
-(define_mode_attr fp [(V8QI "")  (V16QI "")
-		      (V4HI "")  (V8HI  "")
-		      (V2SI "")  (V4SI  "")
-		      (DI   "")  (V2DI  "")
-		      (V2SF "_fp") (V4SF  "_fp")
-		      (V2DF "_fp") (DF    "_fp")
-		      (SF "_fp")])
-
-;; Defined to '_q' for 128-bit types.
-(define_mode_attr q [(V8QI "") (V16QI "_q")
-		     (V4HI "") (V8HI  "_q")
-		     (V2SI "") (V4SI  "_q")
-		     (DI   "") (V2DI  "_q")
-		     (V2SF "") (V4SF  "_q")
-			       (V2DF  "_q")
-		     (QI "") (HI "") (SI "") (DI "") (SF "") (DF "")])
-
 ;; -------------------------------------------------------------------
 ;; Code Iterators
 ;; -------------------------------------------------------------------
@@ -586,13 +527,8 @@
 ;; Iterator for integer conversions
 (define_code_iterator FIXUORS [fix unsigned_fix])
 
-;; Iterator for float conversions
-(define_code_iterator FLOATUORS [float unsigned_float])
-
 ;; Code iterator for variants of vector max and min.
 (define_code_iterator MAXMIN [smax smin umax umin])
-
-(define_code_iterator FMAXMIN [smax smin])
 
 ;; Code iterator for variants of vector max and min.
 (define_code_iterator ADDSUB [plus minus])
@@ -612,9 +548,6 @@
 ;; Unsigned comparison operators.
 (define_code_iterator UCOMPARISONS [ltu leu geu gtu])
 
-;; Unsigned comparison operators.
-(define_code_iterator FAC_COMPARISONS [lt le ge gt])
-
 ;; -------------------------------------------------------------------
 ;; Code Attributes
 ;; -------------------------------------------------------------------
@@ -627,10 +560,6 @@
 			 (zero_extend "zero_extend")
 			 (sign_extract "extv")
 			 (zero_extract "extzv")
-			 (fix "fix")
-			 (unsigned_fix "fixuns")
-			 (float "float")
-			 (unsigned_float "floatuns")
 			 (and "and")
 			 (ior "ior")
 			 (xor "xor")
@@ -670,14 +599,10 @@
 (define_code_attr CMP [(lt "LT") (le "LE") (eq "EQ") (ge "GE") (gt "GT")
 			   (ltu "LTU") (leu "LEU") (geu "GEU") (gtu "GTU")])
 
-(define_code_attr fix_trunc_optab [(fix "fix_trunc")
-				   (unsigned_fix "fixuns_trunc")])
-
 ;; Optab prefix for sign/zero-extending operations
 (define_code_attr su_optab [(sign_extend "") (zero_extend "u")
 			    (div "") (udiv "u")
 			    (fix "") (unsigned_fix "u")
-			    (float "s") (unsigned_float "u")
 			    (ss_plus "s") (us_plus "u")
 			    (ss_minus "s") (us_minus "u")])
 
@@ -702,9 +627,7 @@
 (define_code_attr su [(sign_extend "s") (zero_extend "u")
 		      (sign_extract "s") (zero_extract "u")
 		      (fix "s") (unsigned_fix "u")
-		      (div "s") (udiv "u")
-		      (smax "s") (umax "u")
-		      (smin "s") (umin "u")])
+		      (div "s") (udiv "u")])
 
 ;; Emit cbz/cbnz depending on comparison type.
 (define_code_attr cbz [(eq "cbz") (ne "cbnz") (lt "cbnz") (ge "cbz")])
@@ -713,10 +636,10 @@
 (define_code_attr tbz [(eq "tbz") (ne "tbnz") (lt "tbnz") (ge "tbz")])
 
 ;; Max/min attributes.
-(define_code_attr maxmin [(smax "max")
-			  (smin "min")
-			  (umax "max")
-			  (umin "min")])
+(define_code_attr maxmin [(smax "smax")
+			  (smin "smin")
+			  (umax "umax")
+			  (umin "umin")])
 
 ;; MLA/MLS attributes.
 (define_code_attr as [(ss_plus "a") (ss_minus "s")])
@@ -738,10 +661,7 @@
 (define_int_iterator MAXMINV [UNSPEC_UMAXV UNSPEC_UMINV
 			      UNSPEC_SMAXV UNSPEC_SMINV])
 
-(define_int_iterator FMAXMINV [UNSPEC_FMAXV UNSPEC_FMINV
-			       UNSPEC_FMAXNMV UNSPEC_FMINNMV])
-
-(define_int_iterator SUADDV [UNSPEC_SADDV UNSPEC_UADDV])
+(define_int_iterator FMAXMINV [UNSPEC_FMAXV UNSPEC_FMINV])
 
 (define_int_iterator HADDSUB [UNSPEC_SHADD UNSPEC_UHADD
 			      UNSPEC_SRHADD UNSPEC_URHADD
@@ -755,7 +675,7 @@
 (define_int_iterator ADDSUBHN2 [UNSPEC_ADDHN2 UNSPEC_RADDHN2
 			        UNSPEC_SUBHN2 UNSPEC_RSUBHN2])
 
-(define_int_iterator FMAXMIN_UNS [UNSPEC_FMAX UNSPEC_FMIN])
+(define_int_iterator FMAXMIN [UNSPEC_FMAX UNSPEC_FMIN])
 
 (define_int_iterator VQDMULH [UNSPEC_SQDMULH UNSPEC_SQRDMULH])
 
@@ -791,45 +711,24 @@
 			      UNSPEC_UZP1 UNSPEC_UZP2])
 
 (define_int_iterator FRINT [UNSPEC_FRINTZ UNSPEC_FRINTP UNSPEC_FRINTM
-			     UNSPEC_FRINTN UNSPEC_FRINTI UNSPEC_FRINTX
-			     UNSPEC_FRINTA])
+			     UNSPEC_FRINTI UNSPEC_FRINTX UNSPEC_FRINTA])
 
 (define_int_iterator FCVT [UNSPEC_FRINTZ UNSPEC_FRINTP UNSPEC_FRINTM
-			    UNSPEC_FRINTA UNSPEC_FRINTN])
-
-(define_int_iterator FRECP [UNSPEC_FRECPE UNSPEC_FRECPX])
-
-(define_int_iterator CRYPTO_AES [UNSPEC_AESE UNSPEC_AESD])
-(define_int_iterator CRYPTO_AESMC [UNSPEC_AESMC UNSPEC_AESIMC])
-
-(define_int_iterator CRYPTO_SHA1 [UNSPEC_SHA1C UNSPEC_SHA1M UNSPEC_SHA1P])
-
-(define_int_iterator CRYPTO_SHA256 [UNSPEC_SHA256H UNSPEC_SHA256H2])
+			    UNSPEC_FRINTA])
 
 ;; -------------------------------------------------------------------
 ;; Int Iterators Attributes.
 ;; -------------------------------------------------------------------
-(define_int_attr  maxmin_uns [(UNSPEC_UMAXV "umax")
-			      (UNSPEC_UMINV "umin")
-			      (UNSPEC_SMAXV "smax")
-			      (UNSPEC_SMINV "smin")
-			      (UNSPEC_FMAX  "smax_nan")
-			      (UNSPEC_FMAXNMV "smax")
-			      (UNSPEC_FMAXV "smax_nan")
-			      (UNSPEC_FMIN "smin_nan")
-			      (UNSPEC_FMINNMV "smin")
-			      (UNSPEC_FMINV "smin_nan")])
+(define_int_attr  maxminv [(UNSPEC_UMAXV "umax")
+			   (UNSPEC_UMINV "umin")
+			   (UNSPEC_SMAXV "smax")
+			   (UNSPEC_SMINV "smin")])
 
-(define_int_attr  maxmin_uns_op [(UNSPEC_UMAXV "umax")
-				 (UNSPEC_UMINV "umin")
-				 (UNSPEC_SMAXV "smax")
-				 (UNSPEC_SMINV "smin")
-				 (UNSPEC_FMAX "fmax")
-				 (UNSPEC_FMAXNMV "fmaxnm")
-				 (UNSPEC_FMAXV "fmax")
-				 (UNSPEC_FMIN "fmin")
-				 (UNSPEC_FMINNMV "fminnm")
-				 (UNSPEC_FMINV "fmin")])
+(define_int_attr  fmaxminv [(UNSPEC_FMAXV "max")
+			    (UNSPEC_FMINV "min")])
+
+(define_int_attr  fmaxmin [(UNSPEC_FMAX "fmax")
+			   (UNSPEC_FMIN "fmin")])
 
 (define_int_attr sur [(UNSPEC_SHADD "s") (UNSPEC_UHADD "u")
 		      (UNSPEC_SRHADD "sr") (UNSPEC_URHADD "ur")
@@ -841,7 +740,6 @@
 		      (UNSPEC_SUBHN2 "") (UNSPEC_RSUBHN2 "r")
 		      (UNSPEC_SQXTN "s") (UNSPEC_UQXTN "u")
 		      (UNSPEC_USQADD "us") (UNSPEC_SUQADD "su")
-		      (UNSPEC_SADDV "s") (UNSPEC_UADDV "u")
 		      (UNSPEC_SSLI  "s") (UNSPEC_USLI  "u")
 		      (UNSPEC_SSRI  "s") (UNSPEC_USRI  "u")
 		      (UNSPEC_USRA  "u") (UNSPEC_SSRA  "s")
@@ -900,18 +798,15 @@
 				(UNSPEC_FRINTM "floor")
 				(UNSPEC_FRINTI "nearbyint")
 				(UNSPEC_FRINTX "rint")
-				(UNSPEC_FRINTA "round")
-				(UNSPEC_FRINTN "frintn")])
+				(UNSPEC_FRINTA "round")])
 
 ;; frint suffix for floating-point rounding instructions.
 (define_int_attr frint_suffix [(UNSPEC_FRINTZ "z") (UNSPEC_FRINTP "p")
 			       (UNSPEC_FRINTM "m") (UNSPEC_FRINTI "i")
-			       (UNSPEC_FRINTX "x") (UNSPEC_FRINTA "a")
-			       (UNSPEC_FRINTN "n")])
+			       (UNSPEC_FRINTX "x") (UNSPEC_FRINTA "a")])
 
 (define_int_attr fcvt_pattern [(UNSPEC_FRINTZ "btrunc") (UNSPEC_FRINTA "round")
-			       (UNSPEC_FRINTP "ceil") (UNSPEC_FRINTM "floor")
-			       (UNSPEC_FRINTN "frintn")])
+			       (UNSPEC_FRINTP "ceil") (UNSPEC_FRINTM "floor")])
 
 (define_int_attr perm_insn [(UNSPEC_ZIP1 "zip") (UNSPEC_ZIP2 "zip")
 			    (UNSPEC_TRN1 "trn") (UNSPEC_TRN2 "trn")
@@ -920,13 +815,3 @@
 (define_int_attr perm_hilo [(UNSPEC_ZIP1 "1") (UNSPEC_ZIP2 "2")
 			    (UNSPEC_TRN1 "1") (UNSPEC_TRN2 "2")
 			    (UNSPEC_UZP1 "1") (UNSPEC_UZP2 "2")])
-
-(define_int_attr frecp_suffix  [(UNSPEC_FRECPE "e") (UNSPEC_FRECPX "x")])
-
-(define_int_attr aes_op [(UNSPEC_AESE "e") (UNSPEC_AESD "d")])
-(define_int_attr aesmc_op [(UNSPEC_AESMC "mc") (UNSPEC_AESIMC "imc")])
-
-(define_int_attr sha1_op [(UNSPEC_SHA1C "c") (UNSPEC_SHA1P "p")
-			  (UNSPEC_SHA1M "m")])
-
-(define_int_attr sha256_op [(UNSPEC_SHA256H "") (UNSPEC_SHA256H2 "2")])

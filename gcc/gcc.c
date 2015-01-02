@@ -537,7 +537,7 @@ proper position among the other output files.  */
    shared library ordering, and we keep the wrapper function in
    libgcc.  This is not yet a real spec, though it could become one;
    it is currently just stuffed into LINK_SPEC.  FIXME: This wrapping
-   only works with GNU ld and gold.  FIXME: This is incompatible with
+   only works with GNU ld, gold and mcld.  FIXME: This is incompatible with
    -fmudflap when linking statically, which wants to do its own
    wrapping.  */
 #define STACK_SPLIT_SPEC " %{fsplit-stack: --wrap=pthread_create}"
@@ -2227,7 +2227,7 @@ for_each_path (const struct path_prefix *paths,
 	    }
 
 	  /* Now try the multiarch path.  */
-	  if (!skip_multi_dir && !multi_dir
+	  if (!skip_multi_dir
 	      && !pl->require_machine_suffix && multiarch_dir)
 	    {
 	      memcpy (path + len, multiarch_suffix, multiarch_len + 1);
@@ -2259,16 +2259,6 @@ for_each_path (const struct path_prefix *paths,
 	      else
 		path[len] = '\0';
 
-	      ret = callback (path, callback_info);
-	      if (ret)
-		break;
-	    }
-
-	  /* Now try the multiarch path.  */
-	  if (!skip_multi_dir
-	      && !pl->require_machine_suffix && multiarch_dir)
-	    {
-	      memcpy (path + len, multiarch_suffix, multiarch_len + 1);
 	      ret = callback (path, callback_info);
 	      if (ret)
 		break;
@@ -7670,21 +7660,6 @@ set_multilib_dir (void)
 
 	  if (*p == ' ')
 	    ++p;
-	}
-
-      if (first)
-	{
-	  if (this_path_len > 3 
-	      && this_path[0] == '.' 
-	      && this_path[1] == ':'
-	      && this_path[2] == ':')
-	    {
-	      char *new_multiarch_dir = XNEWVEC (char, this_path_len + 1);
-
-	      strncpy (new_multiarch_dir, this_path, this_path_len);
-	      new_multiarch_dir[this_path_len] = '\0';
-	      multiarch_dir = &new_multiarch_dir[3];
-	    }
 	}
 
       if (ok && first)

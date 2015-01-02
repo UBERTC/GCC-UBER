@@ -418,7 +418,7 @@ Objective-C and Objective-C++ Dialects}.
 -ftree-parallelize-loops=@var{n} -ftree-pre -ftree-partial-pre -ftree-pta @gol
 -ftree-reassoc -ftree-sink -ftree-slsr -ftree-sra @gol
 -ftree-switch-conversion -ftree-tail-merge @gol
--ftree-ter -ftree-vectorize -ftree-vrp @gol
+-ftree-ter -ftree-vect-loop-version -ftree-vectorize -ftree-vrp @gol
 -funit-at-a-time -funroll-all-loops -funroll-loops @gol
 -funsafe-loop-optimizations -funsafe-math-optimizations -funswitch-loops @gol
 -fvariable-expansion-in-unroller -fvect-cost-model -fvpt -fweb @gol
@@ -511,9 +511,7 @@ Objective-C and Objective-C++ Dialects}.
 -mtp=@var{name} -mtls-dialect=@var{dialect} @gol
 -mword-relocations @gol
 -mfix-cortex-m3-ldrd @gol
--munaligned-access @gol
--mneon-for-64bits @gol
--mrestrict-it}
+-munaligned-access}
 
 @emph{AVR Options}
 @gccoptlist{-mmcu=@var{mcu} -maccumulate-args -mbranch-cost=@var{cost} @gol
@@ -650,7 +648,7 @@ Objective-C and Objective-C++ Dialects}.
 -mno-align-stringops  -minline-all-stringops @gol
 -minline-stringops-dynamically -mstringop-strategy=@var{alg} @gol
 -mpush-args  -maccumulate-outgoing-args  -m128bit-long-double @gol
--m96bit-long-double -mlong-double-64 -mlong-double-80 @gol
+-m96bit-long-double -mlong-double-64 -mlong-double-80 -mlong-double-128 @gol
 -mregparm=@var{num}  -msseregparm @gol
 -mveclibabi=@var{type} -mvect8-ret-in-mem @gol
 -mpc32 -mpc64 -mpc80 -mstackrealign @gol
@@ -6608,7 +6606,7 @@ optimizations designed to reduce code size.
 @option{-Os} disables the following optimization flags:
 @gccoptlist{-falign-functions  -falign-jumps  -falign-loops @gol
 -falign-labels  -freorder-blocks  -freorder-blocks-and-partition @gol
--fprefetch-loop-arrays}
+-fprefetch-loop-arrays  -ftree-vect-loop-version}
 
 @item -Ofast
 @opindex Ofast
@@ -7849,20 +7847,19 @@ Perform loop vectorization on trees. This flag is enabled by default at
 Perform basic block vectorization on trees. This flag is enabled by default at
 @option{-O3} and when @option{-ftree-vectorize} is enabled.
 
-@item -fvect-cost-model=@var{model}
+@item -ftree-vect-loop-version
+@opindex ftree-vect-loop-version
+Perform loop versioning when doing loop vectorization on trees.  When a loop
+appears to be vectorizable except that data alignment or data dependence cannot
+be determined at compile time, then vectorized and non-vectorized versions of
+the loop are generated along with run-time checks for alignment or dependence
+to control which version is executed.  This option is enabled by default
+except at level @option{-Os} where it is disabled.
+
+@item -fvect-cost-model
 @opindex fvect-cost-model
-Alter the cost model used for vectorization.  The @var{model} argument
-should be one of @code{unlimited}, @code{dynamic} or @code{cheap}.
-With the @code{unlimited} model the vectorized code-path is assumed
-to be profitable while with the @code{dynamic} model a runtime check
-will guard the vectorized code-path to enable it only for iteration
-counts that will likely execute faster than when executing the original
-scalar loop.  The @code{cheap} model will disable vectorization of
-loops where doing so would be cost prohibitive for example due to
-required runtime checks for data dependence or alignment but otherwise
-is equal to the @code{dynamic} model.
-The default cost model depends on other optimization flags and is
-either @code{dynamic} or @code{cheap}.
+Enable cost model for vectorization.  This option is enabled by default at
+@option{-O3}.
 
 @item -ftree-vrp
 @opindex ftree-vrp
@@ -8454,6 +8451,9 @@ Use the @command{bfd} linker instead of the default linker.
 
 @item -fuse-ld=gold
 Use the @command{gold} linker instead of the default linker.
+
+@item -fuse-ld=mcld
+Use the @command{mcld} linker instead of the default linker.
 
 @item -fcprop-registers
 @opindex fcprop-registers
@@ -9258,15 +9258,13 @@ constraints.  The default value is 0.
 
 @item vect-max-version-for-alignment-checks
 The maximum number of run-time checks that can be performed when
-doing loop versioning for alignment in the vectorizer. 
+doing loop versioning for alignment in the vectorizer.  See option
+@option{-ftree-vect-loop-version} for more information.
 
 @item vect-max-version-for-alias-checks
 The maximum number of run-time checks that can be performed when
-doing loop versioning for alias in the vectorizer. 
-
-@item vect-max-peeling-for-alignment
-The maximum number of loop peels to enhance access alignment
-for vectorizer. Value -1 means 'no limit'.
+doing loop versioning for alias in the vectorizer.  See option
+@option{-ftree-vect-loop-version} for more information.
 
 @item max-iterations-to-track
 The maximum number of iterations of a loop the brute-force algorithm
@@ -10995,8 +10993,6 @@ Feature modifiers used with @option{-march} and @option{-mcpu} can be one
 the following:
 
 @table @samp
-@item crc
-Enable CRC extension.
 @item crypto
 Enable Crypto extension.  This implies Advanced SIMD is enabled.
 @item fp
@@ -11283,11 +11279,8 @@ of the @option{-mcpu=} option.  Permissible names are: @samp{armv2},
 @samp{armv6}, @samp{armv6j},
 @samp{armv6t2}, @samp{armv6z}, @samp{armv6zk}, @samp{armv6-m},
 @samp{armv7}, @samp{armv7-a}, @samp{armv7-r}, @samp{armv7-m}, @samp{armv7e-m}
-@samp{armv8-a}, @samp{armv8-a+crc},
+@samp{armv8-a},
 @samp{iwmmxt}, @samp{iwmmxt2}, @samp{ep9312}.
-
-@option{-march=armv8-a+crc} enables code generation for the ARMv8-A
-architecture together with the optional CRC32 extensions.
 
 @option{-march=native} causes the compiler to auto-detect the architecture
 of the build computer.  At present, this feature is only supported on
@@ -11318,8 +11311,8 @@ Permissible names are: @samp{arm2}, @samp{arm250},
 @samp{arm1136j-s}, @samp{arm1136jf-s}, @samp{mpcore}, @samp{mpcorenovfp},
 @samp{arm1156t2-s}, @samp{arm1156t2f-s}, @samp{arm1176jz-s}, @samp{arm1176jzf-s},
 @samp{cortex-a5}, @samp{cortex-a7}, @samp{cortex-a8}, @samp{cortex-a9}, 
-@samp{cortex-a15}, @samp{cortex-a53}, @samp{cortex-r4}, @samp{cortex-r4f},
-@samp{cortex-r5}, @samp{cortex-r7}, @samp{cortex-m4}, @samp{cortex-m3},
+@samp{cortex-a15}, @samp{cortex-r4}, @samp{cortex-r4f}, @samp{cortex-r5},
+@samp{cortex-m4}, @samp{cortex-m3},
 @samp{cortex-m1},
 @samp{cortex-m0},
 @samp{cortex-m0plus},
@@ -11566,17 +11559,6 @@ setting of this option.  If unaligned access is enabled then the
 preprocessor symbol @code{__ARM_FEATURE_UNALIGNED} will also be
 defined.
 
-@item -mneon-for-64bits
-@opindex mneon-for-64bits
-Enables using Neon to handle scalar 64-bits operations. This is
-disabled by default since the cost of moving data from core registers
-to Neon is high.
-
-@item -mrestrict-it
-@opindex mrestrict-it
-Restricts generation of IT blocks to conform to the rules of ARMv8.
-IT blocks can only contain a single 16-bit instruction from a select
-set of instructions. This option is on by default for ARMv8 Thumb mode.
 @end table
 
 @node AVR Options
@@ -14053,11 +14035,15 @@ with code compiled without that switch.
 
 @item -mlong-double-64
 @itemx -mlong-double-80
+@itemx -mlong-double-128
 @opindex mlong-double-64
 @opindex mlong-double-80
+@opindex mlong-double-128
 These switches control the size of @code{long double} type. A size
 of 64 bits makes the @code{long double} type equivalent to the @code{double}
-type. This is the default for Bionic C library.
+type. This is the default for 32-bit Bionic C library.  A size
+of 128 bits makes the @code{long double} type equivalent to the
+@code{__float128} type. This is the default for 64-bit Bionic C library.
 
 @strong{Warning:} if you override the default value for your target ABI, this
 changes the size of

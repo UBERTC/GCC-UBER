@@ -1,3 +1,172 @@
+2014-12-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline:
+	2014-12-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/pr57003.c: Skip on x32.
+	* gcc.target/i386/pr60516.c: Likewise.
+
+2014-12-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline:
+	2014-12-26  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/64409
+	* gcc.target/i386/pr64409.c: New test.
+
+2014-12-23  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/64244
+	* gfortran.dg/typebound_call_26.f90: New.
+
+2014-12-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backported from mainline
+	2014-12-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/64037
+	* g++.dg/pr64037.C: New test.
+
+2014-12-19  Release Manager
+
+	* GCC 4.8.4 released.
+
+2014-12-18  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/61407
+	* gcc.dg/darwin-minversion-1.c: Fixed formatting
+	* gcc.dg/darwin-minversion-2.c: Fixed formatting
+	* gcc.dg/darwin-minversion-3.c: Fixed formatting
+	* gcc.dg/darwin-minversion-4.c: Added test for OS X 10.10
+
+2014-12-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/58624
+	Backported from mainline
+	2014-03-07  Jason Merrill  <jason@redhat.com>
+
+	* g++.dg/plugin/plugin.exp (DEFAULT_CXXFLAGS): Remove -ansi.
+
+2014-12-13  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2014-12-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/64269
+	* gcc.c-torture/compile/pr64269.c: New test.
+
+2014-12-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2014-09-02  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/builtins-1.c: Add tests for vec_ctf,
+	vec_cts, and vec_ctu.
+	* gcc.target/powerpc/builtins-2.c: Likewise.
+
+	Backport from mainline
+	2014-08-28  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/builtins-1.c: Add tests for vec_xl, vec_xst,
+	vec_round, vec_splat, vec_div, and vec_mul.
+	* gcc.target/powerpc/builtins-2.c: New test.
+
+	Backport from mainline
+	2014-08-20  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* testsuite/gcc.target/powerpc/builtins-1.c: New test.
+
+2014-12-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR bootstrap/64213
+	Revert:
+	2014-11-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/64037
+	* g++.dg/pr64037.C: New test.
+
+2014-12-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2014-11-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/64037
+	* g++.dg/pr64037.C: New test.
+
+2014-12-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/56493
+	* c-c++-common/pr56493.c: New test.
+
+2014-11-28  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2014-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/64067
+	* gcc.c-torture/compile/pr64067.c: New test.
+
+	2014-10-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/63659
+	* gcc.c-torture/execute/pr63659.c: New test.
+
+	2014-10-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR libgomp/61200
+	* c-c++-common/gomp/pr61200.c: New test.
+
+2014-11-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-08-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62031
+	* gcc.dg/torture/pr62031.c: New testcase.
+
+	2014-10-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/63379
+	* gcc.dg/vect/pr63379.c: New testcase.
+
+	2014-11-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/63605
+	* gcc.dg/vect/pr63605.c: New testcase.
+
+	2014-10-28  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/63665
+	* gcc.dg/pr63665.c: New testcase.
+
+2014-11-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/63947
+	* gcc.target/i386/pr63947.c: New test.
+
+2014-11-19  Tom de Vries  <tom@codesourcery.com>
+
+	Backport from mainline
+	PR tree-optimization/62167
+	* gcc.dg/pr51879-12.c: Add xfails.
+	* gcc.dg/pr62167-run.c: New test.
+	* gcc.dg/pr62167.c: New test.
+
+2014-11-18  Teresa Johnson  <tejohnson@google.com>
+
+	Backport from mainline and gcc-4_9 branch.
+	2014-11-13  Teresa Johnson  <tejohnson@google.com>
+
+	PR tree-optimization/63841
+	* g++.dg/tree-ssa/pr63841.C: New test.
+
+2014-11-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR ipa/63838
+	* g++.dg/ipa/pr63838.C: New test.
+
 2014-11-03  Marek Polacek  <polacek@redhat.com>
 
 	PR c/52769

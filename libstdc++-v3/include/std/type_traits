@@ -1806,7 +1806,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     struct __common_type_impl
     : private __do_common_type_impl
     {
-      typedef decltype(_S_test<_Tp, _Up>(0)) type;
+      typedef typename decay<decltype(_S_test<_Tp, _Up>(0))>::type type;
     };
 
   struct __do_member_type_wrapper

@@ -2558,6 +2558,7 @@ ix86_target_string (HOST_WIDE_INT isa, int flags, const char *arch,
   static struct ix86_target_opts flag_opts[] =
   {
     { "-m128bit-long-double",		MASK_128BIT_LONG_DOUBLE },
+    { "-mlong-double-128",		MASK_LONG_DOUBLE_128 },
     { "-mlong-double-64",		MASK_LONG_DOUBLE_64 },
     { "-m80387",			MASK_80387 },
     { "-maccumulate-outgoing-args",	MASK_ACCUMULATE_OUTGOING_ARGS },
@@ -3881,10 +3882,19 @@ ix86_option_override_internal (bool main_args_p)
   else if (target_flags_explicit & MASK_RECIP)
     recip_mask &= ~(RECIP_MASK_ALL & ~recip_mask_explicit);
 
-  /* Default long double to 64-bit for Bionic.  */
+  /* Default long double to 64-bit for 32-bit Bionic and to __float128
+     for 64-bit Bionic.  */
   if (TARGET_HAS_BIONIC
-      && !(target_flags_explicit & MASK_LONG_DOUBLE_64))
-    target_flags |= MASK_LONG_DOUBLE_64;
+      && !(target_flags_explicit
+	   & (MASK_LONG_DOUBLE_64 | MASK_LONG_DOUBLE_128)))
+    target_flags |= (TARGET_64BIT
+			     ? MASK_LONG_DOUBLE_128
+			     : MASK_LONG_DOUBLE_64);
+
+  if ((target_flags & MASK_LONG_DOUBLE_128))
+    target_flags &= ~MASK_LONG_DOUBLE_64;
+  else if ((target_flags & MASK_LONG_DOUBLE_64))
+    target_flags &= ~MASK_LONG_DOUBLE_128;
 
   /* Save the initial options in case the user does function specific
      options.  */
@@ -5539,7 +5549,18 @@ ix86_function_type_abi (const_tree fntype)
       if (abi == SYSV_ABI)
 	{
 	  if (lookup_attribute ("ms_abi", TYPE_ATTRIBUTES (fntype)))
-	    abi = MS_ABI;
+	    {
+	      if (TARGET_X32)
+		{
+		  static bool warned = false;
+		  if (!warned)
+		    {
+		      error ("X32 does not support ms_abi attribute");
+		      warned = true;
+		    }
+		}
+	      abi = MS_ABI;
+	    }
 	}
       else if (lookup_attribute ("sysv_abi", TYPE_ATTRIBUTES (fntype)))
 	abi = SYSV_ABI;
@@ -13800,7 +13821,7 @@ put_condition_code (enum rtx_code code, enum machine_mode mode, bool reverse,
       if (mode == CCmode)
 	suffix = "b";
       else if (mode == CCCmode)
-	suffix = "c";
+	suffix = fp ? "b" : "c";
       else
 	gcc_unreachable ();
       break;
@@ -13823,9 +13844,9 @@ put_condition_code (enum rtx_code code, enum machine_mode mode, bool reverse,
       break;
     case GEU:
       if (mode == CCmode)
-	suffix = fp ? "nb" : "ae";
+	suffix = "nb";
       else if (mode == CCCmode)
-	suffix = "nc";
+	suffix = fp ? "nb" : "nc";
       else
 	gcc_unreachable ();
       break;
@@ -42275,17 +42296,20 @@ ix86_add_stmt_cost (void *data, int count, enum vect_cost_for_stmt kind,
   unsigned *cost = (unsigned *) data;
   unsigned retval = 0;
 
-  tree vectype = stmt_info ? stmt_vectype (stmt_info) : NULL_TREE;
-  int stmt_cost = ix86_builtin_vectorization_cost (kind, vectype, misalign);
+  if (flag_vect_cost_model)
+    {
+      tree vectype = stmt_info ? stmt_vectype (stmt_info) : NULL_TREE;
+      int stmt_cost = ix86_builtin_vectorization_cost (kind, vectype, misalign);
 
-  /* Statements in an inner loop relative to the loop being
-     vectorized are weighted more heavily.  The value here is
-      arbitrary and could potentially be improved with analysis.  */
-  if (where == vect_body && stmt_info && stmt_in_inner_loop_p (stmt_info))
-    count *= 50;  /* FIXME.  */
+      /* Statements in an inner loop relative to the loop being
+	 vectorized are weighted more heavily.  The value here is
+	 arbitrary and could potentially be improved with analysis.  */
+      if (where == vect_body && stmt_info && stmt_in_inner_loop_p (stmt_info))
+	count *= 50;  /* FIXME.  */
 
-  retval = (unsigned) (count * stmt_cost);
-  cost[where] += retval;
+      retval = (unsigned) (count * stmt_cost);
+      cost[where] += retval;
+    }
 
   return retval;
 }

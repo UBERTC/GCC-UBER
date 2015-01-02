@@ -20,45 +20,6 @@
 ;; along with GCC; see the file COPYING3.  If not see
 ;; <http://www.gnu.org/licenses/>.
 
-(define_attr "cortex_a7_neon_type"
-  "neon_mul, neon_mla, neon_other"
-  (cond [
-          (eq_attr "type" "neon_mul_b, neon_mul_b_q,\
-	                   neon_mul_h, neon_mul_h_q,\
-			   neon_mul_s, neon_mul_s_q,\
-			   neon_mul_b_long, neon_mul_h_long,\
-			   neon_mul_s_long, neon_mul_h_scalar,\
-			   neon_mul_h_scalar_q, neon_mul_s_scalar,\
-			   neon_mul_s_scalar_q, neon_mul_h_scalar_long,\
-			   neon_mul_s_scalar_long,\
-			   neon_sat_mul_b, neon_sat_mul_b_q,\
-			   neon_sat_mul_h, neon_sat_mul_h_q,\
-			   neon_sat_mul_s, neon_sat_mul_s_q,\
-			   neon_sat_mul_b_long, neon_sat_mul_h_long,\
-			   neon_sat_mul_s_long,\
-			   neon_sat_mul_h_scalar, neon_sat_mul_h_scalar_q,\
-			   neon_sat_mul_s_scalar, neon_sat_mul_s_scalar_q,\
-			   neon_sat_mul_h_scalar_long,\
-			   neon_sat_mul_s_scalar_long,\
-			   neon_fp_mul_s, neon_fp_mul_s_q,\
-			   neon_fp_mul_s_scalar, neon_fp_mul_s_scalar_q")
-             (const_string "neon_mul")
-          (eq_attr "type" "neon_mla_b, neon_mla_b_q, neon_mla_h,\
-	                   neon_mla_h_q, neon_mla_s, neon_mla_s_q,\
-			   neon_mla_b_long, neon_mla_h_long,\
-                           neon_mla_s_long,\
-			   neon_mla_h_scalar, neon_mla_h_scalar_q,\
-			   neon_mla_s_scalar, neon_mla_s_scalar_q,\
-			   neon_mla_h_scalar_long, neon_mla_s_scalar_long,\
-			   neon_sat_mla_b_long, neon_sat_mla_h_long,\
-			   neon_sat_mla_s_long,\
-			   neon_sat_mla_h_scalar_long,\
-                           neon_sat_mla_s_scalar_long,\
-			   neon_fp_mla_s, neon_fp_mla_s_q,\
-			   neon_fp_mla_s_scalar, neon_fp_mla_s_scalar_q")
-             (const_string "neon_mla")]
-           (const_string "neon_other")))
-
 (define_automaton "cortex_a7")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -106,7 +67,8 @@
 
 (define_insn_reservation "cortex_a7_branch" 0
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "branch"))
+       (and (eq_attr "type" "branch")
+            (eq_attr "neon_type" "none")))
   "(cortex_a7_ex2|cortex_a7_ex1)+cortex_a7_branch")
 
 ;; Call cannot dual-issue as an older instruction. It can dual-issue
@@ -115,7 +77,8 @@
 ;; cycle.
 (define_insn_reservation "cortex_a7_call" 1
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "call"))
+       (and (eq_attr "type" "call")
+            (eq_attr "neon_type" "none")))
   "(cortex_a7_ex2|cortex_a7_both)+cortex_a7_branch")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -125,31 +88,25 @@
 ;; ALU instruction with an immediate operand can dual-issue.
 (define_insn_reservation "cortex_a7_alu_imm" 2
   (and (eq_attr "tune" "cortexa7")
-       (ior (eq_attr "type" "adr,alu_imm,alus_imm,logic_imm,logics_imm,\
-                             mov_imm,mvn_imm,extend")
-            (and (eq_attr "type" "mov_reg,mov_shift,mov_shift_reg")
-                 (not (eq_attr "length" "8")))))
+       (and (ior (eq_attr "type" "simple_alu_imm")
+                 (ior (eq_attr "type" "simple_alu_shift")
+                      (and (eq_attr "insn" "mov")
+                           (not (eq_attr "length" "8")))))
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex2|cortex_a7_ex1")
 
 ;; ALU instruction with register operands can dual-issue
 ;; with a younger immediate-based instruction.
 (define_insn_reservation "cortex_a7_alu_reg" 2
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "alu_reg,alus_reg,logic_reg,logics_reg,\
-                        adc_imm,adcs_imm,adc_reg,adcs_reg,\
-                        bfm,rev,\
-                        shift_imm,shift_reg,mov_reg,mvn_reg"))
+       (and (eq_attr "type" "alu_reg")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1")
 
 (define_insn_reservation "cortex_a7_alu_shift" 2
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "alu_shift_imm,alus_shift_imm,\
-                        logic_shift_imm,logics_shift_imm,\
-                        alu_shift_reg,alus_shift_reg,\
-                        logic_shift_reg,logics_shift_reg,\
-                        mov_shift,mov_shift_reg,\
-                        mvn_shift,mvn_shift_reg,\
-                        mrs,multiple,no_insn"))
+       (and (eq_attr "type" "alu_shift,alu_shift_reg")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1")
 
 ;; Forwarding path for unshifted operands.
@@ -170,8 +127,8 @@
 
 (define_insn_reservation "cortex_a7_mul" 2
   (and (eq_attr "tune" "cortexa7")
-       (ior (eq_attr "mul32" "yes")
-            (eq_attr "mul64" "yes")))
+       (and (eq_attr "type" "mult")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_both")
 
 ;; Forward the result of a multiply operation to the accumulator 
@@ -183,7 +140,7 @@
 ;; The latency depends on the operands, so we use an estimate here.
 (define_insn_reservation "cortex_a7_idiv" 5
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "udiv,sdiv"))
+       (eq_attr "insn" "udiv,sdiv"))
   "cortex_a7_both*5")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -196,42 +153,50 @@
 
 (define_insn_reservation "cortex_a7_load1" 2
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "load_byte,load1"))
+       (and (eq_attr "type" "load_byte,load1")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1")
 
 (define_insn_reservation "cortex_a7_store1" 0
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "store1"))
+       (and (eq_attr "type" "store1")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1")
 
 (define_insn_reservation "cortex_a7_load2" 2
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "load2"))
+       (and (eq_attr "type" "load2")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_both")
 
 (define_insn_reservation "cortex_a7_store2" 0
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "store2"))
+       (and (eq_attr "type" "store2")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_both")
 
 (define_insn_reservation "cortex_a7_load3" 3
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "load3"))
+       (and (eq_attr "type" "load3")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_both, cortex_a7_ex1")
 
 (define_insn_reservation "cortex_a7_store3" 0
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "store4"))
+       (and (eq_attr "type" "store4")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_both, cortex_a7_ex1")
 
 (define_insn_reservation "cortex_a7_load4" 3
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "load4"))
+       (and (eq_attr "type" "load4")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_both, cortex_a7_both")
 
 (define_insn_reservation "cortex_a7_store4" 0
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "store3"))
+       (and (eq_attr "type" "store3")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_both, cortex_a7_both")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -243,8 +208,9 @@
 
 (define_insn_reservation "cortex_a7_fpalu" 4
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "ffariths, fadds, ffarithd, faddd, fmov,\
-                        f_cvt, f_cvtf2i, f_cvti2f, fcmps, fcmpd"))
+       (and (eq_attr "type" "ffariths, fadds, ffarithd, faddd, fcpys,\
+                             f_cvt, fcmps, fcmpd")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1+cortex_a7_fpadd_pipe")
 
 ;; For fconsts and fconstd, 8-bit immediate data is passed directly from
@@ -252,7 +218,8 @@
 
 (define_insn_reservation "cortex_a7_fconst" 3
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "fconsts,fconstd"))
+       (and (eq_attr "type" "fconsts,fconstd")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1+cortex_a7_fpadd_pipe")
 
 ;; We should try not to attempt to issue a single-precision multiplication in
@@ -261,22 +228,40 @@
 
 (define_insn_reservation "cortex_a7_fpmuls" 4
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "fmuls"))
+       (and (eq_attr "type" "fmuls")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1+cortex_a7_fpmul_pipe")
 
 (define_insn_reservation "cortex_a7_neon_mul" 4
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "cortex_a7_neon_type" "neon_mul"))
+       (eq_attr "neon_type"
+                "neon_mul_ddd_8_16_qdd_16_8_long_32_16_long,\
+                 neon_mul_qqq_8_16_32_ddd_32,\
+                 neon_mul_qdd_64_32_long_qqd_16_ddd_32_scalar_64_32_long_scalar,\
+                 neon_mul_ddd_16_scalar_32_16_long_scalar,\
+                 neon_mul_qqd_32_scalar,\
+                 neon_fp_vmul_ddd,\
+                 neon_fp_vmul_qqd"))
   "(cortex_a7_both+cortex_a7_fpmul_pipe)*2")
 
 (define_insn_reservation "cortex_a7_fpmacs" 8
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "fmacs,ffmas"))
+       (and (eq_attr "type" "fmacs,ffmas")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1+cortex_a7_fpmul_pipe")
 
 (define_insn_reservation "cortex_a7_neon_mla" 8
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "cortex_a7_neon_type" "neon_mla"))
+       (eq_attr "neon_type"
+                "neon_mla_ddd_8_16_qdd_16_8_long_32_16_long,\
+                 neon_mla_qqq_8_16,\
+                 neon_mla_ddd_32_qqd_16_ddd_32_scalar_qdd_64_32_long_scalar_qdd_64_32_long,\
+                 neon_mla_qqq_32_qqd_32_scalar,\
+                 neon_mla_ddd_16_scalar_qdd_32_16_long_scalar,\
+                 neon_fp_vmla_ddd,\
+                 neon_fp_vmla_qqq,\
+                 neon_fp_vmla_ddd_scalar,\
+                 neon_fp_vmla_qqq_scalar"))
   "cortex_a7_both+cortex_a7_fpmul_pipe")
 
 (define_bypass 4 "cortex_a7_fpmacs,cortex_a7_neon_mla"
@@ -288,17 +273,20 @@
 
 (define_insn_reservation "cortex_a7_fpmuld" 7
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "fmuld"))
+       (and (eq_attr "type" "fmuld")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1+cortex_a7_fpmul_pipe, cortex_a7_fpmul_pipe*3")
 
 (define_insn_reservation "cortex_a7_fpmacd" 11
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "fmacd"))
+       (and (eq_attr "type" "fmacd")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1+cortex_a7_fpmul_pipe, cortex_a7_fpmul_pipe*3")
 
 (define_insn_reservation "cortex_a7_fpfmad" 8
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "ffmad"))
+       (and (eq_attr "type" "ffmad")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1+cortex_a7_fpmul_pipe, cortex_a7_fpmul_pipe*4")
 
 (define_bypass 7 "cortex_a7_fpmacd"
@@ -311,12 +299,14 @@
 
 (define_insn_reservation "cortex_a7_fdivs" 16
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "fdivs, fsqrts"))
+       (and (eq_attr "type" "fdivs")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1+cortex_a7_fp_div_sqrt, cortex_a7_fp_div_sqrt * 13")
 
 (define_insn_reservation "cortex_a7_fdivd" 31
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "fdivd, fsqrtd"))
+       (and (eq_attr "type" "fdivd")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1+cortex_a7_fp_div_sqrt, cortex_a7_fp_div_sqrt * 28")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -327,12 +317,14 @@
 
 (define_insn_reservation "cortex_a7_r2f" 4
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "f_mcr,f_mcrr"))
+       (and (eq_attr "type" "r_2_f")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_both")
 
 (define_insn_reservation "cortex_a7_f2r" 2
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "f_mrc,f_mrrc"))
+       (and (eq_attr "type" "f_2_r")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -344,7 +336,8 @@
 
 (define_insn_reservation "cortex_a7_f_flags" 4
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "f_flag"))
+       (and (eq_attr "type" "f_flag")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -353,22 +346,26 @@
 
 (define_insn_reservation "cortex_a7_f_loads" 4
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "f_loads"))
+       (and (eq_attr "type" "f_loads")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1")
 
 (define_insn_reservation "cortex_a7_f_loadd" 4
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "f_loadd"))
+       (and (eq_attr "type" "f_loadd")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_both")
 
 (define_insn_reservation "cortex_a7_f_stores" 0
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "f_stores"))
+       (and (eq_attr "type" "f_stores")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_ex1")
 
 (define_insn_reservation "cortex_a7_f_stored" 0
   (and (eq_attr "tune" "cortexa7")
-       (eq_attr "type" "f_stored"))
+       (and (eq_attr "type" "f_stored")
+            (eq_attr "neon_type" "none")))
   "cortex_a7_both")
 
 ;; Load-to-use for floating-point values has a penalty of one cycle,
@@ -389,6 +386,22 @@
 
 (define_insn_reservation "cortex_a7_neon" 4
   (and (eq_attr "tune" "cortexa7")
-       (and (eq_attr "is_neon_type" "yes")
-            (eq_attr "cortex_a7_neon_type" "neon_other")))
+       (eq_attr "neon_type"
+                "!none,\
+                  neon_mul_ddd_8_16_qdd_16_8_long_32_16_long,\
+                  neon_mul_qqq_8_16_32_ddd_32,\
+                  neon_mul_qdd_64_32_long_qqd_16_ddd_32_scalar_64_32_long_scalar,\
+                  neon_mla_ddd_8_16_qdd_16_8_long_32_16_long,\
+                  neon_mla_qqq_8_16,\
+                  neon_mla_ddd_32_qqd_16_ddd_32_scalar_qdd_64_32_long_scalar_qdd_64_32_long,\
+                  neon_mla_qqq_32_qqd_32_scalar,\
+                  neon_mul_ddd_16_scalar_32_16_long_scalar,\
+                  neon_mul_qqd_32_scalar,\
+                  neon_mla_ddd_16_scalar_qdd_32_16_long_scalar,\
+                  neon_fp_vmul_ddd,\
+                  neon_fp_vmul_qqd,\
+                  neon_fp_vmla_ddd,\
+                  neon_fp_vmla_qqq,\
+                  neon_fp_vmla_ddd_scalar,\
+                  neon_fp_vmla_qqq_scalar"))
   "cortex_a7_both*2")

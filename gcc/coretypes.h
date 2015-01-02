@@ -62,8 +62,6 @@ union gimple_statement_d;
 typedef union gimple_statement_d *gimple;
 typedef const union gimple_statement_d *const_gimple;
 typedef gimple gimple_seq;
-struct gimple_stmt_iterator_d;
-typedef struct gimple_stmt_iterator_d gimple_stmt_iterator;
 union section;
 typedef union section section;
 struct gcc_options;

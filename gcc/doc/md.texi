@@ -1711,6 +1711,9 @@ Floating point constant zero
 @item Z
 Integer constant zero
 
+@item Usa
+An absolute symbolic address
+
 @item Ush
 The high part (bits 12 and upwards) of the pc-relative address of a symbol
 within 4GB of the instruction
@@ -8169,9 +8172,9 @@ must be a @code{label_ref}.
 
 @cindex @code{pc} and attributes
 @item (pc)
-This refers to the address of the @emph{current} insn.  It might have
-been more consistent with other usage to make this the address of the
-@emph{next} insn but this would be confusing because the length of the
+For non-branch instructions and backward branch instructions, this refers
+to the address of the current insn.  But for forward branch instructions,
+this refers to the address of the next insn, because the length of the
 current insn is to be computed.
 @end table
 
@@ -8877,8 +8880,7 @@ can be quite tedious to describe these forms directly in the
 (define_cond_exec
   [@var{predicate-pattern}]
   "@var{condition}"
-  "@var{output-template}"
-  "@var{optional-insn-attribues}")
+  "@var{output-template}")
 @end smallexample
 
 @var{predicate-pattern} is the condition that must be true for the
@@ -8898,13 +8900,6 @@ assembly text for the predicate is a simple prefix to the main insn.
 In order to handle the general case, there is a global variable
 @code{current_insn_predicate} that will contain the entire predicate
 if the current insn is predicated, and will otherwise be @code{NULL}.
-
-@var{optional-insn-attributes} is an optional vector of attributes that gets
-appended to the insn attributes of the produced cond_exec rtx. It can
-be used to add some distinguishing attribute to cond_exec rtxs produced
-that way. An example usage would be to use this attribute in conjunction
-with attributes on the main pattern to disable particular alternatives under
-certain conditions.
 
 When @code{define_cond_exec} is used, an implicit reference to
 the @code{predicable} instruction attribute is made.
@@ -9662,7 +9657,7 @@ Here's an example of int iterators in action, taken from the ARM port:
 		      QABSNEG))]
   "TARGET_NEON"
   "vq<absneg>.<V_s_elem>\t%<V_reg>0, %<V_reg>1"
-  [(set_attr "type" "neon_vqneg_vqabs")]
+  [(set_attr "neon_type" "neon_vqneg_vqabs")]
 )
 
 @end smallexample
@@ -9677,7 +9672,7 @@ This is equivalent to:
 		      UNSPEC_VQABS))]
   "TARGET_NEON"
   "vqabs.<V_s_elem>\t%<V_reg>0, %<V_reg>1"
-  [(set_attr "type" "neon_vqneg_vqabs")]
+  [(set_attr "neon_type" "neon_vqneg_vqabs")]
 )
 
 (define_insn "neon_vqneg<mode>"
@@ -9687,7 +9682,7 @@ This is equivalent to:
 		      UNSPEC_VQNEG))]
   "TARGET_NEON"
   "vqneg.<V_s_elem>\t%<V_reg>0, %<V_reg>1"
-  [(set_attr "type" "neon_vqneg_vqabs")]
+  [(set_attr "neon_type" "neon_vqneg_vqabs")]
 )
 
 @end smallexample

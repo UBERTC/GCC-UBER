@@ -114,7 +114,6 @@ let rec signed_ctype = function
   | T_uint32x4 -> T_int32x4
   | T_uint64x1 -> T_int64x1
   | T_uint64x2 -> T_int64x2
-  | T_poly64x2 -> T_int64x2
   (* Cast to types defined by mode in arm.c, not random types pulled in from
      the <stdint.h> header in use. This fixes incompatible pointer errors when
      compiling with C++.  *)
@@ -122,12 +121,9 @@ let rec signed_ctype = function
   | T_uint16 | T_int16 -> T_intHI
   | T_uint32 | T_int32 -> T_intSI
   | T_uint64 | T_int64 -> T_intDI
-  | T_float16 -> T_floatHF
   | T_float32 -> T_floatSF
   | T_poly8 -> T_intQI
   | T_poly16 -> T_intHI
-  | T_poly64 -> T_intDI
-  | T_poly128 -> T_intTI
   | T_arrayof (n, elt) -> T_arrayof (n, signed_ctype elt)
   | T_ptrto elt -> T_ptrto (signed_ctype elt)
   | T_const elt -> T_const (signed_ctype elt)
@@ -279,8 +275,8 @@ let rec mode_suffix elttype shape =
     let mode = mode_of_elt elttype shape in
     string_of_mode mode
   with MixedMode (dst, src) ->
-    let dstmode = mode_of_elt ~argpos:0 dst shape
-    and srcmode = mode_of_elt ~argpos:1 src shape in
+    let dstmode = mode_of_elt dst shape
+    and srcmode = mode_of_elt src shape in
     string_of_mode dstmode ^ string_of_mode srcmode
 
 let get_shuffle features =
@@ -295,24 +291,19 @@ let print_feature_test_start features =
     match List.find (fun feature ->
                        match feature with Requires_feature _ -> true
                                         | Requires_arch _ -> true
-                                        | Requires_FP_bit _ -> true
                                         | _ -> false)
                      features with
-      Requires_feature feature ->
+      Requires_feature feature -> 
         Format.printf "#ifdef __ARM_FEATURE_%s@\n" feature
     | Requires_arch arch ->
         Format.printf "#if __ARM_ARCH >= %d@\n" arch
-    | Requires_FP_bit bit ->
-        Format.printf "#if ((__ARM_FP & 0x%X) != 0)@\n"
-                      (1 lsl bit)
     | _ -> assert false
   with Not_found -> assert true
 
 let print_feature_test_end features =
   let feature =
-    List.exists (function Requires_feature _ -> true
-                          | Requires_arch _ -> true
-                          | Requires_FP_bit _ -> true
+    List.exists (function Requires_feature x -> true
+                          | Requires_arch x -> true
                           |  _ -> false) features in
   if feature then Format.printf "#endif@\n"
 
@@ -365,96 +356,79 @@ let print_ops ops =
      abase : "ARM" base name for the type (i.e. int in int8x8_t).
      esize : element size.
      enum : element count.
-     alevel: architecture level at which available.
 *)
-
-type fpulevel = CRYPTO | ALL
 
 let deftypes () =
   let typeinfo = [
     (* Doubleword vector types.  *)
-    "__builtin_neon_qi", "int", 8, 8, ALL;
-    "__builtin_neon_hi", "int", 16, 4, ALL;
-    "__builtin_neon_si", "int", 32, 2, ALL;
-    "__builtin_neon_di", "int", 64, 1, ALL;
-    "__builtin_neon_hf", "float", 16, 4, ALL;
-    "__builtin_neon_sf", "float", 32, 2, ALL;
-    "__builtin_neon_poly8", "poly", 8, 8, ALL;
-    "__builtin_neon_poly16", "poly", 16, 4, ALL;
-    "__builtin_neon_poly64", "poly", 64, 1, CRYPTO;
-    "__builtin_neon_uqi", "uint", 8, 8, ALL;
-    "__builtin_neon_uhi", "uint", 16, 4, ALL;
-    "__builtin_neon_usi", "uint", 32, 2, ALL;
-    "__builtin_neon_udi", "uint", 64, 1, ALL;
+    "__builtin_neon_qi", "int", 8, 8;
+    "__builtin_neon_hi", "int", 16, 4;
+    "__builtin_neon_si", "int", 32, 2;
+    "__builtin_neon_di", "int", 64, 1;
+    "__builtin_neon_sf", "float", 32, 2;
+    "__builtin_neon_poly8", "poly", 8, 8;
+    "__builtin_neon_poly16", "poly", 16, 4;
+    "__builtin_neon_uqi", "uint", 8, 8;
+    "__builtin_neon_uhi", "uint", 16, 4;
+    "__builtin_neon_usi", "uint", 32, 2;
+    "__builtin_neon_udi", "uint", 64, 1;
 
     (* Quadword vector types.  *)
-    "__builtin_neon_qi", "int", 8, 16, ALL;
-    "__builtin_neon_hi", "int", 16, 8, ALL;
-    "__builtin_neon_si", "int", 32, 4, ALL;
-    "__builtin_neon_di", "int", 64, 2, ALL;
-    "__builtin_neon_sf", "float", 32, 4, ALL;
-    "__builtin_neon_poly8", "poly", 8, 16, ALL;
-    "__builtin_neon_poly16", "poly", 16, 8, ALL;
-    "__builtin_neon_poly64", "poly", 64, 2, CRYPTO;
-    "__builtin_neon_uqi", "uint", 8, 16, ALL;
-    "__builtin_neon_uhi", "uint", 16, 8, ALL;
-    "__builtin_neon_usi", "uint", 32, 4, ALL;
-    "__builtin_neon_udi", "uint", 64, 2, ALL
+    "__builtin_neon_qi", "int", 8, 16;
+    "__builtin_neon_hi", "int", 16, 8;
+    "__builtin_neon_si", "int", 32, 4;
+    "__builtin_neon_di", "int", 64, 2;
+    "__builtin_neon_sf", "float", 32, 4;
+    "__builtin_neon_poly8", "poly", 8, 16;
+    "__builtin_neon_poly16", "poly", 16, 8;
+    "__builtin_neon_uqi", "uint", 8, 16;
+    "__builtin_neon_uhi", "uint", 16, 8;
+    "__builtin_neon_usi", "uint", 32, 4;
+    "__builtin_neon_udi", "uint", 64, 2
   ] in
   List.iter
-    (fun (cbase, abase, esize, enum, fpulevel) ->
+    (fun (cbase, abase, esize, enum) ->
       let attr =
         match enum with
           1 -> ""
         | _ -> Printf.sprintf "\t__attribute__ ((__vector_size__ (%d)))"
                               (esize * enum / 8) in
-      if fpulevel == CRYPTO then
-        Format.printf "#ifdef __ARM_FEATURE_CRYPTO\n";
-      Format.printf "typedef %s %s%dx%d_t%s;@\n" cbase abase esize enum attr;
-      if fpulevel == CRYPTO then
-        Format.printf "#endif\n";)
+      Format.printf "typedef %s %s%dx%d_t%s;@\n" cbase abase esize enum attr)
     typeinfo;
   Format.print_newline ();
   (* Extra types not in <stdint.h>.  *)
   Format.printf "typedef float float32_t;\n";
   Format.printf "typedef __builtin_neon_poly8 poly8_t;\n";
-  Format.printf "typedef __builtin_neon_poly16 poly16_t;\n";
-  Format.printf "#ifdef __ARM_FEATURE_CRYPTO\n";
-  Format.printf "typedef __builtin_neon_poly64 poly64_t;\n";
-  Format.printf "typedef __builtin_neon_poly128 poly128_t;\n";
-  Format.printf "#endif\n"
+  Format.printf "typedef __builtin_neon_poly16 poly16_t;\n"
 
-(* Output structs containing arrays, for load & store instructions etc.
-   poly128_t is deliberately not included here because it has no array types
-   defined for it.  *)
+(* Output structs containing arrays, for load & store instructions etc.  *)
 
 let arrtypes () =
   let typeinfo = [
-    "int", 8, ALL;    "int", 16, ALL;
-    "int", 32, ALL;   "int", 64, ALL;
-    "uint", 8, ALL;   "uint", 16, ALL;
-    "uint", 32, ALL;  "uint", 64, ALL;
-    "float", 32, ALL; "poly", 8, ALL;
-    "poly", 16, ALL; "poly", 64, CRYPTO
+    "int", 8;    "int", 16;
+    "int", 32;   "int", 64;
+    "uint", 8;   "uint", 16;
+    "uint", 32;  "uint", 64;
+    "float", 32; "poly", 8;
+    "poly", 16
   ] in
-  let writestruct elname elsize regsize arrsize fpulevel =
+  let writestruct elname elsize regsize arrsize =
     let elnum = regsize / elsize in
     let structname =
       Printf.sprintf "%s%dx%dx%d_t" elname elsize elnum arrsize in
     let sfmt = start_function () in
-    Format.printf "%stypedef struct %s"
-      (if fpulevel == CRYPTO then "#ifdef __ARM_FEATURE_CRYPTO\n" else "") structname;
+    Format.printf "typedef struct %s" structname;
     open_braceblock sfmt;
     Format.printf "%s%dx%d_t val[%d];" elname elsize elnum arrsize;
     close_braceblock sfmt;
-    Format.printf " %s;%s" structname (if fpulevel == CRYPTO then "\n#endif\n" else "");
+    Format.printf " %s;" structname;
     end_function sfmt;
   in
     for n = 2 to 4 do
       List.iter
-        (fun (elname, elsize, alevel) ->
-          writestruct elname elsize 64 n alevel;
-          writestruct elname elsize 128 n alevel)
+        (fun (elname, elsize) ->
+          writestruct elname elsize 64 n;
+          writestruct elname elsize 128 n)
         typeinfo
     done
 
@@ -510,8 +484,6 @@ let _ =
   print_ops ops;
   Format.print_newline ();
   print_ops reinterp;
-  print_ops reinterpq;
-  Format.printf "%s" crypto_intrinsics;
   print_lines [
 "#ifdef __cplusplus";
 "}";
