@@ -1,5 +1,17 @@
 2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r218319.
+	2014-12-03  Andrew Stubbs  <ams@codesourcery.com>
+
+	Revert:
+
+	2014-09-17  Andrew Stubbs  <ams@codesourcery.com>
+
+	* config/arm/arm.c (arm_option_override): Reject -mfpu=neon
+	when architecture is older than ARMv7.
+
+2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r217691.
 	2014-11-18  Jiong Wang  <jiong.wang@arm.com>
 
