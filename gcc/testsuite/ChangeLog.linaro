@@ -1,3 +1,13 @@
+2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r217362.
+	2014-11-11  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/vbslq_f64_1.c: New.
+	* gcc.target/aarch64/vbslq_f64_2.c: Likewise.
+	* gcc.target/aarch64/vbslq_u64_1.c: Likewise.
+	* gcc.target/aarch64/vbslq_u64_2.c: Likewise.
+
 2014-12-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.9-2014.12 released.

@@ -1,3 +1,26 @@
+2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r217362, r217546.
+	2014-11-14  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/63724
+        * config/aarch64/aarch64.c (aarch64_expand_mov_immediate): Split out
+        numerical immediate handling to...
+        (aarch64_internal_mov_immediate): ...this. New.
+        (aarch64_rtx_costs): Use aarch64_internal_mov_immediate.
+        (aarch64_mov_operand_p): Relax predicate.
+        * config/aarch64/aarch64.md (mov<mode>:GPI): Do not expand CONST_INTs.
+        (*movsi_aarch64): Turn into define_insn_and_split and new alternative
+        for 'n'.
+        (*movdi_aarch64): Likewise.
+
+	2014-11-11  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-simd.md
+	(aarch64_simd_bsl<mode>_internal): Remove float cases, canonicalize.
+	(aarch64_simd_bsl<mode>): Add gen_lowpart expressions where we
+	are punning between float vectors and integer vectors.
+
 2014-12-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	* LINARO-VERSION: Bump version.
