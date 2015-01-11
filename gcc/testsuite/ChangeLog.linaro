@@ -1,5 +1,12 @@
 2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209620.
+	2014-04-22  Vidya Praveen  <vidyapraveen@arm.com>
+
+	* gcc.target/aarch64/cvtf_1.c: New.
+
+2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r217362.
 	2014-11-11  James Greenhalgh  <james.greenhalgh@arm.com>
 

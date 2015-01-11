@@ -1,5 +1,19 @@
 2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r209620.
+	2014-04-22  Vidya Praveen  <vidyapraveen@arm.com>
+
+	* aarch64.md (float<GPI:mode><GPF:mode>2): Remove.
+	(floatuns<GPI:mode><GPF:mode>2): Remove.
+	(<optab><fcvt_target><GPF:mode>2): New pattern for equal width float
+	and floatuns conversions.
+	(<optab><fcvt_iesize><GPF:mode>2): New pattern for inequal width float
+	and floatuns conversions.
+	* iterators.md (fcvt_target, FCVT_TARGET): Support SF and DF modes.
+	(w1,w2): New mode attributes for inequal width conversions.
+ 
+2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r217362, r217546.
 	2014-11-14  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
 
