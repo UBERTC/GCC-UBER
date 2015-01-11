@@ -1,5 +1,13 @@
 2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r211132.
+	2014-06-02  Tom de Vries  <tom@codesourcery.com>
+
+	* config/aarch64/aarch64.c (aarch64_float_const_representable_p): Handle
+	case that x has VOIDmode.
+
+2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r209620.
 	2014-04-22  Vidya Praveen  <vidyapraveen@arm.com>
 
