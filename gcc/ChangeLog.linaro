@@ -1,3 +1,13 @@
+2015-01-12  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r217661.
+	2014-11-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64-cores.def (cortex-a53): Remove
+	AARCH64_FL_CRYPTO from feature flags.
+	(cortex-a57): Likewise.
+	(cortex-a57.cortex-a53): Likewise.
+
 2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r218319.
