@@ -1,5 +1,13 @@
 2015-01-12  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r217717.
+	2014-11-18  Felix Yang  <felix.yang@huawei.com>
+
+	* config/aarch64/aarch64.c (doloop_end): New pattern.
+	* config/aarch64/aarch64.md (TARGET_CAN_USE_DOLOOP_P): Implement.
+
+2015-01-12  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r217661.
 	2014-11-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
