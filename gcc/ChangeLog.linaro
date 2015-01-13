@@ -1,3 +1,14 @@
+2015-01-13  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r217593.
+	2014-11-14  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64-cores.def (thunderx): Change the scheduler
+	over to thunderx.
+	* config/aarch64/aarch64.md: Include thunderx.md.
+	(generic_sched): Set to no for thunderx.
+	* config/aarch64/thunderx.md: New file.
+
 2015-01-12  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r217717.
