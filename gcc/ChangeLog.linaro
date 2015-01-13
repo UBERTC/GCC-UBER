@@ -1,5 +1,16 @@
 2015-01-13  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r217394.
+	2014-11-11  Andrew Pinski  <apinski@cavium.com>
+
+	Bug target/61997
+	* config.gcc (aarch64*-*-*): Set target_gtfiles to include
+	aarch64-builtins.c.
+	* config/aarch64/aarch64-builtins.c: Include gt-aarch64-builtins.h
+	at the end of the file.
+
+2015-01-13  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r216267, r216547, r216548, r217072, r217192, r217405,
 	r217406, r217768.
 	2014-11-19  Renlin Li  <renlin.li@arm.com>
