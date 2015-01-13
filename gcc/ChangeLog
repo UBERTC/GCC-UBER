@@ -1,3 +1,316 @@
+2015-01-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/64536
+	* cfgrtl.c (rtl_tidy_fallthru_edge): Handle removal of degenerate
+	tablejumps.
+
+2015-01-09  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline:
+	2015-01-06  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/64505
+	* config/rs6000/rs6000.c (rs6000_secondary_reload): Return the
+	correct reload handler if -m32 -mpowerpc64 is used.
+
+2015-01-09  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline:
+	2015-01-09  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/rs6000/rtems.h (CPP_OS_RTEMS_SPEC): Define __PPC_CPU_E6500__
+	for -mcpu=e6500.
+	* config/rs6000/t-rtems: Add e6500 multilibs.
+
+2015-01-09  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline:
+	2015-01-09  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/rs6000/t-rtems: Add -mno-spe to soft-float multilib for
+	MPC8540.
+
+2015-01-09  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline:
+	2015-01-09  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/rs6000/t-rtems: Use MULTILIB_REQUIRED instead of
+	MULTILIB_EXCEPTIONS.
+
+2015-01-09  Renlin Li  <renlin.li@arm.com>
+
+	Backport from mainline:
+	2014-08-12 Ramana Radhakrishnan <ramana.radhakrishnan@arm.com>
+
+	PR target/61413
+	* config/arm/arm.h (TARGET_CPU_CPP_BUILTINS): Fix definition
+	of __ARM_SIZEOF_WCHAR_T.
+
+2015-01-08  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/64507
+	* config/sh/sh-mem.cc (sh_expand_cmpnstr): Check 0 length.
+
+2015-01-03  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.md (decrement_and_branch_until_zero): Use `Q' constraint
+	instead of `m' constraint.  Likewise for unnamed movb comparison
+	patterns using reg_before_reload_operand predicate.
+	* config/pa/predicates.md (reg_before_reload_operand): Tighten
+	predicate to reject register index and LO_SUM DLT memory forms
+	after reload.
+
+2014-12-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline:
+	2014-12-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/64409
+	* config/i386/i386.c (ix86_function_type_abi): Issue an error
+	when ms_abi attribute is used with x32.
+
+2014-12-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/mmx.md (*vec_extractv2sf_1): Do not emit unpckhps.
+	Emit movshdup for SSE3 and shufps otherwise.
+	(*vec_extractv2si_1): Do not emit punpckhdq and unpckhps.
+	Emit pshufd for SSE2 and shufps otherwise.
+
+2014-12-24  Nick Clifton  <nickc@redhat.com>
+
+	Backport from mainline:
+	2014-06-13  Nick Clifton  <nickc@redhat.com>
+
+	* config/rx/rx.h (JUMP_ALIGN): Return the log value if user
+	requested alignment is active.
+	(LABEL_ALIGN): Likewise.
+	(LOOP_ALIGN): Likewise.
+
+	2014-03-25  Nick Clifton  <nickc@redhat.com>
+
+	* config/rx/rx.c (rx_print_operand): Allow R operator to accept
+	SImode values.
+
+2014-12-17  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	Backport from mainline
+	2014-12-03  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	PR rtl-optimization/64010
+	* reload.c (push_reload): Before reusing a register contained
+	in an operand as input reload register, ensure that it is not
+	used in CALL_INSN_FUNCTION_USAGE.
+
+2014-12-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/64265
+	* tsan.c (instrument_func_entry): Insert __tsan_func_entry
+	call on edge from entry block to single succ instead
+	of after labels of single succ of entry block.
+
+2014-12-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backported from mainline
+	2014-12-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/64037
+	* combine.c (setup_incoming_promotions): Pass the argument
+	before any promotions happen to promote_function_mode.
+
+2014-12-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backported from mainline
+	2014-12-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/64200
+	* config/i386/i386.c (decide_alg): Don't assert "alg != libcall"
+	for TARGET_INLINE_STRINGOPS_DYNAMICALLY.
+
+2014-12-13  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2014-12-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/64269
+	* tree-ssa-forwprop.c (simplify_builtin_call): Bail out if
+	len2 or diff are too large.
+
+2014-12-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/md.texi (Insn Lengths): Fix description of (pc).
+
+2014-12-11  Renlin Li  <renlin.li@arm.com>
+
+	Backport from mainline
+	2014-12-11  Renlin Li  <renlin.li@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_parse_cpu): Don't define
+	selected_tune.
+	(aarch64_override_options): Use selected_cpu's tuning.
+
+2014-12-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2014-09-02  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000-builtin.def (XVCVSXDDP_SCALE):  New
+	built-in definition.
+	(XVCVUXDDP_SCALE): Likewise.
+	(XVCVDPSXDS_SCALE): Likewise.
+	(XVCVDPUXDS_SCALE): Likewise.
+	* config/rs6000/rs6000-c.c (altivec_overloaded_builtins):  Add
+	entries for VSX_BUILTIN_XVCVSXDDP_SCALE,
+	VSX_BUILTIN_XVCVUXDDP_SCALE, VSX_BUILTIN_XVCVDPSXDS_SCALE, and
+	VSX_BUILTIN_XVCVDPUXDS_SCALE.
+	* config/rs6000/rs6000-protos.h (rs6000_scale_v2df): New
+	prototype.
+	* config/rs6000/rs6000.c (real.h): New include.
+	(rs6000_scale_v2df): New function.
+	* config/rs6000/vsx.md (UNSPEC_VSX_XVCVSXDDP): New unspec.
+	(UNSPEC_VSX_XVCVUXDDP): Likewise.
+	(UNSPEC_VSX_XVCVDPSXDS): Likewise.
+	(UNSPEC_VSX_XVCVDPUXDS): Likewise.
+	(vsx_xvcvsxddp_scale): New define_expand.
+	(vsx_xvcvsxddp): New define_insn.
+	(vsx_xvcvuxddp_scale): New define_expand.
+	(vsx_xvcvuxddp): New define_insn.
+	(vsx_xvcvdpsxds_scale): New define_expand.
+	(vsx_xvcvdpsxds): New define_insn.
+	(vsx_xvcvdpuxds_scale): New define_expand.
+	(vsx_xvcvdpuxds): New define_insn.
+	* doc/extend.texi (vec_ctf): Add new prototypes.
+	(vec_cts): Likewise.
+	(vec_ctu): Likewise.
+	(vec_splat): Likewise.
+	(vec_div): Likewise.
+	(vec_mul): Likewise.
+
+	Backport from mainline
+        2014-08-28  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/altivec.h (vec_xl): New #define.
+	(vec_xst): Likewise.
+	* config/rs6000/rs6000-builtin.def (XXSPLTD_V2DF): New built-in.
+	(XXSPLTD_V2DI): Likewise.
+	(DIV_V2DI): Likewise.
+	(UDIV_V2DI): Likewise.
+	(MUL_V2DI): Likewise.
+	* config/rs6000/rs6000-c.c (altivec_overloaded_builtins): Add
+	entries for VSX_BUILTIN_XVRDPI, VSX_BUILTIN_DIV_V2DI,
+	VSX_BUILTIN_UDIV_V2DI, VSX_BUILTIN_MUL_V2DI,
+	VSX_BUILTIN_XXSPLTD_V2DF, and VSX_BUILTIN_XXSPLTD_V2DI).
+	* config/rs6000/vsx.md (UNSPEC_VSX_XXSPLTD): New unspec.
+	(UNSPEC_VSX_DIVSD): Likewise.
+	(UNSPEC_VSX_DIVUD): Likewise.
+	(UNSPEC_VSX_MULSD): Likewise.
+	(vsx_mul_v2di): New insn-and-split.
+	(vsx_div_v2di): Likewise.
+	(vsx_udiv_v2di): Likewise.
+	(vsx_xxspltd_<mode>): New insn.
+
+	Backport from mainline
+        2014-08-20  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/altivec.h (vec_cpsgn): New #define.
+	(vec_mergee): Likewise.
+	(vec_mergeo): Likewise.
+	(vec_cntlz): Likewise.
+	* config/rs600/rs6000-c.c (altivec_overloaded_builtins): Add new
+	entries for VEC_AND, VEC_ANDC, VEC_MERGEH, VEC_MERGEL, VEC_NOR,
+	VEC_OR, VEC_PACKSU, VEC_XOR, VEC_PERM, VEC_SEL, VEC_VCMPGT_P,
+	VMRGEW, and VMRGOW.
+	* doc/extend.texi: Document various forms of vec_cpsgn,
+	vec_splats, vec_and, vec_andc, vec_mergeh, vec_mergel, vec_nor,
+	vec_or, vec_perm, vec_sel, vec_sub, vec_xor, vec_all_eq,
+	vec_all_ge, vec_all_gt, vec_all_le, vec_all_lt, vec_all_ne,
+	vec_any_eq, vec_any_ge, vec_any_gt, vec_any_le, vec_any_lt,
+	vec_any_ne, vec_mergee, vec_mergeo, vec_packsu, and vec_cntlz.
+
+	Backport from mainline
+        2014-07-20  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/altivec.md (unspec enum):  Fix typo in UNSPEC_VSLDOI.
+	(altivec_vsldoi_<mode>): Likewise.
+
+
+2014-12-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/62021
+	* omp-low.c (simd_clone_adjust_return_type): Use
+	vector of pointer_sized_int_node types instead vector of pointer
+	types.
+	(simd_clone_adjust_argument_types): Likewise.
+
+2014-12-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline:
+	2014-12-09  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR middle-end/64225
+	* tree-ssa-reassoc.c (acceptable_pow_call): Disable transformation
+	for BUILT_IN_POW when flag_errno_math is present.
+
+2014-12-10  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2014-12-10  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/61686
+	* tree-ssa-reassoc.c (range_entry_cmp): Use q->high instead of
+	p->high.
+
+2014-12-09  David Edelsohn  <dje.gcc@gmail.com>
+
+	Backport from mainline
+	2014-12-05  David Edelsohn  <dje.gcc@gmail.com>
+
+	* config/rs6000/xcoff.h (ASM_OUTPUT_ALIGNED_LOCAL): Append
+	alignment to section name. Increase default alignment to
+	word.
+
+2014-12-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR bootstrap/64213
+	Revert:
+	2014-11-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/64037
+	* combine.c (setup_incoming_promotions): Pass the argument
+	before any promotions happen to promote_function_mode.
+
+2014-12-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64191
+	* tree-vect-stmts.c (vect_stmt_relevant_p): Clobbers are
+	not relevant (nor are their uses).
+
+2014-12-07  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2014-12-07  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/50751
+	* config/sh/sh.md (extendqihi2): Allow only for TARGET_SH1.
+
+2014-12-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2014-12-02  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/64108
+	* config/i386/i386.c (decide_alg): Stop only if there aren't
+	any usable algorithms.
+
+2014-12-05  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2014-11-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/64037
+	* combine.c (setup_incoming_promotions): Pass the argument
+	before any promotions happen to promote_function_mode.
+
 2014-12-04  Tobias Burnus  <burnus@net-b.de>
 
 	* configure.ac
