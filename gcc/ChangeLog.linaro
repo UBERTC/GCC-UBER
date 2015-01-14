@@ -1,5 +1,15 @@
 2015-01-14  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r211783.
+	2014-06-18  Charles Baylis  <charles.baylis@linaro.org>
+
+	* config/arm/arm.c (neon_vector_mem_operand): Allow register
+	POST_MODIFY for neon loads and stores.
+	(arm_print_operand): Output post-index register for neon loads and
+	stores.
+
+2015-01-14  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r218451.
 	2014-12-06  James Greenhalgh  <james.greenhalgh@arm.com>
 		    Sebastian Pop  <s.pop@samsung.com>
