@@ -1,5 +1,22 @@
 2015-01-14  Yvan Roux  <yvan.roux@linaro.org>
 
+	Fix Linaro PR #902
+
+	Partial Backport from trunk r211798.
+	2014-06-18  Radovan Obradovic  <robradovic@mips.com>
+		    Tom de Vries  <tom@codesourcery.com>
+
+	* config/arm/arm.c (arm_emit_call_insn): Add IP and CC clobbers to
+	CALL_INSN_FUNCTION_USAGE.
+
+	Backport from trunk r209800.
+	2014-04-25  Tom de Vries  <tom@codesourcery.com>
+
+	* expr.c (clobber_reg_mode): New function.
+	* expr.h (clobber_reg): New function.
+
+2015-01-14  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r211783.
 	2014-06-18  Charles Baylis  <charles.baylis@linaro.org>
 

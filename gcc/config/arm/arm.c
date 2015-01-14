@@ -17727,6 +17727,15 @@ arm_emit_call_insn (rtx pat, rtx addr)
       require_pic_register ();
       use_reg (&CALL_INSN_FUNCTION_USAGE (insn), cfun->machine->pic_reg);
     }
+
+  if (TARGET_AAPCS_BASED)
+    {
+      /* For AAPCS, IP and CC can be clobbered by veneers inserted by the
+         linker.  */
+      rtx *fusage = &CALL_INSN_FUNCTION_USAGE (insn);
+      clobber_reg (fusage, gen_rtx_REG (word_mode, IP_REGNUM));
+      clobber_reg (fusage, gen_rtx_REG (word_mode, CC_REGNUM));
+    }
 }
 
 /* Output a 'call' insn.  */
