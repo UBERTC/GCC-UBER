@@ -1,3 +1,8 @@
+2015-01-15  Yvan Roux  <yvan.roux@linaro.org>
+
+	GCC Linaro 4.9-2015.01 released.
+	* LINARO-VERSION: Update.
+
 2015-01-14  Yvan Roux  <yvan.roux@linaro.org>
 
 	Fix Linaro PR #902
