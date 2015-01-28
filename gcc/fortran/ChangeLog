@@ -1,3 +1,17 @@
+2015-01-24  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/56867
+	* trans-array.c (gfc_conv_resolve_dependencies):  Also check
+	dependencies when there may be substrings of character arrays.
+
+2015-01-24  Thomas Koenig  <tkoenig@netcologne.de>
+
+	Backport from trunk
+	PR fortran/57023
+	* dependency.c (callback_dummy_intent_not_int):  New function.
+	(dummy_intent_not_in):  New function.
+	(gfc_full_array_ref_p):  Use dummy_intent_not_in.
+
 2015-01-12  Janus Weil  <janus@gcc.gnu.org>
 
 	Backport from mainline
