@@ -1,3 +1,27 @@
+2015-02-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-01-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/61058
+	* gcc.dg/pr61058.c: New test.
+
+	PR c/64766
+	* gcc.dg/pr64766.c: New test.
+
+	2015-01-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/64528
+	* gfortran.dg/pr64528.f90: New test.
+
+	2015-01-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/64563
+	* gcc.dg/pr64563.c: New test.
+
+	PR target/64513
+	* gcc.target/i386/pr64513.c: New test.
+
 2015-01-29  Ilya Tocar  <ilya.tocar@intel.com>
 
 	* gcc.target/i386/sse-14.c: Test new intrinsic.
