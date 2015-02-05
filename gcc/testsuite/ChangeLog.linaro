@@ -1,3 +1,11 @@
+2015-02-05  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	Backport from trunk r217230.
+	* gcc.target/arm/lp1243022.c (xhci_test_trb_in_td): Add return type.
+	(xhci_check_trb_in_td_math): Likewise.
+
+	2014-11-07  Jiong Wang  <jiong.wang@arm.com>
+
 2015-01-15  Yvan Roux  <yvan.roux@linaro.org>
 
 	GCC Linaro 4.9-2015.01 released.
