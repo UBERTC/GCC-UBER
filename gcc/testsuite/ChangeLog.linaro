@@ -1,3 +1,124 @@
+2015-02-04  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r216640-r216661.
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vuzp.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vzip.c: Likewise.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmul.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vldX_lane.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vldX.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vld1_dup.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vdup-vmov.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vclz.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vbsl.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vaddw.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vaddl.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vaddhn.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vabdl.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vabd.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vabal.c: New file.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/binary_sat_op.inc: New
+	file.
+	* gcc.target/aarch64/advsimd-intrinsics/vqadd.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vqsub.c: Likewise.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/unary_sat_op.inc: New
+	file.
+	* gcc.target/aarch64/advsimd-intrinsics/vqabs.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vqneg.c: Likewise.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/cmp_fp_op.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vcage.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcagt.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcale.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcalt.c: Likewise.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/cmp_op.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vceq.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcge.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcgt.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcle.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vclt.c: Likewise.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/binary_op.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vadd.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vand.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vbic.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/veor.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vorn.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vorr.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vsub.c: Likewise.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/unary_op.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vabs.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vneg.c: Likewise.
+
+	2014-10-24  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/arm/README.advsimd-intrinsics: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/README: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/arm-neon-ref.h: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/compute-ref-data.h:
+	Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/advsimd-intrinsics.exp:
+	Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vaba.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vld1.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vshl.c: Likewise.
+
 2015-02-05  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
 
 	Backport from trunk r217230.
