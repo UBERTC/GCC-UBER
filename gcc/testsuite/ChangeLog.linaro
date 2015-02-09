@@ -1,3 +1,10 @@
+2015-02-09  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	Backport from trunk r216675.
+	2014-10-24  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/arm/aapcs/abitest.h: Declare memcpy.
+
 2015-02-04  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r216640-r216661.
