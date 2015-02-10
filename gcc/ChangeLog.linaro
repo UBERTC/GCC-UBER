@@ -1,5 +1,17 @@
 2015-02-10  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r217431.
+	2014-11-12  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.h (CALL_USED_REGISTERS): Mark LR as
+	caller-save.
+	(EPILOGUE_USES): Guard the check by epilogue_completed.
+	* config/aarch64/aarch64.c (aarch64_layout_frame): Explictly check for
+	LR.
+	(aarch64_can_eliminate): Check LR_REGNUM liveness.
+
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r219718.
 	* expmed.c (store_bit_field_using_insv): Improve warning message.
 	Use %wu instead of HOST_WIDE_INT_PRINT_UNSIGNED.

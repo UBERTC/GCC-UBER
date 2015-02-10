@@ -1,3 +1,12 @@
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r217431.
+	2014-11-12  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/lr_free_1.c: New testcase for -fomit-frame-pointer.
+	* gcc.target/aarch64/lr_free_2.c: New testcase for leaf
+	-fno-omit-frame-pointer.
+
 2015-02-09  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
 
 	Backport from trunk r216675.
