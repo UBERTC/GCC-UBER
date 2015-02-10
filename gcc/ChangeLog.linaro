@@ -1,3 +1,147 @@
+2015-02-09  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r216779.
+	2014-10-28  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* expr.c (expand_expr_real_2): Remove code handling VEC_LSHIFT_EXPR.
+	* fold-const.c (const_binop): Likewise.
+	* cfgexpand.c (expand_debug_expr): Likewise.
+	* tree-inline.c (estimate_operator_cost): Likewise.
+	* tree-vect-generic.c (expand_vector_operations_1): Likewise.
+	* optabs.c (optab_for_tree_code): Likewise.
+	(expand_vec_shift_expr): Likewise, update comment.
+	* tree.def: Delete VEC_LSHIFT_EXPR, remove comment.
+	* optabs.h (expand_vec_shift_expr): Remove comment re. VEC_LSHIFT_EXPR.
+	* optabs.def: Remove vec_shl_optab.
+	* doc/md.texi: Remove references to vec_shr_m.
+
+2015-02-09  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r216742.
+	2014-10-27  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.c (TARGET_GIMPLE_FOLD_BUILTIN): Define again.
+	* config/aarch64/aarch64-builtins.c (aarch64_gimple_fold_builtin):
+	Restore, enable for bigendian, update to use __builtin..._scal...
+
+2015-02-09  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r216741.
+	2014-10-27  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-simd-builtins.def (reduc_smax_, reduc_smin_,
+	reduc_umax_, reduc_umin_, reduc_smax_nan_, reduc_smin_nan_): Remove.
+	(reduc_smax_scal_, reduc_smin_scal_, reduc_umax_scal_,
+	reduc_umin_scal_, reduc_smax_nan_scal_, reduc_smin_nan_scal_): New.
+
+	* config/aarch64/aarch64-simd.md
+	(reduc_<maxmin_uns>_<mode>): Rename VDQV_S variant to...
+	(reduc_<maxmin_uns>_internal<mode>): ...this.
+	(reduc_<maxmin_uns>_<mode>): New (VDQ_BHSI).
+	(reduc_<maxmin_uns>_scal_<mode>): New (*2).
+
+	(reduc_<maxmin_uns>_v2si): Combine with below, renaming...
+	(reduc_<maxmin_uns>_<mode>): Combine V2F with above, renaming...
+	(reduc_<maxmin_uns>_internal_<mode>): ...to this (VDQF).
+
+	* config/aarch64/arm_neon.h (vmaxv_f32, vmaxv_s8, vmaxv_s16,
+	vmaxv_s32, vmaxv_u8, vmaxv_u16, vmaxv_u32, vmaxvq_f32, vmaxvq_f64,
+	vmaxvq_s8, vmaxvq_s16, vmaxvq_s32, vmaxvq_u8, vmaxvq_u16, vmaxvq_u32,
+	vmaxnmv_f32, vmaxnmvq_f32, vmaxnmvq_f64, vminv_f32, vminv_s8,
+	vminv_s16, vminv_s32, vminv_u8, vminv_u16, vminv_u32, vminvq_f32,
+	vminvq_f64, vminvq_s8, vminvq_s16, vminvq_s32, vminvq_u8, vminvq_u16,
+	vminvq_u32, vminnmv_f32, vminnmvq_f32, vminnmvq_f64): Update to use
+	__builtin_aarch64_reduc_..._scal; remove vget_lane wrapper.
+
+2015-02-09  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r216738.
+	2014-10-27  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-simd-builtins.def
+	(reduc_splus_<mode>/VDQF, reduc_uplus_<mode>/VDQF, reduc_splus_v4sf):
+	Remove.
+	(reduc_plus_scal_<mode>, reduc_plus_scal_v4sf): New.
+
+	* config/aarch64/aarch64-simd.md (reduc_<sur>plus_mode): Remove.
+	(reduc_splus_<mode>, reduc_uplus_<mode>, reduc_plus_scal_<mode>): New.
+
+	(reduc_<sur>plus_mode): Change SUADDV -> UNSPEC_ADDV, rename to...
+	(aarch64_reduc_plus_internal<mode>): ...this.
+
+	(reduc_<sur>plus_v2si): Change SUADDV -> UNSPEC_ADDV, rename to...
+	(aarch64_reduc_plus_internalv2si): ...this.
+
+	(reduc_splus_<mode>/V2F): Rename to...
+	(aarch64_reduc_plus_internal<mode>): ...this.
+
+	* config/aarch64/iterators.md
+	(UNSPEC_SADDV, UNSPEC_UADDV, SUADDV): Remove.
+	(UNSPEC_ADDV): New.
+	(sur): Remove elements for UNSPEC_SADDV and UNSPEC_UADDV.
+
+	* config/aarch64/arm_neon.h (vaddv_s8, vaddv_s16, vaddv_s32, vaddv_u8,
+	vaddv_u16, vaddv_u32, vaddvq_s8, vaddvq_s16, vaddvq_s32, vaddvq_s64,
+	vaddvq_u8, vaddvq_u16, vaddvq_u32, vaddvq_u64, vaddv_f32, vaddvq_f32,
+	vaddvq_f64): Change __builtin_aarch64_reduc_[us]plus_... to
+	__builtin_aarch64_reduc_plus_scal, remove vget_lane wrapper.
+
+2015-02-09  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r216737.
+	2014-10-27  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR tree-optimization/61114
+	* doc/md.texi (Standard Names): Add reduc_(plus,[us](min|max))|scal
+	optabs, and note in reduc_[us](plus|min|max) to prefer the former.
+
+	* expr.c (expand_expr_real_2): Use reduc_..._scal if available, fall
+	back to old reduc_...  BIT_FIELD_REF only if not.
+
+	* optabs.c (optab_for_tree_code): for REDUC_(MAX,MIN,PLUS)_EXPR,
+	return the reduce-to-scalar (reduc_..._scal) optab.
+	(scalar_reduc_to_vector): New.
+
+	* optabs.def (reduc_smax_scal_optab, reduc_smin_scal_optab,
+	reduc_plus_scal_optab, reduc_umax_scal_optab, reduc_umin_scal_optab):
+	New.
+
+	* optabs.h (scalar_reduc_to_vector): Declare.
+
+	* tree-vect-loop.c (vectorizable_reduction): Look for optabs reducing
+	to either scalar or vector.
+
+2015-02-09  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r216736.
+	2014-10-27  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR tree-optimization/61114
+	* expr.c (expand_expr_real_2): For REDUC_{MIN,MAX,PLUS}_EXPR, add
+	extract_bit_field around optab result.
+
+	* fold-const.c (fold_unary_loc): For REDUC_{MIN,MAX,PLUS}_EXPR, produce
+	scalar not vector.
+
+	* tree-cfg.c (verify_gimple_assign_unary): Check result vs operand type
+	for REDUC_{MIN,MAX,PLUS}_EXPR.
+
+	* tree-vect-loop.c (vect_analyze_loop): Update comment.
+	(vect_create_epilog_for_reduction): For direct vector reduction, use
+	result of tree code directly without extract_bit_field.
+
+	* tree.def (REDUC_MAX_EXPR, REDUC_MIN_EXPR, REDUC_PLUS_EXPR): Update
+	comment.
+
+2015-02-09  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r216734.
+	2014-10-27  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.c (TARGET_GIMPLE_FOLD_BUILTIN): Comment out.
+	* config/aarch64/aarch64-builtins.c (aarch64_gimple_fold_builtin):
+	Remove using preprocessor directis.
+
 2015-02-09  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r217173, r217174, r217687.
@@ -268,7 +412,7 @@
 	and floatuns conversions.
 	* iterators.md (fcvt_target, FCVT_TARGET): Support SF and DF modes.
 	(w1,w2): New mode attributes for inequal width conversions.
- 
+
 2015-01-11  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r217362, r217546.

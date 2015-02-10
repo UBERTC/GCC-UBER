@@ -1760,25 +1760,52 @@
 
 ;; 'across lanes' add.
 
-(define_insn "reduc_<sur>plus_<mode>"
+(define_expand "reduc_plus_scal_<mode>"
+  [(match_operand:<VEL> 0 "register_operand" "=w")
+   (unspec:VDQ [(match_operand:VDQ 1 "register_operand" "w")]
+	       UNSPEC_ADDV)]
+  "TARGET_SIMD"
+  {
+    rtx elt = GEN_INT (ENDIAN_LANE_N (<MODE>mode, 0));
+    rtx scratch = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_aarch64_reduc_plus_internal<mode> (scratch, operands[1]));
+    emit_insn (gen_aarch64_get_lane<mode> (operands[0], scratch, elt));
+    DONE;
+  }
+)
+
+(define_expand "reduc_plus_scal_<mode>"
+  [(match_operand:<VEL> 0 "register_operand" "=w")
+   (match_operand:V2F 1 "register_operand" "w")]
+  "TARGET_SIMD"
+  {
+    rtx elt = GEN_INT (ENDIAN_LANE_N (<MODE>mode, 0));
+    rtx scratch = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_aarch64_reduc_plus_internal<mode> (scratch, operands[1]));
+    emit_insn (gen_aarch64_get_lane<mode> (operands[0], scratch, elt));
+    DONE;
+  }
+)
+
+(define_insn "aarch64_reduc_plus_internal<mode>"
  [(set (match_operand:VDQV 0 "register_operand" "=w")
        (unspec:VDQV [(match_operand:VDQV 1 "register_operand" "w")]
-		    SUADDV))]
+		    UNSPEC_ADDV))]
  "TARGET_SIMD"
  "add<VDQV:vp>\\t%<Vetype>0, %1.<Vtype>"
   [(set_attr "type" "neon_reduc_add<q>")]
 )
 
-(define_insn "reduc_<sur>plus_v2si"
+(define_insn "aarch64_reduc_plus_internalv2si"
  [(set (match_operand:V2SI 0 "register_operand" "=w")
        (unspec:V2SI [(match_operand:V2SI 1 "register_operand" "w")]
-		    SUADDV))]
+		    UNSPEC_ADDV))]
  "TARGET_SIMD"
  "addp\\t%0.2s, %1.2s, %1.2s"
   [(set_attr "type" "neon_reduc_add")]
 )
 
-(define_insn "reduc_splus_<mode>"
+(define_insn "aarch64_reduc_plus_internal<mode>"
  [(set (match_operand:V2F 0 "register_operand" "=w")
        (unspec:V2F [(match_operand:V2F 1 "register_operand" "w")]
 		   UNSPEC_FADDV))]
@@ -1796,14 +1823,17 @@
   [(set_attr "type" "neon_fp_reduc_add_s_q")]
 )
 
-(define_expand "reduc_splus_v4sf"
- [(set (match_operand:V4SF 0 "register_operand")
+(define_expand "reduc_plus_scal_v4sf"
+ [(set (match_operand:SF 0 "register_operand")
        (unspec:V4SF [(match_operand:V4SF 1 "register_operand")]
 		    UNSPEC_FADDV))]
  "TARGET_SIMD"
 {
-  emit_insn (gen_aarch64_addpv4sf (operands[0], operands[1]));
-  emit_insn (gen_aarch64_addpv4sf (operands[0], operands[0]));
+  rtx elt = GEN_INT (ENDIAN_LANE_N (V4SFmode, 0));
+  rtx scratch = gen_reg_rtx (V4SFmode);
+  emit_insn (gen_aarch64_addpv4sf (scratch, operands[1]));
+  emit_insn (gen_aarch64_addpv4sf (scratch, scratch));
+  emit_insn (gen_aarch64_get_lanev4sf (operands[0], scratch, elt));
   DONE;
 })
 
@@ -1817,7 +1847,40 @@
 
 ;; 'across lanes' max and min ops.
 
-(define_insn "reduc_<maxmin_uns>_<mode>"
+;; Template for outputting a scalar, so we can create __builtins which can be
+;; gimple_fold'd to the REDUC_(MAX|MIN)_EXPR tree code.  (This is FP smax/smin).
+(define_expand "reduc_<maxmin_uns>_scal_<mode>"
+  [(match_operand:<VEL> 0 "register_operand")
+   (unspec:VDQF [(match_operand:VDQF 1 "register_operand")]
+		FMAXMINV)]
+  "TARGET_SIMD"
+  {
+    rtx elt = GEN_INT (ENDIAN_LANE_N (<MODE>mode, 0));
+    rtx scratch = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_aarch64_reduc_<maxmin_uns>_internal<mode> (scratch,
+							      operands[1]));
+    emit_insn (gen_aarch64_get_lane<mode> (operands[0], scratch, elt));
+    DONE;
+  }
+)
+
+;; Likewise for integer cases, signed and unsigned.
+(define_expand "reduc_<maxmin_uns>_scal_<mode>"
+  [(match_operand:<VEL> 0 "register_operand")
+   (unspec:VDQ_BHSI [(match_operand:VDQ_BHSI 1 "register_operand")]
+		    MAXMINV)]
+  "TARGET_SIMD"
+  {
+    rtx elt = GEN_INT (ENDIAN_LANE_N (<MODE>mode, 0));
+    rtx scratch = gen_reg_rtx (<MODE>mode);
+    emit_insn (gen_aarch64_reduc_<maxmin_uns>_internal<mode> (scratch,
+							      operands[1]));
+    emit_insn (gen_aarch64_get_lane<mode> (operands[0], scratch, elt));
+    DONE;
+  }
+)
+
+(define_insn "aarch64_reduc_<maxmin_uns>_internal<mode>"
  [(set (match_operand:VDQV_S 0 "register_operand" "=w")
        (unspec:VDQV_S [(match_operand:VDQV_S 1 "register_operand" "w")]
 		    MAXMINV))]
@@ -1826,7 +1889,7 @@
   [(set_attr "type" "neon_reduc_minmax<q>")]
 )
 
-(define_insn "reduc_<maxmin_uns>_v2si"
+(define_insn "aarch64_reduc_<maxmin_uns>_internalv2si"
  [(set (match_operand:V2SI 0 "register_operand" "=w")
        (unspec:V2SI [(match_operand:V2SI 1 "register_operand" "w")]
 		    MAXMINV))]
@@ -1835,22 +1898,13 @@
   [(set_attr "type" "neon_reduc_minmax")]
 )
 
-(define_insn "reduc_<maxmin_uns>_<mode>"
- [(set (match_operand:V2F 0 "register_operand" "=w")
-       (unspec:V2F [(match_operand:V2F 1 "register_operand" "w")]
+(define_insn "aarch64_reduc_<maxmin_uns>_internal<mode>"
+ [(set (match_operand:VDQF 0 "register_operand" "=w")
+       (unspec:VDQF [(match_operand:VDQF 1 "register_operand" "w")]
 		    FMAXMINV))]
  "TARGET_SIMD"
- "<maxmin_uns_op>p\\t%<Vetype>0, %1.<Vtype>"
+ "<maxmin_uns_op><vp>\\t%<Vetype>0, %1.<Vtype>"
   [(set_attr "type" "neon_fp_reduc_minmax_<Vetype><q>")]
-)
-
-(define_insn "reduc_<maxmin_uns>_v4sf"
- [(set (match_operand:V4SF 0 "register_operand" "=w")
-       (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "w")]
-		    FMAXMINV))]
- "TARGET_SIMD"
- "<maxmin_uns_op>v\\t%s0, %1.4s"
-  [(set_attr "type" "neon_fp_reduc_minmax_s_q")]
 )
 
 ;; aarch64_simd_bsl may compile to any of bsl/bif/bit depending on register

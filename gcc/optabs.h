@@ -160,6 +160,11 @@ enum optab_subtype
    vector shifts and rotates */
 extern optab optab_for_tree_code (enum tree_code, const_tree, enum optab_subtype);
 
+/* Given an optab that reduces a vector to a scalar, find instead the old
+   optab that produces a vector with the reduction result in one element,
+   for a tree with the specified type.  */
+extern optab scalar_reduc_to_vector (optab, const_tree type);
+
 /* The various uses that a comparison can have; used by can_compare_p:
    jumps, conditional moves, store flag operations.  */
 enum can_compare_purpose
@@ -233,7 +238,7 @@ bool expand_vec_cond_expr_p (tree, tree);
 
 /* Generate code for VEC_COND_EXPR.  */
 extern rtx expand_vec_cond_expr (tree, tree, tree, tree, rtx);
-/* Generate code for VEC_LSHIFT_EXPR and VEC_RSHIFT_EXPR.  */
+/* Generate code for VEC_RSHIFT_EXPR.  */
 extern rtx expand_vec_shift_expr (sepops, rtx);
 
 /* Return true if target supports vector operations for VEC_PERM_EXPR.  */
