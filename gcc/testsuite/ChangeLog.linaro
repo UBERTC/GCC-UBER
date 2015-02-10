@@ -1,3 +1,10 @@
+2015-01-27  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r217228.
+	2014-11-07  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.dg/tree-ssa/20040204-1.c: Add aarch64*-*-* to the list.
+
 2015-02-10  Michael Collison  <michael.collison@linaro.org>
 
 	Backport from trunk r219583.
