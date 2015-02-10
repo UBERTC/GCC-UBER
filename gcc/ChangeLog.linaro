@@ -1,5 +1,23 @@
 2015-02-10  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r217175, r217185, r217186.
+	2014-11-06  Hale Wang  <hale.wang@arm.com>
+
+	* config/arm/arm-cores.def: Add support for
+	-mcpu=cortex-m0.small-multiply,cortex-m0plus.small-multiply,
+	cortex-m1.small-multiply.
+	* config/arm/arm-tables.opt: Regenerate.
+	* config/arm/arm-tune.md: Regenerate.
+	* config/arm/arm.c: Update the rtx-costs for MUL.
+	* config/arm/bpabi.h: Handle
+	-mcpu=cortex-m0.small-multiply,cortex-m0plus.small-multiply,
+	cortex-m1.small-multiply.
+	* doc/invoke.texi: Document
+	-mcpu=cortex-m0.small-multiply,cortex-m0plus.small-multiply,
+	cortex-m1.small-multiply.
+
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r217091.
 	2014-11-04  Jiong Wang  <jiong.wang@arm.com>
 	2014-11-04  Wilco Dijkstra  <wilco.dijkstra@arm.com>
