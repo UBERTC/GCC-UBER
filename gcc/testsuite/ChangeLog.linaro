@@ -1,4 +1,11 @@
-2015-01-27  Michael Collison  <michael.collison@linaro.org>
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r217118.
+	2014-11-05  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* gcc.dg/asr-div1.c: New testcase.
+
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
 
 	Backport from trunk r217228.
 	2014-11-07  Jiong Wang  <jiong.wang@arm.com>

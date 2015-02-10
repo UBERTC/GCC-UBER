@@ -1,3 +1,11 @@
+2015-01-27  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r217118.
+	2014-11-05  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* simplify-rtx.c (simplify_binary_operation_1): Div check added.
+	* rtl.h (SUBREG_P): New macro added.
+
 2015-02-10  Michael Collison  <michael.collison@linaro.org>
 
 	Backport from trunk r217215.
