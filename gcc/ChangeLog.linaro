@@ -1,5 +1,22 @@
 2015-02-10  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r219718.
+	* expmed.c (store_bit_field_using_insv): Improve warning message.
+	Use %wu instead of HOST_WIDE_INT_PRINT_UNSIGNED.
+
+	2015-01-15  Jiong Wang  <jiong.wang@arm.com>
+
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r219717.
+	2015-01-15  Jiong Wang  <jiong.wang@arm.com>
+
+	PR rtl-optimization/64011
+	* expmed.c (store_bit_field_using_insv): Warn and truncate bitsize when
+	there is partial overflow.
+
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r217331.
 	2014-11-11  Bin Cheng  <bin.cheng@arm.com>
 
