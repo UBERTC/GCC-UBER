@@ -1,4 +1,14 @@
-2015-01-27  Michael Collison  <michael.collison@linaro.org>
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r217091.
+	2014-11-04  Jiong Wang  <jiong.wang@arm.com>
+	2014-11-04  Wilco Dijkstra  <wilco.dijkstra@arm.com>
+
+	PR target/63293
+	* config/aarch64/aarch64.c (aarch64_expand_epiloue): Add barriers before
+	stack adjustment.
+
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
 
 	Backport from trunk r217118.
 	2014-11-05  Alex Velenko  <Alex.Velenko@arm.com>
