@@ -1,5 +1,21 @@
 2015-02-10  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r219583.
+	2015-01-14  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/64460
+	* config/arm/arm.md (*<arith_shift_insn>_multsi): Set 'shift' to 2.
+	(*<arith_shift_insn>_shiftsi): Set 'shift' attr to 3.
+
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r217430.
+	2014-11-12  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/arm/arm.c (*<arith_shift_insn>_shiftsi): Fix typo.
+
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r217431.
 	2014-11-12  Jiong Wang  <jiong.wang@arm.com>
 

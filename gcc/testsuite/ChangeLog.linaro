@@ -1,5 +1,13 @@
 2015-02-10  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r219583.
+	2015-01-14  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/64460
+	* gcc.target/arm/pr64460_1.c: New test.
+
+2015-02-10  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r217431.
 	2014-11-12  Jiong Wang  <jiong.wang@arm.com>
 

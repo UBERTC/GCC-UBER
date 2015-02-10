@@ -9883,7 +9883,7 @@
   "<arith_shift_insn>%?\\t%0, %1, %2, lsl %b3"
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")
-   (set_attr "shift" "4")
+   (set_attr "shift" "2")
    (set_attr "arch" "a,t2")
    (set_attr "type" "alu_shift_imm")])
 
@@ -9894,11 +9894,11 @@
 	  [(match_operand:SI 3 "s_register_operand" "r,r,r")
 	   (match_operand:SI 4 "shift_amount_operand" "M,M,r")])
 	 (match_operand:SI 1 "s_register_operand" "rk,<t2_binop0>,rk")))]
-  "TARGET_32BIT && GET_CODE (operands[3]) != MULT"
+  "TARGET_32BIT && GET_CODE (operands[2]) != MULT"
   "<arith_shift_insn>%?\\t%0, %1, %3%S2"
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")
-   (set_attr "shift" "4")
+   (set_attr "shift" "3")
    (set_attr "arch" "a,t2,a")
    (set_attr "type" "alu_shift_imm,alu_shift_imm,alu_shift_reg")])
 
