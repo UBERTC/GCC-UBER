@@ -1,3 +1,53 @@
+2015-02-03  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* intrinsic.texi (CO_ASSOCIATED): c_prt_1 should be c_ptr_1.
+
+2015-01-27  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/62044
+	* resolve.c (resolve_allocate_expr): If the default initializer
+	is NULL, keep the original MOLD expression so that the correct
+	typespec is available.
+
+2015-01-27  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/64771
+	* interface.c (check_dummy_characteristics): Fix coarray handling.
+
+2015-01-26  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/64230
+	* class.c (finalize_component): New argument 'sub_ns'. Insert code to
+	check if 'expr' is associated.
+	(generate_finalization_wrapper): Rename 'ptr' symbols to 'ptr1' and
+	'ptr2'. Pass 'sub_ns' to finalize_component.
+
+2015-01-24  Thomas Koenig  <tkoenig@netcologne.de>
+
+	Backport from trunk
+	PR fortran/57023
+	* dependency.c (callback_dummy_intent_not_int):  New function.
+	(dummy_intent_not_in):  New function.
+	(gfc_full_array_ref_p):  Use dummy_intent_not_in.
+
+2015-01-24  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/60922
+	* class.c (finalize_component): Apply the check for 'fini_coarray' only
+	to coarray components.
+
+2015-01-14  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-01-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/64528
+	* trans-decl.c (create_function_arglist): Don't set TREE_READONLY
+	on dummy args with VALUE attribute.
+
 2015-01-12  Janus Weil  <janus@gcc.gnu.org>
 
 	Backport from mainline

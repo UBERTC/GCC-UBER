@@ -1,3 +1,21 @@
+2015-02-04  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR c++/64901
+	* decl.c (duplicate_decls): Also duplicate DECL_FINAL_P and
+	DECL_OVERRIDE_P.
+
+2015-01-29  Jason Merrill  <jason@redhat.com>
+
+	PR c++/64521
+	* repo.c (repo_emit_p): It's OK for a clone to be extern at this
+	point.
+
+2015-01-13  Jason Merrill  <jason@redhat.com>
+
+	PR c++/64514
+	* pt.c (coerce_template_parameter_pack): Return NULL for a
+	zero-length fixed parameter pack with a pack expansion arg.
+
 2015-01-07  Jason Merrill  <jason@redhat.com>
 
 	PR c++/64487

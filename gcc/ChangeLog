@@ -1,3 +1,251 @@
+2015-02-05  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/64580
+	Backport from mainline
+	* config.rs6000/rs6000.c (compute_vrsave_mask): Reverse loop order.
+	(rs6000_stack_info): Add assert.
+	(rs6000_output_savres_externs): New function, split off from...
+	(rs6000_output_function_prologue): ... here.  Do not call it for
+	thunks.
+
+2015-02-04  Matthias Klose  <doko@ubuntu.com>
+
+	PR target/64938
+	Backport from mainline
+	2015-01-15  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/64068
+	PR ipa/64559
+	* ipa.c (symbol_table::remove_unreachable_nodes):
+	Do not put abstract origins into boundary.
+
+2015-02-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-01-31  Uros Bizjak  <ubizjak@gmail.com>
+
+        PR target/64882
+	* config/i386/predicates.md (address_no_seg_operand): Reject
+	non-CONST_INT_P operands in invalid mode.
+
+	Backport from mainline
+	2015-01-31  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (*prefetch_prefetchw1): Remove mode of
+	address_operand 0.  Rename from *prefetch_prefetchwt1_<mode>.
+	* config/i386/predicates.md (address_no_seg_operand): Call
+	address_operand with VOIDmode.
+	(vsib_address_operand): Ditto.
+
+2015-02-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backported from mainline
+	2015-01-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/i386/driver-i386.c (host_detect_local_cpu): Check new
+	Silvermont, Haswell, Broadwell and Knights Landing model numbers.
+	* config/i386/i386.c (processor_model): Add
+	M_INTEL_COREI7_BROADWELL.
+	(arch_names_table): Add "broadwell".
+
+2015-02-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-01-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/61058
+	* jump.c (cleanup_barriers): Update basic block boundaries
+	if BLOCK_FOR_INSN is non-NULL on PREV.
+
+	2015-01-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/64421
+	* omp-low.c (simd_clone_mangle): If DECL_ASSEMBLER_NAME starts
+	with asterisk, skip the first character.
+
+	* config/rs6000/rs6000-cpus.def (POWERPC_MASKS): Add
+	OPTION_MASK_QUAD_MEMORY_ATOMIC.
+
+	2015-01-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/63637
+	PR rtl-optimization/60663
+	* cse.c (merge_equiv_classes): Set new_elt->cost to MAX_COST
+	if elt->cost is MAX_COST for ASM_OPERANDS.
+	(find_sets_in_insn): Fix up comment typo.
+	(cse_insn): Don't set src_volatile for all non-volatile
+	ASM_OPERANDS in PARALLELs, but just those with multiple outputs
+	or with "memory" clobber.  Set elt->cost to MAX_COST
+	for ASM_OPERANDS in PARALLEL.  Set src_elt->cost to MAX_COST
+	if new_src is ASM_OPERANDS and elt->cost is MAX_COST.
+
+	PR debug/64511
+	* dwarf2out.c (struct dw_loc_descr_node): Add chain_next
+	GTY markup.
+
+	2015-01-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/64663
+	* dwarf2out.c (decl_piece_node): Don't put bitsize into
+	mode if bitsize <= 0.
+	(decl_piece_bitsize, adjust_piece_list, add_var_loc_to_decl,
+	dw_sra_loc_expr): Use HOST_WIDE_INT instead of int for bit
+	sizes and positions.
+
+2015-01-29  Ilya Tocar  <ilya.tocar@intel.com>
+
+	* config/i386/avx2intrin.h (_mm256_bslli_epi128,
+	_mm256_bsrli_epi128): New.
+	* config/i386/emmintrin.h (_mm_bsrli_si128, _mm_bslli_si128): Ditto.
+
+2015-01-27  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
+
+	* config/s390/s390.c (s390_memory_move_cost): Increase costs for
+	memory accesses.
+
+2015-01-27  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
+
+	* config/s390/s390.c (s390_register_move_cost): Increase costs for
+	FPR->GPR moves.
+
+2015-01-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-01-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/64795
+	* config/i386/i386.md (*movdi_internal): Also check operand 0
+	to determine TYPE_LEA operand.
+	(*movsi_internal): Ditto.
+
+	Backport from mainline
+	2015-01-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/sse.md (sse2_loadld): Set attribute isa to sse2 for
+	alternative 1.
+
+2015-01-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/64734
+	* omp-low.c (scan_sharing_clauses): Don't ignore
+	OMP_CLAUSE_MAP_ZERO_BIAS_ARRAY_SECTION GOMP_MAP_POINTER clauses
+	on target data/update constructs.
+
+2015-01-23  Wei Mi  <wmi@google.com>
+
+	Backported from trunk.
+	2015-01-22  Wei Mi  <wmi@google.com>
+
+	PR rtl-optimization/64557
+	* dse.c (record_store): Call get_addr for mem_addr.
+	(check_mem_read_rtx): Likewise.
+
+2015-01-22  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
+
+	* config/s390/s390.md (atomic code attribute): Fix typo "ior" ->
+	"or".
+
+2015-01-21  Wei Mi  <wmi@google.com>
+
+	Backported from trunk.
+	2014-11-22  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/63970
+	* ipa.c (symbol_table::remove_unreachable_nodes): Mark all inline clones
+	as having abstract origin used.
+	* ipa-inline-transform.c (can_remove_node_now_p_1): Drop abstract origin check.
+	(clone_inlined_nodes): Copy abstract originflag.
+	* lto-cgraph.c (compute_ltrans_boundary): Use get_create to get abstract origin node.
+
+2015-01-20  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Backport from mainline
+	* config/nios2/nios2.c (nios2_asm_file_end): Implement
+	TARGET_ASM_FILE_END hook for adding .note.GNU-stack section when
+	needed.
+	(TARGET_ASM_FILE_END): Define.
+
+2015-01-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2014-11-27  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/63704
+	* alias.c (mems_in_disjoint_alias_sets_p): Remove assert
+	and instead return false when !fstrict-aliasing.
+
+2015-01-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* expr.c (expand_expr_real_1) <normal_inner_ref>: Use the expression to
+	set the memory attributes in all cases but clear MEM_EXPR if need be.
+
+2015-01-14  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-01-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/64513
+	* config/i386/i386.c (ix86_expand_prologue): Add
+	REG_FRAME_RELATED_EXPR to %rax and %r10 pushes.
+
+	2015-01-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/64286
+	* ree.c (combine_reaching_defs): Move part of comment earlier,
+	remove !SCALAR_INT_MODE_P check.
+	(add_removable_extension): Don't add vector mode
+	extensions if all uses of the source register aren't the same
+	vector extensions.
+
+	2015-01-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/64563
+	* tree-vrp.c (vrp_evaluate_conditional): Check for VR_RANGE
+	instead of != VR_VARYING.
+
+2015-01-14  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-01-13  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/64391
+	* trans-mem.c (get_attrs_for): Return NULL_TREE if X is NULL_TREE.
+
+2015-01-13  Marc Glisse  <marc.glisse@inria.fr>
+
+	PR c++/54442
+	* tree.c (build_qualified_type): Use a canonical type for
+	TYPE_CANONICAL.
+
+2015-01-13  Pat Haugen  <pthaugen@us.ibm.com>
+
+	Backport from mainline
+	2014-12-20  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/64358
+	* config/rs6000/rs6000.c (rs6000_split_logical_inner): Swap the
+	input operands if only the second is inverted.
+	* config/rs6000/rs6000.md (*boolc<mode>3_internal1 for BOOL_128):
+	Swap BOOL_REGS_OP1 and BOOL_REGS_OP2.  Correct arguments to
+	rs6000_split_logical.
+	(*boolc<mode>3_internal2 for TI2): Swap operands[1] and operands[2].
+
+2015-01-13  Renlin Li  <renlin.li@arm.com>
+
+	Backport from mainline:
+	2014-11-19 Renlin Li <renlin.li@arm.com>
+
+	PR target/63424
+	* config/aarch64/aarch64-simd.md (<su><maxmin>v2di3): New.
+
+2015-01-13  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport form mainline
+	2015-01-13  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/64479
+	* rtlanal.c (set_reg_p): Handle SEQUENCE constructs.
+
 2015-01-09  Jakub Jelinek  <jakub@redhat.com>
 
 	PR rtl-optimization/64536

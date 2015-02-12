@@ -1633,7 +1633,8 @@ scan_sharing_clauses (tree clauses, omp_context *ctx)
 		 #pragma omp target data, there is nothing to map for
 		 those.  */
 	      if (gimple_omp_target_kind (ctx->stmt) == GF_OMP_TARGET_KIND_DATA
-		  && !POINTER_TYPE_P (TREE_TYPE (decl)))
+		  && !POINTER_TYPE_P (TREE_TYPE (decl))
+		  && !OMP_CLAUSE_MAP_ZERO_BIAS_ARRAY_SECTION (c))
 		break;
 	    }
 	  if (DECL_P (decl))
@@ -11105,9 +11106,11 @@ simd_clone_mangle (struct cgraph_node *node,
     }
 
   pp_underscore (&pp);
-  pp_string (&pp,
-	     IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (node->decl)));
-  const char *str = pp_formatted_text (&pp);
+  const char *str = IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (node->decl));
+  if (*str == '*')
+    ++str;
+  pp_string (&pp, str);
+  str = pp_formatted_text (&pp);
 
   /* If there already is a SIMD clone with the same mangled name, don't
      add another one.  This can happen e.g. for

@@ -1,3 +1,190 @@
+2015-02-04  Matthias Klose  <doko@ubuntu.com>
+
+	Backport from mainline
+	2015-01-15  Martin Liska  <mliska@suse.cz>
+
+	* g++.dg/ipa/pr64068.C: New test.
+	* gcc.dg/ipa/PR64559.c: New test.
+
+2015-02-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-01-31  Uros Bizjak  <ubizjak@gmail.com>
+
+        PR target/64882
+	* gcc.dg/torture/pr64882.c: New test.
+
+2015-02-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backported from mainline
+	2015-01-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/builtin_target.c (check_intel_cpu_model): Add
+	Silvermont, Ivy Bridge, Haswell and Broadwell tests.  Update Sandy
+	Bridge test.
+
+2015-02-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-01-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/61058
+	* gcc.dg/pr61058.c: New test.
+
+	PR c/64766
+	* gcc.dg/pr64766.c: New test.
+
+	2015-01-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/64778
+	* gcc.dg/pr64778.c: New test.
+
+	PR middle-end/64421
+	* gcc.dg/vect/pr64421.c: New test.
+
+	2015-01-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/63637
+	PR rtl-optimization/60663
+	* gcc.dg/pr63637-1.c: New test.
+	* gcc.dg/pr63637-2.c: New test.
+	* gcc.dg/pr63637-3.c: New test.
+	* gcc.dg/pr63637-4.c: New test.
+	* gcc.dg/pr63637-5.c: New test.
+	* gcc.dg/pr63637-6.c: New test.
+	* gcc.target/i386/pr63637-1.c: New test.
+	* gcc.target/i386/pr63637-2.c: New test.
+	* gcc.target/i386/pr63637-3.c: New test.
+	* gcc.target/i386/pr63637-4.c: New test.
+	* gcc.target/i386/pr63637-5.c: New test.
+	* gcc.target/i386/pr63637-6.c: New test.
+
+	2015-01-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/64663
+	* gcc.dg/pr64663.c: New test.
+
+2015-01-29  Ilya Tocar  <ilya.tocar@intel.com>
+
+	* gcc.target/i386/sse-14.c: Test new intrinsic.
+	* gcc.target/i386/sse-22.c: Ditto.
+
+2015-01-27  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/62044
+	* gfortran.dg/allocate_with_mold_1.f90: New test
+
+2015-01-27  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/64230
+	* gfortran.dg/class_allocate_18.f90: Remove -fsanitize option to
+	prevent linking errors.
+
+2015-01-27  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/64771
+	* gfortran.dg/coarray_36.f: New.
+	* gfortran.dg/coarray_37.f90: New.
+
+2015-01-26  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/64230
+	* gfortran.dg/class_allocate_18.f90: New.
+
+2015-01-26  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR testsuite/64712
+	* gnat.dg/unchecked_convert1.adb (Unchecked_Convert1): Initialize A.
+
+2015-01-24  Thomas Koenig  <tkoenig@netcologne.de>
+
+	Backport from trunk
+	PR fortran/57023
+	* gfortran.dg/internal_pack_15.f90:  New test.
+
+2015-01-24  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/60922
+	* gfortran.dg/class_allocate_17.f90: New.
+
+2015-01-20  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2014-06-23  Marek Polacek  <polacek@redhat.com>
+
+	PR c/61553
+	* c-c++-common/pr61553.c: New test.
+
+2015-01-16  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* c-c++-common/tsan/tsan_barrier.h: New.
+	* c-c++-common/tsan/atomic_stack.c: Reworked to not depend on sleep.
+	* c-c++-common/tsan/fd_pipe_race.c: Likewise.
+	* c-c++-common/tsan/mutexset1.c: Likewise.
+	* c-c++-common/tsan/race_on_barrier.c: Likewise.
+	* c-c++-common/tsan/race_on_mutex.c: Likewise.
+	* c-c++-common/tsan/race_on_mutex2.c: Likewise.
+	* c-c++-common/tsan/simple_race.c: Likewise.
+	* c-c++-common/tsan/simple_stack.c: Likewise.
+	* c-c++-common/tsan/sleep_sync.c: Likewise.
+	* c-c++-common/tsan/tiny_race.c: Likewise.
+	* c-c++-common/tsan/tls_race.c: Likewise.
+	* c-c++-common/tsan/write_in_reader_lock.c: Likewise.
+	* g++.dg/tsan/atomic_free.C: Likewise.
+	* g++.dg/tsan/atomic_free2.C: Likewise.
+	* g++.dg/tsan/cond_race.C: Likewise.
+	* g++.dg/tsan/tsan_barrier.h: Copied from c-c++-common/tsan.
+
+2015-01-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/opt47.adb: New test.
+
+2015-01-14  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-01-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/64513
+	* gcc.target/i386/pr64513.c: New test.
+
+	2015-01-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/64286
+	* gcc.target/i386/avx2-pr64286.c: New test.
+
+	PR fortran/64528
+	* gfortran.dg/pr64528.f90: New test.
+
+	2015-01-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/64563
+	* gcc.dg/pr64563.c: New test.
+
+2015-01-14  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-01-13  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/64391
+	* gcc.dg/tm/pr64391.c: New test.
+
+2015-01-13  Marc Glisse  <marc.glisse@inria.fr>
+
+	PR c++/54442
+	* g++.dg/pr54442.C: New file.
+
+2015-01-13  Renlin Li  <renlin.li@arm.com>
+
+	Backported from mainline
+	2014-11-19 Renlin Li <renlin.li@arm.com>
+
+	PR target/63424
+	* gcc.target/aarch64/pr63424.c: New Test.
+
 2015-01-12  Janus Weil  <janus@gcc.gnu.org>
 
 	Backport from mainline
