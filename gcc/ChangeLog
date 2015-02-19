@@ -1,3 +1,25 @@
+2015-02-17  Ilya Tocar  <ilya.tocar@intel.com>
+
+	Backported from mainline
+	2015-01-14  Ilya Tocar  <ilya.tocar@intel.com>
+
+	PR target/64387
+	* config/i386/sse.md (vec_unpacks_hi_v8sf): Fix predicate.
+
+2015-02-12  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-02-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/64979
+	* tree-stdarg.c (pass_stdarg::execute): Scan phi node args for
+	va_list escapes.
+
+2015-02-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/alpha/alpha.md (reload_out<mode>_aligned): Make operands 2
+	and 3 earlyclobber operands.
+
 2015-02-05  Segher Boessenkool  <segher@kernel.crashing.org>
 
 	PR target/64580
