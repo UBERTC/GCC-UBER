@@ -1,3 +1,25 @@
+2015-02-25  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/65196
+	* config/avr/avr.c (avr_adjust_insn_length): Call recog_memoized
+	only with NONDEBUG_INSN_P.
+
+2015-02-25  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-02-16  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/63593
+	* tree-predcom.c (execute_pred_commoning_chain): Delay removing
+	stmts and releasing SSA names until...
+	(execute_pred_commoning): ... after processing all chains.
+
+	2015-02-18  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65063
+	* tree-predcom.c (determine_unroll_factor): Return 1 if we
+	have replaced looparound PHIs.
+
 2015-02-24  Richard Biener  <rguenther@suse.de>
 
 	Backport from mainline
@@ -49,7 +71,7 @@
 	for LTO produced CUs.
 
 	2015-02-16  Richard Biener  <rguenther@suse.de>
- 
+
 	PR lto/65015
 	* varasm.c (default_file_start): For LTO produced units
 	emit <artificial> as file directive.
