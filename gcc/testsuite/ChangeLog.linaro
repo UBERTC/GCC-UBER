@@ -1,3 +1,10 @@
+2015-02-27  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	Backport from trunk r215612.
+	2014-09-25  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/simd/vqshlb_1.c: New.
+
 2015-02-12  Michael Collison  <michael.collison@linaro.org>
 
         GCC Linaro 4.9-2015.02 released.
