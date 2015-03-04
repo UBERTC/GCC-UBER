@@ -1,5 +1,18 @@
 2015-03-04  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
 
+	Backport from trunk r215722.
+	2014-09-30  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-simd-builtins.def (sqdmull_laneq): Expand
+	iterator.
+	* config/aarch64/aarch64-simd.md
+	(aarch64_sqdmull_laneq<mode>): Expand iterator.
+	* config/aarch64/arm_neon.h (vqdmullh_laneq_s16): New.
+	(vqdmulls_lane_s32): Fix return type.
+	(vqdmulls_laneq_s32): New.
+
+2015-03-04  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
 	Backport from trunk r215612.
 	2014-09-25  James Greenhalgh  <james.greenhalgh@arm.com>
 
