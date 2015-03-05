@@ -700,6 +700,10 @@ ssa_redirect_edges (struct redirection_data **slot,
 	  if ((*path)[1]->type != EDGE_COPY_SRC_JOINER_BLOCK)
 	    EDGE_SUCC (rd->dup_blocks[0], 0)->count += e->count;
 
+	  /* If we redirect a loop latch edge cancel its loop.  */
+	  if (e->src == e->src->loop_father->latch)
+	    mark_loop_for_removal (e->src->loop_father);
+
 	  /* Redirect the incoming edge (possibly to the joiner block) to the
 	     appropriate duplicate block.  */
 	  e2 = redirect_edge_and_branch (e, rd->dup_blocks[0]);
@@ -780,39 +784,12 @@ thread_block_1 (basic_block bb, bool noloop_only, bool joiners)
   edge e, e2;
   edge_iterator ei;
   ssa_local_info_t local_info;
-  struct loop *loop = bb->loop_father;
 
   /* To avoid scanning a linear array for the element we need we instead
      use a hash table.  For normal code there should be no noticeable
      difference.  However, if we have a block with a large number of
      incoming and outgoing edges such linear searches can get expensive.  */
   redirection_data.create (EDGE_COUNT (bb->succs));
-
-  /* If we thread the latch of the loop to its exit, the loop ceases to
-     exist.  Make sure we do not restrict ourselves in order to preserve
-     this loop.  */
-  if (loop->header == bb)
-    {
-      e = loop_latch_edge (loop);
-      vec<jump_thread_edge *> *path = THREAD_PATH (e);
-
-      if (path
-	  && (((*path)[1]->type == EDGE_COPY_SRC_JOINER_BLOCK && joiners)
-	      || ((*path)[1]->type == EDGE_COPY_SRC_BLOCK && !joiners)))
-	{
-	  for (unsigned int i = 1; i < path->length (); i++)
-	    {
-	      edge e2 = (*path)[i]->e;
-
-	      if (loop_exit_edge_p (loop, e2))
-		{
-		  loop->header = NULL;
-		  loop->latch = NULL;
-		  loops_state_set (LOOPS_NEED_FIXUP);
-		}
-	    }
-	}
-    }
 
   /* Record each unique threaded destination into a hash table for
      efficient lookups.  */
@@ -1257,9 +1234,7 @@ thread_through_loop_header (struct loop *loop, bool may_peel_loop_headers)
     {
       /* If the loop ceased to exist, mark it as such, and thread through its
 	 original header.  */
-      loop->header = NULL;
-      loop->latch = NULL;
-      loops_state_set (LOOPS_NEED_FIXUP);
+      mark_loop_for_removal (loop);
       return thread_block (header, false);
     }
 
@@ -1669,7 +1644,7 @@ duplicate_seme_region (edge entry, edge exit,
 		       basic_block *region_copy)
 {
   unsigned i;
-  bool free_region_copy = false, copying_header = false;
+  bool free_region_copy = false;
   struct loop *loop = entry->dest->loop_father;
   edge exit_copy;
   edge redirected;
@@ -1693,10 +1668,7 @@ duplicate_seme_region (edge entry, edge exit,
 
   initialize_original_copy_tables ();
 
-  if (copying_header)
-    set_loop_copy (loop, loop_outer (loop));
-  else
-    set_loop_copy (loop, loop);
+  set_loop_copy (loop, loop);
 
   if (!region_copy)
     {
@@ -1758,6 +1730,8 @@ duplicate_seme_region (edge entry, edge exit,
   }
 
   /* Redirect the entry and add the phi node arguments.  */
+  if (entry->dest == loop->header)
+    mark_loop_for_removal (loop);
   redirected = redirect_edge_and_branch (entry, get_bb_copy (entry->dest));
   gcc_assert (redirected != NULL);
   flush_pending_stmts (entry);
@@ -1937,16 +1911,8 @@ thread_through_all_blocks (bool may_peel_loop_headers)
 		/* Our path is still valid, thread it.  */
 	        if (e->aux)
 		  {
-		    struct loop *loop = (*path)[0]->e->dest->loop_father;
-
 		    if (thread_block ((*path)[0]->e->dest, false))
-		      {
-			/* This jump thread likely totally scrambled this loop.
-			   So arrange for it to be fixed up.  */
-			loop->header = NULL;
-			loop->latch = NULL;
-			e->aux = NULL;
-		      }
+		      e->aux = NULL;
 		    else
 		      {
 		        delete_jump_thread_path (path);

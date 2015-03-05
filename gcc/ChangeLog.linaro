@@ -1,5 +1,82 @@
 2015-03-05  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r212011, r214942, r214957, r215012, r215016, r218115,
+	r218733, r218746, r220491.
+	2015-02-06  Sebastian Pop  <s.pop@samsung.com>
+		    Brian Rzycki  <b.rzycki@samsung.com>
+
+	PR tree-optimization/64878
+	* tree-ssa-threadedge.c: Include tree-ssa-loop.h.
+	(fsm_find_control_statement_thread_paths): Add parameter seen_loop_phi.
+	Stop recursion at loop phi nodes after having visited a loop phi node.
+
+	2014-12-15  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/64246
+	* cfgloop.c (mark_loop_for_removal): Make safe against multiple
+	invocations on the same loop.
+
+	2014-12-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64284
+	* tree-ssa-threadupdate.c (duplicate_seme_region): Mark
+	the loop for removal if we copied the loop header.
+
+	2014-11-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64083
+	* tree-ssa-threadupdate.c (thread_through_all_blocks): Do not
+	forcibly mark loop for removal the wrong way.
+
+	2014-09-08  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/63196
+	* tree-inline.c (copy_loops): The source loop header should
+	always be non-NULL.
+	(tree_function_versioning): If loops need fixup after removing
+	unreachable blocks fix them.
+	* omp-low.c (simd_clone_adjust): Do not add incr block to
+	loop under construction.
+
+	2014-09-08  Richard Biener  <rguenther@suse.de>
+
+	PR bootstrap/63204
+	* cfgloop.c (mark_loop_for_removal): Track former header
+	unconditionally.
+	* cfgloop.h (struct loop): Add former_header member unconditionally.
+	* loop-init.c (fix_loop_structure): Enable bogus loop removal
+	diagnostic unconditionally.
+
+	2014-09-05  Richard Biener  <rguenther@suse.de>
+
+	* cfgloop.c (mark_loop_for_removal): Record former header
+	when ENABLE_CHECKING.
+	* cfgloop.h (strut loop): Add former_header member when
+	ENABLE_CHECKING.
+	* loop-init.c (fix_loop_structure): Sanity check loops
+	marked for removal if they re-appeared.
+
+	2014-09-05  Richard Biener  <rguenther@suse.de>
+
+	* cfgloop.c (mark_loop_for_removal): New function.
+	* cfgloop.h (mark_loop_for_removal): Declare.
+	* cfghooks.c (delete_basic_block): Use mark_loop_for_removal.
+	(merge_blocks): Likewise.
+	(duplicate_block): Likewise.
+	* except.c (sjlj_emit_dispatch_table): Likewise.
+	* tree-eh.c (cleanup_empty_eh_merge_phis): Likewise.
+	* tree-ssa-threadupdate.c (ssa_redirect_edges): Likewise.
+	(thread_through_loop_header): Likewise.
+
+	2014-06-26  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61607
+	* tree-ssa-threadupdate.c (ssa_redirect_edges): Cancel the
+	loop if we redirected its latch edge.
+	(thread_block_1): Do not cancel loops prematurely.
+
+2015-03-05  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r220860.
 	2015-02-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 

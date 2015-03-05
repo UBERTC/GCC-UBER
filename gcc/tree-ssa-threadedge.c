@@ -48,6 +48,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "langhooks.h"
 #include "params.h"
 #include "tree-ssa-threadedge.h"
+#include "tree-ssa-loop.h"
 
 /* To avoid code explosion due to jump threading, we limit the
    number of statements we are going to copy.  This variable
@@ -947,7 +948,8 @@ static int max_threaded_paths;
 static void
 fsm_find_control_statement_thread_paths (tree expr,
 					 pointer_set_t *visited_phis,
-					 vec<basic_block, va_gc> *&path)
+					 vec<basic_block, va_gc> *&path,
+					 bool seen_loop_phi)
 {
   tree var = SSA_NAME_VAR (expr);
   gimple def_stmt = SSA_NAME_DEF_STMT (expr);
@@ -969,6 +971,14 @@ fsm_find_control_statement_thread_paths (tree expr,
 
   int next_path_length = 0;
   basic_block last_bb_in_path = path->last ();
+
+  if (loop_containing_stmt (def_stmt)->header == gimple_bb (def_stmt))
+    {
+      /* Do not walk through more than one loop PHI node.  */
+      if (seen_loop_phi)
+	return;
+      seen_loop_phi = true;
+    }
 
   /* Following the chain of SSA_NAME definitions, we jumped from a definition in
      LAST_BB_IN_PATH to a definition in VAR_BB.  When these basic blocks are
@@ -1030,7 +1040,9 @@ fsm_find_control_statement_thread_paths (tree expr,
 	{
 	  vec_safe_push (path, bbi);
 	  /* Recursively follow SSA_NAMEs looking for a constant definition.  */
-	  fsm_find_control_statement_thread_paths (arg, visited_phis, path);
+	  fsm_find_control_statement_thread_paths (arg, visited_phis, path,
+						   seen_loop_phi);
+
 	  path->pop ();
 	  continue;
 	}
@@ -1297,7 +1309,8 @@ thread_through_normal_block (edge e,
       pointer_set_t *visited_phis = pointer_set_create ();
 
       max_threaded_paths = PARAM_VALUE (PARAM_MAX_FSM_THREAD_PATHS);
-      fsm_find_control_statement_thread_paths (cond, visited_phis, bb_path);
+      fsm_find_control_statement_thread_paths (cond, visited_phis, bb_path,
+					       false);
 
       pointer_set_destroy (visited_phis);
       vec_free (bb_path);

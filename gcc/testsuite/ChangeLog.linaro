@@ -1,5 +1,32 @@
 2015-03-05  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r218115, r218733, r218746, r220491.
+	2015-02-06  Sebastian Pop  <s.pop@samsung.com>
+		    Brian Rzycki  <b.rzycki@samsung.com>
+
+	PR tree-optimization/64878
+	* testsuite/gcc.dg/tree-ssa/ssa-dom-thread-8.c: New.
+
+	2014-12-15  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/64246
+	* gnat.dg/opt46.adb: New testcase.
+	* gnat.dg/opt46.ads: Likewise.
+	* gnat.dg/opt46_pkg.adb: Likewise.
+	* gnat.dg/opt46_pkg.ads: Likewise.
+
+	2014-12-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64284
+	* gcc.dg/torture/pr64284.c: New testcase.
+
+	2014-11-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64083
+	* gcc.dg/torture/pr64083.c: New testcase.
+
+2015-03-05  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r220860.
 	2015-02-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
