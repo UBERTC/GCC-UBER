@@ -1,5 +1,224 @@
 2015-03-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r218463, r219764, r219765, r219767, r219914,
+	r219917, r219918, r219919, r219920, r219921, r219922, r219930,
+	r219931, r219932, r219934, r219937, r219938, r219939, r219940,
+	r219941, r219942, r219943, r219944, r219945, r219946, r219947,
+	r219948, r219949, r219950, r220117, r220118, r220119, r220121,
+	r220122, r220123, r220124, r220126, r220353.
+
+	2015-02-02  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/arm-neon-ref.h
+	(_ARM_FPSRC): Add DN and AHP fields.
+	(clean_results): Force DN=1 on AArch64.
+	* gcc.target/aarch64/advsimd-intrinsics/binary_op_no64.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vhadd.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vhsub.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmax.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmin.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vrhadd.c: New file.
+
+	2015-01-26  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vpaddl.c: New file.
+
+	2015-01-26  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vpadal.c: New file.
+
+	2015-01-26  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmvn.c: New file.
+
+	2015-01-26  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmovl.c: New file.
+
+	2015-01-26  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vpXXX.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vpadd.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vpmax.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vpmin.c: New file.
+
+	2015-01-26  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmlX_n.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmla_n.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmls_n.c: New file.
+
+	2015-01-26  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vXXXhn.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vraddhn.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vrsubhn.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vsubhn.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vaddhn.c: Use code from
+	vXXXhn.inc.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmull_n.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmull_lane.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmull.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmulh_n.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmulh_lane.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmulh.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmull_n.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmull_lane.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmull.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmul_n.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmul_lane.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmovn.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vXXXw.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vsubw.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vaddw.c: Use code from
+	vXXXw.inc.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vXXXl.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vsubl.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vaddl.c: Use code from
+	vXXXl.inc.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vsXi_n.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vsli_n.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vsri_n.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmlXl_n.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmlal_n.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmlsl_n.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmlXl_lane.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmlal_lane.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmlsl_lane.c: New file.
+
+	2015-01-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmlXl.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmlal.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vqdmlsl.c: New file.
+
+	2015-01-20  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmlXl_n.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmlal_n.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmlsl_n.c: New file.
+
+	2015-01-20  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmlXl_lane.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmlal_lane.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmlsl_lane.c: New file.
+
+	2015-01-20  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmlXl.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmlal.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmlsl.c: New file.
+
+	2015-01-20  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vshuffle.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vtrn.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vuzp.c: Use code from
+	vshuffle.inc.
+	* gcc.target/aarch64/advsimd-intrinsics/vzip.c: Use code from
+	vshuffle.inc.
+
+	2015-01-20  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmlX_lane.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmla_lane.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmls_lane.c: New file.
+
+	2015-01-20  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmlX.inc: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmla.c: New file.
+	* gcc.target/aarch64/advsimd-intrinsics/vmls.c: New file.
+
+	2015-01-20  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vldX_dup.c: New file.
+
+	2015-01-16  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vld1_lane.c: New file.
+
+	2015-01-16  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/arm-neon-ref.h (CHECK):
+	Add trace.
+	(CHECK_FP): Likewise.
+	(CHECK_CUMULATIVE_SAT): Likewise.
+
+	2015-01-16  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/arm-neon-ref.h
+	(Set_Neon_Cumulative_Sat): Add parameter.
+	(__set_neon_cumulative_sat): Support new parameter.
+	* gcc.target/aarch64/advsimd-intrinsics/binary_sat_op.inc
+	(TEST_BINARY_SAT_OP1): Call Set_Neon_Cumulative_Sat with new
+	argument.
+	* gcc.target/aarch64/advsimd-intrinsics/unary_sat_op.inc
+	(TEST_UNARY_SAT_OP1): Call Set_Neon_Cumulative_Sat with new
+	argument.
+
+	2014-12-07  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vaddhn.c: Actually execute
+	the test.
+	* gcc.target/aarch64/advsimd-intrinsics/vaddl.c: Actually execute
+	the test. Fix expected output.
+	* gcc.target/aarch64/advsimd-intrinsics/vaddw.c: Likewise.
+
+2015-03-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r217707.
 	2014-11-18  Christophe Lyon  <christophe.lyon@linaro.org>
 

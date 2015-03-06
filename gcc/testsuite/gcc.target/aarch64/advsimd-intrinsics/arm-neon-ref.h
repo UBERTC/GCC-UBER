@@ -79,6 +79,7 @@ extern size_t strlen(const char *);
 	  abort();							\
 	}								\
       }									\
+    fprintf(stderr, "CHECKED %s\n", MSG);				\
   }
 
 /* Floating-point variant.  */
@@ -107,6 +108,7 @@ extern size_t strlen(const char *);
 	  abort();							\
 	}								\
       }									\
+    fprintf(stderr, "CHECKED %s\n", MSG);				\
   }
 
 /* Clean buffer with a non-zero pattern to help diagnose buffer
@@ -228,7 +230,9 @@ extern ARRAY(expected, hfloat, 32, 4);
 
 typedef union {
   struct {
-    int _xxx:27;
+    int _xxx:25;
+    unsigned int DN:1;
+    unsigned int AHP:1;
     unsigned int QC:1;
     int V:1;
     int C:1;
@@ -247,7 +251,9 @@ typedef union {
     int C:1;
     int V:1;
     unsigned int QC:1;
-    int _dnm:27;
+    unsigned int AHP:1;
+    unsigned int DN:1;
+    int _dnm:25;
   } b;
   unsigned int word;
 } _ARM_FPSCR;
@@ -255,7 +261,11 @@ typedef union {
 #endif /* __ORDER_BIG_ENDIAN__ */
 
 #define Neon_Cumulative_Sat  __read_neon_cumulative_sat()
-#define Set_Neon_Cumulative_Sat(x)  __set_neon_cumulative_sat((x))
+/* We need a fake dependency to ensure correct ordering of asm
+   statements to preset the QC flag value, and Neon operators writing
+   to QC. */
+#define Set_Neon_Cumulative_Sat(x, depend)	\
+  __set_neon_cumulative_sat((x), (depend))
 
 #if defined(__aarch64__)
 static volatile int __read_neon_cumulative_sat (void) {
@@ -263,13 +273,12 @@ static volatile int __read_neon_cumulative_sat (void) {
     asm volatile ("mrs %0,fpsr" : "=r" (_afpscr_for_qc));
     return _afpscr_for_qc.b.QC;
 }
-static void __set_neon_cumulative_sat (int x) {
-    _ARM_FPSCR _afpscr_for_qc;
-    asm volatile ("mrs %0,fpsr" : "=r" (_afpscr_for_qc));
-    _afpscr_for_qc.b.QC = x;
-    asm volatile ("msr fpsr,%0" : : "r" (_afpscr_for_qc));
-    return;
-}
+#define __set_neon_cumulative_sat(x, depend) {				\
+    _ARM_FPSCR _afpscr_for_qc;						\
+    asm volatile ("mrs %0,fpsr" : "=r" (_afpscr_for_qc));		\
+    _afpscr_for_qc.b.QC = x;						\
+    asm volatile ("msr fpsr,%1" : "=X" (depend) : "r" (_afpscr_for_qc)); \
+  }
 #else
 static volatile int __read_neon_cumulative_sat (void) {
     _ARM_FPSCR _afpscr_for_qc;
@@ -277,13 +286,12 @@ static volatile int __read_neon_cumulative_sat (void) {
     return _afpscr_for_qc.b.QC;
 }
 
-static void __set_neon_cumulative_sat (int x) {
-    _ARM_FPSCR _afpscr_for_qc;
-    asm volatile ("vmrs %0,fpscr" : "=r" (_afpscr_for_qc));
-    _afpscr_for_qc.b.QC = x;
-    asm volatile ("vmsr fpscr,%0" : : "r" (_afpscr_for_qc));
-    return;
-}
+#define __set_neon_cumulative_sat(x, depend) {				\
+    _ARM_FPSCR _afpscr_for_qc;						\
+    asm volatile ("vmrs %0,fpscr" : "=r" (_afpscr_for_qc));		\
+    _afpscr_for_qc.b.QC = x;						\
+    asm volatile ("vmsr fpscr,%1" : "=X" (depend) : "r" (_afpscr_for_qc)); \
+  }
 #endif
 
 /* Declare expected cumulative saturation results, one for each
@@ -321,6 +329,7 @@ extern int VECT_VAR(expected_cumulative_sat, uint, 64, 2);
 	      strlen(COMMENT) > 0 ? " " COMMENT : "");			\
       abort();								\
     }									\
+    fprintf(stderr, "CHECKED CUMULATIVE SAT %s\n", MSG);		\
   }
 
 #define CHECK_CUMULATIVE_SAT_NAMED(test_name,EXPECTED,comment)		\
@@ -377,6 +386,15 @@ static void clean_results (void)
   CLEAN(result, poly, 8, 16);
   CLEAN(result, poly, 16, 8);
   CLEAN(result, float, 32, 4);
+
+#if defined(__aarch64__)
+  /* On AArch64, make sure to return DefaultNaN to have the same
+     results as on AArch32.  */
+  _ARM_FPSCR _afpscr_for_dn;
+  asm volatile ("mrs %0,fpcr" : "=r" (_afpscr_for_dn));
+  _afpscr_for_dn.b.DN = 1;
+  asm volatile ("msr fpcr,%0" : : "r" (_afpscr_for_dn));
+#endif
 }
 
 
