@@ -26,6 +26,7 @@
 /* Make __aeabi_AEABI_NAME an alias for __GCC_NAME.  */
 #define RENAME_LIBRARY(GCC_NAME, AEABI_NAME)		\
   typeof (__##GCC_NAME) __aeabi_##AEABI_NAME \
+    __attribute__((visibility("default"))) \
     __attribute__((alias ("__" #GCC_NAME)));
 
 /* Give some libgcc functions an additional __aeabi name.  */

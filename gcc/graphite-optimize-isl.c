@@ -467,7 +467,7 @@ getScheduleForBandList (isl_band_list *BandList, isl_union_map **map_sepcl)
 	      if (flag_loop_unroll_jam && (i != (ScheduleDimensions - depth)))
 		continue;
 
-#ifdef HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE
+#if 1 || defined(HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE)
 	      if (isl_band_member_is_coincident (Band, i))
 #else
 	      if (isl_band_member_is_zero_distance (Band, i))

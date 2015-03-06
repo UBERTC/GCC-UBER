@@ -49,6 +49,10 @@
 #endif
 #include <limits.h>
 #include <errno.h>
+#ifdef __ANDROID__
+#include <sys/sysconf.h>
+#define PAGE_SIZE sysconf(_SC_PAGE_SIZE)
+#endif
 
 #ifndef HAVE_STRTOULL
 # define strtoull(ptr, eptr, base) strtoul (ptr, eptr, base)

@@ -136,7 +136,11 @@ while (0)
 #define LIB_SPEC OBSD_LIB_SPEC
 
 #if defined(HAVE_LD_EH_FRAME_HDR)
+#ifdef USE_EH_FRAME_HDR_FOR_STATIC
+#define LINK_EH_SPEC "--eh-frame-hdr "
+#else
 #define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+#endif
 #endif
 
 #undef LIB_SPEC

@@ -4140,7 +4140,8 @@ build_operator_new_call (tree fnname, vec<tree, va_gc> **args,
   if (size_check != NULL_TREE)
     {
       tree errval = TYPE_MAX_VALUE (sizetype);
-      if (cxx_dialect >= cxx11 && flag_exceptions)
+      /* ANDROID - temporarily disable __cxa_throw_bad_array_new_length call. */
+      if (cxx_dialect >= cxx11 && flag_exceptions && 0)
 	errval = throw_bad_array_new_length ();
       *size = fold_build3 (COND_EXPR, sizetype, size_check,
 			   original_size, errval);

@@ -40,16 +40,17 @@
 #define ANDROID_LINK_SPEC \
   "%{shared: -Bsymbolic}"
 
-#define ANDROID_CC1_SPEC						\
+#define ANDROID_CC1_SPEC(ANDROID_PIC_DEFAULT)				\
   "%{!mglibc:%{!muclibc:%{!mbionic: -mbionic}}} "			\
-  "%{!fno-pic:%{!fno-PIC:%{!fpic:%{!fPIC: -fPIC}}}}"
+  "%{!fno-pic:%{!fno-PIC:%{!fpic:%{!fPIC: " ANDROID_PIC_DEFAULT "}}}}"
 
 #define ANDROID_CC1PLUS_SPEC						\
   "%{!fexceptions:%{!fno-exceptions: -fno-exceptions}} "		\
   "%{!frtti:%{!fno-rtti: -fno-rtti}}"
 
 #define ANDROID_LIB_SPEC \
-  "%{!static: -ldl}"
+  "%{!static: -ldl} \
+  %{pthread: -lc}"
 
 #define ANDROID_STARTFILE_SPEC						\
   "%{shared: crtbegin_so%O%s;:"						\
