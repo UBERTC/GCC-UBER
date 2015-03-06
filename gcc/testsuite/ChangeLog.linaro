@@ -1,15 +1,30 @@
 2015-03-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
- 	Backport from trunk r216663.
+	Backport from trunk r217706.
+	2014-11-18  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vcls.c: New test.
+	* gcc.target/aarch64/advsimd-intrinsics/vcnt.c: New test.
+	* gcc.target/aarch64/advsimd-intrinsics/vcombine.c: New test.
+	* gcc.target/aarch64/advsimd-intrinsics/vcreate.c: New test.
+	* gcc.target/aarch64/advsimd-intrinsics/vcvt.c: New test.
+	* gcc.target/aarch64/advsimd-intrinsics/vdup_lane.c: New test.
+	* gcc.target/aarch64/advsimd-intrinsics/vext.c: New test.
+	* gcc.target/aarch64/advsimd-intrinsics/vget_high.c: New test.
+	* gcc.target/aarch64/advsimd-intrinsics/vget_low.c: New test.
+
+2015-03-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r216663.
 	2014-10-24  Jiong Wang  <jiong.wang@arm.com>
 
- 	* lib/target-supports.exp
- 	(check_effective_target_arm_crypto_ok_nocache): Remove declaration for
- 	vaeseq_u8.
- 	(check_effective_target_arm_neon_fp16_ok_nocache): Remove declaration
- 	for vcvt_f16_f32.
- 	(check_effective_target_arm_neonv2_ok_nocache): Remove declaration for
- 	vfma_f32.
+	* lib/target-supports.exp
+	(check_effective_target_arm_crypto_ok_nocache): Remove declaration for
+	vaeseq_u8.
+	(check_effective_target_arm_neon_fp16_ok_nocache): Remove declaration
+	for vcvt_f16_f32.
+	(check_effective_target_arm_neonv2_ok_nocache): Remove declaration for
+	vfma_f32.
 
 2015-03-05  Yvan Roux  <yvan.roux@linaro.org>
 
