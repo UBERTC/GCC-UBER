@@ -1,5 +1,43 @@
 2015-03-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	Backport from trunk r217707.
+	2014-11-18  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/arm/neon/vbicQs16.c: Regenerate.
+	* gcc.target/arm/neon/vbicQs32.c: Likewise.
+	* gcc.target/arm/neon/vbicQs64.c: Likewise.
+	* gcc.target/arm/neon/vbicQs8.c: Likewise.
+	* gcc.target/arm/neon/vbicQu16.c: Likewise.
+	* gcc.target/arm/neon/vbicQu32.c: Likewise.
+	* gcc.target/arm/neon/vbicQu64.c: Likewise.
+	* gcc.target/arm/neon/vbicQu8.c: Likewise.
+	* gcc.target/arm/neon/vbics16.c: Likewise.
+	* gcc.target/arm/neon/vbics32.c: Likewise.
+	* gcc.target/arm/neon/vbics64.c: Likewise.
+	* gcc.target/arm/neon/vbics8.c: Likewise.
+	* gcc.target/arm/neon/vbicu16.c: Likewise.
+	* gcc.target/arm/neon/vbicu32.c: Likewise.
+	* gcc.target/arm/neon/vbicu64.c: Likewise.
+	* gcc.target/arm/neon/vbicu8.c: Likewise.
+	* gcc.target/arm/neon/vornQs16.c: Likewise.
+	* gcc.target/arm/neon/vornQs32.c: Likewise.
+	* gcc.target/arm/neon/vornQs64.c: Likewise.
+	* gcc.target/arm/neon/vornQs8.c: Likewise.
+	* gcc.target/arm/neon/vornQu16.c: Likewise.
+	* gcc.target/arm/neon/vornQu32.c: Likewise.
+	* gcc.target/arm/neon/vornQu64.c: Likewise.
+	* gcc.target/arm/neon/vornQu8.c: Likewise.
+	* gcc.target/arm/neon/vorns16.c: Likewise.
+	* gcc.target/arm/neon/vorns32.c: Likewise.
+	* gcc.target/arm/neon/vorns64.c: Likewise.
+	* gcc.target/arm/neon/vorns8.c: Likewise.
+	* gcc.target/arm/neon/vornu16.c: Likewise.
+	* gcc.target/arm/neon/vornu32.c: Likewise.
+	* gcc.target/arm/neon/vornu64.c: Likewise.
+	* gcc.target/arm/neon/vornu8.c: Likewise.
+
+2015-03-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	Backport from trunk r217706.
 	2014-11-18  Christophe Lyon  <christophe.lyon@linaro.org>
 
