@@ -885,7 +885,7 @@ write_unscoped_name (const tree decl)
       /* If not, it should be either in the global namespace, or directly
 	 in a local function scope.  */
       gcc_assert (context == global_namespace
-		  || context != NULL
+		  || context == NULL
 		  || TREE_CODE (context) == FUNCTION_DECL);
 
       write_unqualified_name (decl);

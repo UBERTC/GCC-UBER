@@ -68,7 +68,7 @@ libstdc___la_DEPENDENCIES = \
 	$(top_builddir)/src/c++11/libc++11convenience.la
 
 libstdc___la_LDFLAGS = \
-	-version-info $(libtool_VERSION) ${version_arg} -lm
+	-avoid-version ${version_arg} -lm
 
 libstdc___la_LINK = $(CXXLINK) $(libstdc___la_LDFLAGS)
 

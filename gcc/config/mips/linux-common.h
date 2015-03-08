@@ -35,7 +35,7 @@ along with GCC; see the file COPYING3.  If not see
 #undef  SUBTARGET_CC1_SPEC
 #define SUBTARGET_CC1_SPEC						\
   LINUX_OR_ANDROID_CC (GNU_USER_TARGET_CC1_SPEC,			\
-		       GNU_USER_TARGET_CC1_SPEC " " ANDROID_CC1_SPEC)
+		       GNU_USER_TARGET_CC1_SPEC " " ANDROID_CC1_SPEC("-fpic"))
 
 #undef  CC1PLUS_SPEC
 #define CC1PLUS_SPEC							\
@@ -44,7 +44,7 @@ along with GCC; see the file COPYING3.  If not see
 #undef  LIB_SPEC
 #define LIB_SPEC							\
   LINUX_OR_ANDROID_LD (GNU_USER_TARGET_LIB_SPEC,			\
-		       GNU_USER_TARGET_LIB_SPEC " " ANDROID_LIB_SPEC)
+		       GNU_USER_TARGET_LIB_SPEC_LESS_PTHREAD " " ANDROID_LIB_SPEC)
 
 #undef  STARTFILE_SPEC
 #define STARTFILE_SPEC							\

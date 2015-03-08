@@ -841,7 +841,7 @@ struct mips_cpu_info {
 #define ISA_HAS_CONDMOVE        (ISA_HAS_FP_CONDMOVE || TARGET_LOONGSON_2EF)
 
 /* ISA has LDC1 and SDC1.  */
-#define ISA_HAS_LDC1_SDC1	(!ISA_MIPS1 && !TARGET_MIPS16)
+#define ISA_HAS_LDC1_SDC1	(!ISA_MIPS1 && !TARGET_MIPS16 && TARGET_LDC1_SDC1)
 
 /* ISA has the mips4 FP condition code instructions: FP-compare to CC,
    branch on CC, and move (both FP and non-FP) on CC.  */
@@ -855,7 +855,7 @@ struct mips_cpu_info {
    FP madd and msub instructions, and the FP recip and recip sqrt
    instructions.  */
 #define ISA_HAS_FP4		((ISA_MIPS4				\
-				  || (ISA_MIPS32R2 && TARGET_FLOAT64)   \
+				  || ISA_MIPS32R2			\
 				  || ISA_MIPS64				\
 				  || ISA_MIPS64R2)			\
 				 && !TARGET_MIPS16)
@@ -886,10 +886,7 @@ struct mips_cpu_info {
 /* ISA has floating-point nmadd and nmsub instructions
    'd = -((a * b) [+-] c)'.  */
 #define ISA_HAS_NMADD4_NMSUB4(MODE)					\
-				((ISA_MIPS4				\
-				  || (ISA_MIPS32R2 && (MODE) == V2SFmode) \
-				  || ISA_MIPS64				\
-				  || ISA_MIPS64R2)			\
+				(ISA_HAS_FP4				\
 				 && (!TARGET_MIPS5400 || TARGET_MAD)	\
 				 && !TARGET_MIPS16)
 

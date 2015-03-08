@@ -365,10 +365,20 @@ ifeq ($(enable_shared),yes)
   endif
 endif
 
+ifneq ($(enable_shared),yes)
+# Some prebuilt libraries for Android link libc.so before libgcc.a, and they
+# rely on libgcc.a to provide those symbols with default visibility to resolve
+# them eventually. The linker order has been fixed in JB maintain releases but
+# may take a while to trickle down to partners to refresh their prebuilt
+# libraries. Therefore we need to maintain the same visibility as older GCC
+# for now.
+vis_hide =
+else
 # For -fvisibility=hidden.  We need both a -fvisibility=hidden on
 # the command line, and a #define to prevent libgcc2.h etc from
 # overriding that with #pragmas.
 vis_hide = @vis_hide@
+endif
 
 ifneq (,$(vis_hide))
 

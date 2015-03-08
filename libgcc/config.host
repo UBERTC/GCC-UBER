@@ -285,6 +285,11 @@ aarch64*-*-elf)
 	tmake_file="${tmake_file} ${cpu_type}/t-aarch64"
 	tmake_file="${tmake_file} ${cpu_type}/t-softfp t-softfp"
 	;;
+aarch64*-*-linux*-android*)
+	#md_unwind_header=aarch64/linux-unwind.h  # disable this for now since bionic isn't 64-bit ready yet
+	tmake_file="${tmake_file} ${cpu_type}/t-aarch64"
+	tmake_file="${tmake_file} ${cpu_type}/t-softfp t-softfp"
+	;;
 aarch64*-*-linux*)
 	md_unwind_header=aarch64/linux-unwind.h
 	tmake_file="${tmake_file} ${cpu_type}/t-aarch64"

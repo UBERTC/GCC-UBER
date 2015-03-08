@@ -6364,7 +6364,7 @@
 (define_expand "reload_inhi"
   [(parallel [(match_operand:HI 0 "s_register_operand" "=r")
 	      (match_operand:HI 1 "arm_reload_memory_operand" "o")
-	      (match_operand:DI 2 "s_register_operand" "=&r")])]
+	      (match_operand:DI 2 "s_register_operand" "=&l")])]
   "TARGET_EITHER"
   "
   if (TARGET_ARM)

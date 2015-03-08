@@ -6369,7 +6369,8 @@ arm_preferred_reload_class (rtx x ATTRIBUTE_UNUSED, reg_class_t rclass)
       if (rclass == GENERAL_REGS
 	  || rclass == HI_REGS
 	  || rclass == NO_REGS
-	  || rclass == STACK_REG)
+	  || rclass == STACK_REG
+	  || rclass == CORE_REGS)
 	return LO_REGS;
       else
 	return rclass;
@@ -18191,9 +18192,13 @@ arm_print_operand (FILE *stream, rtx x, int code)
 	memsize = MEM_SIZE (x);
 
 	/* Only certain alignment specifiers are supported by the hardware.  */
-	if (memsize == 32 && (align % 32) == 0)
+	/* Note that ARM EABI only guarentees 8-byte stack alignment. While GCC
+	   honors stricter alignment of composite type in user code, it doesn't
+	   observe the alignment of memory passed as an extra argument for function
+	   returning large composite type.  See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=57271 */
+	if (memsize == 32 && (align % 32) == 0 && !TARGET_AAPCS_BASED)
 	  align_bits = 256;
-	else if ((memsize == 16 || memsize == 32) && (align % 16) == 0)
+	else if ((memsize == 16 || memsize == 32) && (align % 16) == 0 && !TARGET_AAPCS_BASED)
 	  align_bits = 128;
 	else if (memsize >= 8 && (align % 8) == 0)
 	  align_bits = 64;
@@ -25964,7 +25969,27 @@ arm_mangle_type (const_tree type)
      has to be managled as if it is in the "std" namespace.  */
   if (TARGET_AAPCS_BASED
       && lang_hooks.types_compatible_p (CONST_CAST_TREE (type), va_list_type))
+    {
+  /* Disable this obsolete warning for Android, because none of the exposed APIs
+     by NDK is impacted by this change of ARM ABI. This warning can be triggered
+     very easily by compiling the following code using arm-linux-androideabi-g++:
+         typedef __builtin_va_list __gnuc_va_list;
+         typedef __gnuc_va_list va_list;
+         void foo(va_list v) { }
+     We could advise developer to add "-Wno-psabi", but doing so also categorically	
+     deny other cases guarded by "warn_psabi".  Hence the decision to disable it
+     case by case here.
+
+      static bool warned;
+      if (!warned && warn_psabi && !in_system_header)
+	{
+	  warned = true;
+	  inform (input_location,
+		  "the mangling of %<va_list%> has changed in GCC 4.4");
+	}
+   */
     return "St9__va_list";
+    }
 
   /* Half-precision float.  */
   if (TREE_CODE (type) == REAL_TYPE && TYPE_PRECISION (type) == 16)

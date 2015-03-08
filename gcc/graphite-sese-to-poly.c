@@ -26,7 +26,10 @@ along with GCC; see the file COPYING3.  If not see
 #include <isl/union_map.h>
 #include <isl/constraint.h>
 #include <isl/aff.h>
-#include <cloog/cloog.h>
+#include <isl/val.h>
+#if defined(__cplusplus)
+#include <isl/val_gmp.h>
+#endif
 #include <cloog/cloog.h>
 #include <cloog/isl/domain.h>
 #ifdef HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE
@@ -50,7 +53,6 @@ along with GCC; see the file COPYING3.  If not see
 #ifdef HAVE_cloog
 #include "graphite-poly.h"
 #include "graphite-sese-to-poly.h"
-
 
 /* Assigns to RES the value of the INTEGER_CST T.  */
 
@@ -466,12 +468,10 @@ build_pbb_scattering_polyhedrons (isl_aff *static_sched,
   int i;
   int nb_iterators = pbb_dim_iter_domain (pbb);
   int used_scattering_dimensions = nb_iterators * 2 + 1;
-  isl_int val;
+  isl_val *val;
   isl_space *dc, *dm;
 
   gcc_assert (scattering_dimensions >= used_scattering_dimensions);
-
-  isl_int_init (val);
 
   dc = isl_set_get_space (pbb->domain);
   dm = isl_space_add_dims (isl_space_from_domain (dc),
@@ -486,12 +486,10 @@ build_pbb_scattering_polyhedrons (isl_aff *static_sched,
 	  isl_constraint *c = isl_equality_alloc
 	      (isl_local_space_from_space (isl_map_get_space (pbb->schedule)));
 
-	  if (0 != isl_aff_get_coefficient (static_sched, isl_dim_in,
-					    i / 2, &val))
-	    gcc_unreachable ();
+	  val = isl_aff_get_coefficient_val (static_sched, isl_dim_in, i / 2);
 
-	  isl_int_neg (val, val);
-	  c = isl_constraint_set_constant (c, val);
+	  val = isl_val_neg (val);
+	  c = isl_constraint_set_constant_val (c, val);
 	  c = isl_constraint_set_coefficient_si (c, isl_dim_out, i, 1);
 	  pbb->schedule = isl_map_add_constraint (pbb->schedule, c);
 	}
@@ -504,8 +502,6 @@ build_pbb_scattering_polyhedrons (isl_aff *static_sched,
 					  isl_dim_out, i);
 	}
     }
-
-  isl_int_clear (val);
 
   pbb->transformed = isl_map_copy (pbb->schedule);
 }
@@ -686,12 +682,12 @@ extract_affine_gmp (mpz_t g, __isl_take isl_space *space)
   isl_local_space *ls = isl_local_space_from_space (isl_space_copy (space));
   isl_aff *aff = isl_aff_zero_on_domain (ls);
   isl_set *dom = isl_set_universe (space);
-  isl_int v;
+  isl_val *v;
+  isl_ctx *ct;
 
-  isl_int_init (v);
-  isl_int_set_gmp (v, g);
-  aff = isl_aff_add_constant (aff, v);
-  isl_int_clear (v);
+  ct = isl_aff_get_ctx (aff);
+  v = isl_val_int_from_gmp (ct, g);
+  aff = isl_aff_add_constant_val (aff, v);
 
   return isl_pw_aff_alloc (dom, aff);
 }
@@ -714,18 +710,16 @@ extract_affine_int (tree e, __isl_take isl_space *space)
 
 /* Compute pwaff mod 2^width.  */
 
+extern isl_ctx *the_isl_ctx;
+
 static isl_pw_aff *
 wrap (isl_pw_aff *pwaff, unsigned width)
 {
-  isl_int mod;
+  isl_val *mod;
 
-  isl_int_init (mod);
-  isl_int_set_si (mod, 1);
-  isl_int_mul_2exp (mod, mod, width);
-
-  pwaff = isl_pw_aff_mod (pwaff, mod);
-
-  isl_int_clear (mod);
+  mod = isl_val_int_from_ui(the_isl_ctx, width);
+  mod = isl_val_2exp (mod);
+  pwaff = isl_pw_aff_mod_val (pwaff, mod);
 
   return pwaff;
 }
@@ -981,11 +975,10 @@ build_loop_iteration_domains (scop_p scop, struct loop *loop,
   isl_space *space;
   isl_constraint *c;
   int pos = isl_set_dim (outer, isl_dim_set);
-  isl_int v;
+  isl_val *v;
   mpz_t g;
 
   mpz_init (g);
-  isl_int_init (v);
 
   inner = isl_set_add_dims (inner, isl_dim_set, 1);
   space = isl_set_get_space (inner);
@@ -1003,8 +996,8 @@ build_loop_iteration_domains (scop_p scop, struct loop *loop,
 	  (isl_local_space_from_space(isl_space_copy (space)));
       c = isl_constraint_set_coefficient_si (c, isl_dim_set, pos, -1);
       tree_int_to_gmp (nb_iters, g);
-      isl_int_set_gmp (v, g);
-      c = isl_constraint_set_constant (c, v);
+      v = isl_val_int_from_gmp (the_isl_ctx, g);
+      c = isl_constraint_set_constant_val (c, v);
       inner = isl_set_add_constraint (inner, c);
     }
 
@@ -1058,9 +1051,9 @@ build_loop_iteration_domains (scop_p scop, struct loop *loop,
 	  c = isl_inequality_alloc
 	      (isl_local_space_from_space (isl_space_copy (space)));
 	  c = isl_constraint_set_coefficient_si (c, isl_dim_set, pos, -1);
-	  isl_int_set_gmp (v, g);
+	  v = isl_val_int_from_gmp (the_isl_ctx, g);
 	  mpz_clear (g);
-	  c = isl_constraint_set_constant (c, v);
+	  c = isl_constraint_set_constant_val (c, v);
 	  inner = isl_set_add_constraint (inner, c);
 	}
       else
@@ -1083,7 +1076,6 @@ build_loop_iteration_domains (scop_p scop, struct loop *loop,
 
   isl_set_free (outer);
   isl_space_free (space);
-  isl_int_clear (v);
   mpz_clear (g);
 }
 
@@ -1347,18 +1339,17 @@ add_param_constraints (scop_p scop, graphite_dim_t p)
       isl_space *space = isl_set_get_space (scop->context);
       isl_constraint *c;
       mpz_t g;
-      isl_int v;
+      isl_val *v;
 
       c = isl_inequality_alloc (isl_local_space_from_space (space));
       mpz_init (g);
-      isl_int_init (v);
       tree_int_to_gmp (lb, g);
-      isl_int_set_gmp (v, g);
-      isl_int_neg (v, v);
+      v = isl_val_int_from_gmp (the_isl_ctx, g);
+      v = isl_val_neg (v);
       mpz_clear (g);
-      c = isl_constraint_set_constant (c, v);
-      isl_int_clear (v);
+      c = isl_constraint_set_constant_val (c, v);
       c = isl_constraint_set_coefficient_si (c, isl_dim_param, p, 1);
+
 
       scop->context = isl_set_add_constraint (scop->context, c);
     }
@@ -1368,17 +1359,15 @@ add_param_constraints (scop_p scop, graphite_dim_t p)
       isl_space *space = isl_set_get_space (scop->context);
       isl_constraint *c;
       mpz_t g;
-      isl_int v;
+      isl_val *v;
 
       c = isl_inequality_alloc (isl_local_space_from_space (space));
 
       mpz_init (g);
-      isl_int_init (v);
       tree_int_to_gmp (ub, g);
-      isl_int_set_gmp (v, g);
+      v = isl_val_int_from_gmp (the_isl_ctx, g);
       mpz_clear (g);
-      c = isl_constraint_set_constant (c, v);
-      isl_int_clear (v);
+      c = isl_constraint_set_constant_val (c, v);
       c = isl_constraint_set_coefficient_si (c, isl_dim_param, p, -1);
 
       scop->context = isl_set_add_constraint (scop->context, c);

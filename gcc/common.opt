@@ -2188,8 +2188,12 @@ Common Negative(fuse-ld=gold)
 Use the bfd linker instead of the default linker
 
 fuse-ld=gold
-Common Negative(fuse-ld=bfd)
+Common Negative(fuse-ld=mcld)
 Use the gold linker instead of the default linker
+
+fuse-ld=mcld
+Common Negative(fuse-ld=bfd)
+Use the mcld linker instead of the default linker
 
 fuse-linker-plugin
 Common Undocumented

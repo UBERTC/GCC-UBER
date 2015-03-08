@@ -269,8 +269,9 @@ getPrevectorMap(isl_ctx *ctx, int DimToVectorize,
   isl_aff *Aff;
   int PointDimension; /* ip */
   int TileDimension;  /* it */
-  isl_int VectorWidthMP;
+  isl_val *VectorWidthMP;
   int i;
+  isl_ctx *ct;
 
   /* assert (0 <= DimToVectorize && DimToVectorize < ScheduleDimensions);*/
 
@@ -300,10 +301,9 @@ getPrevectorMap(isl_ctx *ctx, int DimToVectorize,
   Aff = isl_aff_zero_on_domain(LocalSpaceRange);
   Aff = isl_aff_set_constant_si(Aff, VectorWidth);
   Aff = isl_aff_set_coefficient_si(Aff, isl_dim_in, TileDimension, 1);
-  isl_int_init(VectorWidthMP);
-  isl_int_set_si(VectorWidthMP, VectorWidth);
-  Aff = isl_aff_mod(Aff, VectorWidthMP);
-  isl_int_clear(VectorWidthMP);
+  ct = isl_aff_get_ctx (Aff);
+  VectorWidthMP = isl_val_int_from_si (ct, VectorWidth);
+  Aff = isl_aff_mod_val (Aff, VectorWidthMP);
   Modulo = isl_pw_aff_zero_set(isl_pw_aff_from_aff(Aff));
   TilingMap = isl_map_intersect_range(TilingMap, Modulo);
 
@@ -365,25 +365,26 @@ getScheduleForBandList(isl_band_list *BandList)
 							     SuffixSchedule);
 	  isl_band_list_free(Children);
 	}
-      else if (EnablePollyVector)
+
+	else if (EnablePollyVector)
 	{
 	  for (i = ScheduleDimensions - 1 ;  i >= 0 ; i--)
 	    {
 #ifdef HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE
 	      if (isl_band_member_is_coincident (Band, i))
 #else
-	      if (isl_band_member_is_zero_distance(Band, i))
+	      if (isl_band_member_is_zero_distance (Band, i))
 #endif
 		{
 		  isl_map *TileMap;
 		  isl_union_map *TileUMap;
 
-		  TileMap = getPrevectorMap(ctx, i, ScheduleDimensions, 4);
-		  TileUMap = isl_union_map_from_map(TileMap);
-		  TileUMap = isl_union_map_align_params(TileUMap,
-							isl_space_copy(Space));
-		  PartialSchedule = isl_union_map_apply_range(PartialSchedule,
-							      TileUMap);
+		  TileMap = getPrevectorMap (ctx, i, ScheduleDimensions, 4);
+		  TileUMap = isl_union_map_from_map (TileMap);
+		  TileUMap = isl_union_map_align_params
+		    (TileUMap, isl_space_copy (Space));
+		  PartialSchedule = isl_union_map_apply_range
+		    (PartialSchedule, TileUMap);
 		  break;
 		}
 	    }
