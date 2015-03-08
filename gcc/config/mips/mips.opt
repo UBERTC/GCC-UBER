@@ -233,6 +233,10 @@ mips3d
 Target Report RejectNegative Mask(MIPS3D)
 Use MIPS-3D instructions
 
+mldc1-sdc1
+Target Report Var(TARGET_LDC1_SDC1) Init(1)
+Use ldc1 and sdc1 instruction
+
 mllsc
 Target Report Mask(LLSC)
 Use ll, sc and sync instructions

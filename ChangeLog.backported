@@ -1,0 +1,39 @@
+http://gcc.gnu.org/viewcvs?root=gcc&view=rev&rev=191571
+2012-09-17  Jakub Jelinek  <jakub@redhat.com>
+
+    PR tree-optimization/54563
+    * tree-ssa-math-opts.c (execute_cse_sincos): Call
+    gimple_purge_dead_eh_edges if last call has been changed.
+
+    * g++.dg/torture/pr54563.C: New test.
+
+http://gcc.gnu.org/viewcvs?view=revision&revision=193554
+2012-11-16  Jakub Jelinek  <jakub@redhat.com>
+    PR target/54073
+    * config/i386/i386.md (mov<mode>cc): Use comparison_operator
+    instead of ordered_comparison_operator resp.
+    ix86_fp_comparison_operator predicates.
+    * config/i386/i386.c (ix86_expand_fp_movcc): Reject TImode
+    or for -m32 DImode comparisons.
+
+http://gcc.gnu.org/viewcvs?view=revision&revision=193825
+2012-11-26  Diego Novillo  <dnovillo@google.com>
+
+    * gimplify.c: Work around for PR 55245.
+
+http://gcc.gnu.org/viewcvs?view=revision&revision=186451
+2012-04-14  Tom de Vries  <tom@codesourcery.com>
+    * cfgcleanup.c (try_optimize_cfg): Replace call to delete_insn_chain by
+    call to delete_insn.  Remove code to reorder BASIC_BLOCK note and
+    DELETED_LABEL note, and move it to ...
+    * cfgrtl.c (delete_insn): ... here.  Change return type to void.
+    (delete_insn_and_edges): Likewise.
+    (delete_insn_chain): Handle new return type of delete_insn.  Delete
+    chain backwards rather than forwards.
+    * rtl.h (delete_insn, delete_insn_and_edges): Change return type to
+    void.
+    * cfglayout.c (fixup_reorder_chain): Delete unused label.
+
+2013-01-03  Jason Merrill  <jason@redhat.com>
+    PR c++/55856
+    * semantics.c (build_data_member_initialization): Handle DECL_EXPR.

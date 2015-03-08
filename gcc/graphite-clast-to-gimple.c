@@ -28,6 +28,10 @@ along with GCC; see the file COPYING3.  If not see
 #include <isl/constraint.h>
 #include <isl/ilp.h>
 #include <isl/aff.h>
+#include <isl/val.h>
+#if defined(__cplusplus)
+#include <isl/val_gmp.h>
+#endif
 #include <cloog/cloog.h>
 #include <cloog/isl/domain.h>
 #ifdef HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE
@@ -856,18 +860,18 @@ graphite_create_new_guard (edge entry_edge, struct clast_guard *stmt,
 static void
 compute_bounds_for_param (scop_p scop, int param, mpz_t low, mpz_t up)
 {
-  isl_int v;
+  isl_val *v;
   isl_aff *aff = isl_aff_zero_on_domain
     (isl_local_space_from_space (isl_set_get_space (scop->context)));
 
   aff = isl_aff_add_coefficient_si (aff, isl_dim_param, param, 1);
 
-  isl_int_init (v);
-  isl_set_min (scop->context, aff, &v);
-  isl_int_get_gmp (v, low);
-  isl_set_max (scop->context, aff, &v);
-  isl_int_get_gmp (v, up);
-  isl_int_clear (v);
+  v = isl_set_min_val (scop->context, aff);
+  isl_val_get_num_gmp (v, low);
+  isl_val_free (v);
+  v = isl_set_max_val (scop->context, aff);
+  isl_val_get_num_gmp (v, up);
+  isl_val_free (v);
   isl_aff_free (aff);
 }
 
@@ -886,8 +890,7 @@ compute_bounds_for_loop (struct clast_for *loop, mpz_t low, mpz_t up)
   isl_set *domain;
   isl_aff *dimension;
   isl_local_space *local_space;
-  isl_int isl_value;
-  enum isl_lp_result lp_result;
+  isl_val *isl_value;
 
   domain = isl_set_copy (isl_set_from_cloog_domain (loop->domain));
   local_space = isl_local_space_from_space (isl_set_get_space (domain));
@@ -896,17 +899,12 @@ compute_bounds_for_loop (struct clast_for *loop, mpz_t low, mpz_t up)
 					  isl_set_dim (domain, isl_dim_set) - 1,
 					  1);
 
-  isl_int_init (isl_value);
-
-  lp_result = isl_set_min (domain, dimension, &isl_value);
-  assert (lp_result == isl_lp_ok);
-  isl_int_get_gmp (isl_value, low);
-
-  lp_result = isl_set_max (domain, dimension, &isl_value);
-  assert (lp_result == isl_lp_ok);
-  isl_int_get_gmp (isl_value, up);
-
-  isl_int_clear (isl_value);
+  isl_value = isl_set_min_val (domain, dimension);
+  isl_val_get_num_gmp (isl_value, low);
+  isl_val_free (isl_value);
+  isl_value = isl_set_max_val (domain, dimension);
+  isl_val_get_num_gmp (isl_value, up);
+  isl_val_free (isl_value);
   isl_set_free (domain);
   isl_aff_free (dimension);
 }

@@ -368,7 +368,7 @@ i[34567]86-*-*)
 		       lzcntintrin.h bmiintrin.h bmi2intrin.h tbmintrin.h
 		       avx2intrin.h fmaintrin.h f16cintrin.h rtmintrin.h
 		       xtestintrin.h rdseedintrin.h prfchwintrin.h adxintrin.h
-		       fxsrintrin.h xsaveintrin.h xsaveoptintrin.h"
+		       fxsrintrin.h xsaveintrin.h xsaveoptintrin.h arm_neon.h"
 	;;
 x86_64-*-*)
 	cpu_type=i386
@@ -383,7 +383,7 @@ x86_64-*-*)
 		       lzcntintrin.h bmiintrin.h tbmintrin.h bmi2intrin.h
 		       avx2intrin.h fmaintrin.h f16cintrin.h rtmintrin.h
 		       xtestintrin.h rdseedintrin.h prfchwintrin.h adxintrin.h
-		       fxsrintrin.h xsaveintrin.h xsaveoptintrin.h"
+		       fxsrintrin.h xsaveintrin.h xsaveoptintrin.h arm_neon.h"
 	need_64bit_hwint=yes
 	;;
 ia64-*-*)
@@ -1837,6 +1837,12 @@ mips*-*-linux*)				# Linux MIPS, either endian.
                 ;;
         mipsisa32*)
 		tm_defines="${tm_defines} MIPS_ISA_DEFAULT=32"
+        esac
+	case ${target} in
+	*android*)
+		# Default to little-endian for MIPS Android
+		# tm_defines="${tm_defines} TARGET_ENDIAN_DEFAULT=0"
+		tmake_file="$tmake_file mips/t-linux-android"
         esac
 	test x$with_llsc != x || with_llsc=yes
 	;;

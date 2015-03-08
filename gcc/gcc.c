@@ -537,7 +537,7 @@ proper position among the other output files.  */
    shared library ordering, and we keep the wrapper function in
    libgcc.  This is not yet a real spec, though it could become one;
    it is currently just stuffed into LINK_SPEC.  FIXME: This wrapping
-   only works with GNU ld and gold.  FIXME: This is incompatible with
+   only works with GNU ld, gold and mcld.  FIXME: This is incompatible with
    -fmudflap when linking statically, which wants to do its own
    wrapping.  */
 #define STACK_SPLIT_SPEC " %{fsplit-stack: --wrap=pthread_create}"

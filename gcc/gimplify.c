@@ -2231,6 +2231,15 @@ gimplify_compound_lval (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
 	  if (TREE_OPERAND (t, 3) == NULL_TREE)
 	    {
 	      tree elmt_type = TREE_TYPE (TREE_TYPE (TREE_OPERAND (t, 0)));
+	      /* FIXME google - In some edge cases, ELMT_TYPE may
+		 not have been laid out.  This causes an ICE later
+		 (PR 55245).  We call layout_type if ELMT_TYPE is not
+		 yet complete, but this is not where this bug should
+		 be fixed.  The FE should have laid out all the types
+		 before gimplification.  When a proper fix for PR
+		 55245 is available, remove this.  */
+	      if (!COMPLETE_TYPE_P (elmt_type))
+		layout_type (elmt_type);
 	      tree elmt_size = unshare_expr (array_ref_element_size (t));
 	      tree factor = size_int (TYPE_ALIGN_UNIT (elmt_type));
 
