@@ -1,3 +1,11 @@
+2015-03-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r217852.
+	2014-11-20  Tejas Belagod  <tejas.belagod@arm.com>
+
+	* gcc.target/aarch64/symbol-range.c: New.
+	* gcc.target/aarch64/symbol-range-tiny.c: New.
+
 2015-03-06  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	Backport from trunk r218463, r219764, r219765, r219767, r219914,
