@@ -46,6 +46,7 @@
   BUILTIN_VD_BHSI (BINOP, addp, 0)
   VAR1 (UNOP, addp, 0, di)
   BUILTIN_VDQ_BHSI (UNOP, clz, 2)
+  BUILTIN_VS (UNOP, ctz, 2)
 
   BUILTIN_VALL (GETLANE, be_checked_get_lane, 0)
 

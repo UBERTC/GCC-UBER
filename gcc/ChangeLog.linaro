@@ -1,5 +1,18 @@
 2015-03-10  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r217938.
+	2014-11-21  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/iterators.md (VS): New mode iterator.
+	(vsi2qi): New mode attribute.
+	(VSI2QI): Likewise.
+	* config/aarch64/aarch64-simd-builtins.def: New entry for ctz.
+	* config/aarch64/aarch64-simd.md (ctz<mode>2): New pattern for ctz.
+	* config/aarch64/aarch64-builtins.c
+	(aarch64_builtin_vectorized_function): Support BUILT_IN_CTZ.
+
+2015-03-10  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r217852.
 	2014-11-20  Tejas Belagod  <tejas.belagod@arm.com>
 

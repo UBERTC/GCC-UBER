@@ -1,5 +1,12 @@
 2015-03-10  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r217938.
+	2014-11-21  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/vect_ctz_1.c: New testcase.
+
+2015-03-10  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r217852.
 	2014-11-20  Tejas Belagod  <tejas.belagod@arm.com>
 
