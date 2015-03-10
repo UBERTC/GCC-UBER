@@ -1,5 +1,16 @@
 2015-03-10  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r217725.
+	2014-11-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/cortex-a15-neon.md (cortex_a15_vfp_to_from_gp):
+	Split into...
+	(cortex_a15_gp_to_vfp): ...This.
+	(cortex_a15_fp_to_gp): ...And this.
+	Define and comment bypass from vfp operations to fp->gp moves.
+
+2015-03-10  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r217780.
 	2014-11-19  Wilco Dijkstra  <wdijkstr@arm.com>
 
