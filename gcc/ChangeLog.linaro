@@ -1,5 +1,14 @@
 2015-03-10  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r217780.
+	2014-11-19  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	PR target/61915
+	* config/aarch64/aarch64.c (generic_regmove_cost): Increase FP move
+	cost.
+
+2015-03-10  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r217938.
 	2014-11-21  Jiong Wang  <jiong.wang@arm.com>
 
