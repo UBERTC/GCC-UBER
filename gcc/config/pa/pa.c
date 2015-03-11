@@ -119,6 +119,7 @@ static void pa_output_function_epilogue (FILE *, HOST_WIDE_INT);
 static int pa_adjust_cost (rtx, rtx, rtx, int);
 static int pa_adjust_priority (rtx, int);
 static int pa_issue_rate (void);
+static int pa_reloc_rw_mask (void);
 static void pa_som_asm_init_sections (void) ATTRIBUTE_UNUSED;
 static section *pa_som_tm_clone_table_section (void) ATTRIBUTE_UNUSED;
 static section *pa_select_section (tree, int, unsigned HOST_WIDE_INT)
@@ -293,6 +294,9 @@ static size_t n_deferred_plabels = 0;
 #else
 #define TARGET_ASM_FILE_END output_deferred_plabels
 #endif
+
+#undef TARGET_ASM_RELOC_RW_MASK
+#define TARGET_ASM_RELOC_RW_MASK pa_reloc_rw_mask
 
 #undef TARGET_PRINT_OPERAND_PUNCT_VALID_P
 #define TARGET_PRINT_OPERAND_PUNCT_VALID_P pa_print_operand_punct_valid_p
@@ -6013,18 +6017,15 @@ pa_secondary_reload (bool in_p, rtx x, reg_class_t rclass_i,
 	{
 	  x = XEXP (x, 0);
 
-	  /* We don't need an intermediate for indexed and LO_SUM DLT
-	     memory addresses.  When INT14_OK_STRICT is true, it might
-	     appear that we could directly allow register indirect
-	     memory addresses.  However, this doesn't work because we
-	     don't support SUBREGs in floating-point register copies
-	     and reload doesn't tell us when it's going to use a SUBREG.  */
-	  if (IS_INDEX_ADDR_P (x)
-	      || IS_LO_SUM_DLT_ADDR_P (x))
-	    return NO_REGS;
+	  /* We don't need a secondary reload for indexed memory addresses.
 
-	  /* Request intermediate general register.  */
-	  return GENERAL_REGS;
+	     When INT14_OK_STRICT is true, it might appear that we could
+	     directly allow register indirect memory addresses.  However,
+	     this doesn't work because we don't support SUBREGs in
+	     floating-point register copies and reload doesn't tell us
+	     when it's going to use a SUBREG.  */
+	  if (IS_INDEX_ADDR_P (x))
+	    return NO_REGS;
 	}
 
       /* Request a secondary reload with a general scratch register
@@ -9818,6 +9819,19 @@ pa_select_section (tree exp, int reloc,
     return som_one_only_data_section;
   else
     return data_section;
+}
+
+/* Implement pa_reloc_rw_mask.  */
+
+static int
+pa_reloc_rw_mask (void)
+{
+  /* We force (const (plus (symbol) (const_int))) to memory when the
+     const_int doesn't fit in a 14-bit integer.  The SOM linker can't
+     handle this construct in read-only memory and we want to avoid
+     this for ELF.  So, we always force an RTX needing relocation to
+     the data section.  */
+  return 3;
 }
 
 static void

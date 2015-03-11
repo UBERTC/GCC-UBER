@@ -1,3 +1,30 @@
+2015-03-10  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from mainline
+	PR fortran/65024
+	* trans-expr.c (gfc_conv_component_ref): If the component
+	backend declaration is missing and the derived type symbol is
+	available in the reference, call gfc_build_derived_type.
+
+2015-02-13  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/63744
+	* module.c (check_for_ambiguous): Change argument type
+	from gfc_symbol to gfc_symtree.  Check local (symtree) name
+	instead of original (symbol) name.
+	(read_module): Update caller.
+
+2015-02-12  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from mainline
+	2015-02-12  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/64932
+	* trans-stmt.c (gfc_trans_deallocate): If a component array
+	expression is not a descriptor type and it is a derived type
+	that has allocatable components and is not finalizable, then
+	deallocate the allocatable components.
+
 2015-02-03  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	* intrinsic.texi (CO_ASSOCIATED): c_prt_1 should be c_ptr_1.

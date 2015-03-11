@@ -1,3 +1,415 @@
+2015-03-10  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r220489.
+	2015-02-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR ipa/64896
+	* cgraphunit.c (cgraph_node::expand_thunk): If
+	restype is not is_gimple_reg_type nor the thunk_fndecl
+	returns aggregate_value_p, set restmp to a temporary variable
+	instead of resdecl.
+
+2015-03-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65286
+	* config/rs6000/t-linux: For powerpc64* target set
+	MULTILIB_OSDIRNAMES instead of MULTIARCH_DIRNAME.
+
+2015-03-10  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/53988
+	* config/sh/sh.md (*tst<mode>_t_zero): Remove insns.
+
+2015-03-10  Alan Modra  <amodra@gmail.com>
+
+	PR target/65286
+	* config.gcc (powerpc*-*-linux*): Arrange for powerpc64le-linux
+	to be single-arch by default.  Set cpu_is_64bit for powerpc64
+	given --with-cpu=native.
+	* config/rs6000/t-fprules: Do not set default MULTILIB vars.
+	* config/rs6000/t-linux (MULTIARCH_DIRNAME): Support powerpc64
+	and powerpc64le.
+	* config/rs6000/linux64.h (SUBSUBTARGET_OVERRIDE_OPTIONS): Test
+	rs6000_isa_flags rather than TARGET_64BIT.
+
+2015-03-05  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from trunk
+	2015-03-03  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR 65138/target
+	* config/rs6000/rs6000-cpus.def (powerpc64le): Add new generic
+	processor type for 64-bit little endian PowerPC.
+
+	* config/rs6000/rs6000.c (rs6000_option_override_internal): If
+	-mdebug=reg, print TARGET_DEFAULT.  Fix logic to use
+	TARGET_DEFAULT if there is no default cpu.  Fix -mdebug=reg
+	printing built-in mask so it does not pass NULL pointers.
+
+	* config/rs6000/rs6000-tables.opt: Regenerate.
+
+	* doc/invoke.texi (IBM RS/6000 and PowerPC options): Document
+	-mcpu=powerpc64le.
+
+	Backport from trunk
+	2015-01-19  David Edelsohn  <dje.gcc@gmail.com>
+
+	* config/rs6000/default64.h: Include rs6000-cpus.def.
+	(TARGET_DEFAULT) [LITTLE_ENDIAN]: Use ISA 2.7 (POWER8).
+	(TARGET_DEFAULT) [BIG_ENDIAN]: Use POWER4.
+	* config/rs6000/driver-rs6000.c (detect_processor_aix): Add POWER7
+	and POWER8.
+	* config/rs6000/linux64.h (PROCESSOR_DEFAULT64): Always default to
+	POWER8.
+	* config/rs6000/rs6000.c (rs6000_file_start): Emit .machine
+	pseudo-op to specify assembler dialect.
+
+2015-03-04  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2014-11-27  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR target/59593
+	* config/arm/arm.c (dump_minipool): dispatch to consttable pattern
+	based on mode size.
+	* config/arm/arm.md (consttable_1): Make it TARGET_EITHER.
+	(consttable_2): Make it TARGET_EITHER and move HFmode handling from
+	consttable_4 to it.
+	(consttable_4): Move HFmode handling to consttable_2 pattern.
+
+2015-03-03  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/65249
+	* config/sh/sh.md (symGOT_load): Use R0 reg for operands[2] when
+	called for __stack_chk_guard symbol.
+
+2015-03-03  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/64331
+	* config/avr/avr.c (context.h, tree-pass.h): Include them.
+	(avr_pass_data_recompute_notes): New static variable.
+	(avr_pass_recompute_notes): New class.
+	(avr_register_passes): New static function.
+	(avr_option_override): Call it.
+
+2015-03-03  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/ia64/ia64.c (expand_vec_perm_interleave_2): Use gen_raw_REG
+	to create a register in testing mode.
+
+2015-03-03  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2015-01-14  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR target/64453
+	* config/arm/arm.c (callee_saved_reg_p): Define.
+	(arm_compute_save_reg0_reg12_mask): Use callee_saved_reg_p to check if
+	register is callee saved instead of !call_used_regs[reg].
+	(thumb1_compute_save_reg_mask): Likewise.
+
+2015-02-27  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/63175
+	* builtins.c (get_object_alignment_2): Make sure to re-apply
+	the ANDed mask after recursing to its operand gets us a new
+	misalignment bit position.
+
+2015-02-27  Andrew Pinski  <apinski@cavium.com>
+	    Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	* config/aarch64/aarch64.c (*aarch64_load_symref_appropriately):
+	Check whether the destination of SYMBOL_SMALL_TPREL is Pmode.
+
+2015-02-27  Richard Biener  <rguenther@suse.de>
+
+	PR lto/65193
+	Backport from mainline
+	2014-07-24  Jan Hubicka  <hubicka@ucw.cz>
+ 
+	* lto-streamer-out.c (tree_is_indexable): Consider IMPORTED_DECL
+	as non-indexable.
+
+2015-02-25  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2015-02-25  Adhemerval Zanella  <azanella@linux.vnet.ibm.com>
+
+	* config/rs6000/htm.md (tcheck): Fix assembly encoding.
+
+2015-02-26  Matthew Fortune  <matthew.fortune@imgtec.com>
+
+	PR target/64569
+	Backported from mainline: r213872, r217446, r217939, r219867
+
+	* config.in [!USED_FOR_TARGET] (HAVE_AS_DOT_MODULE): Undefine.
+	* config/mips/mips.h (FP_ASM_SPEC): New macro.
+	(ASM_SPEC): Use FP_ASM_SPEC.
+	* configure.ac (HAVE_AS_DOT_MODULE): Detect support for .module
+	and FPXX extensions.
+	* configure: Regenerate.
+
+2015-02-25  Jason Merrill  <jason@redhat.com>
+
+	* common.opt (-flifetime-dse): New.
+
+2015-02-25  Kai Tietz  <ktietz@redhat.com>
+
+	PR tree-optimization/61917
+	* tree-vect-loop.c (vectorizable_reduction): Handle obvious case
+	that reduc_def_stmt is null.
+
+	Merged from mainline
+	PR target/64212
+	* symtab.c (symtab::make_decl_local): Set DECL_IMPORT_P explicit to 0.
+	(symtab::noninterposable_alias): Likewise.
+
+2015-02-25  Richard Biener  <rguenther@suse.de>
+	Kai Tietz  <ktietz@redhat.com>
+
+	Backported from mainline
+	PR tree-optimization/61917
+	* tree-vect-loop.c (vectorizable_reduction): Allow
+	vect_internal_def without reduction to exit graceful.
+
+2015-02-25  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/65196
+	* config/avr/avr.c (avr_adjust_insn_length): Call recog_memoized
+	only with NONDEBUG_INSN_P.
+
+2015-02-25  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	Backport from mainline
+	2015-02-23  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/65153
+	* config/sh/sh.md (movsicc_true+3): Remove peephole.
+	* config/sh/sh-protos.h (replace_n_hard_rtx): Don't declare.
+	* config/sh/sh.c (replace_n_hard_rtx): Remove.
+
+2015-02-24  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-02-11  Richard Biener  <rguenther@suse.de>
+
+	PR lto/65015
+	* dwarf2out.c (gen_producer_string): Drop -fltrans-output-list
+	and -fresolution.
+
+	2015-02-13  Richard Biener  <rguenther@suse.de>
+
+	PR lto/65015
+	* dwarf2out.c (dwarf2out_finish): Use <artificial> as DW_AT_name
+	for LTO produced CUs.
+
+	2015-02-16  Richard Biener  <rguenther@suse.de>
+
+	PR lto/65015
+	* varasm.c (default_file_start): For LTO produced units
+	emit <artificial> as file directive.
+
+	2015-01-17  Jan Kratochvil  <jan.kratochvil@redhat.com>
+
+        * dwarf2out.c (gen_producer_string): Ignore also OPT_fpreprocessed.
+
+2015-02-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-02-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/65163
+	* config/sh/sh.md (swapbsi2, related peephole2): Use const_int -65536
+	instead of const_int 4294901760.
+
+2015-02-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-11-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/63844
+	* omp-low.c (fixup_child_record_type): Use a restrict qualified
+	referece type for the receiver parameter.
+
+	2014-11-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61634
+	* tree-vect-slp.c: Include gimple-walk.h.
+	(vect_detect_hybrid_slp_stmts): Rewrite to propagate hybrid
+	down the SLP tree for one scalar statement.
+	(vect_detect_hybrid_slp_1): New walker function.
+	(vect_detect_hybrid_slp_2): Likewise.
+	(vect_detect_hybrid_slp): Properly handle pattern statements
+	in a pre-scan over all loop stmts.
+
+	2015-01-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59354
+	* tree-vect-slp.c (vect_build_slp_tree_1): Treat loads from
+	groups larger than the slp group size as having gaps.
+
+	2015-02-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64909
+	* tree-vect-loop.c (vect_estimate_min_profitable_iters): Properly
+	pass a scalar-stmt count estimate to the cost model.
+	* tree-vect-data-refs.c (vect_peeling_hash_get_lowest_cost): Likewise.
+
+2015-02-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-02-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.md (*aarch64_lshr_sisd_or_int_<mode>3):
+	Mark operand 0 as earlyclobber in 2nd alternative.
+	(1st define_split below *aarch64_lshr_sisd_or_int_<mode>3):
+	Write negated shift amount into QI lowpart operand 0 and use it
+	in the shift step.
+	(2nd define_split below *aarch64_lshr_sisd_or_int_<mode>3): Likewise.
+
+2015-02-20  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2015-02-20 trunk r220847.
+
+	PR target/64452
+	* config/avr/avr.md (pushhi_insn): New insn.
+	(push<mode>1): Push virtual regs in one chunk using pushhi1_insn.
+
+2015-02-20  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-01-12  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64530
+	* tree-loop-distribution.c (pg_add_dependence_edges): Shuffle
+	back dr1.
+
+	2015-02-13  Richard Biener  <rguenther@suse.de>
+
+	PR lto/64373
+	* lto-streamer-out.c (tree_is_indexable): Guard for NULL
+	DECL_CONTEXT.
+
+	2015-02-16  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/63593
+	* tree-predcom.c (execute_pred_commoning_chain): Delay removing
+	stmts and releasing SSA names until...
+	(execute_pred_commoning): ... after processing all chains.
+
+	2015-02-18  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65063
+	* tree-predcom.c (determine_unroll_factor): Return 1 if we
+	have replaced looparound PHIs.
+
+2015-02-19  John David Anglin  <danlgin@gcc.gnu.org>
+
+	* config/pa/pa.c (pa_reloc_rw_mask): New function.
+	(TARGET_ASM_RELOC_RW_MASK): Define.
+	(pa_cannot_force_const_mem): Revert previous change.
+
+2015-02-19  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-12-09  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/64199
+	* fold-const.c (fold_binary_loc): Use TREE_OVERFLOW_P.
+
+	2015-01-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64493
+	PR tree-optimization/64495
+	* tree-vect-loop.c (vect_finalize_reduction): For double-reductions
+	assign the proper vectorized PHI to the inner loop exit PHIs.
+
+	2015-01-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/56273
+	PR tree-optimization/59124
+	PR tree-optimization/64277
+	* tree-vrp.c (vrp_finalize): Emit array-bound warnings only
+	from the first VRP pass.
+
+	2015-02-19  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-01-15  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/64365
+	* tree-data-ref.c (dr_analyze_indices): Make sure that accesses
+	for MEM_REF access functions with the same base can never partially
+	overlap.
+
+2015-02-17  Ilya Tocar  <ilya.tocar@intel.com>
+
+	Backported from mainline
+	2015-01-14  Ilya Tocar  <ilya.tocar@intel.com>
+
+	PR target/64387
+	* config/i386/sse.md (vec_unpacks_hi_v8sf): Fix predicate.
+	(vec_unpacks_hi_v16sf): Ditto.
+
+2015-02-15  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.c (pa_secondary_reload): Request a secondary reload
+	for all floading point loads and stores except those using a register
+	index address.
+	* config/pa/pa.md: Add new patterns to load a lo_sum DLT operand
+	to a register.
+
+2015-02-13  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/constraints.md: Change "Q" and "T" constraints to memory
+	constraints.
+	* config/pa/pa.c (pa_cannot_force_const_mem): Don't allow constant
+	symbolic references to data to be forced to constant memory on the
+	SOM target.
+
+2015-02-11  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-02-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/64979
+	* tree-stdarg.c (pass_stdarg::execute): Scan phi node args for
+	va_list escapes.
+
+2015-02-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/alpha/alpha.md (reload_out<mode>_aligned): Make operands 2
+	and 3 earlyclobber operands.
+
+2015-02-09  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+        * doc/extend.texi: s/390: Update documentation of hotpatch attribute.
+        * doc/invoke.texi (-mhotpatch): s/390: Update documentation of
+        -mhotpatch= option.
+        * config/s390/s390.opt (mhotpatch): s/390: Remove -mhotpatch and
+        -mno-hotpatch options.  Change syntax of -mhotpatch= option.
+        * config/s390/s390.c (s390_hotpatch_trampoline_halfwords_default):
+        Renamed.
+        (s390_hotpatch_trampoline_halfwords_max): Renamed.
+        (s390_hotpatch_hw_max): New name.
+        (s390_hotpatch_trampoline_halfwords): Renamed.
+        (s390_hotpatch_hw_before_label): New name.
+        (get_hotpatch_attribute): Removed.
+        (s390_hotpatch_hw_after_label): New name.
+        (s390_handle_hotpatch_attribute): Add second parameter to hotpatch
+        attribute.
+        (s390_attribute_table): Ditto.
+        (s390_function_num_hotpatch_trampoline_halfwords): Renamed.
+        (s390_function_num_hotpatch_hw): New name.
+        Remove special handling of inline functions and hotpatching.
+        Return number of nops before and after the function label.
+        (s390_can_inline_p): Removed.
+        (s390_asm_output_function_label): Emit a configurable number of nops
+        after the function label.
+        (s390_option_override): Update -mhotpatch= syntax and remove -mhotpatch.
+        (TARGET_CAN_INLINE_P) Removed.
+        (TARGET_FUNCTION_ATTRIBUTE_INLINABLE_P): New.
+
 2015-02-05  Segher Boessenkool  <segher@kernel.crashing.org>
 
 	PR target/64580

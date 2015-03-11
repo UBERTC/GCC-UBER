@@ -1,3 +1,345 @@
+2015-03-10  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from mainline
+	PR fortran/65024
+	* gfortran.dg/unlimited_polymorphic_23.f90: New test
+
+2015-03-10  Martin Sebor  <msebor@redhat.com>
+
+	PR testsuite/63175
+	* gcc.dg/vect/costmodel/ppc/costmodel-bb-slp-9a.c (main1): Move
+	checking of results into main to prevent it from getting optimized
+	away.
+	* gcc.dg/vect/costmodel/ppc/costmodel-bb-slp-9a-pr63175.c: New test.
+
+2015-03-10  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r220489.
+	2015-02-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR ipa/64896
+	* g++.dg/ipa/pr64896.C: New test
+
+2015-03-10  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/53988
+	* gcc.target/sh/pr53988.c: Mark tests as xfail.
+
+2015-03-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* g++.dg/other/dump-ada-spec-3.C: Remove include and adjust.
+
+2015-03-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* g++.dg/other/dump-ada-spec-3.C: New test.
+
+2015-03-04  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2014-11-27  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR target/59593
+	* gcc.target/arm/constant-pool.c: New test.
+
+2015-03-03  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/64331
+	* gcc.target/avr/torture/pr64331.c: New test.
+
+2015-03-03  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2015-01-14  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR target/64453
+	* gcc.target/arm/pr64453.c: New.
+
+2015-02-27  Pat Haugen <pthaugen@us.ibm.com>
+
+	* gcc.dg/vect/pr59354.c: Move vector producing code to separate function.
+
+2015-02-27  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2015-02-27  Marek Polacek  <polacek@redhat.com>
+
+	PR c/65228
+	* gcc.dg/pr65228.c: New test.
+
+2015-02-27  Richard Biener  <rguenther@suse.de>
+
+	PR lto/65193
+	* g++.dg/lto/pr65193_0.C: New testcase.
+
+2015-02-26  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2015-02-25  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* gcc.target/powerpc/htm-builtin-1.c (dg-do) Change to assemble.
+	(dg-options): Add -save-temps.
+	(dg-final): Add cleanup-saved-temps.
+
+	2015-02-25  Adhemerval Zanella  <azanella@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/htm-builtin-1.c: Fix tcheck expect value.
+
+2015-02-25  Kai Tietz  <ktietz@redhat.com>
+
+	Backported from mainline
+	PR tree-optimization/61917
+	* gcc.dg/vect/vect-pr61917.c: New file.
+
+2015-02-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-02-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/65163
+	* gcc.c-torture/compile/pr65163.c: New.
+
+2015-02-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-11-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61634
+	* gcc.dg/vect/pr61634.c: New testcase.
+
+	2015-01-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/59354
+	* gcc.dg/vect/pr59354.c: New testcase.
+
+	2015-02-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64909
+	* gcc.dg/vect/costmodel/x86_64/costmodel-pr64909.c: New testcase.
+
+2015-02-23  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
+
+	Backport from mainline
+	2015-02-23  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
+	* gcc.target/s390/hotpatch-1.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-10.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-11.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-12.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-13.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-14.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-15.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-16.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-17.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-18.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-19.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-2.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-20.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-3.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-4.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-5.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-6.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-7.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-8.c: Remove --save-temps option.
+	* gcc.target/s390/hotpatch-9.c: Remove --save-temps option.
+	* gcc.target/s390/htm-nofloat-1.c: Cleanup --save-temps files.
+
+2015-02-23  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
+
+	Backport from mainline
+	2015-02-23  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
+	* gcc.target/s390/hotpatch-8.c: Add -march=g5.
+	* gcc.target/s390/hotpatch-9.c: Add -march=g5.
+	* gcc.target/s390/hotpatch-compile-1.c: Fix error message.
+	* gcc.target/s390/hotpatch-compile-10.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-11.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-12.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-13.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-14.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-2.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-3.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-4.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-5.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-6.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-7.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-8.c: Likewise.
+	* gcc.target/s390/hotpatch-compile-9.c: Likewise.
+
+2015-02-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-02-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/sisd-shft-neg_1.c: New test.
+
+2015-02-20  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2015-02-20 trunk r220847.
+
+	PR target/64452
+	* gcc.target/avr/torture/pr64452.c: New test.
+
+2015-02-20  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-01-12  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64530
+	* gfortran.dg/pr64530.f90: New testcase.
+
+	2015-02-13  Richard Biener  <rguenther@suse.de>
+
+	PR lto/64373
+	* gcc.dg/lto/pr64373_0.c: New testcase.
+
+	2015-02-16  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/63593
+	* gcc.dg/pr63593.c: New testcase.
+
+	2015-02-18  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65063
+	* gcc.dg/pr65063.c: New testcase.
+
+2015-02-19  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-12-09  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/64199
+	* gcc.dg/torture/pr64199.c: New testcase.
+
+	2015-01-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64493
+	PR tree-optimization/64495
+	* gcc.dg/vect/pr64493.c: New testcase.
+	* gcc.dg/vect/pr64495.c: Likewise.
+
+	2015-01-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/56273
+	PR tree-optimization/59124
+	PR tree-optimization/64277
+	* g++.dg/warn/Warray-bounds-6.C: New testcase.
+	* gcc.dg/Warray-bounds-12.c: Likewise.
+	* gcc.dg/Warray-bounds-13.c: Likewise.
+
+	2015-02-19  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-01-15  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/64365
+	* gcc.dg/torture/pr64365.c: New testcase.
+
+2015-02-19  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Revert:
+
+	2015-02-19  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+	Backport from mainline
+	2015-02-19  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	* lib/target-supports.exp (check_compile): Save/restore
+	additional_sources that may belong to an actual test.
+
+2015-02-19  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Backport from mainline
+	2015-02-19  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	* lib/target-supports.exp (check_compile): Save/restore
+	additional_sources that may belong to an actual test.
+
+2015-02-17  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Backported from mainline
+	2015-02-17  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gcc.target/arm/divzero.c: New test case.
+
+2015-02-17  Ilya Tocar  <ilya.tocar@intel.com>
+
+	Backport from mainline
+	2015-01-14  Ilya Tocar  <ilya.tocar@intel.com>
+
+	PR target/64387
+	* gcc.target/i386/pr64387.c: New test.
+
+2015-02-13  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/63744
+	gfortran.dg/use_rename_8.f90: New.
+
+2015-02-12  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from mainline
+	2015-02-12  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/64932
+	* gfortran.dg/finalize_28.f90: New test
+
+2015-02-11  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-02-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/64979
+	* gcc.dg/tree-ssa/stdarg-7.c: New test.
+	* gcc.c-torture/execute/pr64979.c: New test.
+
+2015-02-11  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-07-24  Marek Polacek  <polacek@redhat.com>
+
+	PR c/57653
+	* c-c++-common/pr57653.c: New test.
+	* c-c++-common/pr57653.h: New file.
+	* c-c++-common/pr57653-2.c: New test.
+	* c-c++-common/pr57653-2.h: New file.
+
+2015-02-09  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* gcc/testsuite/gcc.target/s390/hotpatch-13.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-14.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-15.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-16.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-17.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-18.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-19.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-20.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-10.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-11.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-12.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-13.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-14.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-15.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-16.c: New testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-9.c: New
+	testcase.
+	* gcc/testsuite/gcc.target/s390/hotpatch-1.c: Testcase adjusted to
+	new -mhotpatch.
+	* gcc/testsuite/gcc.target/s390/hotpatch-10.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-11.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-12.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-2.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-3.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-4.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-5.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-6.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-7.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-8.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-9.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-1.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-2.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-3.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-4.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-5.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-6.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-7.c: Likewise.
+	* gcc/testsuite/gcc.target/s390/hotpatch-compile-8.c: Likewise.
+
 2015-02-04  Matthias Klose  <doko@ubuntu.com>
 
 	Backport from mainline
