@@ -1,3 +1,12 @@
+2015-03-06  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r220751.
+	2015-02-17  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* haifa-sched.c (recompute_todo_spec): Treat SCHED_GROUP_P
+	as forcing a HARD_DEP between instructions, thereby
+	disallowing rewriting to break dependencies.
+
 2015-03-10  Michael Collison  <michael.collison@linaro.org>
 
 	Backport from trunk r217725.
