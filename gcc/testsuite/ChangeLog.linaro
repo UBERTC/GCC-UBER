@@ -1,5 +1,19 @@
 2015-03-10  Michael Collison  <michael.collison@linaro.org>
 
+	Backport from trunk r218503.
+	2014-12-08  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gcc.target/aarch64/bics_4.c: New.
+
+2015-03-10  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r218486.
+	2014-12-08  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* gcc.target/aarch64/bics_3.c : New testcase.
+
+2015-03-10  Michael Collison  <michael.collison@linaro.org>
+
 	Backport from trunk r217938.
 	2014-11-21  Jiong Wang  <jiong.wang@arm.com>
 
