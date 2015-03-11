@@ -1,3 +1,26 @@
+2015-03-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65286
+	* config/rs6000/t-linux: For powerpc64* target set
+	MULTILIB_OSDIRNAMES instead of MULTIARCH_DIRNAME.
+
+2015-03-10  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/53988
+	* config/sh/sh.md (*tst<mode>_t_zero): Remove insns.
+
+2015-03-10  Alan Modra  <amodra@gmail.com>
+
+	PR target/65286
+	* config.gcc (powerpc*-*-linux*): Arrange for powerpc64le-linux
+	to be single-arch by default.  Set cpu_is_64bit for powerpc64
+	given --with-cpu=native.
+	* config/rs6000/t-fprules: Do not set default MULTILIB vars.
+	* config/rs6000/t-linux (MULTIARCH_DIRNAME): Support powerpc64
+	and powerpc64le.
+	* config/rs6000/linux64.h (SUBSUBTARGET_OVERRIDE_OPTIONS): Test
+	rs6000_isa_flags rather than TARGET_64BIT.
+
 2015-03-05  Michael Meissner  <meissner@linux.vnet.ibm.com>
 
 	Backport from trunk
