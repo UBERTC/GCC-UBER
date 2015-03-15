@@ -1,3 +1,25 @@
+2015-03-14  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/61138
+	gfortran.dg/pointer_remapping_9.f90: New.
+
+2015-03-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65369
+	* gcc.c-torture/execute/pr65369.c: New test.
+
+	PR tree-optimization/65418
+	* gcc.c-torture/execute/pr65418-1.c: New test.
+	* gcc.c-torture/execute/pr65418-2.c: New test.
+
+	PR rtl-optimization/65401
+	* gcc.c-torture/execute/pr65401.c: New test.
+
+2015-03-13  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/64600
+	* gcc.target/arm/pr64600_1.c: New test.
+
 2015-03-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	PR rtl-optimization/65235
@@ -134,7 +156,7 @@
 
 2015-03-10  Ilya Enkovich  <ilya.enkovich@intel.com>
 
-	* gcc/testsuite/lib/mpx-dg.exp (mpx_link_flags): New.
+	* lib/mpx-dg.exp (mpx_link_flags): New.
 	(mpx_init): New.
 	(mpx_finish): New.
 	* gcc.target/i386/mpx/alloca-1-lbv.c: New.
@@ -688,7 +710,8 @@
 
 2015-02-27  Pat Haugen <pthaugen@us.ibm.com>
 
-	* gcc.dg/vect/pr59354.c: Move vector producing code to separate function.
+	* gcc.dg/vect/pr59354.c: Move vector producing code to
+	separate function.
 
 2015-02-27  Jan Hubicka  <hubicka@ucw.cz>
 
@@ -3393,7 +3416,7 @@
 2015-01-12  Jan Hubicka  <hubicka@ucw.cz>
 
 	PR ipa/63470
-	* testsuite/g++.dg/ipa/pr63470.C: New testcase.
+	* g++.dg/ipa/pr63470.C: New testcase.
 
 2015-01-11  Janus Weil  <janus@gcc.gnu.org>
 

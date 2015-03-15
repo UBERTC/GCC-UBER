@@ -1703,7 +1703,8 @@ gimple_can_merge_blocks_p (basic_block a, basic_block b)
   if (!single_pred_p (b))
     return false;
 
-  if (b == EXIT_BLOCK_PTR_FOR_FN (cfun))
+  if (a == ENTRY_BLOCK_PTR_FOR_FN (cfun)
+      || b == EXIT_BLOCK_PTR_FOR_FN (cfun))
     return false;
 
   /* If A ends by a statement causing exceptions or something similar, we
@@ -8721,10 +8722,6 @@ execute_fixup_cfg (void)
   if (count_scale != REG_BR_PROB_BASE)
     compute_function_frequency ();
 
-  /* Dump a textual representation of the flowgraph.  */
-  if (dump_file)
-    gimple_dump_cfg (dump_file, dump_flags);
-
   if (current_loops
       && (todo & TODO_cleanup_cfg))
     loops_state_set (LOOPS_NEED_FIXUP);
@@ -8737,7 +8734,7 @@ namespace {
 const pass_data pass_data_fixup_cfg =
 {
   GIMPLE_PASS, /* type */
-  "*free_cfg_annotations", /* name */
+  "fixup_cfg", /* name */
   OPTGROUP_NONE, /* optinfo_flags */
   TV_NONE, /* tv_id */
   PROP_cfg, /* properties_required */
