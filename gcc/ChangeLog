@@ -1,3 +1,51 @@
+2015-03-16  Jakub Jelinek  <jakub@redhat.com>
+
+	* omp-low.c (expand_omp_target): Use auto_vec<tree, 11>
+	instead of vec<tree> * with vec_alloc and release for args.
+	Adjust all users.
+
+	PR middle-end/65431
+	* omp-low.c (delete_omp_context): Only splay_tree_delete
+	reduction_map in GIMPLE_OMP_TARGET is_gimple_omp_offloaded
+	is_gimple_omp_oacc contexts.  Don't look at ctx->outer.
+
+2015-03-16  Max Ostapenko  <m.ostapenko@partner.samsung.com>
+
+	PR sanitizer/64820
+	* cfgexpand.c (align_base): New function.
+	(alloc_stack_frame_space): Call it.
+	(expand_stack_vars): Align prev_frame to be sure
+	data->asan_vec elements aligned properly.
+
+2015-03-16  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR middle-end/65409
+	* expr.c (store_field): Do not do a direct block copy if the source is
+	a PARALLEL with BLKmode.
+
+2015-03-16  Tom de Vries  <tom@codesourcery.com>
+
+	PR middle-end/65414
+	Revert:
+	2015-03-12  Tom de Vries  <tom@codesourcery.com>
+
+	PR rtl-optimization/64895
+	* lra-lives.c (check_pseudos_live_through_calls): Use
+	actual_call_used_reg_set instead of call_used_reg_set, if available.
+
+2015-03-16  Alan Modra  <amodra@gmail.com>
+
+	PR target/63150
+	* config/rs6000/rs6000.md (bswapdi2): Remove one scratch reg.
+	Modify Z->r bswapdi splitter to use dest in place of scratch.
+	In r->Z and Z->r bswapdi splitter rename word_high, word_low
+	to word1, word2 and rearrange logic to suit.
+	(bswapdi2_64bit): Remove early clobber on Z->r alternative.
+	(bswapdi2_ldbrx): Likewise.  Remove '??' on r->r.
+	(bswapdi2_32bit): Remove early clobber on Z->r alternative.
+	Add one '?' on r->r.  Modify Z->r splitter to avoid need for
+	early clobber.
+
 2015-03-14  Jakub Jelinek  <jakub@redhat.com>
 
 	PR tree-optimization/65369
