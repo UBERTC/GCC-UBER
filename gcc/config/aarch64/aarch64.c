@@ -64,6 +64,7 @@
 #include "tree-vectorizer.h"
 #include "aarch64-cost-tables.h"
 #include "dumpfile.h"
+#include "tm-constrs.h"
 
 /* Defined for convenience.  */
 #define POINTER_BYTES (POINTER_SIZE / BITS_PER_UNIT)
@@ -291,6 +292,13 @@ static const struct cpu_vector_cost cortexa57_vector_cost =
   NAMED_PARAM (cond_not_taken_branch_cost, 1)
 };
 
+#define AARCH64_FUSE_NOTHING	(0)
+#define AARCH64_FUSE_MOV_MOVK	(1 << 0)
+#define AARCH64_FUSE_ADRP_ADD	(1 << 1)
+#define AARCH64_FUSE_MOVK_MOVK	(1 << 2)
+#define AARCH64_FUSE_ADRP_LDR	(1 << 3)
+#define AARCH64_FUSE_CMP_BRANCH	(1 << 4)
+
 #if HAVE_DESIGNATED_INITIALIZERS && GCC_VERSION >= 2007
 __extension__
 #endif
@@ -301,7 +309,8 @@ static const struct tune_params generic_tunings =
   &generic_regmove_cost,
   &generic_vector_cost,
   NAMED_PARAM (memmov_cost, 4),
-  NAMED_PARAM (issue_rate, 2)
+  NAMED_PARAM (issue_rate, 2),
+  NAMED_PARAM (fuseable_ops, AARCH64_FUSE_NOTHING)
 };
 
 static const struct tune_params cortexa53_tunings =
@@ -311,7 +320,9 @@ static const struct tune_params cortexa53_tunings =
   &cortexa53_regmove_cost,
   &generic_vector_cost,
   NAMED_PARAM (memmov_cost, 4),
-  NAMED_PARAM (issue_rate, 2)
+  NAMED_PARAM (issue_rate, 2),
+  NAMED_PARAM (fuseable_ops, (AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD
+                             | AARCH64_FUSE_MOVK_MOVK | AARCH64_FUSE_ADRP_LDR))
 };
 
 static const struct tune_params cortexa57_tunings =
@@ -321,7 +332,8 @@ static const struct tune_params cortexa57_tunings =
   &cortexa57_regmove_cost,
   &cortexa57_vector_cost,
   NAMED_PARAM (memmov_cost, 4),
-  NAMED_PARAM (issue_rate, 3)
+  NAMED_PARAM (issue_rate, 3),
+  NAMED_PARAM (fuseable_ops, (AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD | AARCH64_FUSE_MOVK_MOVK))
 };
 
 static const struct tune_params thunderx_tunings =
@@ -331,7 +343,8 @@ static const struct tune_params thunderx_tunings =
   &thunderx_regmove_cost,
   &generic_vector_cost,
   NAMED_PARAM (memmov_cost, 6),
-  NAMED_PARAM (issue_rate, 2)
+  NAMED_PARAM (issue_rate, 2),
+  NAMED_PARAM (fuseable_ops, AARCH64_FUSE_CMP_BRANCH)
 };
 
 /* A processor implementing AArch64.  */
@@ -10053,6 +10066,160 @@ aarch64_use_by_pieces_infrastructure_p (unsigned HOST_WIDE_INT size,
   return default_use_by_pieces_infrastructure_p (size, align, op, speed_p);
 }
 
+/* Implement TARGET_SCHED_MACRO_FUSION_P.  Return true if target supports
+   instruction fusion of some sort.  */
+
+static bool
+aarch64_macro_fusion_p (void)
+{
+  return aarch64_tune_params->fuseable_ops != AARCH64_FUSE_NOTHING;
+}
+
+
+/* Implement TARGET_SCHED_MACRO_FUSION_PAIR_P.  Return true if PREV and CURR
+   should be kept together during scheduling.  */
+
+static bool
+aarch_macro_fusion_pair_p (rtx prev, rtx curr)
+{
+  rtx set_dest;
+  rtx prev_set = single_set (prev);
+  rtx curr_set = single_set (curr);
+  /* prev and curr are simple SET insns i.e. no flag setting or branching.  */
+  bool simple_sets_p = prev_set && curr_set && !any_condjump_p (curr);
+
+  if (!aarch64_macro_fusion_p ())
+    return false;
+
+  if (simple_sets_p
+      && (aarch64_tune_params->fuseable_ops & AARCH64_FUSE_MOV_MOVK))
+    {
+      /* We are trying to match:
+         prev (mov)  == (set (reg r0) (const_int imm16))
+         curr (movk) == (set (zero_extract (reg r0)
+                                           (const_int 16)
+                                           (const_int 16))
+                             (const_int imm16_1))  */
+
+      set_dest = SET_DEST (curr_set);
+
+      if (GET_CODE (set_dest) == ZERO_EXTRACT
+          && CONST_INT_P (SET_SRC (curr_set))
+          && CONST_INT_P (SET_SRC (prev_set))
+          && CONST_INT_P (XEXP (set_dest, 2))
+          && INTVAL (XEXP (set_dest, 2)) == 16
+          && REG_P (XEXP (set_dest, 0))
+          && REG_P (SET_DEST (prev_set))
+          && REGNO (XEXP (set_dest, 0)) == REGNO (SET_DEST (prev_set)))
+        {
+          return true;
+        }
+    }
+
+  if (simple_sets_p
+      && (aarch64_tune_params->fuseable_ops & AARCH64_FUSE_ADRP_ADD))
+    {
+
+      /*  We're trying to match:
+          prev (adrp) == (set (reg r1)
+                              (high (symbol_ref ("SYM"))))
+          curr (add) == (set (reg r0)
+                             (lo_sum (reg r1)
+                                     (symbol_ref ("SYM"))))
+          Note that r0 need not necessarily be the same as r1, especially
+          during pre-regalloc scheduling.  */
+
+      if (satisfies_constraint_Ush (SET_SRC (prev_set))
+          && REG_P (SET_DEST (prev_set)) && REG_P (SET_DEST (curr_set)))
+        {
+          if (GET_CODE (SET_SRC (curr_set)) == LO_SUM
+              && REG_P (XEXP (SET_SRC (curr_set), 0))
+              && REGNO (XEXP (SET_SRC (curr_set), 0))
+                 == REGNO (SET_DEST (prev_set))
+              && rtx_equal_p (XEXP (SET_SRC (prev_set), 0),
+                              XEXP (SET_SRC (curr_set), 1)))
+            return true;
+        }
+    }
+
+  if (simple_sets_p
+      && (aarch64_tune_params->fuseable_ops & AARCH64_FUSE_MOVK_MOVK))
+    {
+
+      /* We're trying to match:
+         prev (movk) == (set (zero_extract (reg r0)
+                                           (const_int 16)
+                                           (const_int 32))
+                             (const_int imm16_1))
+         curr (movk) == (set (zero_extract (reg r0)
+                                           (const_int 16)
+                                           (const_int 48))
+                             (const_int imm16_2))  */
+
+      if (GET_CODE (SET_DEST (prev_set)) == ZERO_EXTRACT
+          && GET_CODE (SET_DEST (curr_set)) == ZERO_EXTRACT
+          && REG_P (XEXP (SET_DEST (prev_set), 0))
+          && REG_P (XEXP (SET_DEST (curr_set), 0))
+          && REGNO (XEXP (SET_DEST (prev_set), 0))
+             == REGNO (XEXP (SET_DEST (curr_set), 0))
+          && CONST_INT_P (XEXP (SET_DEST (prev_set), 2))
+          && CONST_INT_P (XEXP (SET_DEST (curr_set), 2))
+          && INTVAL (XEXP (SET_DEST (prev_set), 2)) == 32
+          && INTVAL (XEXP (SET_DEST (curr_set), 2)) == 48
+          && CONST_INT_P (SET_SRC (prev_set))
+          && CONST_INT_P (SET_SRC (curr_set)))
+        return true;
+
+    }
+  if (simple_sets_p
+      && (aarch64_tune_params->fuseable_ops & AARCH64_FUSE_ADRP_LDR))
+    {
+      /* We're trying to match:
+          prev (adrp) == (set (reg r0)
+                              (high (symbol_ref ("SYM"))))
+          curr (ldr) == (set (reg r1)
+                             (mem (lo_sum (reg r0)
+                                             (symbol_ref ("SYM")))))
+                 or
+          curr (ldr) == (set (reg r1)
+                             (zero_extend (mem
+                                           (lo_sum (reg r0)
+                                                   (symbol_ref ("SYM"))))))  */
+      if (satisfies_constraint_Ush (SET_SRC (prev_set))
+          && REG_P (SET_DEST (prev_set)) && REG_P (SET_DEST (curr_set)))
+        {
+          rtx curr_src = SET_SRC (curr_set);
+
+          if (GET_CODE (curr_src) == ZERO_EXTEND)
+            curr_src = XEXP (curr_src, 0);
+
+          if (MEM_P (curr_src) && GET_CODE (XEXP (curr_src, 0)) == LO_SUM
+              && REG_P (XEXP (XEXP (curr_src, 0), 0))
+              && REGNO (XEXP (XEXP (curr_src, 0), 0))
+                 == REGNO (SET_DEST (prev_set))
+              && rtx_equal_p (XEXP (XEXP (curr_src, 0), 1),
+                              XEXP (SET_SRC (prev_set), 0)))
+              return true;
+        }
+    }
+
+  if ((aarch64_tune_params->fuseable_ops & AARCH64_FUSE_CMP_BRANCH)
+      && any_condjump_p (curr))
+    {
+      enum attr_type prev_type = get_attr_type (prev);
+
+      /* FIXME: this misses some which is considered simple arthematic
+         instructions for ThunderX.  Simple shifts are missed here.  */
+      if (prev_type == TYPE_ALUS_REG
+          || prev_type == TYPE_ALUS_IMM
+          || prev_type == TYPE_LOGICS_REG
+          || prev_type == TYPE_LOGICS_IMM)
+        return true;
+    }
+
+  return false;
+}
+
 #undef TARGET_ADDRESS_COST
 #define TARGET_ADDRESS_COST aarch64_address_cost
 
@@ -10305,6 +10472,12 @@ aarch64_use_by_pieces_infrastructure_p (unsigned HOST_WIDE_INT size,
 
 #undef TARGET_CAN_USE_DOLOOP_P
 #define TARGET_CAN_USE_DOLOOP_P can_use_doloop_if_innermost
+
+#undef TARGET_SCHED_MACRO_FUSION_P
+#define TARGET_SCHED_MACRO_FUSION_P aarch64_macro_fusion_p
+
+#undef TARGET_SCHED_MACRO_FUSION_PAIR_P
+#define TARGET_SCHED_MACRO_FUSION_PAIR_P aarch_macro_fusion_pair_p
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

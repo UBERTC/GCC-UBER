@@ -1,3 +1,71 @@
+2015-03-18  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r218525.
+	2014-12-09  Andrew Pinski  apinski@cavium.com
+            Kyrylo Tkachov  kyrylo.tkachov@arm.com
+
+	* config/aarch64/aarch64.c (AARCH64_FUSE_CMP_BRANCH): New define.
+	(thunderx_tunings): Add AARCH64_FUSE_CMP_BRANCH to fuseable_ops.
+	(aarch_macro_fusion_pair_p): Handle AARCH64_FUSE_CMP_BRANCH.
+
+2015-03-18  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r218014.
+	2014-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (AARCH64_FUSE_ADRP_LDR): Define.
+	(cortexa53_tunings): Specify AARCH64_FUSE_ADRP_LDR in fuseable_ops.
+	(aarch_macro_fusion_pair_p): Handle AARCH64_FUSE_ADRP_LDR.
+
+2015-03-18  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r218013.
+	2014-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (AARCH64_FUSE_MOVK_MOVK): Define.
+	(cortexa53_tunings): Specify AARCH64_FUSE_MOVK_MOVK in fuseable_ops.
+	(cortexa57_tunings): Likewise.
+	(aarch_macro_fusion_pair_p): Handle AARCH64_FUSE_MOVK_MOVK.
+
+2015-03-18  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r218012.
+	2014-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* sched-deps.c (sched_macro_fuse_insns): Do not check modified_in_p
+	in the not conditional jump case.
+	* doc/tm.texi (TARGET_SCHED_MACRO_FUSION_PAIR_P): Update description.
+	* target.def (TARGET_SCHED_MACRO_FUSION_PAIR_P): Update description.
+
+2015-03-18  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r218010.
+	2014-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c: Include tm-constrs.h
+	(AARCH64_FUSE_ADRP_ADD): Define.
+	(cortexa57_tunings): Add AARCH64_FUSE_ADRP_ADD to fuseable_ops.
+	(cortexa53_tunings): Likewise.
+	(aarch_macro_fusion_pair_p): Handle AARCH64_FUSE_ADRP_ADD.
+
+2015-03-18  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r218007.
+	2014-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64-protos.h (struct tune_params): Add
+	fuseable_ops field.
+	* config/aarch64/aarch64.c (generic_tunings): Specify fuseable_ops.
+	(cortexa53_tunings): Likewise.
+	(cortexa57_tunings): Likewise.
+	(thunderx_tunings): Likewise.
+	(aarch64_macro_fusion_p): New function.
+	(aarch_macro_fusion_pair_p): Likewise.
+	(TARGET_SCHED_MACRO_FUSION_P): Define.
+	(TARGET_SCHED_MACRO_FUSION_PAIR_P): Likewise.
+	(AARCH64_FUSE_MOV_MOVK): Likewise.
+	(AARCH64_FUSE_NOTHING): Likewise.
+
 2015-03-12  Yvan Roux  <yvan.roux@linaro.org>
 
 	* LINARO-VERSION: Bump version.
