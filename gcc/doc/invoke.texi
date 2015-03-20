@@ -197,7 +197,7 @@ in the following sections.
 -fvtv-counts -fvtv-debug @gol
 -fvisibility-ms-compat @gol
 -fext-numeric-literals @gol
--Wabi=@var{n}  -Wconversion-null  -Wctor-dtor-privacy @gol
+-Wabi=@var{n}  -Wabi-tag  -Wconversion-null  -Wctor-dtor-privacy @gol
 -Wdelete-non-virtual-dtor -Wliteral-suffix -Wnarrowing @gol
 -Wnoexcept -Wnon-virtual-dtor  -Wreorder @gol
 -Weffc++  -Wstrict-null-sentinel @gol
@@ -572,7 +572,7 @@ Objective-C and Objective-C++ Dialects}.
 @emph{AVR Options}
 @gccoptlist{-mmcu=@var{mcu} -maccumulate-args -mbranch-cost=@var{cost} @gol
 -mcall-prologues -mint8 -mn_flash=@var{size} -mno-interrupts @gol
--mrelax -mrmw -mstrict-X -mtiny-stack -Waddr-space-convert}
+-mrelax -mrmw -mstrict-X -mtiny-stack -nodevicelib -Waddr-space-convert}
 
 @emph{Blackfin Options}
 @gccoptlist{-mcpu=@var{cpu}@r{[}-@var{sirevision}@r{]} @gol
@@ -2640,6 +2640,13 @@ union U @{
 @code{union U} is always passed in memory.
 
 @end itemize
+
+@item -Wabi-tag @r{(C++ and Objective-C++ only)}
+@opindex Wabi-tag
+@opindex -Wabi-tag
+Warn when a type with an ABI tag is used in a context that does not
+have that ABI tag.  See @ref{C++ Attributes} for more information
+about ABI tags.
 
 @item -Wctor-dtor-privacy @r{(C++ and Objective-C++ only)}
 @opindex Wctor-dtor-privacy
@@ -13576,6 +13583,10 @@ sbiw r26, const   ; X -= const
 @opindex mtiny-stack
 Only change the lower 8@tie{}bits of the stack pointer.
 
+@item -nodevicelib
+@opindex nodevicelib
+Don't link against AVR-LibC's device specific library @code{libdev.a}.
+
 @item -Waddr-space-convert
 @opindex Waddr-space-convert
 Warn about conversions between address spaces in the case where the
@@ -21990,6 +22001,12 @@ instruction set support.
 @item silvermont
 Intel Silvermont CPU with 64-bit extensions, MOVBE, MMX, SSE, SSE2, SSE3, SSSE3,
 SSE4.1, SSE4.2, POPCNT, AES, PCLMUL and RDRND instruction set support.
+
+@item knl
+Intel Knight's Landing CPU with 64-bit extensions, MOVBE, MMX, SSE, SSE2, SSE3,
+SSSE3, SSE4.1, SSE4.2, POPCNT, AVX, AVX2, AES, PCLMUL, FSGSBASE, RDRND, FMA,
+BMI, BMI2, F16C, RDSEED, ADCX, PREFETCHW, AVX512F, AVX512PF, AVX512ER and
+AVX512CD instruction set support.
 
 @item k6
 AMD K6 CPU with MMX instruction set support.

@@ -1,3 +1,184 @@
+2015-03-19  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/65240
+	* config/rs6000/predicates.md (easy_fp_constant): Remove special
+	-ffast-math handling that kept non-0 constants live in the RTL
+	until reload.  Remove logic testing the number of instructions it
+	took to create a constant in a GPR that was never used, due to a
+	test for soft-float earlier.
+	(memory_fp_constant): Delete, no longer used.
+
+	* config/rs6000/rs6000.md (mov<MODE>_hardfloat): Remove
+	alternatives for loading non-0 constants into GPRs for hard
+	floating point that is no longer needed due to changes in
+	easy_fp_constant.  Add support for loading 0.0 into GPRs.
+	(mov<mode>_hardfloat32): Likewise.
+	(mov<mode>_hardfloat64): Likewise.
+	(mov<mode>_64bit_dm): Likewise.
+	(movtd_64bit_nodm): Likewise.
+	(pre-reload move FP constant define_split): Delete define_split,
+	since it is no longer used.
+	(extenddftf2_internal): Remove GHF constraints that are not valid
+	for extenddftf2.
+
+2015-03-19  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/63491
+	* lra-constraints.c (check_and_process_move): Use src instead of
+	sreg.  Remove some dead code.
+
+2015-03-19  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65380
+	* ipa-icf.c (sem_function::merge): Do not merge DECL_EXTERNAL symbols.
+	(sem_variable::merge): Likewise.
+
+2015-03-19  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/65465
+	* cgraphunit.c (cgraph_node::create_wrapper): Correctly reset
+	all fields of cgraph_thunk_info.
+
+2015-03-19  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* ipa-chkp.c (chkp_maybe_create_clone): Don't try to
+	clone instrumented thunks.
+
+2015-03-19  Richard Biener  <rguenther@suse.de>
+
+	Revert
+	2015-03-10  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/63155
+	* tree-ssa-coalesce.h (verify_ssa_coalescing): Declare.
+	* tree-ssa-coalesce.c: Include timevar.h.
+	(attempt_coalesce): Handle graph being NULL.
+	(coalesce_partitions): Call verify_ssa_coalescing if ENABLE_CHECKING.
+	Split out abnormal coalescing to ...
+	(perform_abnormal_coalescing): ... this function.
+	(coalesce_ssa_name): Perform abnormal coalescing without computing
+	live/conflict.
+	(verify_ssa_coalescing_worker): New function.
+	(verify_ssa_coalescing): Likewise.
+
+2015-03-19  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/65400
+	* tsan.c (instrument_gimple): Clear tail call flag on
+	calls.
+
+2015-03-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/65400
+	* ipa-split.c (find_return_bb): Allow TSAN_FUNC_EXIT internal
+	call in the return bb.
+	(find_split_points): Add RETURN_BB argument, don't call
+	find_return_bb.
+	(split_function): Likewise.  Add ADD_TSAN_FUNC_EXIT argument,
+	if true append TSAN_FUNC_EXIT internal call after the call to
+	the split off function.
+	(execute_split_functions): Call find_return_bb here.
+	Don't optimize if TSAN_FUNC_EXIT is found in unexpected places.
+	Adjust find_split_points and split_function calls.
+
+2015-03-18  DJ Delorie  <dj@redhat.com>
+
+	* config/rl78/rl78-virt.md (andqi3_virt): Allow far operands.
+	(iorqi3_virt): Likewise.
+
+2015-03-18  Tom de Vries  <tom@codesourcery.com>
+
+	* tree-parloops.c (parallelize_loops): Make static.
+	* tree-parloops.h (parallelize_loops): Remove extern declaration.
+
+2015-03-18  Andrew Stubbs  <ams@codesourcery.com>
+
+	PR middle-end/64491
+	Revert:
+	2014-11-20  Andrew Stubbs  <ams@codesourcery.com>
+
+	* tree-ssa-loop-niter.c (maybe_lower_iteration_bound): Warn if a loop
+	condition would be removed due to undefined behaviour.
+
+2015-03-18  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/65432
+	* cgraph.c (cgraph_node::get_create): Remove unnecessary
+	xstrdup_for_dump wrapper.
+	* ipa-icf.c (sem_item::dump): Use symtab_node::name instead of
+	sem_item::name.
+	(sem_function::equals): Wrap symtab_node::name and symtab_node::asm_name
+	with xstrdup_for_dump.
+	(sem_variable::equals): Likewise.
+	(sem_item_optimizer::read_section): Use symtab_node::name instead of
+	sem_item::name.
+	(sem_item_optimizer::parse_funcs_and_vars): Likewise.
+	(sem_item_optimizer::merge_classes): Wrap symtab_node::name and
+	symtab_node::asm_name with xstrdup_for_dump.
+	(congruence_class::dump): Use symtab_node::name instead of
+	sem_item::name.
+	* ipa-icf.h (symtab_node::name): Remove.
+	(symtab_node::asm_name): Likewise.
+
+2015-03-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65450
+	* tree-vect-data-refs.c (vect_duplicate_ssa_name_ptr_info): New
+	function.
+	(vect_create_addr_base_for_vector_ref, vect_create_data_ref_ptr): Use
+	it instead of duplicate_ssa_name_ptr_info.
+
+	PR target/65222
+	* doc/invoke.texi: Add knl as x86 -march=/-mtune= CPU type.
+
+2015-03-18  Richard Biener  <rguenther@suse.de>
+
+	* tree-data-ref.h (struct access_matrix): Remove.
+	(AM_LOOP_NEST, AM_NB_INDUCTION_VARS, AM_PARAMETERS, AM_MATRIX,
+	AM_NB_PARAMETERS, AM_CONST_COLUMN_INDEX, AM_NB_COLUMNS,
+	AM_GET_SUBSCRIPT_ACCESS_VECTOR, AM_GET_ACCESS_MATRIX_ELEMENT): Likewise.
+	(am_vector_index_for_loop): Likewise.
+	(struct data_reference): Remove access_matrix member.
+	(DR_ACCESS_MATRIX): Remove.
+	(lambda_vector_new): Add comment.
+	(lambda_matrix_new): Use XOBNEWVEC.
+
+2015-03-18  Richard Biener  <rguenther@suse.de>
+
+	* tree-ssa-loop-ch.c (pass_data_ch): Remove TODO_cleanup_cfg.
+	(pass_ch::execute): Cleanup the CFG only if we did sth.
+	* tree-vect-generic.c (pass_data_lower_vector): Remove TODO_cleanup_cfg.
+
+2015-03-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* expmed.c (synth_mult): Use std::swap instead of manually
+	swapping algorithms.
+
+2015-03-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65078
+	* config/i386/sse.md (movsi/movdi -> vec_extract_*_0 splitter): New.
+
+2015-03-16  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/65296
+	* config/avr/avr.opt (-nodevicelib): New option.
+	* doc/invoke.texi (AVR Options): Document it.
+	* config/avr/avrlibc.h (LIB_SPEC, LIBGCC_SPEC) [avr1]: Don't link
+	libgcc.a, libc.a, libm.a.
+	* config/avr/specs.h: Same.
+	* config/avr/gen-avr-mmcu-specs.c (print_mcu): Don't print specs
+	which don't (directly) depend on the device.  Print more help.
+	(*avrlibc_devicelib) [-nodevicelib]: Don't link libdev.a.
+	(*cpp): Don't define __AVR_DEV_LIB_NAME__.
+	* config/avr/driver-avr.c: Remove -nodevicelib from option list in
+	case of an error.
+	(avr_devicespecs_file): Use suffix "%s" instead of absolute path
+	for specs file name.
+	* config/avr/avr-arch.h (avr_mcu_t) [.library_name]: Remove.
+	* config/avr/avr-mcus.def: Adjust initializers and comments.
+
 2015-03-16  Jan Hubicka  <hubicka@ucw.cz>
 
 	* tree-sra.c (ipa_sra_preliminary_function_checks): Use

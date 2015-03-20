@@ -1,3 +1,117 @@
+2015-03-17  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/65240
+	* gcc/testsuite/g++.dg/pr65240.h: Add tests for PR 65240.
+	* gcc/testsuite/g++.dg/pr65240-1.C: Likewise.
+	* gcc/testsuite/g++.dg/pr65240-2.C: Likewise.
+	* gcc/testsuite/g++.dg/pr65240-3.C: Likewise.
+	* gcc/testsuite/g++.dg/pr65240-4.C: Likewise.
+
+2015-03-19  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/63491
+	* gcc.target/powerpc/pr63491.c: New.
+
+2015-03-19  Jakub Jelinek  <jakub@redhat.com>
+
+	* g++.dg/ipa/pr65465.C: New test.
+
+2015-03-19  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/52659
+	* g++.dg/cpp0x/deleted11.C: New.
+
+2015-03-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/65400
+	* c-c++-common/tsan/pr65400-3.c: New test.
+
+2015-03-19  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/59686
+	* g++.dg/cpp0x/constexpr-59686.C: New.
+
+2015-03-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/64265
+	* g++.dg/tsan/pr64265.C: New test.
+
+	PR sanitizer/65400
+	* c-c++-common/tsan/pr65400-1.c: New test.
+	* c-c++-common/tsan/pr65400-2.c: New test.
+
+2015-03-18  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/59816
+	* g++.dg/cpp0x/pr59816.C: New.
+
+2015-03-18  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/59198
+	* gfortran.dg/proc_ptr_comp_45.f90: Make tests fuzzy.
+
+2015-03-18  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/65439
+	* g++.dg/ipa/ipa-icf-4.C: Extend expected number of
+	equivalences either to 6 or 7.
+
+2015-03-18  Andrew Stubbs  <ams@codesourcery.com>
+
+	PR middle-end/64491
+	Revert:
+	2014-11-20  Andrew Stubbs  <ams@codesourcery.com>
+
+	* gcc.dg/undefined-loop-1.c: New file.
+	* gcc.dg/undefined-loop-2.c: New file.
+
+	2014-12-24  Andrew Stubbs  <ams@codesourcery.com>
+
+	PR testsuite/64032
+	* gcc.dg/undefined-loop-2.c: Don't allow GCC to optimize away the
+	loop exits too early.
+
+2015-03-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65450
+	* gfortran.dg/pr65450.f90: New test.
+
+	PR target/65078
+	* gcc.target/i386/pr65078-1.c: New test.
+	* gcc.target/i386/pr65078-2.c: New test.
+	* gcc.target/i386/pr65078-3.c: New test.
+	* gcc.target/i386/pr65078-4.c: New test.
+	* gcc.target/i386/pr65078-5.c: New test.
+	* gcc.target/i386/pr65078-6.c: New test.
+
+2015-03-18  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65340
+	* g++.dg/cpp1y/pr65340.C: New.
+
+2015-03-17 Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/64432
+	* gfortran.dg/system_clock_3.f08: Adjust test.
+
+2015-03-17  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/59198
+	* gfortran.dg/proc_ptr_comp_44.f90: New test.
+	* gfortran.dg/proc_ptr_comp_45.f90: New test.
+
+2015-03-16 Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/64432
+	* gfortran.dg/system_clock_3.f08: New test.
+
+2015-03-16  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	PR c++/64626
+	g++.dg/cpp1y/pr64626-1.C: New.
+	g++.dg/cpp1y/pr64626-2.C: New.
+	g++.dg/cpp1y/digit-sep-neg.C: Adjust errors and warnings.
+
 2015-03-16  Jakub Jelinek  <jakub@redhat.com>
 
 	PR tree-optimization/65427
