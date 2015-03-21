@@ -6209,6 +6209,21 @@ aarch64_override_options (void)
       aarch64_fix_a53_err843419 = 1;
     }
 
+   /* Disable array_bound warning. */
+   global_options.x_warn_array_bounds = 0;
+   /* Disable clobbered warning. */
+   global_options.x_warn_clobbered = 0;
+   /* Disable unused warning. */
+   global_options.x_warn_unused = 0;
+   /* Disable unused but set parameter warning. */
+   global_options.x_warn_unused_but_set_parameter = 0;
+   /* Disable unused but set variable warning. */
+   global_options.x_warn_unused_but_set_variable = 0;
+   /* Disable maybe uninitialized warning. */
+   global_options.x_warn_maybe_uninitialized = 0;
+   /* Disable strict overflow warning. */
+   global_options.x_warn_strict_overflow = 0;
+
   aarch64_override_options_after_change ();
 
   if (TARGET_ANDROID)
@@ -6218,10 +6233,6 @@ aarch64_override_options (void)
       maybe_set_param_value (PARAM_MAX_DEFAULT_COMPLETELY_PEELED_INSNS, 50,
                              global_options.x_param_values,
                              global_options_set.x_param_values);
-
-      /* Disable array_bound warning. Work around isses
-         introduced in complete unroll.  */
-      global_options.x_warn_array_bounds = 0;
     }
 
 }
