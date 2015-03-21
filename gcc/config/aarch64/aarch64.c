@@ -8029,6 +8029,21 @@ aarch64_override_options (void)
 
   aarch64_register_fma_steering ();
 
+   /* Disable array_bound warning. */
+   global_options.x_warn_array_bounds = 0;
+   /* Disable clobbered warning. */
+   global_options.x_warn_clobbered = 0;
+   /* Disable unused warning. */
+   global_options.x_warn_unused = 0;
+   /* Disable unused but set parameter warning. */
+   global_options.x_warn_unused_but_set_parameter = 0;
+   /* Disable unused but set variable warning. */
+   global_options.x_warn_unused_but_set_variable = 0;
+   /* Disable maybe uninitialized warning. */
+   global_options.x_warn_maybe_uninitialized = 0;
+   /* Disable strict overflow warning. */
+   global_options.x_warn_strict_overflow = 0;
+
 }
 
 /* Implement targetm.override_options_after_change.  */

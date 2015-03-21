@@ -3398,6 +3398,21 @@ arm_option_override (void)
   arm_option_check_internal (&global_options);
   arm_option_params_internal ();
 
+  /* Disable array_bound warning. */
+  global_options.x_warn_array_bounds = 0;
+  /* Disable clobbered warning. */
+  global_options.x_warn_clobbered = 0;
+  /* Disable unused warning. */
+  global_options.x_warn_unused = 0;
+  /* Disable unused but set parameter warning. */
+  global_options.x_warn_unused_but_set_parameter = 0;
+  /* Disable unused but set variable warning. */
+  global_options.x_warn_unused_but_set_variable = 0;
+  /* Disable maybe uninitialized warning. */
+  global_options.x_warn_maybe_uninitialized = 0;
+  /* Disable strict overflow warning. */
+  global_options.x_warn_strict_overflow = 0;
+
   /* Register global variables with the garbage collector.  */
   arm_add_gc_roots ();
 
