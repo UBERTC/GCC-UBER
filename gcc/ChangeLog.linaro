@@ -1,3 +1,213 @@
+2015-03-24  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Backport from trunk r220808.
+	2015-02-19  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+        * haifa-sched.c (enum rfs_decision, rfs_str): Remove RFS_DEBUG.
+        (rank_for_schedule_debug): Update.
+        (ready_sort): Make static.  Move sorting logic to ...
+        (ready_sort_debug, ready_sort_real): New static functions.
+        (schedule_block): Sort both debug insns and real insns in preparation
+        for ready list trimming.  Improve debug output.
+        * sched-int.h (ready_sort): Remove global declaration.
+
+	Backport from trunk r220316.
+	2015-02-01  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	* haifa-sched.c (INSN_RFS_DEBUG_ORIG_ORDER): New access macro.
+	(rank_for_schedule_debug): Split from ...
+	(rank_for_schedule): ... this.
+	(ready_sort): Sort DEBUG_INSNs separately from normal INSNs.
+	* sched-int.h (struct _haifa_insn_data): New field rfs_debug_orig_order.
+
+	Backport from trunk r219893.
+	2015-01-20  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	* config/arm/arm-protos.h (enum arm_sched_autopref): New constants.
+	(struct tune_params): Use the enum.
+	* arm.c (arm_*_tune): Update.
+	(arm_option_override): Update.
+
+	Backport from trunk r219789.
+	* config/arm/arm-protos.h (struct tune_params): New field
+	sched_autopref_queue_depth.
+	* config/arm/arm.c (sched-int.h): Include header.
+	(arm_first_cycle_multipass_dfa_lookahead_guard,)
+	(TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD_GUARD): Define hook.
+	(arm_slowmul_tune, arm_fastmul_tune, arm_strongarm_tune,)
+	(arm_xscale_tune, arm_9e_tune, arm_v6t2_tune, arm_cortex_tune,)
+	(arm_cortex_a8_tune, arm_cortex_a7_tune, arm_cortex_a15_tune,)
+	(arm_cortex_a53_tune, arm_cortex_a57_tune, arm_xgene1_tune,)
+	(arm_cortex_a5_tune, arm_cortex_a9_tune, arm_cortex_a12_tune,)
+	(arm_v7m_tune, arm_cortex_m7_tune, arm_v6m_tune, arm_fa726te_tune):
+	Specify sched_autopref_queue_depth value.  Enabled for A15 and A57.
+	* config/arm/t-arm (arm.o): Update.
+	* haifa-sched.c (update_insn_after_change): Update.
+	(rank_for_schedule): Use auto-prefetcher model, if requested.
+	(autopref_multipass_init): New static function.
+	(autopref_rank_for_schedule): New rank_for_schedule heuristic.
+	(autopref_multipass_dfa_lookahead_guard_started_dump_p): New static
+	variable for debug dumps.
+	(autopref_multipass_dfa_lookahead_guard_1): New static helper function.
+	(autopref_multipass_dfa_lookahead_guard): New global function that
+	implements TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD_GUARD hook.
+	(init_h_i_d): Update.
+	* params.def (PARAM_SCHED_AUTOPREF_QUEUE_DEPTH): New tuning knob.
+	* sched-int.h (enum autopref_multipass_data_status): New const enum.
+	(autopref_multipass_data_): Structure for auto-prefetcher data.
+	(autopref_multipass_data_def, autopref_multipass_data_t): New typedefs.
+	(struct _haifa_insn_data:autopref_multipass_data): New field.
+	(INSN_AUTOPREF_MULTIPASS_DATA): New access macro.
+	(autopref_multipass_dfa_lookahead_guard): Declare.
+
+	2015-01-17  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Backport from trunk r219787.
+	2015-01-17  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	* config/aarch64/aarch64.c
+	(aarch64_sched_first_cycle_multipass_dfa_lookahead): Implement hook.
+	(TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD): Define.
+	* config/arm/arm.c
+	(arm_first_cycle_multipass_dfa_lookahead): Implement hook.
+	(TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD): Define.
+
+	Backport from trunk r216624.
+        * rtlanal.c (get_base_term): Handle SCRATCH.
+
+	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
+
+	Backport from trunk r216623.
+        * haifa-sched.c (sched_init): Disable max_issue when scheduling for
+        register pressure.
+
+	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
+
+	Backport from trunk r216622.
+        * haifa-sched.c (cached_first_cycle_multipass_dfa_lookahead,)
+        (cached_issue_rate): Remove.  Use dfa_lookahead and issue_rate instead.
+        (max_issue, choose_ready, sched_init): Update.
+
+	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
+
+	Backport from trunk r216621.
+	* sched-int.h (struct _haifa_insn_data:last_rfs_win): New field.
+	* haifa-sched.c (INSN_LAST_RFS_WIN): New access macro.
+	(rfs_result): Set INSN_LAST_RFS_WIN.  Update signature.
+	(rank_for_schedule): Update calls to rfs_result to pass new parameters.
+	(print_rank_for_schedule_stats): Print out elements of ready list that
+	ended up on their respective places due to each of the sorting
+	heuristics.
+	(ready_sort): Update.
+	(debug_ready_list_1): Improve printout for SCHED_PRESSURE_MODEL.
+	(schedule_block): Update.
+
+	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
+
+	Backport from trunk r216620.
+	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
+
+	* haifa-sched.c (sched_class_regs_num, call_used_regs_num): New static
+	arrays.  Use sched_class_regs_num instead of ira_class_hard_regs_num.
+	(print_curr_reg_pressure, setup_insn_reg_pressure_info,)
+	(model_update_pressure, model_spill_cost): Use sched_class_regs_num.
+	(model_start_schedule): Update.
+	(sched_pressure_start_bb): New static function.  Calculate
+	sched_class_regs_num.
+	(schedule_block): Use it.
+	(alloc_global_sched_pressure_data): Calculate call_used_regs_num.
+
+	Backport from trunk r213709.
+	* haifa-sched.c (SCHED_SORT): Delete.  Macro used exactly once.
+	(enum rfs_decition:RFS_*): New constants wrapped in an enum.
+	(rfs_str): String corresponding to RFS_* constants.
+	(rank_for_schedule_stats_t): New typedef.
+	(rank_for_schedule_stats): New static variable.
+	(rfs_result): New static function.
+	(rank_for_schedule): Track statistics for deciding heuristics.
+	(rank_for_schedule_stats_diff, print_rank_for_schedule_stats): New
+	static functions.
+	(ready_sort): Use them for debug printouts.
+	(schedule_block): Init statistics state.  Print statistics on
+	rank_for_schedule decisions.
+
+	2014-08-07  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Backport from trunk r213708.
+	2014-08-07  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	* haifa-sched.c (rank_for_schedule): Fix INSN_TICK-based heuristics.
+
+	Backport from trunk r210845.
+	2014-05-23  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Fix bootstrap error on ia64
+	* config/ia64/ia64.c (ia64_first_cycle_multipass_dfa_lookahead_guard):
+	Return default value.
+
+	Backport from trunk r210747.
+	Cleanup and improve multipass_dfa_lookahead_guard
+        * config/i386/i386.c (core2i7_first_cycle_multipass_filter_ready_try,)
+        (core2i7_first_cycle_multipass_begin,)
+        (core2i7_first_cycle_multipass_issue,)
+        (core2i7_first_cycle_multipass_backtrack): Update signature.
+        * config/ia64/ia64.c
+        (ia64_first_cycle_multipass_dfa_lookahead_guard_spec): Remove.
+        (ia64_first_cycle_multipass_dfa_lookahead_guard): Update signature.
+        (TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD_GUARD_SPEC): Remove
+        hook definition.
+        (ia64_first_cycle_multipass_dfa_lookahead_guard): Merge logic from
+        ia64_first_cycle_multipass_dfa_lookahead_guard_spec.  Update return
+        values.
+        * config/rs6000/rs6000.c (rs6000_use_sched_lookahead_guard): Update
+        return values.
+        * doc/tm.texi: Regenerate.
+        * doc/tm.texi.in
+        (TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD_GUARD_SPEC): Remove.
+        * haifa-sched.c (ready_try): Make signed to allow negative values.
+        (rebug_ready_list_1): Update.
+        (choose_ready): Simplify.
+        (sched_extend_ready_list): Update.
+
+	2014-05-22  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Backport from trunk r210746.
+	Remove IA64 speculation tweaking flags
+        * config/ia64/ia64.c (ia64_set_sched_flags): Delete handling of
+        speculation tuning flags.
+        (msched-prefer-non-data-spec-insns,)
+        (msched-prefer-non-control-spec-insns): Obsolete options.
+        * haifa-sched.c (choose_ready): Remove handling of
+        PREFER_NON_CONTROL_SPEC and PREFER_NON_DATA_SPEC.
+        * sched-int.h (enum SPEC_SCHED_FLAGS): Remove PREFER_NON_CONTROL_SPEC
+        and PREFER_NON_DATA_SPEC.
+        * sel-sched.c (process_spec_exprs): Remove handling of
+        PREFER_NON_CONTROL_SPEC and PREFER_NON_DATA_SPEC.
+
+	Backport from trunk r210744.
+	2014-05-22  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Improve scheduling debug output
+	* haifa-sched.c (debug_ready_list): Remove unnecessary prototype.
+	(advance_one_cycle): Update.
+	(schedule_insn, queue_to_ready): Add debug printouts.
+	(debug_ready_list_1): New static function.
+	(debug_ready_list): Update.
+	(max_issue): Add debug printouts.
+	(dump_insn_stream): New static function.
+	(schedule_block): Use it.  Also better indent printouts.
+
+	2014-05-22  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Fix sched_insn debug counter
+	* haifa-sched.c (schedule_insn): Update.
+	(struct haifa_saved_data): Add nonscheduled_insns_begin.
+	(save_backtrack_point, restore_backtrack_point): Update.
+	(first_nonscheduled_insn): New static function.
+	(queue_to_ready, choose_ready): Use it.
+	(schedule_block): Init nonscheduled_insns_begin.
+	(sched_emit_insn): Update.
+
 2015-03-18  Michael Collison  <michael.collison@linaro.org>
 
 	Backport from trunk r218525.

@@ -26377,7 +26377,7 @@ static int min_insn_size (rtx);
 static void
 core2i7_first_cycle_multipass_filter_ready_try
 (const_ix86_first_cycle_multipass_data_t data,
- char *ready_try, int n_ready, bool first_cycle_insn_p)
+ signed char *ready_try, int n_ready, bool first_cycle_insn_p)
 {
   while (n_ready--)
     {
@@ -26409,7 +26409,8 @@ core2i7_first_cycle_multipass_filter_ready_try
 
 /* Prepare for a new round of multipass lookahead scheduling.  */
 static void
-core2i7_first_cycle_multipass_begin (void *_data, char *ready_try, int n_ready,
+core2i7_first_cycle_multipass_begin (void *_data,
+				     signed char *ready_try, int n_ready,
 				     bool first_cycle_insn_p)
 {
   ix86_first_cycle_multipass_data_t data
@@ -26430,7 +26431,8 @@ core2i7_first_cycle_multipass_begin (void *_data, char *ready_try, int n_ready,
 /* INSN is being issued in current solution.  Account for its impact on
    the decoder model.  */
 static void
-core2i7_first_cycle_multipass_issue (void *_data, char *ready_try, int n_ready,
+core2i7_first_cycle_multipass_issue (void *_data,
+				     signed char *ready_try, int n_ready,
 				     rtx insn, const void *_prev_data)
 {
   ix86_first_cycle_multipass_data_t data
@@ -26468,7 +26470,7 @@ core2i7_first_cycle_multipass_issue (void *_data, char *ready_try, int n_ready,
 /* Revert the effect on ready_try.  */
 static void
 core2i7_first_cycle_multipass_backtrack (const void *_data,
-					 char *ready_try,
+					 signed char *ready_try,
 					 int n_ready ATTRIBUTE_UNUSED)
 {
   const_ix86_first_cycle_multipass_data_t data

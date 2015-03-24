@@ -61,6 +61,7 @@
 #include "opts.h"
 #include "dumpfile.h"
 #include "gimple-expr.h"
+#include "sched-int.h"
 
 /* Forward definitions of types.  */
 typedef struct minipool_node    Mnode;
@@ -239,6 +240,8 @@ static void arm_option_override (void);
 static unsigned HOST_WIDE_INT arm_shift_truncation_mask (enum machine_mode);
 static bool arm_cannot_copy_insn_p (rtx);
 static int arm_issue_rate (void);
+static int arm_first_cycle_multipass_dfa_lookahead (void);
+static int arm_first_cycle_multipass_dfa_lookahead_guard (rtx, int);
 static void arm_output_dwarf_dtprel (FILE *, int, rtx) ATTRIBUTE_UNUSED;
 static bool arm_output_addr_const_extra (FILE *, rtx);
 static bool arm_allocate_stack_slots_for_args (void);
@@ -583,6 +586,14 @@ static const struct attribute_spec arm_attribute_table[] =
 
 #undef TARGET_SCHED_ISSUE_RATE
 #define TARGET_SCHED_ISSUE_RATE arm_issue_rate
+
+#undef TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD
+#define TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD \
+  arm_first_cycle_multipass_dfa_lookahead
+
+#undef TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD_GUARD
+#define TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD_GUARD \
+  arm_first_cycle_multipass_dfa_lookahead_guard
 
 #undef TARGET_MANGLE_TYPE
 #define TARGET_MANGLE_TYPE arm_mangle_type
@@ -1703,7 +1714,8 @@ const struct tune_params arm_slowmul_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_fastmul_tune =
@@ -1720,7 +1732,8 @@ const struct tune_params arm_fastmul_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 /* StrongARM has early execution of branches, so a sequence that is worth
@@ -1740,7 +1753,8 @@ const struct tune_params arm_strongarm_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_xscale_tune =
@@ -1757,7 +1771,8 @@ const struct tune_params arm_xscale_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_9e_tune =
@@ -1774,7 +1789,8 @@ const struct tune_params arm_9e_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_v6t2_tune =
@@ -1791,7 +1807,8 @@ const struct tune_params arm_v6t2_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 /* Generic Cortex tuning.  Use more specific tunings if appropriate.  */
@@ -1809,7 +1826,8 @@ const struct tune_params arm_cortex_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_cortex_a8_tune =
@@ -1826,7 +1844,8 @@ const struct tune_params arm_cortex_a8_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_cortex_a7_tune =
@@ -1843,7 +1862,8 @@ const struct tune_params arm_cortex_a7_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,			/* Vectorizer costs.  */
   false,					/* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_cortex_a15_tune =
@@ -1860,7 +1880,8 @@ const struct tune_params arm_cortex_a15_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  true, true                                    /* Prefer 32-bit encodings.  */
+  true, true,                                   /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_FULL			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_cortex_a53_tune =
@@ -1877,7 +1898,8 @@ const struct tune_params arm_cortex_a53_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,			/* Vectorizer costs.  */
   false,					/* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_cortex_a57_tune =
@@ -1894,7 +1916,8 @@ const struct tune_params arm_cortex_a57_tune =
   {true, true},                                /* Prefer non short circuit.  */
   &arm_default_vec_cost,                       /* Vectorizer costs.  */
   false,                                       /* Prefer Neon for 64-bits bitops.  */
-  true, true                                   /* Prefer 32-bit encodings.  */
+  true, true,                                  /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_FULL			/* Sched L2 autopref.  */
 };
 
 /* Branches can be dual-issued on Cortex-A5, so conditional execution is
@@ -1914,7 +1937,8 @@ const struct tune_params arm_cortex_a5_tune =
   {false, false},				/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_cortex_a9_tune =
@@ -1931,7 +1955,8 @@ const struct tune_params arm_cortex_a9_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_cortex_a12_tune =
@@ -1948,7 +1973,8 @@ const struct tune_params arm_cortex_a12_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 /* armv7m tuning.  On Cortex-M4 cores for example, MOVW/MOVT take a single
@@ -1972,7 +1998,8 @@ const struct tune_params arm_v7m_tune =
   {false, false},				/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 /* Cortex-M7 tuning.  */
@@ -1991,7 +2018,8 @@ const struct tune_params arm_cortex_m7_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                 /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 /* The arm_v6m_tune is duplicated from arm_cortex_tune, rather than
@@ -2010,7 +2038,8 @@ const struct tune_params arm_v6m_tune =
   {false, false},				/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 const struct tune_params arm_fa726te_tune =
@@ -2027,7 +2056,8 @@ const struct tune_params arm_fa726te_tune =
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false                                  /* Prefer 32-bit encodings.  */
+  false, false,                                 /* Prefer 32-bit encodings.  */
+  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
 };
 
 
@@ -3080,6 +3110,22 @@ arm_option_override (void)
 
   /* Use the alternative scheduling-pressure algorithm by default.  */
   maybe_set_param_value (PARAM_SCHED_PRESSURE_ALGORITHM, SCHED_PRESSURE_MODEL,
+                         global_options.x_param_values,
+                         global_options_set.x_param_values);
+
+  /* Look through ready list and all of queue for instructions
+     relevant for L2 auto-prefetcher.  */
+  int param_sched_autopref_queue_depth;
+  if (current_tune->sched_autopref == ARM_SCHED_AUTOPREF_OFF)
+    param_sched_autopref_queue_depth = -1;
+  else if (current_tune->sched_autopref == ARM_SCHED_AUTOPREF_RANK)
+    param_sched_autopref_queue_depth = 0;
+  else if (current_tune->sched_autopref == ARM_SCHED_AUTOPREF_FULL)
+    param_sched_autopref_queue_depth = max_insn_queue_index + 1;
+  else
+    gcc_unreachable ();
+  maybe_set_param_value (PARAM_SCHED_AUTOPREF_QUEUE_DEPTH,
+			 param_sched_autopref_queue_depth,
                          global_options.x_param_values,
                          global_options_set.x_param_values);
 
@@ -29874,6 +29920,23 @@ arm_issue_rate (void)
     default:
       return 1;
     }
+}
+
+/* Return how many instructions should scheduler lookahead to choose the
+   best one.  */
+static int
+arm_first_cycle_multipass_dfa_lookahead (void)
+{
+  int issue_rate = arm_issue_rate ();
+
+  return issue_rate > 1 ? issue_rate : 0;
+}
+
+/* Enable modeling of L2 auto-prefetcher.  */
+static int
+arm_first_cycle_multipass_dfa_lookahead_guard (rtx insn, int ready_index)
+{
+  return autopref_multipass_dfa_lookahead_guard (insn, ready_index);
 }
 
 /* A table and a function to perform ARM-specific name mangling for

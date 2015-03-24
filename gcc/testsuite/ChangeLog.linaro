@@ -1,3 +1,8 @@
+2015-03-24  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Backport from trunk r220808.
+        * gcc.dg/pr64935-1.c, gcc.dg/pr64935-2.c: New tests.
+
 2015-03-18  Michael Collison  <michael.collison@linaro.org>
 
 	Backport from trunk r218012.

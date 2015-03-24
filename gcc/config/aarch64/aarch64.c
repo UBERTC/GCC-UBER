@@ -65,6 +65,7 @@
 #include "aarch64-cost-tables.h"
 #include "dumpfile.h"
 #include "tm-constrs.h"
+#include "sched-int.h"
 
 /* Defined for convenience.  */
 #define POINTER_BYTES (POINTER_SIZE / BITS_PER_UNIT)
@@ -6156,6 +6157,14 @@ aarch64_sched_issue_rate (void)
   return aarch64_tune_params->issue_rate;
 }
 
+static int
+aarch64_sched_first_cycle_multipass_dfa_lookahead (void)
+{
+  int issue_rate = aarch64_sched_issue_rate ();
+
+  return issue_rate > 1 ? issue_rate : 0;
+}
+
 /* Vectorizer cost model target hooks.  */
 
 /* Implement targetm.vectorize.builtin_vectorization_cost.  */
@@ -10394,6 +10403,10 @@ aarch_macro_fusion_pair_p (rtx prev, rtx curr)
 
 #undef TARGET_SCHED_ISSUE_RATE
 #define TARGET_SCHED_ISSUE_RATE aarch64_sched_issue_rate
+
+#undef TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD
+#define TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD \
+  aarch64_sched_first_cycle_multipass_dfa_lookahead
 
 #undef TARGET_TRAMPOLINE_INIT
 #define TARGET_TRAMPOLINE_INIT aarch64_trampoline_init

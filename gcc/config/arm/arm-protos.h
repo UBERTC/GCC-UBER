@@ -249,6 +249,13 @@ struct cpu_vec_costs {
 
 struct cpu_cost_table;
 
+enum arm_sched_autopref
+  {
+    ARM_SCHED_AUTOPREF_OFF,
+    ARM_SCHED_AUTOPREF_RANK,
+    ARM_SCHED_AUTOPREF_FULL
+  };
+
 struct tune_params
 {
   bool (*rtx_costs) (rtx, RTX_CODE, RTX_CODE, int *, bool);
@@ -277,6 +284,8 @@ struct tune_params
   /* Prefer 32-bit encoding instead of 16-bit encoding where subset of flags
      would be set.  */
   bool disparage_partial_flag_setting_t16_encodings;
+  /* Depth of scheduling queue to check for L2 autoprefetcher.  */
+  enum arm_sched_autopref sched_autopref;
 };
 
 extern const struct tune_params *current_tune;

@@ -170,7 +170,7 @@ struct ready_list
   int n_debug;
 };
 
-extern char *ready_try;
+extern signed char *ready_try;
 extern struct ready_list ready;
 
 extern int max_issue (struct ready_list *, int, state_t, bool, int *);
@@ -794,6 +794,32 @@ struct reg_set_data
   struct reg_set_data *next_insn_set;
 };
 
+enum autopref_multipass_data_status {
+  /* Entry is irrelevant for auto-prefetcher.  */
+  AUTOPREF_MULTIPASS_DATA_IRRELEVANT = -2,
+  /* Entry is uninitialized.  */
+  AUTOPREF_MULTIPASS_DATA_UNINITIALIZED = -1,
+  /* Entry is relevant for auto-prefetcher and insn can be delayed
+     to allow another insn through.  */
+  AUTOPREF_MULTIPASS_DATA_NORMAL = 0,
+  /* Entry is relevant for auto-prefetcher, but insn should not be
+     delayed as that will break scheduling.  */
+  AUTOPREF_MULTIPASS_DATA_DONT_DELAY = 1
+};
+
+/* Data for modeling cache auto-prefetcher.  */
+struct autopref_multipass_data_
+{
+  /* Base part of memory address.  */
+  rtx base;
+  /* Memory offset.  */
+  int offset;
+  /* Entry status.  */
+  enum autopref_multipass_data_status status;
+};
+typedef struct autopref_multipass_data_ autopref_multipass_data_def;
+typedef autopref_multipass_data_def *autopref_multipass_data_t;
+
 struct _haifa_insn_data
 {
   /* We can't place 'struct _deps_list' into h_i_d instead of deps_list_t
@@ -888,6 +914,16 @@ struct _haifa_insn_data
      pressure excess (between source and target).  */
   int reg_pressure_excess_cost_change;
   int model_index;
+
+  /* Original order of insns in the ready list.  */
+  int rfs_debug_orig_order;
+
+  /* The deciding reason for INSN's place in the ready list.  */
+  int last_rfs_win;
+
+  /* Two entries for cache auto-prefetcher model: one for mem reads,
+     and one for mem writes.  */
+  autopref_multipass_data_def autopref_multipass_data[2];
 };
 
 typedef struct _haifa_insn_data haifa_insn_data_def;
@@ -909,6 +945,8 @@ extern vec<haifa_insn_data_def> h_i_d;
   (HID (INSN)->reg_pressure_excess_cost_change)
 #define INSN_PRIORITY_STATUS(INSN) (HID (INSN)->priority_status)
 #define INSN_MODEL_INDEX(INSN) (HID (INSN)->model_index)
+#define INSN_AUTOPREF_MULTIPASS_DATA(INSN) \
+  (HID (INSN)->autopref_multipass_data)
 
 typedef struct _haifa_deps_insn_data haifa_deps_insn_data_def;
 typedef haifa_deps_insn_data_def *haifa_deps_insn_data_t;
@@ -1141,9 +1179,7 @@ enum SCHED_FLAGS {
 
 enum SPEC_SCHED_FLAGS {
   COUNT_SPEC_IN_CRITICAL_PATH = 1,
-  PREFER_NON_DATA_SPEC = COUNT_SPEC_IN_CRITICAL_PATH << 1,
-  PREFER_NON_CONTROL_SPEC = PREFER_NON_DATA_SPEC << 1,
-  SEL_SCHED_SPEC_DONT_CHECK_CONTROL = PREFER_NON_CONTROL_SPEC << 1
+  SEL_SCHED_SPEC_DONT_CHECK_CONTROL = COUNT_SPEC_IN_CRITICAL_PATH << 1
 };
 
 #define NOTE_NOT_BB_P(NOTE) (NOTE_P (NOTE) && (NOTE_KIND (NOTE)	\
@@ -1357,7 +1393,8 @@ extern int cycle_issued_insns;
 extern int issue_rate;
 extern int dfa_lookahead;
 
-extern void ready_sort (struct ready_list *);
+extern int autopref_multipass_dfa_lookahead_guard (rtx, int);
+
 extern rtx ready_element (struct ready_list *, int);
 extern rtx *ready_lastpos (struct ready_list *);
 
