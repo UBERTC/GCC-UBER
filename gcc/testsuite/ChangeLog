@@ -1,3 +1,129 @@
+2015-03-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/58923
+	* g++.dg/other/virtual3.C: New.
+
+2015-03-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/60130
+	* g++.dg/cpp0x/vt-60130.C: New.
+
+2015-03-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/61971
+	* g++.dg/warn/Warray-bounds-7.C: New.
+
+2015-03-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/60067
+	* g++.dg/template/defarg18.C: New.
+
+2015-03-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/59988
+	* g++.dg/cpp0x/vt-59988.C: New.
+
+2015-03-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65533
+	* gcc.dg/pr65533.c: New test.
+
+2015-03-24  Andre Vehreschild  <vehre@gmx.de>
+
+	* gfortran.dg/allocate_alloc_opt_13.f90: Added tests for
+	source= and mold= expressions functionality.
+	* gfortran.dg/allocate_class_4.f90: New test.
+	* gfortran.dg/unlimited_polymorphic_20.f90: Added test whether
+	copying an unlimited polymorhpic object containing a char array
+	to another unlimited polymorphic object respects the _len
+	component.
+	* gfortran.dg/unlimited_polymorphic_22.f90: Extended to check
+	whether deferred length char array allocate works, unlimited
+	polymorphic object allocation from a string works and if
+	allocating an array of deferred length strings works.
+	* gfortran.dg/unlimited_polymorphic_24.f03: New test.
+
+2015-03-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65513
+	* g++.dg/cpp0x/constexpr-array11.C: New.
+
+2015-03-24  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/65517
+	* gcc.dg/torture/pr65517.c: New testcase.
+
+2015-03-24  Tobias Burnus  <burnus@net-b.de>
+
+	* gfortran.dg/coindexed_1.f90: Moved from
+	gfortran.dg/coarray/coindexed_3.f90; added dg-options.
+
+2015-03-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR testsuite/65506
+	* gcc.dg/pr29215.c: Dump and analyze ccp1 dump instead of
+	gimple dump.
+
+	PR target/65523
+	* gcc.target/i386/pr65523.c: New test.
+
+	PR ipa/65475
+	* g++.dg/lto/pr65475_0.C: Use dg-lto-options instead of
+	dg-options.
+	* g++.dg/lto/pr65475b_0.C: Likewise.
+
+2015-03-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/65505
+	* gcc.target/sh/torture/pr65505.c: New.
+
+2015-03-23  Martin Sebor  <msebor@redhat.com>
+
+	PR testsuite/63175
+	* gcc.dg/vect/costmodel/ppc/costmodel-bb-slp-9a-pr63175.c: Scan
+	assembly for lvx in addition to lxv.
+
+2015-03-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65504
+	* gfortran.dg/pr65504.f90: New test.
+
+	PR ipa/65521
+	* gcc.dg/pr65521.c: New test.
+
+2015-03-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65518
+	* gcc.dg/vect/pr65518.c: New testcase.
+
+2015-03-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65494
+	* gcc.dg/vect/pr65494.c: New testcase.
+
+2015-03-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR preprocessor/65238
+	* c-c++-common/cpp/pr65238-1.c: New test.
+	* gcc.dg/cpp/pr65238-2.c: New test.
+	* gcc.dg/cpp/trad/pr65238-3.c: New test.
+	* gcc.dg/cpp/trad/pr65238-4.c: New test.
+
+2015-03-23  Paul Thomas  <pault@gcc.gnu.org>
+	    Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/64952
+	* gfortran.dg/elemental_dependency_4.f90: New.
+	* gfortran.dg/elemental_dependency_5.f90: New.
+
+2015-03-22  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65475
+	* g++.dg/lto/pr65475b_0.C: New testcase.
+	* g++.dg/lto/pr65475b_1.C: New testcase.
+	* g++.dg/lto/pr65475c_0.C: New testcase.
+	* g++.dg/lto/pr65475c_1.C: New testcase.
+
 2015-03-21  Tobias Burnus  <burnus@net-b.de>
 
 	* gfortran.dg/coarray_38.f90: New.
