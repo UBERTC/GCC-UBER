@@ -23457,12 +23457,19 @@ counter_mode (rtx count_exp)
 static rtx
 ix86_copy_addr_to_reg (rtx addr)
 {
+  rtx reg;
   if (GET_MODE (addr) == Pmode || GET_MODE (addr) == VOIDmode)
-    return copy_addr_to_reg (addr);
+    {
+      reg = copy_addr_to_reg (addr);
+      REG_POINTER (reg) = 1;
+      return reg;
+    }
   else
     {
       gcc_assert (GET_MODE (addr) == DImode && Pmode == SImode);
-      return gen_rtx_SUBREG (SImode, copy_to_mode_reg (DImode, addr), 0);
+      reg = copy_to_mode_reg (DImode, addr);
+      REG_POINTER (reg) = 1;
+      return gen_rtx_SUBREG (SImode, reg, 0);
     }
 }
 
@@ -24354,6 +24361,8 @@ expand_set_or_movmem_prologue_epilogue_by_misaligned_moves (rtx destmem, rtx src
       *destptr = expand_simple_binop (GET_MODE (*destptr), PLUS, *destptr,
 				      GEN_INT (prolog_size),
 				      NULL_RTX, 1, OPTAB_DIRECT);
+      if (REG_P (*destptr) && REG_P (saveddest) && REG_POINTER (saveddest))
+	REG_POINTER (*destptr) = 1;
       *destptr = expand_simple_binop (GET_MODE (*destptr), AND, *destptr,
 				      GEN_INT (-desired_align),
 				      *destptr, 1, OPTAB_DIRECT);
@@ -24363,8 +24372,8 @@ expand_set_or_movmem_prologue_epilogue_by_misaligned_moves (rtx destmem, rtx src
 				       saveddest, 1, OPTAB_DIRECT);
       /* Adjust srcptr and count.  */
       if (!issetmem)
-	*srcptr = expand_simple_binop (GET_MODE (*srcptr), MINUS, *srcptr, saveddest,
-					*srcptr, 1, OPTAB_DIRECT);
+	*srcptr = expand_simple_binop (GET_MODE (*srcptr), MINUS, *srcptr,
+				       saveddest, *srcptr, 1, OPTAB_DIRECT);
       *count = expand_simple_binop (GET_MODE (*count), PLUS, *count,
 				    saveddest, *count, 1, OPTAB_DIRECT);
       /* We copied at most size + prolog_size.  */
@@ -30588,6 +30597,8 @@ struct builtin_isa {
 
 static struct builtin_isa ix86_builtins_isa[(int) IX86_BUILTIN_MAX];
 
+/* Bits that can still enable any inclusion of a builtin.  */
+static HOST_WIDE_INT deferred_isa_values = 0;
 
 /* Add an ix86 target builtin function with CODE, NAME and TYPE.  Save the MASK
    of which isa_flags to use in the ix86_builtins_isa array.  Stores the
@@ -30631,6 +30642,9 @@ def_builtin (HOST_WIDE_INT mask, const char *name,
 	}
       else
 	{
+	  /* Just a MASK where set_and_not_built_p == true can potentially
+	     include a builtin.  */
+	  deferred_isa_values |= mask;
 	  ix86_builtins[(int) code] = NULL_TREE;
 	  ix86_builtins_isa[(int) code].tcode = tcode;
 	  ix86_builtins_isa[(int) code].name = name;
@@ -30666,6 +30680,12 @@ def_builtin_const (HOST_WIDE_INT mask, const char *name,
 static void
 ix86_add_new_builtins (HOST_WIDE_INT isa)
 {
+  if ((isa & deferred_isa_values) == 0)
+    return;
+
+  /* Bits in ISA value can be removed from potential isa values.  */
+  deferred_isa_values &= ~isa;
+
   int i;
   tree saved_current_target_pragma = current_target_pragma;
   current_target_pragma = NULL_TREE;
