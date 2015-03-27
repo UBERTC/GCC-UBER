@@ -286,6 +286,8 @@ struct tune_params
   bool disparage_partial_flag_setting_t16_encodings;
   /* Depth of scheduling queue to check for L2 autoprefetcher.  */
   enum arm_sched_autopref sched_autopref;
+  /* Bitfield encoding the fuseable pairs of instructions.  */
+  unsigned int fuseable_ops;
 };
 
 extern const struct tune_params *current_tune;

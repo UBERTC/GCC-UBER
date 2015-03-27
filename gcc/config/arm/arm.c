@@ -238,6 +238,7 @@ static void arm_expand_builtin_va_start (tree, rtx);
 static tree arm_gimplify_va_arg_expr (tree, tree, gimple_seq *, gimple_seq *);
 static void arm_option_override (void);
 static unsigned HOST_WIDE_INT arm_shift_truncation_mask (enum machine_mode);
+static bool arm_macro_fusion_p (void);
 static bool arm_cannot_copy_insn_p (rtx);
 static int arm_issue_rate (void);
 static int arm_first_cycle_multipass_dfa_lookahead (void);
@@ -279,6 +280,8 @@ static int arm_cortex_m_branch_cost (bool, bool);
 
 static bool arm_vectorize_vec_perm_const_ok (enum machine_mode vmode,
 					     const unsigned char *sel);
+
+static bool aarch_macro_fusion_pair_p (rtx, rtx);
 
 static int arm_builtin_vectorization_cost (enum vect_cost_for_stmt type_of_cost,
 					   tree vectype,
@@ -384,6 +387,12 @@ static const struct attribute_spec arm_attribute_table[] =
 
 #undef  TARGET_COMP_TYPE_ATTRIBUTES
 #define TARGET_COMP_TYPE_ATTRIBUTES arm_comp_type_attributes
+
+#undef TARGET_SCHED_MACRO_FUSION_P
+#define TARGET_SCHED_MACRO_FUSION_P arm_macro_fusion_p
+
+#undef TARGET_SCHED_MACRO_FUSION_PAIR_P
+#define TARGET_SCHED_MACRO_FUSION_PAIR_P aarch_macro_fusion_pair_p
 
 #undef  TARGET_SET_DEFAULT_TYPE_ATTRIBUTES
 #define TARGET_SET_DEFAULT_TYPE_ATTRIBUTES arm_set_default_type_attributes
@@ -1700,6 +1709,9 @@ const struct cpu_cost_table v7m_extra_costs =
   }
 };
 
+#define ARM_FUSE_NOTHING	(0)
+#define ARM_FUSE_MOVW_MOVT	(1 << 0)
+
 const struct tune_params arm_slowmul_tune =
 {
   arm_slowmul_rtx_costs,
@@ -1715,7 +1727,8 @@ const struct tune_params arm_slowmul_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_fastmul_tune =
@@ -1733,7 +1746,8 @@ const struct tune_params arm_fastmul_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 /* StrongARM has early execution of branches, so a sequence that is worth
@@ -1754,7 +1768,8 @@ const struct tune_params arm_strongarm_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_xscale_tune =
@@ -1772,7 +1787,8 @@ const struct tune_params arm_xscale_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_9e_tune =
@@ -1790,7 +1806,8 @@ const struct tune_params arm_9e_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_v6t2_tune =
@@ -1808,7 +1825,8 @@ const struct tune_params arm_v6t2_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 /* Generic Cortex tuning.  Use more specific tunings if appropriate.  */
@@ -1827,7 +1845,8 @@ const struct tune_params arm_cortex_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_cortex_a8_tune =
@@ -1845,7 +1864,8 @@ const struct tune_params arm_cortex_a8_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_cortex_a7_tune =
@@ -1863,7 +1883,8 @@ const struct tune_params arm_cortex_a7_tune =
   &arm_default_vec_cost,			/* Vectorizer costs.  */
   false,					/* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_cortex_a15_tune =
@@ -1881,7 +1902,8 @@ const struct tune_params arm_cortex_a15_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   true, true,                                   /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_FULL			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_FULL,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_cortex_a53_tune =
@@ -1899,7 +1921,8 @@ const struct tune_params arm_cortex_a53_tune =
   &arm_default_vec_cost,			/* Vectorizer costs.  */
   false,					/* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_MOVW_MOVT				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_cortex_a57_tune =
@@ -1917,7 +1940,8 @@ const struct tune_params arm_cortex_a57_tune =
   &arm_default_vec_cost,                       /* Vectorizer costs.  */
   false,                                       /* Prefer Neon for 64-bits bitops.  */
   true, true,                                  /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_FULL			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_FULL,			/* Sched L2 autopref.  */
+  ARM_FUSE_MOVW_MOVT				/* Fuseable pairs of instructions.  */
 };
 
 /* Branches can be dual-issued on Cortex-A5, so conditional execution is
@@ -1938,7 +1962,8 @@ const struct tune_params arm_cortex_a5_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_cortex_a9_tune =
@@ -1956,7 +1981,8 @@ const struct tune_params arm_cortex_a9_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_cortex_a12_tune =
@@ -1974,7 +2000,8 @@ const struct tune_params arm_cortex_a12_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_MOVW_MOVT				/* Fuseable pairs of instructions.  */
 };
 
 /* armv7m tuning.  On Cortex-M4 cores for example, MOVW/MOVT take a single
@@ -1999,7 +2026,8 @@ const struct tune_params arm_v7m_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 /* Cortex-M7 tuning.  */
@@ -2019,7 +2047,8 @@ const struct tune_params arm_cortex_m7_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 /* The arm_v6m_tune is duplicated from arm_cortex_tune, rather than
@@ -2039,7 +2068,8 @@ const struct tune_params arm_v6m_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 const struct tune_params arm_fa726te_tune =
@@ -2057,7 +2087,8 @@ const struct tune_params arm_fa726te_tune =
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
   false, false,                                 /* Prefer 32-bit encodings.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  ARM_FUSE_NOTHING				/* Fuseable pairs of instructions.  */
 };
 
 
@@ -31699,6 +31730,72 @@ arm_validize_comparison (rtx *comparison, rtx * op1, rtx * op2)
 
   return false;
 
+}
+
+static bool
+arm_macro_fusion_p (void)
+{
+  return current_tune->fuseable_ops != ARM_FUSE_NOTHING;
+}
+
+
+static bool
+aarch_macro_fusion_pair_p (rtx prev, rtx curr)
+{
+  rtx set_dest;
+  rtx prev_set = single_set (prev);
+  rtx curr_set = single_set (curr);
+
+  if (!prev_set
+      || !curr_set)
+    return false;
+
+  if (any_condjump_p (curr))
+    return false;
+
+  if (!arm_macro_fusion_p ())
+    return false;
+
+  if (current_tune->fuseable_ops & ARM_FUSE_MOVW_MOVT)
+    {
+      /* We are trying to fuse
+         movw imm / movt imm
+         instructions as a group that gets scheduled together.  */
+
+      set_dest = SET_DEST (curr_set);
+
+      if (GET_MODE (set_dest) != SImode)
+        return false;
+
+      /* We are trying to match:
+         prev (movw)  == (set (reg r0) (const_int imm16))
+         curr (movt) == (set (zero_extract (reg r0)
+                                           (const_int 16)
+                                           (const_int 16))
+                             (const_int imm16_1))
+         or
+         prev (movw) == (set (reg r1)
+                              (high (symbol_ref ("SYM"))))
+         curr (movt) == (set (reg r0)
+                             (lo_sum (reg r1)
+                                     (symbol_ref ("SYM"))))  */
+      if (GET_CODE (set_dest) == ZERO_EXTRACT)
+        {
+          if (CONST_INT_P (SET_SRC (curr_set))
+              && CONST_INT_P (SET_SRC (prev_set))
+              && REG_P (XEXP (set_dest, 0))
+              && REG_P (SET_DEST (prev_set))
+              && REGNO (XEXP (set_dest, 0)) == REGNO (SET_DEST (prev_set)))
+            return true;
+        }
+      else if (GET_CODE (SET_SRC (curr_set)) == LO_SUM
+               && REG_P (SET_DEST (curr_set))
+               && REG_P (SET_DEST (prev_set))
+               && GET_CODE (SET_SRC (prev_set)) == HIGH
+               && REGNO (SET_DEST (curr_set)) == REGNO (SET_DEST (prev_set)))
+             return true;
+    }
+  return false;
 }
 
 /* Implement the TARGET_ASAN_SHADOW_OFFSET hook.  */

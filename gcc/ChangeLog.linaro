@@ -1,3 +1,42 @@
+2015-03-27  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r219470.
+	2015-01-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm-protos.h (tune_params): Add fuseable_ops field.
+	* config/arm/arm.c (arm_macro_fusion_p): New function.
+	(arm_macro_fusion_pair_p): Likewise.
+	(TARGET_SCHED_MACRO_FUSION_P): Define.
+	(TARGET_SCHED_MACRO_FUSION_PAIR_P): Likewise.
+	(ARM_FUSE_NOTHING): Likewise.
+	(ARM_FUSE_MOVW_MOVT): Likewise.
+	(arm_slowmul_tune, arm_fastmul_tune, arm_strongarm_tune,
+	arm_xscale_tune, arm_9e_tune, arm_v6t2_tune, arm_cortex_tune,
+	arm_cortex_a8_tune, arm_cortex_a7_tune, arm_cortex_a15_tune,
+	arm_cortex_a53_tune, arm_cortex_a57_tune, arm_cortex_a9_tune,
+	arm_cortex_a12_tune, arm_v7m_tune, arm_v6m_tune, arm_fa726te_tune
+	arm_cortex_a5_tune): Specify fuseable_ops value.
+
+2015-03-27  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r218635.
+	2014-12-11  Renlin Li  <renlin.li@arm.com>
+
+	* config/aarch64/aarch64-cores.def: Change all AARCH64_FL_FPSIMD to
+	AARCH64_FL_FOR_ARCH8.
+	* config/aarch64/aarch64.c (all_cores): Use FLAGS from
+	aarch64-cores.def file only.
+
+2015-03-27  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r218432.
+	2014-12-05  Renlin Li  <renlin.li@arm.com>
+
+	* config/aarch64/aarch64-opts.h (AARCH64_CORE): Rename IDENT to SCHED.
+	* config/aarch64/aarch64.h (AARCH64_CORE): Likewise.
+	* config/aarch64/aarch64.c (AARCH64_CORE): Rename X to IDENT,
+	IDENT to SCHED.
+
 2015-03-24  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
 
 	Backport from trunk r220808.

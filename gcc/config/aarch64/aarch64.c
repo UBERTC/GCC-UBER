@@ -362,13 +362,11 @@ struct processor
 /* Processor cores implementing AArch64.  */
 static const struct processor all_cores[] =
 {
-#define AARCH64_CORE(NAME, X, IDENT, ARCH, FLAGS, COSTS) \
-  {NAME, IDENT, #ARCH, ARCH,\
-    FLAGS | AARCH64_FL_FOR_ARCH##ARCH, &COSTS##_tunings},
+#define AARCH64_CORE(NAME, IDENT, SCHED, ARCH, FLAGS, COSTS) \
+  {NAME, SCHED, #ARCH, ARCH, FLAGS, &COSTS##_tunings},
 #include "aarch64-cores.def"
 #undef AARCH64_CORE
-  {"generic", cortexa53, "8", 8,\
-    AARCH64_FL_FPSIMD | AARCH64_FL_FOR_ARCH8, &generic_tunings},
+  {"generic", cortexa53, "8", 8, AARCH64_FL_FOR_ARCH8, &generic_tunings},
   {NULL, aarch64_none, NULL, 0, 0, NULL}
 };
 
