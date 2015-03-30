@@ -1,6 +1,7 @@
 2015-03-27  Michael Collison  <michael.collison@linaro.org>
 
-	Backport from trunk r219470.
+	Backport from trunk r218432, r218635, r219470.
+
 	2015-01-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	* config/arm/arm-protos.h (tune_params): Add fuseable_ops field.
@@ -17,9 +18,6 @@
 	arm_cortex_a12_tune, arm_v7m_tune, arm_v6m_tune, arm_fa726te_tune
 	arm_cortex_a5_tune): Specify fuseable_ops value.
 
-2015-03-27  Michael Collison  <michael.collison@linaro.org>
-
-	Backport from trunk r218635.
 	2014-12-11  Renlin Li  <renlin.li@arm.com>
 
 	* config/aarch64/aarch64-cores.def: Change all AARCH64_FL_FPSIMD to
@@ -27,9 +25,6 @@
 	* config/aarch64/aarch64.c (all_cores): Use FLAGS from
 	aarch64-cores.def file only.
 
-2015-03-27  Michael Collison  <michael.collison@linaro.org>
-
-	Backport from trunk r218432.
 	2014-12-05  Renlin Li  <renlin.li@arm.com>
 
 	* config/aarch64/aarch64-opts.h (AARCH64_CORE): Rename IDENT to SCHED.
@@ -39,7 +34,10 @@
 
 2015-03-24  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
 
-	Backport from trunk r220808.
+	Backport from trunk r210736, r210737, r210744, r210746, r210747,
+	r210845, r213708, r213709, r216620, r216621, r216622, r216623,
+	r216624, r219787, r219789, r219893, r220316, r220808.
+
 	2015-02-19  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
 
         * haifa-sched.c (enum rfs_decision, rfs_str): Remove RFS_DEBUG.
@@ -50,7 +48,6 @@
         for ready list trimming.  Improve debug output.
         * sched-int.h (ready_sort): Remove global declaration.
 
-	Backport from trunk r220316.
 	2015-02-01  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
 
 	* haifa-sched.c (INSN_RFS_DEBUG_ORIG_ORDER): New access macro.
@@ -59,7 +56,6 @@
 	(ready_sort): Sort DEBUG_INSNs separately from normal INSNs.
 	* sched-int.h (struct _haifa_insn_data): New field rfs_debug_orig_order.
 
-	Backport from trunk r219893.
 	2015-01-20  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
 
 	* config/arm/arm-protos.h (enum arm_sched_autopref): New constants.
@@ -67,7 +63,8 @@
 	* arm.c (arm_*_tune): Update.
 	(arm_option_override): Update.
 
-	Backport from trunk r219789.
+	2015-01-17  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
 	* config/arm/arm-protos.h (struct tune_params): New field
 	sched_autopref_queue_depth.
 	* config/arm/arm.c (sched-int.h): Include header.
@@ -101,9 +98,6 @@
 
 	2015-01-17  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
 
-	Backport from trunk r219787.
-	2015-01-17  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
-
 	* config/aarch64/aarch64.c
 	(aarch64_sched_first_cycle_multipass_dfa_lookahead): Implement hook.
 	(TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD): Define.
@@ -111,25 +105,23 @@
 	(arm_first_cycle_multipass_dfa_lookahead): Implement hook.
 	(TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD): Define.
 
-	Backport from trunk r216624.
+	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
+
         * rtlanal.c (get_base_term): Handle SCRATCH.
 
 	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
 
-	Backport from trunk r216623.
         * haifa-sched.c (sched_init): Disable max_issue when scheduling for
         register pressure.
 
 	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
 
-	Backport from trunk r216622.
         * haifa-sched.c (cached_first_cycle_multipass_dfa_lookahead,)
         (cached_issue_rate): Remove.  Use dfa_lookahead and issue_rate instead.
         (max_issue, choose_ready, sched_init): Update.
 
 	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
 
-	Backport from trunk r216621.
 	* sched-int.h (struct _haifa_insn_data:last_rfs_win): New field.
 	* haifa-sched.c (INSN_LAST_RFS_WIN): New access macro.
 	(rfs_result): Set INSN_LAST_RFS_WIN.  Update signature.
@@ -143,9 +135,6 @@
 
 	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
 
-	Backport from trunk r216620.
-	2014-10-24  Maxim Kuvyrkov  <maxim.kuvyrkov@gmail.com>
-
 	* haifa-sched.c (sched_class_regs_num, call_used_regs_num): New static
 	arrays.  Use sched_class_regs_num instead of ira_class_hard_regs_num.
 	(print_curr_reg_pressure, setup_insn_reg_pressure_info,)
@@ -156,7 +145,8 @@
 	(schedule_block): Use it.
 	(alloc_global_sched_pressure_data): Calculate call_used_regs_num.
 
-	Backport from trunk r213709.
+	2014-08-07  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
 	* haifa-sched.c (SCHED_SORT): Delete.  Macro used exactly once.
 	(enum rfs_decition:RFS_*): New constants wrapped in an enum.
 	(rfs_str): String corresponding to RFS_* constants.
@@ -172,19 +162,16 @@
 
 	2014-08-07  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
 
-	Backport from trunk r213708.
-	2014-08-07  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
-
 	* haifa-sched.c (rank_for_schedule): Fix INSN_TICK-based heuristics.
 
-	Backport from trunk r210845.
 	2014-05-23  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
 
 	Fix bootstrap error on ia64
 	* config/ia64/ia64.c (ia64_first_cycle_multipass_dfa_lookahead_guard):
 	Return default value.
 
-	Backport from trunk r210747.
+	2014-05-22  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
 	Cleanup and improve multipass_dfa_lookahead_guard
         * config/i386/i386.c (core2i7_first_cycle_multipass_filter_ready_try,)
         (core2i7_first_cycle_multipass_begin,)
@@ -210,7 +197,6 @@
 
 	2014-05-22  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
 
-	Backport from trunk r210746.
 	Remove IA64 speculation tweaking flags
         * config/ia64/ia64.c (ia64_set_sched_flags): Delete handling of
         speculation tuning flags.
@@ -223,7 +209,6 @@
         * sel-sched.c (process_spec_exprs): Remove handling of
         PREFER_NON_CONTROL_SPEC and PREFER_NON_DATA_SPEC.
 
-	Backport from trunk r210744.
 	2014-05-22  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
 
 	Improve scheduling debug output
@@ -249,7 +234,9 @@
 
 2015-03-18  Michael Collison  <michael.collison@linaro.org>
 
-	Backport from trunk r218525.
+	Backport from trunk r218007, r218010, r218012, r218013, r218014,
+	r218525.
+
 	2014-12-09  Andrew Pinski  apinski@cavium.com
             Kyrylo Tkachov  kyrylo.tkachov@arm.com
 
@@ -257,18 +244,12 @@
 	(thunderx_tunings): Add AARCH64_FUSE_CMP_BRANCH to fuseable_ops.
 	(aarch_macro_fusion_pair_p): Handle AARCH64_FUSE_CMP_BRANCH.
 
-2015-03-18  Michael Collison  <michael.collison@linaro.org>
-
-	Backport from trunk r218014.
 	2014-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	* config/aarch64/aarch64.c (AARCH64_FUSE_ADRP_LDR): Define.
 	(cortexa53_tunings): Specify AARCH64_FUSE_ADRP_LDR in fuseable_ops.
 	(aarch_macro_fusion_pair_p): Handle AARCH64_FUSE_ADRP_LDR.
 
-2015-03-18  Michael Collison  <michael.collison@linaro.org>
-
-	Backport from trunk r218013.
 	2014-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	* config/aarch64/aarch64.c (AARCH64_FUSE_MOVK_MOVK): Define.
@@ -276,9 +257,6 @@
 	(cortexa57_tunings): Likewise.
 	(aarch_macro_fusion_pair_p): Handle AARCH64_FUSE_MOVK_MOVK.
 
-2015-03-18  Michael Collison  <michael.collison@linaro.org>
-
-	Backport from trunk r218012.
 	2014-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	* sched-deps.c (sched_macro_fuse_insns): Do not check modified_in_p
@@ -286,9 +264,6 @@
 	* doc/tm.texi (TARGET_SCHED_MACRO_FUSION_PAIR_P): Update description.
 	* target.def (TARGET_SCHED_MACRO_FUSION_PAIR_P): Update description.
 
-2015-03-18  Michael Collison  <michael.collison@linaro.org>
-
-	Backport from trunk r218010.
 	2014-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	* config/aarch64/aarch64.c: Include tm-constrs.h
@@ -297,9 +272,6 @@
 	(cortexa53_tunings): Likewise.
 	(aarch_macro_fusion_pair_p): Handle AARCH64_FUSE_ADRP_ADD.
 
-2015-03-18  Michael Collison  <michael.collison@linaro.org>
-
-	Backport from trunk r218007.
 	2014-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	* config/aarch64/aarch64-protos.h (struct tune_params): Add
