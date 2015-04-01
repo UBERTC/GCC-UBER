@@ -1,3 +1,83 @@
+2015-03-31  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/58945
+	* config/i386/sync.md (atomic_compare_and_swap<dwi>_doubleword):
+	Do not split operands 0 and operands 2 to halfmode.
+	(atomic_compare_and_swap<mode>): Update for
+	atomic_compare_and_swap<dwi>_doubleword changes.
+
+2015-03-31  Jan Hubicka  <hubicka@ucw.cz>
+
+	* tree.c (need_assembler_name_p): Artificial types have no ODR names.
+	* ipa-devirt.c (warn_odr): Do not try to apply ODR cache when
+	no caching is done.
+
+2015-03-31  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/65557
+	* ipa-icf.c (sem_function::equals_wpa): Check if IPA CP
+	has already filled up function summary.
+	(sem_item_optimizer::update_hash_by_addr_refs): Likewise.
+
+2015-03-31  Richard Biener  <rguenther@suse.de>
+
+	* tree-sra.c (create_access_replacement): Drop under-/over-alignment
+	of types.
+
+2015-03-31  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_function_num_hotpatch_hw): Allow hotpatching
+	nested functions.
+	(s390_reorg): Adapt to new signature of s390_function_num_hotpatch_hw.
+	(s390_asm_output_function_label): Adapt to new signature of
+	s390_function_num_hotpatch_hw
+	Optimise the code generating assembler output.
+	Add comments to assembler file.
+
+2015-03-31  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/65626
+	* tree-cfgcleanup.c (fixup_noreturn_call): Only split the block
+	of the noreturn call so it is last and cleanup_control_flow_bb
+	can do the CFG part.
+
+2015-03-31  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR target/65531
+	* ipa-chkp.c (chkp_maybe_create_clone): Don't set
+	same_comdat_group for external symbols.
+	* symtab.c (symtab_node::verify_symtab_nodes): Avoid
+	infinite same_comdat_group traversal loop.
+
+2015-03-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR plugins/61176
+	* Makefile.in (install-plugin): Add all gcc/*.{h,def} files
+	automatically to $headers.
+
+2015-03-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR ipa/65610
+	* ipa-utils.h (inlined_polymorphic_ctor_dtor_block_p): Declare.
+	* ipa-polymorphic-call.c (inlined_polymorphic_ctor_dtor_block_p): New
+	function.
+	(decl_maybe_in_construction_p, noncall_stmt_may_be_vtbl_ptr_store):
+	Use it.
+	* ipa-prop.c (param_type_may_change_p): Likewise.
+	* tree-ssa-live.c: Include ipa-utils.h and its dependencies.
+	(remove_unused_scope_block_p): Add in_ctor_dtor_block
+	argument.  Before inlining, preserve
+	inlined_polymorphic_ctor_dtor_block_p blocks and the outermost block
+	with FUNCTION_DECL BLOCK_ABSTRACT_ORIGIN inside of them.  Adjust
+	recursive calls.
+	(remove_unused_locals): Adjust remove_unused_scope_block_p caller.
+
+2015-03-27  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65076
+	* ipa-inline.c (edge_badness): Base denominator on callee's
+	grwoth squared.
+
 2015-03-27  Martin Jambor  <mjambor@suse.cz>
 
 	PR ipa/65478
