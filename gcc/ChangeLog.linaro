@@ -1,5 +1,20 @@
 2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r218526.
+	2014-12-09  Wilco Dijkstra  <wilco.dijkstra@arm.com>
+
+	* gcc/config/aarch64/aarch64-protos.h (tune-params): Add reasociation
+	tuning parameters.
+	* gcc/config/aarch64/aarch64.c (TARGET_SCHED_REASSOCIATION_WIDTH):
+	Define.
+	(aarch64_reassociation_width): New function.
+	(generic_tunings): Add reassociation tuning parameters.
+	(cortexa53_tunings): Likewise.
+	(cortexa57_tunings): Likewise.
+	(thunderx_tunings): Likewise.
+
+2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r218866.
 	2014-12-18  Wilco Dijkstra  <wilco.dijkstra@arm.com>
 

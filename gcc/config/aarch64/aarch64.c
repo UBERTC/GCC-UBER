@@ -311,7 +311,10 @@ static const struct tune_params generic_tunings =
   &generic_vector_cost,
   NAMED_PARAM (memmov_cost, 4),
   NAMED_PARAM (issue_rate, 2),
-  NAMED_PARAM (fuseable_ops, AARCH64_FUSE_NOTHING)
+  NAMED_PARAM (fuseable_ops, AARCH64_FUSE_NOTHING),
+  2,	/* int_reassoc_width.  */
+  4,	/* fp_reassoc_width.  */
+  1	/* vec_reassoc_width.  */
 };
 
 static const struct tune_params cortexa53_tunings =
@@ -323,7 +326,10 @@ static const struct tune_params cortexa53_tunings =
   NAMED_PARAM (memmov_cost, 4),
   NAMED_PARAM (issue_rate, 2),
   NAMED_PARAM (fuseable_ops, (AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD
-                             | AARCH64_FUSE_MOVK_MOVK | AARCH64_FUSE_ADRP_LDR))
+                             | AARCH64_FUSE_MOVK_MOVK | AARCH64_FUSE_ADRP_LDR)),
+  2,	/* int_reassoc_width.  */
+  4,	/* fp_reassoc_width.  */
+  1	/* vec_reassoc_width.  */
 };
 
 static const struct tune_params cortexa57_tunings =
@@ -334,7 +340,10 @@ static const struct tune_params cortexa57_tunings =
   &cortexa57_vector_cost,
   NAMED_PARAM (memmov_cost, 4),
   NAMED_PARAM (issue_rate, 3),
-  NAMED_PARAM (fuseable_ops, (AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD | AARCH64_FUSE_MOVK_MOVK))
+  NAMED_PARAM (fuseable_ops, (AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD | AARCH64_FUSE_MOVK_MOVK)),
+  2,	/* int_reassoc_width.  */
+  4,	/* fp_reassoc_width.  */
+  1	/* vec_reassoc_width.  */
 };
 
 static const struct tune_params thunderx_tunings =
@@ -345,7 +354,10 @@ static const struct tune_params thunderx_tunings =
   &generic_vector_cost,
   NAMED_PARAM (memmov_cost, 6),
   NAMED_PARAM (issue_rate, 2),
-  NAMED_PARAM (fuseable_ops, AARCH64_FUSE_CMP_BRANCH)
+  NAMED_PARAM (fuseable_ops, AARCH64_FUSE_CMP_BRANCH),
+  2,	/* int_reassoc_width.  */
+  4,	/* fp_reassoc_width.  */
+  1	/* vec_reassoc_width.  */
 };
 
 /* A processor implementing AArch64.  */
@@ -440,6 +452,19 @@ static unsigned int
 aarch64_min_divisions_for_recip_mul (enum machine_mode mode ATTRIBUTE_UNUSED)
 {
   return 2;
+}
+
+static int
+aarch64_reassociation_width (unsigned opc ATTRIBUTE_UNUSED,
+			     enum machine_mode mode)
+{
+  if (VECTOR_MODE_P (mode))
+    return aarch64_tune_params->vec_reassoc_width;
+  if (INTEGRAL_MODE_P (mode))
+    return aarch64_tune_params->int_reassoc_width;
+  if (FLOAT_MODE_P (mode))
+    return aarch64_tune_params->fp_reassoc_width;
+  return 1;
 }
 
 /* Provide a mapping from gcc register numbers to dwarf register numbers.  */
@@ -10383,6 +10408,9 @@ aarch_macro_fusion_pair_p (rtx prev, rtx curr)
 
 #undef TARGET_PREFERRED_RELOAD_CLASS
 #define TARGET_PREFERRED_RELOAD_CLASS aarch64_preferred_reload_class
+
+#undef TARGET_SCHED_REASSOCIATION_WIDTH
+#define TARGET_SCHED_REASSOCIATION_WIDTH aarch64_reassociation_width
 
 #undef TARGET_SECONDARY_RELOAD
 #define TARGET_SECONDARY_RELOAD aarch64_secondary_reload
