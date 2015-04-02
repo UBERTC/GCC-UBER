@@ -1,5 +1,17 @@
 2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r218530.
+	2014-12-09  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.md (absdi2): Remove scratch operand by
+	earlyclobbering result operand.
+
+	* config/aarch64/aarch64-builtins.c (aarch64_types_unop_qualifiers):
+	Remove final qualifier_internal.
+	(aarch64_fold_builtin): Stop folding abs builtins, except on floats.
+
+2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r218526.
 	2014-12-09  Wilco Dijkstra  <wilco.dijkstra@arm.com>
 

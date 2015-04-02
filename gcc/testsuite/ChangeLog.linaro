@@ -1,5 +1,12 @@
 2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r218530.
+	2014-12-09  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/vabs_intrinsic_2.c: New test.
+
+2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r218868.
 	2014-12-18  Alan Lawrence  <alan.lawrence@arm.com>
 
