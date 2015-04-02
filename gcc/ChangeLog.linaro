@@ -1,3 +1,22 @@
+2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r218867, r218868.
+	2014-12-18  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-simd.md (aarch64_lshr_simddi): Handle shift
+	by 64 by moving const0_rtx.
+	(aarch64_ushr_simddi): Delete.
+
+	* config/aarch64/aarch64.md (enum unspec): Delete UNSPEC_USHR64.
+
+	2014-12-18  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.md (enum "unspec"): Remove UNSPEC_SSHR64.
+
+	* config/aarch64/aarch64-simd.md (aarch64_ashr_simddi): Change shift
+	amount to 63 if was 64.
+	(aarch64_sshr_simddi): Remove.
+
 2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r218855.
