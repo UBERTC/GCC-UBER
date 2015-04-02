@@ -436,6 +436,12 @@ static const char * const aarch64_condition_codes[] =
   "hi", "ls", "ge", "lt", "gt", "le", "al", "nv"
 };
 
+static unsigned int
+aarch64_min_divisions_for_recip_mul (enum machine_mode mode ATTRIBUTE_UNUSED)
+{
+  return 2;
+}
+
 /* Provide a mapping from gcc register numbers to dwarf register numbers.  */
 unsigned
 aarch64_dbx_register_number (unsigned regno)
@@ -10352,6 +10358,9 @@ aarch_macro_fusion_pair_p (rtx prev, rtx curr)
 
 #undef TARGET_MEMORY_MOVE_COST
 #define TARGET_MEMORY_MOVE_COST aarch64_memory_move_cost
+
+#undef TARGET_MIN_DIVISIONS_FOR_RECIP_MUL
+#define TARGET_MIN_DIVISIONS_FOR_RECIP_MUL aarch64_min_divisions_for_recip_mul
 
 #undef TARGET_MUST_PASS_IN_STACK
 #define TARGET_MUST_PASS_IN_STACK must_pass_in_stack_var_size

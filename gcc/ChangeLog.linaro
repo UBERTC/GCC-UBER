@@ -1,5 +1,14 @@
 2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r218866.
+	2014-12-18  Wilco Dijkstra  <wilco.dijkstra@arm.com>
+
+	* gcc/config/aarch64/aarch64.c (TARGET_MIN_DIVISIONS_FOR_RECIP_MUL):
+	Define.
+	(aarch64_min_divisions_for_recip_mul): New function.
+
+2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r218867, r218868.
 	2014-12-18  Alan Lawrence  <alan.lawrence@arm.com>
 
