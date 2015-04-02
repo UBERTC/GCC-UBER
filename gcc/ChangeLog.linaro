@@ -1,4 +1,27 @@
-2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
+2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r218958, r218960, r218961.
+	2014-12-19  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.c (<LOGICAL:optab>_one_cmpl<mode>3):
+	Reparameterize to...
+	(<NLOGICAL:optab>_one_cmpl<mode>3): with extra SIMD-register variant.
+	(xor_one_cmpl<mode>3): New define_insn_and_split.
+
+	* config/aarch64/iterators.md (NLOGICAL): New define_code_iterator.
+
+	2014-12-19  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.md (<optab><mode>3, one_cmpl<mode>2):
+	Add SIMD-register variant.
+	* config/aarch64/iterators.md (Vbtype): Add value for SI.
+
+	2014-12-19  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.md (subdi3, adddi3_aarch64): Don't penalize
+	SIMD reg variant.
+
+2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r218897.
 	2014-12-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
@@ -6,7 +29,7 @@
 	* doc/invoke.texi (ARM options): Remove mention of Advanced RISC
 	Machines.
 
-2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
+2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r218895.
 	2014-12-19  Xingxing Pan <xxingpan@marvell.com>
@@ -14,7 +37,7 @@
 	* config/arm/cortex-a9-neon.md (cortex_a9_neon_vmov): Change
 	reservation to cortex_a9_neon_dp.
 
-2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
+2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r218530.
 	2014-12-09  Alan Lawrence  <alan.lawrence@arm.com>
@@ -26,7 +49,7 @@
 	Remove final qualifier_internal.
 	(aarch64_fold_builtin): Stop folding abs builtins, except on floats.
 
-2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
+2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r218526.
 	2014-12-09  Wilco Dijkstra  <wilco.dijkstra@arm.com>
@@ -41,7 +64,7 @@
 	(cortexa57_tunings): Likewise.
 	(thunderx_tunings): Likewise.
 
-2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
+2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r218866.
 	2014-12-18  Wilco Dijkstra  <wilco.dijkstra@arm.com>
@@ -50,7 +73,7 @@
 	Define.
 	(aarch64_min_divisions_for_recip_mul): New function.
 
-2015-04.02  Yvan Roux  <yvan.roux@linaro.org>
+2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r218867, r218868.
 	2014-12-18  Alan Lawrence  <alan.lawrence@arm.com>

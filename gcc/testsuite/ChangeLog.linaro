@@ -1,5 +1,12 @@
 2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
 
+	Backport from trunk r218961.
+	2014-12-19  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/eon_1.c: New test.
+
+2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
+
 	Backport from trunk r218530.
 	2014-12-09  Alan Lawrence  <alan.lawrence@arm.com>
 
