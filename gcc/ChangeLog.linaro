@@ -1,3 +1,10 @@
+2015-04-02  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	Fix testcase backported from trunk
+
+	* gcc/testsuite/gcc.dg/pr64935-1.c: Ignore warnings that can't be
+	disabled with not-yet-existing -Wno-shift-count-overflow.
+
 2015-04-02  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r218958, r218960, r218961.
