@@ -21,7 +21,11 @@
   UNSPEC_LFENCE
   UNSPEC_SFENCE
   UNSPEC_MFENCE
-  UNSPEC_MOVA	; For __atomic support
+
+  UNSPEC_FILD_ATOMIC
+  UNSPEC_FIST_ATOMIC
+
+  ;; __atomic support
   UNSPEC_LDA
   UNSPEC_STA
 ])
@@ -140,10 +144,10 @@
    ])
 
 (define_expand "atomic_load<mode>"
-  [(set (match_operand:ATOMIC 0 "register_operand")
+  [(set (match_operand:ATOMIC 0 "nonimmediate_operand")
 	(unspec:ATOMIC [(match_operand:ATOMIC 1 "memory_operand")
 			(match_operand:SI 2 "const_int_operand")]
-		       UNSPEC_MOVA))]
+		       UNSPEC_LDA))]
   ""
 {
   /* For DImode on 32-bit, we can use the FPU to perform the load.  */
@@ -152,14 +156,25 @@
 	       (operands[0], operands[1],
 	        assign_386_stack_local (DImode, SLOT_TEMP)));
   else
-    emit_move_insn (operands[0], operands[1]);
+    {
+      rtx dst = operands[0];
+
+      if (MEM_P (dst))
+	dst = gen_reg_rtx (<MODE>mode);
+
+      emit_move_insn (dst, operands[1]);
+
+      /* Fix up the destination if needed.  */
+      if (dst != operands[0])
+	emit_move_insn (operands[0], dst);
+    }
   DONE;
 })
 
 (define_insn_and_split "atomic_loaddi_fpu"
   [(set (match_operand:DI 0 "nonimmediate_operand" "=x,m,?r")
 	(unspec:DI [(match_operand:DI 1 "memory_operand" "m,m,m")]
-		   UNSPEC_MOVA))
+		   UNSPEC_LDA))
    (clobber (match_operand:DI 2 "memory_operand" "=X,X,m"))
    (clobber (match_scratch:DF 3 "=X,xf,xf"))]
   "!TARGET_64BIT && (TARGET_80387 || TARGET_SSE)"
@@ -197,9 +212,9 @@
 
 (define_expand "atomic_store<mode>"
   [(set (match_operand:ATOMIC 0 "memory_operand")
-	(unspec:ATOMIC [(match_operand:ATOMIC 1 "register_operand")
+	(unspec:ATOMIC [(match_operand:ATOMIC 1 "nonimmediate_operand")
 			(match_operand:SI 2 "const_int_operand")]
-		       UNSPEC_MOVA))]
+		       UNSPEC_STA))]
   ""
 {
   enum memmodel model = (enum memmodel) (INTVAL (operands[2]) & MEMMODEL_MASK);
@@ -215,6 +230,8 @@
     }
   else
     {
+      operands[1] = force_reg (<MODE>mode, operands[1]);
+
       /* For seq-cst stores, when we lack MFENCE, use XCHG.  */
       if (model == MEMMODEL_SEQ_CST && !(TARGET_64BIT || TARGET_SSE2))
 	{
@@ -238,14 +255,14 @@
   [(set (match_operand:SWI 0 "memory_operand" "=m")
 	(unspec:SWI [(match_operand:SWI 1 "<nonmemory_operand>" "<r><i>")
 		     (match_operand:SI 2 "const_int_operand")]
-		    UNSPEC_MOVA))]
+		    UNSPEC_STA))]
   ""
   "%K2mov{<imodesuffix>}\t{%1, %0|%0, %1}")
 
 (define_insn_and_split "atomic_storedi_fpu"
   [(set (match_operand:DI 0 "memory_operand" "=m,m,m")
-	(unspec:DI [(match_operand:DI 1 "register_operand" "x,m,?r")]
-		   UNSPEC_MOVA))
+	(unspec:DI [(match_operand:DI 1 "nonimmediate_operand" "x,m,?r")]
+		   UNSPEC_STA))
    (clobber (match_operand:DI 2 "memory_operand" "=X,X,m"))
    (clobber (match_scratch:DF 3 "=X,xf,xf"))]
   "!TARGET_64BIT && (TARGET_80387 || TARGET_SSE)"
@@ -273,7 +290,7 @@
       else
 	{
 	  adjust_reg_mode (tmp, DImode);
-	  emit_move_insn (tmp, mem);
+	  emit_move_insn (tmp, src);
 	  src = tmp;
 	}
     }
@@ -288,7 +305,8 @@
 
 (define_insn "loaddi_via_fpu"
   [(set (match_operand:DF 0 "register_operand" "=f")
-	(unspec:DF [(match_operand:DI 1 "memory_operand" "m")] UNSPEC_LDA))]
+	(unspec:DF [(match_operand:DI 1 "memory_operand" "m")]
+		   UNSPEC_FILD_ATOMIC))]
   "TARGET_80387"
   "fild%Z1\t%1"
   [(set_attr "type" "fmov")
@@ -297,7 +315,8 @@
 
 (define_insn "storedi_via_fpu"
   [(set (match_operand:DI 0 "memory_operand" "=m")
-	(unspec:DI [(match_operand:DF 1 "register_operand" "f")] UNSPEC_STA))]
+	(unspec:DI [(match_operand:DF 1 "register_operand" "f")]
+		   UNSPEC_FIST_ATOMIC))]
   "TARGET_80387"
 {
   gcc_assert (find_regno_note (insn, REG_DEAD, FIRST_STACK_REG) != NULL_RTX);
