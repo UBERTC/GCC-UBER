@@ -1,3 +1,58 @@
+2015-04-03  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65655
+	* g++.dg/torture/pr65655.C: New testcase.
+
+2015-04-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/64085
+	* g++.dg/cpp1y/lambda-init13.C: New.
+
+2015-04-03  Marek Polacek  <polacek@redhat.com>
+
+	* g++.dg/cpp0x/pr57101.C: Use proper type for size_t.
+
+2015-04-02  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/65642
+	* g++.dg/cpp0x/constexpr-fold1.C: New test.
+	* g++.dg/cpp0x/constexpr-fold2.C: New test.
+
+2015-04-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR preprocessor/61977
+	* gcc.target/powerpc/pr61977-1.c: New test.
+	* gcc.target/powerpc/pr61977-2.c: New test.
+
+2015-04-01  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/56100
+	* g++.dg/warn/Wshadow-8.C: New.
+	* g++.dg/warn/Wshadow-9.C: Likewise.
+	* g++.dg/warn/Wshadow-10.C: Likewise.
+	* g++.dg/warn/Wshadow-11.C: Likewise.
+
+2015-04-01  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* gcc.dg/pr23623.c: Added aligned attribute.
+	* gcc.dg/20141029-1.c: Likewise.
+	* gcc.dg/20150306-1.c: New test.
+
+2015-04-01  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/65554
+	* g++.dg/cpp0x/initlist93.C: New test.
+	* g++.dg/cpp0x/initlist94.C: New test.
+
+2015-04-01  Max Ostapenko  <m.ostapenko@partner.samsung.com>
+
+	PR target/65624
+	* gcc.target/aarch64/pr65624.c: New test.
+
+2015-03-31  Jan Hubicka  <hubicka@ucw.cz>
+
+	* gcc.dg/ipa/inlinehint-4.c: New testcase.
+
 2015-03-31  Alex Velenko  <Alex.Velenko@arm.com>
 
 	* gcc.target/arm/pr45701-1.c (history_expand_line_internal): Add an
