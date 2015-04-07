@@ -176,6 +176,7 @@
 (include "../arm/cortex-a53.md")
 (include "../arm/cortex-a15.md")
 (include "thunderx.md")
+(include "../arm/xgene1.md")
 
 ;; -------------------------------------------------------------------
 ;; Jumps and other miscellaneous insns

@@ -70,6 +70,7 @@
    |mcpu=cortex-a53					\
    |mcpu=cortex-a57					\
    |mcpu=cortex-a57.cortex-a53				\
+   |mcpu=xgene1                                         \
    |mcpu=cortex-m1.small-multiply                       \
    |mcpu=cortex-m0.small-multiply                       \
    |mcpu=cortex-m0plus.small-multiply			\
@@ -90,6 +91,7 @@
    |mcpu=cortex-a53					\
    |mcpu=cortex-a57					\
    |mcpu=cortex-a57.cortex-a53				\
+   |mcpu=xgene1                                         \
    |mcpu=cortex-m1.small-multiply                       \
    |mcpu=cortex-m0.small-multiply                       \
    |mcpu=cortex-m0plus.small-multiply                   \

@@ -1,3 +1,43 @@
+2015-04-07  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r219679.
+	2015-01-15  Richard Earnshaw  <rearnsha@arm.com>
+
+	* arm.c (arm_xgene_tune): Add default initializer for instruction
+	fusion.
+
+2015-04-07  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r219661.
+	2015-01-15  Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/arm/arm.md (generic_sched): Specify xgene1 in 'no' list.
+	Include xgene1.md.
+	* config/arm/arm.c (arm_issue_rate): Specify 4 for xgene1.
+	* config/arm/arm-cores.def (xgene1): New entry.
+	* config/arm/arm-tables.opt: Regenerate.
+	* config/arm/arm-tune.md: Regenerate.
+	* config/arm/bpabi.h (BE8_LINK_SPEC): Specify mcpu=xgene1.
+
+2015-04-07  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r219657.
+	2015-01-15  Philipp Tomsich  <ptomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64.md: Include xgene1.md.
+	* config/aarch64/xgene1.md: New file.
+
+2015-04-07  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r219656.
+	2015-01-15  Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+	* config/aarch64/aarch64-cores.def (xgene1): Update/add the
+	xgene1 (APM XGene-1) core definition.
+	* gcc/config/aarch64/aarch64.c: Add cost tables for APM XGene-1
+	* config/arm/aarch-cost-tables.h: Add cost tables for APM XGene-1
+	* doc/invoke.texi: Document -mcpu=xgene1.
+
 2015-04-07  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r217062, r217646, r218658.
