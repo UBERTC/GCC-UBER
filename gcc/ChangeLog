@@ -1,3 +1,158 @@
+2015-04-07  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65540
+	* calls.c (initialize_argument_information): When producing tail
+	call also turn SSA_NAMES passed by references to original PARM_DECLs
+
+2015-04-07  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/65648
+	* lra-remat.c (do_remat): Process input and non-input insn
+	registers separately.
+
+2015-04-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/65678
+	* valtrack.c (debug_lowpart_subreg): New function.
+	(dead_debug_insert_temp): Use it.
+
+	PR middle-end/65680
+	* expr.c (get_inner_reference): Handle bit_offset that doesn't fit
+	into signed HOST_WIDE_INT the same as negative bit_offset.
+
+2015-04-07  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* ipa-comdats.c (ipa_comdats): Visit all thunks
+	to set proper comdat group.
+
+2015-04-07  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/65489
+	* config/arm/arm.c (arm_legitimate_constant_p_1): Remove restriction
+	on constants for NEON VSTRUCT modes.
+
+2015-04-07  Jakub Jelinek  <jakub@redhat.com>
+	    Iain Sandoe  <iain@codesourcery.com>
+
+	PR target/65351
+	* configure: Regenerate.
+
+2015-04-06  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/65614
+	* config/rs6000/rs6000.c (struct processor_costs): Add cost field
+	for SF->DF conversions to make FLOAT_EXTEND more expensive, so
+	that LFD is used to load double constants instead of LFS.  Add
+	defaults for all costs structures.  Add comments for missing
+	initialization fields.
+	(size32_cost): Likewise.
+	(size64_cost): Likewise.
+	(rs64a_cost): Likewise.
+	(mpccore_cost): Likewise.
+	(ppc403_cost): Likewise.
+	(ppc405_cost): Likewise.
+	(ppc440_cost): Likewise.
+	(ppc476_cost): Likewise.
+	(ppc601_cost): Likewise.
+	(ppc603_cost): Likewise.
+	(ppc604_cost): Likewise.
+	(ppc604e_cost): Likewise.
+	(ppc620_cost): Likewise.
+	(ppc630_cost): Likewise.
+	(ppccell_cost): Likewise.
+	(ppc750_cost): Likewise.
+	(ppc7450_cost): Likewise.
+	(ppc8540_cost): Likewise.
+	(ppce300c2c3_cost): Likewise.
+	(ppce500mc_cost): Likewise.
+	(ppce500mc64_cost): Likewise.
+	(ppce5500_cost): Likewise.
+	(ppce6500_cost): Likewise.
+	(titan_cost): Likewise.
+	(power4_cost): Likewise.
+	(power6_cost): Likewise.
+	(power7_cost): Likewise.
+	(power8_cost): Likewise.
+	(ppca2_cost): Likewise.
+	(rs6000_rtx_costs): Make FLOAT_EXTEND use SFDF_convert field.
+
+	* config/rs6000/rs6000.md (extendsfdf2_fpr): Generate XSCPSGNDP
+	instead of XXLOR to copy SFmode to clear out dirty bits created
+	when SFmode denormals are generated.
+	(mov<mode>_hardfloat, FMOVE32 case): Likewise.
+	(truncdfsf2_fpr): Add support for ISA 2.07 XSRSP instruction.
+
+2015-04-06  Evandro Menezes  <e.menezes@samsung.com>
+
+	* doc/invoke.texi (AARCH64/mtune): Add exynos-m1 as an option.
+	* config/aarch64/aarch64-cores.def (exynos-m1): New core.
+	* config/aarch64/aarch64-tune.md: Regenerate.
+
+2015-04-06  Evandro Menezes  <e.menezes@samsung.com>
+
+	* doc/invoke.texi (ARM/mtune): Add "exynos-m1" as an option.
+	* config/arm/arm.c (arm_issue_rate): Specify "3" for "exynosm1".
+	* config/arm/arm-cores.def (exynos-m1): New core.
+	* config/arm/arm-tune.md: Regenerate.
+	* config/arm/arm-tables.opt: Add entry for "exynos-m1".
+	* config/arm/bpabi.h: Likewise.
+
+2015-04-06  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* ipa-cp (set_single_call_flag): Remove too
+	restrictive assert.
+
+2015-04-06  Ilya Verbin  <ilya.verbin@intel.com>
+
+	* config/i386/intelmic-mkoffload.c (generate_host_descr_file): Call
+	GOMP_offload_unregister from the destructor.
+
+2015-04-06  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* ipa-chkp.c (chkp_maybe_create_clone): Reset cdtor
+	flags for instrumentation thunk.
+	(chkp_produce_thunks): Likewise.
+
+2015-04-05  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/65665
+	* ipa-icf.c (sem_function::equals_wpa): Verify that IPA CP
+	has computed data structure.
+	(sem_item_optimizer::update_hash_by_addr_refs): Likewise.
+
+2015-04-04  Jan Hubicka  <hubicka@ucw.cz>
+
+	* invoke.texi (inline-unit-growth): Increase growth to 20%
+	* params.def (PARAM_INLINE_UNIT_GROWTH): Likewise.
+
+2015-04-04  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/65647
+	* lra-int.h (LRA_MAX_REMATERIALIZATION_PASSES): New.  Add its
+	value checking.
+	(lra_rematerialization_iter): New.
+	* lra.c (lra): Initialize lra_rematerialization_iter.
+	Stop updating lra_constraint_new_regno_start after switching of
+	inheritance and rematerialization.
+	* lra-remat.c (lra_rematerialization_iter): New.
+	(lra_remat): Add printing pass iteration.  Do rematerialization
+	only first LRA_MAX_REMATERIALIZATION_PASSES iterations.
+
+2015-04-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64909
+	PR tree-optimization/65660
+	* tree-vectorizer.h (vect_get_known_peeling_cost): Adjust
+	to take a cost vector for scalar iteration cost.
+	(vect_get_single_scalar_iteration_cost): Likewise.
+	* tree-vect-loop.c (vect_get_single_scalar_iteration_cost):
+	Compute the scalar iteration cost into a cost vector.
+	(vect_get_known_peeling_cost): Use the scalar cost vector to
+	account for the cost of the peeled iterations.
+	(vect_estimate_min_profitable_iters): Likewise.
+	* tree-vect-data-refs.c (vect_peeling_hash_get_lowest_cost):
+	Likewise.
+
 2015-04-04  Alan Modra  <amodra@gmail.com>
 
 	PR target/65576
@@ -9,7 +164,7 @@
 
 2015-04-03  Jan Hubicka  <hubicka@ucw.cz>
 
-	PR ipa/65648
+	PR ipa/65654
 	* ipa-inline-transform.c (inline_call): Skip sanity check to work
 	around the ICE
 
