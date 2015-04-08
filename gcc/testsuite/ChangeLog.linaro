@@ -1,3 +1,11 @@
+2015-04-09  Kugan Vivekanandarajah  <kugan.vivekanandarajah@linaro.org>
+
+	Backport from trunk r219745.
+	2015-01-16  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/64263
+	* gcc.target/aarch64/pr64263_1.c: New test.
+
 2015-04-07  Yvan Roux  <yvan.roux@linaro.org>
 
 	Backport from trunk r218658.
