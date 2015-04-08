@@ -1,5 +1,14 @@
 2015-04-09  Kugan Vivekanandarajah  <kugan.vivekanandarajah@linaro.org>
 
+	Backport from trunk r219578.
+	2015-01-14  Joey Ye  <joey.ye@arm.com>
+
+	* config/arm/arm.c (arm_compute_save_reg_mask):
+	Do not save lr in case of tail call.
+	* config/arm/thumb2.md (*thumb2_pop_single): New pattern.
+
+2015-04-09  Kugan Vivekanandarajah  <kugan.vivekanandarajah@linaro.org>
+
 	Backport from trunk r219544.
 	2015-01-13  Renlin Li  <renlin.li@arm.com>
 
