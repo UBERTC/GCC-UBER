@@ -1,3 +1,11 @@
+2015-04-09  Kugan Vivekanandarajah  <kugan.vivekanandarajah@linaro.org>
+
+	Backport from trunk r219544.
+	2015-01-13  Renlin Li  <renlin.li@arm.com>
+
+	* config/arm/arm.h (CLZ_DEFINED_VALUE_AT_ZERO): Return 2.
+	(CTZ_DEFINED_VALUE_AT_ZERO): Ditto.
+
 2015-04-08  Charles Baylis  <charles.baylis@linaro.org>
 
 	Backport from trunk r215567, r216672.
