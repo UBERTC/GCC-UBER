@@ -1,3 +1,56 @@
+2015-04-07  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65540
+	* gcc.c-torture/compile/pr65540.c: New.
+
+2015-04-07  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/c-output-template-3.c: Add -O, remove
+	-Wno-pointer-arith.
+
+2015-04-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/65678
+	* g++.dg/debug/pr65678.C: New test.
+
+	PR middle-end/65680
+	* gcc.c-torture/compile/pr65680.c: New test.
+
+2015-04-07  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/65548
+	* gfortran.dg/allocate_with_source_5.f90: New test.
+
+2015-04-07  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.target/i386/mpx/chkp-thunk-comdat-1.cc: New.
+	* gcc.target/i386/mpx/chkp-thunk-comdat-2.cc: New.
+
+2015-04-07  Bin Cheng  <bin.cheng@arm.com>
+
+	* gcc.target/arm/pr65647.c: Add option "-mfloat-abi=soft".
+
+2015-04-06  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/65614
+	* gcc.target/powerpc/compress-float-ppc-pic.c: Run test on power5
+	to get floating point compression.
+	* gcc.target/powerpc/compress-foat-ppc.c: Likewise.
+
+2015-04-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR preprocessor/61977
+	* gcc.dg/cpp/pr61977.c: New test.
+
+2015-04-06  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.dg/lto/chkp-ctor-merge_0.c: New.
+
+2015-04-04  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/65647
+	* gcc.target/arm/pr65647.c: New.
+
 2015-04-03  Jan Hubicka  <hubicka@ucw.cz>
 
 	PR ipa/65655
