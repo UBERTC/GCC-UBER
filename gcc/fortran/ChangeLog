@@ -1,3 +1,50 @@
+2015-03-23  Andre Vehreschild  <vehre@gmx.de>
+	    Janus Weil  <janus@gcc.gnu.org>
+
+	Backported from mainline
+	PR fortran/60255
+	Initial patch version: Janus Weil
+	* class.c (gfc_get_len_component): New.
+	(gfc_build_class_symbol): Add _len component to unlimited
+	polymorphic entities.
+	(find_intrinsic_vtab): Removed emitting of error message.
+	* gfortran.h: Added prototype for gfc_get_len_component.
+	* simplify.c (gfc_simplify_len): Use _len component where
+	available.
+	* trans-expr.c (gfc_class_len_get): New.
+	(gfc_conv_intrinsic_to_class): Add handling for deferred
+	character arrays.
+	(gfc_conv_structure): Treat _len component correctly.
+	(gfc_conv_expr): Prevent bind_c handling when not required.
+	(gfc_trans_pointer_assignment): Propagate _len component.
+	* trans-stmt.c (class_has_len_component): New.
+	(trans_associate_var): _len component treatement for associate
+	context.
+	(gfc_trans_allocate): Same as for trans_associate_var()
+	* trans.h: Add prototype for gfc_class_len_get.
+
+2015-03-21  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/61138
+	* trans-expr.c (gfc_trans_pointer_assignment): Clear DESCRIPTOR_ONLY
+	field before reusing LSE.
+
+2015-03-19  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/59198
+	* trans-types.c (gfc_get_derived_type): If an abstract derived
+	type with procedure pointer components has no other type of
+	component, return the backend_decl. Otherwise build the
+	components if any of the non-procedure pointer components have
+	no backend_decl.
+
+2015-03-12  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/60898
+	* resolve.c (resolve_symbol): Check that the symbol found by
+	name lookup really is the current symbol being resolved.
+
 2015-03-10  Paul Thomas  <pault@gcc.gnu.org>
 
 	Backported from mainline
