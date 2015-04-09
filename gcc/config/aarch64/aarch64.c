@@ -419,7 +419,10 @@ static const struct tune_params xgene1_tunings =
   &xgene1_vector_cost,
   NAMED_PARAM (memmov_cost, 6),
   NAMED_PARAM (issue_rate, 4),
-  NAMED_PARAM (fuseable_ops, AARCH64_FUSE_NOTHING)
+  NAMED_PARAM (fuseable_ops, AARCH64_FUSE_NOTHING),
+  2,	/* int_reassoc_width.  */
+  4,	/* fp_reassoc_width.  */
+  1	/* vec_reassoc_width.  */
 };
 
 /* A processor implementing AArch64.  */

@@ -1,3 +1,8 @@
+2015-04-09  Yvan Roux  <yvan.roux@linaro.org>
+
+	Fix partial backport done at r221911.
+	* gcc/config/aarch64/aarch64.c: Fix cost tables for APM XGene-1
+
 2015-04-09  Kugan Vivekanandarajah  <kugan.vivekanandarajah@linaro.org>
 
 	Backport from trunk r219745.
