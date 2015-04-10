@@ -1,6 +1,13 @@
 2015-04-10  Michael Collison  <michael.collison@linaro.org>
 
 	Backport from trunk r218145, r218146, r219472.
+
+	2015-01-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (arm_cortex_a12_tune): Update entries to match
+	Cortex-A17 tuning parameters.
+	* config/arm/arm-cores.def (cortex-a12): Schedule for cortex-a17.
+
 	2014-11-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	* config/arm/arm.md (generic_sched): Specify cortexa17 in 'no' list.
@@ -23,12 +30,6 @@
 	* config/arm/bpabi.h (BE8_LINK_SPEC): Add mcpu=cortex-a17.cortex-a7.
 	* config/arm/t-aprofile: Add cortex-a17.cortex-a7 entry to
 	MULTILIB_MATCHES.
-
-	2015-01-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
-
-	* config/arm/arm.c (arm_cortex_a12_tune): Update entries to match
-	Cortex-A17 tuning parameters.
-	* config/arm/arm-cores.def (cortex-a12): Schedule for cortex-a17.
 
 2015-04-09  Yvan Roux  <yvan.roux@linaro.org>
 
