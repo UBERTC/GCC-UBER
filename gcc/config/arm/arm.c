@@ -2008,17 +2008,17 @@ const struct tune_params arm_cortex_a12_tune =
 {
   arm_9e_rtx_costs,
   &cortexa12_extra_costs,
-  NULL,
+  NULL,						/* Sched adj cost. */
   1,						/* Constant limit.  */
-  5,						/* Max cond insns.  */
-  ARM_PREFETCH_BENEFICIAL(4,32,32),
+  2,						/* Max cond insns.  */
+  ARM_PREFETCH_NOT_BENEFICIAL,
   false,					/* Prefer constant pool.  */
   arm_default_branch_cost,
   true,						/* Prefer LDRD/STRD.  */
   {true, true},					/* Prefer non short circuit.  */
   &arm_default_vec_cost,                        /* Vectorizer costs.  */
   false,                                        /* Prefer Neon for 64-bits bitops.  */
-  false, false,                                 /* Prefer 32-bit encodings.  */
+  true, true,                                 	/* Prefer 32-bit encodings.  */
   ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
   ARM_FUSE_MOVW_MOVT				/* Fuseable pairs of instructions.  */
 };
@@ -29966,6 +29966,7 @@ arm_issue_rate (void)
     case cortexa8:
     case cortexa9:
     case cortexa12:
+    case cortexa17:
     case cortexa53:
     case fa726te:
     case marvell_pj4:
