@@ -1,3 +1,75 @@
+2015-04-10  Tobias Burnus  <burnus@net-b.de>
+
+	* gfortran.dg/coarray_lock_6.f90: New.
+	* gfortran.dg/coarray_lock_7.f90: New.
+	* gfortran.dg/coarray/lock_2.f90: New.
+
+2015-04-10  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/56674
+	PR fortran/58813
+	PR fortran/59016
+	PR fortran/59024
+	* gfortran.dg/used_types_27.f90: New.
+
+2015-04-09  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/65671
+	* gcc.target/i386/pr65671.c: New.
+
+2015-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65709
+	* c-c++-common/ubsan/align-9.c: New test.
+
+2013-04-09  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/56852
+	* gfortran.dg/pr56852.f90: New test.
+
+2015-04-09  Marek Polacek  <polacek@redhat.com>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/65554
+	* g++.dg/opt/pr65554.C: New test.
+
+2015-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/65690
+	* c-c++-common/attr-aligned-1.c: New test.
+
+2015-04-09  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.target/i386/mpx/memmove-zero-length.c: New.
+
+2015-04-09  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/65676
+	* gcc.target/i386/sse-25.c: New.
+
+2015-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65693
+	* gcc.target/i386/pr65693.c: New test.
+
+2015-04-08  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.dg/lto/chkp-static-bounds_0.c: New.
+
+2015-04-08  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.target/i386/mpx/chkp-thunk-comdat-3.c: New.
+
+2015-04-08  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.target/i386/thunk-retbnd.c: New.
+
+2015-04-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/opt48.adb: New test.
+	* gnat.dg/opt48_pkg1.ad[sb]: New helper.
+	* gnat.dg/opt48_pkg2.ad[sb]: Likewise.
+
 2015-04-07  Jan Hubicka  <hubicka@ucw.cz>
 
 	PR ipa/65540
@@ -535,11 +607,11 @@
 2015-03-19  Michael Meissner  <meissner@linux.vnet.ibm.com>
 
 	PR target/65240
-	* gcc/testsuite/g++.dg/pr65240.h: Add tests for PR 65240.
-	* gcc/testsuite/g++.dg/pr65240-1.C: Likewise.
-	* gcc/testsuite/g++.dg/pr65240-2.C: Likewise.
-	* gcc/testsuite/g++.dg/pr65240-3.C: Likewise.
-	* gcc/testsuite/g++.dg/pr65240-4.C: Likewise.
+	* g++.dg/pr65240.h: Add tests for PR 65240.
+	* g++.dg/pr65240-1.C: Likewise.
+	* g++.dg/pr65240-2.C: Likewise.
+	* g++.dg/pr65240-3.C: Likewise.
+	* g++.dg/pr65240-4.C: Likewise.
 
 2015-03-19  Vladimir Makarov  <vmakarov@redhat.com>
 
@@ -669,7 +741,7 @@
 
 2015-03-16  Eric Botcazou  <ebotcazou@adacore.com>
 
-	* testsuite/g++.dg/pr65049.C: New test.
+	* g++.dg/pr65049.C: New test.
 
 2015-03-16  Tom de Vries  <tom@codesourcery.com>
 

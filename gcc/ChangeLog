@@ -1,3 +1,133 @@
+2015-04-10  Jakub Jelinek  <jakub@redhat.com>
+	    Iain Sandoe  <iain@codesourcery.com>
+
+	PR target/65351
+	* configure: Regenerate.
+
+2015-04-09  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/65671
+	* config/i386/sse.md: Generate vextract32x4 if AVX-512DQ is disabled.
+
+2015-04-09  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/contrib.texi (Contributors): Add John Marino.
+
+2015-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65709
+	* ubsan.c (instrument_mem_ref): Use TREE_TYPE (base) instead of
+	TREE_TYPE (TREE_TYPE (t)).
+
+2015-04-09  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/65710
+	* lra-int.h (lra_bad_spill_regno_start): New.
+	* lra.c (lra_bad_spill_regno_start): New.
+	(lra): Set up lra_bad_spill_regno_start.  Set up
+	lra_constraint_new_regno_start unconditionally.
+	* lra-assigns.c (spill_for): Use lra_bad_spill_regno_start for
+	spill preferences.
+
+2015-04-09  Marek Polacek  <polacek@redhat.com>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/65554
+	* gimple-fold.c (gimple_fold_builtin_memory_op): Update comment.
+	(fold_ctor_reference): Use STRIP_USELESS_TYPE_CONVERSION instead
+	of STRIP_NOPS.
+
+2015-04-09  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/65693
+	* combine.c (is_parallel_of_n_reg_sets): Move outside of
+	#ifndef HAVE_cc0.
+
+2015-04-09  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/65296
+	* config/avr/driver-avr.c (avr_devicespecs_file): Don't specify a
+	device specs file if "device-specs%s" didn't resolve to a path.
+
+2015-04-09  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/65676
+	* config/i386/i386.c (fixup_modeless_constant): New.
+	(ix86_expand_args_builtin): Fixup modeless constant operand.
+	(ix86_expand_round_builtin): Ditto.
+	(ix86_expand_special_args_builtin): Ditto.
+	(ix86_expand_builtin): Ditto.
+
+2015-04-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65693
+	* config/i386/i386.md (*udivmod<mode>4_pow2): Allow
+	any pow2 integer in between 2 and 0x80000000U inclusive.
+
+2015-04-08  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/65693
+	* combine.c (is_parallel_of_n_reg_sets): Change first argument
+	from an rtx_insn * to an rtx.
+	(try_combine): Adjust both callers.  Use it once more.
+
+2015-04-08  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* tree-chkp.c (chkp_find_const_bounds_var): Remove.
+	(chkp_make_static_const_bounds): Search existing
+	symbol by assembler name.  Use make_decl_one_only.
+	(chkp_get_zero_bounds_var): Remove node	search which
+	is now performed in chkp_make_static_const_bounds.
+	(chkp_get_none_bounds_var): Likewise.
+
+2015-04-08  Michael Witten  <mfwitten@gmail.com>
+
+	* doc/extend.texi (Attribute Syntax): Add a trailing semicolon
+	to an example.
+
+2015-04-08  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	* tree.h (CONVERT_EXPR_P): Commentary typo fix.
+
+2015-04-08  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/extend.texi (__sync Builtins): Fix grammar.
+
+2015-04-08  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	* doc/cfg.texi (GIMPLE statement iterators): Fix typo.
+
+2015-04-08  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	* varasm.c (emit_local): Move definition of align.
+
+2015-04-08  Julian Brown  <julian@codesourcery.com>
+
+	* config/nvptx/mkoffload.c (process): Support variable mapping.
+
+2015-03-27  Trevor Saunders  <tbsaunde@tbsaunde.org>
+
+	* config/alpha/alpha.c (alpha_use_linkage): Change type of slot to
+	alpha_links **.
+	(alpha_write_one_linkage): Correct typo.
+
+2015-04-08  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* ipa-comdats.c (propagate_comdat_group): Walk through thunks.
+
+2015-04-08  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/install.texi (bootstrap-lto-noplugin): Rewrite.
+
+2015-04-08  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* tree-chkp.h (chkp_insert_retbnd_call): New.
+	* tree-chkp.c (chkp_insert_retbnd_call): New.
+	* ipa-split.c (insert_bndret_call_after): Remove.
+	(split_function): Use chkp_insert_retbnd_call.
+	* cgraphunit.c (cgraph_node::expand_thunk): Build returned
+	bounds for instrumented functions.
+
 2015-04-07  Jan Hubicka  <hubicka@ucw.cz>
 
 	PR ipa/65540
@@ -429,8 +559,8 @@
 	memory_operand.
 
 	PR target/65052
-        * config/c6x/constraints.md (S3): New constraint.
-        * config/c6x/c6x.md (real_jump): Use it.
+	* config/c6x/constraints.md (S3): New constraint.
+	* config/c6x/c6x.md (real_jump): Use it.
 
 2015-03-26  Jan Hubicka  <hubicka@ucw.cz>
 
