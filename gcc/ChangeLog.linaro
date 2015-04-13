@@ -1,3 +1,27 @@
+2015-04-13  Michael Collison  <michael.collison@linaro.org>
+
+	Backport from trunk r219724, 219746, r220103.
+
+	2014-01-25  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/arm/arm-cores.def (cortex-a57): Use the new Cortex-A57
+	pipeline model.
+	config/arm/arm.md: Include the new Cortex-A57 model.
+	(generic_sched): Don't use generic_sched when tuning for
+	Cortex-A57.
+
+	2015-01-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/arm/cortex-a57.md: Remove duplicate of file accidentally
+	introduced in revision 219724.
+
+	2015-01-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/arm/cortex-a57.md: New.
+	* config/aarch64/aarch64.md: Include it.
+	* config/aarch64/aarch64-cores.def (cortex-a57): Tune for it.
+	* config/aarch64/aarch64-tune.md: Regenerate.
+
 2015-04-10  Michael Collison  <michael.collison@linaro.org>
 
 	Backport from trunk r218145, r218146, r219472.
