@@ -1,3 +1,44 @@
+2015-04-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65747
+	* g++.dg/torture/pr65747.C: New test.
+
+2015-04-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/65736
+	* g++.dg/cpp0x/pr65736.C: New test.
+
+2015-04-11  Jan Hubicka  <hubicka@ucw.cz>
+	    Martin Liska  <mliska@suse.cz>
+
+	PR ipa/65722
+	* g++.dg/ipa/pr65722.C: New testcase.
+
+2015-04-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65735
+	* gcc.c-torture/compile/pr65735.c: New test.
+
+2015-04-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR middle-end/65554
+	* g++.dg/opt/pr65554.C: Use __SIZE_TYPE__ instead of unsigned long.
+
+2015-04-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65671
+	* gcc.target/i386/pr65671.c: Require avx512vl effective target.
+
+2015-04-10  Yvan Roux  <yvan.roux@linaro.org>
+
+	PR target/65647
+	* gcc.target/arm/pr65647-2.c: New.
+
+2015-04-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/65694
+	* g++.dg/torture/pr65694.C: New test.
+
 2015-04-10  Tobias Burnus  <burnus@net-b.de>
 
 	* gfortran.dg/coarray_lock_6.f90: New.

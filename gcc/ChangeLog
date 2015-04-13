@@ -1,3 +1,90 @@
+2015-04-13  Jan Hubicka  <hubicka@ucw.cz>
+	    Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/contrib.texi (Contributors): Add Martin Jambor and
+	Michael Matz.
+
+2015-04-12  Jakub Jelinek  <jakub@redhat.com>
+
+	* BASE-VER: Set to 5.0.1.
+	* DEV-PHASE: Set to prerelease.
+
+	PR tree-optimization/65747
+	* ipa-icf-gimple.c (func_checker::compare_operand): Use compare_operand
+	rather than compare_ssa_name for OBJ_TYPE_REF_OBJECT.
+
+2015-04-12  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/invoke.texi (-Wmemset-transposed-args): Break a long
+	sentence.  Improve grammar.
+
+2015-04-12  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/contrib.texi (Contributors): Add Maxim Kuvyrkov.
+
+2015-04-11  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65743
+	* ipa-inline-transform.c (speculation_removed): Remove static var.
+	(check_speculations): New function.
+	(clone_inlined_nodes): Do not check spculations.
+	(inline_call): Call check_speculations.
+	* ipa-prop.c (ipa_make_edge_direct_to_target): Do not
+	consider non-invariants.
+
+2015-04-11  Jan Hubicka  <hubicka@ucw.cz>
+	    Martin Liska  <mliska@suse.cz>
+
+	PR ipa/65722
+	* ipa-icf.c (sem_item::compare_cgraph_references): function and
+	variable can not match.
+	(sem_item::update_hash_by_addr_refs): Fix handling of virtual tables.
+	(sem_variable::equals_wpa): Fix checking of DECL_FINAL_P patch.
+
+2015-04-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65735
+	* tree-ssa-threadedge.c (fsm_find_control_statement_thread_paths):
+	Remove visited_phis argument, add visited_bbs, avoid recursing into the
+	same bb rather than just into the same phi node.
+	(thread_through_normal_block): Adjust caller.
+
+2015-04-11  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/contrib.texi (Contributors): Add Ira Rosen.
+
+2015-04-11  Benno Schulenberg  <bensberg@justemail.net>
+
+	* gcov.c (find_source): Fix miswording in error message.
+	* config/i386/i386.c (ix86_handle_cconv_attribute): Likewise.
+	(ix86_expand_sse_comi_round): Fix typo in error message.
+
+2015-04-11  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/contrib.texi (Contributors): Add Laurynas Biveinis.
+
+2015-04-10  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/contrib.texi (Contributors): Update Joe Buck's entry.
+
+2015-04-10  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/65710
+	* lra-assigns.c (spill_for): Update smallest_bad_spills_num.
+	Print bad_spills_num and insn_pseudos_num.
+
+2015-04-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/65694
+	* config/arm/arm.c (arm_canonicalize_comparison): Use ARM_SIGN_EXTEND
+	when creating +1 values for SImode.
+
+2015-04-10  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/65729
+	* lra-constraints.c (prohibited_class_reg_set_mode_p): Comment the
+	assert.
+
 2015-04-10  Jakub Jelinek  <jakub@redhat.com>
 	    Iain Sandoe  <iain@codesourcery.com>
 
