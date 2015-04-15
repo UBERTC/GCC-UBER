@@ -1,3 +1,28 @@
+2015-04-15  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* scripts/extract_symvers.pl: Ignore elfdump error output.
+
+2015-04-14  Marc Glisse  <marc.glisse@inria.fr>
+
+	PR libstdc++/61347
+	* include/bits/stl_iterator_base_funcs.h (_List_iterator,
+	_List_const_iterator): Declare.
+	(__distance): Declare new overloads for _List_iterator and
+	_List_const_iterator.
+	* include/bits/stl_list.h (__distance): New overloads for
+	_List_iterator and _List_const_iterator.
+	* testsuite/23_containers/list/61347.cc: New testcase.
+
+2015-04-14  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/evolution.xml: Fix typos.
+	* doc/html/manual/api.html: Regenerate.
+
+2015-04-14  Hans-Peter Nilsson  <hp@axis.com>
+
+	* testsuite/29_atomics/atomic/62259.cc: Assert atomic
+	alignment is larger-equal, not equal, to default alignment.
+
 2015-04-13  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR libstdc++/65754

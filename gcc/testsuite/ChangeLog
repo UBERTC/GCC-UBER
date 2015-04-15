@@ -1,3 +1,44 @@
+2015-04-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR ipa/65765
+	* g++.dg/ipa/pr65765.C: New test.
+
+2015-04-15  Nick Clifton  <nickc@redhat.com>
+
+	* gcc.target/rx/builtins.c: Disable RMPA test if string
+	instructions are not allowed.
+
+2015-04-15  Alan Modra  <amodra@gmail.com>
+
+	* gcc.dg/pr65408.c: New.
+
+2015-04-14  Yvan Roux  <yvan.roux@linaro.org>
+
+	PR target/65729
+	* gcc.target/arm/pr65729.c: New test.
+
+2015-04-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65758
+	* gfortran.fortran-torture/compile/pr65758.f90: New testcase.
+
+2015-04-14  Yvan Roux  <yvan.roux@linaro.org>
+
+	PR target/65648
+	* gcc.c-torture/execute/pr65648.c: New test.
+
+2015-04-14  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* gcc.target/i386/avx512dq-vfpclasspd-2.c (check_fp_class_dp): Use
+	__builtin_finite instead of finite.
+	* gcc.target/i386/avx512dq-vfpclassps-2.c (check_fp_class_sp):
+	Likewise.
+
+2015-04-14  Marc Glisse  <marc.glisse@inria.fr>
+
+	PR tree-optimization/63387
+	* gcc.dg/pr63387.c: New testcase.
+
 2015-04-12  Jan Hubicka  <hubicka@ucw.cz>
 
 	* g++.dg/tree-ssa/nonzero-3.C: New testcase.

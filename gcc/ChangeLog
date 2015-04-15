@@ -1,3 +1,169 @@
+2015-04-15  Jeff Law  <law@redhat.com>
+
+	PR rtl-optimization/42522
+	* cse.c (fold_rtx): Try to simplify a ZERO_EXTRACT or
+	SIGN_EXTRACT as a whole object rather than simplifying
+	its operand.
+
+2015-04-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR ipa/65765
+	* ipa-icf-gimple.c (func_checker::compare_bb): For GIMPLE_NOP
+	and GIMPLE_PREDICT use break instead of return true. For
+	GIMPLE_EH_DISPATCH, compare dispatch region.
+
+2015-04-14  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* doc/extend.texi (__sync Builtins): Simplify some text.  Update
+	details about the implementation.  Make clear preference for
+	__atomic builtins.  Reduce possibility of future change.
+
+2015-04-15  Nick Clifton  <nickc@redhat.com>
+
+	* config/rx/rx.opt (mallow-string-insns): New option.
+	* config/rx/rx.c (RX_BUILTIN_RMPA): Disable the use of this
+	builtin if string instructions are denied.
+	* config/rx/rx.h (TARGET_CPU_CPP_BUILTINS): Define
+	__RX_ALLOW_STRING_INSNS__ or __RX_DISALLOW_STRING_INSNS__, as
+	appropriate.
+	(ASM_SPEC): Pass -mno-allow-string-insns on to the assembler.
+	* config/rx/rx.md (movstr): Enable pattern only if string
+	instructions are allowed.
+	(rx_movstr, rx_strend, movmemsi, rx_movmem): Likewise.
+	(cmpstrnsi, cmpstrsi, rx_cmpstrn, rmpa): Likewise.
+	* config/rx/t-rx (MULTILIB_OPTIONS): Add mno-allow-string-insns.
+	(MULTILIB_DIRNAMES): Add no-strings.
+	* doc/invoke.texi: Document -mno-allow-string-insns.
+2015-04-15  Alan Modra  <amodra@gmail.com>
+
+	PR target/65408
+	PR target/58744
+	PR middle-end/36043
+	* calls.c (load_register_parameters): Don't load past end of
+	mem unless suitably aligned.
+
+2015-04-15  Nick Clifton  <nickc@redhat.com>
+
+	* config/rl78/rl78.c (rl78_expand_prologue): Mark large stack
+	decrement instruction as being frame related.
+	(rl78_print_operand_1): Handle 'p' modifier to add +0 to HL
+	based addresses.
+	If zero extending a function address enclose the operation in
+	%code(...).
+	(rl78_preferred_reload_class): New function.
+	(TARGET_PREFERRED_RELOAD_CLASS): Define.
+	* config/rl78/rl78.md: Remove useless constraints in expanders.
+	(mulqi3_rl78): Remove + qualifier on input-only operand 1.
+	(mulhi3_rl78): Likewise.
+	(mulhi3_g13): Likewise.
+	(mulsi3_rl78): Likewise.
+	(es_addr): Move to before the multiply patterns.
+
+2015-04-15  Alan Modra  <amodra@gmail.com>
+
+	* function.h (struct emit_status): Delete x_first_insn, x_last_insn
+	and sequence_stack.  Add seq.
+	(seq_stack): Delete.
+	* function.c (prepare_function_start): Don't access x_last_insn.
+	* emit-rtl.h (get_current_sequence, get_topmost_sequence): New.
+	(get_insns, set_first_insn, get_last_insn, set_last_insn): Use them.
+	* emit_rtl.c (start_sequence, push_topmost_sequence,
+	pop_topmost_sequence, end_sequence, in_sequence_p, init_emit): Use
+	sequence accessors.
+	(get_last_insn_anywhere, add_insn_after_nobb, add_insn_before_nobb,
+	remove_insn): Likewise.  Simplify.
+	* config/m32c/m32c.c (m32c_leaf_function_p): Use push_topmost_sequence
+	and pop_topmost_sequence.
+	(m32c_function_needs_enter): Use get_topmost_sequence.  Ignore
+	debug insns.
+	* config/rs6000/rs6000.c (rs6000_call_aix): Use get_current_sequence.
+
+2015-04-14  Yvan Roux  <yvan.roux@linaro.org>
+
+	PR target/65729
+	* lra-constraints.c (prohibited_class_reg_set_mode_p): Restore and fix
+	the assertiion.
+
+2015-04-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.h (LEGACY_INT_REG_P): New define.
+	(LEGACY_INT_REGNO_P): Ditto.
+	(GENERAL_REGNO_P): Use LEGACY_INT_REGNO_P.
+	(ANY_MASK_REG_P): Remove.
+	(BND_REG_P): Rename from ANY_BND_REG_P.
+	* config/i386/i386.c (print_reg): Use LEGACY_INT_REG_P to print
+	legacy integer registers.  Do not handle MMX_REG_P in a special way.
+	Merge 64byte and 32byte SSE handling.
+
+2015-04-14  Nick Clifton  <nickc@redhat.com>
+
+	* expr.c (expand_assignment): Force an address offset computation
+	into a register before changing its mode.
+	(expand_expr_real_1): Likewise.
+
+2015-04-14  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/arm_neon.h (vst1_lane_f32, vst1_lane_f64,
+	vst1_lane_p8, vst1_lane_p16, vst1_lane_s8, vst1_lane_s16,
+	vst1_lane_s32, vst1_lane_s64, vst1_lane_u8, vst1_lane_u16,
+	vst1_lane_u32, vst1_lane_u64, vst1q_lane_f32, vst1q_lane_f64,
+	vst1q_lane_p8, vst1q_lane_p16, vst1q_lane_s8, vst1q_lane_s16,
+	vst1q_lane_s32, vst1q_lane_s64, vst1q_lane_u8, vst1q_lane_u16,
+	vst1q_lane_u32, vst1q_lane_u64): Reimplement with pointer dereference
+	and __aarch64_vget_lane_any.
+
+2015-04-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/65761
+	* cfgrtl.c (rtl_split_edge): For EDGE_CROSSING split, use
+	get_last_bb_insn (after) instead of NEXT_INSN (BB_END (after)).
+
+2015-04-14  Richard Biener  <rguenther@suse.de>
+
+	* graphite-scop-detection.c: Do not include cp/cp-tree.h.
+	(graphite_can_represent_scev): Use POINTER_TYPE_P.
+
+2015-04-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65758
+	* tree-ssa-ccp.c (get_value_from_alignment): Adjust mask test
+	against -1.
+	(ccp_lattice_meet): Likewise.
+	(bit_value_unop): Likewise.
+	(bit_value_binop): Likewise.
+	(bit_value_assume_aligned): Likewise.
+
+2015-04-14  Christian Bruel  <christian.bruel@st.com>
+
+	* execute_dwarf2_frame (dw_frame_pointer_regnum): Reinitialize for each
+	function.
+
+2015-04-14  Marc Glisse  <marc.glisse@inria.fr>
+
+	PR tree-optimization/63387
+	* match.pd ((x unord x) | (y unord y) -> (x unord y),
+	(x unord x) | (x unord y) -> (x unord y)): New simplifications.
+
+2015-04-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/predicates.md (any_QIreg_operand): Rename from
+	q_regs_operand.  Do not process subregs.
+	(QIreg_operand): Use QI_REGNO_P predicate.
+	(ext_QIreg_operand): Ditto.
+	(ext_register_operand): Ditto.
+	* config/i386/i386.md (TEST splitters): Use QIreg_operand predicate.
+	(AND splitters): Ditto.
+	(AND with -65536 splitter): Add SWI48 mode for operand 0.
+	(AND with -256 splitter): Use any_QIreg_operand predicate and
+	SWI248 mode for operand 0.
+	(AND with -65281 splitter): Use QIreg_operand predicate and SWI248
+	mode for operand 0.
+	(SETCC + MOVZBL peepholes): Update for renamed any_QIreg_operand.
+
+2015-04-13  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/plugins.texi: Rewrite first introductory paragraph.
+
 2015-04-12  Jan Hubicka  <hubicka@ucw.cz>
 
 	* tree-vrp.c (nonnull_arg_p): THIS pointers and references are non-zero.

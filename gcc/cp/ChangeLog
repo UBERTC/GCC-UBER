@@ -1,3 +1,41 @@
+2015-04-15  Marek Polacek  <polacek@redhat.com>
+
+	* constexpr.c (use_new_call): Remove #define.
+	(lookup_parameter_binding): Remove function.
+	(cxx_bind_parameters_in_call): Remove unused code.
+	(cxx_eval_call_expression): Likewise.
+	(cxx_eval_constant_expression): Likewise.
+
+2015-04-14  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	* tree.c (replace_placeholders_t): Remove unused type.
+	(replace_placeholders): Remove unused pset.
+
+2015-04-14  Jason Merrill  <jason@redhat.com>
+
+	* pt.c (lookup_template_class_1): Use coerce_innermost_template_parms.
+
+	PR c++/65695
+	* cvt.c (cp_fold_convert): Avoid wrapping PTRMEM_CST in NOP_EXPR.
+
+	PR c++/65721
+	* name-lookup.c (do_class_using_decl): Complain about specifying
+	the current class even if there are dependent bases.
+
+2015-04-14  David Krauss  <david_work@me.com>
+
+	PR c++/59766
+	* decl.c (grokdeclarator): Do not flag friends with deduced return.
+
+2015-04-14  Momchil Velikov  <momchil.velikov@gmail.com>
+	    Jason Merrill  <jason@redhat.com>
+
+	PR c++/60994
+	* parser.c (cp_parser_class_name): Add enum_ok parameter.
+	(cp_parser_qualifying_entity): Use it instead of cp_parser_type_name.
+	(cp_parser_diagnose_invalid_type_name): Don't assume a template is
+	a class template.
+
 2015-04-12  Jakub Jelinek  <jakub@redhat.com>
 
 	PR c++/65736
