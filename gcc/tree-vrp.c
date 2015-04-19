@@ -88,6 +88,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "expr.h"
 #include "insn-codes.h"
 #include "optabs.h"
+#include "tree-ssa-scopedtables.h"
 #include "tree-ssa-threadedge.h"
 
 
@@ -6565,6 +6566,14 @@ check_array_ref (location_t location, tree ref, bool ignore_off_by_one)
   up_bound_p1 = int_const_binop (PLUS_EXPR, up_bound,
 				 build_int_cst (TREE_TYPE (up_bound), 1));
 
+  /* Empty array.  */
+  if (tree_int_cst_equal (low_bound, up_bound_p1))
+    {
+      warning_at (location, OPT_Warray_bounds,
+		  "array subscript is above array bounds");
+      TREE_NO_WARNING (ref) = 1;
+    }
+
   if (TREE_CODE (low_sub) == SSA_NAME)
     {
       vr = get_value_range (low_sub);
@@ -6578,9 +6587,11 @@ check_array_ref (location_t location, tree ref, bool ignore_off_by_one)
   if (vr && vr->type == VR_ANTI_RANGE)
     {
       if (TREE_CODE (up_sub) == INTEGER_CST
-          && tree_int_cst_lt (up_bound, up_sub)
+          && (ignore_off_by_one
+	      ? tree_int_cst_lt (up_bound, up_sub)
+	      : tree_int_cst_le (up_bound, up_sub))
           && TREE_CODE (low_sub) == INTEGER_CST
-          && tree_int_cst_lt (low_sub, low_bound))
+          && tree_int_cst_le (low_sub, low_bound))
         {
           warning_at (location, OPT_Warray_bounds,
 		      "array subscript is outside array bounds");
@@ -6589,10 +6600,8 @@ check_array_ref (location_t location, tree ref, bool ignore_off_by_one)
     }
   else if (TREE_CODE (up_sub) == INTEGER_CST
 	   && (ignore_off_by_one
-	       ? (tree_int_cst_lt (up_bound, up_sub)
-		  && !tree_int_cst_equal (up_bound_p1, up_sub))
-	       : (tree_int_cst_lt (up_bound, up_sub)
-		  || tree_int_cst_equal (up_bound_p1, up_sub))))
+	       ? !tree_int_cst_le (up_sub, up_bound_p1)
+	       : !tree_int_cst_le (up_sub, up_bound)))
     {
       if (dump_file && (dump_flags & TDF_DETAILS))
 	{
@@ -6625,25 +6634,6 @@ check_array_ref (location_t location, tree ref, bool ignore_off_by_one)
 static void
 search_for_addr_array (tree t, location_t location)
 {
-  while (TREE_CODE (t) == SSA_NAME)
-    {
-      gimple g = SSA_NAME_DEF_STMT (t);
-
-      if (gimple_code (g) != GIMPLE_ASSIGN)
-	return;
-
-      if (get_gimple_rhs_class (gimple_assign_rhs_code (g))
-	  != GIMPLE_SINGLE_RHS)
-	return;
-
-      t = gimple_assign_rhs1 (g);
-    }
-
-
-  /* We are only interested in addresses of ARRAY_REF's.  */
-  if (TREE_CODE (t) != ADDR_EXPR)
-    return;
-
   /* Check each ARRAY_REFs in the reference chain. */
   do
     {
@@ -6733,12 +6723,11 @@ check_array_bounds (tree *tp, int *walk_subtree, void *data)
   if (TREE_CODE (t) == ARRAY_REF)
     check_array_ref (location, t, false /*ignore_off_by_one*/);
 
-  if (TREE_CODE (t) == MEM_REF
-      || (TREE_CODE (t) == RETURN_EXPR && TREE_OPERAND (t, 0)))
-    search_for_addr_array (TREE_OPERAND (t, 0), location);
-
-  if (TREE_CODE (t) == ADDR_EXPR)
-    *walk_subtree = FALSE;
+  else if (TREE_CODE (t) == ADDR_EXPR)
+    {
+      search_for_addr_array (t, location);
+      *walk_subtree = FALSE;
+    }
 
   return NULL_TREE;
 }
@@ -6768,29 +6757,17 @@ check_all_array_refs (void)
 	{
 	  gimple stmt = gsi_stmt (si);
 	  struct walk_stmt_info wi;
-	  if (!gimple_has_location (stmt))
+	  if (!gimple_has_location (stmt)
+	      || is_gimple_debug (stmt))
 	    continue;
 
-	  if (is_gimple_call (stmt))
-	    {
-	      size_t i;
-	      size_t n = gimple_call_num_args (stmt);
-	      for (i = 0; i < n; i++)
-		{
-		  tree arg = gimple_call_arg (stmt, i);
-		  search_for_addr_array (arg, gimple_location (stmt));
-		}
-	    }
-	  else
-	    {
-	      memset (&wi, 0, sizeof (wi));
-	      wi.info = CONST_CAST (void *, (const void *)
-				    gimple_location_ptr (stmt));
+	  memset (&wi, 0, sizeof (wi));
+	  wi.info = CONST_CAST (void *, (const void *)
+				gimple_location_ptr (stmt));
 
-	      walk_gimple_op (gsi_stmt (si),
-			      check_array_bounds,
-			      &wi);
-	    }
+	  walk_gimple_op (gsi_stmt (si),
+			  check_array_bounds,
+			  &wi);
 	}
     }
 }
@@ -10078,12 +10055,8 @@ vrp_fold_stmt (gimple_stmt_iterator *si)
   return simplify_stmt_using_ranges (si);
 }
 
-/* Stack of dest,src equivalency pairs that need to be restored after
-   each attempt to thread a block's incoming edge to an outgoing edge.
-
-   A NULL entry is used to mark the end of pairs which need to be
-   restored.  */
-static vec<tree> equiv_stack;
+/* Unwindable const/copy equivalences.  */
+const_and_copies *equiv_stack;
 
 /* A trivial wrapper so that we can present the generic jump threading
    code with a simple API for simplifying statements.  STMT is the
@@ -10164,7 +10137,7 @@ identify_jump_threads (void)
 
   /* Allocate our unwinder stack to unwind any temporary equivalences
      that might be recorded.  */
-  equiv_stack.create (20);
+  equiv_stack = new const_and_copies (dump_file, dump_flags);
 
   /* To avoid lots of silly node creation, we create a single
      conditional and just modify it in-place when attempting to
@@ -10222,7 +10195,7 @@ identify_jump_threads (void)
 	      if (e->flags & (EDGE_DFS_BACK | EDGE_COMPLEX))
 		continue;
 
-	      thread_across_edge (dummy, e, true, &equiv_stack,
+	      thread_across_edge (dummy, e, true, equiv_stack,
 				  simplify_stmt_for_jump_threading);
 	    }
 	}
@@ -10243,7 +10216,7 @@ static void
 finalize_jump_threads (void)
 {
   thread_through_all_blocks (false);
-  equiv_stack.release ();
+  delete equiv_stack;
 }
 
 

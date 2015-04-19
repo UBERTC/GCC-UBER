@@ -1861,15 +1861,19 @@ maybe_make_one_only (tree decl)
 bool
 vague_linkage_p (tree decl)
 {
+  if (!TREE_PUBLIC (decl))
+    {
+      gcc_checking_assert (!DECL_COMDAT (decl));
+      return false;
+    }
   /* Unfortunately, import_export_decl has not always been called
      before the function is processed, so we cannot simply check
      DECL_COMDAT.  */
   if (DECL_COMDAT (decl)
-      || (((TREE_CODE (decl) == FUNCTION_DECL
-	    && DECL_DECLARED_INLINE_P (decl))
-	   || (DECL_LANG_SPECIFIC (decl)
-	       && DECL_TEMPLATE_INSTANTIATION (decl)))
-	  && TREE_PUBLIC (decl)))
+      || (TREE_CODE (decl) == FUNCTION_DECL
+	  && DECL_DECLARED_INLINE_P (decl))
+      || (DECL_LANG_SPECIFIC (decl)
+	  && DECL_TEMPLATE_INSTANTIATION (decl)))
     return true;
   else if (DECL_FUNCTION_SCOPE_P (decl))
     /* A local static in an inline effectively has vague linkage.  */
@@ -2386,9 +2390,7 @@ determine_visibility (tree decl)
     {
       /* If the specialization doesn't specify visibility, use the
 	 visibility from the template.  */
-      tree tinfo = (TREE_CODE (decl) == TYPE_DECL
-		    ? TYPE_TEMPLATE_INFO (TREE_TYPE (decl))
-		    : DECL_TEMPLATE_INFO (decl));
+      tree tinfo = get_template_info (decl);
       tree args = TI_ARGS (tinfo);
       tree attribs = (TREE_CODE (decl) == TYPE_DECL
 		      ? TYPE_ATTRIBUTES (TREE_TYPE (decl))

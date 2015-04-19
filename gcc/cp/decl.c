@@ -13708,6 +13708,20 @@ start_preparsed_function (tree decl1, tree attrs, int flags)
 
   store_parm_decls (current_function_parms);
 
+  if (!processing_template_decl
+      && flag_lifetime_dse && DECL_CONSTRUCTOR_P (decl1))
+    {
+      /* Insert a clobber to let the back end know that the object storage
+	 is dead when we enter the constructor.  */
+      tree btype = CLASSTYPE_AS_BASE (current_class_type);
+      tree clobber = build_constructor (btype, NULL);
+      TREE_THIS_VOLATILE (clobber) = true;
+      tree bref = build_nop (build_reference_type (btype), current_class_ptr);
+      bref = convert_from_reference (bref);
+      tree exprstmt = build2 (MODIFY_EXPR, btype, bref, clobber);
+      finish_expr_stmt (exprstmt);
+    }
+
   return true;
 }
 
@@ -14422,7 +14436,8 @@ grokmethod (cp_decl_specifier_seq *declspecs,
 
   check_template_shadow (fndecl);
 
-  DECL_COMDAT (fndecl) = 1;
+  if (TREE_PUBLIC (fndecl))
+    DECL_COMDAT (fndecl) = 1;
   DECL_DECLARED_INLINE_P (fndecl) = 1;
   DECL_NO_INLINE_WARNING_P (fndecl) = 1;
 
@@ -14572,7 +14587,8 @@ cxx_maybe_build_cleanup (tree decl, tsubst_flags_t complain)
 	 ordinary FUNCTION_DECL.  */
       fn = lookup_name (id);
       arg = build_address (decl);
-      mark_used (decl);
+      if (!mark_used (decl, complain) && !(complain & tf_error))
+	return error_mark_node;
       cleanup = cp_build_function_call_nary (fn, complain, arg, NULL_TREE);
       if (cleanup == error_mark_node)
 	return error_mark_node;
@@ -14612,10 +14628,11 @@ cxx_maybe_build_cleanup (tree decl, tsubst_flags_t complain)
     SET_EXPR_LOCATION (cleanup, UNKNOWN_LOCATION);
 
   if (cleanup
-      && !lookup_attribute ("warn_unused", TYPE_ATTRIBUTES (TREE_TYPE (decl))))
-    /* Treat objects with destructors as used; the destructor may do
-       something substantive.  */
-    mark_used (decl);
+      && !lookup_attribute ("warn_unused", TYPE_ATTRIBUTES (TREE_TYPE (decl)))
+      /* Treat objects with destructors as used; the destructor may do
+	 something substantive.  */
+      && !mark_used (decl, complain) && !(complain & tf_error))
+    return error_mark_node;
 
   return cleanup;
 }
