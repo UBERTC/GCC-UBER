@@ -1,3 +1,28 @@
+2015-04-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/65780
+	* gcc.dg/pr65780-1.c: New test.
+	* gcc.dg/pr65780-2.c: Likewise.
+	* gcc.target/i386/pr32219-9.c: Likewise.
+	* gcc.target/i386/pr32219-1.c (xxx): Make it initialized common
+	symbol.
+	* gcc.target/i386/pr64317.c (c): Initialize.
+
+2015-04-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65787
+	* gcc.target/powerpc/pr65787.c: New.
+
+2015-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/65771
+	* gcc.dg/debug/pr65771.c: New test.
+
+2015-04-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/mpx/alloca-1-lbv.c (mpx_test): Replace
+	__buitlin_alloca with __builtin_alloca.
+
 2015-04-15  Jakub Jelinek  <jakub@redhat.com>
 
 	PR ipa/65765
