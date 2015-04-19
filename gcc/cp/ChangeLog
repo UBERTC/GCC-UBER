@@ -1,3 +1,47 @@
+2015-04-16  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* class.c (resolve_address_of_overloaded_function, instantiate_type):
+	Rename tsubst_flags_t parameter flags -> complain.
+
+2015-04-16  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* call.c (build_op_delete_call, build_over_call): Check mark_used
+	return value.
+	* class.c (resolve_address_of_overloaded_function): Likewise.
+	* decl.c (cxx_maybe_build_cleanup): Likewise.
+	* pt.c (gen_elem_of_pack_expansion_instantiation, tsubst_baselink,
+	tsubst_qualified_id, tsubst_copy, tsubst_copy_and_build): Likewise.
+	* rtti.c (build_dynamic_cast_1): Likewise.
+	* semantics.c (process_outer_var_ref): Likewise.
+	* typeck.c (build_class_member_access_expr,
+	cp_build_function_call_vec, cp_build_addr_expr_1): Likewise.
+
+2015-04-15  Jason Merrill  <jason@redhat.com>
+
+	* constexpr.c (cxx_eval_store_expression): Ignore clobbers.
+	(build_constexpr_constructor_member_initializers): Loop to find
+	the BIND_EXPR.
+	* decl.c (start_preparsed_function): Clobber the object at the
+	beginning of a constructor.
+
+	* decl.c (grokmethod): Only set DECL_COMDAT if TREE_PUBLIC is set.
+	* method.c (implicitly_declare_fn): Likewise.
+	* decl2.c (vague_linkage_p): Check TREE_PUBLIC first.
+
+	* decl2.c (determine_visibility): Use get_template_info.
+
+2015-04-15  Jason Merrill  <jason@redhat.com>
+	    Marek Polacek  <polacek@redhat.com>
+
+	PR c++/65727
+	* lambda.c (lambda_expr_this_capture): In unevaluated context go
+	through the normal loop, just don't capture.
+	(maybe_resolve_dummy): Handle null return.
+
+2015-04-15  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* call.c (enforce_access): Emit error + inform.
+
 2015-04-15  Marek Polacek  <polacek@redhat.com>
 
 	* constexpr.c (use_new_call): Remove #define.

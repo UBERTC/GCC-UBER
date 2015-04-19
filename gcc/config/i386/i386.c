@@ -13320,62 +13320,6 @@ legitimate_pic_address_disp_p (rtx disp)
   return false;
 }
 
-/* Our implementation of LEGITIMIZE_RELOAD_ADDRESS.  Returns a value to
-   replace the input X, or the original X if no replacement is called for.
-   The output parameter *WIN is 1 if the calling macro should goto WIN,
-   0 if it should not.  */
-
-bool
-ix86_legitimize_reload_address (rtx x, machine_mode, int opnum, int type,
-			       	int)
-{
-  /* Reload can generate:
-
-     (plus:DI (plus:DI (unspec:DI [(const_int 0 [0])] UNSPEC_TP)
-		       (reg:DI 97))
-	      (reg:DI 2 cx))
-
-     This RTX is rejected from ix86_legitimate_address_p due to
-     non-strictness of base register 97.  Following this rejection, 
-     reload pushes all three components into separate registers,
-     creating invalid memory address RTX.
-
-     Following code reloads only the invalid part of the
-     memory address RTX.  */
-
-  if (GET_CODE (x) == PLUS
-      && REG_P (XEXP (x, 1))
-      && GET_CODE (XEXP (x, 0)) == PLUS
-      && REG_P (XEXP (XEXP (x, 0), 1)))
-    {
-      rtx base, index;
-      bool something_reloaded = false;
-
-      base = XEXP (XEXP (x, 0), 1);      
-      if (!REG_OK_FOR_BASE_STRICT_P (base))
-	{
-	  push_reload (base, NULL_RTX, &XEXP (XEXP (x, 0), 1), NULL,
-		       BASE_REG_CLASS, GET_MODE (x), VOIDmode, 0, 0,
-		       opnum, (enum reload_type) type);
-	  something_reloaded = true;
-	}
-
-      index = XEXP (x, 1);
-      if (!REG_OK_FOR_INDEX_STRICT_P (index))
-	{
-	  push_reload (index, NULL_RTX, &XEXP (x, 1), NULL,
-		       INDEX_REG_CLASS, GET_MODE (x), VOIDmode, 0, 0,
-		       opnum, (enum reload_type) type);
-	  something_reloaded = true;
-	}
-
-      gcc_assert (something_reloaded);
-      return true;
-    }
-
-  return false;
-}
-
 /* Determine if op is suitable RTX for an address register.
    Return naked register if a register or a register subreg is
    found, otherwise return NULL_RTX.  */
@@ -15191,8 +15135,9 @@ void
 print_reg (rtx x, int code, FILE *file)
 {
   const char *reg;
+  int msize;
   unsigned int regno;
-  bool duplicated = code == 'd' && TARGET_AVX;
+  bool duplicated;
 
   if (ASSEMBLER_DIALECT == ASM_ATT)
     putc ('%', file);
@@ -15204,42 +15149,85 @@ print_reg (rtx x, int code, FILE *file)
       return;
     }
 
+  if (code == 'y' && STACK_TOP_P (x))
+    {
+      fputs ("st(0)", file);
+      return;
+    }
+
+  if (code == 'w')
+    msize = 2;
+  else if (code == 'b')
+    msize = 1;
+  else if (code == 'k')
+    msize = 4;
+  else if (code == 'q')
+    msize = 8;
+  else if (code == 'h')
+    msize = 0;
+  else if (code == 'x')
+    msize = 16;
+  else if (code == 't')
+    msize = 32;
+  else if (code == 'g')
+    msize = 64;
+  else
+    msize = GET_MODE_SIZE (GET_MODE (x));
+
   regno = true_regnum (x);
+
   gcc_assert (regno != ARG_POINTER_REGNUM
 	      && regno != FRAME_POINTER_REGNUM
 	      && regno != FLAGS_REG
 	      && regno != FPSR_REG
 	      && regno != FPCR_REG);
 
-  if (code == 'w')
-    code = 2;
-  else if (code == 'b')
-    code = 1;
-  else if (code == 'k')
-    code = 4;
-  else if (code == 'q')
-    code = 8;
-  else if (code == 'y')
-    code = 3;
-  else if (code == 'h')
-    code = 0;
-  else if (code == 'x')
-    code = 16;
-  else if (code == 't')
-    code = 32;
-  else if (code == 'g')
-    code = 64;
-  else
-    code = GET_MODE_SIZE (GET_MODE (x));
+  duplicated = code == 'd' && TARGET_AVX;
 
-  /* Irritatingly, AMD extended registers use different naming convention
-     from the normal registers: "r%d[bwd]"  */
+  switch (msize)
+    {
+    case 8:
+    case 4:
+      if (LEGACY_INT_REGNO_P (regno))
+	putc (msize == 8 ? 'r' : 'e', file);
+    case 16:
+    case 12:
+    case 2:
+    normal:
+      reg = hi_reg_name[regno];
+      break;
+    case 1:
+      if (regno >= ARRAY_SIZE (qi_reg_name))
+	goto normal;
+      reg = qi_reg_name[regno];
+      break;
+    case 0:
+      if (regno >= ARRAY_SIZE (qi_high_reg_name))
+	goto normal;
+      reg = qi_high_reg_name[regno];
+      break;
+    case 32:
+    case 64:
+      if (SSE_REGNO_P (regno))
+	{
+	  gcc_assert (!duplicated);
+	  putc (msize == 32 ? 'y' : 'z', file);
+	  reg = hi_reg_name[regno] + 1;
+	  break;
+	}
+      goto normal;
+    default:
+      gcc_unreachable ();
+    }
+
+  fputs (reg, file);
+
+  /* Irritatingly, AMD extended registers use
+     different naming convention: "r%d[bwd]"  */
   if (REX_INT_REGNO_P (regno))
     {
       gcc_assert (TARGET_64BIT);
-      putc ('r', file);
-      fprint_ul (file, regno - FIRST_REX_INT_REG + 8);
-      switch (code)
+      switch (msize)
 	{
 	  case 0:
 	    error ("extended registers have no high halves");
@@ -15263,52 +15251,6 @@ print_reg (rtx x, int code, FILE *file)
       return;
     }
 
-  reg = NULL;
-  switch (code)
-    {
-    case 3:
-      if (STACK_TOP_P (x))
-	{
-	  reg = "st(0)";
-	  break;
-	}
-      /* FALLTHRU */
-    case 8:
-    case 4:
-    case 12:
-      if (LEGACY_INT_REG_P (x))
-	putc (code == 8 && TARGET_64BIT ? 'r' : 'e', file);
-      /* FALLTHRU */
-    case 16:
-    case 2:
-    normal:
-      reg = hi_reg_name[regno];
-      break;
-    case 1:
-      if (regno >= ARRAY_SIZE (qi_reg_name))
-	goto normal;
-      reg = qi_reg_name[regno];
-      break;
-    case 0:
-      if (regno >= ARRAY_SIZE (qi_high_reg_name))
-	goto normal;
-      reg = qi_high_reg_name[regno];
-      break;
-    case 32:
-    case 64:
-      if (SSE_REG_P (x))
-	{
-	  gcc_assert (!duplicated);
-	  putc (code == 32 ? 'y' : 'z', file);
-	  fputs (hi_reg_name[regno] + 1, file);
-	  return;
-	}
-      break;
-    default:
-      gcc_unreachable ();
-    }
-
-  fputs (reg, file);
   if (duplicated)
     {
       if (ASSEMBLER_DIALECT == ASM_ATT)
@@ -51795,6 +51737,21 @@ ix86_initialize_bounds (tree var, tree lb, tree ub, tree *stmts)
   return 2;
 }
 
+#if !TARGET_MACHO && !TARGET_DLLIMPORT_DECL_ATTRIBUTES
+/* For i386, common symbol is local only for non-PIE binaries.  For
+   x86-64, common symbol is local only for non-PIE binaries or linker
+   supports copy reloc in PIE binaries.   */
+
+static bool
+ix86_binds_local_p (const_tree exp)
+{
+  return default_binds_local_p_3 (exp, flag_shlib != 0, true, true,
+				  (!flag_pic
+				   || (TARGET_64BIT
+				       && HAVE_LD_PIE_COPYRELOC != 0)));
+}
+#endif
+
 /* Initialize the GCC target structure.  */
 #undef TARGET_RETURN_IN_MEMORY
 #define TARGET_RETURN_IN_MEMORY ix86_return_in_memory
@@ -51929,7 +51886,7 @@ ix86_initialize_bounds (tree var, tree lb, tree ub, tree *stmts)
 #define TARGET_BINDS_LOCAL_P darwin_binds_local_p
 #else
 #undef TARGET_BINDS_LOCAL_P
-#define TARGET_BINDS_LOCAL_P default_binds_local_p_2
+#define TARGET_BINDS_LOCAL_P ix86_binds_local_p
 #endif
 #if TARGET_DLLIMPORT_DECL_ATTRIBUTES
 #undef TARGET_BINDS_LOCAL_P

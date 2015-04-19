@@ -1,4 +1,354 @@
+2015-04-18  Trevor Saunders  <tsaunders@mozilla.com>
+
+	* hash-table.h: Remove version of hash_table that stored value_type *.
+	* asan.c, attribs.c, bitmap.c, cfg.c, cgraph.h, config/arm/arm.c,
+	config/i386/winnt.c, config/ia64/ia64.c, config/mips/mips.c,
+	config/sol2.c, coverage.c, cselib.c, dse.c, dwarf2cfi.c,
+	dwarf2out.c, except.c, gcse.c, genmatch.c, ggc-common.c,
+	gimple-ssa-strength-reduction.c, gimplify.c, haifa-sched.c,
+	hard-reg-set.h, hash-map.h, hash-set.h, ipa-devirt.c, ipa-icf.h,
+	ipa-profile.c, ira-color.c, ira-costs.c, loop-invariant.c,
+	loop-iv.c, loop-unroll.c, lto-streamer.h, plugin.c, postreload-gcse.c,
+	reginfo.c, statistics.c, store-motion.c, trans-mem.c, tree-cfg.c,
+	tree-eh.c, tree-hasher.h, tree-into-ssa.c, tree-parloops.c,
+	tree-sra.c, tree-ssa-coalesce.c, tree-ssa-dom.c, tree-ssa-live.c,
+	tree-ssa-loop-im.c, tree-ssa-loop-ivopts.c, tree-ssa-phiopt.c,
+	tree-ssa-pre.c, tree-ssa-reassoc.c, tree-ssa-sccvn.c,
+	tree-ssa-structalias.c, tree-ssa-tail-merge.c,
+	tree-ssa-threadupdate.c, tree-vectorizer.c, tree-vectorizer.h,
+	valtrack.h, var-tracking.c, vtable-verify.c, vtable-verify.h: Adjust.
+
+2015-04-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65787
+	* config/rs6000/rs6000.c (rtx_is_swappable_p): Ensure that a
+	subsequent SH_NONE operand does not overwrite an existing *special
+	value.
+	(adjust_extract): Handle case where a vec_extract operation is
+	wrapped in a PARALLEL.
+
+2015-04-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/65780
+	* config/i386/i386.c (ix86_binds_local_p): Define only if
+	TARGET_MACHO and TARGET_DLLIMPORT_DECL_ATTRIBUTES are false.
+
+2015-04-17  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/47679
+	* Makefile.in (OBJS); Add tree-ssa-scopedtables.o.
+	* tree-ssa-scopedtables.c: New file.
+	* tree-ssa-scopedtables.h: New file.
+	* tree-ssa-dom.c: Include tree-ssa-scopedtables.h.
+	(const_and_copies): Change name/type.
+	(record_const_or_copy): Move into tree-ssa-scopedtables.c
+	(record_const_or_copy_1): Similarly.
+	(restore_vars_to_original_value): Similarly.
+	(pass_dominator::execute): Create and destroy const_and_copies table.
+	(thread_across_edge): Update passing of const_and_copies.
+	(record_temporary_equivalence): Use method calls rather than
+	manipulating const_and_copies directly.
+	(record_equality, cprop_into_successor_phis): Similarly.
+	(dom_opt_dom_walker::before_dom_children): Similarly.
+	(dom_opt_dom_walker::after_dom_children): Similarly.
+	(eliminate_redundant_computations): Similarly.
+	* tree-ssa-threadedge.c (remove_temporary_equivalences): Delete.
+	(record_temporary_equivalence): Likewise.
+	(invalidate_equivalences): Likewise.
+	(record_temporary_equivalences_from_phis): Update due to type
+	change of const_and_copies.  Use method calls rather than
+	manipulating the stack directly.
+	(record_temporary_equivalences_from_stmts_at_dest): Likewise.
+	(thread_through_normal_block, thread_across_edge): Likewise.
+	(thread_across_edge): Likewise.
+	* tree-ssa-threadedge.h (thread_across_edge): Update prototype.
+	* tree-vrp.c: Include tree-ssa-scopedtables.h.  Change type
+	of equiv_stack.
+	(identify_jump_threads): Update due to type change of equiv_stack.
+	(finalize_jump_threads): Delete the equiv_stack when complete.
+
+2015-04-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.h (LEGITIMIZE_RELOAD_ADDRESS): Remove.
+	* config/i386/i386.c (ix86_legitimize_reload_address): Ditto.
+	* config/i386/i386-protos.h (ix86_legitimize_reload_address): Ditto.
+
+2015-04-17  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	PR target/65535
+	* config.gcc: Exit with a comment when we do not have a major version
+	number for the FreeBSD target.
+
+2015-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65689
+	* genpreds.c (struct constraint_data): Add maybe_allows_reg and
+	maybe_allows_mem bitfields.
+	(maybe_allows_none_start, maybe_allows_none_end,
+	maybe_allows_reg_start, maybe_allows_reg_end, maybe_allows_mem_start,
+	maybe_allows_mem_end): New variables.
+	(compute_maybe_allows): New function.
+	(add_constraint): Use it to initialize maybe_allows_reg and
+	maybe_allows_mem fields.
+	(choose_enum_order): Sort the non-is_register/is_const_int/is_memory/
+	is_address constraints such that those that allow neither mem nor
+	reg come first, then those that only allow reg but not mem, then
+	those that only allow mem but not reg, then the rest.
+	(write_allows_reg_mem_function): New function.
+	(write_tm_preds_h): Call it.
+	* stmt.c (parse_output_constraint, parse_input_constraint): Use
+	the generated insn_extra_constraint_allows_reg_mem function
+	instead of always setting *allows_reg = true; *allows_mem = true;
+	for unknown extra constraints.
+
+2015-04-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/65780
+	* output.h (default_binds_local_p_3): New.
+	* varasm.c (default_binds_local_p_3): Make it public.  Take an
+	argument to indicate if common symbol may be local.  If common
+	symbol may be local, treat non-external variable as defined
+	locally.
+	(default_binds_local_p_2): Pass !flag_pic to default_binds_local_p_3.
+	(default_binds_local_p_1): Pass false to default_binds_local_p_3.
+	* config/i386/i386.c (ix86_binds_local_p): New.
+	(TARGET_BINDS_LOCAL_P): Replace default_binds_local_p_2 with
+	ix86_binds_local_p.
+
+2015-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/65771
+	* dwarf2out.c (mem_loc_descriptor): For CONST, fallback to
+	trying mem_loc_descriptor on XEXP (rtl, 0).
+
+2015-04-17  Martin Liska  <mliska@suse.cz>
+
+	* ipa-icf.c (sem_item_optimizer::subdivide_classes_by_sensitive_refs):
+	Release symbol_compare_collection.
+	* ipa-reference.c: Add TODO that a vector should be released.
+
+2015-04-17  Sivanupandi Pitchumani <Pitchumani.Sivanupandi@atmel.com>
+
+	PR target/65296
+	* config/avr/gen-avr-mmcu-specs.c (*avrlibc_startfile): Adjust
+	to new AVR-LibC file layout (bug #44574).
+	(*avrlibc_devicelib): Same.
+	* config/avr/avr-mcus.def: Adjust comments.
+	* config/avr/avr.opt (nodevicelib): Adjust help.
+
+2015-04-17  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/arm_neon.h (vdup_n_f32): Remove forward declaration.
+
+2015-04-17  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/64527
+	* gimplify.c (gimplify_init_constructor): Always emit a
+	side-effecting constructor.
+
+2015-04-17  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/64950
+	* gimplify.c (gimplify_function_tree): Tentatively set PROP_gimple_lva
+	in cfun->curr_properties.
+	(gimplify_va_arg_expr): Clear PROP_gimple_lva in cfun->curr_properties
+	if we generate an IFN_VA_ARG.
+	* tree-inline.c (expand_call_inline): Reset PROP_gimple_lva in dest
+	function if PROP_gimple_lva is not set in src function.
+
+2015-04-17  Tom de Vries  <tom@codesourcery.com>
+	    Michael Matz  <matz@suse.de>
+
+	PR tree-optimization/64950
+	* gimple-iterator.c (update_modified_stmts): Remove static.
+	* gimple-iterator.h (update_modified_stmts): Declare.
+	* gimplify.c (gimplify_modify_expr): Handle IFN_VA_ARG.
+	(gimplify_va_arg_internal): New function.
+	(gimplify_va_arg_expr): Use IFN_VA_ARG.
+	* gimplify.h (gimplify_va_arg_internal): Declare.
+	* internal-fn.c (expand_VA_ARG): New unreachable function.
+	* internal-fn.def (VA_ARG): New DEF_INTERNAL_FN.
+	* tree-stdarg.c (gimple_call_ifn_va_arg_p, expand_ifn_va_arg_1)
+	(expand_ifn_va_arg): New function.
+	(pass_data_stdarg): Add PROP_gimple_lva to properties_provided field.
+	(pass_stdarg::execute): Call expand_ifn_va_arg.
+	(pass_data_lower_vaarg): New pass_data.
+	(pass_lower_vaarg): New gimple_opt_pass.
+	(pass_lower_vaarg::gate, pass_lower_vaarg::execute)
+	(make_pass_lower_vaarg): New function.
+	* cfgexpand.c (pass_data_expand): Add PROP_gimple_lva to
+	properties_required field.
+	* passes.def (all_passes): Add pass_lower_vaarg.
+	* tree-pass.h (PROP_gimple_lva): Add define.
+	(make_pass_lower_vaarg): Declare.
+
+2015-04-17  Tom de Vries  <tom@codesourcery.com>
+
+	* fold-const.c (operand_equal_p): Handle INTERNAL_FNs.
+	* calls.c (call_expr_flags): Same.
+
+2015-04-17  Tom de Vries  <tom@codesourcery.com>
+
+	* tree-stdarg.c (optimize_va_list_gpr_fpr_size): Factor out of ...
+	(pass_stdarg::execute): ... here.
+
+2015-04-17  Tom de Vries  <tom@codesourcery.com>
+	    Michael Matz  <matz@suse.de>
+
+	* tree-cfg.c (make_blocks_1): Factor out of ...
+	(make_blocks): ... here.
+	(make_edges_bb): Factor out of ...
+	(make_edges): ... here.
+	(gimple_find_sub_bbs): New function.
+	* tree-cfg.h (gimple_find_sub_bbs): Declare.
+
+2015-04-17  Tom de Vries  <tom@codesourcery.com>
+
+	* tree.c (free_lang_data): Disable lang_hooks.gimplify_expr.
+
+2015-04-17  Yury Gribov  <y.gribov@samsung.com>
+
+	* asan.c (set_sanitized_sections): New function.
+	(section_sanitized_p): Ditto.
+	(asan_protect_global): Optionally sanitize user-defined
+	sections.
+	* asan.h (set_sanitized_sections): Declare new function.
+	* common.opt (fsanitize-sections): New option.
+	* doc/invoke.texi (-fsanitize-sections): Document new option.
+	* opts-global.c (handle_common_deferred_options): Handle new
+	option.
+
+2015-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/65771
+	* dwarf2out.c (loc_list_from_tree): Return NULL
+	for DEBUG_EXPR_DECL.
+
+2015-04-17  Christian Bruel  <christian.bruel@st.com>
+
+	* ipa-inline.c (can_inline_edge_p): Allow inlining of functions with
+	same attributes.
+
+2015-04-16  Zhouyi Zhou  <yizhouzhou@ict.ac.cn>
+
+	* ira-color.c (setup_left_conflict_sizes_p): Do not process
+	node itself when computing left conflict subnode size.
+
+2015-04-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/predicates.md (register_mixssei387nonimm_operand): New.
+	* config/i386/i386.md (*fop_<mode>_1_mixed): Merge with
+	*fop_<mode>_1_sse using enabled attribute.  Use
+	register_mixssei387nonimm_operand operand 1 predicate. Change
+	alternative 3 constraints from "x" to "v".
+
+2015-04-16  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65774
+	* tree-ssa-ccp.c (evaluate_stmt): Constrain types we invoke
+	bit-value tracking on.
+
+2015-04-16  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64277
+	* tree-vrp.c (check_array_ref): Fix anti-range handling,
+	simplify upper bound handling.
+	(search_for_addr_array): Simplify.
+	(check_array_bounds): Handle ADDR_EXPRs here.
+	(check_all_array_refs): Simplify.
+
+2015-04-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (print_reg): Rewrite function.
+
+2015-04-16  Andreas Krebbel  <Andreas.Krebbel@de.ibm.com>
+
+	* config/s390/s390.h (IRA_HARD_REGNO_ADD_COST_MULTIPLIER):
+	Invert the condition.
+
+2015-04-16  Renlin Li  <renlin.li@arm.com>
+
+	* simplify-rtx.c (simplify_unary_operation_1): Fix a typo. Enable two
+	simplifications for UNSIGNED_FLOAT.
+
+2015-04-16  Nick Clifton  <nickc@redhat.com>
+
+	* config/rl78/rl78-opts.h (enum rl78_mul_types): Add MUL_G14 and
+	MUL_UNINIT.
+	(enum rl78_cpu_type): New.
+	* config/rl78/rl78-virt.md (attr valloc): Add divhi and divsi.
+	(umulhi3_shift_virt): Remove m constraint from operand 1.
+	(umulqihi3_virt): Likewise.
+	* config/rl78/rl78.c (rl78_option_override): Add code to process
+	-mcpu and -mmul options.
+	(rl78_alloc_physical_registers): Add code to handle divhi and
+	divsi valloc attributes.
+	(set_origin): Likewise.
+	* config/rl78/rl78.h (RL78_MUL_G14): Define.
+	(TARGET_G10, TARGET_G13, TARGET_G14): Define.
+	(TARGET_CPU_CPP_BUILTINS): Define __RL78_MUL_xxx__ and
+	__RL78_Gxx__.
+	(ASM_SPEC): Pass -mcpu on to assembler.
+	* config/rl78/rl78.md (mulqi3): Add a clobber of AX.
+	(mulqi3_rl78): Likewise.
+	(mulhi3_g13): Likewise.
+	(mulhi3): Generate the G13 or G14 versions of the insn directly.
+	(mulsi3): Likewise.
+	(mulhi3_g14): Add clobbers of AX and BC.
+	(mulsi3_g14): Likewise.
+	(mulsi3_g13): Likewise.
+	(udivmodhi4, udivmodhi4_g14, udivmodsi4): New patterns.
+	(udivmodsi4_g14, udivmodsi4_g13): New patterns.
+	* config/rl78/rl78.opt (mmul): Initialise value to
+	RL78_MUL_UNINIT.
+	(mcpu): New option.
+	(m13, m14, mrl78): New option aliases.
+	* config/rl78/t-rl78 (MULTILIB_OPTIONS): Add mg13 and mg14.
+	(MULTILIB_DIRNAMES): Add g13 and g14.
+	* doc/invoke.texi: Document -mcpu and -mmul options.
+
+2015-04-16  Richard Biener  <rguenther@suse.de>
+
+	* tree-ssa-ccp.c (likely_value): See if we have operands that
+	are marked as never simulate again and return CONSTANT in this
+	case.
+	* tree-ssa-propagate.c (simulate_stmt): Mark stmts that do
+	not have any operands that will be simulated again as
+	not being simulated again.
+
+2015-04-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (*cmpi<FPCMP:unord><MODEF:mode>_mixed):
+	Merge with *cmpi<FPCMP:unord><MODEF:mode>_sse using enabled attribute.
+	(*extendsfdf2_mixed): Merge with *extendsfdf2_sse using enabled
+	attribute.
+	(*truncdfsf_fast_mixed): Merge with *truncdfsf_fast_sse using
+	enabled attribute.
+	(*float<SWI48:mode><MODEF:mode>2_mixed): Rename from
+	*float<SWI48:mode><MODEF:mode>2_sse.
+	(*absneg<mode>2_mixed): Merge with *absneg<mode>2_sse using
+	enabled attribute.
+	(*fop_<mode>_comm_mixed): Merge with *fop_<mode>_comm_sse using
+	enabled attribute.
+
+2015-04-15  Tom de Vries  <tom@codesourcery.com>
+
+	PR other/65487
+	* function.c (push_dummy_function): New function.
+	(init_dummy_function_start): Use push_dummy_function.
+	(pop_dummy_function): New function.  Factored out of ...
+	(expand_dummy_function_end): ... here.
+	* function.h (push_dummy_function, pop_dummy_function): Declare.
+	* passes.c (pass_manager::dump_passes): Use push_dummy_function and
+	pop_dummy_function.
+	* tree-chkp.c (chkp_gate): Handle cgraph_node::get (cfun->decl) == NULL.
+
 2015-04-15  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/47679
+	* tree-ssa-dom.c (build_and_record_new_cond): Moved to avoid
+	need for forward declaration in upcoming changes.
+	(record_conditions, record_edge_info): Likewise.
 
 	PR rtl-optimization/42522
 	* cse.c (fold_rtx): Try to simplify a ZERO_EXTRACT or
@@ -34,6 +384,7 @@
 	* config/rx/t-rx (MULTILIB_OPTIONS): Add mno-allow-string-insns.
 	(MULTILIB_DIRNAMES): Add no-strings.
 	* doc/invoke.texi: Document -mno-allow-string-insns.
+
 2015-04-15  Alan Modra  <amodra@gmail.com>
 
 	PR target/65408
