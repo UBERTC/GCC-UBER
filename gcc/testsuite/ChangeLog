@@ -1,3 +1,75 @@
+2015-04-21 Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libgfortran/65234
+	* gfortran.dg/fmt_unlimited.f90: New test.
+
+2015-04-21  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* gcc.target/i386/avx512bw-vpermi2w-2.c: Fix includes to use actual
+	headers.
+	* gcc.target/i386/avx512bw-vpermt2w-2.c: Likewise.
+	* gcc.target/i386/avx512bw-vpmaddubsw-2.c: Likewise.
+	* gcc.target/i386/avx512bw-vpmaddwd-2.c: Likewise.
+	* gcc.target/i386/avx512dq-vfpclasspd-2.c: Likewise.
+	* gcc.target/i386/avx512dq-vfpclassps-2.c: Likewise.
+	* gcc.target/i386/avx512vbmi-vpermi2b-2.c: Likewise.
+	* gcc.target/i386/avx512vbmi-vpermt2b-2.c: Likewise.
+
+2015-04-21 Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR libgfortran/56743
+	* gfortran.dg/namelist_87.f90: New test.
+
+2015-04-21  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/mult-synth_1.c: New test.
+	* gcc.target/aarch64/mult-synth_2.c: Likewise.
+	* gcc.target/aarch64/mult-synth_3.c: Likewise.
+	* gcc.target/aarch64/mult-synth_4.c: Likewise.
+	* gcc.target/aarch64/mult-synth_5.c: Likewise.
+	* gcc.target/aarch64/mult-synth_6.c: Likewise.
+
+2015-04-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65650
+	* gcc.dg/tree-ssa/ssa-ccp-37.c: New testcase.
+	* gcc.dg/tree-ssa/forwprop-11.c: Adjust.
+	* gcc.dg/tree-ssa/ssa-fre-3.c: Likewise.
+	* gcc.dg/tree-ssa/ssa-fre-4.c: Likewise.
+	* gcc.dg/tree-ssa/ssa-fre-5.c: Likewise.
+	* gcc.dg/tree-ssa/ssa-fre-32.c: Likewise.
+
+2015-04-21  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65802
+	* g++.dg/pr65802.C: New test.
+
+2015-04-21  Bin Cheng  <bin.cheng@arm.com>
+
+	PR testsuite/65767
+	* g++.dg/lto/pr65276_0.C: Change namespace std to std2.
+	* g++.dg/lto/pr65276_1.C: Change namespace std to std2.
+
+2015-04-20  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65801
+	* g++.dg/cpp0x/Wnarrowing2.C: New.
+
+2015-04-20  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/65658
+	* gcc.dg/pr65658.c: New test.
+
+2015-04-20  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR target/64134
+	* gcc.target/aarch64/vec_init_1.c: New test.
+
+2015-04-20  Yvan Roux  <yvan.roux@linaro.org>
+
+	* gcc.target/arm/pr65729.c: Restrict to hard float ABI compliant
+	targets.
+
 2015-04-18  Martin Sebor  <msebor@redhat.com>
 
 	* gfortran.dg/pr32627.f03 (strptr): Change size to match the number

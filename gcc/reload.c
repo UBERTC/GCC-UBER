@@ -2706,12 +2706,10 @@ find_reloads (rtx_insn *insn, int replace, int ind_levels, int live_known,
   if (JUMP_P (insn) || CALL_P (insn))
     no_output_reloads = 1;
 
-#ifdef HAVE_cc0
-  if (reg_referenced_p (cc0_rtx, PATTERN (insn)))
+  if (HAVE_cc0 && reg_referenced_p (cc0_rtx, PATTERN (insn)))
     no_input_reloads = 1;
-  if (reg_set_p (cc0_rtx, PATTERN (insn)))
+  if (HAVE_cc0 && reg_set_p (cc0_rtx, PATTERN (insn)))
     no_output_reloads = 1;
-#endif
 
 #ifdef SECONDARY_MEMORY_NEEDED
   /* The eliminated forms of any secondary memory locations are per-insn, so
@@ -4579,16 +4577,14 @@ find_reloads (rtx_insn *insn, int replace, int ind_levels, int live_known,
 	    rld[j].in = 0;
 	  }
 
-#ifdef HAVE_cc0
   /* If we made any reloads for addresses, see if they violate a
      "no input reloads" requirement for this insn.  But loads that we
      do after the insn (such as for output addresses) are fine.  */
-  if (no_input_reloads)
+  if (HAVE_cc0 && no_input_reloads)
     for (i = 0; i < n_reloads; i++)
       gcc_assert (rld[i].in == 0
 		  || rld[i].when_needed == RELOAD_FOR_OUTADDR_ADDRESS
 		  || rld[i].when_needed == RELOAD_FOR_OUTPUT_ADDRESS);
-#endif
 
   /* Compute reload_mode and reload_nregs.  */
   for (i = 0; i < n_reloads; i++)
@@ -5873,7 +5869,7 @@ find_reloads_address_1 (machine_mode mode, addr_space_t as,
 	      enum insn_code icode = optab_handler (add_optab, GET_MODE (x));
 	      if (insn && NONJUMP_INSN_P (insn) && equiv
 		  && memory_operand (equiv, GET_MODE (equiv))
-#ifdef HAVE_cc0
+#if HAVE_cc0
 		  && ! sets_cc0_p (PATTERN (insn))
 #endif
 		  && ! (icode != CODE_FOR_nothing

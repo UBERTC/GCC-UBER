@@ -3820,9 +3820,7 @@ can_move_insns_across (rtx_insn *from, rtx_insn *to,
 	  if (bitmap_intersect_p (merge_set, test_use)
 	      || bitmap_intersect_p (merge_use, test_set))
 	    break;
-#ifdef HAVE_cc0
-	  if (!sets_cc0_p (insn))
-#endif
+	  if (!HAVE_cc0 || !sets_cc0_p (insn))
 	    max_to = insn;
 	}
       next = NEXT_INSN (insn);
@@ -3861,10 +3859,7 @@ can_move_insns_across (rtx_insn *from, rtx_insn *to,
       if (NONDEBUG_INSN_P (insn))
 	{
 	  if (!bitmap_intersect_p (test_set, local_merge_live)
-#ifdef HAVE_cc0
-	      && !sets_cc0_p (insn)
-#endif
-	      )
+	      && (!HAVE_cc0 || !sets_cc0_p (insn)))
 	    {
 	      max_to = insn;
 	      break;

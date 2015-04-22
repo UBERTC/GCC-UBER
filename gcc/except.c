@@ -174,12 +174,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "cfgloop.h"
 #include "builtins.h"
 
-/* Provide defaults for stuff that may not be defined when using
-   sjlj exceptions.  */
-#ifndef EH_RETURN_DATA_REGNO
-#define EH_RETURN_DATA_REGNO(N) INVALID_REGNUM
-#endif
-
 static GTY(()) int call_site_base;
 
 struct tree_hash_traits : default_hashmap_traits
@@ -2191,14 +2185,13 @@ expand_builtin_extract_return_addr (tree addr_tree)
     }
 
   /* First mask out any unwanted bits.  */
-#ifdef MASK_RETURN_ADDR
-  expand_and (Pmode, addr, MASK_RETURN_ADDR, addr);
-#endif
+  rtx mask = MASK_RETURN_ADDR;
+  if (mask)
+    expand_and (Pmode, addr, mask, addr);
 
   /* Then adjust to find the real return address.  */
-#if defined (RETURN_ADDR_OFFSET)
-  addr = plus_constant (Pmode, addr, RETURN_ADDR_OFFSET);
-#endif
+  if (RETURN_ADDR_OFFSET)
+    addr = plus_constant (Pmode, addr, RETURN_ADDR_OFFSET);
 
   return addr;
 }
@@ -2214,10 +2207,11 @@ expand_builtin_frob_return_addr (tree addr_tree)
 
   addr = convert_memory_address (Pmode, addr);
 
-#ifdef RETURN_ADDR_OFFSET
-  addr = force_reg (Pmode, addr);
-  addr = plus_constant (Pmode, addr, -RETURN_ADDR_OFFSET);
-#endif
+  if (RETURN_ADDR_OFFSET)
+    {
+      addr = force_reg (Pmode, addr);
+      addr = plus_constant (Pmode, addr, -RETURN_ADDR_OFFSET);
+    }
 
   return addr;
 }

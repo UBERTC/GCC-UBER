@@ -1,3 +1,357 @@
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (INSN_REFERENCES_ARE_DELAYED): New definition.
+	* reorg.c (redundant_insn): Remove ifdef
+	INSN_REFERENCES_ARE_DELAYED.
+	* resource.c (mark_referenced_resources): Likewise.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (INSN_SETS_ARE_DELAYED): New definition.
+	* reorg.c (redundant_insn): Remove ifdef INSN_SETS_ARE_DELAYED.
+	* resource.c (mark_set_resources): Likewise.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* caller-save.c (insert_one_insn): Remove ifdef HAVE_cc0.
+	* cfgcleanup.c (flow_find_cross_jump): Likewise.
+	(flow_find_head_matching_sequence): Likewise.
+	(try_head_merge_bb): Likewise.
+	* combine.c (can_combine_p): Likewise.
+	(try_combine): Likewise.
+	(distribute_notes): Likewise.
+	* df-problems.c (can_move_insns_across): Likewise.
+	* final.c (final): Likewise.
+	* gcse.c (insert_insn_end_basic_block): Likewise.
+	* ira.c (find_moveable_pseudos): Likewise.
+	* reorg.c (try_merge_delay_insns): Likewise.
+	(fill_simple_delay_slots): Likewise.
+	(fill_slots_from_thread): Likewise.
+	* sched-deps.c (sched_analyze_2): Likewise.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* df-scan.c (df_get_entry_block_def_set): Remove #ifdef
+	PIC_OFFSET_TABLE_REGNUM.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* alias.c (init_alias_target): Remove ifdef
+	* HARD_FRAME_POINTER_IS_FRAME_POINTER.
+	* df-scan.c (df_insn_refs_collect): Likewise.
+	(df_get_regular_block_artificial_uses): Likewise.
+	(df_get_eh_block_artificial_uses): Likewise.
+	(df_get_entry_block_def_set): Likewise.
+	(df_get_exit_block_use_set): Likewise.
+	* emit-rtl.c (gen_rtx_REG): Likewise.
+	* ira.c (ira_setup_eliminable_regset): Likewise.
+	* reginfo.c (init_reg_sets_1): Likewise.
+	* regrename.c (rename_chains): Likewise.
+	* reload1.c (reload): Likewise.
+	(eliminate_regs_in_insn): Likewise.
+	* resource.c (mark_referenced_resources): Likewise.
+	(init_resource_info): Likewise.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (MASK_RETURN_ADDR): New definition.
+	* except.c (expand_builtin_extract_return_addr): Remove ifdef
+	MASK_RETURN_ADDR.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (RETURN_ADDR_OFFSET): New definition.
+	* except.c (expand_builtin_extract_return_addr): Remove ifdef
+	RETURN_ADDR_OFFSET.
+	(expand_builtin_frob_return_addr): Likewise.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* cfgrtl.c (rtl_merge_blocks): Change #if HAVE_cc0 to if (HAVE_cc0)
+	(try_redirect_by_replacing_jump): Likewise.
+	(rtl_tidy_fallthru_edge): Likewise.
+	* combine.c (insn_a_feeds_b): Likewise.
+	(find_split_point): Likewise.
+	(simplify_set): Likewise.
+	* cprop.c (cprop_jump): Likewise.
+	* cse.c (cse_extended_basic_block): Likewise.
+	* df-problems.c (can_move_insns_across): Likewise.
+	* function.c (emit_use_return_register_into_block): Likewise.
+	* haifa-sched.c (sched_init): Likewise.
+	* ira.c (find_moveable_pseudos): Likewise.
+	* loop-invariant.c (find_invariant_insn): Likewise.
+	* lra-constraints.c (curr_insn_transform): Likewise.
+	* postreload.c (reload_combine_recognize_const_pattern):
+	* Likewise.
+	* reload.c (find_reloads): Likewise.
+	* reorg.c (delete_scheduled_jump): Likewise.
+	(steal_delay_list_from_target): Likewise.
+	(steal_delay_list_from_fallthrough): Likewise.
+	(redundant_insn): Likewise.
+	(fill_simple_delay_slots): Likewise.
+	(fill_slots_from_thread): Likewise.
+	(delete_computation): Likewise.
+	* sched-rgn.c (add_branch_dependences): Likewise.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* genconfig.c (main): Always define HAVE_cc0.
+	* caller-save.c (insert_one_insn): Change ifdef HAVE_cc0 to #if
+	HAVE_cc0.
+	* cfgcleanup.c (flow_find_cross_jump): Likewise.
+	(flow_find_head_matching_sequence): Likewise.
+	(try_head_merge_bb): Likewise.
+	* cfgrtl.c (rtl_merge_blocks): Likewise.
+	(try_redirect_by_replacing_jump): Likewise.
+	(rtl_tidy_fallthru_edge): Likewise.
+	* combine.c (do_SUBST_MODE): Likewise.
+	(insn_a_feeds_b): Likewise.
+	(combine_instructions): Likewise.
+	(can_combine_p): Likewise.
+	(try_combine): Likewise.
+	(find_split_point): Likewise.
+	(subst): Likewise.
+	(simplify_set): Likewise.
+	(distribute_notes): Likewise.
+	* cprop.c (cprop_jump): Likewise.
+	* cse.c (cse_extended_basic_block): Likewise.
+	* df-problems.c (can_move_insns_across): Likewise.
+	* final.c (final): Likewise.
+	(final_scan_insn): Likewise.
+	* function.c (emit_use_return_register_into_block): Likewise.
+	* gcse.c (insert_insn_end_basic_block): Likewise.
+	* haifa-sched.c (sched_init): Likewise.
+	* ira.c (find_moveable_pseudos): Likewise.
+	* loop-invariant.c (find_invariant_insn): Likewise.
+	* lra-constraints.c (curr_insn_transform): Likewise.
+	* optabs.c (prepare_cmp_insn): Likewise.
+	* postreload.c (reload_combine_recognize_const_pattern):
+	* Likewise.
+	* reload.c (find_reloads): Likewise.
+	(find_reloads_address_1): Likewise.
+	* reorg.c (delete_scheduled_jump): Likewise.
+	(steal_delay_list_from_target): Likewise.
+	(steal_delay_list_from_fallthrough): Likewise.
+	(try_merge_delay_insns): Likewise.
+	(redundant_insn): Likewise.
+	(fill_simple_delay_slots): Likewise.
+	(fill_slots_from_thread): Likewise.
+	(delete_computation): Likewise.
+	(relax_delay_slots): Likewise.
+	* sched-deps.c (sched_analyze_2): Likewise.
+	* sched-rgn.c (add_branch_dependences): Likewise.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* combine.c (find_single_use): Remove HAVE_cc0 ifdef for code
+	that is trivially ded on non cc0 targets.
+	(simplify_set): Likewise.
+	(mark_used_regs_combine): Likewise.
+	* cse.c (new_basic_block): Likewise.
+	(fold_rtx): Likewise.
+	(cse_insn): Likewise.
+	(cse_extended_basic_block): Likewise.
+	(set_live_p): Likewise.
+	* rtlanal.c (canonicalize_condition): Likewise.
+	* simplify-rtx.c (simplify_binary_operation_1): Likewise.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* conditions.h: Define macros even if HAVE_cc0 is undefined.
+	* emit-rtl.c: Define functions even if HAVE_cc0 is undefined.
+	* final.c: Likewise.
+	* jump.c: Likewise.
+	* recog.c: Likewise.
+	* recog.h: Declare functions even when HAVE_cc0 is undefined.
+	* sched-deps.c (sched_analyze_2): Always compile case for cc0.
+
+2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h: New definition of EH_RETURN_DATA_REGNO.
+	* except.c: Remove definition of EH_RETURN_DATA_REGNO.
+	* builtins.c (expand_builtin): Remove check if
+	EH_RETURN_DATA_REGNO is defined.
+	* df-scan.c (df_bb_refs_collect): Likewise.
+	(df_get_exit_block_use_set): Likewise.
+	* haifa-sched.c (initiate_bb_reg_pressure_info): Likewise.
+	* ira-lives.c (process_bb_node_lives): Likewise.
+	* lra-lives.c (process_bb_lives): Likewise.
+
+2015-04-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (ARGP_REG, FRAME_REG, BND2_REG, BND3_REG,
+	FIRST_PSEUDO_REG): New.
+	* config/i386/i386.h (STACK_POINTER_REGNUM): Define to SP_REG.
+	(ARG_POINTER_REGNUM): Define to ARGP_REG.
+	(FRAME_POINTER_REGNUM): Define to FRAME_REG.
+	(HARD_FRAME_POINTER_REGNUM): Define to BP_REG.
+	(FIRST_PSEUDO_REGISTER): Define to FIRST_PSEUDO_REG.
+	(FIRST_INT_REG): New.
+	(LAST_INT_REG): New.
+	(FIRST_*_REG): Define using *_REG.
+	(LAST_*_REG): Ditto.
+	(QI_REGNO_P): Define using FIRST_QU_REG and LAST_QI_REG.
+	(LEGACY_INT_REGNO_P): Define using FIRST_INT_REG and LAST_INT_REG.
+	(FIRST_FLOAT_REG): Define to FIRST_STACK_REG.
+
+2015-04-21  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* expmed.c: (synth_mult): Only assume overlapping
+	shift with previous steps in alg_sub_t_m2 case.
+
+2015-04-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65650
+	* tree-ssa-ccp.c (valid_lattice_transition): Allow lattice
+	transitions involving copies.
+	(set_lattice_value): Adjust for copy lattice state.
+	(ccp_lattice_meet): Do not merge UNDEFINED and a copy to the copy
+	if that doesn't dominate the merge point.
+	(bit_value_unop): Adjust what we treat as varying mask.
+	(bit_value_binop): Likewise.
+	(bit_value_assume_aligned): Likewise.
+	(evaluate_stmt): When we simplified to a SSA name record a copy
+	instead of dropping to varying.
+	(visit_assignment): Simplify.
+
+	* gimple-match.h (gimple_simplify): Add another callback.
+	* gimple-fold.c (fold_stmt_1): Adjust caller.
+	(gimple_fold_stmt_to_constant_1): Likewise - pass valueize
+	for the 2nd callback.
+	* gimple-match-head.c (gimple_simplify): Add a callback that is
+	used to valueize the stmt operands and use it that way.
+
+2015-04-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65788
+	* tree-ssa-ccp.c (evaluate_stmt): Evaluate to UNDEFINED early.
+
+2015-04-21  Richard Biener  <rguenther@suse.de>
+
+	* config/i386/i386.c (ix86_builtin_vectorization_cost): Scale
+	vec_construct cost by vec_stmt_cost.
+
+2015-04-21  Richard Biener  <rguenther@suse.de>
+
+	* cfghooks.h (create_basic_block): Replace with two overloads
+	for RTL and GIMPLE.
+	(split_block): Likewise.
+	* cfghooks.c (split_block): Rename to ...
+	(split_block_1): ... this.
+	(split_block): Add two type-safe overloads for RTL and GIMPLE.
+	(split_block_after_labels): Call split_block_1.
+	(create_basic_block): Rename to ...
+	(create_basic_block_1): ... this.
+	(create_basic_block): Add two type-safe overloads for RTL and GIMPLE.
+	(create_empty_bb): Call create_basic_block_1.
+	* cfgrtl.c (fixup_fallthru_exit_predecessor): Use
+	split_block_after_labels.
+	* omp-low.c (expand_parallel_call): Likewise.
+	(expand_omp_target): Likewise.
+	(simd_clone_adjust): Likewise.
+	* tree-chkp.c (chkp_get_entry_block): Likewise.
+	* cgraphunit.c (init_lowered_empty_function): Use the GIMPLE
+	create_basic_block overload.
+	(cgraph_node::expand_thunk): Likewise.
+	* tree-cfg.c (make_blocks): Likewise.
+	(handle_abnormal_edges): Likewise.
+	* tree-inline.c (copy_bb): Likewise.
+
+2015-04-21  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.md (*<NLOGICAL:optab>_one_cmplsidi3_ze):
+	New pattern.
+	(*xor_one_cmplsidi3_ze): Likewise.
+
+2015-04-21  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* df-core.c (df_finish_pass): Iterate over df->problems_by_index[] and
+	use df_remove_problem rather than manually removing problems, leaving
+	holes in df->problems_in_order[].
+
+2015-04-21  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65802
+	* internal-fn.def (VA_ARG): Add ECF_NOTROW to flags.
+
+2015-04-21  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* common/config/aarch64/aarch64-common.c (AARCH64_CPU_NAME_LENGTH):
+	Increase to 128.
+	(aarch64_rewrite_selected_cpu): Do not chop off extensions starting
+	at '.'.  Assert that there's enough space for everything.
+
+2015-04-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR tree-optimization/64950
+	Revert:
+	2010-08-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/41089
+	* config/alpha/alpha.c (alpha_build_builtin_va_list): Mark __offset
+	as volatile.
+
+2015-04-20  Shiva Chen  <shiva0217@gmail.com>
+
+	PR rtl-optimization/64916
+	* cfgcleanup.c (values_equal_p): New function.
+	(can_replace_by): Use it.
+
+2015-04-20  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65801
+	* doc/invoke.texi ([-Wnarrowing]): Update.
+
+2015-04-20  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/65658
+	* tree-ssa-threadupdate.c (redirection_block_p): Remove
+	redundant test for GIMPLE_ASSIGN in last change.
+
+2015-04-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (set_pic_reg_ever_live): Remove.
+	(legitimize_pic_address): Do not call set_pic_reg_ever_live.
+	(legitimize_tls_address): Ditto.
+	(ix86_expand_move): Ditto.
+	(ix86_expand_binary_operator): Remove reload_in_progress checks.
+	(ix86_expand_unary_operator): Ditto.
+	* config/i386/predicates.md (index_register_operand): Ditto.
+
+2015-04-20  Selim Belbachir  <selim.belbachir@fr.thalesgroup.com>
+
+	* reorg.c (try_merge_delay_insns): Improve correctness checking
+	for targets with multiple delay slots.
+
+2015-04-20  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/65658
+	* tree-ssa-threadupdate.c (redirection_block_p): Ignore clobber
+	statements too.
+
+2015-04-20  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_simd_emit_pair_result_insn): Delete.
+	* config/aarch64/aarch64-protos.h (aarch64_simd_emit_pair_result_insn):
+	Delete.
+
+2015-04-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/65807
+	* dwarf2out.c (add_AT_wide): Clear attr.dw_attr_val.val_entry.
+
+2015-04-20  Richard Biener  <rguenther@suse.de>
+
+	* gimple-fold.h (gimple_build): Remove optional valueize arguments.
+	* gimple-fold.c (gimple_build_valueize): New function.
+	(gimple_build): Always use gimple_build_valueize as valueize hook.
+
+2015-04-20  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR target/64134
+	* config/aarch64/aarch64.c (aarch64_expand_vector_init): Load constant
+	and overwrite variable parts if <= 1/2 the elements are variable.
+
 2015-04-19  Vladimir Makarov  <vmakarov@redhat.com>
 
 	PR rtl-optimization/65805

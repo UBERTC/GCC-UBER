@@ -715,11 +715,11 @@ gen_rtx_REG (machine_mode mode, unsigned int regno)
       if (regno == FRAME_POINTER_REGNUM
 	  && (!reload_completed || frame_pointer_needed))
 	return frame_pointer_rtx;
-#if !HARD_FRAME_POINTER_IS_FRAME_POINTER
-      if (regno == HARD_FRAME_POINTER_REGNUM
+
+      if (!HARD_FRAME_POINTER_IS_FRAME_POINTER
+	  && regno == HARD_FRAME_POINTER_REGNUM
 	  && (!reload_completed || frame_pointer_needed))
 	return hard_frame_pointer_rtx;
-#endif
 #if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM && !HARD_FRAME_POINTER_IS_ARG_POINTER
       if (regno == ARG_POINTER_REGNUM)
 	return arg_pointer_rtx;
@@ -3539,7 +3539,6 @@ prev_active_insn (rtx uncast_insn)
   return insn;
 }
 
-#ifdef HAVE_cc0
 /* Return the next insn that uses CC0 after INSN, which is assumed to
    set it.  This is the inverse of prev_cc0_setter (i.e., prev_cc0_setter
    applied to the result of this function should yield INSN).
@@ -3587,7 +3586,6 @@ prev_cc0_setter (rtx uncast_insn)
 
   return insn;
 }
-#endif
 
 #ifdef AUTO_INC_DEC
 /* Find a RTX_AUTOINC class rtx which matches DATA.  */
