@@ -1,3 +1,22 @@
+2015-04-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/configure.xml: Update descriptions of options
+	affecting dual ABI and add cross-references.
+	* doc/xml/manual/strings.xml: Clarify that string isn't COW now.
+	* doc/xml/manual/using.xml: Document ABI transition.
+	* doc/html/*: Regenerate.
+
+	* doc/xml/manual/abi.xml: Use uppercase for C++ Standard Library.
+	* doc/xml/manual/using.xml: Document newer -std options. Use better
+	examples of nested namespaces.
+
+2015-04-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/concurrency_extensions.xml: Update documentation
+	on atomics.
+	* doc/xml/manual/using.xml: Likewise. Improve markup.
+	* doc/html/*: Regenerate.
+
 2015-04-15  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 
 	* scripts/extract_symvers.pl: Ignore elfdump error output.

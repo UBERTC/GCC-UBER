@@ -335,9 +335,8 @@ mark_referenced_resources (rtx x, struct resources *res,
 	  if (frame_pointer_needed)
 	    {
 	      SET_HARD_REG_BIT (res->regs, FRAME_POINTER_REGNUM);
-#if !HARD_FRAME_POINTER_IS_FRAME_POINTER
-	      SET_HARD_REG_BIT (res->regs, HARD_FRAME_POINTER_REGNUM);
-#endif
+	      if (!HARD_FRAME_POINTER_IS_FRAME_POINTER)
+		SET_HARD_REG_BIT (res->regs, HARD_FRAME_POINTER_REGNUM);
 	    }
 
 	  for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
@@ -393,11 +392,9 @@ mark_referenced_resources (rtx x, struct resources *res,
 			  include_delayed_effects
 			  ? MARK_SRC_DEST_CALL : MARK_SRC_DEST);
 
-#ifdef INSN_REFERENCES_ARE_DELAYED
       if (! include_delayed_effects
 	  && INSN_REFERENCES_ARE_DELAYED (as_a <rtx_insn *> (x)))
 	return;
-#endif
 
       /* No special processing, just speed up.  */
       mark_referenced_resources (PATTERN (x), res, include_delayed_effects);
@@ -697,11 +694,9 @@ mark_set_resources (rtx x, struct resources *res, int in_dest,
 	/* An insn consisting of just a CLOBBER (or USE) is just for flow
 	   and doesn't actually do anything, so we ignore it.  */
 
-#ifdef INSN_SETS_ARE_DELAYED
       if (mark_type != MARK_SRC_DEST_CALL
 	  && INSN_SETS_ARE_DELAYED (as_a <rtx_insn *> (x)))
 	return;
-#endif
 
       x = PATTERN (x);
       if (GET_CODE (x) != USE && GET_CODE (x) != CLOBBER)
@@ -1190,9 +1185,9 @@ init_resource_info (rtx_insn *epilogue_insn)
   if (frame_pointer_needed)
     {
       SET_HARD_REG_BIT (end_of_function_needs.regs, FRAME_POINTER_REGNUM);
-#if !HARD_FRAME_POINTER_IS_FRAME_POINTER
-      SET_HARD_REG_BIT (end_of_function_needs.regs, HARD_FRAME_POINTER_REGNUM);
-#endif
+      if (!HARD_FRAME_POINTER_IS_FRAME_POINTER)
+	SET_HARD_REG_BIT (end_of_function_needs.regs,
+			  HARD_FRAME_POINTER_REGNUM);
     }
   if (!(frame_pointer_needed
 	&& EXIT_IGNORE_STACK

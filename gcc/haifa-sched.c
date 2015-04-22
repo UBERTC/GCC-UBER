@@ -1070,7 +1070,6 @@ initiate_bb_reg_pressure_info (basic_block bb)
       if (NONDEBUG_INSN_P (insn))
 	setup_ref_regs (PATTERN (insn));
   initiate_reg_pressure_info (df_get_live_in (bb));
-#ifdef EH_RETURN_DATA_REGNO
   if (bb_has_eh_pred (bb))
     for (i = 0; ; ++i)
       {
@@ -1082,7 +1081,6 @@ initiate_bb_reg_pressure_info (basic_block bb)
 	  mark_regno_birth_or_death (curr_reg_live, curr_reg_pressure,
 				     regno, true);
       }
-#endif
 }
 
 /* Save current register pressure related info.  */
@@ -7186,9 +7184,8 @@ void
 sched_init (void)
 {
   /* Disable speculative loads in their presence if cc0 defined.  */
-#ifdef HAVE_cc0
+  if (HAVE_cc0)
   flag_schedule_speculative_load = 0;
-#endif
 
   if (targetm.sched.dispatch (NULL, IS_DISPATCH_ON))
     targetm.sched.dispatch_do (NULL, DISPATCH_INIT);

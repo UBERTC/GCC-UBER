@@ -3621,7 +3621,8 @@ fold_stmt_1 (gimple_stmt_iterator *gsi, bool inplace, tree (*valueize) (tree))
       gimple_seq seq = NULL;
       code_helper rcode;
       tree ops[3] = {};
-      if (gimple_simplify (stmt, &rcode, ops, inplace ? NULL : &seq, valueize))
+      if (gimple_simplify (stmt, &rcode, ops, inplace ? NULL : &seq,
+			   valueize, valueize))
 	{
 	  if (replace_stmt_with_simplification (gsi, rcode, ops, &seq, inplace))
 	    changed = true;
@@ -4928,7 +4929,7 @@ gimple_fold_stmt_to_constant_1 (gimple stmt, tree (*valueize) (tree),
      edges if there are intermediate VARYING defs.  For this reason
      do not follow SSA edges here even though SCCVN can technically
      just deal fine with that.  */
-  if (gimple_simplify (stmt, &rcode, ops, NULL, gvalueize)
+  if (gimple_simplify (stmt, &rcode, ops, NULL, gvalueize, valueize)
       && rcode.is_tree_code ()
       && (TREE_CODE_LENGTH ((tree_code) rcode) == 0
 	  || ((tree_code) rcode) == ADDR_EXPR)
@@ -6078,18 +6079,28 @@ rewrite_to_defined_overflow (gimple stmt)
 }
 
 
+/* The valueization hook we use for the gimple_build API simplification.
+   This makes us match fold_buildN behavior by only combining with
+   statements in the sequence(s) we are currently building.  */
+
+static tree
+gimple_build_valueize (tree op)
+{
+  if (gimple_bb (SSA_NAME_DEF_STMT (op)) == NULL)
+    return op;
+  return NULL_TREE;
+}
+
 /* Build the expression CODE OP0 of type TYPE with location LOC,
-   simplifying it first if possible using VALUEIZE if not NULL.
-   OP0 is expected to be valueized already.  Returns the built
+   simplifying it first if possible.  Returns the built
    expression value and appends statements possibly defining it
    to SEQ.  */
 
 tree
 gimple_build (gimple_seq *seq, location_t loc,
-	      enum tree_code code, tree type, tree op0,
-	      tree (*valueize)(tree))
+	      enum tree_code code, tree type, tree op0)
 {
-  tree res = gimple_simplify (code, type, op0, seq, valueize);
+  tree res = gimple_simplify (code, type, op0, seq, gimple_build_valueize);
   if (!res)
     {
       if (gimple_in_ssa_p (cfun))
@@ -6110,17 +6121,15 @@ gimple_build (gimple_seq *seq, location_t loc,
 }
 
 /* Build the expression OP0 CODE OP1 of type TYPE with location LOC,
-   simplifying it first if possible using VALUEIZE if not NULL.
-   OP0 and OP1 are expected to be valueized already.  Returns the built
+   simplifying it first if possible.  Returns the built
    expression value and appends statements possibly defining it
    to SEQ.  */
 
 tree
 gimple_build (gimple_seq *seq, location_t loc,
-	      enum tree_code code, tree type, tree op0, tree op1,
-	      tree (*valueize)(tree))
+	      enum tree_code code, tree type, tree op0, tree op1)
 {
-  tree res = gimple_simplify (code, type, op0, op1, seq, valueize);
+  tree res = gimple_simplify (code, type, op0, op1, seq, gimple_build_valueize);
   if (!res)
     {
       if (gimple_in_ssa_p (cfun))
@@ -6135,18 +6144,16 @@ gimple_build (gimple_seq *seq, location_t loc,
 }
 
 /* Build the expression (CODE OP0 OP1 OP2) of type TYPE with location LOC,
-   simplifying it first if possible using VALUEIZE if not NULL.
-   OP0, OP1 and OP2 are expected to be valueized already.  Returns the built
+   simplifying it first if possible.  Returns the built
    expression value and appends statements possibly defining it
    to SEQ.  */
 
 tree
 gimple_build (gimple_seq *seq, location_t loc,
-	      enum tree_code code, tree type, tree op0, tree op1, tree op2,
-	      tree (*valueize)(tree))
+	      enum tree_code code, tree type, tree op0, tree op1, tree op2)
 {
   tree res = gimple_simplify (code, type, op0, op1, op2,
-			      seq, valueize);
+			      seq, gimple_build_valueize);
   if (!res)
     {
       if (gimple_in_ssa_p (cfun))
@@ -6167,17 +6174,15 @@ gimple_build (gimple_seq *seq, location_t loc,
 
 /* Build the call FN (ARG0) with a result of type TYPE
    (or no result if TYPE is void) with location LOC,
-   simplifying it first if possible using VALUEIZE if not NULL.
-   ARG0 is expected to be valueized already.  Returns the built
+   simplifying it first if possible.  Returns the built
    expression value (or NULL_TREE if TYPE is void) and appends
    statements possibly defining it to SEQ.  */
 
 tree
 gimple_build (gimple_seq *seq, location_t loc,
-	      enum built_in_function fn, tree type, tree arg0,
-	      tree (*valueize)(tree))
+	      enum built_in_function fn, tree type, tree arg0)
 {
-  tree res = gimple_simplify (fn, type, arg0, seq, valueize);
+  tree res = gimple_simplify (fn, type, arg0, seq, gimple_build_valueize);
   if (!res)
     {
       tree decl = builtin_decl_implicit (fn);
@@ -6198,17 +6203,15 @@ gimple_build (gimple_seq *seq, location_t loc,
 
 /* Build the call FN (ARG0, ARG1) with a result of type TYPE
    (or no result if TYPE is void) with location LOC,
-   simplifying it first if possible using VALUEIZE if not NULL.
-   ARG0 is expected to be valueized already.  Returns the built
+   simplifying it first if possible.  Returns the built
    expression value (or NULL_TREE if TYPE is void) and appends
    statements possibly defining it to SEQ.  */
 
 tree
 gimple_build (gimple_seq *seq, location_t loc,
-	      enum built_in_function fn, tree type, tree arg0, tree arg1,
-	      tree (*valueize)(tree))
+	      enum built_in_function fn, tree type, tree arg0, tree arg1)
 {
-  tree res = gimple_simplify (fn, type, arg0, arg1, seq, valueize);
+  tree res = gimple_simplify (fn, type, arg0, arg1, seq, gimple_build_valueize);
   if (!res)
     {
       tree decl = builtin_decl_implicit (fn);
@@ -6229,18 +6232,17 @@ gimple_build (gimple_seq *seq, location_t loc,
 
 /* Build the call FN (ARG0, ARG1, ARG2) with a result of type TYPE
    (or no result if TYPE is void) with location LOC,
-   simplifying it first if possible using VALUEIZE if not NULL.
-   ARG0 is expected to be valueized already.  Returns the built
+   simplifying it first if possible.  Returns the built
    expression value (or NULL_TREE if TYPE is void) and appends
    statements possibly defining it to SEQ.  */
 
 tree
 gimple_build (gimple_seq *seq, location_t loc,
 	      enum built_in_function fn, tree type,
-	      tree arg0, tree arg1, tree arg2,
-	      tree (*valueize)(tree))
+	      tree arg0, tree arg1, tree arg2)
 {
-  tree res = gimple_simplify (fn, type, arg0, arg1, arg2, seq, valueize);
+  tree res = gimple_simplify (fn, type, arg0, arg1, arg2,
+			      seq, gimple_build_valueize);
   if (!res)
     {
       tree decl = builtin_decl_implicit (fn);
