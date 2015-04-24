@@ -1,3 +1,381 @@
+2015-04-24  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* config/arm/unknown-elf.h (ASM_OUTPUT_ALIGNED_DECL_LOCAL): fix
+	ternary operator in fprintf and harmonize spacing.
+
+2015-04-24  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/sse.md (*vec_widen_smult_even_v8si<mask_name>):
+	Mark operand1 commutative.
+
+2015-04-24  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/sse.md (*vec_concatv2sf_sse4_1): Do not allow both
+	input operands in memory.
+	(*vec_concatv2si_sse4_1): Ditto.
+	(*vec_concatv2df): Ditto, except for SSE3 and equal input operands.
+	(vec_extract_lo_<mode><mask_name>): Change operand 1 predicate to
+	register_operand.
+	(vec_extract_hi_v32hi): Ditto.
+	(vec_extract_hi_v64hi): Ditto.
+	(<mask_codefor>avx512f_unpckhpd512<mask_name>): Ditto.
+
+2015-04-24  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+	    Steven Bosscher <steven@gcc.gnu.org>
+
+	PR rtl-optimization/34503
+	* cprop.c (cprop_reg_p): New.
+	(hash_scan_set): Use above function to check if register can be
+	propagated.
+	(find_avail_set): Return up to two sets, one whose source is a
+	register and one whose source is a constant.  Sets are returned in an
+	array passed as parameter rather than as a return value.
+	(cprop_insn): Use a do while loop rather than a goto.  Try each of the
+	sets returned by find_avail_set, starting with the one whose source is
+	a constant. Use cprop_reg_p to check if register can be propagated.
+	(do_local_cprop): Use cprop_reg_p to check if register can be
+	propagated.
+	(implicit_set_cond_p): Likewise.
+
+2015-04-23  Jan Hubicka  <hubicka@ucw.cz>
+
+	* ipa-icf.c (sem_function::equals_wpa): Compare thunk info.
+	(sem_function::equals): IGNORED_NODES parameter is now unused;
+	update call of equals_private.
+	(sem_function::equals_private): Do not call equals_wpa; skip
+	gimple body matching if there is no body.
+	(sem_function::init): Add logic to hash tthunk info.
+	(sem_function::parse): Also parse thunks.
+	* ipa-icf.h (equals_private): Update declaration.
+
+2015-04-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/altivec.md (*altivec_lvx_<mode>_internal): Remove
+	asterisk from name so this can be generated directly.
+	(*altivec_stvx_<mode>_internal): Likewise.
+	* config/rs6000/rs6000.c (rs6000_emit_le_vsx_store): Add assert
+	that this is never called during or after reload/lra.
+	(rs6000_frame_related): Remove split_reg
+	argument and logic that references it.
+	(emit_frame_save): Remove last parameter from call to
+	rs6000_frame_related.
+	(rs6000_emit_prologue): Remove last parameter from eight calls to
+	rs6000_frame_related.  Force generation of stvx instruction for
+	Altivec register saves.  Remove split_reg handling, which is no
+	longer needed.
+	(rs6000_emit_epilogue):  Force generation of lvx instruction for
+	Altivec register restores.
+
+2015-04-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.opt (mcrypto): Change option description to
+	match category changes in ISA 2.07B.
+
+2015-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/iterators.md (GTGE, GTUGEU, COMPARISONS): New code
+	iterators.
+	(cmp_op, cmp_type): New code attributes.
+	(NEON_VCMP, NEON_VACMP): New int iterators.
+	(cmp_op_unsp): New int attribute.
+	* config/arm/neon.md (neon_vc<cmp_op><mode>): New define_expand.
+	(neon_vceq<mode>): Delete.
+	(neon_vc<cmp_op><mode>_insn): New pattern.
+	(neon_vc<cmp_op_unsp><mode>_insn_unspec): Likewise.
+	(neon_vcgeu<mode>): Delete.
+	(neon_vcle<mode>): Likewise.
+	(neon_vclt<mode>: Likewise.
+	(neon_vcage<mode>): Likewise.
+	(neon_vcagt<mode>): Likewise.
+	(neon_vca<cmp_op><mode>): New define_expand.
+	(neon_vca<cmp_op><mode>_insn): New pattern.
+	(neon_vca<cmp_op_unsp><mode>_insn_unspec): Likewise.
+
+2015-04-23  Jan Hubicka  <hubicka@ucw.cz>
+
+	* tree.h (attribute_value_equal): Declare.
+	* tree.c (attribute_value_equal): Export.
+
+2015-04-23  Jan Hubicka  <hubicka@ucw.cz>
+
+	* ipa-icf.c (sem_item::compare_attributes): New function.
+	(sem_item::compare_referenced_symbol_properties): Compare variable
+	attributes.
+	(sem_item::hash_referenced_symbol_properties): Record DECL_ALIGN.
+	(sem_function::param_used_p): New function.
+	(sem_function::equals_wpa): Fix attribute comparsion; match
+	parameter type codes; do not compare paremter flags when
+	they are not used; compare edge flags; compare indirect calls.
+	(sem_item::update_hash_by_addr_refs): Hash reference type.
+	(sem_function::equals_private): Do not match DECL_ATTRIBUTES.
+	(sem_variable::equals_wpa): Do not match DECL_ALIGN; match
+	reference use type.
+	(sem_item_optimizer::update_hash_by_addr_refs): Use param_used_p.
+	* ipa-icf.h (compare_attributes, param_used_p): Declare.
+
+2015-04-23  Jan Hubicka  <hubicka@ucw.cz>
+
+	* ipa-icf.c (symbol_compare_collection::symbol_compare_collection):
+	cleanup.
+	(sem_function::get_hash): Do not hash DECL_DISREGARD_INLINE_LIMITS,
+	DECL_DECLARED_INLINE_P and DECL_IS_OPERATOR_NEW.
+	(sem_item::compare_referenced_symbol_properties): New.
+	(sem_item::hash_referenced_symbol_properties): New.
+	(sem_item::compare_cgraph_references): Rename to ...
+	(sem_item::compare_symbol_references): ... this one; use
+	compare_referenced_symbol_properties.
+	(sem_function::equals_wpa): Do not compare
+	DECL_DISREGARD_INLINE_LIMITS, DECL_DECLARED_INLINE_P,
+	DECL_IS_OPERATOR_NEW; compare pointer sizes.
+	(sem_item::update_hash_by_addr_refs): Call
+	hash_referenced_symbol_properties.
+	(sem_item::update_hash_by_local_refs): Cleanup.
+	(sem_function::merge): Do not mix up symbol properties.
+	(sem_variable::equals_wpa): Use compare_symbol_references.
+	* ipa-icf.h (sem_item::compare_referenced_symbol_properties): New.
+	(sem_item::hash_referenced_symbol_properties): New.
+	(sem_item::compare_symbol_references): New.
+	(sem_item::compare_cgraph_references): Remove.
+
+2015-04-23  Kwok Cheung Yeung  <kcy@codesourcery.com>
+
+	PR target/26702
+	* config/arm/unknown-elf.h (ASM_OUTPUT_ALIGNED_DECL_LOCAL):
+	Emit size of local.
+
+2015-04-23  Nick Clifton  <nickc@redhat.com>
+
+	* config/rl78/rl78.c (rl78_preferred_reload_class): Add
+	ATTRIBUTE_UNUSED to x parameter.
+	* config/rl78/rl78-opts.h (enum rl78_mul_types): Remove unused MUL_RL78.
+
+2015-04-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/crypto.md (crypto_vpmsum<CR_char>): Change
+	TARGET_CRYPTO to TARGET_P8_VECTOR>
+	(crypto_vpermxor_<mode>): Likewise.
+	* config/rs6000/rs6000-builtin.def (BU_CRYPTO_2A): New #define.
+	(BU_CRYPTO_3A): Likewise.
+	(BU_CRYPTO_OVERLOAD_2A): Rename from BU_CRYPTO_OVERLOAD_2.
+	(BU_CRYPTO_OVERLOAD_3A): New #define.
+	(VPMSUMB): Change from BU_CRYPTO_2 to BU_CRYPTO_2A.
+	(VPMSUMH): Likewise.
+	(VPMSUMW): Likewise.
+	(VPMSUMD): Likewise.
+	(VPERMXOR_V2DI): Change from BU_CRYPTO_3 to BU_CRYPTO_3A.
+	(VPERMXOR_V4SI): Likewise.
+	(VPERMXOR_V8HI): Likewise.
+	(VPERMXOR_V16QI): Likewise.
+	(VPMSUM): Change from BU_CRYPTO_OVERLOAD_2 to
+	BU_CRYPTO_OVERLOAD_2A.
+	(VPERMXOR): Change from BU_CRYPTO_OVERLOAD3 to
+	BU_CRYPTO_OVERLOAD_3A.
+	* config/rs6000/rs6000.opt (mcrypto): Change description of
+	option.
+
+2015-04-23  Richard Biener  <rguenther@suse.de>
+
+	* passes.def: Remove copy propagation passes run directly after CCP.
+	* tree-ssa-ccp.c (get_value_for_expr): Fall back to a COPY for
+	SSA names.
+	(ccp_visit_phi_node): Rework to handle first executable edge
+	specially.
+
+2015-04-23  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* config/arm/arm.h (LEGITIMIZE_RELOAD_ADDRESS): Remove.
+	(ARM_LEGITIMIZE_RELOAD_ADDRESS): Remove.
+	(THUMB_LEGITIMIZE_RELOAD_ADDRESS): Remove.
+	* config/arm/arm.c (arm_legimitimize_reload_address): Remove.
+	(thumb_legimitimize_reload_address): Remove.
+	* config/arm/arm-protos.h (arm_legimitimize_reload_address):
+	Remove.
+	(thumb_legimitimize_reload_address): Remove.
+
+2015-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* conditions.h (CC_STATUS_INIT): Gate on #ifndef CC_STATUS_INIT.
+
+2015-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (load_multiple): Reject operand 2 greater than
+	MAX_LDM_STM_OPS.
+	(store_multiple): Likewise.
+
+2015-04-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm-protos.h (struct tune_params): Add issue_rate field.
+	* config/arm/arm.c (arm_slowmul_tune, arm_fastmul_tune,
+	arm_strongarm_tune, arm_xscale_tune, arm_9e_tune, arm_v6t2_tune,
+	arm_cortex_tune, arm_cortex_a8_tune, arm_cortex_a7_tune,
+	arm_cortex_a15_tune, arm_cortex_a53_tune, arm_cortex_a57_tune,
+	arm_cortex_a9_tune, arm_cortex_a12_tune, arm_v7m_tune, arm_v6m_tune,
+	arm_fa726te_tune arm_cortex_a5_tune, arm_xgene1_tune):
+	Specify issue_rate value.
+	(arm_issue_rate): Look up issue rate from tuning structs. Remove
+	large switch statement.
+	(arm_marvell_pj4_tune): New struct.
+	* config/arm/arm-cores.def (marvell-pj4): Use arm_marvell_pj4_tune
+	struct.
+
+2015-04-23  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-slp.c (vect_find_first_load_in_slp_instance): Remove.
+	(vect_find_last_store_in_slp_instance): Rename to ...
+	(vect_find_last_scalar_stmt_in_slp): ... this and generalize.
+	(vect_analyze_slp_cost_1): Use vector_load for constant defs
+	and vec_construct for external defs when estimating prologue cost.
+	(vect_analyze_slp_instance): Do not init SLP_INSTANCE_FIRST_LOAD_STMT.
+	Compute costs here only when vectorizing loops.
+	(vect_slp_analyze_bb_1): Compute SLP cost here, after vector types
+	have been determined.
+	(vect_schedule_slp_instance): Simplify vectorized code placement
+	and prepare for in-BB external defs.
+	* tree-vectorizer.h (struct _slp_instance): Remove first_load member.
+	(SLP_INSTANCE_FIRST_LOAD_STMT): Remove.
+	* tree-vect-stmts.c (vect_model_store_cost): Remove PURE_SLP_STMT
+	guard.
+	(vect_model_load_cost): Likewise.
+	(vectorizable_store): Instead add it here.
+	(vectorizable_load): Likewise.
+	(vect_is_simple_use): Dump def type textually.
+
+2015-04-23  Richard Biener  <rguenther@suse.de>
+
+	* cfgexpand.c (expand_gimple_stmt_1): Use ops.code.
+	* cfgloop.c (verify_loop_structure): Verify the root loop node.
+	* except.c (duplicate_eh_regions): Call get_eh_region_from_lp_number_fn
+	instead of get_eh_region_from_lp_number.
+	* loop-init.c (fix_loop_structure): If we removed a loop, reset
+	the SCEV cache.
+
+2015-04-23  Anton Blanchard  <anton@samba.org>
+
+	* config/rs6000/rs6000.c (rs6000_output_function_prologue): No
+	need for -mprofile-kernel to save LR to stack.
+
+2015-04-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.c (rtx_is_swappable_p): Commentary
+	adjustments.
+	(insn_is_swappable_p): Return 1 for a convert from double to
+	single precision when all of its uses are splats of BE element
+	zero.
+
+2015-04-23  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	* ira-costs.c (record_operand_costs): Fix typo (remove redundant code).
+
+2015-04-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65456
+	* config/rs6000/rs6000.c (rs6000_option_override_internal):  For
+	VSX + POWER8, enable TARGET_ALLOW_MOVMISALIGN and
+	TARGET_EFFICIENT_UNALIGNED_VSX if not selected by command line
+	option.
+	(rs6000_builtin_mask_for_load): Return 0 for targets with
+	efficient unaligned VSX accesses so that the vectorizer will use
+	direct unaligned loads.
+	(rs6000_builtin_support_vector_misalignment): Always return true
+	for targets with efficient unaligned VSX accesses.
+	(rs6000_builtin_vectorization_cost): Cost of unaligned loads and
+	stores on targets with efficient unaligned VSX accesses is almost
+	always the same as the cost of an aligned load or store, so model
+	it that way.
+	* config/rs6000/rs6000.h (SLOW_UNALIGNED_ACCESS): Return 0 for
+	unaligned vectors if we have efficient unaligned VSX accesses.
+	* config/rs6000/rs6000.opt (mefficient-unaligned-vector): New
+	undocumented option.
+
+2015-04-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Revert:
+	2015-04-22  Gregor Richards  <gregor.richards@uwaterloo.ca>
+
+	* config.gcc (LIBC_MUSL): New tm_defines macro.
+	* config/linux.h (OPTION_MUSL): Define.
+	(INCLUDE_DEFAULTS_MUSL_GPP, INCLUDE_DEFAULTS_MUSL_LOCAL,)
+	(INCLUDE_DEFAULTS_MUSL_PREFIX, INCLUDE_DEFAULTS_MUSL_CROSS,)
+	(INCLUDE_DEFAULTS_MUSL_TOOL, INCLUDE_DEFAULTS_MUSL_NATIVE): Define.
+
+	* config/linux.opt (mmusl): New option.
+	* configure.ac (gcc_cv_libc_provides_ssp): Add *-*-musl*.
+	(gcc_cv_target_dl_iterate_phdr): Add *-linux-musl*.
+
+	* configure: Regenerate.
+
+2015-04-22  Gregor Richards  <gregor.richards@uwaterloo.ca>
+
+	* config.gcc (LIBC_MUSL): New tm_defines macro.
+	* config/linux.h (OPTION_MUSL): Define.
+	(INCLUDE_DEFAULTS_MUSL_GPP, INCLUDE_DEFAULTS_MUSL_LOCAL,)
+	(INCLUDE_DEFAULTS_MUSL_PREFIX, INCLUDE_DEFAULTS_MUSL_CROSS,)
+	(INCLUDE_DEFAULTS_MUSL_TOOL, INCLUDE_DEFAULTS_MUSL_NATIVE): Define.
+
+	* config/linux.opt (mmusl): New option.
+	* configure.ac (gcc_cv_libc_provides_ssp): Add *-*-musl*.
+	(gcc_cv_target_dl_iterate_phdr): Add *-linux-musl*.
+
+	* configure: Regenerate.
+
+2015-04-22  Yury Gribov  <y.gribov@samsung.com>
+
+	* doc/invoke.texi (-fsanitize-sections): Update description.
+	* asan.c (set_sanitized_sections): Parse incoming arg.
+	(section_sanitized_p): Support wildcards.
+
+2015-04-22  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65823
+	* gimplify.c (gimplify_modify_expr): Use operand_equal_p to test for
+	equality between ap_copy and ap.
+
+2015-04-22  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	PR target/47098
+	* config/openbsd-oldgas.h (OBSD_LIB_SPEC): Add.
+
+2015-04-22  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	PR target/47122
+	* config.gcc (vax-*-openbsd*): Fix name of pthread spec header.
+
+2015-04-22  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	PR target/55144
+	* config.gcc (bfin*-linux-uclibc*): Prepend tmake_file and
+	remove already contained t-files.
+
+2015-04-22  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	* tree-tailcall.c (suitable_for_tail_opt_p, find_tail_calls):
+	Remove unneeded forward declarations.
+	(suitable_for_tail_call_opt_p): Commentary typo fix.
+
+2015-04-22  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	* varasm.c (emit_bss): Remove redundant guard.
+
+2015-04-22  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	* config/c6x/c6x.h (TARGET_CPU_CPP_BUILTINS): Add unk_isa.
+
+2015-04-22  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	* config/bfin/bfin.h (TARGET_CPU_CPP_BUILTINS): Add BFIN_CPU_UNKNOWN.
+
+2015-04-22  Hale Wang  <hale.wang@arm.com>
+	    Terry Guo  <terry.guo@arm.com>
+
+	PR rtl-optimization/64818
+	* combine.c (can_combine_p): Don't combine user-specified
+	register if it is in an asm input.
+
+2015-04-21  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65076
+	* passes.def (early_optimizations): Add pass_dse.
+
 2015-04-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
 
 	* defaults.h (INSN_REFERENCES_ARE_DELAYED): New definition.

@@ -1699,7 +1699,8 @@ const struct tune_params arm_slowmul_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  1						/* Issue rate.  */
 };
 
 const struct tune_params arm_fastmul_tune =
@@ -1720,7 +1721,8 @@ const struct tune_params arm_fastmul_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  1						/* Issue rate.  */
 };
 
 /* StrongARM has early execution of branches, so a sequence that is worth
@@ -1744,7 +1746,8 @@ const struct tune_params arm_strongarm_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  1						/* Issue rate.  */
 };
 
 const struct tune_params arm_xscale_tune =
@@ -1765,7 +1768,8 @@ const struct tune_params arm_xscale_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  1						/* Issue rate.  */
 };
 
 const struct tune_params arm_9e_tune =
@@ -1786,7 +1790,30 @@ const struct tune_params arm_9e_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  1						/* Issue rate.  */
+};
+
+const struct tune_params arm_marvell_pj4_tune =
+{
+  arm_9e_rtx_costs,
+  NULL,
+  NULL,						/* Sched adj cost.  */
+  1,						/* Constant limit.  */
+  5,						/* Max cond insns.  */
+  ARM_PREFETCH_NOT_BENEFICIAL,
+  true,						/* Prefer constant pool.  */
+  arm_default_branch_cost,
+  false,					/* Prefer LDRD/STRD.  */
+  {true, true},					/* Prefer non short circuit.  */
+  &arm_default_vec_cost,			/* Vectorizer costs.  */
+  false,					/* Prefer Neon for 64-bits bitops.  */
+  false, false,					/* Prefer 32-bit encodings.  */
+  false,					/* Prefer Neon for stringops.  */
+  8,						/* Maximum insns to inline memset.  */
+  ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  2						/* Issue rate.  */
 };
 
 const struct tune_params arm_v6t2_tune =
@@ -1807,8 +1834,10 @@ const struct tune_params arm_v6t2_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  1						/* Issue rate.  */
 };
+
 
 /* Generic Cortex tuning.  Use more specific tunings if appropriate.  */
 const struct tune_params arm_cortex_tune =
@@ -1829,7 +1858,8 @@ const struct tune_params arm_cortex_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  2						/* Issue rate.  */
 };
 
 const struct tune_params arm_cortex_a8_tune =
@@ -1850,7 +1880,8 @@ const struct tune_params arm_cortex_a8_tune =
   true,						/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+   2						/* Issue rate.  */
 };
 
 const struct tune_params arm_cortex_a7_tune =
@@ -1871,7 +1902,8 @@ const struct tune_params arm_cortex_a7_tune =
   true,						/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  2						/* Issue rate.  */
 };
 
 const struct tune_params arm_cortex_a15_tune =
@@ -1892,7 +1924,8 @@ const struct tune_params arm_cortex_a15_tune =
   true,						/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_FULL			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_FULL,			/* Sched L2 autopref.  */
+  3						/* Issue rate.  */
 };
 
 const struct tune_params arm_cortex_a53_tune =
@@ -1913,7 +1946,8 @@ const struct tune_params arm_cortex_a53_tune =
   true,						/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_MOVW_MOVT,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  2						/* Issue rate.  */
 };
 
 const struct tune_params arm_cortex_a57_tune =
@@ -1934,7 +1968,8 @@ const struct tune_params arm_cortex_a57_tune =
   true,						/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_MOVW_MOVT,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_FULL			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_FULL,			/* Sched L2 autopref.  */
+  3						/* Issue rate.  */
 };
 
 const struct tune_params arm_xgene1_tune =
@@ -1955,7 +1990,8 @@ const struct tune_params arm_xgene1_tune =
   false,				       /* Prefer Neon for stringops.  */
   32,					       /* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  4						/* Issue rate.  */
 };
 
 /* Branches can be dual-issued on Cortex-A5, so conditional execution is
@@ -1979,7 +2015,8 @@ const struct tune_params arm_cortex_a5_tune =
   true,						/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  2						/* Issue rate.  */
 };
 
 const struct tune_params arm_cortex_a9_tune =
@@ -2000,7 +2037,8 @@ const struct tune_params arm_cortex_a9_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  2						/* Issue rate.  */
 };
 
 const struct tune_params arm_cortex_a12_tune =
@@ -2021,7 +2059,8 @@ const struct tune_params arm_cortex_a12_tune =
   true,						/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_MOVW_MOVT,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  2						/* Issue rate.  */
 };
 
 /* armv7m tuning.  On Cortex-M4 cores for example, MOVW/MOVT take a single
@@ -2049,7 +2088,8 @@ const struct tune_params arm_v7m_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  1						/* Issue rate.  */
 };
 
 /* Cortex-M7 tuning.  */
@@ -2072,7 +2112,8 @@ const struct tune_params arm_cortex_m7_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  2						/* Issue rate.  */
 };
 
 /* The arm_v6m_tune is duplicated from arm_cortex_tune, rather than
@@ -2095,7 +2136,8 @@ const struct tune_params arm_v6m_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  1						/* Issue rate.  */
 };
 
 const struct tune_params arm_fa726te_tune =
@@ -2116,7 +2158,8 @@ const struct tune_params arm_fa726te_tune =
   false,					/* Prefer Neon for stringops.  */
   8,						/* Maximum insns to inline memset.  */
   ARM_FUSE_NOTHING,				/* Fuseable pairs of instructions.  */
-  ARM_SCHED_AUTOPREF_OFF			/* Sched L2 autopref.  */
+  ARM_SCHED_AUTOPREF_OFF,			/* Sched L2 autopref.  */
+  2						/* Issue rate.  */
 };
 
 
@@ -7929,236 +7972,6 @@ thumb_legitimize_address (rtx x, rtx orig_x, machine_mode mode)
     }
 
   return x;
-}
-
-bool
-arm_legitimize_reload_address (rtx *p,
-			       machine_mode mode,
-			       int opnum, int type,
-			       int ind_levels ATTRIBUTE_UNUSED)
-{
-  /* We must recognize output that we have already generated ourselves.  */
-  if (GET_CODE (*p) == PLUS
-      && GET_CODE (XEXP (*p, 0)) == PLUS
-      && REG_P (XEXP (XEXP (*p, 0), 0))
-      && CONST_INT_P (XEXP (XEXP (*p, 0), 1))
-      && CONST_INT_P (XEXP (*p, 1)))
-    {
-      push_reload (XEXP (*p, 0), NULL_RTX, &XEXP (*p, 0), NULL,
-		   MODE_BASE_REG_CLASS (mode), GET_MODE (*p),
-		   VOIDmode, 0, 0, opnum, (enum reload_type) type);
-      return true;
-    }
-
-  if (GET_CODE (*p) == PLUS
-      && REG_P (XEXP (*p, 0))
-      && ARM_REGNO_OK_FOR_BASE_P (REGNO (XEXP (*p, 0)))
-      /* If the base register is equivalent to a constant, let the generic
-	 code handle it.  Otherwise we will run into problems if a future
-	 reload pass decides to rematerialize the constant.  */
-      && !reg_equiv_constant (ORIGINAL_REGNO (XEXP (*p, 0)))
-      && CONST_INT_P (XEXP (*p, 1)))
-    {
-      HOST_WIDE_INT val = INTVAL (XEXP (*p, 1));
-      HOST_WIDE_INT low, high;
-
-      /* Detect coprocessor load/stores.  */
-      bool coproc_p = ((TARGET_HARD_FLOAT
-			&& TARGET_VFP
-			&& (mode == SFmode || mode == DFmode))
-		       || (TARGET_REALLY_IWMMXT
-			   && VALID_IWMMXT_REG_MODE (mode))
-		       || (TARGET_NEON
-			   && (VALID_NEON_DREG_MODE (mode)
-			       || VALID_NEON_QREG_MODE (mode))));
-
-      /* For some conditions, bail out when lower two bits are unaligned.  */
-      if ((val & 0x3) != 0
-	  /* Coprocessor load/store indexes are 8-bits + '00' appended.  */
-	  && (coproc_p
-	      /* For DI, and DF under soft-float: */
-	      || ((mode == DImode || mode == DFmode)
-		  /* Without ldrd, we use stm/ldm, which does not
-		     fair well with unaligned bits.  */
-		  && (! TARGET_LDRD
-		      /* Thumb-2 ldrd/strd is [-1020,+1020] in steps of 4.  */
-		      || TARGET_THUMB2))))
-	return false;
-
-      /* When breaking down a [reg+index] reload address into [(reg+high)+low],
-	 of which the (reg+high) gets turned into a reload add insn,
-	 we try to decompose the index into high/low values that can often
-	 also lead to better reload CSE.
-	 For example:
-	         ldr r0, [r2, #4100]  // Offset too large
-		 ldr r1, [r2, #4104]  // Offset too large
-
-	 is best reloaded as:
-	         add t1, r2, #4096
-		 ldr r0, [t1, #4]
-		 add t2, r2, #4096
-		 ldr r1, [t2, #8]
-
-	 which post-reload CSE can simplify in most cases to eliminate the
-	 second add instruction:
-	         add t1, r2, #4096
-		 ldr r0, [t1, #4]
-		 ldr r1, [t1, #8]
-
-	 The idea here is that we want to split out the bits of the constant
-	 as a mask, rather than as subtracting the maximum offset that the
-	 respective type of load/store used can handle.
-
-	 When encountering negative offsets, we can still utilize it even if
-	 the overall offset is positive; sometimes this may lead to an immediate
-	 that can be constructed with fewer instructions.
-	 For example:
-	         ldr r0, [r2, #0x3FFFFC]
-
-	 This is best reloaded as:
-	         add t1, r2, #0x400000
-		 ldr r0, [t1, #-4]
-
-	 The trick for spotting this for a load insn with N bits of offset
-	 (i.e. bits N-1:0) is to look at bit N; if it is set, then chose a
-	 negative offset that is going to make bit N and all the bits below
-	 it become zero in the remainder part.
-
-	 The SIGN_MAG_LOW_ADDR_BITS macro below implements this, with respect
-	 to sign-magnitude addressing (i.e. separate +- bit, or 1's complement),
-	 used in most cases of ARM load/store instructions.  */
-
-#define SIGN_MAG_LOW_ADDR_BITS(VAL, N)					\
-      (((VAL) & ((1 << (N)) - 1))					\
-       ? (((VAL) & ((1 << ((N) + 1)) - 1)) ^ (1 << (N))) - (1 << (N))	\
-       : 0)
-
-      if (coproc_p)
-	{
-	  low = SIGN_MAG_LOW_ADDR_BITS (val, 10);
-
-	  /* NEON quad-word load/stores are made of two double-word accesses,
-	     so the valid index range is reduced by 8. Treat as 9-bit range if
-	     we go over it.  */
-	  if (TARGET_NEON && VALID_NEON_QREG_MODE (mode) && low >= 1016)
-	    low = SIGN_MAG_LOW_ADDR_BITS (val, 9);
-	}
-      else if (GET_MODE_SIZE (mode) == 8)
-	{
-	  if (TARGET_LDRD)
-	    low = (TARGET_THUMB2
-		   ? SIGN_MAG_LOW_ADDR_BITS (val, 10)
-		   : SIGN_MAG_LOW_ADDR_BITS (val, 8));
-	  else
-	    /* For pre-ARMv5TE (without ldrd), we use ldm/stm(db/da/ib)
-	       to access doublewords. The supported load/store offsets are
-	       -8, -4, and 4, which we try to produce here.  */
-	    low = ((val & 0xf) ^ 0x8) - 0x8;
-	}
-      else if (GET_MODE_SIZE (mode) < 8)
-	{
-	  /* NEON element load/stores do not have an offset.  */
-	  if (TARGET_NEON_FP16 && mode == HFmode)
-	    return false;
-
-	  if (TARGET_THUMB2)
-	    {
-	      /* Thumb-2 has an asymmetrical index range of (-256,4096).
-		 Try the wider 12-bit range first, and re-try if the result
-		 is out of range.  */
-	      low = SIGN_MAG_LOW_ADDR_BITS (val, 12);
-	      if (low < -255)
-		low = SIGN_MAG_LOW_ADDR_BITS (val, 8);
-	    }
-	  else
-	    {
-	      if (mode == HImode || mode == HFmode)
-		{
-		  if (arm_arch4)
-		    low = SIGN_MAG_LOW_ADDR_BITS (val, 8);
-		  else
-		    {
-		      /* The storehi/movhi_bytes fallbacks can use only
-			 [-4094,+4094] of the full ldrb/strb index range.  */
-		      low = SIGN_MAG_LOW_ADDR_BITS (val, 12);
-		      if (low == 4095 || low == -4095)
-			return false;
-		    }
-		}
-	      else
-		low = SIGN_MAG_LOW_ADDR_BITS (val, 12);
-	    }
-	}
-      else
-	return false;
-
-      high = ((((val - low) & (unsigned HOST_WIDE_INT) 0xffffffff)
-	       ^ (unsigned HOST_WIDE_INT) 0x80000000)
-	      - (unsigned HOST_WIDE_INT) 0x80000000);
-      /* Check for overflow or zero */
-      if (low == 0 || high == 0 || (high + low != val))
-	return false;
-
-      /* Reload the high part into a base reg; leave the low part
-	 in the mem.
-	 Note that replacing this gen_rtx_PLUS with plus_constant is
-	 wrong in this case because we rely on the
-	 (plus (plus reg c1) c2) structure being preserved so that
-	 XEXP (*p, 0) in push_reload below uses the correct term.  */
-      *p = gen_rtx_PLUS (GET_MODE (*p),
-			 gen_rtx_PLUS (GET_MODE (*p), XEXP (*p, 0),
-				       GEN_INT (high)),
-			 GEN_INT (low));
-      push_reload (XEXP (*p, 0), NULL_RTX, &XEXP (*p, 0), NULL,
-		   MODE_BASE_REG_CLASS (mode), GET_MODE (*p),
-		   VOIDmode, 0, 0, opnum, (enum reload_type) type);
-      return true;
-    }
-
-  return false;
-}
-
-rtx
-thumb_legitimize_reload_address (rtx *x_p,
-				 machine_mode mode,
-				 int opnum, int type,
-				 int ind_levels ATTRIBUTE_UNUSED)
-{
-  rtx x = *x_p;
-
-  if (GET_CODE (x) == PLUS
-      && GET_MODE_SIZE (mode) < 4
-      && REG_P (XEXP (x, 0))
-      && XEXP (x, 0) == stack_pointer_rtx
-      && CONST_INT_P (XEXP (x, 1))
-      && !thumb_legitimate_offset_p (mode, INTVAL (XEXP (x, 1))))
-    {
-      rtx orig_x = x;
-
-      x = copy_rtx (x);
-      push_reload (orig_x, NULL_RTX, x_p, NULL, MODE_BASE_REG_CLASS (mode),
-		   Pmode, VOIDmode, 0, 0, opnum, (enum reload_type) type);
-      return x;
-    }
-
-  /* If both registers are hi-regs, then it's better to reload the
-     entire expression rather than each register individually.  That
-     only requires one reload register rather than two.  */
-  if (GET_CODE (x) == PLUS
-      && REG_P (XEXP (x, 0))
-      && REG_P (XEXP (x, 1))
-      && !REG_MODE_OK_FOR_REG_BASE_P (XEXP (x, 0), mode)
-      && !REG_MODE_OK_FOR_REG_BASE_P (XEXP (x, 1), mode))
-    {
-      rtx orig_x = x;
-
-      x = copy_rtx (x);
-      push_reload (orig_x, NULL_RTX, x_p, NULL, MODE_BASE_REG_CLASS (mode),
-		   Pmode, VOIDmode, 0, 0, opnum, (enum reload_type) type);
-      return x;
-    }
-
-  return NULL;
 }
 
 /* Return TRUE if X contains any TLS symbol references.  */
@@ -27195,40 +27008,12 @@ thumb2_output_casesi (rtx *operands)
     }
 }
 
-/* Most ARM cores are single issue, but some newer ones can dual issue.
-   The scheduler descriptions rely on this being correct.  */
+/* Implement TARGET_SCHED_ISSUE_RATE.  Lookup the issue rate in the
+   per-core tuning structs.  */
 static int
 arm_issue_rate (void)
 {
-  switch (arm_tune)
-    {
-    case xgene1:
-      return 4;
-
-    case cortexa15:
-    case cortexa57:
-    case exynosm1:
-      return 3;
-
-    case cortexm7:
-    case cortexr4:
-    case cortexr4f:
-    case cortexr5:
-    case genericv7a:
-    case cortexa5:
-    case cortexa7:
-    case cortexa8:
-    case cortexa9:
-    case cortexa12:
-    case cortexa17:
-    case cortexa53:
-    case fa726te:
-    case marvell_pj4:
-      return 2;
-
-    default:
-      return 1;
-    }
+  return current_tune->issue_rate;
 }
 
 /* Return how many instructions should scheduler lookahead to choose the
