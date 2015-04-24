@@ -1,3 +1,116 @@
+2015-04-24  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/sse.md (*vec_widen_smult_even_v8si<mask_name>):
+	Mark operand1 commutative.
+
+2015-04-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r222362
+	2015-04-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/crypto.md (crypto_vpmsum<CR_char>): Change
+	TARGET_CRYPTO to TARGET_P8_VECTOR>
+	(crypto_vpermxor_<mode>): Likewise.
+	* config/rs6000/rs6000-builtin.def (BU_CRYPTO_2A): New #define.
+	(BU_CRYPTO_3A): Likewise.
+	(BU_CRYPTO_OVERLOAD_2A): Rename from BU_CRYPTO_OVERLOAD_2.
+	(BU_CRYPTO_OVERLOAD_3A): New #define.
+	(VPMSUMB): Change from BU_CRYPTO_2 to BU_CRYPTO_2A.
+	(VPMSUMH): Likewise.
+	(VPMSUMW): Likewise.
+	(VPMSUMD): Likewise.
+	(VPERMXOR_V2DI): Change from BU_CRYPTO_3 to BU_CRYPTO_3A.
+	(VPERMXOR_V4SI): Likewise.
+	(VPERMXOR_V8HI): Likewise.
+	(VPERMXOR_V16QI): Likewise.
+	(VPMSUM): Change from BU_CRYPTO_OVERLOAD_2 to
+	BU_CRYPTO_OVERLOAD_2A.
+	(VPERMXOR): Change from BU_CRYPTO_OVERLOAD3 to
+	BU_CRYPTO_OVERLOAD_3A.
+	* config/rs6000/rs6000.opt (mcrypto): Change description of
+	option.
+
+	Backport from mainline r222362
+	2015-04-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.opt (mcrypto): Change option description to
+	match category changes in ISA 2.07B.
+
+2015-04-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r222351
+	2015-04-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.c (rtx_is_swappable_p): Commentary
+	adjustments.
+	(insn_is_swappable_p): Return 1 for a convert from double to
+	single precision when all of its uses are splats of BE element
+	zero.
+
+2015-04-23  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* DEV-PHASE: Set to prerelease.
+
+2015-04-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r222349
+	2015-04-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65456
+	* config/rs6000/rs6000.c (rs6000_option_override_internal):  For
+	VSX + POWER8, enable TARGET_ALLOW_MOVMISALIGN and
+	TARGET_EFFICIENT_UNALIGNED_VSX if not selected by command line
+	option.
+	(rs6000_builtin_mask_for_load): Return 0 for targets with
+	efficient unaligned VSX accesses so that the vectorizer will use
+	direct unaligned loads.
+	(rs6000_builtin_support_vector_misalignment): Always return true
+	for targets with efficient unaligned VSX accesses.
+	(rs6000_builtin_vectorization_cost): Cost of unaligned loads and
+	stores on targets with efficient unaligned VSX accesses is almost
+	always the same as the cost of an aligned load or store, so model
+	it that way.
+	* config/rs6000/rs6000.h (SLOW_UNALIGNED_ACCESS): Return 0 for
+	unaligned vectors if we have efficient unaligned VSX accesses.
+	* config/rs6000/rs6000.opt (mefficient-unaligned-vector): New
+	undocumented option.
+
+2015-04-23  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from trunk r222223.
+
+	2015-04-19  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/65805
+	* lra-eliminations.c (lra_eliminate_regs_1): Add new assert.
+	Don't use difference of offset and previous offset if
+	update_sp_offset is non-zero.
+	(eliminate_regs_in_insn): Ditto.
+	* lra-spills.c (remove_pseudos): Exchange 4th and 6th args in
+	lra_eliminate_regs_1 call.
+	* lra-constraints.c (get_equiv_with_elimination): Ditto.
+
+2015-04-22  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from trunk r222179.
+
+	2015-04-17  Sivanupandi Pitchumani <Pitchumani.Sivanupandi@atmel.com>
+
+	PR target/65296
+	* config/avr/gen-avr-mmcu-specs.c (*avrlibc_startfile): Adjust
+	to new AVR-LibC file layout (bug #44574).
+	(*avrlibc_devicelib): Same.
+	* config/avr/avr-mcus.def: Adjust comments.
+	* config/avr/avr.opt (nodevicelib): Adjust help.
+
+2015-04-22  Jakub Jelinek  <jakub@redhat.com>
+
+	* BASE-VER: Set to 5.1.1.
+
+2015-04-22  Release Manager
+
+	* GCC 5.1.0 released.
+
 2015-04-20  Jakub Jelinek  <jakub@redhat.com>
 
 	PR debug/65807

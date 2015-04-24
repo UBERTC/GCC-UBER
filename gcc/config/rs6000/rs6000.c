@@ -4251,6 +4251,22 @@ rs6000_option_override_internal (bool global_init_p)
 	}
     }
 
+  /* Determine when unaligned vector accesses are permitted, and when
+     they are preferred over masked Altivec loads.  Note that if
+     TARGET_ALLOW_MOVMISALIGN has been disabled by the user, then
+     TARGET_EFFICIENT_UNALIGNED_VSX must be as well.  The converse is
+     not true.  */
+  if (TARGET_EFFICIENT_UNALIGNED_VSX == -1) {
+    if (TARGET_VSX && rs6000_cpu == PROCESSOR_POWER8
+	&& TARGET_ALLOW_MOVMISALIGN != 0)
+      TARGET_EFFICIENT_UNALIGNED_VSX = 1;
+    else
+      TARGET_EFFICIENT_UNALIGNED_VSX = 0;
+  }
+
+  if (TARGET_ALLOW_MOVMISALIGN == -1 && rs6000_cpu == PROCESSOR_POWER8)
+    TARGET_ALLOW_MOVMISALIGN = 1;
+
   /* Set the builtin mask of the various options used that could affect which
      builtins were used.  In the past we used target_flags, but we've run out
      of bits, and some options like SPE and PAIRED are no longer in
@@ -4299,7 +4315,9 @@ rs6000_option_override (void)
 static tree
 rs6000_builtin_mask_for_load (void)
 {
-  if (TARGET_ALTIVEC || TARGET_VSX)
+  /* Don't use lvsl/vperm for P8 and similarly efficient machines.  */
+  if ((TARGET_ALTIVEC && !TARGET_VSX)
+      || (TARGET_VSX && !TARGET_EFFICIENT_UNALIGNED_VSX))
     return altivec_builtin_mask_for_load;
   else
     return 0;
@@ -4378,6 +4396,9 @@ rs6000_builtin_support_vector_misalignment (machine_mode mode,
 {
   if (TARGET_VSX)
     {
+      if (TARGET_EFFICIENT_UNALIGNED_VSX)
+	return true;
+
       /* Return if movmisalign pattern is not supported for this mode.  */
       if (optab_handler (movmisalign_optab, mode) == CODE_FOR_nothing)
         return false;
@@ -4441,6 +4462,9 @@ rs6000_builtin_vectorization_cost (enum vect_cost_for_stmt type_of_cost,
         return 3;
 
       case unaligned_load:
+	if (TARGET_EFFICIENT_UNALIGNED_VSX)
+	  return 1;
+
         if (TARGET_VSX && TARGET_ALLOW_MOVMISALIGN)
           {
             elements = TYPE_VECTOR_SUBPARTS (vectype);
@@ -4476,6 +4500,9 @@ rs6000_builtin_vectorization_cost (enum vect_cost_for_stmt type_of_cost,
         return 2;
 
       case unaligned_store:
+	if (TARGET_EFFICIENT_UNALIGNED_VSX)
+	  return 1;
+
         if (TARGET_VSX && TARGET_ALLOW_MOVMISALIGN)
           {
             elements = TYPE_VECTOR_SUBPARTS (vectype);
@@ -34218,7 +34245,8 @@ rtx_is_swappable_p (rtx op, unsigned int *special)
 	   order-dependent element, so additional fixup code would be
 	   needed to make those work.  Vector set and non-immediate-form
 	   vector splat are element-order sensitive.  A few of these
-	   cases might be workable with special handling if required.  */
+	   cases might be workable with special handling if required.
+	   Adding cost modeling would be appropriate in some cases.  */
 	int val = XINT (op, 1);
 	switch (val)
 	  {
@@ -34257,12 +34285,6 @@ rtx_is_swappable_p (rtx op, unsigned int *special)
 	  case UNSPEC_VUPKLPX:
 	  case UNSPEC_VUPKLS_V4SF:
 	  case UNSPEC_VUPKLU_V4SF:
-	  /* The following could be handled as an idiom with XXSPLTW.
-	     These place a scalar in BE element zero, but the XXSPLTW
-	     will currently expect it in BE element 2 in a swapped
-	     region.  When one of these feeds an XXSPLTW with no other
-	     defs/uses either way, we can avoid the lane change for
-	     XXSPLTW and things will be correct.  TBD.  */
 	  case UNSPEC_VSX_CVDPSPN:
 	  case UNSPEC_VSX_CVSPDP:
 	  case UNSPEC_VSX_CVSPDPN:
@@ -34351,6 +34373,36 @@ insn_is_swappable_p (swap_web_entry *insn_entry, rtx insn,
 	}
       else
 	return 0;
+    }
+
+  /* A convert to single precision can be left as is provided that
+     all of its uses are in xxspltw instructions that splat BE element
+     zero.  */
+  if (GET_CODE (body) == SET
+      && GET_CODE (SET_SRC (body)) == UNSPEC
+      && XINT (SET_SRC (body), 1) == UNSPEC_VSX_CVDPSPN)
+    {
+      df_ref def;
+      struct df_insn_info *insn_info = DF_INSN_INFO_GET (insn);
+
+      FOR_EACH_INSN_INFO_DEF (def, insn_info)
+	{
+	  struct df_link *link = DF_REF_CHAIN (def);
+	  if (!link)
+	    return 0;
+
+	  for (; link; link = link->next) {
+	    rtx use_insn = DF_REF_INSN (link->ref);
+	    rtx use_body = PATTERN (use_insn);
+	    if (GET_CODE (use_body) != SET
+		|| GET_CODE (SET_SRC (use_body)) != UNSPEC
+		|| XINT (SET_SRC (use_body), 1) != UNSPEC_VSX_XXSPLTW
+		|| XEXP (XEXP (SET_SRC (use_body), 0), 1) != const0_rtx)
+	      return 0;
+	  }
+	}
+
+      return 1;
     }
 
   /* Otherwise check the operands for vector lane violations.  */
