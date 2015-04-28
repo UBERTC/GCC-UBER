@@ -1484,6 +1484,8 @@ enum reg_class
 #define REX_SSE_REGNO_P(N) \
   IN_RANGE ((N), FIRST_REX_SSE_REG, LAST_REX_SSE_REG)
 
+#define EXT_REX_SSE_REG_P(X) (REG_P (X) && EXT_REX_SSE_REGNO_P (REGNO (X)))
+
 #define EXT_REX_SSE_REGNO_P(N) \
   IN_RANGE ((N), FIRST_EXT_REX_SSE_REG, LAST_EXT_REX_SSE_REG)
 
@@ -2015,7 +2017,7 @@ do {							\
    Desirable on the 386 because a CALL with a constant address is
    faster than one with a register address.  */
 
-#define NO_FUNCTION_CSE
+#define NO_FUNCTION_CSE 1
 
 /* Given a comparison code (EQ, NE, etc.) and the first operand of a COMPARE,
    return the mode to be used for the comparison.

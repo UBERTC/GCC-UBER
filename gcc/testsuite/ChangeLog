@@ -1,3 +1,106 @@
+2015-04-28  Marek Polacek  <polacek@redhat.com>
+
+	PR c/65901
+	* gcc.c-torture/compile/pr48767.c (foo): Add dg-error.
+	* gcc.dg/pr65901.c: New test.
+
+2015-04-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62283
+	* gfortran.dg/vect/pr62283-2.f: New testcase.
+	* gcc.dg/vect/bb-slp-14.c: Adjust.
+
+2015-04-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65851
+	* g++.dg/torture/pr65851.C: New testcase.
+
+2015-04-27  Jeff Law <law@redhat.com>
+
+	PR tree-optimization/65217
+	* gcc.target/i386/pr65217.c: Remove XFAIL.
+
+2015-04-27  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/60322
+	Add tests forgotten to svn-add.
+	* gfortran.dg/class_allocate_19.f03: New test.
+	* gfortran.dg/class_array_20.f03: New test.
+	* gfortran.dg/class_array_21.f03: New test.
+	* gfortran.dg/finalize_29.f08: New test.
+
+2015-04-27  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/59678
+	PR fortran/65841
+	* gfortran.dg/alloc_comp_deep_copy_1.f03: New test.
+	* gfortran.dg/alloc_comp_deep_copy_2.f03: New test.
+
+2015-04-27  Caroline Tice  <cmtice@google.com>
+
+	* gcc.dg/tree-prof/cold_partition_label.c (main): Check for cold
+	partition size.
+
+2015-04-27  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/64579
+	* gcc.target/powerpc/htm-1.c: New test.
+	* gcc.target/powerpc/htm-builtin-1.c (__builtin_tabortdc): Only test
+	on 64-bit compiles.
+	(__builtin_tabortdci): Likewise.
+	(__builtin_tcheck): Remove operand.
+	* lib/target-supports.exp (check_htm_hw_available): New function.
+
+2015-04-27  Richard Biener  <rguenther@suse.de>
+
+	* gcc.target/i386/pr65217.c: XFAIL.
+
+2015-04-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65875
+	* gcc.c-torture/compile/pr65875.c: New test.
+
+2015-04-25  Marek Polacek  <polacek@redhat.com>
+
+	PR c/52085
+	* gcc.dg/enum-incomplete-2.c: New test.
+	* gcc.dg/enum-mode-1.c: New test.
+
+2015-04-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/65849
+	* gcc.target/powerpc/pr65849-1.c: New test to verify being able to
+	set new options.
+	* gcc.target/powerpc/pr65849-2.c: Likewise.
+
+2015-04-24  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65802
+	* g++.dg/pr65802.C: Move to ...
+	* gcc.dg/pr65802.c: ... here.  Add -fexceptions to dg-options. Include
+	stdarg.h.  Rewrite for C.
+	(fn1): Use va_list and va_arg.  Make variable args function.  Add use of
+	va_start and va_end.  Remove unnecessary inline asm.
+
+2015-04-24  Uros Bizjak  <ubizjak@gmail.com>
+	    Wei Mi  <wmi@google.com>
+
+	* gcc.target/i386/sse2-load-multi.c: New test.
+	* gcc.target/i386/sse2-store-multi.c: Ditto.
+
+2015-04-24  Marek Polacek  <polacek@redhat.com>
+
+	PR c/65830
+	* c-c++-common/pr65830.c: New test.
+
+	PR c/63357
+	* c-c++-common/Wlogical-op-1.c: New test.
+
+2015-04-24  Marek Polacek  <polacek@redhat.com>
+
+	PR c/61534
+	* c-c++-common/pr61534-1.c: New test.
+
 2015-04-24  Thomas Preud'homme  <thomas.preudhomme@arm.com>
 	    Steven Bosscher <steven@gcc.gnu.org>
 

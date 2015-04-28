@@ -1646,6 +1646,28 @@ setup_incoming_promotions (rtx_insn *first)
     }
 }
 
+#ifdef SHORT_IMMEDIATES_SIGN_EXTEND
+/* If MODE has a precision lower than PREC and SRC is a non-negative constant
+   that would appear negative in MODE, sign-extend SRC for use in nonzero_bits
+   because some machines (maybe most) will actually do the sign-extension and
+   this is the conservative approach.
+
+   ??? For 2.5, try to tighten up the MD files in this regard instead of this
+   kludge.  */
+
+static rtx
+sign_extend_short_imm (rtx src, machine_mode mode, unsigned int prec)
+{
+  if (GET_MODE_PRECISION (mode) < prec
+      && CONST_INT_P (src)
+      && INTVAL (src) > 0
+      && val_signbit_known_set_p (mode, INTVAL (src)))
+    src = GEN_INT (INTVAL (src) | ~GET_MODE_MASK (mode));
+
+  return src;
+}
+#endif
+
 /* Called via note_stores.  If X is a pseudo that is narrower than
    HOST_BITS_PER_WIDE_INT and is being set, record what bits are known zero.
 
@@ -1725,20 +1747,7 @@ set_nonzero_bits_and_sign_copies (rtx x, const_rtx set, void *data)
 	  rtx src = SET_SRC (set);
 
 #ifdef SHORT_IMMEDIATES_SIGN_EXTEND
-	  /* If X is narrower than a word and SRC is a non-negative
-	     constant that would appear negative in the mode of X,
-	     sign-extend it for use in reg_stat[].nonzero_bits because some
-	     machines (maybe most) will actually do the sign-extension
-	     and this is the conservative approach.
-
-	     ??? For 2.5, try to tighten up the MD files in this regard
-	     instead of this kludge.  */
-
-	  if (GET_MODE_PRECISION (GET_MODE (x)) < BITS_PER_WORD
-	      && CONST_INT_P (src)
-	      && INTVAL (src) > 0
-	      && val_signbit_known_set_p (GET_MODE (x), INTVAL (src)))
-	    src = GEN_INT (INTVAL (src) | ~GET_MODE_MASK (GET_MODE (x)));
+	  src = sign_extend_short_imm (src, GET_MODE (x), BITS_PER_WORD);
 #endif
 
 	  /* Don't call nonzero_bits if it cannot change anything.  */
@@ -6185,7 +6194,7 @@ simplify_if_then_else (rtx x)
       if (false_code == EQ)
 	{
 	  swapped = 1, true_code = EQ, false_code = NE;
-	  temp = true_rtx, true_rtx = false_rtx, false_rtx = temp;
+	  std::swap (true_rtx, false_rtx);
 	}
 
       /* If we are comparing against zero and the expression being tested has
@@ -6250,7 +6259,7 @@ simplify_if_then_else (rtx x)
       SUBST (XEXP (x, 1), false_rtx);
       SUBST (XEXP (x, 2), true_rtx);
 
-      temp = true_rtx, true_rtx = false_rtx, false_rtx = temp;
+      std::swap (true_rtx, false_rtx);
       cond = XEXP (x, 0);
 
       /* It is possible that the conditional has been simplified out.  */
@@ -9022,7 +9031,6 @@ static rtx
 known_cond (rtx x, enum rtx_code cond, rtx reg, rtx val)
 {
   enum rtx_code code = GET_CODE (x);
-  rtx temp;
   const char *fmt;
   int i, j;
 
@@ -9062,7 +9070,10 @@ known_cond (rtx x, enum rtx_code cond, rtx reg, rtx val)
   else if (COMPARISON_P (x) || COMMUTATIVE_ARITH_P (x))
     {
       if (rtx_equal_p (XEXP (x, 0), val))
-	cond = swap_condition (cond), temp = val, val = reg, reg = temp;
+        {
+	  std::swap (val, reg);
+	  cond = swap_condition (cond);
+        }
 
       if (rtx_equal_p (XEXP (x, 0), reg) && rtx_equal_p (XEXP (x, 1), val))
 	{
@@ -9788,20 +9799,8 @@ reg_nonzero_bits_for_combine (const_rtx x, machine_mode mode,
   if (tem)
     {
 #ifdef SHORT_IMMEDIATES_SIGN_EXTEND
-      /* If X is narrower than MODE and TEM is a non-negative
-	 constant that would appear negative in the mode of X,
-	 sign-extend it for use in reg_nonzero_bits because some
-	 machines (maybe most) will actually do the sign-extension
-	 and this is the conservative approach.
-
-	 ??? For 2.5, try to tighten up the MD files in this regard
-	 instead of this kludge.  */
-
-      if (GET_MODE_PRECISION (GET_MODE (x)) < GET_MODE_PRECISION (mode)
-	  && CONST_INT_P (tem)
-	  && INTVAL (tem) > 0
-	  && val_signbit_known_set_p (GET_MODE (x), INTVAL (tem)))
-	tem = GEN_INT (INTVAL (tem) | ~GET_MODE_MASK (GET_MODE (x)));
+      tem = sign_extend_short_imm (tem, GET_MODE (x),
+				   GET_MODE_PRECISION (mode));
 #endif
       return tem;
     }
@@ -11451,7 +11450,7 @@ simplify_comparison (enum rtx_code code, rtx *pop0, rtx *pop1)
      is already a constant integer.  */
   if (swap_commutative_operands_p (op0, op1))
     {
-      tem = op0, op0 = op1, op1 = tem;
+      std::swap (op0, op1);
       code = swap_condition (code);
     }
 
@@ -12338,7 +12337,7 @@ simplify_comparison (enum rtx_code code, rtx *pop0, rtx *pop1)
   /* We may have changed the comparison operands.  Re-canonicalize.  */
   if (swap_commutative_operands_p (op0, op1))
     {
-      tem = op0, op0 = op1, op1 = tem;
+      std::swap (op0, op1);
       code = swap_condition (code);
     }
 

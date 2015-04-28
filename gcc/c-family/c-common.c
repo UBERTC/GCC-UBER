@@ -1370,15 +1370,17 @@ c_fully_fold_internal (tree expr, bool in_init, bool *maybe_const_operands,
 	  && c_inhibit_evaluation_warnings == 0)
 	{
 	  if (tree_int_cst_sgn (op1) < 0)
-	    warning_at (loc, 0, (code == LSHIFT_EXPR
-				 ? G_("left shift count is negative")
-				 : G_("right shift count is negative")));
+	    warning_at (loc, OPT_Wshift_count_negative,
+			(code == LSHIFT_EXPR
+			 ? G_("left shift count is negative")
+			 : G_("right shift count is negative")));
 	  else if (compare_tree_int (op1,
 				     TYPE_PRECISION (TREE_TYPE (orig_op0)))
 		   >= 0)
-	    warning_at (loc, 0, (code == LSHIFT_EXPR
-				 ? G_("left shift count >= width of type")
-				 : G_("right shift count >= width of type")));
+	    warning_at (loc, OPT_Wshift_count_overflow,
+			(code == LSHIFT_EXPR
+			 ? G_("left shift count >= width of type")
+			 : G_("right shift count >= width of type")));
 	}
       if ((code == TRUNC_DIV_EXPR
 	   || code == CEIL_DIV_EXPR
@@ -1697,6 +1699,13 @@ warn_logical_operator (location_t location, enum tree_code code, tree type,
       && code != TRUTH_OR_EXPR)
     return;
 
+  /* We don't want to warn if either operand comes from a macro
+     expansion.  ??? This doesn't work with e.g. NEGATE_EXPR yet;
+     see PR61534.  */
+  if (from_macro_expansion_at (EXPR_LOCATION (op_left))
+      || from_macro_expansion_at (EXPR_LOCATION (op_right)))
+    return;
+
   /* Warn if &&/|| are being used in a context where it is
      likely that the bitwise equivalent was intended by the
      programmer. That is, an expression such as op && MASK
@@ -1772,22 +1781,35 @@ warn_logical_operator (location_t location, enum tree_code code, tree type,
     return;
 
   /* If both expressions have the same operand, if we can merge the
-     ranges, and if the range test is always false, then warn.  */
+     ranges, ...  */
   if (operand_equal_p (lhs, rhs, 0)
       && merge_ranges (&in_p, &low, &high, in0_p, low0, high0,
-		       in1_p, low1, high1)
-      && 0 != (tem = build_range_check (UNKNOWN_LOCATION,
-					type, lhs, in_p, low, high))
-      && integer_zerop (tem))
+		       in1_p, low1, high1))
     {
-      if (or_op)
-        warning_at (location, OPT_Wlogical_op,
-                    "logical %<or%> "
-                    "of collectively exhaustive tests is always true");
-      else
-        warning_at (location, OPT_Wlogical_op,
-                    "logical %<and%> "
-                    "of mutually exclusive tests is always false");
+      tem = build_range_check (UNKNOWN_LOCATION, type, lhs, in_p, low, high);
+      /* ... and if the range test is always false, then warn.  */
+      if (tem && integer_zerop (tem))
+	{
+	  if (or_op)
+	    warning_at (location, OPT_Wlogical_op,
+			"logical %<or%> of collectively exhaustive tests is "
+			"always true");
+	  else
+	    warning_at (location, OPT_Wlogical_op,
+			"logical %<and%> of mutually exclusive tests is "
+			"always false");
+	}
+      /* Or warn if the operands have exactly the same range, e.g.
+	 A > 0 && A > 0.  */
+      else if (low0 == low1 && high0 == high1)
+	{
+	  if (or_op)
+	    warning_at (location, OPT_Wlogical_op,
+			"logical %<or%> of equal expressions");
+	  else
+	    warning_at (location, OPT_Wlogical_op,
+			"logical %<and%> of equal expressions");
+	}
     }
 }
 

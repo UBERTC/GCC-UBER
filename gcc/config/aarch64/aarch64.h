@@ -200,6 +200,8 @@ extern unsigned aarch64_architecture_version;
 #define AARCH64_FL_CRYPTO     (1 << 2)	/* Has crypto.  */
 #define AARCH64_FL_SLOWMUL    (1 << 3)	/* A slow multiply core.  */
 #define AARCH64_FL_CRC        (1 << 4)	/* Has CRC.  */
+/* Has static dispatch of FMA.  */
+#define AARCH64_FL_USE_FMA_STEERING_PASS (1 << 5)
 
 /* Has FP and SIMD.  */
 #define AARCH64_FL_FPSIMD     (AARCH64_FL_FP | AARCH64_FL_SIMD)
@@ -220,6 +222,8 @@ extern unsigned long aarch64_isa_flags;
 /* Macros to test tuning flags.  */
 extern unsigned long aarch64_tune_flags;
 #define AARCH64_TUNE_SLOWMUL       (aarch64_tune_flags & AARCH64_FL_SLOWMUL)
+#define AARCH64_TUNE_FMA_STEERING \
+  (aarch64_tune_flags & AARCH64_FL_USE_FMA_STEERING_PASS)
 
 /* Crypto is an optional extension to AdvSIMD.  */
 #define TARGET_CRYPTO (TARGET_SIMD && AARCH64_ISA_CRYPTO)
@@ -506,7 +510,7 @@ enum reg_class
 
 enum target_cpus
 {
-#define AARCH64_CORE(NAME, INTERNAL_IDENT, SCHED, ARCH, FLAGS, COSTS) \
+#define AARCH64_CORE(NAME, INTERNAL_IDENT, SCHED, ARCH, FLAGS, COSTS, IMP, PART) \
   TARGET_CPU_##INTERNAL_IDENT,
 #include "aarch64-cores.def"
 #undef AARCH64_CORE
@@ -929,10 +933,23 @@ extern const char *aarch64_rewrite_mcpu (int argc, const char **argv);
 #define BIG_LITTLE_CPU_SPEC_FUNCTIONS \
   { "rewrite_mcpu", aarch64_rewrite_mcpu },
 
+#if defined(__aarch64__)
+extern const char *host_detect_local_cpu (int argc, const char **argv);
+# define EXTRA_SPEC_FUNCTIONS						\
+  { "local_cpu_detect", host_detect_local_cpu },			\
+  BIG_LITTLE_CPU_SPEC_FUNCTIONS
+
+# define MCPU_MTUNE_NATIVE_SPECS					\
+   " %{march=native:%<march=native %:local_cpu_detect(arch)}"		\
+   " %{mcpu=native:%<mcpu=native %:local_cpu_detect(cpu)}"		\
+   " %{mtune=native:%<mtune=native %:local_cpu_detect(tune)}"
+#else
+# define MCPU_MTUNE_NATIVE_SPECS ""
+# define EXTRA_SPEC_FUNCTIONS BIG_LITTLE_CPU_SPEC_FUNCTIONS
+#endif
+
 #define ASM_CPU_SPEC \
    BIG_LITTLE_SPEC
-
-#define EXTRA_SPEC_FUNCTIONS BIG_LITTLE_CPU_SPEC_FUNCTIONS
 
 #define EXTRA_SPECS						\
   { "asm_cpu_spec",		ASM_CPU_SPEC }

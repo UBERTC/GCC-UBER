@@ -1,3 +1,65 @@
+2015-04-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	* libsupc++/exception (uncaught_exceptions): Add comment. Reorder #if.
+	* testsuite/18_support/uncaught_exceptions/uncaught_exceptions.cc:
+	Use -std=gnu++1z. Check feature-test macro.
+
+	* include/std/type_traits (void_t): Add.
+	* testsuite/20_util/void_t/1.cc: New.
+
+2015-04-28  Tim Shen  <timshen@google.com>
+
+	* include/bits/regex.tcc: Handle regex_constants::__polynomial.
+	* include/bits/regex_automaton.tcc: Throw exception when parsing
+	back-reference with flag __polynomial.
+	* include/bits/regex_constants.h: Add extension flag
+	syntax_option_type __polynomial.
+	* bits/regex_executor.tcc: Still let BFS process ECMAScript.
+	Alternative operation will be fixed in the coming refactoring.
+	* testsuite/28_regex/algorithms/regex_search/61424.cc: Turn
+	loose match_search_debug to use DFS only.
+
+2015-04-27  Sandra Loosemore  <sandra@codesourcery.com>
+
+	PR libstdc++/65909
+	* testsuite/lib/libstdc++.exp (check_v3_target_namedlocale):
+	Make the generated test program fail gracefully if the target
+	doesn't	support passing command-line arguments.
+
+2015-04-27  Federico Lenarduzzi  <federico.lenarduzzi@tallertechnologies.com>
+	    Jonathan Wakely  <jwakely@redhat.com>
+
+	* libsupc++/eh_catch.cc (uncaught_exception, uncaught_exceptions):
+	Return false or zero if the library is built without exceptions.
+	* libsupc++/eh_term_handler.cc: Disable verbose terminate handler if
+	the library is built without exceptions.
+
+2015-04-27  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	* config/abi/pre/gnu.ver: Fix comment.
+
+	Add support for std::uncaught_exceptions.
+	* acinclude.m4: Bump libtool_VERSION.
+	* config/abi/pre/gnu.ver: Export the new symbol.
+	* configure: Regenerate.
+	* libsupc++/eh_catch.cc (uncaught_exceptions): New.
+	* libsupc++/exception (uncaught_exceptions): New.
+	* testsuite/18_support/uncaught_exceptions/uncaught_exceptions.cc: New.
+	* testsuite/util/testsuite_abi.cc: Add 3.4.22 as the latest version.
+
+2015-04-27  Dmitry Prokoptsev  <dprokoptsev@gmail.com>
+	    Michael Hanselmann  <public@hansmi.ch>
+
+	PR libstdc++/62258
+	* libsupc++/eh_ptr.cc (rethrow_exception): Increment count of
+	uncaught exceptions.
+	* testsuite/18_support/exception_ptr/62258.cc: New.
+
+2015-04-27  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/extensions.xml: Add cross-reference.
+	* doc/html/manual/ext_compile_checks.html: Regenerate.
+
 2015-04-22  Szabolcs Nagy  <szabolcs.nagy@arm.com>
 
 	* config/os/generic/os_defines.h (_GLIBCXX_GTHREAD_USE_WEAK): Define.
