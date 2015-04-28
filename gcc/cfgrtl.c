@@ -1705,21 +1705,19 @@ force_nonfallthru_and_redirect (edge e, basic_block target, rtx jump_label)
     {
       if (jump_label == ret_rtx)
 	{
-#ifdef HAVE_return
+	  if (!HAVE_return)
+	    gcc_unreachable ();
+
 	  emit_jump_insn_after_setloc (gen_return (), BB_END (jump_block), loc);
-#else
-	  gcc_unreachable ();
-#endif
 	}
       else
 	{
 	  gcc_assert (jump_label == simple_return_rtx);
-#ifdef HAVE_simple_return
+	  if (!HAVE_simple_return)
+	    gcc_unreachable ();
+
 	  emit_jump_insn_after_setloc (gen_simple_return (),
 				       BB_END (jump_block), loc);
-#else
-	  gcc_unreachable ();
-#endif
 	}
       set_return_jump_label (BB_END (jump_block));
     }
@@ -4341,11 +4339,7 @@ cfg_layout_finalize (void)
 #endif
   force_one_exit_fallthru ();
   rtl_register_cfg_hooks ();
-  if (reload_completed
-#ifdef HAVE_epilogue
-      && !HAVE_epilogue
-#endif
-      )
+  if (reload_completed && !HAVE_epilogue)
     fixup_fallthru_exit_predecessor ();
   fixup_reorder_chain ();
 

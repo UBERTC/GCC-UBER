@@ -3771,15 +3771,16 @@ assign_parms (tree fndecl)
   crtl->args.size = CEIL_ROUND (crtl->args.size,
 					   PARM_BOUNDARY / BITS_PER_UNIT);
 
-#ifdef ARGS_GROW_DOWNWARD
-  crtl->args.arg_offset_rtx
-    = (all.stack_args_size.var == 0 ? GEN_INT (-all.stack_args_size.constant)
-       : expand_expr (size_diffop (all.stack_args_size.var,
-				   size_int (-all.stack_args_size.constant)),
-		      NULL_RTX, VOIDmode, EXPAND_NORMAL));
-#else
-  crtl->args.arg_offset_rtx = ARGS_SIZE_RTX (all.stack_args_size);
-#endif
+  if (ARGS_GROW_DOWNWARD)
+    {
+      crtl->args.arg_offset_rtx
+	= (all.stack_args_size.var == 0 ? GEN_INT (-all.stack_args_size.constant)
+	   : expand_expr (size_diffop (all.stack_args_size.var,
+				       size_int (-all.stack_args_size.constant)),
+			  NULL_RTX, VOIDmode, EXPAND_NORMAL));
+    }
+  else
+    crtl->args.arg_offset_rtx = ARGS_SIZE_RTX (all.stack_args_size);
 
   /* See how many bytes, if any, of its args a function should try to pop
      on return.  */
@@ -4070,68 +4071,71 @@ locate_and_pad_parm (machine_mode passed_mode, tree type, int in_regs,
   if (crtl->preferred_stack_boundary < boundary)
     crtl->preferred_stack_boundary = boundary;
 
-#ifdef ARGS_GROW_DOWNWARD
-  locate->slot_offset.constant = -initial_offset_ptr->constant;
-  if (initial_offset_ptr->var)
-    locate->slot_offset.var = size_binop (MINUS_EXPR, ssize_int (0),
-					  initial_offset_ptr->var);
+  if (ARGS_GROW_DOWNWARD)
+    {
+      locate->slot_offset.constant = -initial_offset_ptr->constant;
+      if (initial_offset_ptr->var)
+	locate->slot_offset.var = size_binop (MINUS_EXPR, ssize_int (0),
+					      initial_offset_ptr->var);
 
-  {
-    tree s2 = sizetree;
-    if (where_pad != none
-	&& (!tree_fits_uhwi_p (sizetree)
-	    || (tree_to_uhwi (sizetree) * BITS_PER_UNIT) % round_boundary))
-      s2 = round_up (s2, round_boundary / BITS_PER_UNIT);
-    SUB_PARM_SIZE (locate->slot_offset, s2);
-  }
+	{
+	  tree s2 = sizetree;
+	  if (where_pad != none
+	      && (!tree_fits_uhwi_p (sizetree)
+		  || (tree_to_uhwi (sizetree) * BITS_PER_UNIT) % round_boundary))
+	    s2 = round_up (s2, round_boundary / BITS_PER_UNIT);
+	  SUB_PARM_SIZE (locate->slot_offset, s2);
+	}
 
-  locate->slot_offset.constant += part_size_in_regs;
+      locate->slot_offset.constant += part_size_in_regs;
 
-  if (!in_regs || reg_parm_stack_space > 0)
-    pad_to_arg_alignment (&locate->slot_offset, boundary,
-			  &locate->alignment_pad);
+      if (!in_regs || reg_parm_stack_space > 0)
+	pad_to_arg_alignment (&locate->slot_offset, boundary,
+			      &locate->alignment_pad);
 
-  locate->size.constant = (-initial_offset_ptr->constant
-			   - locate->slot_offset.constant);
-  if (initial_offset_ptr->var)
-    locate->size.var = size_binop (MINUS_EXPR,
-				   size_binop (MINUS_EXPR,
-					       ssize_int (0),
-					       initial_offset_ptr->var),
-				   locate->slot_offset.var);
+      locate->size.constant = (-initial_offset_ptr->constant
+			       - locate->slot_offset.constant);
+      if (initial_offset_ptr->var)
+	locate->size.var = size_binop (MINUS_EXPR,
+				       size_binop (MINUS_EXPR,
+						   ssize_int (0),
+						   initial_offset_ptr->var),
+				       locate->slot_offset.var);
 
-  /* Pad_below needs the pre-rounded size to know how much to pad
-     below.  */
-  locate->offset = locate->slot_offset;
-  if (where_pad == downward)
-    pad_below (&locate->offset, passed_mode, sizetree);
+      /* Pad_below needs the pre-rounded size to know how much to pad
+	 below.  */
+      locate->offset = locate->slot_offset;
+      if (where_pad == downward)
+	pad_below (&locate->offset, passed_mode, sizetree);
 
-#else /* !ARGS_GROW_DOWNWARD */
-  if (!in_regs || reg_parm_stack_space > 0)
-    pad_to_arg_alignment (initial_offset_ptr, boundary,
-			  &locate->alignment_pad);
-  locate->slot_offset = *initial_offset_ptr;
+    }
+  else
+    {
+      if (!in_regs || reg_parm_stack_space > 0)
+	pad_to_arg_alignment (initial_offset_ptr, boundary,
+			      &locate->alignment_pad);
+      locate->slot_offset = *initial_offset_ptr;
 
 #ifdef PUSH_ROUNDING
-  if (passed_mode != BLKmode)
-    sizetree = size_int (PUSH_ROUNDING (TREE_INT_CST_LOW (sizetree)));
+      if (passed_mode != BLKmode)
+	sizetree = size_int (PUSH_ROUNDING (TREE_INT_CST_LOW (sizetree)));
 #endif
 
-  /* Pad_below needs the pre-rounded size to know how much to pad below
-     so this must be done before rounding up.  */
-  locate->offset = locate->slot_offset;
-  if (where_pad == downward)
-    pad_below (&locate->offset, passed_mode, sizetree);
+      /* Pad_below needs the pre-rounded size to know how much to pad below
+	 so this must be done before rounding up.  */
+      locate->offset = locate->slot_offset;
+      if (where_pad == downward)
+	pad_below (&locate->offset, passed_mode, sizetree);
 
-  if (where_pad != none
-      && (!tree_fits_uhwi_p (sizetree)
-	  || (tree_to_uhwi (sizetree) * BITS_PER_UNIT) % round_boundary))
-    sizetree = round_up (sizetree, round_boundary / BITS_PER_UNIT);
+      if (where_pad != none
+	  && (!tree_fits_uhwi_p (sizetree)
+	      || (tree_to_uhwi (sizetree) * BITS_PER_UNIT) % round_boundary))
+	sizetree = round_up (sizetree, round_boundary / BITS_PER_UNIT);
 
-  ADD_PARM_SIZE (locate->size, sizetree);
+      ADD_PARM_SIZE (locate->size, sizetree);
 
-  locate->size.constant -= part_size_in_regs;
-#endif /* ARGS_GROW_DOWNWARD */
+      locate->size.constant -= part_size_in_regs;
+    }
 
 #ifdef FUNCTION_ARG_OFFSET
   locate->offset.constant += FUNCTION_ARG_OFFSET (passed_mode, type);
@@ -4175,11 +4179,11 @@ pad_to_arg_alignment (struct args_size *offset_ptr, int boundary,
 	  tree offset = size_binop (PLUS_EXPR,
 				    ARGS_SIZE_TREE (*offset_ptr),
 				    sp_offset_tree);
-#ifdef ARGS_GROW_DOWNWARD
-	  tree rounded = round_down (offset, boundary / BITS_PER_UNIT);
-#else
-	  tree rounded = round_up   (offset, boundary / BITS_PER_UNIT);
-#endif
+	  tree rounded;
+	  if (ARGS_GROW_DOWNWARD)
+	    rounded = round_down (offset, boundary / BITS_PER_UNIT);
+	  else
+	    rounded = round_up   (offset, boundary / BITS_PER_UNIT);
 
 	  offset_ptr->var = size_binop (MINUS_EXPR, rounded, sp_offset_tree);
 	  /* ARGS_SIZE_TREE includes constant term.  */
@@ -4191,11 +4195,10 @@ pad_to_arg_alignment (struct args_size *offset_ptr, int boundary,
       else
 	{
 	  offset_ptr->constant = -sp_offset +
-#ifdef ARGS_GROW_DOWNWARD
-	    FLOOR_ROUND (offset_ptr->constant + sp_offset, boundary_in_bytes);
-#else
-	    CEIL_ROUND (offset_ptr->constant + sp_offset, boundary_in_bytes);
-#endif
+	    (ARGS_GROW_DOWNWARD
+	    ? FLOOR_ROUND (offset_ptr->constant + sp_offset, boundary_in_bytes)
+	    : CEIL_ROUND (offset_ptr->constant + sp_offset, boundary_in_bytes));
+
 	    if (boundary > PARM_BOUNDARY)
 	      alignment_pad->constant = offset_ptr->constant - save_constant;
 	}
@@ -5649,7 +5652,6 @@ prologue_epilogue_contains (const_rtx insn)
   return 0;
 }
 
-#ifdef HAVE_return
 /* Insert use of return register before the end of BB.  */
 
 static void
@@ -5674,12 +5676,10 @@ emit_use_return_register_into_block (basic_block bb)
 static rtx
 gen_return_pattern (bool simple_p)
 {
-#ifdef HAVE_simple_return
+  if (!HAVE_simple_return)
+    gcc_assert (!simple_p);
+
   return simple_p ? gen_simple_return () : gen_return ();
-#else
-  gcc_assert (!simple_p);
-  return gen_return ();
-#endif
 }
 
 /* Insert an appropriate return pattern at the end of block BB.  This
@@ -5697,7 +5697,6 @@ emit_return_into_block (bool simple_p, basic_block bb)
   gcc_assert (ANY_RETURN_P (pat));
   JUMP_LABEL (jump) = pat;
 }
-#endif
 
 /* Set JUMP_LABEL for a return insn.  */
 
@@ -5713,7 +5712,6 @@ set_return_jump_label (rtx returnjump)
     JUMP_LABEL (returnjump) = ret_rtx;
 }
 
-#if defined (HAVE_return) || defined (HAVE_simple_return)
 /* Return true if there are any active insns between HEAD and TAIL.  */
 bool
 active_insn_between (rtx_insn *head, rtx_insn *tail)
@@ -5788,15 +5786,13 @@ convert_jumps_to_returns (basic_block last_bb, bool simple_p,
 	    dest = ret_rtx;
 	  if (!redirect_jump (jump, dest, 0))
 	    {
-#ifdef HAVE_simple_return
-	      if (simple_p)
+	      if (HAVE_simple_return && simple_p)
 		{
 		  if (dump_file)
 		    fprintf (dump_file,
 			     "Failed to redirect bb %d branch.\n", bb->index);
 		  unconverted.safe_push (e);
 		}
-#endif
 	      continue;
 	    }
 
@@ -5811,15 +5807,13 @@ convert_jumps_to_returns (basic_block last_bb, bool simple_p,
 	}
       else
 	{
-#ifdef HAVE_simple_return
-	  if (simple_p)
+	  if (HAVE_simple_return && simple_p)
 	    {
 	      if (dump_file)
 		fprintf (dump_file,
 			 "Failed to redirect bb %d branch.\n", bb->index);
 	      unconverted.safe_push (e);
 	    }
-#endif
 	  continue;
 	}
 
@@ -5847,7 +5841,6 @@ emit_return_for_exit (edge exit_fallthru_edge, bool simple_p)
   exit_fallthru_edge->flags &= ~EDGE_FALLTHRU;
   return last_bb;
 }
-#endif
 
 
 /* Generate the prologue and epilogue RTL if the machine supports it.  Thread
@@ -5902,10 +5895,8 @@ void
 thread_prologue_and_epilogue_insns (void)
 {
   bool inserted;
-#ifdef HAVE_simple_return
   vec<edge> unconverted_simple_returns = vNULL;
   bitmap_head bb_flags;
-#endif
   rtx_insn *returnjump;
   rtx_insn *epilogue_end ATTRIBUTE_UNUSED;
   rtx_insn *prologue_seq ATTRIBUTE_UNUSED, *split_prologue_seq ATTRIBUTE_UNUSED;
@@ -5976,7 +5967,6 @@ thread_prologue_and_epilogue_insns (void)
     }
 #endif
 
-#ifdef HAVE_simple_return
   bitmap_initialize (&bb_flags, &bitmap_default_obstack);
 
   /* Try to perform a kind of shrink-wrapping, making sure the
@@ -5984,7 +5974,6 @@ thread_prologue_and_epilogue_insns (void)
      function that require it.  */
 
   try_shrink_wrapping (&entry_edge, orig_entry_edge, &bb_flags, prologue_seq);
-#endif
 
   if (split_prologue_seq != NULL_RTX)
     {
@@ -6009,14 +5998,11 @@ thread_prologue_and_epilogue_insns (void)
 
   exit_fallthru_edge = find_fallthru_edge (EXIT_BLOCK_PTR_FOR_FN (cfun)->preds);
 
-#ifdef HAVE_simple_return
-  if (entry_edge != orig_entry_edge)
+  if (HAVE_simple_return && entry_edge != orig_entry_edge)
     exit_fallthru_edge
 	= get_unconverted_simple_return (exit_fallthru_edge, bb_flags,
 					 &unconverted_simple_returns,
 					 &returnjump);
-#endif
-#ifdef HAVE_return
   if (HAVE_return)
     {
       if (exit_fallthru_edge == NULL)
@@ -6035,17 +6021,16 @@ thread_prologue_and_epilogue_insns (void)
 	    {
 	      last_bb = emit_return_for_exit (exit_fallthru_edge, false);
 	      epilogue_end = returnjump = BB_END (last_bb);
-#ifdef HAVE_simple_return
+
 	      /* Emitting the return may add a basic block.
 		 Fix bb_flags for the added block.  */
-	      if (last_bb != exit_fallthru_edge->src)
+	      if (HAVE_simple_return && last_bb != exit_fallthru_edge->src)
 		bitmap_set_bit (&bb_flags, last_bb->index);
-#endif
+
 	      goto epilogue_done;
 	    }
 	}
     }
-#endif
 
   /* A small fib -- epilogue is not yet completed, but we wish to re-use
      this marker for the splits of EH_RETURN patterns, and nothing else
@@ -6084,7 +6069,6 @@ thread_prologue_and_epilogue_insns (void)
   if (exit_fallthru_edge == NULL)
     goto epilogue_done;
 
-#ifdef HAVE_epilogue
   if (HAVE_epilogue)
     {
       start_sequence ();
@@ -6108,7 +6092,6 @@ thread_prologue_and_epilogue_insns (void)
 	set_return_jump_label (returnjump);
     }
   else
-#endif
     {
       basic_block cur_bb;
 
@@ -6157,10 +6140,9 @@ epilogue_done:
 	}
     }
 
-#ifdef HAVE_simple_return
-  convert_to_simple_return (entry_edge, orig_entry_edge, bb_flags, returnjump,
-			    unconverted_simple_returns);
-#endif
+  if (HAVE_simple_return)
+    convert_to_simple_return (entry_edge, orig_entry_edge, bb_flags,
+			      returnjump, unconverted_simple_returns);
 
 #ifdef HAVE_sibcall_epilogue
   /* Emit sibling epilogues before any sibling call sites.  */
@@ -6174,11 +6156,8 @@ epilogue_done:
 
       if (!CALL_P (insn)
 	  || ! SIBLING_CALL_P (insn)
-#ifdef HAVE_simple_return
-	  || (entry_edge != orig_entry_edge
-	      && !bitmap_bit_p (&bb_flags, bb->index))
-#endif
-	  )
+	  || (HAVE_simple_return && (entry_edge != orig_entry_edge
+				     && !bitmap_bit_p (&bb_flags, bb->index))))
 	{
 	  ei_next (&ei);
 	  continue;
@@ -6205,7 +6184,6 @@ epilogue_done:
     }
 #endif
 
-#ifdef HAVE_epilogue
   if (epilogue_end)
     {
       rtx_insn *insn, *next;
@@ -6223,11 +6201,8 @@ epilogue_done:
 	    reorder_insns (insn, insn, PREV_INSN (epilogue_end));
 	}
     }
-#endif
 
-#ifdef HAVE_simple_return
   bitmap_clear (&bb_flags);
-#endif
 
   /* Threading the prologue and epilogue changes the artificial refs
      in the entry and exit blocks.  */
@@ -6241,8 +6216,11 @@ epilogue_done:
 void
 reposition_prologue_and_epilogue_notes (void)
 {
-#if defined (HAVE_prologue) || defined (HAVE_epilogue) \
-    || defined (HAVE_sibcall_epilogue)
+#if ! defined (HAVE_prologue) && ! defined (HAVE_sibcall_epilogue)
+  if (!HAVE_epilogue)
+    return;
+#endif
+
   /* Since the hash table is created on demand, the fact that it is
      non-null is a signal that it is non-empty.  */
   if (prologue_insn_hash != NULL)
@@ -6339,7 +6317,6 @@ reposition_prologue_and_epilogue_notes (void)
 	    }
 	}
     }
-#endif /* HAVE_prologue or HAVE_epilogue */
 }
 
 /* Returns the name of function declared by FNDECL.  */

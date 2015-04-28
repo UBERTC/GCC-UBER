@@ -1201,12 +1201,32 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define DEFAULT_PCC_STRUCT_RETURN 1
 #endif
 
+#ifndef PCC_BITFIELD_TYPE_MATTERS
+#define PCC_BITFIELD_TYPE_MATTERS false
+#endif
+
 #ifndef INSN_SETS_ARE_DELAYED
 #define INSN_SETS_ARE_DELAYED(INSN) false
 #endif
 
 #ifndef INSN_REFERENCES_ARE_DELAYED
 #define INSN_REFERENCES_ARE_DELAYED(INSN) false
+#endif
+
+#ifndef NO_FUNCTION_CSE
+#define NO_FUNCTION_CSE false
+#endif
+
+#ifndef HARD_REGNO_RENAME_OK
+#define HARD_REGNO_RENAME_OK(FROM, TO) true
+#endif
+
+#ifndef EPILOGUE_USES
+#define EPILOGUE_USES(REG) false
+#endif
+
+#ifndef ARGS_GROW_DOWNWARD
+#define ARGS_GROW_DOWNWARD 0
 #endif
 
 #ifdef GCC_INSN_FLAGS_H
@@ -1380,6 +1400,36 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
    Otherwise the compiler really is not robust.  */
 #ifndef TARGET_SUPPORTS_WIDE_INT
 #define TARGET_SUPPORTS_WIDE_INT 0
+#endif
+
+#ifndef HAVE_simple_return
+#define HAVE_simple_return 0
+static inline rtx
+gen_simple_return ()
+{
+  gcc_unreachable ();
+  return NULL;
+}
+#endif
+
+#ifndef HAVE_return
+#define HAVE_return 0
+static inline rtx
+gen_return ()
+{
+  gcc_unreachable ();
+  return NULL;
+}
+#endif
+
+#ifndef HAVE_epilogue
+#define HAVE_epilogue 0
+static inline rtx
+gen_epilogue ()
+{
+  gcc_unreachable ();
+  return NULL;
+}
 #endif
 
 #endif /* GCC_INSN_FLAGS_H  */

@@ -85,10 +85,8 @@ static tree self_referential_size (tree);
 static void finalize_record_size (record_layout_info);
 static void finalize_type_size (tree);
 static void place_union_field (record_layout_info, tree);
-#if defined (PCC_BITFIELD_TYPE_MATTERS) || defined (BITFIELD_NBYTES_LIMITED)
 static int excess_unit_span (HOST_WIDE_INT, HOST_WIDE_INT, HOST_WIDE_INT,
 			     HOST_WIDE_INT, tree);
-#endif
 extern void debug_rli (record_layout_info);
 
 /* Show that REFERENCE_TYPES are internal and should use address_mode.
@@ -127,6 +125,20 @@ variable_size (tree size)
 /* An array of functions used for self-referential size computation.  */
 static GTY(()) vec<tree, va_gc> *size_functions;
 
+/* Return true if T is a self-referential component reference.  */
+
+static bool
+self_referential_component_ref_p (tree t)
+{
+  if (TREE_CODE (t) != COMPONENT_REF)
+    return false;
+
+  while (REFERENCE_CLASS_P (t))
+    t = TREE_OPERAND (t, 0);
+
+  return (TREE_CODE (t) == PLACEHOLDER_EXPR);
+}
+
 /* Similar to copy_tree_r but do not copy component references involving
    PLACEHOLDER_EXPRs.  These nodes are spotted in find_placeholder_in_expr
    and substituted in substitute_in_expr.  */
@@ -154,19 +166,10 @@ copy_self_referential_tree_r (tree *tp, int *walk_subtrees, void *data)
     }
 
   /* Default case: the component reference.  */
-  else if (code == COMPONENT_REF)
+  else if (self_referential_component_ref_p (*tp))
     {
-      tree inner;
-      for (inner = TREE_OPERAND (*tp, 0);
-	   REFERENCE_CLASS_P (inner);
-	   inner = TREE_OPERAND (inner, 0))
-	;
-
-      if (TREE_CODE (inner) == PLACEHOLDER_EXPR)
-	{
-	  *walk_subtrees = 0;
-	  return NULL_TREE;
-	}
+      *walk_subtrees = 0;
+      return NULL_TREE;
     }
 
   /* We're not supposed to have them in self-referential size trees
@@ -199,7 +202,7 @@ self_referential_size (tree size)
 
   /* Do not factor out simple operations.  */
   t = skip_simple_constant_arithmetic (size);
-  if (TREE_CODE (t) == CALL_EXPR)
+  if (TREE_CODE (t) == CALL_EXPR || self_referential_component_ref_p (t))
     return size;
 
   /* Collect the list of self-references in the expression.  */
@@ -698,11 +701,9 @@ layout_decl (tree decl, unsigned int known_align)
 	    {
 	      zero_bitfield = true;
 	      packed_p = false;
-#ifdef PCC_BITFIELD_TYPE_MATTERS
 	      if (PCC_BITFIELD_TYPE_MATTERS)
 		do_type_align (type, decl);
 	      else
-#endif
 		{
 #ifdef EMPTY_FIELD_BOUNDARY
 		  if (EMPTY_FIELD_BOUNDARY > DECL_ALIGN (decl))
@@ -1066,7 +1067,6 @@ update_alignment_for_field (record_layout_info rli, tree field,
 	  rli->unpacked_align = MAX (rli->unpacked_align, TYPE_ALIGN (type));
 	}
     }
-#ifdef PCC_BITFIELD_TYPE_MATTERS
   else if (is_bitfield && PCC_BITFIELD_TYPE_MATTERS)
     {
       /* Named bit-fields cause the entire structure to have the
@@ -1109,7 +1109,6 @@ update_alignment_for_field (record_layout_info rli, tree field,
 	  user_align |= TYPE_USER_ALIGN (type);
 	}
     }
-#endif
   else
     {
       rli->record_align = MAX (rli->record_align, desired_align);
@@ -1147,7 +1146,6 @@ place_union_field (record_layout_info rli, tree field)
 			       DECL_SIZE_UNIT (field), rli->offset);
 }
 
-#if defined (PCC_BITFIELD_TYPE_MATTERS) || defined (BITFIELD_NBYTES_LIMITED)
 /* A bitfield of SIZE with a required access alignment of ALIGN is allocated
    at BYTE_OFFSET / BIT_OFFSET.  Return nonzero if the field would span more
    units of alignment than the underlying TYPE.  */
@@ -1163,7 +1161,6 @@ excess_unit_span (HOST_WIDE_INT byte_offset, HOST_WIDE_INT bit_offset,
   return ((offset + size + align - 1) / align
 	  > tree_to_uhwi (TYPE_SIZE (type)) / align);
 }
-#endif
 
 /* RLI contains information about the layout of a RECORD_TYPE.  FIELD
    is a FIELD_DECL to be added after those fields already present in
@@ -1290,7 +1287,6 @@ place_field (record_layout_info rli, tree field)
 
   /* Handle compatibility with PCC.  Note that if the record has any
      variable-sized fields, we need not worry about compatibility.  */
-#ifdef PCC_BITFIELD_TYPE_MATTERS
   if (PCC_BITFIELD_TYPE_MATTERS
       && ! targetm.ms_bitfield_layout_p (rli->t)
       && TREE_CODE (field) == FIELD_DECL
@@ -1335,7 +1331,6 @@ place_field (record_layout_info rli, tree field)
       if (! DECL_PACKED (field))
 	TYPE_USER_ALIGN (rli->t) |= TYPE_USER_ALIGN (type);
     }
-#endif
 
 #ifdef BITFIELD_NBYTES_LIMITED
   if (BITFIELD_NBYTES_LIMITED

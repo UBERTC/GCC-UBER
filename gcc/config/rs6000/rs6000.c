@@ -6524,13 +6524,21 @@ virtual_stack_registers_memory_p (rtx op)
 }
 
 /* Return true if a MODE sized memory accesses to OP plus OFFSET
-   is known to not straddle a 32k boundary.  */
+   is known to not straddle a 32k boundary.  This function is used
+   to determine whether -mcmodel=medium code can use TOC pointer
+   relative addressing for OP.  This means the alignment of the TOC
+   pointer must also be taken into account, and unfortunately that is
+   only 8 bytes.  */ 
+
+#ifndef POWERPC64_TOC_POINTER_ALIGNMENT
+#define POWERPC64_TOC_POINTER_ALIGNMENT 8
+#endif
 
 static bool
 offsettable_ok_by_alignment (rtx op, HOST_WIDE_INT offset,
 			     machine_mode mode)
 {
-  tree decl, type;
+  tree decl;
   unsigned HOST_WIDE_INT dsize, dalign, lsb, mask;
 
   if (GET_CODE (op) != SYMBOL_REF)
@@ -6583,38 +6591,20 @@ offsettable_ok_by_alignment (rtx op, HOST_WIDE_INT offset,
 	  if (dsize > 32768)
 	    return false;
 
-	  return dalign / BITS_PER_UNIT >= dsize;
+	  dalign /= BITS_PER_UNIT;
+	  if (dalign > POWERPC64_TOC_POINTER_ALIGNMENT)
+	    dalign = POWERPC64_TOC_POINTER_ALIGNMENT;
+	  return dalign >= dsize;
 	}
     }
   else
-    {
-      type = TREE_TYPE (decl);
-
-      dalign = TYPE_ALIGN (type);
-      if (CONSTANT_CLASS_P (decl))
-	dalign = CONSTANT_ALIGNMENT (decl, dalign);
-      else
-	dalign = DATA_ALIGNMENT (decl, dalign);
-
-      if (dsize == 0)
-	{
-	  /* BLKmode, check the entire object.  */
-	  if (TREE_CODE (decl) == STRING_CST)
-	    dsize = TREE_STRING_LENGTH (decl);
-	  else if (TYPE_SIZE_UNIT (type)
-		   && tree_fits_uhwi_p (TYPE_SIZE_UNIT (type)))
-	    dsize = tree_to_uhwi (TYPE_SIZE_UNIT (type));
-	  else
-	    return false;
-	  if (dsize > 32768)
-	    return false;
-
-	  return dalign / BITS_PER_UNIT >= dsize;
-	}
-    }
+    gcc_unreachable ();
 
   /* Find how many bits of the alignment we know for this access.  */
-  mask = dalign / BITS_PER_UNIT - 1;
+  dalign /= BITS_PER_UNIT;
+  if (dalign > POWERPC64_TOC_POINTER_ALIGNMENT)
+    dalign = POWERPC64_TOC_POINTER_ALIGNMENT;
+  mask = dalign - 1;
   lsb = offset & -offset;
   mask &= lsb - 1;
   dalign = mask + 1;
@@ -7553,13 +7543,14 @@ rs6000_cannot_force_const_mem (machine_mode mode ATTRIBUTE_UNUSED, rtx x)
    can be addressed relative to the toc pointer.  */
 
 static bool
-use_toc_relative_ref (rtx sym)
+use_toc_relative_ref (rtx sym, machine_mode mode)
 {
   return ((constant_pool_expr_p (sym)
 	   && ASM_OUTPUT_SPECIAL_POOL_ENTRY_P (get_pool_constant (sym),
 					       get_pool_mode (sym)))
 	  || (TARGET_CMODEL == CMODEL_MEDIUM
-	      && SYMBOL_REF_LOCAL_P (sym)));
+	      && SYMBOL_REF_LOCAL_P (sym)
+	      && GET_MODE_SIZE (mode) <= POWERPC64_TOC_POINTER_ALIGNMENT));
 }
 
 /* Our implementation of LEGITIMIZE_RELOAD_ADDRESS.  Returns a value to
@@ -7764,7 +7755,7 @@ rs6000_legitimize_reload_address (rtx x, machine_mode mode,
   if (TARGET_TOC
       && reg_offset_p
       && GET_CODE (x) == SYMBOL_REF
-      && use_toc_relative_ref (x))
+      && use_toc_relative_ref (x, mode))
     {
       x = create_TOC_reference (x, NULL_RTX);
       if (TARGET_CMODEL != CMODEL_SMALL)
@@ -8842,7 +8833,7 @@ rs6000_emit_move (rtx dest, rtx source, machine_mode mode)
 	 reference to it.  */
       if (TARGET_TOC
 	  && GET_CODE (operands[1]) == SYMBOL_REF
-	  && use_toc_relative_ref (operands[1]))
+	  && use_toc_relative_ref (operands[1], mode))
 	operands[1] = create_TOC_reference (operands[1], operands[0]);
       else if (mode == Pmode
 	       && CONSTANT_P (operands[1])
@@ -12687,9 +12678,9 @@ static inline enum insn_code
 rs6000_htm_spr_icode (bool nonvoid)
 {
   if (nonvoid)
-    return (TARGET_64BIT) ? CODE_FOR_htm_mfspr_di : CODE_FOR_htm_mfspr_si;
+    return (TARGET_POWERPC64) ? CODE_FOR_htm_mfspr_di : CODE_FOR_htm_mfspr_si;
   else
-    return (TARGET_64BIT) ? CODE_FOR_htm_mtspr_di : CODE_FOR_htm_mtspr_si;
+    return (TARGET_POWERPC64) ? CODE_FOR_htm_mtspr_di : CODE_FOR_htm_mtspr_si;
 }
 
 /* Expand the HTM builtin in EXP and store the result in TARGET.
@@ -12703,7 +12694,17 @@ htm_expand_builtin (tree exp, rtx target, bool * expandedp)
   const struct builtin_description *d;
   size_t i;
 
-  *expandedp = false;
+  *expandedp = true;
+
+  if (!TARGET_POWERPC64
+      && (fcode == HTM_BUILTIN_TABORTDC
+	  || fcode == HTM_BUILTIN_TABORTDCI))
+    {
+      size_t uns_fcode = (size_t)fcode;
+      const char *name = rs6000_builtin_info[uns_fcode].name;
+      error ("builtin %s is only valid in 64-bit mode", name);
+      return const0_rtx;
+    }
 
   /* Expand the HTM builtins.  */
   d = bdesc_htm;
@@ -12716,26 +12717,29 @@ htm_expand_builtin (tree exp, rtx target, bool * expandedp)
 	call_expr_arg_iterator iter;
 	unsigned attr = rs6000_builtin_info[fcode].attr;
 	enum insn_code icode = d->icode;
+	const struct insn_operand_data *insn_op;
+	bool uses_spr = (attr & RS6000_BTC_SPR);
+	rtx cr = NULL_RTX;
 
-	if (attr & RS6000_BTC_SPR)
+	if (uses_spr)
 	  icode = rs6000_htm_spr_icode (nonvoid);
+	insn_op = &insn_data[icode].operand[0];
 
 	if (nonvoid)
 	  {
-	    machine_mode tmode = insn_data[icode].operand[0].mode;
+	    machine_mode tmode = (uses_spr) ? insn_op->mode : SImode;
 	    if (!target
 		|| GET_MODE (target) != tmode
-		|| !(*insn_data[icode].operand[0].predicate) (target, tmode))
+		|| (uses_spr && !(*insn_op->predicate) (target, tmode)))
 	      target = gen_reg_rtx (tmode);
-	    op[nopnds++] = target;
+	    if (uses_spr)
+	      op[nopnds++] = target;
 	  }
 
 	FOR_EACH_CALL_EXPR_ARG (arg, iter, exp)
 	{
-	  const struct insn_operand_data *insn_op;
-
 	  if (arg == error_mark_node || nopnds >= MAX_HTM_OPERANDS)
-	    return NULL_RTX;
+	    return const0_rtx;
 
 	  insn_op = &insn_data[icode].operand[nopnds];
 
@@ -12782,10 +12786,17 @@ htm_expand_builtin (tree exp, rtx target, bool * expandedp)
 
 	/* If this builtin accesses SPRs, then pass in the appropriate
 	   SPR number and SPR regno as the last two operands.  */
-	if (attr & RS6000_BTC_SPR)
+	if (uses_spr)
 	  {
-	    op[nopnds++] = gen_rtx_CONST_INT (Pmode, htm_spr_num (fcode));
-	    op[nopnds++] = gen_rtx_REG (Pmode, htm_spr_regno (fcode));
+	    machine_mode mode = (TARGET_POWERPC64) ? DImode : SImode;
+	    op[nopnds++] = gen_rtx_CONST_INT (mode, htm_spr_num (fcode));
+	    op[nopnds++] = gen_rtx_REG (mode, htm_spr_regno (fcode));
+	  }
+	/* If this builtin accesses a CR, then pass in a scratch
+	   CR as the last operand.  */
+	else if (attr & RS6000_BTC_CR)
+	  { cr = gen_reg_rtx (CCmode);
+	    op[nopnds++] = cr;
 	  }
 
 #ifdef ENABLE_CHECKING
@@ -12798,7 +12809,7 @@ htm_expand_builtin (tree exp, rtx target, bool * expandedp)
 	  expected_nopnds = 3;
 	if (!(attr & RS6000_BTC_VOID))
 	  expected_nopnds += 1;
-	if (attr & RS6000_BTC_SPR)
+	if (uses_spr)
 	  expected_nopnds += 2;
 
 	gcc_assert (nopnds == expected_nopnds && nopnds <= MAX_HTM_OPERANDS);
@@ -12825,12 +12836,41 @@ htm_expand_builtin (tree exp, rtx target, bool * expandedp)
 	  return NULL_RTX;
 	emit_insn (pat);
 
-	*expandedp = true;
+	if (attr & RS6000_BTC_CR)
+	  {
+	    if (fcode == HTM_BUILTIN_TBEGIN)
+	      {
+		/* Emit code to set TARGET to true or false depending on
+		   whether the tbegin. instruction successfully or failed
+		   to start a transaction.  We do this by placing the 1's
+		   complement of CR's EQ bit into TARGET.  */
+		rtx scratch = gen_reg_rtx (SImode);
+		emit_insn (gen_rtx_SET (VOIDmode, scratch,
+					gen_rtx_EQ (SImode, cr,
+						     const0_rtx)));
+		emit_insn (gen_rtx_SET (VOIDmode, target,
+					gen_rtx_XOR (SImode, scratch,
+						     GEN_INT (1))));
+	      }
+	    else
+	      {
+		/* Emit code to copy the 4-bit condition register field
+		   CR into the least significant end of register TARGET.  */
+		rtx scratch1 = gen_reg_rtx (SImode);
+		rtx scratch2 = gen_reg_rtx (SImode);
+		rtx subreg = simplify_gen_subreg (CCmode, scratch1, SImode, 0);
+		emit_insn (gen_movcc (subreg, cr));
+		emit_insn (gen_lshrsi3 (scratch2, scratch1, GEN_INT (28)));
+		emit_insn (gen_andsi3 (target, scratch2, GEN_INT (0xf)));
+	      }
+	  }
+
 	if (nonvoid)
 	  return target;
 	return const0_rtx;
       }
 
+  *expandedp = false;
   return NULL_RTX;
 }
 
@@ -15319,8 +15359,31 @@ htm_init_builtins (void)
       bool void_func = (attr & RS6000_BTC_VOID);
       int attr_args = (attr & RS6000_BTC_TYPE_MASK);
       int nopnds = 0;
-      tree argtype = (attr & RS6000_BTC_SPR) ? long_unsigned_type_node
-					     : unsigned_type_node;
+      tree gpr_type_node;
+      tree rettype;
+      tree argtype;
+
+      if (TARGET_32BIT && TARGET_POWERPC64)
+	gpr_type_node = long_long_unsigned_type_node;
+      else
+	gpr_type_node = long_unsigned_type_node;
+
+      if (attr & RS6000_BTC_SPR)
+	{
+	  rettype = gpr_type_node;
+	  argtype = gpr_type_node;
+	}
+      else if (d->code == HTM_BUILTIN_TABORTDC
+	       || d->code == HTM_BUILTIN_TABORTDCI)
+	{
+	  rettype = unsigned_type_node;
+	  argtype = gpr_type_node;
+	}
+      else
+	{
+	  rettype = unsigned_type_node;
+	  argtype = unsigned_type_node;
+	}
 
       if ((mask & builtin_mask) != mask)
 	{
@@ -15337,7 +15400,7 @@ htm_init_builtins (void)
 	  continue;
 	}
 
-      op[nopnds++] = (void_func) ? void_type_node : argtype;
+      op[nopnds++] = (void_func) ? void_type_node : rettype;
 
       if (attr_args == RS6000_BTC_UNARY)
 	op[nopnds++] = argtype;
@@ -32219,10 +32282,11 @@ static struct rs6000_opt_mask const rs6000_opt_masks[] =
   { "quad-memory",		OPTION_MASK_QUAD_MEMORY,	false, true  },
   { "quad-memory-atomic",	OPTION_MASK_QUAD_MEMORY_ATOMIC,	false, true  },
   { "recip-precision",		OPTION_MASK_RECIP_PRECISION,	false, true  },
+  { "save-toc-indirect",	OPTION_MASK_SAVE_TOC_INDIRECT,	false, true  },
   { "string",			OPTION_MASK_STRING,		false, true  },
   { "update",			OPTION_MASK_NO_UPDATE,		true , true  },
-  { "upper-regs-df",		OPTION_MASK_UPPER_REGS_DF,	false, false },
-  { "upper-regs-sf",		OPTION_MASK_UPPER_REGS_SF,	false, false },
+  { "upper-regs-df",		OPTION_MASK_UPPER_REGS_DF,	false, true  },
+  { "upper-regs-sf",		OPTION_MASK_UPPER_REGS_SF,	false, true  },
   { "vsx",			OPTION_MASK_VSX,		false, true  },
   { "vsx-timode",		OPTION_MASK_VSX_TIMODE,		false, true  },
 #ifdef OPTION_MASK_64BIT
@@ -32295,6 +32359,42 @@ static struct rs6000_opt_var const rs6000_opt_vars[] =
   { "longcall",
     offsetof (struct gcc_options, x_rs6000_default_long_calls),
     offsetof (struct cl_target_option, x_rs6000_default_long_calls), },
+  { "optimize-swaps",
+    offsetof (struct gcc_options, x_rs6000_optimize_swaps),
+    offsetof (struct cl_target_option, x_rs6000_optimize_swaps), },
+  { "allow-movmisalign",
+    offsetof (struct gcc_options, x_TARGET_ALLOW_MOVMISALIGN),
+    offsetof (struct cl_target_option, x_TARGET_ALLOW_MOVMISALIGN), },
+  { "allow-df-permute",
+    offsetof (struct gcc_options, x_TARGET_ALLOW_DF_PERMUTE),
+    offsetof (struct cl_target_option, x_TARGET_ALLOW_DF_PERMUTE), },
+  { "sched-groups",
+    offsetof (struct gcc_options, x_TARGET_SCHED_GROUPS),
+    offsetof (struct cl_target_option, x_TARGET_SCHED_GROUPS), },
+  { "always-hint",
+    offsetof (struct gcc_options, x_TARGET_ALWAYS_HINT),
+    offsetof (struct cl_target_option, x_TARGET_ALWAYS_HINT), },
+  { "align-branch-targets",
+    offsetof (struct gcc_options, x_TARGET_ALIGN_BRANCH_TARGETS),
+    offsetof (struct cl_target_option, x_TARGET_ALIGN_BRANCH_TARGETS), },
+  { "vectorize-builtins",
+    offsetof (struct gcc_options, x_TARGET_VECTORIZE_BUILTINS),
+    offsetof (struct cl_target_option, x_TARGET_VECTORIZE_BUILTINS), },
+  { "tls-markers",
+    offsetof (struct gcc_options, x_tls_markers),
+    offsetof (struct cl_target_option, x_tls_markers), },
+  { "sched-prolog",
+    offsetof (struct gcc_options, x_TARGET_SCHED_PROLOG),
+    offsetof (struct cl_target_option, x_TARGET_SCHED_PROLOG), },
+  { "sched-epilog",
+    offsetof (struct gcc_options, x_TARGET_SCHED_PROLOG),
+    offsetof (struct cl_target_option, x_TARGET_SCHED_PROLOG), },
+  { "gen-cell-microcode",
+    offsetof (struct gcc_options, x_rs6000_gen_cell_microcode),
+    offsetof (struct cl_target_option, x_rs6000_gen_cell_microcode), },
+  { "warn-cell-microcode",
+    offsetof (struct gcc_options, x_rs6000_warn_cell_microcode),
+    offsetof (struct cl_target_option, x_rs6000_warn_cell_microcode), },
 };
 
 /* Inner function to handle attribute((target("..."))) and #pragma GCC target
@@ -32368,9 +32468,15 @@ rs6000_inner_target_options (tree args, bool attr_p)
 			rs6000_isa_flags_explicit |= mask;
 
 			/* VSX needs altivec, so -mvsx automagically sets
-			   altivec.  */
-			if (mask == OPTION_MASK_VSX && !invert)
-			  mask |= OPTION_MASK_ALTIVEC;
+			   altivec and disables -mavoid-indexed-addresses.  */
+			if (!invert)
+			  {
+			    if (mask == OPTION_MASK_VSX)
+			      {
+				mask |= OPTION_MASK_ALTIVEC;
+				TARGET_AVOID_XFORM = 0;
+			      }
+			  }
 
 			if (rs6000_opt_masks[i].invert)
 			  invert = !invert;
@@ -32391,6 +32497,7 @@ rs6000_inner_target_options (tree args, bool attr_p)
 			size_t j = rs6000_opt_vars[i].global_offset;
 			*((int *) ((char *)&global_options + j)) = !invert;
 			error_p = false;
+			not_valid_p = false;
 			break;
 		      }
 		}

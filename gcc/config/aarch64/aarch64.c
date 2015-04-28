@@ -95,6 +95,7 @@
 #include "rtl-iter.h"
 #include "tm-constrs.h"
 #include "sched-int.h"
+#include "cortex-a57-fma-steering.h"
 
 /* Defined for convenience.  */
 #define POINTER_BYTES (POINTER_SIZE / BITS_PER_UNIT)
@@ -440,7 +441,7 @@ struct processor
 /* Processor cores implementing AArch64.  */
 static const struct processor all_cores[] =
 {
-#define AARCH64_CORE(NAME, IDENT, SCHED, ARCH, FLAGS, COSTS) \
+#define AARCH64_CORE(NAME, IDENT, SCHED, ARCH, FLAGS, COSTS, IMP, PART) \
   {NAME, SCHED, #ARCH, ARCH, FLAGS, &COSTS##_tunings},
 #include "aarch64-cores.def"
 #undef AARCH64_CORE
@@ -477,7 +478,7 @@ struct aarch64_option_extension
 /* ISA extensions in AArch64.  */
 static const struct aarch64_option_extension all_extensions[] =
 {
-#define AARCH64_OPT_EXTENSION(NAME, FLAGS_ON, FLAGS_OFF) \
+#define AARCH64_OPT_EXTENSION(NAME, FLAGS_ON, FLAGS_OFF, FEATURE_STRING) \
   {NAME, FLAGS_ON, FLAGS_OFF},
 #include "aarch64-option-extensions.def"
 #undef AARCH64_OPT_EXTENSION
@@ -6883,6 +6884,9 @@ aarch64_override_options (void)
       if (align_functions <= 0)
 	align_functions = aarch64_tune_params->function_align;
     }
+
+  if (AARCH64_TUNE_FMA_STEERING)
+    aarch64_register_fma_steering ();
 
   aarch64_override_options_after_change ();
 }

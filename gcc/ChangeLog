@@ -1,3 +1,477 @@
+2015-04-28  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	PR other/65911
+	* function.c (pad_to_arg_alignment): Add parentheses.
+
+2015-04-28  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/frv/frv.h (CRT_GET_RFIB_DATA): Move definition to
+	libgcc/config/frv/elf-lib.h.
+
+2015-04-28  Tom de Vries  <tom@codesourcery.com>
+
+	* tree-call-cdce.c: Fix example in header comment.
+
+2015-04-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62283
+	* tree-vect-slp.c (vect_build_slp_tree): When the SLP build
+	fails fatally and we are vectorizing a basic-block simply
+	cause the child to be constructed piecewise.
+	(vect_analyze_slp_cost_1): Adjust.
+	(vect_detect_hybrid_slp_stmts): Likewise.
+	(vect_bb_slp_scalar_cost): Likewise.
+	(vect_get_constant_vectors): For piecewise constructed
+	constants place them after the last def.
+	(vect_get_slp_defs): Adjust.
+	* tree-vect-stmts.c (vect_is_simple_use): Detect in-BB
+	externals for basic-block vectorization.
+
+2015-04-28  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR target/63503
+	* config.gcc: Add cortex-a57-fma-steering.o to extra_objs for
+	aarch64-*-*.
+	* config/aarch64/t-aarch64: Add a rule for cortex-a57-fma-steering.o.
+	* config/aarch64/aarch64.h (AARCH64_FL_USE_FMA_STEERING_PASS): Define.
+	(AARCH64_TUNE_FMA_STEERING): Likewise.
+	* config/aarch64/aarch64-cores.def: Set
+	AARCH64_FL_USE_FMA_STEERING_PASS for cores with dynamic steering of
+	FMUL/FMADD instructions.
+	* config/aarch64/aarch64.c (aarch64_register_fma_steering): Declare.
+	(aarch64_override_options): Include cortex-a57-fma-steering.h.  Call
+	aarch64_register_fma_steering () if AARCH64_TUNE_FMA_STEERING is true.
+	* config/aarch64/cortex-a57-fma-steering.h: New file.
+	* config/aarch64/cortex-a57-fma-steering.c: Likewise.
+
+2015-04-28  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gensupport.c (std_preds): Add missing codes to address_operand entry.
+
+2015-04-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65851
+	* tree-ssa-ccp.c (set_lattice_value): Perform a meet when
+	changing CONSTANT to CONSTANT non-copy.  Get new_val by reference.
+	(ccp_lattice_meet): Remove stray argument.  Use operand_equal_p
+	rather than simple_cst_equal as the latter doesn't handle COMPLEX_CST.
+	(ccp_visit_phi_node): Adjust.
+	(evaluate_stmt): For simplifications to SSA names return its
+	lattice value if that isn't VARYING.  Return immediately when
+	simplified to a constant.
+	(visit_assignment): Adjust.
+	(ccp_visit_stmt): Likewise.
+
+2015-04-28  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65818
+	* tree-stdarg.c (expand_ifn_va_arg_1): Ensure that side-effects are
+	evaluated.
+
+2015-04-27  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* calls.c (save_fixed_argument_area): Don't check
+	ARGS_GROW_DOWNWARD with the preprocessor.
+	(restore_fixed_argument_area): Likewise.
+	(mem_overlaps_already_clobbered_arg_p): Likewise.
+	(check_sibcall_argument_overlap): Likewise.
+	(expand_call): Likewise.
+	(emit_library_call_value_1): Likewise.
+	(store_one_arg): Likewise.
+	* function.c (assign_parms): Likewise.
+	(locate_and_pad_parm): Likewise.
+	(pad_to_arg_alignment): Likewise.
+	* targhooks.c (std_gimplify_va_arg_expr): Likewise.
+
+2015-04-27  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* config/pa/pa.h (ARGS_GROW_DOWNWARD): Define to 1.
+	* defaults.h (ARGS_GROW_DOWNWARD): Define it to 0 by default.
+	* calls.c (save_fixed_argument_area): Don't chekc if
+	ARGS_GROW_DOWNWARD is defined.
+	(restore_fixed_argument_area): Likewise.
+	(mem_overlaps_already_clobbered_arg_p): Likewise.
+	(check_sibcall_argument_overlap): Likewise.
+	(expand_call): Likewise.
+	(emit_library_call_value_1): Likewise.
+	(store_one_arg): Likewise.
+	* function.c (assign_parms): Likewise.
+	(locate_and_pad_parm): Likewise.
+	(pad_to_arg_alignment): Likewise.
+	* targhooks.c (std_gimplify_va_arg_expr): Likewise.
+
+2015-04-27  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (gen_epilogue): New function.
+	* alias.c (init_alias_analysis): don't check if HAVE_epilogue is
+	defined.
+	* cfgrtl.c (cfg_layout_finalize): Likewise.
+	* df-scan.c: Likewise.
+	* function.c (thread_prologue_and_epilogue_insns): Likewise.
+	(reposition_prologue_and_epilogue_notes): Likewise.
+	* reorg.c (find_end_label): Likewise.
+	* toplev.c: Likewise.
+
+2015-04-27  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* bb-reorder.c (HAVE_return): Don't check if its undefined.
+	* defaults.h (gen_simple_return): New function.
+	(gen_simple_return): Likewise.
+	(HAVE_return): Add default definition to false.
+	(HAVE_simple_return): Likewise.
+	* cfgrtl.c (force_nonfallthru_and_redirect): Remove checks if
+	HAVE_return and HAVE_simple_return are defined.
+	* function.c (gen_return_pattern): Likewise.
+	(convert_jumps_to_returns): Likewise.
+	(thread_prologue_and_epilogue_insns): Likewise.
+	* reorg.c (find_end_label): Likewise.
+	(dbr_schedule): Likewise.
+	* shrink-wrap.c: Likewise.
+	* shrink-wrap.h: Likewise.
+
+2015-04-27  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (EPILOGUE_USES): Add default definition of false.
+	* df-scan.c (EPILOGUE_USES): Remove check if its undefined.
+	* resource.c (init_resource_info): Likewise.
+
+2015-04-27  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (PCC_BITFIELD_TYPE_MATTERS): Add default definition
+	to false.
+	* dwarf2out.c (field_byte_offset): REmove check if
+	PCC_BITFIELD_TYPE_MATTERS is defined.
+	* stor-layout.c (layout_decl): Likewise.
+	(update_alignment_for_field): Likewise.
+	(place_field): Likewise.
+
+2015-04-27  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (HARD_REGNO_RENAME_OK): Add default definition to
+	true.
+	* regrename.c (check_new_reg_p): Remove check if
+	HARD_REGNO_RENAME_OK is defined.
+	* sel-sched.c (sel_hard_regno_rename_ok): Likewise.
+
+2015-04-27  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* calls.c (prepare_call_address): Remove ifdef NO_FUNCTION_CSE.
+	* cse.c (fold_rtx): Likewise.
+	* config/alpha/alpha.h (NO_FUNCTION_CSE): Define to 1.
+	* config/arc/arc.h (NO_FUNCTION_CSE): Likewise.
+	* config/avr/avr.h (NO_FUNCTION_CSE): Likewise.
+	* config/cr16/cr16.h (NO_FUNCTION_CSE): Likewise.
+	* config/epiphany/epiphany.h (NO_FUNCTION_CSE): Likewise.
+	* config/frv/frv.h (NO_FUNCTION_CSE): Likewise.
+	* config/h8300/h8300.h (NO_FUNCTION_CSE): Likewise.
+	* config/i386/i386.h (NO_FUNCTION_CSE): Likewise.
+	* config/ia64/ia64.h (NO_FUNCTION_CSE): Likewise.
+	* config/lm32/lm32.h (enum reg_class) (NO_FUNCTION_CSE):
+	* Likewise.
+	* config/m32r/m32r.h (NO_FUNCTION_CSE): Likewise.
+	* config/mep/mep.h (NO_FUNCTION_CSE): Likewise.
+	* config/mn10300/mn10300.h (NO_FUNCTION_CSE): Likewise.
+	* config/nds32/nds32.h (NO_FUNCTION_CSE): Likewise.
+	* config/nios2/nios2.h (NO_FUNCTION_CSE): Likewise.
+	* config/pa/pa.h (NO_FUNCTION_CSE): Likewise.
+	* config/rs6000/rs6000.h (NO_FUNCTION_CSE): Likewise.
+	* config/s390/s390.h (NO_FUNCTION_CSE): Likewise.
+	* config/sparc/sparc.h (NO_FUNCTION_CSE): Likewise.
+	* config/spu/spu.h (NO_FUNCTION_CSE): Likewise.
+	* config/stormy16/stormy16.h (NO_FUNCTION_CSE): Likewise.
+	* config/v850/v850.h (NO_FUNCTION_CSE): Likewise.
+	* defaults.h (NO_FUNCTION_CSE): Provide default definition to 0.
+	* doc/tm.texi: Regenerate.
+	* doc/tm.texi.in: Document NO_FUNCTION_CSE is always defined to
+	either true or false.
+
+2015-04-27  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/65217
+	* tree-ssa-dom.c (record_equality): Given two SSA_NAMEs, if just one
+	of them has a single use, make sure it is the LHS of the implied
+	copy.
+
+2015-04-28  Alan Modra  <amodra@gmail.com>
+
+	PR target/65810
+	* config/rs6000/rs6000.c (POWERPC64_TOC_POINTER_ALIGNMENT): Define.
+	(offsettable_ok_by_alignment): Use minimum of decl and toc
+	pointer alignment.  Replace dead code with assertion.
+	(use_toc_relative_ref): Add mode arg.  Return false in -mcmodel=medium
+	case if size exceeds toc pointer alignment.
+	(rs6000_legitimize_reload_address): Update use_toc_relative_ref call.
+	(rs6000_emit_move): Likewise.
+	* configure.ac: Add linker toc pointer alignment check.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+
+2015-04-27  Yoshinori Sato <ysato@users.sourceforge.jp>
+
+	* config.gcc: Add h8300-*-linux.
+	* config/h8300/linux.h: New.
+	* config/h8300/t-linux: New.
+	* config/h8300/h8300.c (h8300_option_override): Normal mode
+	is not supported for h8300-*-linux.
+	(h8300_file_start): Target priority change.
+	(get_shift_alg): Likewise.
+	(h8300_shift_need_scratch_p): Likewise.
+	* config/h8300/h8300.h (TARGET_CPU_CPP_BUILTINS): Likewise.
+	* config/h8300/h8300.md (define_peephole2): Remove duplicate condition.
+
+2015-04-27  Caroline Tice  <cmtice@google.com>
+
+	* final.c (final_scan_insn):  Output cold_function_nmae as function
+	type.
+	* varasm.c (cold_function_name):  Make gloval.
+	(assemble_start_function):  Re-set cold_function_name.
+	(assemble_end_function): Output cold partition size.
+	* varasm.h (cold_fun ction_name):  Declare global.
+
+2015-04-27  Ilya Tocar  <ilya.tocar@intel.com>
+
+	* config/i386/i386.h (EXT_REX_SSE_REG_P): New.
+	* config/i386/i386.md (*cmpi<FPCMP:unord><MODEF:mode>_mixed): Use "v"
+	constraint.
+	(*movxi_internal_avx512f): Ditto.
+	(define_split): Check for xmm16+, when splitting scalar float_extend.
+	(*extendsfdf2_mixed): Use "v" constraint.
+	(define_split): Check for xmm16+, when splitting scalar float_truncate.
+	(*truncdfsf_fast_sse): Use "v" constraint.
+	(fix_trunc<MODEF:mode><SWI48:mode>_sse): Ditto.
+	(*float<SWI48:mode><MODEF:mode>2_sse): Ditto.
+	(define_peephole2): Check for xmm16+, when converting scalar
+	float_truncate.
+	(define_peephole2): Check for xmm16+, when converting scalar
+	float_extend.
+	(*fop_<mode>_comm_mixed): Use "v" constraint.
+	(*fop_<mode>_comm_sse): Ditto.
+	(*fop_<mode>_1_mixed): Ditto.
+	(*sqrt<mode>2_sse): Ditto.
+	(*ieee_s<ieee_maxmin><mode>3): Ditto.
+
+2015-04-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* combine.c (simplify_if_then_else): Use std::swap instead
+	of manually swapping.
+	(known_cond): Likewise.
+	(simplify_comparison): Likewise.
+
+2015-04-27  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/64579
+	* config/rs6000/htm.md: Remove all define_expands.
+	(UNSPECV_HTM_TABORTDC, UNSPECV_HTM_TABORTDCI, UNSPECV_HTM_TABORTWC,
+	UNSPECV_HTM_TABORTWCI): Remove.
+	(UNSPECV_HTM_TABORTXC, UNSPECV_HTM_TABORTXCI, UNSPECV_HTM_TTEST): New.
+	(tabort_internal, tbegin_internal, tcheck_internal, tend_internal,
+	trechkpt_internal, treclaim_internal, tsr_internal): Rename from this...
+	(tabort, tbegin, tcheck, tend, trechkpt, treclaim, tsr): ...to this.
+	(tabortdc_internal, tabortdci_internal, tabortwc_internal,
+	tabortwci_internal): Remove define_insns.
+	(tabort<wd>c, tabort<wd>ci): New define_insns.
+	(tabort): Use gpc_reg_operand.
+	(tcheck): Remove operand.
+	(htm_mfspr_<mode>, htm_mtspr_<mode>): Use GPR mode macro.
+	* config/rs6000/htmxlintrin.h (__TM_end): Use _HTM_TRANSACTIONAL as
+	expected value.
+	* config/rs6000/rs6000-builtin.def (BU_HTM_SPR0): Remove.
+	(BU_HTM_SPR1): Rename to BU_HTM_V1.  Remove use of RS6000_BTC_SPR.
+	(tabort, tabortdc, tabortdci, tabortwc, tabortwci, tbegin,
+	tcheck, tend, tendall, trechkpt, treclaim, tresume, tsuspend,
+	tsr, ttest): Pass in the RS6000_BTC_CR attribute.
+	(get_tfhar, set_tfhar, get_tfiar, set_tfiar, get_texasr, set_texasr,
+	get_texasru, set_texasru): Pass in the RS6000_BTC_SPR attribute.
+	(tcheck): Remove builtin argument.
+	* config/rs6000/rs6000.c (rs6000_htm_spr_icode): Use TARGET_POWERPC64
+	not TARGET_64BIT.
+	(htm_expand_builtin): Fix usage of expandedp.  Disallow usage of the
+	tabortdc and tabortdci builtins when not in 64-bit mode.
+	Modify code to handle the loss of the HTM define_expands.
+	Emit code to copy the CR register to TARGET.
+	(htm_init_builtins): Modify code to handle the loss of the HTM
+	define_expands.
+	* config/rs6000/rs6000.h (RS6000_BTC_32BIT): Delete.
+	(RS6000_BTC_64BIT): Likewise.
+	(RS6000_BTC_CR): New macro.
+	* doc/extend.texi: Update documentation for htm builtins.
+
+2015-04-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* simplify-rtx.c (simplify_gen_binary): Use std::swap instead
+	of manually swapping.
+	(simplify_associative_operation): Likewise.
+	(simplify_binary_operation): Likewise.
+	(simplify_plus_minus): Likewise.
+	(simplify_relational_operation): Likewise.
+	(simplify_ternary_operation): Likewise.
+
+2015-04-27  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* config/stormy16/predicates.md (xs_hi_general_operand): Delete.
+	(xs_hi_nonmemory_operand): Remove error.
+	* config/stormy16/stormy16.md (movhi, movhi_internal): Use
+	general_operand rather than xs_hi_general_operand.
+
+2015-04-27  Richard Biener  <rguenther@suse.de>
+
+	* tree-ssa-dom.c (record_equivalences_from_phis): Valueize PHI arg.
+	(record_equivalences_from_stmt): Valueize rhs.
+	(record_equality): Canonicalize x and y order via
+	tree_swap_operands_p.  Do not swap operands for same loop depth.
+
+2015-04-27  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/65296
+	PR target/65895
+	* config/avr/gen-avr-mmcu-specs.c (print_mcu): Close file.
+	Add hint how to use own spec file.
+
+2015-04-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65875
+	* tree-vrp.c (update_value_range): If in is_new case setting
+	old_vr to VR_VARYING, also set new_vr to it.  Remove
+	old_vr->type == VR_VARYING test.
+	(vrp_visit_phi_node): Return SSA_PROP_VARYING instead of
+	SSA_PROP_INTERESTING if update_value_range returned true,
+	but new range is VR_VARYING.
+
+2015-04-27  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* combine.c (sign_extend_short_imm): New.
+	(set_nonzero_bits_and_sign_copies): Use above new function for sign
+	extension of src short immediate.
+	(reg_nonzero_bits_for_combine): Likewise for tem.
+
+2015-04-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* stor-layout.c (self_referential_component_ref_p): New predicate.
+	(copy_self_referential_tree_r): Use it.
+	(self_referential_size): Punt for simple operations directly involving
+	self-referential component references.
+	* tree-cfg.c (dump_function_to_file): Add missing final curly bracket.
+
+2015-04-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* ipa-icf.c (icf_handled_component_p): Remove redundant tests.
+
+2015-04-27  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* vec.h (vec): Make splice arguments const.  Update definitions
+	accordingly.
+
+2015-04-27  Yvan Roux  <yvan.roux@linaro.org>
+
+	* config/arm/arm.md (*arm_subsi3_insn): Fixed redundant
+	alternatives.
+
+2015-04-26  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65826
+	* internal-fn.def: Mark VA_ARG with ECF_LEAF.
+
+2015-04-24  Steve Ellcey  <sellcey@imgtec.com>
+
+	* config/mips/mips.md: (*madd4<mode>) Remove accum_in attribute.
+	(*madd3<mode>): Ditto.
+	(*msub4<mode>): Ditto.
+	(*msub3<mode>): Ditto.
+	(*nmadd4<mode>): Ditto.
+	(*nmadd3<mode>): Ditto.
+	(*nmadd4<mode>_fastmath): Ditto.
+	(*nmadd3<mode>_fastmath): Ditto.
+	(*nmsub4<mode>): Ditto.
+	(*nmsub3<mode>): Ditto.
+	(*nmsub4<mode>_fastmath): Ditto.
+	(*nmsub3<mode>_fastmath): Ditto.
+
+2015-04-24  Jason Merrill  <jason@redhat.com>
+
+	PR c++/50800
+	* tree.c (build_reference_type_for_mode): Don't pass can_alias_all
+	down when building TYPE_CANONICAL.
+	(build_pointer_type_for_mode): Likewise.
+
+2015-04-24  Chen Gang  <gang.chen.5i5j@gmail.com>
+
+	* genrecog.c (validate_pattern): Check matching constraint refers
+	to a lower numbered operand.
+
+2015-04-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/65849
+	* config/rs6000/rs6000.opt (-mvsx-align-128): Make options that
+	save to independent variables use the Save attribute.  This will
+	allow these options to be modified with the #pragma/attribute
+	target support.
+	(-mallow-movmisalign): Likewise.
+	(-mallow-df-permute): Likewise.
+	(-msched-groups): Likewise.
+	(-malways-hint): Likewise.
+	(-malign-branch-targets): Likewise.
+	(-mvectorize-builtins): Likewise.
+	(-msave-toc-indirect): Likewise.
+
+	* config/rs6000/rs6000.c (rs6000_opt_masks): Add more options that
+	can be set via the #pragma/attribute target support.
+	(rs6000_opt_vars): Likewise.
+	(rs6000_inner_target_options): If VSX was set, also set
+	-mno-avoid-indexed-addresses.
+
+2015-04-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/iterators.md (shiftable_ops): Rename to...
+	(SHIFTABLE_OPS): ... This.  Update use in comments.
+	(ior_xor): Rename to...
+	(IOR_XOR): ... This.
+	(vqh_ops): Rename to...
+	(VQH_OPS): ... This.
+	(vqhs_ops): Rename to...
+	(VQHS_OPS): ... This.
+	(rshifts): Rename to...
+	(RSHIFTS): ... This.
+	(returns): Rename to...
+	(RETURNS): ... This.
+	* config/arm/arm.md: Update uses of the above.
+	* config/arm/neon.md: Likewise.
+
+2014-04-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config.host (case ${host}): Add aarch64*-*-linux case.
+	* config/aarch64/aarch64-cores.def: Add IMPLEMENTER_ID and PART_NUMBER
+	fields to all the cores.
+	* config/aarch64/aarch64-elf.h (DRIVER_SELF_SPECS):
+	Add MCPU_MTUNE_NATIVE_SPECS.
+	* config/aarch64/aarch64-option-extensions.def: Add FEATURE_STRING
+	field to all extensions.
+	* config/aarch64/aarch64-opts.h: Adjust definition of AARCH64_CORE.
+	* config/aarch64/aarch64.c: Adjust definition of AARCH64_CORE.
+	Adjust definition of AARCH64_OPT_EXTENSION.
+	* config/aarch64/aarch64.h: Adjust definition of AARCH64_CORE.
+	(MCPU_MTUNE_NATIVE_SPECS): Define.
+	* config/aarch64/driver-aarch64.c: New file.
+	* config/aarch64/x-arch64: New file.
+	* doc/invoke.texi (AArch64 Options): Document native value for -mcpu,
+	-mtune and -march.
+
+2015-04-24  Uros Bizjak  <ubizjak@gmail.com>
+	    Wei Mi  <wmi@google.com>
+
+	* config/i386/i386-protos.h (ix86_operands_ok_for_move_multiple): New.
+	* config/i386/i386.c (extract_base_offset_in_addr): New function.
+	(ix86_operands_ok_for_move_multiple): Ditto.
+	* config/i386/sse.md (movsd/movhpd to movupd peephole2): New pattern.
+	(movlpd/movhpd to movupd peephole2): Ditto.
+
+2015-04-24  Marek Polacek  <polacek@redhat.com>
+
+	PR c/61534
+	* input.h (from_macro_expansion_at): Define.
+
+	PR c/63357
+	* doc/invoke.texi: Update description of -Wlogical-op.
+
 2015-04-24  Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
 	* config/arm/unknown-elf.h (ASM_OUTPUT_ALIGNED_DECL_LOCAL): fix

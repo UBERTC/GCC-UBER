@@ -1539,7 +1539,7 @@ __asm__("\n"								\
 
 /* Define this macro if it is as good or better to call a constant function
    address than to call an address kept in a register.  */
-#define NO_FUNCTION_CSE
+#define NO_FUNCTION_CSE 1
 
 
 /* Dividing the output into sections.  */
@@ -2124,10 +2124,5 @@ enum frv_builtins
 #define MD_CALL_PROTOTYPES 1
 
 #define CPU_UNITS_QUERY 1
-
-#ifdef __FRV_FDPIC__
-#define CRT_GET_RFIB_DATA(dbase) \
-  ({ extern void *_GLOBAL_OFFSET_TABLE_; (dbase) = &_GLOBAL_OFFSET_TABLE_; })
-#endif
 
 #endif /* __FRV_H__ */

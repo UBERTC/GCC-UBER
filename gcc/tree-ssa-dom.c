@@ -1519,6 +1519,13 @@ record_equivalences_from_phis (basic_block bb)
 	  if (lhs == t)
 	    continue;
 
+	  /* Valueize t.  */
+	  if (TREE_CODE (t) == SSA_NAME)
+	    {
+	      tree tmp = SSA_NAME_VALUE (t);
+	      t = tmp ? tmp : t;
+	    }
+
 	  /* If we have not processed an alternative yet, then set
 	     RHS to this alternative.  */
 	  if (rhs == NULL)
@@ -1752,6 +1759,23 @@ record_equality (tree x, tree y)
 {
   tree prev_x = NULL, prev_y = NULL;
 
+  if (tree_swap_operands_p (x, y, false))
+    std::swap (x, y);
+
+  /* Most of the time tree_swap_operands_p does what we want.  But there's
+     cases where we we know one operand is better for copy propagation than
+     the other.  Given no other code cares about ordering of equality
+     comparison operators for that purpose, we just handle the special cases
+     here.  */
+  if (TREE_CODE (x) == SSA_NAME && TREE_CODE (y) == SSA_NAME)
+    {
+      /* If one operand is a single use operand, then make it
+	 X.  This will preserve its single use properly and if this
+	 conditional is eliminated, the computation of X can be
+	 eliminated as well.  */
+      if (has_single_use (y) && ! has_single_use (x))
+	std::swap (x, y);
+    }
   if (TREE_CODE (x) == SSA_NAME)
     prev_x = SSA_NAME_VALUE (x);
   if (TREE_CODE (y) == SSA_NAME)
@@ -1766,7 +1790,7 @@ record_equality (tree x, tree y)
   else if (is_gimple_min_invariant (x)
 	   /* ???  When threading over backedges the following is important
 	      for correctness.  See PR61757.  */
-	   || (loop_depth_of_name (x) <= loop_depth_of_name (y)))
+	   || (loop_depth_of_name (x) < loop_depth_of_name (y)))
     prev_x = x, x = y, y = prev_x, prev_x = prev_y;
   else if (prev_x && is_gimple_min_invariant (prev_x))
     x = y, y = prev_x, prev_x = prev_y;
@@ -2128,18 +2152,25 @@ record_equivalences_from_stmt (gimple stmt, int may_optimize_p)
       if (may_optimize_p
 	  && (TREE_CODE (rhs) == SSA_NAME
 	      || is_gimple_min_invariant (rhs)))
-      {
-	if (dump_file && (dump_flags & TDF_DETAILS))
-	  {
-	    fprintf (dump_file, "==== ASGN ");
-	    print_generic_expr (dump_file, lhs, 0);
-	    fprintf (dump_file, " = ");
-	    print_generic_expr (dump_file, rhs, 0);
-	    fprintf (dump_file, "\n");
-	  }
+	{
+	  /* Valueize rhs.  */
+	  if (TREE_CODE (rhs) == SSA_NAME)
+	    {
+	      tree tmp = SSA_NAME_VALUE (rhs);
+	      rhs = tmp ? tmp : rhs;
+	    }
 
-	set_ssa_name_value (lhs, rhs);
-      }
+	  if (dump_file && (dump_flags & TDF_DETAILS))
+	    {
+	      fprintf (dump_file, "==== ASGN ");
+	      print_generic_expr (dump_file, lhs, 0);
+	      fprintf (dump_file, " = ");
+	      print_generic_expr (dump_file, rhs, 0);
+	      fprintf (dump_file, "\n");
+	    }
+
+	  set_ssa_name_value (lhs, rhs);
+	}
     }
 
   /* Make sure we can propagate &x + CST.  */
