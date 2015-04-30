@@ -1,4 +1,118 @@
+2015-04-29  Doug Evans  <dje@google.com>
+
+	PR libstdc++/65839
+	* python/libstdcxx/v6/xmethods.py (get_bool_type): New function.
+	Replace all lookups of "bool" with this.
+	(get_std_size_type): New function.  Replace all lookups of std::size_t
+	with this.
+	(*Worker): New method get_result_type.
+	(DequeWorkerBase.__init__): New arg val_type.  All callers updated.
+	(ListWorkerBase.__init__): New arg val_type.  All callers updated.
+	(UniquePtrGetWorker.__init__): New arg elem_type.  All callers updated.
+	Delete setting of name, enabled.
+	(UniquePtrDerefWorker.__init__): New arg elem_type.  All callers
+	updated.  Delete setting of name.
+	(UniquePtrMethodsMatcher): Rewrite for consistency with all other
+	libstdc++ xmethod matchers.
+	* testsuite/libstdc++-xmethods/array.cc: Add whatis tests.
+	* testsuite/libstdc++-xmethods/associative-containers.cc: Ditto.
+	* testsuite/libstdc++-xmethods/deque.cc: Ditto.
+	* testsuite/libstdc++-xmethods/forwardlist.cc: Ditto.
+	* testsuite/libstdc++-xmethods/list.cc: Ditto.
+	* testsuite/libstdc++-xmethods/unique_ptr.cc: Ditto.
+	* testsuite/libstdc++-xmethods/vector.cc: Ditto.
+
+2015-04-29  Doug Evans  <dje@google.com>
+
+	Use consistent naming for value type attributes.
+	* python/libstdcxx/v6/xmethods.py (ArrayWorkerBase): Rename _valtype
+	to _val_type.
+	(ArraySizeWorker, ArrayEmptyWorker): Ditto.
+	(ArrayFrontWorker, ArrayBackWorker): Ditto.
+	(ArrayAtWorker, ArraySubscriptWorker): Ditto.
+	(DequeWorkerBase): Rename elemtype to val_type.
+	(ForwardListWorkerBase): Rename _elem_type to _val_type.
+	(ForwardListFrontWorker): Ditto.  And rename elem_address to
+	val_address.
+	(ForwardListMethodsMatcher): Rename elem_type to val_type.
+	(VectorWorkerBase): Rename _elemtype to _val_type.
+
+2015-04-29  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/65760
+	* include/std/functional (__check_func_return_type): Use is_same to
+	avoid using _is_convertible on incomplete types.
+	* testsuite/20_util/function/65760.cc: New.
+
+	PR libstdc++/64657
+	* include/bits/basic_string (basic_string::_S_copy_chars): Cast
+	expression to void.
+	* include/bits/locale_facets_nonio.tcc (money_get::_M_extract,
+	time_get::_M_extract_num, time_get::_M_extract_name,
+	time_get::_M_extract_wday_or_month): Likewise.
+	* include/bits/stl_algo.h (__includes, __replace_copy_if,
+	__is_sorted_until, __is_permutation, transform): Likewise.
+	* include/bits/stl_algobase.h (swap_ranges, __copy_move::__copy_m,
+	__equal::equal, __lexicographical_compare_impl, equal): Likewise.
+	* include/bits/stl_numeric.h (inner_product): Likewise.
+	* include/bits/stl_uninitialized.h (__uninitialized_copy_a): Likewise.
+	* testsuite/util/testsuite_iterators.h (output_iterator_wrapper,
+	input_iterator_wrapper): Declare unusable comma operator.
+	* testsuite/21_strings/basic_string/cons/char/64657.cc: New.
+	* testsuite/21_strings/basic_string/modifiers/assign/char/64657.cc:
+	New.
+
+2015-04-28  Doug Evans  <dje@google.com>
+
+	* testsuite/libstdc++-xmethods/list.cc (_GLIBCXX_USE_CXX11_ABI):
+	Define to zero.
+
 2015-04-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/stl_algo.h (random_shuffle): Only define for hosted
+	implementations.
+
+2015-04-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	* Makefile.am (SUBDIRS): Move python to hosted_source.
+	* Makefile.in: Regenerate.
+	* acinclude.m4 (glibcxx_SUBDIRS): Reorder.
+	* configure: Regenerate.
+
+2015-04-28  Marc Glisse  <marc.glisse@inria.fr>
+
+	PR libstdc++/65883
+	* include/std/limits (numeric_limits): Add missing unsigned.
+
+2015-04-28  Stephan Bergmann  <sbergman@redhat.com>
+
+	* include/debug/vector (_Safe_vector::operator=): Add missing returns.
+
+2015-04-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60333
+	* include/std/type_traits (__make_unsigned_selector<_Tp, false, true>):
+	Handle enumeration types larger than sizeof(long).
+	(__make_signed_selector<_Tp, false, true>): Find unsigned type then
+	make it signed.
+	* testsuite/20_util/declval/requirements/1_neg.cc: Adjust dg-error.
+	* testsuite/20_util/make_signed/requirements/typedefs_neg.cc:
+	Likewise.
+	* testsuite/20_util/make_signed/requirements/typedefs-3.cc: New.
+	* testsuite/20_util/make_unsigned/requirements/typedefs_neg.cc: Adjust
+	dg-error.
+	* testsuite/20_util/make_unsigned/requirements/typedefs-3.cc: New.
+
+	PR libstdc++/61645
+	* include/bits/forward_list.h (forward_list::splice_after): Add
+	noexcept.
+	* include/bits/forward_list.tcc (forward_list::splice_after):
+	Likewise.
+
+	PR libstdc++/65631
+	* include/bits/random.h (seed_seq) Define copy constructor and copy
+	assignment as deleted.
+	* testsuite/26_numerics/random/seed_seq/cons/65631.cc: New.
 
 	* libsupc++/exception (uncaught_exceptions): Add comment. Reorder #if.
 	* testsuite/18_support/uncaught_exceptions/uncaught_exceptions.cc:

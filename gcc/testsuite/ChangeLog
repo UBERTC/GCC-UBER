@@ -1,3 +1,67 @@
+2015-04-29  Petar Jovanovic  <petar.jovanovic@rt-rk.com>
+
+	* gcc.target/mips/call-from-init.c: New test.
+	* gcc.target/mips/mips.exp: Add section_start to mips_option_groups.
+
+2015-04-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/65871
+	* gcc.target/i386/pr65871-1.c: New test
+	* gcc.target/i386/pr65871-2.c: Ditto.
+
+2015-04-29  Marek Polacek  <polacek@redhat.com>
+
+	PR c/64610
+	* c-c++-common/Wbool-compare-1.c (fn1): Remove a few lines.
+	* c-c++-common/Wbool-compare-2.c: New test.
+
+2015-04-29  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR target/65770
+	* gcc.target/aarch64/vstN_lane_1.c: New file.
+
+2015-04-29  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/64667
+	* g++.dg/warn/Winit-self-3.C: New.
+
+2015-04-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gfortran.dg/namelist_87.f90: Use dg-add-options ieee.
+
+2015-04-29  Yvan Roux  <yvan.roux@linaro.org>
+
+	PR target/65924
+	* gcc.target/arm/pr65924.c: New test.
+
+2015-04-29  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* g++.dg/gomp/tpl-target-update.C: New file.
+
+2015-04-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65917
+	* gcc.dg/tree-ssa/20030922-2.c: Disable ifcombine and XFAIL.
+
+2015-04-29  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/64835
+	* gcc.dg/ipa/iinline-attr.c: New test.
+	* gcc.target/i386/iinline-attr-2.c: New test.
+
+2015-04-28  Andre Vehreschild  <vehre@gmx.de>
+
+	* gfortran.dg/implicit_class_1.f90: Adding flag to check, if
+	segfault is fixed.
+
+2015-04-28  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.dg/vect/vect-33.c: Remove spurious line.
+
+2015-04-28  Jan Hubicka  <hubicka@ucw.cz>
+
+	* g++.dg/tree-ssa/pr61034.C: Add temporary; fix template.
+
 2015-04-28  Marek Polacek  <polacek@redhat.com>
 
 	PR c/65901

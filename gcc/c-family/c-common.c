@@ -5910,6 +5910,10 @@ set_compound_literal_name (tree decl)
 tree
 build_va_arg (location_t loc, tree expr, tree type)
 {
+  /* In gimplify_va_arg_expr we take the address of the ap argument, mark it
+     addressable now.  */
+  mark_addressable (expr);
+
   expr = build1 (VA_ARG_EXPR, type, expr);
   SET_EXPR_LOCATION (expr, loc);
   return expr;
@@ -7598,58 +7602,59 @@ handle_section_attribute (tree *node, tree ARG_UNUSED (name), tree args,
 {
   tree decl = *node;
 
-  if (targetm_common.have_named_sections)
-    {
-      user_defined_section_attribute = true;
-
-      if ((TREE_CODE (decl) == FUNCTION_DECL
-	   || TREE_CODE (decl) == VAR_DECL)
-	  && TREE_CODE (TREE_VALUE (args)) == STRING_CST)
-	{
-	  if (TREE_CODE (decl) == VAR_DECL
-	      && current_function_decl != NULL_TREE
-	      && !TREE_STATIC (decl))
-	    {
-	      error_at (DECL_SOURCE_LOCATION (decl),
-			"section attribute cannot be specified for "
-			"local variables");
-	      *no_add_attrs = true;
-	    }
-
-	  /* The decl may have already been given a section attribute
-	     from a previous declaration.  Ensure they match.  */
-	  else if (DECL_SECTION_NAME (decl) != NULL
-		   && strcmp (DECL_SECTION_NAME (decl),
-			      TREE_STRING_POINTER (TREE_VALUE (args))) != 0)
-	    {
-	      error ("section of %q+D conflicts with previous declaration",
-		     *node);
-	      *no_add_attrs = true;
-	    }
-	  else if (TREE_CODE (decl) == VAR_DECL
-		   && !targetm.have_tls && targetm.emutls.tmpl_section
-		   && DECL_THREAD_LOCAL_P (decl))
-	    {
-	      error ("section of %q+D cannot be overridden", *node);
-	      *no_add_attrs = true;
-	    }
-	  else
-	    set_decl_section_name (decl,
-				   TREE_STRING_POINTER (TREE_VALUE (args)));
-	}
-      else
-	{
-	  error ("section attribute not allowed for %q+D", *node);
-	  *no_add_attrs = true;
-	}
-    }
-  else
+  if (!targetm_common.have_named_sections)
     {
       error_at (DECL_SOURCE_LOCATION (*node),
 		"section attributes are not supported for this target");
-      *no_add_attrs = true;
+      goto fail;
     }
 
+  user_defined_section_attribute = true;
+
+  if (TREE_CODE (decl) != FUNCTION_DECL && TREE_CODE (decl) != VAR_DECL)
+    {
+      error ("section attribute not allowed for %q+D", *node);
+      goto fail;
+    }
+
+  if (TREE_CODE (TREE_VALUE (args)) != STRING_CST)
+    {
+      error ("section attribute argument not a string constant");
+      goto fail;
+    }
+
+  if (TREE_CODE (decl) == VAR_DECL
+      && current_function_decl != NULL_TREE
+      && !TREE_STATIC (decl))
+    {
+      error_at (DECL_SOURCE_LOCATION (decl),
+                "section attribute cannot be specified for local variables");
+      goto fail;
+    }
+
+  /* The decl may have already been given a section attribute
+     from a previous declaration.  Ensure they match.  */
+  if (DECL_SECTION_NAME (decl) != NULL
+      && strcmp (DECL_SECTION_NAME (decl),
+                 TREE_STRING_POINTER (TREE_VALUE (args))) != 0)
+    {
+      error ("section of %q+D conflicts with previous declaration", *node);
+      goto fail;
+    }
+
+  if (TREE_CODE (decl) == VAR_DECL
+      && !targetm.have_tls && targetm.emutls.tmpl_section
+      && DECL_THREAD_LOCAL_P (decl))
+    {
+      error ("section of %q+D cannot be overridden", *node);
+      goto fail;
+    }
+
+  set_decl_section_name (decl, TREE_STRING_POINTER (TREE_VALUE (args)));
+  return NULL_TREE;
+
+fail:
+  *no_add_attrs = true;
   return NULL_TREE;
 }
 
@@ -11906,8 +11911,8 @@ maybe_warn_bool_compare (location_t loc, enum tree_code code, tree op0,
 
   if (!integer_zerop (cst) && !integer_onep (cst))
     {
-      int sign = (TREE_CODE (op0) == INTEGER_CST)
-		 ? tree_int_cst_sgn (cst) : -tree_int_cst_sgn (cst);
+      int sign = (TREE_CODE (op0) == INTEGER_CST
+		 ? tree_int_cst_sgn (cst) : -tree_int_cst_sgn (cst));
       if (code == EQ_EXPR
 	  || ((code == GT_EXPR || code == GE_EXPR) && sign < 0)
 	  || ((code == LT_EXPR || code == LE_EXPR) && sign > 0))
@@ -11916,6 +11921,18 @@ maybe_warn_bool_compare (location_t loc, enum tree_code code, tree op0,
       else
 	warning_at (loc, OPT_Wbool_compare, "comparison of constant %qE "
 		    "with boolean expression is always true", cst);
+    }
+  else if (integer_zerop (cst) || integer_onep (cst))
+    {
+      /* Do some magic to get the right diagnostics.  */
+      bool flag = TREE_CODE (op0) == INTEGER_CST;
+      flag = integer_zerop (cst) ? flag : !flag;
+      if ((code == GE_EXPR && !flag) || (code == LE_EXPR && flag))
+	warning_at (loc, OPT_Wbool_compare, "comparison of constant %qE "
+		    "with boolean expression is always true", cst);
+      else if ((code == LT_EXPR && !flag) || (code == GT_EXPR && flag))
+	warning_at (loc, OPT_Wbool_compare, "comparison of constant %qE "
+		    "with boolean expression is always false", cst);
     }
 }
 

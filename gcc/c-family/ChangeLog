@@ -1,3 +1,25 @@
+2015-04-29  Josh Triplett  <josh@joshtriplett.org>
+
+        * c-common.c (handle_section_attribute): Refactor to reduce
+        nesting and distinguish between error cases.
+
+2015-04-29  Marek Polacek  <polacek@redhat.com>
+
+	PR c/64610
+	* c-common.c (maybe_warn_bool_compare): Warn when comparing a boolean
+	with 0/1.
+
+2015-04-29  Jakub Jelinek  <jakub@redhat.com>
+
+	* c-common.h (omp_clause_mask): Unconditionally define as a class.
+	Use uint64_t instead of unsigned HOST_WIDE_INT and 64 instead of
+	HOST_BITS_PER_WIDE_INT.
+
+2015-04-28  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65887
+	* c-common.c (build_va_arg): Mark va_arg ap argument as addressable.
+
 2015-04-28  Eric Botcazou  <ebotcazou@adacore.com>
             Pierre-Marie de Rodat  <derodat@adacore.com>
 
