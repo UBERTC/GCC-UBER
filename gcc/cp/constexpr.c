@@ -1014,7 +1014,7 @@ get_nth_callarg (tree t, int n)
    represented by _CST nodes.  */
 
 static tree
-cxx_eval_builtin_function_call (const constexpr_ctx *ctx, tree t,
+cxx_eval_builtin_function_call (const constexpr_ctx *ctx, tree t, tree fun,
 				bool lval,
 				bool *non_constant_p, bool *overflow_p)
 {
@@ -1022,18 +1022,30 @@ cxx_eval_builtin_function_call (const constexpr_ctx *ctx, tree t,
   tree *args = (tree *) alloca (nargs * sizeof (tree));
   tree new_call;
   int i;
-  for (i = 0; i < nargs; ++i)
+
+  /* Don't fold __builtin_constant_p within a constexpr function.  */
+  if (DECL_FUNCTION_CODE (fun) == BUILT_IN_CONSTANT_P
+      && current_function_decl
+      && DECL_DECLARED_CONSTEXPR_P (current_function_decl))
     {
-      args[i] = cxx_eval_constant_expression (ctx, CALL_EXPR_ARG (t, i),
-					      lval,
-					      non_constant_p, overflow_p);
-      if (ctx->quiet && *non_constant_p)
-	return t;
+      *non_constant_p = true;
+      return t;
     }
-  if (*non_constant_p)
-    return t;
+
+  /* Be permissive for arguments to built-ins; __builtin_constant_p should
+     return constant false for a non-constant argument.  */
+  constexpr_ctx new_ctx = *ctx;
+  new_ctx.quiet = true;
+  bool dummy1 = false, dummy2 = false;
+  for (i = 0; i < nargs; ++i)
+    args[i] = cxx_eval_constant_expression (&new_ctx, CALL_EXPR_ARG (t, i),
+					    lval, &dummy1, &dummy2);
+
+  bool save_ffbcp = force_folding_builtin_constant_p;
+  force_folding_builtin_constant_p = true;
   new_call = fold_build_call_array_loc (EXPR_LOCATION (t), TREE_TYPE (t),
 					CALL_EXPR_FN (t), nargs, args);
+  force_folding_builtin_constant_p = save_ffbcp;
   VERIFY_CONSTANT (new_call);
   return new_call;
 }
@@ -1200,7 +1212,7 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
     return void_node;
 
   if (is_builtin_fn (fun))
-    return cxx_eval_builtin_function_call (ctx, t,
+    return cxx_eval_builtin_function_call (ctx, t, fun,
 					   lval, non_constant_p, overflow_p);
   if (!DECL_DECLARED_CONSTEXPR_P (fun))
     {
@@ -2568,11 +2580,24 @@ cxx_eval_store_expression (const constexpr_ctx *ctx, tree t,
 
   /* First we figure out where we're storing to.  */
   tree target = TREE_OPERAND (t, 0);
+  tree type = TREE_TYPE (target);
   target = cxx_eval_constant_expression (ctx, target,
 					 true,
 					 non_constant_p, overflow_p);
   if (*non_constant_p)
     return t;
+
+  if (!same_type_ignoring_top_level_qualifiers_p (TREE_TYPE (target), type))
+    {
+      /* For initialization of an empty base, the original target will be
+         *(base*)this, which the above evaluation resolves to the object
+	 argument, which has the derived type rather than the base type.  In
+	 this situation, just evaluate the initializer and return, since
+	 there's no actual data to store.  */
+      gcc_assert (is_empty_class (type));
+      return cxx_eval_constant_expression (ctx, init, false,
+					   non_constant_p, overflow_p);
+    }
 
   /* And then find the underlying variable.  */
   vec<tree,va_gc> *refs = make_tree_vector();
@@ -2610,7 +2635,7 @@ cxx_eval_store_expression (const constexpr_ctx *ctx, tree t,
       *non_constant_p = true;
       return t;
     }
-  tree type = TREE_TYPE (object);
+  type = TREE_TYPE (object);
   while (!refs->is_empty())
     {
       if (*valp == NULL_TREE)

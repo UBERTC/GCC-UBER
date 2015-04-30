@@ -6372,7 +6372,6 @@ c_parser_binary_expression (c_parser *parser, struct c_expr *after,
       stack[sp].expr = c_parser_cast_expression (parser, NULL);
       stack[sp].prec = oprec;
       stack[sp].op = ocode;
-      stack[sp].loc = binary_loc;
     }
  out:
   while (sp > 0)
@@ -12155,10 +12154,7 @@ c_parser_oacc_enter_exit_data (c_parser *parser, bool enter)
 
   stmt = enter ? make_node (OACC_ENTER_DATA) : make_node (OACC_EXIT_DATA);
   TREE_TYPE (stmt) = void_type_node;
-  if (enter)
-    OACC_ENTER_DATA_CLAUSES (stmt) = clauses;
-  else
-    OACC_EXIT_DATA_CLAUSES (stmt) = clauses;
+  OMP_STANDALONE_CLAUSES (stmt) = clauses;
   SET_EXPR_LOCATION (stmt, loc);
   add_stmt (stmt);
 }

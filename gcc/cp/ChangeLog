@@ -1,3 +1,44 @@
+2015-04-29  Jason Merrill  <jason@redhat.com>
+
+	PR c++/50800
+	* tree.c (apply_identity_attributes): Fix handling of classes.
+
+2015-04-29  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* parser.c (cp_parser_oacc_enter_exit_data): Use
+	OMP_STANDALONE_CLAUSES.
+
+2015-04-29  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/64667
+	* init.c (perform_member_init): Handle references for -Winit-self.
+
+2015-04-29  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* pt.c (tsubst_expr) <OMP_TARGET_UPDATE>: Use
+	OMP_TARGET_UPDATE_CLAUSES instead of OMP_CLAUSES.
+
+2015-04-28  Jason Merrill  <jason@redhat.com>
+
+	PR c++/65896
+	* constexpr.c (cxx_eval_store_expression): Don't try to actually
+	store an empty class.
+
+	PR c++/65656
+	* constexpr.c (cxx_eval_builtin_function_call): Fix
+	__builtin_constant_p.
+
+	PR c++/50800
+	* tree.c (strip_typedefs): Add remove_attributes parm.
+	(strip_typedefs_expr): Likewise.
+	(apply_identity_attributes): New subroutine of strip_typedefs.
+	* pt.c (canonicalize_type_argument): Let strip_typedefs handle attrs.
+	(convert_nontype_argument, unify): Likewise.
+	* cp-tree.h: Adjust.
+
+	PR c++/65734
+	* class.c (fixup_attribute_variants): Respect TYPE_USER_ALIGN.
+
 2015-04-27  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
 
 	* class.c (layout_class_type): Remove check if

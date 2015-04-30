@@ -1,3 +1,153 @@
+2015-04-29  Steve Ellcey  <sellcey@imgtec.com>
+
+	* config/mips/mips-cpus.def: (mips4): Change default processor
+	from PROCESSOR_R8000 to PROCESSOR_R10000.
+
+2015-04-29  Petar Jovanovic  <petar.jovanovic@rt-rk.com>
+
+	* config/mips/mips.h (CRT_CALL_STATIC_FUNCTION): Fix the macro to use
+	la/jalr instead of jal.
+
+2015-04-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/65871
+	* config/i386/i386.md (*bmi_bextr_<mode>_cczonly): New pattern.
+	(*bmi2_bzhi_<mode>3_1_cczonly): Ditto.
+	(setcc+movzbl peephole2): Check also clobbered reg.
+	(setcc+andl peephole2): Ditto.
+
+2015-04-29  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR libgomp/65099
+	* config/nvptx/mkoffload.c (target_ilp32): New variable.
+	(main): Set it depending on "-foffload-abi=[...]".
+	(compile_native, main): Use it to pass "-m32" or "-m64" to the
+	compiler.
+
+2015-04-29  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR target/65770
+	* config/aarch64/aarch64-simd.md (vec_store_lanesoi_lane<mode>,
+	vec_store_lanesci_lane<mode>, vec_store_lanesxi_lane<mode>):
+	Flip lane index back at assembly time for bigendian.
+
+2015-04-29  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* tree.h (OMP_STANDALONE_CLAUSES): New macro.
+	* gimplify.c (gimplify_omp_workshare): Use it.
+
+2015-04-29  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* Makefile.in (build/genrecog.o): Depend on inchash.h.
+	(build/genrecog$(build_exeext): Depend on build/hash-table.o and
+	build/inchash.o
+	* genrecog.c: Rewrite most of the code except for the third page.
+
+2015-04-29  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* inchash.h, inchash.c: Include bconfig.h for build objects.
+	* Makefile.in (build/inchash.o): New rule.
+
+2015-04-29  Yvan Roux  <yvan.roux@linaro.org>
+
+	PR target/65924
+	* config/arm/thumb2.md (*thumb2_addsi3_compare0_scratch): Fix operand
+	number in type attribute expression.
+
+2015-04-29  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* loop-iv.c (canon_condition): Generalize to all types of integer
+	constant.
+
+2015-04-29  Bernhard Reuther-Fischer  <aldot@gcc.gnu.org>
+
+	* gimple-walk.c: Prune duplicate or unneeded includes.
+	(walk_gimple_asm): Only call parse_input_constraint or
+	parse_output_constraint if their findings are used.
+	Honour parse_input_constraint and parse_output_constraint
+	result.
+
+2015-04-29  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/arm/neon.md (vec_shl<mode>, vec_shr<mode>): Remove.
+
+2015-04-29  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65893
+	* passes.def (pass_all_optimizations): Move pass_stdarg to after
+	pass_dce.
+
+2015-04-29  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-data-refs.c (vect_analyze_group_access): Properly
+	compute GROUP_SIZE for basic-block SLP.
+	* tree-vect-slp.c (vect_get_place_in_interleaving_chain): Properly
+	take into account gaps.
+	(vect_get_mask_element): Properly reject references to previous
+	vectors.
+	(vect_transform_slp_perm_load): Likewise.
+
+2015-04-29  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/64835
+	* config/i386/i386.c (ix86_default_align): New function.
+	(ix86_override_options_after_change): Call ix86_default_align.
+	(TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE): New hook.
+	(ix86_override_options_after_change): New function.
+
+2015-04-28  Jeff Law  <law@redhat.com>
+
+	* tree-ssa-dom.c (record_equality); Fix comment typos.
+
+2015-04-28  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65887
+	* gimplify.c (gimplify_modify_expr): Remove ifn_va_arg ap fixup.
+
+2015-04-28  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* doc/extend.texi (Declaring Attributes of Functions): Split into
+	subsections by target.  Alphabetize the table of common attributes.
+	Rewrite some of the introductory text to reflect the new structure.
+	Update some cross-references to point to the new subsections.
+	(Attribute Syntax): Put paragraph about "__" naming here.  Remove
+	duplicate copies in the discussion of function, label, and type
+	attributes.
+
+2015-04-28  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR bootstrap/65910
+	* varasm.c (assemble_end_function): Guard ASM_DECLARE_FUNCTION_SIZE.
+
+2015-04-28  Jason Merrill  <jason@redhat.com>
+
+	PR c++/65734
+	* stor-layout.c (layout_type): Layout the TYPE_MAIN_VARIANT.
+	(finalize_type_size): Respect TYPE_USER_ALIGN.
+	(layout_type) [ARRAY_TYPE]: Likewise.
+
+2015-04-28  Yvan Roux  <yvan.roux@linaro.org>
+
+	* config/arm/arm.md (*arm_movt): Fix type attribute.
+	(*cmpsi_shiftsi): Likewise.
+	(*cmpsi_shiftsi_swp): Likewise.
+	(*movsicc_insn): Likewise.
+	(*cond_move): Likewise.
+	(*if_plus_move): Likewise.
+	(*if_move_plus): Likewise.
+	(*if_arith_move): Likewise.
+	(*if_move_arith): Likewise.
+	(*if_shift_move): Likewise.
+	(*if_move_shift): Likewise.
+	(*arm_movtas_ze): Likewise.
+	* config/arm/thumb2.md (*thumb2_movsicc_insn): Fix alternative
+	redundancy and type attribute.
+	(*thumb2_movsi_insn): Fix type attribute.
+	(*thumb2_addsi_short): Likewise.
+	(thumb2_addsi3_compare0): Likewise.
+	(*thumb2_addsi3_compare0_scratch): Merge alternatives and fix
+	attributes accordingly.
+
 2015-04-28  Markus Trippelsdorf  <markus@trippelsdorf.de>
 
 	PR other/65911
@@ -221,12 +371,12 @@
 
 2015-04-27  Caroline Tice  <cmtice@google.com>
 
-	* final.c (final_scan_insn):  Output cold_function_nmae as function
+	* final.c (final_scan_insn):  Output cold_function_name as function
 	type.
-	* varasm.c (cold_function_name):  Make gloval.
+	* varasm.c (cold_function_name):  Make global.
 	(assemble_start_function):  Re-set cold_function_name.
 	(assemble_end_function): Output cold partition size.
-	* varasm.h (cold_fun ction_name):  Declare global.
+	* varasm.h (cold_function_name):  Declare global.
 
 2015-04-27  Ilya Tocar  <ilya.tocar@intel.com>
 
