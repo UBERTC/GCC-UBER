@@ -1,3 +1,131 @@
+2015-04-30  David Malcolm  <dmalcolm@redhat.com>
+
+	* builtins.c (fold_builtin_1): Remove spurious second
+	semicolon.
+	* cgraph.h (symtab_node::get_availability): Likewise.
+	* opts.c (common_handle_option): Remove spurious second semicolon.
+	* tree-ssa-loop-ivopts.c (extract_cond_operands): Likewise.
+	* tree-ssa-loop-niter.c (derive_constant_upper_bound_ops): Likewise.
+
+2015-04-30  Caroline Tice  <cmtice@google.com>
+
+        PR 65929
+	* config/elfos.h (ASM_DECLARE_COLD_FUNCTION_NAME): New macro definition.
+	(ASM_DECLARE_COLD_FUNCTION_SIZE): New macro definition.
+	* doc/tm.texi.in (ASM_DECLARE_COLD_FUNCTION_NAME): Document new macro.
+	(ASM_DECLARE_COLD_FUNCTION_SIZE): Document new macro.
+	* doc/tm.texi: Regenerate.
+	* final.c (final_scan_insn):  Use ASM_DECLARE_COLD_FUNCTION_NAME
+	instead of ASM_DECLARE_FUNCTION_NAME for cold partition name.
+	* varasm.c (assemble_end_function):  Use ASM_DECLARE_COLD_FUNCTION_SIZE
+	instead of ASM_DECLARE_FUNCTION_SIZE for cold partition size.
+
+2015-04-30  Marek Polacek  <polacek@redhat.com>
+
+	* varasm.c (handle_cache_entry): Fix logic.
+
+2015-04-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.md (*extr<mode>5_insn_alt): New pattern.
+	(*extrsi5_insn_uxtw_alt): Likewise.
+	* config/aarch64/aarch64.c (aarch64_extr_rtx_p): New function.
+	(aarch64_rtx_costs, IOR case): Use above to properly cost extr
+	operations.
+
+2015-04-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Handle pattern for
+	fabd in ABS case.
+
+2015-04-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.md
+	(*eor_one_cmpl_<SHIFT:optab><mode>3_alt): New pattern.
+	(*eor_one_cmpl_<SHIFT:optab>sidi3_alt_ze): Likewise.
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Handle MVN-shift
+	appropriately.  Handle alternative EON form.
+
+2015-04-30  Renlin Li  <renlin.li@arm.com>
+
+	* config/aarch64/aarch64-simd.md (vec_shr): Defined as an unspec.
+	* config/aarch64/iterators.md (unspec): Add UNSPEC_VEC_SHR.
+
+2015-04-30  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65873
+	* ipa-inline.c (can_inline_edge_p): It is safe to inline across
+	-fstrict-aliasing boundaries.
+
+2015-04-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_mult_cost): Handle MNEG
+	and [SU]MNEGL patterns.
+
+2015-04-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_shift_p): New function.
+	(aarch64_rtx_mult_cost): Update comment to reflect that it also handles
+	combined arithmetic-shift ops.  Properly handle all shift and extend
+	operations that can occur in combination with PLUS/MINUS.
+	Rename maybe_fma to compound_p.
+	(aarch64_rtx_costs): Use aarch64_shift_p when costing compound
+	arithmetic and shift operations.
+
+2015-04-30  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Use extend_arith
+	rather than arith_shift cost when costing ADD/MINUS of an
+	extended value.
+
+2015-04-30  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR lto/65948
+	* ipa-devirt.c (odr_types_equivalent_p): NULLPTR_TYPE is equivalent
+	to itself.
+
+2015-04-30  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* genrecog.c (simplify_tests): Check that CONST_INT and XWINT tests
+	are for the same position.
+
+2015-04-29  Aditya Kumar  <hiraditya@hotmail.com>
+
+	* tree-vectorizer.c (set_uid_loop_bbs): New.  Factored out of
+	vectorize_loops.
+	(vectorize_loops): Use it.
+
+2015-04-29  Jan Hubicka  <hubicka@ucw.cz>
+
+	* ipa-devirt.c (odr_subtypes_equivalent_p): Compare TYPE_NAME only
+	for aggregate types.
+	(register_odr_type): Be ready for MAIN_VARIANT of ODR type
+	type to be non_ODR.
+	* tree.c (need_assembler_name_p): Compute mangled name for
+	non-fundamental types and integer types.
+
+2015-04-29  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	* dojump.c (do_compare_rtx_and_jump): Use std::swap instead of
+	manual swaps.
+	* expr.c (expand_expr_real_2): Likewise.
+
+2015-04-29  Jan Hubicka  <hubicka@ucw.cz>
+
+	* tree.c (build_common_builtin_nodes): Do not build
+	__builtin_alloca_with_align as equivalent of library alloca.
+
+2015-04-29  Jan Hubicka  <hubicka@ucw.cz>
+
+	* dwarf2out.c (gen_type_die_with_usage): Call verify_type.
+	* ipa-chkp.c (chkp_copy_function_type_adding_bounds): Do not produce
+	bugus variants.
+	* tree.c: Include print-tree.h and ipa-utils.h
+	(free_lang_data_in_type): Clear TYPE_VFIELD leaked by C FE.
+	(free_lang_data_in_cgraph): Call verify_type.
+	(verify_type_variant): New function.
+	(verify_type): New function.
+	* tree.h (verify_type): Declare.
+
 2015-04-29  Steve Ellcey  <sellcey@imgtec.com>
 
 	* config/mips/mips-cpus.def: (mips4): Change default processor
@@ -7247,6 +7375,7 @@
 2015-01-22  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 	    Jakub Jelinek  <jakub@redhat.com>
 
+	PR middle-end/64729
 	* gcc.c (LINK_SSP_SPEC): Handle -fstack-protector-explicit
 	for !TARGET_LIBC_PROVIDES_SSP version and
 	-fstack-protector-{all,strong,explicit} otherwise.
