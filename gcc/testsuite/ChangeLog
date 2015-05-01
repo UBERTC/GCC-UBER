@@ -1,3 +1,65 @@
+2015-04-30  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/crypto-builtin-2.c: Replace powerpc_vsx_ok
+	with powerpc_p8vector_ok.
+
+2015-04-30  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/37131
+	* gfortran.dg/coarray_lib_this_image_2.f90:  Adjust
+	scan pattern.
+	* gfortran.dg/bound_9.f90:  New test case.
+
+2015-04-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	* g++.dg/ipa/devirt-28a.C: Require LTO effective target.
+	* g++.dg/ext/sync-4.C (dg-additional-options): Use -march=pentium
+	for 32bit x86 targets.
+	* gcc.dg/pr36504.c (dg-additional-options): Use -march=i686 -msse
+	for 32bit x86 targets.
+	* gcc.dg/pr39455.c (dg-additional-options): Ditto.
+	* gcc.dg/pr45352-1.c (dg-additional-options): Ditto.
+	* gcc.dg/pr63914.c (dg-additional-options): Use -msse
+	for 32bit x86 targets.
+
+2015-04-30  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/63551
+	* g++.dg/ipa/pr63551.C: New test.
+
+2015-04-30  Caroline Tice  <cmtice@google.com>
+
+	PR  65929
+	* gcc.dg/tree-prof/cold_partition_label.c:  Only check for cold
+	partition size on certain targets.
+
+2015-04-30  Renlin Li  <renlin.li@arm.com>
+
+	* gcc.target/aarch64/vect-reduc-or_1.c: New.
+
+2015-04-30  Marek Polacek  <polacek@redhat.com>
+
+	* c-c++-common/Wbool-compare-3.c: New test.
+
+	* gcc.dg/pr65901.c (foo): Adjust dg-error.
+	* gcc.c-torture/compile/pr48767.c (foo): Likewise.
+
+2015-04-30  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/57610
+	* g++.dg/init/ref22.C: New.
+
+2015-04-30  Marek Polacek  <polacek@redhat.com>
+
+	* gcc.dg/init-bad-8.c: New test.
+
+	* gcc.dg/incomplete-typedef-1.c: New test.
+
+2015-04-30  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/59955
+	* g++.dg/template/crash121.C: New.
+
 2015-04-29  Petar Jovanovic  <petar.jovanovic@rt-rk.com>
 
 	* gcc.target/mips/call-from-init.c: New test.

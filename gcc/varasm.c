@@ -1864,11 +1864,11 @@ assemble_end_function (tree decl, const char *fnname ATTRIBUTE_UNUSED)
 
       save_text_section = in_section;
       switch_to_section (unlikely_text_section ());
-#ifdef ASM_DECLARE_FUNCTION_SIZE
+#ifdef ASM_DECLARE_COLD_FUNCTION_SIZE
       if (cold_function_name != NULL_TREE)
-	ASM_DECLARE_FUNCTION_SIZE (asm_out_file,
-				   IDENTIFIER_POINTER (cold_function_name),
-				   decl);
+	ASM_DECLARE_COLD_FUNCTION_SIZE (asm_out_file,
+					IDENTIFIER_POINTER (cold_function_name),
+					decl);
 #endif
       ASM_OUTPUT_LABEL (asm_out_file, crtl->subsections.cold_section_end_label);
       if (first_function_block_is_cold)
@@ -5793,21 +5793,20 @@ struct tm_clone_hasher : ggc_cache_hasher<tree_map *>
   static hashval_t hash (tree_map *m) { return tree_map_hash (m); }
   static bool equal (tree_map *a, tree_map *b) { return tree_map_eq (a, b); }
 
-  static void handle_cache_entry (tree_map *&e)
+  static void
+  handle_cache_entry (tree_map *&e)
   {
-    if (e != HTAB_EMPTY_ENTRY || e != HTAB_DELETED_ENTRY)
-      {
-	extern void gt_ggc_mx (tree_map *&);
-	if (ggc_marked_p (e->base.from))
-	  gt_ggc_mx (e);
-	else
-	  e = static_cast<tree_map *> (HTAB_DELETED_ENTRY);
-      }
+    extern void gt_ggc_mx (tree_map *&);
+    if (e == HTAB_EMPTY_ENTRY || e == HTAB_DELETED_ENTRY)
+      return;
+    else if (ggc_marked_p (e->base.from))
+      gt_ggc_mx (e);
+    else
+      e = static_cast<tree_map *> (HTAB_DELETED_ENTRY);
   }
 };
 
-static GTY((cache))
-     hash_table<tm_clone_hasher> *tm_clone_hash;
+static GTY((cache)) hash_table<tm_clone_hasher> *tm_clone_hash;
 
 void
 record_tm_clone_pair (tree o, tree n)
