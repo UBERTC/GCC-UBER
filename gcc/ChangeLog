@@ -1,3 +1,16 @@
+2015-04-30  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65801
+	* doc/invoke.texi ([-Wnarrowing]): Update.
+
+2015-04-30  Alan Modra  <amodra@gmail.com>
+
+	PR target/65408
+	PR target/58744
+	PR middle-end/36043
+	* calls.c (load_register_parameters): Don't load past end of
+	mem unless suitably aligned.
+
 2015-04-27  Jakub Jelinek  <jakub@redhat.com>
 
 	PR tree-optimization/65875
@@ -5553,6 +5566,7 @@
 2015-01-22  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 	    Jakub Jelinek  <jakub@redhat.com>
 
+	PR middle-end/64729
 	* gcc.c (LINK_SSP_SPEC): Handle -fstack-protector-explicit
 	for !TARGET_LIBC_PROVIDES_SSP version and
 	-fstack-protector-{all,strong,explicit} otherwise.

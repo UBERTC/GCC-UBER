@@ -1,3 +1,25 @@
+2015-04-30  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r222664
+	2015-04-30  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/crypto-builtin-2.c: Replace powerpc_vsx_ok
+	with powerpc_p8vector_ok.
+
+2015-04-30  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/63551
+	* g++.dg/ipa/pr63551.C: New test.
+
+2015-04-30  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65801
+	* g++.dg/cpp0x/Wnarrowing2.C: New.
+
+2015-04-30  Alan Modra  <amodra@gmail.com>
+
+	* gcc.dg/pr65408.c: New.
+
 2015-04-29  Thomas Schwinge  <thomas@codesourcery.com>
 
 	Backport from trunk r222564:
