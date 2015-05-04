@@ -354,7 +354,9 @@ static const struct tune_params generic_tunings =
   4,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
-  1	/* vec_reassoc_width.  */
+  1,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2	/* min_div_recip_mul_df.  */
 };
 
 static const struct tune_params cortexa53_tunings =
@@ -372,7 +374,9 @@ static const struct tune_params cortexa53_tunings =
   4,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
-  1	/* vec_reassoc_width.  */
+  1,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2	/* min_div_recip_mul_df.  */
 };
 
 static const struct tune_params cortexa57_tunings =
@@ -390,7 +394,9 @@ static const struct tune_params cortexa57_tunings =
   4,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
-  1	/* vec_reassoc_width.  */
+  1,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2	/* min_div_recip_mul_df.  */
 };
 
 static const struct tune_params thunderx_tunings =
@@ -407,7 +413,9 @@ static const struct tune_params thunderx_tunings =
   8,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
-  1	/* vec_reassoc_width.  */
+  1,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2	/* min_div_recip_mul_df.  */
 };
 
 static const struct tune_params xgene1_tunings =
@@ -424,7 +432,9 @@ static const struct tune_params xgene1_tunings =
   16,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
-  1	/* vec_reassoc_width.  */
+  1,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2	/* min_div_recip_mul_df.  */
 };
 
 /* A processor implementing AArch64.  */
@@ -513,9 +523,11 @@ static const char * const aarch64_condition_codes[] =
 };
 
 static unsigned int
-aarch64_min_divisions_for_recip_mul (enum machine_mode mode ATTRIBUTE_UNUSED)
+aarch64_min_divisions_for_recip_mul (enum machine_mode mode)
 {
-  return 2;
+  if (GET_MODE_UNIT_SIZE (mode) == 4)
+    return aarch64_tune_params->min_div_recip_mul_sf;
+  return aarch64_tune_params->min_div_recip_mul_df;
 }
 
 static int
@@ -5865,6 +5877,7 @@ aarch64_rtx_costs (rtx x, int code, int outer ATTRIBUTE_UNUSED,
 
           if (CONST_DOUBLE_P (op1) && aarch64_float_const_zero_rtx_p (op1))
             {
+              *cost += rtx_cost (op0, COMPARE, 0, speed);
               /* FCMP supports constant 0.0 for no extra cost. */
               return true;
             }
@@ -5879,6 +5892,8 @@ aarch64_rtx_costs (rtx x, int code, int outer ATTRIBUTE_UNUSED,
 	op1 = XEXP (x, 1);
 
 cost_minus:
+	*cost += rtx_cost (op0, MINUS, 0, speed);
+
 	/* Detect valid immediates.  */
 	if ((GET_MODE_CLASS (mode) == MODE_INT
 	     || (GET_MODE_CLASS (mode) == MODE_CC
@@ -5886,13 +5901,10 @@ cost_minus:
 	    && CONST_INT_P (op1)
 	    && aarch64_uimm12_shift (INTVAL (op1)))
 	  {
-	    *cost += rtx_cost (op0, MINUS, 0, speed);
-
 	    if (speed)
 	      /* SUB(S) (immediate).  */
 	      *cost += extra_cost->alu.arith;
 	    return true;
-
 	  }
 
 	/* Look for SUB (extended register).  */
@@ -5917,7 +5929,6 @@ cost_minus:
 	    *cost += aarch64_rtx_mult_cost (new_op1, MULT,
 					    (enum rtx_code) code,
 					    speed);
-	    *cost += rtx_cost (op0, MINUS, 0, speed);
 	    return true;
 	  }
 
@@ -5964,6 +5975,8 @@ cost_plus:
 	    return true;
 	  }
 
+	*cost += rtx_cost (op1, PLUS, 1, speed);
+
 	/* Look for ADD (extended register).  */
         if (aarch64_rtx_arith_op_extract_p (op0, mode))
 	  {
@@ -5985,12 +5998,10 @@ cost_plus:
 	  {
 	    *cost += aarch64_rtx_mult_cost (new_op0, MULT, PLUS,
 					    speed);
-	    *cost += rtx_cost (op1, PLUS, 1, speed);
 	    return true;
 	  }
 
-	*cost += (rtx_cost (new_op0, PLUS, 0, speed)
-		  + rtx_cost (op1, PLUS, 1, speed));
+	*cost += rtx_cost (new_op0, PLUS, 0, speed);
 
 	if (speed)
 	  {
@@ -6405,6 +6416,12 @@ cost_plus:
       *cost += rtx_cost (op1, FMA, 1, speed);
       *cost += rtx_cost (op2, FMA, 2, speed);
       return true;
+
+    case FLOAT:
+    case UNSIGNED_FLOAT:
+      if (speed)
+	*cost += extra_cost->fp[mode == DFmode].fromint;
+      return false;
 
     case FLOAT_EXTEND:
       if (speed)

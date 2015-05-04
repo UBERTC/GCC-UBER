@@ -642,7 +642,7 @@ discard_useless_locs (cselib_val **x, void *info ATTRIBUTE_UNUSED)
   cselib_val *v = *x;
   struct elt_loc_list **p = &v->locs;
   bool had_locs = v->locs != NULL;
-  rtx setting_insn = v->locs ? v->locs->setting_insn : NULL;
+  rtx_insn *setting_insn = v->locs ? v->locs->setting_insn : NULL;
 
   while (*p)
     {
@@ -2190,7 +2190,7 @@ cselib_invalidate_regno (unsigned int regno, machine_mode mode)
 	{
 	  cselib_val *v = (*l)->elt;
 	  bool had_locs;
-	  rtx setting_insn;
+	  rtx_insn *setting_insn;
 	  struct elt_loc_list **p;
 	  unsigned int this_last = i;
 
@@ -2268,7 +2268,7 @@ cselib_invalidate_mem (rtx mem_rtx)
       bool has_mem = false;
       struct elt_loc_list **p = &v->locs;
       bool had_locs = v->locs != NULL;
-      rtx setting_insn = v->locs ? v->locs->setting_insn : NULL;
+      rtx_insn *setting_insn = v->locs ? v->locs->setting_insn : NULL;
 
       while (*p)
 	{
@@ -2618,7 +2618,7 @@ cselib_record_sets (rtx_insn *insn)
 /* Return true if INSN in the prologue initializes hard_frame_pointer_rtx.  */
 
 bool
-fp_setter_insn (rtx insn)
+fp_setter_insn (rtx_insn *insn)
 {
   rtx expr, pat = NULL_RTX;
 
