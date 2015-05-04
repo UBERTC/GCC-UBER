@@ -36,7 +36,7 @@
 
 #include <utility>
 #include <type_traits>
-#include <list>
+#include <vector>
 #include <locale>
 #include <iosfwd>
 #include <codecvt>
@@ -423,14 +423,14 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
 
     void _M_split_cmpts();
     void _M_trim();
-    void _M_add_root_name(size_t n);
-    void _M_add_root_dir(size_t pos);
-    void _M_add_filename(size_t pos, size_t n);
+    void _M_add_root_name(size_t __n);
+    void _M_add_root_dir(size_t __pos);
+    void _M_add_filename(size_t __pos, size_t __n);
 
     string_type _M_pathname;
 
     struct _Cmpt;
-    using _List = std::list<_Cmpt>;
+    using _List = _GLIBCXX_STD_C::vector<_Cmpt>;
     _List _M_cmpts; // empty unless _M_type == _Type::_Multi
     _Type _M_type = _Type::_Multi;
   };
@@ -530,6 +530,8 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
 		     const path& __p2, error_code __ec)
     : system_error(__ec, __what_arg), _M_path1(__p1), _M_path2(__p2)
     { }
+
+    ~filesystem_error();
 
     const path& path1() const noexcept { return _M_path1; }
     const path& path2() const noexcept { return _M_path2; }
@@ -681,10 +683,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
     iterator  operator--(int) { auto __tmp = *this; --_M_cur; return __tmp; }
 
     friend bool operator==(const iterator& __lhs, const iterator& __rhs)
-    { return __lhs.equals(__rhs); }
+    { return __lhs._M_equals(__rhs); }
 
     friend bool operator!=(const iterator& __lhs, const iterator& __rhs)
-    { return !__lhs.equals(__rhs); }
+    { return !__lhs._M_equals(__rhs); }
 
   private:
     friend class path;
@@ -697,7 +699,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
     : _M_path(__path), _M_cur(), _M_at_end(__at_end)
     { }
 
-    bool equals(iterator) const;
+    bool _M_equals(iterator) const;
 
     const path* 		_M_path;
     path::_List::const_iterator _M_cur;
@@ -749,7 +751,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
     inline path::_Path<_CharT*, _CharT*>&
     path::operator+=(_CharT __x)
     {
-      auto* __addr = std::addressof(__x);
+      auto* __addr = std::__addressof(__x);
       return concat(__addr, __addr + 1);
     }
 
@@ -781,7 +783,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
       const value_type* __last = __first + _M_pathname.size();
 
 #ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS
-      using _CharAlloc = typename __alloc_rebind<_Allocator, char>;
+      using _CharAlloc = __alloc_rebind<_Allocator, char>;
       using _String = basic_string<char, char_traits<char>, _CharAlloc>;
       using _WString = basic_string<_CharT, _Traits, _Allocator>;
 
@@ -990,7 +992,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CXX11
   }
 
   inline bool
-  path::iterator::equals(iterator __rhs) const
+  path::iterator::_M_equals(iterator __rhs) const
   {
     if (_M_path != __rhs._M_path)
       return false;

@@ -1,3 +1,108 @@
+2015-05-04  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/44735
+	* gfortran.dg/pr44735.f90: New test.
+
+2015-05-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65965
+	* gcc.dg/vect/bb-slp-33.c: New testcase.
+
+2015-05-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65935
+	* gcc.dg/vect/bb-slp-pr65935.c: New testcase.
+
+2015-05-03  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/binary_op.inc: Call CHECK
+	for each supported variant instead of CHECK_RESULTS.
+	* gcc.target/aarch64/advsimd-intrinsics/binary_sat_op.inc: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/unary_op.inc: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vXXXl.inc: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vXXXw.inc: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vsXi_n.inc: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vshuffle.inc: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vaba.c: Remove dummy
+	expected results for unsupported variants.  Call CHECK for each
+	supported variant instead of CHECK_RESULTS.
+	* gcc.target/aarch64/advsimd-intrinsics/vabal.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vabd.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vabdl.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcls.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vclz.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcnt.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcombine.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcreate.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vget_high.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vget_low.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vldX.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vldX_dup.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vldX_lane.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vmul.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vshl.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vsli_n.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vsri_n.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vabs.c: Remove dummy
+	expected results for unsupported variants.
+	* gcc.target/aarch64/advsimd-intrinsics/vadd.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vaddl.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vaddw.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vand.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vbic.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcage.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcagt.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcale.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcalt.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vceq.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcge.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcgt.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vcle.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vclt.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/veor.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vneg.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vorn.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vorr.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vqabs.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vqadd.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vqneg.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vqsub.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vsub.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vsubl.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vsubw.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vtrn.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vuzp.c: Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vzip.c: Likewise.
+
+2015-05-03  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/37131
+	* gfortran.dg/bound_9.f90:  Add pointer assignment.
+
+2015-05-01  Paolo Carlini  <paolo.carlini@oracle.com>
+	    Prathamesh Kulharni  <prathamesh.kulkarni@linaro.org>
+
+	PR c++/65858
+	* g++.dg/cpp0x/Wnarrowing3.C: New.
+
+2015-05-01  Rasmus Villemoes  <rv@rasmusvillemoes.dk>
+
+	* gcc.dg/20150120-1.c: New test.
+	* gcc.dg/20150120-2.c: New test.
+	* gcc.dg/20150120-3.c: New test.
+
+2015-05-01  David Edelsohn  <dje.gcc@gmail.com>
+
+	* gcc.dg/debug/pr65771.c: Add "dg-add-options tls".
+
+2015-05-01  Renlin Li  <renlin.li@arm.com>
+
+	* gcc.dg/pr65345-2.c: Add sync_int_long target selector.
+
+2015-05-01  Mikael Morin  <mikael@gcc.gnu.org>
+
+	* gfortran.dg/bound_simplification_4.f90: New.
+
 2015-04-30  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
 
 	* gcc.target/powerpc/crypto-builtin-2.c: Replace powerpc_vsx_ok

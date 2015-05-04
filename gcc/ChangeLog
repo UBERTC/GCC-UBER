@@ -1,3 +1,232 @@
+2015-05-04  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/arm/arm.c: Restore bootstrap.
+
+2015-05-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.h (TARGET_SUPPORTS_WIDE_INT): New define.
+	* config/i386/i386.c (ix86_legitimate_constant_p): Handle TImode
+	as CONST_WIDE_INT, not CONST_DOUBLE.
+	(ix86_cannot_force_const_mem): Handle CONST_WIDE_INT.
+	(output_pic_addr_const): Do not handle VOIDmode CONST_DOUBLEs.
+	(ix86_find_base_term): Do not check for CONST_DOUBLE.
+	(ix86_print_operand): Do not handle non-FPmode CONST_DOUBLEs.
+	(ix86_build_signbit_mask): Rewrite using wide ints.
+	(ix86_split_to_parts) [HOST_BITS_PER_WIDE_INT < 64]: Remove.
+	(ix86_rtx_costs): Handle CONST_WIDE_INT.
+	(find_constant): Ditto.
+	* config/i386/i386.md (bts, btr, btc peepholes): Rewrite
+	using gen_int_mode.
+	* config/i386/predicates.md (x86_64_immediate_operand)
+	<case CONST_INT>: Remove HOST_BITS_PER_WIDE_INT == 32 code.
+	(x86_64_zext_immediate_operand): Remove CONST_DOUBLE handling.
+	<case CONST_INT>: Remove HOST_BITS_PER_WIDE_INT == 32 code.
+	(const0_operand): Also match const_wide_int.
+	(constm1_operand): Ditto.
+	(const1_operand): Ditto.
+
+2015-05-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65965
+	* tree-vect-data-refs.c (vect_analyze_data_ref_accesses): Split
+	store groups at gaps.
+
+2015-05-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65935
+	* tree-vect-slp.c (vect_build_slp_tree): If we swapped operands
+	then make sure to apply that swapping to the IL.
+
+2015-05-04  Jakub Jelinek  <jakub@redhat.com>
+
+	* Makefile.in (PATCHLEVEL_c): New variable.
+	(DATESTAMP_s, REVISION_s): If PATCHLEVEL_c is not 0,
+	expand the same way as if DEVPHASE_c was non-empty.
+
+2015-05-04  Kai Tietz  <ktietz@redhat.com>
+
+	PR target/65559
+	* lto-wrapper.c (run_gcc): Open filename
+	in binary-mode.
+
+2015-05-03  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* doc/extend.texi (Variable Attributes, Type Attributes):  Move
+	sections up in file, to immediately after the Function Attributes
+	section.
+
+2015-05-02  Jan Hubicka  <hubicka@ucw.cz>
+
+	* tree.c (verify_type): Check various uses of TYPE_MINVAL.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* tree-outof-ssa.c (emit_partition_copy): Return rtx_insn *.
+	(insert_partition_copy_on_edge): Adjust.
+	(insert_rtx_to_part_on_edge): Likewise.
+	(insert_part_to_rtx_on_edge): Likewise.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* function.c (set_return_jump_label): Change type of argument to
+	rtx_insn *.
+	* function.h (set_return_jump_label): Adjust.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* reload.h (struct reg_equivs_t): Change type of init to
+	rtx_insn *.
+	* ira.c (fix_reg_equiv_init): Adjust.
+	* reload1.c (eliminate_regs_1): Likewise.
+	(init_eliminable_invariants): Likewise.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* cselib.c (fp_setter_insn): Take a rtx_insn *.
+	* cselib.h (fp_setter_insn): Adjust.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* recog.c (struct validate_replace_src_data): Change type of
+	insn field to rtx_insn *.
+	(validate_replace_src_group): Change type of argument to rtx_insn *.
+	* recog.h (validate_replace_src_group): Adjust.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* haifa-sched.c: Change the type of some variables to rtx_insn *.
+	* sched-deps.c: Likewise.
+	* sched-int.h: Likewise.
+	* sched-rgn.c: Likewise.
+	* sel-sched.c: Likewise.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	to rtx_insn *.
+	* config/i386/i386.c: Change the type of some arguments to
+	rtx_insn *.
+	* config/arm/arm.c: Likewise.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* lra-constraints.c: Change type of some arguments to rtx_insn *.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* regcprop.c (kill_autoinc_value): Change type of argument to
+	rtx_insn *.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* genrecog.c (print_subroutine): Adjust.
+	* recog.c (get_bool_attr_mask_uncached): Likewise.
+	* recog.h (struct recog_data_d): Change the type of insn to
+	rtx_insn *.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* dwarf2cfi.c (add_cfi_insn): Change type to rtx_insn *.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* df-problems.c (df_set_note): Change type of argument to
+	rtx_insn *.
+
+2015-05-02  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* builtins.c (expand_builtin_trap): Change type of local
+	variable to rtx_insn *.
+	(add_sched_insns_for_speculation): Likewise.
+	(ix86_emit_save_regs): Likewise.
+	(get_scratch_register_on_entry): Likewise.
+	(ix86_emit_restore_reg_using_pop): Likewise.
+	(ix86_emit_leave): Likewise.
+	(ix86_emit_restore_regs_using_mov): Likewise.
+	(ix86_expand_epilogue): Likewise.
+	Likewise.
+	(rl78_alloc_physical_registers_umul): Likewise.
+	* cselib.c (discard_useless_locs): Likewise.
+	(cselib_invalidate_regno): Likewise.
+	(cselib_invalidate_mem): Likewise.
+	* function.c (expand_function_start): Likewise.
+	(emit_use_return_register_into_block): Likewise.
+	* gcse.c: Likewise.
+	* haifa-sched.c (ok_for_early_queue_removal): Likewise.
+	* ifcvt.c (noce_get_alt_condition): Likewise.
+	* loop-doloop.c (doloop_condition_get): Likewise.
+	* lra-constraints.c (inherit_in_ebb): Likewise.
+	* modulo-sched.c (sms_schedule_by_order): Likewise.
+	* recog.c (next_insn_tests_no_inequality): Likewise.
+	* reorg.c (emit_delay_sequence): Likewise.
+	(update_reg_dead_notes): Likewise.
+	(fix_reg_dead_note): Likewise.
+	(fill_slots_from_thread): Likewise.
+	(delete_computation): Likewise.
+
+2015-05-01  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* doc/extend.texi (Variable Attributes): Add menu and proper
+	@nodes to subsections.  Move Microsoft Windows attributes to
+	their own subsection.
+	(Type Attributes): Reorganize introduction to remove duplicate
+	list of attributes.  Add menu and proper @nodes to subsections.
+	Alphabetize the main table of common attributes.
+
+2015-05-01  Rasmus Villemoes  <rv@rasmusvillemoes.dk>
+
+	* match.pd: New simplification patterns.
+	(x + (x & 1))  -> ((x + 1) & ~1)
+	(x & ~(x & y)) -> ((x & ~y))
+	(x | ~(x | y)) -> ((x | ~y))
+
+2015-05-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* target.def (attribute_table): Mention that struct attribute_spec
+	is defined in tree-core.h rather than tree.h
+	* doc/tm.texi: Regenerate.
+
+2015-05-01  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* genrecog.c (test): Rename to rtx_test.  Update rest of file
+	accordingly.
+
+2015-05-01  Andreas Schwab  <schwab@linux-m68k.org>
+
+	PR translation/65959
+	* params.h (DEFPARAM): Rename msgid to nocmsgid.
+
+2015-05-01  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	* gcc/config/aarch64/aarch64-protos.h (tune_params):
+	Add min_div_recip_mul_sf and min_div_recip_mul_df fields.
+	* gcc/config/aarch64/aarch64.c (aarch64_min_divisions_for_recip_mul):
+	Return value depending on target.
+	(generic_tunings): Initialize new target settings.
+	(cortexa53_tunings): Likewise.
+	(cortexa57_tunings): Likewise.
+	(thunderx_tunings): Likewise.
+	(xgene1_tunings): Likewise.
+
+2015-05-01  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	* gcc/config/arm/aarch-cost-tables.h (cortexa53_extra_costs):
+	Make Cortex-A53 shift costs more accurate.
+
+2015-05-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Handle FLOAT and
+	UNSIGNED_FLOAT.
+
+2015-05-01  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	* gcc/config/aarch64/aarch64.c (aarch64_rtx_costs):
+	Calculate cost of op0 and op1 in PLUS and MINUS cases.
+
+2015-05-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_rtx_costs, COMPARE case):
+	Add cost of op0 in the compare-with-fpzero case.
+
 2015-04-30  David Malcolm  <dmalcolm@redhat.com>
 
 	* builtins.c (fold_builtin_1): Remove spurious second

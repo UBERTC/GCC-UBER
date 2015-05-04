@@ -26,6 +26,8 @@
 
 using std::experimental::filesystem::path;
 
+std::experimental::filesystem::filesystem_error::~filesystem_error() = default;
+
 constexpr path::value_type path::preferred_separator;
 
 path&
@@ -35,7 +37,7 @@ path::remove_filename()
     {
       if (!_M_cmpts.empty())
 	{
-	  auto cmpt = --_M_cmpts.end();
+	  auto cmpt = std::prev(_M_cmpts.end());
 	  _M_pathname.erase(cmpt->_M_pos);
 	  _M_cmpts.erase(cmpt);
 	  _M_trim();
@@ -107,17 +109,23 @@ namespace
 int
 path::compare(const path& p) const noexcept
 {
+  struct CmptRef
+  {
+    const path* ptr;
+    const string_type& native() const noexcept { return ptr->native(); }
+  };
+
   if (_M_type == _Type::_Multi && p._M_type == _Type::_Multi)
     return do_compare(_M_cmpts.begin(), _M_cmpts.end(),
-		   p._M_cmpts.begin(), p._M_cmpts.end());
+		      p._M_cmpts.begin(), p._M_cmpts.end());
   else if (_M_type == _Type::_Multi)
     {
-      _Cmpt c[1] = { { p._M_pathname, p._M_type, 0 } };
+      CmptRef c[1] = { { &p } };
       return do_compare(_M_cmpts.begin(), _M_cmpts.end(), c, c+1);
     }
   else if (p._M_type == _Type::_Multi)
     {
-      _Cmpt c[1] = { { _M_pathname, _M_type, 0 } };
+      CmptRef c[1] = { { this } };
       return do_compare(c, c+1, p._M_cmpts.begin(), p._M_cmpts.end());
     }
   else
@@ -130,8 +138,7 @@ path::root_name() const
   path __ret;
   if (_M_type == _Type::_Root_name)
     __ret = *this;
-  else if (_M_cmpts.size()
-      && _M_cmpts.begin()->_M_type == _Type::_Root_name)
+  else if (_M_cmpts.size() && _M_cmpts.begin()->_M_type == _Type::_Root_name)
     __ret = *_M_cmpts.begin();
   return __ret;
 }
@@ -203,8 +210,8 @@ path::parent_path() const
   path __ret;
   if (_M_cmpts.size() < 2)
     return __ret;
-  for (auto __it = _M_cmpts.begin(), __end = --_M_cmpts.end();
-      __it != __end; ++__it)
+  for (auto __it = _M_cmpts.begin(), __end = std::prev(_M_cmpts.end());
+       __it != __end; ++__it)
     {
       __ret /= *__it;
     }

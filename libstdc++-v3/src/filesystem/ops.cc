@@ -47,6 +47,16 @@
 # include <ext/stdio_filebuf.h>
 # include <ostream>
 #endif
+#if _GLIBCXX_HAVE_UTIME_H
+# include <utime.h>
+#endif
+
+#ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+# undef utime
+# define utime _wutime
+# undef chmod
+# define chmod _wchmod
+#endif
 
 namespace fs = std::experimental::filesystem;
 
@@ -131,7 +141,7 @@ fs::copy(const path& from, const path& to, copy_options options)
 namespace
 {
   template<typename Bitmask>
-    bool is_set(Bitmask obj, Bitmask bits)
+    inline bool is_set(Bitmask obj, Bitmask bits)
     {
       return (obj & bits) != Bitmask::none;
     }
@@ -767,7 +777,7 @@ fs::file_size(const path& p)
 namespace
 {
   template<typename Accessor, typename T>
-    T
+    inline T
     do_stat(const fs::path& p, std::error_code& ec, Accessor f, T deflt)
     {
 #ifdef _GLIBCXX_HAVE_SYS_STAT_H
@@ -861,13 +871,23 @@ fs::last_write_time(const path& p __attribute__((__unused__)),
 {
   auto d = new_time.time_since_epoch();
   auto s = chrono::duration_cast<chrono::seconds>(d);
+#if _GLIBCXX_USE_UTIMENSAT
   auto ns = chrono::duration_cast<chrono::nanoseconds>(d - s);
-#ifdef _GLIBCXX_USE_UTIMENSAT
-  struct ::timespec ts[2] = {
-    { 0, UTIME_OMIT },
-    { static_cast<std::time_t>(s.count()), static_cast<long>(ns.count()) }
-  };
-  if (utimensat(AT_FDCWD, p.c_str(), ts, 0))
+  struct ::timespec ts[2];
+  ts[0].tv_sec = 0;
+  ts[0].tv_nsec = UTIME_OMIT;
+  ts[1].tv_sec = static_cast<std::time_t>(s.count());
+  ts[1].tv_nsec = static_cast<long>(ns.count());
+  if (::utimensat(AT_FDCWD, p.c_str(), ts, 0))
+    ec.assign(errno, std::generic_category());
+  else
+    ec.clear();
+#elif _GLIBCXX_HAVE_UTIME_H
+  ::utimbuf times;
+  times.modtime = s.count();
+  times.actime = do_stat(p, ec, [](const auto& st) { return st.st_atime; },
+			 times.modtime);
+  if (::utime(p.c_str(), &times))
     ec.assign(errno, std::generic_category());
   else
     ec.clear();
@@ -887,7 +907,11 @@ fs::permissions(const path& p, perms prms)
 
 void fs::permissions(const path& p, perms prms, error_code& ec) noexcept
 {
+#if _GLIBCXX_USE_FCHMODAT
   if (int err = ::fchmodat(AT_FDCWD, p.c_str(), static_cast<mode_t>(prms), 0))
+#else
+  if (int err = ::chmod(p.c_str(), static_cast<mode_t>(prms)))
+#endif
     ec.assign(err, std::generic_category());
   else
     ec.clear();
@@ -1051,6 +1075,8 @@ fs::space(const path& p, error_code& ec) noexcept
       };
       ec.clear();
     }
+#else
+  ec = std::make_error_code(std::errc::not_supported);
 #endif
   return info;
 }
@@ -1157,6 +1183,7 @@ fs::path fs::temp_directory_path()
 fs::path fs::temp_directory_path(error_code& ec)
 {
 #ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+  ec = std::make_error_code(std::errc::not_supported);
   return {}; // TODO
 #else
   const char* tmpdir = ::getenv("TMPDIR");

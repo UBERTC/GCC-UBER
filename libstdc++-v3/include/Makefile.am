@@ -651,8 +651,11 @@ experimental_headers = \
 	${experimental_srcdir}/erase_if.h \
 	${experimental_srcdir}/forward_list \
 	${experimental_srcdir}/functional \
+	${experimental_srcdir}/iterator \
 	${experimental_srcdir}/list \
 	${experimental_srcdir}/map \
+	${experimental_srcdir}/memory \
+	${experimental_srcdir}/numeric \
 	${experimental_srcdir}/optional \
 	${experimental_srcdir}/ratio \
 	${experimental_srcdir}/set \

@@ -5094,7 +5094,8 @@ expand_function_start (tree subr)
   if (cfun->static_chain_decl)
     {
       tree parm = cfun->static_chain_decl;
-      rtx local, chain, insn;
+      rtx local, chain;
+     rtx_insn *insn;
 
       local = gen_reg_rtx (Pmode);
       chain = targetm.calls.static_chain (current_function_decl, true);
@@ -5657,7 +5658,8 @@ prologue_epilogue_contains (const_rtx insn)
 static void
 emit_use_return_register_into_block (basic_block bb)
 {
-  rtx seq, insn;
+  rtx seq;
+ rtx_insn *insn;
   start_sequence ();
   use_return_register ();
   seq = get_insns ();
@@ -5701,7 +5703,7 @@ emit_return_into_block (bool simple_p, basic_block bb)
 /* Set JUMP_LABEL for a return insn.  */
 
 void
-set_return_jump_label (rtx returnjump)
+set_return_jump_label (rtx_insn *returnjump)
 {
   rtx pat = PATTERN (returnjump);
   if (GET_CODE (pat) == PARALLEL)
