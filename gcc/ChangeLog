@@ -1,3 +1,73 @@
+2015-05-02  Jan Hubicka  <hubicka@ucw.cz>
+
+	* tree.c (verify_type): Check various uses of TYPE_MAXVAL;
+	fix overactive TYPE_MIN_VALUE check and add FIXME for type
+	compatibility problems.
+
+2015-05-04  Ajit Agarwal  <ajitkum@xilinx.com>
+
+	* config/microblaze/microblaze.md (cbranchsi4): Added immediate
+	constraints.
+	(cbranchsi4_reg): New.
+	* config/microblaze/microblaze.c
+	(microblaze_expand_conditional_branch_reg): New.
+	* config/microblaze/microblaze-protos.h
+	(microblaze_expand_conditional_branch_reg): New prototype.
+
+2015-05-04  Ajit Agarwal  <ajitkum@xilinx.com>
+
+	* config/microblaze/microblaze.md (peephole2): New.
+
+2015-05-04  Jeff Law  <law@redhat.com>
+
+	Revert:
+	2015-05-04  Jeff Law  <law@redhat.com>
+
+	* match.pd (bit_and (plus/minus (convert @0) (convert @1) mask): New
+	simplifier to narrow arithmetic.
+	* generic-match-head.c: (types_match, single_use): New functions.
+	* gimple-match-head.c: (types_match, single_use): New functions.
+
+2015-05-04  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/65987
+	* config/sh/sh.c (output_far_jump): Take into account crossing jumps.
+	(split_branches): Likewise.
+
+2015-05-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* common.opt (fdelete-null-pointer-checks): Init to -1.
+	* config/nios2/elf.h (SUBTARGET_OVERRIDE_OPTIONS): Define to
+	override flag_delete_null_pointer_checks default.
+	* doc/invoke.texi (-fdelete-null-pointer-checks): Clarify
+	behavior re address zero.  Better document target-specific behavior.
+	(-fisolate-errneous-paths-dereference): Mention relationship to
+	-fdelete-null-pointer-checks.
+
+2015-05-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65984
+	* ubsan.c: Include tree-cfg.h.
+	(instrument_bool_enum_load): Use stmt_ends_bb_p instead of
+	stmt_could_throw_p test, rename can_throw variable to ends_bb.
+
+2015-05-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c: Change GET_CODE (...) == CONST_DOUBLE check
+	to CONST_DOUBLE_P predicate.
+	(standard_sse_constant_p): Return 0 for !TARGET_SSE.
+	(ix86_legitimate_constant_p) <case CONST_WIDE_INT>: For 32bit targets,
+	allow only operands that satisfy standard_sse_constant_p predicate.
+	* config/i386/i386.md: Change GET_CODE (...) == CONST_DOUBLE check
+	to CONST_DOUBLE_P predicate.
+
+2015-05-04  Jeff Law  <law@redhat.com>
+
+	* match.pd (bit_and (plus/minus (convert @0) (convert @1) mask): New
+	simplifier to narrow arithmetic.
+	* generic-match-head.c: (types_match, single_use): New functions.
+	* gimple-match-head.c: (types_match, single_use): New functions.
+
 2015-05-04  Andreas Tobler  <andreast@gcc.gnu.org>
 
 	* config/arm/arm.c: Restore bootstrap.
