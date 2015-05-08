@@ -1414,18 +1414,28 @@
   "
   if (! aarch64_plus_operand (operands[2], VOIDmode))
     {
-      rtx subtarget = ((optimize && can_create_pseudo_p ())
-		       ? gen_reg_rtx (<MODE>mode) : operands[0]);
       HOST_WIDE_INT imm = INTVAL (operands[2]);
 
-      if (imm < 0)
-	imm = -(-imm & ~0xfff);
+      if (aarch64_move_imm (imm, <MODE>mode) && can_create_pseudo_p ())
+        {
+	  rtx tmp = gen_reg_rtx (<MODE>mode);
+	  emit_move_insn (tmp, operands[2]);
+	  operands[2] = tmp;
+        }
       else
-        imm &= ~0xfff;
+        {
+	  rtx subtarget = ((optimize && can_create_pseudo_p ())
+			   ? gen_reg_rtx (<MODE>mode) : operands[0]);
 
-      emit_insn (gen_add<mode>3 (subtarget, operands[1], GEN_INT (imm)));
-      operands[1] = subtarget;
-      operands[2] = GEN_INT (INTVAL (operands[2]) - imm);
+	  if (imm < 0)
+	    imm = -(-imm & ~0xfff);
+	  else
+	    imm &= ~0xfff;
+
+	  emit_insn (gen_add<mode>3 (subtarget, operands[1], GEN_INT (imm)));
+	  operands[1] = subtarget;
+	  operands[2] = GEN_INT (INTVAL (operands[2]) - imm);
+        }
     }
   "
 )
@@ -2184,14 +2194,13 @@
    && GP_REGNUM_P (REGNO (operands[1]))"
   [(const_int 0)]
   {
-    emit_insn (gen_rtx_SET (VOIDmode, operands[0],
+    emit_insn (gen_rtx_SET (operands[0],
 			    gen_rtx_XOR (DImode,
 					 gen_rtx_ASHIFTRT (DImode,
 							   operands[1],
 							   GEN_INT (63)),
 					 operands[1])));
-    emit_insn (gen_rtx_SET (VOIDmode,
-			    operands[0],
+    emit_insn (gen_rtx_SET (operands[0],
 			    gen_rtx_MINUS (DImode,
 					   operands[0],
 					   gen_rtx_ASHIFTRT (DImode,
@@ -2623,7 +2632,7 @@
          (match_operand 3 "const0_operand")]))]
   ""
 "{
-  emit_insn (gen_rtx_SET (SImode, operands[0], operands[1]));
+  emit_insn (gen_rtx_SET (operands[0], operands[1]));
   DONE;
 }")
 
@@ -4477,7 +4486,7 @@
   cc_reg = SET_DEST (cmp);
   bcomp = gen_rtx_NE (VOIDmode, cc_reg, const0_rtx);
   loc_ref = gen_rtx_LABEL_REF (VOIDmode, operands [1]);
-  emit_jump_insn (gen_rtx_SET (VOIDmode, pc_rtx,
+  emit_jump_insn (gen_rtx_SET (pc_rtx,
 			       gen_rtx_IF_THEN_ELSE (VOIDmode, bcomp,
 						     loc_ref, pc_rtx)));
   DONE;

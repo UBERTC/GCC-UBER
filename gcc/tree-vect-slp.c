@@ -1325,17 +1325,36 @@ vect_supported_load_permutation_p (slp_instance slp_instn)
      FORNOW: not supported in loop SLP because of realignment compications.  */
   if (STMT_VINFO_BB_VINFO (vinfo_for_stmt (stmt)))
     {
-      /* Check that for every node in the instance the loads
-	 form a subchain.  */
+      /* Check whether the loads in an instance form a subchain and thus
+         no permutation is necessary.  */
       FOR_EACH_VEC_ELT (SLP_INSTANCE_LOADS (slp_instn), i, node)
         {
+	  bool subchain_p = true;
           next_load = NULL;
           FOR_EACH_VEC_ELT (SLP_TREE_SCALAR_STMTS (node), j, load)
             {
               if (j != 0 && next_load != load)
-		return false;
+		{
+		  subchain_p = false;
+		  break;
+		}
               next_load = GROUP_NEXT_ELEMENT (vinfo_for_stmt (load));
             }
+	  if (subchain_p)
+	    SLP_TREE_LOAD_PERMUTATION (node).release ();
+	  else
+	    {
+	      /* Verify the permutation can be generated.  */
+	      vec<tree> tem;
+	      if (!vect_transform_slp_perm_load (node, tem, NULL,
+						 1, slp_instn, true))
+		{
+		  dump_printf_loc (MSG_MISSED_OPTIMIZATION,
+				   vect_location,
+				   "unsupported load permutation\n");
+		  return false;
+		}
+	    }
         }
 
       /* Check that the alignment of the first load in every subchain, i.e.,
@@ -1364,9 +1383,6 @@ vect_supported_load_permutation_p (slp_instance slp_instn)
 	    }
 	}
 
-      /* We are done, no actual permutations need to be generated.  */
-      FOR_EACH_VEC_ELT (SLP_INSTANCE_LOADS (slp_instn), i, node)
-	SLP_TREE_LOAD_PERMUTATION (node).release ();
       return true;
     }
 
@@ -3179,7 +3195,7 @@ vect_transform_slp_perm_load (slp_tree node, vec<tree> dr_chain,
      we need the second and the third vectors: {b1,c1,a2,b2} and
      {c2,a3,b3,c3}.  */
 
-    {
+  {
       scalar_index = 0;
       index = 0;
       vect_stmts_counter = 0;

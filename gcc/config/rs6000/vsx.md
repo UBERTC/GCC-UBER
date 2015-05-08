@@ -780,6 +780,7 @@
   emit_insn (gen_vsx_extract_v2di (op4, op2, GEN_INT (1)));
   emit_insn (gen_muldi3 (op3, op3, op4));
   emit_insn (gen_vsx_concat_v2di (op0, op5, op3));
+  DONE;
 }"
   [(set_attr "type" "mul")])
 
@@ -817,6 +818,7 @@
   emit_insn (gen_vsx_extract_v2di (op4, op2, GEN_INT (1)));
   emit_insn (gen_divdi3 (op3, op3, op4));
   emit_insn (gen_vsx_concat_v2di (op0, op5, op3));
+  DONE;
 }"
   [(set_attr "type" "div")])
 
@@ -844,6 +846,7 @@
   emit_insn (gen_vsx_extract_v2di (op4, op2, GEN_INT (1)));
   emit_insn (gen_udivdi3 (op3, op3, op4));
   emit_insn (gen_vsx_concat_v2di (op0, op5, op3));
+  DONE;
 }"
   [(set_attr "type" "div")])
 
@@ -2014,7 +2017,7 @@
     }
 
   x = gen_rtx_VEC_SELECT (<MODE>mode, x, gen_rtx_PARALLEL (VOIDmode, v));
-  emit_insn (gen_rtx_SET (VOIDmode, operands[0], x));
+  emit_insn (gen_rtx_SET (operands[0], x));
   DONE;
 })
 
@@ -2040,7 +2043,7 @@
     }
 
   x = gen_rtx_VEC_SELECT (<MODE>mode, x, gen_rtx_PARALLEL (VOIDmode, v));
-  emit_insn (gen_rtx_SET (VOIDmode, operands[0], x));
+  emit_insn (gen_rtx_SET (operands[0], x));
   DONE;
 })
 
