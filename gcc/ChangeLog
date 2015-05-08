@@ -1,4 +1,305 @@
-2015-05-02  Jan Hubicka  <hubicka@ucw.cz>
+2015-05-08  Marek Polacek  <polacek@redhat.com>
+
+	PR c/64918
+	* doc/invoke.texi: Document -Woverride-init-side-effects.
+
+2015-05-07  Marek Polacek  <polacek@redhat.com>
+
+	PR c/65179
+	* doc/invoke.texi: Document -Wshift-negative-value.
+
+2015-05-06  Aditya Kumar  <hiraditya@msn.com>
+
+	* gcov-tool.c (do_merge): Refactore to remove int ret.
+	* ipa-icf.c (sem_item::hash_referenced_symbol_properties): Change
+	!type == FUNC to type != FUNC.
+	* reload.h (struct target_reload): Changee to type of
+	x_spill_indirect_levels from bool to unsigned char.
+
+2015-05-07  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* rtl.h (always_void_p): New function.
+	* gengenrtl.c (always_void_p): Likewise.
+	(genmacro): Don't add a mode parameter to gen_rtx_foo if rtxes
+	with code foo are always VOIDmode.
+	* genemit.c (gen_exp): Update gen_rtx_foo calls accordingly.
+	* builtins.c, caller-save.c, calls.c, cfgexpand.c, combine.c,
+	compare-elim.c, config/aarch64/aarch64.c,
+	config/aarch64/aarch64.md, config/alpha/alpha.c,
+	config/alpha/alpha.md, config/arc/arc.c, config/arc/arc.md,
+	config/arm/arm-fixed.md, config/arm/arm.c, config/arm/arm.md,
+	config/arm/ldrdstrd.md, config/arm/thumb2.md, config/arm/vfp.md,
+	config/avr/avr.c, config/bfin/bfin.c, config/c6x/c6x.c,
+	config/c6x/c6x.md, config/cr16/cr16.c, config/cris/cris.c,
+	config/cris/cris.md, config/darwin.c, config/epiphany/epiphany.c,
+	config/epiphany/epiphany.md, config/fr30/fr30.c, config/frv/frv.c,
+	config/frv/frv.md, config/h8300/h8300.c, config/i386/i386.c,
+	config/i386/i386.md, config/i386/sse.md, config/ia64/ia64.c,
+	config/ia64/vect.md, config/iq2000/iq2000.c,
+	config/iq2000/iq2000.md, config/lm32/lm32.c, config/lm32/lm32.md,
+	config/m32c/m32c.c, config/m32r/m32r.c, config/m68k/m68k.c,
+	config/m68k/m68k.md, config/mcore/mcore.c, config/mcore/mcore.md,
+	config/mep/mep.c, config/microblaze/microblaze.c,
+	config/mips/mips.c, config/mips/mips.md, config/mmix/mmix.c,
+	config/mn10300/mn10300.c, config/msp430/msp430.c,
+	config/nds32/nds32-memory-manipulation.c, config/nds32/nds32.c,
+	config/nds32/nds32.md, config/nios2/nios2.c, config/nvptx/nvptx.c,
+	config/pa/pa.c, config/pa/pa.md, config/rl78/rl78.c,
+	config/rs6000/altivec.md, config/rs6000/rs6000.c,
+	config/rs6000/rs6000.md, config/rs6000/vector.md,
+	config/rs6000/vsx.md, config/rx/rx.c, config/rx/rx.md,
+	config/s390/s390.c, config/s390/s390.md, config/sh/sh.c,
+	config/sh/sh.md, config/sh/sh_treg_combine.cc,
+	config/sparc/sparc.c, config/sparc/sparc.md, config/spu/spu.c,
+	config/spu/spu.md, config/stormy16/stormy16.c,
+	config/tilegx/tilegx.c, config/tilegx/tilegx.md,
+	config/tilepro/tilepro.c, config/tilepro/tilepro.md,
+	config/v850/v850.c, config/v850/v850.md, config/vax/vax.c,
+	config/visium/visium.c, config/xtensa/xtensa.c, cprop.c, dse.c,
+	expr.c, gcse.c, ifcvt.c, ira.c, jump.c, lower-subreg.c,
+	lra-constraints.c, lra-eliminations.c, lra.c, postreload.c, ree.c,
+	reg-stack.c, reload.c, reload1.c, reorg.c, sel-sched.c,
+	var-tracking.c: Update calls accordingly.
+
+2015-05-07  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR middle-end/192
+	PR middle-end/54303
+	* varasm.c (function_mergeable_rodata_prefix): New function.
+	(mergeable_string_section): Use it.
+	(mergeable_constant_section): Use it.
+
+2015-05-07  Jeff Law  <law@redhat.com>
+
+	* match.pd (bit_and (plus/minus (convert @0) (convert @1) mask): New
+	simplifier to narrow arithmetic.
+	* generic-match-head.c: (types_match, single_use): New functions.
+	* gimple-match-head.c: (types_match, single_use): New functions.
+
+2015-05-07  Venkataramanan Kumar  <venkataramanan.kumar@amd.com>
+
+	* combine.c (make_compound_operation): Remove checks for PLUS/MINUS
+	rtx type.
+
+2015-05-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66002
+	* passes.def: Schedule another pass_merge_phi after ifcombine, right
+	before phiopt.
+
+2015-05-07  Marek Polacek  <polacek@redhat.com>
+	    Martin Uecker  <uecker@eecs.berkeley.edu>
+
+	* doc/invoke.texi: Document -fsanitize=bounds-strict.
+	* flag-types.h (enum sanitize_code): Add SANITIZE_BOUNDS_STRICT, or it
+	into SANITIZE_NONDEFAULT.
+	* opts.c (common_handle_option): Handle -fsanitize=bounds-strict.
+
+2015-05-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66015
+	* config/alpha/alpha.c (alpha_override_options_after_change): New.
+	(TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE): New.
+	(alpha_override_options): Move align_loops, align_jumps and
+	align_functions handling into alpha_override_options_after_change.
+
+2015-05-06  Sandra Loosemore  <sandra@codesourcery.com>
+	    Chris Jones  <chrisj@nvidia.com>
+	    Joshua Conner  <jconner@nvidia.com>
+
+	* config/arm/unknown-elf.h (STARTFILE_SPEC): Add conditional
+	linking of crtfastmath.o.
+	* config/arm/linux-eabi.h (STARTFILE_SPEC): Likewise.
+
+2015-05-06  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* config/rs6000/rs6000.md (cstore<mode>4_signed_imm): New expander.
+	(cstore<mode>4_unsigned_imm): New expander.
+	(cstore<mode>4): Remove empty constraint strings.  Use the new
+	expanders.
+
+2015-05-06  Yvan Roux  <yvan.roux@linaro.org>
+
+	PR target/64208
+	* config/arm/iwmmxt.md ("*iwmmxt_arm_movdi"): Cleanup redundant
+	alternatives.
+
+2015-05-06  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* config/aarch64/geniterators.sh: Use standard BRE in sed.
+
+2015-05-06  Alan Modra  <amodra@gmail.com>
+
+	PR target/66033
+	* config/rs6000/rs6000.md (nop): Use an unspec pattern.
+	(UNSPEC_NOP): Define.
+	(reload_vsx_from_gpr<mode>): Add missing DONE.
+	(reload_gpr_from_vsx<mode>): Likewise.
+	* config/rs6000/vsx.md (vsx_mul_v2di): Likewise.
+	(vsx_div_v2di, vsx_udiv_v2di): Likewise.
+
+2015-05-06  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/66015
+	* config/aarch64/aarch64.c (aarch64_override_options): Move align_loops,
+	align_jumps, align_functions into aarch64_override_options_after_change.
+
+2015-05-06  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-slp.c (vect_supported_load_permutation_p): Use
+	vect_transform_slp_perm_load to check if we support a permutation
+	for basic-block vectorization.
+
+2015-05-06  Nick Clifton  <nickc@redhat.com>
+
+	* config/rl78/rl78.c (need_to_save): Save register 22 if it is
+	used, even if it is not being used as a frame pointer.
+
+2015-05-05  Jason Merrill  <jason@redhat.com>
+
+	* dwarf2out.c (gen_member_die): Don't emit anything for an
+	anonymous class constructor.
+
+2015-05-05  David Malcolm  <dmalcolm@redhat.com>
+
+	* auto-profile.c (afdo_find_equiv_class): Fix indentation so
+	that it reflects the block structure.
+	(afdo_propagate_edge): Likewise.
+	(afdo_calculate_branch_prob): Likewise.
+	(afdo_annotate_cfg): Likewise.
+	* cfgcleanup.c (equal_different_set_p): Likewise.
+	(try_crossjump_to_edge): Likewise.
+	* cgraph.c (cgraph_node::verify_node): Likewise.
+	* cgraphunit.c (expand_all_functions): Likewise.
+	* config/i386/i386.c (ix86_expand_copysign): Likewise.
+	(exact_dependency_1): Likewise.
+	* dwarf2asm.c (dw2_output_indirect_constants): Likewise.
+	* dwarf2out.c (tree_add_const_value_attribute_for_decl): Likewise.
+	* gensupport.c (process_define_subst): Likewise.
+	* lto-wrapper.c (merge_and_complain): Likewise.
+	* tree-if-conv.c (if_convertible_bb_p): Likewise.
+	* tree-ssa-loop-prefetch.c (find_or_create_group): Likewise.
+	* tree-ssa-tail-merge.c (gsi_advance_fw_nondebug_nonlocal): Likewise.
+	* tree-vect-data-refs.c (vect_grouped_load_supported): Likewise.
+	* tree-vect-loop.c (vectorizable_reduction): Likewise.
+	* tree-vect-slp.c (vect_transform_slp_perm_load): Likewise.
+	* tree-vect-stmts.c (vectorizable_shift): Likewise.
+	* tree-vrp.c (vrp_finalize): Likewise.
+	* tree.c (variably_modified_type_p): Likewise.
+
+2015-05-05  Jack Howarth  <howarth.at.gcc@gmail.com>
+
+	* config.gcc: Use darwin9.h, darwin10.h and darwin12.h
+	on darwin12 and later.
+	* config/darwin12.h (LINK_GCC_C_SEQUENCE_SPEC): Add
+	file to pass -rdynamic on darwin12 and later.
+	* config/darwin.opt (rdynamic): Add.
+
+2015-05-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	* doc/extend.texi (C Extensions): Update menu for moved Variable
+	Attributes and Type Attributes sections.
+
+2015-05-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/65990
+	* config/i386/i386.c (ix86_parse_stringop_strategy_string): Error out
+	if rep_8byte stringop strategy was specified for 32-bit target.
+
+2015-05-05  Ilya Tocar  <ilya.tocar@intel.com>
+
+	PR target/65915
+	* config/i386/i386.md (vector convert to float spltiter): Check for
+	xmm16+, when splitting scalar float conversion.
+	* config/i386/sse.md (sse2_cvtsi2sd): Support EVEX version.
+
+2015-05-05  Nick Clifton  <nickc@redhat.com>
+
+	* config/msp430/msp430-opts.h (enum msp430_regions): New.
+	* config/msp430/msp430.c (msp430_override_options): Complain if
+	-mcode-region or -mdata-region is used on a non MSP430X.
+	(msp430_section_attr): New function.  Checks lower, upper and
+	either attributes.
+	(msp430_attribute_table): Add lower, upper and either.
+	(gen_prefix): New function.  Generates a prefix for a section
+	name.
+	(msp430_select_section): New function - handles the choice of
+	section for an object.  Takes into account memory region
+	attributes and options.
+	(msp430_function_section): Use gen_prefix.
+	(TARGET_SECTION_TYPE_FLAGS): Define.
+	(msp430_section_type_flags): New function.
+	(TARGET_ASM_UNIQUE_SECTION): Define.
+	(msp430_unique_section): New function.
+	(msp430_output_aligned_decl_common): New function.
+	(msp430_do_not_relax_short_jumps): New function.
+	* config/msp430/msp430.h (USE_SELECT_SECTION_FOR_FUNCTIONS):
+	Define.
+	(ASM_OUTPUT_ALIGNED_DECL_COMMON): Define.
+	* config/msp430/msp430-protos.h
+	(msp430_do_not_relax_short_jumps): New prototype.
+	(msp430_output_aligned_decl_common): New prototype.
+	* config/msp430/msp430.md (length): New attribute.
+	(cbranchhi4_real): If msp430_do_not_relax_short_jumps is true
+	then use a long code sequence for short jumps.
+	* config/msp430/msp430.opt (mcode-region): New.
+	(mdata-region): New.
+	* doc/invoke.texi: Document new options.
+	* doc/extend.texi: Document new attributes.
+
+2015-05-05  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* gcc/config/aarch64-protos.h (struct cpu_branch_cost): New.
+        (tune_params): Add field branch_costs.
+	(aarch64_branch_cost): Declare.
+	* gcc/config/aarch64.c (generic_branch_cost): New.
+	(generic_tunings): Set field cpu_branch_cost to generic_branch_cost.
+	(cortexa53_tunings): Likewise.
+	(cortexa57_tunings): Likewise.
+	(thunderx_tunings): Likewise.
+	(xgene1_tunings): Likewise.
+	(aarch64_branch_cost): Define.
+	* gcc/config/aarch64/aarch64.h (BRANCH_COST): Redefine.
+
+2015-05-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c: Use HOST_WIDE_INT_1 instead of (HOST_WIDE_INT) 1
+	and HOST_WIDE_INT_1U instead of (unsigned HOST_WIDE_INT) 1.
+	* config/i386/i386.md: Ditto.
+	* config/i386/winnt.c: Ditto.
+
+2015-05-05  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* doc/extend.texi (__atomic Builtins): Move implementation details
+	to the end of the description, rewrite opening paragraphs, state
+	difference with __sync builtins, state C11/C++11 assumptions,
+	weaken itemized descriptions, add explanation of memory model
+	behaviour, expand description of compare-exchange, simplify text.
+
+2015-05-05  Renlin Li  <renlin.li@arm.com>
+
+	* config/aarch64/aarch64.md (add<mode>3): Use mov when allowed.
+
+2015-05-05  Yvan Roux  <yvan.roux@linaro.org>
+
+	* config/aarch64/aarch64-elf-raw.h (CA53_ERR_843419_SPEC): Define.
+	(LINK_SPEC): Include CA53_ERR_843419_SPEC.
+	* config/aarch64/aarch64-linux.h (CA53_ERR_843419_SPEC): Define.
+	(LINK_SPEC): Include CA53_ERR_843419_SPEC.
+	* config/aarch64/aarch64.opt (mfix-cortex-a53-843419): New option.
+	* configure: Regenerate.
+	* configure.ac: Add --enable-fix-cortex-a53-843419 option.
+	* doc/install.texi (aarch64*-*-*): Document new
+	--enable-fix-cortex-a53-843419 option.
+	* doc/invoke.texi (AArch64 Options): Document -mfix-cortex-a53-843419
+	and -mno-fix-cortex-a53-843419 options.
+
+2015-05-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/65871
+	* config/i386/i386.md (*bmi_andn_<mode>_ccno): New pattern.
+
+2015-05-04  Jan Hubicka  <hubicka@ucw.cz>
 
 	* tree.c (verify_type): Check various uses of TYPE_MAXVAL;
 	fix overactive TYPE_MIN_VALUE check and add FIXME for type
@@ -438,8 +739,8 @@
 2015-04-29  Uros Bizjak  <ubizjak@gmail.com>
 
 	PR target/65871
-	* config/i386/i386.md (*bmi_bextr_<mode>_cczonly): New pattern.
-	(*bmi2_bzhi_<mode>3_1_cczonly): Ditto.
+	* config/i386/i386.md (*bmi_bextr_<mode>_ccz): New pattern.
+	(*bmi2_bzhi_<mode>3_1_ccz): Ditto.
 	(setcc+movzbl peephole2): Check also clobbered reg.
 	(setcc+andl peephole2): Ditto.
 

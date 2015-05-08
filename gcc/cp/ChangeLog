@@ -1,3 +1,52 @@
+2015-05-07  Marek Polacek  <polacek@redhat.com>
+
+	PR c/65179
+	* typeck.c (cp_build_binary_op): Warn when left shifting a negative
+	value.
+
+2015-05-07  Jason Merrill  <jason@redhat.com>
+
+	DR 1467
+	PR c++/51747
+	* typeck2.c (digest_init_r): Fix single element list.
+
+2015-05-05  Jason Merrill  <jason@redhat.com>
+
+	* cp-gimplify.c (cp_genericize_r): Track TRY_BLOCK and
+	MUST_NOT_THROW_EXPR, warn about a THROW_EXPR directly within a
+	MUST_NOT_THROW_EXPR.
+	(cp_genericize_data): Add try_block field.
+	(cp_genericize_tree): Initialize it.
+	* except.c (expand_end_catch_block): Set TREE_NO_WARNING on
+	implicit rethrow.
+
+	* constexpr.c (potential_constant_expression_1) [AT_ENCODE_EXPR]:
+	Return false.
+
+	* semantics.c (finish_call_expr): Check complain.
+
+	* decl2.c (reset_type_linkage_2): Update the DECL_NAME of a
+	maybe-in-charge constructor.
+
+	* decl.c (start_decl): Don't push the plain VAR_DECL for a
+	variable template.
+
+	DR 1518
+	DR 1630
+	PR c++/54835
+	PR c++/60417
+	* call.c (convert_like_real): Check value-initialization before
+	explicit.
+	* typeck2.c (process_init_constructor_record): Don't set
+	CONSTRUCTOR_IS_DIRECT_INIT.
+	(process_init_constructor_array): Likewise.
+	* init.c (build_vec_init): Likewise.
+
+2015-05-05  David Malcolm  <dmalcolm@redhat.com>
+
+	* parser.c (cp_parser_asm_definition): Only test for
+        error_mark_node if "outputs" was just set.  Likewise for "inputs".
+
 2015-05-04  Paolo Carlini  <paolo.carlini@oracle.com>
 	    Jakub Jelinek  <jakub@redhat.com>
 
