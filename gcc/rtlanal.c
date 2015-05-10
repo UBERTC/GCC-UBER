@@ -1197,7 +1197,7 @@ record_hard_reg_sets (rtx x, const_rtx pat ATTRIBUTE_UNUSED, void *data)
 /* Examine INSN, and compute the set of hard registers written by it.
    Store it in *PSET.  Should only be called after reload.  */
 void
-find_all_hard_reg_sets (const_rtx insn, HARD_REG_SET *pset, bool implicit)
+find_all_hard_reg_sets (const rtx_insn *insn, HARD_REG_SET *pset, bool implicit)
 {
   rtx link;
 
@@ -1368,7 +1368,7 @@ set_noop_p (const_rtx set)
    value to itself.  */
 
 int
-noop_move_p (const_rtx insn)
+noop_move_p (const rtx_insn *insn)
 {
   rtx pat = PATTERN (insn);
 
@@ -2117,7 +2117,7 @@ add_int_reg_note (rtx insn, enum reg_note kind, int datum)
 /* Add a register note like NOTE to INSN.  */
 
 void
-add_shallow_copy_of_reg_note (rtx insn, rtx note)
+add_shallow_copy_of_reg_note (rtx_insn *insn, rtx note)
 {
   if (GET_CODE (note) == INT_LIST)
     add_int_reg_note (insn, REG_NOTE_KIND (note), XINT (note, 0));
@@ -2159,7 +2159,7 @@ remove_note (rtx insn, const_rtx note)
 /* Remove REG_EQUAL and/or REG_EQUIV notes if INSN has such notes.  */
 
 void
-remove_reg_equal_equiv_notes (rtx insn)
+remove_reg_equal_equiv_notes (rtx_insn *insn)
 {
   rtx *loc;
 
@@ -2205,16 +2205,16 @@ remove_reg_equal_equiv_notes_for_regno (unsigned int regno)
    return 1 if it is found.  A simple equality test is used to determine if
    NODE matches.  */
 
-int
-in_expr_list_p (const_rtx listp, const_rtx node)
+bool
+in_insn_list_p (const rtx_insn_list *listp, const rtx_insn *node)
 {
   const_rtx x;
 
   for (x = listp; x; x = XEXP (x, 1))
     if (node == XEXP (x, 0))
-      return 1;
+      return true;
 
-  return 0;
+  return false;
 }
 
 /* Search LISTP (an EXPR_LIST) for an entry whose first operand is NODE and
@@ -2990,7 +2990,7 @@ computed_jump_p_1 (const_rtx x)
    we can recognize them by a (use (label_ref)).  */
 
 int
-computed_jump_p (const_rtx insn)
+computed_jump_p (const rtx_insn *insn)
 {
   int i;
   if (JUMP_P (insn))

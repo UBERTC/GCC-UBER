@@ -1,3 +1,246 @@
+2015-05-09  Marc Glisse  <marc.glisse@inria.fr>
+
+	PR tree-optimization/64454
+	* tree-vrp.c (extract_range_from_binary_expr_1) <TRUNC_MOD_EXPR>:
+	Rewrite.
+
+2015-05-08  Jason Merrill  <jason@redhat.com>
+
+	* bitmap.c, c/c-aux-info.c, cfg.c, cfghooks.c, cgraph.c,
+	config/aarch64/aarch64.md config/alpha/vms.h, config/darwin.c,
+	config/darwin.h, config/darwin9.h, config/elfos.h,
+	config/i386/bsd.h, config/ia64/ia64.c, config/lm32/lm32.h,
+	config/microblaze/microblaze.h, config/mips/mips.h,
+	config/mmix/mmix.c, config/msp430/msp430.c, config/nios2/nios2.h,
+	config/nvptx/nvptx.c, config/nvptx/nvptx.h, config/pa/pa.c,
+	config/pa/pa.h, config/rs6000/rs6000.c, config/rs6000/sysv4.h,
+	config/rs6000/xcoff.h, config/rx/rx.h, config/s390/s390.h,
+	config/sparc/sol2.h, config/sparc/sparc.h, config/visium/visium.h,
+	cppbuiltin.c, defaults.h, doc/invoke.texi, dwarf2cfi.c,
+	dwarf2out.c, final.c, gcc.c, gcov-dump.c, gcov.c, ipa-cp.c,
+	ipa-inline.c, ipa-polymorphic-call.c, ipa-profile.c, ipa-prop.c,
+	ira-color.c, ira.c, loop-doloop.c, loop-iv.c, mcf.c,
+	modulo-sched.c, predict.c, profile.c, stor-layout.c, toplev.c,
+	tree-ssa-reassoc.c, value-prof.c, wide-int-print.cc: Add space
+	between string literal and macro name.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* jump.c: Change argument types to rtx_insn *.
+	* rtl.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* lra-constraints.c: Change argument type to rtx_insn *.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* df-problems.c: Change argument type to rtx_insn *.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* combine.c: Change argument type to rtx_insn *.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* rtl.h: Adjust.
+	* rtlanal.c: Change argument type to rtx_insn *.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* sched-deps.c: Change argument types to rtx_insn *.
+	* sched-int.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* dwarf2cfi.c: Change argument type to rtx_insn *.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* ira.c (decrease_live_ranges_number): Changetype of local
+	variable to rtx_insn *.
+	* recog.c: Change argument types to rtx_insn *.
+	* recog.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* reorg.c: Change argument types to rtx_insn *.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* ira-color.c: Change argument types to rtx_insn *.
+	* lra-eliminations.c: Likewise.
+	* ira.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* gcse.c: Change argument types to rtx_insn *.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* cse.c (cse_change_cc0_mode): Change argument type to rtx_insn *.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* emit-rtl.c (emit_debug_insn_before): Change argument type to
+	rtx_insn *.
+	* rtl.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* emit-rtl.c (emit_note_before): Change argument type to rtx_insn *.
+	* rtl.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* emit-rtl.c (emit_note_after): Change argument type to rtx_insn *.
+	* rtl.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* emit-rtl.c (prev_cc0_setter): Change argument type to rtx_insn *.
+	* rtl.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* rtlanal.c (noop_move_p): Change argument type to rtx_insn *.
+	* rtl.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* rtlanal.c (add_shallow_copy_of_reg_note): Change argument type
+	to rtx_insn *.
+	* rtl.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* rtlanal.c (remove_reg_equal_equiv_notes): Change argument type
+	to rtx_insn *.
+	* rtl.h: Likewise.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* except.c (can_nonlocal_goto): Change type of argument to
+	rtx_insn *.
+	* rtl.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* rtlanal.c (computed_jump_p): Cange argument type to rtx_insn *.
+	* rtl.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* rtlanal.c (in_insn_list_p): Renamed from in_expr_list_p.
+	* cfgrtl.c (can_delete_label_p): Adjust.
+	* rtl.h: likewise.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* reorg.c (stop_search_p): Change argument to rtx_insn *.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* except.c (make_reg_eh_region_note): Change argument to
+	rtx_insn *.
+	(make_reg_eh_region_note_nothrow_nononlocal): Likewise.
+	* except.h: Adjust.
+
+2015-05-08  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* mode-switching.c (commit_mode_sets): Change type of local
+	variable from rtx to rtx_insn *.
+
+2015-05-08  Jim Wilson  <jim.wilson@linaro.org>
+
+	* doc/install.texi (--enable-languages): Add missing jit and lto info.
+	Add ^ to grep command.
+	* doc/match-and-simplify.texi (GIMPLE API): Add missing fourth tree
+	arg to last gimple_simplify declaration.  Add missing gimple_build
+	declaration for built-in function case with four tree args.
+
+2015-05-08  Gregor Richards  <gregor.richards@uwaterloo.ca>
+	    Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* config/mips/linux.h (MUSL_DYNAMIC_LINKER32): Define.
+	(MUSL_DYNAMIC_LINKER64, MUSL_DYNAMIC_LINKERN32): Define.
+	(GNU_USER_DYNAMIC_LINKERN32): Update.
+
+2015-05-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66036
+	* tree-vect-data-refs.c (vect_compute_data_ref_alignment):
+	Handle strided group loads.
+	(vect_verify_datarefs_alignment): Likewise.
+	(vect_enhance_data_refs_alignment): Likewise.
+	(vect_analyze_group_access): Likewise.
+	(vect_analyze_data_ref_access): Likewise.
+	(vect_analyze_data_ref_accesses): Likewise.
+	* tree-vect-stmts.c (vect_model_load_cost): Likewise.
+	(vectorizable_load): Likewise.
+
+2015-05-08  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* config/rs6000/rs6000.md: Require operand inequality in one
+	of the peepholes.
+
+2015-05-08  Richard Sandiford  <richard.sandiford@arm.com>
+	    Franz Sirl  <Franz.Sirl-kernel@lauterbach.com>
+
+	* config/i386/i386.md (<mode>_ldx, *<mode>_ldx): Remove mode
+	from (set ...).
+	* config/rx/rx.md (movdi, movdf): Likewise.
+	Likewise for define_peephole2s.
+
+2015-05-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/arm_neon.h (vceq_s64, vceq_u64, vceqz_s64, vceqz_u64,
+	vcge_s64, vcge_u64, vcgez_s64, vcgt_s64, vcgt_u64, vcgtz_s64, vcle_s64,
+	vcle_u64, vclez_s64, vclt_s64, vclt_u64, vcltz_s64, vtst_s64,
+	vtst_u64): Rewrite using gcc vector extensions.
+
+2015-05-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-simd.md (aarch64_vcond_internal<mode><mode>,
+	vcond<mode><mode>, vcondu<mode><mode>): Add DImode variant.
+
+2015-05-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* optabs.c (vector_compare_rtx): Handle RTL operands having VOIDmode.
+
+2015-05-08  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* config/glibc-stdint.h (OPTION_MUSL): Define.
+	(INT_FAST16_TYPE, INT_FAST32_TYPE, UINT_FAST16_TYPE, UINT_FAST32_TYPE):
+	Change the definition based on OPTION_MUSL for 64 bit targets.
+	* config/linux.h (OPTION_MUSL): Redefine.
+	* config/alpha/linux.h (OPTION_MUSL): Redefine.
+	* config/rs6000/linux.h (OPTION_MUSL): Redefine.
+	* config/rs6000/linux64.h (OPTION_MUSL): Redefine.
+
+2015-05-08  Gregor Richards  <gregor.richards@uwaterloo.ca>
+	    Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* config.gcc (LIBC_MUSL): New tm_defines macro.
+	* config/linux.h (OPTION_MUSL): Define.
+	(MUSL_DYNAMIC_LINKER, MUSL_DYNAMIC_LINKER32,)
+	(MUSL_DYNAMIC_LINKER64, MUSL_DYNAMIC_LINKERX32,)
+	(INCLUDE_DEFAULTS_MUSL_GPP, INCLUDE_DEFAULTS_MUSL_LOCAL,)
+	(INCLUDE_DEFAULTS_MUSL_PREFIX, INCLUDE_DEFAULTS_MUSL_CROSS,)
+	(INCLUDE_DEFAULTS_MUSL_TOOL, INCLUDE_DEFAULTS_MUSL_NATIVE): Define.
+	* config/linux.opt (mmusl): New option.
+	* doc/invoke.texi (GNU/Linux Options): Document -mmusl.
+	* configure.ac (gcc_cv_libc_provides_ssp): Add *-*-musl*.
+	(gcc_cv_target_dl_iterate_phdr): Add *-linux-musl*.
+	* configure: Regenerate.
+
+2015-05-08  H.J. Lu  <hongjiu.lu@intel.com>
+	    Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	PR target/48904
+	* config.gcc (x86_64-*-knetbsd*-gnu): Add i386/knetbsd-gnu64.h.
+	* config/i386/knetbsd-gnu64.h: New file.
+
 2015-05-08  Marek Polacek  <polacek@redhat.com>
 
 	PR c/64918
