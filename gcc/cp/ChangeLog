@@ -1,3 +1,40 @@
+2015-05-09  Aldy Hernandez  <aldyh@redhat.com>
+
+	PR bootstrap/66085
+	* decl2.c (note_mangling_alias): Declare arguments as unused.
+
+2015-05-08  Jason Merrill  <jason@redhat.com>
+
+	* cp-gimplify.c, parser.c: Adjust to -Wc++11-compat replacing
+	-Wc++0x-compat.
+
+2015-05-08  Jason Merrill  <jason@redhat.com>
+
+	* decl2.c (mangling_aliases): New variable.
+	(note_mangling_alias, generate_mangling_aliases): New.
+	(cp_write_global_declarations): Call generate_mangling_aliases.
+	(generate_mangling_alias): Split out from...
+	* mangle.c (mangle_decl): ...here.
+	* cp-tree.h: Declare note_mangling_alias.
+
+2015-05-08  Aldy Hernandez  <aldyh@redhat.com>
+
+	* decl2.c (collect_candidates_for_java_method_aliases): Remove.
+	(build_java_method_aliases): Adapt to use create_same_body_alias
+	instead of assemble_alias.  Move variable declarations to
+	definition and tidy up.
+	(cp_write_global_declarations): Call build_java_method_aliases
+	instead of collecting candidates first.
+
+2015-05-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/59012
+	* parser.c (cp_parser_std_attribute_list): Handle attribute expansion.
+	(cp_parser_std_attribute_spec): Handle alignas pack expansion.
+	* decl2.c (is_late_template_attribute): An attribute exp is dependent.
+	* pt.c (make_pack_expansion): Allow TREE_LIST for attribute expansion.
+	(apply_late_template_attributes): Handle attribute pack expansion.
+
 2015-05-07  Marek Polacek  <polacek@redhat.com>
 
 	PR c/65179

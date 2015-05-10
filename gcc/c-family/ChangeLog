@@ -1,3 +1,23 @@
+2015-05-09  Jason Merrill  <jason@redhat.com>
+
+	* c-opts.c (c_common_post_options): Also clear
+	cpp_opts->cpp_warn_cxx11_compat.
+
+	* c-common.h (enum cxx_dialect): Add cxx_unset.
+	* c-common.c (cxx_dialect): Initialize to cxx_unset.
+	* c-opts.c (c_common_post_options): Set C++ dialect to C++98 if unset.
+
+	* c.opt (std=c++14): Remove Undocumented flag and experimental warning.
+	(std=gnu++0x): Mark as Undocumented.
+	(std=gnu++1y): Add deprecated message.
+
+2015-05-08  Jason Merrill  <jason@redhat.com>
+
+	* c.opt (Wc++11-compat): Make primary.  Rename var warn_cxx11_compat.
+	* c-opts.c: Adjust.
+
+	* c.opt (Wc++0x-compat): Also set cpp_warn_cxx11_compat.
+
 2015-05-08  Marek Polacek  <polacek@redhat.com>
 
 	PR c/64918

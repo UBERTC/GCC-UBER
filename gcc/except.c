@@ -1694,7 +1694,7 @@ for_each_eh_label (void (*callback) (rtx))
   direct call cases) and just pull the data out of the trees.  */
 
 void
-make_reg_eh_region_note (rtx insn, int ecf_flags, int lp_nr)
+make_reg_eh_region_note (rtx_insn *insn, int ecf_flags, int lp_nr)
 {
   rtx value;
   if (ecf_flags & ECF_NOTHROW)
@@ -1711,7 +1711,7 @@ make_reg_eh_region_note (rtx insn, int ecf_flags, int lp_nr)
    already exists.  */
 
 void
-make_reg_eh_region_note_nothrow_nononlocal (rtx insn)
+make_reg_eh_region_note_nothrow_nononlocal (rtx_insn *insn)
 {
   rtx note = find_reg_note (insn, REG_EH_REGION, NULL_RTX);
   rtx intmin = GEN_INT (INT_MIN);
@@ -1941,7 +1941,7 @@ insn_nothrow_p (const_rtx insn)
 /* ??? This test is here in this file because it (ab)uses REG_EH_REGION.  */
 
 bool
-can_nonlocal_goto (const_rtx insn)
+can_nonlocal_goto (const rtx_insn *insn)
 {
   if (nonlocal_goto_handler_labels && CALL_P (insn))
     {
