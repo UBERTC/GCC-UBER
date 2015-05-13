@@ -252,6 +252,13 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 #define SUBTARGET_CPP_SPEC      ""
 #endif
 
+/* Tree Target Specification.  */
+#define TREE_TARGET_THUMB(opts)  (TARGET_THUMB_P (opts->x_target_flags))
+#define TREE_TARGET_ARM(opts)    (!TARGET_THUMB_P (opts->x_target_flags))
+#define TREE_TARGET_THUMB1(opts) (TARGET_THUMB_P (opts->x_target_flags) \
+				  && !arm_arch_thumb2)
+#define TREE_TARGET_THUMB2(opts) (TARGET_THUMB_P (opts->x_target_flags) \
+				  && arm_arch_thumb2)
 /* Run-time Target Specification.  */
 #define TARGET_SOFT_FLOAT		(arm_float_abi == ARM_FLOAT_ABI_SOFT)
 /* Use hardware floating point instructions. */
@@ -527,12 +534,6 @@ extern int arm_arch8;
 
 /* Nonzero if this chip can benefit from load scheduling.  */
 extern int arm_ld_sched;
-
-/* Nonzero if generating Thumb code, either Thumb-1 or Thumb-2.  */
-extern int thumb_code;
-
-/* Nonzero if generating Thumb-1 code.  */
-extern int thumb1_code;
 
 /* Nonzero if this chip is a StrongARM.  */
 extern int arm_tune_strongarm;
@@ -2056,10 +2057,11 @@ enum arm_auto_incmodes
   (current_tune->branch_cost (speed_p, predictable_p))
 
 /* False if short circuit operation is preferred.  */
-#define LOGICAL_OP_NON_SHORT_CIRCUIT				\
-  ((optimize_size)						\
-   ? (TARGET_THUMB ? false : true)				\
-   : (current_tune->logical_op_non_short_circuit[TARGET_ARM]))
+#define LOGICAL_OP_NON_SHORT_CIRCUIT					\
+  ((optimize_size)							\
+   ? (TARGET_THUMB ? false : true)					\
+   : TARGET_THUMB ? current_tune->logical_op_non_short_circuit_thumb	\
+   : current_tune->logical_op_non_short_circuit_arm)
 
 
 /* Position Independent Code.  */
@@ -2182,23 +2184,7 @@ extern int making_const_table;
    ? 1 : 0)
 
 #define ARM_DECLARE_FUNCTION_NAME(STREAM, NAME, DECL) 	\
-  do							\
-    {							\
-      if (TARGET_THUMB) 				\
-        {						\
-          if (is_called_in_ARM_mode (DECL)		\
-	      || (TARGET_THUMB1 && !TARGET_THUMB1_ONLY	\
-		  && cfun->is_thunk))	\
-            fprintf (STREAM, "\t.code 32\n") ;		\
-          else if (TARGET_THUMB1)			\
-           fprintf (STREAM, "\t.code\t16\n\t.thumb_func\n") ;	\
-          else						\
-           fprintf (STREAM, "\t.thumb\n\t.thumb_func\n") ;	\
-        }						\
-      if (TARGET_POKE_FUNCTION_NAME)			\
-        arm_poke_function_name (STREAM, (const char *) NAME);	\
-    }							\
-  while (0)
+  arm_declare_function_name ((STREAM), (NAME), (DECL));
 
 /* For aliases of functions we use .thumb_set instead.  */
 #define ASM_OUTPUT_DEF_FROM_DECLS(FILE, DECL1, DECL2)		\

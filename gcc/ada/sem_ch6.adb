@@ -268,10 +268,10 @@ package body Sem_Ch6 is
    ---------------------------------
 
    procedure Analyze_Expression_Function (N : Node_Id) is
-      Loc      : constant Source_Ptr := Sloc (N);
-      LocX     : constant Source_Ptr := Sloc (Expression (N));
-      Expr     : constant Node_Id    := Expression (N);
-      Spec     : constant Node_Id    := Specification (N);
+      Expr : constant Node_Id    := Expression (N);
+      Loc  : constant Source_Ptr := Sloc (N);
+      LocX : constant Source_Ptr := Sloc (Expr);
+      Spec : constant Node_Id    := Specification (N);
 
       Def_Id :  Entity_Id;
 
@@ -293,36 +293,11 @@ package body Sem_Ch6 is
 
       Inline_Processing_Required := True;
 
-      --  Create a specification for the generated body. Types and defauts in
-      --  the profile are copies of the spec, but new entities must be created
-      --  for the unit name and the formals.
+      --  Create a specification for the generated body. This must be done
+      --  prior to the analysis of the initial declaration.
 
-      New_Spec := New_Copy_Tree (Spec);
-      Set_Defining_Unit_Name (New_Spec,
-        Make_Defining_Identifier (Sloc (Defining_Unit_Name (Spec)),
-          Chars (Defining_Unit_Name (Spec))));
-
-      if Present (Parameter_Specifications (New_Spec)) then
-         declare
-            Formal_Spec : Node_Id;
-            Def         : Entity_Id;
-
-         begin
-            Formal_Spec := First (Parameter_Specifications (New_Spec));
-
-            --  Create a new formal parameter at the same source position
-
-            while Present (Formal_Spec) loop
-               Def := Defining_Identifier (Formal_Spec);
-               Set_Defining_Identifier (Formal_Spec,
-                 Make_Defining_Identifier (Sloc (Def),
-                   Chars => Chars (Def)));
-               Next (Formal_Spec);
-            end loop;
-         end;
-      end if;
-
-      Prev := Current_Entity_In_Scope (Defining_Entity (Spec));
+      New_Spec := Copy_Subprogram_Spec (Spec);
+      Prev     := Current_Entity_In_Scope (Defining_Entity (Spec));
 
       --  If there are previous overloadable entities with the same name,
       --  check whether any of them is completed by the expression function.
@@ -1179,6 +1154,19 @@ package body Sem_Ch6 is
       if Nkind (N) /= N_Subprogram_Body_Stub then
          New_N := Copy_Generic_Node (N, Empty, Instantiating => False);
          Rewrite (N, New_N);
+
+         --  Once the contents of the generic copy and the template are
+         --  swapped, do the same for their respective aspect specifications.
+
+         Exchange_Aspects (N, New_N);
+
+         --  Collect all contract-related source pragmas found within the
+         --  template and attach them to the contract of the subprogram body.
+         --  This contract is used in the capture of global references within
+         --  annotations.
+
+         Create_Generic_Contract (N);
+
          Start_Generic;
       end if;
 
@@ -1318,10 +1306,35 @@ package body Sem_Ch6 is
          Set_SPARK_Pragma (Body_Id, SPARK_Mode_Pragma);
          Set_SPARK_Pragma_Inherited (Body_Id, True);
 
+         --  Analyze any aspect specifications that appear on the generic
+         --  subprogram body.
+
+         if Has_Aspects (N) then
+            Analyze_Aspect_Specifications_On_Body_Or_Stub (N);
+         end if;
+
          Analyze_Declarations (Declarations (N));
          Check_Completion;
-         Analyze (Handled_Statement_Sequence (N));
 
+         --  When a generic subprogram body appears inside a package, its
+         --  contract is analyzed at the end of the package body declarations.
+         --  This is due to the delay with respect of the package contract upon
+         --  which the body contract may depend. When the generic subprogram
+         --  body is a compilation unit, this delay is not necessary.
+
+         if Nkind (Parent (N)) = N_Compilation_Unit then
+            Analyze_Subprogram_Body_Contract (Body_Id);
+
+            --  Capture all global references in a generic subprogram body
+            --  that acts as a compilation unit now that the contract has
+            --  been analyzed.
+
+            Save_Global_References_In_Contract
+              (Templ  => Original_Node (N),
+               Gen_Id => Gen_Id);
+         end if;
+
+         Analyze (Handled_Statement_Sequence (N));
          Save_Global_References (Original_Node (N));
 
          --  Prior to exiting the scope, include generic formals again (if any
@@ -2150,75 +2163,12 @@ package body Sem_Ch6 is
    --------------------------------------
 
    procedure Analyze_Subprogram_Body_Contract (Body_Id : Entity_Id) is
-      Body_Decl : constant Node_Id := Unit_Declaration_Node (Body_Id);
-
-      procedure Analyze_Completion_Contract (Spec_Id : Entity_Id);
-      --  Analyze all delayed pragmas chained on the contract of subprogram
-      --  body Body_Id as if they appeared at the end of a declarative region.
-      --  Spec_Id denotes the corresponding spec. The aspects in question are:
-      --    Refined_Depends
-      --    Refined_Global
-      --  Note that pragma Refined_Post is analyzed immediately
-
-      ---------------------------------
-      -- Analyze_Completion_Contract --
-      ---------------------------------
-
-      procedure Analyze_Completion_Contract (Spec_Id : Entity_Id) is
-         Items         : constant Node_Id := Contract (Body_Id);
-         Prag          : Node_Id;
-         Prag_Nam      : Name_Id;
-         Ref_Depends   : Node_Id := Empty;
-         Ref_Global    : Node_Id := Empty;
-
-      begin
-         --  All subprograms carry a contract, but for some it is not
-         --  significant and should not be processed.
-
-         if not Has_Significant_Contract (Spec_Id) then
-            return;
-
-         elsif Present (Items) then
-
-            --  Locate and store pragmas Refined_Depends and Refined_Global
-            --  since their order of analysis matters.
-
-            Prag := Classifications (Items);
-            while Present (Prag) loop
-               Prag_Nam := Pragma_Name (Prag);
-
-               if Prag_Nam = Name_Refined_Depends then
-                  Ref_Depends := Prag;
-
-               elsif Prag_Nam = Name_Refined_Global then
-                  Ref_Global := Prag;
-               end if;
-
-               Prag := Next_Pragma (Prag);
-            end loop;
-         end if;
-
-         --  Analyze Refined_Global first as Refined_Depends may mention items
-         --  classified in the global refinement.
-
-         if Present (Ref_Global) then
-            Analyze_Refined_Global_In_Decl_Part (Ref_Global);
-         end if;
-
-         --  Refined_Depends must be analyzed after Refined_Global in order to
-         --  see the modes of all global refinements.
-
-         if Present (Ref_Depends) then
-            Analyze_Refined_Depends_In_Decl_Part (Ref_Depends);
-         end if;
-      end Analyze_Completion_Contract;
-
-      --  Local variables
-
-      Mode    : SPARK_Mode_Type;
-      Spec_Id : Entity_Id;
-
-   --  Start of processing for Analyze_Subprogram_Body_Contract
+      Items       : constant Node_Id := Contract (Body_Id);
+      Mode        : SPARK_Mode_Type;
+      Prag        : Node_Id;
+      Prag_Nam    : Name_Id;
+      Ref_Depends : Node_Id := Empty;
+      Ref_Global  : Node_Id := Empty;
 
    begin
       --  When a subprogram body declaration is illegal, its defining entity is
@@ -2236,18 +2186,48 @@ package body Sem_Ch6 is
 
       Save_SPARK_Mode_And_Set (Body_Id, Mode);
 
-      if Nkind (Body_Decl) = N_Subprogram_Body_Stub then
-         Spec_Id := Corresponding_Spec_Of_Stub (Body_Decl);
-      else
-         Spec_Id := Corresponding_Spec (Body_Decl);
-      end if;
+      --  All subprograms carry a contract, but for some it is not significant
+      --  and should not be processed.
+
+      if not Has_Significant_Contract (Body_Id) then
+         null;
 
       --  The subprogram body is a completion, analyze all delayed pragmas that
       --  apply. Note that when the body is stand alone, the pragmas are always
       --  analyzed on the spot.
 
-      if Present (Spec_Id) then
-         Analyze_Completion_Contract (Spec_Id);
+      elsif Present (Items) then
+
+         --  Locate and store pragmas Refined_Depends and Refined_Global since
+         --  their order of analysis matters.
+
+         Prag := Classifications (Items);
+         while Present (Prag) loop
+            Prag_Nam := Pragma_Name (Prag);
+
+            if Prag_Nam = Name_Refined_Depends then
+               Ref_Depends := Prag;
+
+            elsif Prag_Nam = Name_Refined_Global then
+               Ref_Global := Prag;
+            end if;
+
+            Prag := Next_Pragma (Prag);
+         end loop;
+
+         --  Analyze Refined_Global first as Refined_Depends may mention items
+         --  classified in the global refinement.
+
+         if Present (Ref_Global) then
+            Analyze_Refined_Global_In_Decl_Part (Ref_Global);
+         end if;
+
+         --  Refined_Depends must be analyzed after Refined_Global in order to
+         --  see the modes of all global refinements.
+
+         if Present (Ref_Depends) then
+            Analyze_Refined_Depends_In_Decl_Part (Ref_Depends);
+         end if;
       end if;
 
       --  Ensure that the contract cases or postconditions mention 'Result or
@@ -2272,7 +2252,7 @@ package body Sem_Ch6 is
 
    procedure Analyze_Subprogram_Body_Helper (N : Node_Id) is
       Loc          : constant Source_Ptr := Sloc (N);
-      Body_Spec    : constant Node_Id    := Specification (N);
+      Body_Spec    : Node_Id             := Specification (N);
       Body_Id      : Entity_Id           := Defining_Entity (Body_Spec);
       Prev_Id      : constant Entity_Id  := Current_Entity_In_Scope (Body_Id);
       Conformant   : Boolean;
@@ -2301,13 +2281,12 @@ package body Sem_Ch6 is
       --  chained beyond that point. It is initialized to Empty to deal with
       --  the case where there is no separate spec.
 
-      procedure Analyze_Aspects_On_Body_Or_Stub;
-      --  Analyze the aspect specifications of a subprogram body [stub]. It is
-      --  assumed that N has aspects.
-
       function Body_Has_Contract return Boolean;
       --  Check whether unanalyzed body has an aspect or pragma that may
       --  generate a SPARK contract.
+
+      procedure Build_Subprogram_Declaration;
+      --  Create a matching subprogram declaration for subprogram body N
 
       procedure Check_Anonymous_Return;
       --  Ada 2005: if a function returns an access type that denotes a task,
@@ -2360,188 +2339,118 @@ package body Sem_Ch6 is
       --  indicator, check that it is consistent with the known status of the
       --  entity.
 
-      -------------------------------------
-      -- Analyze_Aspects_On_Body_Or_Stub --
-      -------------------------------------
-
-      procedure Analyze_Aspects_On_Body_Or_Stub is
-         procedure Diagnose_Misplaced_Aspects;
-         --  Subprogram body [stub] N has aspects, but they are not properly
-         --  placed. Provide precise diagnostics depending on the aspects
-         --  involved.
-
-         --------------------------------
-         -- Diagnose_Misplaced_Aspects --
-         --------------------------------
-
-         procedure Diagnose_Misplaced_Aspects is
-            Asp     : Node_Id;
-            Asp_Nam : Name_Id;
-            Asp_Id  : Aspect_Id;
-            --  The current aspect along with its name and id
-
-            procedure SPARK_Aspect_Error (Ref_Nam : Name_Id);
-            --  Emit an error message concerning SPARK aspect Asp. Ref_Nam is
-            --  the name of the refined version of the aspect.
-
-            ------------------------
-            -- SPARK_Aspect_Error --
-            ------------------------
-
-            procedure SPARK_Aspect_Error (Ref_Nam : Name_Id) is
-            begin
-               --  The corresponding spec already contains the aspect in
-               --  question and the one appearing on the body must be the
-               --  refined form:
-
-               --    procedure P with Global ...;
-               --    procedure P with Global ... is ... end P;
-               --                     ^
-               --                     Refined_Global
-
-               if Has_Aspect (Spec_Id, Asp_Id) then
-                  Error_Msg_Name_1 := Asp_Nam;
-
-                  --  Subunits cannot carry aspects that apply to a subprogram
-                  --  declaration.
-
-                  if Nkind (Parent (N)) = N_Subunit then
-                     Error_Msg_N ("aspect % cannot apply to a subunit", Asp);
-
-                  else
-                     Error_Msg_Name_2 := Ref_Nam;
-                     Error_Msg_N ("aspect % should be %", Asp);
-                  end if;
-
-               --  Otherwise the aspect must appear in the spec, not in the
-               --  body:
-
-               --    procedure P;
-               --    procedure P with Global ... is ... end P;
-
-               else
-                  Error_Msg_N
-                    ("aspect specification must appear in subprogram "
-                     & "declaration", Asp);
-               end if;
-            end SPARK_Aspect_Error;
-
-         --  Start of processing for Diagnose_Misplaced_Aspects
-
-         begin
-            --  Iterate over the aspect specifications and emit specific errors
-            --  where applicable.
-
-            Asp := First (Aspect_Specifications (N));
-            while Present (Asp) loop
-               Asp_Nam := Chars (Identifier (Asp));
-               Asp_Id  := Get_Aspect_Id (Asp_Nam);
-
-               --  Do not emit errors on aspects that can appear on a
-               --  subprogram body. This scenario occurs when the aspect
-               --  specification list contains both misplaced and properly
-               --  placed aspects.
-
-               if Aspect_On_Body_Or_Stub_OK (Asp_Id) then
-                  null;
-
-               --  Special diagnostics for SPARK aspects
-
-               elsif Asp_Nam = Name_Depends then
-                  SPARK_Aspect_Error (Name_Refined_Depends);
-
-               elsif Asp_Nam = Name_Global then
-                  SPARK_Aspect_Error (Name_Refined_Global);
-
-               elsif Asp_Nam = Name_Post then
-                  SPARK_Aspect_Error (Name_Refined_Post);
-
-               else
-                  Error_Msg_N
-                    ("aspect specification must appear in subprogram "
-                     & "declaration", Asp);
-               end if;
-
-               Next (Asp);
-            end loop;
-         end Diagnose_Misplaced_Aspects;
-
-      --  Start of processing for Analyze_Aspects_On_Body_Or_Stub
-
-      begin
-         --  Language-defined aspects cannot be associated with a subprogram
-         --  body [stub] if the subprogram has a spec. Certain implementation
-         --  defined aspects are allowed to break this rule (for list, see
-         --  table Aspect_On_Body_Or_Stub_OK).
-
-         if Present (Spec_Id) and then not Aspects_On_Body_Or_Stub_OK (N) then
-            Diagnose_Misplaced_Aspects;
-         else
-            Analyze_Aspect_Specifications (N, Body_Id);
-         end if;
-      end Analyze_Aspects_On_Body_Or_Stub;
-
       -----------------------
       -- Body_Has_Contract --
       -----------------------
 
       function Body_Has_Contract return Boolean is
-         Decls  : constant List_Id := Declarations (N);
-         A_Spec : Node_Id;
-         A      : Aspect_Id;
-         Decl   : Node_Id;
-         P_Id   : Pragma_Id;
+         Decls : constant List_Id := Declarations (N);
+         Item  : Node_Id;
 
       begin
-         --  Check for unanalyzed aspects in the body that will
-         --  generate a contract.
+         --  Check for unanalyzed aspects in the body that will generate a
+         --  contract.
 
          if Present (Aspect_Specifications (N)) then
-            A_Spec := First (Aspect_Specifications (N));
-            while Present (A_Spec) loop
-               A := Get_Aspect_Id (Chars (Identifier (A_Spec)));
-
-               if A = Aspect_Contract_Cases or else
-                  A = Aspect_Depends        or else
-                  A = Aspect_Global         or else
-                  A = Aspect_Pre            or else
-                  A = Aspect_Precondition   or else
-                  A = Aspect_Post           or else
-                  A = Aspect_Postcondition
-               then
+            Item := First (Aspect_Specifications (N));
+            while Present (Item) loop
+               if Is_Contract_Annotation (Item) then
                   return True;
                end if;
 
-               Next (A_Spec);
+               Next (Item);
             end loop;
          end if;
 
          --  Check for pragmas that may generate a contract
 
          if Present (Decls) then
-            Decl := First (Decls);
-            while Present (Decl) loop
-               if Nkind (Decl) = N_Pragma then
-                  P_Id := Get_Pragma_Id (Pragma_Name (Decl));
-
-                  if P_Id = Pragma_Contract_Cases or else
-                     P_Id = Pragma_Depends        or else
-                     P_Id = Pragma_Global         or else
-                     P_Id = Pragma_Pre            or else
-                     P_Id = Pragma_Precondition   or else
-                     P_Id = Pragma_Post           or else
-                     P_Id = Pragma_Postcondition
-                  then
-                     return True;
-                  end if;
+            Item := First (Decls);
+            while Present (Item) loop
+               if Nkind (Item) = N_Pragma
+                 and then Is_Contract_Annotation (Item)
+               then
+                  return True;
                end if;
 
-               Next (Decl);
+               Next (Item);
             end loop;
          end if;
 
          return False;
       end Body_Has_Contract;
+
+      ----------------------------------
+      -- Build_Subprogram_Declaration --
+      ----------------------------------
+
+      procedure Build_Subprogram_Declaration is
+         Asp       : Node_Id;
+         Decl      : Node_Id;
+         Subp_Decl : Node_Id;
+
+      begin
+         --  Create a matching subprogram spec using the profile of the body.
+         --  The structure of the tree is identical, but has new entities for
+         --  the defining unit name and formal parameters.
+
+         Subp_Decl :=
+           Make_Subprogram_Declaration (Loc,
+             Specification => Copy_Subprogram_Spec (Body_Spec));
+
+         --  Relocate the aspects of the subprogram body to the new subprogram
+         --  spec because it acts as the initial declaration.
+         --  ??? what about pragmas
+
+         Move_Aspects (N, To => Subp_Decl);
+         Insert_Before_And_Analyze (N, Subp_Decl);
+
+         --  The analysis of the subprogram spec aspects may introduce pragmas
+         --  that need to be analyzed.
+
+         Decl := Next (Subp_Decl);
+         while Present (Decl) loop
+
+            --  Stop the search for pragmas once the body has been reached as
+            --  this terminates the region where pragmas may appear.
+
+            if Decl = N then
+               exit;
+
+            elsif Nkind (Decl) = N_Pragma then
+               Analyze (Decl);
+            end if;
+
+            Next (Decl);
+         end loop;
+
+         Spec_Id := Defining_Entity (Subp_Decl);
+         Set_Corresponding_Spec (N, Spec_Id);
+
+         --  Mark the generated spec as a source construct to ensure that all
+         --  calls to it are properly registered in ALI files for GNATprove.
+
+         Set_Comes_From_Source (Spec_Id, True);
+
+         --  If aspect SPARK_Mode was specified on the body, it needs to be
+         --  repeated both on the generated spec and the body.
+
+         Asp := Find_Aspect (Spec_Id, Aspect_SPARK_Mode);
+
+         if Present (Asp) then
+            Asp := New_Copy_Tree (Asp);
+            Set_Analyzed (Asp, False);
+            Set_Aspect_Specifications (N, New_List (Asp));
+         end if;
+
+         --  Ensure that the specs of the subprogram declaration and its body
+         --  are identical, otherwise they will appear non-conformant due to
+         --  rewritings in the default values of formal parameters.
+
+         Body_Spec := Copy_Subprogram_Spec (Body_Spec);
+         Set_Specification (N, Body_Spec);
+         Body_Id := Analyze_Subprogram_Specification (Body_Spec);
+      end Build_Subprogram_Declaration;
 
       ----------------------------
       -- Check_Anonymous_Return --
@@ -2921,12 +2830,8 @@ package body Sem_Ch6 is
 
          procedure Detect_And_Exchange (Id : Entity_Id) is
             Typ : constant Entity_Id := Etype (Id);
-
          begin
-            if Ekind (Typ) = E_Incomplete_Type
-              and then From_Limited_With (Typ)
-              and then Present (Non_Limited_View (Typ))
-            then
+            if From_Limited_With (Typ) and then Has_Non_Limited_View (Typ) then
                Set_Etype (Id, Non_Limited_View (Typ));
             end if;
          end Detect_And_Exchange;
@@ -3225,68 +3130,9 @@ package body Sem_Ch6 is
                  --  to the spec, leading to legality errors.
 
                  and then not Body_Has_Contract
+                 and then not Inside_A_Generic
                then
-                  declare
-                     Body_Spec : constant Node_Id :=
-                                   Copy_Separate_Tree (Specification (N));
-                     New_Decl  : constant Node_Id :=
-                                   Make_Subprogram_Declaration (Loc,
-                                     Copy_Separate_Tree (Specification (N)));
-
-                     SPARK_Mode_Aspect : Node_Id;
-                     Aspects           : List_Id;
-                     Prag, Aspect      : Node_Id;
-
-                  begin
-                     Insert_Before (N, New_Decl);
-                     Move_Aspects (From => N, To => New_Decl);
-
-                     --  Mark the newly moved aspects as not analyzed, so that
-                     --  their effect on New_Decl is properly analyzed.
-
-                     Aspect := First (Aspect_Specifications (New_Decl));
-                     while Present (Aspect) loop
-                        Set_Analyzed (Aspect, False);
-                        Next (Aspect);
-                     end loop;
-
-                     Analyze (New_Decl);
-
-                     --  The analysis of the generated subprogram declaration
-                     --  may have introduced pragmas that need to be analyzed.
-
-                     Prag := Next (New_Decl);
-                     while Prag /= N loop
-                        Analyze (Prag);
-                        Next (Prag);
-                     end loop;
-
-                     Spec_Id := Defining_Entity (New_Decl);
-
-                     --  As Body_Id originally comes from source, mark the new
-                     --  Spec_Id as such, which is required so that calls to
-                     --  this subprogram are registered in the local effects
-                     --  stored in ALI files for GNATprove.
-
-                     Set_Comes_From_Source (Spec_Id, True);
-
-                     --  If aspect SPARK_Mode was specified on the body, it
-                     --  needs to be repeated on the generated decl and the
-                     --  body. Since the original aspect was moved to the
-                     --  generated decl, copy it for the body.
-
-                     if Has_Aspect (Spec_Id, Aspect_SPARK_Mode) then
-                        SPARK_Mode_Aspect :=
-                          New_Copy (Find_Aspect (Spec_Id, Aspect_SPARK_Mode));
-                        Set_Analyzed (SPARK_Mode_Aspect, False);
-                        Aspects := New_List (SPARK_Mode_Aspect);
-                        Set_Aspect_Specifications (N, Aspects);
-                     end if;
-
-                     Set_Specification (N, Body_Spec);
-                     Body_Id := Analyze_Subprogram_Specification (Body_Spec);
-                     Set_Corresponding_Spec (N, Spec_Id);
-                  end;
+                  Build_Subprogram_Declaration;
                end if;
             end if;
 
@@ -3671,17 +3517,14 @@ package body Sem_Ch6 is
       Set_Has_Completion (Body_Id);
       Check_Eliminated (Body_Id);
 
+      --  Analyze any aspect specifications that appear on the subprogram body
+      --  stub. Stop the analysis now as the stub does not have a declarative
+      --  or a statement part, and it cannot be inlined.
+
       if Nkind (N) = N_Subprogram_Body_Stub then
-
-         --  Analyze any aspect specifications that appear on the subprogram
-         --  body stub.
-
          if Has_Aspects (N) then
-            Analyze_Aspects_On_Body_Or_Stub;
+            Analyze_Aspect_Specifications_On_Body_Or_Stub (N);
          end if;
-
-         --  Stop the analysis now as the stub cannot be inlined, plus it does
-         --  not have declarative or statement lists.
 
          return;
       end if;
@@ -3781,7 +3624,8 @@ package body Sem_Ch6 is
         and then Full_Analysis
         and then not Inside_A_Generic
         and then Present (Spec_Id)
-        and then Nkind (Parent (Parent (Spec_Id))) = N_Subprogram_Declaration
+        and then
+          Nkind (Unit_Declaration_Node (Spec_Id)) = N_Subprogram_Declaration
         and then Can_Be_Inlined_In_GNATprove_Mode (Spec_Id, Body_Id)
         and then not Body_Has_Contract
       then
@@ -3863,7 +3707,7 @@ package body Sem_Ch6 is
       --  Analyze any aspect specifications that appear on the subprogram body
 
       if Has_Aspects (N) then
-         Analyze_Aspects_On_Body_Or_Stub;
+         Analyze_Aspect_Specifications_On_Body_Or_Stub (N);
       end if;
 
       Analyze_Declarations (Declarations (N));
@@ -3966,8 +3810,7 @@ package body Sem_Ch6 is
             --  from precondition and postcondition pragmas).
 
             if No (Last_Entity (Body_Id)) then
-               Set_First_Entity
-                 (Body_Id, Next_Entity (Last_Real_Spec_Entity));
+               Set_First_Entity (Body_Id, Next_Entity (Last_Real_Spec_Entity));
 
             --  Body entities present (formals), so chain stuff past them
 
@@ -4153,57 +3996,14 @@ package body Sem_Ch6 is
    ---------------------------------
 
    procedure Analyze_Subprogram_Contract (Subp_Id : Entity_Id) is
-      procedure Save_Global_References_In_List (First_Prag : Node_Id);
-      --  Save all global references in contract-related source pragma found in
-      --  the list starting from pragma First_Prag.
-
-      ------------------------------------
-      -- Save_Global_References_In_List --
-      ------------------------------------
-
-      procedure Save_Global_References_In_List (First_Prag : Node_Id) is
-         Prag : Node_Id;
-
-      begin
-         Prag := First_Prag;
-         while Present (Prag) loop
-            if Comes_From_Source (Prag)
-              and then Nam_In (Pragma_Name (Prag), Name_Contract_Cases,
-                                                   Name_Depends,
-                                                   Name_Extensions_Visible,
-                                                   Name_Global,
-                                                   Name_Postcondition,
-                                                   Name_Precondition,
-                                                   Name_Test_Case)
-            then
-               Save_Global_References (Original_Node (Prag));
-            end if;
-
-            Prag := Next_Pragma (Prag);
-         end loop;
-      end Save_Global_References_In_List;
-
-      --  Local variables
-
-      Items         : constant Node_Id := Contract (Subp_Id);
-      Subp_Decl     : constant Node_Id := Unit_Declaration_Node (Subp_Id);
-      Depends       : Node_Id := Empty;
-      Global        : Node_Id := Empty;
-      Mode          : SPARK_Mode_Type;
-      Prag          : Node_Id;
-      Prag_Nam      : Name_Id;
-      Restore_Scope : Boolean := False;
-
-   --  Start of processing for Analyze_Subprogram_Contract
+      Items    : constant Node_Id := Contract (Subp_Id);
+      Depends  : Node_Id := Empty;
+      Global   : Node_Id := Empty;
+      Mode     : SPARK_Mode_Type;
+      Prag     : Node_Id;
+      Prag_Nam : Name_Id;
 
    begin
-      --  All subprograms carry a contract, but for some it is not significant
-      --  and should not be processed.
-
-      if not Has_Significant_Contract (Subp_Id) then
-         return;
-      end if;
-
       --  Due to the timing of contract analysis, delayed pragmas may be
       --  subject to the wrong SPARK_Mode, usually that of the enclosing
       --  context. To remedy this, restore the original SPARK_Mode of the
@@ -4211,21 +4011,13 @@ package body Sem_Ch6 is
 
       Save_SPARK_Mode_And_Set (Subp_Id, Mode);
 
-      --  Ensure that the formal parameters are visible when analyzing all
-      --  contract items.
+      --  All subprograms carry a contract, but for some it is not significant
+      --  and should not be processed.
 
-      if not In_Open_Scopes (Subp_Id) then
-         Restore_Scope := True;
-         Push_Scope (Subp_Id);
+      if not Has_Significant_Contract (Subp_Id) then
+         null;
 
-         if Is_Generic_Subprogram (Subp_Id) then
-            Install_Generic_Formals (Subp_Id);
-         else
-            Install_Formals (Subp_Id);
-         end if;
-      end if;
-
-      if Present (Items) then
+      elsif Present (Items) then
 
          --  Analyze pre- and postconditions
 
@@ -4290,35 +4082,6 @@ package body Sem_Ch6 is
          Check_Result_And_Post_State (Subp_Id);
       end if;
 
-      --  The aspects and contract-related source pragmas associated with a
-      --  generic subprogram are treated separately from the declaration as
-      --  they need to be analyzed when the subprogram contract is analyzed.
-      --  Once this is done, global references can be successfully saved.
-
-      if Nkind (Subp_Decl) = N_Generic_Subprogram_Declaration then
-
-         --  Save all global references found in the aspect specifications of
-         --  the parameter profile of the generic subprogram.
-
-         Save_Global_References_In_Aspects (Original_Node (Subp_Decl));
-
-         --  Save all global references found in contract-related source
-         --  pragmas. These pragmas usually appear after the declaration of
-         --  the generic subprogram, either in the same declarative part or
-         --  in the Pragmas_After list when the generic subprogram is a
-         --  compilation unit.
-
-         if Present (Items) then
-            Save_Global_References_In_List (Pre_Post_Conditions (Items));
-            Save_Global_References_In_List (Contract_Test_Cases (Items));
-            Save_Global_References_In_List (Classifications     (Items));
-         end if;
-      end if;
-
-      if Restore_Scope then
-         End_Scope;
-      end if;
-
       --  Restore the SPARK_Mode of the enclosing context after all delayed
       --  pragmas have been analyzed.
 
@@ -4350,7 +4113,12 @@ package body Sem_Ch6 is
       then
          Check_SPARK_05_Restriction ("null procedure is not allowed", N);
 
-         if Is_Protected_Type (Current_Scope) then
+         --  Null procedures are allowed in protected types, following the
+         --  recent AI12-0147.
+
+         if Is_Protected_Type (Current_Scope)
+           and then Ada_Version < Ada_2012
+         then
             Error_Msg_N ("protected operation cannot be a null procedure", N);
          end if;
 
@@ -4358,7 +4126,7 @@ package body Sem_Ch6 is
 
          if Is_Completion then
 
-            --  The null procedure acts as a body, nothing further is needed.
+            --  The null procedure acts as a body, nothing further is needed
 
             return;
          end if;
@@ -10114,6 +9882,7 @@ package body Sem_Ch6 is
      (T           : List_Id;
       Related_Nod : Node_Id)
    is
+      Context     : constant Node_Id := Parent (Parent (T));
       Param_Spec  : Node_Id;
       Formal      : Entity_Id;
       Formal_Type : Entity_Id;
@@ -10210,7 +9979,9 @@ package body Sem_Ch6 is
                --  it is still the case that untagged incomplete types cannot
                --  be Taft-amendment types and must be completed in private
                --  part, so the subprogram must appear in the list of private
-               --  dependents of the type.
+               --  dependents of the type. If the type is class-wide, it is
+               --  not a primitive, but the freezing of the subprogram must
+               --  also be delayed to force the creation of a freeze node.
 
                if Is_Tagged_Type (Formal_Type)
                  or else (Ada_Version >= Ada_2012
@@ -10219,15 +9990,15 @@ package body Sem_Ch6 is
                then
                   if Ekind (Scope (Current_Scope)) = E_Package
                     and then not Is_Generic_Type (Formal_Type)
-                    and then not Is_Class_Wide_Type (Formal_Type)
                   then
                      if not Nkind_In
                        (Parent (T), N_Access_Function_Definition,
                                     N_Access_Procedure_Definition)
                      then
-                        Append_Elmt
-                          (Current_Scope,
-                           To => Private_Dependents (Base_Type (Formal_Type)));
+                        if not Is_Class_Wide_Type (Formal_Type) then
+                           Append_Elmt (Current_Scope,
+                               Private_Dependents (Base_Type (Formal_Type)));
+                        end if;
 
                         --  Freezing is delayed to ensure that Register_Prim
                         --  will get called for this operation, which is needed
@@ -10257,6 +10028,8 @@ package body Sem_Ch6 is
 
                   --  Incomplete formal untagged types are not allowed in
                   --  subprogram bodies (but are legal in their declarations).
+                  --  This excludes bodies created for null procedures, which
+                  --  are basic declarations.
 
                   if Is_Generic_Type (Formal_Type)
                     and then not Is_Tagged_Type (Formal_Type)
@@ -10272,13 +10045,14 @@ package body Sem_Ch6 is
                      then
                         null;
 
-                     elsif Nkind_In (Parent (Parent (T)), N_Accept_Statement,
-                                                          N_Accept_Alternative,
-                                                          N_Entry_Body,
-                                                          N_Subprogram_Body)
+                     elsif Nkind_In (Context, N_Accept_Statement,
+                                              N_Accept_Alternative,
+                                              N_Entry_Body)
+                       or else (Nkind (Context) = N_Subprogram_Body
+                                 and then Comes_From_Source (Context))
                      then
                         Error_Msg_NE
-                          ("invalid use of untagged incomplete type&",
+                          ("invalid use of untagged incomplete type &",
                            Ptype, Formal_Type);
                      end if;
 

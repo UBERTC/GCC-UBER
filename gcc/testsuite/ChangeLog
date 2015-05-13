@@ -1,3 +1,78 @@
+2015-05-12  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66111
+	* gfortran.dg/inline_matmul_10.f90:  New test.
+
+2015-05-12  David Malcolm  <dmalcolm@redhat.com>
+
+	* c-c++-common/Wmisleading-indentation.c: New testcase.
+	* c-c++-common/Wmisleading-indentation-2.c: New testcase.
+	* c-c++-common/Wmisleading-indentation-2.md: New file.
+
+2015-05-12 Sandra Loosemore <sandra@codesourcery.com>
+
+	* gcc.target/nios2/nios2-trap-insn.c: Expect "trap" instead of
+	"break".
+	* gcc.target/nios2/nios2-stack-check-1.c: Likewise.
+
+2015-05-12  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66101
+	* gcc.dg/torture/pr66101.c: New testcase.
+
+2015-05-12  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/37021
+	* gcc.target/i386/vect-addsub.c: New testcase.
+
+2015-05-11  Alexander Monakov  <amonakov@ispras.ru>
+
+	* gcc.target/i386/pr65753.c: Use -O2 instead of -O.
+
+2015-05-12  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/66010
+	* gcc.dg/tree-ssa/stdarg-2.c: Undo scan xfails for f15.
+
+2015-05-12  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65133
+	* g++.dg/cpp0x/trailing10.C: New.
+
+2015-05-12  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/vect/bb-slp-35.c: New testcase.
+
+2015-05-11  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/66100
+	* gfortran.dg/bound_simplification_6.f90: New.
+
+2015-05-11  Steve Ellcey  <sellcey@mips.com>
+
+	* gcc.target/mips/branch-1.c: Pass argument to bar().
+
+2015-05-11  Alexander Monakov  <amonakov@ispras.ru>
+
+	PR target/65753
+	* gcc.target/i386/pr65753.c: New test.
+
+2015-05-11  Richard Sandiford  <richard.sandiford@arm.com>
+
+	PR rtl-optimization/66076
+	* gcc.dg/torture/pr66076.c: New test.
+
+2015-05-10  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66041
+	* gfortran.dg/inline_matmul_7.f90:  New test.
+	* gfortran.dg/inline_matmul_8.f90:  New test.
+	* gfortran.dg/inline_matmul_9.f90:  New test.
+
+2015-05-10  Mikael Morin  <mikael@gcc.gnu.org>
+
+	* gfortran.dg/bound_simplification_5.f90: New.
+
 2015-05-09  Jason Merrill  <jason@redhat.com>
 
 	* lib/target-supports.exp (cxx_default): New global.

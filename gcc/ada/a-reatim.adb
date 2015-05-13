@@ -7,7 +7,7 @@
 --                                 B o d y                                  --
 --                                                                          --
 --             Copyright (C) 1991-1994, Florida State University            --
---                     Copyright (C) 1995-2014, AdaCore                     --
+--                     Copyright (C) 1995-2015, AdaCore                     --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -123,6 +123,16 @@ package body Ada.Real_Time is
       pragma Unsuppress (Overflow_Check);
       pragma Unsuppress (Division_Check);
    begin
+      --  Even though checks are unsuppressed, we need an explicit check for
+      --  the case of largest negative integer divided by minus one, since
+      --  some library routines we use fail to catch this case. This will be
+      --  fixed at the compiler level in the future, at which point this test
+      --  can be removed.
+
+      if Left = Time_Span_First and then Right = -1 then
+         raise Constraint_Error with "overflow";
+      end if;
+
       return Time_Span (Duration (Left) / Right);
    end "/";
 
@@ -218,6 +228,28 @@ package body Ada.Real_Time is
 
    function Time_Of (SC : Seconds_Count; TS : Time_Span) return Time is
    begin
+      --  Simple case first, TS = 0.0, we need to make sure SC is in range
+
+      if TS = 0.0 then
+         if SC >= Seconds_Count (Duration (Time_Span_First) + Duration'(0.5))
+               and then
+            SC <= Seconds_Count (Duration (Time_Span_Last)  - Duration'(0.5))
+         then
+            --  Don't need any further checks after that manual check
+
+            declare
+               pragma Suppress (All_Checks);
+            begin
+               return Time (SC);
+            end;
+
+         --  Here we have a Seconds_Count value that is out of range
+
+         else
+            raise Constraint_Error;
+         end if;
+      end if;
+
       --  We want to return Time (SC) + TS. To avoid spurious overflows in
       --  the intermediate result Time (SC) we take advantage of the different
       --  signs in SC and TS (when that is the case).
@@ -249,7 +281,7 @@ package body Ada.Real_Time is
             Dist_To_Boundary : constant Time_Span :=
               TS - Time_Span (Closest_Boundary);
             --  Distance between TS and Closest_Boundary expressed in Time_Span
-            --  Both operands in the substraction have the same sign, hence
+            --  Both operands in the subtraction have the same sign, hence
             --  avoiding overflow.
 
          begin

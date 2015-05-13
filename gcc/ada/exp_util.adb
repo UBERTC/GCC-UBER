@@ -3366,6 +3366,13 @@ package body Exp_Util is
 
             Stm := Parent (CV);
 
+            --  If the tree has been otherwise rewritten there is nothing
+            --  else to be done either.
+
+            if Nkind (Stm) /= N_If_Statement then
+               return;
+            end if;
+
             --  Before start of ELSIF part
 
             if Loc < Sloc (CV) then
@@ -4706,7 +4713,6 @@ package body Exp_Util is
    is
       Obj_Id  : constant Entity_Id := Defining_Identifier (Decl);
       Obj_Typ : constant Entity_Id := Base_Type (Etype (Obj_Id));
-      Desig   : Entity_Id := Obj_Typ;
 
       function Initialized_By_Access (Trans_Id : Entity_Id) return Boolean;
       --  Determine whether transient object Trans_Id is initialized either
@@ -4909,31 +4915,61 @@ package body Exp_Util is
       --  Start of processing for Is_Aliased
 
       begin
-         Stmt := First_Stmt;
-         while Present (Stmt) loop
-            if Nkind (Stmt) = N_Object_Declaration then
-               Expr := Expression (Stmt);
+         --  A controlled transient object is not considered aliased when it
+         --  appears inside an expression_with_actions node even when there are
+         --  explicit aliases of it:
 
-               if Present (Expr)
-                 and then Nkind (Expr) = N_Reference
-                 and then Nkind (Prefix (Expr)) = N_Identifier
-                 and then Entity (Prefix (Expr)) = Trans_Id
-               then
-                  return True;
+         --    do
+         --       Trans_Id : Ctrl_Typ ...;  --  controlled transient object
+         --       Alias : ... := Trans_Id;  --  object is aliased
+         --       Val : constant Boolean :=
+         --               ... Alias ...;    --  aliasing ends
+         --       <finalize Trans_Id>       --  object safe to finalize
+         --    in Val end;
+
+         --  Expansion ensures that all aliases are encapsulated in the actions
+         --  list and do not leak to the expression by forcing the evaluation
+         --  of the expression.
+
+         if Nkind (Rel_Node) = N_Expression_With_Actions then
+            return False;
+
+         --  Otherwise examine the statements after the controlled transient
+         --  object and look for various forms of aliasing.
+
+         else
+            Stmt := First_Stmt;
+            while Present (Stmt) loop
+               if Nkind (Stmt) = N_Object_Declaration then
+                  Expr := Expression (Stmt);
+
+                  --  Aliasing of the form:
+                  --    Obj : ... := Trans_Id'reference;
+
+                  if Present (Expr)
+                    and then Nkind (Expr) = N_Reference
+                    and then Nkind (Prefix (Expr)) = N_Identifier
+                    and then Entity (Prefix (Expr)) = Trans_Id
+                  then
+                     return True;
+                  end if;
+
+               elsif Nkind (Stmt) = N_Object_Renaming_Declaration then
+                  Ren_Obj := Find_Renamed_Object (Stmt);
+
+                  --  Aliasing of the form:
+                  --    Obj : ... renames ... Trans_Id ...;
+
+                  if Present (Ren_Obj) and then Ren_Obj = Trans_Id then
+                     return True;
+                  end if;
                end if;
 
-            elsif Nkind (Stmt) = N_Object_Renaming_Declaration then
-               Ren_Obj := Find_Renamed_Object (Stmt);
+               Next (Stmt);
+            end loop;
 
-               if Present (Ren_Obj) and then Ren_Obj = Trans_Id then
-                  return True;
-               end if;
-            end if;
-
-            Next (Stmt);
-         end loop;
-
-         return False;
+            return False;
+         end if;
       end Is_Aliased;
 
       ------------------
@@ -5034,6 +5070,10 @@ package body Exp_Util is
          return False;
       end Is_Iterated_Container;
 
+      --  Local variables
+
+      Desig : Entity_Id := Obj_Typ;
+
    --  Start of processing for Is_Finalizable_Transient
 
    begin
@@ -5060,7 +5100,7 @@ package body Exp_Util is
           and then not Is_Allocated (Obj_Id)
 
           --  If the transient object is a pointer, check that it is not
-          --  initialized by a function which returns a pointer or acts as a
+          --  initialized by a function that returns a pointer or acts as a
           --  renaming of another pointer.
 
           and then
@@ -5075,6 +5115,12 @@ package body Exp_Util is
           --  Do not consider conversions of tags to class-wide types
 
           and then not Is_Tag_To_Class_Wide_Conversion (Obj_Id)
+
+          --  Do not consider iterators because those are treated as normal
+          --  controlled objects and are processed by the usual finalization
+          --  machinery. This avoids the double finalization of an iterator.
+
+          and then not Is_Iterator (Desig)
 
           --  Do not consider containers in the context of iterator loops. Such
           --  transient objects must exist for as long as the loop is around,
@@ -6874,9 +6920,7 @@ package body Exp_Util is
    function Non_Limited_Designated_Type (T : Entity_Id) return Entity_Id is
       Desig : constant Entity_Id := Designated_Type (T);
    begin
-      if Ekind (Desig) = E_Incomplete_Type
-        and then Present (Non_Limited_View (Desig))
-      then
+      if Has_Non_Limited_View (Desig) then
          return Non_Limited_View (Desig);
       else
          return Desig;
@@ -8133,7 +8177,7 @@ package body Exp_Util is
 
    begin
       --  If the expression is the RHS of an assignment or object declaration
-      --   we are always OK because there will always be a target.
+      --  we are always OK because there will always be a target.
 
       --  Object renaming declarations, (generated for view conversions of
       --  actuals in inlined calls), like object declarations, provide an
@@ -8174,8 +8218,8 @@ package body Exp_Util is
          Otyp := Entity (Subtype_Mark (Exp));
       end if;
 
-      --  The input type always comes from the expression, and we assume
-      --  this is indeed always analyzed, so we can simply get the Etype.
+      --  The input type always comes from the expression, and we assume this
+      --  is indeed always analyzed, so we can simply get the Etype.
 
       Ityp := Etype (Expression (Exp));
 
@@ -8246,8 +8290,8 @@ package body Exp_Util is
       then
          return True;
 
-      --  If either type is tagged, then we know the alignment is OK so
-      --  Gigi will be able to use pointer punning.
+      --  If either type is tagged, then we know the alignment is OK so Gigi
+      --  will be able to use pointer punning.
 
       elsif Is_Tagged_Type (Otyp) or else Is_Tagged_Type (Ityp) then
          return True;

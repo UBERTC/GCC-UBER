@@ -5041,7 +5041,23 @@ free_lang_data_in_type (tree type)
 	      TREE_VALUE (p) = build_qualified_type (arg_type, quals);
 	      free_lang_data_in_type (TREE_VALUE (p));
 	    }
+	  /* C++ FE uses TREE_PURPOSE to store initial values.  */
+	  TREE_PURPOSE (p) = NULL;
 	}
+      /* Java uses TYPE_MINVAL for TYPE_ARGUMENT_SIGNATURE.  */
+      TYPE_MINVAL (type) = NULL;
+    }
+  if (TREE_CODE (type) == METHOD_TYPE)
+    {
+      tree p;
+
+      for (p = TYPE_ARG_TYPES (type); p; p = TREE_CHAIN (p))
+	{
+	  /* C++ FE uses TREE_PURPOSE to store initial values.  */
+	  TREE_PURPOSE (p) = NULL;
+	}
+      /* Java uses TYPE_MINVAL for TYPE_ARGUMENT_SIGNATURE.  */
+      TYPE_MINVAL (type) = NULL;
     }
 
   /* Remove members that are not actually FIELD_DECLs from the field
@@ -5084,7 +5100,13 @@ free_lang_data_in_type (tree type)
       if (TYPE_VFIELD (type) && TREE_CODE (TYPE_VFIELD (type)) != FIELD_DECL)
         TYPE_VFIELD (type) = NULL_TREE;
 
-      TYPE_METHODS (type) = NULL_TREE;
+      /* Remove TYPE_METHODS list.  While it would be nice to keep it
+ 	 to enable ODR warnings about different method lists, doing so
+	 seems to impractically increase size of LTO data streamed.
+	 Keep the infrmation if TYPE_METHODS was non-NULL. This is used
+	 by function.c and pretty printers.  */
+      if (TYPE_METHODS (type))
+        TYPE_METHODS (type) = error_mark_node;
       if (TYPE_BINFO (type))
 	{
 	  free_lang_data_in_binfo (TYPE_BINFO (type));
@@ -5138,27 +5160,33 @@ free_lang_data_in_type (tree type)
 static inline bool
 need_assembler_name_p (tree decl)
 {
-  /* We use DECL_ASSEMBLER_NAME to hold mangled type names for One Definition Rule
-     merging.  */
+  /* We use DECL_ASSEMBLER_NAME to hold mangled type names for One Definition
+     Rule merging.  This makes type_odr_p to return true on those types during
+     LTO and by comparing the mangled name, we can say what types are intended
+     to be equivalent across compilation unit.
+
+     We do not store names of type_in_anonymous_namespace_p.
+
+     Record, union and enumeration type have linkage that allows use
+     to check type_in_anonymous_namespace_p. We do not mangle compound types
+     that always can be compared structurally.
+
+     Similarly for builtin types, we compare properties of their main variant.
+     A special case are integer types where mangling do make differences
+     between char/signed char/unsigned char etc.  Storing name for these makes
+     e.g.  -fno-signed-char/-fsigned-char mismatches to be handled well.
+     See cp/mangle.c:write_builtin_type for details.  */
+
   if (flag_lto_odr_type_mering
       && TREE_CODE (decl) == TYPE_DECL
       && DECL_NAME (decl)
       && decl == TYPE_NAME (TREE_TYPE (decl))
-      && !is_lang_specific (TREE_TYPE (decl))
-      /* Save some work. Names of builtin types are always derived from
-	 properties of its main variant.  A special case are integer types
-	 where mangling do make differences between char/signed char/unsigned
-	 char etc.  Storing name for these makes e.g.
-	 -fno-signed-char/-fsigned-char mismatches to be handled well.
-
-	 See cp/mangle.c:write_builtin_type for details.  */
-      && (TREE_CODE (TREE_TYPE (decl)) != VOID_TYPE
-	  && TREE_CODE (TREE_TYPE (decl)) != BOOLEAN_TYPE
-	  && TREE_CODE (TREE_TYPE (decl)) != REAL_TYPE
-	  && TREE_CODE (TREE_TYPE (decl)) != FIXED_POINT_TYPE)
       && !TYPE_ARTIFICIAL (TREE_TYPE (decl))
-      && !variably_modified_type_p (TREE_TYPE (decl), NULL_TREE)
-      && !type_in_anonymous_namespace_p (TREE_TYPE (decl)))
+      && (((RECORD_OR_UNION_TYPE_P (TREE_TYPE (decl))
+	   || TREE_CODE (TREE_TYPE (decl)) == ENUMERAL_TYPE)
+	   && !type_in_anonymous_namespace_p (TREE_TYPE (decl)))
+	  || TREE_CODE (TREE_TYPE (decl)) == INTEGER_TYPE)
+      && !variably_modified_type_p (TREE_TYPE (decl), NULL_TREE))
     return !DECL_ASSEMBLER_NAME_SET_P (decl);
   /* Only FUNCTION_DECLs and VAR_DECLs are considered.  */
   if (TREE_CODE (decl) != FUNCTION_DECL
@@ -6557,6 +6585,12 @@ build_distinct_type_copy (tree type)
   /* Make it its own variant.  */
   TYPE_MAIN_VARIANT (t) = t;
   TYPE_NEXT_VARIANT (t) = 0;
+
+  /* We do not record methods in type copies nor variants
+     so we do not need to keep them up to date when new method
+     is inserted.  */
+  if (RECORD_OR_UNION_TYPE_P (t))
+    TYPE_METHODS (t) = NULL_TREE;
 
   /* Note that it is now possible for TYPE_MIN_VALUE to be a value
      whose TREE_TYPE is not t.  This can also happen in the Ada
@@ -12009,18 +12043,6 @@ obj_type_ref_class (tree ref)
   return TREE_TYPE (ref);
 }
 
-/* Return true if T is in anonymous namespace.  */
-
-bool
-type_in_anonymous_namespace_p (const_tree t)
-{
-  /* TREE_PUBLIC of TYPE_STUB_DECL may not be properly set for
-     bulitin types; those have CONTEXT NULL.  */
-  if (!TYPE_CONTEXT (t))
-    return false;
-  return (TYPE_STUB_DECL (t) && !TREE_PUBLIC (TYPE_STUB_DECL (t)));
-}
-
 /* Lookup sub-BINFO of BINFO of TYPE at offset POS.  */
 
 static tree
@@ -12512,13 +12534,9 @@ verify_type_variant (const_tree t, tree tv)
       debug_tree (tv);
       return false;
     }
-  /* FIXME: this check triggers during libstdc++ build that is a bug.
-     It affects non-LTO debug output only, because free_lang_data clears
-     this anyway.  */
-  if (RECORD_OR_UNION_TYPE_P (t) && COMPLETE_TYPE_P (t) && 0
-      && TYPE_METHODS (t) != TYPE_METHODS (tv))
+  if (RECORD_OR_UNION_TYPE_P (t) && TYPE_METHODS (t))
     {
-      error ("type variant has different TYPE_METHODS");
+      error ("type variant has TYPE_METHODS");
       debug_tree (tv);
       return false;
     }
@@ -12559,6 +12577,98 @@ verify_type_variant (const_tree t, tree tv)
       debug_tree (TYPE_BINFO (tv));
       error ("type's TYPE_BINFO");
       debug_tree (TYPE_BINFO (t));
+      return false;
+    }
+
+  /* Check various uses of TYPE_VALUES_RAW.  */
+  if (TREE_CODE (t) == ENUMERAL_TYPE
+      && TYPE_VALUES (t) != TYPE_VALUES (tv))
+    {
+      error ("type variant has different TYPE_VALUES");
+      debug_tree (tv);
+      error ("type variant's TYPE_VALUES");
+      debug_tree (TYPE_VALUES (tv));
+      error ("type's TYPE_VALUES");
+      debug_tree (TYPE_VALUES (t));
+      return false;
+    }
+  else if (TREE_CODE (t) == ARRAY_TYPE
+	   && TYPE_DOMAIN (t) != TYPE_DOMAIN (tv))
+    {
+      error ("type variant has different TYPE_DOMAIN");
+      debug_tree (tv);
+      error ("type variant's TYPE_DOMAIN");
+      debug_tree (TYPE_DOMAIN (tv));
+      error ("type's TYPE_DOMAIN");
+      debug_tree (TYPE_DOMAIN (t));
+      return false;
+    }
+  /* Permit incomplete variants of complete type.  While FEs may complete
+     all variants, this does not happen for C++ templates in all cases.  */
+  else if (RECORD_OR_UNION_TYPE_P (t)
+	   && COMPLETE_TYPE_P (t)
+	   && TYPE_FIELDS (t) != TYPE_FIELDS (tv))
+    {
+      tree f1, f2;
+
+      /* Fortran builds qualified variants as new records with items of
+	 qualified type. Verify that they looks same.  */
+      for (f1 = TYPE_FIELDS (t), f2 = TYPE_FIELDS (tv);
+	   f1 && f2;
+	   f1 = TREE_CHAIN (f1), f2 = TREE_CHAIN (f2))
+	if (TREE_CODE (f1) != FIELD_DECL || TREE_CODE (f2) != FIELD_DECL
+	    || (TYPE_MAIN_VARIANT (TREE_TYPE (f1))
+		 != TYPE_MAIN_VARIANT (TREE_TYPE (f2))
+		/* FIXME: gfc_nonrestricted_type builds all types as variants
+		   with exception of pointer types.  It deeply copies the type
+		   which means that we may end up with a variant type
+		   referring non-variant pointer.  We may change it to
+		   produce types as variants, too, like
+		   objc_get_protocol_qualified_type does.  */
+		&& !POINTER_TYPE_P (TREE_TYPE (f1)))
+	    || DECL_FIELD_OFFSET (f1) != DECL_FIELD_OFFSET (f2)
+	    || DECL_FIELD_BIT_OFFSET (f1) != DECL_FIELD_BIT_OFFSET (f2))
+	  break;
+      if (f1 || f2)
+	{
+	  error ("type variant has different TYPE_FIELDS");
+	  debug_tree (tv);
+	  error ("first mismatch is field");
+	  debug_tree (f1);
+	  error ("and field");
+	  debug_tree (f2);
+          return false;
+	}
+    }
+  else if ((TREE_CODE (t) == FUNCTION_TYPE || TREE_CODE (t) == METHOD_TYPE)
+	   && TYPE_ARG_TYPES (t) != TYPE_ARG_TYPES (tv))
+    {
+      error ("type variant has different TYPE_ARG_TYPES");
+      debug_tree (tv);
+      return false;
+    }
+  /* For C++ the qualified variant of array type is really an array type
+     of qualified TREE_TYPE.
+     objc builds variants of pointer where pointer to type is a variant, too
+     in objc_get_protocol_qualified_type.  */
+  if (TREE_TYPE (t) != TREE_TYPE (tv)
+      && ((TREE_CODE (t) != ARRAY_TYPE
+	   && !POINTER_TYPE_P (t))
+	  || TYPE_MAIN_VARIANT (TREE_TYPE (t))
+	     != TYPE_MAIN_VARIANT (TREE_TYPE (tv))))
+    {
+      error ("type variant has different TREE_TYPE");
+      debug_tree (tv);
+      error ("type variant's TREE_TYPE");
+      debug_tree (TREE_TYPE (tv));
+      error ("type's TREE_TYPE");
+      debug_tree (TREE_TYPE (t));
+      return false;
+    }
+  if (TYPE_PRECISION (t) != TYPE_PRECISION (tv))
+    {
+      error ("type variant has different TYPE_PRECISION");
+      debug_tree (tv);
       return false;
     }
   return true;
@@ -12619,13 +12729,18 @@ verify_type (const_tree t)
 	  error_found = true;
 	}
     }
-  else if (INTEGRAL_TYPE_P (t) || TREE_CODE (t) == REAL_TYPE || TREE_CODE (t) == FIXED_POINT_TYPE)
+  else if (INTEGRAL_TYPE_P (t) || TREE_CODE (t) == REAL_TYPE
+	   || TREE_CODE (t) == FIXED_POINT_TYPE)
     {
       /* FIXME: The following check should pass:
-	  useless_type_conversion_p (const_cast <tree> (t), TREE_TYPE (TYPE_MIN_VALUE (t))
-	 bud does not for C sizetypes in LTO.  */
+	  useless_type_conversion_p (const_cast <tree> (t),
+				     TREE_TYPE (TYPE_MIN_VALUE (t))
+	 but does not for C sizetypes in LTO.  */
     }
-  else if (TYPE_MINVAL (t))
+  /* Java uses TYPE_MINVAL for TYPE_ARGUMENT_SIGNATURE.  */
+  else if (TYPE_MINVAL (t)
+	   && ((TREE_CODE (t) != METHOD_TYPE && TREE_CODE (t) != FUNCTION_TYPE)
+	       || in_lto_p))
     {
       error ("TYPE_MINVAL non-NULL");
       debug_tree (TYPE_MINVAL (t));
@@ -12636,9 +12751,10 @@ verify_type (const_tree t)
   if (RECORD_OR_UNION_TYPE_P (t))
     {
       if (TYPE_METHODS (t) && TREE_CODE (TYPE_METHODS (t)) != FUNCTION_DECL
-	  && TREE_CODE (TYPE_METHODS (t)) != TEMPLATE_DECL)
+	  && TREE_CODE (TYPE_METHODS (t)) != TEMPLATE_DECL
+	  && TYPE_METHODS (t) != error_mark_node)
 	{
-	  error ("TYPE_METHODS is not FUNCTION_DECL nor TEMPLATE_DECL");
+	  error ("TYPE_METHODS is not FUNCTION_DECL, TEMPLATE_DECL nor error_mark_node");
 	  debug_tree (TYPE_METHODS (t));
 	  error_found = true;
 	}
@@ -12665,11 +12781,13 @@ verify_type (const_tree t)
 	  error_found = true;
 	}
     }
-  else if (INTEGRAL_TYPE_P (t) || TREE_CODE (t) == REAL_TYPE || TREE_CODE (t) == FIXED_POINT_TYPE)
+  else if (INTEGRAL_TYPE_P (t) || TREE_CODE (t) == REAL_TYPE
+	   || TREE_CODE (t) == FIXED_POINT_TYPE)
     {
       /* FIXME: The following check should pass:
-	  useless_type_conversion_p (const_cast <tree> (t), TREE_TYPE (TYPE_MAX_VALUE (t))
-	 bud does not for C sizetypes in LTO.  */
+	  useless_type_conversion_p (const_cast <tree> (t),
+				     TREE_TYPE (TYPE_MAX_VALUE (t))
+	 but does not for C sizetypes in LTO.  */
     }
   else if (TREE_CODE (t) == ARRAY_TYPE)
     {
@@ -12685,6 +12803,167 @@ verify_type (const_tree t)
     {
       error ("TYPE_MAXVAL non-NULL");
       debug_tree (TYPE_MAXVAL (t));
+      error_found = true;
+    }
+
+  /* Check various uses of TYPE_BINFO.  */
+  if (RECORD_OR_UNION_TYPE_P (t))
+    {
+      if (!TYPE_BINFO (t))
+	;
+      else if (TREE_CODE (TYPE_BINFO (t)) != TREE_BINFO)
+	{
+	  error ("TYPE_BINFO is not TREE_BINFO");
+	  debug_tree (TYPE_BINFO (t));
+	  error_found = true;
+	}
+      /* FIXME: Java builds invalid empty binfos that do not have
+         TREE_TYPE set.  */
+      else if (TREE_TYPE (TYPE_BINFO (t)) != TYPE_MAIN_VARIANT (t) && 0)
+	{
+	  error ("TYPE_BINFO type is not TYPE_MAIN_VARIANT");
+	  debug_tree (TREE_TYPE (TYPE_BINFO (t)));
+	  error_found = true;
+	}
+    }
+  else if (TYPE_LANG_SLOT_1 (t) && in_lto_p)
+    {
+      error ("TYPE_LANG_SLOT_1 (binfo) field is non-NULL");
+      debug_tree (TYPE_LANG_SLOT_1 (t));
+      error_found = true;
+    }
+
+  /* Check various uses of TYPE_VALUES_RAW.  */
+  if (TREE_CODE (t) == ENUMERAL_TYPE)
+    for (tree l = TYPE_VALUES (t); l; l = TREE_CHAIN (l))
+      {
+	tree value = TREE_VALUE (l);
+	tree name = TREE_PURPOSE (l);
+
+	/* C FE porduce INTEGER_CST of INTEGER_TYPE, while C++ FE uses
+ 	   CONST_DECL of ENUMERAL TYPE.  */
+	if (TREE_CODE (value) != INTEGER_CST && TREE_CODE (value) != CONST_DECL)
+	  {
+	    error ("Enum value is not CONST_DECL or INTEGER_CST");
+	    debug_tree (value);
+	    debug_tree (name);
+	    error_found = true;
+	  }
+	if (TREE_CODE (TREE_TYPE (value)) != INTEGER_TYPE
+	    && !useless_type_conversion_p (const_cast <tree> (t), TREE_TYPE (value)))
+	  {
+	    error ("Enum value type is not INTEGER_TYPE nor convertible to the enum");
+	    debug_tree (value);
+	    debug_tree (name);
+	    error_found = true;
+	  }
+	if (TREE_CODE (name) != IDENTIFIER_NODE)
+	  {
+	    error ("Enum value name is not IDENTIFIER_NODE");
+	    debug_tree (value);
+	    debug_tree (name);
+	    error_found = true;
+	  }
+      }
+  else if (TREE_CODE (t) == ARRAY_TYPE)
+    {
+      if (TYPE_DOMAIN (t) && TREE_CODE (TYPE_DOMAIN (t)) != INTEGER_TYPE)
+	{
+	  error ("Array TYPE_DOMAIN is not integer type");
+	  debug_tree (TYPE_DOMAIN (t));
+	  error_found = true;
+	}
+    }
+  else if (RECORD_OR_UNION_TYPE_P (t))
+    for (tree fld = TYPE_FIELDS (t); fld; fld = TREE_CHAIN (fld))
+      {
+	/* TODO: verify properties of decls.  */
+	if (TREE_CODE (fld) == FIELD_DECL)
+	  ;
+	else if (TREE_CODE (fld) == TYPE_DECL)
+	  ;
+	else if (TREE_CODE (fld) == CONST_DECL)
+	  ;
+	else if (TREE_CODE (fld) == VAR_DECL)
+	  ;
+	else if (TREE_CODE (fld) == TEMPLATE_DECL)
+	  ;
+	else if (TREE_CODE (fld) == USING_DECL)
+	  ;
+	else
+	  {
+	    error ("Wrong tree in TYPE_FIELDS list");
+	    debug_tree (fld);
+	    error_found = true;
+	  }
+      }
+  else if (TREE_CODE (t) == INTEGER_TYPE
+	   || TREE_CODE (t) == BOOLEAN_TYPE
+	   || TREE_CODE (t) == OFFSET_TYPE
+	   || TREE_CODE (t) == REFERENCE_TYPE
+	   || TREE_CODE (t) == NULLPTR_TYPE
+	   || TREE_CODE (t) == POINTER_TYPE)
+    {
+      if (TYPE_CACHED_VALUES_P (t) != (TYPE_CACHED_VALUES (t) != NULL))
+	{
+	  error ("TYPE_CACHED_VALUES_P is %i while TYPE_CACHED_VALUES is %p",
+		 TYPE_CACHED_VALUES_P (t), (void *)TYPE_CACHED_VALUES (t));
+	  error_found = true;
+	}
+      else if (TYPE_CACHED_VALUES_P (t) && TREE_CODE (TYPE_CACHED_VALUES (t)) != TREE_VEC)
+	{
+	  error ("TYPE_CACHED_VALUES is not TREE_VEC");
+	  debug_tree (TYPE_CACHED_VALUES (t));
+	  error_found = true;
+	}
+      /* Verify just enough of cache to ensure that no one copied it to new type.
+ 	 All copying should go by copy_node that should clear it.  */
+      else if (TYPE_CACHED_VALUES_P (t))
+	{
+	  int i;
+	  for (i = 0; i < TREE_VEC_LENGTH (TYPE_CACHED_VALUES (t)); i++)
+	    if (TREE_VEC_ELT (TYPE_CACHED_VALUES (t), i)
+		&& TREE_TYPE (TREE_VEC_ELT (TYPE_CACHED_VALUES (t), i)) != t)
+	      {
+		error ("wrong TYPE_CACHED_VALUES entry");
+		debug_tree (TREE_VEC_ELT (TYPE_CACHED_VALUES (t), i));
+		error_found = true;
+		break;
+	      }
+	}
+    }
+  else if (TREE_CODE (t) == FUNCTION_TYPE || TREE_CODE (t) == METHOD_TYPE)
+    for (tree l = TYPE_ARG_TYPES (t); l; l = TREE_CHAIN (l))
+      {
+	/* C++ FE uses TREE_PURPOSE to store initial values.  */
+	if (TREE_PURPOSE (l) && in_lto_p)
+	  {
+	    error ("TREE_PURPOSE is non-NULL in TYPE_ARG_TYPES list");
+	    debug_tree (l);
+	    error_found = true;
+	  }
+	if (!TYPE_P (TREE_VALUE (l)))
+	  {
+	    error ("Wrong entry in TYPE_ARG_TYPES list");
+	    debug_tree (l);
+	    error_found = true;
+	  }
+      }
+  else if (!is_lang_specific (t) && TYPE_VALUES_RAW (t))
+    {
+      error ("TYPE_VALUES_RAW field is non-NULL");
+      debug_tree (TYPE_VALUES_RAW (t));
+      error_found = true;
+    }
+  if (TREE_CODE (t) != INTEGER_TYPE
+      && TREE_CODE (t) != BOOLEAN_TYPE
+      && TREE_CODE (t) != OFFSET_TYPE
+      && TREE_CODE (t) != REFERENCE_TYPE
+      && TREE_CODE (t) != NULLPTR_TYPE
+      && TREE_CODE (t) != POINTER_TYPE
+      && TYPE_CACHED_VALUES_P (t))
+    {
+      error ("TYPE_CACHED_VALUES_P is set while it should not");
       error_found = true;
     }
 

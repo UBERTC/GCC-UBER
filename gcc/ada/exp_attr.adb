@@ -1787,21 +1787,10 @@ package body Exp_Attr is
 
             --  Handle designated types that come from the limited view
 
-            if Ekind (Btyp_DDT) = E_Incomplete_Type
-              and then From_Limited_With (Btyp_DDT)
-              and then Present (Non_Limited_View (Btyp_DDT))
+            if From_Limited_With (Btyp_DDT)
+              and then Has_Non_Limited_View (Btyp_DDT)
             then
                Btyp_DDT := Non_Limited_View (Btyp_DDT);
-
-            elsif Is_Class_Wide_Type (Btyp_DDT)
-               and then Ekind (Etype (Btyp_DDT)) = E_Incomplete_Type
-               and then From_Limited_With (Etype (Btyp_DDT))
-               and then Present (Non_Limited_View (Etype (Btyp_DDT)))
-               and then Present (Class_Wide_Type
-                                  (Non_Limited_View (Etype (Btyp_DDT))))
-            then
-               Btyp_DDT :=
-                 Class_Wide_Type (Non_Limited_View (Etype (Btyp_DDT)));
             end if;
 
             --  In order to improve the text of error messages, the designated
@@ -5549,14 +5538,11 @@ package body Exp_Attr is
          --  For X'Size applied to an object of a class-wide type, transform
          --  X'Size into a call to the primitive operation _Size applied to X.
 
-         elsif Is_Class_Wide_Type (Ptyp)
-           or else (Id = Attribute_Size
-                      and then Is_Tagged_Type (Ptyp)
-                      and then Has_Unknown_Discriminants (Ptyp))
-         then
+         elsif Is_Class_Wide_Type (Ptyp) then
+
             --  No need to do anything else compiling under restriction
             --  No_Dispatching_Calls. During the semantic analysis we
-            --  already notified such violation.
+            --  already noted this restriction violation.
 
             if Restriction_Active (No_Dispatching_Calls) then
                return;

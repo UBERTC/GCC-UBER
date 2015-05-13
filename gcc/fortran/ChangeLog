@@ -1,3 +1,40 @@
+2015-05-12  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66111
+	* frontend-passes.c (has_dimen_vector_ref):  New function.
+	(inline_matmul_assign):  Use it to return early in case
+	of unhandled vector subscripts.
+
+2015-05-12  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66041
+	PR fortran/37131
+	* gfortran.h (gfc_array_spec):  Add field resolved.
+	* array.c (gfc_resolve_array_spec):  Resolve array spec
+	only once.
+
+2015-05-11  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/66100
+	* simplify.c (simplify_bound): Fix assert to accept subobject arrays.
+
+2015-05-10  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66041
+	* frontend-passes.c (scalarized_expr): Set correct dimension and
+	shape for the expression to be passed to lbound. Remove trailing
+	references after array refrence.
+	(inline_matmul_assign):  Remove gfc_copy_expr from calls
+	to scalarized_expr().
+
+2015-05-10  Mikael Morin  <mikael@gcc.gnu.org>
+
+	* simplify.c (simplify_bound_dim): Don't check for emptyness
+	in the case of cobound simplification.  Factor lower/upper
+	bound differenciation before the actual simplification.
+	(simplify_bound): Remove assumed shape specific simplification.
+	Don't give up early for the lbound of an assumed shape.
+
 2015-05-09  Mikael Morin  <mikael@gcc.gnu.org>
 
 	PR fortran/65894
