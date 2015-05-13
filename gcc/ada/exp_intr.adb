@@ -345,6 +345,9 @@ package body Exp_Intr is
             begin
                pragma Assert (not Is_Interface (Etype (Tag_Arg)));
 
+               --  The tag is the first entry in the dispatch table of the
+               --  return type of the constructor.
+
                Iface_Tag :=
                  Make_Object_Declaration (Loc,
                    Defining_Identifier => Make_Temporary (Loc, 'V'),
@@ -356,8 +359,8 @@ package body Exp_Intr is
                        Parameter_Associations => New_List (
                          Relocate_Node (Tag_Arg),
                          New_Occurrence_Of
-                           (Node (First_Elmt (Access_Disp_Table
-                                               (Etype (Etype (Act_Constr))))),
+                           (Node (First_Elmt
+                                    (Access_Disp_Table (Etype (Act_Constr)))),
                             Loc))));
                Insert_Action (N, Iface_Tag);
             end;

@@ -53,7 +53,7 @@ package Sem_Util is
    --  Add pragma Prag to the contract of an entry, a package [body], a
    --  subprogram [body] or variable denoted by Id. The following are valid
    --  pragmas:
-   --    Abstract_States
+   --    Abstract_State
    --    Async_Readers
    --    Async_Writers
    --    Contract_Cases
@@ -308,12 +308,10 @@ package Sem_Util is
    --  remains in the Examiner (JB01-005). Note that the Examiner does not
    --  count package declarations in later declarative items.
 
-   procedure Check_Nested_Access (N : Node_Id; Ent : Entity_Id);
+   procedure Check_Nested_Access (Ent : Entity_Id);
    --  Check whether Ent denotes an entity declared in an uplevel scope, which
-   --  is accessed inside a nested procedure, and set the Has_Uplevel_Reference
-   --  flag accordingly. This is currently only enabled for if on a VM target,
-   --  or if Opt.Unnest_Subprogram_Mode is active. N is the node for the
-   --  possible uplevel reference.
+   --  is accessed inside a nested procedure, and set Has_Uplevel_Reference
+   --  flag accordingly. This is currently only enabled for if on a VM target.
 
    procedure Check_No_Hidden_State (Id : Entity_Id);
    --  Determine whether object or state Id introduces a hidden state. If this
@@ -399,12 +397,6 @@ package Sem_Util is
    --    Depends
    --    Global
 
-   function Copy_Parameter_List (Subp_Id : Entity_Id) return List_Id;
-   --  Utility to create a parameter profile for a new subprogram spec, when
-   --  the subprogram has a body that acts as spec. This is done for some cases
-   --  of inlining, and for private protected ops. Also used to create bodies
-   --  for stubbed subprograms.
-
    function Copy_Component_List
      (R_Typ : Entity_Id;
       Loc   : Source_Ptr) return List_Id;
@@ -412,16 +404,31 @@ package Sem_Util is
    --  create a new compatible record type. Loc is the source location assigned
    --  to the created nodes.
 
+   function Copy_Parameter_List (Subp_Id : Entity_Id) return List_Id;
+   --  Utility to create a parameter profile for a new subprogram spec, when
+   --  the subprogram has a body that acts as spec. This is done for some cases
+   --  of inlining, and for private protected ops. Also used to create bodies
+   --  for stubbed subprograms.
+
+   function Copy_Subprogram_Spec (Spec : Node_Id) return Node_Id;
+   --  Replicate a function or a procedure specification denoted by Spec. The
+   --  resulting tree is an exact duplicate of the original tree. New entities
+   --  are created for the unit name and the formal parameters.
+
    function Corresponding_Generic_Type (T : Entity_Id) return Entity_Id;
    --  If a type is a generic actual type, return the corresponding formal in
    --  the generic parent unit. There is no direct link in the tree for this
    --  attribute, except in the case of formal private and derived types.
    --  Possible optimization???
 
-   function Corresponding_Spec_Of (Subp_Decl : Node_Id) return Entity_Id;
-   --  Return the corresponding spec of Subp_Decl when it denotes a body [stub]
-   --  or the defining entity of subprogram declaration Subp_Decl in all other
-   --  cases.
+   function Corresponding_Spec_Of (Decl : Node_Id) return Entity_Id;
+   --  Return the corresponding spec of Decl when it denotes a package or a
+   --  subprogram [stub], or the defining entity of Decl.
+
+   procedure Create_Generic_Contract (Unit : Node_Id);
+   --  Create a contract node for a generic package, generic subprogram or a
+   --  generic body denoted by Unit by collecting all source contract-related
+   --  pragmas in the contract of the unit.
 
    function Current_Entity (N : Node_Id) return Entity_Id;
    pragma Inline (Current_Entity);
@@ -1188,6 +1195,10 @@ package Sem_Util is
    --  explicit dereference. The transformation applies when it has the form
    --  F (X).Discr.all.
 
+   function Is_Contract_Annotation (Item : Node_Id) return Boolean;
+   --  Determine whether aspect specification or pragma Item is a contract
+   --  annotation.
+
    function Is_Controlling_Limited_Procedure
      (Proc_Nam : Entity_Id) return Boolean;
    --  Ada 2005 (AI-345): Determine whether Proc_Nam is a primitive procedure
@@ -1276,6 +1287,10 @@ package Sem_Util is
    --  means that the result returned is not crucial, but should err on the
    --  side of thinking things are fully initialized if it does not know.
 
+   function Is_Generic_Declaration_Or_Body (Decl : Node_Id) return Boolean;
+   --  Determine whether arbitrary declaration Decl denotes a generic package,
+   --  a generic subprogram or a generic body.
+
    function Is_Inherited_Operation (E : Entity_Id) return Boolean;
    --  E is a subprogram. Return True is E is an implicit operation inherited
    --  by a derived type declaration.
@@ -1325,6 +1340,14 @@ package Sem_Util is
    --  this is a case in which conversions whose expression is a variable (in
    --  the Is_Variable sense) with an untagged type target are considered view
    --  conversions and hence variables.
+
+   function Is_Package_Contract_Annotation (Item : Node_Id) return Boolean;
+   --  Determine whether aspect specification or pragma Item is one of the
+   --  following package contract annotations:
+   --    Abstract_State
+   --    Initial_Condition
+   --    Initializes
+   --    Refined_State
 
    function Is_Partially_Initialized_Type
      (Typ              : Entity_Id;
@@ -1403,6 +1426,24 @@ package Sem_Util is
    --  the case of procedure call statements (unlike the direct use of
    --  the N_Statement_Other_Than_Procedure_Call subtype from Sinfo).
    --  Note that a label is *not* a statement, and will return False.
+
+   function Is_Subprogram_Contract_Annotation (Item : Node_Id) return Boolean;
+   --  Determine whether aspect specification or pragma Item is one of the
+   --  following subprogram contract annotations:
+   --    Contract_Cases
+   --    Depends
+   --    Extensions_Visible
+   --    Global
+   --    Post
+   --    Post_Class
+   --    Postcondition
+   --    Pre
+   --    Pre_Class
+   --    Precondition
+   --    Refined_Depends
+   --    Refined_Global
+   --    Refined_Post
+   --    Test_Case
 
    function Is_Subprogram_Stub_Without_Prior_Declaration
      (N : Node_Id) return Boolean;

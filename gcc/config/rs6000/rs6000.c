@@ -1597,8 +1597,8 @@ static const struct attribute_spec rs6000_attribute_table[] =
 #undef TARGET_ASM_LOOP_ALIGN_MAX_SKIP
 #define TARGET_ASM_LOOP_ALIGN_MAX_SKIP rs6000_loop_align_max_skip
 
-#undef TARGET_MD_ASM_CLOBBERS
-#define TARGET_MD_ASM_CLOBBERS rs6000_md_asm_clobbers
+#undef TARGET_MD_ASM_ADJUST
+#define TARGET_MD_ASM_ADJUST rs6000_md_asm_adjust
 
 #undef TARGET_OPTION_OVERRIDE
 #define TARGET_OPTION_OVERRIDE rs6000_option_override
@@ -3209,17 +3209,20 @@ rs6000_builtin_mask_calculate (void)
 	  | ((TARGET_LONG_DOUBLE_128)	    ? RS6000_BTM_LDBL128 : 0));
 }
 
-/* Implement TARGET_MD_ASM_CLOBBERS.  All asm statements are considered
+/* Implement TARGET_MD_ASM_ADJUST.  All asm statements are considered
    to clobber the XER[CA] bit because clobbering that bit without telling
    the compiler worked just fine with versions of GCC before GCC 5, and
    breaking a lot of older code in ways that are hard to track down is
    not such a great idea.  */
 
-static tree
-rs6000_md_asm_clobbers (tree, tree, tree clobbers)
+static rtx_insn *
+rs6000_md_asm_adjust (vec<rtx> &/*outputs*/, vec<rtx> &/*inputs*/,
+		      vec<const char *> &/*constraints*/,
+		      vec<rtx> &clobbers, HARD_REG_SET &clobbered_regs)
 {
-  tree s = build_string (strlen (reg_names[CA_REGNO]), reg_names[CA_REGNO]);
-  return tree_cons (NULL_TREE, s, clobbers);
+  clobbers.safe_push (gen_rtx_REG (SImode, CA_REGNO));
+  SET_HARD_REG_BIT (clobbered_regs, CA_REGNO);
+  return NULL;
 }
 
 /* Override command line options.  Mostly we process the processor type and
@@ -20513,12 +20516,15 @@ rs6000_pre_atomic_barrier (rtx mem, enum memmodel model)
     case MEMMODEL_RELAXED:
     case MEMMODEL_CONSUME:
     case MEMMODEL_ACQUIRE:
+    case MEMMODEL_SYNC_ACQUIRE:
       break;
     case MEMMODEL_RELEASE:
+    case MEMMODEL_SYNC_RELEASE:
     case MEMMODEL_ACQ_REL:
       emit_insn (gen_lwsync ());
       break;
     case MEMMODEL_SEQ_CST:
+    case MEMMODEL_SYNC_SEQ_CST:
       emit_insn (gen_hwsync ());
       break;
     default:
@@ -20535,10 +20541,13 @@ rs6000_post_atomic_barrier (enum memmodel model)
     case MEMMODEL_RELAXED:
     case MEMMODEL_CONSUME:
     case MEMMODEL_RELEASE:
+    case MEMMODEL_SYNC_RELEASE:
       break;
     case MEMMODEL_ACQUIRE:
+    case MEMMODEL_SYNC_ACQUIRE:
     case MEMMODEL_ACQ_REL:
     case MEMMODEL_SEQ_CST:
+    case MEMMODEL_SYNC_SEQ_CST:
       emit_insn (gen_isync ());
       break;
     default:
@@ -20577,7 +20586,9 @@ rs6000_adjust_atomic_subword (rtx orig_mem, rtx *pshift, rtx *pmask)
   /* Shift amount for subword relative to aligned word.  */
   shift = gen_reg_rtx (SImode);
   addr = gen_lowpart (SImode, addr);
-  emit_insn (gen_rlwinm (shift, addr, GEN_INT (3), GEN_INT (shift_mask)));
+  rtx tmp = gen_reg_rtx (SImode);
+  emit_insn (gen_ashlsi3 (tmp, addr, GEN_INT (3)));
+  emit_insn (gen_andsi3 (shift, tmp, GEN_INT (shift_mask)));
   if (BYTES_BIG_ENDIAN)
     shift = expand_simple_binop (SImode, XOR, shift, GEN_INT (shift_mask),
 			         shift, 1, OPTAB_LIB_WIDEN);
@@ -20637,8 +20648,8 @@ rs6000_expand_atomic_compare_and_swap (rtx operands[])
   oldval = operands[3];
   newval = operands[4];
   is_weak = (INTVAL (operands[5]) != 0);
-  mod_s = (enum memmodel) INTVAL (operands[6]);
-  mod_f = (enum memmodel) INTVAL (operands[7]);
+  mod_s = memmodel_from_int (INTVAL (operands[6]));
+  mod_f = memmodel_from_int (INTVAL (operands[7]));
   orig_mode = mode = GET_MODE (mem);
 
   mask = shift = NULL_RTX;
@@ -20726,12 +20737,12 @@ rs6000_expand_atomic_compare_and_swap (rtx operands[])
       emit_unlikely_jump (x, label1);
     }
 
-  if (mod_f != MEMMODEL_RELAXED)
+  if (!is_mm_relaxed (mod_f))
     emit_label (XEXP (label2, 0));
 
   rs6000_post_atomic_barrier (mod_s);
 
-  if (mod_f == MEMMODEL_RELAXED)
+  if (is_mm_relaxed (mod_f))
     emit_label (XEXP (label2, 0));
 
   if (shift)

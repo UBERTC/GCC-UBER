@@ -336,7 +336,7 @@ package body Sem_Disp is
          --  Ada 2005 (AI-50217)
 
          elsif From_Limited_With (Designated_Type (T))
-           and then Present (Non_Limited_View (Designated_Type (T)))
+           and then Has_Non_Limited_View (Designated_Type (T))
            and then Scope (Designated_Type (T)) = Scope (Subp)
          then
             if Is_First_Subtype (Non_Limited_View (Designated_Type (T))) then
@@ -1334,7 +1334,11 @@ package body Sem_Disp is
 
       elsif Is_Concurrent_Type (Tagged_Type) then
          pragma Assert (not Expander_Active);
-         null;
+
+         --  Attach operation to list of primitives of the synchronized type
+         --  itself, for ASIS use.
+
+         Append_Elmt (Subp, Direct_Primitive_Operations (Tagged_Type));
 
       --  If no old subprogram, then we add this as a dispatching operation,
       --  but we avoid doing this if an error was posted, to prevent annoying

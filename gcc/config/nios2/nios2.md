@@ -697,7 +697,7 @@
 ; check or adjust for overflow.
 
 (define_insn "indirect_jump"
-  [(set (pc) (match_operand:SI 0 "register_operand" "r"))]
+  [(set (pc) (match_operand:SI 0 "register_operand" "c"))]
   ""
   "jmp\\t%0"
   [(set_attr "type" "control")])
@@ -811,7 +811,7 @@
 
 (define_insn "*tablejump"
   [(set (pc)
-        (match_operand:SI 0 "register_operand" "r"))
+        (match_operand:SI 0 "register_operand" "c"))
    (use (label_ref (match_operand 1 "" "")))]
   ""
   "jmp\\t%0"
@@ -1000,7 +1000,7 @@
 (define_insn "trap"
   [(trap_if (const_int 1) (const_int 3))]
   ""
-  "break\\t3"
+  "trap\\t3"
   [(set_attr "type" "control")])
 
 (define_insn "ctrapsi4"
@@ -1009,7 +1009,7 @@
                (match_operand:SI 2 "reg_or_0_operand" "rM")])
             (match_operand 3 "const_int_operand" "i"))]
   ""
-  "b%R0\\t%z1, %z2, 1f\;break\\t%3\;1:"
+  "b%R0\\t%z1, %z2, 1f\;trap\\t%3\;1:"
   [(set_attr "type" "control")
    (set_attr "length" "8")])
   

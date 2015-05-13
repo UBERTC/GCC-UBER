@@ -5473,12 +5473,12 @@ ix86_function_ok_for_sibcall (tree decl, tree exp)
   rtx a, b;
 
   /* If we are generating position-independent code, we cannot sibcall
-     optimize any indirect call, or a direct call to a global function,
-     as the PLT requires %ebx be live. (Darwin does not have a PLT.)  */
+     optimize direct calls to global functions, as the PLT requires
+     %ebx be live. (Darwin does not have a PLT.)  */
   if (!TARGET_MACHO
       && !TARGET_64BIT
       && flag_pic
-      && (!decl || !targetm.binds_local_p (decl)))
+      && decl && !targetm.binds_local_p (decl))
     return false;
 
   /* If we need to align the outgoing stack, then sibcalling would
@@ -14997,21 +14997,21 @@ put_condition_code (enum rtx_code code, machine_mode mode, bool reverse,
 	case CCAmode:
 	  suffix = "a";
 	  break;
-
 	case CCCmode:
 	  suffix = "c";
 	  break;
-
 	case CCOmode:
 	  suffix = "o";
 	  break;
-
+	case CCPmode:
+	  suffix = "p";
+	  break;
 	case CCSmode:
 	  suffix = "s";
 	  break;
-
 	default:
 	  suffix = "e";
+	  break;
 	}
       break;
     case NE:
@@ -15020,21 +15020,21 @@ put_condition_code (enum rtx_code code, machine_mode mode, bool reverse,
 	case CCAmode:
 	  suffix = "na";
 	  break;
-
 	case CCCmode:
 	  suffix = "nc";
 	  break;
-
 	case CCOmode:
 	  suffix = "no";
 	  break;
-
+	case CCPmode:
+	  suffix = "np";
+	  break;
 	case CCSmode:
 	  suffix = "ns";
 	  break;
-
 	default:
 	  suffix = "ne";
+	  break;
 	}
       break;
     case GT:
@@ -19765,6 +19765,7 @@ ix86_match_ccmode (rtx insn, machine_mode req_mode)
     case CCAmode:
     case CCCmode:
     case CCOmode:
+    case CCPmode:
     case CCSmode:
       if (set_mode != req_mode)
 	return false;
@@ -19913,6 +19914,7 @@ ix86_cc_modes_compatible (machine_mode m1, machine_mode m2)
     case CCAmode:
     case CCCmode:
     case CCOmode:
+    case CCPmode:
     case CCSmode:
     case CCZmode:
       switch (m2)
@@ -19927,6 +19929,7 @@ ix86_cc_modes_compatible (machine_mode m1, machine_mode m2)
 	case CCAmode:
 	case CCCmode:
 	case CCOmode:
+	case CCPmode:
 	case CCSmode:
 	case CCZmode:
 	  return CCmode;
@@ -45403,19 +45406,23 @@ ix86_c_mode_for_suffix (char suffix)
   return VOIDmode;
 }
 
-/* Worker function for TARGET_MD_ASM_CLOBBERS.
+/* Worker function for TARGET_MD_ASM_ADJUST.
 
    We do this in the new i386 backend to maintain source compatibility
    with the old cc0-based compiler.  */
 
-static tree
-ix86_md_asm_clobbers (tree, tree, tree clobbers)
+static rtx_insn *
+ix86_md_asm_adjust (vec<rtx> &/*outputs*/, vec<rtx> &/*inputs*/,
+		    vec<const char *> &/*constraints*/,
+		    vec<rtx> &clobbers, HARD_REG_SET &clobbered_regs)
 {
-  clobbers = tree_cons (NULL_TREE, build_string (5, "flags"),
-			clobbers);
-  clobbers = tree_cons (NULL_TREE, build_string (4, "fpsr"),
-			clobbers);
-  return clobbers;
+  clobbers.safe_push (gen_rtx_REG (CCmode, FLAGS_REG));
+  clobbers.safe_push (gen_rtx_REG (CCFPmode, FPSR_REG));
+
+  SET_HARD_REG_BIT (clobbered_regs, FLAGS_REG);
+  SET_HARD_REG_BIT (clobbered_regs, FPSR_REG);
+
+  return NULL;
 }
 
 /* Implements target vector targetm.asm.encode_section_info.  */
@@ -51215,7 +51222,7 @@ ix86_destroy_cost_data (void *data)
 static unsigned HOST_WIDE_INT
 ix86_memmodel_check (unsigned HOST_WIDE_INT val)
 {
-  unsigned HOST_WIDE_INT model = val & MEMMODEL_MASK;
+  enum memmodel model = memmodel_from_int (val);
   bool strong;
 
   if (val & ~(unsigned HOST_WIDE_INT)(IX86_HLE_ACQUIRE|IX86_HLE_RELEASE
@@ -51226,14 +51233,14 @@ ix86_memmodel_check (unsigned HOST_WIDE_INT val)
 	       "Unknown architecture specific memory model");
       return MEMMODEL_SEQ_CST;
     }
-  strong = (model == MEMMODEL_ACQ_REL || model == MEMMODEL_SEQ_CST);
-  if (val & IX86_HLE_ACQUIRE && !(model == MEMMODEL_ACQUIRE || strong))
+  strong = (is_mm_acq_rel (model) || is_mm_seq_cst (model));
+  if (val & IX86_HLE_ACQUIRE && !(is_mm_acquire (model) || strong))
     {
       warning (OPT_Winvalid_memory_model,
               "HLE_ACQUIRE not used with ACQUIRE or stronger memory model");
       return MEMMODEL_SEQ_CST | IX86_HLE_ACQUIRE;
     }
-   if (val & IX86_HLE_RELEASE && !(model == MEMMODEL_RELEASE || strong))
+  if (val & IX86_HLE_RELEASE && !(is_mm_release (model) || strong))
     {
       warning (OPT_Winvalid_memory_model,
               "HLE_RELEASE not used with RELEASE or stronger memory model");
@@ -51446,7 +51453,7 @@ ix86_loop_unroll_adjust (unsigned nunroll, struct loop *loop)
   for (i = 0; i < loop->num_nodes; i++)
     FOR_BB_INSNS (bbs[i], insn)
       if (NONDEBUG_INSN_P (insn))
-	FOR_EACH_SUBRTX (iter, array, insn, NONCONST)
+	FOR_EACH_SUBRTX (iter, array, PATTERN (insn), NONCONST)
 	  if (const_rtx x = *iter)
 	    if (MEM_P (x))
 	      {
@@ -51943,8 +51950,8 @@ ix86_operands_ok_for_move_multiple (rtx *operands, bool load,
 #undef TARGET_EXPAND_BUILTIN_VA_START
 #define TARGET_EXPAND_BUILTIN_VA_START ix86_va_start
 
-#undef TARGET_MD_ASM_CLOBBERS
-#define TARGET_MD_ASM_CLOBBERS ix86_md_asm_clobbers
+#undef TARGET_MD_ASM_ADJUST
+#define TARGET_MD_ASM_ADJUST ix86_md_asm_adjust
 
 #undef TARGET_PROMOTE_PROTOTYPES
 #define TARGET_PROMOTE_PROTOTYPES hook_bool_const_tree_true

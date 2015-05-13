@@ -5633,7 +5633,7 @@ package body Sem_Ch8 is
                   end if;
                end if;
 
-               Check_Nested_Access (N, E);
+               Check_Nested_Access (E);
             end if;
 
             Set_Entity_Or_Discriminal (N, E);
@@ -5767,18 +5767,20 @@ package body Sem_Ch8 is
                   end if;
                end if;
 
-            --  Ada 2005 (AI-217): Handle shadow entities associated with types
-            --  declared in limited-withed nested packages. We don't need to
-            --  handle E_Incomplete_Subtype entities because the entities in
-            --  the limited view are always E_Incomplete_Type entities (see
-            --  Build_Limited_Views). Regarding the expression used to evaluate
-            --  the scope, it is important to note that the limited view also
-            --  has shadow entities associated nested packages. For this reason
-            --  the correct scope of the entity is the scope of the real entity
+            --  Ada 2005 (AI-217): Handle shadow entities associated with
+            --  types declared in limited-withed nested packages. We don't need
+            --  to handle E_Incomplete_Subtype entities because the entities
+            --  in the limited view are always E_Incomplete_Type and
+            --  E_Class_Wide_Type entities (see Build_Limited_Views).
+
+            --  Regarding the expression used to evaluate the scope, it
+            --  is important to note that the limited view also has shadow
+            --  entities associated nested packages. For this reason the
+            --  correct scope of the entity is the scope of the real entity.
             --  The non-limited view may itself be incomplete, in which case
             --  get the full view if available.
 
-            elsif Ekind (Id) = E_Incomplete_Type
+            elsif Ekind_In (Id, E_Incomplete_Type, E_Class_Wide_Type)
               and then From_Limited_With (Id)
               and then Present (Non_Limited_View (Id))
               and then Scope (Non_Limited_View (Id)) = P_Name
@@ -5791,8 +5793,19 @@ package body Sem_Ch8 is
             end if;
 
             if Is_New_Candidate then
+
+               --  If entity is a child unit, either it is a visible child of
+               --  the prefix, or we are in the body of a generic prefix, as
+               --  will happen when a child unit is instantiated in the body
+               --  of a generic parent. This is because the instance body does
+               --  not restore the full compilation context, given that all
+               --  non-local references have been captured.
+
                if Is_Child_Unit (Id) or else P_Name = Standard_Standard then
-                  exit when Is_Visible_Lib_Unit (Id);
+                  exit when Is_Visible_Lib_Unit (Id)
+                    or else (Is_Child_Unit (Id)
+                              and then In_Open_Scopes (Scope (Id))
+                              and then In_Instance_Body);
                else
                   exit when not Is_Hidden (Id);
                end if;
@@ -6714,17 +6727,15 @@ package body Sem_Ch8 is
 
          --  The designated type may be a limited view with no components.
          --  Check whether the non-limited view is available, because in some
-         --  cases this will not be set when instlling the context.
+         --  cases this will not be set when installing the context.
 
          if Is_Access_Type (P_Type) then
             declare
                D : constant Entity_Id := Directly_Designated_Type (P_Type);
             begin
                if Is_Incomplete_Type (D)
-                 and then not Is_Class_Wide_Type (D)
                  and then From_Limited_With (D)
                  and then Present (Non_Limited_View (D))
-                 and then not Is_Class_Wide_Type (Non_Limited_View (D))
                then
                   Set_Directly_Designated_Type (P_Type,  Non_Limited_View (D));
                end if;

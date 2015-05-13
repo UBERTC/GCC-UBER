@@ -58,6 +58,7 @@ with Sem_Ch6;  use Sem_Ch6;
 with Sem_Ch7;  use Sem_Ch7;
 with Sem_Ch8;  use Sem_Ch8;
 with Sem_Ch10; use Sem_Ch10;
+with Sem_Ch12; use Sem_Ch12;
 with Sem_Ch13; use Sem_Ch13;
 with Sem_Dim;  use Sem_Dim;
 with Sem_Disp; use Sem_Disp;
@@ -1160,7 +1161,7 @@ package body Sem_Ch3 is
                if Is_Access_Type (Typ)
                  and then Null_Exclusion_In_Return_Present (T_Def)
                then
-                  Set_Etype  (Desig_Type,
+                  Set_Etype (Desig_Type,
                     Create_Null_Excluding_Itype
                       (T           => Typ,
                        Related_Nod => T_Def,
@@ -1759,22 +1760,26 @@ package body Sem_Ch3 is
                   Set_Etype (New_Subp, Etype (Iface_Prim));
                end if;
 
-               --  Internal entities associated with interface types are
-               --  only registered in the list of primitives of the tagged
-               --  type. They are only used to fill the contents of the
-               --  secondary dispatch tables. Therefore they are not needed
-               --  in the homonym chains.
+               --  Internal entities associated with interface types are only
+               --  registered in the list of primitives of the tagged type.
+               --  They are only used to fill the contents of the secondary
+               --  dispatch tables. Therefore they are not needed in the
+               --  homonym chains.
 
                Remove_Homonym (New_Subp);
 
                --  Hidden entities associated with interfaces must have set
-               --  the Has_Delay_Freeze attribute to ensure that, in case of
-               --  locally defined tagged types (or compiling with static
+               --  the Has_Delay_Freeze attribute to ensure that, in case
+               --  of locally defined tagged types (or compiling with static
                --  dispatch tables generation disabled) the corresponding
-               --  entry of the secondary dispatch table is filled when
-               --  such an entity is frozen.
+               --  entry of the secondary dispatch table is filled when such
+               --  an entity is frozen. This is an expansion activity that must
+               --  be suppressed for ASIS because it leads to gigi elaboration
+               --  issues in annotate mode.
 
-               Set_Has_Delayed_Freeze (New_Subp);
+               if not ASIS_Mode then
+                  Set_Has_Delayed_Freeze (New_Subp);
+               end if;
             end if;
 
             <<Continue>>
@@ -1794,9 +1799,10 @@ package body Sem_Ch3 is
    -----------------------------------
 
    procedure Analyze_Component_Declaration (N : Node_Id) is
-      Id  : constant Entity_Id := Defining_Identifier (N);
-      E   : constant Node_Id   := Expression (N);
-      Typ : constant Node_Id   :=
+      Loc : constant Source_Ptr := Sloc (Component_Definition (N));
+      Id  : constant Entity_Id  := Defining_Identifier (N);
+      E   : constant Node_Id    := Expression (N);
+      Typ : constant Node_Id    :=
               Subtype_Indication (Component_Definition (N));
       T   : Entity_Id;
       P   : Entity_Id;
@@ -2123,6 +2129,31 @@ package body Sem_Ch3 is
          end if;
       end if;
 
+      --  If the component is an unconstrained task or protected type with
+      --  discriminants, the component and the enclosing record are limited
+      --  and the component is constrained by its default values. Compute
+      --  its actual subtype, else it may be allocated the maximum size by
+      --  the backend, and possibly overflow.
+
+      if Is_Concurrent_Type (T)
+        and then not Is_Constrained (T)
+        and then Has_Discriminants (T)
+        and then not Has_Discriminants (Current_Scope)
+      then
+         declare
+            Act_T : constant Entity_Id := Build_Default_Subtype (T, N);
+
+         begin
+            Set_Etype (Id, Act_T);
+
+            --  Rewrite component definition to use the constrained subtype
+
+            Rewrite (Component_Definition (N),
+              Make_Component_Definition (Loc,
+                Subtype_Indication => New_Occurrence_Of (Act_T, Loc)));
+         end;
+      end if;
+
       Set_Original_Record_Component (Id, Id);
 
       if Has_Aspects (N) then
@@ -2272,16 +2303,13 @@ package body Sem_Ch3 is
 
       --  Local variables
 
-      Context     : Node_Id;
+      Context     : Node_Id   := Empty;
       Freeze_From : Entity_Id := Empty;
       Next_Decl   : Node_Id;
-      Spec_Id     : Entity_Id;
+      Pack_Decl   : Node_Id   := Empty;
 
       Body_Seen : Boolean := False;
       --  Flag set when the first body [stub] is encountered
-
-      In_Package_Body : Boolean := False;
-      --  Flag set when the current declaration list belongs to a package body
 
    --  Start of processing for Analyze_Declarations
 
@@ -2426,6 +2454,7 @@ package body Sem_Ch3 is
          Context := Parent (L);
 
          if Nkind (Context) = N_Package_Specification then
+            Pack_Decl := Parent (Context);
 
             --  When a package has private declarations, its contract must be
             --  analyzed at the end of the said declarations. This way both the
@@ -2454,44 +2483,71 @@ package body Sem_Ch3 is
             end if;
 
          elsif Nkind (Context) = N_Package_Body then
-            In_Package_Body := True;
-            Spec_Id := Corresponding_Spec (Context);
-
+            Pack_Decl := Context;
             Analyze_Package_Body_Contract (Defining_Entity (Context));
          end if;
-      end if;
 
-      --  Analyze the contracts of subprogram declarations, subprogram bodies
-      --  and variables now due to the delayed visibility requirements of their
-      --  aspects.
+         --  Analyze the contracts of all subprogram declarations, subprogram
+         --  bodies and variables now due to the delayed visibility needs of
+         --  of their aspects and pragmas. Capture global references in generic
+         --  subprograms or bodies.
 
-      Decl := First (L);
-      while Present (Decl) loop
-         if Nkind (Decl) = N_Object_Declaration then
-            Analyze_Object_Contract (Defining_Entity (Decl));
+         Decl := First (L);
+         while Present (Decl) loop
+            if Nkind (Decl) = N_Object_Declaration then
+               Analyze_Object_Contract (Defining_Entity (Decl));
 
-         elsif Nkind_In (Decl, N_Abstract_Subprogram_Declaration,
-                               N_Generic_Subprogram_Declaration,
-                               N_Subprogram_Declaration)
-         then
-            Analyze_Subprogram_Contract (Defining_Entity (Decl));
+            elsif Nkind_In (Decl, N_Abstract_Subprogram_Declaration,
+                                  N_Generic_Subprogram_Declaration,
+                                  N_Subprogram_Declaration)
+            then
+               Analyze_Subprogram_Contract (Defining_Entity (Decl));
 
-         elsif Nkind (Decl) = N_Subprogram_Body then
-            Analyze_Subprogram_Body_Contract (Defining_Entity (Decl));
+            elsif Nkind (Decl) = N_Subprogram_Body then
+               Analyze_Subprogram_Body_Contract (Defining_Entity (Decl));
 
-         elsif Nkind (Decl) = N_Subprogram_Body_Stub then
-            Analyze_Subprogram_Body_Stub_Contract (Defining_Entity (Decl));
+            elsif Nkind (Decl) = N_Subprogram_Body_Stub then
+               Analyze_Subprogram_Body_Stub_Contract (Defining_Entity (Decl));
+            end if;
+
+            --  Capture all global references in a generic subprogram or a body
+            --  [stub] now that the contract has been analyzed.
+
+            if Nkind_In (Decl, N_Generic_Subprogram_Declaration,
+                               N_Subprogram_Body,
+                               N_Subprogram_Body_Stub)
+              and then Is_Generic_Declaration_Or_Body (Decl)
+            then
+               Save_Global_References_In_Contract
+                 (Templ  => Original_Node (Decl),
+                  Gen_Id => Corresponding_Spec_Of (Decl));
+            end if;
+
+            Next (Decl);
+         end loop;
+
+         --  The owner of the declarations is a package [body]
+
+         if Present (Pack_Decl) then
+
+            --  Capture all global references in a generic package or a body
+            --  after all nested generic subprograms and bodies were subjected
+            --  to the same processing.
+
+            if Is_Generic_Declaration_Or_Body (Pack_Decl) then
+               Save_Global_References_In_Contract
+                 (Templ  => Original_Node (Pack_Decl),
+                  Gen_Id => Corresponding_Spec_Of (Pack_Decl));
+            end if;
+
+            --  State refinements are visible upto the end the of the package
+            --  body declarations. Hide the state refinements from visibility
+            --  to restore the original state conditions.
+
+            if Nkind (Pack_Decl) = N_Package_Body then
+               Remove_Visible_Refinements (Corresponding_Spec (Pack_Decl));
+            end if;
          end if;
-
-         Next (Decl);
-      end loop;
-
-      --  State refinements are visible upto the end the of the package body
-      --  declarations. Hide the refinements from visibility to restore the
-      --  original state conditions.
-
-      if In_Package_Body then
-         Remove_Visible_Refinements (Spec_Id);
       end if;
    end Analyze_Declarations;
 
@@ -3314,6 +3370,17 @@ package body Sem_Ch3 is
       --  or a variant record type is encountered, Check_Restrictions is called
       --  indicating the count is unknown.
 
+      function Delayed_Aspect_Present return Boolean;
+      --  If the declaration has an expression that is an aggregate, and it
+      --  has aspects that require delayed analysis, the resolution of the
+      --  aggregate must be deferred to the freeze point of the objet. This
+      --  special processing was created for address clauses, but it must
+      --  also apply to Alignment. This must be done before the aspect
+      --  specifications are analyzed because we must handle the aggregate
+      --  before the analysis of the object declaration is complete.
+
+      --  Any other relevant delayed aspects on object declarations ???
+
       -----------------
       -- Count_Tasks --
       -----------------
@@ -3367,6 +3434,30 @@ package body Sem_Ch3 is
             return Uint_0;
          end if;
       end Count_Tasks;
+
+      ----------------------------
+      -- Delayed_Aspect_Present --
+      ----------------------------
+
+      function Delayed_Aspect_Present return Boolean is
+         A    : Node_Id;
+         A_Id : Aspect_Id;
+
+      begin
+         if Present (Aspect_Specifications (N)) then
+            A    := First (Aspect_Specifications (N));
+            A_Id := Get_Aspect_Id (Chars (Identifier (A)));
+            while Present (A) loop
+               if A_Id = Aspect_Alignment or else A_Id = Aspect_Address then
+                  return True;
+               end if;
+
+               Next (A);
+            end loop;
+         end if;
+
+         return False;
+      end Delayed_Aspect_Present;
 
    --  Start of processing for Analyze_Object_Declaration
 
@@ -3683,7 +3774,8 @@ package body Sem_Ch3 is
          if Comes_From_Source (N)
            and then Expander_Active
            and then Nkind (E) = N_Aggregate
-           and then Present (Following_Address_Clause (N))
+           and then (Present (Following_Address_Clause (N))
+                      or else Delayed_Aspect_Present)
          then
             Set_Etype (E, T);
 
@@ -6494,6 +6586,11 @@ package body Sem_Ch3 is
          Mark_Rewrite_Insertion (Type_Decl);
          Insert_Before (N, Type_Decl);
          Analyze (Type_Decl);
+
+         --  The anonymous base now has a full declaration, but this base
+         --  is not a first subtype.
+
+         Set_Is_First_Subtype (Implicit_Base, False);
 
          --  After the implicit base is analyzed its Etype needs to be changed
          --  to reflect the fact that it is derived from the parent type which
@@ -11603,7 +11700,8 @@ package body Sem_Ch3 is
       --  Freeze the private subtype entity if its parent is delayed, and not
       --  already frozen. We skip this processing if the type is an anonymous
       --  subtype of a record component, or is the corresponding record of a
-      --  protected type, since ???
+      --  protected type, since these are processed when the enclosing type
+      --  is frozen.
 
       if not Is_Type (Scope (Full)) then
          Set_Has_Delayed_Freeze (Full,
@@ -11782,10 +11880,18 @@ package body Sem_Ch3 is
 
       --  Make sure Has_Predicates is set on full type if it is set on the
       --  private type. Note that it may already be set on the full type and
-      --  if so, we don't want to unset it.
+      --  if so, we don't want to unset it. Similarly, propagate information
+      --  about delayed aspects, because the corresponding pragmas must be
+      --  analyzed when one of the views is frozen. This last step is needed
+      --  in particular when the full type is a scalar type for which an
+      --  anonymous base type is constructed.
 
       if Has_Predicates (Priv) then
          Set_Has_Predicates (Full);
+      end if;
+
+      if Has_Delayed_Aspects (Priv) then
+         Set_Has_Delayed_Aspects (Full);
       end if;
    end Complete_Private_Subtype;
 

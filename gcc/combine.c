@@ -1668,6 +1668,51 @@ sign_extend_short_imm (rtx src, machine_mode mode, unsigned int prec)
 }
 #endif
 
+/* Update RSP for pseudo-register X from INSN's REG_EQUAL note (if one exists)
+   and SET.  */
+
+static void
+update_rsp_from_reg_equal (reg_stat_type *rsp, rtx_insn *insn, const_rtx set,
+			   rtx x)
+{
+  rtx reg_equal_note = insn ? find_reg_equal_equiv_note (insn) : NULL_RTX;
+  unsigned HOST_WIDE_INT bits = 0;
+  rtx reg_equal = NULL, src = SET_SRC (set);
+  unsigned int num = 0;
+
+  if (reg_equal_note)
+    reg_equal = XEXP (reg_equal_note, 0);
+
+#ifdef SHORT_IMMEDIATES_SIGN_EXTEND
+  src = sign_extend_short_imm (src, GET_MODE (x), BITS_PER_WORD);
+  if (reg_equal)
+    reg_equal = sign_extend_short_imm (reg_equal, GET_MODE (x), BITS_PER_WORD);
+#endif
+
+  /* Don't call nonzero_bits if it cannot change anything.  */
+  if (rsp->nonzero_bits != ~(unsigned HOST_WIDE_INT) 0)
+    {
+      bits = nonzero_bits (src, nonzero_bits_mode);
+      if (reg_equal && bits)
+	bits &= nonzero_bits (reg_equal, nonzero_bits_mode);
+      rsp->nonzero_bits |= bits;
+    }
+
+  /* Don't call num_sign_bit_copies if it cannot change anything.  */
+  if (rsp->sign_bit_copies != 1)
+    {
+      num = num_sign_bit_copies (SET_SRC (set), GET_MODE (x));
+      if (reg_equal && num != GET_MODE_PRECISION (GET_MODE (x)))
+	{
+	  unsigned int numeq = num_sign_bit_copies (reg_equal, GET_MODE (x));
+	  if (num == 0 || numeq > num)
+	    num = numeq;
+	}
+      if (rsp->sign_bit_copies == 0 || num < rsp->sign_bit_copies)
+	rsp->sign_bit_copies = num;
+    }
+}
+
 /* Called via note_stores.  If X is a pseudo that is narrower than
    HOST_BITS_PER_WIDE_INT and is being set, record what bits are known zero.
 
@@ -1683,7 +1728,6 @@ static void
 set_nonzero_bits_and_sign_copies (rtx x, const_rtx set, void *data)
 {
   rtx_insn *insn = (rtx_insn *) data;
-  unsigned int num;
 
   if (REG_P (x)
       && REGNO (x) >= FIRST_PSEUDO_REGISTER
@@ -1743,21 +1787,7 @@ set_nonzero_bits_and_sign_copies (rtx x, const_rtx set, void *data)
       if (SET_DEST (set) == x
 	  || (paradoxical_subreg_p (SET_DEST (set))
 	      && SUBREG_REG (SET_DEST (set)) == x))
-	{
-	  rtx src = SET_SRC (set);
-
-#ifdef SHORT_IMMEDIATES_SIGN_EXTEND
-	  src = sign_extend_short_imm (src, GET_MODE (x), BITS_PER_WORD);
-#endif
-
-	  /* Don't call nonzero_bits if it cannot change anything.  */
-	  if (rsp->nonzero_bits != ~(unsigned HOST_WIDE_INT) 0)
-	    rsp->nonzero_bits |= nonzero_bits (src, nonzero_bits_mode);
-	  num = num_sign_bit_copies (SET_SRC (set), GET_MODE (x));
-	  if (rsp->sign_bit_copies == 0
-	      || rsp->sign_bit_copies > num)
-	    rsp->sign_bit_copies = num;
-	}
+	update_rsp_from_reg_equal (rsp, insn, set, x);
       else
 	{
 	  rsp->nonzero_bits = GET_MODE_MASK (GET_MODE (x));
@@ -4643,15 +4673,25 @@ try_combine (rtx_insn *i3, rtx_insn *i2, rtx_insn *i1, rtx_insn *i0,
     return newi2pat ? i2 : i3;
 }
 
-/* Undo all the modifications recorded in undobuf.  */
+/* Get a marker for undoing to the current state.  */
+
+static void *
+get_undo_marker (void)
+{
+  return undobuf.undos;
+}
+
+/* Undo the modifications up to the marker.  */
 
 static void
-undo_all (void)
+undo_to_marker (void *marker)
 {
   struct undo *undo, *next;
 
-  for (undo = undobuf.undos; undo; undo = next)
+  for (undo = undobuf.undos; undo != marker; undo = next)
     {
+      gcc_assert (undo);
+
       next = undo->next;
       switch (undo->kind)
 	{
@@ -4675,7 +4715,15 @@ undo_all (void)
       undobuf.frees = undo;
     }
 
-  undobuf.undos = 0;
+  undobuf.undos = (struct undo *) marker;
+}
+
+/* Undo all the modifications recorded in undobuf.  */
+
+static void
+undo_all (void)
+{
+  undo_to_marker (0);
 }
 
 /* We've committed to accepting the changes we made.  Move all
@@ -10831,21 +10879,11 @@ simplify_shift_const (rtx x, enum rtx_code code, machine_mode result_mode,
 }
 
 
-/* Like recog, but we receive the address of a pointer to a new pattern.
-   We try to match the rtx that the pointer points to.
-   If that fails, we may try to modify or replace the pattern,
-   storing the replacement into the same pointer object.
-
-   Modifications include deletion or addition of CLOBBERs.
-
-   PNOTES is a pointer to a location where any REG_UNUSED notes added for
-   the CLOBBERs are placed.
-
-   The value is the final insn code from the pattern ultimately matched,
-   or -1.  */
+/* A subroutine of recog_for_combine.  See there for arguments and
+   return value.  */
 
 static int
-recog_for_combine (rtx *pnewpat, rtx_insn *insn, rtx *pnotes)
+recog_for_combine_1 (rtx *pnewpat, rtx_insn *insn, rtx *pnotes)
 {
   rtx pat = *pnewpat;
   rtx pat_without_clobbers;
@@ -10989,6 +11027,110 @@ recog_for_combine (rtx *pnewpat, rtx_insn *insn, rtx *pnotes)
 
   *pnewpat = pat;
   *pnotes = notes;
+
+  return insn_code_number;
+}
+
+/* Change every ZERO_EXTRACT and ZERO_EXTEND of a SUBREG that can be
+   expressed as an AND and maybe an LSHIFTRT, to that formulation.
+   Return whether anything was so changed.  */
+
+static bool
+change_zero_ext (rtx *src)
+{
+  bool changed = false;
+
+  subrtx_ptr_iterator::array_type array;
+  FOR_EACH_SUBRTX_PTR (iter, array, src, NONCONST)
+    {
+      rtx x = **iter;
+      machine_mode mode = GET_MODE (x);
+      int size;
+
+      if (GET_CODE (x) == ZERO_EXTRACT
+	  && CONST_INT_P (XEXP (x, 1))
+	  && CONST_INT_P (XEXP (x, 2))
+	  && GET_MODE (XEXP (x, 0)) == mode)
+	{
+	  size = INTVAL (XEXP (x, 1));
+
+	  int start = INTVAL (XEXP (x, 2));
+	  if (BITS_BIG_ENDIAN)
+	    start = GET_MODE_PRECISION (mode) - size - start;
+
+	  x = gen_rtx_LSHIFTRT (mode, XEXP (x, 0), GEN_INT (start));
+	}
+      else if (GET_CODE (x) == ZERO_EXTEND
+	       && GET_CODE (XEXP (x, 0)) == SUBREG
+	       && GET_MODE (SUBREG_REG (XEXP (x, 0))) == mode
+	       && subreg_lowpart_p (XEXP (x, 0)))
+	{
+	  size = GET_MODE_PRECISION (GET_MODE (XEXP (x, 0)));
+	  x = SUBREG_REG (XEXP (x, 0));
+	}
+      else
+	continue;
+
+      unsigned HOST_WIDE_INT mask = 1;
+      mask <<= size;
+      mask--;
+
+      x = gen_rtx_AND (mode, x, GEN_INT (mask));
+
+      SUBST (**iter, x);
+      changed = true;
+    }
+
+  return changed;
+}
+
+/* Like recog, but we receive the address of a pointer to a new pattern.
+   We try to match the rtx that the pointer points to.
+   If that fails, we may try to modify or replace the pattern,
+   storing the replacement into the same pointer object.
+
+   Modifications include deletion or addition of CLOBBERs.  If the
+   instruction will still not match, we change ZERO_EXTEND and ZERO_EXTRACT
+   to the equivalent AND and perhaps LSHIFTRT patterns, and try with that
+   (and undo if that fails).
+
+   PNOTES is a pointer to a location where any REG_UNUSED notes added for
+   the CLOBBERs are placed.
+
+   The value is the final insn code from the pattern ultimately matched,
+   or -1.  */
+
+static int
+recog_for_combine (rtx *pnewpat, rtx_insn *insn, rtx *pnotes)
+{
+  rtx pat = PATTERN (insn);
+  int insn_code_number = recog_for_combine_1 (pnewpat, insn, pnotes);
+  if (insn_code_number >= 0 || check_asm_operands (pat))
+    return insn_code_number;
+
+  void *marker = get_undo_marker ();
+  bool changed = false;
+
+  if (GET_CODE (pat) == SET)
+    changed = change_zero_ext (&SET_SRC (pat));
+  else if (GET_CODE (pat) == PARALLEL)
+    {
+      int i;
+      for (i = 0; i < XVECLEN (pat, 0); i++)
+	{
+	  rtx set = XVECEXP (pat, 0, i);
+	  if (GET_CODE (set) == SET)
+	    changed |= change_zero_ext (&SET_SRC (set));
+	}
+    }
+
+  if (changed)
+    {
+      insn_code_number = recog_for_combine_1 (pnewpat, insn, pnotes);
+
+      if (insn_code_number < 0)
+	undo_to_marker (marker);
+    }
 
   return insn_code_number;
 }

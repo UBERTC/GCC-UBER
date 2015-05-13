@@ -36,17 +36,49 @@ EOF
 }
 
 test $# -eq 0 && usage
+nfiles=$#
+files="$*"
+
+stdin=false
+stdin_tmp=""
+if [ $nfiles -eq 1 ] && [ "$files" = "-" ]; then
+    stdin=true
+
+    # By putting stdin into a temp file, we can handle it just like any other
+    # file.  F.i., we can cat it twice, which we can't do with stdin.
+    stdin_tmp=check_GNU_style.stdin
+    cat - > $stdin_tmp
+    files=$stdin_tmp
+else
+    for f in $files; do
+	if [ "$f" = "-" ]; then
+	    # Let's keep things simple.  Either we read from stdin, or we read
+	    # from files specified on the command line, not both.
+	    usage
+	fi
+	if [ ! -f "$f" ]; then
+	    echo "error: could not read file: $f"
+	    exit 1
+	fi
+    done
+fi
 
 inp=check_GNU_style.inp
 tmp=check_GNU_style.tmp
 
 # Remove $tmp on exit and various signals.
-trap "rm -f $inp $tmp" 0
-trap "rm -f $inp $tmp ; exit 1" 1 2 3 5 9 13 15
+trap "rm -f $inp $tmp $stdin_tmp" 0
+trap "rm -f $inp $tmp $stdin_tmp; exit 1" 1 2 3 5 9 13 15
 
-grep -nH '^+' $* \
-	| grep -v ':+++' \
-	> $inp
+if [ $nfiles -eq 1 ]; then
+    # There's no need for the file prefix if we're dealing only with one file.
+    format="-n"
+else
+    format="-nH"
+fi
+grep $format '^+' $files \
+    | grep -v ':+++' \
+    > $inp
 
 # Grep
 g (){
@@ -84,13 +116,37 @@ vg (){
 
 col (){
     msg="$1"
-    cat $inp \
-	| awk -F':\\+' '{ if (length($2) > 80) print $0}' \
-	> $tmp
-    if [ -s $tmp ]; then
-	printf "\n$msg\n"
-	cat $tmp
-    fi
+    local first=true
+    local f
+    for f in $files; do
+	local prefix=""
+	if [ $nfiles -ne 1 ]; then
+	    prefix="$f:"
+	fi
+
+	# Don't reuse $inp, which may be generated using -H and thus contain a
+	# file prefix.
+	grep -n '^+' $f \
+	    | grep -v ':+++' \
+	    > $tmp
+
+	cat $tmp | while IFS= read -r line; do
+	    local longline
+	    # Filter out the line number prefix and the patch line modifier '+'
+	    # to obtain the bare line, before we use expand.
+	    longline=$(echo "$line" \
+		| sed 's/^[0-9]*:+//' \
+		| expand \
+		| awk '{ if (length($0) > 80) print $0}')
+	    if [ "$longline" != "" ]; then
+		if $first; then
+		    printf "\n$msg\n"
+		    first=false
+		fi
+		echo "$prefix$line"
+	    fi
+	done
+    done
 }
 
 col 'Lines should not exceed 80 characters.'
