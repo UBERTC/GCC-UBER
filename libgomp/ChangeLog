@@ -1,3 +1,16 @@
+2015-05-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66133
+	* testsuite/libgomp.c/pr66133.c: New test.
+
+2015-05-13  Michael Haubenwallner  <michael.haubenwallner@ssi-schaefer.com>
+
+	* Makefile.in: Regenerated with automake-1.11.6.
+	* aclocal.m4: Likewise.
+	* config.h.in: Likewise.
+	* configure: Likewise.
+	* testsuite/Makefile.in: Likewise.
+
 2015-05-08  Jason Merrill  <jason@redhat.com>
 
 	* testsuite/libgomp.oacc-c-c++-common/reduction-4.c (main): Use

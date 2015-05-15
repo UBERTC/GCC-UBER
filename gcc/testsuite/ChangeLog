@@ -1,3 +1,80 @@
+2015-05-14  Alexander Monakov  <amonakov@ispras.ru>
+
+	* gcc.target/i386/sibcall-7.c: New test.
+	* gcc.target/i386/sibcall-8.c: New test.
+
+2015-05-14  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	* gcc.target/aarch64/abs_1.c (abs64): Update test for new abs expansion.
+	(abs64_in_dreg): Likewise.
+
+2015-05-14  Marek Polacek  <polacek@redhat.com>
+
+	PR c/66066
+	PR c/66127
+	* gcc.dg/pr14649-1.c: Add -Wpedantic.
+	* gcc.dg/pr19984.c: Likewise.
+	* gcc.dg/pr66066-1.c: New test.
+	* gcc.dg/pr66066-2.c: New test.
+	* gcc.dg/pr66066-3.c: New test.
+
+2015-05-13  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/pow-sqrt-synth-1.c: New test.
+	* gcc.dg/pow-sqrt.x: New file.
+	* gcc.dg/pow-sqrt-1.c: New test.
+	* gcc.dg/pow-sqrt-2.c: Likewise.
+	* gcc.dg/pow-sqrt-3.c: Likewise.
+
+2015-05-13  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66123
+	* gcc.dg/torture/pr66123.c: New testcase.
+
+2015-05-13  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/66110
+	* gcc.dg/alias-2.c: Adjust.
+	* gcc.dg/tree-ssa/ssa-dse-17.c: New testcase.
+
+2015-05-13  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR target/65103
+	* gcc.target/i386/pr65103-3.c: New.
+
+2015-05-13  Martin Liska  <mliska@suse.cz>
+
+	* g++.dg/ipa/pr65557.C: Remove unnecessary dump flag.
+
+2015-05-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/66112
+	* gcc.target/i386/pr66112-2.c: New test.
+
+	PR target/66112
+	* gcc.target/i386/pr66112-1.c: New test.
+
+2015-05-13  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR target/66048
+	* gcc.target/i386/mpx/pr66048.cc: New.
+
+2015-05-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR rtl-optimization/64616
+	* gcc.dg/loop-8.c: New test.
+	* gcc.dg/loop-9.c: New test.
+
+2015-05-12  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR target/pr66047.c
+	* gcc.target/i386/pr66047.c: New testcase.
+
+2015-05-12  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65873
+	* gcc.c-torture/compile/pr65873.c: New testcase.
+
 2015-05-12  Thomas Koenig  <tkoenig@gcc.gnu.org>
 
 	PR fortran/66111
@@ -25,7 +102,7 @@
 	PR tree-optimization/37021
 	* gcc.target/i386/vect-addsub.c: New testcase.
 
-2015-05-11  Alexander Monakov  <amonakov@ispras.ru>
+2015-05-12  Alexander Monakov  <amonakov@ispras.ru>
 
 	* gcc.target/i386/pr65753.c: Use -O2 instead of -O.
 
