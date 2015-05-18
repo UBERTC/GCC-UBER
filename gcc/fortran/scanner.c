@@ -1272,21 +1272,11 @@ restart:
 	 are still in a string and we are looking for a possible
 	 doubled quote and we end up here. See PR64506.  */
 
-      if (in_string)
+      if (in_string && c != '\n')
 	{
 	  gfc_current_locus = old_loc;
-
-	  if (c == '!')
-	    {
-	      skip_comment_line ();
-	      goto restart;
-	    }
-
-	  if (c != '\n')
-	    {
-	      c = '&';
-	      goto done;
-	    }
+	  c = '&';
+	  goto done;
 	}
 
       if (c != '!' && c != '\n')
@@ -1392,6 +1382,8 @@ restart:
 			     "Missing %<&%> in continued character "
 			     "constant at %C");
 	    }
+	  else if (!in_string && (c == '\'' || c == '"'))
+	      goto done;
 	  /* Both !$omp and !$ -fopenmp continuation lines have & on the
 	     continuation line only optionally.  */
 	  else if (openmp_flag || openacc_flag || openmp_cond_flag)
@@ -2014,9 +2006,13 @@ preprocessor_line (gfc_char_t *c)
       if (!current_file->up
 	  || filename_cmp (current_file->up->filename, filename) != 0)
 	{
-	  gfc_warning_now_1 ("%s:%d: file %s left but not entered",
-			     current_file->filename, current_file->line,
-			     filename);
+	  linemap_line_start (line_table, current_file->line, 80);
+	  /* ??? One could compute the exact column where the filename
+	     starts and compute the exact location here.  */
+	  gfc_warning_now_at (linemap_position_for_column (line_table, 1),
+			      0, "file %qs left but not entered",
+			      filename);
+	  current_file->line++;
 	  if (unescape)
 	    free (wide_filename);
 	  free (filename);
@@ -2048,8 +2044,11 @@ preprocessor_line (gfc_char_t *c)
   return;
 
  bad_cpp_line:
-  gfc_warning_now_1 ("%s:%d: Illegal preprocessor directive",
-		   current_file->filename, current_file->line);
+  linemap_line_start (line_table, current_file->line, 80);
+  /* ??? One could compute the exact column where the directive
+     starts and compute the exact location here.  */
+  gfc_warning_now_at (linemap_position_for_column (line_table, 2), 0,
+		      "Illegal preprocessor directive");
   current_file->line++;
 }
 

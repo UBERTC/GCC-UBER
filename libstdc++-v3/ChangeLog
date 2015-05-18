@@ -1,3 +1,39 @@
+2015-05-17  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/bits/unordered_map.h (unordered_map, unordered_multimap): Add
+	missing constructors.
+	* include/bits/unordered_set.h (unordered_set, unordered_multiset):
+	Likewise.
+	* include/debug/unordered_map (unordered_map, unordered_multimap): Add
+	missing constructors.
+	* include/debug/unordered_set (unordered_set, unordered_multiset):
+	Likewise.
+	* include/profile/unordered_map (unordered_map, unordered_multimap): Add
+	missing constructors.
+	* include/profile/unordered_set (unordered_set, unordered_multiset):
+	Likewise.
+	* testsuite/23_containers/unordered_map/cons/66055.cc: Add constructor
+	invocations.
+	* testsuite/23_containers/unordered_multimap/cons/66055.cc: Likewise.
+	* testsuite/23_containers/unordered_multiset/cons/66055.cc: Likewise.
+	* testsuite/23_containers/unordered_set/cons/66055.cc: Likewise.
+
+2015-05-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	* src/filesystem/ops.cc (stat_type): Define alias for struct stat and
+	use throughout the file.
+	(make_file_type): New function.
+	(file_size(const path&, error_code&)): Report an error for anything
+	that isn't a regular file.
+	(status(const path&), symlink_status(const path&)): Do not throw for
+	file_type::not_found.
+	(temp_directory_path()): Check additional environment variables.
+	* testsuite/experimental/filesystem/operations/exists.cc: New.
+	* testsuite/experimental/filesystem/operations/file_size.cc: New.
+	* testsuite/experimental/filesystem/operations/status.cc: New.
+	* testsuite/experimental/filesystem/operations/temp_directory_path.cc:
+	New.
+
 2015-05-14  Nathan Myers  <ncm@cantrip.org>
 	    Jonathan Wakely  <jwakely@redhat.com>
 
