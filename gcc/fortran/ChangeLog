@@ -1,3 +1,58 @@
+2015-05-16  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/65903
+	* io.c (format_lex): Change to NONSTRING when checking for
+	possible doubled quote.
+	* scanner.c (gfc_next_char_literal): Revert change from 64506
+	and add a check for quotes and return.
+
+2015-05-16  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66113
+	* expr.c (is_parent_of_current_ns):  New function.
+	(check_restricted):  Use it.
+
+2015-05-16  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR fortran/44054
+
+	Replace all calls to gfc_notify_std_1 with gfc_notify_std and
+	gfc_warning_1 with gfc_warning.
+	* decl.c (gfc_verify_c_interop_param): Here.
+	* resolve.c (resolve_branch): Here.
+	(resolve_fl_derived): Here.
+	* dependency.c (gfc_check_argument_var_dependency):
+	* scanner.c (preprocessor_line): Use gfc_warning_now_at. Fix line
+	counter and locations before and after warning.
+	* gfortran.h (gfc_warning_1, gfc_warning_now_1, gfc_notify_std_1):
+	Delete.
+	(gfc_warning_now_at): Declare.
+	* error.c (gfc_warning_1): Delete.
+	(gfc_notify_std_1): Delete.
+	(gfc_warning_now_1): Delete.
+	(gfc_format_decoder): Handle two locations.
+	(gfc_diagnostic_build_prefix): Rename as
+	gfc_diagnostic_build_kind_prefix.
+	(gfc_diagnostic_build_locus_prefix): Take an expanded_location
+	instead of diagnostic_info.
+	(gfc_diagnostic_build_locus_prefix): Add overload that takes two
+	expanded_location.
+	(gfc_diagnostic_starter): Handle two locations.
+	(gfc_warning_now_at): New.
+	(gfc_diagnostics_init): Initialize caret_chars array.
+	(gfc_diagnostics_finish): Reset caret_chars array to default.
+
+2015-05-16  Mikael Morin  <mikael@gcc.gnu.org>
+	    Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/65792
+	* trans-expr.c (gfc_trans_subcomponent_assign): Always assign
+	the expression component to the destination. In addition, if
+	the component has allocatable components, copy them and
+	deallocate those of the expression, if it is not a variable.
+	The expression is fixed if not a variable to prevent multiple
+	evaluations.
+
 2015-05-12  Thomas Koenig  <tkoenig@gcc.gnu.org>
 
 	PR fortran/66111
@@ -133,12 +188,12 @@
 	to be referenced always.
 	(build_class_array_ref): Adapt retrieval of array descriptor.
 	(build_array_ref): Likewise.
-	(gfc_conv_array_ref): Hand the vptr or the descriptor to 
+	(gfc_conv_array_ref): Hand the vptr or the descriptor to
 	build_array_ref depending whether the sym is class or not.
 	(gfc_trans_array_cobounds):  Select correct gfc_array_spec for
 	regular and class arrays.
 	(gfc_trans_array_bounds): Likewise.
-	(gfc_trans_dummy_array_bias): Likewise. 
+	(gfc_trans_dummy_array_bias): Likewise.
 	(gfc_get_dataptr_offset): Correcting call of build_array_ref.
 	(gfc_conv_expr_descriptor): Set the array's offset to -1 when
 	lbound in inner most dim is 1 and symbol non-pointer/assoc.
