@@ -676,6 +676,9 @@ const char *mips_hi_relocs[NUM_SYMBOL_TYPES];
 /* Target state for MIPS16.  */
 struct target_globals *mips16_globals;
 
+/* Target state for MICROMIPS.  */
+struct target_globals *micromips_globals;
+
 /* Cached value of can_issue_more. This is cached in mips_variable_issue hook
    and returned from mips_sched_reorder2.  */
 static int cached_can_issue_more;
@@ -17162,6 +17165,13 @@ mips_set_compression_mode (unsigned int compression_mode)
       else
 	restore_target_globals (mips16_globals);
     }
+  else if (compression_mode & MASK_MICROMIPS)
+    {
+      if (!micromips_globals)
+	micromips_globals = save_target_globals_default_opts ();
+      else
+	restore_target_globals (micromips_globals);
+    }
   else
     restore_target_globals (&default_target_globals);
 
@@ -18216,6 +18226,66 @@ umips_load_store_pair_p_1 (bool load_p, bool swap_p,
     return false;
 
   if (!UMIPS_12BIT_OFFSET_P (offset1))
+    return false;
+
+  return true;
+}
+
+bool
+mips_load_store_bonding_p (rtx *operands, machine_mode mode, bool load_p)
+{
+  rtx reg1, reg2, mem1, mem2, base1, base2;
+  enum reg_class rc1, rc2;
+  HOST_WIDE_INT offset1, offset2;
+
+  if (load_p)
+    {
+      reg1 = operands[0];
+      reg2 = operands[2];
+      mem1 = operands[1];
+      mem2 = operands[3];
+    }
+  else
+    {
+      reg1 = operands[1];
+      reg2 = operands[3];
+      mem1 = operands[0];
+      mem2 = operands[2];
+    }
+
+  if (mips_address_insns (XEXP (mem1, 0), mode, false) == 0
+      || mips_address_insns (XEXP (mem2, 0), mode, false) == 0)
+    return false;
+
+  mips_split_plus (XEXP (mem1, 0), &base1, &offset1);
+  mips_split_plus (XEXP (mem2, 0), &base2, &offset2);
+
+  /* Base regs do not match.  */
+  if (!REG_P (base1) || !rtx_equal_p (base1, base2))
+    return false;
+
+  /* Either of the loads is clobbering base register.  It is legitimate to bond
+     loads if second load clobbers base register.  However, hardware does not
+     support such bonding.  */
+  if (load_p
+      && (REGNO (reg1) == REGNO (base1)
+	  || (REGNO (reg2) == REGNO (base1))))
+    return false;
+
+  /* Loading in same registers.  */
+  if (load_p
+      && REGNO (reg1) == REGNO (reg2))
+    return false;
+
+  /* The loads/stores are not of same type.  */
+  rc1 = REGNO_REG_CLASS (REGNO (reg1));
+  rc2 = REGNO_REG_CLASS (REGNO (reg2));
+  if (rc1 != rc2
+      && !reg_class_subset_p (rc1, rc2)
+      && !reg_class_subset_p (rc2, rc1))
+    return false;
+
+  if (abs (offset1 - offset2) != GET_MODE_SIZE (mode))
     return false;
 
   return true;

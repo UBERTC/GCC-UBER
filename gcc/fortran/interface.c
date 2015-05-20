@@ -346,8 +346,12 @@ gfc_match_end_interface (void)
 		break;
 
 	      m = MATCH_ERROR;
-	      gfc_error ("Expecting %<END INTERFACE OPERATOR (%s)%> at %C, "
-			 "but got %s", s1, s2);
+	      if (strcmp(s2, "none") == 0)
+		gfc_error ("Expecting %<END INTERFACE OPERATOR (%s)%> "
+			   "at %C, ", s1);
+	      else		
+		gfc_error ("Expecting %<END INTERFACE OPERATOR (%s)%> at %C, "
+			   "but got %s", s1, s2);
 	    }
 
 	}
@@ -2562,7 +2566,7 @@ static int
 compare_actual_formal (gfc_actual_arglist **ap, gfc_formal_arglist *formal,
 	 	       int ranks_must_agree, int is_elemental, locus *where)
 {
-  gfc_actual_arglist **new_arg, *a, *actual, temp;
+  gfc_actual_arglist **new_arg, *a, *actual;
   gfc_formal_arglist *f;
   int i, n, na;
   unsigned long actual_size, formal_size;
@@ -3025,13 +3029,8 @@ compare_actual_formal (gfc_actual_arglist **ap, gfc_formal_arglist *formal,
 
   if (na != 0)
     {
-      temp = *new_arg[0];
-      *new_arg[0] = *actual;
-      *actual = temp;
-
-      a = new_arg[0];
-      new_arg[0] = new_arg[na];
-      new_arg[na] = a;
+      std::swap (*new_arg[0], *actual);
+      std::swap (new_arg[0], new_arg[na]);
     }
 
   for (i = 0; i < n - 1; i++)

@@ -1767,8 +1767,8 @@ setup_prohibited_mode_move_regs (void)
   if (ira_prohibited_mode_move_regs_initialized_p)
     return;
   ira_prohibited_mode_move_regs_initialized_p = true;
-  test_reg1 = gen_rtx_REG (VOIDmode, 0);
-  test_reg2 = gen_rtx_REG (VOIDmode, 0);
+  test_reg1 = gen_rtx_REG (word_mode, FIRST_PSEUDO_REGISTER);
+  test_reg2 = gen_rtx_REG (word_mode, FIRST_PSEUDO_REGISTER);
   move_pat = gen_rtx_SET (test_reg1, test_reg2);
   move_insn = gen_rtx_INSN (VOIDmode, 0, 0, 0, move_pat, 0, -1, 0);
   for (i = 0; i < NUM_MACHINE_MODES; i++)
@@ -1778,10 +1778,8 @@ setup_prohibited_mode_move_regs (void)
 	{
 	  if (! HARD_REGNO_MODE_OK (j, (machine_mode) i))
 	    continue;
-	  SET_REGNO_RAW (test_reg1, j);
-	  PUT_MODE (test_reg1, (machine_mode) i);
-	  SET_REGNO_RAW (test_reg2, j);
-	  PUT_MODE (test_reg2, (machine_mode) i);
+	  set_mode_and_regno (test_reg1, (machine_mode) i, j);
+	  set_mode_and_regno (test_reg2, (machine_mode) i, j);
 	  INSN_CODE (move_insn) = -1;
 	  recog_memoized (move_insn);
 	  if (INSN_CODE (move_insn) < 0)
@@ -1808,7 +1806,6 @@ ira_setup_alts (rtx_insn *insn, HARD_REG_SET &alts)
   int nop, nalt;
   bool curr_swapped;
   const char *p;
-  rtx op;
   int commutative = -1;
 
   extract_insn (insn);
@@ -1850,7 +1847,7 @@ ira_setup_alts (rtx_insn *insn, HARD_REG_SET &alts)
 	    {
 	      int c, len;
 
-	      op = recog_data.operand[nop];
+	      rtx op = recog_data.operand[nop];
 	      p = insn_constraints[nop * recog_data.n_alternatives + nalt];
 	      if (*p == 0 || *p == ',')
 		continue;
@@ -1923,10 +1920,8 @@ ira_setup_alts (rtx_insn *insn, HARD_REG_SET &alts)
 	break;
       if (curr_swapped)
 	break;
-      op = recog_data.operand[commutative];
-      recog_data.operand[commutative] = recog_data.operand[commutative + 1];
-      recog_data.operand[commutative + 1] = op;
-
+      std::swap (recog_data.operand[commutative],
+		 recog_data.operand[commutative + 1]);
     }
 }
 

@@ -3574,12 +3574,7 @@ df_simulate_one_insn_forwards (basic_block bb, rtx_insn *insn, bitmap live)
 	case REG_UNUSED:
 	  {
 	    rtx reg = XEXP (link, 0);
-	    int regno = REGNO (reg);
-	    if (HARD_REGISTER_NUM_P (regno))
-	      bitmap_clear_range (live, regno,
-				  hard_regno_nregs[regno][GET_MODE (reg)]);
-	    else
-	      bitmap_clear_bit (live, regno);
+	    bitmap_clear_range (live, REGNO (reg), REG_NREGS (reg));
 	  }
 	  break;
 	default:

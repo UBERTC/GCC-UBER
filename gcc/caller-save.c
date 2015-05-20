@@ -150,8 +150,7 @@ reg_save_code (int reg, machine_mode mode)
 
   /* Update the register number and modes of the register
      and memory operand.  */
-  SET_REGNO_RAW (test_reg, reg);
-  PUT_MODE (test_reg, mode);
+  set_mode_and_regno (test_reg, mode, reg);
   PUT_MODE (test_mem, mode);
 
   /* Force re-recognition of the modified insns.  */
@@ -287,8 +286,8 @@ init_caller_save (void)
      To avoid lots of unnecessary RTL allocation, we construct all the RTL
      once, then modify the memory and register operands in-place.  */
 
-  test_reg = gen_rtx_REG (VOIDmode, 0);
-  test_mem = gen_rtx_MEM (VOIDmode, address);
+  test_reg = gen_rtx_REG (word_mode, FIRST_PSEUDO_REGISTER);
+  test_mem = gen_rtx_MEM (word_mode, address);
   savepat = gen_rtx_SET (test_mem, test_reg);
   restpat = gen_rtx_SET (test_reg, test_mem);
 
@@ -993,7 +992,7 @@ mark_set_regs (rtx reg, const_rtx setter ATTRIBUTE_UNUSED, void *data)
 	   && REGNO (reg) < FIRST_PSEUDO_REGISTER)
     {
       regno = REGNO (reg);
-      endregno = END_HARD_REGNO (reg);
+      endregno = END_REGNO (reg);
     }
   else
     return;

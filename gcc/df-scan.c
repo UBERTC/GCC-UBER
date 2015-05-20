@@ -1819,7 +1819,7 @@ df_insn_change_bb (rtx_insn *insn, basic_block new_bb)
 static void
 df_ref_change_reg_with_loc_1 (struct df_reg_info *old_df,
 			      struct df_reg_info *new_df,
-			      int new_regno, rtx loc)
+			      unsigned int new_regno, rtx loc)
 {
   df_ref the_ref = old_df->reg_chain;
 
@@ -1904,25 +1904,33 @@ df_ref_change_reg_with_loc_1 (struct df_reg_info *old_df,
 }
 
 
-/* Change the regno of all refs that contained LOC from OLD_REGNO to
-   NEW_REGNO.  Refs that do not match LOC are not changed which means
-   that artificial refs are not changed since they have no loc.  This
-   call is to support the SET_REGNO macro. */
+/* Change the regno of register LOC to NEW_REGNO and update the df
+   information accordingly.  Refs that do not match LOC are not changed
+   which means that artificial refs are not changed since they have no loc.
+   This call is to support the SET_REGNO macro. */
 
 void
-df_ref_change_reg_with_loc (int old_regno, int new_regno, rtx loc)
+df_ref_change_reg_with_loc (rtx loc, unsigned int new_regno)
 {
-  if ((!df) || (old_regno == -1) || (old_regno == new_regno))
+  unsigned int old_regno = REGNO (loc);
+  if (old_regno == new_regno)
     return;
 
-  df_grow_reg_info ();
+  if (df)
+    {
+      df_grow_reg_info ();
 
-  df_ref_change_reg_with_loc_1 (DF_REG_DEF_GET (old_regno),
-				DF_REG_DEF_GET (new_regno), new_regno, loc);
-  df_ref_change_reg_with_loc_1 (DF_REG_USE_GET (old_regno),
-				DF_REG_USE_GET (new_regno), new_regno, loc);
-  df_ref_change_reg_with_loc_1 (DF_REG_EQ_USE_GET (old_regno),
-				DF_REG_EQ_USE_GET (new_regno), new_regno, loc);
+      df_ref_change_reg_with_loc_1 (DF_REG_DEF_GET (old_regno),
+				    DF_REG_DEF_GET (new_regno),
+				    new_regno, loc);
+      df_ref_change_reg_with_loc_1 (DF_REG_USE_GET (old_regno),
+				    DF_REG_USE_GET (new_regno),
+				    new_regno, loc);
+      df_ref_change_reg_with_loc_1 (DF_REG_EQ_USE_GET (old_regno),
+				    DF_REG_EQ_USE_GET (new_regno),
+				    new_regno, loc);
+    }
+  set_mode_and_regno (loc, GET_MODE (loc), new_regno);
 }
 
 
@@ -2616,7 +2624,7 @@ df_ref_record (enum df_ref_class cl,
 	  endregno = regno + subreg_nregs (reg);
 	}
       else
-	endregno = END_HARD_REGNO (reg);
+	endregno = END_REGNO (reg);
 
       /*  If this is a multiword hardreg, we create some extra
 	  datastructures that will enable us to easily build REG_DEAD
@@ -3510,18 +3518,7 @@ df_get_eh_block_artificial_uses (bitmap eh_block_artificial_uses)
 static void
 df_mark_reg (rtx reg, void *vset)
 {
-  bitmap set = (bitmap) vset;
-  int regno = REGNO (reg);
-
-  gcc_assert (GET_MODE (reg) != BLKmode);
-
-  if (regno < FIRST_PSEUDO_REGISTER)
-    {
-      int n = hard_regno_nregs[regno][GET_MODE (reg)];
-      bitmap_set_range (set, regno, n);
-    }
-  else
-    bitmap_set_bit (set, regno);
+  bitmap_set_range ((bitmap) vset, REGNO (reg), REG_NREGS (reg));
 }
 
 

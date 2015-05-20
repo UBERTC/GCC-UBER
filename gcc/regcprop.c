@@ -207,12 +207,7 @@ kill_value (const_rtx x, struct value_data *vd)
       x = tmp ? tmp : SUBREG_REG (x);
     }
   if (REG_P (x))
-    {
-      unsigned int regno = REGNO (x);
-      unsigned int n = hard_regno_nregs[regno][GET_MODE (x)];
-
-      kill_value_regno (regno, n, vd);
-    }
+    kill_value_regno (REGNO (x), REG_NREGS (x), vd);
 }
 
 /* Remember that REGNO is valid in MODE.  */
@@ -333,8 +328,8 @@ copy_value (rtx dest, rtx src, struct value_data *vd)
     return;
 
   /* If SRC and DEST overlap, don't record anything.  */
-  dn = hard_regno_nregs[dr][GET_MODE (dest)];
-  sn = hard_regno_nregs[sr][GET_MODE (dest)];
+  dn = REG_NREGS (dest);
+  sn = REG_NREGS (src);
   if ((dr > sr && dr < sr + sn)
       || (sr > dr && sr < dr + dn))
     return;
@@ -415,7 +410,7 @@ maybe_mode_change (machine_mode orig_mode, machine_mode copy_mode,
     return NULL_RTX;
 
   if (orig_mode == new_mode)
-    return gen_rtx_raw_REG (new_mode, regno);
+    return gen_raw_REG (new_mode, regno);
   else if (mode_change_ok (orig_mode, new_mode, regno))
     {
       int copy_nregs = hard_regno_nregs[copy_regno][copy_mode];
@@ -431,7 +426,7 @@ maybe_mode_change (machine_mode orig_mode, machine_mode copy_mode,
 		+ (BYTES_BIG_ENDIAN ? byteoffset : 0));
       regno += subreg_regno_offset (regno, orig_mode, offset, new_mode);
       if (HARD_REGNO_MODE_OK (regno, new_mode))
-	return gen_rtx_raw_REG (new_mode, regno);
+	return gen_raw_REG (new_mode, regno);
     }
   return NULL_RTX;
 }
@@ -1035,8 +1030,7 @@ copyprop_hardreg_forward_1 (basic_block bb, struct value_data *vd)
 		  copy_value (dest, SET_SRC (x), vd);
 		  ksvd.ignore_set_reg = dest;
 		  set_regno = REGNO (dest);
-		  set_nregs
-		    = hard_regno_nregs[set_regno][GET_MODE (dest)];
+		  set_nregs = REG_NREGS (dest);
 		  break;
 		}
 	    }
