@@ -202,12 +202,12 @@ init_expr_target (void)
   /* Try indexing by frame ptr and try by stack ptr.
      It is known that on the Convex the stack ptr isn't a valid index.
      With luck, one or the other is valid on any machine.  */
-  mem = gen_rtx_MEM (VOIDmode, stack_pointer_rtx);
-  mem1 = gen_rtx_MEM (VOIDmode, frame_pointer_rtx);
+  mem = gen_rtx_MEM (word_mode, stack_pointer_rtx);
+  mem1 = gen_rtx_MEM (word_mode, frame_pointer_rtx);
 
   /* A scratch register we can modify in-place below to avoid
      useless RTL allocations.  */
-  reg = gen_rtx_REG (VOIDmode, -1);
+  reg = gen_rtx_REG (word_mode, FIRST_PSEUDO_REGISTER);
 
   insn = rtx_alloc (INSN);
   pat = gen_rtx_SET (NULL_RTX, NULL_RTX);
@@ -221,7 +221,6 @@ init_expr_target (void)
       direct_load[(int) mode] = direct_store[(int) mode] = 0;
       PUT_MODE (mem, mode);
       PUT_MODE (mem1, mode);
-      PUT_MODE (reg, mode);
 
       /* See if there is some register that can be used in this mode and
 	 directly loaded or stored from memory.  */
@@ -234,7 +233,7 @@ init_expr_target (void)
 	    if (! HARD_REGNO_MODE_OK (regno, mode))
 	      continue;
 
-	    SET_REGNO (reg, regno);
+	    set_mode_and_regno (reg, mode, regno);
 
 	    SET_SRC (pat) = mem;
 	    SET_DEST (pat) = reg;
@@ -258,7 +257,7 @@ init_expr_target (void)
 	  }
     }
 
-  mem = gen_rtx_MEM (VOIDmode, gen_rtx_raw_REG (Pmode, 10000));
+  mem = gen_rtx_MEM (VOIDmode, gen_raw_REG (Pmode, FIRST_PSEUDO_REGISTER));
 
   for (mode = GET_CLASS_NARROWEST_MODE (MODE_FLOAT); mode != VOIDmode;
        mode = GET_MODE_WIDER_MODE (mode))
@@ -3051,7 +3050,7 @@ write_complex_part (rtx cplx, rtx val, bool imag_p)
 	 where the natural size of floating-point regs is 32-bit.  */
       || (REG_P (cplx)
 	  && REGNO (cplx) < FIRST_PSEUDO_REGISTER
-	  && hard_regno_nregs[REGNO (cplx)][cmode] % 2 == 0))
+	  && REG_NREGS (cplx) % 2 == 0))
     {
       rtx part = simplify_gen_subreg (imode, cplx, cmode,
 				      imag_p ? GET_MODE_SIZE (imode) : 0);
@@ -3116,7 +3115,7 @@ read_complex_part (rtx cplx, bool imag_p)
 	 where the natural size of floating-point regs is 32-bit.  */
       || (REG_P (cplx)
 	  && REGNO (cplx) < FIRST_PSEUDO_REGISTER
-	  && hard_regno_nregs[REGNO (cplx)][cmode] % 2 == 0))
+	  && REG_NREGS (cplx) % 2 == 0))
     {
       rtx ret = simplify_gen_subreg (imode, cplx, cmode,
 				     imag_p ? GET_MODE_SIZE (imode) : 0);
@@ -3346,10 +3345,10 @@ emit_move_complex (machine_mode mode, rtx x, rtx y)
       && optab_handler (mov_optab, GET_MODE_INNER (mode)) != CODE_FOR_nothing
       && !(REG_P (x)
 	   && HARD_REGISTER_P (x)
-	   && hard_regno_nregs[REGNO (x)][mode] == 1)
+	   && REG_NREGS (x) == 1)
       && !(REG_P (y)
 	   && HARD_REGISTER_P (y)
-	   && hard_regno_nregs[REGNO (y)][mode] == 1))
+	   && REG_NREGS (y) == 1))
     try_int = false;
   /* Not possible if the values are inherently not adjacent.  */
   else if (GET_CODE (x) == CONCAT || GET_CODE (y) == CONCAT)

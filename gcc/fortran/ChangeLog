@@ -1,3 +1,75 @@
+2015-05-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66199
+	* trans-openmp.c (gfc_trans_omp_teams): Set OMP_TEAMS_COMBINED for
+	combined constructs.
+	(gfc_trans_omp_target): Make sure BIND_EXPR has non-NULL
+	BIND_EXPR_BLOCK.
+
+2015-05-19  David Malcolm  <dmalcolm@redhat.com>
+
+	* cpp.c (maybe_print_line): Strengthen local "map" from
+	const line_map * to const line_map_ordinary *.
+	(cb_file_change): Likewise for param "map" and local "from".
+	(cb_line_change): Likewise for local "map".
+
+2015-05-19  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	* interface.c (compare_actual_formal): Use std::swap instead of
+	explicit swaps.
+	* trans-array.c (gfc_trans_scalarized_loop_end): Likewise.
+	* trans-intrinsic.c (walk_inline_intrinsic_transpose): Likewise.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66106
+	* interface.c(gfc_match_end_interface): Enforce F2008 C1202 (R1201).
+	* match.c(gfc_op2string): Return 'none' for INTRINSIC_NONE.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66057
+	* decl.c(gfc_match_generic):  Detected a malformed GENERIC statement.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66043
+	* gfortran.dg/storage_size_6.f90: New tests.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66043
+	* gfortran.dg/storage_size_6.f90: New tests.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66044
+	* decl.c(gfc_match_entry):  Change a gfc_internal_error() into
+	a gfc_error() 
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66043
+	* gfortran.dg/storage_size_6.f90: New tests.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66040
+	* parse.c(verify_st_order): Replace a gfc_internal_error with your
+	generic gfc_error.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66039
+	* io.c (match_filepos): Check for incomplete/mangled REWIND, FLUSH,
+	BACKSPACE, and ENDFILE statements
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/64925
+	* symbol.c(check_conflict):  Check for a conflict between a dummy
+	argument and an internal procedure name.
+
 2015-05-16  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
 
 	PR fortran/65903

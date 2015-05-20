@@ -201,9 +201,21 @@ union rtunion
   tree rt_tree;
   basic_block rt_bb;
   mem_attrs *rt_mem;
-  reg_attrs *rt_reg;
   struct constant_descriptor_rtx *rt_constant;
   struct dw_cfi_node *rt_cfi;
+};
+
+/* Describes the properties of a REG.  */
+struct GTY(()) reg_info {
+  /* The value of REGNO.  */
+  unsigned int regno;
+
+  /* The value of REG_NREGS.  */
+  unsigned int nregs : 8;
+  unsigned int unused : 24;
+
+  /* The value of REG_ATTRS.  */
+  reg_attrs *attrs;
 };
 
 /* This structure remembers the position of a SYMBOL_REF within an
@@ -395,6 +407,7 @@ struct GTY((desc("0"), tag("0"),
   union u {
     rtunion fld[1];
     HOST_WIDE_INT hwint[1];
+    struct reg_info reg;
     struct block_symbol block_sym;
     struct real_value rv;
     struct fixed_value fv;
@@ -657,8 +670,8 @@ class GTY(()) rtx_note : public rtx_insn
 #define GET_CODE(RTX)	    ((enum rtx_code) (RTX)->code)
 #define PUT_CODE(RTX, CODE) ((RTX)->code = (CODE))
 
-#define GET_MODE(RTX)	    ((machine_mode) (RTX)->mode)
-#define PUT_MODE(RTX, MODE) ((RTX)->mode = (MODE))
+#define GET_MODE(RTX)		((machine_mode) (RTX)->mode)
+#define PUT_MODE_RAW(RTX, MODE)	((RTX)->mode = (MODE))
 
 /* RTL vector.  These appear inside RTX's when there is a need
    for a variable number of things.  The principle use is inside
@@ -1070,6 +1083,13 @@ is_a_helper <rtx_note *>::test (rtx_insn *insn)
 				 __LINE__, __FUNCTION__);		\
    &_rtx->u.fv; })
 
+#define REG_CHECK(RTX) __extension__					\
+({ __typeof (RTX) const _rtx = (RTX);					\
+   if (GET_CODE (_rtx) != REG)						\
+     rtl_check_failed_code1 (_rtx, REG,  __FILE__, __LINE__,		\
+			     __FUNCTION__);				\
+   &_rtx->u.reg; })
+
 #define BLOCK_SYMBOL_CHECK(RTX) __extension__				\
 ({ __typeof (RTX) const _symbol = (RTX);				\
    const unsigned int flags = SYMBOL_REF_FLAGS (_symbol);		\
@@ -1124,6 +1144,7 @@ extern void rtvec_check_failed_bounds (const_rtvec, int, const char *, int,
 #define XCNMWINT(RTX, N, C, M)	    ((RTX)->u.hwint[N])
 #define XCNMPRV(RTX, C, M)	    (&(RTX)->u.rv)
 #define XCNMPFV(RTX, C, M)	    (&(RTX)->u.fv)
+#define REG_CHECK(RTX)		    (&(RTX)->u.reg)
 #define BLOCK_SYMBOL_CHECK(RTX)	    (&(RTX)->u.block_sym)
 #define HWIVEC_CHECK(RTX,C)	    (&(RTX)->u.hwiv)
 
@@ -1248,7 +1269,6 @@ extern void rtl_check_failed_flag (const char *, const_rtx, const char *,
 #define X0ADVFLAGS(RTX, N) (RTL_CHECK1 (RTX, N, '0').rt_addr_diff_vec_flags)
 #define X0CSELIB(RTX, N)   (RTL_CHECK1 (RTX, N, '0').rt_cselib)
 #define X0MEMATTR(RTX, N)  (RTL_CHECKC1 (RTX, N, MEM).rt_mem)
-#define X0REGATTR(RTX, N)  (RTL_CHECKC1 (RTX, N, REG).rt_reg)
 #define X0CONSTANT(RTX, N) (RTL_CHECK1 (RTX, N, '0').rt_constant)
 
 /* Access a '0' field with any type.  */
@@ -1491,7 +1511,7 @@ enum reg_note
 /* Define macros to extract and insert the reg-note kind in an EXPR_LIST.  */
 #define REG_NOTE_KIND(LINK) ((enum reg_note) GET_MODE (LINK))
 #define PUT_REG_NOTE_KIND(LINK, KIND) \
-  PUT_MODE (LINK, (machine_mode) (KIND))
+  PUT_MODE_RAW (LINK, (machine_mode) (KIND))
 
 /* Names for REG_NOTE's in EXPR_LIST insn's.  */
 
@@ -1693,9 +1713,12 @@ inline rtx_insn *JUMP_LABEL_AS_INSN (const rtx_insn *insn)
 /* For a REG rtx, REGNO extracts the register number.  REGNO can only
    be used on RHS.  Use SET_REGNO to change the value.  */
 #define REGNO(RTX) (rhs_regno(RTX))
-#define SET_REGNO(RTX,N) \
-  (df_ref_change_reg_with_loc (REGNO (RTX), N, RTX), XCUINT (RTX, 0, REG) = N)
-#define SET_REGNO_RAW(RTX,N) (XCUINT (RTX, 0, REG) = N)
+#define SET_REGNO(RTX, N) (df_ref_change_reg_with_loc (RTX, N))
+
+/* Return the number of consecutive registers in a REG.  This is always
+   1 for pseudo registers and is determined by HARD_REGNO_NREGS for
+   hard registers.  */
+#define REG_NREGS(RTX) (REG_CHECK (RTX)->nregs)
 
 /* ORIGINAL_REGNO holds the number the register originally had; for a
    pseudo register turned into a hard reg this will hold the old pseudo
@@ -1707,9 +1730,25 @@ inline rtx_insn *JUMP_LABEL_AS_INSN (const rtx_insn *insn)
 static inline unsigned int
 rhs_regno (const_rtx x)
 {
-  return XCUINT (x, 0, REG);
+  return REG_CHECK (x)->regno;
 }
 
+/* Return the final register in REG X plus one.  */
+static inline unsigned int
+END_REGNO (const_rtx x)
+{
+  return REGNO (x) + REG_NREGS (x);
+}
+
+/* Change the REGNO and REG_NREGS of REG X to the specified values,
+   bypassing the df machinery.  */
+static inline void
+set_regno_raw (rtx x, unsigned int regno, unsigned int nregs)
+{
+  reg_info *reg = REG_CHECK (x);
+  reg->regno = regno;
+  reg->nregs = nregs;
+}
 
 /* 1 if RTX is a reg or parallel that is the current function's return
    value.  */
@@ -2264,7 +2303,7 @@ do {								        \
 
 /* The register attribute block.  We provide access macros for each value
    in the block and provide defaults if none specified.  */
-#define REG_ATTRS(RTX) X0REGATTR (RTX, 1)
+#define REG_ATTRS(RTX) (REG_CHECK (RTX)->attrs)
 
 #ifndef GENERATOR_FILE
 /* For a MEM rtx, the alias set.  If 0, this MEM is not in any alias
@@ -3191,12 +3230,26 @@ gen_rtx_INSN (machine_mode mode, rtx_insn *prev_insn, rtx_insn *next_insn,
 	      rtx reg_notes);
 extern rtx gen_rtx_CONST_INT (machine_mode, HOST_WIDE_INT);
 extern rtx gen_rtx_CONST_VECTOR (machine_mode, rtvec);
-extern rtx gen_raw_REG (machine_mode, int);
-extern rtx gen_rtx_REG (machine_mode, unsigned);
+extern void set_mode_and_regno (rtx, machine_mode, unsigned int);
+extern rtx gen_raw_REG (machine_mode, unsigned int);
+extern rtx gen_rtx_REG (machine_mode, unsigned int);
 extern rtx gen_rtx_SUBREG (machine_mode, rtx, int);
 extern rtx gen_rtx_MEM (machine_mode, rtx);
 extern rtx gen_rtx_VAR_LOCATION (machine_mode, tree, rtx,
 				 enum var_init_status);
+
+#ifdef GENERATOR_FILE
+#define PUT_MODE(RTX, MODE) PUT_MODE_RAW (RTX, MODE)
+#else
+static inline void
+PUT_MODE (rtx x, machine_mode mode)
+{
+  if (REG_P (x))
+    set_mode_and_regno (x, mode, REGNO (x));
+  else
+    PUT_MODE_RAW (x, mode);
+}
+#endif
 
 #define GEN_INT(N)  gen_rtx_CONST_INT (VOIDmode, (N))
 

@@ -1,3 +1,218 @@
+2015-05-20  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	* gcc.target/sh/pr64366.c: Remove -m4 -ml from dg-options.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* lib/target-supports.exp: Vector do not always have natural
+	alignment on s390*.
+
+2015-05-19  David Sherwood  <david.sherwood@arm.com>
+
+	* gcc.dg/loop-invariant.c: New testcase.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* lib/target-supports.exp: Vector do not always have natural
+	alignment on s390*.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.dg/tree-ssa/gen-vect-11b.c: Disable vector instructions on
+	s390*.
+	* gcc.dg/tree-ssa/gen-vect-11c.c: Likewise.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/zvector/vec-dbl-math-compile-1.c: New test.
+	* gcc.target/s390/zvector/vec-genbytemask-1.c: New test.
+	* gcc.target/s390/zvector/vec-genmask-1.c: New test.
+	* gcc.target/s390/zvector/vec-lcbb-1.c: New test.
+	* gcc.target/s390/zvector/vec-overloading-1.c: New test.
+	* gcc.target/s390/zvector/vec-overloading-2.c: New test.
+	* gcc.target/s390/zvector/vec-overloading-3.c: New test.
+	* gcc.target/s390/zvector/vec-overloading-4.c: New test.
+	* gcc.target/s390/zvector/vec-test-mask-1.c: New test.
+	* gcc.target/s390/zvector/vec-elem-1.c: New test.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/vector/vec-scalar-cmp-1.c: New test.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/s390.exp
+	(check_effective_target_vector): New check.
+	* gcc.target/s390/vector/vec-abi-1.c: New test.
+	* gcc.target/s390/vector/vec-abi-2.c: New test.
+	* gcc.target/s390/vector/vec-abi-3.c: New test.
+	* gcc.target/s390/vector/vec-abi-4.c: New test.
+	* gcc.target/s390/vector/vec-abi-align-1.c: New test.
+	* gcc.target/s390/vector/vec-abi-single-1.c: New test.
+	* gcc.target/s390/vector/vec-abi-single-2.c: New test.
+	* gcc.target/s390/vector/vec-abi-struct-1.c: New test.
+	* gcc.target/s390/vector/vec-abi-vararg-1.c: New test.
+	* gcc.target/s390/vector/vec-abi-vararg-2.c: New test.
+	* gcc.target/s390/vector/vec-clobber-1.c: New test.
+	* gcc.target/s390/vector/vec-cmp-1.c: New test.
+	* gcc.target/s390/vector/vec-cmp-2.c: New test.
+	* gcc.target/s390/vector/vec-dbl-math-compile-1.c: New test.
+	* gcc.target/s390/vector/vec-genbytemask-1.c: New test.
+	* gcc.target/s390/vector/vec-genbytemask-2.c: New test.
+	* gcc.target/s390/vector/vec-genmask-1.c: New test.
+	* gcc.target/s390/vector/vec-genmask-2.c: New test.
+	* gcc.target/s390/vector/vec-init-1.c: New test.
+	* gcc.target/s390/vector/vec-int-math-compile-1.c: New test.
+	* gcc.target/s390/vector/vec-shift-1.c: New test.
+	* gcc.target/s390/vector/vec-sub-1.c: New test.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqshrun_n.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqshrn_n.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqshlu_n.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqshl_n.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqshl.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqrshrun_n.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqrshrn_n.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqrshl.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqrdmulh_n.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqrdmulh_lane.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqrdmulh.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqmovun.c: New file.
+
+2015-05-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqmovn.c: New file.
+
+2015-05-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/66187
+	* gcc.c-torture/execute/pr66187.c: New test.
+	* gcc.dg/pr66187-1.c: New test.
+	* gcc.dg/pr66187-2.c: New test.
+
+2015-05-19  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* gcc.dg/vect/bb-slp-35.c: Adjust.
+
+2015-05-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66165
+	* gcc.dg/torture/pr66165.c: New testcase.
+
+	PR tree-optimization/66185
+	* gcc.dg/torture/pr66185.c: New testcase.
+
+2015-05-19  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/54236
+	* gcc.target/sh/pr54236-2.c: Adjust expected insn counts.
+
+2015-05-19  Sameera Deshpande  <sameera.deshpande@imgtec.com>
+
+	* gcc.target/mips/p5600-bonding.c : New file.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66106
+	* gfortran.dg/interface_operator_1.f90: New tests.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66057
+	* gfortran.dg/generic_29.f90: New tests.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66043
+	* gfortran.dg/storage_size_6.f90: New tests.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66045
+	* gfortran.dg/null1.f90: New test.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66044
+	* gfortran.dg/entry_21.f90: New test.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66043
+	* gfortran.dg/storage_size_6.f90: New tests.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66040
+	* gfortran.dg/misplaced_statement.f90: New test.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66039
+	* gfortran.dg/filepos1.f90: New test
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/64925
+	* gfortran.dg/pr64925.f90: New test.
+
+2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* gfortran.dg/lto/pr41521_0.f90: Move INTERFACE statement in program
+	unit.
+	* gfortran.dg/lto/pr41576_1.f90: Ditto.
+
+2015-05-12  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* lib/target-supports.exp (check_effective_target_pie): Add *-*-freebsd*
+	to the family of pie capable targets.
+
+2015-05-18  Alex Velenko <Alex.Velenko@arm.com>
+
+	* gcc.target/arm/bics_1.c : New testcase.
+	* gcc.target/arm/bics_2.c : New testcase.
+	* gcc.target/arm/bics_3.c : New testcase.
+	* gcc.target/arm/bics_4.c : New testcase.
+
+2015-05-18  Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* gcc.target/mips/umips-attr.c: New test.
+
 2015-05-17  Uros Bizjak  <ubizjak@gmail.com>
 
 	* gcc.dg/20150120-1.c (dg-final): Cleanup original tree dump.

@@ -1,3 +1,692 @@
+2015-05-19  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* config.gcc [powerpc*-*-linux*]: Allow --enable-targets=all
+	to build a biarch toolchain again.
+
+2015-05-19  Jan Hubicka  <hubicka@ucw.cz>
+
+	* ipa-devirt.c (type_in_anonymous_namespace_p): Return true
+	or implicit declarations.
+	(odr_type_p): Check that TYPE_NAME is TYPE_DECL before looking
+	into it.
+	(get_odr_type): Check type has linkage before adding bases.
+	(register_odr_type): Check that type has linkage before adding it.
+	(type_known_to_have_no_deriavations_p): Rename to ..
+	(type_known_to_have_no_derivations_p): This one.
+	* ipa-utils.h (type_known_to_have_no_deriavations_p): Rename to ..
+	(type_known_to_have_no_derivations_p): This one.
+	* ipa-polymorphic-call.c
+	(ipa_polymorphic_call_context::restrict_to_inner_type): Check that
+	type has linkage.
+
+2015-05-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* stor-layout.c (finalize_type_size): Use AGGREGATE_TYPE_P.
+	(layout_type): Use RECORD_OR_UNION_TYPE_P.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_vector_bool_type_p): New function.
+	(s390_invalid_binary_op): New function.
+	(TARGET_INVALID_BINARY_OP): Define macro.
+
+2015-05-19  David Sherwood  <david.sherwood@arm.com>
+
+	* loop-invariant.c (create_new_invariant): Don't calculate address cost
+	if mode is not a scalar integer.
+	(get_inv_cost): Increase computational cost for unused invariants.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config.gcc: Add vecintrin.h to extra_headers.  Add s390-c.o to
+	c_target_objs and cxx_target_objs.  Add t-s390 to tmake_file.
+	* config/s390/s390-builtin-types.def: New file.
+	* config/s390/s390-builtins.def: New file.
+	* config/s390/s390-builtins.h: New file.
+	* config/s390/s390-c.c: New file.
+	* config/s390/s390-modes.def: Add modes CCVEQANY, CCVH,
+	CCVHANY, CCVHU, CCVHUANY, CCVFHANY, CCVFHEANY.
+	* config/s390/s390-protos.h (s390_expand_vec_compare_cc)
+	(s390_cpu_cpp_builtins, s390_register_target_pragmas): Add
+	prototypes.
+	* config/s390/s390.c (s390-builtins.h, s390-builtins.def):
+	Include.
+	(flags_builtin, flags_overloaded_builtin_var, s390_builtin_types)
+	(s390_builtin_fn_types, s390_builtin_decls, code_for_builtin): New
+	variable definitions.
+	(s390_const_operand_ok): New function.
+	(s390_expand_builtin): Rewrite.
+	(s390_init_builtins): New function.
+	(s390_handle_vectorbool_attribute): New function.
+	(s390_attribute_table): Add s390_vector_bool attribute.
+	(s390_match_ccmode_set): Handle new cc modes CCVH, CCVHU.
+	(s390_branch_condition_mask): Generate masks for new modes.
+	(s390_expand_vec_compare_cc): New function.
+	(s390_mangle_type): Add mangling for vector bool types.
+	(enum s390_builtin): Remove.
+	(s390_atomic_assign_expand_fenv): Rename constants for sfpc and
+	efpc builtins.
+	* config/s390/s390.h (TARGET_CPU_CPP_BUILTINS): Call
+	s390_cpu_cpp_builtins.
+	(REGISTER_TARGET_PRAGMAS): New macro.
+	* config/s390/s390.md: Define more UNSPEC_VEC_* constants.
+	(insn_cmp mode attribute): Add new CC modes.
+	(s390_sfpc, s390_efpc): Rename patterns to sfpc and efpc.
+	(lcbb): New pattern definition.
+	* config/s390/s390intrin.h: Include vecintrin.h.
+	* config/s390/t-s390: New file.
+	* config/s390/vecintrin.h: New file.
+	* config/s390/vector.md: Include vx-builtins.md.
+	* config/s390/vx-builtins.md: New file.S/390 zvector builtin
+	support.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-modes.def: Add new modes CCVEQ, CCVFH, and
+	CCVFHE.
+	* config/s390/s390.c (s390_match_ccmode_set): Handle new modes.
+	(s390_select_ccmode): Likewise.
+	(s390_canonicalize_comparison): Swap operands if necessary.
+	(s390_expand_vec_compare_scalar): Expand DFmode compare using
+	single element vector instructions.
+	(s390_emit_compare): Call s390_expand_vec_compare_scalar.
+	(s390_branch_condition_mask): Generate CC masks for the new modes.
+	* config/s390/s390.md (v0, vf, vd): New mode attributes.
+	(VFCMP, asm_fcmp, insn_cmp): New mode iterator and attributes.
+	(*vec_cmp<insn_cmp>df_cconly, *fixuns_truncdfdi2_z13)
+	(*fix_trunc<BFP:mode><GPR:mode>2_bfp, *floatunsdidf2_z13)
+	(*floatuns<GPR:mode><FP:mode>2, *extendsfdf2_z13)
+	(*extend<DSF:mode><BFP:mode>2): New insn definition.
+	(fix_trunc<BFP:mode><GPR:mode>2_bfp, loatuns<GPR:mode><FP:mode>2)
+	(extend<DSF:mode><BFP:mode>2): Turn into expander.
+	(floatdi<mode>2, truncdfsf2, add<mode>3, sub<mode>3, mul<mode>3)
+	(div<mode>3, *neg<mode>2, *abs<mode>2, *negabs<mode>2)
+	(sqrt<mode>2): Add vector instruction.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/constraints.md (j00, jm1, jxx, jyy, v): New
+	constraints.
+	* config/s390/predicates.md (const0_operand, constm1_operand)
+	(constable_operand): Accept vector operands.
+	* config/s390/s390-modes.def: Add supported vector modes.
+	* config/s390/s390-protos.h (s390_cannot_change_mode_class)
+	(s390_function_arg_vector, s390_contiguous_bitmask_vector_p)
+	(s390_bytemask_vector_p, s390_expand_vec_strlen)
+	(s390_expand_vec_compare, s390_expand_vcond)
+	(s390_expand_vec_init): Add prototypes.
+	* config/s390/s390.c (VEC_ARG_NUM_REG): New macro.
+	(s390_vector_mode_supported_p): New function.
+	(s390_contiguous_bitmask_p): Mask out the irrelevant bits.
+	(s390_contiguous_bitmask_vector_p): New function.
+	(s390_bytemask_vector_p): New function.
+	(s390_split_ok_p): Vector regs don't work either.
+	(regclass_map): Add VEC_REGS.
+	(s390_legitimate_constant_p): Handle vector constants.
+	(s390_cannot_force_const_mem): Handle CONST_VECTOR.
+	(legitimate_reload_vector_constant_p): New function.
+	(s390_preferred_reload_class): Handle CONST_VECTOR.
+	(s390_reload_symref_address):  Likewise.
+	(s390_secondary_reload): Vector memory instructions only support
+	short displacements.  Rename reload*_nonoffmem* to reload*_la*.
+	(s390_emit_ccraw_jump): New function.
+	(s390_expand_vec_strlen): New function.
+	(s390_expand_vec_compare): New function.
+	(s390_expand_vcond): New function.
+	(s390_expand_vec_init): New function.
+	(s390_dwarf_frame_reg_mode): New function.
+	(print_operand): Handle addresses with 'O' and 'R' constraints.
+	(NR_C_MODES, constant_modes): Add vector modes.
+	(s390_output_pool_entry): Handle vector constants.
+	(s390_hard_regno_mode_ok): Handle vector registers.
+	(s390_class_max_nregs): Likewise.
+	(s390_cannot_change_mode_class): New function.
+	(s390_invalid_arg_for_unprototyped_fn): New function.
+	(s390_function_arg_vector): New function.
+	(s390_function_arg_float): Remove size variable.
+	(s390_pass_by_reference): Handle vector arguments.
+	(s390_function_arg_advance): Likewise.
+	(s390_function_arg): Likewise.
+	(s390_return_in_memory): Vector values are returned in a VR if
+	possible.
+	(s390_function_and_libcall_value): Handle vector arguments.
+	(s390_gimplify_va_arg): Likewise.
+	(s390_call_saved_register_used): Consider the arguments named.
+	(s390_conditional_register_usage): Disable v16-v31 for non-vec
+	targets.
+	(s390_preferred_simd_mode): New function.
+	(s390_support_vector_misalignment): New function.
+	(s390_vector_alignment): New function.
+	(TARGET_STRICT_ARGUMENT_NAMING, TARGET_DWARF_FRAME_REG_MODE)
+	(TARGET_VECTOR_MODE_SUPPORTED_P)
+	(TARGET_INVALID_ARG_FOR_UNPROTOTYPED_FN)
+	(TARGET_VECTORIZE_PREFERRED_SIMD_MODE)
+	(TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT)
+	(TARGET_VECTOR_ALIGNMENT): Define target macro.
+	* config/s390/s390.h (FUNCTION_ARG_PADDING): Define macro.
+	(FIRST_PSEUDO_REGISTER): Increase value.
+	(VECTOR_NOFP_REGNO_P, VECTOR_REGNO_P, VECTOR_NOFP_REG_P)
+	(VECTOR_REG_P): Define macros.
+	(FIXED_REGISTERS, CALL_USED_REGISTERS)
+	(CALL_REALLY_USED_REGISTERS, REG_ALLOC_ORDER)
+	(HARD_REGNO_CALL_PART_CLOBBERED, REG_CLASS_NAMES)
+	(FUNCTION_ARG_REGNO_P, FUNCTION_VALUE_REGNO_P, REGISTER_NAMES):
+	Add vector registers.
+	(CANNOT_CHANGE_MODE_CLASS): Call C function.
+	(enum reg_class): Add VEC_REGS, ADDR_VEC_REGS, GENERAL_VEC_REGS.
+	(SECONDARY_MEMORY_NEEDED): Allow SF<->SI mode moves without
+	memory.
+	(DBX_REGISTER_NUMBER, FIRST_VEC_ARG_REGNO, LAST_VEC_ARG_REGNO)
+	(SHORT_DISP_IN_RANGE, VECTOR_STORE_FLAG_VALUE): Define macro.
+	* config/s390/s390.md (UNSPEC_VEC_*): New constants.
+	(VR*_REGNUM): New constants.
+	(ALL): New mode iterator.
+	(INTALL): Remove mode iterator.
+	Include vector.md.
+	(movti): Implement TImode moves for VRs.
+	Disable TImode splitter for VR targets.
+	Implement splitting TImode GPR<->VR moves.
+	(reload*_tomem_z10, reload*_toreg_z10): Replace INTALL with ALL.
+	(reload<mode>_nonoffmem_in, reload<mode>_nonoffmem_out): Rename to
+	reload<mode>_la_in, reload<mode>_la_out.
+	(*movdi_64, *movsi_zarch, *movhi, *movqi, *mov<mode>_64dfp)
+	(*mov<mode>_64, *mov<mode>_31): Add vector instructions.
+	(TD/TF mode splitter): Enable for GPRs only (formerly !FP).
+	(mov<mode> SF SD): Prefer lder, lde for loading.
+	Add lrl and strl instructions.
+	Add vector instructions.
+	(strlen<mode>): Rename old strlen<mode> to strlen_srst<mode>.
+	Call s390_expand_vec_strlen on z13.
+	(*cc_to_int): Change predicate to nonimmediate_operand.
+	(addti3): Rename to *addti3.  New expander.
+	(subti3): Rename to *subti3.  New expander.
+	* config/s390/vector.md: New file.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* common/config/s390/s390-common.c (processor_flags_table): Add
+	z13.
+	* config.gcc: Add z13.
+	* config/s390/s390-opts.h (enum processor_type): Add
+	PROCESSOR_2964_Z13.
+	* config/s390/s390.c (s390_adjust_priority): Check for
+	PROCESSOR_2964_Z13.
+	(s390_reorg): Likewise.
+	(s390_sched_reorder): Likewise.
+	(s390_sched_variable_issue): Likewise.
+	(s390_loop_unroll_adjust): Likewise.
+	(s390_option_override): Likewise. Default to -mvx when available.
+	* config/s390/s390.h (enum processor_flags): Add PF_Z13 and PF_VX.
+	(TARGET_CPU_Z13, TARGET_CPU_VX, TARGET_Z13, TARGET_VX)
+	(TARGET_VX_ABI): Define macros.
+	macros.
+	(TARGET_DEFAULT): Add MASK_OPT_VX.
+	* config/s390/s390.md ("cpu" attribute): Add z13.
+	("cpu_facility" attribute): Add vec.
+	* config/s390/s390.opt (processor_type): Add z13.
+	(mvx): New options.
+	* doc/invoke.texi: Add z13 option for -march.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/predicates.md (shift_count_or_setmem_operand): Add
+	mode check to make sure that only scalar integer values are
+	accepted.
+
+2015-05-19  Jan Hubicka  <hubicka@ucw.cz>
+
+	* tree.c (verify_type_variant): Fix #undef.
+	(gimple_canonical_types_compatible_p): Move here from lto.c
+	(verify_type): Verify TYPE_CANONICAL compatibility.
+	* tree.h (gimple_canonical_types_compatible_p): Declare.
+
+2015-05-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66199
+	* tree.h (OMP_TEAMS_COMBINED): Define.
+	* gimplify.c (enum gimplify_omp_var_data): Add
+	GOVD_LINEAR_LASTPRIVATE_NO_OUTER.
+	(enum omp_region_type): Add ORT_COMBINED_TEAMS.
+	(omp_notice_variable): Accept both ORT_TEAMS
+	and ORT_COMBINED_TEAMS.  Don't recurse if
+	GOVD_LINEAR_LASTPRIVATE_NO_OUTER is set and either
+	GOVD_LINEAR is set, or GOVD_LASTPRIVATE without
+	GOVD_FIRSTPRIVATE.
+	(omp_no_lastprivate): New function.
+	(gimplify_scan_omp_clauses): For OMP_CLAUSE_LASTPRIVATE
+	and OMP_CLAUSE_LINEAR, if omp_no_lastprivate, don't
+	notice_outer and set appropriate bits, otherwise make
+	sure default(none) combined constructs won't complain.
+	(gimplify_adjust_omp_clauses): Remove OMP_CLAUSE_LINEAR
+	outer special casing, for OMP_CLAUSE_LASTPRIVATE if
+	omp_no_lastprivate either remove the clause or turn it
+	into OMP_CLAUSE_PRIVATE.
+	(gimplify_omp_for): Fix up handling of implicit
+	lastprivate or linear iterators.
+	(gimplify_omp_workshare): For OMP_TEAMS_COMBINED use
+	ORT_COMBINED_TEAMS.
+	* omp-low.c (lower_omp_for_lastprivate): For combined
+	for simd use fd.loop.n2 from the for rather than simd.
+
+2015-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* config/cris/cris.c (cris_expand_prologue): Use gen_raw_REG
+	instead of gen_rtx_raw_REG.
+	(cris_expand_epilogue): Likewise.
+	* config/microblaze/microblaze.c (microblaze_classify_address):
+	Likewise.
+	* config/sparc/sparc.md: Likewise.
+
+2015-05-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/alpha/alpha.c (alpha_legitimize_reload_address)
+	(alpha_preferred_reload_class, alpha_legitimate_constant_p): Use
+	CONST_INT_P, CONST_SCALAR_INT_P and CONST_DOUBLE_P predicates.
+	(alpha_split_reload_pair) <case CONST_INT, case CONST_WIDE_INT>:
+	Use CASE_CONST_SCALAR_INT.
+	(print_operand) <case 'M'>: Use mode_width_operand to check the
+	value of the constant.
+	* config/alpha/alpha.md (movti): Use CONST_SCALAR_INT_P predicate.
+	* config/alpha/predicates.md (input_operand): Use general_operand
+	instead of match_code as operand check.
+	(symbolic_operand): Use match_code with subexpression digits.
+	* config/alpha/constraints.md (Q): Ditto.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* optabs.c (expand_vec_perm): Don't re-use SEL as target operand.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_secondary_reload): Fix check for
+	load/store relative.
+
+2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* recog.h: Increase MAX_RECOG_ALTERNATIVES.  Change type of
+	alternative_mask to uint64_t.
+
+2015-05-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/66187
+	* match.pd ((bit_and (plus/minus (convert @0) (convert @1)) mask)):
+	Pass TYPE_SIGN to tree_int_cst_min_precision.  If
+	!TYPE_OVERFLOW_WRAPS, ensure @4 is non-negative.
+
+2015-05-19  David Malcolm  <dmalcolm@redhat.com>
+
+	* diagnostic.c (diagnostic_report_current_module): Strengthen
+	local "new_map" from const line_map * to
+	const line_map_ordinary *.
+	* genmatch.c (error_cb): Likewise for local "map".
+	(output_line_directive): Likewise for local "map".
+	* input.c (expand_location_1): Likewise for local "map".
+	Pass NULL rather than &map to
+	linemap_unwind_to_first_non_reserved_loc, since the value is never
+	read from there, and the value written back not read from here.
+	(is_location_from_builtin_token): Strengthen local "map" from
+	const line_map * to const line_map_ordinary *.
+	(dump_location_info): Strengthen locals "map" from
+	line_map *, one to const line_map_ordinary *, the other
+	to const line_map_macro *.
+	* tree-diagnostic.c (loc_map_pair): Strengthen field "map" from
+	const line_map * to const line_map_macro *.
+	(maybe_unwind_expanded_macro_loc): Add a call to
+	linemap_check_macro when writing to the "map" field of the
+	loc_map_pair.
+	Introduce local const line_map_ordinary * "ord_map", using it in
+	place of "map" in the part of the function where we know we have
+	an ordinary map.  Strengthen local "m" from const line_map * to
+	const line_map_ordinary *.
+
+2015-05-19  Nick Clifton  <nickc@redhat.com>
+
+	PR target/66156
+	* config/msp430/msp430.md (zero_extendhisi2): Add support for
+	separate source and destination registers.
+
+2015-05-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66165
+	* tree-vect-slp.c (vect_supported_load_permutation_p): Add guard
+	for no load permutation.
+
+	PR tree-optimization/66185
+	* tree-vect-slp.c (vect_build_slp_tree): Properly roll back
+	when building the SLP node from scalars.
+
+2015-05-19  Eric Botcazou  <ebotcazou@adacore.com>
+	    Tristan Gingold  <gingold@adacore.com>
+
+	* insn-notes.def (UPDATE_SJLJ_CONTEXT): New note.
+	* builtins.c (expand_builtin_update_setjmp_buf): Make global.
+	(expand_stack_restore): Call record_new_stack_level.
+	(expand_stack_save): Do not call do_pending_stack_adjust.
+	* builtins.h (expand_builtin_update_setjmp_buf): Declare.
+	* calls.c (expand_call): Call record_new_stack_level for alloca.
+	* except.c (sjlj_mark_call_sites): Expand builtin_update_setjmp_buf
+	wherever a NOTE_INSN_UPDATE_SJLJ_CONTEXT note is present.
+	(update_sjlj_context): New global function.
+	* except.h (update_sjlj_context): Declare.
+	* explow.c (record_new_stack_level): New global function.
+	(allocate_dynamic_stack_space): Call record_new_stack_level.
+	* explow.h (record_new_stack_level): Declare.
+	* final.c (final_scan_insn): Deal with NOTE_INSN_UPDATE_SJLJ_CONTEXT.
+	* cfgrtl.c (duplicate_insn_chain): Likewise.
+
+2015-05-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* calls.c: Always define STACK_GROWS_DOWNWARD as 0 or 1.
+	(mem_overlaps_already_clobbered_arg_p): Rewrite ifdef
+	STACK_GROWS_DOWNWARD as normal if.
+	(expand_call): Likewise.
+
+2015-05-19  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/54236
+	* config/sh/sh.md (*round_int_even): New insn_and_split and
+	accompanying new unnamed split.
+
+2015-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* bitmap.c (bitmap_set_range): Handle count==1 specially.
+	(bitmap_clear_range): Likewise.
+	* cfgcleanup.c (mark_effect): Use bitmap_clear_range and
+	bitmap_set_range unconditionally.
+	* df-problems.c (df_simulate_one_insn_forwards): Likewise.
+	* df-scan.c (df_mark_reg): Likewise.
+	* haifa-sched.c (setup_ref_regs): Likewise.
+	* sched-rgn.c (update_live_1): Likewise.
+
+2015-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* regs.h (END_HARD_REGNO): Delete.
+	(END_REGNO): Move to...
+	* rtl.h: ...here.
+	* bt-load.c (note_btr_set): Use END_REGNO instead of END_HARD_REGNO.
+	* caller-save.c (mark_set_regs): Likewise.
+	* combine.c (move_deaths, distribute_notes): Likewise.
+	* cse.c (invalidate, invalidate_for_call): Likewise.
+	* df-scan.c (df_ref_record): Likewise.
+	* postreload-gcse.c (reg_changed_after_insn_p): Likewise.
+	(record_last_reg_set_info): Likewise.
+	* reg-stack.c (convert_regs_exit): Likewise.
+	* reload.c (reg_overlap_mentioned_for_reload_p): Likewise.
+	* resource.c (update_live_status): Likewise.
+	* rtlanal.c (find_reg_fusage, find_regno_fusage): Likewise.
+
+2015-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* rtl.h (reg_info): Add an nregs field.
+	(REG_NREGS): Use it.
+	(SET_REGNO_RAW): Delete.
+	(set_regno_raw): New function.
+	* regs.h (END_HARD_REGNO): Make equivalent to END_REGNO.
+	(END_REGNO): Redefine in terms of REG_NREGS.
+	* read-rtl.c (read_rtx_code): Call set_regno_raw instead of
+	SET_REGNO_RAW.
+	* emit-rtl.c (set_mode_and_regno): Likewise.
+	* df-scan.c (df_ref_change_reg_with_loc): Use set_mode_and_regno
+	instead of SET_REGNO_RAW.
+
+2015-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* rtl.h (PUT_MODE_RAW): New macro.
+	(PUT_REG_NOTE_KIND): Use it.
+	(set_mode_and_regno): Declare.
+	(gen_raw_REG): Change regno to "unsigned int".
+	(gen_rtx_REG): Change "unsigned" to "unsigned int".
+	(PUT_MODE): Forward to PUT_MODE_RAW for generators, otherwise
+	use set_mode_and_regno to change the mode of registers.
+	* gengenrtl.c (gendef): Use PUT_MODE_RAW.
+	* emit-rtl.c (set_mode_and_regno): New function.
+	(gen_raw_REG): Change regno to unsigned int.  Use set_mode_and_regno.
+	* caller-save.c (reg_save_code): Use set_mode_and_regno.
+	* expr.c (init_expr_target): Likewise.
+	* ira.c (setup_prohibited_mode_move_regs): Likewise.
+	* postreload.c (reload_cse_simplify_operands): Likewise.
+
+2015-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* caller-save.c (init_caller_save): Use word_mode and
+	FIRST_PSEUDO_REGISTER when creating temporary rtxes.
+	* expr.c (init_expr_target): Likewise.
+	* ira.c (setup_prohibited_mode_move_regs): Likewise.
+	* postreload.c (reload_cse_regs_1): Likewise.
+
+2015-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* rtl.def (REG): Change format to "r".
+	* rtl.h (rtunion): Remove rt_reg.
+	(reg_info): New structure.
+	(rtx_def): Add reg field to main union.
+	(X0REGATTR): Delete.
+	(REG_CHECK): New macro.
+	(SET_REGNO_RAW, rhs_regno, REG_ATTRS): Use it.
+	* rtl.c (rtx_format): Document "r".
+	(rtx_code_size): Handle REG specially.
+	* gengenrtl.c (special_format): Return true for formats
+	that include 'r'.
+	* gengtype.c (adjust_field_rtx_def): Handle 'r' fields.
+	Deal with REG_ATTRS after the field loop.
+	* emit-rtl.c (gen_raw_REG): Call rtx_alloc_stat directly.
+	* expmed.c (init_expmed): Call gen_raw_REG instead of
+	gen_rtx_raw_REG.
+	* expr.c (init_expr_target): Likewise.
+	* regcprop.c (maybe_mode_change): Likewise.
+	* varasm.c (make_decl_rtl): Likewise.
+	* final.c (leaf_renumber_regs_insn): Return early after
+	handling REGs.
+	* genemit.c (gen_exp): Handle 'r' fields.
+	* genpeep.c (match_rtx): Likewise.
+	* gensupport.c (subst_pattern_match): Likewise.
+	(get_alternatives_number, collect_insn_data, alter_predicate_for_insn)
+	(alter_constraints, subst_dup): Likewise.
+	* read-rtl.c (read_rtx_code): Likewise.
+	* print-rtl.c (print_rtx): Likewise.
+	* genrecog.c (find_operand, find_matching_operand): Likewise.
+	(validate_pattern, match_pattern_2): Likewise.
+	(parameter::UINT, rtx_test::REGNO_FIELD): New enum values.
+	(rtx_test::regno_field): New function.
+	(operator ==, safe_to_hoist_p, transition_parameter_type)
+	(parameter_type_string, print_parameter_value)
+	(print_nonbool_test, print_test): Handle new enum values.
+	* cselib.c (rtx_equal_for_cselib_1): Handle REG specially.
+	* lra-constraints.c (operands_match_p): Likewise.
+
+2015-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* df.h (df_ref_change_reg_with_loc): Remove old_regno parameter.
+	Change type of new_regno to unsigned int.
+	* df-scan.c (df_ref_change_reg_with_loc_1): Change type of
+	new_regno to unsigned int.
+	(df_ref_change_reg_with_loc): Remove old_regno parameter.
+	Change type of new_regno to unsigned int.  Use SET_REGNO_RAW.
+	* rtl.h (SET_REGNO): Update call to df_ref_change_reg_with_loc.
+	(SET_REGNO_RAW): Add space after ",".
+
+2015-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* rtl.h (REG_NREGS): New macro
+	* alias.c (record_set): Use it.
+	* cfgcleanup.c (mark_effect): Likewise.
+	* combine.c (likely_spilled_retval_1): Likewise.
+	(likely_spilled_retval_p, can_change_dest_mode): Likewise.
+	(move_deaths, distribute_notes): Likewise.
+	* cselib.c (cselib_record_set): Likewise.
+	* df-problems.c (df_simulate_one_insn_forwards): Likewise.
+	* df-scan.c (df_mark_reg): Likewise.
+	* dse.c (look_for_hardregs): Likewise.
+	* dwarf2out.c (reg_loc_descriptor): Likewise.
+	(multiple_reg_loc_descriptor): Likewise.
+	* expr.c (write_complex_part, read_complex_part): Likewise.
+	(emit_move_complex): Likewise.
+	* haifa-sched.c (setup_ref_regs): Likewise.
+	* ira-lives.c (mark_hard_reg_live): Likewise.
+	* lra.c (lra_set_insn_recog_data): Likewise.
+	* mode-switching.c (create_pre_exit): Likewise.
+	* postreload.c (reload_combine_recognize_const_pattern): Likewise.
+	(reload_combine_recognize_pattern): Likewise.
+	(reload_combine_note_use, move2add_record_mode): Likewise.
+	(reload_cse_move2add): Likewise.
+	* reg-stack.c (subst_stack_regs_pat): Likewise.
+	* regcprop.c (kill_value, copy_value): Likewise.
+	(copyprop_hardreg_forward_1): Likewise.
+	* regrename.c (verify_reg_in_set, scan_rtx_reg): Likewise.
+	(build_def_use): Likewise.
+	* sched-deps.c (mark_insn_reg_birth, mark_reg_death): Likewise.
+	(deps_analyze_insn): Likewise.
+	* sched-rgn.c (check_live_1, update_live_1): Likewise.
+	* sel-sched.c (count_occurrences_equiv): Likewise.
+	* valtrack.c (dead_debug_insert_temp): Likewise.
+
+2015-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* cfgcleanup.c (mentions_nonequal_regs): Use END_REGNO.
+	* dse.c (note_add_store): Likewise.
+	* ira-lives.c (mark_hard_reg_dead): Likewise.
+	* loop-invariant.c (mark_reg_store): Likewise.
+	(mark_reg_death): Likewise.
+	* postreload.c (reload_combine): Likewise.
+	(reload_combine_note_store): Likewise.
+	(reload_combine_note_use): Likewise.
+	* recog.c (peep2_reg_dead_p): Likewise.
+
+2015-05-19  Alan Modra  <amodra@gmail.com>
+
+	* config/rs6000/predicates.md (gpc_reg_operand): Don't allow all
+	hard registers numbered greater or equal to ARG_POINTER_REGNUM.
+	(reg_or_neg_short_operand, fix_trunc_dest_operand): Delete
+	unused predicates.
+	* config/rs6000/altivec.md (save_vregs_*, restore_vregs_*):
+	Use altivec_register_operand.  Make insn predicate TARGET_ALTIVEC.
+	* config/rs6000/rs6000.md (extzvdi_internal2): Use cc_reg_operand.
+	* config/rs6000/vsx.md (vsx_float<VSi><mode>2): Expand comment.
+
+2015-05-19  Sameera Deshpande  <Sameera.Deshpande@imgtec.com>
+
+	* config/mips/mips.md (JOIN_MODE): New mode iterator.
+	(join2_load_Store<JOIN_MODE:mode>): New pattern.
+	(join2_loadhi): Likewise.
+	(define_peehole2): Add peephole2 patterns to join 2 HI/SI/SF/DF-mode
+	load-load and store-stores.
+	* config/mips/mips.opt (mload-store-pairs): New option.
+	(TARGET_LOAD_STORE_PAIRS): New macro.
+	* config/mips/mips.h (ENABLE_LD_ST_PAIRS): Likewise.
+	* config/mips/mips-protos.h (mips_load_store_bonding_p): New prototype.
+	* config/mips/mips.c (mips_load_store_bonding_p): New function.
+
+2015-05-19  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	* bb-reorder.c (fix_up_fall_thru_edges): Use std::swap instead of
+	explicit swaps.
+	* dojump.c (do_compare_rtx_and_jump): Likewise.
+	* expmed.c (emit_store_flag_1): Likewise.
+	* fibonacci_heap.h (fibonacci_heap::union_with): Likewise.
+	* final.c (sprint_ul): Use std::reverse for reversing a string.
+	* fold-const.c (extract_muldiv_1): Use std::swap.
+	* genmodes.c (emit_mode_int_n): Likewise.
+	* ifcvt.c (dead_or_predicable): Likewise.
+	* ira-build.c (ira_merge_live_ranges): Likewise.
+	(swap_allocno_copy_ends_if_necessary): Likewise.
+	* ira.c (ira_setup_alts): Likewise.
+	* loop-iv.c (iv_analyze_expr): Likewise.
+	(implies_p): Likewise.
+	(canon_condition): Likewise.
+	* lra-constraints.c (swap_operands): Likewise.
+	* lra-lives.c (lra_merge_live_ranges): Likewise.
+	* omega.c (swap): Remove.
+	(bswap): Remove.
+	(omega_unprotect_1): Use std::swap.
+	(omega_solve_geq): Likewise.
+	* optabs.c (expand_binop_directly): Likewise.
+	(expand_binop): Likewise.
+	(emit_conditional_move): Likewise.
+	(emit_conditional_add): Likewise.
+	* postreload.c (reload_cse_simplify_operands): Likewise.
+	* reg-stack.c (emit_swap_insn): Likewise.
+	(swap_to_top): Likewise.
+	(compare_for_stack_reg): Likewise.
+	(subst_asm_stack_regs): Likewise.
+	* reload.c (find_reloads): Likewise.
+	* reload1.c (gen_reload_chain_without_interm_reg_p): Likewise.
+	* sel-sched.c (invoke_reorder_hooks): Likewise.
+	(create_block_for_bookkeeping): Likewise.
+	* tree-data-ref.c (lambda_matrix_row_exchange): Remove.
+	(lambda_matrix_right_hermite): Use std::swap.
+	* tree-ssa-coalesce.c (sort_coalesce_list): Likewise.
+	* tree-ssa-ifcombine.c (ifcombine_ifandif): Likewise.
+	* tree-ssa-loop-ivopts.c (iv_ca_delta_reverse): Likewise.
+	* tree-ssa-math-opts.c (is_widening_mult_p): Likewise.
+	* tree-ssa-phiopt.c (hoist_adjacent_loads): Likewise.
+	* tree-ssa-reassoc.c (linearize_expr_tree): Likewise.
+	* tree-ssa-threadedge.c (simplify_control_stmt_condition): Likewise.
+	* tree-vrp.c (compare_ranges): Likewise.
+	* var-tracking.c (add_with_sets): Likewise.
+	(vt_find_locations): Likewise.
+
+2015-05-18  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/freebsd-spec.h (FBSD_STARTFILE_SPEC): Add the bits to build
+	pie executables.
+	(FBSD_ENDFILE_SPEC): Likewise.
+	* config/i386/freebsd.h (STARTFILE_SPEC): Remove and use the one from
+	config/freebsd-spec.h.
+	(ENDFILE_SPEC): Likewise.
+
+2015-05-18  Uros Bizjak  <ubizjak@gmail.com>
+	    Richard Henderson  <rth@redhat.com>
+
+	PR target/57032
+	* config/alpha/constraints.md (Q): Rewrite as define_memory_constraint.
+	Check for a memory location that is not a reference (using an AND)
+	to an unaligned location here.
+	* config/alpha/predicates.md (normal_memory_operand): Remove.
+
+2015-05-18  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* config/arm/arm.md (andsi_not_shiftsi_si_scc): New pattern.
+	(andsi_not_shiftsi_si_scc_no_reuse): New pattern.
+
+2015-05-18  Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* config/mips/mips.c (micromips_globals): New variable.
+	(mips_set_compression_mode): Save and reinitialize target-dependent
+	state for microMIPS.
+
+2015-05-18  Martin Liska  <mliska@suse.cz>
+
+	* dbgcnt.def: Add new counter.
+	* ipa-icf.c (sem_item_optimizer::merge_classes): Use the counter.
+
+2015-05-18  Martin Liska  <mliska@suse.cz>
+
+	* dbgcnt.def: Sort counters.
+	* opts.c (common_handle_option): Do not compile if
+	-fdbg-cnt-list is enabled.
+
+2015-05-18  Tom de Vries  <tom@codesourcery.com>
+
+	* gimplify.c (gimplify_modify_expr): Remove do_deref handling.
+	(gimplify_va_arg_expr): Remove do_deref handling.  Remove adding of
+	address operator to va_list operand.
+	* tree-stdarg.c (expand_ifn_va_arg_1): Do deref of va_list operand
+	unconditionally.
+	* config/i386/i386.c (ix86_gimplify_va_arg): Remove deref on va_list
+	operand.
+	* config/rs6000/rs6000.c (rs6000_gimplify_va_arg): Same.
+	* config/s390/s390.c (s390_gimplify_va_arg): Same.
+	* config/spu/spu.c (spu_gimplify_va_arg_expr): Same.
+
+2015-05-18  Tom de Vries  <tom@codesourcery.com>
+
+	* tree-ssa-tail-merge.c: Fix whitespace.
+
+2015-05-17  Jim Wilson  <jim.wilson@linaro.org>
+
+	* doc/invoke.texi (ARM Options, mtune): Add generic-armv7-a,
+	cortex-a17, and cortex-a17.cortex-a7.
+
 2015-05-17  Oleg Endo  <olegendo@gcc.gnu.org>
 
 	PR target/54236
