@@ -1,3 +1,55 @@
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66106
+	* interface.c(gfc_match_end_interface): Enforce F2008 C1202 (R1201).
+	* match.c(gfc_op2string): Return 'none' for INTRINSIC_NONE.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66057
+	* decl.c(gfc_match_generic):  Detected a malformed GENERIC statement.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66052
+	* decl.c(gfc_match_protected): Prevent dereference of NULL pointer. 
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66045
+	* expr.c (gfc_check_assign):  Check for assignment of NULL() instead
+	of the (intended) pointer assignment.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66044
+	* decl.c(gfc_match_entry):  Change a gfc_internal_error() into
+	a gfc_error() 
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66043
+	* check.c (gfc_check_storage_size): Prevent the direct use of NULL()
+	in STORAGE_SIZE() reference.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66040
+	* parse.c(verify_st_order): Replace a gfc_internal_error with your
+	generic gfc_error.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66039
+	* io.c (match_filepos): Check for incomplete/mangled REWIND, FLUSH,
+	BACKSPACE, and ENDFILE statements
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/64925
+	* symbol.c(check_conflict):  Check for a conflict between a dummy
+	argument and an internal procedure name.
+
 2015-05-02  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/65976
