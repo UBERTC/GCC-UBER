@@ -1,3 +1,403 @@
+2015-05-21  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/66232
+	* config/i386/constraints.md (Bg): New constraint for GOT memory
+	operand.
+	* config/i386/i386.md (*call_got_x32): New pattern.
+	(*call_value_got_x32): Likewise.
+	* config/i386/predicates.md (GOT_memory_operand): New predicate.
+
+2015-05-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/66233
+	* match.pd (ocvt (icvt@1 @0)): Don't handle vector types.
+	Simplify.
+
+2015-05-21  Jeff Law  <law@redhat.com>
+
+	* config/pa/pa.md (add-with-constant splitter): Use ASHIFT rather
+	than MULT for shadd sequences.
+
+2015-05-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	* alias.c (alias_stats): New static var.	
+	(alias_sets_conflict_p, alias_sets_must_conflict_p): Update stats.
+	(dump_alias_stats_in_alias_c): New function.
+	* alias.h (dump_alias_stats_in_alias_c): Declare.
+	* tree-ssa-alias.c (dump_alias_stats): Call it.
+
+2015-05-08  Michael Matz  <matz@suse.de>
+
+	* tree-vectorizer.h (struct _stmt_vec_info): Rename stride_load_p
+	to strided_p.
+	(STMT_VINFO_STRIDE_LOAD_P): Rename to ...
+	(STMT_VINFO_STRIDED_P): ... this.
+	* tree-vect-data-refs.c (vect_compute_data_ref_alignment): Adjust.
+	(vect_verify_datarefs_alignment): Likewise.
+	(vect_enhance_data_refs_alignment): Likewise.
+	(vect_analyze_data_ref_access): Likewise.
+	(vect_analyze_data_refs): Accept strided stores.
+	* tree-vect-stmts.c (vect_model_store_cost): Count strided stores.
+	(vect_model_load_cost): Adjust for macro rename.
+	(vectorizable_mask_load_store): Likewise.
+	(vectorizable_load): Likewise.
+	(vectorizable_store): Open code strided stores.
+
+2015-05-21  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* doc/sourcebuild.texi (7.2.3.9 Other hardware attributes):
+	Document sqrt_insn.
+
+2015-05-21  Richard Biener  <rguenther@suse.de>
+
+	PR c++/66211
+	* match.pd: Guard pattern optimzing (int)(float)int
+	conversions to apply only on GIMPLE.
+
+2015-05-21  Jeff Law  <law@redhat.com>
+
+	* combine.c (find_split_point): Handle ASHIFT like MULT to encourage
+	multiply-accumulate/shift-add insn generation.
+
+2015-05-21  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/54236
+	* config/sh/sh.md (*round_int_even): Reject pattern if operands[0] and
+	operands[1] are the same.
+
+2015-05-21  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR middle-end/66221
+	* ipa-chkp.c (chkp_copy_function_type_adding_bounds): Use
+	build_distinct_type_copy to copy bounds.
+
+2015-05-21  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* genrecog.c (MAX_DEPTH, MIN_NUM_STATEMENTS, MAX_NUM_STATEMENTS):
+	Change to unsigned int.
+
+2015-05-20  Jeff Law  <law@redhat.com>
+
+	* config/pa/pa.c (pa_print_operand): New 'o' output modifier.
+	(pa_mem_shadd_constant_p): Renamed from pa_shadd_constant_p.
+	(pa_shadd_constant_p): Allow constants for shadd insns rather
+	than valid scaling constants for memory addresses.
+	* config/pa/pa-protos.h (pa_mem_shadd_constant_p): Add prototype.
+	* config/pa/predicates.md (mem_shadd_operand): New predicate.
+	* config/pa/pa.md (shift-add insns using MULT): Use mem_shadd_operand.
+	(shift-add insns using ASHIFT): New patterns.
+
+2015-05-20  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	* bb-reorder.c (set_edge_can_fallthru_flag): Use rtx_jump_insn where
+	feasible.
+	(fix_up_fall_thru_edges): Likewise.
+	(fix_crossing_conditional_branches): Likewise. Promote jump targets
+	from to rtx_insn to rtx_code_label where feasible.
+	* bt-load.c (move_btr_def): Remove as-a cast of the value returned by
+	gen_move_insn (returned type changed to rtx_insn).
+	* builtins.c (expand_errno_check): Fix arguments of
+	do_compare_rtx_and_jump (now expects rtx_code_label).
+	(expand_builtin_acc_on_device): Likewise.
+	* cfgcleanup.c (try_simplify_condjump): Add cast when calling
+	invert_jump (now exprects rtx_jump_insn).
+	* cfgexpand.c (label_rtx_for_bb): Promote return type to rtx_code_label.
+	(construct_init_block): Use rtx_code_label.
+	* cfgrtl.c (block_label): Promote return type to rtx_code_label.
+	(try_redirect_by_replacing_jump): Use cast to rtx_jump_insn when
+	calling redirect_jump.
+	(patch_jump_insn): Likewise.
+	(redirect_branch_edge): Likewise.
+	(force_nonfallthru_and_redirect): Likewise.
+	(fixup_reorder_chain): Explicitly use rtx_jump_insn instead of rtx_insn
+	when suitable.
+	(rtl_lv_add_condition_to_bb): Update call of do_compare_rtx_and_jump.
+	* cfgrtl.h: Promote return type of block_label to rtx_code_label.
+	* config/bfin/bfin.c (hwloop_optimize): Fix call of emit_label_before.
+	* config/i386/i386.c (ix86_emit_cmove): Explicitly use rtx_code_label
+	to store the value retured by gen_label_rtx.
+	* config/mips/mips.c (mips16_split_long_branches): Promote rtx_insn to
+	rtx_jump_insn.
+	* config/sh/sh.c (gen_far_branch): Likewise. Fix call of invert_jump.
+	(split_branches): Fix calls of redirect_jump.
+	* dojump.c (jumpifnot): Promote argument type from rtx to rtx_code_label.
+	(jumpifnot_1): Likewise.
+	(jumpif): Likewise.
+	(jumpif_1): Likewise.
+	(do_jump_1): Likewise.
+	(do_jump): Likewise. Use rtx_code_label when feasible.
+	(do_jump_by_parts_greater_rtx): Likewise.
+	(do_jump_by_parts_zero_rtx): Likewise.
+	(do_jump_by_parts_equality_rtx): Likewise.
+	(do_compare_rtx_and_jump): Likewise.
+	* dojump.h: Update function prototypes.
+	* dse.c (emit_inc_dec_insn_before): Remove case (gen_move_insn now
+	returns rtx_insn).
+	* emit-rtl.c (emit_jump_insn_before_noloc): Promote return type to
+	rtx_jump_insn.
+	(emit_label_before): Likewise.
+	(emit_jump_insn_after_noloc): Likewise.
+	(emit_jump_insn_after_setloc): Likewise.
+	(emit_jump_insn_after): Likewise
+	(emit_jump_insn_before_setloc): Likewise.
+	(emit_jump_insn_before): Likewise.
+	(emit_label_before): Promote return type to rtx_code_label.
+	(emit_label): Likewise.
+	* except.c (sjlj_emit_dispatch_table): Use jump_target_rtx.
+	* explow.c (emit_stack_save): Use gen_move_insn_uncast instead of
+	gen_move_insn.
+	(emit_stack_restore): Likewise.
+	* expmed.c (emit_store_flag_force): Fix calls of do_compare_rtx_and_jump.
+	(do_cmp_and_jump): Likewise.
+	* expr.c (expand_expr_real_2): Likewise. Promote some local variables
+	from rtx to rtx_code_label.
+	(gen_move_insn_uncast): New function.
+	* expr.h: Update return type of gen_move_insn (promote to rtx_insn).
+	* function.c (convert_jumps_to_returns): Fix call of redirect_jump.
+	* gcse.c (pre_insert_copy_insn): Use rtx_insn instead of rtx.
+	* ifcvt.c (dead_or_predicable): Use rtx_jump_insn when calling
+	invert_jump_1 and redirect_jump_1.
+	* internal-fn.c (expand_arith_overflow_result_store): Fix call of
+	do_compare_rtx_and_jump.
+	(expand_addsub_overflow): Likewise.
+	(expand_neg_overflow): Likewise.
+	(expand_mul_overflow): Likewise.
+	* ira.c (split_live_ranges_for_shrink_wrap): Use rtx_insn for
+	return value of gen_move_insn.
+	* jump.c (redirect_jump): Promote argument from rtx to rtx_jump_insn.
+	* loop-doloop.c (add_test): Use rtx_code_label.
+	(doloop_modify): Likewise.
+	(doloop_optimize): Likewise.
+	* loop-unroll.c (compare_and_jump_seq): Promote rtx to rtx_code_label.
+	* lra-constraints.c (emit_spill_move): Remove cast of value returned
+	by gen_move_insn.
+	(inherit_reload_reg): Add cast when calling dump_insn_slim.
+	(split_reg): Likewise.
+	* modulo-sched.c (schedule_reg_moves): Remove cast of value returned by
+	gen_move_insn.
+	* optabs.c (expand_binop_directly): Remove casts of values returned by
+	maybe_gen_insn.
+	(expand_unop_direct): Likewise.
+	(expand_abs): Likewise.
+	(maybe_emit_unop_insn): Likewise.
+	(maybe_gen_insn): Promote return type to rtx_insn.
+	* optabs.h: Update prototype of maybe_gen_insn.
+	* postreload-gcse.c (eliminate_partially_redundant_load): Remove
+	redundant cast.
+	* recog.c (struct peep2_insn_data): Promote type of insn field to
+	rtx_insn.
+	(peep2_reinit_state): Use NULL instead of NULL_RTX.
+	(peep2_attempt): Remove casts of insn in peep2_insn_data.
+	(peep2_fill_buffer): Promote argument from rtx to rtx_insn
+	* recog.h (struct insn_gen_fn): Promote return types of function
+	pointers and operator ().from rtx to rtx_insn.
+	* reorg.c (fill_simple_delay_slots): Promote rtx_insn to rtx_jump_insn.
+	(fill_eager_delay_slots): Likewise.
+	(relax_delay_slots): Likewise.
+	(make_return_insns): Likewise.
+	(dbr_schedule): Likewise.
+	(optimize_skips): Likewise.
+	(reorg_redirect_jump): Likewise.
+	(fill_slots_from_thread): Likewise.
+	* reorg.h: Update prototypes.
+	* resource.c (find_dead_or_set_registers): Use dyn_cast to
+	rtx_jump_insn instead of check.  Use it's jump_target method.
+	* rtl.h (rtx_jump_insn::jump_label): Define new method.
+	(rtx_jump_insn::jump_target): Define new method.
+	(rtx_jump_insn::set_jump_target): Define new method.
+	* rtlanal.c (tablejump_p): Promote type of one local variable.
+	* sched-deps.c (sched_analyze_2): Promote rtx to rtx_insn_list.
+	(sched_analyze_insn): Likewise.
+	* sched-vis.c (print_insn_with_notes): Promote rtx to rtx_insn.
+	(print_insn): Likewise.
+	* stmt.c (label_rtx): Promote return type to rtx_insn.
+	(force_label_rtx): Likewise.
+	(jump_target_rtx): Define new function.
+	(expand_label): Use it, get rid of one cast.
+	(expand_naked_return): Promote rtx to rtx_code_label.
+	(do_jump_if_equal): Fix do_compare_rtx_and_jump call.
+	(expand_case): Use rtx_code_label instread of rtx where feasible.
+	(expand_sjlj_dispatch_table): Likewise.
+	(emit_case_nodes): Likewise.
+	* stmt.h: Declare jump_target_rtx.  Update prototypes.  Fix comments.
+	* store-motion.c (insert_store): Make use of new return type of
+	gen_move_insn and remove a cast.
+	(replace_store_insn): Likewise.
+
+2015-05-20  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/xtensa/xtensa.c (init_alignment_context): Replace MULT
+	by BITS_PER_UNIT with ASHIFT by exact_log2 (BITS_PER_UNIT).
+
+2015-05-20  Jeff Law  <law@redhat.com>
+
+	* tree-ssa-threadupdate.c (mark_threaded_blocks): Properly
+	dispose of the jump thread path when the jump threading
+	opportunity is cancelled.
+
+2015-05-20  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	* diagnostic.c (diagnostic_print_caret_line): Fix off-by-one error
+	when printing the caret character.
+
+2015-05-20  Marek Polacek  <polacek@redhat.com>
+
+	* cfgexpand.c (expand_debug_expr): Use UNARY_CLASS_P.
+
+2015-05-20  Marek Polacek  <polacek@redhat.com>
+
+	* expr.c (expand_cond_expr_using_cmove): Use COMPARISON_CLASS_P.
+	* gimple-expr.c (gimple_cond_get_ops_from_tree): Likewise.
+	* gimple-fold.c (canonicalize_bool): Likewise.
+	(same_bool_result_p): Likewise.
+	* tree-if-conv.c (parse_predicate): Likewise.
+
+2015-05-20  Marek Polacek  <polacek@redhat.com>
+
+	* gimple-fold.c (fold_const_aggregate_ref_1): Use DECL_P.
+	* gimplify.c (gimplify_modify_expr_rhs): Likewise.
+
+2015-05-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_class_max_nregs):
+	Use UNITS_PER_VREG and UNITS_PER_WORD instead of their direct
+	values.
+
+2015-05-20  Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* config/mips/mips.h (micromips_globals): Declare.
+
+2015-05-20  David Malcolm  <dmalcolm@redhat.com>
+
+	* timevar.def (TV_INITIALIZE_RTL): New.
+	* toplev.c (initialize_rtl): Use an auto_timevar to account this
+	function's time to TV_INITIALIZE_RTL.
+
+2015-05-20  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* tree-chkp.c (chkp_maybe_copy_and_register_bounds): Remove useless
+	gimple_build_nop calls.
+	(chkp_find_bounds_for_elem): Likewise.
+	(chkp_get_zero_bounds): Likewise.
+	(chkp_get_none_bounds): Likewise.
+	(chkp_get_bounds_by_definition): Likewise.
+	(chkp_generate_extern_var_bounds): Likewise.
+	(chkp_get_bounds_for_decl_addr): Likewise.
+	(chkp_get_bounds_for_string_cst): Likewise.
+
+2015-05-20  Bin Cheng  <bin.cheng@arm.com>
+
+	PR tree-optimization/65447
+	* tree-ssa-loop-ivopts.c (struct iv_use): New fields.
+	(dump_use, dump_uses): Support to dump sub use.
+	(record_use): New parameters to support sub use.  Remove call to
+	dump_use.
+	(record_sub_use, record_group_use): New functions.
+	(compute_max_addr_offset, split_all_small_groups): New functions.
+	(group_address_uses, rewrite_use_address): New functions.
+	(strip_offset): New declaration.
+	(find_interesting_uses_address): Call record_group_use.
+	(add_candidate): New assertion.
+	(infinite_cost_p): Move definition forward.
+	(add_costs): Check INFTY cost and return immediately.
+	(get_computation_cost_at): Clear setup cost and dependent bitmap
+	for sub uses.
+	(determine_use_iv_cost_address): Compute cost for sub uses.
+	(rewrite_use_address_1): Rename from old rewrite_use_address.
+	(free_loop_data): Free sub uses.
+	(tree_ssa_iv_optimize_loop): Call group_address_uses.
+
+2015-05-20  Kugan Vivekanandarajah  <kuganv@linaro.org>
+	    Jim Wilson  <jim.wilson@linaro.org>
+
+	* config/arm/aarch-common-protos.h (struct mem_cost_table): Added
+	new  fields loadv and storev.
+	* config/aarch64/aarch64-cost-tables.h (thunderx_extra_costs):
+	Initialize loadv and storev.
+	* config/arm/aarch-cost-tables.h (generic_extra_costs): Likewise.
+	(cortexa53_extra_costs): Likewise.
+	(cortexa57_extra_costs): Likewise.
+	(xgene1_extra_costs): Likewise.
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Update vector
+	rtx_costs.
+
+2015-05-20  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	* config/arm/arm.c (cortexa9_extra_costs): Initialize loadv and
+	 storev.
+	(cortexa8_extra_costs): Likewise.
+	(cortexa5_extra_costs): Likewise.
+	(cortexa7_extra_costs): Likewise.
+	(cortexa12_extra_costs): Likewise.
+	(cortexa15_extra_costs): Likewise.
+	(v7m_extra_costs): Likewise.
+
+2015-05-20  Jeff Law  <law@redhat.com>
+
+	* tree-ssa-threadupdate.c (thread_single_edge): Use delete_jump_thread
+	instead of open-coded version.  Also delete the jump thread created
+	within this function.
+
+2015-05-20  Alan Modra  <amodra@gmail.com>
+
+	* config/rs6000/rs6000.c (rs6000_emit_allocate_stack): Return
+	stack adjusting insn.  Formatting.
+	(rs6000_emit_prologue): Track stack adjusting insn, and use of
+	r12.  If possible, emit first -fsplit-stack arg pointer insn
+	before stack adjust.  Don't use r12 to save cr if split-stack.
+
+2015-05-20  Alan Modra  <amodra@gmail.com>
+
+	* common/config/rs6000/rs6000-common.c (TARGET_SUPPORTS_SPLIT_STACK):
+	Define.
+	(rs6000_supports_split_stack): New function.
+	* gcc/config/rs6000/rs6000.c (machine_function): Add
+	split_stack_arg_pointer.
+	(TARGET_EXTRA_LIVE_ON_ENTRY, TARGET_INTERNAL_ARG_POINTER): Define.
+	(setup_incoming_varargs): Use crtl->args.internal_arg_pointer
+	rather than virtual_incoming_args_rtx.
+	(rs6000_va_start): Likewise.
+	(split_stack_arg_pointer_used_p): New function.
+	(rs6000_emit_prologue): Set up arg pointer for -fsplit-stack.
+	(morestack_ref): New var.
+	(gen_add3_const, rs6000_expand_split_stack_prologue,
+	rs6000_internal_arg_pointer, rs6000_live_on_entry,
+	rs6000_split_stack_space_check): New functions.
+	(rs6000_elf_file_end): Call file_end_indicate_split_stack.
+	* gcc/config/rs6000/rs6000.md (UNSPEC_STACK_CHECK): Define.
+	(UNSPECV_SPLIT_STACK_RETURN): Define.
+	(split_stack_prologue, load_split_stack_limit,
+	load_split_stack_limit_di, load_split_stack_limit_si,
+	split_stack_return, split_stack_space_check): New expands and insns.
+	* gcc/config/rs6000/rs6000-protos.h
+	(rs6000_expand_split_stack_prologue): Declare.
+	(rs6000_split_stack_space_check): Declare.
+
+2015-05-20  Alan Modra  <amodra@gmail.com>
+
+	* config/rs6000/rs6000.c (struct rs6000_stack): Correct comments.
+	(rs6000_stack_info): Don't zero offsets when not saving registers.
+	(debug_stack_info): Adjust to omit printing unused offsets,
+	as before.
+	(direct_return): Test vrsave_size rather than vrsave_mask.
+	(rs6000_emit_prologue): Likewise.  Remove redundant altivec tests.
+	(rs6000_emit_epilogue): Likewise.
+
+2015-05-20  Alan Modra  <amodra@gmail.com>
+
+	* config/rs6000/rs6000.c (rs6000_stack_info): Don't zero offsets
+	when not saving registers.
+	(debug_stack_info): Adjust to omit printing unused offsets,
+	as before.
+	(rs6000_emit_epilogue): Adjust use_backchain_to_restore_sp
+	expression.
+
+2015-05-19  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	PR c++/65835
+	* config/i386/winnt.c (struct wrapped_symbol_hasher): Change
+	value_type to const char *.
+
 2015-05-19  Sandra Loosemore  <sandra@codesourcery.com>
 
 	* config.gcc [powerpc*-*-linux*]: Allow --enable-targets=all

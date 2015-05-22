@@ -3048,7 +3048,9 @@ package body Freeze is
                Set_Etype (Formal, F_Type);
             end if;
 
-            Freeze_And_Append (F_Type, N, Result);
+            if not From_Limited_With (F_Type) then
+               Freeze_And_Append (F_Type, N, Result);
+            end if;
 
             if Is_Private_Type (F_Type)
               and then Is_Private_Type (Base_Type (F_Type))
@@ -4288,21 +4290,32 @@ package body Freeze is
             end if;
          end if;
 
-         --  Make sure that if we have aspect Iterator_Element, then we have
+         --  Make sure that if we have an iterator aspect, then we have
          --  either Constant_Indexing or Variable_Indexing.
 
-         if Has_Aspect (Rec, Aspect_Iterator_Element) then
-            if Has_Aspect (Rec, Aspect_Constant_Indexing)
-                 or else
-               Has_Aspect (Rec, Aspect_Variable_Indexing)
-            then
-               null;
-            else
-               Error_Msg_N
-                 ("Iterator_Element requires indexing aspect",
-                  Find_Aspect (Rec, Aspect_Iterator_Element));
+         declare
+            Iterator_Aspect : Node_Id;
+
+         begin
+            Iterator_Aspect := Find_Aspect (Rec, Aspect_Iterator_Element);
+
+            if No (Iterator_Aspect) then
+               Iterator_Aspect := Find_Aspect (Rec, Aspect_Default_Iterator);
             end if;
-         end if;
+
+            if Present (Iterator_Aspect) then
+               if Has_Aspect (Rec, Aspect_Constant_Indexing)
+                    or else
+                  Has_Aspect (Rec, Aspect_Variable_Indexing)
+               then
+                  null;
+               else
+                  Error_Msg_N
+                    ("Iterator_Element requires indexing aspect",
+                     Iterator_Aspect);
+               end if;
+            end if;
+         end;
 
          --  All done if not a full record definition
 
@@ -5243,22 +5256,24 @@ package body Freeze is
                   if Sloc (SC) > Sloc (AC) then
                      Loc := SC;
                      Error_Msg_NE
-                       ("??size is not a multiple of alignment for &", Loc, E);
+                       ("?Z?size is not a multiple of alignment for &",
+                        Loc, E);
                      Error_Msg_Sloc := Sloc (AC);
                      Error_Msg_Uint_1 := Alignment (E);
-                     Error_Msg_N ("\??alignment of ^ specified #", Loc);
+                     Error_Msg_N ("\?Z?alignment of ^ specified #", Loc);
 
                   else
                      Loc := AC;
                      Error_Msg_NE
-                       ("??size is not a multiple of alignment for &", Loc, E);
+                       ("?Z?size is not a multiple of alignment for &",
+                        Loc, E);
                      Error_Msg_Sloc := Sloc (SC);
                      Error_Msg_Uint_1 := RM_Size (E);
-                     Error_Msg_N ("\??size of ^ specified #", Loc);
+                     Error_Msg_N ("\?Z?size of ^ specified #", Loc);
                   end if;
 
                   Error_Msg_Uint_1 := ((RM_Size (E) / Abits) + 1) * Abits;
-                  Error_Msg_N ("\??Object_Size will be increased to ^", Loc);
+                  Error_Msg_N ("\?Z?Object_Size will be increased to ^", Loc);
                end if;
             end;
          end if;

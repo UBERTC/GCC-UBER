@@ -5132,7 +5132,7 @@
    (clobber (match_operand:SI 4 "register_operand" ""))]
   "! pa_cint_ok_for_move (INTVAL (operands[2]))"
   [(set (match_dup 4) (match_dup 2))
-   (set (match_dup 0) (plus:SI (mult:SI (match_dup 4) (match_dup 3))
+   (set (match_dup 0) (plus:SI (ashift:SI (match_dup 4) (match_dup 3))
 			       (match_dup 1)))]
   "
 {
@@ -5147,17 +5147,17 @@
   if (intval % 2 == 0 && pa_cint_ok_for_move (intval / 2))
     {
       operands[2] = GEN_INT (intval / 2);
-      operands[3] = const2_rtx;
+      operands[3] = const1_rtx;
     }
   else if (intval % 4 == 0 && pa_cint_ok_for_move (intval / 4))
     {
       operands[2] = GEN_INT (intval / 4);
-      operands[3] = GEN_INT (4);
+      operands[3] = const2_rtx;
     }
   else if (intval % 8 == 0 && pa_cint_ok_for_move (intval / 8))
     {
       operands[2] = GEN_INT (intval / 8);
-      operands[3] = GEN_INT (8);
+      operands[3] = GEN_INT (3);
     }
   else if (pa_cint_ok_for_move (-intval))
     {
@@ -6337,7 +6337,7 @@
 (define_insn ""
   [(set (match_operand:SI 0 "register_operand" "=r")
 	(plus:SI (mult:SI (match_operand:SI 2 "register_operand" "r")
-			  (match_operand:SI 3 "shadd_operand" ""))
+			  (match_operand:SI 3 "mem_shadd_operand" ""))
 		 (match_operand:SI 1 "register_operand" "r")))]
   ""
   "{sh%O3addl %2,%1,%0|shladd,l %2,%O3,%1,%0} "
@@ -6347,10 +6347,30 @@
 (define_insn ""
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(plus:DI (mult:DI (match_operand:DI 2 "register_operand" "r")
-			  (match_operand:DI 3 "shadd_operand" ""))
+			  (match_operand:DI 3 "mem_shadd_operand" ""))
 		 (match_operand:DI 1 "register_operand" "r")))]
   "TARGET_64BIT"
   "shladd,l %2,%O3,%1,%0"
+  [(set_attr "type" "binary")
+   (set_attr "length" "4")])
+
+(define_insn ""
+  [(set (match_operand:SI 0 "register_operand" "=r")
+	(plus:SI (ashift:SI (match_operand:SI 2 "register_operand" "r")
+			    (match_operand:SI 3 "shadd_operand" ""))
+		 (match_operand:SI 1 "register_operand" "r")))]
+  ""
+  "{sh%o3addl %2,%1,%0|shladd,l %2,%o3,%1,%0} "
+  [(set_attr "type" "binary")
+   (set_attr "length" "4")])
+
+(define_insn ""
+  [(set (match_operand:DI 0 "register_operand" "=r")
+	(plus:DI (ashift:DI (match_operand:DI 2 "register_operand" "r")
+			    (match_operand:DI 3 "shadd_operand" ""))
+		 (match_operand:DI 1 "register_operand" "r")))]
+  "TARGET_64BIT"
+  "shladd,l %2,%o3,%1,%0"
   [(set_attr "type" "binary")
    (set_attr "length" "4")])
 

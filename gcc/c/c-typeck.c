@@ -2672,9 +2672,8 @@ build_external_ref (location_t loc, tree id, int fun, tree *type)
     }
   else if (current_function_decl != 0
 	   && !DECL_FILE_SCOPE_P (current_function_decl)
-	   && (TREE_CODE (ref) == VAR_DECL
-	       || TREE_CODE (ref) == PARM_DECL
-	       || TREE_CODE (ref) == FUNCTION_DECL))
+	   && (VAR_OR_FUNCTION_DECL_P (ref)
+	       || TREE_CODE (ref) == PARM_DECL))
     {
       tree context = decl_function_context (ref);
 
@@ -2854,9 +2853,10 @@ build_function_call (location_t loc, tree function, tree params)
 
 /* Give a note about the location of the declaration of DECL.  */
 
-static void inform_declaration (tree decl)
+static void
+inform_declaration (tree decl)
 {
-  if (decl && (TREE_CODE (decl) != FUNCTION_DECL || !DECL_BUILT_IN (decl)))
+  if (decl && (TREE_CODE (decl) != FUNCTION_DECL || !DECL_IS_BUILTIN (decl)))
     inform (DECL_SOURCE_LOCATION (decl), "declared here");
 }
 

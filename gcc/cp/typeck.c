@@ -2731,6 +2731,14 @@ finish_class_member_access_expr (tree object, tree name, bool template_p,
 		  return error_mark_node;
 		}
 	      tree val = lookup_enumerator (scope, name);
+	      if (!val)
+		{
+		  if (complain & tf_error)
+		    error ("%qD is not a member of %qD",
+			   name, scope);
+		  return error_mark_node;
+		}
+	      
 	      if (TREE_SIDE_EFFECTS (object))
 		val = build2 (COMPOUND_EXPR, TREE_TYPE (val), object, val);
 	      return val;
@@ -3590,8 +3598,8 @@ warn_args_num (location_t loc, tree fndecl, bool too_many_p)
 		  ? G_("too many arguments to function %q#D")
 		  : G_("too few arguments to function %q#D"),
 		  fndecl);
-      inform (DECL_SOURCE_LOCATION (fndecl),
-	      "declared here");
+      if (!DECL_IS_BUILTIN (fndecl))
+	inform (DECL_SOURCE_LOCATION (fndecl), "declared here");
     }
   else
     {
