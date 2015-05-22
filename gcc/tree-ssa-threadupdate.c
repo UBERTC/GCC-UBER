@@ -1647,9 +1647,7 @@ thread_single_edge (edge e)
   vec<jump_thread_edge *> *path = THREAD_PATH (e);
   edge eto = (*path)[1]->e;
 
-  for (unsigned int i = 0; i < path->length (); i++)
-    delete (*path)[i];
-  delete path;
+  delete_jump_thread_path (path);
   e->aux = NULL;
 
   thread_stats.num_threaded_edges++;
@@ -1693,6 +1691,7 @@ thread_single_edge (edge e)
   redirect_edge_and_branch (e, rd.dup_blocks[0]);
   flush_pending_stmts (e);
 
+  delete_jump_thread_path (npath);
   return rd.dup_blocks[0];
 }
 
@@ -2160,9 +2159,16 @@ mark_threaded_blocks (bitmap threaded_blocks)
         {
 	  /* Attach the path to the starting edge if none is yet recorded.  */
           if ((*path)[0]->e->aux == NULL)
-            (*path)[0]->e->aux = path;
-	  else if (dump_file && (dump_flags & TDF_DETAILS))
-	    dump_jump_thread_path (dump_file, *path, false);
+	    {
+              (*path)[0]->e->aux = path;
+	    }
+	  else
+	    {
+	      paths.unordered_remove (i);
+	      if (dump_file && (dump_flags & TDF_DETAILS))
+	        dump_jump_thread_path (dump_file, *path, false);
+	      delete_jump_thread_path (path);
+	    }
         }
     }
   /* Second, look for paths that have any other jump thread attached to
@@ -2186,8 +2192,10 @@ mark_threaded_blocks (bitmap threaded_blocks)
 	  else
 	    {
 	      e->aux = NULL;
+	      paths.unordered_remove (i);
 	      if (dump_file && (dump_flags & TDF_DETAILS))
 	        dump_jump_thread_path (dump_file, *path, false);
+	      delete_jump_thread_path (path);
 	    }
 	}
     }

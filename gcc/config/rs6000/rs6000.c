@@ -155,10 +155,9 @@ typedef struct rs6000_stack {
   int gp_size;			/* size of saved GP registers */
   int fp_size;			/* size of saved FP registers */
   int altivec_size;		/* size of saved AltiVec registers */
-  int cr_size;			/* size to hold CR if not in save_size */
-  int vrsave_size;		/* size to hold VRSAVE if not in save_size */
-  int altivec_padding_size;	/* size of altivec alignment padding if
-				   not in save_size */
+  int cr_size;			/* size to hold CR if not in fixed area */
+  int vrsave_size;		/* size to hold VRSAVE */
+  int altivec_padding_size;	/* size of altivec alignment padding */
   int spe_gp_size;		/* size of 64-bit GPR save size for SPE */
   int spe_padding_size;
   HOST_WIDE_INT total_size;	/* total bytes allocated for stack */
@@ -188,6 +187,8 @@ typedef struct GTY(()) machine_function
      64-bits wide and is allocated early enough so that the offset
      does not overflow the 16-bit load/store offset field.  */
   rtx sdmode_stack_slot;
+  /* Alternative internal arg pointer for -fsplit-stack.  */
+  rtx split_stack_arg_pointer;
   /* Flag if r2 setup is needed with ELFv2 ABI.  */
   bool r2_setup_needed;
 } machine_function;
@@ -1191,6 +1192,7 @@ static bool rs6000_debug_cannot_change_mode_class (machine_mode,
 						   machine_mode,
 						   enum reg_class);
 static bool rs6000_save_toc_in_prologue_p (void);
+static rtx rs6000_internal_arg_pointer (void);
 
 rtx (*rs6000_legitimize_reload_address_ptr) (rtx, machine_mode, int, int,
 					     int, int *)
@@ -1411,6 +1413,12 @@ static const struct attribute_spec rs6000_attribute_table[] =
 
 #undef TARGET_SET_UP_BY_PROLOGUE
 #define TARGET_SET_UP_BY_PROLOGUE rs6000_set_up_by_prologue
+
+#undef TARGET_EXTRA_LIVE_ON_ENTRY
+#define TARGET_EXTRA_LIVE_ON_ENTRY rs6000_live_on_entry
+
+#undef TARGET_INTERNAL_ARG_POINTER
+#define TARGET_INTERNAL_ARG_POINTER rs6000_internal_arg_pointer
 
 #undef TARGET_HAVE_TLS
 #define TARGET_HAVE_TLS HAVE_AS_TLS
@@ -5206,7 +5214,7 @@ direct_return (void)
 	  && info->first_altivec_reg_save == LAST_ALTIVEC_REGNO + 1
 	  && ! info->lr_save_p
 	  && ! info->cr_save_p
-	  && info->vrsave_mask == 0
+	  && info->vrsave_size == 0
 	  && ! info->push_p)
 	return 1;
     }
@@ -11151,7 +11159,7 @@ setup_incoming_varargs (cumulative_args_t cum, machine_mode mode,
   else
     {
       first_reg_offset = next_cum.words;
-      save_area = virtual_incoming_args_rtx;
+      save_area = crtl->args.internal_arg_pointer;
 
       if (targetm.calls.must_pass_in_stack (mode, type))
 	first_reg_offset += rs6000_arg_size (TYPE_MODE (type), type);
@@ -11345,7 +11353,7 @@ rs6000_va_start (tree valist, rtx nextarg)
     }
 
   /* Find the overflow area.  */
-  t = make_tree (TREE_TYPE (ovf), virtual_incoming_args_rtx);
+  t = make_tree (TREE_TYPE (ovf), crtl->args.internal_arg_pointer);
   if (words != 0)
     t = fold_build_pointer_plus_hwi (t, words * MIN_UNITS_PER_WORD);
   t = build2 (MODIFY_EXPR, TREE_TYPE (ovf), ovf, t);
@@ -22013,31 +22021,6 @@ rs6000_stack_info (void)
   else
     info_ptr->push_p = non_fixed_size > (TARGET_32BIT ? 220 : 288);
 
-  /* Zero offsets if we're not saving those registers.  */
-  if (info_ptr->fp_size == 0)
-    info_ptr->fp_save_offset = 0;
-
-  if (info_ptr->gp_size == 0)
-    info_ptr->gp_save_offset = 0;
-
-  if (! TARGET_ALTIVEC_ABI || info_ptr->altivec_size == 0)
-    info_ptr->altivec_save_offset = 0;
-
-  /* Zero VRSAVE offset if not saved and restored.  */
-  if (! TARGET_ALTIVEC_VRSAVE || info_ptr->vrsave_mask == 0)
-    info_ptr->vrsave_save_offset = 0;
-
-  if (! TARGET_SPE_ABI
-      || info_ptr->spe_64bit_regs_used == 0
-      || info_ptr->spe_gp_size == 0)
-    info_ptr->spe_gp_save_offset = 0;
-
-  if (! info_ptr->lr_save_p)
-    info_ptr->lr_save_offset = 0;
-
-  if (! info_ptr->cr_save_p)
-    info_ptr->cr_save_offset = 0;
-
   return info_ptr;
 }
 
@@ -22143,28 +22126,28 @@ debug_stack_info (rs6000_stack_t *info)
   if (info->calls_p)
     fprintf (stderr, "\tcalls_p             = %5d\n", info->calls_p);
 
-  if (info->gp_save_offset)
+  if (info->gp_size)
     fprintf (stderr, "\tgp_save_offset      = %5d\n", info->gp_save_offset);
 
-  if (info->fp_save_offset)
+  if (info->fp_size)
     fprintf (stderr, "\tfp_save_offset      = %5d\n", info->fp_save_offset);
 
-  if (info->altivec_save_offset)
+  if (info->altivec_size)
     fprintf (stderr, "\taltivec_save_offset = %5d\n",
 	     info->altivec_save_offset);
 
-  if (info->spe_gp_save_offset)
+  if (info->spe_gp_size == 0)
     fprintf (stderr, "\tspe_gp_save_offset  = %5d\n",
 	     info->spe_gp_save_offset);
 
-  if (info->vrsave_save_offset)
+  if (info->vrsave_size)
     fprintf (stderr, "\tvrsave_save_offset  = %5d\n",
 	     info->vrsave_save_offset);
 
-  if (info->lr_save_offset)
+  if (info->lr_save_p)
     fprintf (stderr, "\tlr_save_offset      = %5d\n", info->lr_save_offset);
 
-  if (info->cr_save_offset)
+  if (info->cr_save_p)
     fprintf (stderr, "\tcr_save_offset      = %5d\n", info->cr_save_offset);
 
   if (info->varargs_save_offset)
@@ -22624,7 +22607,7 @@ rs6000_emit_stack_tie (rtx fp, bool hard_frame_needed)
    If COPY_REG, make sure a copy of the old frame is left there.
    The generated code may use hard register 0 as a temporary.  */
 
-static void
+static rtx_insn *
 rs6000_emit_allocate_stack (HOST_WIDE_INT size, rtx copy_reg, int copy_off)
 {
   rtx_insn *insn;
@@ -22637,7 +22620,7 @@ rs6000_emit_allocate_stack (HOST_WIDE_INT size, rtx copy_reg, int copy_off)
     {
       warning (0, "stack frame too large");
       emit_insn (gen_trap ());
-      return;
+      return 0;
     }
 
   if (crtl->limit_stack)
@@ -22688,9 +22671,9 @@ rs6000_emit_allocate_stack (HOST_WIDE_INT size, rtx copy_reg, int copy_off)
   
   insn = emit_insn (TARGET_32BIT
 		    ? gen_movsi_update_stack (stack_reg, stack_reg,
-					todec, stack_reg)
+					      todec, stack_reg)
 		    : gen_movdi_di_update_stack (stack_reg, stack_reg,
-					   todec, stack_reg));
+						 todec, stack_reg));
   /* Since we didn't use gen_frame_mem to generate the MEM, grab
      it now and set the alias set/attributes. The above gen_*_update
      calls will generate a PARALLEL with the MEM set being the first
@@ -22708,6 +22691,7 @@ rs6000_emit_allocate_stack (HOST_WIDE_INT size, rtx copy_reg, int copy_off)
   add_reg_note (insn, REG_FRAME_RELATED_EXPR,
 		gen_rtx_SET (stack_reg, gen_rtx_PLUS (Pmode, stack_reg,
 						      GEN_INT (-size))));
+  return insn;
 }
 
 #define PROBE_INTERVAL (1 << STACK_CHECK_PROBE_INTERVAL_EXP)
@@ -23450,6 +23434,48 @@ rs6000_reg_live_or_pic_offset_p (int reg)
                   || (DEFAULT_ABI == ABI_DARWIN && flag_pic))));
 }
 
+/* Return whether the split-stack arg pointer (r12) is used.  */
+
+static bool
+split_stack_arg_pointer_used_p (void)
+{
+  /* If the pseudo holding the arg pointer is no longer a pseudo,
+     then the arg pointer is used.  */
+  if (cfun->machine->split_stack_arg_pointer != NULL_RTX
+      && (!REG_P (cfun->machine->split_stack_arg_pointer)
+	  || (REGNO (cfun->machine->split_stack_arg_pointer)
+	      < FIRST_PSEUDO_REGISTER)))
+    return true;
+
+  /* Unfortunately we also need to do some code scanning, since
+     r12 may have been substituted for the pseudo.  */
+  rtx_insn *insn;
+  basic_block bb = ENTRY_BLOCK_PTR_FOR_FN (cfun);
+  FOR_BB_INSNS (bb, insn)
+    if (NONDEBUG_INSN_P (insn))
+      {
+	/* A call destroys r12.  */
+	if (CALL_P (insn))
+	  return false;
+
+	df_ref use;
+	FOR_EACH_INSN_USE (use, insn)
+	  {
+	    rtx x = DF_REF_REG (use);
+	    if (REG_P (x) && REGNO (x) == 12)
+	      return true;
+	  }
+	df_ref def;
+	FOR_EACH_INSN_DEF (def, insn)
+	  {
+	    rtx x = DF_REF_REG (def);
+	    if (REG_P (x) && REGNO (x) == 12)
+	      return false;
+	  }
+      }
+  return bitmap_bit_p (DF_LR_OUT (bb), 12);
+}
+
 /* Emit function prologue as insns.  */
 
 void
@@ -23470,6 +23496,10 @@ rs6000_emit_prologue (void)
   /* Offset to top of frame for frame_reg and sp respectively.  */
   HOST_WIDE_INT frame_off = 0;
   HOST_WIDE_INT sp_off = 0;
+  /* sp_adjust is the stack adjusting instruction, tracked so that the
+     insn setting up the split-stack arg pointer can be emitted just
+     prior to it, when r12 is not used here for other purposes.  */
+  rtx_insn *sp_adjust = 0;
 
 #ifdef ENABLE_CHECKING
   /* Track and check usage of r0, r11, r12.  */
@@ -23661,7 +23691,7 @@ rs6000_emit_prologue (void)
 	       || info->first_fp_reg_save < 64
 	       || info->first_gp_reg_save < 32
 	       || info->altivec_size != 0
-	       || info->vrsave_mask != 0
+	       || info->vrsave_size != 0
 	       || crtl->calls_eh_return)
 	ptr_regno = 12;
       else
@@ -23688,7 +23718,10 @@ rs6000_emit_prologue (void)
 	    ptr_off = info->altivec_save_offset + info->altivec_size;
 	  frame_off = -ptr_off;
 	}
-      rs6000_emit_allocate_stack (info->total_size, ptr_reg, ptr_off);
+      sp_adjust = rs6000_emit_allocate_stack (info->total_size,
+					      ptr_reg, ptr_off);
+      if (REGNO (frame_reg_rtx) == 12)
+	sp_adjust = 0;
       sp_off = info->total_size;
       if (frame_reg_rtx != sp_reg_rtx)
 	rs6000_emit_stack_tie (frame_reg_rtx, false);
@@ -23729,7 +23762,8 @@ rs6000_emit_prologue (void)
   if (!WORLD_SAVE_P (info)
       && info->cr_save_p
       && REGNO (frame_reg_rtx) != cr_save_regno
-      && !(using_static_chain_p && cr_save_regno == 11))
+      && !(using_static_chain_p && cr_save_regno == 11)
+      && !(flag_split_stack && cr_save_regno == 12 && sp_adjust))
     {
       cr_save_rtx = gen_rtx_REG (SImode, cr_save_regno);
       START_USE (cr_save_regno);
@@ -23875,6 +23909,8 @@ rs6000_emit_prologue (void)
       int end_save = info->gp_save_offset + info->gp_size;
       int ptr_off;
 
+      if (ptr_regno == 12)
+	sp_adjust = 0;
       if (!ptr_set_up)
 	ptr_reg = gen_rtx_REG (Pmode, ptr_regno);
 
@@ -24193,7 +24229,10 @@ rs6000_emit_prologue (void)
 	}
       else if (REGNO (frame_reg_rtx) == 1)
 	frame_off = info->total_size;
-      rs6000_emit_allocate_stack (info->total_size, ptr_reg, ptr_off);
+      sp_adjust = rs6000_emit_allocate_stack (info->total_size,
+					      ptr_reg, ptr_off);
+      if (REGNO (frame_reg_rtx) == 12)
+	sp_adjust = 0;
       sp_off = info->total_size;
       if (frame_reg_rtx != sp_reg_rtx)
 	rs6000_emit_stack_tie (frame_reg_rtx, false);
@@ -24209,7 +24248,7 @@ rs6000_emit_prologue (void)
 
   /* Save AltiVec registers if needed.  Save here because the red zone does
      not always include AltiVec registers.  */
-  if (!WORLD_SAVE_P (info) && TARGET_ALTIVEC_ABI
+  if (!WORLD_SAVE_P (info)
       && info->altivec_size != 0 && (strategy & SAVE_INLINE_VRS) == 0)
     {
       int end_save = info->altivec_save_offset + info->altivec_size;
@@ -24223,6 +24262,8 @@ rs6000_emit_prologue (void)
 
       gcc_checking_assert (scratch_regno == 11 || scratch_regno == 12);
       NOT_INUSE (0);
+      if (scratch_regno == 12)
+	sp_adjust = 0;
       if (end_save + frame_off != 0)
 	{
 	  rtx offset = GEN_INT (end_save + frame_off);
@@ -24245,7 +24286,7 @@ rs6000_emit_prologue (void)
 	  frame_off = ptr_off;
 	}
     }
-  else if (!WORLD_SAVE_P (info) && TARGET_ALTIVEC_ABI
+  else if (!WORLD_SAVE_P (info)
 	   && info->altivec_size != 0)
     {
       int i;
@@ -24287,9 +24328,7 @@ rs6000_emit_prologue (void)
      epilogue.  */
 
   if (!WORLD_SAVE_P (info)
-      && TARGET_ALTIVEC
-      && TARGET_ALTIVEC_VRSAVE
-      && info->vrsave_mask != 0)
+      && info->vrsave_size != 0)
     {
       rtx reg, vrsave;
       int offset;
@@ -24302,7 +24341,7 @@ rs6000_emit_prologue (void)
       if ((DEFAULT_ABI == ABI_AIX || DEFAULT_ABI == ABI_ELFv2)
 	  && !using_static_chain_p)
 	save_regno = 11;
-      else if (REGNO (frame_reg_rtx) == 12)
+      else if (flag_split_stack || REGNO (frame_reg_rtx) == 12)
 	{
 	  save_regno = 11;
 	  if (using_static_chain_p)
@@ -24348,6 +24387,7 @@ rs6000_emit_prologue (void)
 	  rtx lr = gen_rtx_REG (Pmode, LR_REGNO);
 	  rtx tmp = gen_rtx_REG (Pmode, 12);
 
+	  sp_adjust = 0;
 	  insn = emit_move_insn (tmp, lr);
 	  RTX_FRAME_RELATED_P (insn) = 1;
 
@@ -24402,6 +24442,46 @@ rs6000_emit_prologue (void)
     {
       rtx reg = gen_rtx_REG (reg_mode, TOC_REGNUM);
       emit_insn (gen_frame_store (reg, sp_reg_rtx, RS6000_TOC_SAVE_SLOT));
+    }
+
+  if (flag_split_stack && split_stack_arg_pointer_used_p ())
+    {
+      /* Set up the arg pointer (r12) for -fsplit-stack code.  If
+	 __morestack was called, it left the arg pointer to the old
+	 stack in r29.  Otherwise, the arg pointer is the top of the
+	 current frame.  */
+      if (sp_adjust)
+	{
+	  rtx r12 = gen_rtx_REG (Pmode, 12);
+	  rtx set_r12 = gen_rtx_SET (r12, sp_reg_rtx);
+	  emit_insn_before (set_r12, sp_adjust);
+	}
+      else if (frame_off != 0 || REGNO (frame_reg_rtx) != 12)
+	{
+	  rtx r12 = gen_rtx_REG (Pmode, 12);
+	  if (frame_off == 0)
+	    emit_move_insn (r12, frame_reg_rtx);
+	  else
+	    emit_insn (gen_add3_insn (r12, frame_reg_rtx, GEN_INT (frame_off)));
+	}
+      if (info->push_p)
+	{
+	  rtx r12 = gen_rtx_REG (Pmode, 12);
+	  rtx r29 = gen_rtx_REG (Pmode, 29);
+	  rtx cr7 = gen_rtx_REG (CCUNSmode, CR7_REGNO);
+	  rtx not_more = gen_label_rtx ();
+	  rtx jump;
+
+	  jump = gen_rtx_IF_THEN_ELSE (VOIDmode,
+				       gen_rtx_GEU (VOIDmode, cr7, const0_rtx),
+				       gen_rtx_LABEL_REF (VOIDmode, not_more),
+				       pc_rtx);
+	  jump = emit_jump_insn (gen_rtx_SET (pc_rtx, jump));
+	  JUMP_LABEL (jump) = not_more;
+	  LABEL_NUSES (not_more) += 1;
+	  emit_move_insn (r12, r29);
+	  emit_label (not_more);
+	}
     }
 }
 
@@ -24735,7 +24815,9 @@ rs6000_emit_epilogue (int sibcall)
      here will not trigger at the moment;  We don't actually need a
      frame pointer for alloca, but the generic parts of the compiler
      give us one anyway.  */
-  use_backchain_to_restore_sp = (info->total_size > 32767 - info->lr_save_offset
+  use_backchain_to_restore_sp = (info->total_size + (info->lr_save_p
+						     ? info->lr_save_offset
+						     : 0) > 32767
 				 || (cfun->calls_alloca
 				     && !frame_pointer_needed));
   restore_lr = (info->lr_save_p
@@ -24849,8 +24931,7 @@ rs6000_emit_epilogue (int sibcall)
 
   /* Restore AltiVec registers if we must do so before adjusting the
      stack.  */
-  if (TARGET_ALTIVEC_ABI
-      && info->altivec_size != 0
+  if (info->altivec_size != 0
       && (ALWAYS_RESTORE_ALTIVEC_BEFORE_POP
 	  || (DEFAULT_ABI != ABI_V4
 	      && offset_below_red_zone_p (info->altivec_save_offset))))
@@ -24937,9 +25018,7 @@ rs6000_emit_epilogue (int sibcall)
     }
 
   /* Restore VRSAVE if we must do so before adjusting the stack.  */
-  if (TARGET_ALTIVEC
-      && TARGET_ALTIVEC_VRSAVE
-      && info->vrsave_mask != 0
+  if (info->vrsave_size != 0
       && (ALWAYS_RESTORE_ALTIVEC_BEFORE_POP
 	  || (DEFAULT_ABI != ABI_V4
 	      && offset_below_red_zone_p (info->vrsave_save_offset))))
@@ -25033,7 +25112,6 @@ rs6000_emit_epilogue (int sibcall)
 
   /* Restore AltiVec registers if we have not done so already.  */
   if (!ALWAYS_RESTORE_ALTIVEC_BEFORE_POP
-      && TARGET_ALTIVEC_ABI
       && info->altivec_size != 0
       && (DEFAULT_ABI == ABI_V4
 	  || !offset_below_red_zone_p (info->altivec_save_offset)))
@@ -25141,9 +25219,7 @@ rs6000_emit_epilogue (int sibcall)
 
   /* Restore VRSAVE if we have not done so already.  */
   if (!ALWAYS_RESTORE_ALTIVEC_BEFORE_POP
-      && TARGET_ALTIVEC
-      && TARGET_ALTIVEC_VRSAVE
-      && info->vrsave_mask != 0
+      && info->vrsave_size != 0
       && (DEFAULT_ABI == ABI_V4
 	  || !offset_below_red_zone_p (info->vrsave_save_offset)))
     {
@@ -25833,6 +25909,178 @@ rs6000_output_function_epilogue (FILE *file,
 
       fputs ("\t.align 2\n", file);
     }
+}
+
+/* -fsplit-stack support.  */
+
+/* A SYMBOL_REF for __morestack.  */
+static GTY(()) rtx morestack_ref;
+
+static rtx
+gen_add3_const (rtx rt, rtx ra, long c)
+{
+  if (TARGET_64BIT)
+    return gen_adddi3 (rt, ra, GEN_INT (c));
+ else
+    return gen_addsi3 (rt, ra, GEN_INT (c));
+}
+
+/* Emit -fsplit-stack prologue, which goes before the regular function
+   prologue (at local entry point in the case of ELFv2).  */
+
+void
+rs6000_expand_split_stack_prologue (void)
+{
+  rs6000_stack_t *info = rs6000_stack_info ();
+  unsigned HOST_WIDE_INT allocate;
+  long alloc_hi, alloc_lo;
+  rtx r0, r1, r12, lr, ok_label, compare, jump, call_fusage;
+  rtx_insn *insn;
+
+  gcc_assert (flag_split_stack && reload_completed);
+
+  if (!info->push_p)
+    return;
+
+  allocate = info->total_size;
+  if (allocate > (unsigned HOST_WIDE_INT) 1 << 31)
+    {
+      sorry ("Stack frame larger than 2G is not supported for -fsplit-stack");
+      return;
+    }
+  if (morestack_ref == NULL_RTX)
+    {
+      morestack_ref = gen_rtx_SYMBOL_REF (Pmode, "__morestack");
+      SYMBOL_REF_FLAGS (morestack_ref) |= (SYMBOL_FLAG_LOCAL
+					   | SYMBOL_FLAG_FUNCTION);
+    }
+
+  r0 = gen_rtx_REG (Pmode, 0);
+  r1 = gen_rtx_REG (Pmode, STACK_POINTER_REGNUM);
+  r12 = gen_rtx_REG (Pmode, 12);
+  emit_insn (gen_load_split_stack_limit (r0));
+  /* Always emit two insns here to calculate the requested stack,
+     so that the linker can edit them when adjusting size for calling
+     non-split-stack code.  */
+  alloc_hi = (-allocate + 0x8000) & ~0xffffL;
+  alloc_lo = -allocate - alloc_hi;
+  if (alloc_hi != 0)
+    {
+      emit_insn (gen_add3_const (r12, r1, alloc_hi));
+      if (alloc_lo != 0)
+	emit_insn (gen_add3_const (r12, r12, alloc_lo));
+      else
+	emit_insn (gen_nop ());
+    }
+  else
+    {
+      emit_insn (gen_add3_const (r12, r1, alloc_lo));
+      emit_insn (gen_nop ());
+    }
+
+  compare = gen_rtx_REG (CCUNSmode, CR7_REGNO);
+  emit_insn (gen_rtx_SET (compare, gen_rtx_COMPARE (CCUNSmode, r12, r0)));
+  ok_label = gen_label_rtx ();
+  jump = gen_rtx_IF_THEN_ELSE (VOIDmode,
+			       gen_rtx_GEU (VOIDmode, compare, const0_rtx),
+			       gen_rtx_LABEL_REF (VOIDmode, ok_label),
+			       pc_rtx);
+  jump = emit_jump_insn (gen_rtx_SET (pc_rtx, jump));
+  JUMP_LABEL (jump) = ok_label;
+  /* Mark the jump as very likely to be taken.  */
+  add_int_reg_note (jump, REG_BR_PROB,
+		    REG_BR_PROB_BASE - REG_BR_PROB_BASE / 100);
+
+  lr = gen_rtx_REG (Pmode, LR_REGNO);
+  insn = emit_move_insn (r0, lr);
+  RTX_FRAME_RELATED_P (insn) = 1;
+  insn = emit_insn (gen_frame_store (r0, r1, info->lr_save_offset));
+  RTX_FRAME_RELATED_P (insn) = 1;
+
+  insn = emit_call_insn (gen_call (gen_rtx_MEM (SImode, morestack_ref),
+				   const0_rtx, const0_rtx));
+  call_fusage = NULL_RTX;
+  use_reg (&call_fusage, r12);
+  add_function_usage_to (insn, call_fusage);
+  emit_insn (gen_frame_load (r0, r1, info->lr_save_offset));
+  insn = emit_move_insn (lr, r0);
+  add_reg_note (insn, REG_CFA_RESTORE, lr);
+  RTX_FRAME_RELATED_P (insn) = 1;
+  emit_insn (gen_split_stack_return ());
+
+  emit_label (ok_label);
+  LABEL_NUSES (ok_label) = 1;
+}
+
+/* Return the internal arg pointer used for function incoming
+   arguments.  When -fsplit-stack, the arg pointer is r12 so we need
+   to copy it to a pseudo in order for it to be preserved over calls
+   and suchlike.  We'd really like to use a pseudo here for the
+   internal arg pointer but data-flow analysis is not prepared to
+   accept pseudos as live at the beginning of a function.  */
+
+static rtx
+rs6000_internal_arg_pointer (void)
+{
+  if (flag_split_stack)
+    {
+      if (cfun->machine->split_stack_arg_pointer == NULL_RTX)
+	{
+	  rtx pat;
+
+	  cfun->machine->split_stack_arg_pointer = gen_reg_rtx (Pmode);
+	  REG_POINTER (cfun->machine->split_stack_arg_pointer) = 1;
+
+	  /* Put the pseudo initialization right after the note at the
+	     beginning of the function.  */
+	  pat = gen_rtx_SET (cfun->machine->split_stack_arg_pointer,
+			     gen_rtx_REG (Pmode, 12));
+	  push_topmost_sequence ();
+	  emit_insn_after (pat, get_insns ());
+	  pop_topmost_sequence ();
+	}
+      return plus_constant (Pmode, cfun->machine->split_stack_arg_pointer,
+			    FIRST_PARM_OFFSET (current_function_decl));
+    }
+  return virtual_incoming_args_rtx;
+}
+
+/* We may have to tell the dataflow pass that the split stack prologue
+   is initializing a register.  */
+
+static void
+rs6000_live_on_entry (bitmap regs)
+{
+  if (flag_split_stack)
+    bitmap_set_bit (regs, 12);
+}
+
+/* Emit -fsplit-stack dynamic stack allocation space check.  */
+
+void
+rs6000_split_stack_space_check (rtx size, rtx label)
+{
+  rtx sp = gen_rtx_REG (Pmode, STACK_POINTER_REGNUM);
+  rtx limit = gen_reg_rtx (Pmode);
+  rtx requested = gen_reg_rtx (Pmode);
+  rtx cmp = gen_reg_rtx (CCUNSmode);
+  rtx jump;
+
+  emit_insn (gen_load_split_stack_limit (limit));
+  if (CONST_INT_P (size))
+    emit_insn (gen_add3_insn (requested, sp, GEN_INT (-INTVAL (size))));
+  else
+    {
+      size = force_reg (Pmode, size);
+      emit_move_insn (requested, gen_rtx_MINUS (Pmode, sp, size));
+    }
+  emit_insn (gen_rtx_SET (cmp, gen_rtx_COMPARE (CCUNSmode, requested, limit)));
+  jump = gen_rtx_IF_THEN_ELSE (VOIDmode,
+			       gen_rtx_GEU (VOIDmode, cmp, const0_rtx),
+			       gen_rtx_LABEL_REF (VOIDmode, label),
+			       pc_rtx);
+  jump = emit_jump_insn (gen_rtx_SET (pc_rtx, jump));
+  JUMP_LABEL (jump) = label;
 }
 
 /* A C compound statement that outputs the assembler code for a thunk
@@ -29842,6 +30090,9 @@ rs6000_elf_file_end (void)
   if (TARGET_32BIT || DEFAULT_ABI == ABI_ELFv2)
     file_end_indicate_exec_stack ();
 #endif
+
+  if (flag_split_stack)
+    file_end_indicate_split_stack ();
 }
 #endif
 
