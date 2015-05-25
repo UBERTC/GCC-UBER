@@ -4375,9 +4375,9 @@ extern int operand_equal_for_phi_arg_p (const_tree, const_tree);
 extern tree create_artificial_label (location_t);
 extern const char *get_name (tree);
 extern bool stdarg_p (const_tree);
-extern bool prototype_p (tree);
-extern bool is_typedef_decl (tree x);
-extern bool typedef_variant_p (tree);
+extern bool prototype_p (const_tree);
+extern bool is_typedef_decl (const_tree x);
+extern bool typedef_variant_p (const_tree);
 extern bool auto_var_in_fn_p (const_tree, const_tree);
 extern tree build_low_bits_mask (tree, unsigned);
 extern bool tree_nop_conversion_p (const_tree, const_tree);
@@ -4544,8 +4544,8 @@ extern location_t *block_nonartificial_location (tree);
 extern location_t tree_nonartificial_location (tree);
 extern tree block_ultimate_origin (const_tree);
 extern tree get_binfo_at_offset (tree, HOST_WIDE_INT, tree);
-extern bool virtual_method_call_p (tree);
-extern tree obj_type_ref_class (tree ref);
+extern bool virtual_method_call_p (const_tree);
+extern tree obj_type_ref_class (const_tree ref);
 extern bool types_same_for_odr (const_tree type1, const_tree type2,
 				bool strict=false);
 extern bool contains_bitfld_component_ref_p (const_tree);
@@ -5088,6 +5088,26 @@ int_bit_position (const_tree field)
 { 
   return (wi::lshift (wi::to_offset (DECL_FIELD_OFFSET (field)), BITS_PER_UNIT_LOG)
 	  + wi::to_offset (DECL_FIELD_BIT_OFFSET (field))).to_shwi ();
+}
+
+/* Return true if it makes sense to consider alias set for a type T.  */
+
+inline bool
+type_with_alias_set_p (const_tree t)
+{
+  /* Function and method types are never accessed as memory locations.  */
+  if (TREE_CODE (t) == FUNCTION_TYPE || TREE_CODE (t) == METHOD_TYPE)
+    return false;
+
+  if (COMPLETE_TYPE_P (t))
+    return true;
+
+  /* Incomplete types can not be accessed in general except for arrays
+     where we can fetch its element despite we have no array bounds.  */
+  if (TREE_CODE (t) == ARRAY_TYPE && COMPLETE_TYPE_P (TREE_TYPE (t)))
+    return true;
+
+  return false;
 }
 
 extern void gt_ggc_mx (tree &);

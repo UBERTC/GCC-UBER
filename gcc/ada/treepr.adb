@@ -1382,6 +1382,10 @@ package body Treepr is
          Print_Header_Flag ("ignored ghost");
       end if;
 
+      if Check_Actuals (N) then
+         Print_Header_Flag ("check actuals");
+      end if;
+
       if Enumerate then
          Print_Char (')');
       end if;

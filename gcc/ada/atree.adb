@@ -594,6 +594,10 @@ package body Atree is
          Set_Is_Ignored_Ghost_Node (New_Id);
       end if;
 
+      --  Clear Check_Actuals to False
+
+      Set_Check_Actuals (New_Id, False);
+
       --  Specifically copy Paren_Count to deal with creating new table entry
       --  if the parentheses count is at the maximum possible value already.
 
@@ -650,6 +654,15 @@ package body Atree is
         (Union_Id_Ptr'
           (Nodes.Table (E + 2).Field12'Unrestricted_Access)).Convention := Val;
    end Basic_Set_Convention;
+
+   -------------------
+   -- Check_Actuals --
+   -------------------
+
+   function Check_Actuals (N : Node_Id) return Boolean is
+   begin
+      return Flags.Table (N).Check_Actuals;
+   end Check_Actuals;
 
    --------------------------
    -- Check_Error_Detected --
@@ -2039,6 +2052,15 @@ package body Atree is
    begin
       Nodes.Table (N).Analyzed := Val;
    end Set_Analyzed;
+
+   -----------------------
+   -- Set_Check_Actuals --
+   -----------------------
+
+   procedure Set_Check_Actuals (N : Node_Id; Val : Boolean := True) is
+   begin
+      Flags.Table (N).Check_Actuals := Val;
+   end Set_Check_Actuals;
 
    ---------------------------
    -- Set_Comes_From_Source --
