@@ -252,8 +252,24 @@ type_with_linkage_p (const_tree t)
 {
   /* Builtin types do not define linkage, their TYPE_CONTEXT is NULL.  */
   if (!TYPE_CONTEXT (t)
-      || !TYPE_NAME (t) || TREE_CODE (TYPE_NAME (t)) != TYPE_DECL)
+      || !TYPE_NAME (t) || TREE_CODE (TYPE_NAME (t)) != TYPE_DECL
+      || !TYPE_STUB_DECL (t))
     return false;
+
+  /* In LTO do not get confused by non-C++ produced types or types built
+     with -fno-lto-odr-type-merigng.  */
+  if (in_lto_p)
+    {
+      /* To support -fno-lto-odr-type-merigng recognize types with vtables
+         to have linkage.  */
+      if (RECORD_OR_UNION_TYPE_P (t)
+	  && TYPE_BINFO (t) && BINFO_VTABLE (TYPE_BINFO (t)))
+        return true;
+      /* Do not accept any other types - we do not know if they were produced
+         by C++ FE.  */
+      if (!DECL_ASSEMBLER_NAME_SET_P (TYPE_NAME (t)))
+        return false;
+    }
 
   return (RECORD_OR_UNION_TYPE_P (t)
 	  || TREE_CODE (t) == ENUMERAL_TYPE);
@@ -267,20 +283,22 @@ type_in_anonymous_namespace_p (const_tree t)
 {
   gcc_assert (type_with_linkage_p (t));
 
+  /* Keep -fno-lto-odr-type-merging working by recognizing classes with vtables
+     properly into anonymous namespaces.  */
+  if (RECORD_OR_UNION_TYPE_P (t)
+      && TYPE_BINFO (t) && BINFO_VTABLE (TYPE_BINFO (t)))
+    return (TYPE_STUB_DECL (t) && !TREE_PUBLIC (TYPE_STUB_DECL (t)));
+
   if (TYPE_STUB_DECL (t) && !TREE_PUBLIC (TYPE_STUB_DECL (t)))
     {
-      if (DECL_ARTIFICIAL (TYPE_NAME (t)))
-	return true;
-      tree ctx = DECL_CONTEXT (TYPE_NAME (t));
-      while (ctx)
-	{
-	  if (TREE_CODE (ctx) == NAMESPACE_DECL)
-	    return !TREE_PUBLIC (ctx);
-	  if (TREE_CODE (ctx) == BLOCK)
-	    ctx = BLOCK_SUPERCONTEXT (ctx);
-	  else
-	    ctx = get_containing_scope (ctx);
-	}
+      /* C++ FE uses magic <anon> as assembler names of anonymous types.
+ 	 verify that this match with type_in_anonymous_namespace_p.  */
+#ifdef ENABLE_CHECKING
+      if (in_lto_p)
+	gcc_assert (!strcmp ("<anon>",
+		    IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (TYPE_NAME (t)))));
+#endif
+      return true;
     }
   return false;
 }
@@ -292,14 +310,29 @@ type_in_anonymous_namespace_p (const_tree t)
 bool
 odr_type_p (const_tree t)
 {
-  if (type_with_linkage_p (t) && type_in_anonymous_namespace_p (t))
-    return true;
   /* We do not have this information when not in LTO, but we do not need
      to care, since it is used only for type merging.  */
   gcc_checking_assert (in_lto_p || flag_lto);
 
-  return (TYPE_NAME (t) && TREE_CODE (TYPE_NAME (t)) == TYPE_DECL
-          && (DECL_ASSEMBLER_NAME_SET_P (TYPE_NAME (t))));
+  /* To support -fno-lto-odr-type-merging consider types with vtables ODR.  */
+  if (type_with_linkage_p (t) && type_in_anonymous_namespace_p (t))
+    return true;
+
+  if (TYPE_NAME (t) && TREE_CODE (TYPE_NAME (t)) == TYPE_DECL
+      && (DECL_ASSEMBLER_NAME_SET_P (TYPE_NAME (t))))
+    {
+#ifdef ENABLE_CHECKING
+      /* C++ FE uses magic <anon> as assembler names of anonymous types.
+ 	 verify that this match with type_in_anonymous_namespace_p.  */
+      gcc_assert (!type_with_linkage_p (t)
+		  || strcmp ("<anon>",
+			     IDENTIFIER_POINTER
+			        (DECL_ASSEMBLER_NAME (TYPE_NAME (t))))
+		  || type_in_anonymous_namespace_p (t));
+#endif
+      return true;
+    }
+  return false;
 }
 
 /* Return TRUE if all derived types of T are known and thus
@@ -774,7 +807,7 @@ odr_subtypes_equivalent_p (tree t1, tree t2,
         return false;
       /* Limit recursion: If subtypes are ODR types and we know
          that they are same, be happy.  */
-      if (!get_odr_type (t1, true)->odr_violated)
+      if (!odr_type_p (t1) || !get_odr_type (t1, true)->odr_violated)
         return true;
     }
 
@@ -2279,18 +2312,6 @@ dump_type_inheritance_graph (FILE *f)
     }
 }
 
-/* Given method type T, return type of class it belongs to.
-   Look up this pointer and get its type.    */
-
-tree
-method_class_type (const_tree t)
-{
-  tree first_parm_type = TREE_VALUE (TYPE_ARG_TYPES (t));
-  gcc_assert (TREE_CODE (t) == METHOD_TYPE);
-
-  return TREE_TYPE (first_parm_type);
-}
-
 /* Initialize IPA devirt and build inheritance tree graph.  */
 
 void
@@ -2314,8 +2335,7 @@ build_type_inheritance_graph (void)
     if (is_a <cgraph_node *> (n)
 	&& DECL_VIRTUAL_P (n->decl)
 	&& n->real_symbol_p ())
-      get_odr_type (TYPE_MAIN_VARIANT (method_class_type (TREE_TYPE (n->decl))),
-		    true);
+      get_odr_type (TYPE_METHOD_BASETYPE (TREE_TYPE (n->decl)), true);
 
     /* Look also for virtual tables of types that do not define any methods.
  
@@ -3446,8 +3466,7 @@ update_type_inheritance_graph (void)
     if (DECL_VIRTUAL_P (n->decl)
 	&& !n->definition
 	&& n->real_symbol_p ())
-      get_odr_type (method_class_type (TYPE_MAIN_VARIANT (TREE_TYPE (n->decl))),
-				       true);
+      get_odr_type (TYPE_METHOD_BASETYPE (TREE_TYPE (n->decl)), true);
   timevar_pop (TV_IPA_INHERITANCE);
 }
 

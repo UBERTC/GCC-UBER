@@ -2913,7 +2913,12 @@ parser::parse_operation ()
 
   user_id *p = dyn_cast<user_id *> (op);
   if (p && p->is_oper_list)
-    record_operlist (id_tok->src_loc, p);
+    {
+      if (active_fors.length() == 0)
+	record_operlist (id_tok->src_loc, p);
+      else
+	fatal_at (id_tok, "operator-list %s cannot be exapnded inside 'for'", id);
+    }
   return op;
 }
 
@@ -3329,8 +3334,13 @@ parser::parse_for (source_location)
 		      "others with arity %d", oper, idb->nargs, arity);
 
 	  user_id *p = dyn_cast<user_id *> (idb);
-	  if (p && p->is_oper_list)
-	    op->substitutes.safe_splice (p->substitutes);
+	  if (p)
+	    {
+	      if (p->is_oper_list)
+		op->substitutes.safe_splice (p->substitutes);
+	      else
+		fatal_at (token, "iterator cannot be used as operator-list");
+	    }
 	  else 
 	    op->substitutes.safe_push (idb);
 	}
@@ -3426,6 +3436,11 @@ parser::parse_operator_list (source_location)
       else
 	op->substitutes.safe_push (idb);
     }
+
+  // Check that there is no junk after id-list
+  token = peek();
+  if (token->type != CPP_CLOSE_PAREN)
+    fatal_at (token, "expected identifier got %s", cpp_type2name (token->type, 0));
 
   if (op->substitutes.length () == 0)
     fatal_at (token, "operator-list cannot be empty");

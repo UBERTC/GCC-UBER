@@ -10266,12 +10266,15 @@ grokdeclarator (const cp_declarator *declarator,
 	 in the declaration of a constructor or conversion function within
 	 a class definition.  */
       if (!current_class_type)
-	error ("%<explicit%> outside class declaration");
+	error_at (declspecs->locations[ds_explicit],
+		  "%<explicit%> outside class declaration");
       else if (friendp)
-	error ("%<explicit%> in friend declaration");
+	error_at (declspecs->locations[ds_explicit],
+		  "%<explicit%> in friend declaration");
       else
-	error ("only declarations of constructors and conversion operators "
-	       "can be %<explicit%>");
+	error_at (declspecs->locations[ds_explicit],
+		  "only declarations of constructors and conversion operators "
+		  "can be %<explicit%>");
       explicitp = 0;
     }
 
@@ -13057,11 +13060,12 @@ finish_enum (tree enumtype)
 
 /* Build and install a CONST_DECL for an enumeration constant of the
    enumeration type ENUMTYPE whose NAME and VALUE (if any) are provided.
-   LOC is the location of NAME.
+   Apply ATTRIBUTES if available.  LOC is the location of NAME.
    Assignment of sequential values by default is handled here.  */
 
 void
-build_enumerator (tree name, tree value, tree enumtype, location_t loc)
+build_enumerator (tree name, tree value, tree enumtype, tree attributes,
+		  location_t loc)
 {
   tree decl;
   tree context;
@@ -13093,7 +13097,8 @@ build_enumerator (tree name, tree value, tree enumtype, location_t loc)
 	      if (tmp_value)
 		value = tmp_value;
 	    }
-	  else if (! INTEGRAL_OR_ENUMERATION_TYPE_P (TREE_TYPE (value)))
+	  else if (! INTEGRAL_OR_UNSCOPED_ENUMERATION_TYPE_P
+		   (TREE_TYPE (value)))
 	    value = perform_implicit_conversion_flags
 	      (ENUM_UNDERLYING_TYPE (enumtype), value, tf_warning_or_error,
 	       LOOKUP_IMPLICIT | LOOKUP_NO_NARROWING);
@@ -13223,6 +13228,9 @@ incremented enumerator value is too large for %<long%>");
   TREE_CONSTANT (decl) = 1;
   TREE_READONLY (decl) = 1;
   DECL_INITIAL (decl) = value;
+
+  if (attributes)
+    cplus_decl_attributes (&decl, attributes, 0);
 
   if (context && context == current_class_type && !SCOPED_ENUM_P (enumtype))
     /* In something like `struct S { enum E { i = 7 }; };' we put `i'

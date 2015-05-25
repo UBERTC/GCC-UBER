@@ -5182,8 +5182,7 @@ need_assembler_name_p (tree decl)
       && DECL_NAME (decl)
       && decl == TYPE_NAME (TREE_TYPE (decl))
       && !TYPE_ARTIFICIAL (TREE_TYPE (decl))
-      && ((type_with_linkage_p (TREE_TYPE (decl))
-	   && !type_in_anonymous_namespace_p (TREE_TYPE (decl)))
+      && (type_with_linkage_p (TREE_TYPE (decl))
 	  || TREE_CODE (TREE_TYPE (decl)) == INTEGER_TYPE)
       && !variably_modified_type_p (TREE_TYPE (decl), NULL_TREE))
     return !DECL_ASSEMBLER_NAME_SET_P (decl);
@@ -11579,7 +11578,7 @@ stdarg_p (const_tree fntype)
 /* Return true if TYPE has a prototype.  */
 
 bool
-prototype_p (tree fntype)
+prototype_p (const_tree fntype)
 {
   tree t;
 
@@ -12005,7 +12004,7 @@ lhd_gcc_personality (void)
    can't apply.) */
 
 bool
-virtual_method_call_p (tree target)
+virtual_method_call_p (const_tree target)
 {
   if (TREE_CODE (target) != OBJ_TYPE_REF)
     return false;
@@ -12026,7 +12025,7 @@ virtual_method_call_p (tree target)
 /* REF is OBJ_TYPE_REF, return the class the ref corresponds to.  */
 
 tree
-obj_type_ref_class (tree ref)
+obj_type_ref_class (const_tree ref)
 {
   gcc_checking_assert (TREE_CODE (ref) == OBJ_TYPE_REF);
   ref = TREE_TYPE (ref);
@@ -12124,7 +12123,7 @@ get_binfo_at_offset (tree binfo, HOST_WIDE_INT offset, tree expected_type)
 /* Returns true if X is a typedef decl.  */
 
 bool
-is_typedef_decl (tree x)
+is_typedef_decl (const_tree x)
 {
   return (x && TREE_CODE (x) == TYPE_DECL
           && DECL_ORIGINAL_TYPE (x) != NULL_TREE);
@@ -12133,7 +12132,7 @@ is_typedef_decl (tree x)
 /* Returns true iff TYPE is a type variant created for a typedef. */
 
 bool
-typedef_variant_p (tree type)
+typedef_variant_p (const_tree type)
 {
   return is_typedef_decl (TYPE_NAME (type));
 }
@@ -12720,6 +12719,23 @@ gimple_canonical_types_compatible_p (const_tree t1, const_tree t2,
   if (t1 == NULL_TREE || t2 == NULL_TREE)
     return false;
 
+  /* We consider complete types always compatible with incomplete type.
+     This does not make sense for canonical type calculation and thus we
+     need to ensure that we are never called on it.
+
+     FIXME: For more correctness the function probably should have three modes
+	1) mode assuming that types are complete mathcing their structure
+	2) mode allowing incomplete types but producing equivalence classes
+	   and thus ignoring all info from complete types
+	3) mode allowing incomplete types to match complete but checking
+	   compatibility between complete types.
+
+     1 and 2 can be used for canonical type calculation. 3 is the real
+     definition of type compatibility that can be used i.e. for warnings during
+     declaration merging.  */
+
+  gcc_assert (!trust_type_canonical
+	      || (type_with_alias_set_p (t1) && type_with_alias_set_p (t2)));
   /* If the types have been previously registered and found equal
      they still are.  */
   if (TYPE_CANONICAL (t1) && TYPE_CANONICAL (t2)
@@ -12837,9 +12853,6 @@ gimple_canonical_types_compatible_p (const_tree t1, const_tree t2,
 						trust_type_canonical))
 	return false;
 
-      if (!comp_type_attributes (t1, t2))
-	return false;
-
       if (TYPE_ARG_TYPES (t1) == TYPE_ARG_TYPES (t2))
 	return true;
       else
@@ -12939,10 +12952,9 @@ verify_type (const_tree t)
   /* Method and function types can not be used to address memory and thus
      TYPE_CANONICAL really matters only for determining useless conversions.
 
-     FIXME: C++ FE does not agree with gimple_canonical_types_compatible_p
-     here.  gimple_canonical_types_compatible_p calls comp_type_attributes
-     while for C++ FE the attributes does not make difference.  */
-  else if (TREE_CODE (t) == FUNCTION_TYPE || TREE_CODE (t) == METHOD_TYPE)
+     FIXME: C++ FE produce declarations of builtin functions that are not
+     compatible with main variants.  */
+  else if (TREE_CODE (t) == FUNCTION_TYPE)
     ;
   else if (t != ct
 	   /* FIXME: gimple_canonical_types_compatible_p can not compare types
@@ -13249,7 +13261,15 @@ verify_type (const_tree t)
 	}
     }
   
-
+  /* ipa-devirt makes an assumption that TYPE_METHOD_BASETYPE is always
+     TYPE_MAIN_VARIANT and it would be odd to add methods only to variatns
+     of a type. */
+  if (TREE_CODE (t) == METHOD_TYPE
+      && TYPE_MAIN_VARIANT (TYPE_METHOD_BASETYPE (t)) != TYPE_METHOD_BASETYPE (t))
+    {
+	error ("TYPE_METHOD_BASETYPE is not main variant");
+	error_found = true;
+    }
 
   if (error_found)
     {

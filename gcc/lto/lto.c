@@ -309,6 +309,12 @@ hash_canonical_type (tree type)
 {
   inchash::hash hstate;
 
+  /* We compute alias sets only for types that needs them.
+     Be sure we do not recurse to something else as we can not hash incomplete
+     types in a way they would have same hash value as compatible complete
+     types.  */
+  gcc_checking_assert (type_with_alias_set_p (type));
+
   /* Combine a few common features of types so that types are grouped into
      smaller sets; when searching for existing matching types to merge,
      only existing types having the same features as the new type will be
@@ -371,10 +377,6 @@ hash_canonical_type (tree type)
     {
       unsigned na;
       tree p;
-
-      /* For method types also incorporate their parent class.  */
-      if (TREE_CODE (type) == METHOD_TYPE)
-	iterative_hash_canonical_type (TYPE_METHOD_BASETYPE (type), hstate);
 
       iterative_hash_canonical_type (TREE_TYPE (type), hstate);
 
@@ -493,7 +495,7 @@ gimple_register_canonical_type_1 (tree t, hashval_t hash)
 static void
 gimple_register_canonical_type (tree t)
 {
-  if (TYPE_CANONICAL (t))
+  if (TYPE_CANONICAL (t) || !type_with_alias_set_p (t))
     return;
 
   gimple_register_canonical_type_1 (t, hash_canonical_type (t));

@@ -2710,7 +2710,7 @@ package body Sem_Prag is
          Legal   : out Boolean);
       --  Subsidiary to the analysis of pragmas Abstract_State and Part_Of.
       --  Perform full analysis of indicator Part_Of. Item_Id is the entity of
-      --  an abstract state, variable or package instantiation. State is the
+      --  an abstract state, object, or package instantiation. State is the
       --  encapsulating state. Indic is the Part_Of indicator. Flag Legal is
       --  set when the indicator is legal.
 
@@ -5842,20 +5842,20 @@ package body Sem_Prag is
          K    : Node_Kind;
          Utyp : Entity_Id;
 
-         procedure Set_Atomic_Full (E : Entity_Id);
-         --  Set given type as Is_Atomic or Has_Volatile_Full_Access. Also, if
+         procedure Set_Atomic_VFA (E : Entity_Id);
+         --  Set given type as Is_Atomic or Is_Volatile_Full_Access. Also, if
          --  no explicit alignment was given, set alignment to unknown, since
          --  back end knows what the alignment requirements are for atomic and
          --  full access arrays. Note: this is necessary for derived types.
 
-         ---------------------
-         -- Set_Atomic_Full --
-         ---------------------
+         --------------------
+         -- Set_Atomic_VFA --
+         --------------------
 
-         procedure Set_Atomic_Full (E : Entity_Id) is
+         procedure Set_Atomic_VFA (E : Entity_Id) is
          begin
             if Prag_Id = Pragma_Volatile_Full_Access then
-               Set_Has_Volatile_Full_Access (E);
+               Set_Is_Volatile_Full_Access (E);
             else
                Set_Is_Atomic (E);
             end if;
@@ -5863,7 +5863,7 @@ package body Sem_Prag is
             if not Has_Alignment_Clause (E) then
                Set_Alignment (E, Uint_0);
             end if;
-         end Set_Atomic_Full;
+         end Set_Atomic_VFA;
 
       --  Start of processing for Process_Atomic_Independent_Shared_Volatile
 
@@ -5889,13 +5889,50 @@ package body Sem_Prag is
          --  Check Atomic and VFA used together
 
          if (Is_Atomic (E) and then Prag_Id = Pragma_Volatile_Full_Access)
-           or else (Has_Volatile_Full_Access (E)
+           or else (Is_Volatile_Full_Access (E)
                      and then (Prag_Id = Pragma_Atomic
                                  or else
                                Prag_Id = Pragma_Shared))
          then
             Error_Pragma
               ("cannot have Volatile_Full_Access and Atomic for same entity");
+         end if;
+
+         --  Check for applying VFA to an entity which has aliased component
+
+         if Prag_Id = Pragma_Volatile_Full_Access then
+            declare
+               Comp         : Entity_Id;
+               Aliased_Comp : Boolean := False;
+               --  Set True if aliased component present
+
+            begin
+               if Is_Array_Type (Etype (E)) then
+                  Aliased_Comp := Has_Aliased_Components (Etype (E));
+
+               --  Record case, too bad Has_Aliased_Components is not also
+               --  set for records, should it be ???
+
+               elsif Is_Record_Type (Etype (E)) then
+                  Comp := First_Component_Or_Discriminant (Etype (E));
+                  while Present (Comp) loop
+                     if Is_Aliased (Comp)
+                       or else Is_Aliased (Etype (Comp))
+                     then
+                        Aliased_Comp := True;
+                        exit;
+                     end if;
+
+                     Next_Component_Or_Discriminant (Comp);
+                  end loop;
+               end if;
+
+               if Aliased_Comp then
+                  Error_Pragma
+                    ("cannot apply Volatile_Full_Access (aliased component "
+                     & "present)");
+               end if;
+            end;
          end if;
 
          --  Now check appropriateness of the entity
@@ -5910,38 +5947,36 @@ package body Sem_Prag is
                Check_First_Subtype (Arg1);
             end if;
 
+            --  Attribute belongs on the base type. If the view of the type is
+            --  currently private, it also belongs on the underlying type.
+
             if Prag_Id = Pragma_Atomic
                  or else
                Prag_Id = Pragma_Shared
                  or else
                Prag_Id = Pragma_Volatile_Full_Access
             then
-               Set_Atomic_Full (E);
-               Set_Atomic_Full (Underlying_Type (E));
-               Set_Atomic_Full (Base_Type (E));
+               Set_Atomic_VFA (E);
+               Set_Atomic_VFA (Base_Type (E));
+               Set_Atomic_VFA (Underlying_Type (E));
             end if;
 
             --  Atomic/Shared/Volatile_Full_Access imply Independent
 
             if Prag_Id /= Pragma_Volatile then
                Set_Is_Independent (E);
-               Set_Is_Independent (Underlying_Type (E));
                Set_Is_Independent (Base_Type (E));
+               Set_Is_Independent (Underlying_Type (E));
 
                if Prag_Id = Pragma_Independent then
                   Record_Independence_Check (N, Base_Type (E));
                end if;
             end if;
 
-            --  Attribute belongs on the base type. If the view of the type is
-            --  currently private, it also belongs on the underlying type.
+            --  Atomic/Shared/Volatile_Full_Access imply Volatile
 
             if Prag_Id /= Pragma_Independent then
-               if Prag_Id = Pragma_Volatile_Full_Access then
-                  Set_Has_Volatile_Full_Access (Base_Type (E));
-                  Set_Has_Volatile_Full_Access (Underlying_Type (E));
-               end if;
-
+               Set_Is_Volatile (E);
                Set_Is_Volatile (Base_Type (E));
                Set_Is_Volatile (Underlying_Type (E));
 
@@ -5964,7 +5999,7 @@ package body Sem_Prag is
                Prag_Id = Pragma_Volatile_Full_Access
             then
                if Prag_Id = Pragma_Volatile_Full_Access then
-                  Set_Has_Volatile_Full_Access (E);
+                  Set_Is_Volatile_Full_Access (E);
                else
                   Set_Is_Atomic (E);
                end if;
@@ -5994,8 +6029,8 @@ package body Sem_Prag is
                --  treated as atomic, thus incurring a potentially costly
                --  synchronization operation for every access.
 
-               --  For Volatile_Full_Access we can do this for elementary
-               --  types too, since there is no issue of atomic sync.
+               --  For Volatile_Full_Access we can do this for elementary types
+               --  too, since there is no issue of atomic synchronization.
 
                --  Of course it would be best if the back end could just adjust
                --  the alignment etc for the specific object, but that's not
@@ -6010,19 +6045,17 @@ package body Sem_Prag is
                  and then Sloc (Utyp) > No_Location
                  and then
                    Get_Source_File_Index (Sloc (E)) =
-                   Get_Source_File_Index (Sloc (Underlying_Type (Etype (E))))
+                                            Get_Source_File_Index (Sloc (Utyp))
                then
                   if Prag_Id = Pragma_Volatile_Full_Access then
-                     Set_Has_Volatile_Full_Access
-                       (Underlying_Type (Etype (E)));
+                     Set_Is_Volatile_Full_Access (Utyp);
                   else
-                     Set_Is_Atomic
-                       (Underlying_Type (Etype (E)));
+                     Set_Is_Atomic (Utyp);
                   end if;
                end if;
             end if;
 
-            --  Atomic/Shared imply both Independent and Volatile
+            --  Atomic/Shared/Volatile_Full_Access imply Independent
 
             if Prag_Id /= Pragma_Volatile then
                Set_Is_Independent (E);
@@ -6031,6 +6064,8 @@ package body Sem_Prag is
                   Record_Independence_Check (N, E);
                end if;
             end if;
+
+            --  Atomic/Shared/Volatile_Full_Access imply Volatile
 
             if Prag_Id /= Pragma_Independent then
                Set_Is_Volatile (E);
@@ -23971,14 +24006,25 @@ package body Sem_Prag is
                      end loop;
                   end if;
 
+                  --  Constants are part of the hidden state of a package, but
+                  --  the compiler cannot determine whether they have variable
+                  --  input (SPARK RM 7.1.1(2)) and cannot classify them as a
+                  --  hidden state. Accept the constant quietly even if it is
+                  --  a visible state or lacks a Part_Of indicator.
+
+                  if Ekind (Constit_Id) = E_Constant then
+                     null;
+
                   --  If we get here, then the constituent is not a hidden
                   --  state of the related package and may not be used in a
                   --  refinement (SPARK RM 7.2.2(9)).
 
-                  Error_Msg_Name_1 := Chars (Spec_Id);
-                  SPARK_Msg_NE
-                    ("cannot use & in refinement, constituent is not a hidden "
-                     & "state of package %", Constit, Constit_Id);
+                  else
+                     Error_Msg_Name_1 := Chars (Spec_Id);
+                     SPARK_Msg_NE
+                       ("cannot use & in refinement, constituent is not a "
+                        & "hidden state of package %", Constit, Constit_Id);
+                  end if;
                end if;
             end Check_Matching_Constituent;
 
@@ -24422,7 +24468,6 @@ package body Sem_Prag is
          ----------------------------
 
          procedure Collect_Visible_States (Pack_Id : Entity_Id) is
-            Decl    : Node_Id;
             Item_Id : Entity_Id;
 
          begin
@@ -24441,16 +24486,15 @@ package body Sem_Prag is
                elsif Ekind (Item_Id) = E_Abstract_State then
                   Add_Item (Item_Id, Result);
 
-               elsif Ekind_In (Item_Id, E_Constant, E_Variable) then
-                  Decl := Declaration_Node (Item_Id);
+               --  Do not consider constants or variables that map generic
+               --  formals to their actuals, as the formals cannot be named
+               --  from the outside and participate in refinement.
 
-                  --  Do not consider constants or variables that map generic
-                  --  formals to their actuals as the formals cannot be named
-                  --  from the outside and participate in refinement.
-
-                  if No (Corresponding_Generic_Association (Decl)) then
-                     Add_Item (Item_Id, Result);
-                  end if;
+               elsif Ekind_In (Item_Id, E_Constant, E_Variable)
+                 and then No (Corresponding_Generic_Association
+                                (Declaration_Node (Item_Id)))
+               then
+                  Add_Item (Item_Id, Result);
 
                --  Recursively gather the visible states of a nested package
 
@@ -24539,31 +24583,39 @@ package body Sem_Prag is
             while Present (State_Elmt) loop
                State_Id := Node (State_Elmt);
 
+               --  Constants are part of the hidden state of a package, but the
+               --  compiler cannot determine whether they have variable input
+               --  (SPARK RM 7.1.1(2)) and cannot classify them properly as a
+               --  hidden state. Do not emit an error when a constant does not
+               --  participate in a state refinement, even though it acts as a
+               --  hidden state.
+
+               if Ekind (State_Id) = E_Constant then
+                  null;
+
                --  Generate an error message of the form:
 
                --    body of package ... has unused hidden states
                --      abstract state ... defined at ...
-               --      constant ... defined at ...
                --      variable ... defined at ...
 
-               if not Posted then
-                  Posted := True;
-                  SPARK_Msg_N
-                    ("body of package & has unused hidden states", Body_Id);
-               end if;
-
-               Error_Msg_Sloc := Sloc (State_Id);
-
-               if Ekind (State_Id) = E_Abstract_State then
-                  SPARK_Msg_NE
-                    ("\abstract state & defined #", Body_Id, State_Id);
-
-               elsif Ekind (State_Id) = E_Constant then
-                  SPARK_Msg_NE ("\constant & defined #", Body_Id, State_Id);
-
                else
-                  pragma Assert (Ekind (State_Id) = E_Variable);
-                  SPARK_Msg_NE ("\variable & defined #", Body_Id, State_Id);
+                  if not Posted then
+                     Posted := True;
+                     SPARK_Msg_N
+                       ("body of package & has unused hidden states", Body_Id);
+                  end if;
+
+                  Error_Msg_Sloc := Sloc (State_Id);
+
+                  if Ekind (State_Id) = E_Abstract_State then
+                     SPARK_Msg_NE
+                       ("\abstract state & defined #", Body_Id, State_Id);
+
+                  else
+                     pragma Assert (Ekind (State_Id) = E_Variable);
+                     SPARK_Msg_NE ("\variable & defined #", Body_Id, State_Id);
+                  end if;
                end if;
 
                Next_Elmt (State_Elmt);
@@ -24992,6 +25044,13 @@ package body Sem_Prag is
       --  interfere with standard Ada rules and produce false positives.
 
       elsif SPARK_Mode /= On then
+         return;
+
+      --  Do not consider constants, because the compiler cannot accurately
+      --  determine whether they have variable input (SPARK RM 7.1.1(2)) and
+      --  act as a hidden state of a package.
+
+      elsif Ekind (Item_Id) = E_Constant then
          return;
       end if;
 

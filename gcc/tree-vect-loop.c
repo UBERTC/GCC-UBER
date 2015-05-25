@@ -1399,7 +1399,12 @@ vect_analyze_loop_operations (loop_vec_info loop_vinfo, bool slp)
 	    {
 	      gimple stmt = gsi_stmt (si);
 	      stmt_vec_info stmt_info = vinfo_for_stmt (stmt);
-	      gcc_assert (stmt_info);
+	      if (STMT_VINFO_IN_PATTERN_P (stmt_info)
+		  && STMT_VINFO_RELATED_STMT (stmt_info))
+		{
+		  stmt = STMT_VINFO_RELATED_STMT (stmt_info);
+		  stmt_info = vinfo_for_stmt (stmt);
+		}
 	      if ((STMT_VINFO_RELEVANT_P (stmt_info)
 		   || VECTORIZABLE_CYCLE_DEF (STMT_VINFO_DEF_TYPE (stmt_info)))
 		  && !PURE_SLP_STMT (stmt_info))
@@ -2031,12 +2036,8 @@ vect_is_slp_reduction (loop_vec_info loop_info, gimple phi, gimple first_stmt)
 
           if (flow_bb_inside_loop_p (loop, gimple_bb (use_stmt)))
             {
-              if (vinfo_for_stmt (use_stmt)
-                  && !STMT_VINFO_IN_PATTERN_P (vinfo_for_stmt (use_stmt)))
-                {
-                  loop_use_stmt = use_stmt;
-                  nloop_uses++;
-                }
+	      loop_use_stmt = use_stmt;
+	      nloop_uses++;
             }
            else
              n_out_of_loop_uses++;
@@ -2265,9 +2266,7 @@ vect_is_simple_reduction_1 (loop_vec_info loop_info, gimple phi,
           return NULL;
         }
 
-      if (vinfo_for_stmt (use_stmt)
-	  && !is_pattern_stmt_p (vinfo_for_stmt (use_stmt)))
-        nloop_uses++;
+      nloop_uses++;
       if (nloop_uses > 1)
         {
           if (dump_enabled_p ())
@@ -2325,9 +2324,7 @@ vect_is_simple_reduction_1 (loop_vec_info loop_info, gimple phi,
       gimple use_stmt = USE_STMT (use_p);
       if (is_gimple_debug (use_stmt))
 	continue;
-      if (flow_bb_inside_loop_p (loop, gimple_bb (use_stmt))
-	  && vinfo_for_stmt (use_stmt)
-	  && !is_pattern_stmt_p (vinfo_for_stmt (use_stmt)))
+      if (flow_bb_inside_loop_p (loop, gimple_bb (use_stmt)))
 	nloop_uses++;
       if (nloop_uses > 1)
 	{
@@ -3166,6 +3163,29 @@ have_whole_vector_shift (enum machine_mode mode)
   return true;
 }
 
+/* Return the reduction operand (with index REDUC_INDEX) of STMT.  */
+
+static tree
+get_reduction_op (gimple stmt, int reduc_index)
+{
+  switch (get_gimple_rhs_class (gimple_assign_rhs_code (stmt)))
+    {
+    case GIMPLE_SINGLE_RHS:
+      gcc_assert (TREE_OPERAND_LENGTH (gimple_assign_rhs1 (stmt))
+		  == ternary_op);
+      return TREE_OPERAND (gimple_assign_rhs1 (stmt), reduc_index);
+    case GIMPLE_UNARY_RHS:
+      return gimple_assign_rhs1 (stmt);
+    case GIMPLE_BINARY_RHS:
+      return (reduc_index
+	      ? gimple_assign_rhs2 (stmt) : gimple_assign_rhs1 (stmt));
+    case GIMPLE_TERNARY_RHS:
+      return gimple_op (stmt, reduc_index + 1);
+    default:
+      gcc_unreachable ();
+    }
+}
+
 /* TODO: Close dependency between vect_model_*_cost and vectorizable_*
    functions. Design better to avoid maintenance issues.  */
 
@@ -3177,7 +3197,7 @@ have_whole_vector_shift (enum machine_mode mode)
 
 static bool
 vect_model_reduction_cost (stmt_vec_info stmt_info, enum tree_code reduc_code,
-			   int ncopies)
+			   int ncopies, int reduc_index)
 {
   int prologue_cost = 0, epilogue_cost = 0;
   enum tree_code code;
@@ -3187,32 +3207,23 @@ vect_model_reduction_cost (stmt_vec_info stmt_info, enum tree_code reduc_code,
   tree reduction_op;
   machine_mode mode;
   loop_vec_info loop_vinfo = STMT_VINFO_LOOP_VINFO (stmt_info);
-  struct loop *loop = LOOP_VINFO_LOOP (loop_vinfo);
-  void *target_cost_data = LOOP_VINFO_TARGET_COST_DATA (loop_vinfo);
+  struct loop *loop = NULL;
+  void *target_cost_data;
+
+  if (loop_vinfo)
+    {
+      loop = LOOP_VINFO_LOOP (loop_vinfo);
+      target_cost_data = LOOP_VINFO_TARGET_COST_DATA (loop_vinfo);
+    }
+  else
+    target_cost_data = BB_VINFO_TARGET_COST_DATA (STMT_VINFO_BB_VINFO (stmt_info));
 
   /* Cost of reduction op inside loop.  */
   unsigned inside_cost = add_stmt_cost (target_cost_data, ncopies, vector_stmt,
 					stmt_info, 0, vect_body);
   stmt = STMT_VINFO_STMT (stmt_info);
 
-  switch (get_gimple_rhs_class (gimple_assign_rhs_code (stmt)))
-    {
-    case GIMPLE_SINGLE_RHS:
-      gcc_assert (TREE_OPERAND_LENGTH (gimple_assign_rhs1 (stmt)) == ternary_op);
-      reduction_op = TREE_OPERAND (gimple_assign_rhs1 (stmt), 2);
-      break;
-    case GIMPLE_UNARY_RHS:
-      reduction_op = gimple_assign_rhs1 (stmt);
-      break;
-    case GIMPLE_BINARY_RHS:
-      reduction_op = gimple_assign_rhs2 (stmt);
-      break;
-    case GIMPLE_TERNARY_RHS:
-      reduction_op = gimple_assign_rhs3 (stmt);
-      break;
-    default:
-      gcc_unreachable ();
-    }
+  reduction_op = get_reduction_op (stmt, reduc_index);
 
   vectype = get_vectype_for_scalar_type (TREE_TYPE (reduction_op));
   if (!vectype)
@@ -3245,7 +3256,7 @@ vect_model_reduction_cost (stmt_vec_info stmt_info, enum tree_code reduc_code,
      We have a reduction operator that will reduce the vector in one statement.
      Also requires scalar extract.  */
 
-  if (!nested_in_vect_loop_p (loop, orig_stmt))
+  if (!loop || !nested_in_vect_loop_p (loop, orig_stmt))
     {
       if (reduc_code != ERROR_MARK)
 	{
@@ -3992,26 +4003,7 @@ vect_create_epilog_for_reduction (vec<tree> vect_defs, gimple stmt,
       gcc_assert (!slp_node);
     }
 
-  switch (get_gimple_rhs_class (gimple_assign_rhs_code (stmt)))
-    {
-    case GIMPLE_SINGLE_RHS:
-      gcc_assert (TREE_OPERAND_LENGTH (gimple_assign_rhs1 (stmt))
-		  == ternary_op);
-      reduction_op = TREE_OPERAND (gimple_assign_rhs1 (stmt), reduc_index);
-      break;
-    case GIMPLE_UNARY_RHS:
-      reduction_op = gimple_assign_rhs1 (stmt);
-      break;
-    case GIMPLE_BINARY_RHS:
-      reduction_op = reduc_index ?
-                     gimple_assign_rhs2 (stmt) : gimple_assign_rhs1 (stmt);
-      break;
-    case GIMPLE_TERNARY_RHS:
-      reduction_op = gimple_op (stmt, reduc_index + 1);
-      break;
-    default:
-      gcc_unreachable ();
-    }
+  reduction_op = get_reduction_op (stmt, reduc_index);
 
   vectype = get_vectype_for_scalar_type (TREE_TYPE (reduction_op));
   gcc_assert (vectype);
@@ -4845,8 +4837,6 @@ vectorizable_reduction (gimple stmt, gimple_stmt_iterator *gsi,
   tree ops[3];
   bool nested_cycle = false, found_nested_cycle_def = false;
   gimple reduc_def_stmt = NULL;
-  /* The default is that the reduction variable is the last in statement.  */
-  int reduc_index = 2;
   bool double_reduc = false, dummy;
   basic_block def_bb;
   struct loop * def_stmt_loop, *outer_loop = NULL;
@@ -4951,6 +4941,8 @@ vectorizable_reduction (gimple stmt, gimple_stmt_iterator *gsi,
     default:
       gcc_unreachable ();
     }
+  /* The default is that the reduction variable is the last in statement.  */
+  int reduc_index = op_type - 1;
 
   if (code == COND_EXPR && slp_node)
     return false;
@@ -5248,7 +5240,8 @@ vectorizable_reduction (gimple stmt, gimple_stmt_iterator *gsi,
 
   if (!vec_stmt) /* transformation not required.  */
     {
-      if (!vect_model_reduction_cost (stmt_info, epilog_reduc_code, ncopies))
+      if (!vect_model_reduction_cost (stmt_info, epilog_reduc_code, ncopies,
+				      reduc_index))
         return false;
       STMT_VINFO_TYPE (stmt_info) = reduc_vec_info_type;
       return true;

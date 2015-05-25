@@ -2065,19 +2065,18 @@ package body Exp_Aggr is
       begin
          Typ := T;
 
-         --  Handle private types in instances
+         --  If type is private, get constraint from full view. This was
+         --  previously done in an instance context, but is needed whenever
+         --  the ancestor part has a discriminant, possibly inherited through
+         --  multiple derivations.
 
-         if In_Instance
-           and then Is_Private_Type (Typ)
-           and then Present (Full_View (Typ))
-         then
+         if Is_Private_Type (Typ) and then Present (Full_View (Typ)) then
             Typ := Full_View (Typ);
          end if;
 
          Indic := Subtype_Indication (Type_Definition (Parent (Typ)));
 
-         --  ??? Also need to cover case of a type mark denoting a subtype
-         --  with constraint.
+         --  Verify that the subtype indication carries a constraint
 
          if Nkind (Indic) = N_Subtype_Indication
            and then Present (Constraint (Indic))
@@ -4175,7 +4174,7 @@ package body Exp_Aggr is
 
             Ctyp := Component_Type (Ctyp);
 
-            if Is_Atomic (Ctyp) then
+            if Is_Atomic_Or_VFA (Ctyp) then
                return False;
             end if;
          end loop;
@@ -5935,15 +5934,15 @@ package body Exp_Aggr is
    --  Start of processing for Expand_Record_Aggregate
 
    begin
-      --  If the aggregate is to be assigned to an atomic variable, we have
+      --  If the aggregate is to be assigned to an atomic/VFA variable, we have
       --  to prevent a piecemeal assignment even if the aggregate is to be
       --  expanded. We create a temporary for the aggregate, and assign the
       --  temporary instead, so that the back end can generate an atomic move
       --  for it.
 
-      if Is_Atomic (Typ)
+      if Is_Atomic_Or_VFA (Typ)
         and then Comes_From_Source (Parent (N))
-        and then Is_Atomic_Aggregate (N, Typ)
+        and then Is_Atomic_VFA_Aggregate (N, Typ)
       then
          return;
 

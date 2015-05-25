@@ -1,3 +1,479 @@
+2015-05-22  Ed Schonberg  <schonberg@adacore.com>
+
+	* sem_ch3.adb (Constrain_Concurrent): If the context is a
+	type declaration, generate an Itype_Reference for the anonymous
+	subtype, to force elaboration at this point in gigi.
+
+2015-05-22  Gary Dismukes  <dismukes@adacore.com>
+
+	* layout.adb, einfo.ads, sem_ch12.adb, freeze.adb, sem_util.ads,
+	exp_ch4.adb, sem_ch6.adb: Minor reformatting and typo fixes.
+
+2015-05-22  Ed Schonberg  <schonberg@adacore.com>
+
+	* sem_res.adb (Resolve_Actuals): If the call is to an overridden
+	operation, replace the names of the actuals in named associations
+	with the names of the actuals of the subprogram that is eventually
+	executed. The names of the formals and the defaults can differ
+	between the two operations when they are operations of a formal
+	derived type.
+
+2015-05-22  Bob Duff  <duff@adacore.com>
+
+	* a-convec.ads, a-convec.adb (Append): Check for fast path. Split
+	out slow path into separate procedure. Inline Append. Fast path
+	now avoids calling Insert.
+	(Finalize): Do the busy checking last, so the container gets emptied.
+	(Insert, Insert_Space): Remove redundancy.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* switch-c.adb (Scan_Front_End_Switches): Insist on -gnatc
+	for -gnatd.V.
+
+2015-05-22  Arnaud Charlet  <charlet@adacore.com>
+
+	* gnatvsn.ads: Minor code reorg to remember more easily to update
+	variables.
+
+2015-05-22  Ed Schonberg  <schonberg@adacore.com>
+
+	* sem_ch10.adb (Analyze_With_Clause): In ASIS_Mode, a
+	limited_with clause on a predefined unit is not transformed into
+	a regular with_clause, to preserve the original tree structure.
+	* sinfo.ads (N_With_Clause): Add comment on handling of
+	Limited_With.
+	* sem_ch10.adb: Minor reformatting.
+
+2015-05-22  Ed Schonberg  <schonberg@adacore.com>
+
+	* sem_ch8.adb (Freeze_Profile): A limited view of a type in
+	the profile of a subprogram renaming does not require freezing,
+	because it is declared in a different unit.
+
+2015-05-22  Ed Schonberg  <schonberg@adacore.com>
+
+	* exp_aggr.adb (Get_Constraint_Association): If type (of ancestor
+	composite type) is private, go to full view. This was previously
+	done only in an instance context, but is happen whenever a chain
+	of private extensions includes one inherited discriminant.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* einfo.ads: Minor comment updates.
+	* exp_unst.adb: Move Subps table to spec Don't remove old entries
+	from table Add Last field to record last entry used.
+	* exp_unst.ads: Move Subps table here from body So that Cprint
+	can access saved values.
+
+2015-05-22  Bob Duff  <duff@adacore.com>
+
+	* a-cdlili.adb, a-cdlili.ads, a-cohama.adb, a-cohama.ads,
+	* a-cohase.adb, a-cohase.ads, a-convec.adb, a-convec.ads,
+	* a-coorma.adb, a-coorma.ads, a-coorse.adb, a-coorse.ads:
+	(Pseudo_Reference, Element_Access, Get_Element_Access): New
+	declarations added for use by performance improvements in exp_ch5.adb.
+	* snames.ads-tmpl: New names referenced by exp_ch5.adb.
+	* exp_ch5.adb: Speed up "for ... of" loops for predefined containers.
+	Instead of doing literally what the RM calls for, we do something
+	equivalent that avoids expensive operations inside the loop. If the
+	container package has appropriate Next, Pseudo_Reference,
+	Element_Access, Get_Element_Access declarations, we invoke the
+	optimization.
+	* snames.ads-tmpl: Note speed improvement.
+
+2015-05-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* einfo.ads (Is_Atomic_Or_VFA): Move to XEINFO INLINES section.
+	* xeinfo.adb: Replace a-einfo.h with einfo.h throughout.
+	Add pattern to translate "or else" into "||".
+
+2015-05-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* einfo.ads (Has_Volatile_Full_Access): Rename into...
+	(Is_Volatile_Full_Access): ...this.
+	(Set_Has_Volatile_Full_Access): Rename into...
+	(Set_Is_Volatile_Full_Access): ...this.
+	* einfo.adb (Has_Volatile_Full_Access): Rename into...
+	(Is_Volatile_Full_Access): ...this.
+	(Set_Has_Volatile_Full_Access): Rename into...
+	(Set_Is_Volatile_Full_Access): ...this.
+	(Is_Atomic_Or_VFA): Adjust to above renaming.
+	* errout.adb (Special_Msg_Delete): Likewise.
+	* exp_pakd.adb (Install_PAT): Likewise.
+	* freeze.adb (Freeze_Array_Type): Likewise.
+	* sem_ch8.adb (Analyze_Object_Renaming): Likewise.
+	* sem_ch13.adb (Inherit_Delayed_Rep_Aspects): Likewise.
+	(Inherit_Aspects_At_Freeze_Point): Likewise.
+	* sem_prag.adb (Set_Atomic_VFA): Likewise.
+	(Process_Atomic_Independent_Shared_Volatile): Likewise.
+	* sem_util.adb (Is_Atomic_Or_VFA_Object): Likewise.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* exp_ch5.adb, layout.adb, einfo.adb, einfo.ads, sem_prag.adb,
+	freeze.adb, freeze.ads, sem_util.adb, sem_util.ads, exp_ch2.adb,
+	exp_ch4.adb, errout.adb, exp_aggr.adb, sem_ch13.adb: This is a general
+	change that deals with the fact that most of the special coding for
+	Atomic should also apply to the case of Volatile_Full_Access.
+	A new attribute Is_Atomic_Or_VFA is introduced, and many of the
+	references to Is_Atomic now use this new attribute.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* exp_ch4.adb (Expand_N_Op_Eq): Introduce 'Machine for 'Result
+	comparison.
+
+2015-05-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* sprint.adb (Source_Dump): When generating debug files, deal
+	with the case of a stand-alone package instantiation by dumping
+	together the spec and the body in the common debug file.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* sem_ch13.adb (Minimum_Size): Size is zero for null range
+	discrete subtype.
+
+2015-05-22  Hristian Kirtchev  <kirtchev@adacore.com>
+
+	* einfo.adb (Anonymous_Master): This attribute now applies
+	to package and subprogram bodies.
+	(Set_Anonymous_Master): This attribute now applies to package and
+	subprogram bodies.
+	(Write_Field36_Name): Add output for package and subprogram bodies.
+	* einfo.ads Update the documentation on attribute Anonymous_Master
+	along with occurrences in entities.
+	* exp_ch4.adb (Create_Anonymous_Master): Reimplemented to
+	handle spec and body anonymous masters of the same unit.
+	(Current_Anonymous_Master): Reimplemented. Handle a
+	package instantiation that acts as a compilation unit.
+	(Insert_And_Analyze): Reimplemented.
+
+2015-05-22  Ed Schonberg  <schonberg@adacore.com>
+
+	* sem_ch10.adb (Analyze_With_Clause): A limited_with_clause on a
+	predefined unit is treated as a regular with_clause.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* sem_ch12.adb, prj.ads, makeutl.ads, sem_ch6.adb, prj-nmsc.adb,
+	prj-conf.adb, sem_disp.adb: Minor reformatting.
+
+2015-05-22  Vincent Celier  <celier@adacore.com>
+
+	* clean.adb (Parse_Cmd_Line): For native gnatclean, check
+	for switch -P and, if found and gprclean is available, invoke
+	silently gprclean.
+	* make.adb (Initialize): For native gnatmake, check for switch -P
+	and, if found and gprbuild is available, invoke silently gprbuild.
+
+2015-05-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* sem_ch13.adb (Validate_Unchecked_Conversions): Also issue
+	specific warning for discrete types when the source is larger
+	than the target.
+
+2015-05-22  Ed Schonberg  <schonberg@adacore.com>
+
+	* einfo.ads, einfo.adb (Incomplete_Actuals): New attribute of
+	package instantiations. Holds the list of actuals in the instance
+	that are incomplete types, to determine where the corresponding
+	instance body must be placed.
+	* sem_ch6.adb (Conforming_Types): An incomplete type used as an
+	actual in an instance matches an incomplete formal.
+	* sem_disp.adb (Check_Dispatching_Call): Handle missing case of
+	explicit dereference.
+	(Inherited_Subprograms): In the presence of a limited view there
+	are no subprograms to inherit.
+	* sem_ch12.adb (Preanalyze_Actuals): Build list of incomplete
+	actuals of instance, for later placement of instance body and
+	freeze nodes for actuals.
+	(Install_Body): In the presence of actuals that incomplete types
+	from a limited view, the instance body cannot be placed after
+	the declaration because full views have not been seen yet. Any
+	use of the non-limited views in the instance body requires
+	the presence of a regular with_clause in the enclosing unit,
+	and will fail if this with_clause is missing.  We place the
+	instance body at the beginning of the enclosing body, which is
+	the unit being compiled, and ensure that freeze nodes for the
+	full views of the incomplete types appear before the instance.
+
+2015-05-22  Pascal Obry  <obry@adacore.com>
+
+	* makeutl.ads, prj-conf.adb, prj-nmsc.adb, prj.ads
+	(In_Place_Option): Removed.
+	(Relocate_Build_Tree_Option): New constant.
+	(Root_Dir_Option): New constant.
+	(Obj_Root_Dir): Removed.
+	(Build_Tree_Dir): New variable.
+	(Root_Src_Tree): Removed.
+	(Root_Dir): New variable.
+	* prj-conf.adb (Get_Or_Create_Configuration_File): Add check
+	for improper relocation.
+	* prj-nmsc.adb (Locate_Directory): Add check for improper
+	relocation.
+
+2015-05-22  Hristian Kirtchev  <kirtchev@adacore.com>
+
+	* einfo.adb (Default_Init_Cond_Procedure): Code cleanup. The
+	attribute now applies to the base type.
+	(Has_Default_Init_Cond): Now applies to the base type.
+	(Has_Inherited_Default_Init_Cond): Now applies to the base type.
+	(Set_Default_Init_Cond_Procedure): Code cleanup. The attribute now
+	applies to the base type.
+	(Set_Has_Default_Init_Cond): Now applies to the base type.
+	(Set_Has_Inherited_Default_Init_Cond): Now applies to the base type.
+	* exp_ch3.adb (Expand_N_Object_Declaration): No need to use the
+	base type when adding a call to the Default_Initial_Condition.
+
+2015-05-22  Hristian Kirtchev  <kirtchev@adacore.com>
+
+	* einfo.adb: Node36 is now used as Anonymous_Master. Flag253
+	is now unused.
+	(Anonymous_Master): New routine.
+	(Has_Anonymous_Master): Removed.
+	(Set_Anonymous_Master): New routine.
+	(Set_Has_Anonymous_Master): Removed.
+	(Write_Entity_Flags): Remove the output for Has_Anonymous_Maser.
+	(Write_Field36_Name): Add output for Anonymous_Master.
+	* einfo.ads Add new attribute Anonymous_Master along with
+	occurrences in nodes. Remove attribute Has_Anonymous_Master along
+	with occurrences in nodes.
+	(Anonymous_Master): New routine along with pragma Inline.
+	(Has_Anonymous_Master): Removed along with pragma Inline.
+	(Set_Anonymous_Master): New routine along with pragma Inline.
+	(Set_Has_Anonymous_Master): Removed along with pragma Inline.
+	* exp_ch4.adb (Create_Anonymous_Master): New routine.
+	(Current_Anonymous_Master): Reimplemented.
+
+2015-05-22  Bob Duff  <duff@adacore.com>
+
+	* freeze.adb (Freeze_Profile): Suppress warning if imported
+	subprogram is not at library level.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* sem_ch8.adb (Analyze_Object_Renaming): Check for renaming
+	component of an object to which Volatile_Full_Access applies.
+
+2015-05-22  Jerome Guitton  <guitton@adacore.com>
+
+	* exp_dbug.ads: Add note about non bit-packed arrays.
+
+2015-05-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* sem_prag.adb: Fix typo.
+	* einfo.ads: Grammar fixes in comments.
+
+2015-05-22  Bob Duff  <duff@adacore.com>
+
+	* a-cborma.ads, a-cidlli.ads, a-cimutr.ads, a-ciormu.ads,
+	* a-cihase.ads, a-cohama.ads, a-coorse.ads, a-cbhama.ads,
+	* a-cborse.ads, a-comutr.ads, a-ciorma.ads, a-cobove.ads,
+	* a-coormu.ads, a-convec.ads, a-cohase.ads, a-coinho.ads,
+	* a-cbdlli.ads, a-cbmutr.ads, a-cbhase.ads, a-cdlili.ads,
+	* a-cihama.ads, a-coinve.ads, a-ciorse.ads, a-coorma.ads,
+	* a-coinho-shared.ads (Constant_Reference_Type, Reference_Type):
+	Add an initialization expression "raise Program_Error". See,
+	for example, RM-A.18.2(148.4).
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* debug.adb: Update documentation.
+	* einfo.ads, einfo.adb (Needs_Typedef): New flag
+	* exp_unst.adb (Unnest_Subprogram): Mark AREC types as needing
+	typedef's in C.
+	* frontend.adb: Update comments.
+	* gnat1drv.adb (Adjust_Global_Switches): Set all needed flags
+	for -gnatd.V
+	* opt.ads (Generate_C_Code): New switch.
+	* osint-c.adb (Write_C_File_Info): Removed, not used
+	(Write_H_File_Info): Removed, not used
+	* osint-c.ads (Write_C_File_Info): Removed, not used
+	(Write_H_File_Info): Removed, not used
+	* osint.ads (Write_Info): Minor comment updates.
+	(Output_FD): Moved from private part to public part of spec.
+	* sem.adb (Semantics): Force expansion on if in Generate_C_Code
+	mode.
+	* atree.ads: minor typo in comment.
+	* sem_prag.adb (Process_Atomic_Independent_Shared_Volatile):
+	Do not allow VFA on composite object with aliased component.
+
+2015-05-22  Arnaud Charlet  <charlet@adacore.com>
+
+	* osint-c.adb, osint-c.ads (Set_File_Name): Move back to spec.
+
+2015-05-22  Pascal Obry  <obry@adacore.com>
+
+	* prj-util.adb: Minor comment editing.
+
+2015-05-22  Pascal Obry  <obry@adacore.com>
+
+	* makeutl.ads (In_Place_Option): New constant.
+	* prj.ads (Obj_Root_Dir): New variable (absolute path to relocate
+	objects).
+	(Root_Src_Tree): New variable (absolute path of root source tree).
+	* prj-conf.adb (Do_Autoconf): Take into account the object root
+	directory (if defined) to generate configuration project.
+	* prj-nmsc.adb (Get_Directories): Handle case where Obj_Root_Dir
+	is defined.
+	(Locate_Directory): Likewise.
+
+2015-05-22  Pascal Obry  <obry@adacore.com>
+
+	* prj-util.ads, prj-util.adb (Relative_Path): New routine.
+
+2015-05-22  Bob Duff  <duff@adacore.com>
+
+	* exp_utils.ads, exp_utils.adb (Find_Optional_Prim_Op): New
+	interface to return Empty when not found, so we can avoid handling
+	Program_Error in that case.
+	(Find_Prim_Op): Fix latent bug: raise Program_Error when there are no
+	primitives.
+	* exp_ch7.adb, sem_util.adb: Use Find_Optional_Prim_Op when the
+	code is expecting Empty.
+	* sem_ch8.adb: Use Find_Optional_Prim_Op to avoid handling
+	Program_Error.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* sem_ch3.adb, sem_intr.adb, exp_ch4.adb, s-rannum.adb,
+	sem_eval.adb, s-fatgen.adb, s-expmod.ads: Remove incorrect hyphen in
+	non-binary.
+	* exp_util.adb: Add comment.
+	* osint-c.ads, osint-c.adb (Set_Library_Info_Name): Move from spec to
+	body.
+	(Set_File_Name): New name for the above.
+	(Create_C_File, Create_H_File, Write_C_File_Info, Write_H_File_Info,
+	Close_C_File, Close_H_File): New procedure.
+	* osint.adb: Minor reformatting.
+	* osint.ads: Minor comment updates.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* exp_ch4.adb: Minor rewording.
+	* exp_util.ads: Clarify that Find_Prim_Op is only for
+	tagged types.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* atree.adb, atree.ads, treepr.adb: Change name Needs_Actuals_Check to
+	Check_Actuals.
+	* exp_ch4.adb (Expand_N_Op_Expon): Optimize 2**x in modular
+	and overflow cases.
+
+2015-05-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* exp_pakd.adb (Install_PAT): Propagate representation aspects
+	from the original array type to the PAT.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* treepr.adb (Print_Node_Header): Add output of Needs_Actuals_Check.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* atree.adb, atree.ads (Needs_Actuals_Check): New flag.
+
+2015-05-22  Hristian Kirtchev  <kirtchev@adacore.com>
+
+	* sem_prag.adb (Analyze_Pragma): Remove the detection
+	of a useless Part_Of indicator when the related item is a constant.
+	(Check_Matching_Constituent): Do not emit an error on a constant.
+	(Check_Missing_Part_Of): Do not check for a missing Part_Of indicator
+	when the related item is a constant.
+	(Collect_Body_States): Code cleanup.
+	(Collect_Visible_States): Code cleanup.
+	(Report_Unused_States): Do not emit an error on a constant.
+	* sem_util.ads, sem_util.adb (Has_Variable_Input): Removed.
+
+2015-05-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* sem_ch8.adb (Analyze_Object_Renaming): Copy
+	Has_Volatile_Full_Access from renamed to renaming entities.
+	* sem_prag.adb (Process_Atomic_Independent_Shared_Volatile):
+	Tidy up and remove redundant setting of Has_Volatile_Full_Access.
+
+2015-05-22  Hristian Kirtchev  <kirtchev@adacore.com>
+
+	* ghost.adb (Check_Ghost_Completion): Update references to SPARK
+	RM 6.9 rules.
+	(Check_Ghost_Policy): Update references to SPARK RM 6.9 rules.
+	* sem_ch3.adb (Analyze_Object_Declaration): Update references
+	to SPARK RM 6.9 rules.
+	(Check_Completion): Ghost entities do not require a special form of
+	completion.
+	* sem_ch6.adb (Analyze_Generic_Subprogram_Body): Update references
+	to SPARK RM 6.9 rules.
+	(Analyze_Subprogram_Body_Helper): Update references to SPARK RM 6.9
+	rules.
+	* sem_ch7.adb (Analyze_Package_Body_Helper): Update references
+	to SPARK RM 6.9 rules.
+	(Requires_Completion_In_Body): Ghost entities do not require a special
+	form of completion.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* a-csquin.ads: Use Ada 2012 notation.
+	* sem_ch8.adb: Minor reformatting.
+
+2015-05-22  Hristian Kirtchev  <kirtchev@adacore.com>
+
+	* sem_ch13.adb (Analyze_Aspect_Specifications): Aspect Import
+	acts as a completion.
+
+2015-05-22  Ed Schonberg  <schonberg@adacore.com>
+
+	* sem_ch13.adb: Minor reformatting.
+
+2015-05-22  Jose Ruiz  <ruiz@adacore.com>
+
+	* a-reatim.adb: Minor change, fix typo.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* sem_util.ads: Minor addition of ??? comment.
+	* sem_prag.adb, sem_util.adb: Minor reformatting.
+	* sem_ch13.adb: minor reformatting.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* a-reatim.ads: Add Compile_Time_Error to ensure Duration
+	is 64-bits.
+	* sem_ch13.adb: Improve error message.
+	* exp_ch4.adb: Minor reformatting.
+
+2015-05-22  Hristian Kirtchev  <kirtchev@adacore.com>
+
+	* sem_prag.adb (Analyze_Pragma): Constants without variable
+	input do not require indicator Part_Of.
+	(Check_Missing_Part_Of): Constants without variable input do not
+	requrie indicator Part_Of.
+	(Collect_Visible_States): Constants without variable input are
+	not part of the hidden state of a package.
+	* sem_util.ads, sem_util.adb (Has_Variable_Input): New routine.
+
+2015-05-22  Robert Dewar  <dewar@adacore.com>
+
+	* exp_util.adb (Activate_Atomic_Synchronization): Do not set
+	Atomic_Sync_Required for an object renaming declaration.
+	* sem_ch8.adb (Analyze_Object_Renaming): Copy Is_Atomic and
+	Is_Independent to renaming object.
+
+2015-05-22  Ed Schonberg  <schonberg@adacore.com>
+
+	* sem_ch5.adb (Analyze_Iterator_Specification): Diagnose
+	various illegalities in iterators over arrays and containers:
+	a) New function Get_Cursor_Type, to verify that the cursor is
+	not a limited type at the point of iteration.
+	b) If the container is a constant, an element_iterator is illegal
+	if the container type does not have a Constant_Indexing aspect.
+	c) If the iterate function has an in-out controlling parameter,
+	the container cannot be a constant object.
+	d) Reject additional cases of iterators over a
+	discriminant-dependent component of a mutable object.
+
 2015-05-21  Hristian Kirtchev  <kirtchev@adacore.com>
 
 	* einfo.adb (Contract): This attribute now applies to constants.

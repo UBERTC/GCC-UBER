@@ -912,6 +912,25 @@ package body Sem_Ch8 is
               ("renaming of conversion only allowed for tagged types", Nam);
          end if;
 
+         --  Reject renaming of component of Volatile_Full_Access object
+
+         if Nkind_In (Nam, N_Selected_Component, N_Indexed_Component) then
+            declare
+               P : constant Node_Id := Prefix (Nam);
+            begin
+               if Is_Entity_Name (P) then
+                  if Is_Volatile_Full_Access (Entity (P))
+                       or else
+                     Is_Volatile_Full_Access (Etype (P))
+                  then
+                     Error_Msg_N
+                       ("cannot rename component of Volatile_Full_Access "
+                        & "object", Nam);
+                  end if;
+               end if;
+            end;
+         end if;
+
          Resolve (Nam, T);
 
          --  If the renamed object is a function call of a limited type,
@@ -1311,7 +1330,7 @@ package body Sem_Ch8 is
       then
          null;
 
-      --  Allow internally generated x'Reference expression
+      --  Allow internally generated x'Ref resulting in N_Reference node
 
       elsif Nkind (Nam) = N_Reference then
          null;
@@ -1343,6 +1362,15 @@ package body Sem_Ch8 is
       --  is volatile in the RM legality sense.
 
       Set_Is_Volatile (Id, Is_Volatile_Object (Nam));
+
+      --  Also copy settings of Atomic/Independent/Volatile_Full_Access
+
+      if Is_Entity_Name (Nam) then
+         Set_Is_Atomic               (Id, Is_Atomic      (Entity (Nam)));
+         Set_Is_Independent          (Id, Is_Independent (Entity (Nam)));
+         Set_Is_Volatile_Full_Access (Id,
+           Is_Volatile_Full_Access (Entity (Nam)));
+      end if;
 
       --  Treat as volatile if we just set the Volatile flag
 
@@ -2465,8 +2493,7 @@ package body Sem_Ch8 is
             end loop;
 
             if Ekind (Formal_Spec) = E_Function
-              and then Ekind (Etype (Formal_Spec)) = E_Incomplete_Type
-              and then not Is_Tagged_Type (Etype (F))
+              and then not Is_Tagged_Type (Etype (Formal_Spec))
             then
                Has_Untagged_Inc := True;
             end if;
@@ -2486,6 +2513,13 @@ package body Sem_Ch8 is
                        or else Is_Generic_Type (Root_Type (Etype (F)))
                      then
                         null;
+
+                     --  A limited view of a type declared elsewhere needs no
+                     --  freezing actions.
+
+                     elsif From_Limited_With (Etype (F)) then
+                        null;
+
                      else
                         Error_Msg_NE
                           ("type& must be frozen before this point",
@@ -2630,45 +2664,42 @@ package body Sem_Ch8 is
                --  an abstract formal subprogram must be dispatching
                --  operation).
 
-               begin
-                  case Attribute_Name (Nam) is
-                     when Name_Input  =>
-                        Stream_Prim :=
-                          Find_Prim_Op (Prefix_Type, TSS_Stream_Input);
-                     when Name_Output =>
-                        Stream_Prim :=
-                          Find_Prim_Op (Prefix_Type, TSS_Stream_Output);
-                     when Name_Read   =>
-                        Stream_Prim :=
-                          Find_Prim_Op (Prefix_Type, TSS_Stream_Read);
-                     when Name_Write  =>
-                        Stream_Prim :=
-                          Find_Prim_Op (Prefix_Type, TSS_Stream_Write);
-                     when others      =>
-                        Error_Msg_N
-                          ("attribute must be a primitive"
-                            & " dispatching operation", Nam);
-                        return;
-                  end case;
+               case Attribute_Name (Nam) is
+                  when Name_Input  =>
+                     Stream_Prim :=
+                       Find_Optional_Prim_Op (Prefix_Type, TSS_Stream_Input);
+                  when Name_Output =>
+                     Stream_Prim :=
+                       Find_Optional_Prim_Op (Prefix_Type, TSS_Stream_Output);
+                  when Name_Read   =>
+                     Stream_Prim :=
+                       Find_Optional_Prim_Op (Prefix_Type, TSS_Stream_Read);
+                  when Name_Write  =>
+                     Stream_Prim :=
+                       Find_Optional_Prim_Op (Prefix_Type, TSS_Stream_Write);
+                  when others      =>
+                     Error_Msg_N
+                       ("attribute must be a primitive"
+                         & " dispatching operation", Nam);
+                     return;
+               end case;
 
-               exception
+               --  If no operation was found, and the type is limited,
+               --  the user should have defined one.
 
-                  --  If no operation was found, and the type is limited,
-                  --  the user should have defined one.
+               if No (Stream_Prim) then
+                  if Is_Limited_Type (Prefix_Type) then
+                     Error_Msg_NE
+                      ("stream operation not defined for type&",
+                        N, Prefix_Type);
+                     return;
 
-                  when Program_Error =>
-                     if Is_Limited_Type (Prefix_Type) then
-                        Error_Msg_NE
-                         ("stream operation not defined for type&",
-                           N, Prefix_Type);
-                        return;
+                  --  Otherwise, compiler should have generated default
 
-                     --  Otherwise, compiler should have generated default
-
-                     else
-                        raise;
-                     end if;
-               end;
+                  else
+                     raise Program_Error;
+                  end if;
+               end if;
 
                --  Rewrite the attribute into the name of its corresponding
                --  primitive dispatching subprogram. We can then proceed with

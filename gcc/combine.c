@@ -1028,10 +1028,8 @@ can_combine_def_p (df_ref def)
       || (regno == HARD_FRAME_POINTER_REGNUM
 	  && (!reload_completed || frame_pointer_needed))
 #endif
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
-      || (regno == ARG_POINTER_REGNUM && fixed_regs[regno])
-#endif
-      )
+      || (FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
+	  && regno == ARG_POINTER_REGNUM && fixed_regs[regno]))
     return false;
 
   return true;
@@ -2247,10 +2245,9 @@ combinable_i3pat (rtx_insn *i3, rtx *loc, rtx i2dest, rtx i1dest, rtx i0dest,
 #if !HARD_FRAME_POINTER_IS_FRAME_POINTER
 	  && REGNO (subdest) != HARD_FRAME_POINTER_REGNUM
 #endif
-#if ARG_POINTER_REGNUM != FRAME_POINTER_REGNUM
-	  && (REGNO (subdest) != ARG_POINTER_REGNUM
-	      || ! fixed_regs [REGNO (subdest)])
-#endif
+	  && (FRAME_POINTER_REGNUM == ARG_POINTER_REGNUM
+	      || (REGNO (subdest) != ARG_POINTER_REGNUM
+		  || ! fixed_regs [REGNO (subdest)]))
 	  && REGNO (subdest) != STACK_POINTER_REGNUM)
 	{
 	  if (*pi3dest_killed)
@@ -3749,6 +3746,21 @@ try_combine (rtx_insn *i3, rtx_insn *i2, rtx_insn *i1, rtx_insn *i0,
 	      split_code = GET_CODE (*split);
 	    }
 
+	  /* Similarly for (plus (mult FOO (const_int pow2))).  */
+	  if (split_code == PLUS
+	      && GET_CODE (XEXP (*split, 0)) == MULT
+	      && CONST_INT_P (XEXP (XEXP (*split, 0), 1))
+	      && INTVAL (XEXP (XEXP (*split, 0), 1)) > 0
+	      && (i = exact_log2 (UINTVAL (XEXP (XEXP (*split, 0), 1)))) >= 0)
+	    {
+	      rtx nsplit = XEXP (*split, 0);
+	      SUBST (XEXP (*split, 0), gen_rtx_ASHIFT (GET_MODE (nsplit),
+					     XEXP (nsplit, 0), GEN_INT (i)));
+	      /* Update split_code because we may not have a multiply
+		 anymore.  */
+	      split_code = GET_CODE (*split);
+	    }
+
 #ifdef INSN_SCHEDULING
 	  /* If *SPLIT is a paradoxical SUBREG, when we split it, it should
 	     be written as a ZERO_EXTEND.  */
@@ -4773,11 +4785,10 @@ find_split_point (rtx *loc, rtx_insn *insn, bool set_src)
       return find_split_point (&SUBREG_REG (x), insn, false);
 
     case MEM:
-#ifdef HAVE_lo_sum
       /* If we have (mem (const ..)) or (mem (symbol_ref ...)), split it
 	 using LO_SUM and HIGH.  */
-      if (GET_CODE (XEXP (x, 0)) == CONST
-	  || GET_CODE (XEXP (x, 0)) == SYMBOL_REF)
+      if (HAVE_lo_sum && (GET_CODE (XEXP (x, 0)) == CONST
+			  || GET_CODE (XEXP (x, 0)) == SYMBOL_REF))
 	{
 	  machine_mode address_mode = get_address_mode (x);
 
@@ -4787,7 +4798,6 @@ find_split_point (rtx *loc, rtx_insn *insn, bool set_src)
 				 XEXP (x, 0)));
 	  return &XEXP (XEXP (x, 0), 0);
 	}
-#endif
 
       /* If we have a PLUS whose second operand is a constant and the
 	 address is not valid, perhaps will can split it up using
@@ -5845,16 +5855,14 @@ combine_simplify_rtx (rtx x, machine_mode op0_mode, int in_dest,
 	SUBST (XEXP (x, 0), XEXP (XEXP (x, 0), 0));
       break;
 
-#ifdef HAVE_lo_sum
     case LO_SUM:
       /* Convert (lo_sum (high FOO) FOO) to FOO.  This is necessary so we
 	 can add in an offset.  find_split_point will split this address up
 	 again if it doesn't match.  */
-      if (GET_CODE (XEXP (x, 0)) == HIGH
+      if (HAVE_lo_sum && GET_CODE (XEXP (x, 0)) == HIGH
 	  && rtx_equal_p (XEXP (XEXP (x, 0), 0), XEXP (x, 1)))
 	return XEXP (x, 1);
       break;
-#endif
 
     case PLUS:
       /* (plus (xor (and <foo> (const_int pow2 - 1)) <c>) <-c>)
@@ -6821,9 +6829,8 @@ simplify_set (rtx x)
       && (GET_CODE (XEXP (src, 0)) == EQ || GET_CODE (XEXP (src, 0)) == NE)
       && XEXP (XEXP (src, 0), 1) == const0_rtx
       && GET_MODE (src) == GET_MODE (XEXP (XEXP (src, 0), 0))
-#ifdef HAVE_conditional_move
-      && ! can_conditionally_move_p (GET_MODE (src))
-#endif
+      && (!HAVE_conditional_move
+	  || ! can_conditionally_move_p (GET_MODE (src)))
       && (num_sign_bit_copies (XEXP (XEXP (src, 0), 0),
 			       GET_MODE (XEXP (XEXP (src, 0), 0)))
 	  == GET_MODE_PRECISION (GET_MODE (XEXP (XEXP (src, 0), 0))))
@@ -13340,9 +13347,8 @@ mark_used_regs_combine (rtx x)
 #if !HARD_FRAME_POINTER_IS_FRAME_POINTER
 	      || regno == HARD_FRAME_POINTER_REGNUM
 #endif
-#if FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
-	      || (regno == ARG_POINTER_REGNUM && fixed_regs[regno])
-#endif
+	      || (FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
+		  && regno == ARG_POINTER_REGNUM && fixed_regs[regno])
 	      || regno == FRAME_POINTER_REGNUM)
 	    return;
 

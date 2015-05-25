@@ -812,8 +812,9 @@ vect_mark_stmts_to_be_vectorized (loop_vec_info loop_vinfo)
 	      for (; i < gimple_num_ops (stmt); i++)
                 {
 		  op = gimple_op (stmt, i);
-                  if (!process_use (stmt, op, loop_vinfo, live_p, relevant,
-				    &worklist, false))
+                  if (TREE_CODE (op) == SSA_NAME
+		      && !process_use (stmt, op, loop_vinfo, live_p, relevant,
+				       &worklist, false))
                     return false;
                  }
             }
@@ -3963,14 +3964,12 @@ vectorizable_conversion (gimple stmt, gimple_stmt_iterator *gsi,
 
 	      if (slp_node)
 		SLP_TREE_VEC_STMTS (slp_node).quick_push (new_stmt);
+
+	      if (!prev_stmt_info)
+		STMT_VINFO_VEC_STMT (stmt_info) = new_stmt;
 	      else
-		{
-		  if (!prev_stmt_info)
-		    STMT_VINFO_VEC_STMT (stmt_info) = new_stmt;
-		  else
-		    STMT_VINFO_RELATED_STMT (prev_stmt_info) = new_stmt;
-		  prev_stmt_info = vinfo_for_stmt (new_stmt);
-		}
+		STMT_VINFO_RELATED_STMT (prev_stmt_info) = new_stmt;
+	      prev_stmt_info = vinfo_for_stmt (new_stmt);
 	    }
 	}
 

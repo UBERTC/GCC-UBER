@@ -1,3 +1,320 @@
+2015-05-22  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR lto/66180
+	* ipa-devirt.c (type_with_linkage): Check that TYPE_STUB_DECL
+	is set; check for assembler name at LTO time.
+	(type_in_anonymous_namespace): Remove hacks, check that all
+	anonymous types are called "<anon>"
+	(odr_type_p): Simplify; add check for "<anon>"
+	(odr_subtypes_equivalent): Add odr_type_p check.
+	* tree.c (need_assembler_name_p): Even anonymous namespace needs
+	assembler name.
+
+2015-05-22  Jan Hubicka  <hubicka@ucw.cz>
+
+	* ipa-utils.h (method_class_type): Remove.
+	* cgraphunit.c (walk_polymorphic_call_targets): Use
+	TYPE_METHOD_BASETYPE.
+	* ipa-devirt.c (type_in_anonymous_namespace_p): Check that it is called
+	on main variants only.
+	(method_class_type): Remove.
+	(update_type_inheritance_graph): Use TYPE_METHOD_BASETYPE.
+	(build_type_inheritance_graph): Likewise.
+	* ipa-icf.c (sem_function::equals_wpa): Likewise.
+	* pa-polymorphic-call.c (decl_maybe_in_construction_p,
+	check_stmt_for_type_change): Use TYPE_METHOD_BASETYPE.
+
+2015-05-22  Jan Hubicka  <hubicka@ucw.cz>
+
+	* tree.c (prototype_p, virtual_method_call_p, obj_type_ref_class,
+	is_typedef_decl, typedef_variant_p): Constify.
+	* tree.h (prototype_p, virtual_method_call_p, obj_type_ref_class,
+	is_typedef_decl, typedef_variant_p): Constify.
+
+2015-05-23  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (gen_tablejump): New function.
+	(HAVE_tablejump): Add default value.
+	* expr.c: Adjust.
+	* stmt.c: Likewise.
+
+2015-05-23  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (gen_store_multiple): New function.
+	(HAVE_store_multiple): Add default value.
+	* expr.c (move_block_from_reg): Adjust.
+
+2015-05-23  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (gen_load_multiple): New function.
+	(HAVE_load_multiple): Add default value.
+	* expr.c (move_block_to_reg): Adjust.
+
+2015-05-23  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (gen_mem_signal_fence): New function.
+	(HAVE_mem_signal_fence): Add default value.
+	* optabs.c: Adjust.
+
+2015-05-23  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (gen_memory_barrier): New function.
+	(HAVE_memory_barrier): Add default value.
+	* optabs.c: Adjust.
+
+2015-05-23  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h (gen_mem_thread_fence): New function.
+	(HAVE_mem_thread_fence): Add default definition.
+	* optabs.c: Adjust.
+
+2015-05-23  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* combine.c (find_split_point): Check the value of HAVE_lo_sum
+	instead of if it is defined.
+	(combine_simplify_rtx): Likewise.
+	* lra-constraints.c (process_address_1): Likewise.
+	* config/darwin.c: Adjust.
+	* genconfig.c (main): Always define HAVE_lo_sum.
+
+2015-05-23  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	* genmatch.c (parser::parse_operation): Reject expanding
+	operator-list inside 'for'.
+
+2015-05-23  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	* genmatch.c (parser::parse_for): Reject iterator if used as
+	operator-list.
+
+2015-05-23  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	* genmatch.c (parser::parse_operator_list): Check for CPP_CLOSE_PAREN
+	after end of id-list.
+
+2015-05-22  Jan Hubicka  <hubicka@ucw.cz>
+
+	* tree.c (gimple_canonical_types_compatible_p): Sanity check that
+	we do not try to compute canonical type for type that does not need
+	alias set.
+	(verify_type): Drop FIXME for METHOD_TYPE, update FIXME for
+	FUNCITON_TYPE.
+	* tree.h (type_with_alias_set_p): New.
+
+2015-05-22  Jan Hubicka  <hubicka@ucw.cz>
+
+	* tree.c (gimple_canonical_types_compatible_p):  Do not compare
+	function attributes.
+	(verify_type): Remove METHOD_TYPE FIXME; update FUNCTION_TYPE.
+
+2015-05-22  Jim Wilson  <jim.wilson@linaro.org>
+
+	* Makefile.in (check_gcc_parallelize): Delete.
+	(lang_checks_parallelized): Update comment.
+
+2015-05-22  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	PR rtl-optimization/66237
+	* bb-reorder.c (fix_crossing_conditional_branches): Fix wrong
+	location of an "as_a" cast.
+
+2015-05-22  Jeff Law  <law@redhat.com>
+
+	* config/pa/pa.md (non-canonical shift-add insns): Remove.
+	(peepholes with non-canonical RTL sources): Remove.
+	(peepholes for indexed stores of FP regs in integer modes): Match and
+	generate canonical RTL.
+
+2015-05-22  Marc Glisse  <marc.glisse@inria.fr>
+
+	PR tree-optimization/63387
+	* match.pd ((X /[ex] A) * A -> X): Remove unnecessary condition.
+	((x ord x) & (y ord y) -> (x ord y),
+	(x ord x) & (x ord y) -> (x ord y)): New simplifications.
+	* fold-const.c (tree_unary_nonnegative_warnv_p) <ABS_EXPR>: Handle
+	vectors like scalars.
+
+2015-05-22  Marc Glisse  <marc.glisse@inria.fr>
+
+	* convert.c (convert_to_integer, convert_to_vector): Include the
+	types in the error message.
+
+2015-05-22  Marc Glisse  <marc.glisse@inria.fr>
+
+	* match.pd ((x | y) & ~x -> y & ~x, (x & y) | ~x -> y | ~x): New
+	simplifications.
+
+2015-05-22  Jeff Law  <law@redhat.com>
+
+	* config/pa/pa.md (integer_indexed_store splitters): Use
+	mem_shadd_operand.  Use ASHIFT rather than MULT in the resulting
+	insns -- adjusting the constant 2nd operand accordingly.
+
+	* combine.c (try_combine): Canonicalize (plus (mult X pow2) Y) into
+	(plus (ashift X log2) Y) if it is a split point.
+
+	* config/pa/pa.c (mem_shadd_or_shadd_rtx_p): New function factoredx
+	out of hppa_legitimize_address to handle both forms of a multiply
+	by 2, 4 or 8.
+	(hppa_legitimize_address): Use mem_shadd_or_shadd_rtx_p.
+	Always generate the ASHIFT variant as the result is not directly
+	used in a MEM.  Update comments and refactor slightly to improve
+	readability.
+
+2015-05-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/65491
+	* config/aarch64/aarch64.c (aarch64_short_vector_p): Move above
+	aarch64_composite_type_p.  Remove check for aarch64_composite_type_p.
+	(aarch64_composite_type_p): Return false if given type and mode are
+	for a short vector.
+
+2015-05-22  Richard Biener  <rguenther@suse.de>
+
+	* tree-vectorizer.h (struct _slp_oprnd_info): Add second_pattern
+	member.
+	* tree-vect-loop.c (vect_analyze_loop_operations): Look at
+	patterns when determining whether SLP is pure.
+	(vect_is_slp_reduction): Remove check for pattern stmts.
+	(vect_is_simple_reduction_1): Remove dead code.
+	* tree-vect-slp.c (vect_create_oprnd_info): Initialize second_pattern.
+	(vect_get_and_check_slp_defs): Pass in the stmt number.
+	Allow the first def in a reduction to be not a pattern stmt when
+	the rest of the stmts def are patterns.
+	(vect_build_slp_tree_1): Allow tcc_expression codes like
+	SAD_EXPR and DOT_PROD_EXPR.
+	(vect_build_slp_tree): Adjust.
+	(vect_analyze_slp): Refactor and move BB vect error message ...
+	(vect_slp_analyze_bb_1): ... here.
+
+2015-05-22  Aldy Hernandez  <aldyh@redhat.com>
+
+	* tree-switch-conversion.c (build_one_array): Set DECL_IGNORED_P
+	for CSWTCH temporary.
+
+2015-05-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (arm_new_rtx_costs): Handle UNSPEC_VOLATILE.
+	(arm_unspec_cost): Allow UNSPEC_VOLATILE.  Do not recurse inside
+	unknown unspecs.
+
+2015-05-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66251
+	* tree-vect-stmts.c (vectorizable_conversion): Properly
+	set STMT_VINFO_VEC_STMT even for the SLP case.
+
+2015-05-22  Marek Polacek  <polacek@redhat.com>
+
+	* doc/extend.texi: Use @pxref instead of @xref.
+
+2015-05-22  hiraditya  <hiraditya@msn.com>
+
+	* gimple.h (gimple_expr_type): Refactor to make it concise. Remove
+	redundant if.
+
+2015-05-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65701
+	* tree-vect-data-refs.c (vect_enhance_data_refs_alignment):
+	Move peeling cost models into one place.  Peel for alignment
+	for single loads only if an aligned load is cheaper than
+	an unaligned load.
+
+2015-05-22  Marek Polacek  <polacek@redhat.com>
+
+	PR c/47043
+	* doc/extend.texi (Enumerator Attributes): New section.
+	Document syntax of enumerator attributes.
+
+2015-05-22  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-loop.c (get_reduction_op): New function.
+	(vect_model_reduction_cost): Use it, add reduc_index parameter.
+	Make ready for BB reductions.
+	(vect_create_epilog_for_reduction): Use get_reduction_op.
+	(vectorizable_reduction): Init reduc_index to a valid value.
+	Adjust vect_model_reduction_cost call.
+	* tree-vect-slp.c (vect_get_constant_vectors): Use the proper
+	operand for reduction defaults.  Add SAD_EXPR support.
+	Assert we have a neutral op for SLP reductions.
+	* tree-vect-stmts.c (vect_mark_stmts_to_be_vectorized): When
+	walking pattern stmt ops only recurse to SSA names.
+
+2015-05-22  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-patterns.c (vect_recog_dot_prod_pattern): Replace
+	assert with guard, remove check on detected reduction.
+	(vect_recog_sad_pattern): Likewise.
+	(vect_recog_widen_sum_pattern): Likewise.
+
+2015-05-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/arm_neon.h (vaeseq_u8): Add __extension__ and
+	__always_inline__ attribute.
+	(vaesdq_u8): Likewise.
+	(vaesmcq_u8): Likewise.
+	(vaesimcq_u8): Likewise.
+	(vsha1cq_u32): Likewise.
+	(vsha1mq_u32): Likewise.
+	(vsha1pq_u32): Likewise.
+	(vsha1h_u32): Likewise.
+	(vsha1su0q_u32): Likewise.
+	(vsha1su1q_u32): Likewise.
+	(vsha256hq_u32): Likewise.
+	(vsha256h2q_u32): Likewise.
+	(vsha256su0q_u32): Likewise.
+	(vsha256su1q_u32): Likewise.
+	(vmull_p64): Likewise.
+	(vmull_high_p64): Likewise.
+
+2015-05-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* final.c (final_scan_insn): Don't check HAVE_peephole with the
+	preprocessor.
+	* output.h: Likewise.
+	* genconfig.c (main): Alwways define HAVE_peephole.
+	* genpeep.c: Don't emit checks of HAVE_peephole.
+
+2015-05-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* combine.c, expmed.c, expr.c, optabs.c optabs.h, toplev.c: DOn't
+	check HAVE_conditional_move with the preprocessor.
+
+2015-05-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* genconfig.c (main): Always define HAVE_conditional_move.
+	* combine.c, expmed.c, expr.c, ifcvt.c, optabs.c, optabs.h,
+	toplev.c, tree-ssa-phiopt.c: Don't check if HAVE_conditional_move
+	is defined.
+
+2015-05-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* combine.c, df-problems.c, df-scan.c, emit-rtl.c, reginfo.c,
+	reload.c, rtlanal.c: Remove comparison of ARG_FRAME_POINTER_REGNUM
+	and FRAME_POINTER_REGNUM with the preprocessor.
+
+2015-05-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* defaults.h: Add default for STACK_PUSH_CODE.
+	* expr.c: Don't redefine STACK_PUSH_CODE.
+	* recog.c: Likewise.
+
+2015-05-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* builtins.c, dwarf2cfi.c, explow.c, expr.c, recog.c,
+	sched-deps.c: Use if instead of preprocessor checks with
+	STACK_GROWS_DOWNWARD.
+
+2015-05-21  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* *.c: Check the value of STACK_GROWS_DOWNWARD rather than if it
+	is defined.
+	* config/**/*.h: Define STACK_GROWS_DOWNWARD to an integer.
+	* defaults.h: Provide default for STACK_GROWS_DOWNWARD.
+	* doc/tm.texi.in: Update references to STACK_GROWS_DOWNWARD.
+	* doc/tm.texi: Regenerate.
+
 2015-05-21  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR target/66232
@@ -20,7 +337,7 @@
 
 2015-05-08  Jan Hubicka  <hubicka@ucw.cz>
 
-	* alias.c (alias_stats): New static var.	
+	* alias.c (alias_stats): New static var.
 	(alias_sets_conflict_p, alias_sets_must_conflict_p): Update stats.
 	(dump_alias_stats_in_alias_c): New function.
 	* alias.h (dump_alias_stats_in_alias_c): Declare.
@@ -120,7 +437,8 @@
 	rtx_jump_insn.
 	* config/sh/sh.c (gen_far_branch): Likewise. Fix call of invert_jump.
 	(split_branches): Fix calls of redirect_jump.
-	* dojump.c (jumpifnot): Promote argument type from rtx to rtx_code_label.
+	* dojump.c (jumpifnot): Promote argument type from rtx to
+	rtx_code_label.
 	(jumpifnot_1): Likewise.
 	(jumpif): Likewise.
 	(jumpif_1): Likewise.
