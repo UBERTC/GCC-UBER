@@ -1,3 +1,28 @@
+2015-05-28  Mike Frysinger  <vapier@gentoo.org>
+
+	* config/microblaze/linux.h (CPP_SPEC): Define.
+
+2015-05-28  Mike Frysinger  <vapier@gentoo.org>
+
+	* config/pa/pa-linux.h (CPP_SPEC): Change so -D_REENTRANT is used when
+	-pthread is specified.
+
+2015-05-27  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/66148
+	* config/pa/pa.c (pa_emit_move_sequence): Correct placement of
+	REG_EQUAL note when doing insert.
+
+2015-05-26  Rohit Arul Raj  <rohitarulraj@freescale.com>
+
+	Backported from mainline
+	2015-05-14  Rohit Arul Raj  <rohitarulraj@freescale.com>
+
+	* varasm.c (output_constant_pool_1): Pass down alignment from
+	constant pool entry's descriptor to output_constant_pool_2.
+	(output_object_block): Add comment prior to call to
+	output_constant_pool_1.
+
 2015-05-21  Sandra Loosemore  <sandra@codesourcery.com>
 
 	Backport from mainline r223418:
