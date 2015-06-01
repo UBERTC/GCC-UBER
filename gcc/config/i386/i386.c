@@ -5478,6 +5478,7 @@ ix86_function_ok_for_sibcall (tree decl, tree exp)
   if (!TARGET_MACHO
       && !TARGET_64BIT
       && flag_pic
+      && flag_plt
       && decl && !targetm.binds_local_p (decl))
     return false;
 
@@ -15229,7 +15230,7 @@ print_reg (rtx x, int code, FILE *file)
     case 8:
     case 4:
       if (LEGACY_INT_REGNO_P (regno))
-	putc (msize == 8 ? 'r' : 'e', file);
+	putc (msize == 8 && TARGET_64BIT ? 'r' : 'e', file);
     case 16:
     case 12:
     case 2:

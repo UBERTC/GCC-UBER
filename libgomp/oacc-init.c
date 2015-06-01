@@ -29,6 +29,7 @@
 #include "libgomp.h"
 #include "oacc-int.h"
 #include "openacc.h"
+#include "plugin/plugin-host.h"
 #include <assert.h>
 #include <stdlib.h>
 #include <strings.h>
@@ -108,10 +109,12 @@ name_of_acc_device_t (enum acc_device_t type)
     }
 }
 
-/* ACC_DEVICE_LOCK should be held before calling this function.  */
+/* ACC_DEVICE_LOCK must be held before calling this function.  If FAIL_IS_ERROR
+   is true, this function raises an error if there are no devices of type D,
+   otherwise it returns NULL in that case.  */
 
 static struct gomp_device_descr *
-resolve_device (acc_device_t d)
+resolve_device (acc_device_t d, bool fail_is_error)
 {
   acc_device_t d_arg = d;
 
@@ -129,7 +132,13 @@ resolve_device (acc_device_t d)
 		  && dispatchers[d]->get_num_devices_func () > 0)
 		goto found;
 
-	    gomp_fatal ("device type %s not supported", goacc_device_type);
+	    if (fail_is_error)
+	      {
+		gomp_mutex_unlock (&acc_device_lock);
+		gomp_fatal ("device type %s not supported", goacc_device_type);
+	      }
+	    else
+	      return NULL;
 	  }
 
 	/* No default device specified, so start scanning for any non-host
@@ -148,7 +157,13 @@ resolve_device (acc_device_t d)
 	  d = acc_device_host;
 	  goto found;
 	}
-      gomp_fatal ("no device found");
+      if (fail_is_error)
+        {
+	  gomp_mutex_unlock (&acc_device_lock);
+	  gomp_fatal ("no device found");
+	}
+      else
+        return NULL;
       break;
 
     case acc_device_host:
@@ -156,7 +171,12 @@ resolve_device (acc_device_t d)
 
     default:
       if (d > _ACC_device_hwm)
-	gomp_fatal ("device %u out of range", (unsigned)d);
+	{
+	  if (fail_is_error)
+	    goto unsupported_device;
+	  else
+	    return NULL;
+	}
       break;
     }
  found:
@@ -165,12 +185,30 @@ resolve_device (acc_device_t d)
 	  && d != acc_device_default
 	  && d != acc_device_not_host);
 
+  if (dispatchers[d] == NULL && fail_is_error)
+    {
+    unsupported_device:
+      gomp_mutex_unlock (&acc_device_lock);
+      gomp_fatal ("device type %s not supported", name_of_acc_device_t (d));
+    }
+
   return dispatchers[d];
+}
+
+/* Emit a suitable error if no device of a particular type is available, or
+   the given device number is out-of-range.  */
+static void
+acc_dev_num_out_of_range (acc_device_t d, int ord, int ndevs)
+{
+  if (ndevs == 0)
+    gomp_fatal ("no devices of type %s available", name_of_acc_device_t (d));
+  else
+    gomp_fatal ("device %u out of range", ord);
 }
 
 /* This is called when plugins have been initialized, and serves to call
    (indirectly) the target's device_init hook.  Calling multiple times without
-   an intervening acc_shutdown_1 call is an error.  ACC_DEVICE_LOCK should be
+   an intervening acc_shutdown_1 call is an error.  ACC_DEVICE_LOCK must be
    held before calling this function.  */
 
 static struct gomp_device_descr *
@@ -179,12 +217,12 @@ acc_init_1 (acc_device_t d)
   struct gomp_device_descr *base_dev, *acc_dev;
   int ndevs;
 
-  base_dev = resolve_device (d);
+  base_dev = resolve_device (d, true);
 
   ndevs = base_dev->get_num_devices_func ();
 
-  if (!base_dev || ndevs <= 0 || goacc_device_num >= ndevs)
-    gomp_fatal ("device %s not supported", name_of_acc_device_t (d));
+  if (ndevs <= 0 || goacc_device_num >= ndevs)
+    acc_dev_num_out_of_range (d, goacc_device_num, ndevs);
 
   acc_dev = &base_dev[goacc_device_num];
 
@@ -201,7 +239,7 @@ acc_init_1 (acc_device_t d)
   return base_dev;
 }
 
-/* ACC_DEVICE_LOCK should be held before calling this function.  */
+/* ACC_DEVICE_LOCK must be held before calling this function.  */
 
 static void
 acc_shutdown_1 (acc_device_t d)
@@ -212,10 +250,7 @@ acc_shutdown_1 (acc_device_t d)
   bool devices_active = false;
 
   /* Get the base device for this device type.  */
-  base_dev = resolve_device (d);
-
-  if (!base_dev)
-    gomp_fatal ("device %s not supported", name_of_acc_device_t (d));
+  base_dev = resolve_device (d, true);
 
   gomp_mutex_lock (&goacc_thread_lock);
 
@@ -365,7 +400,8 @@ goacc_attach_host_thread_to_device (int ord)
   
   num_devices = base_dev->get_num_devices_func ();
   if (num_devices <= 0 || ord >= num_devices)
-    gomp_fatal ("device %u out of range", ord);
+    acc_dev_num_out_of_range (acc_device_type (base_dev->type), ord,
+			      num_devices);
   
   if (!thr)
     thr = goacc_new_thread ();
@@ -425,7 +461,7 @@ acc_get_num_devices (acc_device_t d)
   gomp_init_targets_once ();
 
   gomp_mutex_lock (&acc_device_lock);
-  acc_dev = resolve_device (d);
+  acc_dev = resolve_device (d, false);
   gomp_mutex_unlock (&acc_device_lock);
 
   if (!acc_dev)
@@ -455,7 +491,7 @@ acc_set_device_type (acc_device_t d)
   if (!cached_base_dev)
     gomp_init_targets_once ();
 
-  cached_base_dev = base_dev = resolve_device (d);
+  cached_base_dev = base_dev = resolve_device (d, true);
   acc_dev = &base_dev[goacc_device_num];
 
   gomp_mutex_lock (&acc_dev->lock);
@@ -493,7 +529,7 @@ acc_get_device_type (void)
       gomp_init_targets_once ();
 
       gomp_mutex_lock (&acc_device_lock);
-      dev = resolve_device (acc_device_default);
+      dev = resolve_device (acc_device_default, true);
       gomp_mutex_unlock (&acc_device_lock);
       res = acc_device_type (dev->type);
     }
@@ -513,16 +549,14 @@ acc_get_device_num (acc_device_t d)
   struct goacc_thread *thr = goacc_thread ();
 
   if (d >= _ACC_device_hwm)
-    gomp_fatal ("device %u out of range", (unsigned)d);
+    gomp_fatal ("unknown device type %u", (unsigned) d);
 
   if (!cached_base_dev)
     gomp_init_targets_once ();
 
   gomp_mutex_lock (&acc_device_lock);
-  dev = resolve_device (d);
+  dev = resolve_device (d, true);
   gomp_mutex_unlock (&acc_device_lock);
-  if (!dev)
-    gomp_fatal ("device %s not supported", name_of_acc_device_t (d));
 
   if (thr && thr->base_dev == dev && thr->dev)
     return thr->dev->target_id;
@@ -553,12 +587,12 @@ acc_set_device_num (int ord, acc_device_t d)
     {
       gomp_mutex_lock (&acc_device_lock);
 
-      cached_base_dev = base_dev = resolve_device (d);
+      cached_base_dev = base_dev = resolve_device (d, true);
 
       num_devices = base_dev->get_num_devices_func ();
 
-      if (ord >= num_devices)
-        gomp_fatal ("device %u out of range", ord);
+      if (num_devices <= 0 || ord >= num_devices)
+        acc_dev_num_out_of_range (d, ord, num_devices);
 
       acc_dev = &base_dev[ord];
 
@@ -580,11 +614,18 @@ ialias (acc_set_device_num)
 int
 acc_on_device (acc_device_t dev)
 {
-  if (acc_get_device_type () == acc_device_host_nonshm)
+  struct goacc_thread *thr = goacc_thread ();
+
+  /* We only want to appear to be the "host_nonshm" plugin from "offloaded"
+     code -- i.e. within a parallel region.  Test a flag set by the
+     openacc_parallel hook of the host_nonshm plugin to determine that.  */
+  if (acc_get_device_type () == acc_device_host_nonshm
+      && thr && thr->target_tls
+      && ((struct nonshm_thread *)thr->target_tls)->nonshm_exec)
     return dev == acc_device_host_nonshm || dev == acc_device_not_host;
 
-  /* Just rely on the compiler builtin.  */
-  return __builtin_acc_on_device (dev);
+  /* For OpenACC, libgomp is only built for the host, so this is sufficient.  */
+  return dev == acc_device_host || dev == acc_device_none;
 }
 
 ialias (acc_on_device)

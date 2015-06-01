@@ -1,4 +1,633 @@
-2015-05-22  Jan Hubicka  <hubicka@ucw.cz>
+2015-05-31  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac (NO_PIE_CFLAGS): Check CXXFLAGS instead of CFLAGS.
+	* configure: Regenerated.
+
+2015-05-31  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	* config/cris/cris.h (CRIS_ARCH_CPP_DEFAULT): Fix C++11 compatibility
+	issue (add space between string literal and macro).
+	* config/i386/mingw32.h (REAL_LIBGCC_SPEC): Likewise.
+
+2015-05-30  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* config/m68k/m68k.h (ASM_PCREL_SPEC): Pass --pcrel also for
+	implict or explicit -fPIE or -fpie.
+
+2015-05-30  Mike Frysinger  <vapier@gentoo.org>
+
+	* gcc/config/alpha/elf.h (ASM_SPEC): Add %{mcpu=*:-m%*}.
+
+2015-05-28  DJ Delorie  <dj@redhat.com>
+
+	* expmed.c (extract_bit_field_1): Avoid clobbering a
+	yet-to-be-used base/index register.
+
+2015-05-30  Jan Hubicka  <hubicka@ucw.cz>
+
+	* alias.c (alias_set_entry_d): Add is_pointer and has_pointer.
+	(alias_stats): Add num_universal.
+	(alias_set_subset_of): Special case pointers; be ready for NULL
+	children.
+	(alias_sets_conflict_p): Special case pointers; be ready for NULL
+	children.
+	(init_alias_set_entry): Break out from ...
+	(record_alias_subset): ... here; propagate new fields;
+	allocate children only when really needed.
+	(get_alias_set): Do less generous pointer globbing.
+	(dump_alias_stats_in_alias_c): Update statistics.
+
+2015-05-30  Alan Modra  <amodra@gmail.com>
+
+	* config/rs6000/rs6000.c (split_stack_arg_pointer_used_p): Scan
+	correct block for use of r12.
+	(rs6000_expand_split_stack_prologue): Error on r29 asm global reg.
+
+2015-05-29  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR target/66215
+	* config/s390/s390.c (s390_reorg): Fix placement of post-label NOPs
+	with -mhotpatch=.
+
+2015-05-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/66142
+	* tree-if-conv.c (if_convertible_phi_p): Don't give up on
+	virtual phis that feed themselves.
+
+2015-05-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66314
+	* tree-ssa-threadupdate.c (create_block_for_threading): Add
+	parameter that says which loop the new block belongs to.
+	(ssa_create_duplicates): Blocks duplicated for the threaded
+	path belong to the loop of the thread destination.
+
+2015-05-29  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	* config/arm/neon-testgen.ml (emit_epilogue): Remove manual call
+	to cleanup-saved-temps.
+	* doc/sourcebuild.texi (Clean up generated test files): Expand
+	introduction.
+	(dg-keep-saved-temps): Document new proc.
+	(cleanup-ipa-dump, cleanup-rtl-dump, cleanup-tree-dump,
+	cleanup-saved-temps): Remove.
+
+2015-05-28  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* configure.ac: Move the atoll check from AC_CHECK_FUNCS to
+	gcc_AC_CHECK_DECLS.
+	* configure: Regenerate.
+
+2015-05-28  Mike Frysinger  <vapier@gentoo.org>
+
+	* config/nios2/linux.h (CPP_SPEC): Define.
+
+2015-05-28  Mike Frysinger  <vapier@gentoo.org>
+
+	* config/microblaze/linux.h (CPP_SPEC): Define.
+
+2015-05-28  Mike Frysinger  <vapier@gentoo.org>
+
+	* config/pa/pa-linux.h (CPP_SPEC): Change so -D_REENTRANT is used when
+	-pthread is specified.
+
+2015-05-28  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-loop.c (vect_fixup_reduc_chain): New function.
+	(vect_fixup_scalar_cycles_with_patterns): Likewise.
+	(vect_analyze_loop_2): Call vect_fixup_scalar_cycles_with_patterns
+	after pattern recog.
+	(vect_create_epilog_for_reduction): Properly handle reductions
+	with patterns.
+	(vectorizable_reduction): Likewise.
+	* tree-vect-slp.c (vect_analyze_slp_instance): Properly mark
+	reduction chains.
+	(vect_get_constant_vectors): Create the correct number of
+	initial values for reductions.
+	(vect_schedule_slp_instance): Handle reduction chains that are
+	type changing properly.
+	* tree-vect-stmts.c (vect_analyze_stmt): Adjust.
+
+2015-05-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66142
+	* tree-ssa-sccvn.c (vn_reference_lookup_3): Handle non-GIMPLE
+	values better in memcpy destination handling.  Handle non-aliasing
+	we discover here.
+
+2015-05-28  Lawrence Velázquez  <vq@larryv.me>
+
+	PR target/63810
+	* config/darwin-c.c (version_components): New global enum.
+	(parse_version, version_as_legacy_macro)
+	(version_as_modern_macro, macosx_version_as_macro): New functions.
+	(version_as_macro): Remove.
+	(darwin_cpp_builtins): Use new function.
+
+2015-05-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* builtins.c (expand_builtin_acc_on_device): Mark parameters
+	with ATTRIBUTE_UNUSED.
+
+2015-05-28  Julian Brown  <julian@codesourcery.com>
+
+	PR libgomp/65742
+
+	* builtins.c (expand_builtin_acc_on_device): Don't use open-coded
+	sequence for !ACCEL_COMPILER.
+
+2015-05-28  Nick Clifton  <nickc@redhat.com>
+
+	* config/rx/rx.c (push_regs): New function.  Extracts code from...
+	(rx_expand_prologue): ... here.  Use push_regs to push even small
+	spans of registers.
+	(pop_regs): New function.
+	(rx_expand_epilogue):  Use pop_regs to pop even small spans of
+	registers.
+
+2015-05-28  Richard Biener  <rguenther@suse.de>
+
+	* tree-vectorizer.h (struct _slp_instance): Remove body_cost_vec
+	member.
+	(SLP_INSTANCE_BODY_COST_VEC): Remove.
+	(vect_update_slp_costs_according_to_vf): Likewise.
+	(vect_slp_analyze_operations): Update prototype.
+	* tree-vect-loop.c (vect_analyze_loop_2): Remove call to
+	vect_update_slp_costs_according_to_vf, adjust.
+	* tree-vect-slp.c (vect_free_slp_instance): Adjust.
+	(vect_analyze_slp_cost_1): Likewise.
+	(vect_analyze_slp_cost): Likewise.  Properly deal with
+	widening reduction ops.  Commit body costs.
+	(vect_analyze_slp_instance): Adjust.  Do not analyze SLP
+	cost for loops from here.
+	(vect_slp_analyze_operations): But do it from here when
+	the vectorization factor is known and stmts are analyzed.
+	(vect_bb_vectorization_profitable_p): Simplify.
+	(vect_slp_analyze_bb_1): Do not compute SLP cost here.
+	(vect_update_slp_costs_according_to_vf): Remove.
+
+2015-05-27  Magnus Granberg  <zorry@gentoo.org>
+	    H.J. Lu  <hongjiu.lu@intel.com>
+
+	* Makefile.in (COMPILER): Add @NO_PIE_CFLAGS@.
+	(BUILD_CFLAGS): Likewise.
+	(BUILD_CXXFLAGS): Likewise.
+	(LINKER): Add @NO_PIE_FLAG@.
+	(BUILD_LDFLAGS): Likewise.
+	(libgcc.mvars): Set NO_PIE_CFLAGS to -fno-PIE for
+	--enable-default-pie.
+	* common.opt (fPIE): Initialize to -1.
+	(fpie): Likewise.
+	(no-pie): New option.
+	(pie): Replace "Negative(shared)" with "Negative(no-pie)".
+	* configure.ac: Add --enable-default-pie.
+	(NO_PIE_CFLAGS): New.  Check if -fno-PIE works.  AC_SUBST.
+	(NO_PIE_FLAG): New.  Check if -no-pie works.  AC_SUBST.
+	* defaults.h (DEFAULT_FLAG_PIE): New.  Default PIE to -fPIE.
+	* gcc.c (NO_PIE_SPEC): New.
+	(PIE_SPEC): Likewise.
+	(NO_FPIE1_SPEC): Likewise.
+	(FPIE1_SPEC): Likewise.
+	(NO_FPIE2_SPEC): Likewise.
+	(FPIE2_SPEC): Likewise.
+	(NO_FPIE2_SPEC): Likewise.
+	(FPIE_SPEC): Likewise.
+	(NO_FPIE_SPEC): Likewise.
+	(NO_FPIC1_SPEC): Likewise.
+	(FPIC1_SPEC): Likewise.
+	(NO_FPIC2_SPEC): Likewise.
+	(FPIC2_SPEC): Likewise.
+	(NO_FPIC2_SPEC): Likewise.
+	(FPIC_SPEC): Likewise.
+	(NO_FPIC_SPEC): Likewise.
+	(NO_FPIE1_AND_FPIC1_SPEC): Likewise.
+	(FPIE1_OR_FPIC1_SPEC): Likewise.
+	(NO_FPIE2_AND_FPIC2_SPEC): Likewise.
+	(FPIE2_OR_FPIC2_SPEC): Likewise.
+	(NO_FPIE_AND_FPIC_SPEC): Likewise.
+	(FPIE_OR_FPIC_SPEC): Likewise.
+	(LD_PIE_SPEC): Likewise.
+	(LINK_PIE_SPEC): Handle -no-pie.  Use PIE_SPEC and LD_PIE_SPEC.
+	* opts.c (finish_options): Update opts->x_flag_pie if it is -1.
+	* config/darwin.h (PIE_SPEC): Renamed to ...
+	(DARWIN_PIE_SPEC): This.
+	(LINK_SPEC): Replace PIE_SPEC with DARWIN_PIE_SPEC.
+	* config/darwin9.h (PIE_SPEC): Renamed to ...
+	(DARWIN_PIE_SPEC): This.
+	* config/gnu-user.h (GNU_USER_TARGET_STARTFILE_SPEC): Use
+	PIE_SPEC and NO_PIE_SPEC if HAVE_LD_PIE is defined.
+	* config/openbsd.h (ASM_SPEC): Use FPIE1_OR_FPIC1_SPEC and
+	FPIE2_OR_FPIC2_SPEC.
+	* config/m68k/netbsd-elf.h (ASM_SPEC): Likewise.
+	* config/m68k/openbsd.h (ASM_SPEC): Likewise.
+	* gcc/config/sol2.h (ASM_PIC_SPEC): Likewise.
+	* config/arm/freebsd.h (SUBTARGET_EXTRA_ASM_SPEC): Likewise.
+	* config/arm/netbsd-elf.h (SUBTARGET_EXTRA_ASM_SPEC): Likewise.
+	* config/arm/semi.h (SUBTARGET_EXTRA_ASM_SPEC): Likewise.
+	* config/cris/linux.h (CRIS_ASM_SUBTARGET_SPEC): Likewise.
+	* config/m32r/m32r.h (ASM_SPEC): Likewise.
+	* config/m68k/uclinux.h (DRIVER_SELF_SPECS): Likewise.
+	* config/rs6000/linux64.h (ASM_SPEC32): Likewise.
+	* config/rs6000/sysv4.h (ASM_SPEC): Likewise.
+	* config/sparc/freebsd.h (ASM_SPEC): Likewise.
+	* config/sparc/linux.h (ASM_SPEC): Likewise.
+	* config/sparc/linux64.h (ASM_SPEC): Likewise.
+	* config/sparc/netbsd-elf.h (ASM_SPEC): Likewise.
+	* config/sparc/openbsd64.h (ASM_SPEC): Likewise.
+	* config/sparc/sp-elf.h (ASM_SPEC): Likewise.
+	* config/sparc/sp64-elf.h (ASM_SPEC): Likewise.
+	* config/sparc/sparc.h (ASM_SPEC): Likewise.
+	* config/sparc/sysv4.h (ASM_SPEC): Likewise.
+	* config/sparc/vxworks.h (ASM_SPEC): Likewise.
+	* config/c6x/elf-common.h (ASM_SPEC): Use NO_FPIC2_SPEC,
+	FPIC2_SPEC, FPIC1_SPEC and FPIC2_SPEC.
+	* config/c6x/uclinux-elf.h (LINK_SPEC): Use FPIE_SPEC.
+	* config/frv/frv.h (DRIVER_SELF_SPECS): Use FPIC_SPEC,
+	NO_FPIC_SPEC and NO_FPIE1_AND_FPIC1_SPEC.
+	(ASM_SPEC): Use FPIE1_OR_FPIC1_SPEC and FPIE2_OR_FPIC2_SPEC.
+	* config/m68k/m68k.h (ASM_PCREL_SPEC): Use FPIC_SPEC and
+	NO_FPIC_SPEC.
+	* config/mips/gnu-user.h (NO_SHARED_SPECS): Use
+	NO_FPIE_AND_FPIC_SPEC.
+	* config/mips/vxworks.h (SUBTARGET_ASM_SPEC): Use FPIC_SPEC.
+	* config/rs6000/freebsd64.h (ASM_SPEC32): Likewise.
+	* config/rs6000/vxworks.h (ASM_SPEC): Likewise.
+	* config/vax/linux.h (ASM_SPEC): Likewise.
+	* doc/install.texi: Document --enable-default-pie.
+	* doc/invoke.texi: Document -no-pie.
+	* config.in: Regenerated.
+	* configure: Likewise.
+
+2015-05-28  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR rtl-optimization/66168
+	* loop-invariant.c (move_invariant_reg): Pass dest rather than reg to
+	can_move_invariant_reg.
+
+2015-05-27  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/66148
+	* config/pa/pa.c (pa_emit_move_sequence): Correct placement of
+	REG_EQUAL note when doing insert.
+
+	* config/pa/pa.c (pa_print_operand): Use HOST_WIDE_INT_PRINT_DEC
+	instead of "%d" for 'o' operand.
+
+2015-05-27  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/66270
+	* tree.c (build_pointer_type_for_mode): Canonical type does not
+	inherit can_alias_all.
+	(build_reference_type_for_mode): Likewise.
+
+2015-05-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* expr.h (array_at_struct_end_p): Move to...
+	(array_ref_element_size): Likewise.
+	(component_ref_field_offset): Likewise.
+	* tree.h (array_ref_element_size): ...here.
+	(array_at_struct_end_p): Likewise.
+	(component_ref_field_offset): Likewise.
+	* expr.c (array_ref_element_size): Move to...
+	(array_ref_low_bound): Likewise.
+	(array_at_struct_end_p): Likewise.
+	(array_ref_up_bound): Likewise.
+	(component_ref_field_offset): Likewise.
+	* tree.c (array_ref_element_size): ...here.
+	(array_ref_low_bound): Likewise.
+	(array_ref_up_bound): Likewise.
+	(array_at_struct_end_p): Likewise.
+	(component_ref_field_offset): Likewise.
+
+2015-05-27  Gregor Richards  <gregor.richards@uwaterloo.ca>
+	    Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* config/aarch64/aarch64-linux.h (MUSL_DYNAMIC_LINKER): Define.
+
+2015-05-27  Jason Merrill  <jason@redhat.com>
+
+	PR bootstrap/66304
+	* configure.ac: Use ACX_PROG_CXX_WARNING_OPTS,
+	ACX_PROG_CXX_WARNING_ALMOST_PEDANTIC, and
+	ACX_PROG_CXX_WARNINGS_ARE_ERRORS.
+
+2015-05-22 Aditya Kumar <hiraditya@msn.com>
+
+	* auto-profile.c (afdo_calculate_branch_prob): Break once has_sample
+	is true.
+
+	* statistics.c (statistics_fini_pass): Print pass name.
+
+2015-05-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66272
+	Revert parts of
+	2014-08-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62031
+	* tree-data-ref.c (dr_analyze_indices): Do not set
+	DR_UNCONSTRAINED_BASE.
+	(dr_may_alias_p): All indirect accesses have to go the
+	formerly DR_UNCONSTRAINED_BASE path.
+	* tree-data-ref.h (struct indices): Remove
+	unconstrained_base member.
+	(DR_UNCONSTRAINED_BASE): Remove.
+
+2015-05-27  Aldy Hernandez  <aldyh@redhat.com>
+
+	* dwarf2out.c: Remove block_map.
+	(gen_call_site_die): Replace block_map use with BLOCK_DIE.
+	(gen_lexical_block_die): Same.
+	(dwarf2out_function_decl): Remove block_map use.
+	(dwarf2out_c_finalize): Same.
+	* tree-core.h (struct tree_block): Add die field.
+	* tree.h (BLOCK_DIE): New.
+
+2015-05-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/65358
+	* expr.c (memory_load_overlap): New function.
+	(emit_push_insn): When pushing partial args to the stack would
+	clobber the register part load the overlapping part into a pseudo
+	and put it into the hard reg after pushing.  Change return type
+	to bool.  Add bool argument.
+	* expr.h (emit_push_insn): Change return type to bool.
+	Add bool argument.
+	* calls.c (expand_call): Cancel sibcall optimization when encountering
+	partial argument on targets with ARGS_GROW_DOWNWARD and
+	!STACK_GROWS_DOWNWARD.
+	(emit_library_call_value_1): Update callsite of emit_push_insn.
+	(store_one_arg): Likewise. 
+
+2015-05-27  Gregor Richards  <gregor.richards@uwaterloo.ca>
+
+	* config/arm/linux-eabi.h (MUSL_DYNAMIC_LINKER): Define.
+
+2015-05-27  Martin Liska  <mliska@suse.cz>
+
+	* Makefile.in: Add additional dependencies related to memory report
+	enhancement.
+	* alloc-pool.c (allocate_pool_descriptor): Use new ctor.
+	* bitmap.c (struct bitmap_descriptor_d): Remove.
+	(struct loc): Likewise.
+	(struct bitmap_desc_hasher): Likewise.
+	(bitmap_desc_hasher::hash): Likewise.
+	(bitmap_desc_hasher::equal): Likewise.
+	(get_bitmap_descriptor): Likewise.
+	(bitmap_register): User new memory descriptor API.
+	(register_overhead): Likewise.
+	(bitmap_find_bit): Register nsearches and search_iter statistics.
+	(struct bitmap_output_info): Remove.
+	(print_statistics): Likewise.
+	(dump_bitmap_statistics): Use new memory descriptor.
+	* bitmap.h (struct bitmap_usage): New class.
+	* genmatch.c: Extend header file inclusion.
+	* genpreds.c: Likewise.
+	* ggc-common.c (struct ggc_usage): New class.
+	(struct ggc_loc_desc_hasher): Remove.
+	(ggc_loc_desc_hasher::hash): Likewise.
+	(ggc_loc_desc_hasher::equal): Likewise.
+	(struct ggc_ptr_hash_entry): Likewise.
+	(struct ptr_hash_hasher): Likewise.
+	(ptr_hash_hasher::hash): Likewise.
+	(ptr_hash_hasher::equal): Likewise.
+	(make_loc_descriptor): Likewise.
+	(ggc_prune_ptr): Likewise.
+	(dump_ggc_loc_statistics): Use new memory descriptor.
+	(ggc_record_overhead): Likewise.
+	(ggc_free_overhead): Likewise.
+	(final_cmp_statistic): Remove.
+	(cmp_statistic): Likewise.
+	(ggc_add_statistics): Liekwise.
+	(ggc_prune_overhead_list): Likewise.
+	* hash-map-traits.h: New file.
+	* hash-map.h (struct default_hashmap_traits): Move the traits to a
+	separate header file.
+	* hash-set.h: Pass memory statistics info to ctor.
+	* hash-table.c (void dump_hash_table_loc_statistics): New function.
+	* hash-table.h (hash_table::hash_table): Add new ctor arguments.
+	(hash_table::~hash_table): Register memory release operation.
+	(hash_table::alloc_entries): Handle memory allocation operation.
+	(hash_table::expand): Likewise.
+	* inchash.c (iterative_hash_hashval_t): Move implementation to header
+	file.
+	(iterative_hash_host_wide_int): Likewise.
+	* inchash.h (class hash): Likewise.
+	* mem-stats-traits.h: New file.
+	* mem-stats.h: New file.
+	(mem_location): Add new class.
+	(mem_usage): Likewise.
+	(mem_alloc_description): Likewise.
+	* sese.c: Add new header file inclusision.
+	* toplev.c (dump_memory_report): Add report for hash_table, hash_map
+	and hash_set.
+	* tree-sra.c: Add new header file inclusision.
+	* vec.c (struct vec_descriptor): Remove.
+	(hash_descriptor): Likewise.
+	(struct vec_usage): Likewise.
+	(struct ptr_hash_entry): Likewise.
+	(hash_ptr): Likewise.
+	(eq_ptr): Likewise.
+	(vec_prefix::register_overhead): Use new memory descriptor API.
+	(vec_prefix::release_overhead): Likewise.
+	(add_statistics): Remove.
+	(dump_vec_loc_statistics): Use new memory descriptor API.
+	* vec.h (struct vec_prefix): Likewise.
+	(va_heap::reserve): Likewise.
+	(va_heap::release): Likewise.
+	* emit-rtl.c (gen_raw_REG): Fix passing MEM_STAT.
+
+2015-05-27  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-stmts.c (vectorizable_load): Initialize slp_perm
+	earlier and remove ??? comment.
+	(vect_analyze_stmt): If we are analyzing a pure SLP stmt
+	and got called from loop analysis bail out.  Always pass the SLP
+	node to the vectorizable_* functions.
+	* tree-vect-loop.c (vect_analyze_loop_operations): Remove
+	the premature SLP check here.
+	* tree-vect-slp.c (vect_detect_hybrid_slp_stmts): Dump hybrid
+	detected SLP stmts.
+	(vect_detect_hybrid_slp_1): Likewise.
+
+2015-05-26  Jeff Law  <law@redhat.com>
+
+	* combine.c (find_split_point): Verify that the shift count is a
+	constant when choosing (plus (ashift ...)) as a split point.
+
+	* tree-ssa-threadupdate.c: Replace 8 space sequences with tabs.
+	No functional changes.
+
+2015-05-26  Jan Hubicka  <hubicka@ucw.cz>
+
+	* ipa-polymorphic-call.c
+	(ipa_polymorphic_call_context::get_dynamic_type): Short circuit the
+	case when call target is already known.
+
+2015-05-26  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/65979
+	* config/sh/sh.md (tstsi_t peephole2): Use gen_rtx_SET and
+	take into account the case that operands[1] and operands[2]
+	are the same register.
+
+2015-05-26  Michael Matz  <matz@suse.de>
+
+	PR middle-end/66251
+
+	* tree-vect-stmts.c (vect_model_store_cost): Handled strided group
+	stores.
+	(vect_create_vectorized_demotion_stmts): Always set
+	STMT_VINFO_VEC_STMT, also with SLP.
+	(vectorizable_store): Handle strided group stores.
+
+2015-05-26  Venkataramanan Kumar  <venkataramanan.kumar@amd.com>
+
+	PR target/66049
+	* config/aarch64/aarch64.md
+	(*adds_shift_imm_<mode>):  New pattern.
+	(*subs_shift_imm_<mode>):  Likewise.
+	(*adds_<optab><ALLX:mode>_shift_<GPI:mode>):  Likewise.
+	(*subs_<optab><ALLX:mode>_shift_<GPI:mode>): Likewise.
+	(*add_uxt<mode>_shift2): Likewise.
+	(*add_uxtsi_shift2_uxtw): Likewise.
+	(*sub_uxt<mode>_shift2): Likewise.
+	(*sub_uxtsi_shift2_uxtw): Likewise.
+
+2015-05-26  David Edelsohn  <dje.gcc@gmail.com>
+
+	* config/rs6000/constraints.md (Y, U): Use match_test.
+
+2015-05-26  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/52144
+	* config/arm/arm.c (arm_option_check_internal)
+	(arm_option_params_internal): Check opts->target_flags to set macros.
+	(TREE_TARGET_ARM, TREE_TARGET_THUMB)
+	(TREE_TARGET_THUMB1, TREE_TARGET_THUMB2) Replace with...
+	(TARGET_ARM_P, TARGET_THUMB_P, TARGET_THUMB1_P, TARGET_THUMB2_P)
+	(builtin_define): Replaced with def_or_undef_macro.
+	* config/arm/arm.h (TREE_TARGET_ARM, TREE_TARGET_THUMB)
+	TREE_TARGET_THUMB1, TREE_TARGET_THUMB2) Redefine with...
+	(TARGET_ARM_P, TARGET_THUMB_P, TARGET_THUMB1_P, TARGET_THUMB2_P)
+	(TARGET_32BIT_P, TARGET_ARM_QBIT_P, TARGET_ARM_SAT_P, TARGET_IDIV_P)
+	(TARGET_HAVE_LDREX_P, TARGET_HAVE_LDREXBH_P, TARGET_HAVE_LDREXD_P)
+	(TARGET_ARM_FEATURE_LDREX_P)
+	(TARGET_DSP_MULTIPLY_P, TARGET_INT_SIMD_P): New macros.
+	* config/arm/arm-c.c (def_or_undef_macro): New function.
+	(arm_cpu_cpp_builtins): Use def_or_undef_macro for macros definition.
+
+2015-05-26  Christian Bruel  <christian.bruel@st.com>
+
+	* c-common.h (builtin_define_with_int_value)
+	(builtin_define_type_sizeof): Declare.
+	* c-cppbuiltin.c (builtin_define_with_int_value)
+	(builtin_define_type_sizeof): Externalize.
+	(builtin_define_std): Cleanup declaration.
+	* config/arm/arm-protos.h (arm_cpu_cpp_builtins): Declare.
+	* config/arm/arm.h (TARGET_CPU_CPP_BUILTINS): Move macro defines into...
+	* config/arm/arm-c.c (arm_cpu_cpp_builtins): New function.
+	(builtin_define, builtin_assert): New macros.
+
+2015-05-26  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66142
+	* tree-ssa-sccvn.c (vn_reference_lookup_3): Manually compare
+	MEM_REFs for the same base address.
+
+2015-05-26  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR ipa/66181
+	* tree.c (verify_type_variant): Do not check TYPE_NO_FORCE_BLK.
+
+2015-05-26  Jason Merrill  <jason@redhat.com>
+
+	* configure.ac: Set CXXFLAGS for ISL test.
+	* configure: Regenerate.
+
+	* configure.ac: Use C++ for all tests.  Use AC_CHECK_DECLS for
+	strstr and basename.
+	* configure: Regenerate.
+
+2015-05-26  Richard Biener  <rguenther@suse.de>
+
+	* fold-const.c (fold_binary_loc): Move X % -Y -> X % Y and
+	X % C -> X & (C - 1) for C being a power-of two to ...
+	* match.pd: ... patterns.
+
+2015-05-26  Marc Glisse  <marc.glisse@inria.fr>
+
+	* match.pd (swapped_tcc_comparison): New operator list.
+	(-A CMP -B): New simplification.
+	* fold-const.c (fold_comparison): Remove corresponding code.
+
+2015-05-26  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* caller-save.c (init_caller_save): Base temporary register numbers
+	on LAST_VIRTUAL_REGISTER + 1 rather than FIRST_PSEUDO_REGISTER.
+	* cfgloopanal.c (init_set_costs): Likewise.
+	* dojump.c (prefer_and_bit_test): Likewise.
+	* expr.c (init_expr_target): Likewise.
+	* ira.c (setup_prohibited_mode_move_regs): Likewise.
+	* lower-subreg.c (init_lower_subreg): Likewise.
+	* postreload.c (reload_cse_regs_1): Likewise.
+
+2015-05-26  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gensupport.h (compute_test_codes): Declare.
+	* gensupport.c (compute_predicate_codes): Rename to...
+	(compute_test_codes): ...this.  Generalize error message.
+	(process_define_predicate): Update accordingly.
+	* genpreds.c (compute_maybe_allows): Delete.
+	(add_constraint): Use compute_test_codes to determine whether
+	something can accept a SUBREG, REG or MEM.
+
+2015-05-26  Torvald Riegel  <triegel@redhat.com>
+
+	* doc/extend.texi (__atomic Builtins): Use 'memory order' instead of
+	'memory	model' to align with C++11; fix description of memory orders;
+	fix a few typos.
+
+2015-05-26  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-loop.c (vect_update_vf_for_slp): Split out from ...
+	(vect_analyze_loop_operations): ... here.  Remove slp parameter,
+	detect whether we apply SLP.  Remove call to
+	vect_update_slp_costs_according_to_vf.
+	(vect_analyze_loop_2): Call vect_update_vf_for_slp and
+	vect_update_slp_costs_according_to_vf from here.  Dispatch
+	to vect_slp_analyze_operations to analyze SLP stmts.
+	* tree-vect-slp.c (vect_slp_analyze_node_operations): Drop
+	unused bb_vec_info parameter, adjust assert.
+	(vect_slp_analyze_operations): Pass in the slp instance tree
+	instead of bb_vec_info.
+	(vect_slp_analyze_bb_1): Adjust call to vect_slp_analyze_operations.
+	* tree-vectorizer.h (vect_slp_analyze_operations): Declare.
+
+2015-05-25  Alexander Monakov  <amonakov@ispras.ru>
+
+	* config/i386/i386.h (enum reg_class): Move CLOBBERED_REGS prior to
+	Q_REGS.  Expand comment.
+	(REG_CLASS_NAMES): Ditto.
+	(REG_CLASS_CONTENTS): Ditto.
+
+2015-05-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66274
+	* config/i386/i386.c (print_reg): Only print "r" for TARGET_64BIT
+	when LEGACY_INT_REGNO_P is processed.
+
+2015-05-25  Alexander Monakov  <amonakov@ispras.ru>
+
+	* config/i386/i386.c (ix86_function_ok_for_sibcall): Check flag_plt.
+
+2015-05-25  Pitchumani Sivanupandi  <pitchumani.s@atmel.com>
+
+	* config/avr/avr.c (avr_out_load_psi_reg_no_disp_tiny): Restore base
+	register if not marked dead/unused, before return.
+
+2015-05-24  Jan Hubicka  <hubicka@ucw.cz>
 
 	PR lto/66180
 	* ipa-devirt.c (type_with_linkage): Check that TYPE_STUB_DECL
@@ -10,7 +639,7 @@
 	* tree.c (need_assembler_name_p): Even anonymous namespace needs
 	assembler name.
 
-2015-05-22  Jan Hubicka  <hubicka@ucw.cz>
+2015-05-24  Jan Hubicka  <hubicka@ucw.cz>
 
 	* ipa-utils.h (method_class_type): Remove.
 	* cgraphunit.c (walk_polymorphic_call_targets): Use
@@ -24,7 +653,7 @@
 	* pa-polymorphic-call.c (decl_maybe_in_construction_p,
 	check_stmt_for_type_change): Use TYPE_METHOD_BASETYPE.
 
-2015-05-22  Jan Hubicka  <hubicka@ucw.cz>
+2015-05-24  Jan Hubicka  <hubicka@ucw.cz>
 
 	* tree.c (prototype_p, virtual_method_call_p, obj_type_ref_class,
 	is_typedef_decl, typedef_variant_p): Constify.
@@ -2611,6 +3240,7 @@
 
 2015-05-07  Jeff Law  <law@redhat.com>
 
+	PR target/39726
 	* match.pd (bit_and (plus/minus (convert @0) (convert @1) mask): New
 	simplifier to narrow arithmetic.
 	* generic-match-head.c: (types_match, single_use): New functions.

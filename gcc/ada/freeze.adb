@@ -1459,17 +1459,15 @@ package body Freeze is
    -- Is_Atomic_VFA_Aggregate --
    -----------------------------
 
-   function Is_Atomic_VFA_Aggregate
-     (E   : Entity_Id;
-      Typ : Entity_Id) return Boolean
-   is
-      Loc   : constant Source_Ptr := Sloc (E);
+   function Is_Atomic_VFA_Aggregate (N : Node_Id) return Boolean is
+      Loc   : constant Source_Ptr := Sloc (N);
       New_N : Node_Id;
       Par   : Node_Id;
       Temp  : Entity_Id;
+      Typ   : Entity_Id;
 
    begin
-      Par := Parent (E);
+      Par := Parent (N);
 
       --  Array may be qualified, so find outer context
 
@@ -1477,24 +1475,45 @@ package body Freeze is
          Par := Parent (Par);
       end if;
 
-      if Nkind_In (Par, N_Object_Declaration, N_Assignment_Statement)
-        and then Comes_From_Source (Par)
-      then
-         Temp := Make_Temporary (Loc, 'T', E);
-         New_N :=
-           Make_Object_Declaration (Loc,
-             Defining_Identifier => Temp,
-             Object_Definition   => New_Occurrence_Of (Typ, Loc),
-             Expression          => Relocate_Node (E));
-         Insert_Before (Par, New_N);
-         Analyze (New_N);
-
-         Set_Expression (Par, New_Occurrence_Of (Temp, Loc));
-         return True;
-
-      else
+      if not Comes_From_Source (Par) then
          return False;
       end if;
+
+      case Nkind (Par) is
+         when N_Assignment_Statement =>
+            Typ := Etype (Name (Par));
+
+            if not Is_Atomic_Or_VFA (Typ)
+              and then not (Is_Entity_Name (Name (Par))
+                             and then Is_Atomic_Or_VFA (Entity (Name (Par))))
+            then
+               return False;
+            end if;
+
+         when N_Object_Declaration =>
+            Typ := Etype (Defining_Identifier (Par));
+
+            if not Is_Atomic_Or_VFA (Typ)
+              and then not Is_Atomic_Or_VFA (Defining_Identifier (Par))
+            then
+               return False;
+            end if;
+
+         when others =>
+            return False;
+      end case;
+
+      Temp := Make_Temporary (Loc, 'T', N);
+      New_N :=
+        Make_Object_Declaration (Loc,
+          Defining_Identifier => Temp,
+          Object_Definition   => New_Occurrence_Of (Typ, Loc),
+          Expression          => Relocate_Node (N));
+      Insert_Before (Par, New_N);
+      Analyze (New_N);
+
+      Set_Expression (Par, New_Occurrence_Of (Temp, Loc));
+      return True;
    end Is_Atomic_VFA_Aggregate;
 
    -----------------------------------------------
@@ -1862,8 +1881,8 @@ package body Freeze is
       Formal : Entity_Id;
       Indx   : Node_Id;
 
-      Test_E : Entity_Id := E;
-      --  This could use a comment ???
+      Has_Default_Initialization : Boolean := False;
+      --  This flag gets set to true for a variable with default initialization
 
       Late_Freezing : Boolean := False;
       --  Used to detect attempt to freeze function declared in another unit
@@ -1871,8 +1890,8 @@ package body Freeze is
       Result : List_Id := No_List;
       --  List of freezing actions, left at No_List if none
 
-      Has_Default_Initialization : Boolean := False;
-      --  This flag gets set to true for a variable with default initialization
+      Test_E : Entity_Id := E;
+      --  This could use a comment ???
 
       procedure Add_To_Result (N : Node_Id);
       --  N is a freezing action to be appended to the Result
@@ -2226,7 +2245,7 @@ package body Freeze is
 
             --  Propagate flags for component type
 
-            if Is_Controlled (Component_Type (Arr))
+            if Is_Controlled_Active (Component_Type (Arr))
               or else Has_Controlled_Component (Ctyp)
             then
                Set_Has_Controlled_Component (Arr);
@@ -4106,7 +4125,7 @@ package body Freeze is
                    (Has_Controlled_Component (Etype (Comp))
                      or else
                        (Chars (Comp) /= Name_uParent
-                         and then Is_Controlled (Etype (Comp)))
+                         and then Is_Controlled_Active (Etype (Comp)))
                      or else
                        (Is_Protected_Type (Etype (Comp))
                          and then
@@ -4632,7 +4651,7 @@ package body Freeze is
       --  Ignore. Set the mode now to ensure that any nodes generated during
       --  freezing are properly flagged as ignored Ghost.
 
-      Set_Ghost_Mode_For_Freeze (E, N);
+      Set_Ghost_Mode_From_Entity (E);
 
       --  We are going to test for various reasons why this entity need not be
       --  frozen here, but in the case of an Itype that's defined within a
@@ -4821,8 +4840,7 @@ package body Freeze is
            and then Nkind (Parent (E)) = N_Object_Declaration
            and then Present (Expression (Parent (E)))
            and then Nkind (Expression (Parent (E))) = N_Aggregate
-           and then
-             Is_Atomic_VFA_Aggregate (Expression (Parent (E)), Etype (E))
+           and then Is_Atomic_VFA_Aggregate (Expression (Parent (E)))
          then
             null;
          end if;

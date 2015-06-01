@@ -34,6 +34,7 @@ with Errout;   use Errout;
 with Exp_Aggr; use Exp_Aggr;
 with Exp_Ch6;  use Exp_Ch6;
 with Exp_Ch7;  use Exp_Ch7;
+with Ghost;    use Ghost;
 with Inline;   use Inline;
 with Itypes;   use Itypes;
 with Lib;      use Lib;
@@ -6423,33 +6424,63 @@ package body Exp_Util is
       Expr : Node_Id;
       Mem  : Boolean := False) return Node_Id
    is
-      Loc : constant Source_Ptr := Sloc (Expr);
+      GM : constant Ghost_Mode_Type := Ghost_Mode;
+
+      procedure Restore_Globals;
+      --  Restore the values of all saved global variables
+
+      ---------------------
+      -- Restore_Globals --
+      ---------------------
+
+      procedure Restore_Globals is
+      begin
+         Ghost_Mode := GM;
+      end Restore_Globals;
+
+      --  Local variables
+
+      Loc  : constant Source_Ptr := Sloc (Expr);
+      Call : Node_Id;
+      PFM  : Entity_Id;
+
+   --  Start of processing for Make_Predicate_Call
 
    begin
       pragma Assert (Present (Predicate_Function (Typ)));
 
+      --  The related type may be subject to pragma Ghost with policy Ignore.
+      --  Set the mode now to ensure that the call is properly flagged as
+      --  ignored Ghost.
+
+      Set_Ghost_Mode_From_Entity (Typ);
+
       --  Call special membership version if requested and available
 
       if Mem then
-         declare
-            PFM : constant Entity_Id := Predicate_Function_M (Typ);
-         begin
-            if Present (PFM) then
-               return
-                 Make_Function_Call (Loc,
-                   Name                   => New_Occurrence_Of (PFM, Loc),
-                   Parameter_Associations => New_List (Relocate_Node (Expr)));
-            end if;
-         end;
+         PFM := Predicate_Function_M (Typ);
+
+         if Present (PFM) then
+            Call :=
+              Make_Function_Call (Loc,
+                Name                   => New_Occurrence_Of (PFM, Loc),
+                Parameter_Associations => New_List (Relocate_Node (Expr)));
+
+            Restore_Globals;
+            return Call;
+         end if;
       end if;
 
       --  Case of calling normal predicate function
 
-      return
-          Make_Function_Call (Loc,
-            Name                   =>
-              New_Occurrence_Of (Predicate_Function (Typ), Loc),
-            Parameter_Associations => New_List (Relocate_Node (Expr)));
+      Call :=
+        Make_Function_Call (Loc,
+          Name                   =>
+            New_Occurrence_Of (Predicate_Function (Typ), Loc),
+          Parameter_Associations => New_List (Relocate_Node (Expr)));
+
+      Restore_Globals;
+      return Call;
    end Make_Predicate_Call;
 
    --------------------------
@@ -6848,12 +6879,16 @@ package body Exp_Util is
       then
          return False;
 
+      --  Never needs finalization if Disable_Controlled set
+
+      elsif Disable_Controlled (T) then
+         return False;
+
       else
          --  Class-wide types are treated as controlled because derivations
          --  from the root type can introduce controlled components.
 
-         return
-           Is_Class_Wide_Type (T)
+         return Is_Class_Wide_Type (T)
              or else Is_Controlled (T)
              or else Has_Controlled_Component (T)
              or else Has_Some_Controlled_Component (T)
@@ -7424,6 +7459,12 @@ package body Exp_Util is
       --  is present (xxx is taken from the Chars field of Related_Nod),
       --  otherwise it generates an internal temporary.
 
+      function Is_Name_Reference (N : Node_Id) return Boolean;
+      --  Determine if the tree referenced by N represents a name. This is
+      --  similar to Is_Object_Reference but returns true only if N can be
+      --  renamed without the need for a temporary, the typical example of
+      --  an object not in this category being a function call.
+
       ---------------------
       -- Build_Temporary --
       ---------------------
@@ -7453,6 +7494,58 @@ package body Exp_Util is
             return Make_Temporary (Loc, Id, Related_Nod);
          end if;
       end Build_Temporary;
+
+      -----------------------
+      -- Is_Name_Reference --
+      -----------------------
+
+      function Is_Name_Reference (N : Node_Id) return Boolean is
+      begin
+         if Is_Entity_Name (N) then
+            return Present (Entity (N)) and then Is_Object (Entity (N));
+         end if;
+
+         case Nkind (N) is
+            when N_Indexed_Component | N_Slice =>
+               return
+                 Is_Name_Reference (Prefix (N))
+                   or else Is_Access_Type (Etype (Prefix (N)));
+
+            --  Attributes 'Input, 'Old and 'Result produce objects
+
+            when N_Attribute_Reference =>
+               return
+                 Nam_In
+                   (Attribute_Name (N), Name_Input, Name_Old, Name_Result);
+
+            when N_Selected_Component =>
+               return
+                 Is_Name_Reference (Selector_Name (N))
+                   and then
+                     (Is_Name_Reference (Prefix (N))
+                       or else Is_Access_Type (Etype (Prefix (N))));
+
+            when N_Explicit_Dereference =>
+               return True;
+
+            --  A view conversion of a tagged name is a name reference
+
+            when N_Type_Conversion =>
+               return Is_Tagged_Type (Etype (Subtype_Mark (N)))
+                 and then Is_Tagged_Type (Etype (Expression (N)))
+                 and then Is_Name_Reference (Expression (N));
+
+            --  An unchecked type conversion is considered to be a name if
+            --  the operand is a name (this construction arises only as a
+            --  result of expansion activities).
+
+            when N_Unchecked_Type_Conversion =>
+               return Is_Name_Reference (Expression (N));
+
+            when others =>
+               return False;
+         end case;
+      end Is_Name_Reference;
 
       --  Local variables
 
@@ -7494,34 +7587,25 @@ package body Exp_Util is
          return;
       end if;
 
-      --  The remaining procesaing is done with all checks suppressed
+      --  The remaining processing is done with all checks suppressed
 
       --  Note: from now on, don't use return statements, instead do a goto
       --  Leave, to ensure that we properly restore Scope_Suppress.Suppress.
 
       Scope_Suppress.Suppress := (others => True);
 
-      --  If it is a scalar type and we need to capture the value, just make
-      --  a copy. Likewise for a function call, an attribute reference, a
-      --  conditional expression, an allocator, or an operator. And if we have
-      --  a volatile reference and Name_Req is not set (see comments for
-      --  Side_Effect_Free).
+      --  If it is an elementary type and we need to capture the value, just
+      --  make a constant. Likewise if this is not a name reference, except
+      --  for a type conversion because we would enter an infinite recursion
+      --  with Checks.Apply_Predicate_Check if the target type has predicates.
+      --  And type conversions need a specific treatment anyway, see below.
+      --  Also do it if we have a volatile reference and Name_Req is not set
+      --  (see comments for Side_Effect_Free).
 
       if Is_Elementary_Type (Exp_Type)
-
-        --  Note: this test is rather mysterious??? Why can't we just test ONLY
-        --  Is_Elementary_Type and be done with it. If we try that approach, we
-        --  get some failures (infinite recursions) from the Duplicate_Subexpr
-        --  call at the end of Checks.Apply_Predicate_Check. To be
-        --  investigated ???
-
         and then (Variable_Ref
-                   or else Nkind_In (Exp, N_Attribute_Reference,
-                                          N_Allocator,
-                                          N_Case_Expression,
-                                          N_If_Expression,
-                                          N_Function_Call)
-                   or else Nkind (Exp) in N_Op
+                   or else (not Is_Name_Reference (Exp)
+                             and then Nkind (Exp) /= N_Type_Conversion)
                    or else (not Name_Req
                              and then Is_Volatile_Reference (Exp)))
       then
@@ -7641,20 +7725,13 @@ package body Exp_Util is
             Insert_Action (Exp, E);
          end if;
 
-      --  For expressions that denote objects, we can use a renaming scheme.
+      --  For expressions that denote names, we can use a renaming scheme.
       --  This is needed for correctness in the case of a volatile object of
       --  a non-volatile type because the Make_Reference call of the "default"
       --  approach would generate an illegal access value (an access value
       --  cannot designate such an object - see Analyze_Reference).
 
-      elsif Is_Object_Reference (Exp)
-        and then Nkind (Exp) /= N_Function_Call
-
-        --  In Ada 2012 a qualified expression is an object, but for purposes
-        --  of removing side effects it still need to be transformed into a
-        --  separate declaration, particularly in the case of an aggregate.
-
-        and then Nkind (Exp) /= N_Qualified_Expression
+      elsif Is_Name_Reference (Exp)
 
         --  We skip using this scheme if we have an object of a volatile
         --  type and we do not have Name_Req set true (see comments for
@@ -7663,37 +7740,13 @@ package body Exp_Util is
         and then (Name_Req or else not Treat_As_Volatile (Exp_Type))
       then
          Def_Id := Build_Temporary (Loc, 'R', Exp);
+         Res := New_Occurrence_Of (Def_Id, Loc);
 
-         if Nkind (Exp) = N_Selected_Component
-           and then Nkind (Prefix (Exp)) = N_Function_Call
-           and then Is_Array_Type (Exp_Type)
-         then
-            --  Avoid generating a variable-sized temporary, by generating
-            --  the renaming declaration just for the function call. The
-            --  transformation could be refined to apply only when the array
-            --  component is constrained by a discriminant???
-
-            Res :=
-              Make_Selected_Component (Loc,
-                Prefix => New_Occurrence_Of (Def_Id, Loc),
-                Selector_Name => Selector_Name (Exp));
-
-            Insert_Action (Exp,
-              Make_Object_Renaming_Declaration (Loc,
-                Defining_Identifier => Def_Id,
-                Subtype_Mark        =>
-                  New_Occurrence_Of (Base_Type (Etype (Prefix (Exp))), Loc),
-                Name                => Relocate_Node (Prefix (Exp))));
-
-         else
-            Res := New_Occurrence_Of (Def_Id, Loc);
-
-            Insert_Action (Exp,
-              Make_Object_Renaming_Declaration (Loc,
-                Defining_Identifier => Def_Id,
-                Subtype_Mark        => New_Occurrence_Of (Exp_Type, Loc),
-                Name                => Relocate_Node (Exp)));
-         end if;
+         Insert_Action (Exp,
+           Make_Object_Renaming_Declaration (Loc,
+             Defining_Identifier => Def_Id,
+             Subtype_Mark        => New_Occurrence_Of (Exp_Type, Loc),
+             Name                => Relocate_Node (Exp)));
 
          --  If this is a packed reference, or a selected component with
          --  a non-standard representation, a reference to the temporary
@@ -7711,7 +7764,19 @@ package body Exp_Util is
             Set_Is_Renaming_Of_Object (Def_Id, False);
          end if;
 
-      --  Otherwise we generate a reference to the value
+      --  Avoid generating a variable-sized temporary, by generating the
+      --  reference just for the function call. The transformation could be
+      --  refined to apply only when the array component is constrained by a
+      --  discriminant???
+
+      elsif Nkind (Exp) = N_Selected_Component
+        and then Nkind (Prefix (Exp)) = N_Function_Call
+        and then Is_Array_Type (Exp_Type)
+      then
+         Remove_Side_Effects (Prefix (Exp), Name_Req, Variable_Ref);
+         goto Leave;
+
+      --  Otherwise we generate a reference to the expression
 
       else
          --  An expression which is in SPARK mode is considered side effect
@@ -8970,23 +9035,10 @@ package body Exp_Util is
             return Side_Effect_Free (Expression (N), Name_Req, Variable_Ref);
 
          --  A selected component is side effect free only if it is a side
-         --  effect free prefixed reference. If it designates a component
-         --  with a rep. clause it must be treated has having a potential
-         --  side effect, because it may be modified through a renaming, and
-         --  a subsequent use of the renaming as a macro will yield the
-         --  wrong value. This complex interaction between renaming and
-         --  removing side effects is a reminder that the latter has become
-         --  a headache to maintain, and that it should be removed in favor
-         --  of the gcc mechanism to capture values ???
+         --  effect free prefixed reference.
 
          when N_Selected_Component =>
-            if Nkind (Parent (N)) = N_Explicit_Dereference
-              and then Has_Non_Standard_Rep (Designated_Type (Typ))
-            then
-               return False;
-            else
-               return Safe_Prefixed_Reference (N);
-            end if;
+            return Safe_Prefixed_Reference (N);
 
          --  A range is side effect free if the bounds are side effect free
 

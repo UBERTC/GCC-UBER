@@ -311,7 +311,7 @@ package body Exp_Ch3 is
    --  Predefined_Primitive_Bodies.
 
    function Has_New_Non_Standard_Rep (T : Entity_Id) return Boolean;
-   --  returns True if there are representation clauses for type T that are not
+   --  Returns True if there are representation clauses for type T that are not
    --  inherited. If the result is false, the init_proc and the discriminant
    --  checking functions of the parent can be reused by a derived type.
 
@@ -761,14 +761,12 @@ package body Exp_Ch3 is
             Set_Debug_Info_Off (Proc_Id);
          end if;
 
-         --  Set inlined unless controlled stuff or tasks around, in which
-         --  case we do not want to inline, because nested stuff may cause
-         --  difficulties in inter-unit inlining, and furthermore there is
-         --  in any case no point in inlining such complex init procs.
+         --  Set inlined unless tasks are around, in which case we do not
+         --  want to inline, because nested stuff may cause difficulties in
+         --  inter-unit inlining, and furthermore there is in any case no
+         --  point in inlining such complex init procs.
 
-         if not Has_Task (Proc_Id)
-           and then not Needs_Finalization (Proc_Id)
-         then
+         if not Has_Task (Proc_Id) then
             Set_Is_Inlined (Proc_Id);
          end if;
 
@@ -3619,14 +3617,10 @@ package body Exp_Ch3 is
          --  The initialization of protected records is not worth inlining.
          --  In addition, when compiled for another unit for inlining purposes,
          --  it may make reference to entities that have not been elaborated
-         --  yet. The initialization of controlled records contains a nested
-         --  clean-up procedure that makes it impractical to inline as well,
-         --  and leads to undefined symbols if inlined in a different unit.
-         --  Similar considerations apply to task types.
+         --  yet. Similar considerations apply to task types.
 
          if not Is_Concurrent_Type (Rec_Type)
            and then not Has_Task (Rec_Type)
-           and then not Needs_Finalization (Rec_Type)
          then
             Set_Is_Inlined  (Proc_Id);
          end if;
@@ -4792,14 +4786,21 @@ package body Exp_Ch3 is
 
       --  Local declarations
 
-      Def_Id : constant Entity_Id := Defining_Identifier (N);
-      B_Id   : constant Entity_Id := Base_Type (Def_Id);
+      Def_Id : constant Entity_Id       := Defining_Identifier (N);
+      B_Id   : constant Entity_Id       := Base_Type (Def_Id);
+      GM     : constant Ghost_Mode_Type := Ghost_Mode;
       FN     : Node_Id;
       Par_Id : Entity_Id;
 
    --  Start of processing for Expand_N_Full_Type_Declaration
 
    begin
+      --  The type declaration may be subject to pragma Ghost with policy
+      --  Ignore. Set the mode now to ensure that any nodes generated during
+      --  expansion are properly flagged as ignored Ghost.
+
+      Set_Ghost_Mode (N);
+
       if Is_Access_Type (Def_Id) then
          Build_Master (Def_Id);
 
@@ -4923,6 +4924,11 @@ package body Exp_Ch3 is
             end if;
          end;
       end if;
+
+      --  Restore the original Ghost mode once analysis and expansion have
+      --  taken place.
+
+      Ghost_Mode := GM;
    end Expand_N_Full_Type_Declaration;
 
    ---------------------------------
@@ -4930,12 +4936,13 @@ package body Exp_Ch3 is
    ---------------------------------
 
    procedure Expand_N_Object_Declaration (N : Node_Id) is
-      Def_Id   : constant Entity_Id  := Defining_Identifier (N);
-      Expr     : constant Node_Id    := Expression (N);
-      Loc      : constant Source_Ptr := Sloc (N);
-      Obj_Def  : constant Node_Id    := Object_Definition (N);
-      Typ      : constant Entity_Id  := Etype (Def_Id);
-      Base_Typ : constant Entity_Id  := Base_Type (Typ);
+      Loc      : constant Source_Ptr      := Sloc (N);
+      Def_Id   : constant Entity_Id       := Defining_Identifier (N);
+      Expr     : constant Node_Id         := Expression (N);
+      GM       : constant Ghost_Mode_Type := Ghost_Mode;
+      Obj_Def  : constant Node_Id         := Object_Definition (N);
+      Typ      : constant Entity_Id       := Etype (Def_Id);
+      Base_Typ : constant Entity_Id       := Base_Type (Typ);
       Expr_Q   : Node_Id;
 
       function Build_Equivalent_Aggregate return Boolean;
@@ -4946,6 +4953,9 @@ package body Exp_Ch3 is
       procedure Default_Initialize_Object (After : Node_Id);
       --  Generate all default initialization actions for object Def_Id. Any
       --  new code is inserted after node After.
+
+      procedure Restore_Globals;
+      --  Restore the values of all saved global variables
 
       function Rewrite_As_Renaming return Boolean;
       --  Indicate whether to rewrite a declaration with initialization into an
@@ -5161,7 +5171,7 @@ package body Exp_Ch3 is
            and then not Is_Value_Type (Typ)
          then
             --  Do not initialize the components if No_Default_Initialization
-            --  applies as the the actual restriction check will occur later
+            --  applies as the actual restriction check will occur later
             --  when the object is frozen as it is not known yet whether the
             --  object is imported or not.
 
@@ -5377,6 +5387,15 @@ package body Exp_Ch3 is
          end if;
       end Default_Initialize_Object;
 
+      ---------------------
+      -- Restore_Globals --
+      ---------------------
+
+      procedure Restore_Globals is
+      begin
+         Ghost_Mode := GM;
+      end Restore_Globals;
+
       -------------------------
       -- Rewrite_As_Renaming --
       -------------------------
@@ -5392,16 +5411,15 @@ package body Exp_Ch3 is
 
       --  Local variables
 
-      Next_N  : constant Node_Id := Next (N);
-      Id_Ref  : Node_Id;
+      Next_N     : constant Node_Id := Next (N);
+      Id_Ref     : Node_Id;
+      Tag_Assign : Node_Id;
 
       Init_After : Node_Id := N;
       --  Node after which the initialization actions are to be inserted. This
       --  is normally N, except for the case of a shared passive variable, in
       --  which case the init proc call must be inserted only after the bodies
       --  of the shared variable procedures have been seen.
-
-      Tag_Assign : Node_Id;
 
    --  Start of processing for Expand_N_Object_Declaration
 
@@ -5420,6 +5438,12 @@ package body Exp_Ch3 is
       if Is_Abstract_Type (Typ) then
          return;
       end if;
+
+      --  The object declaration may be subject to pragma Ghost with policy
+      --  Ignore. Set the mode now to ensure that any nodes generated during
+      --  expansion are properly flagged as ignored Ghost.
+
+      Set_Ghost_Mode (N);
 
       --  First we do special processing for objects of a tagged type where
       --  this is the point at which the type is frozen. The creation of the
@@ -5589,6 +5613,7 @@ package body Exp_Ch3 is
            and then Is_Build_In_Place_Function_Call (Expr_Q)
          then
             Make_Build_In_Place_Call_In_Object_Declaration (N, Expr_Q);
+            Restore_Globals;
 
             --  The previous call expands the expression initializing the
             --  built-in-place object into further code that will be analyzed
@@ -5833,6 +5858,7 @@ package body Exp_Ch3 is
                end;
             end if;
 
+            Restore_Globals;
             return;
 
          --  Common case of explicit object initialization
@@ -5948,6 +5974,7 @@ package body Exp_Ch3 is
                --  to avoid its management in the backend
 
                Set_Expression (N, Empty);
+               Restore_Globals;
                return;
 
             --  Handle initialization of limited tagged types
@@ -6169,10 +6196,13 @@ package body Exp_Ch3 is
          end;
       end if;
 
+      Restore_Globals;
+
    --  Exception on library entity not available
 
    exception
       when RE_Not_Available =>
+         Restore_Globals;
          return;
    end Expand_N_Object_Declaration;
 
@@ -6936,9 +6966,10 @@ package body Exp_Ch3 is
          --  type. See Make_CW_Equivalent_Type.
 
          if not Is_Class_Wide_Equivalent_Type (Def_Id)
-           and then (Has_Controlled_Component (Comp_Typ)
-                      or else (Chars (Comp) /= Name_uParent
-                                and then Is_Controlled (Comp_Typ)))
+           and then
+             (Has_Controlled_Component (Comp_Typ)
+               or else (Chars (Comp) /= Name_uParent
+                         and then (Is_Controlled_Active (Comp_Typ))))
          then
             Set_Has_Controlled_Component (Def_Id);
          end if;
@@ -7608,7 +7639,7 @@ package body Exp_Ch3 is
       --  Ignore. Set the mode now to ensure that any nodes generated during
       --  freezing are properly flagged as ignored Ghost.
 
-      Set_Ghost_Mode_For_Freeze (Def_Id, N);
+      Set_Ghost_Mode (N, Def_Id);
 
       --  Process any remote access-to-class-wide types designating the type
       --  being frozen.

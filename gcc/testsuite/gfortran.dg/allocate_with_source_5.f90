@@ -146,7 +146,7 @@ program test
   if (any(abs(phs%m_in - [42.0, 42.0]) > 1E-6)) call abort()
 
   o%n = 2
-  allocate (o%val(2,4))
+  allocate (o%val(0:1,4))
   call o%make()
 
   o2%n = 3

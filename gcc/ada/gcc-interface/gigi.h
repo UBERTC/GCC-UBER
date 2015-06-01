@@ -6,7 +6,7 @@
  *                                                                          *
  *                              C Header File                               *
  *                                                                          *
- *          Copyright (C) 1992-2014, Free Software Foundation, Inc.         *
+ *          Copyright (C) 1992-2015, Free Software Foundation, Inc.         *
  *                                                                          *
  * GNAT is free software;  you can  redistribute it  and/or modify it under *
  * terms of the  GNU General Public License as published  by the Free Soft- *
@@ -373,9 +373,6 @@ enum standard_datatypes
   /* The type of an exception.  */
   ADT_except_type,
 
-  /* Type declaration node  <==> typedef void *T */
-  ADT_ptr_void_type,
-
   /* Function type declaration -- void T() */
   ADT_void_ftype,
 
@@ -461,7 +458,6 @@ extern GTY(()) tree gnat_raise_decls_ext[(int) LAST_REASON_CODE + 1];
 
 #define longest_float_type_node gnat_std_decls[(int) ADT_longest_float_type]
 #define except_type_node gnat_std_decls[(int) ADT_except_type]
-#define ptr_void_type_node gnat_std_decls[(int) ADT_ptr_void_type]
 #define void_ftype gnat_std_decls[(int) ADT_void_ftype]
 #define ptr_void_ftype gnat_std_decls[(int) ADT_ptr_void_ftype]
 #define fdesc_type_node gnat_std_decls[(int) ADT_fdesc_type]
@@ -716,12 +712,6 @@ create_var_decl_1 (tree var_name, tree asm_name, tree type, tree var_init,
 		     const_flag, public_flag, extern_flag,		\
 		     static_flag, false, attr_list, gnat_node)
 
-/* Record DECL as a global renaming pointer.  */
-extern void record_global_renaming_pointer (tree decl);
-
-/* Invalidate the global renaming pointers.  */
-extern void invalidate_global_renaming_pointers (void);
-
 /* Return a FIELD_DECL node.  FIELD_NAME is the field's name, FIELD_TYPE is
    its type and RECORD_TYPE is the type of the enclosing record.  If SIZE is
    nonzero, it is the specified size of the field.  If POS is nonzero, it is
@@ -858,11 +848,18 @@ extern unsigned int known_alignment (tree exp);
    of 2.  */
 extern bool value_factor_p (tree value, HOST_WIDE_INT factor);
 
-/* Build an atomic load for the underlying atomic object in SRC.  */
-extern tree build_atomic_load (tree src);
+/* Build an atomic load for the underlying atomic object in SRC.  SYNC is
+   true if the load requires synchronization.  */
+extern tree build_atomic_load (tree src, bool sync);
 
-/* Build an atomic store from SRC to the underlying atomic object in DEST.  */
-extern tree build_atomic_store (tree dest, tree src);
+/* Build an atomic store from SRC to the underlying atomic object in DEST.
+   SYNC is true if the store requires synchronization.  */
+extern tree build_atomic_store (tree dest, tree src, bool sync);
+
+/* Build a load-modify-store sequence from SRC to DEST.  GNAT_NODE is used for
+   the location of the sequence.  Note that, even if the load and the store are
+   both atomic, the sequence itself is not atomic.  */
+extern tree build_load_modify_store (tree dest, tree src, Node_Id gnat_node);
 
 /* Make a binary operation of kind OP_CODE.  RESULT_TYPE is the type
    desired for the result.  Usually the operation is to be performed
@@ -962,9 +959,21 @@ extern tree gnat_protect_expr (tree exp);
 
 /* This is equivalent to stabilize_reference in tree.c but we know how to
    handle our own nodes and we take extra arguments.  FORCE says whether to
-   force evaluation of everything.  We set SUCCESS to true unless we walk
-   through something we don't know how to stabilize.  */
-extern tree gnat_stabilize_reference (tree ref, bool force, bool *success);
+   force evaluation of everything in REF.  INIT is set to the first arm of
+   a COMPOUND_EXPR present in REF, if any.  */
+extern tree gnat_stabilize_reference (tree ref, bool force, tree *init);
+
+/* Rewrite reference REF and call FUNC on each expression within REF in the
+   process.  DATA is passed unmodified to FUNC.  INIT is set to the first
+   arm of a COMPOUND_EXPR present in REF, if any.  */
+typedef tree (*rewrite_fn) (tree, void *);
+extern tree gnat_rewrite_reference (tree ref, rewrite_fn func, void *data,
+				    tree *init);
+
+/* This is equivalent to get_inner_reference in expr.c but it returns the
+   ultimate containing object only if the reference (lvalue) is constant,
+   i.e. if it doesn't depend on the context in which it is evaluated.  */
+extern tree get_inner_constant_reference (tree exp);
 
 /* If EXPR is an expression that is invariant in the current function, in the
    sense that it can be evaluated anywhere in the function and any number of
@@ -1019,18 +1028,15 @@ extern Pos get_target_short_size (void);
 extern Pos get_target_int_size (void);
 extern Pos get_target_long_size (void);
 extern Pos get_target_long_long_size (void);
-extern Pos get_target_float_size (void);
-extern Pos get_target_double_size (void);
-extern Pos get_target_long_double_size (void);
 extern Pos get_target_pointer_size (void);
 extern Pos get_target_maximum_default_alignment (void);
 extern Pos get_target_system_allocator_alignment (void);
 extern Pos get_target_maximum_allowed_alignment (void);
 extern Pos get_target_maximum_alignment (void);
-extern Nat get_float_words_be (void);
-extern Nat get_words_be (void);
-extern Nat get_bytes_be (void);
-extern Nat get_bits_be (void);
+extern Nat get_target_float_words_be (void);
+extern Nat get_target_words_be (void);
+extern Nat get_target_bytes_be (void);
+extern Nat get_target_bits_be (void);
 extern Nat get_target_strict_alignment (void);
 extern Nat get_target_double_float_alignment (void);
 extern Nat get_target_double_scalar_alignment (void);
@@ -1043,9 +1049,6 @@ extern void enumerate_modes (void (*f) (const char *, int, int, int, int, int,
 #ifdef __cplusplus
 }
 #endif
-
-/* Convenient shortcuts.  */
-#define VECTOR_TYPE_P(TYPE) (TREE_CODE (TYPE) == VECTOR_TYPE)
 
 /* If EXP's type is a VECTOR_TYPE, return EXP converted to the associated
    TYPE_REPRESENTATIVE_ARRAY.  */
@@ -1061,8 +1064,51 @@ maybe_vector_array (tree exp)
   return exp;
 }
 
+/* Return the smallest power of 2 larger than X.  */
+
 static inline unsigned HOST_WIDE_INT
 ceil_pow2 (unsigned HOST_WIDE_INT x)
 {
   return (unsigned HOST_WIDE_INT) 1 << (floor_log2 (x - 1) + 1);
+}
+
+/* Return true if EXP, a CALL_EXPR, is an atomic load.  */
+
+static inline bool
+call_is_atomic_load (tree exp)
+{
+  tree fndecl = get_callee_fndecl (exp);
+
+  if (!(fndecl && DECL_BUILT_IN_CLASS (fndecl) == BUILT_IN_NORMAL))
+    return false;
+
+  enum built_in_function code = DECL_FUNCTION_CODE (fndecl);
+  return BUILT_IN_ATOMIC_LOAD_N <= code && code <= BUILT_IN_ATOMIC_LOAD_16;
+}
+
+/* Return true if TYPE is padding a self-referential type.  */
+
+static inline bool
+type_is_padding_self_referential (tree type)
+{
+  if (!TYPE_IS_PADDING_P (type))
+    return false;
+
+  return CONTAINS_PLACEHOLDER_P (DECL_SIZE (TYPE_FIELDS (type)));
+}
+
+/* Return true if a function returning TYPE doesn't return a fixed size.  */
+
+static inline bool
+return_type_with_variable_size_p (tree type)
+{
+  if (TREE_CODE (TYPE_SIZE (type)) != INTEGER_CST)
+    return true;
+
+  /* Return true for an unconstrained type with default discriminant, see
+     the E_Subprogram_Type case of gnat_to_gnu_entity.  */
+  if (type_is_padding_self_referential (type))
+    return true;
+
+  return false;
 }

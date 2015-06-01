@@ -1500,7 +1500,7 @@ Optional Features:
                           Mostly useful for compiler development
   --enable-objc-gc        enable use of Boehm's garbage collector with the GNU
                           Objective-C runtime
-  --enable-vtable-verify    Enable vtable verification feature
+  --enable-vtable-verify  Enable vtable verification feature
   --enable-serial-[{host,target,build}-]configure
                           force sequential configuration of sub-packages for
                           the host, target or build machine, or all
@@ -5406,6 +5406,12 @@ $as_echo "$as_me: WARNING: trying to bootstrap a cross compiler" >&2;}
     as_fn_error "invalid option for --enable-bootstrap" "$LINENO" 5
     ;;
 esac
+
+# When bootstrapping with GCC, build stage 1 in C++98 mode to ensure that a
+# C++98 compiler can still start the bootstrap.
+if test "$enable_bootstrap:$GXX" = "yes:yes"; then
+  CXX="$CXX -std=c++98"
+fi
 
 # Used for setting $lt_cv_objdir
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for objdir" >&5

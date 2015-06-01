@@ -2304,6 +2304,16 @@ package body Sem_Aggr is
             if Others_Present then
                Get_Index_Bounds (Index_Constr, Aggr_Low, Aggr_High);
 
+               --  Abandon processing if either bound is already signalled as
+               --  an error (prevents junk cascaded messages and blow ups).
+
+               if Nkind (Aggr_Low) = N_Error
+                    or else
+                  Nkind (Aggr_High) = N_Error
+               then
+                  return False;
+               end if;
+
             --  No others clause present
 
             else
@@ -2313,6 +2323,16 @@ package body Sem_Aggr is
 
                if Others_Allowed then
                   Get_Index_Bounds (Index_Constr, Aggr_Low, Aggr_High);
+
+                  --  Abandon processing if either bound is already signalled
+                  --  as an error (stop junk cascaded messages and blow ups).
+
+                  if Nkind (Aggr_Low) = N_Error
+                       or else
+                     Nkind (Aggr_High) = N_Error
+                  then
+                     return False;
+                  end if;
 
                   --  If others allowed, and no others present, then the array
                   --  should cover all index values. If it does not, we will
@@ -4677,6 +4697,7 @@ package body Sem_Aggr is
          Set_Expressions            (New_Aggregate, No_List);
          Set_Etype                  (New_Aggregate, Etype (N));
          Set_Component_Associations (New_Aggregate, New_Assoc_List);
+         Set_Check_Actuals          (New_Aggregate, Check_Actuals (N));
 
          Rewrite (N, New_Aggregate);
       end Step_8;

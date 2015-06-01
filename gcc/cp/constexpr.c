@@ -2427,41 +2427,54 @@ cxx_eval_indirect_ref (const constexpr_ctx *ctx, tree t,
 		       bool *non_constant_p, bool *overflow_p)
 {
   tree orig_op0 = TREE_OPERAND (t, 0);
-  tree op0 = cxx_eval_constant_expression (ctx, orig_op0,
-					   /*lval*/false, non_constant_p,
-					   overflow_p);
   bool empty_base = false;
-  tree r;
 
-  /* Don't VERIFY_CONSTANT here.  */
-  if (*non_constant_p)
-    return t;
-
-  r = cxx_fold_indirect_ref (EXPR_LOCATION (t), TREE_TYPE (t), op0,
-			     &empty_base);
-
-  if (r)
-    r = cxx_eval_constant_expression (ctx, r,
-				      lval, non_constant_p, overflow_p);
-  else
+  /* First try to simplify it directly.  */
+  tree r = cxx_fold_indirect_ref (EXPR_LOCATION (t), TREE_TYPE (t), orig_op0,
+				  &empty_base);
+  if (!r)
     {
-      tree sub = op0;
-      STRIP_NOPS (sub);
-      if (TREE_CODE (sub) == ADDR_EXPR)
+      /* If that didn't work, evaluate the operand first.  */
+      tree op0 = cxx_eval_constant_expression (ctx, orig_op0,
+					       /*lval*/false, non_constant_p,
+					       overflow_p);
+      /* Don't VERIFY_CONSTANT here.  */
+      if (*non_constant_p)
+	return t;
+
+      r = cxx_fold_indirect_ref (EXPR_LOCATION (t), TREE_TYPE (t), op0,
+				 &empty_base);
+      if (r == NULL_TREE)
 	{
 	  /* We couldn't fold to a constant value.  Make sure it's not
 	     something we should have been able to fold.  */
-	  gcc_assert (!same_type_ignoring_top_level_qualifiers_p
-		      (TREE_TYPE (TREE_TYPE (sub)), TREE_TYPE (t)));
-	  /* DR 1188 says we don't have to deal with this.  */
-	  if (!ctx->quiet)
-	    error ("accessing value of %qE through a %qT glvalue in a "
-		   "constant expression", build_fold_indirect_ref (sub),
-		   TREE_TYPE (t));
-	  *non_constant_p = true;
+	  tree sub = op0;
+	  STRIP_NOPS (sub);
+	  if (TREE_CODE (sub) == ADDR_EXPR)
+	    {
+	      gcc_assert (!same_type_ignoring_top_level_qualifiers_p
+			  (TREE_TYPE (TREE_TYPE (sub)), TREE_TYPE (t)));
+	      /* DR 1188 says we don't have to deal with this.  */
+	      if (!ctx->quiet)
+		error ("accessing value of %qE through a %qT glvalue in a "
+		       "constant expression", build_fold_indirect_ref (sub),
+		       TREE_TYPE (t));
+	      *non_constant_p = true;
+	      return t;
+	    }
+
+	  if (lval && op0 != orig_op0)
+	    return build1 (INDIRECT_REF, TREE_TYPE (t), op0);
+	  if (!lval)
+	    VERIFY_CONSTANT (t);
 	  return t;
 	}
     }
+
+  r = cxx_eval_constant_expression (ctx, r,
+				    lval, non_constant_p, overflow_p);
+  if (*non_constant_p)
+    return t;
 
   /* If we're pulling out the value of an empty base, make sure
      that the whole object is constant and then return an empty
@@ -2473,14 +2486,6 @@ cxx_eval_indirect_ref (const constexpr_ctx *ctx, tree t,
       TREE_CONSTANT (r) = true;
     }
 
-  if (r == NULL_TREE)
-    {
-      if (lval && op0 != orig_op0)
-	return build1 (INDIRECT_REF, TREE_TYPE (t), op0);
-      if (!lval)
-	VERIFY_CONSTANT (t);
-      return t;
-    }
   return r;
 }
 
@@ -3458,7 +3463,9 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
       break;
 
     case PLACEHOLDER_EXPR:
-      if (!ctx || !ctx->ctor || (lval && !ctx->object))
+      if (!ctx || !ctx->ctor || (lval && !ctx->object)
+	  || !(same_type_ignoring_top_level_qualifiers_p
+	       (TREE_TYPE (t), TREE_TYPE (ctx->ctor))))
 	{
 	  /* A placeholder without a referent.  We can get here when
 	     checking whether NSDMIs are noexcept, or in massage_init_elt;
@@ -3473,8 +3480,6 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 	     use ctx->object unconditionally, but using ctx->ctor when we
 	     can is a minor optimization.  */
 	  tree ctor = lval ? ctx->object : ctx->ctor;
-	  gcc_assert (same_type_ignoring_top_level_qualifiers_p
-		      (TREE_TYPE (t), TREE_TYPE (ctor)));
 	  return cxx_eval_constant_expression
 	    (ctx, ctor, lval,
 	     non_constant_p, overflow_p);
