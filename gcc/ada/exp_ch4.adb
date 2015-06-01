@@ -6299,7 +6299,10 @@ package body Exp_Ch4 is
 
       --    The prefix of an address or bit or size attribute reference
 
-      --  The following circuit detects these exceptions
+      --  The following circuit detects these exceptions. Note that we need to
+      --  deal with implicit dereferences when climbing up the parent chain,
+      --  with the additional difficulty that the type of parents may have yet
+      --  to be resolved since prefixes are usually resolved first.
 
       declare
          Child : Node_Id := N;
@@ -6351,10 +6354,21 @@ package body Exp_Ch4 is
             then
                return;
 
-            elsif Nkind_In (Parnt, N_Indexed_Component, N_Selected_Component)
+            elsif Nkind (Parnt) = N_Indexed_Component
               and then Prefix (Parnt) = Child
             then
                null;
+
+            elsif Nkind (Parnt) = N_Selected_Component
+              and then Prefix (Parnt) = Child
+              and then not (Present (Etype (Selector_Name (Parnt)))
+                              and then
+                            Is_Access_Type (Etype (Selector_Name (Parnt))))
+            then
+               null;
+
+            --  If the parent is a dereference, either implicit or explicit,
+            --  then the packed reference needs to be expanded.
 
             else
                Expand_Packed_Element_Reference (N);
@@ -7566,6 +7580,33 @@ package body Exp_Ch4 is
       Etyp   : Entity_Id;
       Xnode  : Node_Id;
 
+      function Wrap_MA (Exp : Node_Id) return Node_Id;
+      --  Given an expression Exp, if the root type is Float or Long_Float,
+      --  then wrap the expression in a call of Bastyp'Machine, to stop any
+      --  extra precision. This is done to ensure that X**A = X**B when A is
+      --  a static constant and B is a variable with the same value. For any
+      --  other type, the node Exp is returned unchanged.
+
+      -------------
+      -- Wrap_MA --
+      -------------
+
+      function Wrap_MA (Exp : Node_Id) return Node_Id is
+         Loc : constant Source_Ptr := Sloc (Exp);
+      begin
+         if Rtyp = Standard_Float or else Rtyp = Standard_Long_Float then
+            return
+              Make_Attribute_Reference (Loc,
+                Attribute_Name => Name_Machine,
+                Prefix         => New_Occurrence_Of (Bastyp, Loc),
+                Expressions    => New_List (Relocate_Node (Exp)));
+         else
+            return Exp;
+         end if;
+      end Wrap_MA;
+
+   --  Start of processing for Expand_N_Op
+
    begin
       Binary_Op_Validity_Checks (N);
 
@@ -7623,7 +7664,7 @@ package body Exp_Ch4 is
          --  could fold small negative exponents for the real case, but we
          --  can't because we are required to raise Constraint_Error for
          --  the case of 0.0 ** (negative) even if Machine_Overflows = False.
-         --  See ACVC test C4A012B.
+         --  See ACVC test C4A012B, and it is not worth generating the test.
 
          if Expv >= 0 and then Expv <= 4 then
 
@@ -7652,20 +7693,22 @@ package body Exp_Ch4 is
 
             elsif Expv = 2 then
                Xnode :=
-                 Make_Op_Multiply (Loc,
-                   Left_Opnd  => Duplicate_Subexpr (Base),
-                   Right_Opnd => Duplicate_Subexpr_No_Checks (Base));
+                 Wrap_MA (
+                   Make_Op_Multiply (Loc,
+                     Left_Opnd  => Duplicate_Subexpr (Base),
+                     Right_Opnd => Duplicate_Subexpr_No_Checks (Base)));
 
             --  X ** 3 = X * X * X
 
             elsif Expv = 3 then
                Xnode :=
-                 Make_Op_Multiply (Loc,
-                   Left_Opnd =>
-                     Make_Op_Multiply (Loc,
-                       Left_Opnd  => Duplicate_Subexpr (Base),
-                       Right_Opnd => Duplicate_Subexpr_No_Checks (Base)),
-                   Right_Opnd  => Duplicate_Subexpr_No_Checks (Base));
+                 Wrap_MA (
+                   Make_Op_Multiply (Loc,
+                     Left_Opnd =>
+                       Make_Op_Multiply (Loc,
+                         Left_Opnd  => Duplicate_Subexpr (Base),
+                         Right_Opnd => Duplicate_Subexpr_No_Checks (Base)),
+                   Right_Opnd  => Duplicate_Subexpr_No_Checks (Base)));
 
             --  X ** 4  ->
 
@@ -7686,16 +7729,18 @@ package body Exp_Ch4 is
                        Constant_Present    => True,
                        Object_Definition   => New_Occurrence_Of (Typ, Loc),
                        Expression =>
-                         Make_Op_Multiply (Loc,
-                           Left_Opnd  =>
-                             Duplicate_Subexpr (Base),
-                           Right_Opnd =>
-                             Duplicate_Subexpr_No_Checks (Base)))),
+                         Wrap_MA (
+                           Make_Op_Multiply (Loc,
+                             Left_Opnd  =>
+                               Duplicate_Subexpr (Base),
+                             Right_Opnd =>
+                               Duplicate_Subexpr_No_Checks (Base))))),
 
                    Expression =>
-                     Make_Op_Multiply (Loc,
-                       Left_Opnd  => New_Occurrence_Of (Temp, Loc),
-                       Right_Opnd => New_Occurrence_Of (Temp, Loc)));
+                     Wrap_MA (
+                       Make_Op_Multiply (Loc,
+                         Left_Opnd  => New_Occurrence_Of (Temp, Loc),
+                         Right_Opnd => New_Occurrence_Of (Temp, Loc))));
             end if;
 
             Rewrite (N, Xnode);
@@ -7779,6 +7824,9 @@ package body Exp_Ch4 is
                TestS : Boolean;
                --  Set True if we must test the shift count
 
+               Test_Gt : Node_Id;
+               --  Node for test against TestS
+
             begin
                --  Compute maximum shift based on the underlying size. For a
                --  modular type this is one less than the size.
@@ -7841,15 +7889,21 @@ package body Exp_Ch4 is
                   --  zero if this shift count is exceeded.
 
                   if TestS then
+
+                     --  Note: build node for the comparison first, before we
+                     --  reuse the Right_Opnd, so that we have proper parents
+                     --  in place for the Duplicate_Subexpr call.
+
+                     Test_Gt :=
+                       Make_Op_Gt (Loc,
+                         Left_Opnd  => Duplicate_Subexpr (Right_Opnd (N)),
+                         Right_Opnd => Make_Integer_Literal (Loc, MaxS));
+
                      Rewrite (N,
                        Make_If_Expression (Loc,
                          Expressions => New_List (
-                           Make_Op_Gt (Loc,
-                             Left_Opnd  => Duplicate_Subexpr (Right_Opnd (N)),
-                             Right_Opnd => Make_Integer_Literal (Loc, MaxS)),
-
+                           Test_Gt,
                            Make_Integer_Literal (Loc, Uint_0),
-
                            Make_Op_Shift_Left (Loc,
                              Left_Opnd  => Make_Integer_Literal (Loc, Uint_1),
                              Right_Opnd => Right_Opnd (N)))));
@@ -7877,10 +7931,10 @@ package body Exp_Ch4 is
 
       if Is_Modular_Integer_Type (Rtyp) then
 
-         --  Nonbinary case, we call the special exponentiation routine for
-         --  the nonbinary case, converting the argument to Long_Long_Integer
-         --  and passing the modulus value. Then the result is converted back
-         --  to the base type.
+         --  Nonbinary modular case, we call the special exponentiation
+         --  routine for the nonbinary case, converting the argument to
+         --  Long_Long_Integer and passing the modulus value. Then the
+         --  result is converted back to the base type.
 
          if Non_Binary_Modulus (Rtyp) then
             Rewrite (N,
@@ -7893,9 +7947,9 @@ package body Exp_Ch4 is
                     Make_Integer_Literal (Loc, Modulus (Rtyp)),
                     Exp))));
 
-         --  Binary case, in this case, we call one of two routines, either the
-         --  unsigned integer case, or the unsigned long long integer case,
-         --  with a final "and" operation to do the required mod.
+         --  Binary modular case, in this case, we call one of two routines,
+         --  either the unsigned integer case, or the unsigned long long
+         --  integer case, with a final "and" operation to do the required mod.
 
          else
             if UI_To_Int (Esize (Rtyp)) <= Standard_Integer_Size then
@@ -7963,16 +8017,32 @@ package body Exp_Ch4 is
             Rent := RE_Exn_Integer;
          end if;
 
-      --  Floating-point cases, always done using Long_Long_Float. We do not
-      --  need separate routines for the overflow case here, since in the case
-      --  of floating-point, we generate infinities anyway as a rule (either
-      --  that or we automatically trap overflow), and if there is an infinity
-      --  generated and a range check is required, the check will fail anyway.
+      --  Floating-point cases. We do not need separate routines for the
+      --  overflow case here, since in the case of floating-point, we generate
+      --  infinities anyway as a rule (either that or we automatically trap
+      --  overflow), and if there is an infinity generated and a range check
+      --  is required, the check will fail anyway.
+
+      --  Historical note: we used to convert everything to Long_Long_Float
+      --  and call a single common routine, but this had the undesirable effect
+      --  of giving different results for small static exponent values and the
+      --  same dynamic values.
 
       else
          pragma Assert (Is_Floating_Point_Type (Rtyp));
-         Etyp := Standard_Long_Long_Float;
-         Rent := RE_Exn_Long_Long_Float;
+
+         if Rtyp = Standard_Float then
+            Etyp := Standard_Float;
+            Rent := RE_Exn_Float;
+
+         elsif Rtyp = Standard_Long_Float then
+            Etyp := Standard_Long_Float;
+            Rent := RE_Exn_Long_Float;
+
+         else
+            Etyp := Standard_Long_Long_Float;
+            Rent := RE_Exn_Long_Long_Float;
+         end if;
       end if;
 
       --  Common processing for integer cases and floating-point cases.
@@ -7983,9 +8053,10 @@ package body Exp_Ch4 is
         and then Rtyp /= Universal_Real
       then
          Rewrite (N,
-           Make_Function_Call (Loc,
-             Name                   => New_Occurrence_Of (RTE (Rent), Loc),
-             Parameter_Associations => New_List (Base, Exp)));
+           Wrap_MA (
+             Make_Function_Call (Loc,
+               Name                   => New_Occurrence_Of (RTE (Rent), Loc),
+               Parameter_Associations => New_List (Base, Exp))));
 
       --  Otherwise we have to introduce conversions (conversions are also
       --  required in the universal cases, since the runtime routine is

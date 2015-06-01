@@ -45,132 +45,7 @@
 extern char arm_arch_name[];
 
 /* Target CPU builtins.  */
-#define TARGET_CPU_CPP_BUILTINS()			\
-  do							\
-    {							\
-	if (TARGET_DSP_MULTIPLY)			\
-	   builtin_define ("__ARM_FEATURE_DSP");	\
-        if (TARGET_ARM_QBIT)				\
-           builtin_define ("__ARM_FEATURE_QBIT");	\
-        if (TARGET_ARM_SAT)				\
-           builtin_define ("__ARM_FEATURE_SAT");	\
-        if (TARGET_CRYPTO)				\
-	   builtin_define ("__ARM_FEATURE_CRYPTO");	\
-	if (unaligned_access)				\
-	  builtin_define ("__ARM_FEATURE_UNALIGNED");	\
-	if (TARGET_CRC32)				\
-	  builtin_define ("__ARM_FEATURE_CRC32");	\
-	if (TARGET_32BIT)				\
-	  builtin_define ("__ARM_32BIT_STATE");		\
-	if (TARGET_ARM_FEATURE_LDREX)				\
-	  builtin_define_with_int_value (			\
-	    "__ARM_FEATURE_LDREX", TARGET_ARM_FEATURE_LDREX);	\
-	if ((TARGET_ARM_ARCH >= 5 && !TARGET_THUMB)		\
-	     || TARGET_ARM_ARCH_ISA_THUMB >=2)			\
-	  builtin_define ("__ARM_FEATURE_CLZ");			\
-	if (TARGET_INT_SIMD)					\
-	  builtin_define ("__ARM_FEATURE_SIMD32");		\
-								\
-	builtin_define_with_int_value (				\
-	  "__ARM_SIZEOF_MINIMAL_ENUM",				\
-	  flag_short_enums ? 1 : 4);				\
-	builtin_define_type_sizeof ("__ARM_SIZEOF_WCHAR_T",	\
-				    wchar_type_node);		\
-	if (TARGET_ARM_ARCH_PROFILE)				\
-	  builtin_define_with_int_value (			\
-	    "__ARM_ARCH_PROFILE", TARGET_ARM_ARCH_PROFILE);	\
-								\
-	/* Define __arm__ even when in thumb mode, for	\
-	   consistency with armcc.  */			\
-	builtin_define ("__arm__");			\
-	if (TARGET_ARM_ARCH)				\
-	  builtin_define_with_int_value (		\
-	    "__ARM_ARCH", TARGET_ARM_ARCH);		\
-	if (arm_arch_notm)				\
-	  builtin_define ("__ARM_ARCH_ISA_ARM");	\
-	builtin_define ("__APCS_32__");			\
-	if (TARGET_THUMB)				\
-	  builtin_define ("__thumb__");			\
-	if (TARGET_THUMB2)				\
-	  builtin_define ("__thumb2__");		\
-	if (TARGET_ARM_ARCH_ISA_THUMB)			\
-	  builtin_define_with_int_value (		\
-	    "__ARM_ARCH_ISA_THUMB",			\
-	    TARGET_ARM_ARCH_ISA_THUMB);			\
-							\
-	if (TARGET_BIG_END)				\
-	  {						\
-	    builtin_define ("__ARMEB__");		\
-	    builtin_define ("__ARM_BIG_ENDIAN");	\
-	    if (TARGET_THUMB)				\
-	      builtin_define ("__THUMBEB__");		\
-	  }						\
-        else						\
-	  {						\
-	    builtin_define ("__ARMEL__");		\
-	    if (TARGET_THUMB)				\
-	      builtin_define ("__THUMBEL__");		\
-	  }						\
-							\
-	if (TARGET_SOFT_FLOAT)				\
-	  builtin_define ("__SOFTFP__");		\
-							\
-	if (TARGET_VFP)					\
-	  builtin_define ("__VFP_FP__");		\
-							\
-	if (TARGET_ARM_FP)				\
-	  builtin_define_with_int_value (		\
-	    "__ARM_FP", TARGET_ARM_FP);			\
-	if (arm_fp16_format == ARM_FP16_FORMAT_IEEE)		\
-	  builtin_define ("__ARM_FP16_FORMAT_IEEE");		\
-	if (arm_fp16_format == ARM_FP16_FORMAT_ALTERNATIVE)	\
-	  builtin_define ("__ARM_FP16_FORMAT_ALTERNATIVE");	\
-        if (TARGET_FMA)					\
-          builtin_define ("__ARM_FEATURE_FMA");		\
-							\
-	if (TARGET_NEON)				\
-	  {						\
-	    builtin_define ("__ARM_NEON__");		\
-	    builtin_define ("__ARM_NEON");		\
-	  }						\
-	if (TARGET_NEON_FP)				\
-	  builtin_define_with_int_value (		\
-	    "__ARM_NEON_FP", TARGET_NEON_FP);		\
-							\
-	/* Add a define for interworking.		\
-	   Needed when building libgcc.a.  */		\
-	if (arm_cpp_interwork)				\
-	  builtin_define ("__THUMB_INTERWORK__");	\
-							\
-	builtin_assert ("cpu=arm");			\
-	builtin_assert ("machine=arm");			\
-							\
-	builtin_define (arm_arch_name);			\
-	if (arm_arch_xscale)				\
-	  builtin_define ("__XSCALE__");		\
-	if (arm_arch_iwmmxt)				\
-          {						\
-	    builtin_define ("__IWMMXT__");		\
-	    builtin_define ("__ARM_WMMX");		\
-	  }						\
-	if (arm_arch_iwmmxt2)				\
-	  builtin_define ("__IWMMXT2__");		\
-	if (TARGET_AAPCS_BASED)				\
-	  {						\
-	    if (arm_pcs_default == ARM_PCS_AAPCS_VFP)	\
-	      builtin_define ("__ARM_PCS_VFP");		\
-	    else if (arm_pcs_default == ARM_PCS_AAPCS)	\
-	      builtin_define ("__ARM_PCS");		\
-	    builtin_define ("__ARM_EABI__");		\
-	  }						\
-	if (TARGET_IDIV)				\
-         {						\
-            builtin_define ("__ARM_ARCH_EXT_IDIV__");	\
-            builtin_define ("__ARM_FEATURE_IDIV");	\
-         }						\
-	if (inline_asm_unified)				\
-	  builtin_define ("__ARM_ASM_SYNTAX_UNIFIED__");\
-    } while (0)
+#define TARGET_CPU_CPP_BUILTINS() arm_cpu_cpp_builtins (pfile)
 
 #include "config/arm/arm-opts.h"
 
@@ -253,12 +128,10 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 #endif
 
 /* Tree Target Specification.  */
-#define TREE_TARGET_THUMB(opts)  (TARGET_THUMB_P (opts->x_target_flags))
-#define TREE_TARGET_ARM(opts)    (!TARGET_THUMB_P (opts->x_target_flags))
-#define TREE_TARGET_THUMB1(opts) (TARGET_THUMB_P (opts->x_target_flags) \
-				  && !arm_arch_thumb2)
-#define TREE_TARGET_THUMB2(opts) (TARGET_THUMB_P (opts->x_target_flags) \
-				  && arm_arch_thumb2)
+#define TARGET_ARM_P(flags)    (!TARGET_THUMB_P (flags))
+#define TARGET_THUMB1_P(flags) (TARGET_THUMB_P (flags) && !arm_arch_thumb2)
+#define TARGET_THUMB2_P(flags) (TARGET_THUMB_P (flags) && arm_arch_thumb2)
+
 /* Run-time Target Specification.  */
 #define TARGET_SOFT_FLOAT		(arm_float_abi == ARM_FLOAT_ABI_SOFT)
 /* Use hardware floating point instructions. */
@@ -287,6 +160,8 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 #define TARGET_THUMB1			(TARGET_THUMB && !arm_arch_thumb2)
 /* Arm or Thumb-2 32-bit code.  */
 #define TARGET_32BIT			(TARGET_ARM || arm_arch_thumb2)
+#define TARGET_32BIT_P(flags)		(TARGET_ARM_P (flags) \
+					 || arm_arch_thumb2)
 /* 32-bit Thumb-2 code.  */
 #define TARGET_THUMB2			(TARGET_THUMB && arm_arch_thumb2)
 /* Thumb-1 only.  */
@@ -341,17 +216,21 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 		     && TARGET_VFP && arm_fpu_desc->neon)
 
 /* Q-bit is present.  */
-#define TARGET_ARM_QBIT \
-  (TARGET_32BIT && arm_arch5e && (arm_arch_notm || arm_arch7))
+#define TARGET_ARM_QBIT_P(flags) \
+  (TARGET_32BIT_P (flags) && arm_arch5e && (arm_arch_notm || arm_arch7))
+#define TARGET_ARM_QBIT TARGET_ARM_QBIT_P(target_flags)
 /* Saturation operation, e.g. SSAT.  */
-#define TARGET_ARM_SAT \
-  (TARGET_32BIT && arm_arch6 && (arm_arch_notm || arm_arch7))
+#define TARGET_ARM_SAT_P(flags) \
+  (TARGET_32BIT_P (flags) && arm_arch6 && (arm_arch_notm || arm_arch7))
+#define TARGET_ARM_SAT TARGET_ARM_SAT_P(target_flags)
 /* "DSP" multiply instructions, eg. SMULxy.  */
-#define TARGET_DSP_MULTIPLY \
-  (TARGET_32BIT && arm_arch5e && (arm_arch_notm || arm_arch7em))
+#define TARGET_DSP_MULTIPLY_P(flags) \
+  (TARGET_32BIT_P (flags) && arm_arch5e && (arm_arch_notm || arm_arch7em))
+#define TARGET_DSP_MULTIPLY TARGET_DSP_MULTIPLY_P(target_flags)
 /* Integer SIMD instructions, and extend-accumulate instructions.  */
-#define TARGET_INT_SIMD \
-  (TARGET_32BIT && arm_arch6 && (arm_arch_notm || arm_arch7em))
+#define TARGET_INT_SIMD_P(flags) \
+  (TARGET_32BIT_P (flags) && arm_arch6 && (arm_arch_notm || arm_arch7em))
+#define TARGET_INT_SIMD TARGET_INT_SIMD_P(target_flags)
 
 /* Should MOVW/MOVT be used in preference to a constant pool.  */
 #define TARGET_USE_MOVT \
@@ -374,21 +253,30 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 #define TARGET_HAVE_MEMORY_BARRIER (TARGET_HAVE_DMB || TARGET_HAVE_DMB_MCR)
 
 /* Nonzero if this chip supports ldrex and strex */
-#define TARGET_HAVE_LDREX	((arm_arch6 && TARGET_ARM) || arm_arch7)
+#define TARGET_HAVE_LDREX_P(flags) ((arm_arch6 && TARGET_ARM_P (flags)) \
+				    || arm_arch7)
+#define TARGET_HAVE_LDREX	  TARGET_HAVE_LDREX_P (target_flags) 
 
 /* Nonzero if this chip supports ldrex{bh} and strex{bh}.  */
-#define TARGET_HAVE_LDREXBH	((arm_arch6k && TARGET_ARM) || arm_arch7)
+#define TARGET_HAVE_LDREXBH_P(flags) ((arm_arch6k && TARGET_ARM_P (flags)) \
+				      || arm_arch7)
+#define TARGET_HAVE_LDREXBH	     TARGET_HAVE_LDREXBH_P (target_flags)
 
 /* Nonzero if this chip supports ldrexd and strexd.  */
-#define TARGET_HAVE_LDREXD	(((arm_arch6k && TARGET_ARM) || arm_arch7) \
-				 && arm_arch_notm)
+#define TARGET_HAVE_LDREXD_P(flags) (((arm_arch6k && TARGET_ARM_P (flags)) \
+				      || arm_arch7) && arm_arch_notm)
+#define TARGET_HAVE_LDREXD	    TARGET_HAVE_LDREXD_P (target_flags)
+				
 
 /* Nonzero if this chip supports load-acquire and store-release.  */
 #define TARGET_HAVE_LDACQ	(TARGET_ARM_ARCH >= 8)
 
 /* Nonzero if integer division instructions supported.  */
-#define TARGET_IDIV		((TARGET_ARM && arm_arch_arm_hwdiv) \
-				 || (TARGET_THUMB2 && arm_arch_thumb_hwdiv))
+#define TARGET_IDIV_P(flags)	((TARGET_ARM_P (flags) && arm_arch_arm_hwdiv) \
+				 || (TARGET_THUMB2_P (flags)                  \
+				     && arm_arch_thumb_hwdiv))
+#define TARGET_IDIV             TARGET_IDIV_P (target_flags)		
+
 
 /* Nonzero if disallow volatile memory access in IT block.  */
 #define TARGET_NO_VOLATILE_CE		(arm_arch_no_volatile_ce)
@@ -2313,6 +2201,11 @@ extern int making_const_table;
   ((TARGET_HAVE_LDREX ? 4 : 0)					\
    | (TARGET_HAVE_LDREXBH ? 3 : 0)				\
    | (TARGET_HAVE_LDREXD ? 8 : 0))
+
+#define TARGET_ARM_FEATURE_LDREX_P(flags)			\
+  ((TARGET_HAVE_LDREX_P (flags) ? 4 : 0)			\
+   | (TARGET_HAVE_LDREXBH_P (flags) ? 3 : 0)			\
+   | (TARGET_HAVE_LDREXD_P (flags) ? 8 : 0))
 
 /* Set as a bit mask indicating the available widths of hardware floating
    point types.  Where bit 1 indicates 16-bit support, bit 2 indicates

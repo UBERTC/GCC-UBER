@@ -38,6 +38,8 @@ along with GCC; see the file COPYING3.  If not see
   ge   gt   ne eq lt   le   ordered   unordered ge   gt   le   lt   ltgt uneq)
 (define_operator_list inverted_tcc_comparison_with_nans
   unge ungt ne eq unlt unle ordered   unordered ge   gt   le   lt   ltgt uneq)
+(define_operator_list swapped_tcc_comparison
+  gt   ge   eq ne le   lt   unordered ordered   ungt unge unlt unle uneq ltgt)
 
 
 /* Simplifications of operations with one constant operand and
@@ -227,6 +229,30 @@ along with GCC; see the file COPYING3.  If not see
        /* Avoid this transformation if C is INT_MIN, i.e. C == -C.  */
        && !sign_bit_p (@1, @1))
    (trunc_mod @0 (negate @1))))
+
+/* X % -Y is the same as X % Y.  */
+(simplify
+ (trunc_mod @0 (convert? (negate @1)))
+ (if (!TYPE_UNSIGNED (type)
+      && !TYPE_OVERFLOW_TRAPS (type)
+      && tree_nop_conversion_p (type, TREE_TYPE (@1)))
+  (trunc_mod @0 (convert @1))))
+
+/* Optimize TRUNC_MOD_EXPR by a power of two into a BIT_AND_EXPR,
+   i.e. "X % C" into "X & (C - 1)", if X and C are positive.
+   Also optimize A % (C << N)  where C is a power of 2,
+   to A & ((C << N) - 1).  */
+(match (power_of_two_cand @1)
+ INTEGER_CST@1)
+(match (power_of_two_cand @1)
+ (lshift INTEGER_CST@1 @2))
+(for mod (trunc_mod floor_mod)
+ (simplify
+  (mod @0 (power_of_two_cand@1 @2))
+  (if ((TYPE_UNSIGNED (type)
+	|| tree_expr_nonnegative_p (@0))
+	&& integer_pow2p (@2) && tree_int_cst_sgn (@2) > 0)
+   (bit_and @0 (minus @1 { build_int_cst (TREE_TYPE (@1), 1); })))))
 
 /* X % Y is smaller than Y.  */
 (for cmp (lt ge)
@@ -979,6 +1005,24 @@ along with GCC; see the file COPYING3.  If not see
 (simplify
  (bit_and:c (ordered @0 @0) (ordered:c@2 @0 @1))
  @2)
+
+/* -A CMP -B -> B CMP A.  */
+(for cmp (tcc_comparison)
+     scmp (swapped_tcc_comparison)
+ (simplify
+  (cmp (negate @0) (negate @1))
+  (if (FLOAT_TYPE_P (TREE_TYPE (@0))
+       || (ANY_INTEGRAL_TYPE_P (TREE_TYPE (@0))
+	   && TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (@0))))
+   (scmp @0 @1)))
+ (simplify
+  (cmp (negate @0) CONSTANT_CLASS_P@1)
+  (if (FLOAT_TYPE_P (TREE_TYPE (@0))
+       || (ANY_INTEGRAL_TYPE_P (TREE_TYPE (@0))
+	   && TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (@0))))
+   (with { tree tem = fold_unary (NEGATE_EXPR, TREE_TYPE (@0), @1); }
+    (if (tem && !TREE_OVERFLOW (tem))
+     (scmp @0 { tem; }))))))
 
 /* Simplification of math builtins.  */
 

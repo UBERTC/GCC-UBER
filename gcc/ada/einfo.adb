@@ -63,7 +63,7 @@ package body Einfo is
    --    Scope                           Node3
    --    Etype                           Node5
 
-   --   Remaining fields are present only in extended nodes (i.e. entities)
+   --  Remaining fields are present only in extended nodes (i.e. entities).
 
    --  The following fields are present in all entities
 
@@ -558,6 +558,7 @@ package body Einfo is
 
    --    Has_Implicit_Dereference        Flag251
    --    Is_Processed_Transient          Flag252
+   --    Disable_Controlled              Flag253
    --    Is_Implementation_Defined       Flag254
    --    Is_Predicate_Function           Flag255
    --    Is_Predicate_Function_M         Flag256
@@ -595,7 +596,6 @@ package body Einfo is
    --    Is_Volatile_Full_Access         Flag285
    --    Needs_Typedef                   Flag286
 
-   --    (unused)                        Flag253
    --    (unused)                        Flag287
    --    (unused)                        Flag288
    --    (unused)                        Flag289
@@ -874,7 +874,7 @@ package body Einfo is
 
    function Component_Type (Id : E) return E is
    begin
-      pragma Assert (Is_Array_Type (Id) or else Is_String_Type (Id));
+      pragma Assert (Is_Array_Type (Id));
       return Node20 (Implementation_Base_Type (Id));
    end Component_Type;
 
@@ -1025,6 +1025,11 @@ package body Einfo is
       pragma Assert (Is_Access_Type (Id));
       return Node20 (Id);
    end Directly_Designated_Type;
+
+   function Disable_Controlled (Id : E) return B is
+   begin
+      return Flag253 (Base_Type (Id));
+   end Disable_Controlled;
 
    function Discard_Names (Id : E) return B is
    begin
@@ -1318,7 +1323,7 @@ package body Einfo is
 
    function First_Index (Id : E) return N is
    begin
-      pragma Assert (Is_Array_Type (Id) or else Is_String_Type (Id));
+      pragma Assert (Is_Array_Type (Id));
       return Node17 (Id);
    end First_Index;
 
@@ -1611,7 +1616,9 @@ package body Einfo is
 
    function Has_Out_Or_In_Out_Parameter (Id : E) return B is
    begin
-      pragma Assert (Ekind_In (Id, E_Function, E_Generic_Function));
+      pragma Assert
+        (Ekind_In (Id, E_Entry, E_Entry_Family)
+          or else Is_Subprogram_Or_Generic_Subprogram (Id));
       return Flag110 (Id);
    end Has_Out_Or_In_Out_Parameter;
 
@@ -3939,6 +3946,12 @@ package body Einfo is
       Set_Node20 (Id, V);
    end Set_Directly_Designated_Type;
 
+   procedure Set_Disable_Controlled (Id : E; V : B := True) is
+   begin
+      pragma Assert (Is_Type (Id) and then Is_Base_Type (Id));
+      Set_Flag253 (Id, V);
+   end Set_Disable_Controlled;
+
    procedure Set_Discard_Names (Id : E; V : B := True) is
    begin
       Set_Flag88 (Id, V);
@@ -4191,7 +4204,7 @@ package body Einfo is
 
    procedure Set_First_Index (Id : E; V : N) is
    begin
-      pragma Assert (Is_Array_Type (Id) or else Is_String_Type (Id));
+      pragma Assert (Is_Array_Type (Id));
       Set_Node17 (Id, V);
    end Set_First_Index;
 
@@ -4505,7 +4518,9 @@ package body Einfo is
 
    procedure Set_Has_Out_Or_In_Out_Parameter (Id : E; V : B := True) is
    begin
-      pragma Assert (Ekind_In (Id, E_Function, E_Generic_Function));
+      pragma Assert
+        (Ekind_In (Id, E_Entry, E_Entry_Family)
+          or else Is_Subprogram_Or_Generic_Subprogram (Id));
       Set_Flag110 (Id, V);
    end Set_Has_Out_Or_In_Out_Parameter;
 
@@ -7353,7 +7368,6 @@ package body Einfo is
       E_Ordinary_Fixed_Point_Subtype |
       E_Decimal_Fixed_Point_Subtype  |
       E_Array_Subtype                |
-      E_String_Subtype               |
       E_Record_Subtype               |
       E_Private_Subtype              |
       E_Record_Subtype_With_Private  |
@@ -7389,6 +7403,15 @@ package body Einfo is
       return
         K = E_Constant or else K = E_In_Parameter or else K = E_Loop_Parameter;
    end Is_Constant_Object;
+
+   --------------------------
+   -- Is_Controlled_Active --
+   --------------------------
+
+   function Is_Controlled_Active (Id : E) return B is
+   begin
+      return Is_Controlled (Id) and then not Disable_Controlled (Id);
+   end Is_Controlled_Active;
 
    --------------------
    -- Is_Discriminal --
@@ -9461,11 +9484,6 @@ package body Einfo is
          when Modular_Integer_Kind                         =>
             Write_Str ("Modulus");
 
-         when E_Incomplete_Subtype                         =>
-            if From_Limited_With (Id) then
-               Write_Str ("Non_Limited_View");
-            end if;
-
          when E_Component                                  =>
             Write_Str ("Prival");
 
@@ -9560,6 +9578,11 @@ package body Einfo is
               E_Class_Wide_Type                            |
               E_Incomplete_Type                            =>
             Write_Str ("Non_Limited_View");
+
+         when E_Incomplete_Subtype                         =>
+            if From_Limited_With (Id) then
+               Write_Str ("Non_Limited_View");
+            end if;
 
          when E_Array_Type                                 =>
             Write_Str ("Default_Component_Value");

@@ -202,6 +202,16 @@ procedure Gnat1drv is
          GNATprove_Mode := False;
          Debug_Flag_Dot_FF := False;
 
+         --  Turn off C tree generation, not compatible with CodePeer mode. We
+         --  do not expect this to happen in normal use, since both modes are
+         --  enabled by special tools, but it is useful to turn off these flags
+         --  this way when we are doing CodePeer tests on existing test suites
+         --  that may have -gnatd.V set, to avoid the need for special casing.
+
+         Modify_Tree_For_C := False;
+         Generate_C_Code := False;
+         Unnest_Subprogram_Mode := False;
+
          --  Turn off inlining, confuses CodePeer output and gains nothing
 
          Front_End_Inlining := False;
@@ -944,13 +954,20 @@ begin
                System_Source_File_Index := S;
             end if;
 
+            --  Call to get target parameters. Note that the actual interface
+            --  routines are in Tbuild. They can't be in this procedure because
+            --  of accessibility issues.
+
             Targparm.Get_Target_Parameters
               (System_Text  => Source_Text  (S),
                Source_First => Source_First (S),
                Source_Last  => Source_Last  (S),
                Make_Id      => Tbuild.Make_Id'Access,
                Make_SC      => Tbuild.Make_SC'Access,
-               Set_RND      => Tbuild.Set_RND'Access);
+               Set_NOD      => Tbuild.Set_NOD'Access,
+               Set_NSA      => Tbuild.Set_NSA'Access,
+               Set_NUA      => Tbuild.Set_NUA'Access,
+               Set_NUP      => Tbuild.Set_NUP'Access);
 
             --  Acquire configuration pragma information from Targparm
 

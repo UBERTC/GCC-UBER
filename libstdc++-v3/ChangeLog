@@ -1,3 +1,163 @@
+2015-05-31  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/66354
+	* include/bits/stl_algobase.h (__fill_a): Check length before calling
+	memset.
+
+2015-05-30  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/stl_algobase.h (__equal<true>::equal): Check length
+	instead of checking for null pointers.
+	(__lexicographical_compare<true>::__lc): Only check shorter length.
+
+2015-05-29  François Dumont  fdumont@gcc.gnu.org>
+
+	* include/debug/debug.h (_GLIBCXX_DEBUG_ASSERT,
+	_GLIBCXX_DEBUG_PEDASSERT, _GLIBCXX_DEBUG_ONLY): Move definition...
+	* include/debug/assertions.h: ...here, new.
+	* include/debug/formatter.h
+	(_Error_formatter::_Is_iterator_value_type): New.
+	(_Error_formatter::_Is_instance): New.
+	(_Error_formatter::_Parameter): Make public and not friend anymore.
+	(_Error_formatter::_Parameter::__instance): New _M_kind enum entry.
+	(_Error_formatter::_Parameter::__iterator_value_type): New _M_kind enum
+	entry.
+	(_Error_formatter::_Parameter::_Type): New.
+	(_Error_formatter::_Parameter::_Instance): New, inherit from
+	latter.
+	(union _Error_formatter::_Parameter::_M_variant): Reorganize.
+	(_Parameter(_Iterator const&, const char*, _Is_iterator)): Make all
+	overloads take iterator through a const reference.
+	(_Parameter(const _Iterator&, const char*, _Is_iterator_value_type)):
+	New.
+	(_Parameter(const _Type&, const char*, _Is_instance)): New.
+	(_Error_formatter::_M_print_type): Delete.
+	(_Error_formatter::_M_iterator_value_type): New.
+	(_Error_formatter::_M_instance): New.
+	* include/Makefile.am: Add new above debug file.
+	* include/Makefile.in: Regenerate.
+	* include/debug/functions.h
+	(__check_dereferenceable(const _Safe_iterator<>&),
+	__valid_range(const _Safe_iterator<>&),
+	__is_safe_random_iterator<_Safe_iterator<>>): Move...
+	* include/debug/safe_iterator.h: ... here.
+	Replace debug.h include with assertions.h.
+	(__check_singular_aux): Move...
+	* include/debug/safe_base.h: ... here.
+	* include/debug/functions.h
+	(__check_dereferenceable(const _Safe_local_iterator<>&),
+	__valid_range(const _Safe_local_iterator<>&): Move...
+	* include/debug/safe_local_iterator.h: ...here.
+	* include/debug/safe_sequence.h: Replace debug.h with assertions.h.
+	Remove _Safe_iterator declaration.
+	* include/debug/safe_unordered_container.h: Replace debug.h with
+	assertions.h.
+	* include/debug/array: Replace safe_sequence.h include with
+	formatter.h and macros.h.
+	* include/debug/deque: Include functions.tcc.
+	* include/debug/forward_list: Likewise.
+	* include/debug/list: Likewise.
+	* include/debug/string: Likewise.
+	* include/debug/vector: Likewise.
+	* include/bits/unique_ptr.h: Replace debug.h include with new
+	assertions.h.
+	* include/bits/stl_iterator_base_funcs.h: Likewise.
+	* testsuite/23_containers/array/tuple_interface/get_debug_neg.cc:
+	Adjust dg-error line number.
+	* testsuite/23_containers/array/tuple_interface/
+	tuple_element_debug_neg.cc: Likewise.
+	* src/c++11/debug.cc: Adapt.
+
+2015-05-29  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/status_cxx2017.xml: Fix duplicate ID attribute.
+	* doc/html/manual/*: Regenerate.
+
+	* include/std/future (__async_result_of): New alias template.
+	(async): Use __async_result_of to pass decayed types to result_of.
+	* testsuite/30_threads/async/lwg2021.cc: New.
+	* doc/xml/manual/intro.xml: Document LWG 2021 status.
+
+	PR libstdc++/66327
+	* include/bits/stl_algobase.h (__equal<true>::equal): Do not call
+	memcmp with null pointers.
+	(__lexicographical_compare<true>::__lc): Do not call memcmp for empty
+	ranges.
+
+2015-05-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/65352
+	* include/profile/array (array::data): Use _S_ptr.
+	* include/debug/array (array::data): Likewise.
+
+	PR libstdc++/65352
+	* include/std/array (__array_traits::_S_ptr): New function.
+	(array::data): Use _S_ptr to avoid creating invalid reference.
+	* testsuite/23_containers/array/tuple_interface/get_neg.cc: Adjust
+	dg-error line numbers.
+	* testsuite/23_containers/array/tuple_interface/tuple_element_neg.cc:
+	likewise.
+
+2015-05-27  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/stl_tree.h (_Rb_tree::_M_end()): Return _Base_ptr
+	instead of downcasting.
+	(_Rb_tree::_M_copy): Change second parameter to _Base_ptr.
+	(_Rb_tree::_M_lower_bound, _Rb_tree:_M_upper_bound): Likewise.
+	(_Rb_tree::_S_iter): Remove.
+	(_Rb_tree::_S_lower_bound_tr, _Rb_tree::_S_upper_bound_tr): Remove.
+	(_Rb_tree::_M_find_tr(const _Kt&) const): Call _M_lower_bound_tr
+	instead of _S_lower_bound_tr
+	(_Rb_tree::_M_find_tr(const _Kt&)): Call const overload.
+	(_Rb_tree::_M_lower_bound_tr(const _Kt&) const): Do the search here
+	instead of calling _S_lower_bound_tr.
+	(_Rb_tree::_M_lower_bound_tr(const _Kt&)): Call const overload.
+	(_Rb_tree::_M_upper_bound_tr(const _Kt&) const): Do the search here
+	instead of calling _S_upper_bound_tr.
+	(_Rb_tree::_M_upper_bound_tr(const _Kt&)): Call const overload.
+	(_Rb_tree::_M_equal_range_tr(const _Kt&)): Likewise.
+	(_Rb_tree::equal_range): Use _Base_ptr for end pointer.
+	(_Rb_tree::_M_get_insert_unique_pos): Likewise.
+	(_Rb_tree::_M_get_insert_equal_pos): Likewise.
+	(_Rb_tree::_M_insert_equal_lower_node): Likewise.
+	(_Rb_tree::_M_insert_unique, _Rb_tree::_M_emplace_unique,
+	_Rb_tree::_M_emplace_hint_unique): Remove static_cast.
+
+	PR libstdc++/66017
+	* include/bits/stl_tree.h (_Rb_tree_node): Use __aligned_membuf.
+	(_Rb_tree_iterator, _Rb_tree_const_iterator): Support construction
+	from _Base_ptr.
+	(_Rb_tree_const_iterator::_M_const_cast): Remove static_cast.
+	(_Rb_tree::begin, _Rb_tree::end): Remove static_cast.
+	* include/ext/aligned_buffer.h (__aligned_membuf): New type using
+	alignment of _Tp as a member subobject, not as a complete object.
+	* python/libstdcxx/v6/printers.py (StdRbtreeIteratorPrinter): Lookup
+	_Link_type manually as it might not be in the debug info.
+
+2015-05-26  Doug Evans  <dje@google.com>
+
+	* python/libstdcxx/v6/xmethods.py (UniquePtrMethodsMatcher): Add
+	operator-> support.
+	* testsuite/libstdc++-xmethods/unique_ptr.cc: Add tests for
+	operator->.
+
+2015-05-26  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/locale_conv.h: Fix copyright years.
+	* include/bits/quoted_string.h: Likewise.
+	* src/filesystem/Makefile.am: Likewise.
+	* testsuite/22_locale/conversions/buffer/1.cc: Likewise.
+	* testsuite/22_locale/conversions/buffer/requirements/typedefs.cc:
+	Likewise.
+	* testsuite/22_locale/conversions/string/1.cc: Likewise.
+	* testsuite/22_locale/conversions/string/2.cc: Likewise.
+	* testsuite/22_locale/conversions/string/3.cc: Likewise.
+	* testsuite/22_locale/conversions/string/requirements/typedefs-2.cc:
+	Likewise.
+	* testsuite/22_locale/conversions/string/requirements/typedefs.cc:
+	Likewise.
+	* testsuite/util/testsuite_fs.h: Likewise.
+
 2015-05-23  François Dumont  fdumont@gcc.gnu.org>
 
 	PR libstdc++/64657

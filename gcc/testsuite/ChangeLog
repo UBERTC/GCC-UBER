@@ -1,3 +1,232 @@
+2015-05-31  Eric Botcazou  <ebotcazou@adacore.com>
+
+	  * g++.dg/other/dump-ada-spec-4.C: New test.
+
+2015-05-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.dg/alias-8.c: Fix dg-warning.
+
+2015-05-30  Jan Hubicka  <hubicka@ucw.cz>
+
+	* gcc.dg/alias-8.c: Do not xfail.
+	* gcc.dg/pr62167.c: Prevent FRE.
+	* gcc.dg/alias-14.c: New testcase.
+
+2015-05-29  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/arm/simd/vextp64_1.c: Close comment on final line.
+
+2015-05-29  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR target/66215
+	* gcc.target/s390/hotpatch-1.c: Remove optimization options from
+	dg-options.
+	* gcc.target/s390/hotpatch-10.c: Likewise.
+	* gcc.target/s390/hotpatch-11.c: Likewise.
+	* gcc.target/s390/hotpatch-12.c: Likewise.
+	* gcc.target/s390/hotpatch-17.c: Likewise.
+	* gcc.target/s390/hotpatch-18.c: Likewise.
+	* gcc.target/s390/hotpatch-20.c: Likewise.
+	* gcc.target/s390/hotpatch-21.c: Likewise.
+	* gcc.target/s390/hotpatch-22.c: Likewise.
+	* gcc.target/s390/hotpatch-23.c: Likewise.
+	* gcc.target/s390/hotpatch-24.c: Likewise.
+	* gcc.target/s390/hotpatch-2.c: Likewise.  Adjust scan-assembler
+	to check for the exact nops too.
+	* gcc.target/s390/hotpatch-3.c: Likewise.
+	* gcc.target/s390/hotpatch-4.c: Likewise.
+	* gcc.target/s390/hotpatch-5.c: Likewise.
+	* gcc.target/s390/hotpatch-6.c: Likewise.
+	* gcc.target/s390/hotpatch-7.c: Likewise.
+	* gcc.target/s390/hotpatch-8.c: Likewise.
+	* gcc.target/s390/hotpatch-9.c: Likewise.
+	* gcc.target/s390/hotpatch-14.c: Likewise.
+	* gcc.target/s390/hotpatch-15.c: Likewise.
+	* gcc.target/s390/hotpatch-16.c: Likewise.
+	* gcc.target/s390/hotpatch-19.c: Likewise.
+	* gcc.target/s390/hotpatch-25.c: Likewise.  Remove
+	scan-assembler-times counting number of .align directives.
+	* gcc.target/s390/hotpatch-13.c: Remove optimization options from
+	dg-options.  Remove scan-assembler-times counting number of .align
+	directives.
+	* gcc.target/s390/hotpatch-26.c: New file.
+	* gcc.target/s390/hotpatch-27.c: New file.
+	* gcc.target/s390/hotpatch-28.c: New file.
+	* gcc.target/s390/s390.exp: Run hotpatch-*.c tests as torture tests
+	using -Os -O0 -O1 -O2 -O3 options.
+
+2015-05-29  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/vdup_lane_2.c: Close comment on final line.
+
+2015-05-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/66142
+	* gcc.dg/vect/pr66142.c: New test.
+
+2015-05-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66314
+	* gcc.dg/asan/pr66314.c: New testcase.
+
+2015-05-29  Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	* lib/gcc-dg.exp (cleanup-ipa-dump, cleanup-rtl-dump,
+	cleanup-tree-dump, cleanup-dump, cleanup-saved-temps): Remove.
+	Adjust all callers.
+	(schedule-cleanups, dg-keep-saved-temps): New proc.
+	(gcc-dg-test-1): Schedule cleanups.
+	* lib/profopt.exp (profopt-execute): Likewise.
+	* g++.dg/cdce3.C: Adjust expected line numbers.
+	* gcc.dg/cdce1.c: Likewise.
+	* gcc.dg/cdce2.c: Likewise.
+	* gcc.dg/strlenopt-22.c: Fix comment delimiter.
+	* gcc.dg/strlenopt-24.c: Likewise.
+	* gcc.dg/tree-ssa/vrp26.c: Likewise.
+	* gcc.dg/tree-ssa/vrp28.c: Likewise.
+	* obj-c++.dg/encode-2.mm: Likewise.
+
+2015-05-28  DJ Delorie  <dj@redhat.com>
+
+	* gcc.c-torture/execute/pr65369.c: Don't assume int is 32 bits.
+
+2015-05-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/discr43.adb: New test.
+
+2015-05-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/varsize_temp.adb: Rename into...
+	* gnat.dg/varsize1.adb: ...this.
+	* gnat.dg/varsize_copy.ad[sb]: Rename into...
+	* gnat.dg/varsize2.ad[sb]: ...this.
+	* gnat.dg/varsize3_1.adb: New test.
+	* gnat.dg/varsize3_2.adb: Likewise.
+	* gnat.dg/varsize3_3.adb: Likewise.
+	* gnat.dg/varsize3_4.adb: Likewise.
+	* gnat.dg/varsize3_5.adb: Likewise.
+	* gnat.dg/varsize3_6.adb: Likewise.
+	* gnat.dg/varsize3_pkg1.ads: New helper.
+	* gnat.dg/varsize3_pkg2.ads: Likewise.
+	* gnat.dg/varsize3_pkg3.ads: Likewise.
+
+2015-05-28  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/vect/slp-reduc-sad.c: New testcase.
+
+2015-05-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66142
+	* gcc.dg/tree-ssa/ssa-fre-44.c: Fixup.
+
+2015-05-28  Lawrence Velázquez  <vq@larryv.me>
+
+	PR target/63810
+	* gcc.dg/darwin-minversion-3.c: Update testcase.
+	* gcc.dg/darwin-minversion-4.c: Ditto.
+	* gcc.dg/darwin-minversion-5.c: New testcase.
+	* gcc.dg/darwin-minversion-6.c: Ditto.
+	* gcc.dg/darwin-minversion-7.c: Ditto.
+	* gcc.dg/darwin-minversion-8.c: Ditto.
+	* gcc.dg/darwin-minversion-9.c: Ditto.
+	* gcc.dg/darwin-minversion-10.c: Ditto.
+	* gcc.dg/darwin-minversion-11.c: Ditto.
+	* gcc.dg/darwin-minversion-12.c: Ditto.
+
+2015-05-28  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR rtl-optimization/66168
+	* gcc.c-torture/compile/pr66168.c: New test.
+
+2015-05-27  Jeff Law  <law@redhat.com>
+
+	PR target/39726
+	* gcc.dg/target/m68k/pr39726-1.c: New test.
+
+2015-05-27  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/66270
+	* g++.dg/ext/alias-canon3.C: New.
+
+2015-05-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66272
+	Revert parts of
+	2014-08-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62031
+	* gcc.dg/torture/pr66272.c: New testcase.
+
+2015-05-27  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/vect/slp-reduc-7.c: New testcase.
+
+2015-05-27  Honggyu Kim  <hong.gyu.kim@lge.com>
+
+	PR target/65358
+	* gcc.dg/pr65358.c: New test. 
+
+2015-05-27  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/65548
+	* gfortran.dg/allocate_with_source_5.f90: Correct errorneous
+	semantic.
+	* gfortran.dg/allocate_with_source_6.f90: New test.
+
+2015-05-26  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/atomic7_1.adb: New test.
+	* gnat.dg/atomic7_2.adb: Likewise.
+	* gnat.dg/atomic7_pkg1.ads: New helper.
+	* gnat.dg/atomic7_pkg2.ad[sb]: Likewise.
+
+2015-05-26  Michael Matz  <matz@suse.de>
+
+	PR middle-end/66251
+	* gcc.dg/vect/pr66251.c: New test.
+
+2015-05-26  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66142
+	* gcc.dg/tree-ssa/ssa-fre-44.c: New testcase.
+
+2015-05-26  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/66082
+	* gfortran.dg/allocatable_scalar_13.f90: New test
+
+2015-05-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/warn11.adb: New test.
+	* gnat.dg/specs/alignment2.ads: Add dg-warning directive.
+
+2015-05-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/vfa1_1.adb: New test.
+	* gnat.dg/vfa1_2.adb: Likewise.
+	* gnat.dg/vfa1_3.adb: Likewise.
+	* gnat.dg/vfa1_4.adb: Likewise.
+	* gnat.dg/vfa1_pkg.ads: New helper.
+
+2015-05-25  Alexander Monakov  <amonakov@ispras.ru>
+
+	* gcc.target/i386/pr66232-1.c: Adjust scan pattern.
+	* gcc.target/i386/pr66232-3.c: Likewise.
+
+2015-05-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66274
+	* gcc.target/i386/pr66274.c: New test.
+
+2015-05-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/renaming6.ad[sb]: New test.
+
+2015-05-25  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* gcc.target/i386/pr64317.c: Use 'dg-require-effective-target ia32'
+	and 'dg-require-effective-target pie'.
+
 2015-05-23  Nathan Sidwell  <nathan@acm.org>
 
 	PR c++/66243

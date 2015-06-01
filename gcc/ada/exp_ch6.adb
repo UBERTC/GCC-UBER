@@ -45,6 +45,7 @@ with Exp_Tss;  use Exp_Tss;
 with Exp_Unst; use Exp_Unst;
 with Exp_Util; use Exp_Util;
 with Freeze;   use Freeze;
+with Ghost;    use Ghost;
 with Inline;   use Inline;
 with Lib;      use Lib;
 with Namet;    use Namet;
@@ -997,10 +998,6 @@ package body Exp_Ch6 is
    -- Expand_Actuals --
    --------------------
 
-   --------------------
-   -- Expand_Actuals --
-   --------------------
-
    procedure Expand_Actuals (N : in out Node_Id; Subp : Entity_Id) is
       Loc       : constant Source_Ptr := Sloc (N);
       Actual    : Node_Id;
@@ -1257,7 +1254,6 @@ package body Exp_Ch6 is
             begin
                if Is_Renaming_Of_Object (Var)
                  and then Nkind (Renamed_Object (Var)) = N_Selected_Component
-                 and then Is_Entity_Name (Prefix (Renamed_Object (Var)))
                  and then Nkind (Original_Node (Prefix (Renamed_Object (Var))))
                    = N_Indexed_Component
                  and then
@@ -1857,7 +1853,7 @@ package body Exp_Ch6 is
                   and then
                     Nkind (Parent (Subp)) = N_Private_Extension_Declaration
                then
-                  if  Comes_From_Source (N) and then Is_Public_Subp then
+                  if Comes_From_Source (N) and then Is_Public_Subp then
                      Append_To (Post_Call, Make_Invariant_Call (Actual));
                   end if;
 
@@ -1979,7 +1975,7 @@ package body Exp_Ch6 is
                --  To deal with this, we replace the call by
 
                --    do
-               --       Tnnn : function-result-type renames function-call;
+               --       Tnnn : constant function-result-type := function-call;
                --       Post_Call actions
                --    in
                --       Tnnn;
@@ -1996,10 +1992,11 @@ package body Exp_Ch6 is
 
                begin
                   Prepend_To (Post_Call,
-                    Make_Object_Renaming_Declaration (Loc,
+                    Make_Object_Declaration (Loc,
                       Defining_Identifier => Tnnn,
-                      Subtype_Mark        => New_Occurrence_Of (FRTyp, Loc),
-                      Name                => Name));
+                      Object_Definition   => New_Occurrence_Of (FRTyp, Loc),
+                      Constant_Present    => True,
+                      Expression          => Name));
 
                   Rewrite (N,
                     Make_Expression_With_Actions (Loc,
@@ -2018,9 +2015,12 @@ package body Exp_Ch6 is
 
                   --  Reset calling argument to point to function call inside
                   --  the expression with actions so the caller can continue
-                  --  to process the call.
+                  --  to process the call. In spite of the fact that it is
+                  --  marked Analyzed above, it may be rewritten by Remove_
+                  --  Side_Effects if validity checks are present, so go back
+                  --  to original call.
 
-                  N := Name;
+                  N := Original_Node (Name);
                end;
 
             --  If not the special Ada 2012 case of a function call, then
@@ -4917,8 +4917,20 @@ package body Exp_Ch6 is
    ---------------------------------------
 
    procedure Expand_N_Procedure_Call_Statement (N : Node_Id) is
+      GM : constant Ghost_Mode_Type := Ghost_Mode;
+
    begin
+      --  The procedure call may be Ghost if the name is Ghost. Set the mode
+      --  now to ensure that any nodes generated during expansion are properly
+      --  flagged as ignored Ghost.
+
+      Set_Ghost_Mode (N);
       Expand_Call (N);
+
+      --  Restore the original Ghost mode once analysis and expansion have
+      --  taken place.
+
+      Ghost_Mode := GM;
    end Expand_N_Procedure_Call_Statement;
 
    --------------------------------------
@@ -4993,8 +5005,9 @@ package body Exp_Ch6 is
    --  Wrap thread body
 
    procedure Expand_N_Subprogram_Body (N : Node_Id) is
-      Loc      : constant Source_Ptr := Sloc (N);
-      H        : constant Node_Id    := Handled_Statement_Sequence (N);
+      GM       : constant Ghost_Mode_Type := Ghost_Mode;
+      Loc      : constant Source_Ptr      := Sloc (N);
+      HSS      : constant Node_Id         := Handled_Statement_Sequence (N);
       Body_Id  : Entity_Id;
       Except_H : Node_Id;
       L        : List_Id;
@@ -5005,6 +5018,9 @@ package body Exp_Ch6 is
       --  statement is not already a return or a goto statement. Note that
       --  the latter test is not critical, it does not matter if we add a few
       --  extra returns, since they get eliminated anyway later on.
+
+      procedure Restore_Globals;
+      --  Restore the values of all saved global variables
 
       ----------------
       -- Add_Return --
@@ -5039,8 +5055,8 @@ package body Exp_Ch6 is
               and then not Comes_From_Source (Parent (S))
             then
                Loc := Sloc (Last_Stmt);
-            elsif Present (End_Label (H)) then
-               Loc := Sloc (End_Label (H));
+            elsif Present (End_Label (HSS)) then
+               Loc := Sloc (End_Label (HSS));
             else
                Loc := Sloc (Last_Stmt);
             end if;
@@ -5078,9 +5094,24 @@ package body Exp_Ch6 is
          end if;
       end Add_Return;
 
+      ---------------------
+      -- Restore_Globals --
+      ---------------------
+
+      procedure Restore_Globals is
+      begin
+         Ghost_Mode := GM;
+      end Restore_Globals;
+
    --  Start of processing for Expand_N_Subprogram_Body
 
    begin
+      --  The subprogram body may be subject to pragma Ghost with policy
+      --  Ignore. Set the mode now to ensure that any nodes generated during
+      --  expansion are flagged as ignored Ghost.
+
+      Set_Ghost_Mode (N);
+
       --  Set L to either the list of declarations if present, or to the list
       --  of statements if no declarations are present. This is used to insert
       --  new stuff at the start.
@@ -5088,7 +5119,7 @@ package body Exp_Ch6 is
       if Is_Non_Empty_List (Declarations (N)) then
          L := Declarations (N);
       else
-         L := Statements (H);
+         L := Statements (HSS);
       end if;
 
       --  If local-exception-to-goto optimization active, insert dummy push
@@ -5113,8 +5144,8 @@ package body Exp_Ch6 is
             --  or to the last declaration if there are no statements present.
             --  It is the node after which the pop's are generated.
 
-            if Is_Non_Empty_List (Statements (H)) then
-               LS := Last (Statements (H));
+            if Is_Non_Empty_List (Statements (HSS)) then
+               LS := Last (Statements (HSS));
             else
                LS := Last (L);
             end if;
@@ -5256,6 +5287,8 @@ package body Exp_Ch6 is
             Set_Handled_Statement_Sequence (N,
               Make_Handled_Sequence_Of_Statements (Loc,
                 Statements => New_List (Make_Null_Statement (Loc))));
+
+            Restore_Globals;
             return;
          end if;
       end if;
@@ -5296,10 +5329,10 @@ package body Exp_Ch6 is
       --  the subprogram.
 
       if Ekind_In (Spec_Id, E_Procedure, E_Generic_Procedure) then
-         Add_Return (Statements (H));
+         Add_Return (Statements (HSS));
 
-         if Present (Exception_Handlers (H)) then
-            Except_H := First_Non_Pragma (Exception_Handlers (H));
+         if Present (Exception_Handlers (HSS)) then
+            Except_H := First_Non_Pragma (Exception_Handlers (HSS));
             while Present (Except_H) loop
                Add_Return (Statements (Except_H));
                Next_Non_Pragma (Except_H);
@@ -5334,10 +5367,10 @@ package body Exp_Ch6 is
 
       elsif Has_Missing_Return (Spec_Id) then
          declare
-            Hloc : constant Source_Ptr := Sloc (H);
+            Hloc : constant Source_Ptr := Sloc (HSS);
             Blok : constant Node_Id    :=
                      Make_Block_Statement (Hloc,
-                       Handled_Statement_Sequence => H);
+                       Handled_Statement_Sequence => HSS);
             Rais : constant Node_Id    :=
                      Make_Raise_Program_Error (Hloc,
                        Reason => PE_Missing_Return);
@@ -5390,6 +5423,8 @@ package body Exp_Ch6 is
       then
          Unest_Bodies.Append ((Spec_Id, N));
       end if;
+
+      Restore_Globals;
    end Expand_N_Subprogram_Body;
 
    -----------------------------------
@@ -5416,14 +5451,21 @@ package body Exp_Ch6 is
    --  If the declaration is for a null procedure, emit null body
 
    procedure Expand_N_Subprogram_Declaration (N : Node_Id) is
-      Loc       : constant Source_Ptr := Sloc (N);
-      Subp      : constant Entity_Id  := Defining_Entity (N);
-      Scop      : constant Entity_Id  := Scope (Subp);
-      Prot_Decl : Node_Id;
+      Loc       : constant Source_Ptr      := Sloc (N);
+      GM        : constant Ghost_Mode_Type := Ghost_Mode;
+      Subp      : constant Entity_Id       := Defining_Entity (N);
+      Scop      : constant Entity_Id       := Scope (Subp);
       Prot_Bod  : Node_Id;
+      Prot_Decl : Node_Id;
       Prot_Id   : Entity_Id;
 
    begin
+      --  The subprogram declaration may be subject to pragma Ghost with policy
+      --  Ignore. Set the mode now to ensure that any nodes generated during
+      --  expansion are flagged as ignored Ghost.
+
+      Set_Ghost_Mode (N);
+
       --  In SPARK, subprogram declarations are only allowed in package
       --  specifications.
 
@@ -5524,6 +5566,11 @@ package body Exp_Ch6 is
             Set_Is_Inlined (Subp, False);
          end;
       end if;
+
+      --  Restore the original Ghost mode once analysis and expansion have
+      --  taken place.
+
+      Ghost_Mode := GM;
    end Expand_N_Subprogram_Declaration;
 
    --------------------------------
@@ -6619,111 +6666,23 @@ package body Exp_Ch6 is
       if Ekind (Scope_Id) = E_Function
         and then Present (Postconditions_Proc (Scope_Id))
       then
+         --  In the case of discriminated objects, we have created a
+         --  constrained subtype above, and used the underlying type. This
+         --  transformation is post-analysis and harmless, except that now the
+         --  call to the post-condition will be analyzed and the type kinds
+         --  have to match.
+
+         if Nkind (Exp) = N_Unchecked_Type_Conversion
+           and then Is_Private_Type (R_Type) /= Is_Private_Type (Etype (Exp))
+         then
+            Rewrite (Exp, Expression (Relocate_Node (Exp)));
+         end if;
+
          --  We are going to reference the returned value twice in this case,
          --  once in the call to _Postconditions, and once in the actual return
-         --  statement, but we can't have side effects happening twice, and in
-         --  any case for efficiency we don't want to do the computation twice.
+         --  statement, but we can't have side effects happening twice.
 
-         --  If the returned expression is an entity name, we don't need to
-         --  worry since it is efficient and safe to reference it twice, that's
-         --  also true for literals other than string literals, and for the
-         --  case of X.all where X is an entity name.
-
-         if Is_Entity_Name (Exp)
-           or else Nkind_In (Exp, N_Character_Literal,
-                                  N_Integer_Literal,
-                                  N_Real_Literal)
-           or else (Nkind (Exp) = N_Explicit_Dereference
-                     and then Is_Entity_Name (Prefix (Exp)))
-         then
-            null;
-
-         --  Otherwise we are going to need a temporary to capture the value
-
-         else
-            declare
-               ExpR : Node_Id            := Relocate_Node (Exp);
-               Tnn  : constant Entity_Id := Make_Temporary (Loc, 'T', ExpR);
-
-            begin
-               --  In the case of discriminated objects, we have created a
-               --  constrained subtype above, and used the underlying type.
-               --  This transformation is post-analysis and harmless, except
-               --  that now the call to the post-condition will be analyzed and
-               --  type kinds have to match.
-
-               if Nkind (ExpR) = N_Unchecked_Type_Conversion
-                 and then
-                   Is_Private_Type (R_Type) /= Is_Private_Type (Etype (ExpR))
-               then
-                  ExpR := Expression (ExpR);
-               end if;
-
-               --  For a complex expression of an elementary type, capture
-               --  value in the temporary and use it as the reference.
-
-               if Is_Elementary_Type (R_Type) then
-                  Insert_Action (Exp,
-                    Make_Object_Declaration (Loc,
-                      Defining_Identifier => Tnn,
-                      Constant_Present    => True,
-                      Object_Definition   => New_Occurrence_Of (R_Type, Loc),
-                      Expression          => ExpR),
-                    Suppress => All_Checks);
-
-                  Rewrite (Exp, New_Occurrence_Of (Tnn, Loc));
-
-               --  If we have something we can rename, generate a renaming of
-               --  the object and replace the expression with a reference
-
-               elsif Is_Object_Reference (Exp) then
-                  Insert_Action (Exp,
-                    Make_Object_Renaming_Declaration (Loc,
-                      Defining_Identifier => Tnn,
-                      Subtype_Mark        => New_Occurrence_Of (R_Type, Loc),
-                      Name                => ExpR),
-                    Suppress => All_Checks);
-
-                  Rewrite (Exp, New_Occurrence_Of (Tnn, Loc));
-
-               --  Otherwise we have something like a string literal or an
-               --  aggregate. We could copy the value, but that would be
-               --  inefficient. Instead we make a reference to the value and
-               --  capture this reference with a renaming, the expression is
-               --  then replaced by a dereference of this renaming.
-
-               else
-                  --  For now, copy the value, since the code below does not
-                  --  seem to work correctly ???
-
-                  Insert_Action (Exp,
-                    Make_Object_Declaration (Loc,
-                      Defining_Identifier => Tnn,
-                      Constant_Present    => True,
-                      Object_Definition   => New_Occurrence_Of (R_Type, Loc),
-                      Expression          => Relocate_Node (Exp)),
-                    Suppress => All_Checks);
-
-                  Rewrite (Exp, New_Occurrence_Of (Tnn, Loc));
-
-                  --  Insert_Action (Exp,
-                  --    Make_Object_Renaming_Declaration (Loc,
-                  --      Defining_Identifier => Tnn,
-                  --      Access_Definition =>
-                  --        Make_Access_Definition (Loc,
-                  --          All_Present  => True,
-                  --          Subtype_Mark => New_Occurrence_Of (R_Type, Loc)),
-                  --      Name =>
-                  --        Make_Reference (Loc,
-                  --          Prefix => Relocate_Node (Exp))),
-                  --    Suppress => All_Checks);
-
-                  --  Rewrite (Exp,
-                  --    Make_Explicit_Dereference (Loc,
-                  --      Prefix => New_Occurrence_Of (Tnn, Loc)));
-               end if;
-            end;
-         end if;
+         Remove_Side_Effects (Exp);
 
          --  Generate call to _Postconditions
 
@@ -6731,7 +6690,7 @@ package body Exp_Ch6 is
            Make_Procedure_Call_Statement (Loc,
              Name                   =>
                New_Occurrence_Of (Postconditions_Proc (Scope_Id), Loc),
-             Parameter_Associations => New_List (Duplicate_Subexpr (Exp))));
+             Parameter_Associations => New_List (New_Copy_Tree (Exp))));
       end if;
 
       --  Ada 2005 (AI-251): If this return statement corresponds with an
@@ -7380,7 +7339,7 @@ package body Exp_Ch6 is
                Prag := Contract_Test_Cases (Items);
                while Present (Prag) loop
                   if Pragma_Name (Prag) = Name_Contract_Cases then
-                     Expand_Contract_Cases
+                     Expand_Pragma_Contract_Cases
                        (CCs     => Prag,
                         Subp_Id => Subp_Id,
                         Decls   => Declarations (N),
@@ -8946,6 +8905,9 @@ package body Exp_Ch6 is
       Res_Decl        : Node_Id;
       Result_Subt     : Entity_Id;
 
+      Definite : Boolean;
+      --  True for definite function result subtype
+
    begin
       --  Step past qualification or unchecked conversion (the latter can occur
       --  in cases of calls to 'Input).
@@ -8981,6 +8943,7 @@ package body Exp_Ch6 is
       end if;
 
       Result_Subt := Etype (Function_Id);
+      Definite    := Is_Definite_Subtype (Underlying_Type (Result_Subt));
 
       --  Create an access type designating the function's result subtype. We
       --  use the type of the original call because it may be a call to an
@@ -9001,7 +8964,7 @@ package body Exp_Ch6 is
 
       --  The access type and its accompanying object must be inserted after
       --  the object declaration in the constrained case, so that the function
-      --  call can be passed access to the object. In the unconstrained case,
+      --  call can be passed access to the object. In the indefinite case,
       --  or if the object declaration is for a return object, the access type
       --  and object must be inserted before the object, since the object
       --  declaration is rewritten to be a renaming of a dereference of the
@@ -9009,7 +8972,7 @@ package body Exp_Ch6 is
       --  the result object is in a different (transient) scope, so won't
       --  cause freezing.
 
-      if Is_Constrained (Underlying_Type (Result_Subt))
+      if Definite
         and then not Is_Return_Object (Defining_Identifier (Object_Decl))
       then
          Insert_After_And_Analyze (Object_Decl, Ptr_Typ_Decl);
@@ -9029,11 +8992,11 @@ package body Exp_Ch6 is
          Freeze_Expression (Ptr_Typ_Freeze_Ref);
       end;
 
-      --  If the the object is a return object of an enclosing build-in-place
+      --  If the object is a return object of an enclosing build-in-place
       --  function, then the implicit build-in-place parameters of the
       --  enclosing function are simply passed along to the called function.
       --  (Unfortunately, this won't cover the case of extension aggregates
-      --  where the ancestor part is a build-in-place unconstrained function
+      --  where the ancestor part is a build-in-place indefinite function
       --  call that should be passed along the caller's parameters. Currently
       --  those get mishandled by reassigning the result of the call to the
       --  aggregate return object, when the call result should really be
@@ -9069,7 +9032,7 @@ package body Exp_Ch6 is
                     Loc),
                Pool_Actual => Pool_Actual);
 
-         --  Otherwise, if enclosing function has a constrained result subtype,
+         --  Otherwise, if enclosing function has a definite result subtype,
          --  then caller allocation will be used.
 
          else
@@ -9099,12 +9062,12 @@ package body Exp_Ch6 is
                   (Build_In_Place_Formal (Enclosing_Func, BIP_Object_Access),
                    Loc));
 
-      --  In the constrained case, add an implicit actual to the function call
+      --  In the definite case, add an implicit actual to the function call
       --  that provides access to the declared object. An unchecked conversion
       --  to the (specific) result type of the function is inserted to handle
       --  the case where the object is declared with a class-wide type.
 
-      elsif Is_Constrained (Underlying_Type (Result_Subt)) then
+      elsif Definite then
          Caller_Object :=
             Make_Unchecked_Type_Conversion (Loc,
               Subtype_Mark => New_Occurrence_Of (Result_Subt, Loc),
@@ -9114,12 +9077,12 @@ package body Exp_Ch6 is
          --  parameter must be passed indicating that the caller is allocating
          --  the result object. This is needed because such a function can be
          --  called as a dispatching operation and must be treated similarly
-         --  to functions with unconstrained result subtypes.
+         --  to functions with indefinite result subtypes.
 
          Add_Unconstrained_Actuals_To_Build_In_Place_Call
            (Func_Call, Function_Id, Alloc_Form => Caller_Allocation);
 
-      --  In other unconstrained cases, pass an indication to do the allocation
+      --  In other indefinite cases, pass an indication to do the allocation
       --  on the secondary stack and set Caller_Object to Empty so that a null
       --  value will be passed for the caller's object address. A transient
       --  scope is established to ensure eventual cleanup of the result.
@@ -9179,11 +9142,11 @@ package body Exp_Ch6 is
 
       Insert_After_And_Analyze (Ptr_Typ_Decl, Res_Decl);
 
-      --  If the result subtype of the called function is constrained and
-      --  is not itself the return expression of an enclosing BIP function,
-      --  then mark the object as having no initialization.
+      --  If the result subtype of the called function is definite and is not
+      --  itself the return expression of an enclosing BIP function, then mark
+      --  the object as having no initialization.
 
-      if Is_Constrained (Underlying_Type (Result_Subt))
+      if Definite
         and then not Is_Return_Object (Defining_Identifier (Object_Decl))
       then
          --  The related object declaration is encased in a transient block
@@ -9207,7 +9170,7 @@ package body Exp_Ch6 is
          Set_Expression (Object_Decl, Empty);
          Set_No_Initialization (Object_Decl);
 
-      --  In case of an unconstrained result subtype, or if the call is the
+      --  In case of an indefinite result subtype, or if the call is the
       --  return expression of an enclosing BIP function, rewrite the object
       --  declaration as an object renaming where the renamed object is a
       --  dereference of <function_Call>'reference:

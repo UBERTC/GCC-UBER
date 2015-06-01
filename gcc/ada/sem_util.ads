@@ -455,7 +455,7 @@ package Sem_Util is
    --  2012 stand-alone object of an anonymous access type, then return the
    --  static accesssibility level of the object. In that case, the dynamic
    --  accessibility level of the object may take on values in a range. The low
-   --  bound of of that range is returned by Type_Access_Level; this function
+   --  bound of that range is returned by Type_Access_Level; this function
    --  yields the high bound of that range. Also differs from Type_Access_Level
    --  in the case of a descendant of a generic formal type (returns Int'Last
    --  instead of 0).
@@ -529,11 +529,14 @@ package Sem_Util is
    --  related expression evaluates to True.
 
    function Enclosing_Comp_Unit_Node (N : Node_Id) return Node_Id;
-   --  Returns the enclosing N_Compilation_Unit Node that is the root of a
+   --  Returns the enclosing N_Compilation_Unit node that is the root of a
    --  subtree containing N.
 
    function Enclosing_CPP_Parent (Typ : Entity_Id) return Entity_Id;
    --  Returns the closest ancestor of Typ that is a CPP type.
+
+   function Enclosing_Declaration (N : Node_Id) return Node_Id;
+   --  Returns the declaration node enclosing N, if any, or Empty otherwise
 
    function Enclosing_Generic_Body
      (N : Node_Id) return Node_Id;
@@ -552,9 +555,20 @@ package Sem_Util is
    --  caller is responsible for ensuring this condition) or other specified
    --  entity.
 
+   function Enclosing_Lib_Unit_Node (N : Node_Id) return Node_Id;
+   --  Returns the N_Compilation_Unit node of the library unit that is directly
+   --  or indirectly (through a subunit) at the root of a subtree containing
+   --  N. This may be either the same as Enclosing_Comp_Unit_Node, or if
+   --  Enclosing_Comp_Unit_Node returns a subunit, then the corresponding
+   --  library unit. If no such item is found, returns Empty.
+
    function Enclosing_Package (E : Entity_Id) return Entity_Id;
    --  Utility function to return the Ada entity of the package enclosing
    --  the entity E, if any. Returns Empty if no enclosing package.
+
+   function Enclosing_Package_Or_Subprogram (E : Entity_Id) return Entity_Id;
+   --  Returns the entity of the package or subprogram enclosing E, if any.
+   --  Returns Empty if no enclosing package or subprogram.
 
    function Enclosing_Subprogram (E : Entity_Id) return Entity_Id;
    --  Utility function to return the Ada entity of the subprogram enclosing
@@ -809,15 +823,20 @@ package Sem_Util is
    --  returned. Otherwise the Etype of the node is returned.
 
    function Get_Body_From_Stub (N : Node_Id) return Node_Id;
-   --  Return the body node for a stub (subprogram or package)
+   --  Return the body node for a stub.
 
    function Get_Cursor_Type
      (Aspect : Node_Id;
       Typ    : Entity_Id) return Entity_Id;
-   --  Find Cursor type in scope of formal container Typ, by locating primitive
-   --  operation First. For use in resolving the other primitive operations
-   --  of an Iterable type and expanding loops and quantified expressions
-   --  over formal containers.
+   --  Find Cursor type in scope of type Typ with Iterable aspect, by locating
+   --  primitive operation First. For use in resolving the other primitive
+   --  operations of an Iterable type and expanding loops and quantified
+   --  expressions over formal containers.
+
+   function Get_Cursor_Type (Typ : Entity_Id) return Entity_Id;
+   --  Find Cursor type in scope of type Typ with Iterable aspect, by locating
+   --  primitive operation First. For use after resolving the primitive
+   --  operations of an Iterable type.
 
    function Get_Default_External_Name (E : Node_Or_Entity_Id) return Node_Id;
    --  This is used to construct the string literal node representing a
@@ -906,21 +925,24 @@ package Sem_Util is
    --  not a renamed entity, returns its argument. It is an error to call this
    --  with any other kind of entity.
 
+   function Get_Return_Object (N : Node_Id) return Entity_Id;
+   --  Given an extended return statement, return the corresponding return
+   --  object, identified as the one for which Is_Return_Object = True.
+
    function Get_Subprogram_Entity (Nod : Node_Id) return Entity_Id;
    --  Nod is either a procedure call statement, or a function call, or an
    --  accept statement node. This procedure finds the Entity_Id of the related
    --  subprogram or entry and returns it, or if no subprogram can be found,
    --  returns Empty.
 
-   function Get_Subprogram_Body (E : Entity_Id) return Node_Id;
-   --  Given the entity for a subprogram (E_Function or E_Procedure), return
-   --  the corresponding N_Subprogram_Body node. If the corresponding body
-   --  is missing (as for an imported subprogram), return Empty.
-
    function Get_Task_Body_Procedure (E : Entity_Id) return Node_Id;
    pragma Inline (Get_Task_Body_Procedure);
    --  Given an entity for a task type or subtype, retrieves the
    --  Task_Body_Procedure field from the corresponding task type declaration.
+
+   function Get_User_Defined_Eq (E : Entity_Id) return Entity_Id;
+   --  For a type entity, return the entity of the primitive equality function
+   --  for the type if it exists, otherwise return Empty.
 
    function Has_Access_Values (T : Entity_Id) return Boolean;
    --  Returns true if type or subtype T is an access type, or has a component
@@ -1175,6 +1197,9 @@ package Sem_Util is
    function Is_Attribute_Result (N : Node_Id) return Boolean;
    --  Determine whether node N denotes attribute 'Result
 
+   function Is_Attribute_Update (N : Node_Id) return Boolean;
+   --  Determine whether node N denotes attribute 'Update
+
    function Is_Body_Or_Package_Declaration (N : Node_Id) return Boolean;
    --  Determine whether node N denotes a body or a package declaration
 
@@ -1222,6 +1247,12 @@ package Sem_Util is
    --  First determine whether type T is an interface and then check whether
    --  it is of protected, synchronized or task kind.
 
+   function Is_Current_Instance (N : Node_Id) return Boolean;
+   --  Predicate is true if N legally denotes a type name within its own
+   --  declaration. Prior to Ada 2012 this covered only synchronized type
+   --  declarations. In Ada 2012 it also covers type and subtype declarations
+   --  with aspects: Invariant, Predicate, and Default_Initial_Condition.
+
    function Is_Declaration (N : Node_Id) return Boolean;
    --  Determine whether arbitrary node N denotes a declaration
 
@@ -1247,6 +1278,15 @@ package Sem_Util is
    --  Returns True if type T1 is a descendent of type T2, and false otherwise.
    --  This is the RM definition, a type is a descendent of another type if it
    --  is the same type or is derived from a descendent of the other type.
+
+   function Is_Double_Precision_Floating_Point_Type
+     (E : Entity_Id) return Boolean;
+   --  Return whether E is a double precision floating point type,
+   --  characterized by:
+   --  . machine_radix = 2
+   --  . machine_mantissa = 53
+   --  . machine_emax = 2**10
+   --  . machine_emin = 3 - machine_emax
 
    function Is_Effectively_Volatile (Id : Entity_Id) return Boolean;
    --  The SPARK property "effectively volatile" applies to both types and
@@ -1400,6 +1440,9 @@ package Sem_Util is
    function Is_Renamed_Entry (Proc_Nam : Entity_Id) return Boolean;
    --  Return True if Proc_Nam is a procedure renaming of an entry
 
+   function Is_Renaming_Declaration (N : Node_Id) return Boolean;
+   --  Determine whether arbitrary node N denotes a renaming declaration
+
    function Is_Reversible_Iterator (Typ : Entity_Id) return Boolean;
    --  AI05-0139-2: Check whether Typ is derived from the predefined interface
    --  Ada.Iterator_Interfaces.Reversible_Iterator.
@@ -1409,6 +1452,15 @@ package Sem_Util is
    --  As described in Sinfo, Selector_Names are special because they
    --  represent use of the N_Identifier node for a true identifier, when
    --  normally such nodes represent a direct name.
+
+   function Is_Single_Precision_Floating_Point_Type
+     (E : Entity_Id) return Boolean;
+   --  Return whether E is a single precision floating point type,
+   --  characterized by:
+   --  . machine_radix = 2
+   --  . machine_mantissa = 24
+   --  . machine_emax = 2**7
+   --  . machine_emin = 3 - machine_emax
 
    function Is_SPARK_05_Initialization_Expr (N : Node_Id) return Boolean;
    --  Determines if the tree referenced by N represents an initialization

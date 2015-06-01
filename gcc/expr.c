@@ -199,7 +199,7 @@ init_expr_target (void)
 
   /* A scratch register we can modify in-place below to avoid
      useless RTL allocations.  */
-  reg = gen_rtx_REG (word_mode, FIRST_PSEUDO_REGISTER);
+  reg = gen_rtx_REG (word_mode, LAST_VIRTUAL_REGISTER + 1);
 
   insn = rtx_alloc (INSN);
   pat = gen_rtx_SET (NULL_RTX, NULL_RTX);
@@ -249,7 +249,7 @@ init_expr_target (void)
 	  }
     }
 
-  mem = gen_rtx_MEM (VOIDmode, gen_raw_REG (Pmode, FIRST_PSEUDO_REGISTER));
+  mem = gen_rtx_MEM (VOIDmode, gen_raw_REG (Pmode, LAST_VIRTUAL_REGISTER + 1));
 
   for (mode = GET_CLASS_NARROWEST_MODE (MODE_FLOAT); mode != VOIDmode;
        mode = GET_MODE_WIDER_MODE (mode))
@@ -4104,12 +4104,35 @@ emit_single_push_insn (machine_mode mode, rtx x, tree type)
 }
 #endif
 
+/* If reading SIZE bytes from X will end up reading from
+   Y return the number of bytes that overlap.  Return -1
+   if there is no overlap or -2 if we can't determine
+   (for example when X and Y have different base registers).  */
+
+static int
+memory_load_overlap (rtx x, rtx y, HOST_WIDE_INT size)
+{
+  rtx tmp = plus_constant (Pmode, x, size);
+  rtx sub = simplify_gen_binary (MINUS, Pmode, tmp, y);
+
+  if (!CONST_INT_P (sub))
+    return -2;
+
+  HOST_WIDE_INT val = INTVAL (sub);
+
+  return IN_RANGE (val, 1, size) ? val : -1;
+}
+
 /* Generate code to push X onto the stack, assuming it has mode MODE and
    type TYPE.
    MODE is redundant except when X is a CONST_INT (since they don't
    carry mode info).
    SIZE is an rtx for the size of data to be copied (in bytes),
    needed only if X is BLKmode.
+   Return true if successful.  May return false if asked to push a
+   partial argument during a sibcall optimization (as specified by
+   SIBCALL_P) and the incoming and outgoing pointers cannot be shown
+   to not overlap.
 
    ALIGN (in bits) is maximum alignment we can assume.
 
@@ -4135,11 +4158,11 @@ emit_single_push_insn (machine_mode mode, rtx x, tree type)
    for arguments passed in registers.  If nonzero, it will be the number
    of bytes required.  */
 
-void
+bool
 emit_push_insn (rtx x, machine_mode mode, tree type, rtx size,
 		unsigned int align, int partial, rtx reg, int extra,
 		rtx args_addr, rtx args_so_far, int reg_parm_stack_space,
-		rtx alignment_pad)
+		rtx alignment_pad, bool sibcall_p)
 {
   rtx xinner;
   enum direction stack_direction = STACK_GROWS_DOWNWARD ? downward : upward;
@@ -4156,6 +4179,10 @@ emit_push_insn (rtx x, machine_mode mode, tree type, rtx size,
       where_pad = (where_pad == downward ? upward : downward);
 
   xinner = x;
+
+  int nregs = partial / UNITS_PER_WORD;
+  rtx *tmp_regs = NULL;
+  int overlapping = 0;
 
   if (mode == BLKmode
       || (STRICT_ALIGNMENT && align < GET_MODE_ALIGNMENT (mode)))
@@ -4287,6 +4314,43 @@ emit_push_insn (rtx x, machine_mode mode, tree type, rtx size,
 	     PARM_BOUNDARY.  Assume the caller isn't lying.  */
 	  set_mem_align (target, align);
 
+	  /* If part should go in registers and pushing to that part would
+	     overwrite some of the values that need to go into regs, load the
+	     overlapping values into temporary pseudos to be moved into the hard
+	     regs at the end after the stack pushing has completed.
+	     We cannot load them directly into the hard regs here because
+	     they can be clobbered by the block move expansions.
+	     See PR 65358.  */
+
+	  if (partial > 0 && reg != 0 && mode == BLKmode
+	      && GET_CODE (reg) != PARALLEL)
+	    {
+	      overlapping = memory_load_overlap (XEXP (x, 0), temp, partial);
+	      if (overlapping > 0)
+	        {
+		  gcc_assert (overlapping % UNITS_PER_WORD == 0);
+		  overlapping /= UNITS_PER_WORD;
+
+		  tmp_regs = XALLOCAVEC (rtx, overlapping);
+
+		  for (int i = 0; i < overlapping; i++)
+		    tmp_regs[i] = gen_reg_rtx (word_mode);
+
+		  for (int i = 0; i < overlapping; i++)
+		    emit_move_insn (tmp_regs[i],
+				    operand_subword_force (target, i, mode));
+	        }
+	      else if (overlapping == -1)
+		overlapping = 0;
+	      /* Could not determine whether there is overlap.
+	         Fail the sibcall.  */
+	      else
+		{
+		  overlapping = 0;
+		  if (sibcall_p)
+		    return false;
+		}
+	    }
 	  emit_block_move (target, xinner, size, BLOCK_OP_CALL_PARM);
 	}
     }
@@ -4341,12 +4405,13 @@ emit_push_insn (rtx x, machine_mode mode, tree type, rtx size,
 	 has a size a multiple of a word.  */
       for (i = size - 1; i >= not_stack; i--)
 	if (i >= not_stack + offset)
-	  emit_push_insn (operand_subword_force (x, i, mode),
+	  if (!emit_push_insn (operand_subword_force (x, i, mode),
 			  word_mode, NULL_TREE, NULL_RTX, align, 0, NULL_RTX,
 			  0, args_addr,
 			  GEN_INT (args_offset + ((i - not_stack + skip)
 						  * UNITS_PER_WORD)),
-			  reg_parm_stack_space, alignment_pad);
+			  reg_parm_stack_space, alignment_pad, sibcall_p))
+	    return false;
     }
   else
     {
@@ -4389,9 +4454,8 @@ emit_push_insn (rtx x, machine_mode mode, tree type, rtx size,
 	}
     }
 
-  /* If part should go in registers, copy that part
-     into the appropriate registers.  Do this now, at the end,
-     since mem-to-mem copies above may do function calls.  */
+  /* Move the partial arguments into the registers and any overlapping
+     values that we moved into the pseudos in tmp_regs.  */
   if (partial > 0 && reg != 0)
     {
       /* Handle calls that pass values in multiple non-contiguous locations.
@@ -4399,9 +4463,15 @@ emit_push_insn (rtx x, machine_mode mode, tree type, rtx size,
       if (GET_CODE (reg) == PARALLEL)
 	emit_group_load (reg, x, type, -1);
       else
-	{
+        {
 	  gcc_assert (partial % UNITS_PER_WORD == 0);
-	  move_block_to_reg (REGNO (reg), x, partial / UNITS_PER_WORD, mode);
+	  move_block_to_reg (REGNO (reg), x, nregs - overlapping, mode);
+
+	  for (int i = 0; i < overlapping; i++)
+	    emit_move_insn (gen_rtx_REG (word_mode, REGNO (reg)
+						    + nregs - overlapping + i),
+			    tmp_regs[i]);
+
 	}
     }
 
@@ -4410,6 +4480,8 @@ emit_push_insn (rtx x, machine_mode mode, tree type, rtx size,
 
   if (alignment_pad && args_addr == 0)
     anti_adjust_stack (alignment_pad);
+
+  return true;
 }
 
 /* Return X if X can be used as a subtarget in a sequence of arithmetic
@@ -6951,139 +7023,6 @@ get_inner_reference (tree exp, HOST_WIDE_INT *pbitsize,
     *pmode = mode;
 
   return exp;
-}
-
-/* Return a tree of sizetype representing the size, in bytes, of the element
-   of EXP, an ARRAY_REF or an ARRAY_RANGE_REF.  */
-
-tree
-array_ref_element_size (tree exp)
-{
-  tree aligned_size = TREE_OPERAND (exp, 3);
-  tree elmt_type = TREE_TYPE (TREE_TYPE (TREE_OPERAND (exp, 0)));
-  location_t loc = EXPR_LOCATION (exp);
-
-  /* If a size was specified in the ARRAY_REF, it's the size measured
-     in alignment units of the element type.  So multiply by that value.  */
-  if (aligned_size)
-    {
-      /* ??? tree_ssa_useless_type_conversion will eliminate casts to
-	 sizetype from another type of the same width and signedness.  */
-      if (TREE_TYPE (aligned_size) != sizetype)
-	aligned_size = fold_convert_loc (loc, sizetype, aligned_size);
-      return size_binop_loc (loc, MULT_EXPR, aligned_size,
-			     size_int (TYPE_ALIGN_UNIT (elmt_type)));
-    }
-
-  /* Otherwise, take the size from that of the element type.  Substitute
-     any PLACEHOLDER_EXPR that we have.  */
-  else
-    return SUBSTITUTE_PLACEHOLDER_IN_EXPR (TYPE_SIZE_UNIT (elmt_type), exp);
-}
-
-/* Return a tree representing the lower bound of the array mentioned in
-   EXP, an ARRAY_REF or an ARRAY_RANGE_REF.  */
-
-tree
-array_ref_low_bound (tree exp)
-{
-  tree domain_type = TYPE_DOMAIN (TREE_TYPE (TREE_OPERAND (exp, 0)));
-
-  /* If a lower bound is specified in EXP, use it.  */
-  if (TREE_OPERAND (exp, 2))
-    return TREE_OPERAND (exp, 2);
-
-  /* Otherwise, if there is a domain type and it has a lower bound, use it,
-     substituting for a PLACEHOLDER_EXPR as needed.  */
-  if (domain_type && TYPE_MIN_VALUE (domain_type))
-    return SUBSTITUTE_PLACEHOLDER_IN_EXPR (TYPE_MIN_VALUE (domain_type), exp);
-
-  /* Otherwise, return a zero of the appropriate type.  */
-  return build_int_cst (TREE_TYPE (TREE_OPERAND (exp, 1)), 0);
-}
-
-/* Returns true if REF is an array reference to an array at the end of
-   a structure.  If this is the case, the array may be allocated larger
-   than its upper bound implies.  */
-
-bool
-array_at_struct_end_p (tree ref)
-{
-  if (TREE_CODE (ref) != ARRAY_REF
-      && TREE_CODE (ref) != ARRAY_RANGE_REF)
-    return false;
-
-  while (handled_component_p (ref))
-    {
-      /* If the reference chain contains a component reference to a
-         non-union type and there follows another field the reference
-	 is not at the end of a structure.  */
-      if (TREE_CODE (ref) == COMPONENT_REF
-	  && TREE_CODE (TREE_TYPE (TREE_OPERAND (ref, 0))) == RECORD_TYPE)
-	{
-	  tree nextf = DECL_CHAIN (TREE_OPERAND (ref, 1));
-	  while (nextf && TREE_CODE (nextf) != FIELD_DECL)
-	    nextf = DECL_CHAIN (nextf);
-	  if (nextf)
-	    return false;
-	}
-
-      ref = TREE_OPERAND (ref, 0);
-    }
-
-  /* If the reference is based on a declared entity, the size of the array
-     is constrained by its given domain.  */
-  if (DECL_P (ref))
-    return false;
-
-  return true;
-}
-
-/* Return a tree representing the upper bound of the array mentioned in
-   EXP, an ARRAY_REF or an ARRAY_RANGE_REF.  */
-
-tree
-array_ref_up_bound (tree exp)
-{
-  tree domain_type = TYPE_DOMAIN (TREE_TYPE (TREE_OPERAND (exp, 0)));
-
-  /* If there is a domain type and it has an upper bound, use it, substituting
-     for a PLACEHOLDER_EXPR as needed.  */
-  if (domain_type && TYPE_MAX_VALUE (domain_type))
-    return SUBSTITUTE_PLACEHOLDER_IN_EXPR (TYPE_MAX_VALUE (domain_type), exp);
-
-  /* Otherwise fail.  */
-  return NULL_TREE;
-}
-
-/* Return a tree representing the offset, in bytes, of the field referenced
-   by EXP.  This does not include any offset in DECL_FIELD_BIT_OFFSET.  */
-
-tree
-component_ref_field_offset (tree exp)
-{
-  tree aligned_offset = TREE_OPERAND (exp, 2);
-  tree field = TREE_OPERAND (exp, 1);
-  location_t loc = EXPR_LOCATION (exp);
-
-  /* If an offset was specified in the COMPONENT_REF, it's the offset measured
-     in units of DECL_OFFSET_ALIGN / BITS_PER_UNIT.  So multiply by that
-     value.  */
-  if (aligned_offset)
-    {
-      /* ??? tree_ssa_useless_type_conversion will eliminate casts to
-	 sizetype from another type of the same width and signedness.  */
-      if (TREE_TYPE (aligned_offset) != sizetype)
-	aligned_offset = fold_convert_loc (loc, sizetype, aligned_offset);
-      return size_binop_loc (loc, MULT_EXPR, aligned_offset,
-			     size_int (DECL_OFFSET_ALIGN (field)
-				       / BITS_PER_UNIT));
-    }
-
-  /* Otherwise, take the offset from that of the field.  Substitute
-     any PLACEHOLDER_EXPR that we have.  */
-  else
-    return SUBSTITUTE_PLACEHOLDER_IN_EXPR (DECL_FIELD_OFFSET (field), exp);
 }
 
 /* Alignment in bits the TARGET of an assignment may be assumed to have.  */

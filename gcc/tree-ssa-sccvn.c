@@ -1894,7 +1894,12 @@ vn_reference_lookup_3 (ao_ref *ref, tree vuse, void *vr_,
       size2 = lhs_ref.size;
       maxsize2 = lhs_ref.max_size;
       if (maxsize2 == -1
-	  || (base != base2 && !operand_equal_p (base, base2, 0))
+	  || (base != base2
+	      && (TREE_CODE (base) != MEM_REF
+		  || TREE_CODE (base2) != MEM_REF
+		  || TREE_OPERAND (base, 0) != TREE_OPERAND (base2, 0)
+		  || !tree_int_cst_equal (TREE_OPERAND (base, 1),
+					  TREE_OPERAND (base2, 1))))
 	  || offset2 > offset
 	  || offset2 + size2 < offset + maxsize)
 	return (void *)-1;
@@ -2023,7 +2028,16 @@ vn_reference_lookup_3 (ao_ref *ref, tree vuse, void *vr_,
       lhs = gimple_call_arg (def_stmt, 0);
       lhs_offset = 0;
       if (TREE_CODE (lhs) == SSA_NAME)
-	lhs = SSA_VAL (lhs);
+	{
+	  lhs = SSA_VAL (lhs);
+	  if (TREE_CODE (lhs) == SSA_NAME)
+	    {
+	      gimple def_stmt = SSA_NAME_DEF_STMT (lhs);
+	      if (gimple_assign_single_p (def_stmt)
+		  && gimple_assign_rhs_code (def_stmt) == ADDR_EXPR)
+		lhs = gimple_assign_rhs1 (def_stmt);
+	    }
+	}
       if (TREE_CODE (lhs) == ADDR_EXPR)
 	{
 	  tree tem = get_addr_base_and_unit_offset (TREE_OPERAND (lhs, 0),
@@ -2034,6 +2048,8 @@ vn_reference_lookup_3 (ao_ref *ref, tree vuse, void *vr_,
 	      && tree_fits_uhwi_p (TREE_OPERAND (tem, 1)))
 	    {
 	      lhs = TREE_OPERAND (tem, 0);
+	      if (TREE_CODE (lhs) == SSA_NAME)
+		lhs = SSA_VAL (lhs);
 	      lhs_offset += tree_to_uhwi (TREE_OPERAND (tem, 1));
 	    }
 	  else if (DECL_P (tem))
@@ -2084,10 +2100,15 @@ vn_reference_lookup_3 (ao_ref *ref, tree vuse, void *vr_,
 		  || TREE_OPERAND (lhs, 0) != base)))
 	return (void *)-1;
 
-      /* And the access has to be contained within the memcpy destination.  */
       at = offset / BITS_PER_UNIT;
       if (TREE_CODE (base) == MEM_REF)
 	at += tree_to_uhwi (TREE_OPERAND (base, 1));
+      /* If the access is completely outside of the memcpy destination
+	 area there is no aliasing.  */
+      if (lhs_offset >= at + maxsize / BITS_PER_UNIT
+	  || lhs_offset + copy_size <= at)
+	return NULL;
+      /* And the access has to be contained within the memcpy destination.  */
       if (lhs_offset > at
 	  || lhs_offset + copy_size < at + maxsize / BITS_PER_UNIT)
 	return (void *)-1;

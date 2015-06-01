@@ -828,6 +828,45 @@ vect_analyze_scalar_cycles (loop_vec_info loop_vinfo)
     vect_analyze_scalar_cycles_1 (loop_vinfo, loop->inner);
 }
 
+/* Transfer group and reduction information from STMT to its pattern stmt.  */
+
+static void
+vect_fixup_reduc_chain (gimple stmt)
+{
+  gimple firstp = STMT_VINFO_RELATED_STMT (vinfo_for_stmt (stmt));
+  gimple stmtp;
+  gcc_assert (!GROUP_FIRST_ELEMENT (vinfo_for_stmt (firstp))
+	      && GROUP_FIRST_ELEMENT (vinfo_for_stmt (stmt)));
+  GROUP_SIZE (vinfo_for_stmt (firstp)) = GROUP_SIZE (vinfo_for_stmt (stmt));
+  do
+    {
+      stmtp = STMT_VINFO_RELATED_STMT (vinfo_for_stmt (stmt));
+      GROUP_FIRST_ELEMENT (vinfo_for_stmt (stmtp)) = firstp;
+      stmt = GROUP_NEXT_ELEMENT (vinfo_for_stmt (stmt));
+      if (stmt)
+	GROUP_NEXT_ELEMENT (vinfo_for_stmt (stmtp))
+	  = STMT_VINFO_RELATED_STMT (vinfo_for_stmt (stmt));
+    }
+  while (stmt);
+  STMT_VINFO_DEF_TYPE (vinfo_for_stmt (stmtp)) = vect_reduction_def;
+}
+
+/* Fixup scalar cycles that now have their stmts detected as patterns.  */
+
+static void
+vect_fixup_scalar_cycles_with_patterns (loop_vec_info loop_vinfo)
+{
+  gimple first;
+  unsigned i;
+
+  FOR_EACH_VEC_ELT (LOOP_VINFO_REDUCTION_CHAINS (loop_vinfo), i, first)
+    if (STMT_VINFO_IN_PATTERN_P (vinfo_for_stmt (first)))
+      {
+	vect_fixup_reduc_chain (first);
+	LOOP_VINFO_REDUCTION_CHAINS (loop_vinfo)[i]
+	  = STMT_VINFO_RELATED_STMT (vinfo_for_stmt (first));
+      }
+}
 
 /* Function vect_get_loop_niters.
 
@@ -1355,25 +1394,85 @@ vect_analyze_loop_form (struct loop *loop)
   return loop_vinfo;
 }
 
+/* Scan the loop stmts and dependent on whether there are any (non-)SLP
+   statements update the vectorization factor.  */
+
+static void
+vect_update_vf_for_slp (loop_vec_info loop_vinfo)
+{
+  struct loop *loop = LOOP_VINFO_LOOP (loop_vinfo);
+  basic_block *bbs = LOOP_VINFO_BBS (loop_vinfo);
+  int nbbs = loop->num_nodes;
+  unsigned int vectorization_factor;
+  int i;
+
+  if (dump_enabled_p ())
+    dump_printf_loc (MSG_NOTE, vect_location,
+		     "=== vect_update_vf_for_slp ===\n");
+
+  vectorization_factor = LOOP_VINFO_VECT_FACTOR (loop_vinfo);
+  gcc_assert (vectorization_factor != 0);
+
+  /* If all the stmts in the loop can be SLPed, we perform only SLP, and
+     vectorization factor of the loop is the unrolling factor required by
+     the SLP instances.  If that unrolling factor is 1, we say, that we
+     perform pure SLP on loop - cross iteration parallelism is not
+     exploited.  */
+  bool only_slp_in_loop = true;
+  for (i = 0; i < nbbs; i++)
+    {
+      basic_block bb = bbs[i];
+      for (gimple_stmt_iterator si = gsi_start_bb (bb); !gsi_end_p (si);
+	   gsi_next (&si))
+	{
+	  gimple stmt = gsi_stmt (si);
+	  stmt_vec_info stmt_info = vinfo_for_stmt (stmt);
+	  if (STMT_VINFO_IN_PATTERN_P (stmt_info)
+	      && STMT_VINFO_RELATED_STMT (stmt_info))
+	    {
+	      stmt = STMT_VINFO_RELATED_STMT (stmt_info);
+	      stmt_info = vinfo_for_stmt (stmt);
+	    }
+	  if ((STMT_VINFO_RELEVANT_P (stmt_info)
+	       || VECTORIZABLE_CYCLE_DEF (STMT_VINFO_DEF_TYPE (stmt_info)))
+	      && !PURE_SLP_STMT (stmt_info))
+	    /* STMT needs both SLP and loop-based vectorization.  */
+	    only_slp_in_loop = false;
+	}
+    }
+
+  if (only_slp_in_loop)
+    vectorization_factor = LOOP_VINFO_SLP_UNROLLING_FACTOR (loop_vinfo);
+  else
+    vectorization_factor
+      = least_common_multiple (vectorization_factor,
+			       LOOP_VINFO_SLP_UNROLLING_FACTOR (loop_vinfo));
+
+  LOOP_VINFO_VECT_FACTOR (loop_vinfo) = vectorization_factor;
+  if (dump_enabled_p ())
+    dump_printf_loc (MSG_NOTE, vect_location,
+		     "Updating vectorization factor to %d\n",
+		     vectorization_factor);
+}
 
 /* Function vect_analyze_loop_operations.
 
    Scan the loop stmts and make sure they are all vectorizable.  */
 
 static bool
-vect_analyze_loop_operations (loop_vec_info loop_vinfo, bool slp)
+vect_analyze_loop_operations (loop_vec_info loop_vinfo)
 {
   struct loop *loop = LOOP_VINFO_LOOP (loop_vinfo);
   basic_block *bbs = LOOP_VINFO_BBS (loop_vinfo);
   int nbbs = loop->num_nodes;
-  unsigned int vectorization_factor = 0;
+  unsigned int vectorization_factor;
   int i;
   stmt_vec_info stmt_info;
   bool need_to_vectorize = false;
   int min_profitable_iters;
   int min_scalar_loop_bound;
   unsigned int th;
-  bool only_slp_in_loop = true, ok;
+  bool ok;
   HOST_WIDE_INT max_niter;
   HOST_WIDE_INT estimated_niter;
   int min_profitable_estimate;
@@ -1381,50 +1480,6 @@ vect_analyze_loop_operations (loop_vec_info loop_vinfo, bool slp)
   if (dump_enabled_p ())
     dump_printf_loc (MSG_NOTE, vect_location,
 		     "=== vect_analyze_loop_operations ===\n");
-
-  gcc_assert (LOOP_VINFO_VECT_FACTOR (loop_vinfo));
-  vectorization_factor = LOOP_VINFO_VECT_FACTOR (loop_vinfo);
-  if (slp)
-    {
-      /* If all the stmts in the loop can be SLPed, we perform only SLP, and
-	 vectorization factor of the loop is the unrolling factor required by
-	 the SLP instances.  If that unrolling factor is 1, we say, that we
-	 perform pure SLP on loop - cross iteration parallelism is not
-	 exploited.  */
-      for (i = 0; i < nbbs; i++)
-	{
-	  basic_block bb = bbs[i];
-	  for (gimple_stmt_iterator si = gsi_start_bb (bb); !gsi_end_p (si);
-	       gsi_next (&si))
-	    {
-	      gimple stmt = gsi_stmt (si);
-	      stmt_vec_info stmt_info = vinfo_for_stmt (stmt);
-	      if (STMT_VINFO_IN_PATTERN_P (stmt_info)
-		  && STMT_VINFO_RELATED_STMT (stmt_info))
-		{
-		  stmt = STMT_VINFO_RELATED_STMT (stmt_info);
-		  stmt_info = vinfo_for_stmt (stmt);
-		}
-	      if ((STMT_VINFO_RELEVANT_P (stmt_info)
-		   || VECTORIZABLE_CYCLE_DEF (STMT_VINFO_DEF_TYPE (stmt_info)))
-		  && !PURE_SLP_STMT (stmt_info))
-		/* STMT needs both SLP and loop-based vectorization.  */
-		only_slp_in_loop = false;
-	    }
-	}
-
-      if (only_slp_in_loop)
-	vectorization_factor = LOOP_VINFO_SLP_UNROLLING_FACTOR (loop_vinfo);
-      else
-	vectorization_factor = least_common_multiple (vectorization_factor,
-				LOOP_VINFO_SLP_UNROLLING_FACTOR (loop_vinfo));
-
-      LOOP_VINFO_VECT_FACTOR (loop_vinfo) = vectorization_factor;
-      if (dump_enabled_p ())
-	dump_printf_loc (MSG_NOTE, vect_location,
-			 "Updating vectorization factor to %d\n",
-			 vectorization_factor);
-    }
 
   for (i = 0; i < nbbs; i++)
     {
@@ -1563,6 +1618,9 @@ vect_analyze_loop_operations (loop_vec_info loop_vinfo, bool slp)
       return false;
     }
 
+  vectorization_factor = LOOP_VINFO_VECT_FACTOR (loop_vinfo);
+  gcc_assert (vectorization_factor != 0);
+
   if (LOOP_VINFO_NITERS_KNOWN_P (loop_vinfo) && dump_enabled_p ())
     dump_printf_loc (MSG_NOTE, vect_location,
 		     "vectorization_factor = %d, niters = "
@@ -1585,10 +1643,6 @@ vect_analyze_loop_operations (loop_vec_info loop_vinfo, bool slp)
     }
 
   /* Analyze cost.  Decide if worth while to vectorize.  */
-
-  /* Once VF is set, SLP costs should be updated since the number of created
-     vector stmts depends on VF.  */
-  vect_update_slp_costs_according_to_vf (loop_vinfo);
 
   vect_estimate_min_profitable_iters (loop_vinfo, &min_profitable_iters,
 				      &min_profitable_estimate);
@@ -1664,7 +1718,7 @@ vect_analyze_loop_operations (loop_vec_info loop_vinfo, bool slp)
 static bool
 vect_analyze_loop_2 (loop_vec_info loop_vinfo)
 {
-  bool ok, slp = false;
+  bool ok;
   int max_vf = MAX_VECTORIZATION_FACTOR;
   int min_vf = 2;
   unsigned int th;
@@ -1692,6 +1746,8 @@ vect_analyze_loop_2 (loop_vec_info loop_vinfo)
   vect_analyze_scalar_cycles (loop_vinfo);
 
   vect_pattern_recog (loop_vinfo, NULL);
+
+  vect_fixup_scalar_cycles_with_patterns (loop_vinfo);
 
   /* Analyze the access patterns of the data-refs in the loop (consecutive,
      complex, etc.). FORNOW: Only handle consecutive access pattern.  */
@@ -1790,19 +1846,31 @@ vect_analyze_loop_2 (loop_vec_info loop_vinfo)
   ok = vect_analyze_slp (loop_vinfo, NULL, n_stmts);
   if (ok)
     {
-      /* Decide which possible SLP instances to SLP.  */
-      slp = vect_make_slp_decision (loop_vinfo);
+      /* If there are any SLP instances mark them as pure_slp.  */
+      if (vect_make_slp_decision (loop_vinfo))
+	{
+	  /* Find stmts that need to be both vectorized and SLPed.  */
+	  vect_detect_hybrid_slp (loop_vinfo);
 
-      /* Find stmts that need to be both vectorized and SLPed.  */
-      vect_detect_hybrid_slp (loop_vinfo);
+	  /* Update the vectorization factor based on the SLP decision.  */
+	  vect_update_vf_for_slp (loop_vinfo);
+
+	  /* Analyze operations in the SLP instances.  Note this may
+	     remove unsupported SLP instances which makes the above
+	     SLP kind detection invalid.  */
+	  unsigned old_size = LOOP_VINFO_SLP_INSTANCES (loop_vinfo).length ();
+	  vect_slp_analyze_operations (LOOP_VINFO_SLP_INSTANCES (loop_vinfo),
+				       LOOP_VINFO_TARGET_COST_DATA (loop_vinfo));
+	  if (LOOP_VINFO_SLP_INSTANCES (loop_vinfo).length () != old_size)
+	    return false;
+	}
     }
   else
     return false;
 
-  /* Scan all the operations in the loop and make sure they are
-     vectorizable.  */
-
-  ok = vect_analyze_loop_operations (loop_vinfo, slp);
+  /* Scan all the remaining operations in the loop that are not subject
+     to SLP and make sure they are vectorizable.  */
+  ok = vect_analyze_loop_operations (loop_vinfo);
   if (!ok)
     {
       if (dump_enabled_p ())
@@ -4546,8 +4614,12 @@ vect_finalize_reduction:
      exit phi node.  */
   if (GROUP_FIRST_ELEMENT (vinfo_for_stmt (stmt)))
     {
-      scalar_dest = gimple_assign_lhs (
-			SLP_TREE_SCALAR_STMTS (slp_node)[group_size - 1]);
+      gimple dest_stmt = SLP_TREE_SCALAR_STMTS (slp_node)[group_size - 1];
+      /* Handle reduction patterns.  */
+      if (STMT_VINFO_RELATED_STMT (vinfo_for_stmt (dest_stmt)))
+	dest_stmt = STMT_VINFO_RELATED_STMT (vinfo_for_stmt (dest_stmt));
+
+      scalar_dest = gimple_assign_lhs (dest_stmt);
       group_size = 1;
     }
 
@@ -4848,12 +4920,17 @@ vectorizable_reduction (gimple stmt, gimple_stmt_iterator *gsi,
   auto_vec<gimple> phis;
   int vec_num;
   tree def0, def1, tem, op0, op1 = NULL_TREE;
+  bool first_p = true;
 
   /* In case of reduction chain we switch to the first stmt in the chain, but
      we don't update STMT_INFO, since only the last stmt is marked as reduction
      and has reduction properties.  */
-  if (GROUP_FIRST_ELEMENT (vinfo_for_stmt (stmt)))
-    stmt = GROUP_FIRST_ELEMENT (stmt_info);
+  if (GROUP_FIRST_ELEMENT (stmt_info)
+      && GROUP_FIRST_ELEMENT (stmt_info) != stmt)
+    {
+      stmt = GROUP_FIRST_ELEMENT (stmt_info);
+      first_p = false;
+    }
 
   if (nested_in_vect_loop_p (loop, stmt))
     {
@@ -4876,8 +4953,8 @@ vectorizable_reduction (gimple stmt, gimple_stmt_iterator *gsi,
     return false;
 
   /* Make sure it was already recognized as a reduction computation.  */
-  if (STMT_VINFO_DEF_TYPE (stmt_info) != vect_reduction_def
-      && STMT_VINFO_DEF_TYPE (stmt_info) != vect_nested_cycle)
+  if (STMT_VINFO_DEF_TYPE (vinfo_for_stmt (stmt)) != vect_reduction_def
+      && STMT_VINFO_DEF_TYPE (vinfo_for_stmt (stmt)) != vect_nested_cycle)
     return false;
 
   /* 2. Has this been recognized as a reduction pattern?
@@ -4887,7 +4964,7 @@ vectorizable_reduction (gimple stmt, gimple_stmt_iterator *gsi,
      the STMT_VINFO_RELATED_STMT field records the last stmt in
      the original sequence that constitutes the pattern.  */
 
-  orig_stmt = STMT_VINFO_RELATED_STMT (stmt_info);
+  orig_stmt = STMT_VINFO_RELATED_STMT (vinfo_for_stmt (stmt));
   if (orig_stmt)
     {
       orig_stmt_info = vinfo_for_stmt (orig_stmt);
@@ -5013,20 +5090,16 @@ vectorizable_reduction (gimple stmt, gimple_stmt_iterator *gsi,
       return false;
     }
 
+  gimple tmp = vect_is_simple_reduction (loop_vinfo, reduc_def_stmt,
+					 !nested_cycle, &dummy);
   if (orig_stmt)
-    gcc_assert (orig_stmt == vect_is_simple_reduction (loop_vinfo,
-                                                       reduc_def_stmt,
-                                                       !nested_cycle,
-                                                       &dummy));
+    gcc_assert (tmp == orig_stmt
+		|| GROUP_FIRST_ELEMENT (vinfo_for_stmt (tmp)) == orig_stmt);
   else
-    {
-      gimple tmp = vect_is_simple_reduction (loop_vinfo, reduc_def_stmt,
-                                             !nested_cycle, &dummy);
-      /* We changed STMT to be the first stmt in reduction chain, hence we
-         check that in this case the first element in the chain is STMT.  */
-      gcc_assert (stmt == tmp
-                  || GROUP_FIRST_ELEMENT (vinfo_for_stmt (tmp)) == stmt);
-    }
+    /* We changed STMT to be the first stmt in reduction chain, hence we
+       check that in this case the first element in the chain is STMT.  */
+    gcc_assert (stmt == tmp
+		|| GROUP_FIRST_ELEMENT (vinfo_for_stmt (tmp)) == stmt);
 
   if (STMT_VINFO_LIVE_P (vinfo_for_stmt (reduc_def_stmt)))
     return false;
@@ -5240,8 +5313,9 @@ vectorizable_reduction (gimple stmt, gimple_stmt_iterator *gsi,
 
   if (!vec_stmt) /* transformation not required.  */
     {
-      if (!vect_model_reduction_cost (stmt_info, epilog_reduc_code, ncopies,
-				      reduc_index))
+      if (first_p
+	  && !vect_model_reduction_cost (stmt_info, epilog_reduc_code, ncopies,
+					 reduc_index))
         return false;
       STMT_VINFO_TYPE (stmt_info) = reduc_vec_info_type;
       return true;
@@ -5297,11 +5371,7 @@ vectorizable_reduction (gimple stmt, gimple_stmt_iterator *gsi,
   prev_stmt_info = NULL;
   prev_phi_info = NULL;
   if (slp_node)
-    {
-      vec_num = SLP_TREE_NUMBER_OF_VEC_STMTS (slp_node);
-      gcc_assert (TYPE_VECTOR_SUBPARTS (vectype_out) 
-                  == TYPE_VECTOR_SUBPARTS (vectype_in));
-    }
+    vec_num = SLP_TREE_NUMBER_OF_VEC_STMTS (slp_node);
   else
     {
       vec_num = 1;

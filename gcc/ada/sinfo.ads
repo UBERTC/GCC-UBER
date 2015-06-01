@@ -786,9 +786,8 @@ package Sinfo is
 
    --  Acts_As_Spec (Flag4-Sem)
    --    A flag set in the N_Subprogram_Body node for a subprogram body which
-   --    is acting as its own spec, except in the case of a library level
-   --    subprogram, in which case the flag is set on the parent compilation
-   --    unit node instead.
+   --    is acting as its own spec. In the case of a library-level subprogram
+   --    the flag is set as well on the parent compilation unit node.
 
    --  Actual_Designated_Subtype (Node4-Sem)
    --    Present in N_Free_Statement and N_Explicit_Dereference nodes. If gigi
@@ -1626,6 +1625,11 @@ package Sinfo is
    --      Refined_Post
    --      Refined_State
    --      Test_Case
+
+   --  Is_Ghost_Pragma (Flag3-Sem)
+   --    This flag is present in N_Pragma nodes. It is set when the pragma is
+   --    either declared within a Ghost construct or it applies to a Ghost
+   --    construct.
 
    --  Is_Ignored (Flag9-Sem)
    --    A flag set in an N_Aspect_Specification or N_Pragma node if there was
@@ -2468,6 +2472,7 @@ package Sinfo is
       --  Is_Delayed_Aspect (Flag14-Sem)
       --  Is_Disabled (Flag15-Sem)
       --  Is_Generic_Contract_Pragma (Flag2-Sem)
+      --  Is_Ghost_Pragma (Flag3-Sem);
       --  Is_Ignored (Flag9-Sem)
       --  Is_Inherited (Flag4-Sem)
       --  Split_PPC (Flag17) set if corresponding aspect had Split_PPC set
@@ -9322,6 +9327,9 @@ package Sinfo is
    function Is_Generic_Contract_Pragma
      (N : Node_Id) return Boolean;    -- Flag2
 
+   function Is_Ghost_Pragma
+     (N : Node_Id) return Boolean;    -- Flag3
+
    function Is_Ignored
      (N : Node_Id) return Boolean;    -- Flag9
 
@@ -10344,6 +10352,9 @@ package Sinfo is
 
    procedure Set_Is_Generic_Contract_Pragma
      (N : Node_Id; Val : Boolean := True);    -- Flag2
+
+   procedure Set_Is_Ghost_Pragma
+     (N : Node_Id; Val : Boolean := True);    -- Flag3
 
    procedure Set_Is_Ignored
      (N : Node_Id; Val : Boolean := True);    -- Flag9
@@ -12736,6 +12747,7 @@ package Sinfo is
    pragma Inline (Is_Finalization_Wrapper);
    pragma Inline (Is_Folded_In_Parser);
    pragma Inline (Is_Generic_Contract_Pragma);
+   pragma Inline (Is_Ghost_Pragma);
    pragma Inline (Is_Ignored);
    pragma Inline (Is_In_Discriminant_Check);
    pragma Inline (Is_Inherited);
@@ -13072,6 +13084,7 @@ package Sinfo is
    pragma Inline (Set_Is_Finalization_Wrapper);
    pragma Inline (Set_Is_Folded_In_Parser);
    pragma Inline (Set_Is_Generic_Contract_Pragma);
+   pragma Inline (Set_Is_Ghost_Pragma);
    pragma Inline (Set_Is_Ignored);
    pragma Inline (Set_Is_In_Discriminant_Check);
    pragma Inline (Set_Is_Inherited);
