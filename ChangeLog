@@ -1,3 +1,16 @@
+2015-06-04  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* MAINTAINERS (gen* on machine desc): Add self.
+
+2015-06-02  Jason Merrill  <jason@redhat.com>
+
+	PR bootstrap/66319
+	* configure.ac: Use -std=gnu++98.
+
+2015-06-02  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* MAINTAINERS (Write After Approval): Add myself.
+
 2015-05-28  Mike Frysinger  <vapier@gentoo.org>
 
 	* configure.ac (--vtable-verify): Use AS_HELP_STRING for help.
@@ -11,12 +24,6 @@
 2015-05-16  James Bowman  <james.bowman@ftdichip.com>
 
 	* configure.ac: FT32 target added.
-	* libgcc/config.host: FT32 target added.
-	* gcc/config/ft32/: FT32 target added.
-	* libgcc/config/ft32/: FT32 target added.
-	* gcc/doc/install.texi, invoke.texi, md.texi: FT32 details added.
-	* gcc/doc/contrib.texi: self added.
-	* contrib/config-list.mk: FT32 target added.
 	* configure: Regenerated.
 
 2015-05-16  Iain Buclaw  <ibuclaw@gdcproject.org>

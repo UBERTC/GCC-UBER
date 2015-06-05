@@ -26,13 +26,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm.h"
 #include "rtl.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -54,8 +51,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "recog.h"
 #include "hashtab.h"
 #include "statistics.h"
-#include "real.h"
-#include "fixed-value.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -13345,6 +13340,8 @@ s390_option_override (void)
     }
 
   /* Sanity checks.  */
+  if (s390_arch == PROCESSOR_NATIVE || s390_tune == PROCESSOR_NATIVE)
+    gcc_unreachable ();
   if (TARGET_ZARCH && !TARGET_CPU_ZARCH)
     error ("z/Architecture mode not supported on %s", s390_arch_string);
   if (TARGET_64BIT && !TARGET_ZARCH)

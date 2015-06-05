@@ -29,7 +29,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "hashtab.h"
 #include "hash-set.h"
 #include "vec.h"
-#include "machmode.h"
 #include "input.h"
 #include "function.h"
 #include "predict.h"
@@ -40,6 +39,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "insn-config.h"
 #include "insn-attr.h"
 #include "params.h"
+#include "alloc-pool.h"
 #include "cselib.h"
 #include "target.h"
 

@@ -1,3 +1,273 @@
+2015-06-04  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* obj-c++.dg/tls/diag-5.mm: Adjust per r224097.
+
+2015-06-04  Sriraman Tallam  <tmsriram@google.com>
+
+	* testsuite/gcc.target/i386/noplt-1.c: New test.
+	* testsuite/gcc.target/i386/noplt-2.c: New test.
+	* testsuite/gcc.target/i386/noplt-3.c: New test.
+	* testsuite/gcc.target/i386/noplt-4.c: New test.
+
+2015-06-04  Thomas Koenig  <tkoenig@netcologne.de>
+
+	PR fortran/58749
+	* gfortran.dg/adjustl_1.f90:  New test.
+
+2015-06-04  Jan Hubicka  <hubicka@ucw.cz>
+
+	* gcc.dg/lto/c-compatible-types_0.c: New testcase.
+	* gcc.dg/lto/c-compatible-types_1.c: New testcase.
+
+2015-06-03  Jan Hubicka  <hubicka@ucw.cz>
+
+	* lto.c (iterative_hash_canonical_type,
+	gimple_register_canonical_type): only hash main variants of types
+
+2015-06-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gcc.target/aarch64/advsimd-intrinsics/advsimd-intrinsics.exp:
+	Move set of dg-do-what-default after early return.
+
+2015-06-04  Marek Polacek  <polacek@redhat.com>
+
+	PR c/66341
+	* gcc.dg/lvalue-8.c: New test.
+
+2015-06-03  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/66130
+	* g++.dg/other/pr66130.C: New.
+	* g++.dg/cpp0x/pr66130.C: Likewise.
+
+2015-06-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* g++.dg/cpp0x/decl-loc1.C: New.
+	* g++.dg/cpp0x/constexpr-neg1.C: Adjust.
+	* g++.dg/cpp0x/constexpr-object1.C: Likewise.
+	* g++.dg/init/ctor8.C: Likewise.
+	* g++.dg/parse/semicolon4.C: Likewise.
+
+2015-06-03  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/66190
+	* g++.dg/ubsan/static-init-1.C: New test.
+	* g++.dg/ubsan/static-init-2.C: New test.
+	* g++.dg/ubsan/static-init-3.C: New test.
+
+2015-06-03  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66275
+	* gcc.target/i386/pr66275.c: New test.
+
+2015-06-03  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	* gcc.dg/Wcxx-compat-22.c: New testcase.
+	* c-c++-common/Wsizeof-pointer-memaccess1.c: Pass -Wno-c++-compat.
+	* c-c++-common/Wsizeof-pointer-memaccess2.c: Likewise.
+	* c-c++-common/pr58346-1.c: Likewise.
+	* c-c++-common/transparent-union-1.c: Likewise.
+
+2015-06-02  Andres Tiraboschi  <andres.tiraboschi@tallertechnologies.com>
+
+	* g++.dg/plugin/plugin.exp: Add def-plugin-test.C.
+	* g++.dg/plugin/def_plugin.c: New file.
+	* g++.dg/plugin/def-plugin-test.C: New file.
+
+2015-06-03  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/vect/bb-slp-36.c: New testcase.
+
+2015-06-03  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.dg/lto/chkp-removed-alias_0.c: New.
+
+2015-06-03  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.dg/lto/chkp-privatize-1_0.c: New.
+	* gcc.dg/lto/chkp-privatize-1_1.c: New.
+	* gcc.dg/lto/chkp-privatize-2_0.c: New.
+	* gcc.dg/lto/chkp-privatize-2_1.c: New.
+
+2015-06-03  Marek Polacek  <polacek@redhat.com>
+
+	PR c/64223
+	PR c/29358
+	* gcc.dg/pr64223-1.c: New test.
+	* gcc.dg/pr64223-2.c: New test.
+
+2015-06-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/63916
+	* gcc.dg/tree-ssa/ssa-fre-45.c: New testcase.
+
+2015-06-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66375
+	* gcc.dg/torture/pr66375.c: New testcase.
+
+2015-06-03  Bin Cheng  <bin.cheng@arm.com>
+
+	* gcc.dg/tree-ssa/pr65447.c: Increase searching number.
+
+2015-06-02  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	PR target/65768
+	* gcc.target/arm/maskdata.c: Remove -fno-gcse.
+
+2015-06-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66380
+	* gfortran.dg/reshape_7.f90: New test.
+
+2015-06-02  David Malcolm  <dmalcolm@redhat.com>
+
+	PR c/66220:
+	* c-c++-common/Wmisleading-indentation.c (fn_35): New.
+	(fn_36): New.
+
+2015-06-02  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	PR c/49551
+	* gcc.dg/pr49551.c: New testcase.
+
+2015-06-02  Richard Biener  <rguenther@suse.de>
+
+	PR debug/65549
+	* g++.dg/lto/pr65549_0.C: New testcase.
+
+2015-06-02  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR libgomp/65742
+	PR middle-end/66332
+	* c-c++-common/goacc/acc_on_device-2.c: XFAIL for C, too.
+
+2015-06-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	* g++.dg/abi/mangle-regparm.C (dg-do): Fix x86_32 target selector.
+
+2015-06-02  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/61683
+	* g++.dg/cpp0x/decltype-mem-initializer1.C: New.
+
+2015-06-02  Bin Cheng  <bin.cheng@arm.com>
+
+	PR tree-optimization/48052
+	* gcc.dg/tree-ssa/scev-8.c: New.
+	* gcc.dg/tree-ssa/scev-9.c: New.
+	* gcc.dg/tree-ssa/scev-10.c: New.
+	* gcc.dg/vect/pr48052.c: New.
+
+2015-06-02  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/vect/vec-scal-opt.c: Adjust regexp.
+
+2015-06-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.dg/vect/vect-outer-simd-1.c: Remove cleanup-tree-dump directive.
+
+2015-06-02  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/66345
+	* gcc.dg/torture/pr66345.c: New test.
+
+2015-06-02  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65961
+	* gcc.dg/torture/pr65961.c: New testcase.
+
+2015-06-02  Bin Cheng  <bin.cheng@arm.com>
+
+	PR tree-optimization/52563
+	PR tree-optimization/62173
+	* gcc.dg/tree-ssa/scev-3.c: Remove xfail.
+	* gcc.dg/tree-ssa/scev-4.c: Ditto.
+
+2015-06-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/specs/varsize_return2.ads: New test.
+	* gnat.dg/specs/varsize_return2_pkg.ad[sb]: New helper.
+
+2015-06-01  Yuri Rumyantsev  <ysrumyan@gmail.com>
+
+	* gcc.dg/vect/vect-outer-simd-1.c: New test.
+
+2015-06-01  Matthew Wahab  <matthew.wahab@arm.com>
+
+	PR target/65697
+	* gcc.target/aarch64/sync-comp-swap.c: New.
+	* gcc.target/aarch64/sync-comp-swap.x: New.
+	* gcc.target/aarch64/sync-op-acquire.c: New.
+	* gcc.target/aarch64/sync-op-acquire.x: New.
+	* gcc.target/aarch64/sync-op-full.c: New.
+	* gcc.target/aarch64/sync-op-full.x: New.
+	* gcc.target/aarch64/sync-op-release.c: New.
+	* gcc.target/aarch64/sync-op-release.x: New.
+
+2015-06-01  Alex Velenko  <Alex.Velenko@arm.com>
+
+        * gcc.target/arm/thumb-ltu.c (foo): Predefined.
+        (bar): Predefined.
+
+2015-06-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66349
+	PR tree-optimization/66352
+	PR tree-optimization/66357
+	* gcc.dg/torture/pr66357.c: New testcase.
+	* gcc.dg/torture/pr66349.c: Likewise.
+	* gfortran.fortran-torture/compile/pr66352.f90: Likewise.
+
+2015-06-01  Richard Biener  <rguenther@suse.de>
+
+	Revert
+	2015-05-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66314
+	* gcc.dg/asan/pr66314.c: New testcase.
+
+2015-06-01  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/ipa/ipa-pta-1.c: Adjust.
+
+2015-06-01  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.target/s390/hotpatch-compile-15.c: Remove dg-prune-output
+	directives.
+	(hp3, hp4): Add inline keyword.
+	* gcc.target/s390/hotpatch-19.c: Remove dg-prune-output directive.
+	(hp2): Add inline keyword.
+	* gcc.target/s390/hotpatch-19.c: Remove dg-prune-output directives.
+	(hp2): Add inline keyword.
+
+2015-06-01  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR target/65527
+	* gcc.target/i386/mpx/chkp-fix-calls-1.c: New.
+	* gcc.target/i386/mpx/chkp-fix-calls-2.c: New.
+	* gcc.target/i386/mpx/chkp-fix-calls-3.c: New.
+	* gcc.target/i386/mpx/chkp-fix-calls-4.c: New.
+
+2015-06-01  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/advsimd-intrinsics/advsimd-intrinsics.exp: Pass
+	wildcard to gcc-dg-runtest; remove loop and unnecessary initialization.
+
+2015-06-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66280
+	* g++.dg/torture/pr66280.C: New testcase.
+	* g++.dg/torture/pr66280-2.C: Likewise.
+
+2015-06-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/addr9_1.adb: New test.
+	* gnat.dg/addr9_2.adb: Likewise.
+	* gnat.dg/addr9_3.adb: Likewise.
+	* gnat.dg/addr9_4.adb: Likewise.
+
 2015-05-31  Eric Botcazou  <ebotcazou@adacore.com>
 
 	  * g++.dg/other/dump-ada-spec-4.C: New test.

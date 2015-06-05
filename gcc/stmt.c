@@ -30,13 +30,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "rtl.h"
 #include "hard-reg-set.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -49,8 +46,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "insn-config.h"
 #include "hashtab.h"
 #include "statistics.h"
-#include "real.h"
-#include "fixed-value.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -748,7 +743,7 @@ do_jump_if_equal (machine_mode mode, rtx op0, rtx op1, rtx_code_label *label,
 
 static struct case_node *
 add_case_node (struct case_node *head, tree low, tree high,
-               tree label, int prob, alloc_pool case_node_pool)
+	       tree label, int prob, pool_allocator<case_node> &case_node_pool)
 {
   struct case_node *r;
 
@@ -756,7 +751,7 @@ add_case_node (struct case_node *head, tree low, tree high,
   gcc_checking_assert (high && (TREE_TYPE (low) == TREE_TYPE (high)));
 
   /* Add this label to the chain.  */
-  r = (struct case_node *) pool_alloc (case_node_pool);
+  r = case_node_pool.allocate ();
   r->low = low;
   r->high = high;
   r->code_label = label;
@@ -1160,7 +1155,7 @@ expand_case (gswitch *stmt)
   struct case_node *case_list = 0;
 
   /* A pool for case nodes.  */
-  alloc_pool case_node_pool;
+  pool_allocator<case_node> case_node_pool ("struct case_node pool", 100);
 
   /* An ERROR_MARK occurs for various reasons including invalid data type.
      ??? Can this still happen, with GIMPLE and all?  */
@@ -1171,9 +1166,6 @@ expand_case (gswitch *stmt)
      expressions being INTEGER_CST.  */
   gcc_assert (TREE_CODE (index_expr) != INTEGER_CST);
   
-  case_node_pool = create_alloc_pool ("struct case_node pool",
-				      sizeof (struct case_node),
-				      100);
 
   do_pending_stack_adjust ();
 
@@ -1273,7 +1265,6 @@ expand_case (gswitch *stmt)
   reorder_insns (NEXT_INSN (before_case), get_last_insn (), before_case);
 
   free_temp_slots ();
-  free_alloc_pool (case_node_pool);
 }
 
 /* Expand the dispatch to a short decrement chain if there are few cases
@@ -1340,9 +1331,8 @@ expand_sjlj_dispatch_table (rtx dispatch_index,
     {
       /* Similar to expand_case, but much simpler.  */
       struct case_node *case_list = 0;
-      alloc_pool case_node_pool = create_alloc_pool ("struct sjlj_case pool",
-						     sizeof (struct case_node),
-						     ncases);
+      pool_allocator<case_node> case_node_pool ("struct sjlj_case pool",
+						ncases);
       tree index_expr = make_tree (index_type, dispatch_index);
       tree minval = build_int_cst (index_type, 0);
       tree maxval = CASE_LOW (dispatch_table.last ());
@@ -1362,7 +1352,6 @@ expand_sjlj_dispatch_table (rtx dispatch_index,
 				minval, maxval, range,
                                 BLOCK_FOR_INSN (before_case));
       emit_label (default_label);
-      free_alloc_pool (case_node_pool);
     }
 
   /* Dispatching something not handled?  Trap!  */

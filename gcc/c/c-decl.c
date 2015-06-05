@@ -35,8 +35,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "symtab.h"
 #include "input.h"
 #include "alias.h"
-#include "double-int.h"
-#include "machmode.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -50,7 +48,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "hashtab.h"
 #include "hash-set.h"
 #include "vec.h"
-#include "machmode.h"
 #include "hard-reg-set.h"
 #include "function.h"
 #include "c-tree.h"
@@ -2630,6 +2627,12 @@ merge_decls (tree newdecl, tree olddecl, tree newtype, tree oldtype)
     DECL_PRESERVE_P (newdecl) = 1;
   else if (DECL_PRESERVE_P (newdecl))
     DECL_PRESERVE_P (olddecl) = 1;
+
+  /* Merge DECL_COMMON */
+  if (VAR_P (olddecl) && VAR_P (newdecl)
+      && !lookup_attribute ("common", DECL_ATTRIBUTES (newdecl))
+      && !lookup_attribute ("nocommon", DECL_ATTRIBUTES (newdecl)))
+    DECL_COMMON (newdecl) = DECL_COMMON (newdecl) && DECL_COMMON (olddecl);
 
   /* Copy most of the decl-specific fields of NEWDECL into OLDDECL.
      But preserve OLDDECL's DECL_UID, DECL_CONTEXT and
@@ -7519,11 +7522,22 @@ detect_field_duplicates (tree fieldlist)
 /* Finish up struct info used by -Wc++-compat.  */
 
 static void
-warn_cxx_compat_finish_struct (tree fieldlist)
+warn_cxx_compat_finish_struct (tree fieldlist, enum tree_code code,
+			       location_t record_loc)
 {
   unsigned int ix;
   tree x;
   struct c_binding *b;
+
+  if (fieldlist == NULL_TREE)
+    {
+      if (code == RECORD_TYPE)
+	warning_at (record_loc, OPT_Wc___compat,
+		    "empty struct has size 0 in C, size 1 in C++");
+      else
+	warning_at (record_loc, OPT_Wc___compat,
+		    "empty union has size 0 in C, size 1 in C++");
+    }
 
   /* Set the C_TYPE_DEFINED_IN_STRUCT flag for each type defined in
      the current struct.  We do this now at the end of the struct
@@ -7857,7 +7871,7 @@ finish_struct (location_t loc, tree t, tree fieldlist, tree attributes,
 			  DECL_EXPR, build_decl (loc, TYPE_DECL, NULL, t)));
 
   if (warn_cxx_compat)
-    warn_cxx_compat_finish_struct (fieldlist);
+    warn_cxx_compat_finish_struct (fieldlist, TREE_CODE (t), loc);
 
   struct_parse_info->struct_types.release ();
   struct_parse_info->fields.release ();
@@ -8233,6 +8247,7 @@ start_function (struct c_declspecs *declspecs, struct c_declarator *declarator,
 
   decl1 = grokdeclarator (declarator, declspecs, FUNCDEF, true, NULL,
 			  &attributes, NULL, NULL, DEPRECATED_NORMAL);
+  invoke_plugin_callbacks (PLUGIN_START_PARSE_FUNCTION, decl1);
 
   /* If the declarator is not suitable for a function definition,
      cause a syntax error.  */
@@ -9077,6 +9092,7 @@ finish_function (void)
      It's still in DECL_STRUCT_FUNCTION, and we'll restore it in
      tree_rest_of_compilation.  */
   set_cfun (NULL);
+  invoke_plugin_callbacks (PLUGIN_FINISH_PARSE_FUNCTION, current_function_decl);
   current_function_decl = NULL;
 }
 

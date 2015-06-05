@@ -27,13 +27,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "diagnostic-core.h"
 #include "rtl.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"		/* FIXME: Used by call_may_noreturn_p.  */
 #include "tm_p.h"
@@ -54,6 +51,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "basic-block.h"
 #include "sched-int.h"
 #include "params.h"
+#include "alloc-pool.h"
 #include "cselib.h"
 #include "ira.h"
 #include "target.h"
@@ -334,7 +332,7 @@ dep_link_is_detached_p (dep_link_t link)
 }
 
 /* Pool to hold all dependency nodes (dep_node_t).  */
-static alloc_pool dn_pool;
+static pool_allocator<_dep_node> *dn_pool;
 
 /* Number of dep_nodes out there.  */
 static int dn_pool_diff = 0;
@@ -343,7 +341,7 @@ static int dn_pool_diff = 0;
 static dep_node_t
 create_dep_node (void)
 {
-  dep_node_t n = (dep_node_t) pool_alloc (dn_pool);
+  dep_node_t n = dn_pool->allocate ();
   dep_link_t back = DEP_NODE_BACK (n);
   dep_link_t forw = DEP_NODE_FORW (n);
 
@@ -371,11 +369,11 @@ delete_dep_node (dep_node_t n)
 
   --dn_pool_diff;
 
-  pool_free (dn_pool, n);
+  dn_pool->remove (n);
 }
 
 /* Pool to hold dependencies lists (deps_list_t).  */
-static alloc_pool dl_pool;
+static pool_allocator<_deps_list> *dl_pool;
 
 /* Number of deps_lists out there.  */
 static int dl_pool_diff = 0;
@@ -393,7 +391,7 @@ deps_list_empty_p (deps_list_t l)
 static deps_list_t
 create_deps_list (void)
 {
-  deps_list_t l = (deps_list_t) pool_alloc (dl_pool);
+  deps_list_t l = dl_pool->allocate ();
 
   DEPS_LIST_FIRST (l) = NULL;
   DEPS_LIST_N_LINKS (l) = 0;
@@ -410,7 +408,7 @@ free_deps_list (deps_list_t l)
 
   --dl_pool_diff;
 
-  pool_free (dl_pool, l);
+  dl_pool->remove (l);
 }
 
 /* Return true if there is no dep_nodes and deps_lists out there.
@@ -2853,7 +2851,7 @@ sched_analyze_2 (struct deps_desc *deps, rtx x, rtx_insn *insn)
     sched_deps_info->finish_rhs ();
 }
 
-/* Try to group two fuseable insns together to prevent scheduler
+/* Try to group two fusible insns together to prevent scheduler
    from scheduling them apart.  */
 
 static void
@@ -4075,10 +4073,10 @@ sched_deps_init (bool global_p)
 
   if (global_p)
     {
-      dl_pool = create_alloc_pool ("deps_list", sizeof (struct _deps_list),
+      dl_pool = new pool_allocator<_deps_list> ("deps_list",
                                    /* Allocate lists for one block at a time.  */
                                    insns_in_block);
-      dn_pool = create_alloc_pool ("dep_node", sizeof (struct _dep_node),
+      dn_pool = new pool_allocator<_dep_node> ("dep_node",
                                    /* Allocate nodes for one block at a time.
                                       We assume that average insn has
                                       5 producers.  */
@@ -4128,9 +4126,10 @@ void
 sched_deps_finish (void)
 {
   gcc_assert (deps_pools_are_empty_p ());
-  free_alloc_pool_if_empty (&dn_pool);
-  free_alloc_pool_if_empty (&dl_pool);
-  gcc_assert (dn_pool == NULL && dl_pool == NULL);
+  dn_pool->release_if_empty ();
+  dn_pool = NULL;
+  dl_pool->release_if_empty ();
+  dl_pool = NULL;
 
   h_d_i_d.release ();
   cache_size = 0;

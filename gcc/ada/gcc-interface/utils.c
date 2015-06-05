@@ -28,13 +28,10 @@
 #include "coretypes.h"
 #include "tm.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -2191,6 +2188,7 @@ copy_type (tree type)
   TYPE_REFERENCE_TO (new_type) = 0;
   TYPE_MAIN_VARIANT (new_type) = new_type;
   TYPE_NEXT_VARIANT (new_type) = 0;
+  TYPE_CANONICAL (new_type) = new_type;
 
   return new_type;
 }
@@ -2428,7 +2426,13 @@ create_var_decl_1 (tree var_name, tree asm_name, tree type, tree var_init,
   if (TREE_CODE (var_decl) == VAR_DECL)
     {
       if (asm_name)
-	SET_DECL_ASSEMBLER_NAME (var_decl, asm_name);
+	{
+	  /* Let the target mangle the name if this isn't a verbatim asm.  */
+	  if (*IDENTIFIER_POINTER (asm_name) != '*')
+	    asm_name = targetm.mangle_decl_assembler_name (var_decl, asm_name);
+
+	  SET_DECL_ASSEMBLER_NAME (var_decl, asm_name);
+	}
 
       if (global_bindings_p ())
 	rest_of_decl_compilation (var_decl, true, 0);
@@ -2902,7 +2906,24 @@ process_deferred_decl_context (bool force)
 static unsigned int
 scale_by_factor_of (tree expr, unsigned int value)
 {
+  unsigned HOST_WIDE_INT addend = 0;
+  unsigned HOST_WIDE_INT factor = 1;
+
+  /* Peel conversions around EXPR and try to extract bodies from function
+     calls: it is possible to get the scale factor from size functions.  */
   expr = remove_conversions (expr, true);
+  if (TREE_CODE (expr) == CALL_EXPR)
+    expr = maybe_inline_call_in_expr (expr);
+
+  /* Sometimes we get PLUS_EXPR (BIT_AND_EXPR (..., X), Y), where Y is a
+     multiple of the scale factor we are looking for.  */
+  if (TREE_CODE (expr) == PLUS_EXPR
+      && TREE_CODE (TREE_OPERAND (expr, 1)) == INTEGER_CST
+      && tree_fits_uhwi_p (TREE_OPERAND (expr, 1)))
+    {
+      addend = TREE_INT_CST_LOW (TREE_OPERAND (expr, 1));
+      expr = TREE_OPERAND (expr, 0);
+    }
 
   /* An expression which is a bitwise AND with a mask has a power-of-2 factor
      corresponding to the number of trailing zeros of the mask.  */
@@ -2915,12 +2936,21 @@ scale_by_factor_of (tree expr, unsigned int value)
       while ((mask & 1) == 0 && i < HOST_BITS_PER_WIDE_INT)
 	{
 	  mask >>= 1;
-	  value *= 2;
+	  factor *= 2;
 	  i++;
 	}
     }
 
-  return value;
+  /* If the addend is not a multiple of the factor we found, give up.  In
+     theory we could find a smaller common factor but it's useless for our
+     needs.  This situation arises when dealing with a field F1 with no
+     alignment requirement but that is following a field F2 with such
+     requirements.  As long as we have F2's offset, we don't need alignment
+     information to compute F1's.  */
+  if (addend % factor != 0)
+    factor = 1;
+
+  return factor * value;
 }
 
 /* Given two consecutive field decls PREV_FIELD and CURR_FIELD, return true
@@ -3047,8 +3077,17 @@ create_subprog_decl (tree subprog_name, tree asm_name, tree subprog_type,
   DECL_BY_REFERENCE (result_decl) = TREE_ADDRESSABLE (subprog_type);
   DECL_RESULT (subprog_decl) = result_decl;
 
+  process_attributes (&subprog_decl, &attr_list, true, gnat_node);
+
+  /* Add this decl to the current binding level.  */
+  gnat_pushdecl (subprog_decl, gnat_node);
+
   if (asm_name)
     {
+      /* Let the target mangle the name if this isn't a verbatim asm.  */
+      if (*IDENTIFIER_POINTER (asm_name) != '*')
+	asm_name = targetm.mangle_decl_assembler_name (subprog_decl, asm_name);
+
       SET_DECL_ASSEMBLER_NAME (subprog_decl, asm_name);
 
       /* The expand_main_function circuitry expects "main_identifier_node" to
@@ -3060,11 +3099,6 @@ create_subprog_decl (tree subprog_name, tree asm_name, tree subprog_type,
       if (asm_name == main_identifier_node)
 	DECL_NAME (subprog_decl) = main_identifier_node;
     }
-
-  process_attributes (&subprog_decl, &attr_list, true, gnat_node);
-
-  /* Add this decl to the current binding level.  */
-  gnat_pushdecl (subprog_decl, gnat_node);
 
   /* Output the assembler code and/or RTL for the declaration.  */
   rest_of_decl_compilation (subprog_decl, global_bindings_p (), 0);
@@ -4092,8 +4126,9 @@ convert (tree type, tree expr)
       CONSTRUCTOR_APPEND_ELT (v, TYPE_FIELDS (type),
 			      build_template (TREE_TYPE (TYPE_FIELDS (type)),
 					      obj_type, NULL_TREE));
-      CONSTRUCTOR_APPEND_ELT (v, DECL_CHAIN (TYPE_FIELDS (type)),
-			      convert (obj_type, expr));
+      if (expr)
+	CONSTRUCTOR_APPEND_ELT (v, DECL_CHAIN (TYPE_FIELDS (type)),
+				convert (obj_type, expr));
       return gnat_build_constructor (type, v);
     }
 
@@ -4699,14 +4734,13 @@ maybe_unconstrained_array (tree exp)
 
       if (TYPE_CONTAINS_TEMPLATE_P (type))
 	{
-	  exp = build_component_ref (exp, NULL_TREE,
-				     DECL_CHAIN (TYPE_FIELDS (type)),
-				     false);
-	  type = TREE_TYPE (exp);
+	  exp = build_simple_component_ref (exp, NULL_TREE,
+					    DECL_CHAIN (TYPE_FIELDS (type)),
+					    false);
 
 	  /* If the array type is padded, convert to the unpadded type.  */
-	  if (TYPE_IS_PADDING_P (type))
-	    exp = convert (TREE_TYPE (TYPE_FIELDS (type)), exp);
+	  if (exp && TYPE_IS_PADDING_P (TREE_TYPE (exp)))
+	    exp = convert (TREE_TYPE (TYPE_FIELDS (TREE_TYPE (exp))), exp);
 	}
       break;
 

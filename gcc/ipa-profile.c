@@ -49,13 +49,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -107,7 +104,8 @@ struct histogram_entry
    duplicate entries.  */
 
 vec<histogram_entry *> histogram;
-static alloc_pool histogram_pool;
+static pool_allocator<histogram_entry> histogram_pool
+  ("IPA histogram", 10);
 
 /* Hashtable support for storing SSA names hashed by their SSA_NAME_VAR.  */
 
@@ -144,7 +142,7 @@ account_time_size (hash_table<histogram_hash> *hashtable,
 
   if (!*val)
     {
-      *val = (histogram_entry *) pool_alloc (histogram_pool);
+      *val = histogram_pool.allocate ();
       **val = key;
       histogram.safe_push (*val);
     }
@@ -205,8 +203,6 @@ ipa_profile_generate_summary (void)
   basic_block bb;
 
   hash_table<histogram_hash> hashtable (10);
-  histogram_pool = create_alloc_pool ("IPA histogram", sizeof (struct histogram_entry),
-				      10);
   
   FOR_EACH_FUNCTION_WITH_GIMPLE_BODY (node)
     FOR_EACH_BB_FN (bb, DECL_STRUCT_FUNCTION (node->decl))
@@ -287,8 +283,6 @@ ipa_profile_read_summary (void)
   int j = 0;
 
   hash_table<histogram_hash> hashtable (10);
-  histogram_pool = create_alloc_pool ("IPA histogram", sizeof (struct histogram_entry),
-				      10);
 
   while ((file_data = file_data_vec[j++]))
     {
@@ -593,7 +587,7 @@ ipa_profile (void)
 	}
     }
   histogram.release ();
-  free_alloc_pool (histogram_pool);
+  histogram_pool.release ();
 
   /* Produce speculative calls: we saved common traget from porfiling into
      e->common_target_id.  Now, at link time, we can look up corresponding

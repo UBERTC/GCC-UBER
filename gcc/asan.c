@@ -23,14 +23,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -68,8 +65,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "rtl.h"
 #include "flags.h"
 #include "statistics.h"
-#include "real.h"
-#include "fixed-value.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -176,7 +171,7 @@ along with GCC; see the file COPYING3.  If not see
 
 	where '(...){n}' means the content inside the parenthesis occurs 'n'
 	times, with 'n' being the number of variables on the stack.
-     
+
      3/ The following 8 bytes contain the PC of the current function which
      will be used by the run-time library to print an error message.
 
@@ -281,7 +276,7 @@ bool
 set_asan_shadow_offset (const char *val)
 {
   char *endp;
-  
+
   errno = 0;
 #ifdef HAVE_LONG_LONG
   asan_shadow_offset_value = strtoull (val, &endp, 0);
@@ -372,23 +367,24 @@ struct asan_mem_ref
 
   /* The size of the access.  */
   HOST_WIDE_INT access_size;
+
+  /* Pool allocation new operator.  */
+  inline void *operator new (size_t)
+  {
+    return pool.allocate ();
+  }
+
+  /* Delete operator utilizing pool allocation.  */
+  inline void operator delete (void *ptr)
+  {
+    pool.remove ((asan_mem_ref *) ptr);
+  }
+
+  /* Memory allocation pool.  */
+  static pool_allocator<asan_mem_ref> pool;
 };
 
-static alloc_pool asan_mem_ref_alloc_pool;
-
-/* This creates the alloc pool used to store the instances of
-   asan_mem_ref that are stored in the hash table asan_mem_ref_ht.  */
-
-static alloc_pool
-asan_mem_ref_get_alloc_pool ()
-{
-  if (asan_mem_ref_alloc_pool == NULL)
-    asan_mem_ref_alloc_pool = create_alloc_pool ("asan_mem_ref",
-						 sizeof (asan_mem_ref),
-						 10);
-  return asan_mem_ref_alloc_pool;
-    
-}
+pool_allocator<asan_mem_ref> asan_mem_ref::pool ("asan_mem_ref", 10);
 
 /* Initializes an instance of asan_mem_ref.  */
 
@@ -408,8 +404,7 @@ asan_mem_ref_init (asan_mem_ref *ref, tree start, HOST_WIDE_INT access_size)
 static asan_mem_ref*
 asan_mem_ref_new (tree start, HOST_WIDE_INT access_size)
 {
-  asan_mem_ref *ref =
-    (asan_mem_ref *) pool_alloc (asan_mem_ref_get_alloc_pool ());
+  asan_mem_ref *ref = new asan_mem_ref;
 
   asan_mem_ref_init (ref, start, access_size);
   return ref;
@@ -501,11 +496,7 @@ free_mem_ref_resources ()
   delete asan_mem_ref_ht;
   asan_mem_ref_ht = NULL;
 
-  if (asan_mem_ref_alloc_pool)
-    {
-      free_alloc_pool (asan_mem_ref_alloc_pool);
-      asan_mem_ref_alloc_pool = NULL;
-    }
+  asan_mem_ref::pool.release ();
 }
 
 /* Return true iff the memory reference REF has been instrumented.  */
@@ -2035,7 +2026,7 @@ maybe_instrument_assignment (gimple_stmt_iterator *iter)
 			 is_store);
       is_instrumented = true;
     }
- 
+
   if (gimple_assign_load_p (s))
     {
       ref_expr = gimple_assign_rhs1 (s);
