@@ -33,13 +33,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm.h"
 #include "flags.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -82,8 +79,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssanames.h"
 #include "rtl.h"
 #include "statistics.h"
-#include "real.h"
-#include "fixed-value.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -4871,9 +4866,53 @@ simple_cst_list_equal (const_tree l1, const_tree l2)
   return l1 == l2;
 }
 
+/* Compare two identifier nodes representing attributes.  Either one may
+   be in wrapped __ATTR__ form.  Return true if they are the same, false
+   otherwise.  */
+
+static bool
+cmp_attrib_identifiers (const_tree attr1, const_tree attr2)
+{
+  /* Make sure we're dealing with IDENTIFIER_NODEs.  */
+  gcc_checking_assert (TREE_CODE (attr1) == IDENTIFIER_NODE
+		       && TREE_CODE (attr2) == IDENTIFIER_NODE);
+
+  /* Identifiers can be compared directly for equality.  */
+  if (attr1 == attr2)
+    return true;
+
+  /* If they are not equal, they may still be one in the form
+     'text' while the other one is in the form '__text__'.  TODO:
+     If we were storing attributes in normalized 'text' form, then
+     this could all go away and we could take full advantage of
+     the fact that we're comparing identifiers. :-)  */
+  const size_t attr1_len = IDENTIFIER_LENGTH (attr1);
+  const size_t attr2_len = IDENTIFIER_LENGTH (attr2);
+
+  if (attr2_len == attr1_len + 4)
+    {
+      const char *p = IDENTIFIER_POINTER (attr2);
+      const char *q = IDENTIFIER_POINTER (attr1);
+      if (p[0] == '_' && p[1] == '_'
+	  && p[attr2_len - 2] == '_' && p[attr2_len - 1] == '_'
+	  && strncmp (q, p + 2, attr1_len) == 0)
+	return true;;
+    }
+  else if (attr2_len + 4 == attr1_len)
+    {
+      const char *p = IDENTIFIER_POINTER (attr2);
+      const char *q = IDENTIFIER_POINTER (attr1);
+      if (q[0] == '_' && q[1] == '_'
+	  && q[attr1_len - 2] == '_' && q[attr1_len - 1] == '_'
+	  && strncmp (q + 2, p, attr2_len) == 0)
+	return true;
+    }
+
+  return false;
+}
+
 /* Compare two attributes for their value identity.  Return true if the
-   attribute values are known to be equal; otherwise return false.
-*/
+   attribute values are known to be equal; otherwise return false.  */
 
 bool
 attribute_value_equal (const_tree attr1, const_tree attr2)
@@ -4883,10 +4922,25 @@ attribute_value_equal (const_tree attr1, const_tree attr2)
 
   if (TREE_VALUE (attr1) != NULL_TREE
       && TREE_CODE (TREE_VALUE (attr1)) == TREE_LIST
-      && TREE_VALUE (attr2) != NULL
+      && TREE_VALUE (attr2) != NULL_TREE
       && TREE_CODE (TREE_VALUE (attr2)) == TREE_LIST)
-    return (simple_cst_list_equal (TREE_VALUE (attr1),
-				   TREE_VALUE (attr2)) == 1);
+    {
+      /* Handle attribute format.  */
+      if (is_attribute_p ("format", TREE_PURPOSE (attr1)))
+	{
+	  attr1 = TREE_VALUE (attr1);
+	  attr2 = TREE_VALUE (attr2);
+	  /* Compare the archetypes (printf/scanf/strftime/...).  */
+	  if (!cmp_attrib_identifiers (TREE_VALUE (attr1),
+				       TREE_VALUE (attr2)))
+	    return false;
+	  /* Archetypes are the same.  Compare the rest.  */
+	  return (simple_cst_list_equal (TREE_CHAIN (attr1),
+					 TREE_CHAIN (attr2)) == 1);
+	}
+      return (simple_cst_list_equal (TREE_VALUE (attr1),
+				     TREE_VALUE (attr2)) == 1);
+    }
 
   if ((flag_openmp || flag_openmp_simd)
       && TREE_VALUE (attr1) && TREE_VALUE (attr2)
@@ -6037,38 +6091,10 @@ lookup_ident_attribute (tree attr_identifier, tree list)
       gcc_checking_assert (TREE_CODE (get_attribute_name (list))
 			   == IDENTIFIER_NODE);
 
-      /* Identifiers can be compared directly for equality.  */
-      if (attr_identifier == get_attribute_name (list))
+      if (cmp_attrib_identifiers (attr_identifier,
+				  get_attribute_name (list)))
+	/* Found it.  */
 	break;
-
-      /* If they are not equal, they may still be one in the form
-	 'text' while the other one is in the form '__text__'.  TODO:
-	 If we were storing attributes in normalized 'text' form, then
-	 this could all go away and we could take full advantage of
-	 the fact that we're comparing identifiers. :-)  */
-      {
-	size_t attr_len = IDENTIFIER_LENGTH (attr_identifier);
-	size_t ident_len = IDENTIFIER_LENGTH (get_attribute_name (list));
-
-	if (ident_len == attr_len + 4)
-	  {
-	    const char *p = IDENTIFIER_POINTER (get_attribute_name (list));
-	    const char *q = IDENTIFIER_POINTER (attr_identifier);
-	    if (p[0] == '_' && p[1] == '_'
-		&& p[ident_len - 2] == '_' && p[ident_len - 1] == '_'
-		&& strncmp (q, p + 2, attr_len) == 0)
-	      break;
-	  }
-	else if (ident_len + 4 == attr_len)
-	  {
-	    const char *p = IDENTIFIER_POINTER (get_attribute_name (list));
-	    const char *q = IDENTIFIER_POINTER (attr_identifier);
-	    if (q[0] == '_' && q[1] == '_'
-		&& q[attr_len - 2] == '_' && q[attr_len - 1] == '_'
-		&& strncmp (q + 2, p, ident_len) == 0)
-	      break;
-	  }
-      }
       list = TREE_CHAIN (list);
     }
 
@@ -9125,6 +9151,8 @@ get_callee_fndecl (const_tree call)
   return NULL_TREE;
 }
 
+#define TREE_MEM_USAGE_SPACES 40
+
 /* Print debugging information about tree nodes generated during the compile,
    and any language-specific information.  */
 
@@ -9135,8 +9163,8 @@ dump_tree_statistics (void)
     {
       int i;
       int total_nodes, total_bytes;
-      fprintf (stderr, "Kind                   Nodes      Bytes\n");
-      fprintf (stderr, "---------------------------------------\n");
+      fprintf (stderr, "\nKind                   Nodes      Bytes\n");
+      mem_usage::print_dash_line (TREE_MEM_USAGE_SPACES);
       total_nodes = total_bytes = 0;
       for (i = 0; i < (int) all_kinds; i++)
 	{
@@ -9145,17 +9173,20 @@ dump_tree_statistics (void)
 	  total_nodes += tree_node_counts[i];
 	  total_bytes += tree_node_sizes[i];
 	}
-      fprintf (stderr, "---------------------------------------\n");
+      mem_usage::print_dash_line (TREE_MEM_USAGE_SPACES);
       fprintf (stderr, "%-20s %7d %10d\n", "Total", total_nodes, total_bytes);
-      fprintf (stderr, "---------------------------------------\n");
+      mem_usage::print_dash_line (TREE_MEM_USAGE_SPACES);
       fprintf (stderr, "Code                   Nodes\n");
-      fprintf (stderr, "----------------------------\n");
+      mem_usage::print_dash_line (TREE_MEM_USAGE_SPACES);
       for (i = 0; i < (int) MAX_TREE_CODES; i++)
-	fprintf (stderr, "%-20s %7d\n", get_tree_code_name ((enum tree_code) i),
+	fprintf (stderr, "%-32s %7d\n", get_tree_code_name ((enum tree_code) i),
                  tree_code_counts[i]);
-      fprintf (stderr, "----------------------------\n");
+      mem_usage::print_dash_line (TREE_MEM_USAGE_SPACES);
+      fprintf (stderr, "\n");
       ssanames_print_statistics ();
+      fprintf (stderr, "\n");
       phinodes_print_statistics ();
+      fprintf (stderr, "\n");
     }
   else
     fprintf (stderr, "(No per-node statistics)\n");
@@ -12819,6 +12850,17 @@ verify_type_variant (const_tree t, tree tv)
       debug_tree (TREE_TYPE (t));
       return false;
     }
+  if (type_with_alias_set_p (t)
+      && !gimple_canonical_types_compatible_p (t, tv, false))
+    {
+      error ("type is not compatible with its vairant");
+      debug_tree (tv);
+      error ("type variant's TREE_TYPE");
+      debug_tree (TREE_TYPE (tv));
+      error ("type's TREE_TYPE");
+      debug_tree (TREE_TYPE (t));
+      return false;
+    }
   return true;
 #undef verify_variant_match
 }
@@ -12843,7 +12885,13 @@ bool
 gimple_canonical_types_compatible_p (const_tree t1, const_tree t2,
 				     bool trust_type_canonical)
 {
-  /* Before starting to set up the SCC machinery handle simple cases.  */
+  /* Type variants should be same as the main variant.  When not doing sanity
+     checking to verify this fact, go to main variants and save some work.  */
+  if (trust_type_canonical)
+    {
+      t1 = TYPE_MAIN_VARIANT (t1);
+      t2 = TYPE_MAIN_VARIANT (t2);
+    }
 
   /* Check first for the obvious case of pointer identity.  */
   if (t1 == t2)
@@ -12877,7 +12925,8 @@ gimple_canonical_types_compatible_p (const_tree t1, const_tree t2,
     return TYPE_CANONICAL (t1) == TYPE_CANONICAL (t2);
 
   /* Can't be the same type if the types don't have the same code.  */
-  if (TREE_CODE (t1) != TREE_CODE (t2))
+  if (tree_code_for_canonical_type_merging (TREE_CODE (t1))
+      != tree_code_for_canonical_type_merging (TREE_CODE (t2)))
     return false;
 
   /* Qualifiers do not matter for canonical type comparison purposes.  */

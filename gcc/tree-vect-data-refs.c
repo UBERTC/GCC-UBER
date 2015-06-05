@@ -25,13 +25,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "dumpfile.h"
 #include "tm.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -76,8 +73,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "rtl.h"
 #include "flags.h"
 #include "statistics.h"
-#include "real.h"
-#include "fixed-value.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -2205,29 +2200,33 @@ vect_analyze_group_access (struct data_reference *dr)
 
       /* Check that the size of the interleaving is equal to count for stores,
          i.e., that there are no gaps.  */
-      if (groupsize != count)
+      if (groupsize != count
+	  && !DR_IS_READ (dr))
         {
-          if (DR_IS_READ (dr))
-            {
-              slp_impossible = true;
-              /* There is a gap after the last load in the group. This gap is a
-                 difference between the groupsize and the number of elements.
-		 When there is no gap, this difference should be 0.  */
-              GROUP_GAP (vinfo_for_stmt (stmt)) = groupsize - count;
-            }
-          else
-            {
-              if (dump_enabled_p ())
-                dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
-                                 "interleaved store with gaps\n");
-              return false;
-            }
-        }
+	  if (dump_enabled_p ())
+	    dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+			     "interleaved store with gaps\n");
+	  return false;
+	}
+
+      /* If there is a gap after the last load in the group it is the
+	 difference between the groupsize and the last accessed
+	 element.
+	 When there is no gap, this difference should be 0.  */
+      GROUP_GAP (vinfo_for_stmt (stmt)) = groupsize - last_accessed_element;
 
       GROUP_SIZE (vinfo_for_stmt (stmt)) = groupsize;
       if (dump_enabled_p ())
-        dump_printf_loc (MSG_NOTE, vect_location,
-                         "Detected interleaving of size %d\n", (int)groupsize);
+	{
+	  dump_printf_loc (MSG_NOTE, vect_location,
+			   "Detected interleaving of size %d starting with ",
+			   (int)groupsize);
+	  dump_gimple_stmt (MSG_NOTE, TDF_SLIM, stmt, 0);
+	  if (GROUP_GAP (vinfo_for_stmt (stmt)) != 0)
+	    dump_printf_loc (MSG_NOTE, vect_location,
+			     "There is a gap of %d elements after the group\n",
+			     (int)GROUP_GAP (vinfo_for_stmt (stmt)));
+	}
 
       /* SLP: create an SLP data structure for every interleaving group of
 	 stores for further analysis in vect_analyse_slp.  */
@@ -2287,18 +2286,22 @@ vect_analyze_data_ref_access (struct data_reference *dr)
       return false;
     }
 
-  /* Allow invariant loads in not nested loops.  */
+  /* Allow loads with zero step in inner-loop vectorization.  */
   if (loop_vinfo && integer_zerop (step))
     {
       GROUP_FIRST_ELEMENT (vinfo_for_stmt (stmt)) = NULL;
-      if (nested_in_vect_loop_p (loop, stmt))
+      if (!nested_in_vect_loop_p (loop, stmt))
+	return DR_IS_READ (dr);
+      /* Allow references with zero step for outer loops marked
+	 with pragma omp simd only - it guarantees absence of
+	 loop-carried dependencies between inner loop iterations.  */
+      if (!loop->force_vectorize)
 	{
 	  if (dump_enabled_p ())
 	    dump_printf_loc (MSG_NOTE, vect_location,
 			     "zero step in inner loop of nest\n");
 	  return false;
 	}
-      return DR_IS_READ (dr);
     }
 
   if (loop && nested_in_vect_loop_p (loop, stmt))

@@ -23,13 +23,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "options.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "c-common.h"
@@ -894,7 +891,7 @@ c_common_post_options (const char **pfilename)
   /* Change flag_abi_version to be the actual current ABI level for the
      benefit of c_cpp_builtins.  */
   if (flag_abi_version == 0)
-    flag_abi_version = 8;
+    flag_abi_version = 9;
 
   /* Set C++ standard to C++98 if not specified on the command line.  */
   if (c_dialect_cxx () && cxx_dialect == cxx_unset)

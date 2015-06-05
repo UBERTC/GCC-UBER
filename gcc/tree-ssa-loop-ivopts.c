@@ -66,13 +66,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -113,8 +110,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "rtl.h"
 #include "flags.h"
 #include "statistics.h"
-#include "real.h"
-#include "fixed-value.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -171,9 +166,10 @@ struct iv
   tree base_object;	/* A memory object to that the induction variable points.  */
   tree step;		/* Step of the iv (constant only).  */
   tree ssa_name;	/* The ssa name with the value.  */
+  unsigned use_id;	/* The identifier in the use if it is the case.  */
   bool biv_p;		/* Is it a biv?  */
   bool have_use_for;	/* Do we already have a use for it?  */
-  unsigned use_id;	/* The identifier in the use if it is the case.  */
+  bool no_overflow;	/* True if the iv doesn't overflow.  */
 };
 
 /* Per-ssa version information (induction variable descriptions, etc.).  */
@@ -516,9 +512,9 @@ single_dom_exit (struct loop *loop)
 /* Dumps information about the induction variable IV to FILE.  */
 
 void
-dump_iv (FILE *file, struct iv *iv)
+dump_iv (FILE *file, struct iv *iv, bool dump_name)
 {
-  if (iv->ssa_name)
+  if (iv->ssa_name && dump_name)
     {
       fprintf (file, "ssa name ");
       print_generic_expr (file, iv->ssa_name, TDF_SLIM);
@@ -595,7 +591,7 @@ dump_use (FILE *file, struct iv_use *use)
     print_generic_expr (file, *use->op_p, TDF_SLIM);
   fprintf (file, "\n");
 
-  dump_iv (file, use->iv);
+  dump_iv (file, use->iv, false);
 
   if (use->related_cands)
     {
@@ -683,7 +679,7 @@ dump_cand (FILE *file, struct iv_cand *cand)
       break;
     }
 
-  dump_iv (file, iv);
+  dump_iv (file, iv, false);
 }
 
 /* Returns the info for ssa version VER.  */
@@ -1005,10 +1001,10 @@ contain_complex_addr_expr (tree expr)
 }
 
 /* Allocates an induction variable with given initial value BASE and step STEP
-   for loop LOOP.  */
+   for loop LOOP.  NO_OVERFLOW implies the iv doesn't overflow.  */
 
 static struct iv *
-alloc_iv (tree base, tree step)
+alloc_iv (tree base, tree step, bool no_overflow = false)
 {
   tree expr = base;
   struct iv *iv = XCNEW (struct iv);
@@ -1035,21 +1031,24 @@ alloc_iv (tree base, tree step)
   iv->have_use_for = false;
   iv->use_id = 0;
   iv->ssa_name = NULL_TREE;
+  iv->no_overflow = no_overflow;
 
   return iv;
 }
 
-/* Sets STEP and BASE for induction variable IV.  */
+/* Sets STEP and BASE for induction variable IV.  NO_OVERFLOW implies the IV
+   doesn't overflow.  */
 
 static void
-set_iv (struct ivopts_data *data, tree iv, tree base, tree step)
+set_iv (struct ivopts_data *data, tree iv, tree base, tree step,
+	bool no_overflow)
 {
   struct version_info *info = name_info (data, iv);
 
   gcc_assert (!info->iv);
 
   bitmap_set_bit (data->relevant, SSA_NAME_VERSION (iv));
-  info->iv = alloc_iv (base, step);
+  info->iv = alloc_iv (base, step, no_overflow);
   info->iv->ssa_name = iv;
 }
 
@@ -1071,29 +1070,10 @@ get_iv (struct ivopts_data *data, tree var)
 
       if (!bb
 	  || !flow_bb_inside_loop_p (data->current_loop, bb))
-	set_iv (data, var, var, build_int_cst (type, 0));
+	set_iv (data, var, var, build_int_cst (type, 0), true);
     }
 
   return name_info (data, var)->iv;
-}
-
-/* Determines the step of a biv defined in PHI.  Returns NULL if PHI does
-   not define a simple affine biv with nonzero step.  */
-
-static tree
-determine_biv_step (gphi *phi)
-{
-  struct loop *loop = gimple_bb (phi)->loop_father;
-  tree name = PHI_RESULT (phi);
-  affine_iv iv;
-
-  if (virtual_operand_p (name))
-    return NULL_TREE;
-
-  if (!simple_iv (loop, loop, name, &iv, true))
-    return NULL_TREE;
-
-  return integer_zerop (iv.step) ? NULL_TREE : iv.step;
 }
 
 /* Return the first non-invariant ssa var found in EXPR.  */
@@ -1129,6 +1109,7 @@ static bool
 find_bivs (struct ivopts_data *data)
 {
   gphi *phi;
+  affine_iv iv;
   tree step, type, base, stop;
   bool found = false;
   struct loop *loop = data->current_loop;
@@ -1141,10 +1122,16 @@ find_bivs (struct ivopts_data *data)
       if (SSA_NAME_OCCURS_IN_ABNORMAL_PHI (PHI_RESULT (phi)))
 	continue;
 
-      step = determine_biv_step (phi);
-      if (!step)
+      if (virtual_operand_p (PHI_RESULT (phi)))
 	continue;
 
+      if (!simple_iv (loop, loop, PHI_RESULT (phi), &iv, true))
+	continue;
+
+      if (integer_zerop (iv.step))
+	continue;
+
+      step = iv.step;
       base = PHI_ARG_DEF_FROM_EDGE (phi, loop_preheader_edge (loop));
       /* Stop expanding iv base at the first ssa var referred by iv step.
 	 Ideally we should stop at any ssa var, because that's expensive
@@ -1167,7 +1154,7 @@ find_bivs (struct ivopts_data *data)
 	    step = fold_convert (type, step);
 	}
 
-      set_iv (data, PHI_RESULT (phi), base, step);
+      set_iv (data, PHI_RESULT (phi), base, step, iv.no_overflow);
       found = true;
     }
 
@@ -1270,7 +1257,7 @@ find_givs_in_stmt (struct ivopts_data *data, gimple stmt)
   if (!find_givs_in_stmt_scev (data, stmt, &iv))
     return;
 
-  set_iv (data, gimple_assign_lhs (stmt), iv.base, iv.step);
+  set_iv (data, gimple_assign_lhs (stmt), iv.base, iv.step, iv.no_overflow);
 }
 
 /* Finds general ivs in basic block BB.  */
@@ -1334,7 +1321,7 @@ find_induction_variables (struct ivopts_data *data)
       EXECUTE_IF_SET_IN_BITMAP (data->relevant, 0, i, bi)
 	{
 	  if (ver_info (data, i)->iv)
-	    dump_iv (dump_file, ver_info (data, i)->iv);
+	    dump_iv (dump_file, ver_info (data, i)->iv, true);
 	}
     }
 
@@ -1363,10 +1350,6 @@ record_use (struct ivopts_data *data, tree *use_p, struct iv *iv,
   use->next = NULL;
   use->addr_base = addr_base;
   use->addr_offset = addr_offset;
-
-  /* To avoid showing ssa name in the dumps, if it was not reset by the
-     caller.  */
-  iv->ssa_name = NULL_TREE;
 
   data->iv_uses.safe_push (use);
 
@@ -1683,6 +1666,7 @@ idx_find_step (tree base, tree *idx, void *data)
 {
   struct ifs_ivopts_data *dta = (struct ifs_ivopts_data *) data;
   struct iv *iv;
+  bool use_overflow_semantics = false;
   tree step, iv_base, iv_step, lbound, off;
   struct loop *loop = dta->ivopts_data->current_loop;
 
@@ -1742,9 +1726,12 @@ idx_find_step (tree base, tree *idx, void *data)
 
   iv_base = iv->base;
   iv_step = iv->step;
+  if (iv->no_overflow && nowrap_type_p (TREE_TYPE (iv_step)))
+    use_overflow_semantics = true;
+
   if (!convert_affine_scev (dta->ivopts_data->current_loop,
 			    sizetype, &iv_base, &iv_step, dta->stmt,
-			    false))
+			    use_overflow_semantics))
     {
       /* The index might wrap.  */
       return false;

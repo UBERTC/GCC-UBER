@@ -26,15 +26,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "hash-table.h"
 #include "diagnostic-core.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
 #include "flags.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "tree-pass.h"
@@ -441,6 +438,8 @@ register_callback (const char *plugin_name,
 	    return;
 	  }
       /* Fall through.  */
+      case PLUGIN_START_PARSE_FUNCTION:
+      case PLUGIN_FINISH_PARSE_FUNCTION:
       case PLUGIN_FINISH_TYPE:
       case PLUGIN_FINISH_DECL:
       case PLUGIN_START_UNIT:
@@ -519,6 +518,8 @@ invoke_plugin_callbacks_full (int event, void *gcc_data)
 	gcc_assert (event >= PLUGIN_EVENT_FIRST_DYNAMIC);
 	gcc_assert (event < event_last);
       /* Fall through.  */
+      case PLUGIN_START_PARSE_FUNCTION:
+      case PLUGIN_FINISH_PARSE_FUNCTION:
       case PLUGIN_FINISH_TYPE:
       case PLUGIN_FINISH_DECL:
       case PLUGIN_START_UNIT:

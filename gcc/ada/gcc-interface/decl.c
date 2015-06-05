@@ -28,13 +28,10 @@
 #include "coretypes.h"
 #include "tm.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -882,8 +879,9 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	    check_ok_for_atomic_type (gnu_inner, gnat_entity, true);
 	  }
 
-	/* If this is an aliased object with an unconstrained nominal subtype,
-	   make a type that includes the template.  */
+	/* If this is an aliased object with an unconstrained array nominal
+	   subtype, make a type that includes the template.  We will either
+	   allocate or create a variable of that type, see below.  */
 	if (Is_Constr_Subt_For_UN_Aliased (Etype (gnat_entity))
 	    && Is_Array_Type (Underlying_Type (Etype (gnat_entity)))
 	    && !type_annotate_only)
@@ -1149,7 +1147,8 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	   effects in this case.  */
 	if (definition && Present (Address_Clause (gnat_entity)))
 	  {
-	    Node_Id gnat_expr = Expression (Address_Clause (gnat_entity));
+	    const Node_Id gnat_clause = Address_Clause (gnat_entity);
+	    Node_Id gnat_expr = Expression (gnat_clause);
 	    tree gnu_address
 	      = present_gnu_tree (gnat_entity)
 		? get_gnu_tree (gnat_entity) : gnat_to_gnu (gnat_expr);
@@ -1167,6 +1166,40 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 		|| compile_time_known_address_p (gnat_expr);
 	    gnu_size = NULL_TREE;
 
+	    /* If this is an aliased object with an unconstrained array nominal
+	       subtype, then it can overlay only another aliased object with an
+	       unconstrained array nominal subtype and compatible template.  */
+	    if (Is_Constr_Subt_For_UN_Aliased (Etype (gnat_entity))
+		&& Is_Array_Type (Underlying_Type (Etype (gnat_entity)))
+		&& !type_annotate_only)
+	      {
+		tree rec_type = TREE_TYPE (gnu_type);
+		tree off = byte_position (DECL_CHAIN (TYPE_FIELDS (rec_type)));
+
+		/* This is the pattern built for a regular object.  */
+		if (TREE_CODE (gnu_address) == POINTER_PLUS_EXPR
+		    && TREE_OPERAND (gnu_address, 1) == off)
+		  gnu_address = TREE_OPERAND (gnu_address, 0);
+		/* This is the pattern built for an overaligned object.  */
+		else if (TREE_CODE (gnu_address) == POINTER_PLUS_EXPR
+			 && TREE_CODE (TREE_OPERAND (gnu_address, 1))
+			    == PLUS_EXPR
+			 && TREE_OPERAND (TREE_OPERAND (gnu_address, 1), 1)
+			    == off)
+		  gnu_address
+		    = build2 (POINTER_PLUS_EXPR, gnu_type,
+			      TREE_OPERAND (gnu_address, 0),
+			      TREE_OPERAND (TREE_OPERAND (gnu_address, 1), 0));
+		else
+		  {
+		    post_error_ne ("aliased object& with unconstrained array "
+				   "nominal subtype", gnat_clause,
+				   gnat_entity);
+		    post_error ("\\can overlay only aliased object with "
+				"compatible subtype", gnat_clause);
+		  }
+	      }
+
 	    /* If this is a deferred constant, the initializer is attached to
 	       the full view.  */
 	    if (kind == E_Constant && Present (Full_View (gnat_entity)))
@@ -1183,11 +1216,11 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	    else
 	      gnu_expr
 		= build2 (COMPOUND_EXPR, gnu_type,
-			  build_binary_op
-			  (MODIFY_EXPR, NULL_TREE,
-			   build_unary_op (INDIRECT_REF, NULL_TREE,
-					   gnu_address),
-			   gnu_expr),
+			  build_binary_op (INIT_EXPR, NULL_TREE,
+					   build_unary_op (INDIRECT_REF,
+							   NULL_TREE,
+							   gnu_address),
+					   gnu_expr),
 			  gnu_address);
 	  }
 
@@ -1302,8 +1335,11 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	/* If this object would go into the stack and has an alignment larger
 	   than the largest stack alignment the back-end can honor, resort to
 	   a variable of "aligning type".  */
-	if (!global_bindings_p () && !static_p && definition
-	    && !imported_p && TYPE_ALIGN (gnu_type) > BIGGEST_ALIGNMENT)
+	if (definition
+	    && !global_bindings_p ()
+	    && !static_p
+	    && !imported_p
+	    && TYPE_ALIGN (gnu_type) > BIGGEST_ALIGNMENT)
 	  {
 	    /* Create the new variable.  No need for extra room before the
 	       aligned field as this is in automatic storage.  */
@@ -1315,11 +1351,12 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	      = create_var_decl (create_concat_name (gnat_entity, "ALIGN"),
 				 NULL_TREE, gnu_new_type, NULL_TREE, false,
 				 false, false, false, NULL, gnat_entity);
+	    DECL_ARTIFICIAL (gnu_new_var) = 1;
 
 	    /* Initialize the aligned field if we have an initializer.  */
 	    if (gnu_expr)
 	      add_stmt_with_node
-		(build_binary_op (MODIFY_EXPR, NULL_TREE,
+		(build_binary_op (INIT_EXPR, NULL_TREE,
 				  build_component_ref
 				  (gnu_new_var, NULL_TREE,
 				   TYPE_FIELDS (gnu_new_type), false),
@@ -1330,28 +1367,26 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	    gnu_type = build_reference_type (gnu_type);
 	    gnu_expr
 	      = build_unary_op
-		(ADDR_EXPR, gnu_type,
+		(ADDR_EXPR, NULL_TREE,
 		 build_component_ref (gnu_new_var, NULL_TREE,
 				      TYPE_FIELDS (gnu_new_type), false));
+	    TREE_CONSTANT (gnu_expr) = 1;
 
 	    used_by_ref = true;
 	    const_flag = true;
 	    gnu_size = NULL_TREE;
 	  }
 
-	/* If this is an aliased object with an unconstrained nominal subtype,
-	   we make its type a thin reference, i.e. the reference counterpart
-	   of a thin pointer, so that it points to the array part.  This is
-	   aimed at making it easier for the debugger to decode the object.
-	   Note that we have to do that this late because of the couple of
-	   allocation adjustments that might be made just above.  */
+	/* If this is an aliased object with an unconstrained array nominal
+	   subtype, we make its type a thin reference, i.e. the reference
+	   counterpart of a thin pointer, so it points to the array part.
+	   This is aimed to make it easier for the debugger to decode the
+	   object.  Note that we have to do it this late because of the
+	   couple of allocation adjustments that might be made above.  */
 	if (Is_Constr_Subt_For_UN_Aliased (Etype (gnat_entity))
 	    && Is_Array_Type (Underlying_Type (Etype (gnat_entity)))
 	    && !type_annotate_only)
 	  {
-	    tree gnu_array
-	      = gnat_to_gnu_type (Base_Type (Etype (gnat_entity)));
-
 	    /* In case the object with the template has already been allocated
 	       just above, we have nothing to do here.  */
 	    if (!TYPE_IS_THIN_POINTER_P (gnu_type))
@@ -1362,8 +1397,7 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 				      const_flag, Is_Public (gnat_entity),
 				      imported_p || !definition, static_p,
 				      NULL, gnat_entity);
-		gnu_expr
-		  = build_unary_op (ADDR_EXPR, NULL_TREE, gnu_unc_var);
+		gnu_expr = build_unary_op (ADDR_EXPR, NULL_TREE, gnu_unc_var);
 		TREE_CONSTANT (gnu_expr) = 1;
 
 		used_by_ref = true;
@@ -1372,6 +1406,8 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 		gnu_size = NULL_TREE;
 	      }
 
+	    tree gnu_array
+	      = gnat_to_gnu_type (Base_Type (Etype (gnat_entity)));
 	    gnu_type
 	      = build_reference_type (TYPE_OBJECT_RECORD_TYPE (gnu_array));
 	  }
@@ -2980,6 +3016,12 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	    else
 	      gnu_parent = gnat_to_gnu_type (gnat_parent);
 
+	    /* The parent field needs strict alignment so, if it is to
+	       be created with a component clause below, then we need
+	       to apply the same adjustment as in gnat_to_gnu_field.  */
+	    if (has_rep && TYPE_ALIGN (gnu_type) < TYPE_ALIGN (gnu_parent))
+	      TYPE_ALIGN (gnu_type) = TYPE_ALIGN (gnu_parent);
+
 	    /* Finally we fix up both kinds of twisted COMPONENT_REF we have
 	       initially built.  The discriminants must reference the fields
 	       of the parent subtype and not those of its base type for the
@@ -4153,7 +4195,7 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	       type the pointer type and make a note of that.  */
 	    if (Returns_By_Ref (gnat_entity))
 	      {
-		gnu_return_type = build_pointer_type (gnu_return_type);
+		gnu_return_type = build_reference_type (gnu_return_type);
 		return_by_direct_ref_p = true;
 	      }
 
@@ -4171,7 +4213,7 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	       the actual return type is the pointer type.  */
 	    else if (Requires_Transient_Scope (gnat_return_type))
 	      {
-		gnu_return_type = build_pointer_type (gnu_return_type);
+		gnu_return_type = build_reference_type (gnu_return_type);
 		return_unconstrained_p = true;
 	      }
 
@@ -4207,7 +4249,8 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 		  = maybe_pad_type (gnu_return_type,
 				    max_size (TYPE_SIZE (gnu_return_type),
 					      true),
-				    0, gnat_entity, false, false, false, true);
+				    0, gnat_entity, false, false, definition,
+				    true);
 
 		/* Declare it now since it will never be declared otherwise.
 		   This is necessary to ensure that its subtrees are properly
@@ -4593,13 +4636,15 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
     case E_Record_Type_With_Private:
     case E_Record_Subtype_With_Private:
       {
+	bool is_from_limited_with
+	  = (IN (kind, Incomplete_Kind) && From_Limited_With (gnat_entity));
 	/* Get the "full view" of this entity.  If this is an incomplete
 	   entity from a limited with, treat its non-limited view as the
 	   full view.  Otherwise, use either the full view or the underlying
 	   full view, whichever is present.  This is used in all the tests
 	   below.  */
 	Entity_Id full_view
-	  = (IN (kind, Incomplete_Kind) && From_Limited_With (gnat_entity))
+	  = is_from_limited_with
 	    ? Non_Limited_View (gnat_entity)
 	    : Present (Full_View (gnat_entity))
 	      ? Full_View (gnat_entity)
@@ -4635,10 +4680,15 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 
 	/* Otherwise, if we are not defining the type now, get the type
 	   from the full view.  But always get the type from the full view
-	   for define on use types, since otherwise we won't see them!  */
+	   for define on use types, since otherwise we won't see them.
+	   Likewise if this is a non-limited view not declared in the main
+	   unit, which can happen for incomplete formal types instantiated
+	   on a type coming from a limited_with clause.  */
 	else if (!definition
 		 || (Is_Itype (full_view) && No (Freeze_Node (gnat_entity)))
-		 || (Is_Itype (gnat_entity) && No (Freeze_Node (full_view))))
+		 || (Is_Itype (gnat_entity) && No (Freeze_Node (full_view)))
+		 || (is_from_limited_with
+		     && !In_Extended_Main_Code_Unit (full_view)))
 	  {
 	    gnu_decl = gnat_to_gnu_entity (full_view, NULL_TREE, 0);
 	    maybe_present = true;

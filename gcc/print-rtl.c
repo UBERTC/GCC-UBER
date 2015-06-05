@@ -34,13 +34,10 @@ along with GCC; see the file COPYING3.  If not see
    generator programs.  */
 #ifndef GENERATOR_FILE
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "print-tree.h"
@@ -52,6 +49,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "basic-block.h"
 #include "diagnostic.h"
 #include "tree-pretty-print.h"
+#include "alloc-pool.h"
 #include "cselib.h"
 #include "dumpfile.h"	/* for dump_flags */
 #include "dwarf2out.h"

@@ -22,13 +22,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -62,8 +59,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "hashtab.h"
 #include "rtl.h"
 #include "statistics.h"
-#include "real.h"
-#include "fixed-value.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -612,9 +607,11 @@ fixup_noreturn_call (gimple stmt)
 	}
     }
 
-  /* If there is an LHS, remove it.  */
+  /* If there is an LHS, remove it, but only if its type has fixed size.
+     The LHS will need to be recreated during RTL expansion and creating
+     temporaries of variable-sized types is not supported.  */
   tree lhs = gimple_call_lhs (stmt);
-  if (lhs)
+  if (lhs && TREE_CODE (TYPE_SIZE_UNIT (TREE_TYPE (lhs))) == INTEGER_CST)
     {
       gimple_call_set_lhs (stmt, NULL_TREE);
 

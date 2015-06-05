@@ -28,15 +28,11 @@
 #include "coretypes.h"
 #include "tm.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
-#include "real.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stringpool.h"
@@ -858,14 +854,17 @@ lvalue_required_p (Node_Id gnat_node, tree gnu_type, bool constant,
       if (Prefix (gnat_parent) != gnat_node)
 	return 0;
 
-      /* ??? Consider that referencing an indexed component with a
-	 non-constant index forces the whole aggregate to memory.
-	 Note that N_Integer_Literal is conservative, any static
-	 expression in the RM sense could probably be accepted.  */
+      /* ??? Consider that referencing an indexed component with a variable
+	 index forces the whole aggregate to memory.  Note that testing only
+	 for literals is conservative, any static expression in the RM sense
+	 could probably be accepted with some additional work.  */
       for (gnat_temp = First (Expressions (gnat_parent));
 	   Present (gnat_temp);
 	   gnat_temp = Next (gnat_temp))
-	if (Nkind (gnat_temp) != N_Integer_Literal)
+	if (Nkind (gnat_temp) != N_Character_Literal
+	    && Nkind (gnat_temp) != N_Integer_Literal
+	    && !(Is_Entity_Name (gnat_temp)
+		 && Ekind (Entity (gnat_temp)) == E_Enumeration_Literal))
 	  return 1;
 
       /* ... fall through ... */
@@ -6806,7 +6805,7 @@ gnat_to_gnu (Node_Id gnat_node)
 	       self-referential since we want to allocate the fixed size.  */
 	    if (TREE_CODE (gnu_ret_val) == COMPONENT_REF
 		&& type_is_padding_self_referential
-		   (TREE_OPERAND (gnu_ret_val, 0)))
+		   (TREE_TYPE (TREE_OPERAND (gnu_ret_val, 0))))
 	      gnu_ret_val = TREE_OPERAND (gnu_ret_val, 0);
 
 	    /* If the function returns by direct reference, return a pointer

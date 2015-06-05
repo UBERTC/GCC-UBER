@@ -26,13 +26,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "rtl.h"
 #include "tm_p.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
@@ -67,8 +64,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "hashtab.h"
 #include "flags.h"
 #include "statistics.h"
-#include "real.h"
-#include "fixed-value.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -235,7 +230,8 @@ typedef struct operand_entry
   unsigned int count;
 } *operand_entry_t;
 
-static alloc_pool operand_entry_pool;
+static pool_allocator<operand_entry> operand_entry_pool ("operand entry pool",
+							 30);
 
 /* This is used to assign a unique ID to each struct operand_entry
    so that qsort results are identical on different hosts.  */
@@ -417,10 +413,6 @@ insert_operand_rank (tree e, long rank)
 static long
 get_rank (tree e)
 {
-  /* Constants have rank 0.  */
-  if (is_gimple_min_invariant (e))
-    return 0;
-
   /* SSA_NAME's have the rank of the expression they are the result
      of.
      For globals and uninitialized values, the rank is 0.
@@ -460,9 +452,9 @@ get_rank (tree e)
 
   if (TREE_CODE (e) == SSA_NAME)
     {
+      ssa_op_iter iter;
       gimple stmt;
       long rank;
-      int i, n;
       tree op;
 
       if (SSA_NAME_IS_DEFAULT_DEF (e))
@@ -472,8 +464,7 @@ get_rank (tree e)
       if (gimple_code (stmt) == GIMPLE_PHI)
 	return phi_rank (stmt);
 
-      if (!is_gimple_assign (stmt)
-	  || gimple_vdef (stmt))
+      if (!is_gimple_assign (stmt))
 	return bb_rank[gimple_bb (stmt)->index];
 
       /* If we already have a rank for this expression, use that.  */
@@ -484,34 +475,12 @@ get_rank (tree e)
       /* Otherwise, find the maximum rank for the operands.  As an
 	 exception, remove the bias from loop-carried phis when propagating
 	 the rank so that dependent operations are not also biased.  */
+      /* Simply walk over all SSA uses - this takes advatage of the
+         fact that non-SSA operands are is_gimple_min_invariant and
+	 thus have rank 0.  */
       rank = 0;
-      if (gimple_assign_single_p (stmt))
-	{
-	  tree rhs = gimple_assign_rhs1 (stmt);
-	  n = TREE_OPERAND_LENGTH (rhs);
-	  if (n == 0)
-	    rank = propagate_rank (rank, rhs);
-	  else
-	    {
-	      for (i = 0; i < n; i++)
-		{
-		  op = TREE_OPERAND (rhs, i);
-
-		  if (op != NULL_TREE)
-		    rank = propagate_rank (rank, op);
-		}
-	    }
-	}
-      else
-	{
-	  n = gimple_num_ops (stmt);
-	  for (i = 1; i < n; i++)
-	    {
-	      op = gimple_op (stmt, i);
-	      gcc_assert (op);
-	      rank = propagate_rank (rank, op);
-	    }
-	}
+      FOR_EACH_SSA_TREE_OPERAND (op, stmt, iter, SSA_OP_USE)
+	rank = propagate_rank (rank, op);
 
       if (dump_file && (dump_flags & TDF_DETAILS))
 	{
@@ -525,7 +494,7 @@ get_rank (tree e)
       return (rank + 1);
     }
 
-  /* Globals, etc,  are rank 0 */
+  /* Constants, globals, etc., are rank 0 */
   return 0;
 }
 
@@ -619,7 +588,7 @@ sort_by_operand_rank (const void *pa, const void *pb)
 static void
 add_to_ops_vec (vec<operand_entry_t> *ops, tree op)
 {
-  operand_entry_t oe = (operand_entry_t) pool_alloc (operand_entry_pool);
+  operand_entry_t oe = operand_entry_pool.allocate ();
 
   oe->op = op;
   oe->rank = get_rank (op);
@@ -635,7 +604,7 @@ static void
 add_repeat_to_ops_vec (vec<operand_entry_t> *ops, tree op,
 		       HOST_WIDE_INT repeat)
 {
-  operand_entry_t oe = (operand_entry_t) pool_alloc (operand_entry_pool);
+  operand_entry_t oe = operand_entry_pool.allocate ();
 
   oe->op = op;
   oe->rank = get_rank (op);
@@ -2990,7 +2959,7 @@ get_ops (tree var, enum tree_code code, vec<operand_entry_t> *ops,
 	&& !get_ops (rhs[i], code, ops, loop)
 	&& has_single_use (rhs[i]))
       {
-	operand_entry_t oe = (operand_entry_t) pool_alloc (operand_entry_pool);
+	operand_entry_t oe = operand_entry_pool.allocate ();
 
 	oe->op = rhs[i];
 	oe->rank = code;
@@ -3223,8 +3192,7 @@ maybe_optimize_range_tests (gimple stmt)
 	      && has_single_use (rhs))
 	    {
 	      /* Otherwise, push the _234 range test itself.  */
-	      operand_entry_t oe
-		= (operand_entry_t) pool_alloc (operand_entry_pool);
+	      operand_entry_t oe = operand_entry_pool.allocate ();
 
 	      oe->op = rhs;
 	      oe->rank = code;
@@ -3256,8 +3224,7 @@ maybe_optimize_range_tests (gimple stmt)
 			   loop_containing_stmt (stmt))))
 	{
 	  /* Or push the GIMPLE_COND stmt itself.  */
-	  operand_entry_t oe
-	    = (operand_entry_t) pool_alloc (operand_entry_pool);
+	  operand_entry_t oe = operand_entry_pool.allocate ();
 
 	  oe->op = NULL;
 	  oe->rank = (e->flags & EDGE_TRUE_VALUE)
@@ -5035,8 +5002,6 @@ init_reassoc (void)
 
   memset (&reassociate_stats, 0, sizeof (reassociate_stats));
 
-  operand_entry_pool = create_alloc_pool ("operand entry pool",
-					  sizeof (struct operand_entry), 30);
   next_operand_entry_id = 0;
 
   /* Reverse RPO (Reverse Post Order) will give us something where
@@ -5085,7 +5050,7 @@ fini_reassoc (void)
 			    reassociate_stats.pows_created);
 
   delete operand_rank;
-  free_alloc_pool (operand_entry_pool);
+  operand_entry_pool.release ();
   free (bb_rank);
   plus_negates.release ();
   free_dominance_info (CDI_POST_DOMINATORS);

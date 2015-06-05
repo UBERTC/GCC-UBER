@@ -25,7 +25,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "hashtab.h"
 #include "hash-set.h"
 #include "vec.h"
-#include "machmode.h"
 #include "tm.h"
 #include "hard-reg-set.h"
 #include "input.h"
@@ -4101,7 +4100,8 @@ more_aggr_init_expr_args_p (const aggr_init_expr_arg_iterator *iter)
   (DECL_LANG_SPECIFIC (NODE)->u.base.not_really_extern)
 
 #define DECL_REALLY_EXTERN(NODE) \
-  (DECL_EXTERNAL (NODE) && ! DECL_NOT_REALLY_EXTERN (NODE))
+  (DECL_EXTERNAL (NODE)				\
+   && (!DECL_LANG_SPECIFIC (NODE) || !DECL_NOT_REALLY_EXTERN (NODE)))
 
 /* A thunk is a stub function.
 
@@ -5490,7 +5490,7 @@ extern bool mark_used			        (tree, tsubst_flags_t);
 extern void finish_static_data_member_decl	(tree, tree, bool, tree, int);
 extern tree cp_build_parm_decl			(tree, tree);
 extern tree get_guard				(tree);
-extern tree get_guard_cond			(tree);
+extern tree get_guard_cond			(tree, bool);
 extern tree set_guard				(tree);
 extern tree get_tls_wrapper_fn			(tree);
 extern void mark_needed				(tree);
@@ -5505,7 +5505,6 @@ extern tree vtv_finish_verification_constructor_init_function (tree);
 extern bool cp_omp_mappable_type		(tree);
 
 /* in error.c */
-extern void init_error				(void);
 extern const char *type_as_string		(tree, int);
 extern const char *type_as_string_translate	(tree, int);
 extern const char *decl_as_string		(tree, int);
@@ -6282,7 +6281,8 @@ extern tree build_address			(tree);
 extern tree build_nop				(tree, tree);
 extern tree non_reference			(tree);
 extern tree lookup_anon_field			(tree, tree);
-extern bool invalid_nonstatic_memfn_p		(tree, tsubst_flags_t);
+extern bool invalid_nonstatic_memfn_p		(location_t, tree,
+						 tsubst_flags_t);
 extern tree convert_member_func_to_ptr		(tree, tree, tsubst_flags_t);
 extern tree convert_ptrmem			(tree, tree, bool, bool,
 						 tsubst_flags_t);

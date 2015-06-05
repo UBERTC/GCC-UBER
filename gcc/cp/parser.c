@@ -25,13 +25,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "timevar.h"
 #include "cpplib.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "print-tree.h"
@@ -12803,11 +12800,12 @@ cp_parser_mem_initializer (cp_parser* parser)
 
    mem-initializer-id:
      :: [opt] nested-name-specifier [opt] class-name
+     decltype-specifier (C++11)
      identifier
 
-   Returns a TYPE indicating the class to be initializer for the first
-   production.  Returns an IDENTIFIER_NODE indicating the data member
-   to be initialized for the second production.  */
+   Returns a TYPE indicating the class to be initialized for the first
+   production (and the second in C++11).  Returns an IDENTIFIER_NODE
+   indicating the data member to be initialized for the last production.  */
 
 static tree
 cp_parser_mem_initializer_id (cp_parser* parser)
@@ -12865,14 +12863,18 @@ cp_parser_mem_initializer_id (cp_parser* parser)
 				 /*is_declaration=*/true);
   /* Otherwise, we could also be looking for an ordinary identifier.  */
   cp_parser_parse_tentatively (parser);
-  /* Try a class-name.  */
-  id = cp_parser_class_name (parser,
-			     /*typename_keyword_p=*/true,
-			     /*template_keyword_p=*/false,
-			     none_type,
-			     /*check_dependency_p=*/true,
-			     /*class_head_p=*/false,
-			     /*is_declaration=*/true);
+  if (cp_lexer_next_token_is_decltype (parser->lexer))
+    /* Try a decltype-specifier.  */
+    id = cp_parser_decltype (parser);
+  else
+    /* Otherwise, try a class-name.  */
+    id = cp_parser_class_name (parser,
+			       /*typename_keyword_p=*/true,
+			       /*template_keyword_p=*/false,
+			       none_type,
+			       /*check_dependency_p=*/true,
+			       /*class_head_p=*/false,
+			       /*is_declaration=*/true);
   /* If we found one, we're done.  */
   if (cp_parser_parse_definitely (parser))
     return id;

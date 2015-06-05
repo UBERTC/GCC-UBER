@@ -29,13 +29,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "stor-layout.h"
@@ -902,7 +899,7 @@ ocp_convert (tree type, tree expr, int convtype, int flags,
     {
       /* If the conversion failed and expr was an invalid use of pointer to
 	 member function, try to report a meaningful error.  */
-      if (invalid_nonstatic_memfn_p (expr, complain))
+      if (invalid_nonstatic_memfn_p (loc, expr, complain))
 	/* We displayed the error message.  */;
       else
 	error_at (loc, "conversion from %qT to non-scalar type %qT requested",
@@ -960,7 +957,7 @@ convert_to_void (tree expr, impl_conv_void implicit, tsubst_flags_t complain)
 
   if (!TREE_TYPE (expr))
     return expr;
-  if (invalid_nonstatic_memfn_p (expr, complain))
+  if (invalid_nonstatic_memfn_p (loc, expr, complain))
     return error_mark_node;
   if (TREE_CODE (expr) == PSEUDO_DTOR_EXPR)
     {

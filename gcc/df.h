@@ -32,7 +32,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "vec.h"
 #include "hashtab.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "tm.h"
 #include "hard-reg-set.h"
 #include "input.h"
@@ -305,7 +304,7 @@ struct dataflow
   unsigned int block_info_size;
 
   /* The pool to allocate the block_info from. */
-  alloc_pool block_pool;
+  pool_allocator<df_link> *block_pool;
 
   /* The lr and live problems have their transfer functions recomputed
      only if necessary.  This is possible for them because, the

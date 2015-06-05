@@ -24,13 +24,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "hash-set.h"
-#include "machmode.h"
 #include "vec.h"
-#include "double-int.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "wide-int.h"
 #include "inchash.h"
 #include "tree.h"
 #include "stor-layout.h"
@@ -906,6 +903,7 @@ struct cp_genericize_data
   vec<tree> bind_expr_stack;
   struct cp_genericize_omp_taskreg *omp_ctx;
   tree try_block;
+  bool no_sanitize_p;
 };
 
 /* Perform any pre-gimplification lowering of C++ front end trees to
@@ -1105,6 +1103,21 @@ cp_genericize_r (tree *stmt_p, int *walk_subtrees, void *data)
 				     : OMP_CLAUSE_DEFAULT_PRIVATE);
 	      }
 	}
+      if (flag_sanitize
+	  & (SANITIZE_NULL | SANITIZE_ALIGNMENT | SANITIZE_VPTR))
+	{
+	  /* The point here is to not sanitize static initializers.  */
+	  bool no_sanitize_p = wtd->no_sanitize_p;
+	  wtd->no_sanitize_p = true;
+	  for (tree decl = BIND_EXPR_VARS (stmt);
+	       decl;
+	       decl = DECL_CHAIN (decl))
+	    if (VAR_P (decl)
+		&& TREE_STATIC (decl)
+		&& DECL_INITIAL (decl))
+	      cp_walk_tree (&DECL_INITIAL (decl), cp_genericize_r, data, NULL);
+	  wtd->no_sanitize_p = no_sanitize_p;
+	}
       wtd->bind_expr_stack.safe_push (stmt);
       cp_walk_tree (&BIND_EXPR_BODY (stmt),
 		    cp_genericize_r, data, NULL);
@@ -1275,9 +1288,10 @@ cp_genericize_r (tree *stmt_p, int *walk_subtrees, void *data)
       if (*stmt_p == error_mark_node)
 	*stmt_p = size_one_node;
       return NULL;
-    }    
-  else if (flag_sanitize
-	   & (SANITIZE_NULL | SANITIZE_ALIGNMENT | SANITIZE_VPTR))
+    }
+  else if ((flag_sanitize
+	    & (SANITIZE_NULL | SANITIZE_ALIGNMENT | SANITIZE_VPTR))
+	   && !wtd->no_sanitize_p)
     {
       if ((flag_sanitize & (SANITIZE_NULL | SANITIZE_ALIGNMENT))
 	  && TREE_CODE (stmt) == NOP_EXPR
@@ -1319,6 +1333,7 @@ cp_genericize_tree (tree* t_p)
   wtd.bind_expr_stack.create (0);
   wtd.omp_ctx = NULL;
   wtd.try_block = NULL_TREE;
+  wtd.no_sanitize_p = false;
   cp_walk_tree (t_p, cp_genericize_r, &wtd, NULL);
   delete wtd.p_set;
   wtd.bind_expr_stack.release ();

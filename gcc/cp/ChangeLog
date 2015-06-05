@@ -1,3 +1,117 @@
+2015-06-04  Andrew MacLeod  <amacleod@redhat.com>
+
+	* call.c: Adjust includes for restructured coretypes.h.
+	* class.c: Likewise.
+	* constexpr.c: Likewise.
+	* cp-array-notation.c: Likewise.
+	* cp-gimplify.c: Likewise.
+	* cp-lang.c: Likewise.
+	* cp-objcp-common.c: Likewise.
+	* cp-tree.h: Likewise.
+	* cp-ubsan.c: Likewise.
+	* cvt.c: Likewise.
+	* decl.c: Likewise.
+	* decl2.c: Likewise.
+	* dump.c: Likewise.
+	* error.c: Likewise.
+	* except.c: Likewise.
+	* expr.c: Likewise.
+	* friend.c: Likewise.
+	* init.c: Likewise.
+	* lambda.c: Likewise.
+	* lex.c: Likewise.
+	* mangle.c: Likewise.
+	* method.c: Likewise.
+	* name-lookup.c: Likewise.
+	* optimize.c: Likewise.
+	* parser.c: Likewise.
+	* pt.c: Likewise.
+	* ptree.c: Likewise.
+	* repo.c: Likewise.
+	* rtti.c: Likewise.
+	* search.c: Likewise.
+	* semantics.c: Likewise.
+	* tree.c: Likewise.
+	* typeck.c: Likewise.
+	* typeck2.c: Likewise.
+	* vtable-class-hierarchy.c: Likewise.
+
+2015-06-04  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR c++/66192
+	PR target/66200
+	* cp-tree.h (get_guard_cond): Adjust declaration
+	* decl.c (expand_static_init): Use atomic load acquire
+	and adjust call to get_guard_cond.
+	* decl2.c (build_atomic_load_byte): New function.
+	(get_guard_cond): Handle thread_safety.
+	(one_static_initialization_or_destruction): Adjust call to
+	get_guard_cond.
+
+2015-06-03  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44282
+	* mangle.c (mangle_decl): Always SET_IDENTIFIER_GLOBAL_VALUE.
+	(write_CV_qualifiers_for_type): Set G.need_abi_warning.
+	(decl_implicit_alias_p): Split out from maybe_remove_implicit_alias.
+	* cp-tree.h (DECL_REALLY_EXTERN): Handle null DECL_LANG_SPECIFIC.
+
+2015-06-03  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/66130
+	* typeck.c (invalid_nonstatic_memfn_p): Add location_t parameter and
+	use it in the diagnostic.
+	(decay_conversion): Adjust call.
+	* semantics.c (finish_decltype_type): Likewise.
+	* call.c (resolve_args, build_new_op_1,
+	perform_implicit_conversion_flags): Adjust calls.
+	* cvt.c (ocp_convert, convert_to_void): Likewise.
+	* cp-tree.h (invalid_nonstatic_memfn_p): Update declaration.
+
+2015-06-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* decl.c (check_tag_decl): Use declspecs->locations as locations in
+	error_at and warning_at calls.
+
+2015-06-03  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/66190
+	* cp-gimplify.c (struct cp_genericize_data): Add no_sanitize_p.
+	(cp_genericize_r): Don't instrument static initializers.
+	(cp_genericize_tree): Initialize wtd.no_sanitize_p.
+
+2015-06-02  Andres Tiraboschi  <andres.tiraboschi@tallertechnologies.com>
+
+	* decl.c (start_function): Call plugin before parsing.
+	(finish_function): Call plugin after parsing.
+
+2015-06-02  Patrick Palka <patrick@parcs.ath.cx>
+
+	* cp-tree.h (init_error): Remove declaration.
+	* error.c (scratch_pretty_printer): Rename to ...
+	(actual_pretty_printer): ... this.
+	(cxx_pp): Constify and update accordingly.
+	(init_error): Remove definition.
+	* lex.c (cxx_init): Do not call init_error.
+
+2015-06-02  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/61683
+	* parser.c (cp_parser_mem_initializer): Allow for decltype-specifier.
+
+2015-06-01  Jason Merrill  <jason@redhat.com>
+
+	PR c++/65942
+	* decl2.c (mark_used): Don't always instantiate constexpr fns.
+	* constexpr.c (cxx_eval_call_expression): Instantiate them here.
+
+	PR c++/44282
+	* mangle.c (attr_strcmp): New.
+	(write_CV_qualifiers_for_type): Also write out attributes that
+	affect type identity.
+	(write_type): Strip all attributes after writing qualifiers.
+
 2015-05-31  Jason Merrill  <jason@redhat.com>
 
 	* constexpr.c (cxx_eval_indirect_ref): Try folding first.
