@@ -1,3 +1,91 @@
+2015-06-03  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-05-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66133
+	* omp-low.c (expand_omp_taskreg): For GIMPLE_OMP_TASK expansion,
+	make sure it is never noreturn, even when the task body does not
+	return.
+	(lower_omp_taskreg): For GIMPLE_OMP_TASK, emit GIMPLE_OMP_CONTINUE
+	right before GIMPLE_OMP_RETURN.
+	* tree-cfg.c (make_edges): Accept GIMPLE_OMP_CONTINUE as ->cont
+	for GIMPLE_OMP_TASK.  For GIMPLE_OMP_RETURN corresponding to
+	GIMPLE_OMP_TASK add an EDGE_ABNORMAL edge from entry to exit.
+
+	2015-04-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/65680
+	* expr.c (get_inner_reference): Handle bit_offset that doesn't fit
+	into signed HOST_WIDE_INT the same as negative bit_offset.
+
+	2015-03-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65368
+	* config/i386/i386.md (bmi2_bzhi_<mode>3): Removed define_insn,
+	new define_expand.
+	(*bmi2_bzhi_<mode>3, *bmi2_bzhi_<mode>3_1): New define_insns.
+
+	2015-02-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR gcov-profile/64634
+	* tree-eh.c (frob_into_branch_around): Fix up typos
+	in function comment.
+	(lower_catch): Put eh_seq resulting from EH lowering of
+	the cleanup sequence after the cleanup rather than before
+	it.
+
+2015-06-03  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-05-26  Michael Matz  <matz@suse.de>
+
+	PR middle-end/66251
+	* tree-vect-stmts.c (vect_create_vectorized_demotion_stmts): Always set
+	STMT_VINFO_VEC_STMT, also with SLP.
+
+	2015-05-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66251
+	* tree-vect-stmts.c (vectorizable_conversion): Properly
+	set STMT_VINFO_VEC_STMT even for the SLP case.
+
+	2015-03-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65518
+	* tree-vect-stmts.c (vectorizable_load): Reject single-element
+	interleaving cases we generate absymal code for.
+
+	2015-05-13  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66123
+	* tree-ssa-dom.c (propagate_rhs_into_lhs): Check if we found
+	a taken edge.
+
+	2015-05-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66272
+	Revert parts of
+	2014-08-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62031
+	* tree-data-ref.c (dr_analyze_indices): Do not set
+	DR_UNCONSTRAINED_BASE.
+	(dr_may_alias_p): All indirect accesses have to go the
+	formerly DR_UNCONSTRAINED_BASE path.
+	* tree-data-ref.h (struct indices): Remove
+	unconstrained_base member.
+	(DR_UNCONSTRAINED_BASE): Remove.
+
+2015-06-01  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-05-29  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR target/66215
+	* config/s390/s390.c (s390_reorg): Fix placement of post-label NOPs
+	with -mhotpatch=.
+
 2015-05-28  Mike Frysinger  <vapier@gentoo.org>
 
 	* config/microblaze/linux.h (CPP_SPEC): Define.
