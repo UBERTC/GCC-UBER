@@ -22,12 +22,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "tree-hasher.h"
@@ -39,7 +36,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-inline.h"
 #include "debug.h"
 #include "convert.h"
-#include "hash-map.h"
 #include "is-a.h"
 #include "plugin-api.h"
 #include "hard-reg-set.h"
@@ -48,7 +44,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "ipa-ref.h"
 #include "cgraph.h"
 #include "splay-tree.h"
-#include "hash-table.h"
 #include "gimple-expr.h"
 #include "gimplify.h"
 #include "attribs.h"
@@ -2557,15 +2552,15 @@ replace_placeholders_r (tree* t, int* walk_subtrees, void* data_)
   switch (TREE_CODE (*t))
     {
     case PLACEHOLDER_EXPR:
-      gcc_assert (same_type_ignoring_top_level_qualifiers_p
-		  (TREE_TYPE (*t), TREE_TYPE (obj)));
-      *t = obj;
-      *walk_subtrees = false;
-      break;
-
-    case TARGET_EXPR:
-      /* Don't mess with placeholders in an unrelated object.  */
-      *walk_subtrees = false;
+      {
+	tree x = obj;
+	for (; !(same_type_ignoring_top_level_qualifiers_p
+		 (TREE_TYPE (*t), TREE_TYPE (x)));
+	     x = TREE_OPERAND (x, 0))
+	  gcc_assert (TREE_CODE (x) == COMPONENT_REF);
+	*t = x;
+	*walk_subtrees = false;
+      }
       break;
 
     case CONSTRUCTOR:

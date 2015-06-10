@@ -22,13 +22,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
-#include "inchash.h"
 #include "tree.h"
 #include "stringpool.h"
 
@@ -518,6 +515,9 @@ build_module_descriptor (long vers, tree attr)
   /* This is the root of the metadata for defined classes and categories, it
      is referenced by the runtime and, therefore, needed.  */
   DECL_PRESERVE_P (UOBJC_MODULES_decl) = 1;
+
+  /* Squash `defined but not used' warning.  */
+  TREE_USED (UOBJC_MODULES_decl) = 1;
 
   /* Allow the runtime to mark meta-data such that it can be assigned to target
      specific sections by the back-end.  */

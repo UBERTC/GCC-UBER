@@ -28,13 +28,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "gfortran.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
-#include "inchash.h"
 #include "tree.h"
 #include "flags.h"
 #include "langhooks.h"
@@ -44,13 +41,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "hard-reg-set.h"
 #include "input.h"
 #include "function.h"
-#include "ggc.h"
 #include "toplev.h"
 #include "target.h"
 #include "debug.h"
 #include "diagnostic.h" /* For errorcount/warningcount */
 #include "dumpfile.h"
-#include "hash-map.h"
 #include "is-a.h"
 #include "plugin-api.h"
 #include "ipa-ref.h"
@@ -94,7 +89,6 @@ static bool global_bindings_p (void);
 /* Each front end provides its own.  */
 static bool gfc_init (void);
 static void gfc_finish (void);
-static void gfc_write_global_declarations (void);
 static void gfc_be_parse_file (void);
 static alias_set_type gfc_get_alias_set (tree);
 static void gfc_init_ts (void);
@@ -121,7 +115,6 @@ static const struct attribute_spec gfc_attribute_table[] =
 #undef LANG_HOOKS_NAME
 #undef LANG_HOOKS_INIT
 #undef LANG_HOOKS_FINISH
-#undef LANG_HOOKS_WRITE_GLOBALS
 #undef LANG_HOOKS_OPTION_LANG_MASK
 #undef LANG_HOOKS_INIT_OPTIONS_STRUCT
 #undef LANG_HOOKS_INIT_OPTIONS
@@ -155,7 +148,6 @@ static const struct attribute_spec gfc_attribute_table[] =
 #define LANG_HOOKS_NAME                 "GNU Fortran"
 #define LANG_HOOKS_INIT                 gfc_init
 #define LANG_HOOKS_FINISH               gfc_finish
-#define LANG_HOOKS_WRITE_GLOBALS	gfc_write_global_declarations
 #define LANG_HOOKS_OPTION_LANG_MASK	gfc_option_lang_mask
 #define LANG_HOOKS_INIT_OPTIONS_STRUCT  gfc_init_options_struct
 #define LANG_HOOKS_INIT_OPTIONS         gfc_init_options
@@ -226,9 +218,21 @@ gfc_be_parse_file (void)
   while (!global_bindings_p ())
     poplevel (0, 0);
 
+  /* Finalize all of the globals.
+
+     Emulated tls lowering needs to see all TLS variables before we
+     call finalize_compilation_unit.  The C/C++ front ends manage this
+     by calling decl_rest_of_compilation on each global and static
+     variable as they are seen.  The Fortran front end waits until
+     here.  */
+  for (tree decl = getdecls (); decl ; decl = DECL_CHAIN (decl))
+    rest_of_decl_compilation (decl, true, true);
+
   /* Switch to the default tree diagnostics here, because there may be
      diagnostics before gfc_finish().  */
   gfc_diagnostics_finish ();
+
+  global_decl_processing ();
 }
 
 
@@ -270,32 +274,6 @@ gfc_finish (void)
   gfc_done_1 ();
   gfc_release_include_path ();
   return;
-}
-
-/* ??? This is something of a hack.
-
-   Emulated tls lowering needs to see all TLS variables before we call
-   finalize_compilation_unit.  The C/C++ front ends manage this
-   by calling decl_rest_of_compilation on each global and static variable
-   as they are seen.  The Fortran front end waits until this hook.
-
-   A Correct solution is for finalize_compilation_unit not to be
-   called during the WRITE_GLOBALS langhook, and have that hook only do what
-   its name suggests and write out globals.  But the C++ and Java front ends
-   have (unspecified) problems with aliases that gets in the way.  It has
-   been suggested that these problems would be solved by completing the
-   conversion to cgraph-based aliases.  */
-
-static void
-gfc_write_global_declarations (void)
-{
-  tree decl;
-
-  /* Finalize all of the globals.  */
-  for (decl = getdecls(); decl ; decl = DECL_CHAIN (decl))
-    rest_of_decl_compilation (decl, true, true);
-
-  write_global_declarations ();
 }
 
 /* These functions and variables deal with binding contours.  We only

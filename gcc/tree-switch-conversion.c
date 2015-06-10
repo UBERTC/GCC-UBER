@@ -29,12 +29,9 @@ Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
 #include "line-map.h"
 #include "params.h"
 #include "flags.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "varasm.h"
@@ -55,7 +52,6 @@ Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
 #include "gimple-ssa.h"
-#include "hash-map.h"
 #include "plugin-api.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -72,9 +68,7 @@ Software Foundation, 51 Franklin Street, Fifth Floor, Boston, MA
 #include "langhooks.h"
 
 /* Need to include expr.h and optabs.h for lshift_cheap_p.  */
-#include "hashtab.h"
 #include "rtl.h"
-#include "statistics.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -1093,6 +1087,7 @@ build_one_array (gswitch *swtch, int num, tree arr_index_type,
       DECL_IGNORED_P (decl) = 1;
       TREE_CONSTANT (decl) = 1;
       TREE_READONLY (decl) = 1;
+      DECL_IGNORED_P (decl) = 1;
       varpool_node::finalize_decl (decl);
 
       fetch = build4 (ARRAY_REF, value_type, decl, tidx, NULL_TREE,

@@ -25,7 +25,6 @@
 #include "coretypes.h"
 #include "tm.h"
 #include "rtl.h"
-#include "vec.h"
 #include "predict.h"
 #include "bitmap.h"
 #include "basic-block.h"
@@ -40,7 +39,7 @@
 void
 canon_list_insert (rtx dest, const_rtx x ATTRIBUTE_UNUSED, void *data)
 {
-  rtx dest_addr, insn;
+  rtx dest_addr;
   int bb;
   modify_pair pair;
 
@@ -58,7 +57,7 @@ canon_list_insert (rtx dest, const_rtx x ATTRIBUTE_UNUSED, void *data)
 
   dest_addr = get_addr (XEXP (dest, 0));
   dest_addr = canon_rtx (dest_addr);
-  insn = ((struct gcse_note_stores_info *)data)->insn;
+  rtx_insn *insn = ((struct gcse_note_stores_info *)data)->insn;
   bb = BLOCK_FOR_INSN (insn)->index;
 
   pair.dest = dest;

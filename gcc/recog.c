@@ -22,12 +22,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "rtl-error.h"
 #include "tm_p.h"
@@ -37,11 +34,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "recog.h"
 #include "regs.h"
 #include "addresses.h"
-#include "hashtab.h"
 #include "function.h"
 #include "rtl.h"
 #include "flags.h"
-#include "statistics.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -3080,7 +3075,7 @@ peep2_buf_position (int n)
    does not exist.  Used by the recognizer to find the next insn to match
    in a multi-insn pattern.  */
 
-rtx
+rtx_insn *
 peep2_next_insn (int n)
 {
   gcc_assert (n <= peep2_current_count);
@@ -3653,8 +3648,7 @@ peephole2_optimize (void)
 
 	  /* Match the peephole.  */
 	  head = peep2_insn_data[peep2_current].insn;
-	  attempt = safe_as_a <rtx_insn *> (
-		      peephole2_insns (PATTERN (head), head, &match_len));
+	  attempt = peephole2_insns (PATTERN (head), head, &match_len);
 	  if (attempt != NULL)
 	    {
 	      rtx_insn *last = peep2_attempt (bb, head, match_len, attempt);

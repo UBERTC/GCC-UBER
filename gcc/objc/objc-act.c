@@ -22,13 +22,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stringpool.h"
@@ -58,13 +55,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "c-family/c-target.h"
 #include "diagnostic-core.h"
 #include "intl.h"
-#include "hash-map.h"
 #include "is-a.h"
 #include "plugin-api.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
 #include "tree-iterator.h"
-#include "hash-table.h"
 #include "langhooks-def.h"
 /* Different initialization, code gen and meta data generation for each
    runtime.  */
@@ -435,8 +430,7 @@ objc_init (void)
   return true;
 }
 
-/* This is called automatically (at the very end of compilation) by
-   c_write_global_declarations and cp_write_global_declarations.  */
+/* This is called at the end of parsing by the C/C++ parsers.  */
 void
 objc_write_global_declarations (void)
 {

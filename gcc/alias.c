@@ -23,20 +23,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "rtl.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "varasm.h"
-#include "hashtab.h"
 #include "hard-reg-set.h"
 #include "function.h"
 #include "flags.h"
-#include "statistics.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -50,7 +45,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "diagnostic-core.h"
 #include "alloc-pool.h"
 #include "cselib.h"
-#include "hash-map.h"
 #include "langhooks.h"
 #include "timevar.h"
 #include "dumpfile.h"
@@ -1072,8 +1066,9 @@ get_alias_set (tree t)
     }
   /* In LTO the rules above needs to be part of canonical type machinery.
      For now just punt.  */
-  else if (POINTER_TYPE_P (t) && t != ptr_type_node && in_lto_p)
-    set = get_alias_set (ptr_type_node);
+  else if (POINTER_TYPE_P (t)
+	   && t != TYPE_CANONICAL (ptr_type_node) && in_lto_p)
+    set = get_alias_set (TYPE_CANONICAL (ptr_type_node));
 
   /* Otherwise make a new alias set for this type.  */
   else

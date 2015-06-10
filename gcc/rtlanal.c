@@ -32,16 +32,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm_p.h"
 #include "flags.h"
 #include "regs.h"
-#include "hashtab.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "function.h"
 #include "predict.h"
 #include "basic-block.h"
 #include "df.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "emit-rtl.h"  /* FIXME: Can go away once crtl is moved to rtl.h.  */
 #include "addresses.h"
@@ -2226,7 +2222,7 @@ void
 remove_node_from_expr_list (const_rtx node, rtx_expr_list **listp)
 {
   rtx_expr_list *temp = *listp;
-  rtx prev = NULL_RTX;
+  rtx_expr_list *prev = NULL;
 
   while (temp)
     {
@@ -2255,7 +2251,7 @@ void
 remove_node_from_insn_list (const rtx_insn *node, rtx_insn_list **listp)
 {
   rtx_insn_list *temp = *listp;
-  rtx prev = NULL;
+  rtx_insn_list *prev = NULL;
 
   while (temp)
     {

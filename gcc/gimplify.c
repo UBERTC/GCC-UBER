@@ -23,22 +23,17 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
-#include "hashtab.h"
 #include "tm.h"
 #include "hard-reg-set.h"
 #include "function.h"
 #include "rtl.h"
 #include "flags.h"
-#include "statistics.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -68,7 +63,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "langhooks.h"
 #include "bitmap.h"
 #include "gimple-ssa.h"
-#include "hash-map.h"
 #include "plugin-api.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -82,6 +76,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimple-low.h"
 #include "cilk.h"
 #include "gomp-constants.h"
+#include "tree-dump.h"
 
 #include "langhooks-def.h"	/* FIXME: for lhd_set_decl_assembler_name */
 #include "tree-pass.h"		/* FIXME: only for PROP_gimple_any */
@@ -9444,6 +9439,8 @@ gimplify_function_tree (tree fndecl)
   cfun->curr_properties |= PROP_gimple_any;
 
   pop_cfun ();
+
+  dump_function (TDI_generic, fndecl);
 }
 
 /* Return a dummy expression of type TYPE in order to keep going after an

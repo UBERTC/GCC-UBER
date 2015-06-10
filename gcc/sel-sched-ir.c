@@ -26,9 +26,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm_p.h"
 #include "hard-reg-set.h"
 #include "regs.h"
-#include "hashtab.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "function.h"
 #include "predict.h"
@@ -46,9 +43,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "params.h"
 #include "target.h"
 #include "sched-int.h"
-#include "ggc.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "langhooks.h"
 #include "rtlhooks-def.h"
@@ -4560,9 +4555,7 @@ sel_bb_head (basic_block bb)
     }
   else
     {
-      insn_t note;
-
-      note = bb_note (bb);
+      rtx_note *note = bb_note (bb);
       head = next_nonnote_insn (note);
 
       if (head && (BARRIER_P (head) || BLOCK_FOR_INSN (head) != bb))
@@ -4983,7 +4976,7 @@ clear_outdated_rtx_info (basic_block bb)
 static void
 return_bb_to_pool (basic_block bb)
 {
-  rtx note = bb_note (bb);
+  rtx_note *note = bb_note (bb);
 
   gcc_assert (NOTE_BASIC_BLOCK (note) == bb
 	      && bb->aux == NULL);

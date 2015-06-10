@@ -25,12 +25,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "toplev.h"
 
 #include "rtl.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "tm_p.h"
 #include "regs.h"
@@ -47,8 +44,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "lcm.h"
 #include "cfgcleanup.h"
 #include "basic-block.h"
-#include "hashtab.h"
-#include "statistics.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -58,10 +53,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "stmt.h"
 #include "expr.h"
 #include "except.h"
-#include "ggc.h"
 #include "intl.h"
 #include "tree-pass.h"
-#include "hash-table.h"
 #include "df.h"
 #include "dbgcnt.h"
 #include "rtl-iter.h"
@@ -304,10 +297,10 @@ store_ops_ok (const_rtx x, int *regs_set)
 /* Returns a list of registers mentioned in X.
    FIXME: A regset would be prettier and less expensive.  */
 
-static rtx
+static rtx_expr_list *
 extract_mentioned_regs (rtx x)
 {
-  rtx mentioned_regs = NULL;
+  rtx_expr_list *mentioned_regs = NULL;
   subrtx_var_iterator::array_type array;
   FOR_EACH_SUBRTX_VAR (iter, array, x, NONCONST)
     {

@@ -450,7 +450,7 @@ gen_expand (rtx expand)
     printf ("  rtx operand%d;\n", i);
   for (; i <= stats.max_scratch_opno; i++)
     printf ("  rtx operand%d ATTRIBUTE_UNUSED;\n", i);
-  printf ("  rtx _val = 0;\n");
+  printf ("  rtx_insn *_val = 0;\n");
   printf ("  start_sequence ();\n");
 
   /* The fourth operand of DEFINE_EXPAND is some code to be executed
@@ -568,15 +568,17 @@ gen_split (rtx split)
   /* Output the prototype, function name and argument declarations.  */
   if (GET_CODE (split) == DEFINE_PEEPHOLE2)
     {
-      printf ("extern rtx gen_%s_%d (rtx_insn *, rtx *);\n",
+      printf ("extern rtx_insn *gen_%s_%d (rtx_insn *, rtx *);\n",
 	      name, insn_code_number);
-      printf ("rtx\ngen_%s_%d (rtx_insn *curr_insn ATTRIBUTE_UNUSED, rtx *operands%s)\n",
+      printf ("rtx_insn *\ngen_%s_%d (rtx_insn *curr_insn ATTRIBUTE_UNUSED, rtx *operands%s)\n",
 	      name, insn_code_number, unused);
     }
   else
     {
-      printf ("extern rtx gen_split_%d (rtx_insn *, rtx *);\n", insn_code_number);
-      printf ("rtx\ngen_split_%d (rtx_insn *curr_insn ATTRIBUTE_UNUSED, rtx *operands%s)\n",
+      printf ("extern rtx_insn *gen_split_%d (rtx_insn *, rtx *);\n",
+	      insn_code_number);
+      printf ("rtx_insn *\ngen_split_%d "
+	      "(rtx_insn *curr_insn ATTRIBUTE_UNUSED, rtx *operands%s)\n",
 	      insn_code_number, unused);
     }
   printf ("{\n");
@@ -584,7 +586,7 @@ gen_split (rtx split)
   /* Declare all local variables.  */
   for (i = 0; i < stats.num_operand_vars; i++)
     printf ("  rtx operand%d;\n", i);
-  printf ("  rtx _val = 0;\n");
+  printf ("  rtx_insn *_val = NULL;\n");
 
   if (GET_CODE (split) == DEFINE_PEEPHOLE2)
     output_peephole2_scratches (split);
@@ -806,28 +808,18 @@ from the machine description file `md'.  */\n\n");
   printf ("#include \"system.h\"\n");
   printf ("#include \"coretypes.h\"\n");
   printf ("#include \"tm.h\"\n");
-  printf ("#include \"hash-set.h\"\n");
-  printf ("#include \"machmode.h\"\n");
-  printf ("#include \"vec.h\"\n");
-  printf ("#include \"double-int.h\"\n");
   printf ("#include \"input.h\"\n");
   printf ("#include \"alias.h\"\n");
   printf ("#include \"symtab.h\"\n");
-  printf ("#include \"wide-int.h\"\n");
-  printf ("#include \"inchash.h\"\n");
   printf ("#include \"tree.h\"\n");
   printf ("#include \"varasm.h\"\n");
   printf ("#include \"stor-layout.h\"\n");
   printf ("#include \"calls.h\"\n");
   printf ("#include \"rtl.h\"\n");
   printf ("#include \"tm_p.h\"\n");
-  printf ("#include \"hashtab.h\"\n");
   printf ("#include \"hard-reg-set.h\"\n");
   printf ("#include \"function.h\"\n");
   printf ("#include \"flags.h\"\n");
-  printf ("#include \"statistics.h\"\n");
-  printf ("#include \"real.h\"\n");
-  printf ("#include \"fixed-value.h\"\n");
   printf ("#include \"insn-config.h\"\n");
   printf ("#include \"expmed.h\"\n");
   printf ("#include \"dojump.h\"\n");

@@ -27,7 +27,6 @@
 #include "errors.h"		/* for fatal */
 #include "getopt.h"
 #include "version.h"		/* for version_string & pkgversion_string.  */
-#include "hashtab.h"
 #include "xregex.h"
 #include "obstack.h"
 #include "gengtype.h"
@@ -1712,19 +1711,17 @@ open_base_files (void)
     /* The order of files here matters very much.  */
     static const char *const ifiles[] = {
       "config.h", "system.h", "coretypes.h", "tm.h", "insn-codes.h",
-      "hashtab.h", "splay-tree.h", "obstack.h", "bitmap.h", "input.h",
-      "hash-set.h", "machmode.h", "vec.h", "double-int.h", "input.h",
+      "splay-tree.h", "obstack.h", "bitmap.h", "input.h",
       "alias.h", "symtab.h", "options.h", 
-      "wide-int.h", "inchash.h",
       "tree.h", "fold-const.h", "rtl.h",
-      "machmode.h", "tm.h", "hard-reg-set.h", "input.h", "predict.h",
-      "function.h", "insn-config.h", "flags.h", "statistics.h",
-      "real.h", "fixed-value.h", "tree.h", "expmed.h", "dojump.h",
+      "hard-reg-set.h", "predict.h",
+      "function.h", "insn-config.h", "flags.h", 
+      "tree.h", "expmed.h", "dojump.h",
       "explow.h", "calls.h", "emit-rtl.h", "varasm.h", "stmt.h",
       "expr.h", "alloc-pool.h",
       "basic-block.h", "cselib.h", "insn-addr.h",
-      "optabs.h", "libfuncs.h", "debug.h", "ggc.h", 
-      "ggc.h", "dominance.h", "cfg.h", "basic-block.h",
+      "optabs.h", "libfuncs.h", "debug.h", 
+      "dominance.h", "cfg.h", "basic-block.h",
       "tree-ssa-alias.h", "internal-fn.h", "gimple-fold.h", "tree-eh.h",
       "gimple-expr.h", "is-a.h",
       "gimple.h", "gimple-iterator.h", "gimple-ssa.h", "tree-cfg.h",
@@ -4719,33 +4716,6 @@ write_roots (pair_p variables, bool emit_pch)
    guaranteee for somewhat increased readability.  If name conflicts do happen,
    this funcion will have to be adjusted to be more like
    output_mangled_typename.  */
-
-static void
-output_typename (outf_p of, const_type_p t)
-{
-  switch (t->kind)
-    {
-    case TYPE_STRING:
-      oprintf (of, "str");
-      break;
-    case TYPE_SCALAR:
-      oprintf (of, "scalar");
-      break;
-    case TYPE_POINTER:
-      output_typename (of, t->u.p);
-      break;
-    case TYPE_STRUCT:
-    case TYPE_USER_STRUCT:
-    case TYPE_UNION:
-    case TYPE_LANG_STRUCT:
-      oprintf (of, "%s", t->u.s.tag);
-      break;
-    case TYPE_NONE:
-    case TYPE_UNDEFINED:
-    case TYPE_ARRAY:
-      gcc_unreachable ();
-    }
-}
 
 #define INDENT 2
 

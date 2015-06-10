@@ -120,16 +120,11 @@
 #include "output.h"
 #include "addresses.h"
 #include "target.h"
-#include "hashtab.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "function.h"
 #include "symtab.h"
 #include "flags.h"
-#include "statistics.h"
 #include "alias.h"
-#include "inchash.h"
 #include "tree.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -871,7 +866,7 @@ match_reload (signed char out, signed char *ins, enum reg_class goal_class,
 	      rtx_insn **before, rtx_insn **after)
 {
   int i, in;
-  rtx new_in_reg, new_out_reg, reg, clobber;
+  rtx new_in_reg, new_out_reg, reg;
   machine_mode inmode, outmode;
   rtx in_rtx = *curr_id->operand_loc[ins[0]];
   rtx out_rtx = out < 0 ? in_rtx : *curr_id->operand_loc[out];
@@ -912,7 +907,7 @@ match_reload (signed char out, signed char *ins, enum reg_class goal_class,
 	     NEW_OUT_REG living above.  We add clobber clause for
 	     this.  This is just a temporary clobber.  We can remove
 	     it at the end of LRA work.  */
-	  clobber = emit_clobber (new_out_reg);
+	  rtx_insn *clobber = emit_clobber (new_out_reg);
 	  LRA_TEMP_CLOBBER_P (PATTERN (clobber)) = 1;
 	  LRA_SUBREG_P (new_in_reg) = 1;
 	  if (GET_CODE (in_rtx) == SUBREG)
@@ -5558,7 +5553,7 @@ inherit_in_ebb (rtx_insn *head, rtx_insn *tail)
 			   || reg_renumber[src_regno] >= 0)
 		    {
 		      bool before_p;
-		      rtx use_insn = curr_insn;
+		      rtx_insn *use_insn = curr_insn;
 
 		      before_p = (JUMP_P (curr_insn)
 				  || (CALL_P (curr_insn) && reg->type == OP_IN));

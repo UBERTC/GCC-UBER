@@ -1,3 +1,43 @@
+2015-06-09  Matthias Klose  <doko@ubuntu.com>
+
+	* Make-lang.in (jit.install-common): Install headers using INSTALL_DATA.
+
+2015-06-08  Andrew MacLeod  <amacleod@redhat.com>
+
+	* dummy-frontend.c : Adjust include files.
+	* jit-common.h : Likewise.
+	* jit-playback.c : Likewise.
+
+2015-06-05  David Malcolm  <dmalcolm@redhat.com>
+
+	* dummy-frontend.c
+	(jit_langhook_post_compilation_parsing_cleanups): Remove.
+	(LANG_HOOKS_POST_COMPILATION_PARSING_CLEANUPS): Remove
+	* jit-playback.c (gcc::jit::playback::context::new_global): Add
+	call to varpool_node::finalize_decl.
+	(gcc::jit::playback::context::finalize_global_decls): Remove.
+	* jit-playback.h
+	(gcc::jit::playback::context::finalize_global_decls): Remove.
+
+2015-06-05  David Malcolm  <dmalcolm@redhat.com>
+
+	* dummy-frontend.c (jit_langhook_write_globals): Rename to...
+	(jit_langhook_post_compilation_parsing_cleanups): ...this, and
+	eliminate calls to finalize_compilation_unit and
+	write_global_decls_2.
+	(LANG_HOOKS_WRITE_GLOBALS): Rename to...
+	(LANG_HOOKS_POST_COMPILATION_PARSING_CLEANUPS): ...this and
+	redirect from jit_langhook_write_globals to
+	jit_langhook_post_compilation_parsing_cleanups.
+	* jit-playback.c
+	(gcc::jit::playback::context::write_global_decls_1): Rename to...
+	(gcc::jit::playback::context::finalize_global_decls): ...this.
+	(gcc::jit::playback::context::write_global_decls_1): Delete.
+	* jit-playback.h
+	(gcc::jit::playback::context::write_global_decls_1): Rename to...
+	(gcc::jit::playback::context::finalize_global_decls): ...this.
+	(gcc::jit::playback::context::write_global_decls_1): Delete.
+
 2015-06-04  Andrew MacLeod  <amacleod@redhat.com>
 
 	* dummy-frontend.c: Adjust includes for restructured coretypes.h.

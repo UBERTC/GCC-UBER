@@ -26,13 +26,10 @@ The Free Software Foundation is independent of Sun Microsystems, Inc.  */
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stringpool.h"
@@ -50,8 +47,6 @@ The Free Software Foundation is independent of Sun Microsystems, Inc.  */
 #include "hard-reg-set.h"
 #include "input.h"
 #include "function.h"
-#include "ggc.h"
-#include "hash-map.h"
 #include "is-a.h"
 #include "plugin-api.h"
 #include "ipa-ref.h"
@@ -119,10 +114,6 @@ static GTY(()) vec<tree, va_gc> *registered_class;
 /* A tree that returns the address of the class$ of the class
    currently being compiled.  */
 static GTY(()) tree this_classdollar;
-
-/* A list of static class fields.  This is to emit proper debug
-   info for them.  */
-vec<tree, va_gc> *pending_static_fields;
 
 /* Return the node that most closely represents the class whose name
    is IDENT.  Start the search from NODE (followed by its siblings).
@@ -892,8 +883,6 @@ add_field (tree klass, tree name, tree field_type, int flags)
       /* Considered external unless we are compiling it into this
 	 object file.  */
       DECL_EXTERNAL (field) = (is_compiled_class (klass) != 2);
-      if (!DECL_EXTERNAL (field))
-	vec_safe_push (pending_static_fields, field);
     }
 
   return field;
@@ -3268,19 +3257,6 @@ in_same_package (tree name1, tree name2)
   split_qualified_name (&pkg2, &tmp, name2);
 
   return (pkg1 == pkg2);
-}
-
-/* lang_hooks.decls.final_write_globals: perform final processing on
-   global variables.  */
-
-void
-java_write_globals (void)
-{
-  tree *vec = vec_safe_address (pending_static_fields);
-  int len = vec_safe_length (pending_static_fields);
-  write_global_declarations ();
-  emit_debug_global_declarations (vec, len);
-  vec_free (pending_static_fields);
 }
 
 #include "gt-java-class.h"

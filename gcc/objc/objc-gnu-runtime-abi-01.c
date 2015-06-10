@@ -21,13 +21,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stringpool.h"
@@ -51,7 +48,6 @@ along with GCC; see the file COPYING3.  If not see
 #endif  /* OBJCPLUS */
 
 #include "toplev.h"
-#include "ggc.h"
 #include "tree-iterator.h"
 
 #include "objc-runtime-hooks.h"
@@ -497,6 +493,8 @@ build_selector_table_decl (void)
   temp = build_array_type (objc_selector_template, NULL_TREE);
 
   UOBJC_SELECTOR_TABLE_decl = start_var_decl (temp, "_OBJC_SELECTOR_TABLE");
+  /* Squash `defined but not used' warning check_global_declaration.  */
+  TREE_USED (UOBJC_SELECTOR_TABLE_decl) = 1;
   OBJCMETA (UOBJC_SELECTOR_TABLE_decl, objc_meta, meta_base);
 }
 

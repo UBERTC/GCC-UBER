@@ -28,12 +28,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stor-layout.h"
@@ -3141,15 +3138,6 @@ cp_build_array_ref (location_t loc, tree array, tree idx,
 	  && ! int_fits_type_p (idx, TYPE_DOMAIN (TREE_TYPE (array))))
 	{
 	  if (!cxx_mark_addressable (array))
-	    return error_mark_node;
-	}
-
-      if (!lvalue_p (array))
-	{
-	  if (complain & tf_error)
-	    pedwarn (loc, OPT_Wpedantic, 
-		     "ISO C++ forbids subscripting non-lvalue array");
-	  else
 	    return error_mark_node;
 	}
 

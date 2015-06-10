@@ -1,3 +1,186 @@
+2015-06-09  Alexandre Oliva <aoliva@redhat.com>
+
+	Revert:
+	2015-06-09  Alexandre Oliva <aoliva@redhat.com>
+	* gcc.dg/guality/pr54200.c: Add -fno-tree-coalesce-vars.
+	* gcc.dg/ssp-1.c: Make counter a register.
+	* gcc.dg/ssp-2.c: Likewise.
+	* gcc.dg/torture/parm-coalesce.c: New.
+
+2015-06-09  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.target/i386/vararg-loc.c: New test.
+
+2015-06-09  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65815
+	* g++.dg/cpp0x/nsdmi-aggr1.C: New.
+	* g++.dg/cpp0x/mem-init-aggr1.C: Likewise.
+
+2015-06-09  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/66299
+	* gcc.dg/pr66299-1.c: New test.
+	* gcc.dg/pr66299-2.c: New test.
+	* gcc.dg/pr66299-3.c: New test.
+
+2015-06-09  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* g++.dg/ext/pr57735.C: Do not override -mfloat-abi directives
+	passed by the testsuite driver.
+
+2015-06-09  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/66423
+	* gcc.dg/fold-modpow2.c: New testcase.
+
+2015-06-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66419
+	* gcc.dg/vect/bb-slp-37.c: New testcase.
+
+2015-06-09  Shiva Chen  <shiva0217@gmail.com>
+
+	* gcc.target/arm/stl-cond.c: New test.
+
+2015-06-09  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/66413
+	* gcc.dg/torture/pr66413.c: New testcase.
+
+2015-06-09  Alexandre Oliva <aoliva@redhat.com>
+
+	* gcc.dg/guality/pr54200.c: Add -fno-tree-coalesce-vars.
+	* gcc.dg/ssp-1.c: Make counter a register.
+	* gcc.dg/ssp-2.c: Likewise.
+	* gcc.dg/torture/parm-coalesce.c: New.
+
+2015-06-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	* gfortran.dg/lto/bind_c-2b_0.f90: New testcase.
+	* gfortran.dg/lto/bind_c-2b_1.c: New testcase.
+
+2015-06-08  Tom de Vries  <tom@codesourcery.com>
+
+	PR rtl-optimization/66444
+	* gcc.dg/pr66444.c: New test.
+
+2015-06-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66245
+	* gfortran.dg/class_is_1.f90: New test.
+	* gfortran.dg/type_is_1.f90: Ditto.
+
+2015-06-08  Marek Polacek  <polacek@redhat.com>
+
+	PR c/66415
+	* gcc.dg/cpp/pr66415-1.c: New test.
+	* gcc.dg/cpp/pr66415-2.c: New test.
+
+2015-06-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66422
+	* gcc.dg/Warray-bounds-16.c: New testcase.
+
+2015-06-08  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/vect/slp-perm-10.c: New testcase.
+	* gcc.dg/vect/slp-23.c: Adjust.
+	* gcc.dg/torture/pr53366-2.c: Also verify cross-iteration
+	vector pointer update.
+
+2015-06-08  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/66452
+	* g++.dg/ubsan/pr66452.C: New test.
+
+2015-06-08  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/66436
+	* gcc.dg/gomp/dump-new-function-2.c: New test.
+	* gcc.dg/gomp/dump-new-function-3.c: Same.
+	* gcc.dg/gomp/dump-new-function.c: Same.
+
+2015-06-08  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/66435
+	* gcc.dg/gomp/notify-new-function-2.c: New test.
+	* gcc.dg/gomp/notify-new-function-3.c: Same.
+	* gcc.dg/gomp/notify-new-function.c: Same.
+
+2015-06-06  Jan Hubicka  <hubicka@ucw.cz>
+
+	* gfortran.dg/lto/bind_c-1_0.f90: New testcase.
+	* gfortran.dg/lto/bind_c-1_1.c: New testcase.
+	* gcc.dg/lto/c-compatible-types_0.c: Rename to ...
+	* gcc.dg/lto/c-compatible-types-1_0.c: this one; fix template
+	* gcc.dg/lto/c-compatible-types_1.c: Rename to ...
+	* gcc.dg/lto/c-compatible-types-1_1.c: this one; harden for
+	-fshort-enum.
+
+2015-06-06  Thomas Koenig  <tkoenig@netcologne.de>
+
+	PR fortran/47659
+	* gfortran.dg/array_constructor_type_17.f03: Adjust error message.
+	* gfortran.dg/warn_conversion.f90: Add warning for change in value
+	for assignment.
+	* gfortran.dg/warn_conversion_3.f90: Add warnings.
+	* gfortran.dg/warn_conversion_5.f90: New test.
+	* gfortran.dg/warn_conversion_6.f90: New test.
+	* gfortran.dg/warn_conversion_7.f90: New test.
+
+2015-06-05  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66347
+	* gfortran.dg/blockdata_9.f: New test.
+
+2015-06-05  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66385
+	* gfortran.dg/forall_17.f90:  New test.
+
+2015-06-05  Aldy Hernandez  <aldyh@redhat.com>
+
+	* g++.dg/cpp0x/pr57101.C: Add warning.
+	* g++.dg/debug/dwarf2/dwarf4-typedef.C: Same.
+	* g++.dg/ext/visibility/anon7.C: Same.
+	* g++.dg/ipa/pr63587-2.C: Same.
+	* g++.dg/opt/dump1.C: Same.
+	* g++.dg/opt/pr59622-3.C: Same.
+	* g++.dg/opt/pr59622.C: Same.
+	* g++.dg/torture/pr46383.C: Same.
+	* gcc.dg/dfp/pragma-float-const-decimal64-8.c: Same.
+	* g++.dg/debug/dwarf2/auto1.C: Adjust for early dwarf.
+	* g++.dg/lto/pr65549_0.C: Add { } to used but never defined
+	functions.
+	* gfortran.dg/intent_out_8.f90: Same.
+	* gfortran.dg/warn_target_lifetime_3.f90: Same.
+
+2015-06-05  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66377
+	gfortran.dg/equiv_9.f90: New test.
+
+
+2015-06-05  Tom de Vries  <tom@codesourcery.com>
+
+	merge from gomp4 branch:
+	2015-05-28  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65443
+	* gcc.dg/parloops-exit-first-loop-alt-2.c: New test.
+	* gcc.dg/parloops-exit-first-loop-alt-3.c: New test.
+	* gcc.dg/parloops-exit-first-loop-alt.c: New test.
+
+2015-06-05  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/52595
+	* g++,dg/cpp0x/nsdmi-defer5.C: Add template case.
+
+2015-06-05  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	* gcc.target/arm/neon-reload-class.c: Remove movw and movt.
+
 2015-06-04  Paolo Carlini  <paolo.carlini@oracle.com>
 
 	* obj-c++.dg/tls/diag-5.mm: Adjust per r224097.

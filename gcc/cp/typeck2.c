@@ -29,12 +29,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "stor-layout.h"
 #include "varasm.h"
@@ -839,7 +836,7 @@ store_init_value (tree decl, tree init, vec<tree, va_gc>** cleanups, int flags)
       TREE_CONSTANT (decl) = const_init && decl_maybe_constant_var_p (decl);
     }
 
-  if (cxx_dialect >= cxx14)
+  if (cxx_dialect >= cxx14 && CLASS_TYPE_P (strip_array_types (type)))
     /* Handle aggregate NSDMI in non-constant initializers, too.  */
     value = replace_placeholders (value, decl);
 
@@ -1092,6 +1089,7 @@ digest_init_r (tree type, tree init, bool nested, int flags,
 	      || TREE_CODE (type) == UNION_TYPE
 	      || TREE_CODE (type) == COMPLEX_TYPE);
 
+#ifdef ENABLE_CHECKING
   /* "If T is a class type and the initializer list has a single
      element of type cv U, where U is T or a class derived from T,
      the object is initialized from that element."  */
@@ -1102,8 +1100,10 @@ digest_init_r (tree type, tree init, bool nested, int flags,
     {
       tree elt = CONSTRUCTOR_ELT (init, 0)->value;
       if (reference_related_p (type, TREE_TYPE (elt)))
-	init = elt;
+	/* We should have fixed this in reshape_init.  */
+	gcc_unreachable ();
     }
+#endif
 
   if (BRACE_ENCLOSED_INITIALIZER_P (init)
       && !TYPE_NON_AGGREGATE_CLASS (type))
@@ -1161,10 +1161,14 @@ digest_nsdmi_init (tree decl, tree init)
 {
   gcc_assert (TREE_CODE (decl) == FIELD_DECL);
 
+  tree type = TREE_TYPE (decl);
   int flags = LOOKUP_IMPLICIT;
   if (DIRECT_LIST_INIT_P (init))
     flags = LOOKUP_NORMAL;
-  init = digest_init_flags (TREE_TYPE (decl), init, flags);
+  if (BRACE_ENCLOSED_INITIALIZER_P (init)
+      && CP_AGGREGATE_TYPE_P (type))
+    init = reshape_init (type, init, tf_warning_or_error);
+  init = digest_init_flags (type, init, flags);
   if (TREE_CODE (init) == TARGET_EXPR)
     /* This represents the whole initialization.  */
     TARGET_EXPR_DIRECT_INIT_P (init) = true;

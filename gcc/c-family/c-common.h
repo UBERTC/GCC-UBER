@@ -22,16 +22,10 @@ along with GCC; see the file COPYING3.  If not see
 
 #include "splay-tree.h"
 #include "cpplib.h"
-#include "ggc.h"
-#include "hashtab.h"
-#include "hash-set.h"
 #include "input.h"
-#include "statistics.h"
-#include "vec.h"
 #include "alias.h"
 #include "flags.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 
@@ -886,6 +880,8 @@ extern HOST_WIDE_INT c_common_to_target_charset (HOST_WIDE_INT);
 
 /* This is the basic parsing function.  */
 extern void c_parse_file (void);
+
+extern void c_parse_final_cleanups (void);
 
 extern void warn_for_omitted_condop (location_t, tree);
 

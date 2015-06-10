@@ -21,15 +21,10 @@ along with GCC; see the file COPYING3.  If not see
 #ifndef GCC_CP_TREE_H
 #define GCC_CP_TREE_H
 
-#include "ggc.h"
-#include "hashtab.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "tm.h"
 #include "hard-reg-set.h"
 #include "input.h"
 #include "function.h"
-#include "hash-map.h"
 
 /* In order for the format checking to accept the C++ front end
    diagnostic framework extensions, you must include this file before
@@ -5469,7 +5464,7 @@ extern tree cp_reconstruct_complex_type		(tree, tree);
 extern bool attributes_naming_typedef_ok	(tree);
 extern void cplus_decl_attributes		(tree *, tree, int);
 extern void finish_anon_union			(tree);
-extern void cp_write_global_declarations	(void);
+extern void cxx_post_compilation_parsing_cleanups (void);
 extern tree coerce_new_type			(tree);
 extern tree coerce_delete_type			(tree);
 extern void comdat_linkage			(tree);

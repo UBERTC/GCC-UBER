@@ -24,12 +24,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "dumpfile.h"
 #include "tm.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stor-layout.h"
@@ -52,10 +49,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssanames.h"
 #include "tree-pass.h"
 #include "cfgloop.h"
-#include "hashtab.h"
 #include "rtl.h"
 #include "flags.h"
-#include "statistics.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -767,33 +762,6 @@ vect_build_slp_tree_1 (loop_vec_info loop_vinfo, bb_vec_info bb_vinfo,
 	  else
 	    {
 	      /* Load.  */
-	      unsigned unrolling_factor
-		= least_common_multiple
-		    (*max_nunits, group_size) / group_size;
-              /* FORNOW: Check that there is no gap between the loads
-		 and no gap between the groups when we need to load
-		 multiple groups at once.  */
-              if (unrolling_factor > 1
-		  && ((GROUP_FIRST_ELEMENT (vinfo_for_stmt (stmt)) == stmt
-		       && GROUP_GAP (vinfo_for_stmt (stmt)) != 0)
-		      /* If the group is split up then GROUP_GAP
-			 isn't correct here, nor is GROUP_FIRST_ELEMENT.  */
-		      || GROUP_SIZE (vinfo_for_stmt (stmt)) > group_size))
-                {
-                  if (dump_enabled_p ())
-                    {
-                      dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
-				       "Build SLP failed: grouped "
-				       "loads have gaps ");
-                      dump_gimple_stmt (MSG_MISSED_OPTIMIZATION, TDF_SLIM,
-					stmt, 0);
-                      dump_printf (MSG_MISSED_OPTIMIZATION, "\n");
-                    }
-		  /* Fatal mismatch.  */
-		  matches[0] = false;
-                  return false;
-                }
-
               /* Check that the size of interleaved loads group is not
                  greater than the SLP group size.  */
 	      unsigned ncopies
@@ -1444,7 +1412,9 @@ vect_supported_load_permutation_p (slp_instance slp_instn)
           next_load = NULL;
           FOR_EACH_VEC_ELT (SLP_TREE_SCALAR_STMTS (node), j, load)
             {
-              if (j != 0 && next_load != load)
+              if (j != 0
+		  && (next_load != load
+		      || GROUP_GAP (vinfo_for_stmt (load)) != 1))
 		{
 		  subchain_p = false;
 		  break;
@@ -1497,47 +1467,14 @@ vect_supported_load_permutation_p (slp_instance slp_instn)
       return true;
     }
 
-  /* FORNOW: the only supported permutation is 0..01..1.. of length equal to
-     GROUP_SIZE and where each sequence of same drs is of GROUP_SIZE length as
-     well (unless it's reduction).  */
-  if (SLP_INSTANCE_LOADS (slp_instn).length () != group_size)
-    return false;
-  FOR_EACH_VEC_ELT (SLP_INSTANCE_LOADS (slp_instn), i, node)
-    if (!node->load_permutation.exists ())
-      return false;
-
-  load_index = sbitmap_alloc (group_size);
-  bitmap_clear (load_index);
-  FOR_EACH_VEC_ELT (SLP_INSTANCE_LOADS (slp_instn), i, node)
-    {
-      unsigned int lidx = node->load_permutation[0];
-      if (bitmap_bit_p (load_index, lidx))
-	{
-	  sbitmap_free (load_index);
-	  return false;
-	}
-      bitmap_set_bit (load_index, lidx);
-      FOR_EACH_VEC_ELT (node->load_permutation, j, k)
-	if (k != lidx)
-	  {
-	    sbitmap_free (load_index);
-	    return false;
-	  }
-    }
-  for (i = 0; i < group_size; i++)
-    if (!bitmap_bit_p (load_index, i))
-      {
-	sbitmap_free (load_index);
-	return false;
-      }
-  sbitmap_free (load_index);
-
+  /* For loop vectorization verify we can generate the permutation.  */
   FOR_EACH_VEC_ELT (SLP_INSTANCE_LOADS (slp_instn), i, node)
     if (node->load_permutation.exists ()
 	&& !vect_transform_slp_perm_load
 	      (node, vNULL, NULL,
 	       SLP_INSTANCE_UNROLLING_FACTOR (slp_instn), slp_instn, true))
       return false;
+
   return true;
 }
 
@@ -1882,7 +1819,13 @@ vect_analyze_slp_instance (loop_vec_info loop_vinfo, bb_vec_info bb_vinfo,
 		this_load_permuted = true;
 	      load_permutation.safe_push (load_place);
 	    }
-	  if (!this_load_permuted)
+	  if (!this_load_permuted
+	      /* The load requires permutation when unrolling exposes
+	         a gap either because the group is larger than the SLP
+		 group-size or because there is a gap between the groups.  */
+	      && (unrolling_factor == 1
+		  || (group_size == GROUP_SIZE (vinfo_for_stmt (first_stmt))
+		      && GROUP_GAP (vinfo_for_stmt (first_stmt)) == 0)))
 	    {
 	      load_permutation.release ();
 	      continue;
@@ -3282,6 +3225,8 @@ vect_transform_slp_perm_load (slp_tree node, vec<tree> dr_chain,
   if (!STMT_VINFO_GROUPED_ACCESS (stmt_info))
     return false;
 
+  stmt_info = vinfo_for_stmt (GROUP_FIRST_ELEMENT (stmt_info));
+
   /* Generate permutation masks for every NODE. Number of masks for each NODE
      is equal to GROUP_SIZE.
      E.g., we have a group of three nodes with three loads from the same
@@ -3316,7 +3261,7 @@ vect_transform_slp_perm_load (slp_tree node, vec<tree> dr_chain,
           for (k = 0; k < group_size; k++)
             {
 	      i = SLP_TREE_LOAD_PERMUTATION (node)[k];
-              first_mask_element = i + j * group_size;
+              first_mask_element = i + j * STMT_VINFO_GROUP_SIZE (stmt_info);
               if (!vect_get_mask_element (stmt, first_mask_element, 0,
 					  nunits, only_one_vec, index,
 					  mask, &current_mask_element,
