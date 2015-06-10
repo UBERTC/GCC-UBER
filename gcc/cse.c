@@ -26,9 +26,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "hard-reg-set.h"
 #include "regs.h"
 #include "predict.h"
-#include "vec.h"
-#include "hashtab.h"
-#include "hash-set.h"
 #include "input.h"
 #include "function.h"
 #include "dominance.h"
@@ -41,9 +38,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "insn-config.h"
 #include "recog.h"
 #include "symtab.h"
-#include "statistics.h"
 #include "alias.h"
-#include "inchash.h"
 #include "tree.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -55,7 +50,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "expr.h"
 #include "diagnostic-core.h"
 #include "toplev.h"
-#include "ggc.h"
 #include "except.h"
 #include "target.h"
 #include "params.h"
@@ -5487,7 +5481,7 @@ cse_insn (rtx_insn *insn)
 	     and hope for the best.  */
 	  if (n_sets == 1)
 	    {
-	      rtx_insn *new_rtx;
+	      rtx_jump_insn *new_rtx;
 	      rtx note;
 
 	      new_rtx = emit_jump_insn_before (gen_jump (XEXP (src, 0)), insn);
@@ -6845,7 +6839,7 @@ static bool
 set_live_p (rtx set, rtx_insn *insn ATTRIBUTE_UNUSED, /* Only used with HAVE_cc0.  */
 	    int *counts)
 {
-  rtx tem;
+  rtx_insn *tem;
 
   if (set_noop_p (set))
     ;

@@ -22,12 +22,9 @@
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "varasm.h"
@@ -42,8 +39,6 @@
 #include "insn-attr.h"
 #include "flags.h"
 #include "function.h"
-#include "hashtab.h"
-#include "statistics.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -67,7 +62,6 @@
 #include "predict.h"
 #include "basic-block.h"
 #include "df.h"
-#include "ggc.h"
 #include "tm_p.h"
 #include "debug.h"
 #include "target.h"
@@ -4423,14 +4417,14 @@ rl78_select_section (tree decl,
     }
 
   if (readonly)
-    return readonly_data_section;
+    return TARGET_ES0 ? frodata_section : readonly_data_section;
 
   switch (categorize_decl_for_section (decl, reloc))
     {
     case SECCAT_TEXT:   return text_section;
     case SECCAT_DATA:   return data_section;
     case SECCAT_BSS:    return bss_section;
-    case SECCAT_RODATA: return readonly_data_section;
+    case SECCAT_RODATA: return TARGET_ES0 ? frodata_section : readonly_data_section;
     default:
       return default_select_section (decl, reloc, align);
     }

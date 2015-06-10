@@ -22,11 +22,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "rtl.h"
-#include "hashtab.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "hard-reg-set.h"
 #include "input.h"
 #include "function.h"
@@ -958,7 +954,7 @@ get_loop_body_in_bfs_order (const struct loop *loop)
 	    }
 	}
 
-      gcc_assert (i >= vc);
+      gcc_assert (i > vc);
 
       bb = blocks[vc++];
     }

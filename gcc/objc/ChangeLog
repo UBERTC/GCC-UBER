@@ -1,3 +1,25 @@
+2015-06-08  Andrew MacLeod  <amacleod@redhat.com>
+
+	* objc-act.c : Adjust include files.
+	* objc-encoding.c : Likewise.
+	* objc-gnu-runtime-abi-01.c : Likewise.
+	* objc-lang.c : Likewise.
+	* objc-map.c : Likewise.
+	* objc-next-runtime-abi-01.c : Likewise.
+	* objc-next-runtime-abi-02.c : Likewise.
+	* objc-runtime-shared-support.c : Likewise.
+
+2015-06-08  Aldy Hernandez  <aldyh@redhat.com>
+
+	* objc-runtime-shared-support.c (build_module_descriptor): Set
+	TREE_USED on UOBJC_MODULES_decl.
+
+2015-06-05  Aldy Hernandez  <aldyh@redhat.com>
+
+	* objc-act.c (objc_write_global_declarations): Adjust comment.
+	* objc-gnu-runtime-abi-01.c (build_selector_table_decl): Set
+	TREE_USED bit.
+
 2015-06-04  Andrew MacLeod  <amacleod@redhat.com>
 
 	* objc-act.c: Adjust includes for restructured coretypes.h.

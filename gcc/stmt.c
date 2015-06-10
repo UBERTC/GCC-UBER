@@ -29,12 +29,9 @@ along with GCC; see the file COPYING3.  If not see
 
 #include "rtl.h"
 #include "hard-reg-set.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "varasm.h"
@@ -44,8 +41,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "except.h"
 #include "function.h"
 #include "insn-config.h"
-#include "hashtab.h"
-#include "statistics.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -980,7 +975,7 @@ emit_case_dispatch_table (tree index_expr, tree index_type,
   int i, ncases;
   struct case_node *n;
   rtx *labelvec;
-  rtx fallback_label = label_rtx (case_list->code_label);
+  rtx_insn *fallback_label = label_rtx (case_list->code_label);
   rtx_code_label *table_label = gen_label_rtx ();
   bool has_gaps = false;
   edge default_edge = stmt_bb ? EDGE_SUCC (stmt_bb, 0) : NULL;

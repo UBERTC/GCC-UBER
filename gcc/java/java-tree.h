@@ -27,7 +27,6 @@ The Free Software Foundation is independent of Sun Microsystems, Inc.  */
 #ifndef GCC_JAVA_TREE_H
 #define GCC_JAVA_TREE_H
 
-#include "hashtab.h"
 
 struct JCF;
 
@@ -1193,10 +1192,6 @@ extern void java_read_sourcefilenames (const char *fsource_filename);
 extern void rewrite_reflection_indexes (void *);
 
 int cxx_keyword_p (const char *name, int length);
-
-extern GTY(()) vec<tree, va_gc> *pending_static_fields;
-
-extern void java_write_globals (void);   
 
 #define DECL_FINAL(DECL) DECL_LANG_FLAG_3 (DECL)
 

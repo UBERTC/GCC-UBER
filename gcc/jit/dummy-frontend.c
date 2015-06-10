@@ -21,7 +21,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "opts.h"
-#include "hash-set.h"
 #include "alias.h"
 #include "flags.h"
 #include "symtab.h"
@@ -218,21 +217,6 @@ jit_langhook_getdecls (void)
   return NULL;
 }
 
-static void
-jit_langhook_write_globals (void)
-{
-  gcc::jit::playback::context *ctxt = gcc::jit::active_playback_ctxt;
-  gcc_assert (ctxt);
-  JIT_LOG_SCOPE (ctxt->get_logger ());
-
-  ctxt->write_global_decls_1 ();
-
-  /* This is the hook that runs the middle and backends: */
-  symtab->finalize_compilation_unit ();
-
-  ctxt->write_global_decls_2 ();
-}
-
 #undef LANG_HOOKS_NAME
 #define LANG_HOOKS_NAME		"libgccjit"
 
@@ -259,9 +243,6 @@ jit_langhook_write_globals (void)
 
 #undef LANG_HOOKS_GETDECLS
 #define LANG_HOOKS_GETDECLS		jit_langhook_getdecls
-
-#undef LANG_HOOKS_WRITE_GLOBALS
-#define LANG_HOOKS_WRITE_GLOBALS	jit_langhook_write_globals
 
 struct lang_hooks lang_hooks = LANG_HOOKS_INITIALIZER;
 

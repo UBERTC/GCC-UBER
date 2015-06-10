@@ -1,3 +1,120 @@
+2015-06-09  Jason Merrill  <jason@redhat.com>
+
+	DR 1467
+	PR c++/51747
+	* typeck2.c (digest_init_r): Replace previous change with
+	gcc_unreachable.
+
+	PR c++/66387
+	* semantics.c (process_outer_var_ref): Make sure the value is
+	actually constant before returning it.
+	* typeck.c (cp_build_array_ref): Allow subscripting non-lvalue
+	array.
+
+2015-06-09  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65815
+	* typeck2.c (digest_nsdmi_init): On aggregates use reshape_init.
+	* init.c (expand_default_init): Likewise.
+
+2015-06-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66383
+	* tree.c (replace_placeholders_r): Handle placeholders for an
+	outer object.
+	* typeck2.c (store_init_value): Only replace_placeholders for
+	objects of class type.
+
+2015-06-08  Andrew MacLeod  <amacleod@redhat.com>
+
+	* call.c : Adjust include files.
+	* class.c : Likewise.
+	* constexpr.c : Likewise.
+	* cp-array-notation.c : Likewise.
+	* cp-cilkplus.c : Likewise.
+	* cp-gimplify.c : Likewise.
+	* cp-lang.c : Likewise.
+	* cp-objcp-common.c : Likewise.
+	* cp-tree.h : Likewise.
+	* cp-ubsan.c : Likewise.
+	* cvt.c : Likewise.
+	* decl.c : Likewise.
+	* decl2.c : Likewise.
+	* dump.c : Likewise.
+	* error.c : Likewise.
+	* except.c : Likewise.
+	* expr.c : Likewise.
+	* friend.c : Likewise.
+	* init.c : Likewise.
+	* lambda.c : Likewise.
+	* lex.c : Likewise.
+	* mangle.c : Likewise.
+	* method.c : Likewise.
+	* name-lookup.c : Likewise.
+	* optimize.c : Likewise.
+	* parser.c : Likewise.
+	* pt.c : Likewise.
+	* ptree.c : Likewise.
+	* repo.c : Likewise.
+	* rtti.c : Likewise.
+	* search.c : Likewise.
+	* semantics.c : Likewise.
+	* tree.c : Likewise.
+	* typeck.c : Likewise.
+	* typeck2.c : Likewise.
+	* vtable-class-hierarchy.c : Likewise.
+
+2015-06-05  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66405
+	* pt.c (argument_pack_element_is_expansion_p): Return 2 if
+	the expansion has extra args.
+	(use_pack_expansion_extra_args_p): Return true in that case.
+
+	PR c++/66405
+	* pt.c (type_dependent_expression_p): EXPR_PACK_EXPANSION is
+	dependent even if it has a type.
+
+2015-06-05  Aldy Hernandez  <aldyh@redhat.com>
+
+	* cp-objcp-common.c: Adjust comment for
+	cxx_warn_unused_global_decl.
+	* cp-objcp-common.h (LANG_HOOKS_WRITE_GLOBALS): Remove
+	(LANG_HOOKS_POST_COMPILATION_PARSING_CLEANUPS): New.
+	* cp-tree.h (note_mangling_alias): Protoize.
+	(cp_write_global_declarations): Remove.
+	(cxx_post_compilation_parsing_cleanups): Protoize.
+	* decl.c (wrapup_globals_for_namespace): Remove use of DATA
+	argument.
+	* decl2.c (mangling_aliases): New global.
+	(build_java_method_aliases): New.  Adapted from
+	collect_candidates_for_java_method_aliases.
+	(collect_candidates_for_java_method_aliases): Remove.
+	(build_java_method_aliases): Remove.
+	(generate_mangling_aliases): New.
+	(note_mangling_alias): New.  Moved from mangle_decl.
+	(locus_at_end_of_parsing): New global.
+	(c_parse_final_cleanups): Rename from
+	cp_write_global_declarations.
+	Use locus_at_end_of_parsing.
+	Call generate_mangling_aliases.
+	Rename call to collect_candidates_for_java_method_aliases into
+	build_java_method_aliases.
+	Remove call to finalize_compilation_unit.
+	Move vtable handling into cxx_post_compilation_parsing_cleanups.
+	Do not call check_global_declarations or
+	emit_debug_global_declarations.
+	(cxx_post_compilation_parsing_cleanups): New.
+	* mangle.c (mangle_decl): Move code to note_mangling_alias.
+	* name-lookup.c (do_namespace_alias): Call early_global_decl.
+
+2015-06-05  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/52595
+	* parser.c (cp_parser_cache_defarg): Continue looking for
+	declarators when scanning a potential template argument list of an
+	NSDMI.
+
 2015-06-04  Andrew MacLeod  <amacleod@redhat.com>
 
 	* call.c: Adjust includes for restructured coretypes.h.

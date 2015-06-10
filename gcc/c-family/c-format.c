@@ -21,12 +21,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "stringpool.h"
 #include "flags.h"
@@ -138,9 +135,11 @@ location_from_offset (location_t loc, int offset)
   expanded_location s = expand_location_to_spelling_point (loc);
   int line_width;
   const char *line = location_get_source_line (s, &line_width);
+  if (line == NULL)
+    return loc;
   line += s.column - 1 ;
   line_width -= s.column - 1;
-  unsigned int column = 
+  unsigned int column =
     location_column_from_byte_offset (line, line_width, (unsigned) offset);
 
   return linemap_position_for_loc_and_offset (line_table, loc, column);

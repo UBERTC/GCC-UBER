@@ -43,9 +43,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm_p.h"
 #include "obstack.h"
 #include "predict.h"
-#include "vec.h"
-#include "hashtab.h"
-#include "hash-set.h"
 #include "input.h"
 #include "function.h"
 #include "dominance.h"
@@ -55,9 +52,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "cfgloop.h"
 #include "symtab.h"
 #include "flags.h"
-#include "statistics.h"
 #include "alias.h"
-#include "inchash.h"
 #include "tree.h"
 #include "insn-config.h"
 #include "expmed.h"
@@ -71,7 +66,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "recog.h"
 #include "target.h"
 #include "df.h"
-#include "hash-table.h"
 #include "except.h"
 #include "params.h"
 #include "regs.h"
@@ -882,14 +876,13 @@ pre_check_invariant_p (bool simple, rtx dest)
   if (simple && REG_P (dest) && DF_REG_DEF_COUNT (REGNO (dest)) > 1)
     {
       df_ref use;
-      rtx ref;
       unsigned int i = REGNO (dest);
       struct df_insn_info *insn_info;
       df_ref def_rec;
 
       for (use = DF_REG_USE_CHAIN (i); use; use = DF_REF_NEXT_REG (use))
 	{
-	  ref = DF_REF_INSN (use);
+	  rtx_insn *ref = DF_REF_INSN (use);
 	  insn_info = DF_INSN_INFO_GET (ref);
 
 	  FOR_EACH_INSN_INFO_DEF (def_rec, insn_info)

@@ -1,3 +1,103 @@
+2015-06-08  Andrew MacLeod  <amacleod@redhat.com>
+
+	* convert.c : Adjust include files.
+	* cpp.c : Likewise.
+	* decl.c : Likewise.
+	* f95-lang.c : Likewise.
+	* gfortran.h : Likewise.
+	* iresolve.c : Likewise.
+	* match.c : Likewise.
+	* module.c : Likewise.
+	* openmp.c : Likewise.
+	* options.c : Likewise.
+	* target-memory.c : Likewise.
+	* trans-array.c : Likewise.
+	* trans-common.c : Likewise.
+	* trans-const.c : Likewise.
+	* trans-decl.c : Likewise.
+	* trans-expr.c : Likewise.
+	* trans-intrinsic.c : Likewise.
+	* trans-io.c : Likewise.
+	* trans-openmp.c : Likewise.
+	* trans-stmt.c : Likewise.
+	* trans-types.c : Likewise.
+	* trans.c : Likewise.
+
+2015-06-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66245
+	* match.c (gfc_match_type_is, gfc_match_class_is):  Check if the
+	return type spec or derived type spec is validate.
+
+2015-06-06  Thomas Koenig  <tkoenig@netcologne.de>
+
+	PR fortran/47659
+	* arith.c (eval_intrinsic_op): Set warn flag for
+	gfc_type_convert_binary if -Wconversion or -Wconversion-extra
+	are set.
+	(wprecision_real_real): New function.
+	(wprecision_int_real): New function.
+	(gfc_int2int): If -fno-range-check and -Wconversion are specified
+	and it is a narrowing conversion, warn.
+	(gfc_int2real): If there is a change in value for the conversion,
+	warn.
+	(gfc_int2complex):  Likewise.
+	(gfc_real2int): If there is a fractional part to the real number,
+	warn with -Wconversion, otherwise warn with -Wconversion-extra.
+	(gfc_real2real): Emit warning if the constant was changed by
+	conversion with either -Wconversion or -Wconversion-extra.  With
+	-Wconversion-extra, warn if no warning was issued earlier.
+	(gfc_real2complex):  Likewise.
+	(gfc_complex2int): For -Wconversion or -Wconversion-extra, if
+	there was an imaginary part, warn; otherwise, warn for change in
+	value.  Warn with -Wconversion-extra if no other warning was
+	issued.
+	(gfc_complex2real): For -Wconversion or -Wconversion-extra, if
+	there was an imaginary part, warn; otherwise, warn for change in
+	value. Warn with -Wconversion-extra if no other warning was
+	issued.
+	(gfc_complex2complex):  For -Wconversion, warn if the value of
+	either the real or the imaginary part was changed.  Warn for
+	-Wconversion-extra if no prior warning was issued.
+	* expr.c (gfc_check_assign):  Remove check for change in value.
+	* primary.c (match_real_constant): For -Wconversion-extra, check
+	against a number in which the last non-zero digit has been
+	replaced with a zero.  If the number compares equal, warn.
+	* intrinsic.c (gfc_convert_type_warn):  Do not warn about constant
+	conversions.
+
+2015-06-05  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66347
+	* resolve.c (apply_default_init_local): Do not dereference a NULL
+	pointer.
+
+2015-06-05  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66385
+	* frontend-passes.c (combine_array_constructor): Return early if
+	inside a FORALL loop.
+
+2015-06-05  Aldy Hernandez  <aldyh@redhat.com>
+
+	* f95-lang.c (gfc_write_global_declarations): Remove.
+	(LANG_HOOKS_WRITE_GLOBALS): Remove.
+	(gfc_write_global_declarations): Move code from here to...
+	(gfc_be_parse_file): ...here.
+	Call global_decl_processing.
+	* trans-decl.c (gfc_emit_parameter_debug_info): Rename global_decl
+	to early_global_decl.
+
+2015-06-05  Russell Whitesides  <russelldub@gmail.com>
+	    Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/40958
+	PR fortran/60780
+	PR fortran/66377
+	* module.c (load_equiv): Add check for loading duplicate EQUIVALENCEs
+	from different modules.  Eliminate the pruning of unused
+	equivalence-objects
+
 2015-06-04  Thomas Koenig  <tkoenig@netcologne.de>
 
 	PR fortran/58749

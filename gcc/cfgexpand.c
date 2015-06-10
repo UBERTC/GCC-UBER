@@ -23,12 +23,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm.h"
 #include "rtl.h"
 #include "hard-reg-set.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stringpool.h"
@@ -38,7 +35,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "print-tree.h"
 #include "tm_p.h"
 #include "predict.h"
-#include "hashtab.h"
 #include "function.h"
 #include "dominance.h"
 #include "cfg.h"
@@ -50,7 +46,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "insn-codes.h"
 #include "optabs.h"
 #include "flags.h"
-#include "statistics.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -69,7 +64,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimple-iterator.h"
 #include "gimple-walk.h"
 #include "gimple-ssa.h"
-#include "hash-map.h"
 #include "plugin-api.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -2900,7 +2894,7 @@ expand_asm_stmt (gasm *stmt)
       for (i = 0; i < nlabels; ++i)
 	{
 	  tree label = TREE_VALUE (gimple_asm_label_op (stmt, i));
-	  rtx r;
+	  rtx_insn *r;
 	  /* If asm goto has any labels in the fallthru basic block, use
 	     a label that we emit immediately after the asm goto.  Expansion
 	     may insert further instructions into the same basic block after

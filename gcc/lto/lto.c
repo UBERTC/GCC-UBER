@@ -23,13 +23,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "opts.h"
 #include "toplev.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stor-layout.h"
@@ -37,7 +34,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm.h"
 #include "predict.h"
 #include "basic-block.h"
-#include "hash-map.h"
 #include "is-a.h"
 #include "plugin-api.h"
 #include "hard-reg-set.h"
@@ -49,7 +45,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-pass.h"
 #include "langhooks.h"
 #include "bitmap.h"
-#include "inchash.h"
 #include "alloc-pool.h"
 #include "symbol-summary.h"
 #include "ipa-prop.h"
@@ -337,17 +332,15 @@ hash_canonical_type (tree type)
   if (TREE_CODE (type) == COMPLEX_TYPE)
     hstate.add_int (TYPE_UNSIGNED (type));
 
-  /* For pointer and reference types, fold in information about the type
-     pointed to but do not recurse to the pointed-to type.  */
-  if (POINTER_TYPE_P (type))
-    {
-      hstate.add_int (TYPE_ADDR_SPACE (TREE_TYPE (type)));
-      hstate.add_int (TREE_CODE (TREE_TYPE (type)));
-    }
+  /* Fortran's C_SIGNED_CHAR is !TYPE_STRING_FLAG but needs to be
+     interoperable with "signed char".  Unless all frontends are revisited to
+     agree on these types, we must ignore the flag completely.  */
 
-  /* For integer types hash only the string flag.  */
-  if (TREE_CODE (type) == INTEGER_TYPE)
-    hstate.add_int (TYPE_STRING_FLAG (type));
+  /* Fortran standard define C_PTR type that is compatible with every
+     C pointer.  For this reason we need to glob all pointers into one.
+     Still pointers in different address spaces are not compatible.  */
+  if (POINTER_TYPE_P (type))
+    hstate.add_int (TYPE_ADDR_SPACE (TREE_TYPE (type)));
 
   /* For array types hash the domain bounds and the string flag.  */
   if (TREE_CODE (type) == ARRAY_TYPE && TYPE_DOMAIN (type))

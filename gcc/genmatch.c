@@ -25,15 +25,10 @@ along with GCC; see the file COPYING3.  If not see
 #include <new>
 #include "system.h"
 #include "coretypes.h"
-#include "ggc.h"
 #include <cpplib.h>
 #include "errors.h"
-#include "hashtab.h"
 #include "hash-table.h"
-#include "inchash.h"
-#include "hash-map.h"
 #include "hash-set.h"
-#include "vec.h"
 #include "is-a.h"
 
 
@@ -1707,6 +1702,13 @@ expr::gen_transform (FILE *f, const char *dest, bool gimple, int depth,
       /* comparisons use boolean_type_node (or what gets in), but
          their operands need to figure out the types themselves.  */
       sprintf (optype, "boolean_type_node");
+      type = optype;
+    }
+  else if (*operation == COND_EXPR
+	   || *operation == VEC_COND_EXPR)
+    {
+      /* Conditions are of the same type as their first alternative.  */
+      sprintf (optype, "TREE_TYPE (ops%d[1])", depth);
       type = optype;
     }
   else

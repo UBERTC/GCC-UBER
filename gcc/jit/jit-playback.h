@@ -215,10 +215,6 @@ public:
     return m_recording_ctxt->errors_occurred ();
   }
 
-  /* For use by jit_langhook_write_globals.  */
-  void write_global_decls_1 ();
-  void write_global_decls_2 ();
-
 private:
   void dump_generated_code ();
 

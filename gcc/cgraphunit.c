@@ -161,12 +161,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "varasm.h"
@@ -179,6 +176,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "input.h"
 #include "function.h"
 #include "basic-block.h"
+#include "dominance.h"
+#include "cfgcleanup.h"
+#include "cfg.h"
 #include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-fold.h"
@@ -201,7 +201,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "diagnostic.h"
 #include "params.h"
 #include "intl.h"
-#include "hash-map.h"
 #include "plugin-api.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -403,10 +402,11 @@ cgraph_node::reset (void)
   remove_all_references ();
 }
 
-/* Return true when there are references to the node.  */
+/* Return true when there are references to the node.  INCLUDE_SELF is
+   true if a self reference counts as a reference.  */
 
 bool
-symtab_node::referred_to_p (void)
+symtab_node::referred_to_p (bool include_self)
 {
   ipa_ref *ref = NULL;
 
@@ -416,7 +416,13 @@ symtab_node::referred_to_p (void)
   /* For functions check also calls.  */
   cgraph_node *cn = dyn_cast <cgraph_node *> (this);
   if (cn && cn->callers)
-    return true;
+    {
+      if (include_self)
+	return true;
+      for (cgraph_edge *e = cn->callers; e; e = e->next_caller)
+	if (e->caller != this)
+	  return true;
+    }
   return false;
 }
 
@@ -500,6 +506,23 @@ cgraph_node::add_new_function (tree fndecl, bool lowered)
 {
   gcc::pass_manager *passes = g->get_passes ();
   cgraph_node *node;
+
+  if (dump_file)
+    {
+      struct function *fn = DECL_STRUCT_FUNCTION (fndecl);
+      const char *function_type = ((gimple_has_body_p (fndecl))
+				   ? (lowered
+				      ? (gimple_in_ssa_p (fn)
+					 ? "ssa gimple"
+					 : "low gimple")
+				      : "high gimple")
+				   : "to-be-gimplified");
+      fprintf (dump_file,
+	       "Added new %s function %s to callgraph\n",
+	       function_type,
+	       fndecl_name (fndecl));
+    }
+
   switch (symtab->state)
     {
       case PARSING:
@@ -628,7 +651,6 @@ cgraph_node::analyze (void)
 	 body.  */
       if (!gimple_has_body_p (decl))
 	gimplify_function_tree (decl);
-      dump_function (TDI_generic, decl);
 
       /* Lower the function.  */
       if (!lowered)
@@ -924,8 +946,12 @@ walk_polymorphic_call_targets (hash_set<void *> *reachable_call_targets,
 static cgraph_node *first_analyzed;
 static varpool_node *first_analyzed_var;
 
+/* FIRST_TIME is set to TRUE for the first time we are called for a
+   translation unit from finalize_compilation_unit() or false
+   otherwise.  */
+
 static void
-analyze_functions (void)
+analyze_functions (bool first_time)
 {
   /* Keep track of already processed nodes when called multiple times for
      intermodule optimization.  */
@@ -1097,6 +1123,13 @@ analyze_functions (void)
       symtab_node::dump_table (symtab->dump_file);
     }
 
+  if (first_time)
+    {
+      symtab_node *snode;
+      FOR_EACH_SYMBOL (snode)
+	check_global_declaration (snode->decl);
+    }
+
   if (symtab->dump_file)
     fprintf (symtab->dump_file, "\nRemoving unused symbols:");
 
@@ -1109,6 +1142,19 @@ analyze_functions (void)
 	{
 	  if (symtab->dump_file)
 	    fprintf (symtab->dump_file, " %s", node->name ());
+
+	  /* See if the debugger can use anything before the DECL
+	     passes away.  Perhaps it can notice a DECL that is now a
+	     constant and can tag the early DIE with an appropriate
+	     attribute.
+
+	     Otherwise, this is the last chance the debug_hooks have
+	     at looking at optimized away DECLs, since
+	     late_global_decl will subsequently be called from the
+	     contents of the now pruned symbol table.  */
+	  if (!decl_function_context (node->decl))
+	    (*debug_hooks->late_global_decl) (node->decl);
+
 	  node->remove ();
 	  continue;
 	}
@@ -2445,13 +2491,23 @@ symbol_table::finalize_compilation_unit (void)
 
   /* Gimplify and lower all functions, compute reachability and
      remove unreachable nodes.  */
-  analyze_functions ();
+  analyze_functions (/*first_time=*/true);
 
   /* Mark alias targets necessary and emit diagnostics.  */
   handle_alias_pairs ();
 
   /* Gimplify and lower thunks.  */
-  analyze_functions ();
+  analyze_functions (/*first_time=*/false);
+
+  /* Emit early debug for reachable functions, and by consequence,
+     locally scoped symbols.  */
+  struct cgraph_node *cnode;
+  FOR_EACH_FUNCTION_WITH_GIMPLE_BODY (cnode)
+    (*debug_hooks->early_global_decl) (cnode->decl);
+
+  /* Clean up anything that needs cleaning up after initial debug
+     generation.  */
+  (*debug_hooks->early_finish) ();
 
   /* Finally drive the pass manager.  */
   compile ();

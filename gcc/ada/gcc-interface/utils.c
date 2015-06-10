@@ -27,7 +27,6 @@
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "hash-set.h"
 #include "vec.h"
 #include "input.h"
 #include "alias.h"
@@ -53,7 +52,6 @@
 #include "is-a.h"
 #include "plugin-api.h"
 #include "hard-reg-set.h"
-#include "input.h"
 #include "function.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -224,8 +222,8 @@ static GTY((deletable)) struct gnat_binding_level *free_binding_level;
 /* The context to be used for global declarations.  */
 static GTY(()) tree global_context;
 
-/* An array of global declarations.  */
-static GTY(()) vec<tree, va_gc> *global_decls;
+/* An array of global type declarations.  */
+static GTY(()) vec<tree, va_gc> *type_decls;
 
 /* An array of builtin function declarations.  */
 static GTY(()) vec<tree, va_gc> *builtin_decls;
@@ -756,7 +754,10 @@ gnat_pushdecl (tree decl, Node_Id gnat_node)
 	    vec_safe_push (builtin_decls, decl);
 	}
       else if (global_bindings_p ())
-	vec_safe_push (global_decls, decl);
+	{
+	  if (TREE_CODE (decl) == TYPE_DECL)
+	    vec_safe_push (type_decls, decl);
+	}
       else
 	{
 	  DECL_CHAIN (decl) = BLOCK_VARS (current_binding_level->block);
@@ -5179,12 +5180,13 @@ smaller_form_type_p (tree type, tree orig_type)
   return tree_int_cst_lt (size, osize) != 0;
 }
 
-/* Perform final processing on global variables.  */
+/* Keep track of types used at the global level and emit debug info
+   for all global types.  */
 
 static GTY (()) tree dummy_global;
 
 void
-gnat_write_global_declarations (void)
+note_types_used_by_globals (void)
 {
   unsigned int i;
   tree iter;
@@ -5213,27 +5215,13 @@ gnat_write_global_declarations (void)
 	}
     }
 
-  /* Output debug information for all global type declarations first.  This
-     ensures that global types whose compilation hasn't been finalized yet,
-     for example pointers to Taft amendment types, have their compilation
-     finalized in the right context.  */
-  FOR_EACH_VEC_SAFE_ELT (global_decls, i, iter)
-    if (TREE_CODE (iter) == TYPE_DECL && !DECL_IGNORED_P (iter))
+  /* Output debug information for all global type declarations.  This ensures
+     that global types whose compilation cannot been finalized earlier, e.g.
+     pointers to Taft amendment types, have their compilation finalized in
+     the right context.  */
+  FOR_EACH_VEC_SAFE_ELT (type_decls, i, iter)
+    if (!DECL_IGNORED_P (iter))
       debug_hooks->type_decl (iter, false);
-
-  /* Proceed to optimize and emit assembly. */
-  symtab->finalize_compilation_unit ();
-
-  /* After cgraph has had a chance to emit everything that's going to
-     be emitted, output debug information for the rest of globals.  */
-  if (!seen_error ())
-    {
-      timevar_push (TV_SYMOUT);
-      FOR_EACH_VEC_SAFE_ELT (global_decls, i, iter)
-	if (TREE_CODE (iter) != TYPE_DECL && !DECL_IGNORED_P (iter))
-	  debug_hooks->global_decl (iter);
-      timevar_pop (TV_SYMOUT);
-    }
 }
 
 /* ************************************************************************

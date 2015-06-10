@@ -25,21 +25,16 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "toplev.h"
-#include "hash-set.h"
-#include "vec.h"
 #include "input.h"
 #include "alias.h"
 #include "symtab.h"
-#include "inchash.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stringpool.h"
-#include "hashtab.h"
 #include "hard-reg-set.h"
 #include "function.h"
 #include "rtl.h"
 #include "flags.h"
-#include "statistics.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -70,7 +65,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "diagnostic.h"
 #include "except.h"
 #include "debug.h"
-#include "hash-map.h"
 #include "plugin-api.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -278,12 +272,13 @@ lto_location_cache::input_location (location_t *loc, struct bitpack_d *bp,
 
   gcc_assert (current_cache == this);
 
-  if (bp_unpack_value (bp, 1))
-    {
-      *loc = UNKNOWN_LOCATION;
-      return;
-    }
-  *loc = BUILTINS_LOCATION + 1;
+  *loc = bp_unpack_int_in_range (bp, "location", 0, RESERVED_LOCATION_COUNT);
+
+  if (*loc < RESERVED_LOCATION_COUNT)
+    return;
+
+  /* Keep value RESERVED_LOCATION_COUNT in *loc as linemap lookups will
+     ICE on it.  */
 
   file_change = bp_unpack_value (bp, 1);
   line_change = bp_unpack_value (bp, 1);

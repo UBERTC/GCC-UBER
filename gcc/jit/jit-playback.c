@@ -23,7 +23,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "opts.h"
 #include "hashtab.h"
-#include "hash-set.h"
 #include "input.h"
 #include "statistics.h"
 #include "vec.h"
@@ -514,6 +513,8 @@ new_global (location *loc,
 
   varpool_node::get_create (inner);
 
+  varpool_node::finalize_decl (inner);
+
   m_globals.safe_push (inner);
 
   return new lvalue (this, inner);
@@ -667,45 +668,6 @@ as_truth_value (tree expr, location *loc)
 
   return expr;
 }
-
-/* For use by jit_langhook_write_globals.
-   Calls varpool_node::finalize_decl on each global.  */
-
-void
-playback::context::
-write_global_decls_1 ()
-{
-  /* Compare with e.g. the C frontend's c_write_global_declarations.  */
-  JIT_LOG_SCOPE (get_logger ());
-
-  int i;
-  tree decl;
-  FOR_EACH_VEC_ELT (m_globals, i, decl)
-    {
-      gcc_assert (TREE_CODE (decl) == VAR_DECL);
-      varpool_node::finalize_decl (decl);
-    }
-}
-
-/* For use by jit_langhook_write_globals.
-   Calls debug_hooks->global_decl on each global.  */
-
-void
-playback::context::
-write_global_decls_2 ()
-{
-  /* Compare with e.g. the C frontend's c_write_global_declarations_2. */
-  JIT_LOG_SCOPE (get_logger ());
-
-  int i;
-  tree decl;
-  FOR_EACH_VEC_ELT (m_globals, i, decl)
-    {
-      gcc_assert (TREE_CODE (decl) == VAR_DECL);
-      debug_hooks->global_decl (decl);
-    }
-}
-
 
 /* Construct a playback::rvalue instance (wrapping a tree) for a
    unary op.  */
