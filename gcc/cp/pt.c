@@ -9781,16 +9781,22 @@ make_fnparm_pack (tree spec_parm)
   return extract_fnparm_pack (NULL_TREE, &spec_parm);
 }
 
-/* Return true iff the Ith element of the argument pack ARG_PACK is a
-   pack expansion.  */
+/* Return 1 if the Ith element of the argument pack ARG_PACK is a
+   pack expansion with no extra args, 2 if it has extra args, or 0
+   if it is not a pack expansion.  */
 
-static bool
+static int
 argument_pack_element_is_expansion_p (tree arg_pack, int i)
 {
   tree vec = ARGUMENT_PACK_ARGS (arg_pack);
   if (i >= TREE_VEC_LENGTH (vec))
-    return false;
-  return PACK_EXPANSION_P (TREE_VEC_ELT (vec, i));
+    return 0;
+  tree elt = TREE_VEC_ELT (vec, i);
+  if (!PACK_EXPANSION_P (elt))
+    return 0;
+  if (PACK_EXPANSION_EXTRA_ARGS (elt))
+    return 2;
+  return 1;
 }
 
 
@@ -9840,7 +9846,12 @@ use_pack_expansion_extra_args_p (tree parm_packs,
 	{
 	  tree arg = TREE_VALUE (parm_pack);
 
-	  if (argument_pack_element_is_expansion_p (arg, i))
+	  int exp = argument_pack_element_is_expansion_p (arg, i);
+	  if (exp == 2)
+	    /* We can't substitute a pack expansion with extra args into
+	       our pattern.  */
+	    return true;
+	  else if (exp)
 	    has_expansion_arg = true;
 	  else
 	    has_non_expansion_arg = true;
@@ -21417,6 +21428,10 @@ type_dependent_expression_p (tree expression)
       && variable_template_p (DECL_TI_TEMPLATE (expression)))
     return any_dependent_template_arguments_p (DECL_TI_ARGS (expression));
 
+  /* Always dependent, on the number of arguments if nothing else.  */
+  if (TREE_CODE (expression) == EXPR_PACK_EXPANSION)
+    return true;
+
   if (TREE_TYPE (expression) == unknown_type_node)
     {
       if (TREE_CODE (expression) == ADDR_EXPR)
@@ -21433,10 +21448,6 @@ type_dependent_expression_p (tree expression)
       /* SCOPE_REF with non-null TREE_TYPE is always non-dependent.  */
       if (TREE_CODE (expression) == SCOPE_REF)
 	return false;
-
-      /* Always dependent, on the number of arguments if nothing else.  */
-      if (TREE_CODE (expression) == EXPR_PACK_EXPANSION)
-	return true;
 
       if (BASELINK_P (expression))
 	{

@@ -1,3 +1,34 @@
+2015-06-09  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66387
+	* semantics.c (process_outer_var_ref): Make sure the value is
+	actually constant before returning it.
+	* typeck.c (cp_build_array_ref): Allow subscripting non-lvalue
+	array.
+
+	PR c++/66383
+	* tree.c (replace_placeholders_r): Handle placeholders for an
+	outer object.
+	* typeck2.c (store_init_value): Only replace_placeholders for
+	objects of class type.
+
+2015-06-05  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66405
+	* pt.c (argument_pack_element_is_expansion_p): Return 2 if
+	the expansion has extra args.
+	(use_pack_expansion_extra_args_p): Return true in that case.
+
+	PR c++/66405
+	* pt.c (type_dependent_expression_p): EXPR_PACK_EXPANSION is
+	dependent even if it has a type.
+
+2015-06-05  Jason Merrill  <jason@redhat.com>
+
+	PR c++/65942
+	* decl2.c (mark_used): Don't always instantiate constexpr fns.
+	* constexpr.c (cxx_eval_call_expression): Instantiate them here.
+
 2015-06-04  Marek Polacek  <polacek@redhat.com>
 
 	Backported from mainline
