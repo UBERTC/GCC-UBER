@@ -1,3 +1,104 @@
+2015-06-05  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66405
+	* pt.c (argument_pack_element_is_expansion_p): Return 2 if
+	the expansion has extra args.
+	(use_pack_expansion_extra_args_p): Return true in that case.
+
+	PR c++/66405
+	* pt.c (type_dependent_expression_p): EXPR_PACK_EXPANSION is
+	dependent even if it has a type.
+
+2015-06-05  Jason Merrill  <jason@redhat.com>
+
+	PR c++/65942
+	* decl2.c (mark_used): Don't always instantiate constexpr fns.
+	* constexpr.c (cxx_eval_call_expression): Instantiate them here.
+
+2015-06-04  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2015-06-03  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/66190
+	* cp-gimplify.c (struct cp_genericize_data): Add no_sanitize_p.
+	(cp_genericize_r): Don't instrument static initializers.
+	(cp_genericize_tree): Initialize wtd.no_sanitize_p.
+
+2015-05-31  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66320
+	* constexpr.c (cxx_eval_constant_expression): Treat a placeholder
+	with the wrong type as non-constant.
+
+	* pt.c (tsubst_decl) [VAR_DECL]: SET_DECL_IMPLICIT_INSTANTIATION
+	before register_specialization.
+
+2015-05-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-05-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66199
+	* parser.c (cp_parser_omp_for_loop): Don't add
+	OMP_CLAUSE_SHARED to OMP_PARALLEL_CLAUSES when moving
+	OMP_CLAUSE_LASTPRIVATE clause to OMP_FOR_CLAUSES.
+	(cp_parser_omp_teams): Set OMP_TEAMS_COMBINED for combined
+	constructs.
+
+2015-05-18  Jason Merrill  <jason@redhat.com>
+
+	* pt.c (tsubst_decl) [VAR_DECL]: Call coerce_innermost_template_parms.
+	(determine_specialization): Call coerce_template_parms.
+
+	* tree.c (strip_typedefs_expr) [TRAIT_EXPR]: Fix typo.
+	(strip_typedefs) [DECLTYPE_TYPE]: Fix typedef of decltype.
+	[TREE_LIST]: Fix no-change case.
+
+2015-05-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/59012
+	* parser.c (cp_parser_std_attribute_list): Handle attribute expansion.
+	(cp_parser_std_attribute_spec): Handle alignas pack expansion.
+	* decl2.c (is_late_template_attribute): An attribute exp is dependent.
+	* pt.c (make_pack_expansion): Allow TREE_LIST for attribute expansion.
+	(apply_late_template_attributes): Handle attribute pack expansion.
+
+	DR 1467
+	PR c++/51747
+	* typeck2.c (digest_init_r): Fix single element list.
+
+2015-05-05  Jason Merrill  <jason@redhat.com>
+
+	* decl.c (start_decl): Don't push the plain VAR_DECL for a
+	variable template.
+
+2015-05-04  Paolo Carlini  <paolo.carlini@oracle.com>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/66007
+	* typeck2.c (check_narrowing): Check by-hand that the pedwarn didn't
+	result in an actual error.
+
+2015-05-01  Paolo Carlini  <paolo.carlini@oracle.com>
+	    Prathamesh Kulharni  <prathamesh.kulkarni@linaro.org>
+
+	PR c++/65858
+	* typeck2.c (check_narrowing): Set ok = true when pedwarn returns
+	false.
+
+2015-04-30  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65801
+	* typeck2.c (check_narrowing): In C++11 mode too, -Wno-narrowing
+	suppresses the diagnostic.
+
+2015-04-30  Jason Merrill  <jason@redhat.com>
+
+	PR c++/65876
+	* constexpr.c (cxx_eval_call_expression): Fail gracefully if cgraph
+	threw away DECL_SAVED_TREE.
+
 2015-04-29  Thomas Schwinge  <thomas@codesourcery.com>
 
 	Backport from trunk r222564:

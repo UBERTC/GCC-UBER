@@ -511,6 +511,7 @@ Objective-C and Objective-C++ Dialects}.
 -momit-leaf-frame-pointer  -mno-omit-leaf-frame-pointer @gol
 -mtls-dialect=desc  -mtls-dialect=traditional @gol
 -mfix-cortex-a53-835769  -mno-fix-cortex-a53-835769 @gol
+-mfix-cortex-a53-843419  -mno-fix-cortex-a53-843419 @gol
 -march=@var{name}  -mcpu=@var{name}  -mtune=@var{name}}
 
 @emph{Adapteva Epiphany Options}
@@ -2703,10 +2704,10 @@ int i = @{ 2.2 @}; // error: narrowing from double to int
 
 This flag is included in @option{-Wall} and @option{-Wc++11-compat}.
 
-With @option{-std=c++11}, @option{-Wno-narrowing} suppresses for
-non-constants the diagnostic required by the standard.  Note that this
-does not affect the meaning of well-formed code; narrowing conversions
-are still considered ill-formed in SFINAE context.
+With @option{-std=c++11}, @option{-Wno-narrowing} suppresses the diagnostic
+required by the standard.  Note that this does not affect the meaning
+of well-formed code; narrowing conversions are still considered
+ill-formed in SFINAE context.
 
 @item -Wnoexcept @r{(C++ and Objective-C++ only)}
 @opindex Wnoexcept
@@ -12311,6 +12312,14 @@ of TLS variables.
 Enable or disable the workaround for the ARM Cortex-A53 erratum number 835769.
 This involves inserting a NOP instruction between memory instructions and
 64-bit integer multiply-accumulate instructions.
+
+@item -mfix-cortex-a53-843419
+@itemx -mno-fix-cortex-a53-843419
+@opindex mfix-cortex-a53-843419
+@opindex mno-fix-cortex-a53-843419
+Enable or disable the workaround for the ARM Cortex-A53 erratum number 843419.
+This erratum workaround is made at link time and this will only pass the
+corresponding flag to the linker.
 
 @item -march=@var{name}
 @opindex march

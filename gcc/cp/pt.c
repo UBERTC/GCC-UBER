@@ -1919,7 +1919,13 @@ determine_specialization (tree template_id,
     ++header_count;
 
   if (variable_template_p (fns))
-    templates = tree_cons (explicit_targs, fns, templates);
+    {
+      tree parms = INNERMOST_TEMPLATE_PARMS (DECL_TEMPLATE_PARMS (fns));
+      targs = coerce_template_parms (parms, explicit_targs, fns,
+				     tf_warning_or_error,
+				     /*req_all*/true, /*use_defarg*/true);
+      templates = tree_cons (targs, fns, templates);
+    }
   else for (; fns; fns = OVL_NEXT (fns))
     {
       tree fn = OVL_CURRENT (fns);
@@ -3338,9 +3344,9 @@ make_pack_expansion (tree arg)
   if (!arg || arg == error_mark_node)
     return arg;
 
-  if (TREE_CODE (arg) == TREE_LIST)
+  if (TREE_CODE (arg) == TREE_LIST && TREE_PURPOSE (arg))
     {
-      /* The only time we will see a TREE_LIST here is for a base
+      /* A TREE_LIST with a non-null TREE_PURPOSE is for a base
          class initializer.  In this case, the TREE_PURPOSE will be a
          _TYPE node (representing the base class expansion we're
          initializing) and the TREE_VALUE will be a TREE_LIST
@@ -9065,6 +9071,21 @@ apply_late_template_attributes (tree *decl_p, tree attributes, int attr_flags,
 		      = tree_cons (NULL_TREE, TREE_VALUE (TREE_VALUE (t)),
 				   chain);
 		}
+	      else if (TREE_VALUE (t) && PACK_EXPANSION_P (TREE_VALUE (t)))
+		{
+		  /* An attribute pack expansion.  */
+		  tree purp = TREE_PURPOSE (t);
+		  tree pack = (tsubst_pack_expansion
+			       (TREE_VALUE (t), args, complain, in_decl));
+		  int len = TREE_VEC_LENGTH (pack);
+		  for (int i = 0; i < len; ++i)
+		    {
+		      tree elt = TREE_VEC_ELT (pack, i);
+		      *q = build_tree_list (purp, elt);
+		      q = &TREE_CHAIN (*q);
+		    }
+		  continue;
+		}
 	      else
 		TREE_VALUE (t)
 		  = tsubst_expr (TREE_VALUE (t), args, complain, in_decl,
@@ -9760,16 +9781,22 @@ make_fnparm_pack (tree spec_parm)
   return extract_fnparm_pack (NULL_TREE, &spec_parm);
 }
 
-/* Return true iff the Ith element of the argument pack ARG_PACK is a
-   pack expansion.  */
+/* Return 1 if the Ith element of the argument pack ARG_PACK is a
+   pack expansion with no extra args, 2 if it has extra args, or 0
+   if it is not a pack expansion.  */
 
-static bool
+static int
 argument_pack_element_is_expansion_p (tree arg_pack, int i)
 {
   tree vec = ARGUMENT_PACK_ARGS (arg_pack);
   if (i >= TREE_VEC_LENGTH (vec))
-    return false;
-  return PACK_EXPANSION_P (TREE_VEC_ELT (vec, i));
+    return 0;
+  tree elt = TREE_VEC_ELT (vec, i);
+  if (!PACK_EXPANSION_P (elt))
+    return 0;
+  if (PACK_EXPANSION_EXTRA_ARGS (elt))
+    return 2;
+  return 1;
 }
 
 
@@ -9819,7 +9846,12 @@ use_pack_expansion_extra_args_p (tree parm_packs,
 	{
 	  tree arg = TREE_VALUE (parm_pack);
 
-	  if (argument_pack_element_is_expansion_p (arg, i))
+	  int exp = argument_pack_element_is_expansion_p (arg, i);
+	  if (exp == 2)
+	    /* We can't substitute a pack expansion with extra args into
+	       our pattern.  */
+	    return true;
+	  else if (exp)
 	    has_expansion_arg = true;
 	  else
 	    has_non_expansion_arg = true;
@@ -11302,6 +11334,11 @@ tsubst_decl (tree t, tree args, tsubst_flags_t complain)
 		tmpl = DECL_TI_TEMPLATE (t);
 		gen_tmpl = most_general_template (tmpl);
 		argvec = tsubst (DECL_TI_ARGS (t), args, complain, in_decl);
+		if (argvec != error_mark_node)
+		  argvec = (coerce_innermost_template_parms
+			    (DECL_TEMPLATE_PARMS (gen_tmpl),
+			     argvec, t, complain,
+			     /*all*/true, /*defarg*/true));
 		if (argvec == error_mark_node)
 		  RETURN (error_mark_node);
 		hash = hash_tmpl_and_args (gen_tmpl, argvec);
@@ -11425,9 +11462,9 @@ tsubst_decl (tree t, tree args, tsubst_flags_t complain)
 	       processing here.  */
 	    DECL_EXTERNAL (r) = 1;
 
-	    register_specialization (r, gen_tmpl, argvec, false, hash);
 	    DECL_TEMPLATE_INFO (r) = build_template_info (tmpl, argvec);
 	    SET_DECL_IMPLICIT_INSTANTIATION (r);
+	    register_specialization (r, gen_tmpl, argvec, false, hash);
 	  }
 	else if (!cp_unevaluated_operand)
 	  register_local_specialization (r, t);
@@ -21391,6 +21428,10 @@ type_dependent_expression_p (tree expression)
       && variable_template_p (DECL_TI_TEMPLATE (expression)))
     return any_dependent_template_arguments_p (DECL_TI_ARGS (expression));
 
+  /* Always dependent, on the number of arguments if nothing else.  */
+  if (TREE_CODE (expression) == EXPR_PACK_EXPANSION)
+    return true;
+
   if (TREE_TYPE (expression) == unknown_type_node)
     {
       if (TREE_CODE (expression) == ADDR_EXPR)
@@ -21407,10 +21448,6 @@ type_dependent_expression_p (tree expression)
       /* SCOPE_REF with non-null TREE_TYPE is always non-dependent.  */
       if (TREE_CODE (expression) == SCOPE_REF)
 	return false;
-
-      /* Always dependent, on the number of arguments if nothing else.  */
-      if (TREE_CODE (expression) == EXPR_PACK_EXPANSION)
-	return true;
 
       if (BASELINK_P (expression))
 	{

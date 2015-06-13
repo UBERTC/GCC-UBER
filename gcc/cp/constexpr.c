@@ -1245,6 +1245,15 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
 	return build_zero_init (DECL_CONTEXT (fun), NULL_TREE, false);
     }
 
+  /* We can't defer instantiating the function any longer.  */
+  if (!DECL_INITIAL (fun)
+      && DECL_TEMPLOID_INSTANTIATION (fun))
+    {
+      ++function_depth;
+      instantiate_decl (fun, /*defer_ok*/false, /*expl_inst*/false);
+      --function_depth;
+    }
+
   /* If in direct recursive call, optimize definition search.  */
   if (ctx && ctx->call && ctx->call->fundef->decl == fun)
     new_call.fundef = ctx->call->fundef;
@@ -1355,7 +1364,14 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
 		     fun = DECL_CHAIN (fun))
 		  if (DECL_SAVED_TREE (fun))
 		    break;
-	      gcc_assert (DECL_SAVED_TREE (fun));
+	      if (!DECL_SAVED_TREE (fun))
+		{
+		  /* cgraph/gimplification have released the DECL_SAVED_TREE
+		     for this function.  Fail gracefully.  */
+		  gcc_assert (ctx->quiet);
+		  *non_constant_p = true;
+		  return t;
+		}
 	      tree parms, res;
 
 	      /* Unshare the whole function body.  */
@@ -3498,7 +3514,9 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
       break;
 
     case PLACEHOLDER_EXPR:
-      if (!ctx || !ctx->ctor || (lval && !ctx->object))
+      if (!ctx || !ctx->ctor || (lval && !ctx->object)
+	  || !(same_type_ignoring_top_level_qualifiers_p
+	       (TREE_TYPE (t), TREE_TYPE (ctx->ctor))))
 	{
 	  /* A placeholder without a referent.  We can get here when
 	     checking whether NSDMIs are noexcept, or in massage_init_elt;
@@ -3513,8 +3531,6 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 	     use ctx->object unconditionally, but using ctx->ctor when we
 	     can is a minor optimization.  */
 	  tree ctor = lval ? ctx->object : ctx->ctor;
-	  gcc_assert (same_type_ignoring_top_level_qualifiers_p
-		      (TREE_TYPE (t), TREE_TYPE (ctor)));
 	  return cxx_eval_constant_expression
 	    (ctx, ctor, lval,
 	     non_constant_p, overflow_p);

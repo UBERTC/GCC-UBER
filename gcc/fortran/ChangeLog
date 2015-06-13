@@ -1,3 +1,108 @@
+2015-06-05  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66347
+	* resolve.c (apply_default_init_local): Do not dereference a NULL
+	pointer.
+
+2015-06-05  Russell Whitesides  <russelldub@gmail.com>
+	    Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/40958
+	PR fortran/60780
+	PR fortran/66377
+	* module.c (load_equiv): Add check for loading duplicate EQUIVALENCEs
+	from different modules.  Eliminate the pruning of unused
+	equivalence-objects
+
+
+2015-06-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66380
+	* simplify.c (gfc_simplify_reshape): Convert assert into returning
+	NULL, which triggers an error condition.
+
+2015-05-29  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/66257
+	* resolve.c (resolve_actual_arglist): Don't throw an error
+	if the argument with procedure pointer component is not a variable.
+
+2015-05-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-05-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66199
+	* trans-openmp.c (gfc_trans_omp_teams): Set OMP_TEAMS_COMBINED for
+	combined constructs.
+	(gfc_trans_omp_target): Make sure BIND_EXPR has non-NULL
+	BIND_EXPR_BLOCK.
+
+2015-05-19  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/65903
+	* io.c (format_lex): Change to NONSTRING when checking for
+	possible doubled quote.
+	* scanner.c (gfc_next_char_literal): Revert change from 64506
+	and add a check for quotes and return.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66106
+	* interface.c(gfc_match_end_interface): Enforce F2008 C1202 (R1201).
+	* match.c(gfc_op2string): Return 'none' for INTRINSIC_NONE.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66057
+	* decl.c(gfc_match_generic):  Detected a malformed GENERIC statement.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66052
+	* decl.c(gfc_match_protected): Prevent dereference of NULL pointer. 
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66045
+	* expr.c (gfc_check_assign):  Check for assignment of NULL() instead
+	of the (intended) pointer assignment.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66044
+	* decl.c(gfc_match_entry):  Change a gfc_internal_error() into
+	a gfc_error() 
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66043
+	* check.c (gfc_check_storage_size): Prevent the direct use of NULL()
+	in STORAGE_SIZE() reference.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66040
+	* parse.c(verify_st_order): Replace a gfc_internal_error with your
+	generic gfc_error.
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66039
+	* io.c (match_filepos): Check for incomplete/mangled REWIND, FLUSH,
+	BACKSPACE, and ENDFILE statements
+
+2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/64925
+	* symbol.c(check_conflict):  Check for a conflict between a dummy
+	argument and an internal procedure name.
+
+2015-05-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/65976
+	* invoke.texi:  Remove 'no-' in '-fno-fixed-form'
+
 2015-04-22  Release Manager
 
 	* GCC 5.1.0 released.

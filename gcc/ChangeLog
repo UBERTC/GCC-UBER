@@ -1,3 +1,409 @@
+2015-06-06  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR bootstrap/66319
+	* config/pa/pa-hpux10.h (TARGET_OS_CPP_BUILTINS): Rearrange builtin
+	defines.  Define _LARGEFILE_SOURCE and _LARGEFILE64_SOURCE for c++.
+	Define _XOPEN_UNIX and _XOPEN_SOURCE_EXTENDED for c++ if unix95 or
+	later.
+	* config/pa/pa-hpux11.h (TARGET_OS_CPP_BUILTINS): Likewise.
+	Define _INCLUDE_STDC_SOURCE_PRE_199901, _INCLUDE_STDC_SOURCE_199901,
+	_INCLUDE_XOPEN_SOURCE_PRE_500, _INCLUDE_XOPEN_SOURCE_520,
+	_INCLUDE_XOPEN_SOURCE_PRE_600 and _INCLUDE_XOPEN_SOURCE_600 for c++
+	and non iso if unix2003.
+
+2015-06-03  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-06-02  Richard Biener  <rguenther@suse.de>
+
+	PR debug/65549
+	* dwarf2out.c (lookup_context_die): New function.
+	(resolve_addr): Avoid forcing a full DIE for the
+	target of a DW_TAG_GNU_call_site during late compilation.
+	Instead create a stub DIE without a type if we have a
+	context DIE present.
+
+	2015-06-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66280
+	* tree-vect-slp.c (vect_detect_hybrid_slp_stmts): Fix pattern
+	def-use walking.
+
+	2015-05-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66272
+	Revert parts of
+	2014-08-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62031
+	* tree-data-ref.c (dr_analyze_indices): Do not set
+	DR_UNCONSTRAINED_BASE.
+	(dr_may_alias_p): All indirect accesses have to go the
+	formerly DR_UNCONSTRAINED_BASE path.
+	* tree-data-ref.h (struct indices): Remove
+	unconstrained_base member.
+	(DR_UNCONSTRAINED_BASE): Remove.
+
+	2015-05-21  Richard Biener  <rguenther@suse.de>
+
+	PR c++/66211
+	* match.pd: Guard pattern optimzing (int)(float)int
+	conversions to apply only on GIMPLE.
+
+	2015-05-13  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66123
+	* tree-ssa-dom.c (propagate_rhs_into_lhs): Check if we found
+	a taken edge.
+
+2015-06-02  Renlin Li  <renlin.li@arm.com>
+
+	Backport from mainline
+	2015-04-30  Renlin Li  <renlin.li@arm.com>
+
+	* config/aarch64/aarch64-simd.md (vec_shr): Defined as an unspec.
+	* config/aarch64/iterators.md (unspec): Add UNSPEC_VEC_SHR.
+
+2015-06-02  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-06-02  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/66345
+	* gimple-fold.c (gimple_fold_builtin_snprintf): Return false if
+	get_maxval_strlen does not produce an INTEGER_CST.
+
+2015-06-02  Alan Modra  <amodra@gmail.com>
+
+	* config/rs6000/vsx.md (vsx_extract_v4sf): Revert accidental
+	2014-08-11 change.
+
+2015-06-01  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-05-29  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR target/66215
+	* config/s390/s390.c (s390_reorg): Fix placement of post-label NOPs
+	with -mhotpatch=.
+
+2015-06-01  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-05-26  Michael Matz  <matz@suse.de>
+
+	PR middle-end/66251
+	* tree-vect-stmts.c (vect_create_vectorized_demotion_stmts): Always set
+	STMT_VINFO_VEC_STMT, also with SLP.
+
+	2015-05-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66251
+	* tree-vect-stmts.c (vectorizable_conversion): Properly
+	set STMT_VINFO_VEC_STMT even for the SLP case.
+
+2015-05-28  Mike Frysinger  <vapier@gentoo.org>
+
+	* config/nios2/linux.h (CPP_SPEC): Define.
+
+2015-05-28  Mike Frysinger  <vapier@gentoo.org>
+
+	* config/microblaze/linux.h (CPP_SPEC): Define.
+
+2015-05-28  Mike Frysinger  <vapier@gentoo.org>
+
+	* config/pa/pa-linux.h (CPP_SPEC): Change so -D_REENTRANT is used when
+	-pthread is specified.
+
+2015-05-27  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/66148
+	* config/pa/pa.c (pa_emit_move_sequence): Correct placement of
+	REG_EQUAL note when doing insert.
+
+2015-05-27  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-05-12  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66101
+	* tree-ssa-dce.c (remove_dead_stmt): Properly mark loops for
+	fixup if we turn a loop exit edge to a fallthru edge.
+
+2015-05-26  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/65979
+	* config/sh/sh.md (tstsi_t peephole2): Use gen_rtx_SET and
+	take into account the case that operands[1] and operands[2]
+	are the same register.
+
+2015-05-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-05-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/66233
+	* match.pd (ocvt (icvt@1 @0)): Don't handle vector types.
+	Simplify.
+
+	2015-05-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66199
+	* tree.h (OMP_TEAMS_COMBINED): Define.
+	* gimplify.c (enum gimplify_omp_var_data): Add
+	GOVD_LINEAR_LASTPRIVATE_NO_OUTER.
+	(enum omp_region_type): Add ORT_COMBINED_TEAMS.
+	(omp_notice_variable): Accept both ORT_TEAMS
+	and ORT_COMBINED_TEAMS.  Don't recurse if
+	GOVD_LINEAR_LASTPRIVATE_NO_OUTER is set and either
+	GOVD_LINEAR is set, or GOVD_LASTPRIVATE without
+	GOVD_FIRSTPRIVATE.
+	(omp_no_lastprivate): New function.
+	(gimplify_scan_omp_clauses): For OMP_CLAUSE_LASTPRIVATE
+	and OMP_CLAUSE_LINEAR, if omp_no_lastprivate, don't
+	notice_outer and set appropriate bits, otherwise make
+	sure default(none) combined constructs won't complain.
+	(gimplify_adjust_omp_clauses): Remove OMP_CLAUSE_LINEAR
+	outer special casing, for OMP_CLAUSE_LASTPRIVATE if
+	omp_no_lastprivate either remove the clause or turn it
+	into OMP_CLAUSE_PRIVATE.
+	(gimplify_omp_for): Fix up handling of implicit
+	lastprivate or linear iterators.
+	(gimplify_omp_workshare): For OMP_TEAMS_COMBINED use
+	ORT_COMBINED_TEAMS.
+	* omp-low.c (lower_omp_for_lastprivate): For combined
+	for simd use fd.loop.n2 from the for rather than simd.
+
+	2015-05-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66133
+	* omp-low.c (expand_omp_taskreg): For GIMPLE_OMP_TASK expansion,
+	make sure it is never noreturn, even when the task body does not
+	return.
+	(lower_omp_taskreg): For GIMPLE_OMP_TASK, emit GIMPLE_OMP_CONTINUE
+	right before GIMPLE_OMP_RETURN.
+	(make_gimple_omp_edges): Accept GIMPLE_OMP_CONTINUE as ->cont
+	for GIMPLE_OMP_TASK.  For GIMPLE_OMP_RETURN corresponding to
+	GIMPLE_OMP_TASK add an EDGE_ABNORMAL edge from entry to exit.
+
+2015-05-21  Sandra Loosemore  <sandra@codesourcery.com>
+
+	Backport from mainline r223418:
+	* config.gcc [powerpc*-*-linux*]: Allow --enable-targets=all
+	to build a biarch toolchain again.
+
+2015-05-21  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r223471
+	2015-05-21  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR middle-end/66221
+	* ipa-chkp.c (chkp_copy_function_type_adding_bounds): Use
+	build_distinct_type_copy to copy bounds.
+
+2015-05-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66174
+	* config/i386/i386.c (expand_vec_perm_blend): Enable HImode and
+	QImode inner modes for TARGET_AVX512BW.  Force mask operand
+	to a register for AVX512F modes.
+
+2015-04-16  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR target/66047
+	* i386.c (ix86_function_sseregparm): Only return -1 if local function
+	with implied regparm is called from -mno-sse function.
+	(init_cumulative_args): Output error if ix86_function_sseregparm
+	return -1 and SSE register would be needed.
+	(function_arg_advance_32): Likewise.
+	(function_arg_32): Likewise.
+	* i386.h (ix86_args): Add decl field.
+
+2015-04-16  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR target/66047
+	* i386.c (ix86_function_sseregparm): Only return -1 if local function
+	with implied regparm is called from -mno-sse function.
+	(init_cumulative_args): Output error if ix86_function_sseregparm
+	return -1 and SSE register would be needed.
+	(function_arg_advance_32): Likewise.
+	(function_arg_32): Likewise.
+	* i386.h (ix86_args): Add decl field.
+	* gcc.target/i386/pr66047.c: New testcase.
+
+2015-04-16  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/65873
+	* ipa-inline.c (can_inline_edge_p): Allow early inlining of always
+	inlines across optimization boundary; be tolerant about COMDAT;
+	allow inlining across -fstrict-aliasing boundary.
+
+2015-05-16  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backport from mainline
+	2015-05-13  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/30967
+	* config/rs6000/rs6000.c (rs6000_rtx_costs): Don't consider
+	destination mode for the cost of scc patterns.
+
+2015-05-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66140
+	* config/alpha/alpha.c (get_aligned_mem): Also look for reload
+	replacements in memory addresses.
+	(get_unaligned_address): Ditto.
+
+2015-05-13  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-05-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/65955
+	* config/arm/arm.md (movcond_addsi): Check that operands[2] is a
+	REG before taking its REGNO.
+
+2015-05-12  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/2827.md: Split zEC12_simple into zEC12_simple_int
+	and zEC12_simple_fp.
+	* config/s390/s390.c (s390_issue_rate): Set issue rate for zEC12
+	to 1.
+
+2015-05-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-04-21  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* common/config/aarch64/aarch64-common.c (AARCH64_CPU_NAME_LENGTH):
+	Increase to 128.
+	(aarch64_rewrite_selected_cpu): Do not chop off extensions starting
+	at '.'.  Assert that there's enough space for everything.
+
+2015-05-12  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from mainline.
+	2015-05-05  Yvan Roux  <yvan.roux@linaro.org>
+
+	* config/aarch64/aarch64-elf-raw.h (CA53_ERR_843419_SPEC): Define.
+	(LINK_SPEC): Include CA53_ERR_843419_SPEC.
+	* config/aarch64/aarch64-linux.h (CA53_ERR_843419_SPEC): Define.
+	(LINK_SPEC): Include CA53_ERR_843419_SPEC.
+	* config/aarch64/aarch64.opt (mfix-cortex-a53-843419): New option.
+	* configure: Regenerate.
+	* configure.ac: Add --enable-fix-cortex-a53-843419 option.
+	* doc/install.texi (aarch64*-*-*): Document new
+	--enable-fix-cortex-a53-843419 option.
+	* doc/invoke.texi (AArch64 Options): Document -mfix-cortex-a53-843419
+	and -mno-fix-cortex-a53-843419 options.
+
+2015-05-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (ix86_loop_unroll_adjust): Use PATTERN (insn)
+	when looking for memory references.
+
+2015-05-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65780
+	* config/s390/linux.h (TARGET_BINDS_LOCAL_P): Define to
+	default_binds_local_p_2.
+	* config/arm/linux-elf.h (TARGET_BINDS_LOCAL_P): Likewise.
+	* config/aarch64/aarch64-linux.h (TARGET_BINDS_LOCAL_P): Likewise.
+
+2015-05-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66015
+	* config/alpha/alpha.c (alpha_override_options_after_change): New.
+	(TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE): New.
+	(alpha_override_options): Move align_loops, align_jumps and
+	align_functions handling into alpha_override_options_after_change.
+
+2015-05-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/65990
+	* config/i386/i386.c (ix86_parse_stringop_strategy_string): Error out
+	if rep_8byte stringop strategy was specified for 32-bit target.
+
+2015-05-06  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/66015
+	* config/aarch64/aarch64.c (aarch64_override_options): Move align_loops,
+	align_jumps, align_functions into aarch64_override_options_after_change.
+
+2015-05-05  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline.
+	2015-04-27  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/64579
+	* config/rs6000/htm.md: Remove all define_expands.
+	(UNSPECV_HTM_TABORTDC, UNSPECV_HTM_TABORTDCI, UNSPECV_HTM_TABORTWC,
+	UNSPECV_HTM_TABORTWCI): Remove.
+	(UNSPECV_HTM_TABORTXC, UNSPECV_HTM_TABORTXCI, UNSPECV_HTM_TTEST): New.
+	(tabort_internal, tbegin_internal, tcheck_internal, tend_internal,
+	trechkpt_internal, treclaim_internal, tsr_internal): Rename from this...
+	(tabort, tbegin, tcheck, tend, trechkpt, treclaim, tsr): ...to this.
+	(tabortdc_internal, tabortdci_internal, tabortwc_internal,
+	tabortwci_internal): Remove define_insns.
+	(tabort<wd>c, tabort<wd>ci): New define_insns.
+	(tabort): Use gpc_reg_operand.
+	(tcheck): Remove operand.
+	(htm_mfspr_<mode>, htm_mtspr_<mode>): Use GPR mode macro.
+	* config/rs6000/htmxlintrin.h (__TM_end): Use _HTM_TRANSACTIONAL as
+	expected value.
+	* config/rs6000/rs6000-builtin.def (BU_HTM_SPR0): Remove.
+	(BU_HTM_SPR1): Rename to BU_HTM_V1.  Remove use of RS6000_BTC_SPR.
+	(tabort, tabortdc, tabortdci, tabortwc, tabortwci, tbegin,
+	tcheck, tend, tendall, trechkpt, treclaim, tresume, tsuspend,
+	tsr, ttest): Pass in the RS6000_BTC_CR attribute.
+	(get_tfhar, set_tfhar, get_tfiar, set_tfiar, get_texasr, set_texasr,
+	get_texasru, set_texasru): Pass in the RS6000_BTC_SPR attribute.
+	(tcheck): Remove builtin argument.
+	* config/rs6000/rs6000.c (rs6000_htm_spr_icode): Use TARGET_POWERPC64
+	not TARGET_64BIT.
+	(htm_expand_builtin): Fix usage of expandedp.  Disallow usage of the
+	tabortdc and tabortdci builtins when not in 64-bit mode.
+	Modify code to handle the loss of the HTM define_expands.
+	Emit code to copy the CR register to TARGET.
+	(htm_init_builtins): Modify code to handle the loss of the HTM
+	define_expands.
+	* config/rs6000/rs6000.h (RS6000_BTC_32BIT): Delete.
+	(RS6000_BTC_64BIT): Likewise.
+	(RS6000_BTC_CR): New macro.
+	* doc/extend.texi: Update documentation for htm builtins.
+
+2015-05-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65984
+	* ubsan.c: Include tree-cfg.h.
+	(instrument_bool_enum_load): Use stmt_ends_bb_p instead of
+	stmt_could_throw_p test, rename can_throw variable to ends_bb.
+
+	* Makefile.in (PATCHLEVEL_c): New variable.
+	(DATESTAMP_s, REVISION_s): If PATCHLEVEL_c is not 0,
+	expand the same way as if DEVPHASE_c was non-empty.
+
+2015-05-04  Kai Tietz  <ktietz@redhat.com>
+
+	Backmerge from trunk.
+
+	PR lto/65559
+	* lto-wrapper.c (run_gcc): Open filename
+	in binary-mode.
+
+2015-04-30  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65801
+	* doc/invoke.texi ([-Wnarrowing]): Update.
+
+2015-04-30  Alan Modra  <amodra@gmail.com>
+
+	PR target/65408
+	PR target/58744
+	PR middle-end/36043
+	* calls.c (load_register_parameters): Don't load past end of
+	mem unless suitably aligned.
+
 2015-04-27  Jakub Jelinek  <jakub@redhat.com>
 
 	PR tree-optimization/65875
@@ -5553,6 +5959,7 @@
 2015-01-22  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 	    Jakub Jelinek  <jakub@redhat.com>
 
+	PR middle-end/64729
 	* gcc.c (LINK_SSP_SPEC): Handle -fstack-protector-explicit
 	for !TARGET_LIBC_PROVIDES_SSP version and
 	-fstack-protector-{all,strong,explicit} otherwise.

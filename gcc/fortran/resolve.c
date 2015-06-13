@@ -1981,7 +1981,8 @@ resolve_actual_arglist (gfc_actual_arglist *arg, procedure_type ptype,
 	}
 
       comp = gfc_get_proc_ptr_comp(e);
-      if (comp && comp->attr.elemental)
+      if (e->expr_type == EXPR_VARIABLE
+	  && comp && comp->attr.elemental)
 	{
 	    gfc_error ("ELEMENTAL procedure pointer component %qs is not "
 		       "allowed as an actual argument at %L", comp->name,
@@ -10948,7 +10949,7 @@ apply_default_init_local (gfc_symbol *sym)
      result variable, which are also nonstatic.  */
   if (sym->attr.save || sym->ns->save_all
       || (flag_max_stack_var_size == 0 && !sym->attr.result
-	  && !sym->ns->proc_name->attr.recursive
+	  && (sym->ns->proc_name && !sym->ns->proc_name->attr.recursive)
 	  && (!sym->attr.dimension || !is_non_constant_shape_array (sym))))
     {
       /* Don't clobber an existing initializer!  */
