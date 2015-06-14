@@ -2446,6 +2446,7 @@ static void dwarf2out_abstract_function (tree);
 static void dwarf2out_var_location (rtx_insn *);
 static void dwarf2out_begin_function (tree);
 static void dwarf2out_end_function (unsigned int);
+static void dwarf2out_register_main_translation_unit (tree unit);
 static void dwarf2out_set_name (tree, tree);
 
 /* The debug hooks structure.  */
@@ -2475,6 +2476,7 @@ const struct gcc_debug_hooks dwarf2_debug_hooks =
   dwarf2out_end_epilogue,
   dwarf2out_begin_function,
   dwarf2out_end_function,	/* end_function */
+  dwarf2out_register_main_translation_unit,
   dwarf2out_function_decl,	/* function_decl */
   dwarf2out_early_global_decl,
   dwarf2out_late_global_decl,
@@ -5685,25 +5687,61 @@ debug_dwarf (void)
   print_die (comp_unit_die (), stderr);
 }
 
+#ifdef ENABLE_CHECKING
 /* Sanity checks on DIEs.  */
 
 static void
 check_die (dw_die_ref die)
 {
-  /* A debugging information entry that is a member of an abstract
-     instance tree [that has DW_AT_inline] should not contain any
-     attributes which describe aspects of the subroutine which vary
-     between distinct inlined expansions or distinct out-of-line
-     expansions.  */
   unsigned ix;
   dw_attr_ref a;
   bool inline_found = false;
+  int n_location = 0, n_low_pc = 0, n_high_pc = 0, n_artificial = 0;
+  int n_decl_line = 0, n_decl_file = 0;
   FOR_EACH_VEC_SAFE_ELT (die->die_attr, ix, a)
-    if (a->dw_attr == DW_AT_inline && a->dw_attr_val.v.val_unsigned)
-      inline_found = true;
+    {
+      switch (a->dw_attr)
+	{
+	case DW_AT_inline:
+	  if (a->dw_attr_val.v.val_unsigned)
+	    inline_found = true;
+	  break;
+	case DW_AT_location:
+	  ++n_location;
+	  break;
+	case DW_AT_low_pc:
+	  ++n_low_pc;
+	  break;
+	case DW_AT_high_pc:
+	  ++n_high_pc;
+	  break;
+	case DW_AT_artificial:
+	  ++n_artificial;
+	  break;
+	case DW_AT_decl_line:
+	  ++n_decl_line;
+	  break;
+	case DW_AT_decl_file:
+	  ++n_decl_file;
+	  break;
+	default:
+	  break;
+	}
+    }
+  if (n_location > 1 || n_low_pc > 1 || n_high_pc > 1 || n_artificial > 1
+      || n_decl_line > 1 || n_decl_file > 1)
+    {
+      fprintf (stderr, "Duplicate attributes in DIE:\n");
+      debug_dwarf_die (die);
+      gcc_unreachable ();
+    }
   if (inline_found)
     {
-      /* Catch the most common mistakes.  */
+      /* A debugging information entry that is a member of an abstract
+	 instance tree [that has DW_AT_inline] should not contain any
+	 attributes which describe aspects of the subroutine which vary
+	 between distinct inlined expansions or distinct out-of-line
+	 expansions.  */
       FOR_EACH_VEC_SAFE_ELT (die->die_attr, ix, a)
 	gcc_assert (a->dw_attr != DW_AT_low_pc
 		    && a->dw_attr != DW_AT_high_pc
@@ -5712,6 +5750,7 @@ check_die (dw_die_ref die)
 		    && a->dw_attr != DW_AT_GNU_all_call_sites);
     }
 }
+#endif
 
 /* Start a new compilation unit DIE for an include file.  OLD_UNIT is the CU
    for the enclosing include file, if any.  BINCL_DIE is the DW_TAG_GNU_BINCL
@@ -16095,6 +16134,9 @@ add_location_or_const_value_attribute (dw_die_ref die, tree decl, bool cache_p,
   if (TREE_CODE (decl) == ERROR_MARK)
     return false;
 
+  if (get_AT (die, attr))
+    return true;
+
   gcc_assert (TREE_CODE (decl) == VAR_DECL || TREE_CODE (decl) == PARM_DECL
 	      || TREE_CODE (decl) == RESULT_DECL);
 
@@ -18055,10 +18097,9 @@ gen_formal_parameter_die (tree node, tree origin, bool emit_name_p,
 				decl_quals (node_or_origin),
 				context_die);
 	}
-    add_location:
       if (origin == NULL && DECL_ARTIFICIAL (node))
 	add_AT_flag (parm_die, DW_AT_artificial, 1);
-
+    add_location:
       if (node && node != origin)
         equate_decl_number_to_die (node, parm_die);
       if (! DECL_ABSTRACT_P (node_or_origin))
@@ -20354,15 +20395,15 @@ static void
 gen_struct_or_union_type_die (tree type, dw_die_ref context_die,
 				enum debug_info_usage usage)
 {
-  /* Fill in the bound of variable-length fields in late dwarf if
-     still incomplete.  */
-  if (TREE_ASM_WRITTEN (type)
-      && variably_modified_type_p (type, NULL)
-      && !early_dwarf)
+  if (TREE_ASM_WRITTEN (type))
     {
-      tree member;
-      for (member = TYPE_FIELDS (type); member; member = DECL_CHAIN (member))
-	fill_variable_array_bounds (TREE_TYPE (member));
+      /* Fill in the bound of variable-length fields in late dwarf if
+	 still incomplete.  */
+      if (!early_dwarf && variably_modified_type_p (type, NULL))
+	for (tree member = TYPE_FIELDS (type);
+	     member;
+	     member = DECL_CHAIN (member))
+	  fill_variable_array_bounds (TREE_TYPE (member));
       return;
     }
 
@@ -20842,7 +20883,15 @@ gen_type_die_with_usage (tree type, dw_die_ref context_die,
 static void
 gen_type_die (tree type, dw_die_ref context_die)
 {
-  gen_type_die_with_usage (type, context_die, DINFO_USAGE_DIR_USE);
+  if (type != error_mark_node)
+    {
+      gen_type_die_with_usage (type, context_die, DINFO_USAGE_DIR_USE);
+#ifdef ENABLE_CHECKING
+      dw_die_ref die = lookup_type_die (type);
+      if (die)
+	check_die (die);
+#endif
+    }
 }
 
 /* Generate a DW_TAG_lexical_block DIE followed by DIEs to represent all of the
@@ -21874,9 +21923,11 @@ dwarf2out_decl (tree decl)
 
   gen_decl_die (decl, NULL, context_die);
 
+#ifdef ENABLE_CHECKING
   dw_die_ref die = lookup_decl_die (decl);
   if (die)
     check_die (die);
+#endif
 }
 
 /* Write the debugging output for DECL.  */
@@ -22503,6 +22554,26 @@ dwarf2out_end_function (unsigned int)
     decl_loc_table->traverse<int, find_empty_loc_ranges_at_text_label> (0);
   in_first_function_p = false;
   maybe_at_text_label_p = false;
+}
+
+/* Temporary holder for dwarf2out_register_main_translation_unit.  Used to let
+   front-ends register a translation unit even before dwarf2out_init is
+   called.  */
+static tree main_translation_unit = NULL_TREE;
+
+/* Hook called by front-ends after they built their main translation unit.
+   Associate comp_unit_die to UNIT.  */
+
+static void
+dwarf2out_register_main_translation_unit (tree unit)
+{
+  gcc_assert (TREE_CODE (unit) == TRANSLATION_UNIT_DECL
+	      && main_translation_unit == NULL_TREE);
+  main_translation_unit = unit;
+  /* If dwarf2out_init has not been called yet, it will perform the association
+     itself looking at main_translation_unit.  */
+  if (decl_die_table != NULL)
+    equate_decl_number_to_die (unit, comp_unit_die ());
 }
 
 /* Add OPCODE+VAL as an entry at the end of the opcode array in TABLE.  */
@@ -23242,6 +23313,11 @@ dwarf2out_init (const char *filename ATTRIBUTE_UNUSED)
   /* Make sure the line number table for .text always exists.  */
   text_section_line_info = new_line_info_table ();
   text_section_line_info->end_label = text_end_label;
+
+  /* If front-ends already registered a main translation unit but we were not
+     ready to perform the association, do this now.  */
+  if (main_translation_unit != NULL_TREE)
+    equate_decl_number_to_die (main_translation_unit, comp_unit_die ());
 }
 
 /* Called before compile () starts outputtting functions, variables
@@ -23762,8 +23838,17 @@ prune_unused_types (void)
   if (skeleton_debug_str_hash)
     skeleton_debug_str_hash->empty ();
   prune_unused_types_prune (comp_unit_die ());
-  for (node = limbo_die_list; node; node = node->next)
-    prune_unused_types_prune (node->die);
+  for (limbo_die_node **pnode = &limbo_die_list; *pnode; )
+    {
+      node = *pnode;
+      if (!node->die->die_mark)
+	*pnode = node->next;
+      else
+	{
+	  prune_unused_types_prune (node->die);
+	  pnode = &node->next;
+	}
+    }
   for (ctnode = comdat_type_list; ctnode; ctnode = ctnode->next)
     prune_unused_types_prune (ctnode->root_die);
 
