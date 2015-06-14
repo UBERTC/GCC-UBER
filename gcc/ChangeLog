@@ -1,3 +1,74 @@
+2015-06-11  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	Backport from mainline:
+	2015-06-11  David Edelsohn  <dje.gcc@gmail.com>
+
+		* dbxout.c (xcoff_debug_hooks): Provide a function for
+		register_main_translation_unit hook.
+
+2015-06-11  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.c (pa_output_global_address): Handle LABEL_REF plus
+	CONST_INT for goto.
+
+2015-06-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR bootstrap/66252
+	* config/sparc/sparc.c (hard_regno_mode_classes): Add ??? comment.
+	* config/sparc/sparc.md (zero_extendsidi2_insn_sp32): Use single order.
+	(*addx_extend_sp32): Fix pasto.
+	(*subx_extend): Rename into...
+	(*subx_extend_sp32): ...this.
+	(*adddi3_extend_sp32): Add earlyclobber.
+	(*subdi3_insn_sp32): Likewise.
+	(*subdi3_extend_sp32): Likewise.
+	(*and_not_di_sp32): Likewise.
+	(*or_not_di_sp32): Likewise.
+	(*xor_not_di_sp32): Likewise.
+	(*negdi2_sp32): Likewise.
+	(*one_cmpldi2_sp32): Likewise.
+
+2015-06-11  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* debug.h (struct gcc_debug_hooks): Add a
+	register_main_translation_unit hook.
+	* debug.c (do_nothing_debug_hooks): Provide a function for this
+	new hook.
+	* dbxout.c (dbx_debug_hooks): Likewise.
+	* sdbout.c (sdb_debug_hooks): Likewise.
+	* vmsdbgout.c (vmsdbg_debug_hooks): Likewise.
+	* dwarf2out.c (main_translation_unit): New global variable.
+	(dwarf2out_register_main_translation_unit): New function
+	implementing the new hook.
+	(dwarf2_debug_hooks): Assign
+	dwarf2out_register_main_translation_unit to this new hook.
+	(dwarf2out_init): Associate any main translation unit to
+	comp_unit_die ().
+
+2015-06-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66473
+	* config/i386/i386.c (ix86_expand_vector_set): Use gen_int_mode
+	to prepare mask operand for AVX512 modes.
+
+2015-06-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline:
+	2015-06-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/66474
+	* doc/md.texi (Machine Constraints): Document that on the PowerPC
+	if you use a constraint that targets a VSX register, you must use
+	%x<n> in the template.
+
+2015-06-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/66470
+	* config/i386/i386.c (ix86_split_long_move): For collisions
+	involving direct tls segment refs, move the UNSPEC_TP possibly
+	wrapped in ZERO_EXTEND out of the address for lea, to each of
+	the memory loads.
+
 2015-06-08  Uros Bizjak  <ubizjak@gmail.com>
 
 	Backport from mainline:

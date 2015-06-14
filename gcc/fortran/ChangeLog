@@ -1,3 +1,20 @@
+2015-06-14  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66385
+	Backport from trunk
+	* frontend-passes.c (combine_array_constructor): Return early if
+	inside a FORALL loop.
+
+2015-06-14  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	* intrinsic.texi:  Change \leq to < in descrition of imaginary
+	part in argument to log.
+
+2015-06-11  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* f95-lang.c (gfc_create_decls): Register the main translation unit
+	through the new debug hook.
+
 2015-06-08  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/66245

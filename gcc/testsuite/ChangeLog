@@ -1,3 +1,19 @@
+2015-06-14  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66385
+	* gfortran.dg/forall_17.f90:  New test.
+
+2015-06-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66473
+	* gcc.target/i386/pr66473.c: New test.
+
+2015-06-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/66470
+	* gcc.dg/tls/pr66470.c: New test.
+	* gcc.target/i386/pr66470.c: New test.
+
 2015-06-08  Uros Bizjak  <ubizjak@gmail.com>
 
 	Backport from mainline:
