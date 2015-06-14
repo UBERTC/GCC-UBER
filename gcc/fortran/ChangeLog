@@ -1,3 +1,23 @@
+2015-06-14  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	* intrinsic.texi:  Change \leq to < in descrition of imaginary
+	part in argument to log.
+
+2015-06-11  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/66079
+	* trans-expr.c (gfc_conv_procedure_call): Allocatable scalar
+	function results must be freed and nullified after use. Create
+	a temporary to hold the result to prevent duplicate calls.
+	* trans-stmt.c (gfc_trans_allocate): Rename temporary variable
+	as 'source'. Deallocate allocatable components of non-variable
+	'source's.
+
+2015-06-11  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* f95-lang.c (gfc_create_decls): Register the main translation unit
+	through the new debug hook.
+
 2015-06-08  Andrew MacLeod  <amacleod@redhat.com>
 
 	* convert.c : Adjust include files.
@@ -253,7 +273,7 @@
 
 	PR fortran/66044
 	* decl.c(gfc_match_entry):  Change a gfc_internal_error() into
-	a gfc_error() 
+	a gfc_error()
 
 2015-05-18  Steven G. Kargl  <kargl@gcc.gnu.org>
 

@@ -1,3 +1,88 @@
+2015-06-13  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/65168
+	g++.dg/warn/Walways-true-3.C: New test.
+
+2015-06-13  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/parloops-exit-first-loop-alt-4.c: New test.
+
+2015-06-13  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/parloops-exit-first-loop-alt-2.c: Add comment.
+	(main): Remove superfluous attributes.
+	* gcc.dg/parloops-exit-first-loop-alt-3.c: Same.
+	* gcc.dg/parloops-exit-first-loop-alt.c: Same.
+
+2015-06-12  Venkataramanan Kumar  <venkataramanan.kumar@amd.com>
+
+	* gcc.target/i386/monitorx.c: New.
+	* gcc.target/i386/sse-12.c: Add -mmwaitx.
+	* gcc.target/i386/sse-13.c: Ditto.
+	* gcc.target/i386/sse-14.c: Ditto.
+	* gcc.target/i386/sse-22.c: Ditto.
+	* gcc.target/i386/sse-23.c: Ditto.
+	* g++.dg/other/i386-2.C: Ditto.
+	* g++.dg/other/i386-3.C: Ditto.
+
+2015-06-11  Steve Ellcey  <sellcey@imgtec.com>
+
+	* gcc.dg/tree-prof/stringop-2.c: Fix ifdef __mips.
+
+2015-06-11  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/66079
+	* gfortran.dg/allocatable_scalar_13.f90: New test
+
+2015-06-11  Marek Polacek  <polacek@redhat.com>
+
+	* gcc.dg/fold-xor-3.c: New test.
+
+2015-06-11  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/arm/short-it-ifcvt-1.c: New test.
+	* gcc.target/arm/short-it-ifcvt-2.c: Likewise.
+
+2015-06-11  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/52144
+	* gcc.target/arm/pragma_attribute.c: New test.
+
+2015-06-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	* g++.dg/abi/mangle-regparm.C (dg-optiond): Add -save-temps.
+
+2015-06-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66473
+	* gcc.target/i386/pr66473.c: New test.
+
+2015-06-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/66470
+	* gcc.dg/tls/pr66470.c: New test.
+	* gcc.target/i386/pr66470.c: New test.
+
+2015-06-10  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/52144
+	* gcc.target/arm/attr_arm.c: New test
+	* gcc.target/arm/attr_arm-err.c: New test
+	* gcc.target/arm/attr_thumb.c: New test
+	* gcc.target/arm/attr_thumb-static.c: New test
+
+2015-06-10  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/66200
+	PR target/66428
+	PR c++/66192
+	* g++.dg/abi/aarch64_guard1.C: Adjust test.
+
+2015-06-10  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/arm/pr65710.c: Do not override -mfloat-abi directives
+	passed by the testsuite driver.
+
 2015-06-09  Alexandre Oliva <aoliva@redhat.com>
 
 	Revert:
@@ -617,7 +702,7 @@
 2015-05-27  Honggyu Kim  <hong.gyu.kim@lge.com>
 
 	PR target/65358
-	* gcc.dg/pr65358.c: New test. 
+	* gcc.dg/pr65358.c: New test.
 
 2015-05-27  Andre Vehreschild  <vehre@gmx.de>
 

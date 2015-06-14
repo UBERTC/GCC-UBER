@@ -1991,7 +1991,8 @@ extern int making_const_table;
   c_register_pragma (0, "long_calls", arm_pr_long_calls);		\
   c_register_pragma (0, "no_long_calls", arm_pr_no_long_calls);		\
   c_register_pragma (0, "long_calls_off", arm_pr_long_calls_off);	\
-  arm_lang_object_attributes_init(); \
+  arm_lang_object_attributes_init();					\
+  arm_register_target_pragmas();                                       \
 } while (0)
 
 /* Condition code information.  */
@@ -2258,4 +2259,8 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
 
 #define DRIVER_SELF_SPECS MCPU_MTUNE_NATIVE_SPECS
 #define TARGET_SUPPORTS_WIDE_INT 1
+
+/* For switching between functions with different target attributes.  */
+#define SWITCHABLE_TARGET 1
+
 #endif /* ! GCC_ARM_H */

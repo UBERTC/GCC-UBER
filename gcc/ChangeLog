@@ -1,3 +1,270 @@
+2015-06-13  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	* tree.c (make_vector_stat): Fix comment to state that the
+	function returns a VECTOR_CST.
+
+2015-06-13  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gensupport.h (add_implicit_parallel): Declare.
+	* genrecog.c (add_implicit_parallel): Move to...
+	* gensupport.c (add_implicit_parallel): ...here.
+	(process_one_cond_exec): Use it.
+	* genemit.c (gen_insn): Likewise.
+
+2015-06-13  Iain Sandoe  <iain@codesourcery.com>
+
+	PR bootstrap/66448
+	* passes.c (rest_of_decl_compilation): Do not register globals for
+	early debug if they are declared in built-ins.
+
+2015-06-12  Aldy Hernandez  <aldyh@redhat.com>
+
+	* dwarf2out.c (check_die): Protect with ENABLE_CHECKING.
+
+2015-06-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* ifcvt.c (noce_try_store_flag_constants): Use std::swap instead of
+	manually swapping.
+	(noce_try_cmove_arith): Likewise.
+	(noce_get_alt_condition): Likewise.
+
+2015-06-12  Venkataramanan Kumar  <venkataramanan.kumar@amd.com>
+
+	* common/config/i386/i386-common.c
+	(OPTION_MASK_ISA_MWAITX_SET): New.
+	(ix86_handle_option): Handle mwaitx.
+	* config.gcc (i[34567]86-*-*): Add mwaitxintrin.h,
+	(x86_64-*-*): Likewise.
+	* config/i386/mwaitxintrin.h: New header.
+	* config/i386/cpuid.h (bit_MWAITX):  Define.
+	* config/i386/driver-i386.c (host_detect_local_cpu): Detect
+	MWAITX support.
+	* config/i386/i386.opt (mwaitx): New.
+	* config/i386/i386-builtin-types.def
+	(VOID_FTYPE_UNSIGNED_ UNSIGNED_UNSIGNED): New function type.
+	* config/i386/i386-c.c: Define __MWAITX__ if needed.
+	* config/i386/i386.c (ix86_target_string): Define -mmwaitx option.
+	(PTA_MWAITX): New.
+	(ix86_option_override_internal): Handle new option.
+	(processor_alias_table): Added PTA_MWAITX.
+	(ix86_valid_target_attribute_inner_p): Add OPT_mmwaitx.
+	(ix86_builtins): Add IX86_BUILTIN_MWAITX, IX86_BUILTIN_MONITORX.
+	(ix86_expand_builtin): Handle IX86_BUILTIN_MWAITX and
+	IX86_BUILTIN_MONITORX  built-ins.
+	* config/i386/i386.h (TARGET_MWAITX): New.
+	* config/i386/i386.md (unspecv): Add UNSPEC_MWAITX and
+	UNSPEC_MONITORX.
+	(mwaitx):  New pattern.
+	(monitorx_<mode>): New pattern.
+	* config/i386/x86intrin.h: Include mwaitxintrin.h.
+	* doc/extend.texi: Document monitorx and mwaitx builtins.
+	* doc/invoke.texi: Document -mmwaitx option.
+
+2015-06-12  Uros Bizjak  <ubizjak@gmail.com>
+
+	* emit-rtl.c (need_atomic_barrier_p): Mask model with
+	MEMMODEL_BASE_MASK.  Remove MEMMODEL_SYNC_* cases.
+
+2015-06-11  David Edelsohn  <dje.gcc@gmail.com>
+
+	* dbxout.c (xcoff_debug_hooks): Provide a function for
+	register_main_translation_unit hook.
+
+2015-06-11  David Edelsohn  <dje.gcc@gmail.com>
+
+	* config/rs6000/rs6000.c (rs6000_pre_atomic_barrier): Remove SYNC
+	variants cases from switch.
+	(rs6000_post_atomic_barrier): Same.
+	(rs6000_expand_atomic_compare_and_swap): Use memmodel_base.
+	(rs6000_expand_atomic_exchange): Same.
+	(rs6000_expand_atomic_op): Same.
+	* config/rs6000/sync.md (mem_thread_fence): Use memodel_base. Remove
+	SYNC variants cases from switch.
+	(atomic_load): Same.
+	(atomic_store): Same.
+
+2015-06-11  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.c (pa_output_global_address): Handle LABEL_REF plus
+	CONST_INT for goto.
+
+2015-06-11  Aldy Hernandez  <aldyh@redhat.com>
+
+	PR bootstrap/66448
+	* dwarf2out.c (check_die): Check for common duplicate attributes.
+	(add_location_or_const_value_attribute): Do not add duplicate
+	attributes.
+	(gen_formal_parameter_die): Do not add DW_AT_artificial the second
+	time around.
+	(gen_struct_or_union_type_die): Bail early if TREE_ASM_WRITTEN.
+	(gen_type_die_with_usage): Call check_die.
+	(dwarf2out_decl): Only call check_die() when ENABLE_CHECKING.
+
+2015-06-11  Jason Merrill  <jason@redhat.com>
+
+	* dwarf2out.c (prune_unused_types): Handle unused top-level limbo
+	dies.
+
+2015-06-11  Marek Polacek  <polacek@redhat.com>
+
+	* match.pd ((x & y) ^ (x | y)): Don't check for single_use.
+
+2015-06-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR bootstrap/66252
+	* config/sparc/sparc.c (hard_regno_mode_classes): Add ??? comment.
+	* config/sparc/sparc.md (zero_extendsidi2_insn_sp32): Use single order.
+	(*addx_extend_sp32): Fix pasto.
+	(*subx_extend): Rename into...
+	(*subx_extend_sp32): ...this.
+	(*adddi3_extend_sp32): Add earlyclobber.
+	(*subdi3_insn_sp32): Likewise.
+	(*subdi3_extend_sp32): Likewise.
+	(*and_not_di_sp32): Likewise.
+	(*or_not_di_sp32): Likewise.
+	(*xor_not_di_sp32): Likewise.
+	(*negdi2_sp32): Likewise.
+	(*one_cmpldi2_sp32): Likewise.
+
+2015-06-11  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* debug.h (struct gcc_debug_hooks): Add a
+	register_main_translation_unit hook.
+	* debug.c (do_nothing_debug_hooks): Provide a function for this
+	new hook.
+	* dbxout.c (dbx_debug_hooks): Likewise.
+	* sdbout.c (sdb_debug_hooks): Likewise.
+	* vmsdbgout.c (vmsdbg_debug_hooks): Likewise.
+	* dwarf2out.c (main_translation_unit): New global variable.
+	(dwarf2out_register_main_translation_unit): New function
+	implementing the new hook.
+	(dwarf2_debug_hooks): Assign
+	dwarf2out_register_main_translation_unit to this new hook.
+	(dwarf2out_init): Associate any main translation unit to
+	comp_unit_die ().
+
+2015-06-11  Marek Polacek  <polacek@redhat.com>
+
+	* match.pd ((x & y) ^ (x | y) -> x ^ y): New pattern.
+
+2015-06-11  Marek Polacek  <polacek@redhat.com>
+
+	* match.pd: Use single_use throughout.
+
+2015-06-11  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.c (arm_option_params_internal): When optimising
+	for speed set max_insns_skipped when arm_restrict_it.
+
+2015-06-11  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/52144
+	* config/arm/arm-c.c (arm_cpu_cpp_builtins): Conditionally define
+	 macros in ...
+	(arm_cpu_builtins): New function.
+	(arm_pragma_target_parse): Call arm_cpu_builtins.
+	* config/arm/arm-protos.h (arm_cpu_builtins): Declare.
+	(arm_register_target_pragmas): Likewise.
+	* config/arm/arm.h (REGISTER_TARGET_PRAGMAS):
+	 Call arm_register_target_pragmas.
+	* config/arm/arm-c.c (arm_register_target_pragmas): New function.
+	(arm_pragma_target_parse): Likewise.
+
+2015-06-10  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	* config/sh/sh.md (tstsi_t): Add '?' modifier to 'r' alternative
+	of the second operand.
+
+2015-06-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66473
+	* config/i386/i386.c (ix86_expand_vector_set): Use gen_int_mode
+	to prepare mask operand for AVX512 modes.
+
+2015-06-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/66474
+	* doc/md.texi (Machine Constraints): Document that on the PowerPC
+	if you use a constraint that targets a VSX register, you must use
+	%x<n> in the template.
+
+2015-06-10  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/xtensa/xtensa.h (TARGET_DEBUG): New definition.
+	* config/xtensa/xtensa.md (define_attr "type"): New type "trap".
+	(define_insn "trap"): New definition.
+
+2015-06-10  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-slp.c (vect_attempt_slp_rearrange_stmts): Split
+	out from ...
+	(vect_supported_load_permutation_p): ... here.  Handle
+	supportable permutations in reductions.
+	* tree-vect-stmts.c (vectorizable_load): Handle SLP permutations
+	for vectorizing strided group loads.
+
+2015-06-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/66470
+	* config/i386/i386.c (ix86_split_long_move): For collisions
+	involving direct tls segment refs, move the UNSPEC_TP possibly
+	wrapped in ZERO_EXTEND out of the address for lea, to each of
+	the memory loads.
+
+2015-06-10  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* config/arm/sync.md (*memory_barrier): Use dmb ish instead of
+	dmb sy. Adjust tabs.
+
+2015-06-10  Tom de Vries  <tom@codesourcery.com>
+
+	* omp-low.c (expand_omp_target): Remove duplicate declaration of node.
+
+2015-06-10  Martin Liska  <mliska@suse.cz>
+
+	PR bootstrap/66471
+	* mem-stats-traits.h (enum mem_alloc_origin): Add _ORIGIN suffix for
+	all enum values in mem_alloc_origin.
+	* alloc-pool.c (dump_alloc_pool_statistics): Use newly changed enum
+	name.
+	* alloc-pool.h (pool_allocator::pool_allocator): Likewise.
+	* bitmap.c (bitmap_register): Likewise.
+	(dump_bitmap_statistics): Likewise.
+	* ggc-common.c (dump_ggc_loc_statistics): Likewise.
+	(ggc_record_overhead): Likewise.
+	* hash-map.h: Likewise.
+	* hash-set.h: Likewise.
+	* hash-table.c (void dump_hash_table_loc_statistics): Likewise.
+	* hash-table.h: Likewise.
+	* vec.c (vec_prefix::register_overhead): Likewise.
+	(vec_prefix::release_overhead): Likewise.
+	(dump_vec_loc_statistics): Likewise.
+
+2015-06-09  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/52144
+	* config/arm/arm.opt (THUMB, arm_restrict_it, inline_asm_unified): Save.
+	* config/arm/arm-protos.h (arm_valid_target_attribute_tree): Declare.
+	(arm_reset_previous_fndecl, arm_change_mode_p): Likewise.
+	* config/arm/arm.h (SWITCHABLE_TARGET): Define.
+	* config/arm/arm.c (arm_reset_previous_fndecl): New functions.
+	(arm_valid_target_attribute_tree, arm_change_mode_p): Likewise.
+	(arm_valid_target_attribute_p): Likewise.
+	(arm_set_current_function, arm_can_inline_p): Likewise.
+	(arm_valid_target_attribute_rec): Likewise.
+	(arm_previous_fndecl): New variable.
+	(TARGET_SET_CURRENT_FUNCTION, TARGET_OPTION_VALID_ATTRIBUTE_P): Define.
+	(TARGET_CAN_INLINE_P): Define.
+	(arm_asm_trampoline_template): Emit mode.
+	(arm_file_start): Don't set unified syntax.
+	(arm_declare_function_name): Set unified syntax and mode.
+	(arm_option_override): Init target_option_default_node.
+	and target_option_current_node.
+	* config/arm/arm.md (*call_value_symbol): Set mode when possible.
+	(*call_symbol): Likewise.
+	* doc/extend.texi: Document ARM/Thumb target attribute.
+	* doc/invoke.texi: Likewise.
+
 2015-06-09  Alexandre Oliva <aoliva@redhat.com>
 
 	Revert:
