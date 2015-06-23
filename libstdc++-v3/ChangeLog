@@ -1,3 +1,114 @@
+2015-06-22  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/26_numerics/complex/value_operations/1.cc: Use
+	non-negative rho argument.
+
+	* include/debug/list (__gnu_debug::list): Use allocator-aware
+	_Safe_container base.
+	* include/debug/string (__gnu_debug::basic_string): Use
+	allocator-aware _Safe_container base for cxx11 ABI.
+
+	* include/bits/locale_conv.h (__do_str_codecvt): Handle empty range.
+	(wstring_convert): Move into __cxx11 namespace.
+	(wbuffer_convert(streambuf*, _Codecvt*, state_type)): Fix exception
+	message.
+
+	PR libstdc++/64657
+	* include/bits/stl_uninitialized.h
+	(__uninitialized_copy::__uninit_copy): Cast expression to void.
+
+2015-06-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/55409
+	* include/bits/list.tcc (_List_base::_M_clear()): Use allocator traits.
+	(list::list(const list&)): Use allocator propagation trait. Use
+	_M_assign_dispatch to copy elements.
+	* include/bits/stl_list.h (_List_node): Use __aligned_membuf in C++11.
+	(_List_node::_M_valptr()): Add accessor for stored value.
+	(_List_iterator, _List_const_iterator, _List_base): Use _M_valptr().
+	(_List_base, list): Use allocator traits.
+	(_List_base::_M_get_Tp_allocator, _List_base::get_allocator): Remove.
+	(_List_base::_M_move_nodes): New function.
+	(_List_base(_List_base&&)): Use _M_move_nodes.
+	(_List_base(_List_base&&, _Node_alloc_type&&)): New constructor.
+	(list::_M_create_node, list::_M_erase, list::max_size): Use allocator
+	traits.
+	(list(size_type)): Add allocator parameter.
+	(list(const list&)): Use allocator propagation trait.
+	(list(const list&, const allocator_type&)): New constructor.
+	(list(list&&, const allocator_type&)): Likewise.
+	(list::operator=(list&&), list::swap(list&)): Use allocator
+	propagation traits.
+	(list::_M_move_assign): New functions.
+	* include/debug/list: Add allocator-extended constructors.
+	* include/profile/list: Likewise.
+	* python/libstdcxx/v6/printers.py (get_value_from_list_node): New
+	function to get value from _List_node.
+	(StdListPrinter): Use get_value_from_list_node.
+	* testsuite/23_containers/list/allocator/copy.cc: New.
+	* testsuite/23_containers/list/allocator/copy_assign.cc: New.
+	* testsuite/23_containers/list/allocator/minimal.cc: New.
+	* testsuite/23_containers/list/allocator/move.cc: New.
+	* testsuite/23_containers/list/allocator/move_assign.cc: New.
+	* testsuite/23_containers/list/allocator/noexcept.cc: New.
+	* testsuite/23_containers/list/allocator/swap.cc: New.
+	* testsuite/23_containers/list/requirements/dr438/assign_neg.cc:
+	Adjust dg-prune-output line number.
+	* testsuite/23_containers/list/requirements/dr438/constructor_1_neg.cc:
+	Likewise.
+	* testsuite/23_containers/list/requirements/dr438/insert_neg.cc:
+	Likewise.
+
+	* include/bits/forward_list.h
+	(_Fwd_list_base(const _Node_alloc_type&)): Change parameter to
+	rvalue-reference.
+	(_Fwd_list_base(_Fwd_list_base&&, const _Node_alloc_type&)): Likewise.
+	(forward_list(const _Alloc&)): Split default constructor out to
+	separate function.
+	(forward_list(forward_list&&, const _Alloc&)): Move elements if base
+	class didn't do so.
+	(forward_list::_M_move_assign(forward_list&&, true_type)): Replace
+	swap call with two assignments.
+	* include/bits/forward_list.tcc
+	(_Fwd_list_base(_Fwd_list_base&&, const _Node_alloc_type&)): Don't
+	move elements when allocators are not equal.
+	* include/debug/forward_list (forward_list(const allocator_type&)):
+	Split default constructor out to separate function.
+	* include/profile/forward_list (forward_list(const _Alloc&)):
+	Likewise.
+
+	* include/bits/forward_list.h (forward_list::_M_get_Node_allocator):
+	Remove unnecessary uses of operator& and static_cast.
+	* include/bits/forward_list.tcc
+	(forward_list::operator=(const forward_list&)): Use __addressof
+	instead of operator&.
+	(forward_list::remove(const _Tp&), forward_list::remove(_Pred)):
+	Remove invalid static_casts.
+	* include/debug/forward_list: Use __addressof instead of operator&.
+	* testsuite/23_containers/forward_list/modifiers/addressof.cc: New.
+
+	* include/ext/alloc_traits.h (__alloc_traits::_S_nothrow_swap()): Use
+	__is_nothrow_swappable.
+
+2015-06-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/allocated_ptr.h (__allocated_ptr): Use __addressof.
+
+	* include/bits/list.tcc (list::operator=(const list&), list::merge):
+	Use __addressof instead of operator&.
+	(list::sort): Use array-to-pointer decay instead of operator&.
+	* include/bits/stl_list.h (list::splice): Use __addressof instead of
+	operator&.
+	* include/debug/formatter.h (_Error_formatter::_Parameter::_Parameter):
+	Likewise.
+	* include/debug/functions.h (__check_singular): Likewise.
+	* include/debug/list (list::splice, list::merge): Likewise.
+	* testsuite/23_containers/list/modifiers/addressof.cc: New.
+
+	PR libstdc++/65393
+	* src/c++11/thread.cc (thread::_M_make_thread): Replace shared_ptr
+	copies with moves.
+
 2015-06-12  Jonathan Wakely  <jwakely@redhat.com>
 
 	* include/precompiled/stdc++.h: Include <codecvt> and <shared_mutex>.

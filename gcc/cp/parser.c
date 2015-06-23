@@ -24,7 +24,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm.h"
 #include "timevar.h"
 #include "cpplib.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -39,10 +38,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "flags.h"
 #include "diagnostic-core.h"
 #include "target.h"
-#include "is-a.h"
 #include "plugin-api.h"
 #include "hard-reg-set.h"
-#include "input.h"
 #include "function.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -7559,6 +7556,9 @@ cp_parser_new_placement (cp_parser* parser)
 		     (parser, non_attr, /*cast_p=*/false,
 		      /*allow_expansion_p=*/true,
 		      /*non_constant_p=*/NULL));
+
+  if (expression_list && expression_list->is_empty ())
+    error ("expected expression-list or type-id");
 
   return expression_list;
 }

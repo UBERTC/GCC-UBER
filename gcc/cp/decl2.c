@@ -30,7 +30,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -48,10 +47,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "target.h"
 #include "c-family/c-common.h"
 #include "c-family/c-objc.h"
-#include "is-a.h"
 #include "plugin-api.h"
 #include "hard-reg-set.h"
-#include "input.h"
 #include "function.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -4060,6 +4057,16 @@ cpp_check (tree t, cpp_operation op)
 {
   switch (op)
     {
+      case HAS_DEPENDENT_TEMPLATE_ARGS:
+	{
+	  tree ti = CLASSTYPE_TEMPLATE_INFO (t);
+	  if (!ti)
+	    return 0;
+	  ++processing_template_decl;
+	  const bool dep = any_dependent_template_arguments_p (TI_ARGS (ti));
+	  --processing_template_decl;
+	  return dep;
+	}
       case IS_ABSTRACT:
 	return DECL_PURE_VIRTUAL_P (t);
       case IS_CONSTRUCTOR:
@@ -4221,8 +4228,12 @@ no_linkage_error (tree decl)
 		TYPE_NAME (t));
     }
   else if (cxx_dialect >= cxx11)
-    permerror (DECL_SOURCE_LOCATION (decl), "%q#D, declared using local type "
-	       "%qT, is used but never defined", decl, t);
+    {
+      if (TREE_CODE (decl) == VAR_DECL || !DECL_PURE_VIRTUAL_P (decl))
+	permerror (DECL_SOURCE_LOCATION (decl),
+		   "%q#D, declared using local type "
+		   "%qT, is used but never defined", decl, t);
+    }
   else if (TREE_CODE (decl) == VAR_DECL)
     warning_at (DECL_SOURCE_LOCATION (decl), 0, "type %qT with no linkage "
 		"used to declare variable %q#D with linkage", t, decl);

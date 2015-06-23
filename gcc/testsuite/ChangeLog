@@ -1,7 +1,414 @@
+2015-06-23  Marek Polacek  <polacek@redhat.com>
+
+	* c-c++-common/Wlogical-op-3.c: New test.
+
+2015-06-23  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/66254
+	* g++.dg/cpp0x/scoped_enum5.C: New.
+
+2015-06-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66636
+	* gcc.dg/vect/pr66636.c: New testcase.
+
+2015-06-23  Marek Polacek  <polacek@redhat.com>
+
+	* gcc.dg/fold-minus-4.c: New test.
+	* gcc.dg/fold-minus-5.c: New test.
+	* c-c++-common/ubsan/overflow-add-5.c: New test.
+
+2015-06-23  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Add missing testcase from r224672.
+	2015-06-19  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/vax/bswapdi-1.c: New.
+
+2015-06-23  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/64674
+	* gfortran.dg/associate_18.f08: New test.
+
+2015-06-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66560
+	* gcc.target/i386/pr66560-1.c: New test.
+	* gcc.target/i386/pr66560-2.c: Ditto.
+	* gcc.target/i386/pr66560-3.c: Ditto.
+	* gcc.target/i386/pr66560-4.c: Ditto.
+
+2015-06-23  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* gcc.target/nvptx/nvptx.exp: New file.
+	* gcc.target/nvptx/proto-1.c: Likewise.
+
+2015-06-23  Bin Cheng  <bin.cheng@arm.com>
+
+	PR tree-optimization/66449
+	* gcc.dg/vect/pr66449.c: New test.
+
+2015-06-22  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* g++.dg/other/dump-ada-spec-5.C: New test.
+	* g++.dg/other/dump-ada-spec-6.C: Likewise.
+	* g++.dg/other/dump-ada-spec-7.C: Likewise.
+
+2015-06-22  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* g++.dg/inherit/pure1.C: Test location too.
+
+2015-06-22  Marek Polacek  <polacek@redhat.com>
+
+	* gcc.dg/fold-ior-1.c: New test.
+	* gcc.dg/fold-minus-2.c: New test.
+	* gcc.dg/fold-minus-3.c: New test.
+	* gcc.dg/fold-plus-1.c: New test.
+	* gcc.dg/fold-plus-2.c: New test.
+	* gcc.dg/fold-xor-4.c: New test.
+	* gcc.dg/fold-xor-5.c: New test.
+
+2015-06-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65914
+	* g++.dg/torture/pr65914.C:  New.
+
+2015-06-22  Richard Biener  <rguenther@suse.de>
+
+	* lib/c-torture.exp: Set LTO_TORTURE_OPTIONS conditional on
+	not existing TORTURE_OPTIONS only.
+	* lib/gcc-dg.exp: Likewise.
+
+2015-06-22  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/52144
+	* gcc.target/arm/flip-thumb.c: New test.
+
+2015-06-22  Jan Hubicka  <hubicka@ucw.cz>
+	    Martin Liska  <mliska@suse.cz>
+
+	PR ipa/65908
+	* g++.dg/ipa/pr65908.C: New testcase.
+
+2015-06-20  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	PR c++/65882
+	* g++.dg/diagnostic/inhibit-warn-1.C: New test.
+	* g++.dg/diagnostic/inhibit-warn-2.C: New test.
+
+2015-06-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/specs/debug1.ads: Adjust.
+
+2015-06-19  Jim Wilson  <jim.wilson@linaro.org>
+
+	* gcc.target/aarch64/fmovd-zero-mem.c: New.
+	* gcc.target/aarch64/fmovd-zero-reg.c: New.
+	* gcc.target/aarch64/fmovf-zero-mem.c: New.
+	* gcc.target/aarch64/fmovf-zero-reg.c: New.
+	* gcc.target/aarch64/fmovld-zero-mem.c: New.
+	* gcc.target/aarch64/fmovld-zero-mem.c: New.
+	* gcc.target/aarch64/fmovd-zero.c: Delete.
+	* gcc.target/aarch64/fmovf-zero.c: Delete.
+
+2015-06-19  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/vax/bswapdi-1.c: New.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vtst.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vtbX.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vstX_lane.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vst1_lane.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vsra_n.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vshrn_n.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vshl_n.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vshll_n.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vset_lane.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vrsra_n.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vrsqrts.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vrsqrte.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vrshrn_n.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vrshr_n.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vshr_n.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vrshl.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vrev.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vreinterpret.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vrecps.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/arm-neon-ref.h
+	(_ARM_FPSCR): Add FZ field.
+	(clean_results): Force FZ=1 on AArch64.
+	* gcc.target/aarch64/advsimd-intrinsics/vrecpe.c: New file.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/pr62308.c: New test.
+
+2015-06-19  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/66549
+	* gfortran.dg/gomp/omp_parallel_1.f90: New file.
+
+2015-06-19  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* gcc.target/i386/mpx/pr66581.c: New test.
+
+2015-06-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/cmov9.c: New test.
+
+2015-06-18  Richard Biener  <rguenther@suse.de>
+
+	* g++.dg/other/const4.C: New testcase.
+
+2015-06-18  Michael Matz  <matz@suse.de>
+
+	PR middle-end/66253
+	* gcc.dg/vect/pr66253.c: New testcase.
+
+2015-06-18  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/66569
+	* gcc.target/i386/mpx/chkp-vararg.c: New test.
+
+2015-06-18  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR middle-end/66568
+	* gcc.target/i386/mpx/pr66568.c: New test.
+
+2015-06-18  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR middle-end/66567
+	* gcc.target/i386/mpx/pr66567.c: New test.
+
+2015-06-18  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66510
+	* gcc.dg/vect/slp-perm-12.c: New testcase.
+
+2015-06-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/noplt-1.c (dg-do): Fix target selector.
+	* gcc.target/i386/noplt-2.c (dg-do): Ditto.
+	* gcc.target/i386/noplt-3.c (dg-do): Ditto.
+	* gcc.target/i386/noplt-4.c (dg-do): Ditto.
+
+2015-06-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/66571
+	* g++.dg/gomp/pr66571-1.C: New test.
+
+	PR middle-end/66429
+	* c-c++-common/gomp/pr66429.c: New test.
+
+2015-06-17  David Malcolm  <dmalcolm@redhat.com>
+
+	* jit.dg/test-error-accessing-field-in-other-struct.c: Rename to...
+	* jit.dg/test-error-gcc_jit_rvalue_dereference_field-wrong-struct.c:
+	...this.
+	* jit.dg/test-error-gcc_jit_lvalue_access_field-wrong-struct.c:
+	New testcase.
+	* jit.dg/test-error-gcc_jit_rvalue_access_field-wrong-struct.c:
+	New testcase.
+
+2015-06-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR testsuite/65944
+	* g++.dg/lto/pr65276_0.C: Add std2::exception::~exception() function.
+
+2015-06-17  Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* gcc.target/mips/pr65862-1.c: New test.
+	* gcc.target/mips/pr65862-2.c: Likewise.
+
+2015-06-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/pr54592.c: Remove dg-require-effective-target.
+	* gcc.target/i386/pr52252-atom.c: Ditto.
+	* gcc.target/i386/vect-div-1.c: Ditto.
+	* gcc.target/i386/rotate-5.c: Ditto.
+	* gcc.target/i386/pr50202.c: Ditto.
+	* gcc.target/i386/pr37843-3.c: Ditto.
+	* gcc.target/i386/avx2-vect-aggressive-1.c: Ditto.
+	* gcc.target/i386/pr53397-1.c: Ditto.
+	* gcc.target/i386/pr55934.c: Ditto.
+	* gcc.target/i386/pr37843-4.c: Ditto.
+	* gcc.target/i386/pr60451.c: Ditto.
+	* gcc.target/i386/pr53397-2.c: Ditto.
+	* gcc.target/i386/vectorize1.c: Ditto.
+	* gcc.target/i386/extract-insert-combining.c: Ditto.
+	* gcc.target/i386/pr53759.c: Ditto.
+	* gcc.target/i386/pr52252-core.c: Ditto.
+	* gcc.target/i386/rotate-3.c: Ditto.
+	* gcc.target/i386/sse-20.c: Ditto.
+	* gcc.target/i386/rotate-4.c: Ditto.
+	* gcc.target/i386/pr61403.c: Ditto.
+	* gcc.target/i386/pr60205-2.c: Add dg-do compile directive.
+	* gcc.target/i386/pr60901.c: Ditto.
+	* gcc.target/i386/pr59794-7.c: Ditto.
+	* gcc.target/i386/pr62208.c: Ditto.
+	* gcc.target/i386/pr53416.c: Ditto.
+	* gcc.target/i386/asm-dialect-1.c: Ditto.
+	* gcc.target/i386/pr50038.c: Ditto.
+	* gcc.target/i386/47698.c: Ditto.
+	* gcc.target/i386/avx512vl-vpmuludq-1.c: Ditto.
+	* gcc.target/i386/pr59794-2.c: Ditto.
+	* gcc.target/i386/pr59794-3.c: Ditto.
+	* gcc.target/i386/pr39058.c: Ditto.
+	* gcc.target/i386/pr60205-1.c: Ditto.
+	* gcc.target/i386/fma4-256-nmsubXX.c: Add dg-do run directive.
+	* gcc.target/i386/sse2-movq-2.c: Ditto.
+
+2015-06-17  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66251
+	* gfortran.fortran-torture/compile/pr66251-2.f90: New testcase.
+
+2015-06-16  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/59682
+	* g++.dg/parse/new-placement1.C: New.
+
+2015-06-16  David Malcolm  <dmalcolm@redhat.com>
+
+	* jit.dg/all-non-failing-tests.h: Add test-compound-assignment.c.
+	* jit.dg/test-compound-assignment.c: New testcase.
+
+2015-06-16  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/66539
+	* jit.dg/all-non-failing-tests.h: Add test-debug-strings.c
+	to "testcases" array.
+
+2015-06-16  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/66539
+	* jit.dg/all-non-failing-tests.h: Add test-debug-strings.c.
+	* jit.dg/test-debug-strings.c: New test case.
+	* jit.dg/test-quadratic.c (make_calc_discriminant): Verify that
+	the discriminant has a sane debug string.
+
+2015-06-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/56766
+	* gcc.target/i386/pr56766-1.c: New test.
+	* gcc.target/i386/pr56766-2.c: Ditto.
+
+2015-06-16  Steve Ellcey  <sellcey@imgtec.com>
+
+	* gcc.target/mips/loongson-shift-count-truncated-1.c:
+	Skip on mips*-mti-linux* and mips*-img-linux* targets.
+	* gcc.target/mips/loongson-simd.c: Ditto.
+
+2015-06-16  Richard Biener  <rguenther@suse.de>
+
+	* gcc.target/i386/recip-vec-sqrtf-avx.c: Disable unrolling.
+
+2015-06-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/arm/pr65647.c: Do not override -mfloat-abi directives
+	passed by the testsuite driver.
+
+2015-06-16  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/vect/slp-perm-11.c: New testcase.
+
+2015-06-16  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/arm/thumb-ifcvt.c: Add -mno-restrict-it to
+	dg-options.
+
+2015-06-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/advsimd-intrinsics/advsimd-intrinsics.exp:
+	Reinstate calls to torture-init and torture-finalize.
+
+2015-06-16  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/arm/attr_thumb.c: Add -mno-restrict-it to dg-options.
+
+2015-06-15  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/58583
+	* g++.dg/cpp0x/nsdmi-template14.C: New test.
+
+2015-06-15  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/51048
+	* g++.dg/cpp0x/local-type1.C: New.
+
+2015-06-15  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/44672
+	PR fortran/45440
+	PR fortran/57307
+	* gfortran.dg/allocate_with_source_3.f90: Removed check for
+	unimplemented error.
+	* gfortran.dg/allocate_with_source_7.f08: New test.
+	* gfortran.dg/allocate_with_source_8.f08: New test.
+
 2015-06-13  Patrick Palka  <ppalka@gcc.gnu.org>
 
 	PR c++/65168
-	g++.dg/warn/Walways-true-3.C: New test.
+	* g++.dg/warn/Walways-true-3.C: New test.
 
 2015-06-13  Tom de Vries  <tom@codesourcery.com>
 

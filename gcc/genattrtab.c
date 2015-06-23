@@ -2532,11 +2532,7 @@ simplify_test_exp (rtx exp, int insn_code, int insn_index)
 	  && compute_alternative_mask (right, IOR))
 	{
 	  if (GET_CODE (left) == IOR)
-	    {
-	      rtx tem = left;
-	      left = right;
-	      right = tem;
-	    }
+	    std::swap (left, right);
 
 	  newexp = attr_rtx (IOR,
 			     attr_rtx (AND, left, XEXP (right, 0)),
@@ -5127,6 +5123,7 @@ write_header (FILE *outf)
   fprintf (outf, "#include \"toplev.h\"\n");
   fprintf (outf, "#include \"flags.h\"\n");
   fprintf (outf, "#include \"function.h\"\n");
+  fprintf (outf, "#include \"emit-rtl.h\"\n");
   fprintf (outf, "#include \"predict.h\"\n");
   fprintf (outf, "\n");
   fprintf (outf, "#define operands recog_data.operand\n\n");

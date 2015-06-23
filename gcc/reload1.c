@@ -28,7 +28,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "obstack.h"
 #include "insn-config.h"
 #include "flags.h"
-#include "input.h"
 #include "function.h"
 #include "symtab.h"
 #include "rtl.h"
@@ -5613,11 +5612,7 @@ reloads_unique_chain_p (int r1, int r2)
 
   /* The following loop assumes that r1 is the reload that feeds r2.  */
   if (r1 > r2)
-    {
-      int tmp = r2;
-      r2 = r1;
-      r1 = tmp;
-    }
+    std::swap (r1, r2);
 
   for (i = 0; i < n_reloads; i ++)
     /* Look for input reloads that aren't our two */

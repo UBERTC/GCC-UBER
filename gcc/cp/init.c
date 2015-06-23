@@ -24,7 +24,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -541,6 +540,7 @@ get_nsdmi (tree member, bool in_ctor)
   tree init;
   tree save_ccp = current_class_ptr;
   tree save_ccr = current_class_ref;
+  
   if (!in_ctor)
     {
       /* Use a PLACEHOLDER_EXPR when we don't have a 'this' parameter to
@@ -548,22 +548,40 @@ get_nsdmi (tree member, bool in_ctor)
       current_class_ref = build0 (PLACEHOLDER_EXPR, DECL_CONTEXT (member));
       current_class_ptr = build_address (current_class_ref);
     }
+
   if (DECL_LANG_SPECIFIC (member) && DECL_TEMPLATE_INFO (member))
     {
-      /* Do deferred instantiation of the NSDMI.  */
-      init = (tsubst_copy_and_build
-	      (DECL_INITIAL (DECL_TI_TEMPLATE (member)),
-	       DECL_TI_ARGS (member),
-	       tf_warning_or_error, member, /*function_p=*/false,
-	       /*integral_constant_expression_p=*/false));
+      init = DECL_INITIAL (DECL_TI_TEMPLATE (member));
+      if (TREE_CODE (init) == DEFAULT_ARG)
+	goto unparsed;
 
-      init = digest_nsdmi_init (member, init);
+      /* Check recursive instantiation.  */
+      if (DECL_INSTANTIATING_NSDMI_P (member))
+	{
+	  error ("recursive instantiation of non-static data member "
+		 "initializer for %qD", member);
+	  init = error_mark_node;
+	}
+      else
+	{
+	  DECL_INSTANTIATING_NSDMI_P (member) = 1;
+	  
+	  /* Do deferred instantiation of the NSDMI.  */
+	  init = (tsubst_copy_and_build
+		  (init, DECL_TI_ARGS (member),
+		   tf_warning_or_error, member, /*function_p=*/false,
+		   /*integral_constant_expression_p=*/false));
+	  init = digest_nsdmi_init (member, init);
+	  
+	  DECL_INSTANTIATING_NSDMI_P (member) = 0;
+	}
     }
   else
     {
       init = DECL_INITIAL (member);
       if (init && TREE_CODE (init) == DEFAULT_ARG)
 	{
+	unparsed:
 	  error ("constructor required before non-static data member "
 		 "for %qD has been parsed", member);
 	  DECL_INITIAL (member) = error_mark_node;
@@ -3444,8 +3462,7 @@ build_vec_init (tree base, tree maxindex, tree init,
       && TREE_CODE (atype) == ARRAY_TYPE
       && TREE_CONSTANT (maxindex)
       && (from_array == 2
-	  ? (!CLASS_TYPE_P (inner_elt_type)
-	     || !TYPE_HAS_COMPLEX_COPY_ASSIGN (inner_elt_type))
+	  ? !type_has_nontrivial_assignment (inner_elt_type)
 	  : !TYPE_NEEDS_CONSTRUCTING (type))
       && ((TREE_CODE (init) == CONSTRUCTOR
 	   /* Don't do this if the CONSTRUCTOR might contain something

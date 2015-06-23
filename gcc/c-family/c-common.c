@@ -22,7 +22,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "input.h"
 #include "c-common.h"
 #include "tm.h"
 #include "intl.h"
@@ -48,14 +47,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "diagnostic.h"
 #include "tree-iterator.h"
 #include "opts.h"
-#include "is-a.h"
 #include "plugin-api.h"
 #include "hard-reg-set.h"
-#include "input.h"
 #include "function.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
-#include "target-def.h"
 #include "gimplify.h"
 #include "wide-int-print.h"
 #include "gimple-expr.h"
@@ -1841,7 +1837,8 @@ warn_logical_operator (location_t location, enum tree_code code, tree type,
 	}
       /* Or warn if the operands have exactly the same range, e.g.
 	 A > 0 && A > 0.  */
-      else if (low0 == low1 && high0 == high1)
+      else if (tree_int_cst_equal (low0, low1)
+	       && tree_int_cst_equal (high0, high1))
 	{
 	  if (or_op)
 	    warning_at (location, OPT_Wlogical_op,
@@ -12608,11 +12605,9 @@ scalar_to_vector (location_t loc, enum tree_code code, tree op0, tree op1,
       /* What about UNLT_EXPR?  */
 	if (TREE_CODE (type0) == VECTOR_TYPE)
 	  {
-	    tree tmp;
 	    ret = stv_secondarg;
-	    /* Swap TYPE0 with TYPE1 and OP0 with OP1  */
-	    tmp = type0; type0 = type1; type1 = tmp;
-	    tmp = op0; op0 = op1; op1 = tmp;
+	    std::swap (type0, type1);
+	    std::swap (op0, op1);
 	  }
 
 	if (TREE_CODE (type0) == INTEGER_TYPE

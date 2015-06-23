@@ -188,7 +188,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -205,7 +204,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimple-expr.h"
-#include "is-a.h"
 #include "gimple.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
@@ -2303,11 +2301,7 @@ combine_chains (chain_p ch1, chain_p ch2)
     }
 
   if (swap)
-    {
-      chain_p tmp = ch1;
-      ch1 = ch2;
-      ch2 = tmp;
-    }
+    std::swap (ch1, ch2);
 
   new_chain = XCNEW (struct chain);
   new_chain->type = CT_COMBINATION;
