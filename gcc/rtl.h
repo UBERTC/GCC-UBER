@@ -34,12 +34,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "vec.h"
 #include "hash-table.h"
 #include "hash-set.h"
+#include "input.h"
+#include "is-a.h"
 #endif  /* GENERATOR_FILE */
 
-#include "input.h"
 #include "alias.h"
 #include "flags.h"
-#include "is-a.h"
 
 /* Value used by some passes to "recognize" noop moves as valid
  instructions.  */
@@ -2666,6 +2666,7 @@ extern rtvec rtvec_alloc (int);
 extern rtvec shallow_copy_rtvec (rtvec);
 extern bool shared_const_p (const_rtx);
 extern rtx copy_rtx (rtx);
+extern enum rtx_code classify_insn (rtx);
 extern void dump_rtx_statistics (void);
 
 /* In emit-rtl.c */

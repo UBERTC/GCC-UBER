@@ -60,7 +60,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "rtl.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -97,7 +96,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "target.h"
 #include "common/common-target.h"
 #include "langhooks.h"
-#include "is-a.h"
 #include "plugin-api.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -18790,7 +18788,8 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
 		   end function
 		 end module
 	   */
-	   || old_die->die_parent->die_tag == DW_TAG_module
+	   || (old_die->die_parent
+	       && old_die->die_parent->die_tag == DW_TAG_module)
 	   || context_die == NULL)
 	   && (DECL_ARTIFICIAL (decl)
 	       || (get_AT_file (old_die, DW_AT_decl_file) == file_index

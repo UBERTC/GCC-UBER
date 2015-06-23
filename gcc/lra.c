@@ -114,7 +114,6 @@ along with GCC; see the file COPYING3.	If not see
 #include "output.h"
 #include "addresses.h"
 #include "flags.h"
-#include "input.h"
 #include "function.h"
 #include "symtab.h"
 #include "tree.h"
@@ -1378,11 +1377,8 @@ lra_create_copy (int regno1, int regno2, int freq)
   regno1_dest_p = true;
   if (regno1 > regno2)
     {
-      int temp = regno2;
-
+      std::swap (regno1, regno2);
       regno1_dest_p = false;
-      regno2 = regno1;
-      regno1 = temp;
     }
   cp = new lra_copy ();
   copy_vec.safe_push (cp);

@@ -28,7 +28,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm_p.h"
 #include "hard-reg-set.h"
 #include "regs.h"
-#include "input.h"
 #include "function.h"
 #include "profile.h"
 #include "flags.h"
@@ -2007,9 +2006,7 @@ get_sched_window (partial_schedule_ptr ps, ddg_node_ptr u_node,
      node close to its successors.  */
   if (pss_not_empty && count_succs >= count_preds)
     {
-      int tmp = end;
-      end = start;
-      start = tmp;
+      std::swap (start, end);
       step = -1;
     }
 

@@ -1,7 +1,9 @@
 /* { dg-do run } */
-/* { dg-options "-O2 -ftree-parallelize-loops=2" } */
+/* { dg-additional-options "-ftree-parallelize-loops=2" } */
 
 /* Constant bound, reduction.  */
+
+#include <stdlib.h>
 
 #define N 4000
 
@@ -29,5 +31,7 @@ main (void)
     array[i] = i % 7;
   a = &array[0];
   res = f ();
-  return !(res == 11995);
+  if (res != 11995)
+    abort ();
+  return 0;
 }

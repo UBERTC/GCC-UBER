@@ -24,7 +24,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -52,7 +51,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-expr.h"
-#include "is-a.h"
 #include "gimple.h"
 #include "gimple-iterator.h"
 #include "gimple-ssa.h"
@@ -610,11 +608,8 @@ DFS::DFS (struct output_block *ob, tree expr, bool ref_p, bool this_ref_p,
 		    }
 		}
 	      for (unsigned i = 0; i < scc_entry_len; ++i)
-		{
-		  scc_entry tem = sccstack[first + i];
-		  sccstack[first + i] = sccstack[first + entry_start + i];
-		  sccstack[first + entry_start + i] = tem;
-		}
+		std::swap (sccstack[first + i],
+			   sccstack[first + entry_start + i]);
 
 	      if (scc_entry_len == 1)
 		; /* We already sorted SCC deterministically in hash_scc.  */
@@ -740,7 +735,7 @@ DFS::DFS_write_tree_body (struct output_block *ob,
       /* Drop names that were created for anonymous entities.  */
       if (DECL_NAME (expr)
 	  && TREE_CODE (DECL_NAME (expr)) == IDENTIFIER_NODE
-	  && ANON_AGGRNAME_P (DECL_NAME (expr)))
+	  && anon_aggrname_p (DECL_NAME (expr)))
 	;
       else
 	DFS_follow_tree_edge (DECL_NAME (expr));
@@ -1119,7 +1114,8 @@ hash_tree (struct streamer_tree_cache_d *cache, hash_map<tree, hashval_t> *map, 
     {
       hstate.add_wide_int (TYPE_MODE (t));
       hstate.add_flag (TYPE_STRING_FLAG (t));
-      hstate.add_flag (TYPE_NO_FORCE_BLK (t));
+      /* TYPE_NO_FORCE_BLK is private to stor-layout and need
+ 	 no streaming.  */
       hstate.add_flag (TYPE_NEEDS_CONSTRUCTING (t));
       hstate.add_flag (TYPE_PACKED (t));
       hstate.add_flag (TYPE_RESTRICT (t));
@@ -1180,7 +1176,7 @@ hash_tree (struct streamer_tree_cache_d *cache, hash_map<tree, hashval_t> *map, 
       /* Drop names that were created for anonymous entities.  */
       if (DECL_NAME (t)
 	  && TREE_CODE (DECL_NAME (t)) == IDENTIFIER_NODE
-	  && ANON_AGGRNAME_P (DECL_NAME (t)))
+	  && anon_aggrname_p (DECL_NAME (t)))
 	;
       else
 	visit (DECL_NAME (t));

@@ -22,7 +22,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -42,7 +41,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimple-fold.h"
 #include "tree-eh.h"
 #include "gimple-expr.h"
-#include "is-a.h"
 #include "gimple.h"
 #include "gimplify.h"
 #include "gimple-ssa.h"
@@ -2391,11 +2389,7 @@ vn_nary_op_compute_hash (const vn_nary_op_t vno1)
   if (vno1->length == 2
       && commutative_tree_code (vno1->opcode)
       && tree_swap_operands_p (vno1->op[0], vno1->op[1], false))
-    {
-      tree temp = vno1->op[0];
-      vno1->op[0] = vno1->op[1];
-      vno1->op[1] = temp;
-    }
+    std::swap (vno1->op[0], vno1->op[1]);
 
   hstate.add_int (vno1->opcode);
   for (i = 0; i < vno1->length; ++i)

@@ -23,7 +23,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "flags.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -2097,7 +2096,7 @@ make_anon_name (void)
 {
   char buf[32];
 
-  sprintf (buf, ANON_AGGRNAME_FORMAT, anon_cnt++);
+  sprintf (buf, anon_aggrname_format (), anon_cnt++);
   return get_identifier (buf);
 }
 

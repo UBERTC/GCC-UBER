@@ -52,7 +52,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm_p.h"
 #include "hard-reg-set.h"
 #include "regs.h"
-#include "input.h"
 #include "function.h"
 #include "profile.h"
 #include "flags.h"
@@ -71,6 +70,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "target.h"
 #include "tree-pass.h"
 #include "dbgcnt.h"
+#include "emit-rtl.h"
 
 #ifdef INSN_SCHEDULING
 

@@ -22,7 +22,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "rtl.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -64,7 +63,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-expr.h"
-#include "is-a.h"
 #include "gimple.h"
 #include "gimple-ssa.h"
 #include "plugin-api.h"
@@ -8428,11 +8426,7 @@ expand_expr_real_2 (sepops ops, rtx target, machine_mode tmode,
 	 Thus the following special case checks need only
 	 check the second operand.  */
       if (TREE_CODE (treeop0) == INTEGER_CST)
-	{
-	  tree t1 = treeop0;
-	  treeop0 = treeop1;
-	  treeop1 = t1;
-	}
+	std::swap (treeop0, treeop1);
 
       /* First, check if we have a multiplication of one signed and one
 	 unsigned operand.  */
@@ -8557,11 +8551,7 @@ expand_expr_real_2 (sepops ops, rtx target, machine_mode tmode,
 	    def0 = get_def_for_expr (treeop1, NEGATE_EXPR);
 	    /* Swap operands if the 2nd operand is fed by a negate.  */
 	    if (def0)
-	      {
-		tree tem = treeop0;
-		treeop0 = treeop1;
-		treeop1 = tem;
-	      }
+	      std::swap (treeop0, treeop1);
 	  }
 	def2 = get_def_for_expr (treeop2, NEGATE_EXPR);
 
@@ -8608,11 +8598,7 @@ expand_expr_real_2 (sepops ops, rtx target, machine_mode tmode,
 	 Thus the following special case checks need only
 	 check the second operand.  */
       if (TREE_CODE (treeop0) == INTEGER_CST)
-	{
-	  tree t1 = treeop0;
-	  treeop0 = treeop1;
-	  treeop1 = t1;
-	}
+	std::swap (treeop0, treeop1);
 
       /* Attempt to return something suitable for generating an
 	 indexed address, for machines that support that.  */
@@ -10912,7 +10898,6 @@ do_store_flag (sepops ops, rtx target, machine_mode mode)
 {
   enum rtx_code code;
   tree arg0, arg1, type;
-  tree tem;
   machine_mode operand_mode;
   int unsignedp;
   rtx op0, op1;
@@ -11035,7 +11020,7 @@ do_store_flag (sepops ops, rtx target, machine_mode mode)
   if (TREE_CODE (arg0) == REAL_CST || TREE_CODE (arg0) == INTEGER_CST
       || TREE_CODE (arg0) == FIXED_CST)
     {
-      tem = arg0; arg0 = arg1; arg1 = tem;
+      std::swap (arg0, arg1);
       code = swap_condition (code);
     }
 

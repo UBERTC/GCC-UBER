@@ -28,7 +28,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -787,14 +786,15 @@ merge_types (tree t1, tree t2)
 	int quals = cp_type_quals (t1);
 
 	if (code1 == POINTER_TYPE)
-	  t1 = build_pointer_type (target);
+	  {
+	    t1 = build_pointer_type (target);
+	    if (TREE_CODE (target) == METHOD_TYPE)
+	      t1 = build_ptrmemfunc_type (t1);
+	  }
 	else
 	  t1 = cp_build_reference_type (target, TYPE_REF_IS_RVALUE (t1));
 	t1 = build_type_attribute_variant (t1, attributes);
 	t1 = cp_build_qualified_type (t1, quals);
-
-	if (TREE_CODE (target) == METHOD_TYPE)
-	  t1 = build_ptrmemfunc_type (t1);
 
 	return t1;
       }
@@ -3179,11 +3179,7 @@ cp_build_array_ref (location_t loc, tree array, tree idx,
 
     /* Put the integer in IND to simplify error checking.  */
     if (TREE_CODE (TREE_TYPE (ar)) == INTEGER_TYPE)
-      {
-	tree temp = ar;
-	ar = ind;
-	ind = temp;
-      }
+      std::swap (ar, ind);
 
     if (ar == error_mark_node || ind == error_mark_node)
       return error_mark_node;

@@ -28,7 +28,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -4795,7 +4794,7 @@ push_template_decl_real (tree decl, bool is_friend)
       if (DECL_CLASS_SCOPE_P (decl))
 	member_template_p = true;
       if (TREE_CODE (decl) == TYPE_DECL
-	  && ANON_AGGRNAME_P (DECL_NAME (decl)))
+	  && anon_aggrname_p (DECL_NAME (decl)))
 	{
 	  error ("template class without a name");
 	  return error_mark_node;
@@ -9216,12 +9215,20 @@ instantiate_class_template_1 (tree type)
      it now.  */
   push_deferring_access_checks (dk_no_deferred);
 
+  int saved_unevaluated_operand = cp_unevaluated_operand;
+  int saved_inhibit_evaluation_warnings = c_inhibit_evaluation_warnings;
+
   fn_context = decl_function_context (TYPE_MAIN_DECL (type));
   /* Also avoid push_to_top_level for a lambda in an NSDMI.  */
   if (!fn_context && LAMBDA_TYPE_P (type) && TYPE_CLASS_SCOPE_P (type))
     fn_context = error_mark_node;
   if (!fn_context)
     push_to_top_level ();
+  else
+    {
+      cp_unevaluated_operand = 0;
+      c_inhibit_evaluation_warnings = 0;
+    }
   /* Use #pragma pack from the template context.  */
   saved_maximum_field_alignment = maximum_field_alignment;
   maximum_field_alignment = TYPE_PRECISION (pattern);
@@ -9635,6 +9642,14 @@ instantiate_class_template_1 (tree type)
 		}
 	    }
 	}
+    }
+
+  if (fn_context)
+    {
+      /* Restore these before substituting into the lambda capture
+	 initializers.  */
+      cp_unevaluated_operand = saved_unevaluated_operand;
+      c_inhibit_evaluation_warnings = saved_inhibit_evaluation_warnings;
     }
 
   if (tree expr = CLASSTYPE_LAMBDA_EXPR (type))
@@ -13071,10 +13086,8 @@ tsubst_copy (tree t, tree args, tsubst_flags_t complain, tree in_decl)
 		      if (TREE_STATIC (r))
 			rest_of_decl_compilation (r, toplevel_bindings_p (),
 						  at_eof);
-		      else if (decl_constant_var_p (r))
-			/* A use of a local constant decays to its value.
-			   FIXME update for core DR 696.  */
-			r = scalar_constant_value (r);
+		      else
+			r = process_outer_var_ref (r, complain);
 		    }
 		}
 	      /* Remember this for subsequent uses.  */
@@ -13492,6 +13505,32 @@ tsubst_copy (tree t, tree args, tsubst_flags_t complain, tree in_decl)
     }
 }
 
+/* Helper function for tsubst_omp_clauses, used for instantiation of
+   OMP_CLAUSE_DECL of clauses that handles also OpenMP array sections
+   represented with TREE_LIST.  */
+
+static tree
+tsubst_omp_clause_decl (tree decl, tree args, tsubst_flags_t complain,
+			tree in_decl)
+{
+  if (TREE_CODE (decl) == TREE_LIST)
+    {
+      tree low_bound
+	= tsubst_expr (TREE_PURPOSE (decl), args, complain, in_decl,
+		       /*integral_constant_expression_p=*/false);
+      tree length = tsubst_expr (TREE_VALUE (decl), args, complain, in_decl,
+				 /*integral_constant_expression_p=*/false);
+      tree chain = tsubst_omp_clause_decl (TREE_CHAIN (decl), args, complain,
+					   in_decl);
+      if (TREE_PURPOSE (decl) == low_bound
+	  && TREE_VALUE (decl) == length
+	  && TREE_CHAIN (decl) == chain)
+	return decl;
+      return tree_cons (low_bound, length, chain);
+    }
+  return tsubst_copy (decl, args, complain, in_decl);
+}
+
 /* Like tsubst_copy, but specifically for OpenMP clauses.  */
 
 static tree
@@ -13523,16 +13562,23 @@ tsubst_omp_clauses (tree clauses, bool declare_simd,
 	case OMP_CLAUSE_FIRSTPRIVATE:
 	case OMP_CLAUSE_COPYIN:
 	case OMP_CLAUSE_COPYPRIVATE:
+	case OMP_CLAUSE_UNIFORM:
+	  OMP_CLAUSE_DECL (nc) = tsubst_copy (OMP_CLAUSE_DECL (oc), args,
+					      complain, in_decl);
+	  break;
+	case OMP_CLAUSE_DEPEND:
+	case OMP_CLAUSE_FROM:
+	case OMP_CLAUSE_TO:
+	case OMP_CLAUSE_MAP:
+	  OMP_CLAUSE_DECL (nc)
+	    = tsubst_omp_clause_decl (OMP_CLAUSE_DECL (oc), args, complain,
+				      in_decl);
+	  break;
 	case OMP_CLAUSE_IF:
 	case OMP_CLAUSE_NUM_THREADS:
 	case OMP_CLAUSE_SCHEDULE:
 	case OMP_CLAUSE_COLLAPSE:
 	case OMP_CLAUSE_FINAL:
-	case OMP_CLAUSE_DEPEND:
-	case OMP_CLAUSE_FROM:
-	case OMP_CLAUSE_TO:
-	case OMP_CLAUSE_UNIFORM:
-	case OMP_CLAUSE_MAP:
 	case OMP_CLAUSE_DEVICE:
 	case OMP_CLAUSE_DIST_SCHEDULE:
 	case OMP_CLAUSE_NUM_TEAMS:
@@ -13559,20 +13605,17 @@ tsubst_omp_clauses (tree clauses, bool declare_simd,
 	      else
 		gcc_assert (identifier_p (placeholder));
 	    }
-	  OMP_CLAUSE_OPERAND (nc, 0)
-	    = tsubst_expr (OMP_CLAUSE_OPERAND (oc, 0), args, complain,
-			   in_decl, /*integral_constant_expression_p=*/false);
+	  OMP_CLAUSE_DECL (nc) = tsubst_copy (OMP_CLAUSE_DECL (oc), args,
+					      complain, in_decl);
 	  break;
 	case OMP_CLAUSE_LINEAR:
 	case OMP_CLAUSE_ALIGNED:
-	  OMP_CLAUSE_OPERAND (nc, 0)
-	    = tsubst_expr (OMP_CLAUSE_OPERAND (oc, 0), args, complain,
-			   in_decl, /*integral_constant_expression_p=*/false);
+	  OMP_CLAUSE_DECL (nc) = tsubst_copy (OMP_CLAUSE_DECL (oc), args,
+					      complain, in_decl);
 	  OMP_CLAUSE_OPERAND (nc, 1)
 	    = tsubst_expr (OMP_CLAUSE_OPERAND (oc, 1), args, complain,
 			   in_decl, /*integral_constant_expression_p=*/false);
 	  break;
-
 	case OMP_CLAUSE_NOWAIT:
 	case OMP_CLAUSE_ORDERED:
 	case OMP_CLAUSE_DEFAULT:
@@ -15638,7 +15681,11 @@ tsubst_copy_and_build (tree t,
 	      r = build_cxx_call (wrap, 0, NULL, tf_warning_or_error);
 	  }
 	else if (outer_automatic_var_p (r))
-	  r = process_outer_var_ref (r, complain);
+	  {
+	    r = process_outer_var_ref (r, complain);
+	    if (is_capture_proxy (r))
+	      register_local_specialization (r, t);
+	  }
 
 	if (TREE_CODE (TREE_TYPE (t)) != REFERENCE_TYPE)
 	  /* If the original type was a reference, we'll be wrapped in
@@ -16498,15 +16545,11 @@ maybe_adjust_types_for_deduction (unification_kind_t strict,
       break;
 
     case DEDUCE_CONV:
-      {
-	/* Swap PARM and ARG throughout the remainder of this
-	   function; the handling is precisely symmetric since PARM
-	   will initialize ARG rather than vice versa.  */
-	tree* temp = parm;
-	parm = arg;
-	arg = temp;
-	break;
-      }
+      /* Swap PARM and ARG throughout the remainder of this
+	 function; the handling is precisely symmetric since PARM
+	 will initialize ARG rather than vice versa.  */
+      std::swap (parm, arg);
+      break;
 
     case DEDUCE_EXACT:
       /* Core issue #873: Do the DR606 thing (see below) for these cases,

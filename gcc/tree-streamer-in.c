@@ -23,7 +23,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "diagnostic.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
@@ -33,13 +32,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "predict.h"
 #include "tm.h"
 #include "hard-reg-set.h"
-#include "input.h"
 #include "function.h"
 #include "basic-block.h"
 #include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-expr.h"
-#include "is-a.h"
 #include "gimple.h"
 #include "plugin-api.h"
 #include "ipa-ref.h"
@@ -370,7 +367,8 @@ unpack_ts_type_common_value_fields (struct bitpack_d *bp, tree expr)
   mode = bp_unpack_machine_mode (bp);
   SET_TYPE_MODE (expr, mode);
   TYPE_STRING_FLAG (expr) = (unsigned) bp_unpack_value (bp, 1);
-  TYPE_NO_FORCE_BLK (expr) = (unsigned) bp_unpack_value (bp, 1);
+  /* TYPE_NO_FORCE_BLK is private to stor-layout and need
+     no streaming.  */
   TYPE_NEEDS_CONSTRUCTING (expr) = (unsigned) bp_unpack_value (bp, 1);
   if (RECORD_OR_UNION_TYPE_P (expr))
     {

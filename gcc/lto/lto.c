@@ -23,7 +23,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "opts.h"
 #include "toplev.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
@@ -34,10 +33,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm.h"
 #include "predict.h"
 #include "basic-block.h"
-#include "is-a.h"
 #include "plugin-api.h"
 #include "hard-reg-set.h"
-#include "input.h"
 #include "function.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -1159,7 +1156,6 @@ compare_tree_sccs_1 (tree t1, tree t2, tree **map)
     {
       compare_values (TYPE_MODE);
       compare_values (TYPE_STRING_FLAG);
-      compare_values (TYPE_NO_FORCE_BLK);
       compare_values (TYPE_NEEDS_CONSTRUCTING);
       if (RECORD_OR_UNION_TYPE_P (t1))
 	{

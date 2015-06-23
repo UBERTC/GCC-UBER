@@ -109,7 +109,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -118,7 +117,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "calls.h"
 #include "predict.h"
 #include "basic-block.h"
-#include "is-a.h"
 #include "plugin-api.h"
 #include "hard-reg-set.h"
 #include "function.h"
@@ -1848,12 +1846,7 @@ add_type_duplicate (odr_type val, tree type)
     }
 
   if (prevail)
-    {
-      tree tmp = type;
-
-      type = val->type;
-      val->type = tmp;
-    }
+    std::swap (val->type, type);
 
   val->types_set->add (type);
 

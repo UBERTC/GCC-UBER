@@ -24,7 +24,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
@@ -38,10 +37,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "toplev.h"
 #include "target.h"
 #include "convert.h"
-#include "is-a.h"
 #include "plugin-api.h"
 #include "hard-reg-set.h"
-#include "input.h"
 #include "function.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
@@ -5136,6 +5133,24 @@ type_has_non_user_provided_default_constructor (tree t)
 	return true;
     }
 
+  return false;
+}
+
+/* Return true if TYPE has some non-trivial assignment operator.  */
+
+bool
+type_has_nontrivial_assignment (tree type)
+{
+  gcc_assert (TREE_CODE (type) != ARRAY_TYPE);
+  if (CLASS_TYPE_P (type))
+    for (tree fns
+	   = lookup_fnfields_slot_nolazy (type, ansi_assopname (NOP_EXPR));
+	 fns; fns = OVL_NEXT (fns))
+      {
+	tree fn = OVL_CURRENT (fns);
+	if (!trivial_fn_p (fn))
+	  return true;
+      }
   return false;
 }
 

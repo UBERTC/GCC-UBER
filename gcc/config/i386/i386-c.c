@@ -21,7 +21,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
@@ -30,7 +29,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "flags.h"
 #include "c-family/c-common.h"
 #include "target.h"
-#include "target-def.h"
 #include "cpplib.h"
 #include "c-family/c-pragma.h"
 

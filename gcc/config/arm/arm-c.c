@@ -21,14 +21,12 @@
 #include "coretypes.h"
 #include "tm.h"
 #include "tm_p.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
 #include "tm_p.h"
 #include "c-family/c-common.h"
 #include "target.h"
-#include "target-def.h"
 #include "c-family/c-pragma.h"
 
 /* Output C specific EABI object attributes.  These can not be done in

@@ -65,7 +65,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "tree.h"
@@ -83,7 +82,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimple-expr.h"
-#include "is-a.h"
 #include "gimple.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
@@ -1487,8 +1485,8 @@ extract_cond_operands (struct ivopts_data *data, gimple stmt,
   /* The objects returned when COND has constant operands.  */
   static struct iv const_iv;
   static tree zero;
-  tree *op0 = &zero, *op1 = &zero, *tmp_op;
-  struct iv *iv0 = &const_iv, *iv1 = &const_iv, *tmp_iv;
+  tree *op0 = &zero, *op1 = &zero;
+  struct iv *iv0 = &const_iv, *iv1 = &const_iv;
   bool ret = false;
 
   if (gimple_code (stmt) == GIMPLE_COND)
@@ -1519,8 +1517,8 @@ extract_cond_operands (struct ivopts_data *data, gimple stmt,
   if (integer_zerop (iv0->step))
     {
       /* Control variable may be on the other side.  */
-      tmp_op = op0; op0 = op1; op1 = tmp_op;
-      tmp_iv = iv0; iv0 = iv1; iv1 = tmp_iv;
+      std::swap (op0, op1);
+      std::swap (iv0, iv1);
     }
   ret = !integer_zerop (iv0->step) && integer_zerop (iv1->step);
 

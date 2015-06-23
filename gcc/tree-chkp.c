@@ -21,7 +21,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "options.h"
@@ -35,7 +34,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "langhooks.h"
 #include "tree-pass.h"
 #include "diagnostic.h"
-#include "is-a.h"
 #include "cfgloop.h"
 #include "stringpool.h"
 #include "tree-ssa-alias.h"
@@ -466,6 +464,21 @@ chkp_gimple_call_builtin_p (gimple call,
       && gimple_call_fndecl (call) == fndecl)
     return true;
   return false;
+}
+
+/* Emit code to build zero bounds and return RTL holding
+   the result.  */
+rtx
+chkp_expand_zero_bounds ()
+{
+  tree zero_bnd;
+
+  if (flag_chkp_use_static_const_bounds)
+    zero_bnd = chkp_get_zero_bounds_var ();
+  else
+    zero_bnd = chkp_build_make_bounds_call (integer_zero_node,
+					    integer_zero_node);
+  return expand_normal (zero_bnd);
 }
 
 /* Emit code to store zero bounds for PTR located at MEM.  */
@@ -2513,6 +2526,7 @@ chkp_compute_bounds_for_assignment (tree node, gimple assign)
   tree rhs1 = gimple_assign_rhs1 (assign);
   tree bounds = NULL_TREE;
   gimple_stmt_iterator iter = gsi_for_stmt (assign);
+  tree base = NULL;
 
   if (dump_file && (dump_flags & TDF_DETAILS))
     {
@@ -2539,6 +2553,7 @@ chkp_compute_bounds_for_assignment (tree node, gimple assign)
     case INTEGER_CST:
       /* Bounds are just propagated from RHS.  */
       bounds = chkp_find_bounds (rhs1, &iter);
+      base = rhs1;
       break;
 
     case VIEW_CONVERT_EXPR:
@@ -2609,6 +2624,8 @@ chkp_compute_bounds_for_assignment (tree node, gimple assign)
 	     (e.g. pointer minus pointer).  In such case
 	     use default invalid op bounds.  */
 	  bounds = chkp_get_invalid_op_bounds ();
+
+	base = (bounds == bnd1) ? rhs1 : (bounds == bnd2) ? rhs2 : NULL;
       }
       break;
 
@@ -2703,6 +2720,19 @@ chkp_compute_bounds_for_assignment (tree node, gimple assign)
     }
 
   gcc_assert (bounds);
+
+  /* We may reuse bounds of other pointer we copy/modify.  But it is not
+     allowed for abnormal ssa names.  If we produced a pointer using
+     abnormal ssa name, we better make a bounds copy to avoid coalescing
+     issues.  */
+  if (base
+      && TREE_CODE (base) == SSA_NAME
+      && SSA_NAME_OCCURS_IN_ABNORMAL_PHI (base))
+    {
+      gimple stmt = gimple_build_assign (chkp_get_tmp_reg (NULL), bounds);
+      gsi_insert_after (&iter, stmt, GSI_SAME_STMT);
+      bounds = gimple_assign_lhs (stmt);
+    }
 
   if (node)
     bounds = chkp_maybe_copy_and_register_bounds (node, bounds);
@@ -4090,7 +4120,7 @@ chkp_replace_function_pointer (tree *op, int *walk_subtrees,
 			       void *data ATTRIBUTE_UNUSED)
 {
   if (TREE_CODE (*op) == FUNCTION_DECL
-      && !lookup_attribute ("bnd_legacy", DECL_ATTRIBUTES (*op))
+      && chkp_instrumentable_p (*op)
       && (DECL_BUILT_IN_CLASS (*op) == NOT_BUILT_IN
 	  /* For builtins we replace pointers only for selected
 	     function and functions having definitions.  */

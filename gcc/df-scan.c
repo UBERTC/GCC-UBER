@@ -29,11 +29,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm_p.h"
 #include "insn-config.h"
 #include "recog.h"
-#include "input.h"
 #include "alias.h"
 #include "symtab.h"
 #include "hard-reg-set.h"
-#include "input.h"
 #include "function.h"
 #include "regs.h"
 #include "alloc-pool.h"
@@ -47,7 +45,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "dumpfile.h"
 #include "tree.h"
 #include "target.h"
-#include "target-def.h"
 #include "df.h"
 #include "emit-rtl.h"  /* FIXME: Can go away once crtl is moved to rtl.h.  */
 
@@ -2135,14 +2132,6 @@ df_ref_ptr_compare (const void *r1, const void *r2)
   return df_ref_compare (*(const df_ref *) r1, *(const df_ref *) r2);
 }
 
-static void
-df_swap_refs (vec<df_ref, va_heap> *ref_vec, int i, int j)
-{
-  df_ref tmp = (*ref_vec)[i];
-  (*ref_vec)[i] = (*ref_vec)[j];
-  (*ref_vec)[j] = tmp;
-}
-
 /* Sort and compress a set of refs.  */
 
 static void
@@ -2162,7 +2151,7 @@ df_sort_and_compress_refs (vec<df_ref, va_heap> *ref_vec)
       df_ref r0 = (*ref_vec)[0];
       df_ref r1 = (*ref_vec)[1];
       if (df_ref_compare (r0, r1) > 0)
-        df_swap_refs (ref_vec, 0, 1);
+	std::swap ((*ref_vec)[0], (*ref_vec)[1]);
     }
   else
     {
