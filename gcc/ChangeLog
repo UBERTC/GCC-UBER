@@ -1,3 +1,165 @@
+2015-06-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-06-09  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/66413
+	* tree-inline.c (insert_init_debug_bind): Unshare value.
+
+2015-06-23  Ludovic Courtès  <ludo@gnu.org>
+
+	PR 65711
+	* config/arm/linux-elf.h (LINUX_TARGET_LINK_SPEC): Move
+	'-dynamic-linker' within %{!shared: ...}.
+
+2015-06-22  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR bootstrap/63740
+	* lra-lives.c (process_bb_lives): Check insn copying the same
+	reload pseudo and don't create a copy for it.
+
+2015-06-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-06-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66422
+	* tree-ssa-loop-ivcanon.c (remove_exits_and_undefined_stmts): Split
+	block after inserted gcc_unreachable.
+
+2015-06-21  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-06-20  Marek Polacek  <polacek@redhat.com>
+
+	* common.opt (fsanitize-undefined-trap-on-error): Add Driver.
+
+2015-06-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-06-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66375
+	* tree-scalar-evolution.c (follow_ssa_edge_binary): First
+	add to the evolution before following SSA edges.
+
+2015-06-18  Venkataramanan Kumar  <venkataramanan.kumar@amd.com>
+
+	Backport from mainline r224414.
+	2015-06-12  Venkataramanan Kumar  <venkataramanan.kumar@amd.com>
+
+	* common/config/i386/i386-common.c
+	(OPTION_MASK_ISA_MWAITX_SET): New.
+	(ix86_handle_option): Handle mwaitx.
+	* config.gcc (i[34567]86-*-*): Add mwaitxintrin.h,
+	(x86_64-*-*): Likewise.
+	* config/i386/mwaitxintrin.h: New header.
+	* config/i386/cpuid.h (bit_MWAITX):  Define.
+	 * config/i386/driver-i386.c (host_detect_local_cpu): Detect
+	MWAITX support.
+	 * config/i386/i386.opt (mwaitx): New.
+	* config/i386/i386-builtin-types.def
+	(VOID_FTYPE_UNSIGNED_ UNSIGNED_UNSIGNED): New function type.
+	* config/i386/i386-c.c: Define __MWAITX__ if needed.
+	* config/i386/i386.c (ix86_target_string): Define -mmwaitx option.
+	(PTA_MWAITX): New.
+	(ix86_option_override_internal): Handle new option.
+	(processor_alias_table): Added PTA_MWAITX.
+	(ix86_valid_target_attribute_inner_p): Add OPT_mmwaitx.
+	(ix86_builtins): Add IX86_BUILTIN_MWAITX, IX86_BUILTIN_MONITORX.
+	(ix86_expand_builtin): Handle IX86_BUILTIN_MWAITX and
+	IX86_BUILTIN_MONITORX  built-ins.
+	* config/i386/i386.h (TARGET_MWAITX): New.
+	* config/i386/i386.md (unspecv): Add UNSPEC_MWAITX and
+	UNSPEC_MONITORX.
+	(mwaitx):  New pattern.
+	(monitorx_<mode>): New pattern.
+	* config/i386/x86intrin.h: Include mwaitxintrin.h.
+	* doc/extend.texi: Document monitorx and mwaitx builtins.
+	* doc/invoke.texi: Document -mmwaitx option.
+
+2015-06-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66429
+	* omp-low.c (expand_omp_taskreg, expand_omp_target): Use child_cfun
+	instead of DECL_STRUCT_FUNCTION (child_fn).  Or in has_simduid_loops
+	and has_force_vectorize_loops flags from cfun into
+	child_cfun.
+	(expand_omp_simd): For broken loop, set cfun->has_simduid_loops
+	if simduid is non-NULL.
+	* tree-pass.h (make_pass_simduid_cleanup): New prototype.
+	* passes.def (pass_simduid_cleanup): Add new pass after loop
+	passes.
+	* tree-vectorizer.c (adjust_simduid_builtins): Remove one unnecessary
+	indirection from htab argument's type.
+	(shrink_simd_arrays): New function.
+	(vectorize_loops): Use it.  Adjust adjust_simduid_builtins caller.
+	Don't call adjust_simduid_builtins if there are no loops.
+	(pass_data_simduid_cleanup, pass_simduid_cleanup): New variables.
+	(pass_simduid_cleanup::execute): New method.
+	(make_pass_simduid_cleanup): New function.
+
+2015-06-17  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r223929.
+	2015-06-01  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR target/65527
+	* cgraph.c (cgraph_edge::redirect_call_stmt_to_callee): Add
+	redirection for instrumented calls.
+	* lto-wrapper.c (merge_and_complain): Merge -fcheck-pointer-bounds.
+	(append_compiler_options): Append -fcheck-pointer-bounds.
+	* tree-chkp.h (chkp_copy_call_skip_bounds): New.
+	(chkp_redirect_edge): New.
+	* tree-chkp.c (chkp_copy_call_skip_bounds): New.
+	(chkp_redirect_edge): New.
+
+2015-06-17  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r224063.
+	2015-06-03  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* ipa.c (symbol_table::remove_unreachable_nodes): Don't
+	remove instumentation thunks calling reachable functions.
+	* lto-cgraph.c (output_refs): Always output IPA_REF_CHKP.
+	* lto/lto-partition.c (privatize_symbol_name_1): New.
+	(privatize_symbol_name): Privatize both decl and orig_decl
+	names for instrumented functions.
+	* cgraph.c (cgraph_node::verify_node): Add transparent
+	transparent alias chain check for instrumented node.
+
+2015-06-16  Jim Wilson  <jim.wilson@linaro.org>
+
+	Backport from mainline
+	2015-06-02  Jim Wilson  <jim.wilson@linaro.org>
+
+	PR target/66258
+	* config/aarch64/aarch64.c (aarch64_function_value_regno_p): Change
+	!TARGET_GENERAL_REGS_ONLY to TARGET_FLOAT.
+	(aarch64_secondary_reload): Likewise
+	(aarch64_expand_builtin_va_start): Change TARGET_GENERAL_REGS_ONLY
+	to !TARGET_FLOAT.
+	(aarch64_gimplify_va_arg_expr, aarch64_setup_incoming_varargs):
+	Likewise.
+
+2015-06-16  Richard Biener  <rguenther@suse.de>
+
+	Revert
+	2015-06-01  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-05-26  Michael Matz  <matz@suse.de>
+
+	PR middle-end/66251
+	* tree-vect-stmts.c (vect_create_vectorized_demotion_stmts): Always set
+	STMT_VINFO_VEC_STMT, also with SLP.
+
+	2015-05-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66251
+	* tree-vect-stmts.c (vectorizable_conversion): Properly
+	set STMT_VINFO_VEC_STMT even for the SLP case.
+
 2015-06-11  Pierre-Marie de Rodat  <derodat@adacore.com>
 
 	Backport from mainline:

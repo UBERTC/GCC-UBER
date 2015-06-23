@@ -1,3 +1,86 @@
+2015-06-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-06-09  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/66413
+	* gcc.dg/torture/pr66413.c: New testcase.
+
+2015-06-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-06-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66422
+	* gcc.dg/Warray-bounds-16.c: New testcase.
+
+2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from mainline r224649.
+	2015-06-19  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/pr62308.c: New test.
+
+2015-06-18  Richard Biener  <rguenther@suse.de>
+
+	* g++.dg/other/const4.C: New testcase.
+
+2015-06-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-06-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66375
+	* gcc.dg/torture/pr66375.c: New testcase.
+
+2015-06-18  Venkataramanan Kumar  <venkataramanan.kumar@amd.com>
+
+	Backport from mainline r224414.
+	2015-06-12  Venkataramanan Kumar  <venkataramanan.kumar@amd.com>
+
+	* gcc.target/i386/monitorx.c: New.
+	* gcc.target/i386/sse-12.c: Add -mmwaitx.
+	* gcc.target/i386/sse-13.c: Ditto.
+	* gcc.target/i386/sse-14.c: Ditto.
+	* gcc.target/i386/sse-22.c: Ditto.
+	* gcc.target/i386/sse-23.c: Ditto.
+	* g++.dg/other/i386-2.C: Ditto.
+	* g++.dg/other/i386-3.C: Ditto.
+
+2015-06-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/66571
+	* g++.dg/gomp/pr66571-1.C: New test.
+
+	PR middle-end/66429
+	* c-c++-common/gomp/pr66429.c: New test.
+
+2015-06-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR testsuite/65944
+	* g++.dg/lto/pr65276_0.C: Add std2::exception::~exception() function.
+
+2015-06-17  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r223929.
+	2015-06-01  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR target/65527
+	* gcc.target/i386/mpx/chkp-fix-calls-1.c: New.
+	* gcc.target/i386/mpx/chkp-fix-calls-2.c: New.
+	* gcc.target/i386/mpx/chkp-fix-calls-3.c: New.
+	* gcc.target/i386/mpx/chkp-fix-calls-4.c: New.
+
+2015-06-17  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r224063.
+	2015-06-03  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.dg/lto/chkp-privatize-1_0.c: New.
+	* gcc.dg/lto/chkp-privatize-1_1.c: New.
+	* gcc.dg/lto/chkp-privatize-2_0.c: New.
+	* gcc.dg/lto/chkp-privatize-2_1.c: New.
+
 2015-06-14  Thomas Koenig  <tkoenig@gcc.gnu.org>
 
 	PR fortran/66385
