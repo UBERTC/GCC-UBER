@@ -1,3 +1,25 @@
+2015-06-23  Release Manager
+
+	* GCC 4.8.5 released.
+
+2015-06-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.dg/vect/vect-33.c: Don't exclude "Vectorizing an unaligned
+	access" test for non-PowerPC arches.
+
+2015-06-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2014-12-04  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/56917
+	* g++.dg/other/const4.C: New testcase.
+
+2015-06-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/66233
+	* gcc.c-torture/execute/pr66233.c: New test.
+
 2015-06-12  Jakub Jelinek  <jakub@redhat.com>
 
 	PR middle-end/63608
