@@ -1,3 +1,115 @@
+2015-06-24  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR fortran/66528
+	* gfortran.dg/maxerrors.f90: New test.
+
+2015-06-08  DJ Delorie  <dj@redhat.com>
+
+	* gcc.dg/torture/pr66345.c: Fix assumption about size_t type.
+
+2015-06-24  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/mgeneral-regs_3.c: New.
+
+2015-06-24  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/mgeneral-regs_1.c: New file.
+	* gcc.target/aarch64/mgeneral-regs_2.c: New file.
+	* gcc.target/aarch64/nofp_1.c: New file.
+
+2015-06-24  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	Implement N3928 - Extending static_assert
+	* g++.dg/cpp0x/static_assert8.C: Adjust.
+	* g++.dg/cpp0x/static_assert12.C: New.
+	* g++.dg/cpp0x/static_assert13.C: New.
+	* g++.dg/cpp1y/static_assert1.C: New.
+	* g++.dg/cpp1y/static_assert2.C: New.
+	* g++.dg/cpp1z/static_assert-nomsg.C: New.
+
+2015-06-24  Adam Butcher  <adam@jessamine.co.uk>
+
+	PR c++/65750
+	* g++.dg/cpp0x/trailing11.C: New.
+
+2015-06-24  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* gcc.target/arm/fixed_float_conversion.c: Skip for inappropriate
+          multilibs.
+	* gcc.target/arm/memset-inline-10.c: Likewise.
+	* gcc.target/arm/pr58784.c: Likewise.
+	* gcc.target/arm/pr59985.C: Likewise.
+	* gcc.target/arm/vfp-1.c: Likewise and test only for the non fma cases.
+
+2015-06-24  Renlin Li  <renlin.li@arm.com>
+
+	* gcc.target/aarch64/arm_align_max_pwr.c: New.
+	* gcc.target/aarch64/arm_align_max_stack_pwr.c: New.
+
+2015-06-24  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	Revert:
+	2015-06-23  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/30044
+	* g++.dg/cpp0x/auto45.C: New test.
+	* g++.dg/template/pr30044.C: New test.
+	* g++.dg/template/crash83.C: Accept any error string.
+	* g++.dg/cpp0x/variadic18.C: Adjust to not shadow template
+	parameters.
+	* g++.dg/cpp0x/variadic18.C: Likewise
+	* g++.dg/template/canon-type-13.C: Likewise.
+	* g++.old-deja/g++.pt/ttp42.C: Likewise.
+
+2015-06-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65811
+	* g++.dg/other/linkage2.C: New.
+
+2015-06-24  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/63408
+	* gcc.target/arm/pr63408.c: New test.
+
+2015-06-24  James Greenhalgh  <james.greenhalgh@arm.com>
+
+        * lib/c-torture.exp: Don't call check_effective_target_lto
+	before setting up environment correctly.
+        * lib/gcc-dg.exp: Likewise, and protect
+	gcc_force_conventional_output.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR rtl-optimization/66306
+	* gcc.target/s390/pr66306.c: New test.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/vector/vec-abi-1.c: Add gnu attribute check.
+	* gcc.target/s390/vector/vec-abi-attr-1.c: New test.
+	* gcc.target/s390/vector/vec-abi-attr-2.c: New test.
+	* gcc.target/s390/vector/vec-abi-attr-3.c: New test.
+	* gcc.target/s390/vector/vec-abi-attr-4.c: New test.
+	* gcc.target/s390/vector/vec-abi-attr-5.c: New test.
+	* gcc.target/s390/vector/vec-abi-attr-6.c: New test.
+
+2015-06-23  Chen Gang  <gang.chen.5i5j@gmail.com>
+
+        PR target/65803
+	* gcc.c-torture/pr65803.c: New test.
+
+2015-06-23  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/30044
+	* g++.dg/cpp0x/auto45.C: New test.
+	* g++.dg/template/pr30044.C: New test.
+	* g++.dg/template/crash83.C: Accept any error string.
+	* g++.dg/cpp0x/variadic18.C: Adjust to not shadow template
+	parameters.
+	* g++.dg/cpp0x/variadic18.C: Likewise
+	* g++.dg/template/canon-type-13.C: Likewise.
+	* g++.old-deja/g++.pt/ttp42.C: Likewise.
+
 2015-06-23  Marek Polacek  <polacek@redhat.com>
 
 	* c-c++-common/Wlogical-op-3.c: New test.

@@ -1,3 +1,62 @@
+2015-06-24  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66647
+	* pt.c (dependent_type_p_r): Check for dependent alias template
+	specialization sooner.
+
+	PR c++/66501
+	* class.c (type_has_nontrivial_assignment): Remove.
+	* cp-tree.h: Remove declaration.
+	* init.c (vec_copy_assign_is_trivial): New.
+	(build_vec_init): Use it.
+
+2015-06-24  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	Implement N3928 - Extending static_assert
+	* parser.c (cp_parser_static_assert): Support static_assert with
+	no message string.  Supply an empty string in this case.
+	* semantics.c (finish_static_assert): Don't try to print a message if
+	the message strnig is empty.
+
+2015-06-24  Adam Butcher  <adam@jessamine.co.uk>
+
+	PR c++/65750
+	* parser.c (cp_parser_simple_type_specifier): Don't synthesize
+	implicit template parm if 'auto' is a placeholder for trailing
+	return type.
+
+2015-06-24  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	Revert:
+	2015-06-23  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/30044
+	* parser.c (cp_parser_template_parameter_list): Update
+	current_template_parms right after processing a paramater.
+	* pt.c (template_parms_to_args): Remove obsolete hack for
+	giving template template arguments the proper level.
+	(check_default_tmpl_args): Account for tested template
+	parameter_lists.
+	(splite_late_return_type): Remove obsolete hack for giving
+	template template arguments the proper level.
+
+2015-06-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65811
+	* decl.c (duplicate_decls): Adjust DECL_COMDAT of newdecl.
+
+2015-06-23  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/30044
+	* parser.c (cp_parser_template_parameter_list): Update
+	current_template_parms right after processing a paramater.
+	* pt.c (template_parms_to_args): Remove obsolete hack for
+	giving template template arguments the proper level.
+	(check_default_tmpl_args): Account for tested template
+	parameter_lists.
+	(splite_late_return_type): Remove obsolete hack for giving
+	template template arguments the proper level.
+
 2015-06-23  Jason Merrill  <jason@redhat.com>
 
 	PR c++/65879
