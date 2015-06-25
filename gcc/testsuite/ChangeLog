@@ -1,3 +1,22 @@
+2015-06-24  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/66200
+	* g++.dg/abi/aarch64_guard1.C: Adjust.
+
+2015-06-24  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/66549
+	* gfortran.dg/gomp/omp_parallel_1.f90: New file.
+
+2015-06-24  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	Backport from mainline:
+	2015-06-20  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	PR c++/65882
+	* g++.dg/diagnostic/inhibit-warn-1.C: New test.
+	* g++.dg/diagnostic/inhibit-warn-2.C: New test.
+
 2015-06-23  Richard Biener  <rguenther@suse.de>
 
 	Backport from mainline

@@ -1,3 +1,26 @@
+2015-06-24  Jason Merrill  <jason@redhat.com>
+
+	PR c++/65919
+	* mangle.c (mangle_decl): Always SET_IDENTIFIER_GLOBAL_VALUE.
+	(decl_implicit_alias_p): Split out from maybe_remove_implicit_alias.
+	* cp-tree.h (DECL_REALLY_EXTERN): Handle null DECL_LANG_SPECIFIC.
+
+	PR c++/66647
+	* pt.c (dependent_type_p_r): Check for dependent alias template
+	specialization sooner.
+
+	PR c++/66501
+	* init.c (vec_copy_assign_is_trivial): New.
+	(build_vec_init): Use it.
+
+2015-06-24  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	Backport from mainline:
+	2015-06-20  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	PR c++/65882
+	* call.c (build_new_op_1): Check tf_warning flag in all cases.
+
 2015-06-23  Jason Merrill  <jason@redhat.com>
 
 	PR c++/65879
