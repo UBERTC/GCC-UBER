@@ -1,3 +1,154 @@
+2015-06-24  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/66563
+	* config/sh/sh.md (GOTaddr2picreg): Add a new operand for
+	an additional element of the unspec vector.  Modify indices
+	of operands.
+	(builtin_setjmp_receiver): Pass const0_rtx to gen_GOTaddr2picreg.
+	* config/sh/sh.c (prepare_move_operands): Pass incremented
+	const_int to gen_GOTaddr2picreg.
+	(sh_expand_prologue): Pass const0_rtx to gen_GOTaddr2picreg.
+
+2015-06-24  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.md (<optab><fcvt_target><GPF:mode>2):
+	Condition on TARGET_FLOAT.
+
+2015-06-24  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* doc/invoke.texi: Clarify AArch64 feature modifiers (no)fp, (no)simd
+	and (no)crypto.
+
+2015-06-24  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-protos.h (aarch64_err_no_fpadvsimd): New.
+
+	* config/aarch64/aarch64.md (mov<mode>/GPF, movtf): Use
+	aarch64_err_no_fpadvsimd.
+
+	* config/aarch64/aarch64.c (aarch64_err_no_fpadvsimd): New.
+	(aarch64_layout_arg, aarch64_init_cumulative_args): Use
+	aarch64_err_no_fpadvsimd if !TARGET_FLOAT and we need FP regs.
+	(aarch64_expand_builtin_va_start, aarch64_setup_incoming_varargs):
+	Turn error into assert, test TARGET_FLOAT.
+	(aarch64_gimplify_va_arg_expr): Use aarch64_err_no_fpadvsimd, test
+	TARGET_FLOAT.
+
+2015-06-24  Aldy Hernandez  <aldyh@redhat.com>
+
+	PR debug/66482
+	* dwarf2out.c (gen_formal_parameter_die): Remove assert.
+
+2015-06-24  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* tree-vect-slp.c (vect_build_slp_tree_1): Init vectype.
+
+2015-06-24 Renlin Li <renlin.li@arm.com>
+
+	* config/aarch64/aarch64.h(TARGET_CPU_CPP_BUILTINS): Add
+	__ARM_ALIGN_MAX_PWR, __ARM_ALIGN_MAX_STACK_PWR.
+
+2015-06-24  Richard Biener  <rguenther@suse.de>
+
+	* genmatch.c (enum tree_code): Add VIEW_CONVERT[012].
+	(main): Likewise.
+	(lower_opt_convert): Support lowering of conditional view_convert.
+	(parser::parse_operation): Likewise.
+	(parser::parse_for): Likewise.
+
+2015-06-24  Renlin Li  <renlin.li@arm.com>
+
+	* varasm.c (emit_local): Use unsigned int for align variable.
+
+2015-06-24  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/63408
+	* config/arm/arm.c (vfp3_const_double_for_fract_bits): Disable
+	for negative numbers.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR rtl-optimization/66306
+	* reload.c (find_reloads): Swap the match_dup info for
+	commutative operands.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vx-builtins.md
+	("vec_scatter_element<mode>_<non_vec_int>")
+	("vec_scatter_element<V_HW_64:mode>_SI"): Replace gf mode
+	attribute with bhfgq.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtins.def: Fix vpopct instruction comments.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtin-types.def: Add flag to indicate the
+	options under which the function type is needed.
+	* config/s390/s390-builtins.def: Add flag to indicate the options
+	under which the builtin is enabled.
+	* config/s390/s390-builtins.h: Add flags parameter to macro
+	definitions.
+	(bflags_for_builtin): New function.
+	(flags_for_builtin): Renamed to ...
+	(opflags_for_builtin): ... this.
+	* config/s390/s390-c.c (s390_resolve_overloaded_builtin): Rename
+	flags_for_builtin to bflags_for_builtin and
+	flags_overloaded_builtin_var to opflags_overloaded_builtin_var.
+	* config/s390/s390.c: Add initialization of bflags_builtin and
+	opflags_builtin arrays.
+	Remove code for flags_builtin.
+	(s390_init_builtins): Only create builtin function types if one of
+	their flags is active.
+	Only create builtins if all of their flags are active.
+	(s390_expand_builtin): Rename flags_for_builtin to
+	opflags_for_builtin.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vecintrin.h: Remove internal builtins.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_secondary_reload): Fix check for
+	GENERAL_REGS register class.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_support_vector_misalignment): Call
+	default implementation for !TARGET_VX.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_legitimate_constant_p): Add
+	TARGET_VX check.
+
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_vector_abi): New variable definition.
+	(s390_check_type_for_vector_abi): New function.
+	(TARGET_ASM_FILE_END): New macro definition.
+	(s390_asm_file_end): New function.
+	(s390_function_arg): Call s390_check_type_for_vector_abi.
+	(s390_gimplify_va_arg): Likewise.
+	* configure: Regenerate.
+	* configure.ac: Check for .gnu_attribute Binutils feature.
+
+2015-06-23  Chen Gang  <gang.chen.5i5j@gmail.com>
+
+	PR target/65803
+	* config/bfin/bfin.c (hwloop_optimize): Initialize
+	JUMP_LABEL for newly created jump.
+
+2015-06-23  Tristan Gingold  <gingold@adacore.com>
+
+	* collect-utils.c (collect_wait): Unlink the response file here
+	instead of...
+	(do_wait): ...here.
+	(utils_cleanup): ...and here.
+
 2015-06-23  Richard Sandiford  <richard.sandiford@arm.com>
 
 	* df-scan.c: Don't include target-def.h.
