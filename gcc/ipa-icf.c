@@ -91,8 +91,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-dfa.h"
 #include "tree-pass.h"
 #include "gimple-pretty-print.h"
-#include "plugin-api.h"
-#include "ipa-ref.h"
 #include "cgraph.h"
 #include "alloc-pool.h"
 #include "symbol-summary.h"
@@ -2908,8 +2906,7 @@ sem_item_optimizer::subdivide_classes_by_equality (bool in_wpa)
 unsigned
 sem_item_optimizer::subdivide_classes_by_sensitive_refs ()
 {
-  typedef hash_map <symbol_compare_collection *, vec <sem_item *>,
-    symbol_compare_hashmap_traits> subdivide_hash_map;
+  typedef hash_map <symbol_compare_hash, vec <sem_item *> > subdivide_hash_map;
 
   unsigned newly_created_classes = 0;
 

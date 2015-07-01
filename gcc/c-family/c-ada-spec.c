@@ -249,6 +249,7 @@ print_ada_macros (pretty_printer *pp, cpp_hashnode **macros, int max_ada_macros)
 		  case CPP_WCHAR:
 		  case CPP_CHAR16:
 		  case CPP_CHAR32:
+		  case CPP_UTF8CHAR:
 		  case CPP_NAME:
 		  case CPP_STRING:
 		  case CPP_NUMBER:
@@ -2826,7 +2827,7 @@ print_ada_declaration (pretty_printer *buffer, tree t, tree type, int spc)
     }
   else
     {
-      if (TREE_CODE (t) == VAR_DECL
+      if (VAR_P (t)
 	  && decl_name
 	  && *IDENTIFIER_POINTER (decl_name) == '_')
 	return 0;

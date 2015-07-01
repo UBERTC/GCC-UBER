@@ -133,6 +133,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "expr.h"
 #include "insn-codes.h"
 #include "optabs.h"
+#include "tree-hash-traits.h"
 
 /* List of basic blocks in if-conversion-suitable order.  */
 static basic_block *ifc_bbs;
@@ -1588,27 +1589,7 @@ convert_scalar_cond_reduction (gimple reduc, gimple_stmt_iterator *gsi,
   return rhs;
 }
 
-/* Helpers for PHI arguments hashtable map.  */
-
-struct phi_args_hash_traits : default_hashmap_traits
-{
-  static inline hashval_t hash (tree);
-  static inline bool equal_keys (tree, tree);
-};
-
-inline hashval_t
-phi_args_hash_traits::hash (tree value)
-{
-  return iterative_hash_expr (value, 0);
-}
-
-inline bool
-phi_args_hash_traits::equal_keys (tree value1, tree value2)
-{
-  return operand_equal_p (value1, value2, 0);
-}
-
-  /* Produce condition for all occurrences of ARG in PHI node.  */
+/* Produce condition for all occurrences of ARG in PHI node.  */
 
 static tree
 gen_phi_arg_condition (gphi *phi, vec<int> *occur,
@@ -1754,7 +1735,7 @@ predicate_scalar_phi (gphi *phi, gimple_stmt_iterator *gsi)
   /* Create hashmap for PHI node which contain vector of argument indexes
      having the same value.  */
   bool swap = false;
-  hash_map<tree, auto_vec<int>, phi_args_hash_traits> phi_arg_map;
+  hash_map<tree_operand_hash, auto_vec<int> > phi_arg_map;
   unsigned int num_args = gimple_phi_num_args (phi);
   int max_ind = -1;
   /* Vector of different PHI argument values.  */

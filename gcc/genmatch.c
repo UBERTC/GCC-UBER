@@ -178,7 +178,7 @@ END_BUILTINS
 
 /* Base class for all identifiers the parser knows.  */
 
-struct id_base : typed_noop_remove<id_base>
+struct id_base : nofree_ptr_hash<id_base>
 {
   enum id_kind { CODE, FN, PREDICATE, USER } kind;
 
@@ -189,8 +189,6 @@ struct id_base : typed_noop_remove<id_base>
   const char *id;
 
   /* hash_table support.  */
-  typedef id_base *value_type;
-  typedef id_base *compare_type;
   static inline hashval_t hash (const id_base *);
   static inline int equal (const id_base *, const id_base *);
 };
@@ -326,6 +324,9 @@ add_operator (enum tree_code code, const char *id,
       /* And allow CONSTRUCTOR for vector initializers.  */
       && !(code == CONSTRUCTOR))
     return;
+  /* Treat ADDR_EXPR as atom, thus don't allow matching its operand.  */
+  if (code == ADDR_EXPR)
+    nargs = 0;
   operator_id *op = new operator_id (code, id, nargs, tcc);
   id_base **slot = operators->find_slot_with_hash (op, op->hashval, INSERT);
   if (*slot)
@@ -397,28 +398,7 @@ get_operator (const char *id)
   return 0;
 }
 
-
-/* Helper for the capture-id map.  */
-
-struct capture_id_map_hasher : default_hashmap_traits
-{
-  static inline hashval_t hash (const char *);
-  static inline bool equal_keys (const char *, const char *);
-};
-
-inline hashval_t
-capture_id_map_hasher::hash (const char *id)
-{
-  return htab_hash_string (id);
-}
-
-inline bool
-capture_id_map_hasher::equal_keys (const char *id1, const char *id2)
-{
-  return strcmp (id1, id2) == 0;
-}
-
-typedef hash_map<const char *, unsigned, capture_id_map_hasher> cid_map_t;
+typedef hash_map<nofree_string_hash, unsigned> cid_map_t;
 
 
 /* The AST produced by parsing of the pattern definitions.  */

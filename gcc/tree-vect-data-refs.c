@@ -59,8 +59,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-scalar-evolution.h"
 #include "tree-vectorizer.h"
 #include "diagnostic-core.h"
-#include "plugin-api.h"
-#include "ipa-ref.h"
 #include "cgraph.h"
 /* Need to include rtl.h, expr.h, etc. for optabs.  */
 #include "rtl.h"
@@ -4859,7 +4857,10 @@ vect_setup_realignment (gimple stmt, gimple_stmt_iterator *gsi,
       ptr = vect_create_data_ref_ptr (stmt, vectype, loop_for_initial_load,
 				      NULL_TREE, &init_addr, NULL, &inc,
 				      true, &inv_p);
-      new_temp = copy_ssa_name (ptr);
+      if (TREE_CODE (ptr) == SSA_NAME)
+	new_temp = copy_ssa_name (ptr);
+      else
+	new_temp = make_ssa_name (TREE_TYPE (ptr));
       new_stmt = gimple_build_assign
 		   (new_temp, BIT_AND_EXPR, ptr,
 		    build_int_cst (TREE_TYPE (ptr),
