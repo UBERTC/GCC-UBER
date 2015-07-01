@@ -41,7 +41,6 @@
 #include "except.h"
 #include "function.h"
 #include "target.h"
-#include "target-def.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -60,8 +59,6 @@
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
 #include "basic-block.h"
-#include "plugin-api.h"
-#include "ipa-ref.h"
 #include "cgraph.h"
 #include "langhooks.h"
 #include "bfin-protos.h"
@@ -76,6 +73,9 @@
 #include "opts.h"
 #include "dumpfile.h"
 #include "builtins.h"
+
+/* This file should be included last.  */
+#include "target-def.h"
 
 /* A C structure for machine-specific, per-function data.
    This is added to the cfun structure.  */
@@ -1089,6 +1089,9 @@ bfin_expand_prologue (void)
   rtx pic_reg_loaded = NULL_RTX;
   tree attrs = TYPE_ATTRIBUTES (TREE_TYPE (current_function_decl));
   bool all = lookup_attribute ("saveall", attrs) != NULL_TREE;
+
+  if (flag_stack_usage_info)
+    current_function_static_stack_size = frame_size;
 
   if (fkind != SUBROUTINE)
     {

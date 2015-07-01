@@ -38,10 +38,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "flags.h"
 #include "diagnostic-core.h"
 #include "target.h"
-#include "plugin-api.h"
 #include "hard-reg-set.h"
 #include "function.h"
-#include "ipa-ref.h"
 #include "cgraph.h"
 #include "c-family/c-common.h"
 #include "c-family/c-objc.h"
@@ -4286,6 +4284,7 @@ cp_parser_primary_expression (cp_parser *parser,
     case CPP_CHAR16:
     case CPP_CHAR32:
     case CPP_WCHAR:
+    case CPP_UTF8CHAR:
     case CPP_NUMBER:
     case CPP_PREPARSED_EXPR:
       if (TREE_CODE (token->u.value) == USERDEF_LITERAL)
@@ -4347,6 +4346,7 @@ cp_parser_primary_expression (cp_parser *parser,
     case CPP_CHAR16_USERDEF:
     case CPP_CHAR32_USERDEF:
     case CPP_WCHAR_USERDEF:
+    case CPP_UTF8CHAR_USERDEF:
       return cp_parser_userdef_char_literal (parser);
 
     case CPP_STRING:
@@ -6889,6 +6889,7 @@ cp_parser_parenthesized_expression_list (cp_parser* parser,
 		  case CPP_WCHAR:
 		  case CPP_CHAR16:
 		  case CPP_CHAR32:
+		  case CPP_UTF8CHAR:
 		    /* If a parameter is literal zero alone, remember it
 		       for -Wmemset-transposed-args warning.  */
 		    if (integer_zerop (tok->u.value)
@@ -10573,7 +10574,7 @@ cp_convert_range_for (tree statement, tree range_decl, tree range_expr,
     {
       tree range_temp;
 
-      if (TREE_CODE (range_expr) == VAR_DECL
+      if (VAR_P (range_expr)
 	  && array_of_runtime_bound_p (TREE_TYPE (range_expr)))
 	/* Can't bind a reference to an array of runtime bound.  */
 	range_temp = range_expr;
@@ -28093,7 +28094,7 @@ cp_parser_oacc_data_clause_deviceptr (cp_parser *parser, tree list)
 	 c_parser_omp_var_list_parens should construct a list of
 	 locations to go along with the var list.  */
 
-      if (TREE_CODE (v) != VAR_DECL)
+      if (!VAR_P (v))
 	error_at (loc, "%qD is not a variable", v);
       else if (TREE_TYPE (v) == error_mark_node)
 	;

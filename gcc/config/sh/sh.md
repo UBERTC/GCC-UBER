@@ -11344,6 +11344,8 @@ label:
     LABEL_NUSES (operands[2])++;
 })
 
+;; This may be replaced with casesi_worker_2 in sh_reorg for PIC.
+;; The insn length is set to 8 for that case.
 (define_insn "casesi_worker_1"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
 	(unspec:SI [(reg:SI R0_REG)
@@ -11375,7 +11377,9 @@ label:
       gcc_unreachable ();
     }
 }
-  [(set_attr "length" "4")])
+  [(set_attr_alternative "length"
+     [(if_then_else (match_test "flag_pic") (const_int 8) (const_int 4))
+      (if_then_else (match_test "flag_pic") (const_int 8) (const_int 4))])])
 
 (define_insn "casesi_worker_2"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
@@ -14733,8 +14737,19 @@ label:
   if (REGNO (operands[1]) == REGNO (operands[2]))
       operands[2] = gen_rtx_REG (SImode, REGNO (operands[0]));
 
-  sh_check_add_incdec_notes (emit_insn (gen_rtx_SET (operands[2],
-						     operands[3])));
+  // We don't know what the new set insn will be in detail.  Just make sure
+  // that it still can be recognized and the constraints are satisfied.
+  rtx_insn* i = emit_insn (gen_rtx_SET (operands[2], operands[3]));
+						     
+  recog_data_d prev_recog_data = recog_data;
+  bool i_invalid = insn_invalid_p (i, false); 
+  recog_data = prev_recog_data;
+  
+  if (i_invalid)
+    FAIL;
+    
+  sh_check_add_incdec_notes (i);
+
   emit_insn (gen_tstsi_t (operands[2],
 			  gen_rtx_REG (SImode, (REGNO (operands[1])))));
 })
@@ -14761,8 +14776,19 @@ label:
        || REGNO (operands[2]) == REGNO (operands[5]))"
   [(const_int 0)]
 {
-  sh_check_add_incdec_notes (emit_insn (gen_rtx_SET (operands[2],
-						     operands[3])));
+  // We don't know what the new set insn will be in detail.  Just make sure
+  // that it still can be recognized and the constraints are satisfied.
+  rtx_insn* i = emit_insn (gen_rtx_SET (operands[2], operands[3]));
+
+  recog_data_d prev_recog_data = recog_data;
+  bool i_invalid = insn_invalid_p (i, false); 
+  recog_data = prev_recog_data;
+  
+  if (i_invalid)
+    FAIL;
+    
+  sh_check_add_incdec_notes (i);
+  
   emit_insn (gen_tstsi_t (operands[2],
 			  gen_rtx_REG (SImode, (REGNO (operands[1])))));
 })

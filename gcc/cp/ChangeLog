@@ -1,3 +1,162 @@
+2015-07-01  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/66686
+	* pt.c (coerce_template_template_parm) [PARM_DECL]: Don't
+	return 0 if tsubst returns a dependent type.
+
+2015-06-30  Jason Merrill  <jason@redhat.com>
+
+	PR debug/66653
+	* decl2.c (is_late_template_attribute): True for tls_model.
+
+	PR debug/66653
+	* cp-tree.h (CP_DECL_THREAD_LOCAL_P): New.
+	(DECL_GNU_TLS_P): Use DECL_LANG_SPECIFIC field.
+	(SET_DECL_GNU_TLS_P): New.
+	* call.c (make_temporary_var_for_ref_to_temp): Use
+	CP_DECL_THREAD_LOCAL_P.
+	(set_up_extended_ref_temp): Likewise.
+	* decl.c (duplicate_decls, expand_static_init): Likewise.
+	(redeclaration_error_message, grokvardecl): Likewise.
+	(start_decl, register_dtor_fn, grokdeclarator): Likewise.
+	* decl2.c (get_guard, var_needs_tls_wrapper): Likewise.
+	(handle_tls_init): Likewise.
+	* pt.c (tsubst_decl, tsubst_copy_and_build): Likewise.
+	* semantics.c (finish_id_expression): Likewise.
+	(handle_omp_array_sections_1, finish_omp_clauses): Likewise.
+	(finish_omp_threadprivate): Likewise.
+	* tree.c (decl_storage_duration): Likewise.
+	* cp-gimplify.c (omp_var_to_track): Likewise.
+	(cp_genericize_r): Check that it matches DECL_THREAD_LOCAL_P.
+	* lex.c (retrofit_lang_decl): Return if DECL_LANG_SPECIFIC is
+	already set.
+
+2015-06-30  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	Implement N4197 - Adding u8 character literals
+	* parser.c (cp_parser_primary_expression()): Treat CPP_UTF8CHAR
+	and CPP_UTF8CHAR_USERDEF tokens;
+	(cp_parser_parenthesized_expression_list()): Treat CPP_UTF8CHAR token.
+
+2015-06-29  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65977
+	* decl.c (grokfndecl): Allow constexpr declarations of friend
+	template specializations.
+
+2015-06-29  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR fortran/66605
+	* decl.c (finish_function): Call do_warn_unused_parameter.
+
+2015-06-29  Marek Polacek  <polacek@redhat.com>
+
+	PR c/66322
+	* decl.c (struct cp_switch): Add OUTSIDE_RANGE_P.
+	(push_switch): Set OUTSIDE_RANGE_P.
+	(pop_switch): Update c_do_switch_warnings call.
+	(finish_case_label): Update c_add_case_label call.
+	* semantics.c (finish_switch_cond): Don't warn about -Wswitch-bool
+	here.
+
+2015-06-27  Marek Polacek  <polacek@redhat.com>
+
+	* call.c: Use VECTOR_TYPE_P.
+	* constexpr.c: Likewise.
+	* cvt.c: Likewise.
+	* decl.c: Likewise.
+	* decl2.c: Likewise.
+	* init.c: Likewise.
+	* semantics.c: Likewise.
+	* tree.c: Likewise.
+	* typeck.c: Likewise.
+	* typeck2.c: Likewise.
+
+2015-06-27  Marek Polacek  <polacek@redhat.com>
+
+	* call.c (set_up_extended_ref_temp): Use VAR_P.
+	* class.c: Use VAR_P throughout.
+	* constexpr.c (cxx_eval_constant_expression): Use VAR_P.
+	* cp-array-notation.c (make_triplet_val_inv): Likewise.
+	* decl.c: Use VAR_OR_FUNCTION_DECL_P or VAR_P
+	throughout.
+	* decl2.c: Likewise.
+	* error.c (dump_decl): Use VAR_P.
+	* mangle.c (decl_implicit_alias_p): Likewise.
+	* parser.c: Use VAR_P throughout.
+	* pt.c: Likewise.
+	* semantics.c: Likewise.
+	* vtable-class-hierarchy.c: Likewise.
+	* tree.c (handle_abi_tag_attribute): Use VAR_OR_FUNCTION_DECL_P.
+
+2015-06-27  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* pt.c (check_unstripped_args): Mark parameter as unused.
+
+2015-06-26  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66216
+	* class.c (finish_struct): Call fixup_attribute_variants.
+
+	PR c++/66684
+	* typeck2.c (merge_exception_specifiers): Allow different
+	noexcept-specifiers if we've had errors.
+
+	PR c++/66255
+	* pt.c (check_unstripped_args): Split out from...
+	(retrieve_specialization): ...here.  Allow typedefs in the type of
+	a non-type argument.
+
+	PR c++/66067
+	* mangle.c (write_nested_name): Limit TYPENAME_TYPE handling to
+	TYPE_DECLs.
+	* mangle.c (write_template_args): Handle 0 length TREE_VEC.
+
+	PR c++/66654
+	* typeck2.c (digest_init_r): Only expect reshaping if the class is
+	aggregate.
+
+2015-06-26  Marek Polacek  <polacek@redhat.com>
+
+	* cp-array-notation.c (expand_sec_reduce_builtin): Use INDIRECT_REF_P.
+	* cp-ubsan.c (cp_ubsan_check_member_access_r): Likewise.
+
+2015-06-25  Andrew MacLeod  <amacleod@redhat.com>
+
+	* call.c: Remove ipa-ref.h and plugin-api.h from include list.
+	* class.c: Likewise.
+	* cp-ubsan.c: Likewise.
+	* decl.c: Likewise.
+	* decl2.c: Likewise.
+	* lambda.c: Likewise.
+	* mangle.c: Likewise.
+	* method.c: Likewise.
+	* optimize.c: Likewise.
+	* parser.c: Likewise.
+	* semantics.c: Likewise.
+	* tree.c: Likewise.
+	* vtable-class-hierarchy.c: Likewise.
+
+2015-06-25  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* constexpr.c (constexpr_fundef_hasher): Inherit from ggc_ptr_hash
+	rather than ggc_hasher.
+	(constexpr_call_hasher): Likewise.
+	* cp-tree.h (cxx_int_tree_map_hasher, named_label_hasher): Likewise.
+	* decl.c (typename_hasher): Likewise.
+	* mangle.c (conv_type_hasher): Likewise.
+	* pt.c (spec_hasher): Likewise.
+	* tree.c (cplus_array_hasher, list_hasher): Likewise.
+	* typeck2.c (abstract_type_hasher): Likewise.
+
+2015-06-25  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* class.c (fixed_type_or_null_ref_ht): Inherit from nofree_ptr_hash
+	rather than pointer_hash.
+	(fixed_type_or_null): Use nofree_ptr_hash instead of pointer_hash.
+	* semantics.c (nrv_data): Likewise.
+	* tree.c (verify_stmt_tree_r, verify_stmt_tree): Likewise.
+
 2015-06-24  Jason Merrill  <jason@redhat.com>
 
 	PR c++/66647
