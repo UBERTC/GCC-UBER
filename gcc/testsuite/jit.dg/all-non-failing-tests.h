@@ -57,10 +57,24 @@
 #undef create_code
 #undef verify_code
 
+/* test-compound-assignment.c */
+#define create_code create_code_compound_assignment
+#define verify_code verify_code_compound_assignment
+#include "test-compound-assignment.c"
+#undef create_code
+#undef verify_code
+
 /* test-constants.c */
 #define create_code create_code_constants
 #define verify_code verify_code_constants
 #include "test-constants.c"
+#undef create_code
+#undef verify_code
+
+/* test-debug-strings.c */
+#define create_code create_code_debug_strings
+#define verify_code verify_code_debug_strings
+#include "test-debug-strings.c"
 #undef create_code
 #undef verify_code
 
@@ -212,9 +226,15 @@ const struct testcase testcases[] = {
   {"calling_function_ptr",
    create_code_calling_function_ptr,
    verify_code_calling_function_ptr},
+  {"compound_assignment",
+   create_code_compound_assignment,
+   verify_code_compound_assignment},
   {"constants",
    create_code_constants,
    verify_code_constants},
+  {"debug_strings",
+   create_code_debug_strings,
+   verify_code_debug_strings},
   {"dot_product",
    create_code_dot_product,
    verify_code_dot_product},

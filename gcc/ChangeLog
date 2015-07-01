@@ -1,3 +1,91 @@
+2015-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66702
+	* omp-low.c (simd_clone_adjust): Handle addressable linear
+	or uniform parameters or non-gimple type uniform parameters.
+
+2015-06-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/sparc/leon.md (leon_load): Enable for all LEON variants if
+	-mfix-ut699 is not specified.
+	(leon3_load): Rename into...
+	(ut699_load): ...this.  Enable for all LEON variants if -mfix-ut699
+	is specified.
+
+2015-06-30  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	Backport from mainline:
+	2015-06-02  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	PR target/66136
+	* config/aarch64/geniterators.sh: Rewrite in awk.
+
+2015-06-27  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline r224672.
+	2015-06-19  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/vax/vax.md: Adjust sign/zero extend patterns to
+	handle SUBREGs in operands[1].
+
+2015-06-27  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-06-25  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/65979
+	PR target/66611
+	* config/sh/sh.md (tstsi_t peephole2): Use insn_invalid_p to check if
+	the replacement insn will work.
+
+2015-06-26  Martin Jambor  <mjambor@suse.cz>
+
+	PR debug/66301
+	* tree-ssa-pre.c (before_dom_children): Check that dump_file is not
+	NULL instead of calling dump_enabled_p.
+
+2015-06-26  Uros Bizjak  <ubizjak@gmail.com>
+	    Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/66412
+	* config/i386/i386.md (various splitters): Use shallow_copy_rtx
+	before doing PUT_MODE or PUT_CODE on operands to avoid
+	in-place RTX modification.
+
+2015-06-25  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2015-05-18  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/freebsd-spec.h (FBSD_STARTFILE_SPEC): Add the bits to build
+	pie executables.
+	(FBSD_ENDFILE_SPEC): Likewise.
+	* config/i386/freebsd.h (STARTFILE_SPEC): Remove and use the one from
+	config/freebsd-spec.h.
+	(ENDFILE_SPEC): Likewise.
+
+2015-06-25  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	Backport from mainline
+	2015-06-24  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/66563
+	* config/sh/sh.md (GOTaddr2picreg): Add a new operand for
+	an additional element of the unspec vector.  Modify indices
+	of operands.
+	(builtin_setjmp_receiver): Pass const0_rtx to gen_GOTaddr2picreg.
+	* config/sh/sh.c (prepare_move_operands): Pass incremented
+	const_int to gen_GOTaddr2picreg.
+	(sh_expand_prologue): Pass const0_rtx to gen_GOTaddr2picreg.
+
+2015-06-25  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	Backport from mainline.
+	2015-06-24  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+	PR target/63408
+	* config/arm/arm.c (vfp3_const_double_for_fract_bits): Disable
+	for negative numbers.
+
 2015-06-24  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
 
 	PR target/66200

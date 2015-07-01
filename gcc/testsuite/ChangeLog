@@ -1,3 +1,84 @@
+2015-06-29  David Malcolm  <dmalcolm@redhat.com>
+
+	Backport from mainline r224565
+	2015-06-17  David Malcolm  <dmalcolm@redhat.com>
+
+	* jit.dg/test-error-accessing-field-in-other-struct.c: Rename to...
+	* jit.dg/test-error-gcc_jit_rvalue_dereference_field-wrong-struct.c:
+	...this.
+	* jit.dg/test-error-gcc_jit_lvalue_access_field-wrong-struct.c:
+	New testcase.
+	* jit.dg/test-error-gcc_jit_rvalue_access_field-wrong-struct.c:
+	New testcase.
+
+2015-06-29  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline r224832.
+	2015-06-19  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/vax/bswapdi-1.c: New.
+
+2015-06-29  David Malcolm  <dmalcolm@redhat.com>
+
+	Backport from mainline r224536
+	2015-06-16  David Malcolm  <dmalcolm@redhat.com>
+
+	* jit.dg/all-non-failing-tests.h: Add test-compound-assignment.c.
+	* jit.dg/test-compound-assignment.c: New testcase.
+
+2015-06-29  David Malcolm  <dmalcolm@redhat.com>
+
+	Backport from mainline r224531
+	2015-06-16  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/66539
+	* jit.dg/all-non-failing-tests.h: Add test-debug-strings.c.
+	* jit.dg/test-debug-strings.c: New test case.
+	* jit.dg/test-quadratic.c (make_calc_discriminant): Verify that
+	the discriminant has a sane debug string.
+
+2015-06-29  David Malcolm  <dmalcolm@redhat.com>
+
+	Backport from mainline
+	2015-05-06  David Malcolm  <dmalcolm@redhat.com>
+
+	* jit.dg/harness.h (set_options): Wrap with
+	#ifndef TEST_ESCHEWS_SET_OPTIONS.
+	* jit.dg/jit.exp (is_testcase_meant_to_generate_a_reproducer):
+	Special-case test-benchmark.c as a negative.
+	* jit.dg/test-benchmark.c: New file.
+
+2015-06-29  Adam Butcher  <adam@jessamine.co.uk>
+
+	PR c++/65750
+	* g++.dg/cpp0x/trailing11.C: New.
+
+2015-06-27  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	PR testsuite/66667
+	* g++.dg/diagnostic/inhibit-warn-2.C: Fix test directives to match
+	diagnostic messages of GCC 5.x.
+
+2015-06-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66412
+	* gcc.target/i386/pr66412.c: New test.
+
+2015-06-25  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2015-05-12  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* lib/target-supports.exp (check_effective_target_pie): Add *-*-freebsd*
+	to the family of pie capable targets.
+
+2015-06-25  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	Backport from mainline.
+	2015-06-24  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+	PR target/63408
+	* gcc.target/arm/pr63408.c: New test.
+
 2015-06-24  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
 
 	PR target/66200
