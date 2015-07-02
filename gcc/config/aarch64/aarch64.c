@@ -10573,6 +10573,9 @@ aarch_macro_fusion_pair_p (rtx prev, rtx curr)
 #undef TARGET_FIXED_CONDITION_CODE_REGS
 #define TARGET_FIXED_CONDITION_CODE_REGS aarch64_fixed_condition_code_regs
 
+#undef TARGET_RELAXED_ORDERING
+#define TARGET_RELAXED_ORDERING true
+
 #undef TARGET_FLAGS_REGNUM
 #define TARGET_FLAGS_REGNUM CC_REGNUM
 

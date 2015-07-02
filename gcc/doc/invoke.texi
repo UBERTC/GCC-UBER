@@ -8,7 +8,7 @@
 @c man end
 
 @c man begin COPYRIGHT
-Copyright @copyright{} 1988-2014 Free Software Foundation, Inc.
+Copyright @copyright{} 1988-2015 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -480,6 +480,7 @@ Objective-C and Objective-C++ Dialects}.
 -momit-leaf-frame-pointer  -mno-omit-leaf-frame-pointer @gol
 -mtls-dialect=desc  -mtls-dialect=traditional @gol
 -mfix-cortex-a53-835769  -mno-fix-cortex-a53-835769 @gol
+-mfix-cortex-a53-843419  -mno-fix-cortex-a53-843419 @gol
 -march=@var{name}  -mcpu=@var{name}  -mtune=@var{name}}
 
 @emph{Adapteva Epiphany Options}
@@ -11449,6 +11450,14 @@ Enable or disable the workaround for the ARM Cortex-A53 erratum number 835769.
 This will involve inserting a NOP instruction between memory instructions and
 64-bit integer multiply-accumulate instructions.
 
+@item -mfix-cortex-a53-843419
+@itemx -mno-fix-cortex-a53-843419
+@opindex mfix-cortex-a53-843419
+@opindex mno-fix-cortex-a53-843419
+Enable or disable the workaround for the ARM Cortex-A53 erratum number 843419.
+This erratum workaround is made at link time and this will only pass the
+corresponding flag to the linker.
+
 @item -march=@var{name}
 @opindex march
 Specify the name of the target architecture, optionally suffixed by one or
@@ -20275,13 +20284,13 @@ The default is to not print debug information.
 
 @item -march=@var{cpu-type}
 @opindex march
-Generate code that runs on @var{cpu-type}, which is the name of a system
-representing a certain processor type.  Possible values for
+Generate code that runs on @var{cpu-type}, which is the name of a
+system representing a certain processor type.  Possible values for
 @var{cpu-type} are @samp{g5}, @samp{g6}, @samp{z900}, @samp{z990},
-@samp{z9-109}, @samp{z9-ec} and @samp{z10}.
-When generating code using the instructions available on z/Architecture,
-the default is @option{-march=z900}.  Otherwise, the default is
-@option{-march=g5}.
+@samp{z9-109}, @samp{z9-ec}, @samp{z10}, @samp{z196}, and
+@samp{zEC12}.  When generating code using the instructions available
+on z/Architecture, the default is @option{-march=z900}.  Otherwise,
+the default is @option{-march=g5}.
 
 @item -mtune=@var{cpu-type}
 @opindex mtune

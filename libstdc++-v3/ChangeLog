@@ -1,3 +1,117 @@
+2015-06-26  Release Manager
+
+	* GCC 4.9.3 released.
+
+2015-06-16  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	PR target/66200
+	* configure.host (host_cpu): Add aarch64 case.
+	* config/cpu/aarch64/atomic_word.h: New file.
+
+2015-06-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2015-01-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/64650
+	* include/experimental/optional (bad_optional_access): Add default
+	constructor.
+	* testsuite/experimental/optional/requirements.cc: Test for default
+	constructor.
+
+2015-06-08  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backported from mainline
+	2015-06-01  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/lib/libstdc++.exp (libstdc++_init): Unset LANGUAGE
+	environment variable.
+
+	PR libstdc++/66354
+	* include/bits/stl_algobase.h (__fill_a): Check length before calling
+	memset.
+
+	PR libstdc++/66327
+	* include/bits/stl_algobase.h (__equal<true>::equal): Do not call
+	memcmp for empty ranges.
+	(__lexicographical_compare<true>::__lc): Likewise.
+
+	Backport from mainline
+	2015-04-13  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/evolution.xml: Document changes since 4.5 release.
+	* doc/html/*: Regenerate.
+
+2015-06-05  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/66359
+	Backport from mainline
+	2014-11-13  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/63775
+	* include/bits/regex_compiler.h (_Compiler<>::_M_expression_term,
+	_BracketMatcher<>::_M_make_range): Throw regex_erorr on invalid range
+	like [z-a]. Change _M_expression_term interface.
+	* include/bits/regex_compiler.tcc (
+	_Compiler<>::_M_insert_bracket_matcher,
+	_Compiler<>::_M_expression_term): Rewrite bracket expression parsing.
+	* testsuite/28_regex/algorithms/regex_match/cstring_bracket_01.cc:
+	Add testcases and move file out of extended.
+
+2015-06-04  Renlin Li  <renlin.li@arm.com>
+
+	Backported from mainline
+	2015-06-02  Renlin Li  <renlin.li@arm.com>
+
+	* testsuite/27_io/fpos/14775.cc: Add _GLIBCXX_HAVE_LIMIT_FSIZE check.
+
+2015-05-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/65352
+	* include/profile/array (array::data): Use __array_traits::_S_ptr.
+	* include/debug/array (array::data): Likewise.
+	* include/std/array (__array_traits::_S_ptr): New function.
+	(array::data): Use _S_ptr to avoid creating invalid reference.
+	* testsuite/23_containers/array/tuple_interface/get_neg.cc: Adjust
+	dg-error line numbers.
+	* testsuite/23_containers/array/tuple_interface/tuple_element_neg.cc:
+	likewise.
+
+	Backport from mainline
+	2015-01-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/64658
+	* include/std/atomic (atomic_init): Define.
+	* testsuite/29_atomics/atomic/64658.cc: New.
+
+	Backport from mainline
+	2014-12-22  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/37522
+	* include/bits/basic_string.h (stod, stof, stoi, stol, stold, stoll,
+	stoul, stoull, to_string): Only use _GLIBCXX_HAVE_BROKEN_VSWPRINTF
+	to guard definition of to_wstring.
+
+2015-05-22  David Edelsohn  <dje.gcc@gmail.com>
+
+	Backport from mainline
+	2015-05-21  David Edelsohn  <dje.gcc@gmail.com>
+
+	PR target/66224
+	* config/cpu/powerpc/atomic_word.h (_GLIBCXX_READ_MEM_BARRIER):
+	Don't use isync. Use lwsync if available.
+
+2015-05-07  Renlin Li  <renlin.li@arm.com>
+
+	Backported from mainline
+	2015-04-22  Renlin Li  <renlin.li@arm.com>
+
+	* testsuite/lib/dg-options.exp (dg-require-thread-fence): New.
+	* testsuite/lib/libstdc++.exp (check_v3_target_thread_fence): New.
+	* testsuite/29_atomics/atomic_flag/clear/1.cc: Use it.
+	* testsuite/29_atomics/atomic_flag/test_and_set/explicit.cc: Likewise.
+	* testsuite/29_atomics/atomic_flag/test_and_set/implicit.cc: Likewise.
+
 2015-04-11  Jonathan Wakely  <jwakely@redhat.com>
 
 	* testsuite/30_threads/shared_lock/cons/5.cc: Remove
