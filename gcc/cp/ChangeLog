@@ -1,3 +1,33 @@
+2015-07-02  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66743
+	* pt.c (for_each_template_parm_r) [UNDERLYING_TYPE]: Use
+	TYPE_VALUES_RAW rather than TYPE_FIELDS.
+
+2015-07-02  Andrew Sutton  <andrew.n.sutton@gmail.com>
+
+	* pt.c (type_dependent_expression_p): Handle expressions
+	that refer to variable templates.
+
+2015-07-01  Jason Merrill  <jason@redhat.com>
+
+	* lex.c (init_reswords): s/CXX0X/CXX11/.
+	* parser.c (cp_lexer_get_preprocessor_token): Likewise.
+
+	* mangle.c (write_CV_qualifiers_for_type, write_nested_name):
+	Attribute mangling is now -fabi-version=10.
+
+	PR c++/65945
+	* decl.c (cxx_init_decl_processing): Set TYPE_ALIGN of nullptr_t.
+	* class.c (layout_nonempty_base_or_field): Warn if that affects
+	the offset of a field.
+
+2015-07-01  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/60365
+	* parser.c (cp_parser_check_std_attribute): New.
+	(cp_parser_std_attribute_list): Call it.
+
 2015-07-01  Patrick Palka  <ppalka@gcc.gnu.org>
 
 	PR c++/66686

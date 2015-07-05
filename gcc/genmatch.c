@@ -175,6 +175,62 @@ END_BUILTINS
 };
 #undef DEF_BUILTIN
 
+/* Return true if CODE represents a commutative tree code.  Otherwise
+   return false.  */
+bool
+commutative_tree_code (enum tree_code code)
+{
+  switch (code)
+    {
+    case PLUS_EXPR:
+    case MULT_EXPR:
+    case MULT_HIGHPART_EXPR:
+    case MIN_EXPR:
+    case MAX_EXPR:
+    case BIT_IOR_EXPR:
+    case BIT_XOR_EXPR:
+    case BIT_AND_EXPR:
+    case NE_EXPR:
+    case EQ_EXPR:
+    case UNORDERED_EXPR:
+    case ORDERED_EXPR:
+    case UNEQ_EXPR:
+    case LTGT_EXPR:
+    case TRUTH_AND_EXPR:
+    case TRUTH_XOR_EXPR:
+    case TRUTH_OR_EXPR:
+    case WIDEN_MULT_EXPR:
+    case VEC_WIDEN_MULT_HI_EXPR:
+    case VEC_WIDEN_MULT_LO_EXPR:
+    case VEC_WIDEN_MULT_EVEN_EXPR:
+    case VEC_WIDEN_MULT_ODD_EXPR:
+      return true;
+
+    default:
+      break;
+    }
+  return false;
+}
+
+/* Return true if CODE represents a ternary tree code for which the
+   first two operands are commutative.  Otherwise return false.  */
+bool
+commutative_ternary_tree_code (enum tree_code code)
+{
+  switch (code)
+    {
+    case WIDEN_MULT_PLUS_EXPR:
+    case WIDEN_MULT_MINUS_EXPR:
+    case DOT_PROD_EXPR:
+    case FMA_EXPR:
+      return true;
+
+    default:
+      break;
+    }
+  return false;
+}
+
 
 /* Base class for all identifiers the parser knows.  */
 
@@ -1740,6 +1796,10 @@ expr::gen_transform (FILE *f, const char *dest, bool gimple, int depth,
 
   if (gimple)
     {
+      if (*operation == CONVERT_EXPR)
+	fprintf (f, "  if (%s != TREE_TYPE (ops%d[0])\n"
+	    "      && !useless_type_conversion_p (%s, TREE_TYPE (ops%d[0])))\n"
+	    "  {\n", type, depth, type, depth);
       /* ???  Building a stmt can fail for various reasons here, seq being
          NULL or the stmt referencing SSA names occuring in abnormal PHIs.
 	 So if we fail here we should continue matching other patterns.  */
@@ -1752,9 +1812,15 @@ expr::gen_transform (FILE *f, const char *dest, bool gimple, int depth,
 	       ops.length (), type);
       fprintf (f, "  res = maybe_push_res_to_seq (tem_code, %s, tem_ops, seq);\n"
 	       "  if (!res) return false;\n", type);
+      if (*operation == CONVERT_EXPR)
+        fprintf (f, "  }\n"
+		 "  else\n"
+		 "    res = ops%d[0];\n", depth);
     }
   else
     {
+      if (*operation == CONVERT_EXPR)
+	fprintf (f, "  if (TREE_TYPE (ops%d[0]) != %s)\n", depth, type);
       if (operation->kind == id_base::CODE)
 	fprintf (f, "  res = fold_build%d_loc (loc, %s, %s",
 		 ops.length(), opr, type);
@@ -1764,6 +1830,9 @@ expr::gen_transform (FILE *f, const char *dest, bool gimple, int depth,
       for (unsigned i = 0; i < ops.length (); ++i)
 	fprintf (f, ", ops%d[%u]", depth, i);
       fprintf (f, ");\n");
+      if (*operation == CONVERT_EXPR)
+	fprintf (f, "  else\n"
+		 "    res = ops%d[0];\n", depth);
     }
   fprintf (f, "%s = res;\n", dest);
   fprintf (f, "}\n");
@@ -1982,6 +2051,25 @@ dt_operand::gen_gimple_expr (FILE *f)
       fprintf (f, "if ((%s = do_valueize (valueize, %s)))\n",
 	       child_opname, child_opname);
       fprintf (f, "{\n");
+    }
+  /* While the toplevel operands are canonicalized by the caller
+     after valueizing operands of sub-expressions we have to
+     re-canonicalize operand order.  */
+  if (operator_id *code = dyn_cast <operator_id *> (id))
+    {
+      /* ???  We can't canonicalize tcc_comparison operands here
+         because that requires changing the comparison code which
+	 we already matched...  */
+      if (commutative_tree_code (code->code)
+	  || commutative_ternary_tree_code (code->code))
+	{
+	  char child_opname0[20], child_opname1[20];
+	  gen_opname (child_opname0, 0);
+	  gen_opname (child_opname1, 1);
+	  fprintf (f, "if (tree_swap_operands_p (%s, %s, false))\n"
+		   "  std::swap (%s, %s);\n", child_opname0, child_opname1,
+		   child_opname0, child_opname1);
+	}
     }
 
   return n_ops;

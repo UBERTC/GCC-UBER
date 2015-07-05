@@ -1,3 +1,251 @@
+2015-07-04  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* config/nios2/nios2.c (save_reg, restore_reg): Use plus_constant.
+	Use rtx_insn * instead of rtx.
+	(nios2_emit_add_constant): Use rtx_insn * instead of rtx.
+	(nios2_expand_prologue, nios2_expand_epilogue): Likewise.
+	(nios2_call_tls_get_addr): Likewise.
+	(nios2_emit_expensive_div): Likewise.
+	(nios2_emit_move_sequence): Change return type to bool.
+	* config/nios2/nios2-protos.h (nios2_emit_move_sequence):
+	Change return type to bool.
+
+2015-07-04  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR target/66747
+	* config/mips/mips.c (mips_find_gp_ref): Handle instruction sequences.
+
+2015-07-04  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/66114
+	* config/pa/pa.md (indirect_jump): Use pmode_register_operand instead
+	of register_operand.  Remove constraint.
+
+2015-07-04  Marc Glisse  <marc.glisse@inria.fr>
+
+	* tree-cfg.c (verify_gimple_assign_ternary) <VEC_COND_EXPR>: Check
+	the first argument.
+
+2015-07-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* attribs.c (decl_attributes): Guard inform with the return value
+	of the preceding warning.
+
+2015-07-03  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* doc/invoke.texi (moverride): Move to correct section.
+
+2015-07-03  Richard Biener  <rguenther@suse.de>
+
+	* genmatch.c (commutative_tree_code, commutative_ternary_tree_code):
+	Copy from tree.c
+	(dt_operand::gen_gimple_expr): After valueizing operands
+	re-canonicalize operand order for commutative tree codes.
+
+2015-07-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/66746.
+	* config/i386/ia32intrin.h (__crc32b): Don't define if __iamcu__
+	is defined.
+	(__crc32w): Likewise.
+	(__crc32d): Likewise.
+	(__rdpmc): Likewise.
+	(__rdtscp): Likewise.
+	(_rdpmc): Likewise.
+	(_rdtscp): Likewise.
+	* config/i386/x86intrin.h: Only include ia32intrin.h if __iamcu__
+	is defined.
+
+2015-07-03  Richard Biener  <rguenther@suse.de>
+
+	* fold-const.c (fold_mathfn_compare): Remove.
+	(fold_inf_compare): Likewise.
+	(fold_comparison): Move floating point comparison simplifications...
+	* match.pd: ... to patterns here.  Introduce simple_comparisons
+	operator list and use it for patterns formerly in fold_comparison.
+
+2015-07-03  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	PR tree-optimization/66119
+	* toplev.c (process_options): Don't set up default values for
+	the sra_max_scalarization_size_{speed,size} parameters.
+	* tree-sra (analyze_all_variable_accesses): If no values
+	have been set for the sra_max_scalarization_size_{speed,size}
+	parameters, call get_move_ratio to get target defaults.
+
+2015-07-03  Richard Biener  <rguenther@suse.de>
+
+	* fold-const.c (fold_binary_loc): Move (T)ptr & CST folding...
+	* match.pd: ... here.
+
+2015-07-03  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	PR target/37072
+	* doc/invoke.texi (i386 and x86-64 Options): -mno-fancy-math-387
+	is not actually the default on FreeBSD.
+
+2015-07-02  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000-builtin.def (CMPGE_16QI): New built-in
+	definition.
+	(CMPGE_8HI): Likewise.
+	(CMPGE_4SI): Likewise.
+	(CMPGE_2DI): Likewise.
+	(CMPGE_U16QI): Likewise.
+	(CMPGE_U8HI): Likewise.
+	(CMPGE_U4SI): Likewise.
+	(CMPGE_U2DI): Likewise.
+	(CMPLE_16QI): Likewise.
+	(CMPLE_8HI): Likewise.
+	(CMPLE_4SI): Likewise.
+	(CMPLE_2DI): Likewise.
+	(CMPLE_U16QI): Likewise.
+	(CMPLE_U8HI): Likewise.
+	(CMPLE_U4SI): Likewise.
+	(CMPLE_U2DI): Likewise.
+	* config/rs6000/rs6000-c.c (altivec_overloaded_builtins): Add
+	overloads for ALTIVEC_BUILTIN_VEC_CMPGE and
+	ALTIVEC_BUILTIN_VEC_CMPLE.
+	* config/rs6000/vector.md (vector_ge<mode>): Restrict to
+	floating-point vector modes.
+	(vector_nlt<mode>): New define_expand.
+	(vector_nltu<mode>): Likewise.
+	(vector_ngt<mode>): Likewise.
+	(vector_ngtu<mode>): Likewise.
+
+2015-07-02  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/66706
+	* combine.c (make_compound_operation): If an AND of SUBREG of
+	LSHIFTRT does not simplify, see if just the AND of SUBREG does.
+
+2015-07-02  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* tree-pass.h (make_pass_ch_vect): New.
+	* passes.def: Add pass_ch_vect just before pass_if_conversion.
+
+	* tree-ssa-loop-ch.c (ch_base, pass_ch_vect, pass_data_ch_vect,
+	pass_ch::process_loop_p, pass_ch_vect::process_loop_p,
+	make_pass_ch_vect): New.
+	(pass_ch): Extend ch_base.
+
+	(pass_ch::execute): Move all but loop_optimizer_init/finalize to...
+	(ch_base::copy_headers): ...here.
+
+2015-07-02  Richard Biener  <rguenther@suse.de>
+
+	* builtins.c (get_pointer_alignment_1): Handle POINTER_PLUS_EXPR.
+	* fold-const.c (get_pointer_modulus_and_residue): Remove.
+	(fold_binary_loc): Implement (T)ptr & CST in terms of
+	get_pointer_alignment_1.
+	* tree-vect-loop-manip.c (vect_gen_niters_for_prolog_loop):
+	Make sure to build the alignment test on a SSA name without
+	final alignment info valid only after the prologue.
+
+2015-07-02  Hans-Peter Nilsson  <hp@axis.com>
+
+	* config/cris/cris.md ("epilogue"): Remove condition.
+	("prologue"): Ditto.
+
+2015-07-02  Richard Biener  <rguenther@suse.de>
+
+	* tree-ssa-dom.c (build_and_record_new_cond): Add optional
+	parameter to record a condition that is false.
+	(record_conditions): When recording an extra NE_EXPR that is
+	true also record a EQ_EXPR that is false.
+
+2015-07-02  Bin Cheng  <bin.cheng@arm.com>
+
+	* tree-ssa-loop-ivopts.c (struct ivopts_data): New field iv_obstack.
+	(tree_ssa_iv_optimize_init): Initialize iv_obstack.
+	(alloc_iv): New parameter.  Allocate struct iv using obstack_alloc.
+	(set_iv, find_interesting_uses_address, add_candidate_1): New
+	argument to alloc_iv.
+	(find_interesting_uses_op, find_interesting_uses_cond): Don't
+	duplicate struct iv.
+	(free_loop_data): Don't free struct iv explicitly.
+	(tree_ssa_iv_optimize_finalize): Free iv_obstack.
+
+2015-07-01  DJ Delorie  <dj@redhat.com>
+
+	* config/s390/tpf.h (LIBSTDCXX): Change to CPP1.
+	(LIB_SPEC): Add.
+	(SUPPORTS_DISCRIMINATOR): Define.
+
+2015-07-01  Richard Sandiford  <richard.sandiford@arm.com>
+
+	PR bootstrap/66685
+	* rtl.c (classify_insn): Only return JUMP_INSN for parallel returns if
+	there are no CALLs in the same pattern.
+
+2015-07-01  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR rtl-optimization/61047
+	* rtlanal.c (get_initial_register_offset): New function.
+	(rtx_addr_can_trap_p_1): Check offsets of stack references.
+
+2015-07-01  Richard Biener  <rguenther@suse.de>
+
+	* fold-const.c (fold_comparison): Move X - Y CMP 0 -> X CMP Y,
+	X * C1 CMP 0 -> X CMP 0, X CMP X, ~X CMP ~Y -> Y CMP X and
+	~X CMP C -> X CMP' ~C to ...
+	* match.pd: ... patterns here.
+
+2015-07-01  Nick Clifton  <nickc@redhat.com>
+
+	* config/msp430/msp430.md (zero_extendhipsi2): Use MOVX.A to store
+	a 16-bit value into a 20-bit memory slot.
+
+2015-07-01  Jiong Wang  <jiong.wang@arm.com>
+
+	* doc/sourcebuild.texi (AArch64-specific attributes): Document
+	"aarch64_tiny", "aarch64_small", "aarch64_large",
+	"aarch64_little_endian", "aarch64_big_endian".
+
+2015-07-01  Jiong Wang  <jiong.wang@arm.com>
+
+	* doc/sourcebuild.texi (AArch64-specific attributes): New subsection.
+	Document "aarch64_small_fpic".
+
+2015-07-01  Jiong Wang  <jiong.wang@arm.com>
+
+	* configure.ac: Add check for aarch64 assembler -fpic relocation
+	modifier support.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+	* config/aarch64/aarch64.c (initialize_aarch64_code_model): Fall back
+	to -fPIC if not support of -fpic relocation modifier in assembler.
+
+2015-07-01  Richard Sandiford  <richard.sandiford@arm.com>
+
+	PR bootstrap/66685
+	* rtl.c (classify_insn): Handle returns in PARALLELs.
+
+2015-07-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR middle-end/66633
+	* tree-nested.c (convert_nonlocal_omp_clauses): Initialize need_chain
+	to true if the function is nested and if not optimizing.
+	(convert_local_omp_clauses): Initialize need_frame to true if the
+	function contains nested functions and if not optimizing.
+
+2015-07-01  Richard Biener  <rguenther@suse.de>
+
+	* fold-const.c (fold_binary_loc): Move ~X ^ X -> -1 and
+	(X & Y) ^ Y -> ~X & Y transforms to ...
+	* match.pd: ... here.
+
+2015-07-01  Richard Biener <rguenther@suse.de>
+
+	* genmatch.c (expr::gen_transform): Shortcut re-simplifying
+	of converts to avoid uninteresting noise from the conversion
+	simplifying patterns.
+
+2015-06-30  Sandra Loosemore <sandra@codesourcery.com>
+
+	* config/c6x/c6x.c (try_rename_operands): Do not depend on
+	gcc_assert evaluating its argument for side-effect.
+
 2015-06-30  Kaz Kojima  <kkojima@gcc.gnu.org>
 
 	PR target/64833

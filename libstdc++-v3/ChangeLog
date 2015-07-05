@@ -1,3 +1,80 @@
+2015-07-03  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/status_cxx2017.xml: Update status table.
+	* doc/html/manual/*: Regenerate.
+
+2015-07-03  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Implement std::experimental::fundamentals_v2::propagate_const.
+	* include/Makefile.am: Add propagate_const.
+	* include/Makefile.in: Regenerate.
+	* include/experimental/propagate_const: New.
+	* testsuite/experimental/propagate_const/assignment/copy.cc: Likewise.
+	* testsuite/experimental/propagate_const/assignment/move.cc: Likewise.
+	* testsuite/experimental/propagate_const/assignment/move_neg.cc:
+	Likewise.
+	* testsuite/experimental/propagate_const/cons/copy.cc: Likewise.
+	* testsuite/experimental/propagate_const/cons/default.cc: Likewise.
+	* testsuite/experimental/propagate_const/cons/move.cc: Likewise.
+	* testsuite/experimental/propagate_const/cons/move_neg.cc: Likewise.
+	* testsuite/experimental/propagate_const/hash/1.cc: Likewise.
+	* testsuite/experimental/propagate_const/observers/1.cc: Likewise.
+	* testsuite/experimental/propagate_const/relops/1.cc: Likewise.
+	* testsuite/experimental/propagate_const/requirements1.cc: Likewise.
+	* testsuite/experimental/propagate_const/requirements2.cc: Likewise.
+	* testsuite/experimental/propagate_const/requirements3.cc: Likewise.
+	* testsuite/experimental/propagate_const/requirements4.cc: Likewise.
+	* testsuite/experimental/propagate_const/requirements5.cc: Likewise.
+	* testsuite/experimental/propagate_const/swap/1.cc: Likewise.
+	* testsuite/experimental/propagate_const/typedefs.cc: Likewise.
+
+2015-07-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	* acinclude.m4 (GLIBCXX_DEFAULT_ABI): Change valid arguments for
+	--with-default-libstdcxx-abi
+	* configure: Regenerate.
+	* doc/xml/manual/configure.xml: Document valid arguments.
+
+2015-07-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	* libsupc++/guard.cc (__test_and_acquire): Use __p after __atomic_load
+	to avoid unused variable warning.
+	(__set_and_release): Use __p after __atomic_store to avoid unused
+	variable warning.
+
+2015-07-01  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/alloc_traits.h (__alloctr_rebind): Remove.
+	(__allocator_traits_base): New base class.
+	(__alloc_rebind): Reimplement in terms of detection idiom.
+	(allocator_traits): Derive from __allocator_traits_base. Reimplement
+	nested types in terms of detection idiom. Simplify SFINAE constraints
+	on overloaded static member functions.
+	* include/bits/hashtable.h (_Hashtable): Use __alloc_rebind instead
+	of __alloctr_rebind.
+	* testsuite/20_util/scoped_allocator/propagation.cc: Define rebind.
+	* testsuite/23_containers/unordered_set/instantiation_neg.cc: Adjust
+	dg-error line number.
+
+	* include/bits/ptr_traits.h (__ptrtr_elt_type, __ptrtr_diff_type,
+	__ptrtr_rebind, __ptrtr_not_void): Remove
+	(__get_first_arg, __replace_first_arg, __make_not_void): Define new
+	transformations.
+	(__detected_or_): New detection trait.
+	(pointer_traits): Use new traits.
+	* testsuite/20_util/pointer_traits/pointer_to.cc: Add rebind member.
+	* testsuite/20_util/pointer_traits/requirements/
+	explicit_instantiation.cc: Use valid arguments to pointer_traits.
+
+	* doc/xml/manual/status_cxx2017.xml: Update status table.
+	* include/experimental/type_traits (void_t, is_detected,
+	is_detected_v, detected_t, detected_or, detected_or_t,
+	is_detected_exact, is_detected_exact_v, is_detected_convertible,
+	is_detected_convertible_v): Define.
+	* include/std/type_traits (__detector, __detected_or, __detected_or_t,
+	__detected_or_t_): Define.
+	* testsuite/experimental/type_traits/detection.cc: New.
+
 2015-06-30  Jonathan Wakely  <jwakely@redhat.com>
 
 	* doc/Makefile.am (stamp-pdf-doxygen): Grep for LaTeX errors in log.
