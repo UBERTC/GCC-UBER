@@ -1,3 +1,388 @@
+2015-07-04  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/66114
+	* config/pa/pa.md (indirect_jump): Use pmode_register_operand instead
+	of register_operand.  Remove constraint.
+
+2015-07-03  Jack Howarth  <howarth.at.gcc@gmail.com>
+
+	PR target/66509
+	* configure.ac: Fix filds and fildq test for 64-bit.
+	* configure: Regenerated.
+
+2015-07-03  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline.
+	2015-07-03  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	PR tree-optimization/66119
+	* toplev.c (process_options): Don't set up default values for
+	the sra_max_scalarization_size_{speed,size} parameters.
+	* tree-sra (analyze_all_variable_accesses): If no values
+	have been set for the sra_max_scalarization_size_{speed,size}
+	parameters, call get_move_ratio to get target defaults.
+
+2015-07-03  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	PR target/37072
+	* doc/invoke.texi (i386 and x86-64 Options): -mno-fancy-math-387
+	is not actually the default on FreeBSD.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vx-builtins.md
+	("vec_scatter_element<mode>_<non_vec_int>")
+	("vec_scatter_element<V_HW_64:mode>_SI"): Replace gf mode
+	attribute with bhfgq.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtins.def: Fix vpopct instruction comments.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtin-types.def: Add flag to indicate the
+	options under which the function type is needed.
+	* config/s390/s390-builtins.def: Add flag to indicate the options
+	under which the builtin is enabled.
+	* config/s390/s390-builtins.h: Add flags parameter to macro
+	definitions.
+	(bflags_for_builtin): New function.
+	(flags_for_builtin): Renamed to ...
+	(opflags_for_builtin): ... this.
+	* config/s390/s390-c.c (s390_resolve_overloaded_builtin): Rename
+	flags_for_builtin to bflags_for_builtin and
+	flags_overloaded_builtin_var to opflags_overloaded_builtin_var.
+	* config/s390/s390.c: Add initialization of bflags_builtin and
+	opflags_builtin arrays.
+	Remove code for flags_builtin.
+	(s390_init_builtins): Only create builtin function types if one of
+	their flags is active.
+	Only create builtins if all of their flags are active.
+	(s390_expand_builtin): Rename flags_for_builtin to
+	opflags_for_builtin.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vecintrin.h: Remove internal builtins.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_secondary_reload): Fix check for
+	GENERAL_REGS register class.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_support_vector_misalignment): Call
+	default implementation for !TARGET_VX.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_legitimate_constant_p): Add
+	TARGET_VX check.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_vector_abi): New variable definition.
+	(s390_check_type_for_vector_abi): New function.
+	(TARGET_ASM_FILE_END): New macro definition.
+	(s390_asm_file_end): New function.
+	(s390_function_arg): Call s390_check_type_for_vector_abi.
+	(s390_gimplify_va_arg): Likewise.
+	* configure: Regenerate.
+	* configure.ac: Check for .gnu_attribute Binutils feature.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_vector_bool_type_p): New function.
+	(s390_invalid_binary_op): New function.
+	(TARGET_INVALID_BINARY_OP): Define macro.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config.gcc: Add vecintrin.h to extra_headers.  Add s390-c.o to
+	c_target_objs and cxx_target_objs.  Add t-s390 to tmake_file.
+	* config/s390/s390-builtin-types.def: New file.
+	* config/s390/s390-builtins.def: New file.
+	* config/s390/s390-builtins.h: New file.
+	* config/s390/s390-c.c: New file.
+	* config/s390/s390-modes.def: Add modes CCVEQANY, CCVH,
+	CCVHANY, CCVHU, CCVHUANY, CCVFHANY, CCVFHEANY.
+	* config/s390/s390-protos.h (s390_expand_vec_compare_cc)
+	(s390_cpu_cpp_builtins, s390_register_target_pragmas): Add
+	prototypes.
+	* config/s390/s390.c (s390-builtins.h, s390-builtins.def):
+	Include.
+	(flags_builtin, flags_overloaded_builtin_var, s390_builtin_types)
+	(s390_builtin_fn_types, s390_builtin_decls, code_for_builtin): New
+	variable definitions.
+	(s390_const_operand_ok): New function.
+	(s390_expand_builtin): Rewrite.
+	(s390_init_builtins): New function.
+	(s390_handle_vectorbool_attribute): New function.
+	(s390_attribute_table): Add s390_vector_bool attribute.
+	(s390_match_ccmode_set): Handle new cc modes CCVH, CCVHU.
+	(s390_branch_condition_mask): Generate masks for new modes.
+	(s390_expand_vec_compare_cc): New function.
+	(s390_mangle_type): Add mangling for vector bool types.
+	(enum s390_builtin): Remove.
+	(s390_atomic_assign_expand_fenv): Rename constants for sfpc and
+	efpc builtins.
+	* config/s390/s390.h (TARGET_CPU_CPP_BUILTINS): Call
+	s390_cpu_cpp_builtins.
+	(REGISTER_TARGET_PRAGMAS): New macro.
+	* config/s390/s390.md: Define more UNSPEC_VEC_* constants.
+	(insn_cmp mode attribute): Add new CC modes.
+	(s390_sfpc, s390_efpc): Rename patterns to sfpc and efpc.
+	(lcbb): New pattern definition.
+	* config/s390/s390intrin.h: Include vecintrin.h.
+	* config/s390/t-s390: New file.
+	* config/s390/vecintrin.h: New file.
+	* config/s390/vector.md: Include vx-builtins.md.
+	* config/s390/vx-builtins.md: New file.S/390 zvector builtin
+	support.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-modes.def: Add new modes CCVEQ, CCVFH, and
+	CCVFHE.
+	* config/s390/s390.c (s390_match_ccmode_set): Handle new modes.
+	(s390_select_ccmode): Likewise.
+	(s390_canonicalize_comparison): Swap operands if necessary.
+	(s390_expand_vec_compare_scalar): Expand DFmode compare using
+	single element vector instructions.
+	(s390_emit_compare): Call s390_expand_vec_compare_scalar.
+	(s390_branch_condition_mask): Generate CC masks for the new modes.
+	* config/s390/s390.md (v0, vf, vd): New mode attributes.
+	(VFCMP, asm_fcmp, insn_cmp): New mode iterator and attributes.
+	(*vec_cmp<insn_cmp>df_cconly, *fixuns_truncdfdi2_z13)
+	(*fix_trunc<BFP:mode><GPR:mode>2_bfp, *floatunsdidf2_z13)
+	(*floatuns<GPR:mode><FP:mode>2, *extendsfdf2_z13)
+	(*extend<DSF:mode><BFP:mode>2): New insn definition.
+	(fix_trunc<BFP:mode><GPR:mode>2_bfp, loatuns<GPR:mode><FP:mode>2)
+	(extend<DSF:mode><BFP:mode>2): Turn into expander.
+	(floatdi<mode>2, truncdfsf2, add<mode>3, sub<mode>3, mul<mode>3)
+	(div<mode>3, *neg<mode>2, *abs<mode>2, *negabs<mode>2)
+	(sqrt<mode>2): Add vector instruction.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/constraints.md (j00, jm1, jxx, jyy, v): New
+	constraints.
+	* config/s390/predicates.md (const0_operand, constm1_operand)
+	(constable_operand): Accept vector operands.
+	* config/s390/s390-modes.def: Add supported vector modes.
+	* config/s390/s390-protos.h (s390_cannot_change_mode_class)
+	(s390_function_arg_vector, s390_contiguous_bitmask_vector_p)
+	(s390_bytemask_vector_p, s390_expand_vec_strlen)
+	(s390_expand_vec_compare, s390_expand_vcond)
+	(s390_expand_vec_init): Add prototypes.
+	* config/s390/s390.c (VEC_ARG_NUM_REG): New macro.
+	(s390_vector_mode_supported_p): New function.
+	(s390_contiguous_bitmask_p): Mask out the irrelevant bits.
+	(s390_contiguous_bitmask_vector_p): New function.
+	(s390_bytemask_vector_p): New function.
+	(s390_split_ok_p): Vector regs don't work either.
+	(regclass_map): Add VEC_REGS.
+	(s390_legitimate_constant_p): Handle vector constants.
+	(s390_cannot_force_const_mem): Handle CONST_VECTOR.
+	(legitimate_reload_vector_constant_p): New function.
+	(s390_preferred_reload_class): Handle CONST_VECTOR.
+	(s390_reload_symref_address):  Likewise.
+	(s390_secondary_reload): Vector memory instructions only support
+	short displacements.  Rename reload*_nonoffmem* to reload*_la*.
+	(s390_emit_ccraw_jump): New function.
+	(s390_expand_vec_strlen): New function.
+	(s390_expand_vec_compare): New function.
+	(s390_expand_vcond): New function.
+	(s390_expand_vec_init): New function.
+	(s390_dwarf_frame_reg_mode): New function.
+	(print_operand): Handle addresses with 'O' and 'R' constraints.
+	(NR_C_MODES, constant_modes): Add vector modes.
+	(s390_output_pool_entry): Handle vector constants.
+	(s390_hard_regno_mode_ok): Handle vector registers.
+	(s390_class_max_nregs): Likewise.
+	(s390_cannot_change_mode_class): New function.
+	(s390_invalid_arg_for_unprototyped_fn): New function.
+	(s390_function_arg_vector): New function.
+	(s390_function_arg_float): Remove size variable.
+	(s390_pass_by_reference): Handle vector arguments.
+	(s390_function_arg_advance): Likewise.
+	(s390_function_arg): Likewise.
+	(s390_return_in_memory): Vector values are returned in a VR if
+	possible.
+	(s390_function_and_libcall_value): Handle vector arguments.
+	(s390_gimplify_va_arg): Likewise.
+	(s390_call_saved_register_used): Consider the arguments named.
+	(s390_conditional_register_usage): Disable v16-v31 for non-vec
+	targets.
+	(s390_preferred_simd_mode): New function.
+	(s390_support_vector_misalignment): New function.
+	(s390_vector_alignment): New function.
+	(TARGET_STRICT_ARGUMENT_NAMING, TARGET_DWARF_FRAME_REG_MODE)
+	(TARGET_VECTOR_MODE_SUPPORTED_P)
+	(TARGET_INVALID_ARG_FOR_UNPROTOTYPED_FN)
+	(TARGET_VECTORIZE_PREFERRED_SIMD_MODE)
+	(TARGET_VECTORIZE_SUPPORT_VECTOR_MISALIGNMENT)
+	(TARGET_VECTOR_ALIGNMENT): Define target macro.
+	* config/s390/s390.h (FUNCTION_ARG_PADDING): Define macro.
+	(FIRST_PSEUDO_REGISTER): Increase value.
+	(VECTOR_NOFP_REGNO_P, VECTOR_REGNO_P, VECTOR_NOFP_REG_P)
+	(VECTOR_REG_P): Define macros.
+	(FIXED_REGISTERS, CALL_USED_REGISTERS)
+	(CALL_REALLY_USED_REGISTERS, REG_ALLOC_ORDER)
+	(HARD_REGNO_CALL_PART_CLOBBERED, REG_CLASS_NAMES)
+	(FUNCTION_ARG_REGNO_P, FUNCTION_VALUE_REGNO_P, REGISTER_NAMES):
+	Add vector registers.
+	(CANNOT_CHANGE_MODE_CLASS): Call C function.
+	(enum reg_class): Add VEC_REGS, ADDR_VEC_REGS, GENERAL_VEC_REGS.
+	(SECONDARY_MEMORY_NEEDED): Allow SF<->SI mode moves without
+	memory.
+	(DBX_REGISTER_NUMBER, FIRST_VEC_ARG_REGNO, LAST_VEC_ARG_REGNO)
+	(SHORT_DISP_IN_RANGE, VECTOR_STORE_FLAG_VALUE): Define macro.
+	* config/s390/s390.md (UNSPEC_VEC_*): New constants.
+	(VR*_REGNUM): New constants.
+	(ALL): New mode iterator.
+	(INTALL): Remove mode iterator.
+	Include vector.md.
+	(movti): Implement TImode moves for VRs.
+	Disable TImode splitter for VR targets.
+	Implement splitting TImode GPR<->VR moves.
+	(reload*_tomem_z10, reload*_toreg_z10): Replace INTALL with ALL.
+	(reload<mode>_nonoffmem_in, reload<mode>_nonoffmem_out): Rename to
+	reload<mode>_la_in, reload<mode>_la_out.
+	(*movdi_64, *movsi_zarch, *movhi, *movqi, *mov<mode>_64dfp)
+	(*mov<mode>_64, *mov<mode>_31): Add vector instructions.
+	(TD/TF mode splitter): Enable for GPRs only (formerly !FP).
+	(mov<mode> SF SD): Prefer lder, lde for loading.
+	Add lrl and strl instructions.
+	Add vector instructions.
+	(strlen<mode>): Rename old strlen<mode> to strlen_srst<mode>.
+	Call s390_expand_vec_strlen on z13.
+	(*cc_to_int): Change predicate to nonimmediate_operand.
+	(addti3): Rename to *addti3.  New expander.
+	(subti3): Rename to *subti3.  New expander.
+	* config/s390/vector.md: New file.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* common/config/s390/s390-common.c (processor_flags_table): Add
+	z13.
+	* config.gcc: Add z13.
+	* config/s390/s390-opts.h (enum processor_type): Add
+	PROCESSOR_2964_Z13.
+	* config/s390/s390.c (s390_adjust_priority): Check for
+	PROCESSOR_2964_Z13.
+	(s390_reorg): Likewise.
+	(s390_sched_reorder): Likewise.
+	(s390_sched_variable_issue): Likewise.
+	(s390_loop_unroll_adjust): Likewise.
+	(s390_option_override): Likewise. Default to -mvx when available.
+	* config/s390/s390.h (enum processor_flags): Add PF_Z13 and PF_VX.
+	(TARGET_CPU_Z13, TARGET_CPU_VX, TARGET_Z13, TARGET_VX)
+	(TARGET_VX_ABI): Define macros.
+	macros.
+	(TARGET_DEFAULT): Add MASK_OPT_VX.
+	* config/s390/s390.md ("cpu" attribute): Add z13.
+	("cpu_facility" attribute): Add vec.
+	* config/s390/s390.opt (processor_type): Add z13.
+	(mvx): New options.
+	* doc/invoke.texi: Add z13 option for -march.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* optabs.c (expand_vec_perm): Don't re-use SEL as target operand.
+
+2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-05-19  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* recog.h: Increase MAX_RECOG_ALTERNATIVES.  Change type of
+	alternative_mask to uint64_t.
+
+2015-07-02  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-06-08  Jakub Jelinek  <jakub@redhat.com>
+
+	* genattrtab.c (insn_alternatives): Change type from int *
+	to uint64_t *.
+	(check_attr_test): Shift ((uint64_t) 1) instead of 1 up.
+	(get_attr_value): Change type of num_alt to uint64_t.
+	(compute_alternative_mask): Change return type from
+	int to uint64_t, shift ((uint64_t) 1) instead of 1 up.
+	(make_alternative_compare, mk_attr_alt): Change argument type
+	from int to uint64_t.
+	(simplify_test_exp): Change type of i from int to uint64_t.
+	Shift ((uint64_t) 1) instead of 1 up.
+	(main): Adjust oballocvec first argument from int to uint64_t.
+	Shift ((uint64_t) 1) instead of 1 up.
+
+2015-07-01  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	2015-06-30  Kaz Kojima  <kkojima@gcc.gnu.org>
+	PR target/64833
+	* config/sh/sh.md (casesi_worker_1): Set length to 8 when
+	flag_pic is set.
+
+2015-07-01  David Malcolm  <dmalcolm@redhat.com>
+
+	Backport from mainline r225207
+	2015-06-30  David Malcolm  <dmalcolm@redhat.com>
+
+	* typed-splay-tree.h: New file.
+
+2015-07-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR middle-end/66633
+	* tree-nested.c (convert_nonlocal_omp_clauses): Initialize need_chain
+	to true if the function is nested and if not optimizing.
+	(convert_local_omp_clauses): Initialize need_frame to true if the
+	function contains nested functions and if not optimizing.
+
 2015-06-30  Jakub Jelinek  <jakub@redhat.com>
 
 	PR middle-end/66702
