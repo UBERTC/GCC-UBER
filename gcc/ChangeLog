@@ -1,3 +1,107 @@
+2015-07-14  Matthias Klose  <doko@ubuntu.com>
+
+	PR target/66840
+	* config/rs6000/t-rs6000 (TM_H): Add rs6000-cpus.def.
+
+2015-07-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66820
+	* gimplify.c (maybe_fold_stmt): Don't fold in ORT_PARALLEL
+	or ORT_TASK contexts.
+	* omp-low.c (lower_omp): Call fold_stmt even if taskreg_nesting_level
+	is non-zero.
+
+	Backported from mainline
+	2015-07-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66633
+	* tree-nested.c (get_static_chain): Or in a flag into
+	info->static_chain_added.
+	(get_frame_field, get_nonlocal_debug_decl): Likewise.
+	(convert_nonlocal_omp_clauses, convert_local_omp_clauses): Revert
+	2015-07-01 changes.
+	(convert_tramp_reference_stmt): If a frame_decl or chain_decl
+	is needed newly inside of GIMPLE_OMP_{PARALLEL,TASK,TARGET} body,
+	add it to clauses.
+
+2015-07-10  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from mainline
+	2015-07-09  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/66782
+	* lra-int.h (struct lra_insn_recog_data): Add comment about
+	clobbered hard regs for arg_hard_regs.
+	* lra.c (lra_set_insn_recog_data): Add clobbered hard regs.
+	* lra-lives.c (process_bb_lives): Process clobbered hard regs.
+	Add condition for processing used hard regs.
+	* lra-constraints.c (update_ebb_live_info, inherit_in_ebb):
+	Process clobbered hard regs.
+
+2015-07-10  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-07-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66823
+	* tree-if-conv.c (memrefs_read_or_written_unconditionally): Fix
+	inverted predicate.
+
+	2015-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/43341
+	* toplev.c (compile_file): Reset maximum_field_alignment after parsing.
+
+	2015-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66794
+	* gimple-ssa-isolate-paths.c (gimple_ssa_isolate_erroneous_paths):
+	Free post-dominators.
+
+2015-07-10  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	Backport form mainline
+	2015-07-07  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/66780
+	* config/sh/sh.md (symGOT_load): Revert a part of 2015-03-03
+	change for target/65249.
+
+2015-07-09  Iain Sandoe  <iain@codesourcery.com>
+
+	PR target/66523
+	* config/darwin.c (darwin_mark_decl_preserved): Exclude 'L' label names from
+	preservation.
+
+2015-07-06  Alan Lawrence  <alan.lawrence@arm.com>
+
+	Backport from mainline r225465
+	2015-07-06  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR target/65956
+	* config/arm/arm.c (arm_needs_doubleword_align): Drop any outer
+	alignment attribute, exploring one level down for records and arrays.
+
+2015-07-06  Alan Lawrence  <alan.lawrence@arm.com>
+
+	Backport from mainline r225461
+	2015-07-06  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/arm/arm.md (movdi): Avoid odd-number ldrd/strd in ARM state.
+
+2015-07-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r224725
+	2015-06-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65914
+	* config/rs6000/predicates.md (altivec_register_operand): Permit
+	virtual stack registers.
+	(vsx_register_operand): Likewise.
+	(vfloat_operand): Likewise.
+	(vint_operand): Likewise.
+	(vlogical_operand): Likewise.
+
 2015-07-04  John David Anglin  <danglin@gcc.gnu.org>
 
 	PR target/66114

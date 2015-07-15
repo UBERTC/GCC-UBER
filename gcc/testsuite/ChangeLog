@@ -1,3 +1,67 @@
+2015-07-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66820
+	* gcc.dg/gomp/pr66820.c: New test.
+
+	Backported from mainline
+	2015-07-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66633
+	* gcc.dg/gomp/pr66633-1.c: New test.
+	* gcc.dg/gomp/pr66633-2.c: New test.
+	* gcc.dg/gomp/pr66633-3.c: New test.
+	* gcc.dg/gomp/pr66633-4.c: New test.
+
+	2015-07-08  Jakub Jelinek  <jakub@redhat.com>
+
+	* g++.dg/vect/vect.exp: Run also simd* tests.
+	* gcc.dg/vect/tree-vect.h (abort, exit): For C++ use extern "C".
+	(check_vect): Fix up get_cpuid call for C++.
+	* g++.dg/vect/simd-clone-1.cc: New test.
+
+2015-07-10  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-07-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66823
+	* gcc.dg/vect/pr61194.c: Remove -ftree-loop-if-convert-stores
+	which should not be necessary.  XFAIL.
+
+	2015-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66794
+	* gcc.dg/torture/pr66794.c: New testcase.
+
+2015-07-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65956
+	* gcc.c-torture/execute/pr65956.c: New test.
+
+2015-07-06  Alan Lawrence  <alan.lawrence@arm.com>
+
+	Backport from mainline r225465
+	2015-07-06  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/arm/aapcs/align1.c: New.
+	* gcc.target/arm/aapcs/align_rec1.c: New.
+	* gcc.target/arm/aapcs/align2.c: New.
+	* gcc.target/arm/aapcs/align_rec2.c: New.
+	* gcc.target/arm/aapcs/align3.c: New.
+	* gcc.target/arm/aapcs/align_rec3.c: New.
+	* gcc.target/arm/aapcs/align4.c: New.
+	* gcc.target/arm/aapcs/align_rec4.c: New.
+	* gcc.target/arm/aapcs/align_vararg1.c: New.
+	* gcc.target/arm/aapcs/align_vararg2.c: New.
+
+2015-07-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r224725
+	2015-06-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65914
+	* g++.dg/torture/pr65914.C:  New.
+
 2015-07-03  James Greenhalgh  <james.greenhalgh@arm.com>
 
 	Backport from mainline.
