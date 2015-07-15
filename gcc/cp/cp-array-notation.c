@@ -54,9 +54,8 @@
 #include "system.h"
 #include "coretypes.h"
 #include "alias.h"
-#include "symtab.h"
-#include "options.h"
 #include "tree.h"
+#include "options.h"
 #include "cp-tree.h"
 #include "c-family/c-common.h"
 #include "diagnostic.h"
@@ -197,7 +196,7 @@ replace_invariant_exprs (tree *node)
 
 /* Replace array notation's built-in function passed in AN_BUILTIN_FN with
    the appropriate loop and computation (all stored in variable LOOP of type
-   tree node).  The output of the function function is always a scalar and that
+   tree node).  The output of the function is always a scalar and that
    result is returned in *NEW_VAR.  *NEW_VAR is NULL_TREE if the function is
    __sec_reduce_mutating.  */
 

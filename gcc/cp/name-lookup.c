@@ -24,7 +24,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm.h"
 #include "flags.h"
 #include "alias.h"
-#include "symtab.h"
 #include "tree.h"
 #include "stringpool.h"
 #include "print-tree.h"
@@ -4159,7 +4158,7 @@ merge_functions (tree s1, tree s2)
 	  /* If the function from S2 is already in S1, there is no
 	     need to add it again.  For `extern "C"' functions, we
 	     might have two FUNCTION_DECLs for the same function, in
-	     different namespaces, but let's leave them in in case
+	     different namespaces, but let's leave them in case
 	     they have different default arguments.  */
 	  if (fn1 == fn2)
 	    break;

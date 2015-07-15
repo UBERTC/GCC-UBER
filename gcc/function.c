@@ -34,20 +34,19 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
+#include "rtl.h"
+#include "df.h"
 #include "rtl-error.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "varasm.h"
 #include "stringpool.h"
 #include "flags.h"
 #include "except.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "rtl.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -69,15 +68,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimple-expr.h"
 #include "gimplify.h"
 #include "tree-pass.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
-#include "df.h"
 #include "params.h"
 #include "bb-reorder.h"
 #include "shrink-wrap.h"
@@ -216,6 +210,7 @@ free_after_compilation (struct function *f)
   f->eh = NULL;
   f->machine = NULL;
   f->cfg = NULL;
+  f->curr_properties &= ~PROP_cfg;
 
   regno_reg_rtx = NULL;
 }
@@ -4874,38 +4869,24 @@ init_function_start (tree subr)
 /* Expand code to verify the stack_protect_guard.  This is invoked at
    the end of a function to be protected.  */
 
-#ifndef HAVE_stack_protect_test
-# define HAVE_stack_protect_test		0
-# define gen_stack_protect_test(x, y, z)	(gcc_unreachable (), NULL_RTX)
-#endif
-
 void
 stack_protect_epilogue (void)
 {
   tree guard_decl = targetm.stack_protect_guard ();
   rtx_code_label *label = gen_label_rtx ();
   rtx x, y, tmp;
+  rtx_insn *seq;
 
   x = expand_normal (crtl->stack_protect_guard);
   y = expand_normal (guard_decl);
 
   /* Allow the target to compare Y with X without leaking either into
      a register.  */
-  switch (HAVE_stack_protect_test != 0)
-    {
-    case 1:
-      tmp = gen_stack_protect_test (x, y, label);
-      if (tmp)
-	{
-	  emit_insn (tmp);
-	  break;
-	}
-      /* FALLTHRU */
-
-    default:
-      emit_cmp_and_jump_insns (x, y, EQ, NULL_RTX, ptr_mode, 1, label);
-      break;
-    }
+  if (targetm.have_stack_protect_test ()
+      && ((seq = targetm.gen_stack_protect_test (x, y, label)) != NULL_RTX))
+    emit_insn (seq);
+  else
+    emit_cmp_and_jump_insns (x, y, EQ, NULL_RTX, ptr_mode, 1, label);
 
   /* The noreturn predictor has been moved to the tree level.  The rtl-level
      predictors estimate this branch about 20%, which isn't enough to get
@@ -5848,19 +5829,13 @@ thread_prologue_and_epilogue_insns (void)
       && (lookup_attribute ("no_split_stack", DECL_ATTRIBUTES (cfun->decl))
 	  == NULL))
     {
-#ifndef HAVE_split_stack_prologue
-      gcc_unreachable ();
-#else
-      gcc_assert (HAVE_split_stack_prologue);
-
       start_sequence ();
-      emit_insn (gen_split_stack_prologue ());
+      emit_insn (targetm.gen_split_stack_prologue ());
       split_prologue_seq = get_insns ();
       end_sequence ();
 
       record_insns (split_prologue_seq, NULL, &prologue_insn_hash);
       set_insn_locations (split_prologue_seq, prologue_location);
-#endif
     }
 
   prologue_seq = NULL;

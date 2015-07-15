@@ -23,27 +23,21 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "diagnostic-core.h"
+#include "backend.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
+#include "diagnostic-core.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"		/* FIXME: Used by call_may_noreturn_p.  */
 #include "tm_p.h"
-#include "hard-reg-set.h"
 #include "regs.h"
-#include "function.h"
 #include "flags.h"
 #include "insn-config.h"
 #include "insn-attr.h"
 #include "except.h"
 #include "recog.h"
 #include "emit-rtl.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgbuild.h"
-#include "predict.h"
-#include "basic-block.h"
 #include "sched-int.h"
 #include "params.h"
 #include "alloc-pool.h"
@@ -2228,11 +2222,10 @@ init_insn_reg_pressure_info (rtx_insn *insn)
 
   note_stores (PATTERN (insn), mark_insn_reg_store, insn);
 
-#ifdef AUTO_INC_DEC
-  for (link = REG_NOTES (insn); link; link = XEXP (link, 1))
-    if (REG_NOTE_KIND (link) == REG_INC)
-      mark_insn_reg_store (XEXP (link, 0), NULL_RTX, insn);
-#endif
+  if (AUTO_INC_DEC)
+    for (link = REG_NOTES (insn); link; link = XEXP (link, 1))
+      if (REG_NOTE_KIND (link) == REG_INC)
+	mark_insn_reg_store (XEXP (link, 0), NULL_RTX, insn);
 
   for (link = REG_NOTES (insn); link; link = XEXP (link, 1))
     if (REG_NOTE_KIND (link) == REG_DEAD)

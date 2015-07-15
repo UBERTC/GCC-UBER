@@ -21,18 +21,19 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "rtl.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "gimple.h"
+#include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "varasm.h"
 #include "calls.h"
 #include "stringpool.h"
 #include "stor-layout.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "insn-flags.h"
@@ -40,8 +41,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "insn-attr.h"
 #include "flags.h"
 #include "recog.h"
-#include "obstack.h"
-#include "function.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -56,22 +55,14 @@ along with GCC; see the file COPYING3.  If not see
 #include "diagnostic-core.h"
 #include "target.h"
 #include "langhooks.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "predict.h"
-#include "basic-block.h"
-#include "df.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "gimplify.h"
 #include "opts.h"
 #include "dumpfile.h"
@@ -240,7 +231,7 @@ static void mep_move_ready_insn (rtx_insn **, int, rtx_insn *);
 static int mep_sched_reorder (FILE *, int, rtx_insn **, int *, int);
 static rtx_insn *mep_make_bundle (rtx, rtx_insn *);
 static void mep_bundle_insns (rtx_insn *);
-static bool mep_rtx_cost (rtx, int, int, int, int *, bool);
+static bool mep_rtx_cost (rtx, machine_mode, int, int, int *, bool);
 static int mep_address_cost (rtx, machine_mode, addr_space_t, bool);
 static void mep_setup_incoming_varargs (cumulative_args_t, machine_mode,
 					tree, int *, int);
@@ -7118,10 +7109,13 @@ mep_expand_binary_intrinsic (int ATTRIBUTE_UNUSED immediate,
 }
 
 static bool
-mep_rtx_cost (rtx x, int code, int outer_code ATTRIBUTE_UNUSED,
+mep_rtx_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
+	      int outer_code ATTRIBUTE_UNUSED,
 	      int opno ATTRIBUTE_UNUSED, int *total,
 	      bool ATTRIBUTE_UNUSED speed_t)
 {
+  int code = GET_CODE (x);
+
   switch (code)
     {
     case CONST_INT:

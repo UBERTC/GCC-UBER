@@ -25,26 +25,24 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
 #include "tree.h"
+#include "gimple.h"
+#include "rtl.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "varasm.h"
 #include "tree-inline.h"
 #include "realmpfr.h"	/* For GMP/MPFR/MPC versions, in print_version.  */
 #include "version.h"
-#include "rtl.h"
 #include "tm_p.h"
 #include "flags.h"
 #include "insn-attr.h"
 #include "insn-config.h"
 #include "insn-flags.h"
-#include "hard-reg-set.h"
 #include "recog.h"
 #include "output.h"
 #include "except.h"
-#include "function.h"
 #include "toplev.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -70,8 +68,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "langhooks.h"
 #include "cfgloop.h" /* for init_set_costs */
 #include "hosthooks.h"
-#include "predict.h"
-#include "basic-block.h"
 #include "cgraph.h"
 #include "opts.h"
 #include "opts-diagnostic.h"
@@ -80,16 +76,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "alloc-pool.h"
 #include "asan.h"
 #include "tsan.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "plugin.h"
 #include "context.h"
 #include "pass_manager.h"
 #include "auto-profile.h"
 #include "dwarf2out.h"
-#include "bitmap.h"
 #include "ipa-reference.h"
 #include "symbol-summary.h"
 #include "ipa-prop.h"
@@ -561,6 +553,11 @@ compile_file (void)
 
   if (flag_syntax_only || flag_wpa)
     return;
+ 
+  /* Reset maximum_field_alignment, it can be adjusted by #pragma pack
+     and this shouldn't influence any types built by the middle-end
+     from now on (like gcov_info_type).  */
+  maximum_field_alignment = initial_max_fld_align * BITS_PER_UNIT;
 
   ggc_protect_identifiers = false;
 
@@ -1571,19 +1568,16 @@ process_options (void)
 	}
     }
 
-#ifndef HAVE_prefetch
-  if (flag_prefetch_loop_arrays > 0)
+  if (flag_prefetch_loop_arrays > 0 && !targetm.code_for_prefetch)
     {
       warning (0, "-fprefetch-loop-arrays not supported for this target");
       flag_prefetch_loop_arrays = 0;
     }
-#else
-  if (flag_prefetch_loop_arrays > 0 && !HAVE_prefetch)
+  else if (flag_prefetch_loop_arrays > 0 && !targetm.have_prefetch ())
     {
       warning (0, "-fprefetch-loop-arrays not supported for this target (try -march switches)");
       flag_prefetch_loop_arrays = 0;
     }
-#endif
 
   /* This combination of options isn't handled for i386 targets and doesn't
      make much sense anyway, so don't allow it.  */

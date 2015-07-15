@@ -21,6 +21,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 
 #ifdef HAVE_isl
+/* Workaround for GMP 5.1.3 bug, see PR56019.  */
+#include <stddef.h>
+
 #include <isl/set.h>
 #include <isl/map.h>
 #include <isl/union_map.h>
@@ -28,36 +31,18 @@ along with GCC; see the file COPYING3.  If not see
 #include <isl/band.h>
 #include <isl/aff.h>
 #include <isl/options.h>
-#endif
 
 #include "system.h"
 #include "coretypes.h"
-#include "alias.h"
-#include "symtab.h"
-#include "options.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
-#include "fold-const.h"
-#include "predict.h"
-#include "tm.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
-#include "internal-fn.h"
-#include "gimple-expr.h"
 #include "gimple.h"
+#include "fold-const.h"
 #include "gimple-iterator.h"
 #include "tree-ssa-loop.h"
-#include "dumpfile.h"
 #include "cfgloop.h"
-#include "tree-chrec.h"
 #include "tree-data-ref.h"
-#include "tree-scalar-evolution.h"
-#include "sese.h"
-
-#ifdef HAVE_isl
 #include "graphite-poly.h"
 
 static isl_union_set *
@@ -627,4 +612,4 @@ optimize_isl (scop_p scop)
   return true;
 }
 
-#endif
+#endif  /* HAVE_isl */

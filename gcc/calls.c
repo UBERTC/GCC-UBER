@@ -20,24 +20,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "hard-reg-set.h"
+#include "backend.h"
+#include "predict.h"
+#include "tree.h"
+#include "gimple.h"
 #include "rtl.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "varasm.h"
 #include "stringpool.h"
 #include "attribs.h"
-#include "predict.h"
-#include "function.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "flags.h"
 #include "insn-config.h"
 #include "expmed.h"
@@ -55,8 +49,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "output.h"
 #include "tm_p.h"
 #include "timevar.h"
-#include "sbitmap.h"
-#include "bitmap.h"
 #include "langhooks.h"
 #include "target.h"
 #include "cgraph.h"
@@ -966,8 +958,9 @@ precompute_register_parameters (int num_actuals, struct arg_data *args,
 		     || (GET_CODE (args[i].value) == SUBREG
 			 && REG_P (SUBREG_REG (args[i].value)))))
 		 && args[i].mode != BLKmode
-		 && set_src_cost (args[i].value, optimize_insn_for_speed_p ())
-		    > COSTS_N_INSNS (1)
+		 && (set_src_cost (args[i].value, args[i].mode,
+				   optimize_insn_for_speed_p ())
+		     > COSTS_N_INSNS (1))
 		 && ((*reg_parm_seen
 		      && targetm.small_register_classes_for_mode_p (args[i].mode))
 		     || optimize))
@@ -1177,7 +1170,7 @@ store_unaligned_arguments_into_pseudos (struct arg_data *args, int num_actuals)
    and may be modified by this routine.
 
    OLD_PENDING_ADJ, MUST_PREALLOCATE and FLAGS are pointers to integer
-   flags which may may be modified by this routine.
+   flags which may be modified by this routine.
 
    MAY_TAILCALL is cleared if we encounter an invisible pass-by-reference
    that requires allocation of stack space.

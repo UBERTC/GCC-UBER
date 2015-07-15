@@ -20,28 +20,23 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
+#include "rtl.h"
+#include "df.h"
 #include "diagnostic-core.h"
 #include "toplev.h"
-#include "rtl.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"
 #include "tm_p.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "flags.h"
 #include "insn-config.h"
 #include "recog.h"
-#include "predict.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -55,9 +50,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "alloc-pool.h"
 #include "cselib.h"
 #include "intl.h"
-#include "obstack.h"
 #include "tree-pass.h"
-#include "df.h"
 #include "dbgcnt.h"
 #include "target.h"
 #include "cfgloop.h"
@@ -759,11 +752,12 @@ try_replace_reg (rtx from, rtx to, rtx_insn *insn)
   bool speed = optimize_bb_for_speed_p (BLOCK_FOR_INSN (insn));
   int old_cost = set ? set_rtx_cost (set, speed) : 0;
 
-  if ((note != 0
-      && REG_NOTE_KIND (note) == REG_EQUAL
-      && (GET_CODE (XEXP (note, 0)) == CONST
-	  || CONSTANT_P (XEXP (note, 0))))
-      || (set && CONSTANT_P (SET_SRC (set))))
+  if (!set
+      || CONSTANT_P (SET_SRC (set))
+      || (note != 0
+	  && REG_NOTE_KIND (note) == REG_EQUAL
+	  && (GET_CODE (XEXP (note, 0)) == CONST
+	      || CONSTANT_P (XEXP (note, 0)))))
     check_rtx_costs = false;
 
   /* Usually we substitute easy stuff, so we won't copy everything.
@@ -779,7 +773,7 @@ try_replace_reg (rtx from, rtx to, rtx_insn *insn)
 
   if (check_rtx_costs
       && CONSTANT_P (to)
-      && (set_rtx_cost (set, speed) > old_cost))
+      && set_rtx_cost (set, speed) > old_cost)
     {
       cancel_changes (0);
       return false;

@@ -22,24 +22,23 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "rtl.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "stor-layout.h"
 #include "varasm.h"
 #include "calls.h"
 #include "stringpool.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "output.h"
 #include "insn-attr.h"
 #include "flags.h"
 #include "recog.h"
-#include "function.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -53,16 +52,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm_p.h"
 #include "tm-constrs.h"
 #include "target.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "predict.h"
-#include "basic-block.h"
-#include "df.h"
 #include "builtins.h"
 
 /* This file should be included last.  */
@@ -1247,9 +1241,11 @@ h8300_shift_costs (rtx x)
 /* Worker function for TARGET_RTX_COSTS.  */
 
 static bool
-h8300_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
-		 int *total, bool speed)
+h8300_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED, int outer_code,
+		 int opno ATTRIBUTE_UNUSED, int *total, bool speed)
 {
+  int code = GET_CODE (x);
+
   if (TARGET_H8300SX && outer_code == MEM)
     {
       /* Estimate the number of execution states needed to calculate

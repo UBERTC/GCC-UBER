@@ -112,17 +112,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "rtl.h"
 #include "alias.h"
-#include "symtab.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stringpool.h"
 #include "stor-layout.h"
 #include "flags.h"
-#include "hard-reg-set.h"
-#include "function.h"
 #include "insn-codes.h"
 #include "optabs.h"
 #include "insn-config.h"
@@ -146,11 +144,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "target.h"
 #include "common/common-target.h"
 #include "langhooks.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
-#include "basic-block.h"
 #include "cgraph.h"
 #include "diagnostic.h"
 #include "tree-pretty-print.h"
@@ -959,16 +953,11 @@ emit_to_new_bb_before (rtx_insn *seq, rtx insn)
 void
 expand_dw2_landing_pad_for_region (eh_region region)
 {
-#ifdef HAVE_exception_receiver
-  if (HAVE_exception_receiver)
-    emit_insn (gen_exception_receiver ());
+  if (targetm.have_exception_receiver ())
+    emit_insn (targetm.gen_exception_receiver ());
+  else if (targetm.have_nonlocal_goto_receiver ())
+    emit_insn (targetm.gen_nonlocal_goto_receiver ());
   else
-#endif
-#ifdef HAVE_nonlocal_goto_receiver
-  if (HAVE_nonlocal_goto_receiver)
-    emit_insn (gen_nonlocal_goto_receiver ());
-  else
-#endif
     { /* Nothing */ }
 
   if (region->exc_ptr_reg)

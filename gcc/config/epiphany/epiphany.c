@@ -21,24 +21,23 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "varasm.h"
 #include "calls.h"
 #include "stringpool.h"
-#include "rtl.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "output.h"
 #include "insn-attr.h"
 #include "flags.h"
-#include "function.h"
 #include "insn-codes.h"
 #include "optabs.h"
 #include "expmed.h"
@@ -52,16 +51,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "toplev.h"
 #include "tm_p.h"
 #include "target.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "predict.h"
-#include "basic-block.h"
-#include "df.h"
 #include "langhooks.h"
 #include "tm-constrs.h"
 #include "tree-pass.h"	/* for current_pass */
@@ -578,7 +572,7 @@ sfunc_symbol (const char *name)
 }
 
 /* X and Y are two things to compare using CODE in IN_MODE.
-   Emit the compare insn, construct the the proper cc reg in the proper
+   Emit the compare insn, construct the proper cc reg in the proper
    mode, and return the rtx for the cc reg comparison in CMODE.  */
 
 rtx
@@ -772,9 +766,12 @@ epiphany_arg_partial_bytes (cumulative_args_t cum, machine_mode mode,
    scanned.  In either case, *TOTAL contains the cost result.  */
 
 static bool
-epiphany_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
+epiphany_rtx_costs (rtx x, machine_mode mode, int outer_code,
+		    int opno ATTRIBUTE_UNUSED,
 		    int *total, bool speed ATTRIBUTE_UNUSED)
 {
+  int code = GET_CODE (x);
+
   switch (code)
     {
       /* Small integers in the right context are as cheap as registers.  */
@@ -815,7 +812,7 @@ epiphany_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
       return true;
 
     case COMPARE:
-      switch (GET_MODE (x))
+      switch (mode)
 	{
 	/* There are a number of single-insn combiner patterns that use
 	   the flag side effects of arithmetic.  */

@@ -21,35 +21,24 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
+#include "gimple.h"
+#include "rtl.h"
+#include "ssa.h"
 #include "flags.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "calls.h"
-#include "predict.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfganal.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "gimple-iterator.h"
 #include "gimple-walk.h"
-#include "gimple-ssa.h"
 #include "tree-cfg.h"
-#include "tree-phinodes.h"
-#include "ssa-iterators.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
 #include "tree-ssa-loop-manip.h"
 #include "tree-ssa-loop-niter.h"
 #include "tree-ssa-loop.h"
@@ -65,7 +54,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-propagate.h"
 #include "tree-chrec.h"
 #include "tree-ssa-threadupdate.h"
-#include "rtl.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -1148,7 +1136,7 @@ gimple_call_nonnegative_warnv_p (gimple stmt, bool *strict_overflow_p)
 					strict_overflow_p);
 }
 
-/* Return true if STMT is know to to compute a non-negative value.
+/* Return true if STMT is know to compute a non-negative value.
    If the return value is based on the assumption that signed overflow is
    undefined, set *STRICT_OVERFLOW_P to true; otherwise, don't change
    *STRICT_OVERFLOW_P.*/
@@ -3449,7 +3437,7 @@ extract_range_from_binary_expr (value_range_t *vr,
 
 /* Extract range information from a unary operation CODE based on
    the range of its operand *VR0 with type OP0_TYPE with resulting type TYPE.
-   The The resulting range is stored in *VR.  */
+   The resulting range is stored in *VR.  */
 
 static void
 extract_range_from_unary_expr_1 (value_range_t *vr,
@@ -5393,7 +5381,17 @@ register_edge_assert_for_2 (tree name, edge e, gimple_stmt_iterator bsi,
 	      cst = int_const_binop (code, val, cst);
 	    }
 	  else if (CONVERT_EXPR_CODE_P (code))
-	    cst = fold_convert (TREE_TYPE (name2), val);
+	    {
+	      /* For truncating conversions require that the constant
+	         fits in the truncated type if we are going to record
+		 an inequality.  */
+	      if (comp_code == NE_EXPR
+		  && (TYPE_PRECISION (TREE_TYPE (name2))
+		      < TYPE_PRECISION (TREE_TYPE (name)))
+		  && ! int_fits_type_p (val, TREE_TYPE (name2)))
+		continue;
+	      cst = fold_convert (TREE_TYPE (name2), val);
+	    }
 	  else
 	    continue;
 
@@ -8915,7 +8913,7 @@ vrp_visit_phi_node (gphi *phi)
 	  && (cmp_min != 0 || cmp_max != 0))
 	goto varying;
 
-      /* If the new minimum is larger than than the previous one
+      /* If the new minimum is larger than the previous one
 	 retain the old value.  If the new minimum value is smaller
 	 than the previous one and not -INF go all the way to -INF + 1.
 	 In the first case, to avoid infinite bouncing between different

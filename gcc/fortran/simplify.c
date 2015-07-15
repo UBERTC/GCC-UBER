@@ -21,7 +21,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "flags.h"
 #include "gfortran.h"
 #include "arith.h"
 #include "intrinsic.h"
@@ -2352,9 +2351,7 @@ gfc_simplify_floor (gfc_expr *e, gfc_expr *k)
   if (e->expr_type != EXPR_CONSTANT)
     return NULL;
 
-  gfc_set_model_kind (kind);
-
-  mpfr_init (floor);
+  mpfr_init2 (floor, mpfr_get_prec (e->value.real));
   mpfr_floor (floor, e->value.real);
 
   result = gfc_get_constant_expr (BT_INTEGER, kind, &e->where);

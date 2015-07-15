@@ -56,22 +56,14 @@ along with GCC; see the file COPYING3.  If not see
 #include <list>
 #include "coretypes.h"
 #include "alias.h"
-#include "symtab.h"
-#include "options.h"
+#include "backend.h"
 #include "tree.h"
-#include "fold-const.h"
-#include "predict.h"
-#include "tm.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
-#include "internal-fn.h"
-#include "gimple-expr.h"
 #include "gimple.h"
 #include "rtl.h"
+#include "ssa.h"
+#include "options.h"
+#include "fold-const.h"
+#include "internal-fn.h"
 #include "flags.h"
 #include "insn-config.h"
 #include "expmed.h"
@@ -83,11 +75,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "stmt.h"
 #include "expr.h"
 #include "gimple-iterator.h"
-#include "gimple-ssa.h"
 #include "tree-cfg.h"
-#include "tree-phinodes.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
 #include "tree-dfa.h"
 #include "tree-pass.h"
 #include "gimple-pretty-print.h"
@@ -101,6 +89,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "coverage.h"
 #include "attribs.h"
 #include "print-tree.h"
+#include "target.h"
 #include "lto-streamer.h"
 #include "data-streamer.h"
 #include "ipa-utils.h"
@@ -2415,7 +2404,7 @@ sem_item_optimizer::read_section (lto_file_decl_data *file_data,
   lto_data_in_delete (data_in);
 }
 
-/* Read IPA IPA ICF summary for symbols.  */
+/* Read IPA ICF summary for symbols.  */
 
 void
 sem_item_optimizer::read_summary (void)
@@ -3205,7 +3194,7 @@ sem_item_optimizer::do_congruence_step (congruence_class *cls)
   EXECUTE_IF_SET_IN_BITMAP (usage, 0, i, bi)
   {
     if (dump_file && (dump_flags & TDF_DETAILS))
-      fprintf (dump_file, "  processing congruece step for class: %u, index: %u\n",
+      fprintf (dump_file, "  processing congruence step for class: %u, index: %u\n",
 	       cls->id, i);
 
     do_congruence_step_for_index (cls, i);

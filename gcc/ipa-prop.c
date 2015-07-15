@@ -21,24 +21,16 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "alias.h"
-#include "symtab.h"
-#include "options.h"
+#include "backend.h"
 #include "tree.h"
+#include "gimple.h"
+#include "rtl.h"
+#include "ssa.h"
+#include "options.h"
 #include "fold-const.h"
-#include "predict.h"
-#include "tm.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
-#include "rtl.h"
 #include "flags.h"
 #include "insn-config.h"
 #include "expmed.h"
@@ -61,11 +53,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "alloc-pool.h"
 #include "symbol-summary.h"
 #include "ipa-prop.h"
-#include "bitmap.h"
-#include "gimple-ssa.h"
 #include "tree-cfg.h"
-#include "tree-phinodes.h"
-#include "ssa-iterators.h"
 #include "tree-into-ssa.h"
 #include "tree-dfa.h"
 #include "tree-pass.h"
@@ -78,8 +66,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-streamer.h"
 #include "params.h"
 #include "ipa-utils.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
 #include "dbgcnt.h"
 #include "domwalk.h"
 #include "builtins.h"
@@ -687,7 +673,7 @@ param_type_may_change_p (tree function, tree arg, gimple call)
       /* Normal (non-THIS) argument.  */
       if ((SSA_NAME_VAR (arg) != DECL_ARGUMENTS (function)
 	   || TREE_CODE (TREE_TYPE (function)) != METHOD_TYPE)
-	  /* THIS pointer of an method - here we we want to watch constructors
+	  /* THIS pointer of an method - here we want to watch constructors
 	     and destructors as those definitely may change the dynamic
 	     type.  */
 	  || (TREE_CODE (TREE_TYPE (function)) == METHOD_TYPE
@@ -2344,7 +2330,7 @@ analysis_dom_walker::before_dom_children (basic_block bb)
   ipa_compute_jump_functions_for_bb (m_fbi, bb);
 }
 
-/* Initialize the array describing properties of of formal parameters
+/* Initialize the array describing properties of formal parameters
    of NODE, analyze their uses and compute jump functions associated
    with actual arguments of calls from within NODE.  */
 

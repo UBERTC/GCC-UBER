@@ -20,24 +20,23 @@
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "stor-layout.h"
 #include "varasm.h"
 #include "stringpool.h"
 #include "calls.h"
-#include "rtl.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "output.h"
 #include "dbxout.h"
 #include "insn-attr.h"
 #include "flags.h"
-#include "function.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -46,16 +45,11 @@
 #include "expr.h"
 #include "recog.h"
 #include "diagnostic-core.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "predict.h"
-#include "basic-block.h"
-#include "df.h"
 #include "tm_p.h"
 #include "target.h"
 #include "tm-constrs.h"
@@ -105,7 +99,7 @@ static bool m32r_function_value_regno_p (const unsigned int);
 static void m32r_setup_incoming_varargs (cumulative_args_t, machine_mode,
 					 tree, int *, int);
 static void init_idents (void);
-static bool m32r_rtx_costs (rtx, int, int, int, int *, bool speed);
+static bool m32r_rtx_costs (rtx, machine_mode, int, int, int *, bool speed);
 static int m32r_memory_move_cost (machine_mode, reg_class_t, bool);
 static bool m32r_pass_by_reference (cumulative_args_t, machine_mode,
 				    const_tree, bool);
@@ -1368,10 +1362,13 @@ m32r_memory_move_cost (machine_mode mode,
 }
 
 static bool
-m32r_rtx_costs (rtx x, int code, int outer_code ATTRIBUTE_UNUSED,
+m32r_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
+		int outer_code ATTRIBUTE_UNUSED,
 		int opno ATTRIBUTE_UNUSED, int *total,
 		bool speed ATTRIBUTE_UNUSED)
 {
+  int code = GET_CODE (x);
+
   switch (code)
     {
       /* Small integers are as cheap as registers.  4 byte values can be

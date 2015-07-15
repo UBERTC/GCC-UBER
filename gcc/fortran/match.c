@@ -21,12 +21,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
+#include "options.h"
 #include "flags.h"
 #include "gfortran.h"
 #include "match.h"
 #include "parse.h"
 #include "alias.h"
-#include "symtab.h"
 #include "tree.h"
 #include "stringpool.h"
 

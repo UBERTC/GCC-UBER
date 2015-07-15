@@ -21,10 +21,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "diagnostic-core.h"
-#include "hard-reg-set.h"
+#include "backend.h"
+#include "predict.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
+#include "diagnostic-core.h"
 #include "insn-config.h"
 #include "recog.h"
 #include "target.h"
@@ -32,12 +34,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm_p.h"
 #include "flags.h"
 #include "regs.h"
-#include "function.h"
-#include "predict.h"
-#include "basic-block.h"
-#include "df.h"
-#include "symtab.h"
-#include "tree.h"
 #include "emit-rtl.h"  /* FIXME: Can go away once crtl is moved to rtl.h.  */
 #include "addresses.h"
 #include "rtl-iter.h"
@@ -4031,7 +4027,8 @@ label_is_jump_target_p (const_rtx label, const rtx_insn *jump_insn)
    be returned.  */
 
 int
-rtx_cost (rtx x, enum rtx_code outer_code, int opno, bool speed)
+rtx_cost (rtx x, machine_mode mode, enum rtx_code outer_code,
+	  int opno, bool speed)
 {
   int i, j;
   enum rtx_code code;
@@ -4042,9 +4039,12 @@ rtx_cost (rtx x, enum rtx_code outer_code, int opno, bool speed)
   if (x == 0)
     return 0;
 
+  if (GET_MODE (x) != VOIDmode)
+    mode = GET_MODE (x);
+
   /* A size N times larger than UNITS_PER_WORD likely needs N times as
      many insns, taking N times as long.  */
-  factor = GET_MODE_SIZE (GET_MODE (x)) / UNITS_PER_WORD;
+  factor = GET_MODE_SIZE (mode) / UNITS_PER_WORD;
   if (factor == 0)
     factor = 1;
 
@@ -4074,7 +4074,8 @@ rtx_cost (rtx x, enum rtx_code outer_code, int opno, bool speed)
     case SET:
       /* A SET doesn't have a mode, so let's look at the SET_DEST to get
 	 the mode for the factor.  */
-      factor = GET_MODE_SIZE (GET_MODE (SET_DEST (x))) / UNITS_PER_WORD;
+      mode = GET_MODE (SET_DEST (x));
+      factor = GET_MODE_SIZE (mode) / UNITS_PER_WORD;
       if (factor == 0)
 	factor = 1;
       /* Pass through.  */
@@ -4091,12 +4092,12 @@ rtx_cost (rtx x, enum rtx_code outer_code, int opno, bool speed)
       total = 0;
       /* If we can't tie these modes, make this expensive.  The larger
 	 the mode, the more expensive it is.  */
-      if (! MODES_TIEABLE_P (GET_MODE (x), GET_MODE (SUBREG_REG (x))))
+      if (! MODES_TIEABLE_P (mode, GET_MODE (SUBREG_REG (x))))
 	return COSTS_N_INSNS (2 + factor);
       break;
 
     default:
-      if (targetm.rtx_costs (x, code, outer_code, opno, &total, speed))
+      if (targetm.rtx_costs (x, mode, outer_code, opno, &total, speed))
 	return total;
       break;
     }
@@ -4107,10 +4108,10 @@ rtx_cost (rtx x, enum rtx_code outer_code, int opno, bool speed)
   fmt = GET_RTX_FORMAT (code);
   for (i = GET_RTX_LENGTH (code) - 1; i >= 0; i--)
     if (fmt[i] == 'e')
-      total += rtx_cost (XEXP (x, i), code, i, speed);
+      total += rtx_cost (XEXP (x, i), mode, code, i, speed);
     else if (fmt[i] == 'E')
       for (j = 0; j < XVECLEN (x, i); j++)
-	total += rtx_cost (XVECEXP (x, i, j), code, i, speed);
+	total += rtx_cost (XVECEXP (x, i, j), mode, code, i, speed);
 
   return total;
 }
@@ -4119,11 +4120,11 @@ rtx_cost (rtx x, enum rtx_code outer_code, int opno, bool speed)
    costs for X, which is operand OPNO in an expression with code OUTER.  */
 
 void
-get_full_rtx_cost (rtx x, enum rtx_code outer, int opno,
+get_full_rtx_cost (rtx x, machine_mode mode, enum rtx_code outer, int opno,
 		   struct full_rtx_costs *c)
 {
-  c->speed = rtx_cost (x, outer, opno, true);
-  c->size = rtx_cost (x, outer, opno, false);
+  c->speed = rtx_cost (x, mode, outer, opno, true);
+  c->size = rtx_cost (x, mode, outer, opno, false);
 }
 
 
@@ -4151,7 +4152,7 @@ address_cost (rtx x, machine_mode mode, addr_space_t as, bool speed)
 int
 default_address_cost (rtx x, machine_mode, addr_space_t, bool speed)
 {
-  return rtx_cost (x, MEM, 0, speed);
+  return rtx_cost (x, Pmode, MEM, 0, speed);
 }
 
 
@@ -4253,7 +4254,6 @@ nonzero_bits1 (const_rtx x, machine_mode mode, const_rtx known_x,
        just return the mode mask.  Those tests will then be false.  */
     return nonzero;
 
-#ifndef WORD_REGISTER_OPERATIONS
   /* If MODE is wider than X, but both are a single word for both the host
      and target machines, we can compute this from which bits of the
      object might be nonzero in its own mode, taking into account the fact
@@ -4261,7 +4261,9 @@ nonzero_bits1 (const_rtx x, machine_mode mode, const_rtx known_x,
      causes the high-order bits to become undefined.  So they are
      not known to be zero.  */
 
-  if (GET_MODE (x) != VOIDmode && GET_MODE (x) != mode
+  if (!WORD_REGISTER_OPERATIONS
+      && GET_MODE (x) != VOIDmode
+      && GET_MODE (x) != mode
       && GET_MODE_PRECISION (GET_MODE (x)) <= BITS_PER_WORD
       && GET_MODE_PRECISION (GET_MODE (x)) <= HOST_BITS_PER_WIDE_INT
       && GET_MODE_PRECISION (mode) > GET_MODE_PRECISION (GET_MODE (x)))
@@ -4271,7 +4273,6 @@ nonzero_bits1 (const_rtx x, machine_mode mode, const_rtx known_x,
       nonzero |= GET_MODE_MASK (mode) & ~GET_MODE_MASK (GET_MODE (x));
       return nonzero;
     }
-#endif
 
   code = GET_CODE (x);
   switch (code)
@@ -4327,14 +4328,12 @@ nonzero_bits1 (const_rtx x, machine_mode mode, const_rtx known_x,
       }
 
     case CONST_INT:
-#ifdef SHORT_IMMEDIATES_SIGN_EXTEND
       /* If X is negative in MODE, sign-extend the value.  */
-      if (INTVAL (x) > 0
+      if (SHORT_IMMEDIATES_SIGN_EXTEND && INTVAL (x) > 0
 	  && mode_width < BITS_PER_WORD
 	  && (UINTVAL (x) & ((unsigned HOST_WIDE_INT) 1 << (mode_width - 1)))
 	     != 0)
 	return UINTVAL (x) | (HOST_WIDE_INT_M1U << mode_width);
-#endif
 
       return UINTVAL (x);
 
@@ -4545,7 +4544,7 @@ nonzero_bits1 (const_rtx x, machine_mode mode, const_rtx known_x,
 	  nonzero &= cached_nonzero_bits (SUBREG_REG (x), mode,
 					  known_x, known_mode, known_ret);
 
-#if defined (WORD_REGISTER_OPERATIONS) && defined (LOAD_EXTEND_OP)
+#if WORD_REGISTER_OPERATIONS && defined (LOAD_EXTEND_OP)
 	  /* If this is a typical RISC machine, we only have to worry
 	     about the way loads are extended.  */
 	  if ((LOAD_EXTEND_OP (inner_mode) == SIGN_EXTEND
@@ -4765,12 +4764,12 @@ num_sign_bit_copies1 (const_rtx x, machine_mode mode, const_rtx known_x,
 
   if (GET_MODE (x) != VOIDmode && bitwidth > GET_MODE_PRECISION (GET_MODE (x)))
     {
-#ifndef WORD_REGISTER_OPERATIONS
       /* If this machine does not do all register operations on the entire
 	 register and MODE is wider than the mode of X, we can say nothing
 	 at all about the high-order bits.  */
-      return 1;
-#else
+      if (!WORD_REGISTER_OPERATIONS)
+	return 1;
+
       /* Likewise on machines that do, if the mode of the object is smaller
 	 than a word and loads of that size don't sign extend, we can say
 	 nothing about the high order bits.  */
@@ -4780,7 +4779,6 @@ num_sign_bit_copies1 (const_rtx x, machine_mode mode, const_rtx known_x,
 #endif
 	  )
 	return 1;
-#endif
     }
 
   switch (code)
@@ -4859,7 +4857,6 @@ num_sign_bit_copies1 (const_rtx x, machine_mode mode, const_rtx known_x,
 				   - bitwidth)));
 	}
 
-#ifdef WORD_REGISTER_OPERATIONS
 #ifdef LOAD_EXTEND_OP
       /* For paradoxical SUBREGs on machines where all register operations
 	 affect the entire register, just look inside.  Note that we are
@@ -4871,12 +4868,12 @@ num_sign_bit_copies1 (const_rtx x, machine_mode mode, const_rtx known_x,
 	 then we lose all sign bit copies that existed before the store
 	 to the stack.  */
 
-      if (paradoxical_subreg_p (x)
+      if (WORD_REGISTER_OPERATIONS
+	  && paradoxical_subreg_p (x)
 	  && LOAD_EXTEND_OP (GET_MODE (SUBREG_REG (x))) == SIGN_EXTEND
 	  && MEM_P (SUBREG_REG (x)))
 	return cached_num_sign_bit_copies (SUBREG_REG (x), mode,
 					   known_x, known_mode, known_ret);
-#endif
 #endif
       break;
 
@@ -5158,7 +5155,7 @@ insn_rtx_cost (rtx pat, bool speed)
   else
     return 0;
 
-  cost = set_src_cost (SET_SRC (set), speed);
+  cost = set_src_cost (SET_SRC (set), GET_MODE (SET_DEST (set)), speed);
   return cost > 0 ? cost : COSTS_N_INSNS (1);
 }
 

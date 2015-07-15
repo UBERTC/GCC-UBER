@@ -103,16 +103,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "diagnostic-core.h"
+#include "backend.h"
+#include "predict.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
+#include "diagnostic-core.h"
 #include "tm_p.h"
-#include "symtab.h"
-#include "hard-reg-set.h"
-#include "function.h"
 #include "flags.h"
 #include "alias.h"
-#include "tree.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -123,13 +122,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "stmt.h"
 #include "expr.h"
 #include "conditions.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "basic-block.h"
 #include "regs.h"
 #include "recog.h"
-#include "obstack.h"
 #include "insn-attr.h"
 #include "resource.h"
 #include "except.h"
@@ -1403,12 +1397,12 @@ try_merge_delay_insns (rtx_insn *insn, rtx_insn *thread)
 	  rtx_insn *dtrial = pat->insn (i);
 
 	  CLEAR_RESOURCE (&modified);
-	  /* Account for resources set by the the insn following NEXT_TO_MATCH
+	  /* Account for resources set by the insn following NEXT_TO_MATCH
 	     inside INSN's delay list. */
 	  for (j = 1; slot_number + j < num_slots; j++)
 	    mark_set_resources (XVECEXP (PATTERN (insn), 0, slot_number + j),
 				&modified, 0, MARK_SRC_DEST_CALL);
-	  /* Account for resources set by the the insn before DTRIAL and inside
+	  /* Account for resources set by the insn before DTRIAL and inside
 	     TRIAL's delay list. */
 	  for (j = 1; j < i; j++)
 	    mark_set_resources (XVECEXP (pat, 0, j),

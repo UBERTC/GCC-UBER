@@ -25,20 +25,20 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "insn-config.h"
-#include "rtl.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "gimple.h"
+#include "rtl.h"
+#include "df.h"
+#include "insn-config.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "stringpool.h"
 #include "stor-layout.h"
 #include "calls.h"
 #include "varasm.h"
 #include "flags.h"
-#include "hard-reg-set.h"
-#include "function.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -57,25 +57,17 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm_p.h"
 #include "target.h"
 #include "langhooks.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
-#include "df.h"
 #include "intl.h"
 #include "sched-int.h"
 #include "params.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "gimplify.h"
 #include "cfgloop.h"
 #include "alloc-pool.h"
@@ -284,7 +276,7 @@ static int addsubcosts (rtx);
 static int multcosts (rtx);
 static bool unspec_caller_rtx_p (rtx);
 static bool sh_cannot_copy_insn_p (rtx_insn *);
-static bool sh_rtx_costs (rtx, int, int, int, int *, bool);
+static bool sh_rtx_costs (rtx, machine_mode, int, int, int *, bool);
 static int sh_address_cost (rtx, machine_mode, addr_space_t, bool);
 static int sh_pr_n_sets (void);
 static rtx sh_allocate_initial_value (rtx);
@@ -3289,7 +3281,7 @@ and_xor_ior_costs (rtx x, int code)
 	  || satisfies_constraint_J16 (XEXP (x, 1)))
 	return 1;
       else
-	return 1 + rtx_cost (XEXP (x, 1), AND, 1, !optimize_size);
+	return 1 + rtx_cost (XEXP (x, 1), GET_MODE (x), AND, 1, !optimize_size);
     }
 
   /* These constants are single cycle extu.[bw] instructions.  */
@@ -3429,9 +3421,12 @@ multcosts (rtx x ATTRIBUTE_UNUSED)
    cost has been computed, and false if subexpressions should be
    scanned.  In either case, *TOTAL contains the cost result.  */
 static bool
-sh_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
+sh_rtx_costs (rtx x, machine_mode mode ATTRIBUTE_UNUSED, int outer_code,
+	      int opno ATTRIBUTE_UNUSED,
 	      int *total, bool speed ATTRIBUTE_UNUSED)
 {
+  int code = GET_CODE (x);
+
   switch (code)
     {
       /* The lower-subreg pass decides whether to split multi-word regs
@@ -9028,7 +9023,7 @@ sh_round_reg (const CUMULATIVE_ARGS& cum, machine_mode mode)
     : cum.arg_count[(int) GET_SH_ARG_CLASS (mode)]);
 }
 
-/* Return true if arg of the specified mode should be be passed in a register
+/* Return true if arg of the specified mode should be passed in a register
    or false otherwise.  */
 static bool
 sh_pass_in_reg_p (const CUMULATIVE_ARGS& cum, machine_mode mode,

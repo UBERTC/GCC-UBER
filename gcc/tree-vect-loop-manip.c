@@ -23,32 +23,21 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "dumpfile.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
-#include "fold-const.h"
-#include "predict.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "cfganal.h"
-#include "basic-block.h"
-#include "gimple-pretty-print.h"
-#include "tree-ssa-alias.h"
-#include "internal-fn.h"
-#include "gimple-expr.h"
 #include "gimple.h"
+#include "hard-reg-set.h"
+#include "ssa.h"
+#include "alias.h"
+#include "fold-const.h"
+#include "cfganal.h"
+#include "gimple-pretty-print.h"
+#include "internal-fn.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
-#include "gimple-ssa.h"
 #include "tree-cfg.h"
-#include "tree-phinodes.h"
-#include "ssa-iterators.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
 #include "tree-ssa-loop-manip.h"
 #include "tree-into-ssa.h"
 #include "tree-ssa.h"
@@ -366,8 +355,8 @@ adjust_phi_and_debug_stmts (gimple update_phi, edge e, tree new_def)
            next_bb
 
      The SSA names defined in the original loop have a current
-     reaching definition that that records the corresponding new
-     ssa-name used in the new duplicated loop copy.
+     reaching definition that records the corresponding new ssa-name
+     used in the new duplicated loop copy.
   */
 
 /* Function slpeel_update_phi_nodes_for_guard1
@@ -2143,7 +2132,7 @@ vect_create_cond_for_align_checks (loop_vec_info loop_vinfo,
       bool negative = tree_int_cst_compare
 	(DR_STEP (STMT_VINFO_DATA_REF (stmt_vinfo)), size_zero_node) < 0;
       tree offset = negative
-	? size_int (-TYPE_VECTOR_SUBPARTS (vectype) + 1) : NULL_TREE;
+	? size_int (-TYPE_VECTOR_SUBPARTS (vectype) + 1) : size_zero_node;
 
       /* create: addr_tmp = (int)(address_of_first_vector) */
       addr_base =

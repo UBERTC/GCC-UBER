@@ -27,7 +27,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "alias.h"
-#include "symtab.h"
 #include "tree.h"
 #include "stor-layout.h"
 #include "trans-mem.h"
@@ -1520,7 +1519,7 @@ reference_binding (tree rto, tree rfrom, tree expr, bool c_cast_p, int flags,
     tfrom = unlowered_expr_type (expr);
 
   /* Figure out whether or not the types are reference-related and
-     reference compatible.  We have do do this after stripping
+     reference compatible.  We have to do this after stripping
      references from FROM.  */
   related_p = reference_related_p (to, tfrom);
   /* If this is a C cast, first convert to an appropriately qualified
@@ -5397,7 +5396,7 @@ build_new_op_1 (location_t loc, enum tree_code code, int flags, tree arg1,
      only non-member functions that have type T1 or reference to
      cv-qualified-opt T1 for the first argument, if the first argument
      has an enumeration type, or T2 or reference to cv-qualified-opt
-     T2 for the second argument, if the the second argument has an
+     T2 for the second argument, if the second argument has an
      enumeration type.  Filter out those that don't match.  */
   else if (! arg2 || ! CLASS_TYPE_P (TREE_TYPE (arg2)))
     {
@@ -6439,12 +6438,14 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
       /* Copy-initialization where the cv-unqualified version of the source
 	 type is the same class as, or a derived class of, the class of the
 	 destination [is treated as direct-initialization].  [dcl.init] */
-      flags = LOOKUP_NORMAL|LOOKUP_ONLYCONVERTING;
+      flags = LOOKUP_NORMAL;
       if (convs->user_conv_p)
 	/* This conversion is being done in the context of a user-defined
 	   conversion (i.e. the second step of copy-initialization), so
 	   don't allow any more.  */
 	flags |= LOOKUP_NO_CONVERSION;
+      else
+	flags |= LOOKUP_ONLYCONVERTING;
       if (convs->rvaluedness_matches_p)
 	flags |= LOOKUP_PREFER_RVALUE;
       if (TREE_CODE (expr) == TARGET_EXPR
@@ -8069,7 +8070,10 @@ build_new_method_call_1 (tree instance, tree fns, vec<tree, va_gc> **args,
       /* If BASETYPE is an aggregate, we need to do aggregate
 	 initialization.  */
       else if (CP_AGGREGATE_TYPE_P (basetype))
-	init = digest_init (basetype, init_list, complain);
+	{
+	  init = reshape_init (basetype, init_list, complain);
+	  init = digest_init (basetype, init, complain);
+	}
 
       if (init)
 	{

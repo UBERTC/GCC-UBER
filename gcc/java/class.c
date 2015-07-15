@@ -27,9 +27,8 @@ The Free Software Foundation is independent of Sun Microsystems, Inc.  */
 #include "system.h"
 #include "coretypes.h"
 #include "alias.h"
-#include "symtab.h"
-#include "options.h"
 #include "tree.h"
+#include "options.h"
 #include "fold-const.h"
 #include "stringpool.h"
 #include "stor-layout.h"
@@ -1046,7 +1045,7 @@ build_static_class_ref (tree type)
       DECL_CONTEXT (decl) = type;
 
       /* ??? We want to preserve the DECL_CONTEXT we set just above,
-	 that that means not calling pushdecl_top_level.  */
+	 that means not calling pushdecl_top_level.  */
       IDENTIFIER_GLOBAL_VALUE (decl_name) = decl;
     }
 

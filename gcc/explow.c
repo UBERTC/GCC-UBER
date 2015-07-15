@@ -25,13 +25,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "diagnostic-core.h"
 #include "rtl.h"
 #include "alias.h"
-#include "symtab.h"
 #include "tree.h"
 #include "stor-layout.h"
 #include "tm_p.h"
 #include "flags.h"
 #include "except.h"
-#include "hard-reg-set.h"
 #include "function.h"
 #include "insn-config.h"
 #include "expmed.h"
@@ -973,30 +971,24 @@ emit_stack_save (enum save_level save_level, rtx *psave)
 {
   rtx sa = *psave;
   /* The default is that we use a move insn and save in a Pmode object.  */
-  rtx (*fcn) (rtx, rtx) = gen_move_insn_uncast;
+  rtx_insn *(*fcn) (rtx, rtx) = gen_move_insn;
   machine_mode mode = STACK_SAVEAREA_MODE (save_level);
 
   /* See if this machine has anything special to do for this kind of save.  */
   switch (save_level)
     {
-#ifdef HAVE_save_stack_block
     case SAVE_BLOCK:
-      if (HAVE_save_stack_block)
-	fcn = gen_save_stack_block;
+      if (targetm.have_save_stack_block ())
+	fcn = targetm.gen_save_stack_block;
       break;
-#endif
-#ifdef HAVE_save_stack_function
     case SAVE_FUNCTION:
-      if (HAVE_save_stack_function)
-	fcn = gen_save_stack_function;
+      if (targetm.have_save_stack_function ())
+	fcn = targetm.gen_save_stack_function;
       break;
-#endif
-#ifdef HAVE_save_stack_nonlocal
     case SAVE_NONLOCAL:
-      if (HAVE_save_stack_nonlocal)
-	fcn = gen_save_stack_nonlocal;
+      if (targetm.have_save_stack_nonlocal ())
+	fcn = targetm.gen_save_stack_nonlocal;
       break;
-#endif
     default:
       break;
     }
@@ -1028,7 +1020,7 @@ void
 emit_stack_restore (enum save_level save_level, rtx sa)
 {
   /* The default is that we use a move insn.  */
-  rtx (*fcn) (rtx, rtx) = gen_move_insn_uncast;
+  rtx_insn *(*fcn) (rtx, rtx) = gen_move_insn;
 
   /* If stack_realign_drap, the x86 backend emits a prologue that aligns both
      STACK_POINTER and HARD_FRAME_POINTER.
@@ -1047,24 +1039,18 @@ emit_stack_restore (enum save_level save_level, rtx sa)
   /* See if this machine has anything special to do for this kind of save.  */
   switch (save_level)
     {
-#ifdef HAVE_restore_stack_block
     case SAVE_BLOCK:
-      if (HAVE_restore_stack_block)
-	fcn = gen_restore_stack_block;
+      if (targetm.have_restore_stack_block ())
+	fcn = targetm.gen_restore_stack_block;
       break;
-#endif
-#ifdef HAVE_restore_stack_function
     case SAVE_FUNCTION:
-      if (HAVE_restore_stack_function)
-	fcn = gen_restore_stack_function;
+      if (targetm.have_restore_stack_function ())
+	fcn = targetm.gen_restore_stack_function;
       break;
-#endif
-#ifdef HAVE_restore_stack_nonlocal
     case SAVE_NONLOCAL:
-      if (HAVE_restore_stack_nonlocal)
-	fcn = gen_restore_stack_nonlocal;
+      if (targetm.have_restore_stack_nonlocal ())
+	fcn = targetm.gen_restore_stack_nonlocal;
       break;
-#endif
     default:
       break;
     }
@@ -1320,16 +1306,15 @@ allocate_dynamic_stack_space (rtx size, unsigned size_align,
 
       available_label = NULL;
 
-#ifdef HAVE_split_stack_space_check
-      if (HAVE_split_stack_space_check)
+      if (targetm.have_split_stack_space_check ())
 	{
 	  available_label = gen_label_rtx ();
 
 	  /* This instruction will branch to AVAILABLE_LABEL if there
 	     are SIZE bytes available on the stack.  */
-	  emit_insn (gen_split_stack_space_check (size, available_label));
+	  emit_insn (targetm.gen_split_stack_space_check
+		     (size, available_label));
 	}
-#endif
 
       /* The __morestack_allocate_stack_space function will allocate
 	 memory using malloc.  If the alignment of the memory returned
@@ -1387,8 +1372,7 @@ allocate_dynamic_stack_space (rtx size, unsigned size_align,
   /* Perform the required allocation from the stack.  Some systems do
      this differently than simply incrementing/decrementing from the
      stack pointer, such as acquiring the space by calling malloc().  */
-#ifdef HAVE_allocate_stack
-  if (HAVE_allocate_stack)
+  if (targetm.have_allocate_stack ())
     {
       struct expand_operand ops[2];
       /* We don't have to check against the predicate for operand 0 since
@@ -1396,10 +1380,9 @@ allocate_dynamic_stack_space (rtx size, unsigned size_align,
 	 be valid for the operand.  */
       create_fixed_operand (&ops[0], target);
       create_convert_operand_to (&ops[1], size, STACK_SIZE_MODE, true);
-      expand_insn (CODE_FOR_allocate_stack, 2, ops);
+      expand_insn (targetm.code_for_allocate_stack, 2, ops);
     }
   else
-#endif
     {
       int saved_stack_pointer_delta;
 
@@ -1422,11 +1405,9 @@ allocate_dynamic_stack_space (rtx size, unsigned size_align,
 
 	  emit_cmp_and_jump_insns (available, size, GEU, NULL_RTX, Pmode, 1,
 				   space_available);
-#ifdef HAVE_trap
-	  if (HAVE_trap)
-	    emit_insn (gen_trap ());
+	  if (targetm.have_trap ())
+	    emit_insn (targetm.gen_trap ());
 	  else
-#endif
 	    error ("stack limits not supported on this target");
 	  emit_barrier ();
 	  emit_label (space_available);
@@ -1505,22 +1486,18 @@ set_stack_check_libfunc (const char *libfunc_name)
 void
 emit_stack_probe (rtx address)
 {
-#ifdef HAVE_probe_stack_address
-  if (HAVE_probe_stack_address)
-    emit_insn (gen_probe_stack_address (address));
+  if (targetm.have_probe_stack_address ())
+    emit_insn (targetm.gen_probe_stack_address (address));
   else
-#endif
     {
       rtx memref = gen_rtx_MEM (word_mode, address);
 
       MEM_VOLATILE_P (memref) = 1;
 
       /* See if we have an insn to probe the stack.  */
-#ifdef HAVE_probe_stack
-      if (HAVE_probe_stack)
-        emit_insn (gen_probe_stack (memref));
+      if (targetm.have_probe_stack ())
+        emit_insn (targetm.gen_probe_stack (memref));
       else
-#endif
         emit_move_insn (memref, const0_rtx);
     }
 }
@@ -1562,8 +1539,7 @@ probe_stack_range (HOST_WIDE_INT first, rtx size)
     }
 
   /* Next see if we have an insn to check the stack.  */
-#ifdef HAVE_check_stack
-  else if (HAVE_check_stack)
+  else if (targetm.have_check_stack ())
     {
       struct expand_operand ops[1];
       rtx addr = memory_address (Pmode,
@@ -1573,10 +1549,9 @@ probe_stack_range (HOST_WIDE_INT first, rtx size)
 								size, first)));
       bool success;
       create_input_operand (&ops[0], addr, Pmode);
-      success = maybe_expand_insn (CODE_FOR_check_stack, 1, ops);
+      success = maybe_expand_insn (targetm.code_for_check_stack, 1, ops);
       gcc_assert (success);
     }
-#endif
 
   /* Otherwise we have to generate explicit probes.  If we have a constant
      small number of them to generate, that's the easy case.  */

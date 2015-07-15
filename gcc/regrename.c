@@ -20,26 +20,20 @@
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "rtl.h"
+#include "df.h"
 #include "rtl-error.h"
 #include "tm_p.h"
 #include "insn-config.h"
 #include "regs.h"
 #include "addresses.h"
-#include "hard-reg-set.h"
-#include "predict.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfganal.h"
-#include "basic-block.h"
 #include "reload.h"
 #include "output.h"
 #include "recog.h"
 #include "flags.h"
-#include "obstack.h"
 #include "tree-pass.h"
-#include "df.h"
 #include "target.h"
 #include "emit-rtl.h"
 #include "regrename.h"
@@ -447,12 +441,10 @@ rename_chains (void)
 	continue;
 
       if (fixed_regs[reg] || global_regs[reg]
-#if !HARD_FRAME_POINTER_IS_FRAME_POINTER
-	  || (frame_pointer_needed && reg == HARD_FRAME_POINTER_REGNUM)
-#else
-	  || (frame_pointer_needed && reg == FRAME_POINTER_REGNUM)
-#endif
-	  )
+	  || (!HARD_FRAME_POINTER_IS_FRAME_POINTER && frame_pointer_needed
+	      && reg == HARD_FRAME_POINTER_REGNUM)
+	  || (HARD_FRAME_POINTER_REGNUM && frame_pointer_needed
+	      && reg == FRAME_POINTER_REGNUM))
 	continue;
 
       COPY_HARD_REG_SET (this_unavailable, unavailable);
@@ -1314,11 +1306,11 @@ scan_rtx_address (rtx_insn *insn, rtx *loc, enum reg_class cl,
     case PRE_INC:
     case PRE_DEC:
     case PRE_MODIFY:
-#ifndef AUTO_INC_DEC
       /* If the target doesn't claim to handle autoinc, this must be
 	 something special, like a stack push.  Kill this chain.  */
+    if (!AUTO_INC_DEC)
       action = mark_all_read;
-#endif
+
       break;
 
     case MEM:

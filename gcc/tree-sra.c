@@ -75,35 +75,22 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "alloc-pool.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
-#include "tree.h"
-#include "fold-const.h"
+#include "backend.h"
 #include "predict.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
+#include "tree.h"
+#include "gimple.h"
+#include "rtl.h"
+#include "ssa.h"
+#include "alias.h"
+#include "fold-const.h"
 #include "internal-fn.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "stor-layout.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
 #include "gimple-walk.h"
-#include "bitmap.h"
-#include "gimple-ssa.h"
 #include "tree-cfg.h"
-#include "tree-phinodes.h"
-#include "ssa-iterators.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
-#include "rtl.h"
 #include "flags.h"
 #include "insn-config.h"
 #include "expmed.h"
@@ -872,7 +859,7 @@ mark_parm_dereference (tree base, HOST_WIDE_INT dist, gimple stmt)
 static struct access *
 create_access_1 (tree base, HOST_WIDE_INT offset, HOST_WIDE_INT size)
 {
-  struct access *access = new struct access ();
+  struct access *access = new struct access;
 
   memset (access, 0, sizeof (struct access));
   access->base = base;
@@ -1024,7 +1011,7 @@ completely_scalarize_record (tree base, tree decl, HOST_WIDE_INT offset,
 }
 
 /* Create total_scalarization accesses for all scalar type fields in VAR and
-   for VAR a a whole.  VAR must be of a RECORD_TYPE conforming to
+   for VAR as a whole.  VAR must be of a RECORD_TYPE conforming to
    type_consists_of_records_p.   */
 
 static void
@@ -2407,7 +2394,7 @@ create_artificial_child_access (struct access *parent, struct access *model,
 
   gcc_assert (!model->grp_unscalarizable_region);
 
-  struct access *access = new struct access ();
+  struct access *access = new struct access;
   memset (access, 0, sizeof (struct access));
   if (!build_user_friendly_ref_for_offset (&expr, TREE_TYPE (expr), new_offset,
 					   model->type))

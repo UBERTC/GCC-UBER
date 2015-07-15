@@ -22,11 +22,12 @@
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "rtl.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "varasm.h"
@@ -36,8 +37,6 @@
 #include "output.h"
 #include "insn-attr.h"
 #include "insn-codes.h"
-#include "hard-reg-set.h"
-#include "function.h"
 #include "flags.h"
 #include "insn-config.h"
 #include "expmed.h"
@@ -49,21 +48,16 @@
 #include "regs.h"
 #include "optabs.h"
 #include "recog.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "predict.h"
-#include "basic-block.h"
 #include "sched-int.h"
 #include "timevar.h"
 #include "tm_p.h"
 #include "tm-preds.h"
 #include "tm-constrs.h"
-#include "df.h"
 #include "diagnostic-core.h"
 #include "cgraph.h"
 #include "langhooks.h"
@@ -6052,11 +6046,12 @@ shift_p (rtx x, enum rtx_code code, int amount)
    scanned.  In either case, *TOTAL contains the cost result.  */
 
 static bool
-c6x_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
+c6x_rtx_costs (rtx x, machine_mode mode, int outer_code, int opno, int *total,
 	       bool speed)
 {
   int cost2 = COSTS_N_INSNS (1);
   rtx op0, op1;
+  int code = GET_CODE (x);
 
   switch (code)
     {
@@ -6085,12 +6080,12 @@ c6x_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
 
     case TRUNCATE:
       /* Recognize a mult_highpart operation.  */
-      if ((GET_MODE (x) == HImode || GET_MODE (x) == SImode)
+      if ((mode == HImode || mode == SImode)
 	  && GET_CODE (XEXP (x, 0)) == LSHIFTRT
-	  && GET_MODE (XEXP (x, 0)) == GET_MODE_2XWIDER_MODE (GET_MODE (x))
+	  && GET_MODE (XEXP (x, 0)) == GET_MODE_2XWIDER_MODE (mode)
 	  && GET_CODE (XEXP (XEXP (x, 0), 0)) == MULT
 	  && GET_CODE (XEXP (XEXP (x, 0), 1)) == CONST_INT
-	  && INTVAL (XEXP (XEXP (x, 0), 1)) == GET_MODE_BITSIZE (GET_MODE (x)))
+	  && INTVAL (XEXP (XEXP (x, 0), 1)) == GET_MODE_BITSIZE (mode))
 	{
 	  rtx mul = XEXP (XEXP (x, 0), 0);
 	  rtx op0 = XEXP (mul, 0);
@@ -6100,15 +6095,16 @@ c6x_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
 
 	  if ((code0 == code1
 	       && (code0 == SIGN_EXTEND || code0 == ZERO_EXTEND))
-	      || (GET_MODE (x) == HImode
+	      || (mode == HImode
 		  && code0 == ZERO_EXTEND && code1 == SIGN_EXTEND))
 	    {
-	      if (GET_MODE (x) == HImode)
+	      if (mode == HImode)
 		*total = COSTS_N_INSNS (2);
 	      else
 		*total = COSTS_N_INSNS (12);
-	      *total += rtx_cost (XEXP (op0, 0), code0, 0, speed);
-	      *total += rtx_cost (XEXP (op1, 0), code1, 0, speed);
+	      mode = GET_MODE (XEXP (op0, 0));
+	      *total += rtx_cost (XEXP (op0, 0), mode, code0, 0, speed);
+	      *total += rtx_cost (XEXP (op1, 0), mode, code1, 0, speed);
 	      return true;
 	    }
 	}
@@ -6117,7 +6113,7 @@ c6x_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
     case ASHIFT:
     case ASHIFTRT:
     case LSHIFTRT:
-      if (GET_MODE (x) == DImode)
+      if (mode == DImode)
 	*total = COSTS_N_INSNS (CONSTANT_P (XEXP (x, 1)) ? 4 : 15);
       else
 	*total = COSTS_N_INSNS (1);
@@ -6128,16 +6124,16 @@ c6x_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
       *total = COSTS_N_INSNS (1);
       op0 = code == PLUS ? XEXP (x, 0) : XEXP (x, 1);
       op1 = code == PLUS ? XEXP (x, 1) : XEXP (x, 0);
-      if (GET_MODE_SIZE (GET_MODE (x)) <= UNITS_PER_WORD
-	  && INTEGRAL_MODE_P (GET_MODE (x))
+      if (GET_MODE_SIZE (mode) <= UNITS_PER_WORD
+	  && INTEGRAL_MODE_P (mode)
 	  && GET_CODE (op0) == MULT
 	  && GET_CODE (XEXP (op0, 1)) == CONST_INT
 	  && (INTVAL (XEXP (op0, 1)) == 2
 	      || INTVAL (XEXP (op0, 1)) == 4
 	      || (code == PLUS && INTVAL (XEXP (op0, 1)) == 8)))
 	{
-	  *total += rtx_cost (XEXP (op0, 0), ASHIFT, 0, speed);
-	  *total += rtx_cost (op1, (enum rtx_code) code, 1, speed);
+	  *total += rtx_cost (XEXP (op0, 0), mode, ASHIFT, 0, speed);
+	  *total += rtx_cost (op1, mode, (enum rtx_code) code, 1, speed);
 	  return true;
 	}
       return false;
@@ -6145,21 +6141,21 @@ c6x_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
     case MULT:
       op0 = XEXP (x, 0);
       op1 = XEXP (x, 1);
-      if (GET_MODE (x) == DFmode)
+      if (mode == DFmode)
 	{
 	  if (TARGET_FP)
 	    *total = COSTS_N_INSNS (speed ? 10 : 1);
 	  else
 	    *total = COSTS_N_INSNS (speed ? 200 : 4);
 	}
-      else if (GET_MODE (x) == SFmode)
+      else if (mode == SFmode)
 	{
 	  if (TARGET_FP)
 	    *total = COSTS_N_INSNS (speed ? 4 : 1);
 	  else
 	    *total = COSTS_N_INSNS (speed ? 100 : 4);
 	}
-      else if (GET_MODE (x) == DImode)
+      else if (mode == DImode)
 	{
 	  if (TARGET_MPY32
 	      && GET_CODE (op0) == GET_CODE (op1)
@@ -6174,7 +6170,7 @@ c6x_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
 	    /* Maybe improve this laster.  */
 	    *total = COSTS_N_INSNS (20);
 	}
-      else if (GET_MODE (x) == SImode)
+      else if (mode == SImode)
 	{
 	  if (((GET_CODE (op0) == ZERO_EXTEND
 		|| GET_CODE (op0) == SIGN_EXTEND
@@ -6202,15 +6198,15 @@ c6x_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
 	  else
 	    *total = COSTS_N_INSNS (6);
 	}
-      else if (GET_MODE (x) == HImode)
+      else if (mode == HImode)
 	*total = COSTS_N_INSNS (speed ? 2 : 1);
 
       if (GET_CODE (op0) != REG
 	  && (GET_CODE (op0) != SUBREG || GET_CODE (SUBREG_REG (op0)) != REG))
-	*total += rtx_cost (op0, MULT, 0, speed);
+	*total += rtx_cost (op0, mode, MULT, 0, speed);
       if (op1 && GET_CODE (op1) != REG
 	  && (GET_CODE (op1) != SUBREG || GET_CODE (SUBREG_REG (op1)) != REG))
-	*total += rtx_cost (op1, MULT, 1, speed);
+	*total += rtx_cost (op1, mode, MULT, 1, speed);
       return true;
 
     case UDIV:
@@ -6228,7 +6224,7 @@ c6x_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
 	  && XEXP (op0, 1) == const0_rtx
 	  && rtx_equal_p (XEXP (x, 1), XEXP (op0, 0)))
 	{
-	  *total = rtx_cost (XEXP (x, 1), (enum rtx_code) outer_code,
+	  *total = rtx_cost (XEXP (x, 1), VOIDmode, (enum rtx_code) outer_code,
 			     opno, speed);
 	  return false;
 	}

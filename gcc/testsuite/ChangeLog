@@ -1,3 +1,504 @@
+2015-07-14  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/66850
+	* g++.dg/template/pr66850.C: New test.
+
+2015-07-14  Sandra Loosemore  <sandra@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+	    Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* gcc.target/nios2/nios2-flushd.c: New.
+	* gcc.target/nios2/nios2-rdprs.c: New.
+	* gcc.target/nios2/r2-atomic.c: New.
+	* gcc.target/nios2/r2-eni.c: New.
+	* gcc.target/nios2/r2-wrpie.c: New.
+
+2015-07-14  Sandra Loosemore  <sandra@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+	    Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* gcc.target/nios2/cdx-ldstwm-1.c: New.
+	* gcc.target/nios2/cdx-ldstwm-2.c: New.
+
+2015-07-14  Sandra Loosemore  <sandra@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+	    Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* gcc.target/nios2/andci.c: New.
+	* gcc.target/nios2/bmx.c: New.
+	* gcc.target/nios2/cdx-add.c: New.
+	* gcc.target/nios2/cdx-branch.c: New.
+	* gcc.target/nios2/cdx-callret.c: New.
+	* gcc.target/nios2/cdx-loadstore.c: New.
+	* gcc.target/nios2/cdx-logical.c: New.
+	* gcc.target/nios2/cdx-mov.c: New.
+	* gcc.target/nios2/cdx-shift.c: New.
+	* gcc.target/nios2/cdx-sub.c: New.
+	* gcc.target/nios2/nios2-trap-insn.c: Adjust pattern.
+
+2015-07-14  Andrea Azzarone  <azzaronea@gmail.com>
+
+	PR c++/65071
+	* g++.dg/cpp0x/vt-65071.C: New.
+
+2015-07-14  Sandra Loosemore  <sandra@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+	    Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* gcc.target/nios2/r2-io-range.c: New.
+	* gcc.target/nios2/r2-stio-1.c: New.
+	* gcc.target/nios2/r2-stio-2.c: New.
+	* gcc.target/nios2/nios2-ldxio.c: New.
+	* gcc.target/nios2/nios2-stxio.c: Change to assemble test instead
+	of just compile.  Add more tests.
+
+2015-07-14  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	gfortran.dg/pr66864.f90: New test.
+
+2015-07-14  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/66626
+	* gcc.target/i386/pr66626.c: New.
+
+2015-07-14  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gcc.target/nios2/nios2-stack-check-1.c: Adjust patterns.
+	* gcc.target/nios2/nios2-stack-check-2.c: Likewise.
+	* gcc.target/nios2/nios2-stack-check-3.c: New test case.
+
+2015-07-14  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* g++.dg/template/crash81.C: Adjust for error + inform change.
+	* g++.dg/template/pr58878.C: Likewise.
+	* g++.dg/template/shadow1.C: Likewise.
+	* g++.dg/template/shadow2.C: Likewise.
+	* g++.old-deja/g++.benjamin/tem03.C: Likewise.
+	* g++.old-deja/g++.benjamin/tem04.C: Likewise.
+	* g++.old-deja/g++.brendan/crash7.C: Likewise.
+	* g++.old-deja/g++.pt/shadow2.C: Likewise.
+
+2015-07-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66863
+	* gcc.dg/torture/pr66863.c: New testcase.
+
+2015-07-13  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/65186
+	* g++.dg/template/pr65186.C: New test.
+
+2015-07-13  Mantas Mikaitis  <mantas.mikaitis@arm.com>
+
+	* gcc.target/arm/macro_defs0.c: Add directive to skip
+	test if -marm is present.
+	* gcc.target/arm/macro_defs1.c: Likewise.
+
+2015-07-13  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/adds3.c: Adjust for more aggressive
+	if-conversion..
+	* gcc.target/aarch64/adds1.c: Likewise.
+	* gcc.target/aarch64/ands_1.c: Likewise.
+	* gcc.target/aarch64/bics_1.c: Likewise.
+	* gcc.target/aarch64/subs1.c: Likewise.
+	* gcc.target/aarch64/subs3.c: Likewise.
+
+2015-07-13  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/64589
+	* gfortran.dg/pr64589.f90: New test.
+
+2015-07-13  Renlin Li  <renlin.li@arm.com>
+
+	PR rtl/66556
+	* gcc.c-torture/execute/pr66556.c: New.
+
+2015-07-12  Aldy Hernandez  <aldyh@redhat.com>
+
+	* gcc.dg/20020219-1.c: Fix double word typos.
+	* gcc.dg/20020919-1.c: Same.
+
+2015-07-12  Kugan Vivekanandarajah  <kuganv@linaro.org>
+	    Jeff Law  <law@redhat.com>
+
+	PR middle-end/66726
+	* g++.dg/tree-ssa/pr66726.c: New test.
+	* gcc.dg/tree-ssa/pr66726-2.c: New test.
+	* gcc.dg/tree-ssa/pr66726.c: New test.
+
+2015-07-11  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/58734
+	* g++.dg/cpp0x/variadic-ttp2.C: New.
+
+2015-07-10  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/30044
+	* g++.dg/cpp0x/auto46.C: New test.
+	* g++.dg/template/pr30044.C: New test.
+	* g++.dg/template/shadow2.C: New test.
+	* g++.dg/template/error55.C: New test.
+	* g++.dg/template/crash83.C: Accept any error string.
+	* g++.dg/cpp0x/variadic18.C: Adjust to avoid shadowing template
+	parameters.
+	* g++.dg/cpp0x/variadic19.C: Likewise
+	* g++.dg/template/canon-type-13.C: Likewise.
+	* g++.old-deja/g++.pt/ttp42.C: Likewise.
+	* g++.dg/torture/20070621-1.C: Likewise.
+
+2015-07-10  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/54521
+	* g++.dg/init/explicit3.C: New.
+
+2015-07-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/66819
+	* gcc.target/i386/pr66819-1.c: New test.
+	* gcc.target/i386/pr66819-2.c: Likewise.
+	* gcc.target/i386/pr66819-3.c: Likewise.
+	* gcc.target/i386/pr66819-4.c: Likewise.
+	* gcc.target/i386/pr66819-5.c: Likewise.
+
+2015-07-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66703
+	* gcc.target/i386/readeflags-1.c (readeflags_test): Declare with
+	__attribute__((noinline, noclone)).  Change "x" to "volatile char"
+	type to prevent possible flag-clobbering zero-extensions.
+	* gcc.target/i386/pr66703.c: New test.
+
+2015-07-10  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/60842
+	* g++.dg/cpp0x/nsdmi-template15.C: New.
+
+2015-07-10  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/got_mem_hoist_1.c: New test.
+
+2015-07-10  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/arm/attr_thumb.c: Skip if Thumb is not supported.
+	* gcc.target/arm/flip-thumb.c: Likewise.
+
+2015-07-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66813
+	* gcc.target/i386/pr66813.c: New test.
+
+2015-07-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66820
+	* gcc.dg/gomp/pr66820.c: New test.
+
+2015-07-10  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65592
+	* g++.dg/cpp0x/scoped_enum6.C: New.
+
+2015-07-10  Tom de Vries  <tom@codesourcery.com>
+
+	* gfortran.dg/parloops-exit-first-loop-alt-2.f95: New test.
+	* gfortran.dg/parloops-exit-first-loop-alt.f95: New test.
+
+2015-07-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66823
+	* gcc.dg/vect/pr61194.c: Remove -ftree-loop-if-convert-stores
+	which should not be necessary.  XFAIL.
+
+2015-07-09  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/64848
+	* g++.dg/cpp0x/lambda/lambda-ice14.C: New.
+
+2015-07-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66633
+	* gcc.dg/gomp/pr66633-1.c: New test.
+	* gcc.dg/gomp/pr66633-2.c: New test.
+	* gcc.dg/gomp/pr66633-3.c: New test.
+	* gcc.dg/gomp/pr66633-4.c: New test.
+
+2015-07-09  John Marino  <gnugcc@marino.st>
+
+	* lib/target-supports.exp (check_effective_target_pie):
+	Add *-*-dragonfly*
+
+2015-07-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66814
+	* gcc.target/i386/pr66814.c: New test.
+
+2015-07-09  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* gcc.target/aarch64/fnmul-1.c: Fix whitespace.
+	* gcc.target/aarch64/fnmul-2.c: Likewise.
+	* gcc.target/aarch64/fnmul-3.c: Likewise.
+	* gcc.target/aarch64/fnmul-4.c: Likewise.
+
+2015-07-09  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/65790
+	* g++.dg/cpp0x/vt-65790.C: New.
+
+2015-07-09  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/66818
+	* gcc.target/i386/pr66818.c: New test.
+
+2015-07-09  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/66817
+	* gcc.target/i386/pr66817.c: New test.
+
+2015-07-09  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/66718
+	* gcc.dg/vect/vect-126.c: New test.
+
+2015-07-08  Carlos Sánchez de La Lama  <csanchezdll@gmail.com>
+
+	* g++.dg/debug/dwarf2/*.C: generate dwarf-2 debug information
+	even when dwarf-2 is not the default.
+
+2015-07-08  Jeff Law  <law@redhat.com>
+
+	PR testsuite/66796
+	* gcc.target/hppa/shadd-1.c: Avoid the read-modify-write so as
+	to have a single memory reference.
+
+2015-07-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* g++.dg/other/dump-ada-spec-9.C: New test.
+
+2015-07-08  Jakub Jelinek  <jakub@redhat.com>
+
+	* g++.dg/vect/vect.exp: Run also simd* tests.
+	* gcc.dg/vect/tree-vect.h (abort, exit): For C++ use extern "C".
+	(check_vect): Fix up get_cpuid call for C++.
+	* g++.dg/vect/simd-clone-1.cc: New test.
+
+2015-07-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/pr37870.c (dg-options): Add -mlong-double-80.
+
+2015-07-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/readeflags-1.c (abort): New prototype.
+	* gcc.target/i386/writeeflags-1.c (abort): Likewise.
+
+2015-07-08  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/66421
+	* g++.dg/cpp0x/auto45.C: New.
+
+2015-07-08  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR middle-end/66334
+	* gcc.target/i386/pr66334.c: New.
+
+2015-07-08  David Malcolm  <dmalcolm@redhat.com>
+
+	* jit.dg/test-error-gcc_jit_block_end_with_switch-NULL-case.c: Fix
+	comments.
+
+2015-07-08  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/66783
+	* jit.dg/test-error-gcc_jit_context_new_field-opaque-struct.c
+	(verify_code): Update expected error message.
+	* jit.dg/test-error-gcc_jit_context_new_global-opaque-struct.c
+	(verify_code): Likewise.
+	* jit.dg/test-error-gcc_jit_function_new_local-opaque-struct.c
+	(verify_code): Likewise.
+
+2015-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66793
+	* gcc.dg/torture/pr66793.c: New testcase.
+
+2015-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66794
+	* gcc.dg/torture/pr66794.c: New testcase.
+
+2015-07-08  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/66748
+	* g++.dg/abi/abi-tag15.C: New test.
+
+2015-07-08  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* gcc.target/mips/branch-2.c: Change NOMIPS16 to NOCOMPRESSION.
+	* gcc.target/mips/branch-3.c: Ditto
+	* gcc.target/mips/branch-4.c: Ditto.
+	* gcc.target/mips/branch-5.c: Ditto.
+	* gcc.target/mips/branch-6.c: Ditto.
+	* gcc.target/mips/branch-7.c: Ditto.
+	* gcc.target/mips/branch-8.c: Ditto.
+	* gcc.target/mips/branch-9.c: Ditto.
+	* gcc.target/mips/branch-10.c: Ditto.
+	* gcc.target/mips/branch-11.c: Ditto.
+	* gcc.target/mips/branch-12.c: Ditto.
+	* gcc.target/mips/branch-13.c: Ditto.
+	* gcc.target/mips/umips-branch-5.c: New file.
+	* gcc.target/mips/umips-branch-6.c: New file.
+	* gcc.target/mips/umips-branch-7.c: New file.
+	* gcc.target/mips/umips-branch-8.c: New file.
+	* gcc.target/mips/umips-branch-9.c: New file.
+	* gcc.target/mips/umips-branch-10.c: New file.
+	* gcc.target/mips/umips-branch-11.c: New file.
+	* gcc.target/mips/umips-branch-12.c: New file.
+	* gcc.target/mips/umips-branch-13.c: New file.
+	* gcc.target/mips/umips-branch-14.c: New file.
+	* gcc.target/mips/umips-branch-15.c: New file.
+	* gcc.target/mips/umips-branch-16.c: New file.
+	* gcc.target/mips/branch-helper.h (OCCUPY_0x10000): New define.  
+	(OCCUPY_0xfffc): New define.
+
+2015-07-08  Renlin Li  <renlin.li@arm.com>
+
+	* gcc.target/arm/unsigned-float.c: Different options for hf toolchain.
+
+2015-07-08  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* gcc.target/mips/stack-1.c: Do not build the testcase for micromips.
+
+2015-07-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/bt-3.c: New test.
+	* gcc.target/i386/bt-4.c: Ditto.
+
+2015-07-07  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* g++.dg/other/dump-ada-spec-8.C: New test.
+
+2015-07-07  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/66783
+	* jit.dg/test-error-gcc_jit_context_new_field-opaque-struct.c: New
+	test case.
+	* jit.dg/test-error-gcc_jit_context_new_global-opaque-struct.c:
+	New test case.
+	* jit.dg/test-error-gcc_jit_function_new_local-opaque-struct.c:
+	New test case.
+	* jit.dg/test-error-mismatching-types-in-call.c (create_code):
+	Avoid using an opaque struct for local "f".
+
+2015-07-07  David Malcolm  <dmalcolm@redhat.com>
+
+	PR jit/66779
+	* jit.dg/all-non-failing-tests.h: Add test-pr66779.c.
+	* jit.dg/test-pr66779.c: New testcase.
+
+2015-07-07  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* gcc.target/mips/no-smartmips-lwxs.c: Change NOMIPS16 to
+	NOCOMPRESSION.
+
+2015-07-07  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/vect/vect-over-widen-3-big-array.c: Adjust.
+
+2015-07-07  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* gcc.target/mips/call-1.c: Allow testcase to match the jrc instruction.
+	* gcc.target/mips/call-5.c: Ditto.
+	* gcc.target/mips/call-6.c: Ditto.
+
+2015-07-07  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	* gcc.dg/dx-test.c: New test-case.
+
+2015-07-07  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/66578
+	* gfortran.dg/allocate_with_source_9.f08: New test.
+
+2015-07-07  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/52144
+	* gcc.target/arm/flip-thumb.c: Fix scan.
+	* gcc.target/arm/attr_thumb.c: Test for all targets. Fix scan.
+	* gcc.target/arm/attr_arm.c: Test for all targets. Fix scan.
+	* gcc.target/arm/attr_thumb-static.c: Test for all targets.
+	Fix return value.
+
+2015-05-05  Jakub Jelinek  <jakub@redhat.com>
+
+        PR target/65956
+        * gcc.c-torture/execute/pr65956.c: New test.
+
+2015-07-06  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/arm/aapcs/align1.c: New.
+	* gcc.target/arm/aapcs/align_rec1.c: New.
+	* gcc.target/arm/aapcs/align2.c: New.
+	* gcc.target/arm/aapcs/align_rec2.c: New.
+	* gcc.target/arm/aapcs/align3.c: New.
+	* gcc.target/arm/aapcs/align_rec3.c: New.
+	* gcc.target/arm/aapcs/align4.c: New.
+	* gcc.target/arm/aapcs/align_rec4.c: New.
+	* gcc.target/arm/aapcs/align_vararg1.c: New.
+	* gcc.target/arm/aapcs/align_vararg2.c: New.
+
+2015-07-06  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* gfortran.dg/iomsg_2.f90: New test.
+
+2015-07-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66772
+	* gcc.dg/torture/pr66772-1.c: New testcase.
+	* gcc.dg/torture/pr66772-2.c: Likewise.
+
+2015-07-06  Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* gcc.target/mips/near-far-3.c: Allow the call to near_func to use
+	the jals instruction.
+
+2015-07-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/53383
+	* gcc.target/i386/pr53383-1.c: New file.
+	* gcc.target/i386/pr53383-2.c: Likewise.
+	* gcc.target/i386/pr53383-3.c: Likewise.
+
+2015-07-06  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* gcc.target/aarch64/fnmul-1.c: New.
+	* gcc.target/aarch64/fnmul-2.c: New.
+	* gcc.target/aarch64/fnmul-3.c: New.
+	* gcc.target/aarch64/fnmul-4.c: New.
+
+2015-07-06  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/66759
+	* gcc.dg/torture/pr66759.c: New testcase.
+
+2015-07-06  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/58586
+	* gfortran.dg/alloc_comp_class_3.f03: New test.
+	* gfortran.dg/alloc_comp_class_4.f03: New test.
+
+2015-07-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.c-torture/execute/pr66757.c: New test.
+
+2015-07-06  Bin Cheng  <bin.cheng@arm.com>
+
+	PR tree-optimization/66720
+	* gcc.dg/vect/pr48052.c: Use dg-require-effective-target vect_int_mult.
+
+2015-07-05  Chung-Lin Tang  <cltang@codesourcery.com>
+	    Sandra Loosemore <sandra@codesourcery.com>
+
+	* gcc.target/nios2/gprel-offset.c: New test.
+
 2015-07-04  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/66725
@@ -125,7 +626,8 @@
 
 2015-07-01  Jiong Wang  <jiong.wang@arm.com>
 
-	* lib/target-supports.exp (check_effective_target_aarch64_small_fpic):New function.
+	* lib/target-supports.exp (check_effective_target_aarch64_small_fpic):
+	New function.
 	* gcc.target/aarch64/pic-small.c: Restrict this test under
 	check_effective_target_aarch64_small_fpic.
 

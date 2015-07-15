@@ -21,37 +21,25 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
+#include "gimple.h"
 #include "rtl.h"
+#include "ssa.h"
 #include "tm_p.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"
 #include "fold-const.h"
 #include "stor-layout.h"
-#include "predict.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfganal.h"
-#include "basic-block.h"
 #include "gimple-pretty-print.h"
 #include "tree-inline.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
-#include "gimple-ssa.h"
 #include "tree-cfg.h"
-#include "tree-phinodes.h"
-#include "ssa-iterators.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
 #include "tree-ssa-loop-niter.h"
 #include "tree-ssa-loop.h"
 #include "flags.h"
@@ -2540,10 +2528,10 @@ optimize_range_tests_to_bit_test (enum tree_code opcode, int first, int length,
 						      GEN_INT (-m)), speed_p);
 	      rtx r = immed_wide_int_const (mask, word_mode);
 	      cost_diff += set_src_cost (gen_rtx_AND (word_mode, reg, r),
-					 speed_p);
+					 word_mode, speed_p);
 	      r = immed_wide_int_const (wi::lshift (mask, m), word_mode);
 	      cost_diff -= set_src_cost (gen_rtx_AND (word_mode, reg, r),
-					 speed_p);
+					 word_mode, speed_p);
 	      if (cost_diff > 0)
 		{
 		  mask = wi::lshift (mask, m);

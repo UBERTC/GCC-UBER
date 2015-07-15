@@ -21,6 +21,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 
 #ifdef HAVE_isl
+/* Workaround for GMP 5.1.3 bug, see PR56019.  */
+#include <stddef.h>
+
 #include <isl/set.h>
 #include <isl/map.h>
 #include <isl/union_map.h>
@@ -36,61 +39,30 @@ extern "C" {
 #if 0 && !defined(HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE) && defined(__cplusplus)
 }
 #endif
-#endif
 
 #include "system.h"
 #include "coretypes.h"
-#include "alias.h"
-#include "symtab.h"
-#include "options.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
-#include "fold-const.h"
-#include "predict.h"
-#include "tm.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
-#include "internal-fn.h"
-#include "gimple-expr.h"
 #include "gimple.h"
+#include "ssa.h"
+#include "fold-const.h"
 #include "gimple-iterator.h"
 #include "gimplify.h"
 #include "gimplify-me.h"
-#include "gimple-ssa.h"
 #include "tree-cfg.h"
-#include "tree-phinodes.h"
-#include "ssa-iterators.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
 #include "tree-ssa-loop-manip.h"
 #include "tree-ssa-loop-niter.h"
 #include "tree-ssa-loop.h"
 #include "tree-into-ssa.h"
 #include "tree-pass.h"
 #include "cfgloop.h"
-#include "tree-chrec.h"
 #include "tree-data-ref.h"
 #include "tree-scalar-evolution.h"
 #include "domwalk.h"
-#include "sese.h"
-#include "tree-ssa-propagate.h"
-
-#ifdef HAVE_isl
-#include "rtl.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
 #include "graphite-poly.h"
+#include "tree-ssa-propagate.h"
 #include "graphite-sese-to-poly.h"
 
 
@@ -3196,4 +3168,4 @@ build_poly_scop (scop_p scop)
      representation.  */
   POLY_SCOP_P (scop) = true;
 }
-#endif
+#endif  /* HAVE_isl */

@@ -21,11 +21,14 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "flags.h"
 #include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "function.h"
+#include "predict.h"
+#include "basic-block.h"
 #include "tree.h"
+#include "gimple.h"
+#include "hard-reg-set.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "stringpool.h"
 #include "stor-layout.h"
@@ -36,18 +39,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "lto-tree.h"
 #include "lto.h"
 #include "tree-inline.h"
-#include "predict.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "diagnostic-core.h"
 #include "toplev.h"
 #include "cgraph.h"
-#include "lto-streamer.h"
 #include "cilk.h"
 
 static tree lto_type_for_size (unsigned, int);
@@ -1219,7 +1214,7 @@ lto_init (void)
     main_identifier_node = get_identifier ("main");
 
   /* In the C++ front-end, fileptr_type_node is defined as a variant
-     copy of of ptr_type_node, rather than ptr_node itself.  The
+     copy of ptr_type_node, rather than ptr_node itself.  The
      distinction should only be relevant to the front-end, so we
      always use the C definition here in lto1.  */
   gcc_assert (fileptr_type_node == ptr_type_node);

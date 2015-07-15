@@ -1,3 +1,54 @@
+2015-07-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Sync with binutils-gdb:
+	2015-03-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac (target_configdirs): Exclude target-zlib if
+	target-libjava isn't built.
+	* configure: Regenerated.
+
+2015-07-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Sync with binutils-gdb:
+	2015-05-13  John David Anglin  <dave.anglin@bell.net>
+
+	* configure.ac: Disable configuration of GDB for HPUX targets.
+	* configure: Regenerate.
+
+	2015-04-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* configure.ac: Add --with-system-zlib.
+	* configure: Regenerated.
+
+	2015-01-28  James Bowman  <james.bowman@ftdichip.com>
+
+	* configure.ac: Add FT32 support.
+	* configure: Regenerate.
+
+	2015-01-12  Anthony Green  <green@moxielogic.com>
+
+	* configure.ac: Don't disable gprof for moxie.
+	* configure: Rebuild.
+
+2015-07-14  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Sync with binutils-gdb:
+	2015-05-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ld/18355
+	* Makefile.def: Add extra_configure_flags to host zlib.
+	* configure.ac (extra_host_zlib_configure_flags): New.  Set
+	to --enable-host-shared When bfd is to be built as shared
+	library.  AC_SUBST.
+	* Makefile.in: Regenerated.
+
+2015-07-14  Hans-Peter Nilsson  <hp@bitrange.com>
+
+	Sync with src:
+	2015-03-30  H.J. Lu  <hongjiu.lu@intel.com>
+	* Makefile.def (dependencies): Add all-zlib to all-bfd.
+	* Makefile.in: Regenerated.
+
 2015-06-30  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* configure.ac (ospace_frag): Enable for i?86*-*-elfiamcu

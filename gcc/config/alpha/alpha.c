@@ -22,24 +22,25 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "rtl.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "gimple.h"
+#include "rtl.h"
+#include "df.h"
+#include "ssa.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "calls.h"
 #include "varasm.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "output.h"
 #include "insn-attr.h"
 #include "flags.h"
 #include "recog.h"
-#include "function.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -49,7 +50,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "insn-codes.h"
 #include "optabs.h"
 #include "reload.h"
-#include "obstack.h"
 #include "except.h"
 #include "diagnostic-core.h"
 #include "tm_p.h"
@@ -57,32 +57,21 @@ along with GCC; see the file COPYING3.  If not see
 #include "common/common-target.h"
 #include "debug.h"
 #include "langhooks.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "tree-pass.h"
 #include "context.h"
 #include "pass_manager.h"
 #include "gimple-iterator.h"
 #include "gimplify.h"
-#include "gimple-ssa.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
 #include "tree-stdarg.h"
 #include "tm-constrs.h"
-#include "df.h"
 #include "libfuncs.h"
 #include "opts.h"
 #include "params.h"
@@ -1371,10 +1360,10 @@ alpha_legitimize_reload_address (rtx x,
    scanned.  In either case, *TOTAL contains the cost result.  */
 
 static bool
-alpha_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
+alpha_rtx_costs (rtx x, machine_mode mode, int outer_code, int opno, int *total,
 		 bool speed)
 {
-  machine_mode mode = GET_MODE (x);
+  int code = GET_CODE (x);
   bool float_mode_p = FLOAT_MODE_P (mode);
   const struct alpha_rtx_cost_data *cost_data;
 
@@ -1439,9 +1428,9 @@ alpha_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
       else if (GET_CODE (XEXP (x, 0)) == MULT
 	       && const48_operand (XEXP (XEXP (x, 0), 1), VOIDmode))
 	{
-	  *total = (rtx_cost (XEXP (XEXP (x, 0), 0),
+	  *total = (rtx_cost (XEXP (XEXP (x, 0), 0), mode,
 			      (enum rtx_code) outer_code, opno, speed)
-		    + rtx_cost (XEXP (x, 1),
+		    + rtx_cost (XEXP (x, 1), mode,
 				(enum rtx_code) outer_code, opno, speed)
 		    + COSTS_N_INSNS (1));
 	  return true;

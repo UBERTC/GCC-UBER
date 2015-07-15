@@ -21,20 +21,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "predict.h"
 #include "rtl.h"
 #include "alias.h"
-#include "symtab.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "varasm.h"
 #include "tm_p.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "flags.h"
 #include "insn-config.h"
 #include "recog.h"
-#include "function.h"
 #include "insn-codes.h"
 #include "optabs.h"
 #include "expmed.h"
@@ -46,7 +44,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "expr.h"
 #include "diagnostic-core.h"
 #include "target.h"
-#include "predict.h"
 
 /* Simplification and canonicalization of RTL.  */
 
@@ -677,9 +674,7 @@ simplify_truncation (machine_mode mode, rtx op,
      the truncation, i.e. simplify (truncate:QI (op:SI (x:SI) (y:SI))) into
      (op:QI (truncate:QI (x:SI)) (truncate:QI (y:SI))).  */
   if (1
-#ifdef WORD_REGISTER_OPERATIONS
-      && precision >= BITS_PER_WORD
-#endif
+      && (!WORD_REGISTER_OPERATIONS || precision >= BITS_PER_WORD)
       && (GET_CODE (op) == PLUS
 	  || GET_CODE (op) == MINUS
 	  || GET_CODE (op) == MULT))
@@ -2090,8 +2085,8 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 	      coeff = immed_wide_int_const (coeff0 + coeff1, mode);
 
 	      tem = simplify_gen_binary (MULT, mode, lhs, coeff);
-	      return set_src_cost (tem, speed) <= set_src_cost (orig, speed)
-		? tem : 0;
+	      return (set_src_cost (tem, mode, speed)
+		      <= set_src_cost (orig, mode, speed) ? tem : 0);
 	    }
 	}
 
@@ -2265,8 +2260,8 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 	      coeff = immed_wide_int_const (coeff0 + negcoeff1, mode);
 
 	      tem = simplify_gen_binary (MULT, mode, lhs, coeff);
-	      return set_src_cost (tem, speed) <= set_src_cost (orig, speed)
-		? tem : 0;
+	      return (set_src_cost (tem, mode, speed)
+		      <= set_src_cost (orig, mode, speed) ? tem : 0);
 	    }
 	}
 
@@ -4930,7 +4925,8 @@ simplify_const_relational_operation (enum rtx_code code,
 
   /* Optimize comparisons with upper and lower bounds.  */
   if (HWI_COMPUTABLE_MODE_P (mode)
-      && CONST_INT_P (trueop1))
+      && CONST_INT_P (trueop1)
+      && !side_effects_p (trueop0))
     {
       int sign;
       unsigned HOST_WIDE_INT nonzero = nonzero_bits (trueop0, mode);
@@ -5043,7 +5039,7 @@ simplify_const_relational_operation (enum rtx_code code,
     }
 
   /* Optimize integer comparisons with zero.  */
-  if (trueop1 == const0_rtx)
+  if (trueop1 == const0_rtx && !side_effects_p (trueop0))
     {
       /* Some addresses are known to be nonzero.  We don't know
 	 their sign, but equality comparisons are known.  */
@@ -5094,7 +5090,7 @@ simplify_const_relational_operation (enum rtx_code code,
     }
 
   /* Optimize comparison of ABS with zero.  */
-  if (trueop1 == CONST0_RTX (mode)
+  if (trueop1 == CONST0_RTX (mode) && !side_effects_p (trueop0)
       && (GET_CODE (trueop0) == ABS
 	  || (GET_CODE (trueop0) == FLOAT_EXTEND
 	      && GET_CODE (XEXP (trueop0, 0)) == ABS)))

@@ -21,25 +21,20 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "output.h"
-#include "predict.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
 #include "flags.h"
-#include "symtab.h"
-#include "tree.h"
 #include "varasm.h"
 #include "stor-layout.h"
 #include "calls.h"
@@ -56,7 +51,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "debug.h"
 #include "tm_p.h"
 #include "target.h"
-#include "df.h"
 #include "tm-constrs.h"
 #include "builtins.h"
 
@@ -156,7 +150,7 @@ static void mmix_setup_incoming_varargs
   (cumulative_args_t, machine_mode, tree, int *, int);
 static void mmix_file_start (void);
 static void mmix_file_end (void);
-static bool mmix_rtx_costs (rtx, int, int, int, int *, bool);
+static bool mmix_rtx_costs (rtx, machine_mode, int, int, int *, bool);
 static int mmix_register_move_cost (machine_mode,
 				    reg_class_t, reg_class_t);
 static rtx mmix_struct_value_rtx (tree, int);
@@ -1181,7 +1175,7 @@ mmix_reversible_cc_mode (machine_mode mode)
 
 static bool
 mmix_rtx_costs (rtx x ATTRIBUTE_UNUSED,
-		int code ATTRIBUTE_UNUSED,
+		machine_mode mode ATTRIBUTE_UNUSED,
 		int outer_code ATTRIBUTE_UNUSED,
 		int opno ATTRIBUTE_UNUSED,
 		int *total ATTRIBUTE_UNUSED,

@@ -20,18 +20,16 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-
-#include "hard-reg-set.h"
+#include "backend.h"
+#include "predict.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
+
 #include "tm_p.h"
-#include "obstack.h"
 #include "insn-config.h"
 #include "flags.h"
-#include "function.h"
-#include "symtab.h"
 #include "alias.h"
-#include "tree.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -43,13 +41,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "insn-codes.h"
 #include "optabs.h"
 #include "regs.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
 #include "reload.h"
 #include "recog.h"
 #include "alloc-pool.h"
@@ -58,8 +52,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "except.h"
 #include "target.h"
 #include "tree-pass.h"
-#include "df.h"
 #include "dbgcnt.h"
+
+#ifndef LOAD_EXTEND_OP
+#define LOAD_EXTEND_OP(M) UNKNOWN
+#endif
 
 static int reload_cse_noop_set_p (rtx);
 static bool reload_cse_simplify (rtx_insn *, rtx);
@@ -261,9 +258,7 @@ reload_cse_simplify_set (rtx set, rtx_insn *insn)
   int old_cost;
   cselib_val *val;
   struct elt_loc_list *l;
-#ifdef LOAD_EXTEND_OP
   enum rtx_code extend_op = UNKNOWN;
-#endif
   bool speed = optimize_bb_for_speed_p (BLOCK_FOR_INSN (insn));
 
   dreg = true_regnum (SET_DEST (set));
@@ -276,7 +271,6 @@ reload_cse_simplify_set (rtx set, rtx_insn *insn)
 
   dclass = REGNO_REG_CLASS (dreg);
 
-#ifdef LOAD_EXTEND_OP
   /* When replacing a memory with a register, we need to honor assumptions
      that combine made wrt the contents of sign bits.  We'll do this by
      generating an extend instruction instead of a reg->reg copy.  Thus
@@ -286,7 +280,6 @@ reload_cse_simplify_set (rtx set, rtx_insn *insn)
       && (extend_op = LOAD_EXTEND_OP (GET_MODE (src))) != UNKNOWN
       && !REG_P (SET_DEST (set)))
     return 0;
-#endif
 
   val = cselib_lookup (src, GET_MODE (SET_DEST (set)), 0, VOIDmode);
   if (! val)
@@ -299,7 +292,7 @@ reload_cse_simplify_set (rtx set, rtx_insn *insn)
     old_cost = register_move_cost (GET_MODE (src),
 				   REGNO_REG_CLASS (REGNO (src)), dclass);
   else
-    old_cost = set_src_cost (src, speed);
+    old_cost = set_src_cost (src, GET_MODE (SET_DEST (set)), speed);
 
   for (l = val->locs; l; l = l->next)
     {
@@ -308,7 +301,6 @@ reload_cse_simplify_set (rtx set, rtx_insn *insn)
 
       if (CONSTANT_P (this_rtx) && ! references_value_p (this_rtx, 0))
 	{
-#ifdef LOAD_EXTEND_OP
 	  if (extend_op != UNKNOWN)
 	    {
 	      wide_int result;
@@ -333,19 +325,17 @@ reload_cse_simplify_set (rtx set, rtx_insn *insn)
 		}
 	      this_rtx = immed_wide_int_const (result, word_mode);
 	    }
-#endif
-	  this_cost = set_src_cost (this_rtx, speed);
+
+	  this_cost = set_src_cost (this_rtx, GET_MODE (SET_DEST (set)), speed);
 	}
       else if (REG_P (this_rtx))
 	{
-#ifdef LOAD_EXTEND_OP
 	  if (extend_op != UNKNOWN)
 	    {
 	      this_rtx = gen_rtx_fmt_e (extend_op, word_mode, this_rtx);
-	      this_cost = set_src_cost (this_rtx, speed);
+	      this_cost = set_src_cost (this_rtx, word_mode, speed);
 	    }
 	  else
-#endif
 	    this_cost = register_move_cost (GET_MODE (this_rtx),
 					    REGNO_REG_CLASS (REGNO (this_rtx)),
 					    dclass);
@@ -360,7 +350,6 @@ reload_cse_simplify_set (rtx set, rtx_insn *insn)
 	      && REG_P (this_rtx)
 	      && !REG_P (SET_SRC (set))))
 	{
-#ifdef LOAD_EXTEND_OP
 	  if (GET_MODE_BITSIZE (GET_MODE (SET_DEST (set))) < BITS_PER_WORD
 	      && extend_op != UNKNOWN
 #ifdef CANNOT_CHANGE_MODE_CLASS
@@ -374,7 +363,6 @@ reload_cse_simplify_set (rtx set, rtx_insn *insn)
 	      ORIGINAL_REGNO (wide_dest) = ORIGINAL_REGNO (SET_DEST (set));
 	      validate_change (insn, &SET_DEST (set), wide_dest, 1);
 	    }
-#endif
 
 	  validate_unshare_change (insn, &SET_SRC (set), this_rtx, 1);
 	  old_cost = this_cost, did_change = 1;
@@ -446,7 +434,6 @@ reload_cse_simplify_operands (rtx_insn *insn, rtx testreg)
 	continue;
 
       op = recog_data.operand[i];
-#ifdef LOAD_EXTEND_OP
       if (MEM_P (op)
 	  && GET_MODE_BITSIZE (GET_MODE (op)) < BITS_PER_WORD
 	  && LOAD_EXTEND_OP (GET_MODE (op)) != UNKNOWN)
@@ -497,7 +484,7 @@ reload_cse_simplify_operands (rtx_insn *insn, rtx testreg)
 	       safe to optimize, but is it worth the trouble?  */
 	    continue;
 	}
-#endif /* LOAD_EXTEND_OP */
+
       if (side_effects_p (op))
 	continue;
       v = cselib_lookup (op, recog_data.operand_mode[i], 0, VOIDmode);
@@ -585,10 +572,10 @@ reload_cse_simplify_operands (rtx_insn *insn, rtx testreg)
 		      && TEST_BIT (preferred, j)
 		      && reg_fits_class_p (testreg, rclass, 0, mode)
 		      && (!CONST_INT_P (recog_data.operand[i])
-			  || (set_src_cost (recog_data.operand[i],
+			  || (set_src_cost (recog_data.operand[i], mode,
 					    optimize_bb_for_speed_p
 					     (BLOCK_FOR_INSN (insn)))
-			      > set_src_cost (testreg,
+			      > set_src_cost (testreg, mode,
 					      optimize_bb_for_speed_p
 					       (BLOCK_FOR_INSN (insn))))))
 		    {
@@ -921,12 +908,13 @@ try_replace_in_use (struct reg_use *use, rtx reg, rtx src)
 	  && CONSTANT_P (XEXP (SET_SRC (new_set), 1)))
 	{
 	  rtx new_src;
-	  int old_cost = set_src_cost (SET_SRC (new_set), speed);
+	  machine_mode mode = GET_MODE (SET_DEST (new_set));
+	  int old_cost = set_src_cost (SET_SRC (new_set), mode, speed);
 
 	  gcc_assert (rtx_equal_p (XEXP (SET_SRC (new_set), 0), reg));
 	  new_src = simplify_replace_rtx (SET_SRC (new_set), reg, src);
 
-	  if (set_src_cost (new_src, speed) <= old_cost
+	  if (set_src_cost (new_src, mode, speed) <= old_cost
 	      && validate_change (use_insn, &SET_SRC (new_set),
 				  new_src, 0))
 	    return true;
@@ -2024,7 +2012,7 @@ reload_cse_move2add (rtx_insn *first)
 
 			  get_full_set_rtx_cost (set, &oldcst);
 			  SET_SRC (set) = tem;
-			  get_full_set_src_cost (tem, &newcst);
+			  get_full_set_src_cost (tem, GET_MODE (reg), &newcst);
 			  SET_SRC (set) = old_src;
 			  costs_add_n_insns (&oldcst, 1);
 

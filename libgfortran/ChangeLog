@@ -1,3 +1,17 @@
+2015-07-14  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR libfortran/66861
+	* io/unix.c (compare_file_filename): Verify that u->filename is
+	non-NULL before strcmp.
+	(find_file0): Likewise.
+
+2015-07-06  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR libfortran/40267
+	* Makefile.am: Remove libgfortranbegin targets.
+	* Makefile.in: Regenerate.
+	* fmain.c: Remove.
+
 2015-04-22  Szabolcs Nagy  <szabolcs.nagy@arm.com>
 
 	* acinclude.m4 (GTHREAD_USE_WEAK): Define as 0 for *-*-musl*.

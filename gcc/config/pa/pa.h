@@ -572,7 +572,7 @@ extern rtx hppa_pic_save_rtx (void);
    The INCOMING field tracks whether this is an "incoming" or
    "outgoing" argument.
    
-   The INDIRECT field indicates whether this is is an indirect
+   The INDIRECT field indicates whether this is an indirect
    call or not.
    
    The NARGS_PROTOTYPE field indicates that an argument does not
@@ -1011,7 +1011,7 @@ do {									     \
 
 /* Define if operations between registers always perform the operation
    on the full register even if a narrower mode is specified.  */
-#define WORD_REGISTER_OPERATIONS
+#define WORD_REGISTER_OPERATIONS 1
 
 /* Define if loading in MODE, an integral mode narrower than BITS_PER_WORD
    will either zero-extend or sign-extend.  The value of this macro should

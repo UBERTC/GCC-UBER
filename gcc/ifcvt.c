@@ -20,26 +20,21 @@
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
+
 #include "regs.h"
-#include "hard-reg-set.h"
-#include "function.h"
 #include "flags.h"
 #include "insn-config.h"
 #include "recog.h"
 #include "except.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
-#include "symtab.h"
 #include "alias.h"
-#include "tree.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -56,7 +51,6 @@
 #include "cfgloop.h"
 #include "target.h"
 #include "tree-pass.h"
-#include "df.h"
 #include "dbgcnt.h"
 #include "shrink-wrap.h"
 #include "ifcvt.h"
@@ -66,9 +60,6 @@
 #endif
 #ifndef HAVE_decscc
 #define HAVE_decscc 0
-#endif
-#ifndef HAVE_trap
-#define HAVE_trap 0
 #endif
 
 #ifndef MAX_CONDITIONAL_EXECUTE
@@ -2238,7 +2229,7 @@ noce_try_sign_mask (struct noce_if_info *if_info)
      && (if_info->insn_b == NULL_RTX
 	 || BLOCK_FOR_INSN (if_info->insn_b) == if_info->test_bb));
   if (!(t_unconditional
-	|| (set_src_cost (t, optimize_bb_for_speed_p (if_info->test_bb))
+	|| (set_src_cost (t, mode, optimize_bb_for_speed_p (if_info->test_bb))
 	    < COSTS_N_INSNS (2))))
     return FALSE;
 
@@ -3414,7 +3405,7 @@ find_if_header (basic_block test_bb, int pass)
       && cond_exec_find_if_block (&ce_info))
     goto success;
 
-  if (HAVE_trap
+  if (targetm.have_trap ()
       && optab_handler (ctrap_optab, word_mode) != CODE_FOR_nothing
       && find_cond_trap (test_bb, then_edge, else_edge))
     goto success;

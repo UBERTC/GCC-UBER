@@ -21,23 +21,22 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "insn-attr.h"
 #include "flags.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"
 #include "fold-const.h"
 #include "varasm.h"
 #include "stor-layout.h"
 #include "calls.h"
 #include "stmt.h"
-#include "function.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -54,16 +53,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "target.h"
 #include "insn-codes.h"
 #include "optabs.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "predict.h"
-#include "basic-block.h"
-#include "df.h"
 #include "opts.h"
 #include "cgraph.h"
 #include "builtins.h"
@@ -153,7 +147,7 @@ static reg_class_t cris_preferred_reload_class (rtx, reg_class_t);
 
 static int cris_register_move_cost (machine_mode, reg_class_t, reg_class_t);
 static int cris_memory_move_cost (machine_mode, reg_class_t, bool);
-static bool cris_rtx_costs (rtx, int, int, int, int *, bool);
+static bool cris_rtx_costs (rtx, machine_mode, int, int, int *, bool);
 static int cris_address_cost (rtx, machine_mode, addr_space_t, bool);
 static bool cris_pass_by_reference (cumulative_args_t, machine_mode,
 				    const_tree, bool);
@@ -2104,9 +2098,11 @@ cris_expand_return (bool on_stack)
    scanned.  In either case, *TOTAL contains the cost result.  */
 
 static bool
-cris_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
-		bool speed)
+cris_rtx_costs (rtx x, machine_mode mode, int outer_code, int opno,
+		int *total, bool speed)
 {
+  int code = GET_CODE (x);
+
   switch (code)
     {
     case CONST_INT:
@@ -2136,7 +2132,7 @@ cris_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
       return true;
 
     case CONST_DOUBLE:
-      if (x != CONST0_RTX (GET_MODE (x) == VOIDmode ? DImode : GET_MODE (x)))
+      if (x != CONST0_RTX (mode == VOIDmode ? DImode : mode))
 	*total = 12;
       else
         /* Make 0.0 cheap, else test-insns will not be used.  */
@@ -2198,9 +2194,9 @@ cris_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
 	  && !satisfies_constraint_I (XEXP (x, 1)))
 	{
 	  *total
-	    = (rtx_cost (XEXP (x, 0), (enum rtx_code) outer_code,
+	    = (rtx_cost (XEXP (x, 0), mode, (enum rtx_code) outer_code,
 			 opno, speed) + 2
-	       + 2 * GET_MODE_NUNITS (GET_MODE (XEXP (x, 0))));
+	       + 2 * GET_MODE_NUNITS (mode));
 	  return true;
 	}
       return false;
@@ -2211,7 +2207,8 @@ cris_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
       /* fall through */
 
     case ZERO_EXTEND: case SIGN_EXTEND:
-      *total = rtx_cost (XEXP (x, 0), (enum rtx_code) outer_code, opno, speed);
+      *total = rtx_cost (XEXP (x, 0), VOIDmode, (enum rtx_code) outer_code,
+			 opno, speed);
       return true;
 
     default:

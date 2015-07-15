@@ -20,25 +20,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
 #include "tree.h"
+#include "gimple.h"
+#include "hard-reg-set.h"
+#include "ssa.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
-#include "predict.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
-#include "gimple-expr.h"
-#include "gimple.h"
-#include "gimple-ssa.h"
-#include "tree-phinodes.h"
-#include "ssa-iterators.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
 #include "tree-into-ssa.h"
 #include "tree-ssa.h"
 #include "tree-pass.h"
@@ -390,7 +380,7 @@ mark_ptr_info_alignment_unknown (struct ptr_info_def *pi)
   pi->misalign = 0;
 }
 
-/* Store the the power-of-two byte alignment and the deviation from that
+/* Store the power-of-two byte alignment and the deviation from that
    alignment of pointer described by PI to ALIOGN and MISALIGN
    respectively.  */
 

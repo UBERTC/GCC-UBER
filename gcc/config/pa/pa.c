@@ -21,17 +21,17 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "insn-attr.h"
 #include "flags.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "stringpool.h"
@@ -40,7 +40,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "output.h"
 #include "dbxout.h"
 #include "except.h"
-#include "function.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -52,20 +51,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "reload.h"
 #include "diagnostic-core.h"
 #include "recog.h"
-#include "predict.h"
 #include "tm_p.h"
 #include "target.h"
 #include "common/common-target.h"
 #include "langhooks.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
-#include "df.h"
 #include "opts.h"
 #include "builtins.h"
 
@@ -113,7 +107,7 @@ static void fix_range (const char *);
 static int hppa_register_move_cost (machine_mode mode, reg_class_t,
 				    reg_class_t);
 static int hppa_address_cost (rtx, machine_mode mode, addr_space_t, bool);
-static bool hppa_rtx_costs (rtx, int, int, int, int *, bool);
+static bool hppa_rtx_costs (rtx, machine_mode, int, int, int *, bool);
 static inline rtx force_mode (machine_mode, rtx);
 static void pa_reorg (void);
 static void pa_combine_instructions (void);
@@ -1487,10 +1481,12 @@ hppa_address_cost (rtx X, machine_mode mode ATTRIBUTE_UNUSED,
    scanned.  In either case, *TOTAL contains the cost result.  */
 
 static bool
-hppa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
+hppa_rtx_costs (rtx x, machine_mode mode, int outer_code,
+		int opno ATTRIBUTE_UNUSED,
 		int *total, bool speed ATTRIBUTE_UNUSED)
 {
   int factor;
+  int code = GET_CODE (x);
 
   switch (code)
     {
@@ -1522,14 +1518,14 @@ hppa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
       return true;
 
     case MULT:
-      if (GET_MODE_CLASS (GET_MODE (x)) == MODE_FLOAT)
+      if (GET_MODE_CLASS (mode) == MODE_FLOAT)
 	{
 	  *total = COSTS_N_INSNS (3);
 	  return true;
 	}
 
       /* A mode size N times larger than SImode needs O(N*N) more insns.  */
-      factor = GET_MODE_SIZE (GET_MODE (x)) / 4;
+      factor = GET_MODE_SIZE (mode) / 4;
       if (factor == 0)
 	factor = 1;
 
@@ -1540,7 +1536,7 @@ hppa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
       return true;
 
     case DIV:
-      if (GET_MODE_CLASS (GET_MODE (x)) == MODE_FLOAT)
+      if (GET_MODE_CLASS (mode) == MODE_FLOAT)
 	{
 	  *total = COSTS_N_INSNS (14);
 	  return true;
@@ -1551,7 +1547,7 @@ hppa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
     case MOD:
     case UMOD:
       /* A mode size N times larger than SImode needs O(N*N) more insns.  */
-      factor = GET_MODE_SIZE (GET_MODE (x)) / 4;
+      factor = GET_MODE_SIZE (mode) / 4;
       if (factor == 0)
 	factor = 1;
 
@@ -1560,7 +1556,7 @@ hppa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
 
     case PLUS: /* this includes shNadd insns */
     case MINUS:
-      if (GET_MODE_CLASS (GET_MODE (x)) == MODE_FLOAT)
+      if (GET_MODE_CLASS (mode) == MODE_FLOAT)
 	{
 	  *total = COSTS_N_INSNS (3);
 	  return true;
@@ -1568,7 +1564,7 @@ hppa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
 
       /* A size N times larger than UNITS_PER_WORD needs N times as
 	 many insns, taking N times as long.  */
-      factor = GET_MODE_SIZE (GET_MODE (x)) / UNITS_PER_WORD;
+      factor = GET_MODE_SIZE (mode) / UNITS_PER_WORD;
       if (factor == 0)
 	factor = 1;
       *total = factor * COSTS_N_INSNS (1);

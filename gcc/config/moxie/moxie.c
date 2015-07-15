@@ -21,10 +21,12 @@
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "insn-flags.h"
@@ -34,14 +36,10 @@
 #include "recog.h"
 #include "reload.h"
 #include "diagnostic-core.h"
-#include "obstack.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"
 #include "stor-layout.h"
 #include "varasm.h"
 #include "calls.h"
-#include "function.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -54,16 +52,11 @@
 #include "target.h"
 #include "tm_p.h"
 #include "langhooks.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "predict.h"
-#include "basic-block.h"
-#include "df.h"
 #include "builtins.h"
 
 /* This file should be included last.  */
@@ -595,6 +588,45 @@ moxie_offset_address_p (rtx x)
   return 0;
 }
 
+/* Helper function for `moxie_legitimate_address_p'.  */
+
+static bool
+moxie_reg_ok_for_base_p (const_rtx reg, bool strict_p)
+{
+  int regno = REGNO (reg);
+
+  if (strict_p)
+    return HARD_REGNO_OK_FOR_BASE_P (regno)
+	   || HARD_REGNO_OK_FOR_BASE_P (reg_renumber[regno]);
+  else    
+    return !HARD_REGISTER_NUM_P (regno)
+	   || HARD_REGNO_OK_FOR_BASE_P (regno);
+}
+
+/* Worker function for TARGET_LEGITIMATE_ADDRESS_P.  */
+
+static bool
+moxie_legitimate_address_p (machine_mode mode ATTRIBUTE_UNUSED,
+			    rtx x, bool strict_p,
+			    addr_space_t as)
+{
+  gcc_assert (ADDR_SPACE_GENERIC_P (as));
+
+  if (GET_CODE(x) == PLUS
+      && REG_P (XEXP (x, 0))
+      && moxie_reg_ok_for_base_p (XEXP (x, 0), strict_p)
+      && CONST_INT_P (XEXP (x, 1))
+      && IN_RANGE (INTVAL (XEXP (x, 1)), -32768, 32767))
+    return true;
+  if (REG_P (x) && moxie_reg_ok_for_base_p (x, strict_p))
+    return true;
+  if (GET_CODE (x) == SYMBOL_REF
+      || GET_CODE (x) == LABEL_REF
+      || GET_CODE (x) == CONST)
+    return true;
+  return false;
+}
+
 /* The Global `targetm' Variable.  */
 
 /* Initialize the GCC target structure.  */
@@ -615,6 +647,8 @@ moxie_offset_address_p (rtx x)
 #undef  TARGET_FUNCTION_ARG_ADVANCE
 #define TARGET_FUNCTION_ARG_ADVANCE	moxie_function_arg_advance
 
+#undef  TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P
+#define TARGET_ADDR_SPACE_LEGITIMATE_ADDRESS_P	moxie_legitimate_address_p
 
 #undef  TARGET_SETUP_INCOMING_VARARGS
 #define TARGET_SETUP_INCOMING_VARARGS 	moxie_setup_incoming_varargs
@@ -624,7 +658,7 @@ moxie_offset_address_p (rtx x)
 
 /* Define this to return an RTX representing the place where a
    function returns or receives a value of data type RET_TYPE, a tree
-   node node representing a data type.  */
+   node representing a data type.  */
 #undef TARGET_FUNCTION_VALUE
 #define TARGET_FUNCTION_VALUE moxie_function_value
 #undef TARGET_LIBCALL_VALUE

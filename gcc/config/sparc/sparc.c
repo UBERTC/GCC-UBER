@@ -23,25 +23,25 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "gimple.h"
+#include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "stringpool.h"
 #include "stor-layout.h"
 #include "calls.h"
 #include "varasm.h"
-#include "rtl.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "insn-codes.h"
 #include "conditions.h"
 #include "output.h"
 #include "insn-attr.h"
 #include "flags.h"
-#include "function.h"
 #include "except.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -56,26 +56,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "debug.h"
 #include "target.h"
 #include "common/common-target.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "gimplify.h"
 #include "langhooks.h"
 #include "reload.h"
 #include "params.h"
-#include "df.h"
 #include "opts.h"
 #include "tree-pass.h"
 #include "context.h"
@@ -597,7 +589,7 @@ static rtx sparc_tls_get_addr (void);
 static rtx sparc_tls_got (void);
 static int sparc_register_move_cost (machine_mode,
 				     reg_class_t, reg_class_t);
-static bool sparc_rtx_costs (rtx, int, int, int, int *, bool);
+static bool sparc_rtx_costs (rtx, machine_mode, int, int, int *, bool);
 static rtx sparc_function_value (const_tree, const_tree, bool);
 static rtx sparc_libcall_value (machine_mode, const_rtx);
 static bool sparc_function_value_regno_p (const unsigned int);
@@ -10934,10 +10926,11 @@ sparc_fold_builtin (tree fndecl, int n_args ATTRIBUTE_UNUSED,
    ??? the latencies and then CSE will just use that.  */
 
 static bool
-sparc_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
+sparc_rtx_costs (rtx x, machine_mode mode, int outer_code,
+		 int opno ATTRIBUTE_UNUSED,
 		 int *total, bool speed ATTRIBUTE_UNUSED)
 {
-  machine_mode mode = GET_MODE (x);
+  int code = GET_CODE (x);
   bool float_mode_p = FLOAT_MODE_P (mode);
 
   switch (code)
@@ -10961,7 +10954,7 @@ sparc_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
       return true;
 
     case CONST_DOUBLE:
-      if (GET_MODE (x) == VOIDmode
+      if (mode == VOIDmode
 	  && ((CONST_DOUBLE_HIGH (x) == 0
 	       && CONST_DOUBLE_LOW (x) < 0x1000)
 	      || (CONST_DOUBLE_HIGH (x) == -1
@@ -11013,12 +11006,12 @@ sparc_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
 	sub = XEXP (x, 0);
 	if (GET_CODE (sub) == NEG)
 	  sub = XEXP (sub, 0);
-	*total += rtx_cost (sub, FMA, 0, speed);
+	*total += rtx_cost (sub, mode, FMA, 0, speed);
 
 	sub = XEXP (x, 2);
 	if (GET_CODE (sub) == NEG)
 	  sub = XEXP (sub, 0);
-	*total += rtx_cost (sub, FMA, 2, speed);
+	*total += rtx_cost (sub, mode, FMA, 2, speed);
 	return true;
       }
 
@@ -11137,7 +11130,7 @@ sparc_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
 
     case IOR:
       /* Handle the NAND vector patterns.  */
-      if (sparc_vector_mode_supported_p (GET_MODE (x))
+      if (sparc_vector_mode_supported_p (mode)
 	  && GET_CODE (XEXP (x, 0)) == NOT
 	  && GET_CODE (XEXP (x, 1)) == NOT)
 	{

@@ -23,31 +23,19 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "alias.h"
-#include "symtab.h"
-#include "options.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "gimple.h"
+#include "hard-reg-set.h"
+#include "ssa.h"
+#include "options.h"
 #include "fold-const.h"
 #include "flags.h"
-#include "predict.h"
-#include "tm.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "gimple-iterator.h"
 #include "gimple-walk.h"
 #include "tree-ssa.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
-#include "gimple-ssa.h"
-#include "tree-ssa-operands.h"
-#include "tree-phinodes.h"
-#include "ssa-iterators.h"
 #include "cfgloop.h"
 #include "tree-pass.h"
 #include "tree-cfg.h"
@@ -116,7 +104,14 @@ insert_trap_and_remove_trailing_statements (gimple_stmt_iterator *si_p, tree op)
   if (walk_stmt_load_store_ops (stmt, (void *)op,
 			        check_loadstore,
 				check_loadstore))
-    gsi_insert_after (si_p, seq, GSI_NEW_STMT);
+    {
+      gsi_insert_after (si_p, seq, GSI_NEW_STMT);
+      if (stmt_ends_bb_p (stmt))
+	{
+	  split_block (gimple_bb (stmt), stmt);
+	  return;
+	}
+    }
   else
     gsi_insert_before (si_p, seq, GSI_NEW_STMT);
 
@@ -501,10 +496,10 @@ gimple_ssa_isolate_erroneous_paths (void)
   /* We scramble the CFG and loop structures a bit, clean up
      appropriately.  We really should incrementally update the
      loop structures, in theory it shouldn't be that hard.  */
+  free_dominance_info (CDI_POST_DOMINATORS);
   if (cfg_altered)
     {
       free_dominance_info (CDI_DOMINATORS);
-      free_dominance_info (CDI_POST_DOMINATORS);
       loops_state_set (LOOPS_NEED_FIXUP);
       return TODO_cleanup_cfg | TODO_update_ssa;
     }
