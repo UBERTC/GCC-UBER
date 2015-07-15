@@ -52,12 +52,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm.h"
 #include "rtl.h"
 #include "alias.h"
-#include "symtab.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "varasm.h"
-#include "hard-reg-set.h"
 #include "function.h"
 #include "flags.h"
 #include "insn-config.h"
@@ -1339,10 +1337,6 @@ default_target_can_inline_p (tree caller, tree callee)
   return ret;
 }
 
-#ifndef HAVE_casesi
-# define HAVE_casesi 0
-#endif
-
 /* If the machine does not have a case insn that compares the bounds,
    this means extra overhead for dispatch tables, which raises the
    threshold for using them.  */
@@ -1350,7 +1344,7 @@ default_target_can_inline_p (tree caller, tree callee)
 unsigned int
 default_case_values_threshold (void)
 {
-  return (HAVE_casesi ? 4 : 5);
+  return (targetm.have_casesi () ? 4 : 5);
 }
 
 bool

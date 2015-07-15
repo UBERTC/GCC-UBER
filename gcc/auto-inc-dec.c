@@ -21,19 +21,14 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "predict.h"
 #include "tree.h"
 #include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "tm_p.h"
-#include "hard-reg-set.h"
-#include "predict.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
-#include "basic-block.h"
 #include "insn-config.h"
 #include "regs.h"
 #include "flags.h"
@@ -49,7 +44,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "stmt.h"
 #include "expr.h"
 #include "tree-pass.h"
-#include "df.h"
 #include "dbgcnt.h"
 #include "target.h"
 
@@ -123,7 +117,6 @@ along with GCC; see the file COPYING3.  If not see
   before the ref or +c if the increment was after the ref, then if we
   can do the combination but switch the pre/post bit.  */
 
-#ifdef AUTO_INC_DEC
 
 enum form
 {
@@ -494,9 +487,9 @@ attempt_change (rtx new_addr, rtx inc_reg)
   PUT_MODE (mem_tmp, mode);
   XEXP (mem_tmp, 0) = new_addr;
 
-  old_cost = (set_src_cost (mem, speed)
+  old_cost = (set_src_cost (mem, mode, speed)
 	      + set_rtx_cost (PATTERN (inc_insn.insn), speed));
-  new_cost = set_src_cost (mem_tmp, speed);
+  new_cost = set_src_cost (mem_tmp, mode, speed);
 
   /* The first item of business is to see if this is profitable.  */
   if (old_cost < new_cost)
@@ -1448,8 +1441,6 @@ merge_in_block (int max_reg, basic_block bb)
     }
 }
 
-#endif
-
 /* Discover auto-inc auto-dec instructions.  */
 
 namespace {
@@ -1477,11 +1468,10 @@ public:
   /* opt_pass methods: */
   virtual bool gate (function *)
     {
-#ifdef AUTO_INC_DEC
+      if (!AUTO_INC_DEC)
+	return false;
+
       return (optimize > 0 && flag_auto_inc_dec);
-#else
-      return false;
-#endif
     }
 
 
@@ -1492,7 +1482,9 @@ public:
 unsigned int
 pass_inc_dec::execute (function *fun ATTRIBUTE_UNUSED)
 {
-#ifdef AUTO_INC_DEC
+  if (!AUTO_INC_DEC)
+    return 0;
+
   basic_block bb;
   int max_reg = max_reg_num ();
 
@@ -1515,7 +1507,7 @@ pass_inc_dec::execute (function *fun ATTRIBUTE_UNUSED)
   free (reg_next_def);
 
   mem_tmp = NULL;
-#endif
+
   return 0;
 }
 

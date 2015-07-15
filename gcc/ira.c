@@ -366,27 +366,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "tree.h"
+#include "rtl.h"
+#include "df.h"
 #include "regs.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"
-#include "hard-reg-set.h"
-#include "rtl.h"
 #include "tm_p.h"
 #include "target.h"
 #include "flags.h"
-#include "obstack.h"
-#include "bitmap.h"
-#include "predict.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
-#include "df.h"
 #include "insn-config.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -403,6 +394,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "except.h"
 #include "reload.h"
 #include "diagnostic-core.h"
+#include "cfgloop.h"
+#include "ira.h"
+#include "alloc-pool.h"
 #include "ira-int.h"
 #include "lra.h"
 #include "dce.h"
@@ -4366,7 +4360,7 @@ rtx_moveable_p (rtx *loc, enum op_type type)
       return rtx_moveable_p (&SET_DEST (x), OP_OUT);
 
     case UNSPEC_VOLATILE:
-      /* It is a bad idea to consider insns with with such rtl
+      /* It is a bad idea to consider insns with such rtl
 	 as moveable ones.  The insn scheduler also considers them as barrier
 	 for a reason.  */
       return false;

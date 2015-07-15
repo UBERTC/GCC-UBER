@@ -521,11 +521,11 @@ do {                                                            \
 
 #define CASE_VECTOR_MODE Pmode
 
-#define WORD_REGISTER_OPERATIONS
+#define WORD_REGISTER_OPERATIONS 1
 
 #define LOAD_EXTEND_OP(MODE) ZERO_EXTEND
 
-#define SHORT_IMMEDIATES_SIGN_EXTEND
+#define SHORT_IMMEDIATES_SIGN_EXTEND 1
 
 #define MOVE_MAX        UNITS_PER_WORD
 #define MAX_MOVE_MAX    4

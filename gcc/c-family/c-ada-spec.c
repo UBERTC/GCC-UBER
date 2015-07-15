@@ -24,9 +24,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "alias.h"
-#include "symtab.h"
-#include "options.h"
 #include "tree.h"
+#include "options.h"
 #include "fold-const.h"
 #include "dumpfile.h"
 #include "c-ada-spec.h"
@@ -2891,6 +2890,7 @@ print_ada_declaration (pretty_printer *buffer, tree t, tree type, int spc)
       bool is_constructor = false;
       bool is_destructor = false;
       bool is_copy_constructor = false;
+      bool is_move_constructor = false;
 
       if (!decl_name)
 	return 0;
@@ -2901,15 +2901,20 @@ print_ada_declaration (pretty_printer *buffer, tree t, tree type, int spc)
 	  is_constructor = cpp_check (t, IS_CONSTRUCTOR);
 	  is_destructor = cpp_check (t, IS_DESTRUCTOR);
 	  is_copy_constructor = cpp_check (t, IS_COPY_CONSTRUCTOR);
+	  is_move_constructor = cpp_check (t, IS_MOVE_CONSTRUCTOR);
 	}
 
-      /* Skip copy constructors: some are internal only, and those that are
-	 not cannot be called easily from Ada anyway.  */
-      if (is_copy_constructor)
+      /* Skip copy constructors and C++11 move constructors: some are internal
+	 only and those that are not cannot be called easily from Ada.  */
+      if (is_copy_constructor || is_move_constructor)
 	return 0;
 
       if (is_constructor || is_destructor)
 	{
+	  /* ??? Skip implicit constructors/destructors for now.  */
+	  if (DECL_ARTIFICIAL (t))
+	    return 0;
+
 	  /* Only consider constructors/destructors for complete objects.  */
 	  if (strncmp (IDENTIFIER_POINTER (decl_name), "__comp", 6) != 0)
 	    return 0;
@@ -3043,9 +3048,12 @@ print_ada_declaration (pretty_printer *buffer, tree t, tree type, int spc)
 	  if (num_fields == 1)
 	    is_interface = 1;
 
-	  /* Also check that there are only virtual methods.  */
+	  /* Also check that there are only pure virtual methods.  Since the
+	     class is empty, we can skip implicit constructors/destructors.  */
 	  for (tmp = TYPE_METHODS (TREE_TYPE (t)); tmp; tmp = TREE_CHAIN (tmp))
 	    {
+	      if (DECL_ARTIFICIAL (tmp))
+		continue;
 	      if (cpp_check (tmp, IS_ABSTRACT))
 		is_abstract_record = 1;
 	      else

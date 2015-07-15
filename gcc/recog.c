@@ -21,20 +21,19 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "rtl-error.h"
 #include "tm_p.h"
 #include "insn-config.h"
 #include "insn-attr.h"
-#include "hard-reg-set.h"
 #include "recog.h"
 #include "regs.h"
 #include "addresses.h"
-#include "function.h"
-#include "rtl.h"
 #include "flags.h"
 #include "expmed.h"
 #include "dojump.h"
@@ -44,17 +43,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "varasm.h"
 #include "stmt.h"
 #include "expr.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
 #include "reload.h"
 #include "target.h"
 #include "tree-pass.h"
-#include "df.h"
 #include "insn-codes.h"
 
 #ifndef STACK_POP_CODE
@@ -566,15 +560,6 @@ cancel_changes (int num)
 }
 
 /* Reduce conditional compilation elsewhere.  */
-#ifndef HAVE_extv
-#define HAVE_extv	0
-#define CODE_FOR_extv	CODE_FOR_nothing
-#endif
-#ifndef HAVE_extzv
-#define HAVE_extzv	0
-#define CODE_FOR_extzv	CODE_FOR_nothing
-#endif
-
 /* A subroutine of validate_replace_rtx_1 that tries to simplify the resulting
    rtx.  */
 
@@ -690,15 +675,15 @@ simplify_while_replacing (rtx *loc, rtx to, rtx_insn *object,
 	  machine_mode is_mode = GET_MODE (XEXP (x, 0));
 	  int pos = INTVAL (XEXP (x, 2));
 
-	  if (GET_CODE (x) == ZERO_EXTRACT && HAVE_extzv)
+	  if (GET_CODE (x) == ZERO_EXTRACT && targetm.have_extzv ())
 	    {
-	      wanted_mode = insn_data[CODE_FOR_extzv].operand[1].mode;
+	      wanted_mode = insn_data[targetm.code_for_extzv].operand[1].mode;
 	      if (wanted_mode == VOIDmode)
 		wanted_mode = word_mode;
 	    }
-	  else if (GET_CODE (x) == SIGN_EXTRACT && HAVE_extv)
+	  else if (GET_CODE (x) == SIGN_EXTRACT && targetm.have_extv ())
 	    {
-	      wanted_mode = insn_data[CODE_FOR_extv].operand[1].mode;
+	      wanted_mode = insn_data[targetm.code_for_extv].operand[1].mode;
 	      if (wanted_mode == VOIDmode)
 		wanted_mode = word_mode;
 	    }
@@ -1720,9 +1705,7 @@ int
 asm_operand_ok (rtx op, const char *constraint, const char **constraints)
 {
   int result = 0;
-#ifdef AUTO_INC_DEC
   bool incdec_ok = false;
-#endif
 
   /* Use constrain_operands after reload.  */
   gcc_assert (!reload_completed);
@@ -1790,7 +1773,6 @@ asm_operand_ok (rtx op, const char *constraint, const char **constraints)
 	    result = 1;
 	  break;
 
-#ifdef AUTO_INC_DEC
 	case '<':
 	case '>':
 	  /* ??? Before auto-inc-dec, auto inc/dec insns are not supposed
@@ -1800,7 +1782,6 @@ asm_operand_ok (rtx op, const char *constraint, const char **constraints)
 
 	     Match any memory and hope things are resolved after reload.  */
 	  incdec_ok = true;
-#endif
 	default:
 	  cn = lookup_constraint (constraint);
 	  switch (get_constraint_type (cn))
@@ -1844,9 +1825,8 @@ asm_operand_ok (rtx op, const char *constraint, const char **constraints)
 	return 0;
     }
 
-#ifdef AUTO_INC_DEC
   /* For operands without < or > constraints reject side-effects.  */
-  if (!incdec_ok && result && MEM_P (op))
+  if (AUTO_INC_DEC && !incdec_ok && result && MEM_P (op))
     switch (GET_CODE (XEXP (op, 0)))
       {
       case PRE_INC:
@@ -1859,7 +1839,6 @@ asm_operand_ok (rtx op, const char *constraint, const char **constraints)
       default:
 	break;
       }
-#endif
 
   return result;
 }
@@ -2822,9 +2801,8 @@ constrain_operands (int strict, alternative_mask alternatives)
 		    = recog_data.operand[funny_match[funny_match_index].this_op];
 		}
 
-#ifdef AUTO_INC_DEC
 	      /* For operands without < or > constraints reject side-effects.  */
-	      if (recog_data.is_asm)
+	      if (AUTO_INC_DEC && recog_data.is_asm)
 		{
 		  for (opno = 0; opno < recog_data.n_operands; opno++)
 		    if (MEM_P (recog_data.operand[opno]))
@@ -2845,7 +2823,7 @@ constrain_operands (int strict, alternative_mask alternatives)
 			  break;
 			}
 		}
-#endif
+
 	      return 1;
 	    }
 	}

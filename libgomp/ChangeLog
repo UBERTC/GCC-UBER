@@ -1,3 +1,210 @@
+2015-07-14  Maxim Blumenthal  <maxim.blumenthal@intel.com>
+
+	* testsuite/libgomp.c/examples-4/simd-3.c: (main): Change type of res
+	and ref from int to double.  Replaced their comparison with
+	an inequality of their difference and EPS.
+	* testsuite/libgomp.c/examples-4/simd-8.c: (main): Replace the
+	comparison of pri and a reference number with an inequality of their
+	difference and EPS.
+	* testsuite/libgomp.fortran/examples-4/simd-3.f90: (main): Replaced
+	the comparison of sum and sum_ref with an inequality of their
+	difference and EPS.
+	* testsuite/libgomp.fortran/examples-4/simd-8.f90: (main): Replace
+	the comparison of pri and a reference number with an inequality of
+	their difference and EPS.
+
+2015-07-13  Maxim Blumenthal  <maxim.blumenthal@intel.com>
+
+	* testsuite/libgomp.c++/examples-4/e.53.2.C: Renamed to...
+	* testsuite/libgomp.c++/examples-4/declare_target-2.C: ...this.
+	* testsuite/libgomp.c++/examples-4/e.51.5.C: Renamed to...
+	* testsuite/libgomp.c++/examples-4/target_data-5.C: ...this.
+	* testsuite/libgomp.c/examples-4/e.56.3.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/array_sections-3.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.56.4.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/array_sections-4.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.55.1.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/async_target-1.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.55.2.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/async_target-2.c: ...this.
+	(vec_mult_ref): Remove v1 and v2 arguments, turn them into local
+	variables.
+	(vec_mult): Likewise.  Add #pragma omp taskwait.
+	(main): Adjust caller.
+	* testsuite/libgomp.c/examples-4/e.53.1.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/declare_target-1.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.53.3.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/declare_target-3.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.53.4.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/declare_target-4.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.53.5.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/declare_target-5.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.57.1.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/device-1.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.57.2.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/device-2.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.57.3.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/device-3.c: ...this.
+	* testsuite/libgomp.c/examples-4/simd-1.c: New file.
+	* testsuite/libgomp.c/examples-4/simd-2.c: New file.
+	* testsuite/libgomp.c/examples-4/simd-3.c: New file.
+	* testsuite/libgomp.c/examples-4/simd-4.c: New file.
+	* testsuite/libgomp.c/examples-4/simd-5.c: New file.
+	* testsuite/libgomp.c/examples-4/simd-6.c: New file.
+	* testsuite/libgomp.c/examples-4/simd-7.c: New file.
+	* testsuite/libgomp.c/examples-4/simd-8.c: New file.
+	* testsuite/libgomp.c/examples-4/e.50.1.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target-1.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.50.2.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target-2.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.50.3.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target-3.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.50.4.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target-4.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.50.5.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target-5.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.51.1.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target_data-1.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.51.2.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target_data-2.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.51.3.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target_data-3.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.51.4.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target_data-4.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.51.6.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target_data-6.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.51.7.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target_data-7.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.52.1.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target_update-1.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.52.2.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/target_update-2.c: ...this.
+	* testsuite/libgomp.c/examples-4/task_dep-1.c: New file.
+	* testsuite/libgomp.c/examples-4/task_dep-2.c: New file.
+	* testsuite/libgomp.c/examples-4/task_dep-3.c: New file.
+	* testsuite/libgomp.c/examples-4/task_dep-4.c: New file.
+	* testsuite/libgomp.c/examples-4/task_dep-5.c: New file.
+	* testsuite/libgomp.c/examples-4/e.54.2.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/teams-2.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.54.3.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/teams-3.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.54.4.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/teams-4.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.54.5.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/teams-5.c: ...this.
+	* testsuite/libgomp.c/examples-4/e.54.6.c: Renamed to...
+	* testsuite/libgomp.c/examples-4/teams-6.c: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.56.3.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/array_sections-3.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.56.4.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/array_sections-4.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.55.1.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/async_target-1.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.55.2.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/async_target-2.f90: ...this.
+	(vec_mult): Add !$omp taskwait.
+	* testsuite/libgomp.fortran/examples-4/e.53.1.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/declare_target-1.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.53.2.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/declare_target-2.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.53.3.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/declare_target-3.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.53.4.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/declare_target-4.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.53.5.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/declare_target-5.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.57.1.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/device-1.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.57.2.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/device-2.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.57.3.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/device-3.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/simd-1.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/simd-2.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/simd-3.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/simd-4.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/simd-5.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/simd-6.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/simd-7.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/simd-8.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/e.50.1.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target-1.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.50.2.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target-2.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.50.3.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target-3.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.50.4.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target-4.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.50.5.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target-5.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.51.1.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target_data-1.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.51.2.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target_data-2.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.51.3.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target_data-3.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.51.4.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target_data-4.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.51.5.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target_data-5.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.51.6.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target_data-6.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.51.7.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target_data-7.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.52.1.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target_update-1.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.52.2.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/target_update-2.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/task_dep-1.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/task_dep-2.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/task_dep-3.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/task_dep-4.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/task_dep-5.f90: New file.
+	* testsuite/libgomp.fortran/examples-4/e.54.2.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/teams-2.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.54.3.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/teams-3.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.54.4.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/teams-4.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.54.5.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/teams-5.f90: ...this.
+	* testsuite/libgomp.fortran/examples-4/e.54.6.f90: Renamed to...
+	* testsuite/libgomp.fortran/examples-4/teams-6.f90: ...this.
+
+2015-07-10  Tom de Vries  <tom@codesourcery.com>
+
+	* testsuite/libgomp.fortran/parloops-exit-first-loop-alt-2.f95: New test.
+	* testsuite/libgomp.fortran/parloops-exit-first-loop-alt.f95: New test.
+
+2015-07-08  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR libgomp/65099
+	* plugin/plugin-nvptx.c (nvptx_get_num_devices): Return 0 if not
+	in a 64-bit configuration.
+	* testsuite/libgomp.oacc-c++/c++.exp: Don't attempt nvidia
+	offloading testing if no such device is available.
+	* testsuite/libgomp.oacc-c/c.exp: Likewise.
+	* testsuite/libgomp.oacc-fortran/fortran.exp: Likewise.
+
+2015-07-08  Tom de Vries  <tom@codesourcery.com>
+
+	* testsuite/libgomp.c/parloops-exit-first-loop-alt-3.c (main): Fix
+	second call to f.
+	* testsuite/libgomp.c/parloops-exit-first-loop-alt.c: Same.
+
+2015-07-07  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/66642
+	* testsuite/libgomp.c/parloops-exit-first-loop-alt-3.c (main): Test low
+	iteration count case.
+	* testsuite/libgomp.c/parloops-exit-first-loop-alt.c (init): New
+	function, factor out of ...
+	(main): ... here.  Test low iteration count case.
+
+2015-07-06  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* libgomp.h (gomp_thread_pool): Comment last_team field.
+
 2015-07-02  Uros Bizjak  <ubizjak@gmail.com>
 
 	* testsuite/libgomp.c++/pr66702-1.C: Require

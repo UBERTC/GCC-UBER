@@ -91,17 +91,15 @@ a register with any other reload.  */
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "tree.h"
+#include "rtl.h"
+#include "df.h"
 #include "rtl-error.h"
 #include "tm_p.h"
 #include "insn-config.h"
-#include "symtab.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "rtl.h"
 #include "flags.h"
 #include "alias.h"
-#include "tree.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -113,11 +111,6 @@ a register with any other reload.  */
 #include "insn-codes.h"
 #include "optabs.h"
 #include "recog.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "predict.h"
-#include "basic-block.h"
-#include "df.h"
 #include "reload.h"
 #include "regs.h"
 #include "addresses.h"
@@ -1093,7 +1086,7 @@ push_reload (rtx in, rtx out, rtx *inloc, rtx *outloc,
 		      && INTEGRAL_MODE_P (GET_MODE (SUBREG_REG (in)))
 		      && LOAD_EXTEND_OP (GET_MODE (SUBREG_REG (in))) != UNKNOWN)
 #endif
-#ifdef WORD_REGISTER_OPERATIONS
+#if WORD_REGISTER_OPERATIONS
 		  || ((GET_MODE_PRECISION (inmode)
 		       < GET_MODE_PRECISION (GET_MODE (SUBREG_REG (in))))
 		      && ((GET_MODE_SIZE (inmode) - 1) / UNITS_PER_WORD ==
@@ -1131,8 +1124,9 @@ push_reload (rtx in, rtx out, rtx *inloc, rtx *outloc,
 #endif
       inloc = &SUBREG_REG (in);
       in = *inloc;
-#if ! defined (LOAD_EXTEND_OP) && ! defined (WORD_REGISTER_OPERATIONS)
-      if (MEM_P (in))
+#if ! defined (LOAD_EXTEND_OP)
+      if (!WORD_REGISTER_OPERATIONS
+	  && MEM_P (in))
 	/* This is supposed to happen only for paradoxical subregs made by
 	   combine.c.  (SUBREG (MEM)) isn't supposed to occur other ways.  */
 	gcc_assert (GET_MODE_SIZE (GET_MODE (in)) <= GET_MODE_SIZE (inmode));
@@ -1193,7 +1187,7 @@ push_reload (rtx in, rtx out, rtx *inloc, rtx *outloc,
 	       || MEM_P (SUBREG_REG (out)))
 	      && ((GET_MODE_PRECISION (outmode)
 		   > GET_MODE_PRECISION (GET_MODE (SUBREG_REG (out))))
-#ifdef WORD_REGISTER_OPERATIONS
+#if WORD_REGISTER_OPERATIONS
 		  || ((GET_MODE_PRECISION (outmode)
 		       < GET_MODE_PRECISION (GET_MODE (SUBREG_REG (out))))
 		      && ((GET_MODE_SIZE (outmode) - 1) / UNITS_PER_WORD ==
@@ -1227,11 +1221,9 @@ push_reload (rtx in, rtx out, rtx *inloc, rtx *outloc,
 #endif
       outloc = &SUBREG_REG (out);
       out = *outloc;
-#if ! defined (LOAD_EXTEND_OP) && ! defined (WORD_REGISTER_OPERATIONS)
-      gcc_assert (!MEM_P (out)
+      gcc_assert (WORD_REGISTER_OPERATIONS || !MEM_P (out)
 		  || GET_MODE_SIZE (GET_MODE (out))
 		     <= GET_MODE_SIZE (outmode));
-#endif
       outmode = GET_MODE (out);
     }
 
@@ -3159,7 +3151,7 @@ find_reloads (rtx_insn *insn, int replace, int ind_levels, int live_known,
 		      || ((MEM_P (operand)
 			   || (REG_P (operand)
 			       && REGNO (operand) >= FIRST_PSEUDO_REGISTER))
-#ifndef WORD_REGISTER_OPERATIONS
+#if !WORD_REGISTER_OPERATIONS
 			  && (((GET_MODE_BITSIZE (GET_MODE (operand))
 				< BIGGEST_ALIGNMENT)
 			       && (GET_MODE_SIZE (operand_mode[i])
@@ -5176,9 +5168,8 @@ find_reloads_address (machine_mode mode, rtx *memrefloc, rtx ad,
       if ((regno_ok_for_base_p (REGNO (operand), mode, as, inner_code,
 				GET_CODE (addend))
 	   || operand == frame_pointer_rtx
-#if !HARD_FRAME_POINTER_IS_FRAME_POINTER
-	   || operand == hard_frame_pointer_rtx
-#endif
+	   || (!HARD_FRAME_POINTER_IS_FRAME_POINTER
+	       && operand == hard_frame_pointer_rtx)
 	   || (FRAME_POINTER_REGNUM != ARG_POINTER_REGNUM
 	       && operand == arg_pointer_rtx)
 	   || operand == stack_pointer_rtx)
@@ -5455,14 +5446,13 @@ static void
 update_auto_inc_notes (rtx_insn *insn ATTRIBUTE_UNUSED, int regno ATTRIBUTE_UNUSED,
 		       int reloadnum ATTRIBUTE_UNUSED)
 {
-#ifdef AUTO_INC_DEC
-  rtx link;
+  if (!AUTO_INC_DEC)
+    return;
 
-  for (link = REG_NOTES (insn); link; link = XEXP (link, 1))
+  for (rtx link = REG_NOTES (insn); link; link = XEXP (link, 1))
     if (REG_NOTE_KIND (link) == REG_INC
         && (int) REGNO (XEXP (link, 0)) == regno)
       push_replacement (&XEXP (link, 0), reloadnum, VOIDmode);
-#endif
 }
 
 /* Record the pseudo registers we must reload into hard registers in a
@@ -6169,12 +6159,11 @@ find_reloads_subreg_address (rtx x, int opnum, enum reload_type type,
   if (paradoxical_subreg_p (x))
     return NULL;
 
-#ifdef WORD_REGISTER_OPERATIONS
-  if (GET_MODE_SIZE (outer_mode) < GET_MODE_SIZE (inner_mode)
+  if (WORD_REGISTER_OPERATIONS
+      && GET_MODE_SIZE (outer_mode) < GET_MODE_SIZE (inner_mode)
       && ((GET_MODE_SIZE (outer_mode) - 1) / UNITS_PER_WORD
           == (GET_MODE_SIZE (inner_mode) - 1) / UNITS_PER_WORD))
     return NULL;
-#endif
 
   /* Since we don't attempt to handle paradoxical subregs, we can just
      call into simplify_subreg, which will handle all remaining checks
@@ -7089,7 +7078,7 @@ find_equiv_reg (rtx goal, rtx_insn *insn, enum reg_class rclass, int other,
 		}
 	    }
 
-#ifdef AUTO_INC_DEC
+#if AUTO_INC_DEC
 	  /* If this insn auto-increments or auto-decrements
 	     either regno or valueno, return 0 now.
 	     If GOAL is a memory ref and its address is not constant,
@@ -7176,12 +7165,14 @@ find_inc_amount (rtx x, rtx inced)
 /* Return 1 if registers from REGNO to ENDREGNO are the subjects of a
    REG_INC note in insn INSN.  REGNO must refer to a hard register.  */
 
-#ifdef AUTO_INC_DEC
 static int
 reg_inc_found_and_valid_p (unsigned int regno, unsigned int endregno,
 			   rtx insn)
 {
   rtx link;
+
+  if (!AUTO_INC_DEC)
+    return 0;
 
   gcc_assert (insn);
 
@@ -7197,11 +7188,6 @@ reg_inc_found_and_valid_p (unsigned int regno, unsigned int endregno,
       }
   return 0;
 }
-#else
-
-#define reg_inc_found_and_valid_p(regno,endregno,insn) 0
-
-#endif
 
 /* Return 1 if register REGNO is the subject of a clobber in insn INSN.
    If SETS is 1, also consider SETs.  If SETS is 2, enable checking

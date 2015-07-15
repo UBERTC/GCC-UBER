@@ -61,13 +61,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm.h"
 #include "rtl.h"
 #include "alias.h"
-#include "symtab.h"
 #include "tree.h"
 #include "fold-const.h"
 #include "stringpool.h"
 #include "stor-layout.h"
 #include "varasm.h"
-#include "hard-reg-set.h"
 #include "function.h"
 #include "emit-rtl.h"
 #include "version.h"
@@ -25168,8 +25166,8 @@ dwarf2out_finish (const char *filename)
   if (flag_eliminate_dwarf2_dups)
     break_out_includes (comp_unit_die ());
 
-  /* Traverse the DIE's and add add sibling attributes to those DIE's
-     that have children.  */
+  /* Traverse the DIE's and add sibling attributes to those DIE's that
+     have children.  */
   add_sibling_attributes (comp_unit_die ());
   limbo_die_node *node;
   for (node = limbo_die_list; node; node = node->next)
@@ -25447,7 +25445,7 @@ dwarf2out_early_finish (void)
       tree decl = node->created_for;
       if (DECL_ASSEMBLER_NAME (decl) != DECL_NAME (decl)
 	  /* A missing DECL_ASSEMBLER_NAME can be a constant DIE that
-	     ended up in in deferred_asm_name before we knew it was
+	     ended up in deferred_asm_name before we knew it was
 	     constant and never written to disk.  */
 	  && DECL_ASSEMBLER_NAME (decl))
 	{

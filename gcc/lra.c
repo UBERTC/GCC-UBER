@@ -103,9 +103,11 @@ along with GCC; see the file COPYING3.	If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "hard-reg-set.h"
+#include "backend.h"
+#include "predict.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
 #include "tm_p.h"
 #include "regs.h"
 #include "insn-config.h"
@@ -114,9 +116,6 @@ along with GCC; see the file COPYING3.	If not see
 #include "output.h"
 #include "addresses.h"
 #include "flags.h"
-#include "function.h"
-#include "symtab.h"
-#include "tree.h"
 #include "optabs.h"
 #include "alias.h"
 #include "expmed.h"
@@ -127,20 +126,17 @@ along with GCC; see the file COPYING3.	If not see
 #include "varasm.h"
 #include "stmt.h"
 #include "expr.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfgbuild.h"
-#include "basic-block.h"
 #include "except.h"
 #include "tree-pass.h"
 #include "timevar.h"
 #include "target.h"
 #include "ira.h"
 #include "alloc-pool.h"
+#include "lra.h"
+#include "insn-attr.h"
 #include "lra-int.h"
-#include "df.h"
 
 /* Dump bitmap SET with TITLE and BB INDEX.  */
 void
@@ -1060,6 +1056,7 @@ lra_set_insn_recog_data (rtx_insn *insn)
   data->arg_hard_regs = NULL;
   if (CALL_P (insn))
     {
+      bool use_p;
       rtx link;
       int n_hard_regs, regno, arg_hard_regs[FIRST_PSEUDO_REGISTER];
 
@@ -1070,14 +1067,16 @@ lra_set_insn_recog_data (rtx_insn *insn)
       for (link = CALL_INSN_FUNCTION_USAGE (insn);
 	   link != NULL_RTX;
 	   link = XEXP (link, 1))
-	if (GET_CODE (XEXP (link, 0)) == USE
+	if (((use_p = GET_CODE (XEXP (link, 0)) == USE)
+	     || GET_CODE (XEXP (link, 0)) == CLOBBER)
 	    && REG_P (XEXP (XEXP (link, 0), 0)))
 	  {
 	    regno = REGNO (XEXP (XEXP (link, 0), 0));
 	    lra_assert (regno < FIRST_PSEUDO_REGISTER);
 	    /* It is an argument register.  */
 	    for (i = REG_NREGS (XEXP (XEXP (link, 0), 0)) - 1; i >= 0; i--)
-	      arg_hard_regs[n_hard_regs++] = regno + i;
+	      arg_hard_regs[n_hard_regs++]
+		= regno + i + (use_p ? 0 : FIRST_PSEUDO_REGISTER);
 	  }
       if (n_hard_regs != 0)
 	{
@@ -2093,7 +2092,6 @@ has_nonexceptional_receiver (void)
   return false;
 }
 
-#ifdef AUTO_INC_DEC
 
 /* Process recursively X of INSN and add REG_INC notes if necessary.  */
 static void
@@ -2121,7 +2119,6 @@ add_auto_inc_notes (rtx_insn *insn, rtx x)
     }
 }
 
-#endif
 
 /* Remove all REG_DEAD and REG_UNUSED notes and regenerate REG_INC.
    We change pseudos by hard registers without notification of DF and
@@ -2148,9 +2145,9 @@ update_inc_notes (void)
 	    else
 	      pnote = &XEXP (*pnote, 1);
 	  }
-#ifdef AUTO_INC_DEC
-	add_auto_inc_notes (insn, PATTERN (insn));
-#endif
+
+	if (AUTO_INC_DEC)
+	  add_auto_inc_notes (insn, PATTERN (insn));
       }
 }
 

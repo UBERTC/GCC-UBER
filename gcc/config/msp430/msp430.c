@@ -21,22 +21,21 @@
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "calls.h"
-#include "rtl.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "output.h"
 #include "insn-attr.h"
 #include "flags.h"
-#include "function.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -51,16 +50,11 @@
 #include "diagnostic-core.h"
 #include "toplev.h"
 #include "reload.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "predict.h"
-#include "basic-block.h"
-#include "df.h"
 #include "tm_p.h"
 #include "debug.h"
 #include "target.h"
@@ -1011,17 +1005,19 @@ msp430_legitimate_constant (machine_mode mode, rtx x)
 #undef  TARGET_RTX_COSTS
 #define TARGET_RTX_COSTS msp430_rtx_costs
 
-static bool msp430_rtx_costs (rtx   x ATTRIBUTE_UNUSED,
-			      int   code,
-			      int   outer_code ATTRIBUTE_UNUSED,
-			      int   opno ATTRIBUTE_UNUSED,
-			      int * total,
-			      bool  speed ATTRIBUTE_UNUSED)
+static bool msp430_rtx_costs (rtx	   x ATTRIBUTE_UNUSED,
+			      machine_mode mode,
+			      int	   outer_code ATTRIBUTE_UNUSED,
+			      int	   opno ATTRIBUTE_UNUSED,
+			      int *	   total,
+			      bool	   speed ATTRIBUTE_UNUSED)
 {
+  int code = GET_CODE (x);
+
   switch (code)
     {
     case SIGN_EXTEND:
-      if (GET_MODE (x) == SImode && outer_code == SET)
+      if (mode == SImode && outer_code == SET)
 	{
 	  *total = COSTS_N_INSNS (4);
 	  return true;

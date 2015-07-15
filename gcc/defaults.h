@@ -1265,6 +1265,14 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define TARGET_SUPPORTS_WIDE_INT 0
 #endif
 
+#ifndef SHORT_IMMEDIATES_SIGN_EXTEND
+#define SHORT_IMMEDIATES_SIGN_EXTEND 0
+#endif
+
+#ifndef WORD_REGISTER_OPERATIONS
+#define WORD_REGISTER_OPERATIONS 0
+#endif
+
 #ifdef GCC_INSN_FLAGS_H
 /* Dependent default target macro definitions
 
@@ -1424,16 +1432,6 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
    pointer to a function.  */
 #ifndef TARGET_VTABLE_USES_DESCRIPTORS
 #define TARGET_VTABLE_USES_DESCRIPTORS 0
-#endif
-
-#ifndef HAVE_tablejump
-#define HAVE_tablejump 0
-static inline rtx
-gen_tablejump (rtx, rtx)
-{
-  gcc_unreachable ();
-  return NULL;
-}
 #endif
 
 #endif /* GCC_INSN_FLAGS_H  */

@@ -21,19 +21,19 @@
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
+#include "gimple.h"
 #include "rtl.h"
+#include "df.h"
 #include "regs.h"
 #include "insn-config.h"
 #include "output.h"
 #include "insn-attr.h"
 #include "recog.h"
-#include "hard-reg-set.h"
-#include "function.h"
 #include "flags.h"
 #include "alias.h"
-#include "symtab.h"
-#include "tree.h"
 #include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
@@ -45,15 +45,11 @@
 #include "langhooks.h"
 #include "insn-codes.h"
 #include "optabs.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "predict.h"
-#include "basic-block.h"
 #include "sched-int.h"
 #include "sel-sched.h"
 #include "tm_p.h"
@@ -62,12 +58,9 @@
 #include "dwarf2.h"
 #include "timevar.h"
 #include "fold-const.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "stringpool.h"
 #include "stor-layout.h"
 #include "gimplify.h"
@@ -501,9 +494,11 @@ tilepro_gimplify_va_arg_expr (tree valist, tree type, gimple_seq * pre_p,
 
 /* Implement TARGET_RTX_COSTS.  */
 static bool
-tilepro_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
-		   bool speed)
+tilepro_rtx_costs (rtx x, machine_mode mode, int outer_code, int opno,
+		   int *total, bool speed)
 {
+  int code = GET_CODE (x);
+
   switch (code)
     {
     case CONST_INT:
@@ -570,9 +565,9 @@ tilepro_rtx_costs (rtx x, int code, int outer_code, int opno, int *total,
       if (GET_CODE (XEXP (x, 0)) == MULT
 	  && cint_248_operand (XEXP (XEXP (x, 0), 1), VOIDmode))
 	{
-	  *total = (rtx_cost (XEXP (XEXP (x, 0), 0),
+	  *total = (rtx_cost (XEXP (XEXP (x, 0), 0), mode,
 			      (enum rtx_code) outer_code, opno, speed)
-		    + rtx_cost (XEXP (x, 1),
+		    + rtx_cost (XEXP (x, 1), mode,
 				(enum rtx_code) outer_code, opno, speed)
 		    + COSTS_N_INSNS (1));
 	  return true;

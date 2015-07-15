@@ -152,31 +152,25 @@
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
 #include "tree.h"
+#include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "varasm.h"
 #include "rtl-error.h"
 #include "tm_p.h"
-#include "hard-reg-set.h"
-#include "function.h"
 #include "insn-config.h"
 #include "regs.h"
 #include "flags.h"
 #include "recog.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
 #include "reload.h"
 #include "tree-pass.h"
 #include "target.h"
-#include "df.h"
 #include "emit-rtl.h"  /* FIXME: Can go away once crtl is moved to rtl.h.  */
 #include "rtl-iter.h"
 
@@ -2423,7 +2417,7 @@ change_stack (rtx_insn *insn, stack_ptr old, stack_ptr new_stack,
 
   /* If the destination block's stack already has a specified layout
      and contains two or more registers, use a more intelligent algorithm
-     to pop registers that minimizes the number number of fxchs below.  */
+     to pop registers that minimizes the number of fxchs below.  */
   if (new_stack->top > 0)
     {
       bool slots[REG_STACK_SIZE];

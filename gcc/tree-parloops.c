@@ -23,33 +23,22 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "alias.h"
-#include "symtab.h"
-#include "options.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
-#include "fold-const.h"
-#include "predict.h"
-#include "tm.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "basic-block.h"
-#include "tree-ssa-alias.h"
-#include "internal-fn.h"
-#include "gimple-expr.h"
 #include "gimple.h"
+#include "hard-reg-set.h"
+#include "ssa.h"
+#include "options.h"
+#include "fold-const.h"
+#include "internal-fn.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
 #include "gimple-walk.h"
 #include "stor-layout.h"
 #include "tree-nested.h"
-#include "gimple-ssa.h"
 #include "tree-cfg.h"
-#include "tree-phinodes.h"
-#include "ssa-iterators.h"
-#include "stringpool.h"
-#include "tree-ssanames.h"
 #include "tree-ssa-loop-ivopts.h"
 #include "tree-ssa-loop-manip.h"
 #include "tree-ssa-loop-niter.h"
@@ -1492,25 +1481,6 @@ replace_uses_in_bb_by (tree name, tree val, basic_block bb)
     }
 }
 
-/* Replace uses of NAME by VAL in blocks BBS.  */
-
-static void
-replace_uses_in_bbs_by (tree name, tree val, bitmap bbs)
-{
-  gimple use_stmt;
-  imm_use_iterator imm_iter;
-
-  FOR_EACH_IMM_USE_STMT (use_stmt, imm_iter, name)
-    {
-      if (!bitmap_bit_p (bbs, gimple_bb (use_stmt)->index))
-	continue;
-
-      use_operand_p use_p;
-      FOR_EACH_IMM_USE_ON_STMT (use_p, imm_iter)
-	SET_USE (use_p, val);
-    }
-}
-
 /* Do transformation from:
 
      <bb preheader>:
@@ -1535,7 +1505,7 @@ replace_uses_in_bbs_by (tree name, tree val, bitmap bbs)
      goto <bb header>
 
      <bb exit>:
-     sum_z = PHI <sum_b (cond[1])>
+     sum_z = PHI <sum_b (cond[1]), ...>
 
      [1] Where <bb cond> is single_pred (bb latch); In the simplest case,
 	 that's <bb header>.
@@ -1562,14 +1532,17 @@ replace_uses_in_bbs_by (tree name, tree val, bitmap bbs)
      if (ivtmp_c < n + 1)
        goto <bb header>;
      else
-       goto <bb exit>;
+       goto <bb newexit>;
 
      <bb latch>:
      ivtmp_b = ivtmp_a + 1;
      goto <bb newheader>
 
+     <bb newexit>:
+     sum_y = PHI <sum_c (newheader)>
+
      <bb exit>:
-     sum_z = PHI <sum_c (newheader)>
+     sum_z = PHI <sum_y (newexit), ...>
 
 
    In unified diff format:
@@ -1606,9 +1579,12 @@ replace_uses_in_bbs_by (tree name, tree val, bitmap bbs)
 -     goto <bb header>
 +     goto <bb newheader>
 
++    <bb newexit>:
++    sum_y = PHI <sum_c (newheader)>
+
       <bb exit>:
--     sum_z = PHI <sum_b (cond[1])>
-+     sum_z = PHI <sum_c (newheader)>
+-     sum_z = PHI <sum_b (cond[1]), ...>
++     sum_z = PHI <sum_y (newexit), ...>
 
    Note: the example does not show any virtual phis, but these are handled more
    or less as reductions.
@@ -1631,22 +1607,15 @@ transform_to_exit_first_loop_alt (struct loop *loop,
   tree control = gimple_cond_lhs (cond_stmt);
   edge e;
 
-  /* Gather the bbs dominated by the exit block.  */
-  bitmap exit_dominated = BITMAP_ALLOC (NULL);
-  bitmap_set_bit (exit_dominated, exit_block->index);
-  vec<basic_block> exit_dominated_vec
-    = get_dominated_by (CDI_DOMINATORS, exit_block);
-
-  int i;
-  basic_block dom_bb;
-  FOR_EACH_VEC_ELT (exit_dominated_vec, i, dom_bb)
-    bitmap_set_bit (exit_dominated, dom_bb->index);
-
-  exit_dominated_vec.release ();
+  /* Rewriting virtuals into loop-closed ssa normal form makes this
+     transformation simpler.  It also ensures that the virtuals are in
+     loop-closed ssa normal from after the transformation, which is required by
+     create_parallel_loop.  */
+  rewrite_virtuals_into_loop_closed_ssa (loop);
 
   /* Create the new_header block.  */
   basic_block new_header = split_block_before_cond_jump (exit->src);
-  edge split_edge = single_pred_edge (new_header);
+  edge edge_at_split = single_pred_edge (new_header);
 
   /* Redirect entry edge to new_header.  */
   edge entry = loop_preheader_edge (loop);
@@ -1663,9 +1632,9 @@ transform_to_exit_first_loop_alt (struct loop *loop,
   e = redirect_edge_and_branch (post_cond_edge, header);
   gcc_assert (e == post_cond_edge);
 
-  /* Redirect split_edge to latch.  */
-  e = redirect_edge_and_branch (split_edge, latch);
-  gcc_assert (e == split_edge);
+  /* Redirect edge_at_split to latch.  */
+  e = redirect_edge_and_branch (edge_at_split, latch);
+  gcc_assert (e == edge_at_split);
 
   /* Set the new loop bound.  */
   gimple_cond_set_rhs (cond_stmt, bound);
@@ -1675,6 +1644,7 @@ transform_to_exit_first_loop_alt (struct loop *loop,
   vec<edge_var_map> *v = redirect_edge_var_map_vector (post_inc_edge);
   edge_var_map *vm;
   gphi_iterator gsi;
+  int i;
   for (gsi = gsi_start_phis (header), i = 0;
        !gsi_end_p (gsi) && v->iterate (i, &vm);
        gsi_next (&gsi), i++)
@@ -1692,10 +1662,9 @@ transform_to_exit_first_loop_alt (struct loop *loop,
       /* Replace ivtmp/sum_b with ivtmp/sum_c in header phi.  */
       add_phi_arg (phi, res_c, post_cond_edge, UNKNOWN_LOCATION);
 
-      /* Replace sum_b with sum_c in exit phi.  Loop-closed ssa does not hold
-	 for virtuals, so we cannot get away with exit_block only.  */
+      /* Replace sum_b with sum_c in exit phi.  */
       tree res_b = redirect_edge_var_map_def (vm);
-      replace_uses_in_bbs_by (res_b, res_c, exit_dominated);
+      replace_uses_in_bb_by (res_b, res_c, exit_block);
 
       struct reduction_info *red = reduction_phi (reduction_list, phi);
       gcc_assert (virtual_operand_p (res_a)
@@ -1710,7 +1679,6 @@ transform_to_exit_first_loop_alt (struct loop *loop,
 	}
     }
   gcc_assert (gsi_end_p (gsi) && !v->iterate (i, &vm));
-  BITMAP_FREE (exit_dominated);
 
   /* Set the preheader argument of the new phis to ivtmp/sum_init.  */
   flush_pending_stmts (entry);
@@ -1718,21 +1686,36 @@ transform_to_exit_first_loop_alt (struct loop *loop,
   /* Set the latch arguments of the new phis to ivtmp/sum_b.  */
   flush_pending_stmts (post_inc_edge);
 
-  /* Register the reduction exit phis.  */
+  /* Create a new empty exit block, inbetween the new loop header and the old
+     exit block.  The function separate_decls_in_region needs this block to
+     insert code that is active on loop exit, but not any other path.  */
+  basic_block new_exit_block = split_edge (exit);
+
+  /* Insert and register the reduction exit phis.  */
   for (gphi_iterator gsi = gsi_start_phis (exit_block);
        !gsi_end_p (gsi);
        gsi_next (&gsi))
     {
       gphi *phi = gsi.phi ();
       tree res_z = PHI_RESULT (phi);
+
+      /* Now that we have a new exit block, duplicate the phi of the old exit
+	 block in the new exit block to preserve loop-closed ssa.  */
+      edge succ_new_exit_block = single_succ_edge (new_exit_block);
+      edge pred_new_exit_block = single_pred_edge (new_exit_block);
+      tree res_y = copy_ssa_name (res_z, phi);
+      gphi *nphi = create_phi_node (res_y, new_exit_block);
+      tree res_c = PHI_ARG_DEF_FROM_EDGE (phi, succ_new_exit_block);
+      add_phi_arg (nphi, res_c, pred_new_exit_block, UNKNOWN_LOCATION);
+      add_phi_arg (phi, res_y, succ_new_exit_block, UNKNOWN_LOCATION);
+
       if (virtual_operand_p (res_z))
 	continue;
 
-      tree res_c = PHI_ARG_DEF_FROM_EDGE (phi, exit);
       gimple reduc_phi = SSA_NAME_DEF_STMT (res_c);
       struct reduction_info *red = reduction_phi (reduction_list, reduc_phi);
       if (red != NULL)
-	red->keep_res = phi;
+	red->keep_res = nphi;
     }
 
   /* We're going to cancel the loop at the end of gen_parallel_loop, but until
@@ -1846,8 +1829,18 @@ try_transform_to_exit_first_loop_alt (struct loop *loop,
 	alt_bound = op1;
     }
 
+  /* If not found, insert nit + 1.  */
   if (alt_bound == NULL_TREE)
-    return false;
+    {
+      alt_bound = fold_build2 (PLUS_EXPR, nit_type, nit,
+			       build_int_cst_type (nit_type, 1));
+
+      gimple_stmt_iterator gsi = gsi_last_bb (loop_preheader_edge (loop)->src);
+
+      alt_bound
+	= force_gimple_operand_gsi (&gsi, alt_bound, true, NULL_TREE, false,
+				    GSI_CONTINUE_LINKING);
+    }
 
   transform_to_exit_first_loop_alt (loop, reduction_list, alt_bound);
   return true;

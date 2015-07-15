@@ -22,12 +22,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "opts.h"
 #include "alias.h"
-#include "flags.h"
-#include "symtab.h"
-#include "tree-core.h"
+#include "tree.h"
 #include "stor-layout.h"
 #include "inchash.h"
-#include "tree.h"
 #include "debug.h"
 #include "langhooks.h"
 #include "langhooks-def.h"
@@ -153,6 +150,17 @@ jit_langhook_type_for_mode (enum machine_mode mode, int unsignedp)
 
   if (mode == TYPE_MODE (double_type_node))
     return double_type_node;
+
+  if (mode == TYPE_MODE (intQI_type_node))
+    return unsignedp ? unsigned_intQI_type_node : intQI_type_node;
+  if (mode == TYPE_MODE (intHI_type_node))
+    return unsignedp ? unsigned_intHI_type_node : intHI_type_node;
+  if (mode == TYPE_MODE (intSI_type_node))
+    return unsignedp ? unsigned_intSI_type_node : intSI_type_node;
+  if (mode == TYPE_MODE (intDI_type_node))
+    return unsignedp ? unsigned_intDI_type_node : intDI_type_node;
+  if (mode == TYPE_MODE (intTI_type_node))
+    return unsignedp ? unsigned_intTI_type_node : intTI_type_node;
 
   if (mode == TYPE_MODE (integer_type_node))
     return unsignedp ? unsigned_type_node : integer_type_node;

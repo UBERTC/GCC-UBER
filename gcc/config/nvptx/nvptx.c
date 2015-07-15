@@ -23,17 +23,16 @@
 #include <sstream>
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "rtl.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "rtl.h"
+#include "df.h"
+#include "alias.h"
 #include "insn-flags.h"
 #include "output.h"
 #include "insn-attr.h"
 #include "insn-codes.h"
-#include "hard-reg-set.h"
-#include "function.h"
 #include "flags.h"
 #include "insn-config.h"
 #include "expmed.h"
@@ -55,11 +54,8 @@
 #include "dbxout.h"
 #include "target.h"
 #include "diagnostic.h"
-#include "predict.h"
-#include "basic-block.h"
 #include "cfgrtl.h"
 #include "stor-layout.h"
-#include "df.h"
 #include "builtins.h"
 
 /* This file should be included last.  */
@@ -1969,9 +1965,6 @@ nvptx_reorg_subreg (void)
 static void
 nvptx_reorg (void)
 {
-  struct reg_replace qiregs, hiregs, siregs, diregs;
-  rtx_insn *insn, *next;
-
   /* We are freeing block_for_insn in the toplev to keep compatibility
      with old MDEP_REORGS that are not CFG based.  Recompute it now.  */
   compute_bb_for_insn ();
@@ -1991,7 +1984,7 @@ nvptx_reorg (void)
       regno_reg_rtx[i] = const0_rtx;
 
   /* Replace subregs.  */
-  nvptx_reorg_subreg (max_regs);
+  nvptx_reorg_subreg ();
 
   regstat_free_n_sets_and_refs ();
 

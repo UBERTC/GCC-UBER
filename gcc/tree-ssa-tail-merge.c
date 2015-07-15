@@ -188,33 +188,24 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "cfghooks.h"
 #include "tree.h"
+#include "gimple.h"
+#include "hard-reg-set.h"
+#include "ssa.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "trans-mem.h"
 #include "tm_p.h"
-#include "predict.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfganal.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
 #include "flags.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "gimple-iterator.h"
-#include "gimple-ssa.h"
 #include "tree-cfg.h"
-#include "tree-phinodes.h"
-#include "ssa-iterators.h"
 #include "tree-into-ssa.h"
 #include "params.h"
 #include "gimple-pretty-print.h"
@@ -1249,7 +1240,7 @@ find_duplicate (same_succ same_succ, basic_block bb1, basic_block bb2)
       gimple stmt1 = gsi_stmt (gsi1);
       gimple stmt2 = gsi_stmt (gsi2);
 
-      /* What could be better than to this this here is to blacklist the bb
+      /* What could be better than this here is to blacklist the bb
 	 containing the stmt, when encountering the stmt f.i. in
 	 same_succ_hash.  */
       if (is_tm_ending (stmt1)

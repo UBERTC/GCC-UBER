@@ -1,3 +1,95 @@
+2015-07-14  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* simplify.c (gfc_simplify_floor): Set precision of temporary to
+	that of arg.
+
+2015-07-13  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/64589
+	* class.c (find_intrinsic_vtab): Put/Search vtabs for intrinsic
+	types in the top-level namespace.
+
+2015-07-12  Aldy Hernandez  <aldyh@redhat.com>
+
+	* trans-stmt.c: Fix double word typos.
+
+2015-07-09  Andrew MacLeod  <amacleod@redhat.com>
+
+	* arith.c: Adjust includes for flags.h changes.
+	* array.c: Likewise.
+	* check.c: Likewise.
+	* decl.c: Likewise.
+	* error.c: Likewise.
+	* expr.c: Likewise.
+	* frontend-passes.c: Likewise.
+	* interface.c: Likewise.
+	* intrinsic.c: Likewise.
+	* io.c: Likewise.
+	* match.c: Likewise.
+	* openmp.c: Likewise.
+	* parse.c: Likewise.
+	* primary.c: Likewise.
+	* resolve.c: Likewise.
+	* scanner.c: Likewise.
+	* simplify.c: Likewise.
+	* symbol.c: Likewise.
+	* target-memory.c: Likewise.
+
+2015-07-07  Andrew MacLeod  <amacleod@redhat.com>
+
+	* convert.c: Adjust includes.
+	* cpp.c: Likewise.
+	* decl.c: Likewise.
+	* f95-lang.c: Likewise.
+	* iresolve.c: Likewise.
+	* match.c: Likewise.
+	* module.c: Likewise.
+	* options.c: Likewise.
+	* target-memory.c: Likewise.
+	* trans-array.c: Likewise.
+	* trans-common.c: Likewise.
+	* trans-const.c: Likewise.
+	* trans-decl.c: Likewise.
+	* trans-expr.c: Likewise.
+	* trans-intrinsic.c: Likewise.
+	* trans-io.c: Likewise.
+	* trans-openmp.c: Likewise.
+	* trans-stmt.c: Likewise.
+	* trans-types.c: Likewise.
+	* trans.c: Likewise.
+
+2015-07-07  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/66578
+	* trans-array.c (gfc_conv_expr_descriptor): Ensure array descriptor
+	is one-based for non-full array refs. Correct the offset when a
+	rank_remap occurs.
+
+2015-07-06  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* io.c (check_char_variable): New function.
+	(match_open_element, match_close_element, match_file_element,
+	match_dt_element, match_inquire_element, match_wait_element): Use it.
+
+2015-07-06  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/58586
+	* resolve.c (resolve_symbol): Non-private functions in modules
+	with allocatable or pointer components are marked referenced
+	now. Furthermore is the default init especially for those
+	components now done in gfc_conf_procedure_call preventing
+	duplicate code.
+	* trans-decl.c (gfc_generate_function_code): Generate a fake
+	result decl for	functions returning an object with allocatable
+	components and initialize them.
+	* trans-expr.c (gfc_conv_procedure_call): For value typed trees
+	use the tree without indirect ref. And for non-decl trees
+	add a temporary variable to prevent evaluating the tree
+	multiple times (prevent multiple function evaluations).
+	* trans.h: Made gfc_trans_structure_assign () protoype
+	available, which is now needed by trans-decl.c:gfc_generate_
+	function_code(), too.
+
 2015-07-04  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/66725

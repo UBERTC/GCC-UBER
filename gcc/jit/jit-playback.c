@@ -26,11 +26,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "statistics.h"
 #include "vec.h"
 #include "alias.h"
-#include "flags.h"
-#include "symtab.h"
-#include "tree-core.h"
-#include "inchash.h"
 #include "tree.h"
+#include "inchash.h"
 #include "hash-map.h"
 #include "vec.h"
 #include "hashtab.h"
@@ -2660,7 +2657,7 @@ location_comparator (const void *lhs, const void *rhs)
    linemap API requires locations to be created in ascending order
    as if we were tokenizing files.
 
-   This hook sorts all of the the locations that have been created, and
+   This hook sorts all of the locations that have been created, and
    calls into the linemap API, creating linemap entries in sorted order
    for our locations.  */
 

@@ -22,9 +22,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "coretypes.h"
 #include "tm.h"
 #include "alias.h"
-#include "symtab.h"
-#include "options.h"
 #include "tree.h"
+#include "options.h"
 #include "tm_p.h"
 #include "flags.h"
 #include "c-family/c-common.h"
@@ -64,6 +63,8 @@ ix86_target_macros_internal (HOST_WIDE_INT isa_flag,
       def_or_undef (parse_in, "__i486");
       def_or_undef (parse_in, "__i486__");
       break;
+    case PROCESSOR_IAMCU:
+      /* Intel MCU is based on Intel Pentium CPU.  */
     case PROCESSOR_PENTIUM:
       def_or_undef (parse_in, "__i586");
       def_or_undef (parse_in, "__i586__");
@@ -284,6 +285,9 @@ ix86_target_macros_internal (HOST_WIDE_INT isa_flag,
       break;
     case PROCESSOR_KNL:
       def_or_undef (parse_in, "__tune_knl__");
+      break;
+    case PROCESSOR_IAMCU:
+      def_or_undef (parse_in, "__tune_iamcu__");
       break;
     case PROCESSOR_INTEL:
     case PROCESSOR_GENERIC:

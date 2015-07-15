@@ -22,20 +22,17 @@
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
 #include "rtl.h"
+#include "df.h"
 #include "regs.h"
-#include "hard-reg-set.h"
-#include "predict.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "insn-flags.h"
@@ -43,8 +40,6 @@
 #include "insn-codes.h"
 #include "recog.h"
 #include "output.h"
-#include "symtab.h"
-#include "tree.h"
 #include "fold-const.h"
 #include "calls.h"
 #include "flags.h"
@@ -64,7 +59,6 @@
 #include "target.h"
 #include "langhooks.h"
 #include "tm-constrs.h"
-#include "df.h"
 #include "builtins.h"
 
 /* This file should be included last.  */
@@ -88,7 +82,7 @@ static bool lm32_in_small_data_p (const_tree);
 static void lm32_setup_incoming_varargs (cumulative_args_t cum,
 					 machine_mode mode, tree type,
 					 int *pretend_size, int no_rtl);
-static bool lm32_rtx_costs (rtx x, int code, int outer_code, int opno,
+static bool lm32_rtx_costs (rtx x, machine_mode mode, int outer_code, int opno,
 			    int *total, bool speed);
 static bool lm32_can_eliminate (const int, const int);
 static bool
@@ -941,10 +935,10 @@ nonpic_symbol_mentioned_p (rtx x)
    scanned.  In either case, *TOTAL contains the cost result.  */
 
 static bool
-lm32_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
-		int *total, bool speed)
+lm32_rtx_costs (rtx x, machine_mode mode, int outer_code,
+		int opno ATTRIBUTE_UNUSED, int *total, bool speed)
 {
-  machine_mode mode = GET_MODE (x);
+  int code = GET_CODE (x);
   bool small_mode;
 
   const int arithmetic_latency = 1;

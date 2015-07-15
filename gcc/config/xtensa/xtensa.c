@@ -21,20 +21,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "backend.h"
+#include "cfghooks.h"
+#include "tree.h"
+#include "gimple.h"
 #include "rtl.h"
+#include "df.h"
 #include "regs.h"
-#include "hard-reg-set.h"
-#include "predict.h"
-#include "function.h"
-#include "dominance.h"
-#include "cfg.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "lcm.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "basic-block.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "insn-flags.h"
@@ -42,8 +40,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "insn-codes.h"
 #include "recog.h"
 #include "output.h"
-#include "symtab.h"
-#include "tree.h"
 #include "fold-const.h"
 #include "stringpool.h"
 #include "stor-layout.h"
@@ -64,14 +60,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "libfuncs.h"
 #include "target.h"
 #include "langhooks.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "gimplify.h"
-#include "df.h"
 #include "builtins.h"
 #include "dumpfile.h"
 #include "hw-doloop.h"
@@ -151,7 +143,7 @@ static unsigned int xtensa_multibss_section_type_flags (tree, const char *,
 							int) ATTRIBUTE_UNUSED;
 static section *xtensa_select_rtx_section (machine_mode, rtx,
 					   unsigned HOST_WIDE_INT);
-static bool xtensa_rtx_costs (rtx, int, int, int, int *, bool);
+static bool xtensa_rtx_costs (rtx, machine_mode, int, int, int *, bool);
 static int xtensa_register_move_cost (machine_mode, reg_class_t,
 				      reg_class_t);
 static int xtensa_memory_move_cost (machine_mode, reg_class_t, bool);
@@ -3575,9 +3567,12 @@ xtensa_memory_move_cost (machine_mode mode ATTRIBUTE_UNUSED,
    scanned.  In either case, *TOTAL contains the cost result.  */
 
 static bool
-xtensa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
+xtensa_rtx_costs (rtx x, machine_mode mode, int outer_code,
+		  int opno ATTRIBUTE_UNUSED,
 		  int *total, bool speed ATTRIBUTE_UNUSED)
 {
+  int code = GET_CODE (x);
+
   switch (code)
     {
     case CONST_INT:
@@ -3647,9 +3642,9 @@ xtensa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
     case MEM:
       {
 	int num_words =
-	  (GET_MODE_SIZE (GET_MODE (x)) > UNITS_PER_WORD) ?  2 : 1;
+	  (GET_MODE_SIZE (mode) > UNITS_PER_WORD) ?  2 : 1;
 
-	if (memory_address_p (GET_MODE (x), XEXP ((x), 0)))
+	if (memory_address_p (mode, XEXP ((x), 0)))
 	  *total = COSTS_N_INSNS (num_words);
 	else
 	  *total = COSTS_N_INSNS (2*num_words);
@@ -3666,13 +3661,13 @@ xtensa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
       return true;
 
     case NOT:
-      *total = COSTS_N_INSNS ((GET_MODE (x) == DImode) ? 3 : 2);
+      *total = COSTS_N_INSNS (mode == DImode ? 3 : 2);
       return true;
 
     case AND:
     case IOR:
     case XOR:
-      if (GET_MODE (x) == DImode)
+      if (mode == DImode)
 	*total = COSTS_N_INSNS (2);
       else
 	*total = COSTS_N_INSNS (1);
@@ -3681,7 +3676,7 @@ xtensa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
     case ASHIFT:
     case ASHIFTRT:
     case LSHIFTRT:
-      if (GET_MODE (x) == DImode)
+      if (mode == DImode)
 	*total = COSTS_N_INSNS (50);
       else
 	*total = COSTS_N_INSNS (1);
@@ -3689,10 +3684,9 @@ xtensa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
 
     case ABS:
       {
-	machine_mode xmode = GET_MODE (x);
-	if (xmode == SFmode)
+	if (mode == SFmode)
 	  *total = COSTS_N_INSNS (TARGET_HARD_FLOAT ? 1 : 50);
-	else if (xmode == DFmode)
+	else if (mode == DFmode)
 	  *total = COSTS_N_INSNS (50);
 	else
 	  *total = COSTS_N_INSNS (4);
@@ -3702,10 +3696,9 @@ xtensa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
     case PLUS:
     case MINUS:
       {
-	machine_mode xmode = GET_MODE (x);
-	if (xmode == SFmode)
+	if (mode == SFmode)
 	  *total = COSTS_N_INSNS (TARGET_HARD_FLOAT ? 1 : 50);
-	else if (xmode == DFmode || xmode == DImode)
+	else if (mode == DFmode || mode == DImode)
 	  *total = COSTS_N_INSNS (50);
 	else
 	  *total = COSTS_N_INSNS (1);
@@ -3713,17 +3706,16 @@ xtensa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
       }
 
     case NEG:
-      *total = COSTS_N_INSNS ((GET_MODE (x) == DImode) ? 4 : 2);
+      *total = COSTS_N_INSNS (mode == DImode ? 4 : 2);
       return true;
 
     case MULT:
       {
-	machine_mode xmode = GET_MODE (x);
-	if (xmode == SFmode)
+	if (mode == SFmode)
 	  *total = COSTS_N_INSNS (TARGET_HARD_FLOAT ? 4 : 50);
-	else if (xmode == DFmode)
+	else if (mode == DFmode)
 	  *total = COSTS_N_INSNS (50);
-	else if (xmode == DImode)
+	else if (mode == DImode)
 	  *total = COSTS_N_INSNS (TARGET_MUL32_HIGH ? 10 : 50);
 	else if (TARGET_MUL32)
 	  *total = COSTS_N_INSNS (4);
@@ -3739,13 +3731,12 @@ xtensa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
     case DIV:
     case MOD:
       {
-	machine_mode xmode = GET_MODE (x);
-	if (xmode == SFmode)
+	if (mode == SFmode)
 	  {
 	    *total = COSTS_N_INSNS (TARGET_HARD_FLOAT_DIV ? 8 : 50);
 	    return true;
 	  }
-	else if (xmode == DFmode)
+	else if (mode == DFmode)
 	  {
 	    *total = COSTS_N_INSNS (50);
 	    return true;
@@ -3756,8 +3747,7 @@ xtensa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
     case UDIV:
     case UMOD:
       {
-	machine_mode xmode = GET_MODE (x);
-	if (xmode == DImode)
+	if (mode == DImode)
 	  *total = COSTS_N_INSNS (50);
 	else if (TARGET_DIV32)
 	  *total = COSTS_N_INSNS (32);
@@ -3767,7 +3757,7 @@ xtensa_rtx_costs (rtx x, int code, int outer_code, int opno ATTRIBUTE_UNUSED,
       }
 
     case SQRT:
-      if (GET_MODE (x) == SFmode)
+      if (mode == SFmode)
 	*total = COSTS_N_INSNS (TARGET_HARD_FLOAT_SQRT ? 8 : 50);
       else
 	*total = COSTS_N_INSNS (50);

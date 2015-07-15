@@ -26,10 +26,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
-#include "symtab.h"
+#include "backend.h"
+#include "predict.h"
 #include "tree.h"
+#include "gimple.h"
+#include "rtl.h"
+#include "alias.h"
 #include "fold-const.h"
 #include "varasm.h"
 #include "calls.h"
@@ -40,19 +42,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "flags.h"
 #include "debug.h"
 #include "target.h"
-#include "predict.h"
-#include "dominance.h"
-#include "cfg.h"
-#include "basic-block.h"
-#include "hard-reg-set.h"
-#include "function.h"
 #include "cgraph.h"
 #include "intl.h"
-#include "tree-ssa-alias.h"
 #include "internal-fn.h"
 #include "tree-eh.h"
-#include "gimple-expr.h"
-#include "gimple.h"
 #include "gimple-iterator.h"
 #include "timevar.h"
 #include "dumpfile.h"
@@ -62,7 +55,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "value-prof.h"
 #include "except.h"
 #include "diagnostic-core.h"
-#include "rtl.h"
 #include "ipa-utils.h"
 #include "lto-streamer.h"
 #include "alloc-pool.h"
@@ -685,7 +677,7 @@ cgraph_edge_hasher::hash (gimple call_stmt)
   return (hashval_t) ((intptr_t)call_stmt >> 3);
 }
 
-/* Return nonzero if the call_stmt of of cgraph_edge X is stmt *Y.  */
+/* Return nonzero if the call_stmt of cgraph_edge X is stmt *Y.  */
 
 inline bool
 cgraph_edge_hasher::equal (cgraph_edge *x, gimple y)
@@ -1747,8 +1739,8 @@ cgraph_node::release_body (bool keep_arguments)
       if (!keep_arguments)
 	DECL_ARGUMENTS (decl) = NULL;
     }
-  /* If the node is abstract and needed, then do not clear DECL_INITIAL
-     of its associated function function declaration because it's
+  /* If the node is abstract and needed, then do not clear
+     DECL_INITIAL of its associated function declaration because it's
      needed to emit debug info later.  */
   if (!used_as_abstract_origin && DECL_INITIAL (decl))
     DECL_INITIAL (decl) = error_mark_node;
