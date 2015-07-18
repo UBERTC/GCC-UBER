@@ -1,3 +1,81 @@
+2015-07-17  Mikael Morin  <mikael@gcc.gnu.org>
+
+	* gfortran.dg/coarray_collectives_16.f90: Fix patterns
+	as follow-up to r225932.
+
+2015-07-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66866
+	* g++.dg/pr66866.C: New test.
+
+2015-07-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2015-07-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66703
+	* gcc.target/i386/readeflags-1.c (readeflags_test): Declare with
+	__attribute__((noinline, noclone)).  Change "x" to "volatile char"
+	type to prevent possible flag-clobbering zero-extensions.
+	* gcc.target/i386/pr66703.c: New test.
+
+2015-07-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2015-07-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66814
+	* gcc.target/i386/pr66814.c: New test.
+
+2015-07-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2015-07-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR rtl-optimization/66838
+	* gcc.target/i386/pr66838.c: New test.
+
+2015-07-17  Alessandro Fanfarillo  <fanfarillo.gcc@gmail.com>
+
+	* gfortran.dg/co_reduce_1.f90: New file.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66864
+	* gfortran.dg/pr66864.f90: New test.
+
+2015-07-16  Steven G. Kargl   <kargl@gcc.gnu.org>
+
+	PR fortran/66545
+	* gfortran.dg/pr66545_1.f90: New test.
+	* gfortran.dg/pr66545_2.f90: New test.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/56520
+	* gfortran.dg/pr56520.f90: New test.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* gfortran.dg/iomsg_2.f90: New test.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66725
+	* gfortran.dg/pr66725.f90: New test.
+
+2015-07-16  Martin Liska  <mliska@suse.cz>
+
+	* g++.dg/ipa/pr66896.c: New test.
+
+2015-07-16  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2015-07-08  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/66748
+	* g++.dg/abi/abi-tag15.C: New test.
+
 2015-07-16  Release Manager
 
 	* GCC 5.2.0 released.
@@ -792,7 +870,7 @@
 	Add missing ChangeLog entry for r222341.
 
 	Backport from trunk r222273
-        2015-04-21  Andreas Tobler  <andreast@gcc.gnu.org>
+	2015-04-21  Andreas Tobler  <andreast@gcc.gnu.org>
 	* gcc.target/i386/avx512bw-vpermi2w-2.c: Fix includes to use actual
 	headers.
 	* gcc.target/i386/avx512bw-vpermt2w-2.c: Likewise.

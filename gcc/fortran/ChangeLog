@@ -1,3 +1,44 @@
+2015-07-17  Alessandro Fanfarillo  <fanfarillo.gcc@gmail.com>
+
+	* trans-intrinsic.c (conv_co_collective): Remove redundant address
+	operator in the generated code.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66724
+	PR fortran/66724
+	* io.c (is_char_type): Call gfc_resolve_expr ().
+	(match_open_element, match_dt_element, match_inquire_element): Fix
+	ASYNCHRONOUS case.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66864
+	* simplify.c (gfc_simplify_floor): Set precision of temporary to
+	that of arg.
+
+2015-07-16  Steven G. Kargl   <kargl@gcc.gnu.org>
+
+	PR fortran/66545
+	* primary.c (match_sym_complex_part): Do not dereference NULL pointer.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/56520
+	* match.c (gfc_match_name): Special case unary minus and plus.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* io.c (check_char_variable): New function.
+	(match_open_element, match_close_element, match_file_element,
+	match_dt_element, match_inquire_element, match_wait_element): Use it.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66725
+	* io.c (is_char_type): New function to test for BT_CHARACTER
+	(gfc_match_open, gfc_match_close, match_dt_element): Use it.
+
 2015-07-16  Release Manager
 
 	* GCC 5.2.0 released.
