@@ -1,3 +1,52 @@
+2015-07-16  Release Manager
+
+	* GCC 5.2.0 released.
+
+2015-07-15  Renlin Li  <renlin.li@arm.com>
+
+	Backport from mainline.
+	2015-07-13  Renlin Li  <renlin.li@arm.com>
+
+	PR rtl/66556
+	* simplify-rtx.c (simplify_const_relational_operation): Add
+	side_effects_p checks.
+
+2015-07-15  Thomas Schwinge  <thomas@codesourcery.com>
+
+	Backport trunk r225560:
+
+	2015-07-08  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR libgomp/65099
+	* config/nvptx/mkoffload.c (main): Create an offload image only in
+	64-bit configurations.
+
+	Backport trunk r222583:
+
+	2015-04-29  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR libgomp/65099
+	* config/nvptx/mkoffload.c (target_ilp32): New variable.
+	(main): Set it depending on "-foffload-abi=[...]".
+	(compile_native, main): Use it to pass "-m32" or "-m64" to the
+	compiler.
+
+	Backport trunk r223805:
+
+	2015-05-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* builtins.c (expand_builtin_acc_on_device): Mark parameters
+	with ATTRIBUTE_UNUSED.
+
+	Backport trunk r223801:
+
+	2015-05-28  Julian Brown  <julian@codesourcery.com>
+
+	PR libgomp/65742
+
+	* builtins.c (expand_builtin_acc_on_device): Don't use open-coded
+	sequence for !ACCEL_COMPILER.
+
 2015-07-14  Matthias Klose  <doko@ubuntu.com>
 
 	PR target/66840
