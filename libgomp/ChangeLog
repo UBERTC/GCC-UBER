@@ -1,3 +1,45 @@
+2015-07-17  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* target.c (GOMP_offload_register): Use int for device type arg.
+	(GOMP_offload_unregister): Likewise.
+
+	* target.c (struct_offload_image_descr): Constify host_table.
+	(gomp_offload_image_to_device): Likewise.
+	(GOMP_offload_register, GOMP_offload_unregister): Likewise.
+
+	* libgomp.h (gomp_device_descr): Constify target data arguments.
+	* target.c (struct offload_image_descr): Constify target_data.
+	(gomp_offload_image_to_device): Likewise.
+	(GOMP_offload_register): Likewise.
+	(GOMP_offload_unrefister): Likewise.
+	* plugin/plugin-host.c (GOMP_OFFLOAD_load_image,
+	GOMP_OFFLOAD_unload_image): Constify target data.
+	* plugin/plugin-nvptx.c (struct ptx_image_data): Constify target data.
+	(GOMP_OFFLOAD_load_image, GOMP_OFFLOAD_unload_image): Likewise.
+
+2015-07-16  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* plugin/plugin-nvptx.c (link_ptx): Constify string argument.
+	Workaround driver library const error.
+	(struct nvptx_tdata, nvptx_tdata_t): New.
+	(GOMP_OFFLOAD_load_image): Use struct for target_data's real
+	type.
+
+2015-07-15  Maxim Blumenthal  <maxim.blumenthal@intel.com>
+
+	* testsuite/libgomp.fortran/examples-4/simd-8.f90: (main): Change type
+	of EPS parameter from integer to real.
+	* testsuite/libgomp.fortran/examples-4/task_dep-5.f90: (check): Change
+	type of EPS parameter from integer to real.
+
+2015-07-15  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* team.c (get_last_team): New.
+	(gomp_new_team): Recycle last non-nested team if possible.
+	(gomp_team_end): Move team work share list free lock destruction
+	to ...
+	(free_team): ... here.
+
 2015-07-14  Maxim Blumenthal  <maxim.blumenthal@intel.com>
 
 	* testsuite/libgomp.c/examples-4/simd-3.c: (main): Change type of res

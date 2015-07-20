@@ -1,3 +1,805 @@
+2015-07-18  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* vmsdbgout.c (vmsdbgout_decl): Change name of prototyped
+	function to vmsdbgout_function_decl.
+
+2015-07-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66922
+	* config/i386/i386.c (ix86_expand_pextr): Reject extractions
+	from misaligned positions.
+	(ix86_expand_pinsr): Reject insertions to misaligned positions.
+
+2015-07-18  Sebastian Pop  <s.pop@samsung.com>
+
+	PR middle-end/46851
+	PR middle-end/60340
+	* Makefile.in: Removed omega.o.
+	* common.opt: Document flag fcheck-data-deps as deprecated.
+	* doc/invoke.texi: Remove documentation for fcheck-data-deps and
+	its associated params: omega-max-vars, omega-max-geqs,
+	omega-max-eqs, omega-max-wild-cards, omega-hash-table-size,
+	omega-max-keys, omega-eliminate-redundant-constraints.
+	* doc/loop.texi: Remove all the section on Omega.
+	* graphite-blocking.c: Include missing params.h: it used to be
+	included through tree-data-ref.h and omega.h.
+	* graphite-isl-ast-to-gimple.c: Same.
+	* graphite-optimize-isl.c: Same.
+	* graphite-sese-to-poly.c: Same.
+	* graphite.c: Same.
+	* omega.c: Remove.
+	* omega.h: Remove.
+	* params.def: Removed PARAM_OMEGA_MAX_VARS, PARAM_OMEGA_MAX_GEQS,
+	PARAM_OMEGA_MAX_EQS, PARAM_OMEGA_MAX_WILD_CARDS,
+	PARAM_OMEGA_HASH_TABLE_SIZE, PARAM_OMEGA_MAX_KEYS, and
+	PARAM_OMEGA_ELIMINATE_REDUNDANT_CONSTRAINTS.
+	* passes.def: Remove pass_check_data_deps.
+	* tree-data-ref.c (dump_affine_function): Declare DEBUG_FUNCTION.
+	(dump_conflict_function): Same.
+	(dump_subscript): Same.
+	(print_direction_vector): Same.
+	(print_dir_vectors): Same.
+	(print_lambda_vector): Same.
+	(print_dist_vectors): Same.
+	(dump_data_dependence_relation): Same.
+	(dump_data_dependence_relations): Same.
+	(dump_dist_dir_vectors): Same.
+	(dump_ddrs): Same.
+	(init_omega_eq_with_af): Removed.
+	(omega_extract_distance_vectors): Removed.
+	(omega_setup_subscript): Removed.
+	(init_omega_for_ddr_1): Removed.
+	(init_omega_for_ddr): Removed.
+	(ddr_consistent_p): Removed.
+	(compute_affine_dependence): Do not use omega to check data
+	dependences.
+	(compute_data_dependences_for_bb): Removed.
+	(analyze_all_data_dependences): Removed.
+	(tree_check_data_deps): Removed.
+	* tree-data-ref.h: Do not include omega.h.
+	(compute_data_dependences_for_bb): Removed.
+	(tree_check_data_deps): Removed.
+	* tree-ssa-loop.c (pass_check_data_deps): Removed.
+	(make_pass_check_data_deps): Removed.
+	* tree-ssa-phiopt.c: Include params.h.
+	* tree-vect-data-refs.c: Same.
+	* tree-vect-slp.c: Same.
+
+2015-07-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (pushsf splitter): Pass curr_insn to
+	find_constant_src.  FAIL if find_constant_src returns NULL_RTX.
+	(mem->fpreg splitters): Ditto.
+	(general_operand->nonimmediate_operand splitter): Use explicit modes.
+	Disable DFmode for TARGET_64BIT.
+
+2015-07-17  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/66906
+	* config/i386/i386.c (ix86_expand_prologue): Replicate static
+	chain on the stack.
+
+2015-07-17  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* config/nvptx/mkoffload.c (process): Constify host data.
+	* config/i386/intelmic-mkoffload.c (generate_target_descr_file):
+	Constify host data.
+	(generate_host_descr_file): Likewise.
+
+2015-07-17  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	PR middle-end/61929
+	* graphite-dependences.c (add_pdr_constraints): Renamed
+	pdr->extent to pdr->subscript_sizes.
+	* graphite-interchange.c (build_linearized_memory_access): Add
+	back all gcc_assert's that the "isl_int to isl_val conversion"
+	patch has removed.  Refactored.
+	(pdr_stride_in_loop): Renamed pdr->extent to pdr->subscript_sizes.
+	* graphite-poly.c (new_poly_dr): Same.
+	(free_poly_dr): Same.
+	* graphite-poly.h (struct poly_dr): Same.
+	* graphite-scop-detection.c (stmt_has_simple_data_refs_p): Ignore
+	all data references other than ARRAY_REF, MEM_REF, and COMPONENT_REF.
+	* graphite-scop-detection.h: Fix space.
+	* graphite-sese-to-poly.c (build_pbb_scattering_polyhedrons): Add
+	back all gcc_assert's removed by a previous patch.
+	(wrap): Remove the_isl_ctx global variable that the same patch has
+	added.
+	(build_loop_iteration_domains): Same.
+	(add_param_constraints): Same.
+	(pdr_add_data_dimensions): Same.  Refactored.
+	(build_poly_dr): Renamed extent to subscript_sizes.
+
+2015-07-17  Marek Polacek  <polacek@redhat.com>
+
+	* fold-const.c (fold_binary_loc): Move A - (A & B) into ~B & A ...
+	* match.pd: ... here.
+
+2015-07-17  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* config/nvptx/mkoffload.c (process): Constify target data.
+	* config/i386/intelmic-mkoffload.c (generate_target_descr_file):
+	Constify target data.
+	(generate_target_offloadend_file): Likewise.
+
+2015-07-17  Yuri Rumyantsev  <ysrumyan@gmail.com>
+
+	* tree-vect-loop-manip.c (rename_variables_in_bb): Add argument
+	to allow renaming of PHI arguments on edges incoming from outer
+	loop header, add corresponding check before start PHI iterator.
+	(slpeel_tree_duplicate_loop_to_edge_cfg): Introduce new bool
+	variable DUPLICATE_OUTER_LOOP and set it to true for outer loops
+	with true force_vectorize.  Set-up dominator for outer loop too.
+	Pass DUPLICATE_OUTER_LOOP as argument to rename_variables_in_bb.
+	(slpeel_can_duplicate_loop_p): Allow duplicate of outer loop if it
+	was marked with force_vectorize and has restricted cfg.
+	(slpeel_tree_peel_loop_to_edge): Do not rename exit PHI uses in
+	inner loop.
+	* tree-vect-data-refs.c (vect_enhance_data_refs_alignment): Do not
+	do peeling for outer loops.
+
+2015-07-17  Yvan Roux  <yvan.roux@linaro.org>
+	    Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac: Move AC_ARG_WITH checks for native-system-header-dir,
+	build-sysroot, sysroot from the `Miscenalleous configure options' to
+	the `Directories' section and strip trailing `/' from with_sysroot.
+	(gcc_gxx_include_dir): Don't strip a `/' sysroot value.
+	* configure: Regenerated.
+
+2015-07-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66824
+	* config/i386/i386.h (TARGET_HARD_SF_REGS): New define.
+	(TARGET_HARD_DF_REGS): Ditto.
+	(TARGET_HARD_XF_REGS): Ditto.
+	* config/i386/i386.md (*movxf_internal): Add alternatives 9 and 10.
+	Enable alternatives 9 and 10 only for !TARGET_HARD_XF_REG target.
+	(*movdf_internal): Add alternatives 22, 23, 24 and 25. Enable
+	alternatives 22, 23, 24 and 25 only for !TARGET_HARD_DF_REG target.
+	(*movsf_internal): Add alternatives 16 and 17. Enable
+	alternatives 16 and 17 only for !TARGET_HARD_SF_REG target.
+
+2015-07-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR rtl-optimization/66891
+	* calls.c (expand_call): Wrap precompute_register_parameters with
+	NO_DEFER_POP/OK_DEFER_POP to prevent deferred pops.
+
+2015-07-16  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* config/nvptx/mkoffload.c (process): Constify mapping variables.
+	Define target data struct and initialize it.
+
+2015-07-16  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/66626
+	* ira.h (emit-rtl.h): Include.
+	(non_spilled_static_chain_regno_p): New.
+	* ira-color.c (setup_profitable_hard_regs): Clear profitable regs
+	unless it is non spilled static chain pseudo.
+	(assign_hard_rego): Spill memory profitable allocno unless it is
+	non spilled static chain pseudo.
+	(allocno_spill_priority_compare): Put non spilled static chain
+	pseudo at the end of sorted array.
+	(improve_allocation): Do nothing if we have static chain and
+	non-local goto.
+	(allocno__priority_compare_func): Put non spilled static chain
+	pseudo at the beginning of sorted array.
+	(move_spill_restore): Ignore non spilled static chain pseudo.
+	* ira-costs.c (find_costs_and_classes): Don't assign class NO_REGS
+	to non spilled static chain pseudo.
+	* lra-assigns.c (pseudo_compare_func): Put non spilled static chain
+	pseudo at the beginning of sorted array.
+	(spill_for): Spill non spilled static chain pseudo last.
+	* lra-constraints.c (lra_constraints): Remove static chain pseudo
+	check for equivalence.
+
+2015-07-16  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/66896.
+	* ipa-prop.c (update_jump_functions_after_inlining): Create properly
+	dst_ctx if it does not exist.
+
+2015-07-16  Martin Liska  <mliska@suse.cz>
+
+	* hash-set.h (remove): New function.
+	(iterator): New iteration class for hash_set.
+
+2015-07-16  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* genattrtab.c (make_canonical): Add a file_location parameter.
+	Use fatal_at rather than fatal.
+	(get_attr_value): Likewise.  Update call to make_canonical.
+	(fill_attr, make_length_attrs, optimize_attrs, gen_attr)
+	(make_internal_attr): Update calls accordingly.
+
+2015-07-16  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* read-md.h (message_with_line, error_with_line): Delete.
+	* read-md.c (message_with_line, error_with_line): Delete.
+	* gensupport.h: Include read-md.h.
+	(md_rtx_info): New structure.
+	(read_md_rtx): Use it.  Return a bool success value.
+	* gensupport.c (read_md_rtx): Likewise.
+	* genattr-common.c (gen_attr): Take an md_rtx_info rather than an rtx.
+	(main): Update after interface changes.
+	* genattr.c (gen_attr): Take an md_rtx_info rather than an rtx.
+	(main): Update after interface changes.
+	* genattrtab.c (insn_code_number): Delete.
+	(optimize_attrs): Add a max_insn_code parameter and use it instead
+	of insn_code_number.
+	(gen_attr): Take an md_rtx_info rather than an rtx and lineno.
+	Use *_at rather than *_with_line functions.
+	(gen_insn): Likewise.
+	(gen_delay): Likewise.
+	(gen_insn_reserv): Likewise.
+	(gen_bypass): Take an md_rtx_info rather than an rtx.
+	(main): Update after interface changes.  Use a local max_insn_code
+	variable instead of insn_code_number.
+	* genautomata.c (gen_cpu_unit): Take an md_rtx_info rather than
+	an rtx.  Use fatal_at rather than fatal.
+	(gen_query_cpu_unit, gen_bypass, gen_excl_set)
+	(gen_presence_absence_set, gen_presence_set, gen_final_presence_set)
+	(gen_absence_set, gen_final_absence_set, gen_automaton)
+	(gen_automata_option, gen_reserv, gen_insn_reserv): Likewise.
+	(main): Update after interface changes.
+	* gencodes.c (gen_insn): Take an md_rtx_info rather than an rtx
+	and code number.
+	(main): Update after interface changes.
+	* genconditions.c (main): Use new read_md_rtx interface.
+	* genconfig.c (gen_insn): Take an md_rtx_info rather than an rtx.
+	(gen_expand, gen_split, gen_peephole, gen_peephole2): Likewise.
+	(main): Update after interface changes.
+	* genemit.c (insn_code_number, insn_index_number): Delete.
+	(gen_insn): Take an md_rtx_info rather than an rtx and lineno.
+	Use fatal_at rather than fatal.
+	(gen_expand): Take an md_rtx_info rather than an rtx.  Use fatal_at
+	rather than fatal.
+	(gen_split): Likewise.
+	(main): Update after interface changes.
+	* genextract.c (line_no): Delete.
+	(gen_insn): Take an md_rtx_info rather than an rtx and lineno.
+	Update call to walk_rtx.
+	(VEC_safe_set_locstr): Add an md_rtx_info argument.  Use message_at
+	rather than message_with_line.
+	(walk_rtx): Add an md_rtx_info argument.  Update call to
+	VEC_safe_set_locstr.
+	(main): Update after interface changes.
+	* genflags.c (gen_insn): Take an md_rtx_info rather than an rtx
+	and lineno.  Use error_at rather than separate message_with_line
+	calls and have_error assignments.
+	(main): Update after interface changes.
+	* genmddump.c (main): Use new read_md_rtx interface.
+	* genopinit.c (insn): Take an md_rtx_info rather than an rtx.
+	(main): Update after interface changes.
+	* genoutput.c (next_code_number): Delete.
+	(gen_insn): Take an md_rtx_info rather than an rtx and lineno.
+	(gen_peephole, gen_expand, gen_split): Likewise.
+	(note_constraint): Likewise.  Use *_at rather than *_with_line
+	functions.
+	(main): Update after interface changes.
+	* genpeep.c (gen_peephole): Take an md_rtx_info rather than an
+	rtx and lineno.
+	(main): Update after interface changes.
+	* genpreds.c (process_define_predicate): Take an md_rtx_info rather
+	than an rtx and lineno.
+	(process_define_constraint): Likewise.
+	(process_define_register_constraint): Likewise.
+	(main): Update after interface changes.
+	* genrecog.c (next_insn_code, pattern_lineno): Delete.
+	(validate_pattern): Replace top-level rtx with an md_rtx_info.
+	Use *_at rather than *_with_line functions.
+	(match_pattern_2): Likewise.
+	(match_pattern_1, match_pattern): Add an md_rtx_info parameter.
+	(get_peephole2_pattern): Take an md_rtx_info rather than an rtvec.
+	Use *_at rather than *_with_line functions.
+	* gentarget-def.c (add_insn): New function.
+	(main): Use it.  Use new read_md_rtx interface.
+
+2015-07-16  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gensupport.h (compute_test_codes): Take a file_location rather
+	than a line number.
+	* gensupport.c (compute_test_codes): Likewise.  Use *_at functions
+	rather than *_with_line functions.
+	(process_define_predicate): Update call to compute_test_codes.
+	* genpreds.c (validate_exp): Take a file_location rather than a
+	line number.  Use *_at functions rather than *_with_line functions.
+	(process_define_predicate): Update call to validate_exp.
+	(constraint_data): Replace lineno field with a file_location.
+	(add_constraint): Take a file_location rather than a line number.
+	Use *_at functions rather than *_with_line functions.  Fix error
+	message for address constraints.  Update after changes to
+	validate_exp, constraint_data and compute_test_codes.
+	(process_define_constraint): Update accordingly.
+	(process_define_register_constraint): Likewise.
+
+2015-07-16  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* genoutput.c (data): Use a file_location to record the source
+	position.
+	(nothing): Delete.
+	(idata, idata_end): Remove initialization.
+	(constraint_data): Replace lineno with a file_location.
+	(output_insn_data): Update after changes to data.
+	(gen_insn, gen_peephole, gen_expand, gen_split): Likewise.
+	(scan_operands): Likewise, using *_at rather than *_with_line
+	functions.
+	(process_template): Likewise.
+	(validate_insn_alternatives): Likewise.
+	(validate_insn_operands): Likewise.
+	(validate_optab_operands): Likewise.
+	(init_insn_for_nothing): Initialize idata and idata_end.
+	(note_constraint): Update after changes to constraint_data,
+	using at rather than with_line functions.
+	(mdep_constraint_len): Take a file_location rather than a
+	line number.  Use at rather than with_line functions.
+
+2015-07-16  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* read-md.h (fatal_at): Declare.
+	* read-md.c (fatal_at): New function.
+	* genattrtab.c (insn_def, attr_desc, delay_desc): Use a file_location
+	to record the source position.
+	(check_attr_test): Take a file_location instead of a line number.
+	Use fatal_at instead of fatal.
+	(check_attr_value): Update after above changes, using "at"
+	rather than "with_line" reporting functions.
+	(convert_set_attr_alternative): Likewise.
+	(gen_attr): Likewise.
+	(check_defs): Likewise.  Don't assign to read_md_filename.
+	(gen_insn): Update initialization after above changes.
+	(gen_delay): Likewise.
+	(write_insn_cases): Print the filename for a define_peephole.
+	(gen_insn_reserv): Take a line number as argument and update
+	the call to check_attr_test.
+	(main): Pass a line number to gen_insn_reserv.
+
+2015-07-16  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* read-md.h (file_location): New structure.
+	(directive_handler_t): Take a file_location rather than a line number.
+	(message_at, error_at): Declare.
+	(read_skip_construct): Delete.
+	* read-md.c (message_with_line_1): Replace with...
+	(message_at_1): ...this new function.
+	(message_at, error_at): New functions.
+	(message_with_line, error_with_line): Update to use message_at_1.
+	(handle_enum): Take a file_location rather than a line number
+	and use error_at for error reporting.
+	(handle_include): Likewise.
+	(read_skip_construct): Likewise.  Make static.
+	(handle_file): Update after above changes.  Pass a file_location
+	rather than a line number to handle_directive.
+	* gensupport.c (queue_elem): Replace separate filename and lineno
+	with a file_location.
+	(queue_pattern): Replace filename and lineno arguments with a
+	file_location.  Update after change to queue_elem.
+	(process_define_predicate): Replace lineno argument with a
+	file_location and use error_at for error reporting.  Update
+	after above changes.
+	(process_rtx): Likewise.
+	(subst_pattern_match): Likewise.
+	(get_alternatives_number): Likewise.
+	(alter_predicate_for_insn): Likewise.
+	(rtx_handle_directive): Likewise.
+	(is_predicable): Update after above changes, using error_at rather
+	than error_with_line.
+	(has_subst_attribute): Likewise.
+	(identify_predicable_attribute): Likewise.
+	(alter_attrs_for_subst_insn): Likewise.
+	(process_one_cond_exec): Likewise.
+	(process_substs_on_one_elem): Likewise.
+	(process_define_subst): Likewise.
+	(check_define_attr_duplicates): Likewise.
+	(read_md_rtx): Update after change to queue_elem.
+
+2015-07-16  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* genoutput.c (next_index_number): Delete.
+	(data): Remove index_number.
+	(gen_insn, gen_peephole, gen_expand, gen_split): Update accordingly.
+	(main): Remove manipulation of next_index_number.
+
+2015-07-16  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* genattrtab.c (check_attr_value): Remove handling of null attrs.
+	(make_canonical): Likewise.
+
+2015-07-16  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/sparc/sparc.md (save_stack_nonlocal): Use adjust_address
+	instead of adjust_address_nv.
+	(restore_stack_nonlocal): Likewise.
+	(nonlocal_goto): Likewise.
+
+2015-07-16  Tom de Vries  <tom@codesourcery.com>
+
+	* tree-parloops.c (create_parallel_loop): Handle case that exit phi does
+	not have a corresponding loop header phi.
+
+2015-07-16  Tom de Vries  <tom@codesourcery.com>
+
+	* tree-parloops.c (create_loads_for_reductions): Handle case that
+	reduction is unused.
+
+2015-07-16  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66894
+	* tree-vrp.c (register_edge_assert_for_2): Fix bad assumption
+	about deriving NE_EXPR from truncated values.
+
+2015-07-16  Martin Liska  <mliska@suse.cz>
+
+	* alloc-pool.h
+	(object_allocator): Add new class.
+	(pool_allocator::initialize): Use the underlying class.
+	(pool_allocator::allocate): Likewise.
+	(pool_allocator::remove): Likewise.
+	(operator new): A new generic allocator.
+	* asan.c (struct asan_mem_ref): Remove unused members.
+	(asan_mem_ref_new): Replace new operator with
+	object_allocator::allocate.
+	(free_mem_ref_resources): Change deallocation.
+	* cfg.c (initialize_original_copy_tables): Replace pool_allocator
+	with object_allocator.
+	* config/sh/sh.c (add_constant): Replace new operator with
+	object_allocator::allocate.
+	(sh_reorg): Change call to a release method.
+	* cselib.c (struct elt_list): Remove unused members.
+	(new_elt_list): Replace new operator with
+	object_allocator::allocate.
+	(new_elt_loc_list): Likewise.
+	(new_cselib_val): Likewise.
+	(unchain_one_elt_list): Change delete operator with remove method.
+	(unchain_one_elt_loc_list): Likewise.
+	(unchain_one_value): Likewise.
+	(cselib_finish): Release newly added static allocators.
+	* cselib.h (struct cselib_val): Remove unused members.
+	(struct elt_loc_list): Likewise.
+	* df-problems.c (df_chain_alloc): Replace pool_allocator with
+	object_allocator.
+	* df-scan.c (struct df_scan_problem_data): Likewise.
+	(df_scan_alloc): Likewise.
+	* df.h (struct dataflow): Likewise.
+	* dse.c (struct read_info_type): Likewise.
+	(struct insn_info_type): Likewise.
+	(struct dse_bb_info_type): Likewise.
+	(struct group_info): Likewise.
+	(struct deferred_change): Likewise.
+	(get_group_info): Likewise.
+	(delete_dead_store_insn): Likewise.
+	(free_read_records): Likewise.
+	(replace_read): Likewise.
+	(check_mem_read_rtx): Likewise.
+	(scan_insn): Likewise.
+	(dse_step1): Likewise.
+	(dse_step7): Likewise.
+	* et-forest.c (struct et_occ): Remove unused members.
+	(et_new_occ): Use allocate instead of new operator.
+	(et_new_tree): Likewise.
+	(et_free_tree): Call release method explicitly.
+	(et_free_tree_force): Likewise.
+	(et_free_pools): Likewise.
+	(et_split): Use remove instead of delete operator.
+	* et-forest.h (struct et_node): Remove unused members.
+	* ipa-cp.c: Change pool_allocator to object_allocator.
+	* ipa-inline-analysis.c: Likewise.
+	* ipa-profile.c: Likewise.
+	* ipa-prop.c: Likewise.
+	* ipa-prop.h: Likewise.
+	* ira-build.c (initiate_cost_vectors): Cast return value.
+	(ira_allocate_cost_vector): Likewise.
+	* ira-color.c (struct update_cost_record): Remove unused members.
+	* lra-int.h (struct lra_live_range): Likewise.
+	(struct lra_copy): Likewise.
+	(struct lra_insn_reg): Likewise.
+	* lra-lives.c (lra_live_ranges_finish): Release new static allocator.
+	* lra.c (new_insn_reg): Replace new operator with allocate method.
+	(free_insn_regs): Same for operator delete.
+	(finish_insn_regs): Release new static allocator.
+	(finish_insn_recog_data): Likewise.
+	(lra_free_copies): Replace delete operator with remove method.
+	(lra_create_copy): Replace operator new with allocate method.
+	(invalidate_insn_data_regno_info): Same for remove method.
+	* regcprop.c (struct queued_debug_insn_change): Remove unused members.
+	(free_debug_insn_changes): Replace delete operator with remove method.
+	(replace_oldest_value_reg): Replace operator new with allocate method.
+	(pass_cprop_hardreg::execute): Release new static variable.
+	* sched-deps.c (sched_deps_init): Change pool_allocator to
+	object_allocator.
+	* sel-sched-ir.c: Likewise.
+	* sel-sched-ir.h: Likewise.
+	* stmt.c (expand_case): Likewise.
+	(expand_sjlj_dispatch_table): Likewise.
+	* tree-sra.c (struct access): Remove unused members.
+	(struct assign_link): Likewise.
+	(sra_deinitialize): Release newly added static pools.
+	(create_access_1):Replace operator new with allocate method.
+	(build_accesses_from_assign): Likewise.
+	(create_artificial_child_access): Likewise.
+	* tree-ssa-math-opts.c (pass_cse_reciprocals::execute): Change
+	pool_allocator to object_allocator.
+	* tree-ssa-pre.c: Likewise.
+	* tree-ssa-reassoc.c: Likewise.
+	* tree-ssa-sccvn.c (allocate_vn_table): Likewise.
+	* tree-ssa-strlen.c: Likewise.
+	* tree-ssa-structalias.c: Likewise.
+	* var-tracking.c (onepart_pool_allocate): New function.
+	(unshare_variable): Use the newly added function.
+	(variable_merge_over_cur): Likewise.
+	(variable_from_dropped): Likewise.
+	(variable_was_changed): Likewise.
+	(set_slot_part): Likewise.
+	(emit_notes_for_differences_1): Likewise.
+	(vt_finalize): Release newly added static pools.
+
+2015-07-16  Martin Jambor  <mjambor@suse.cz>
+
+	* ipa-prop.h (param_aa_status): Rename to ipa_param_aa_status.  Adjust
+	all uses.  Fix two typos in its general comment.
+	(func_body_info): Rename to ipa_func_body_info.  Adjust all uses.
+
+2015-07-16  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* config/i386/linux-common.h (LINK_MPX): New.
+	(MPX_SPEC): Use LINK_MPX instead of %(link_mpx).
+	* configure.ac: Add HAVE_LD_BNDPLT_SUPPORT macro
+	indicating '-z bndplt' support by linker.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+
+2015-07-16  Richard Biener  <rguenther@suse.de>
+
+	* fold-const.c (fold_widened_comparison): Remove.
+	(fold_sign_changed_comparison): Likewise.
+	(fold_comparison): Move widened and sign-changed comparison
+	simplification ...
+	* match.pd: ... to patterns here.
+	* generic-match-head.c: Include target.h.
+	* gimple-match-head.c: Likewise.
+
+2015-07-16  Richard Biener  <rguenther@suse.de>
+
+	* tree-ssa-dom.c (dom_valueize): New function.
+	(record_temporary_equivalences): Also record equivalences
+	for dominating stmts that have uses of equivalences we are
+	about to record.
+
+2015-07-16  Bin Cheng  <bin.cheng@arm.com>
+
+	* tree-ssa-loop-ivopts.c (add_candidate): Remove call to
+	add_autoinc_candidates.
+	(add_iv_candidate_for_biv): Rename to add_iv_candidate_for_biv.
+	(add_iv_candidate_for_biv): Rename from add_iv_candidate_for_biv.
+	(add_old_ivs_candidates): Rename to add_iv_candidate_for_bivs.
+	(add_iv_candidate_for_bivs): Rename from add_old_ivs_candidates.
+	Call new function.
+	(add_iv_value_candidates): Rename to add_iv_candidate_for_use.
+	(add_iv_candidate_for_use): Rename from add_iv_value_candidates.
+	Remove parameter struct iv*.  Call add_autoinc_candidates here.
+	(add_derived_ivs_candidates): Rename to add_iv_candidate_for_uses.
+	(add_iv_candidate_for_uses): Rename from add_derived_ivs_candidates.
+	Call new function.
+	(find_iv_candidates): Call new functions.
+
+2015-07-16  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* config/nios2/nios2.c (nios2_emit_stack_limit_check): Fix
+	uninitialized-variable warning.
+
+2015-07-16  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/65249
+	* config/sh/sh.md (movdi): Split simple reg move to two movsi
+	when the destination is R0.
+
+2015-07-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66866
+	* config/i386/i386-protos.h (ix86_expand_pextr): New prototype.
+	* config/i386/i386.c (ix86_expand_pextr): New function.
+	(ix86_expand_pinsr): Handle V1TI and TI modes.  Call ix86_expand_pextr
+	for non-lowpart subregs.
+	* config/i386/i386.md (extzv<mode>): Expand with ix86_expand_pextr.
+	(insv<mode>): Use SWI248 mode iterator.
+	(insv<mode>_1): Ditto.
+
+2015-07-15  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	* graphite-sese-to-poly.c (rewrite_cross_bb_scalar_deps): Point
+	iterator to use_stmt.
+
+2015-07-15  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop <s.pop@samsung.com>
+
+	* graphite-scop-detection.c (build_scops_1): Discard scops for
+	which entry==exit.
+
+2015-07-15  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop <s.pop@samsung.com>
+
+	* graphite-scop-detection.c (stmt_simple_for_scop_p): Bail out in
+	case of a return statement in scop.
+
+2015-07-15  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop <s.pop@samsung.com>
+
+	* graphite-sese-to-poly.c (parameter_index_in_region): Only handle
+	INTEGER_TYPE parameters.
+	(scan_tree_for_params): Handle REAL_CST, COMPLEX_CST, and
+	VECTOR_CST in scan_tree_for_params.
+	(add_conditions_to_domain): Only constrain on INTEGER_TYPE.
+
+2015-07-15  Andrew MacLeod  <amacleod@redhat.com>
+
+	* gimple-pretty-print.h: Don't include pretty-print.h.
+	* tree-streamer.h: Don't include lto-streamer.h.
+	* gimple-streamer.h: Include tree-streamer.h rather than lto-streamer.h.
+	* gimple-streamer-in.c: Remove redundant includes.
+	* gimple-streamer-out.c: Likewise.
+	* ipa-devirt.c: Likewise.
+	* ipa-icf.c: Likewise.
+	* ipa-inline-analysis.c: Likewise.
+	* ipa-polymorphic-call.c: Likewise.
+	* ipa-profile.c: Likewise.
+	* ipa-prop.c: Likewise.
+	* ipa-pure-const.c: Likewise.
+	* lto-cgraph.c: Likewise.
+	* lto-streamer-in.c: Likewise.
+	* lto-streamer-out.c: Likewise.
+	* lto-streamer.c: Likewise.
+	* tree-streamer-in.c: Likewise.
+	* tree-streamer-out.c: Likewise.
+	* tree-streamer.c: Likewise.
+
+2015-07-15  Andrew MacLeod  <amacleod@redhat.com>
+
+	* opth-gen.awk: Check for UNKNOWN_LOCATION rather than GCC_TM_H, don't
+	include input.h.
+	* opts.c: Remove multiline #include comment.
+
+2015-07-15  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* config/nvptx/mkoffload.c (process): Add C++ protection to
+	emitted code.
+
+2015-07-14  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/66854
+	* config/rs6000/rs6000.c (rs6000_pass_by_reference): Move test for
+	null before IEEE 128-bit floating point support patch.
+
+2015-07-15  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* simplify-rtx.c (simplify_ternary_operation): Add simplification
+	for (!c) != {0,...,0} ? a : b for vector modes.
+
+2015-07-15  Paolo Bonzini  <bonzini@gnu.org>
+	    Martin Jambor  <mjambor@suse.cz>
+
+	* ipa-inline-analysis.c (unmodified_parm_or_parm_agg_item): Accept
+	struct func_body_info* instead of struct ipa_node_params*, expecting
+	fbi->info to be filled in.  Replace throughout.  Adjust call to
+	ipa_load_from_parm_agg.
+	(set_cond_stmt_execution_predicate): Accept struct func_body_info*
+	instead of struct ipa_node_params*.  Adjust calls to other functions
+	so that they pass either fbi or fbi->info.
+	(set_switch_stmt_execution_predicate): Likewise.
+	(will_be_nonconstant_predicate): Likewise.
+	(compute_bb_predicates): Likewise.
+	(estimate_function_body_sizes): Move asserts earlier.  Fill in
+	struct func_body_info, replace parms_info with fbi.info.  Adjust
+	calls to functions that now accept struct func_body_info.
+	* ipa-prop.c (param_aa_status, struct ipa_bb_info): Move to ipa-prop.h.
+	(struct func_body_info): Likewise.
+	(ipa_load_from_parm_agg_1): Rename to ipa_load_from_parm_agg,
+	remove static.  Adjust callers.
+	(ipa_load_from_parm_agg): Remove.
+	* ipa-prop.h (param_aa_status, ipa_bb_info): Move from ipa-prop.c.
+	(func_body_info): Likewise.
+	(ipa_load_from_parm_agg): Adjust prototype.
+
+2015-07-12  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* gensupport.c (rtx_handle_directive): Adjust.
+	* read-rtl.c (apply_iterators): Take vector to add rtxs to
+	instead of expr list rtx.
+	(add_define_attr_for_define_subst): Likewise.
+	(add_define_subst_attr): Likewise.
+	(read_subst_mapping): Likewise.
+	(read_rtx): Likewise.
+	* rtl.h (read_rtx): Adjust.
+
+2015-07-15  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.md (*csinc2<mode>_insn): Use cinc mnemonic.
+
+2015-07-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/58066
+	* config/i386/i386.md (*tls_global_dynamic_64_<mode>): Depend on SP_REG.
+	(*tls_local_dynamic_base_64_<mode>): Ditto.
+	(*tls_local_dynamic_base_64_largepic): Ditto.
+	(tls_global_dynamic_64_<mode>): Update expander pattern.
+	(tls_local_dynamic_base_64_<mode>): Ditto.
+
+2015-07-15  Richard Biener  <rguenther@suse.de>
+
+	* fold-const.c (fold_binary_loc): Move bool_var != 0 -> bool_var
+	and bool_var == 1 -> bool_var simplifications ...
+	* match.pd: ... to patterns here.  Factor out negate_expr_p
+	cases from the A - B -> A + (-B) patterns as negate_expr_p
+	predicate and add a -(A + B) -> (-B) - A pattern.
+
+2015-07-15  Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* config/mips/mips.c (mips_emit_save_slot_move): Fix typo.
+
+2015-07-15  Matthew Fortune  <matthew.fortune@imgtec.com>
+	    Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* config/mips/mips.c (mips_int_mask): New enum.
+	(mips_shadow_set): Likewise.
+	(int_mask): New variable.
+	(use_shadow_register_set_p): Change type to enum mips_shadow_set.
+	(machine_function): Add int_mask and use_shadow_register_set.
+	(mips_attribute_table): Add attribute handlers for interrupt and
+	use_shadow_register_set.
+	(mips_interrupt_mask): New static function.
+	(mips_handle_interrupt_attr): Likewise.
+	(mips_handle_use_shadow_register_set_attr): Likewise.
+	(mips_use_shadow_register_set): Change return type to enum
+	mips_shadow_set.  Add argument handling for use_shadow_register_set
+	attribute.
+	(mips_interrupt_extra_called_saved_reg_p): Update the conditional to
+	compare with mips_shadow_set enum.
+	(mips_compute_frame_info): Add interrupt mask and
+	use_shadow_register_set to per-function information structure.
+	Add a stack slot for EPC unconditionally.
+	(mips_expand_prologue): Compare use_shadow_register_set value
+	with mips_shadow_set enum.  Save EPC always in K1, clobber only K1 for
+	masked interrupt register but in EIC mode use K0 and save Cause in K0.
+	EPC saved and restored unconditionally.  Use PMODE_INSN macro when
+	copying the stack pointer from the shadow register set.
+	* config/mips/mips.h (SR_IM0): New define.
+	* config/mips/mips.md (mips_rdpgpr): Rename to...
+	(mips_rdpgpr_<mode>): ...this.  Use the Pmode iterator.
+	* doc/extend.texi (Declaring Attributes of Functions): Document
+	optional arguments for interrupt and use_shadow_register_set
+	attributes.
+
+2015-07-15  Robert Suchanek  <robert.suchanek@imgtec.com>
+
+	* config/mips/mips.c (mips_compute_frame_info): Allow -mhard-float in
+	interrupt attribute.
+	(mips_expand_prologue): Disable the floating point unit in an ISR.
+	* config/mips/mips.h (SR_COP1): New define.
+
+2015-07-15  Richard Biener  <rguenther@suse.de>
+
+	* genmatch.c (parser::peek, parser::peek_ident): Add argument
+	to tell how many tokens to peek ahead (default 1).
+	(parser::eat_token, parser::eat_ident): Return token consumed.
+	(parser::parse_result): Parse new switch statement.
+	* match.pd: Use case statements where appropriate.
+
+2015-07-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR rtl-optimization/58066
+	* calls.c (expand_call): Precompute register parameters before stack
+	alignment is performed.
+
+2015-07-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR rtl-optimization/66838
+	* postreload.c (reload_cse_move2add): Also process
+	CALL_INSN_FUNCTION_USAGE when resetting information of
+	call-clobbered registers.
+
 2015-07-14  Sandra Loosemore  <sandra@codesourcery.com>
 	    Cesar Philippidis  <cesar@codesourcery.com>
 	    Chung-Lin Tang  <cltang@codesourcery.com>
@@ -21,8 +823,8 @@
 	(nios2_expand_cache_builtin): New function.
 	(nios2_expand_wrpie_builtin): New function.
 	(nios2_expand_eni_builtin): New function.
-	(nios2_expand_builtin): Add arch field handling and new builtin 
-        cases.
+	(nios2_expand_builtin): Add arch field handling and new builtin
+	cases.
 	* doc/extend.texi (Altera Nios II Built-in Functions): Document
 	new builtins.
 	* doc/md.texi (Machine Constraints): Document U and v constraints.
@@ -271,7 +1073,7 @@
 	* omega.h: Don't include config.h, don't include params.h again if
 	omega.h has already been included.
 	* graphite-poly.h: Include sese.h.
-	* graphite.c: Don't include sese.h, remove needless includes and 
+	* graphite.c: Don't include sese.h, remove needless includes and
 	minimize includes outside #ifdef HAVE_isl block.
 	* graphite-blocking.c: Don't include sese.h, remove needless includes,
 	and wrap entire file in #ifdef HAVE_isl
@@ -1094,6 +1896,17 @@
 	* config/darwin.c (darwin_mark_decl_preserved): Exclude 'L' label
 	names from preservation.
 
+2015-07-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/66806
+	* config/i386/i386.c (type_natural_mode): Don't warn vector ABI
+	change for IAMCU.
+	(function_arg_advance_32): Don't pass vectors in registers for
+	IAMCU.
+	(function_arg_32): Likewise.
+	(ix86_return_in_memory): Don't return vectors in registers for
+	IAMCU.
+
 2015-07-08  Vladimir Makarov  <vmakarov@redhat.com>
 
 	PR middle-end/66334
@@ -1820,6 +2633,11 @@
 	* tree.c (build_each_one_cst): New function.
 	* tree.h (build_each_one_cst): Likewise.
 
+2015-07-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/i386/i386-c.c (ix86_target_macros_internal): Handle
+	PROCESSOR_IAMCU.
+
 2015-07-06  Steve Ellcey  <sellcey@imgtec.com>
 
 	* config.gcc <mips*-*-*>: Add fused-madd.opt.
@@ -1899,6 +2717,20 @@
 2015-07-06  Alan Lawrence  <alan.lawrence@arm.com>
 
 	* config/arm/arm.md (movdi): Avoid odd-number ldrd/strd in ARM state.
+
+2015-07-06  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/66749
+	* config/i386/i386.c (iamcu_cost): New.
+	(m_IAMCU): Likewise.
+	(initial_ix86_arch_features): Disable X86_ARCH_CMOV for m_IAMCU.
+	(processor_target_table): Add an entry for "iamcu".
+	(processor_alias_table): Likewise.
+	(ix86_issue_rate): Handle PROCESSOR_IAMCU.
+	(ix86_adjust_cost): Likewise.
+	(ia32_multipass_dfa_lookahead): Likewise.
+	* config/i386/i386.h (processor_type): Add PROCESSOR_IAMCU.
+	* config/i386/x86-tune.def: Updated for m_IAMCU.
 
 2015-07-06  Richard Biener  <rguenther@suse.de>
 

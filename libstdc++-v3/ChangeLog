@@ -1,3 +1,20 @@
+2015-07-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/status_cxx2017.xml: Fix URL for N4279.
+	* doc/html/manual/status.html: Regenerate.
+
+2015-07-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/status_cxx2011.xml: Add caveats for native_handle.
+	* doc/html/manual/status.html: Regenerate.
+
+2015-07-16  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/bits/stl_algobase.h (__miter_base): Move...
+	* include/bits/cpp_type_traits.h: ...here.
+	* include/debug/functions.h (__foreign_iterator_aux): Use latter.
+	* testsuite/23_containers/vector/debug/insert7_neg.cc: New.
+
 2015-07-13  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR libstdc++/66855
