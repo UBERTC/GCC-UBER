@@ -47,6 +47,7 @@ extern "C" {
 #include "tree.h"
 #include "gimple.h"
 #include "ssa.h"
+#include "params.h"
 #include "fold-const.h"
 #include "gimple-iterator.h"
 #include "gimplify.h"
@@ -497,6 +498,7 @@ build_pbb_scattering_polyhedrons (isl_aff *static_sched,
 	      (isl_local_space_from_space (isl_map_get_space (pbb->schedule)));
 
 	  val = isl_aff_get_coefficient_val (static_sched, isl_dim_in, i / 2);
+	  gcc_assert (val && isl_val_is_int (val));
 
 	  val = isl_val_neg (val);
 	  c = isl_constraint_set_constant_val (c, val);
@@ -719,14 +721,12 @@ extract_affine_int (tree e, __isl_take isl_space *space)
 
 /* Compute pwaff mod 2^width.  */
 
-extern isl_ctx *the_isl_ctx;
-
 static isl_pw_aff *
 wrap (isl_pw_aff *pwaff, unsigned width)
 {
   isl_val *mod;
 
-  mod = isl_val_int_from_ui(the_isl_ctx, width);
+  mod = isl_val_int_from_ui (isl_pw_aff_get_ctx (pwaff), width);
   mod = isl_val_2exp (mod);
   pwaff = isl_pw_aff_mod_val (pwaff, mod);
 
@@ -761,6 +761,10 @@ parameter_index_in_region (tree name, sese region)
   int i;
 
   gcc_assert (TREE_CODE (name) == SSA_NAME);
+
+  /* Cannot constrain on anything else than INTEGER_TYPE parameters.  */
+  if (TREE_CODE (TREE_TYPE (name)) != INTEGER_TYPE)
+    return -1;
 
   i = parameter_index_in_region_1 (name, region);
   if (i != -1)
@@ -887,6 +891,9 @@ scan_tree_for_params (sese s, tree e)
 
     case INTEGER_CST:
     case ADDR_EXPR:
+    case REAL_CST:
+    case COMPLEX_CST:
+    case VECTOR_CST:
       break;
 
    default:
@@ -1005,7 +1012,7 @@ build_loop_iteration_domains (scop_p scop, struct loop *loop,
 	  (isl_local_space_from_space (isl_space_copy (space)));
       c = isl_constraint_set_coefficient_si (c, isl_dim_set, pos, -1);
       tree_int_to_gmp (nb_iters, g);
-      v = isl_val_int_from_gmp (the_isl_ctx, g);
+      v = isl_val_int_from_gmp (scop->ctx, g);
       c = isl_constraint_set_constant_val (c, v);
       inner = isl_set_add_constraint (inner, c);
     }
@@ -1060,7 +1067,7 @@ build_loop_iteration_domains (scop_p scop, struct loop *loop,
 	  c = isl_inequality_alloc
 	      (isl_local_space_from_space (isl_space_copy (space)));
 	  c = isl_constraint_set_coefficient_si (c, isl_dim_set, pos, -1);
-	  v = isl_val_int_from_gmp (the_isl_ctx, g);
+	  v = isl_val_int_from_gmp (scop->ctx, g);
 	  mpz_clear (g);
 	  c = isl_constraint_set_constant_val (c, v);
 	  inner = isl_set_add_constraint (inner, c);
@@ -1166,6 +1173,10 @@ add_conditions_to_domain (poly_bb_p pbb)
       {
       case GIMPLE_COND:
 	  {
+            /* Don't constrain on anything else than INTEGER_TYPE.  */
+	    if (TREE_CODE (TREE_TYPE (gimple_cond_lhs (stmt))) != INTEGER_TYPE)
+              break;
+
 	    gcond *cond_stmt = as_a <gcond *> (stmt);
 	    enum tree_code code = gimple_cond_code (cond_stmt);
 
@@ -1324,7 +1335,7 @@ add_param_constraints (scop_p scop, graphite_dim_t p)
       c = isl_inequality_alloc (isl_local_space_from_space (space));
       mpz_init (g);
       tree_int_to_gmp (lb, g);
-      v = isl_val_int_from_gmp (the_isl_ctx, g);
+      v = isl_val_int_from_gmp (scop->ctx, g);
       v = isl_val_neg (v);
       mpz_clear (g);
       c = isl_constraint_set_constant_val (c, v);
@@ -1344,7 +1355,7 @@ add_param_constraints (scop_p scop, graphite_dim_t p)
 
       mpz_init (g);
       tree_int_to_gmp (ub, g);
-      v = isl_val_int_from_gmp (the_isl_ctx, g);
+      v = isl_val_int_from_gmp (scop->ctx, g);
       mpz_clear (g);
       c = isl_constraint_set_constant_val (c, v);
       c = isl_constraint_set_coefficient_si (c, isl_dim_param, p, -1);
@@ -1480,20 +1491,19 @@ pdr_add_memory_accesses (isl_map *acc, data_reference_p dr, poly_bb_p pbb)
    domain.  */
 
 static isl_set *
-pdr_add_data_dimensions (isl_set *extent, scop_p scop, data_reference_p dr)
+pdr_add_data_dimensions (isl_set *subscript_sizes, scop_p scop,
+			 data_reference_p dr)
 {
   tree ref = DR_REF (dr);
-  int i, nb_subscripts = DR_NUM_DIMENSIONS (dr);
 
-  for (i = nb_subscripts - 1; i >= 0; i--, ref = TREE_OPERAND (ref, 0))
+  int nb_subscripts = DR_NUM_DIMENSIONS (dr);
+  for (int i = nb_subscripts - 1; i >= 0; i--, ref = TREE_OPERAND (ref, 0))
     {
-      tree low, high;
-
       if (TREE_CODE (ref) != ARRAY_REF)
-	break;
+	return subscript_sizes;
 
-      low = array_ref_low_bound (ref);
-      high = array_ref_up_bound (ref);
+      tree low = array_ref_low_bound (ref);
+      tree high = array_ref_up_bound (ref);
 
       /* XXX The PPL code dealt separately with
          subscript - low >= 0 and high - subscript >= 0 in case one of
@@ -1511,10 +1521,10 @@ pdr_add_data_dimensions (isl_set *extent, scop_p scop, data_reference_p dr)
 	  isl_aff *aff;
 	  isl_set *univ, *lbs, *ubs;
 	  isl_pw_aff *index;
-	  isl_space *space;
 	  isl_set *valid;
-	  isl_pw_aff *lb = extract_affine_int (low, isl_set_get_space (extent));
-	  isl_pw_aff *ub = extract_affine_int (high, isl_set_get_space (extent));
+	  isl_space *space = isl_set_get_space (subscript_sizes);
+	  isl_pw_aff *lb = extract_affine_int (low, isl_space_copy (space));
+	  isl_pw_aff *ub = extract_affine_int (high, isl_space_copy (space));
 
 	  /* high >= 0 */
 	  valid = isl_pw_aff_nonneg_set (isl_pw_aff_copy (ub));
@@ -1522,25 +1532,24 @@ pdr_add_data_dimensions (isl_set *extent, scop_p scop, data_reference_p dr)
 				       isl_set_dim (valid, isl_dim_set));
 	  scop->context = isl_set_intersect (scop->context, valid);
 
-	  space = isl_set_get_space (extent);
 	  aff = isl_aff_zero_on_domain (isl_local_space_from_space (space));
 	  aff = isl_aff_add_coefficient_si (aff, isl_dim_in, i + 1, 1);
 	  univ = isl_set_universe (isl_space_domain (isl_aff_get_space (aff)));
 	  index = isl_pw_aff_alloc (univ, aff);
 
-	  id = isl_set_get_tuple_id (extent);
+	  id = isl_set_get_tuple_id (subscript_sizes);
 	  lb = isl_pw_aff_set_tuple_id (lb, isl_dim_in, isl_id_copy (id));
 	  ub = isl_pw_aff_set_tuple_id (ub, isl_dim_in, id);
 
 	  /* low <= sub_i <= high */
 	  lbs = isl_pw_aff_ge_set (isl_pw_aff_copy (index), lb);
 	  ubs = isl_pw_aff_le_set (index, ub);
-	  extent = isl_set_intersect (extent, lbs);
-	  extent = isl_set_intersect (extent, ubs);
+	  subscript_sizes = isl_set_intersect (subscript_sizes, lbs);
+	  subscript_sizes = isl_set_intersect (subscript_sizes, ubs);
 	}
     }
 
-  return extent;
+  return subscript_sizes;
 }
 
 /* Build data accesses for DR in PBB.  */
@@ -1550,7 +1559,7 @@ build_poly_dr (data_reference_p dr, poly_bb_p pbb)
 {
   int dr_base_object_set;
   isl_map *acc;
-  isl_set *extent;
+  isl_set *subscript_sizes;
   scop_p scop = PBB_SCOP (pbb);
 
   {
@@ -1577,9 +1586,10 @@ build_poly_dr (data_reference_p dr, poly_bb_p pbb)
       alias_set_num = *(bap->alias_set);
 
     space = isl_space_set_tuple_id (space, isl_dim_set, id);
-    extent = isl_set_nat_universe (space);
-    extent = isl_set_fix_si (extent, isl_dim_set, 0, alias_set_num);
-    extent = pdr_add_data_dimensions (extent, scop, dr);
+    subscript_sizes = isl_set_nat_universe (space);
+    subscript_sizes = isl_set_fix_si (subscript_sizes, isl_dim_set, 0,
+				      alias_set_num);
+    subscript_sizes = pdr_add_data_dimensions (subscript_sizes, scop, dr);
   }
 
   gcc_assert (dr->aux);
@@ -1587,7 +1597,7 @@ build_poly_dr (data_reference_p dr, poly_bb_p pbb)
 
   new_poly_dr (pbb, dr_base_object_set,
 	       DR_IS_READ (dr) ? PDR_READ : PDR_WRITE,
-	       dr, DR_NUM_DIMENSIONS (dr), acc, extent);
+	       dr, DR_NUM_DIMENSIONS (dr), acc, subscript_sizes);
 }
 
 /* Write to FILE the alias graph of data references in DIMACS format.  */
@@ -2430,10 +2440,10 @@ rewrite_cross_bb_scalar_deps (scop_p scop, gimple_stmt_iterator *gsi)
   handle_scalar_deps_crossing_scop_limits (scop, def, stmt);
 
   FOR_EACH_IMM_USE_STMT (use_stmt, imm_iter, def)
-    if (gimple_code (use_stmt) == GIMPLE_PHI
-	&& (res = true))
+    if (gphi *phi = dyn_cast <gphi *> (use_stmt))
       {
-	gphi_iterator psi = gsi_start_phis (gimple_bb (use_stmt));
+	res = true;
+	gphi_iterator psi = gsi_for_phi (phi);
 
 	if (scalar_close_phi_node_p (gsi_stmt (psi)))
 	  rewrite_close_phi_out_of_ssa (scop, &psi);

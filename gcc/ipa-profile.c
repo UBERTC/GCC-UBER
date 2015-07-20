@@ -67,7 +67,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "value-prof.h"
 #include "alloc-pool.h"
 #include "tree-inline.h"
-#include "lto-streamer.h"
 #include "data-streamer.h"
 #include "symbol-summary.h"
 #include "ipa-prop.h"
@@ -88,7 +87,7 @@ struct histogram_entry
    duplicate entries.  */
 
 vec<histogram_entry *> histogram;
-static pool_allocator<histogram_entry> histogram_pool
+static object_allocator<histogram_entry> histogram_pool
   ("IPA histogram", 10);
 
 /* Hashtable support for storing SSA names hashed by their SSA_NAME_VAR.  */

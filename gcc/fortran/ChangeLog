@@ -1,3 +1,67 @@
+2015-07-17  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/52846
+	* decl.c (gfc_match_end): Pick out declared submodule name from
+	the composite identifier.
+	* gfortran.h : Add 'submodule_name' to gfc_use_list structure.
+	* module.c (gfc_match_submodule): Define submodule_name and add
+	static 'submodule_name'.
+	(gfc_match_submodule): Build up submodule filenames, using '@'
+	as a delimiter. Store the output filename in 'submodule_name'.
+	Similarly, the submodule identifier is built using '.' as an
+	identifier.
+	(gfc_dump_module): If current state is COMP_SUBMODULE, write
+	to file 'submodule_name', using SUBMODULE_EXTENSION.
+	(gfc_use_module): Similarly, use the 'submodule_name' field in
+	the gfc_use_list structure and SUBMODULE_EXTENSION to read the
+	implicitly used submodule files.
+
+2015-07-17  Alessandro Fanfarillo  <fanfarillo.gcc@gmail.com>
+
+	* trans-intrinsic.c (conv_co_collective): Remove redundant address
+	operator in the generated code.
+
+2015-07-17  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/66035
+	* trans-expr.c (alloc_scalar_allocatable_for_subcomponent_assignment):
+	Compute the size to allocate for class and derived type objects
+	correclty.
+	(gfc_trans_subcomponent_assign): Only allocate memory for a
+	component when the object to assign is not an allocatable class
+	object (the memory is already present for allocatable class objects).
+	Furthermore use copy_class_to_class for assigning the rhs to the
+	component (may happen for dummy class objects on the rhs).
+
+2015-07-17  Mikael Morin  <mikael@gcc.gnu.org>
+	    Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/61831
+	* trans-array.c (gfc_conv_array_parameter): Guard allocatable
+	component deallocation code generation with descriptorless
+	calling convention flag.
+	* trans-expr.c (gfc_conv_expr_reference): Remove allocatable
+	component deallocation code generation from revision 212329.
+	(expr_may_alias_variables): New function.
+	(gfc_conv_procedure_call): New boolean elemental_proc to factor
+	check for procedure elemental-ness.  Rename boolean f to nodesc_arg
+	and declare it in the outer scope.  Use expr_may_alias_variables,
+	elemental_proc and nodesc_arg to decide whether generate allocatable
+	component deallocation code.
+	(gfc_trans_subarray_assign): Set deep copy flag.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66724
+	PR fortran/66724
+	* io.c (is_char_type): Call gfc_resolve_expr ().
+	(match_open_element, match_dt_element, match_inquire_element): Fix
+	ASYNCHRONOUS case.
+
+2015-07-15  Andrew MacLeod  <amacleod@redhat.com>
+
+	* trans-types.c: Remove multiline #include comment.
+
 2015-07-14  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	* simplify.c (gfc_simplify_floor): Set precision of temporary to

@@ -769,10 +769,6 @@ REPORT_BUGS_TEXI
 REPORT_BUGS_TO
 PKGVERSION
 CONFIGURE_SPECS
-CROSS_SYSTEM_HEADER_DIR
-TARGET_SYSTEM_ROOT_DEFINE
-TARGET_SYSTEM_ROOT
-SYSROOT_CFLAGS_FOR_TARGET
 enable_shared
 enable_fixed_point
 enable_decimal_float
@@ -812,6 +808,10 @@ LDFLAGS
 CFLAGS
 CC
 GENINSRC
+CROSS_SYSTEM_HEADER_DIR
+TARGET_SYSTEM_ROOT_DEFINE
+TARGET_SYSTEM_ROOT
+SYSROOT_CFLAGS_FOR_TARGET
 target_subdir
 host_subdir
 build_subdir
@@ -873,6 +873,9 @@ ac_user_opts='
 enable_option_checking
 with_build_libsubdir
 with_local_prefix
+with_native_system_header_dir
+with_build_sysroot
+with_sysroot
 with_gxx_include_dir
 with_cpp_install_dir
 enable_generated_files_in_srcdir
@@ -899,9 +902,6 @@ enable_tls
 enable_objc_gc
 with_dwarf2
 enable_shared
-with_native_system_header_dir
-with_build_sysroot
-with_sysroot
 with_specs
 with_pkgversion
 with_bugurl
@@ -1689,6 +1689,12 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-build-libsubdir=DIR  Directory where to find libraries for build system
   --with-local-prefix=DIR specifies directory to put local include
+  --with-native-system-header-dir=dir
+                          use dir as the directory to look for standard
+                          system header files in.  Defaults to /usr/include.
+  --with-build-sysroot=sysroot
+                          use sysroot as the system root during the build
+  --with-sysroot[=DIR]    search for usr/lib, usr/include, et al, within DIR
   --with-gxx-include-dir=DIR
                           specifies directory to put g++ header files
   --with-cpp-install-dir=DIR
@@ -1701,12 +1707,6 @@ Optional Packages:
   --with-as               arrange to use the specified as (full pathname)
   --with-stabs            arrange to use stabs instead of host debug format
   --with-dwarf2           force the default debug format to be DWARF 2
-  --with-native-system-header-dir=dir
-                          use dir as the directory to look for standard
-                          system header files in.  Defaults to /usr/include.
-  --with-build-sysroot=sysroot
-                          use sysroot as the system root during the build
-  --with-sysroot[=DIR]    search for usr/lib, usr/include, et al, within DIR
   --with-specs=SPECS      add SPECS to driver command-line processing
   --with-pkgversion=PKG   Use PKG in the version string in place of "GCC"
   --with-bugurl=URL       Direct users to URL to report a bug
@@ -3460,6 +3460,83 @@ if test x$local_prefix = x; then
 	local_prefix=/usr/local
 fi
 
+
+# Check whether --with-native-system-header-dir was given.
+if test "${with_native_system_header_dir+set}" = set; then :
+  withval=$with_native_system_header_dir;
+ case ${with_native_system_header_dir} in
+ yes|no) as_fn_error "bad value ${withval} given for --with-native-system-header-dir" "$LINENO" 5 ;;
+ /* | [A-Za-z]:[\\/]*) ;;
+ *) as_fn_error "--with-native-system-header-dir argument ${withval} must be an absolute directory" "$LINENO" 5 ;;
+ esac
+ configured_native_system_header_dir="${withval}"
+
+else
+  configured_native_system_header_dir=
+fi
+
+
+
+# Check whether --with-build-sysroot was given.
+if test "${with_build_sysroot+set}" = set; then :
+  withval=$with_build_sysroot; if test x"$withval" != x ; then
+     SYSROOT_CFLAGS_FOR_TARGET="--sysroot=$withval"
+   fi
+else
+  SYSROOT_CFLAGS_FOR_TARGET=
+fi
+
+
+
+if test "x$prefix" = xNONE; then
+ test_prefix=/usr/local
+else
+ test_prefix=$prefix
+fi
+if test "x$exec_prefix" = xNONE; then
+ test_exec_prefix=$test_prefix
+else
+ test_exec_prefix=$exec_prefix
+fi
+
+
+# Check whether --with-sysroot was given.
+if test "${with_sysroot+set}" = set; then :
+  withval=$with_sysroot;
+ case ${with_sysroot} in
+ /) ;;
+ */) with_sysroot=`echo $with_sysroot | sed 's,/$,,'` ;;
+ esac
+ case ${with_sysroot} in
+ yes) TARGET_SYSTEM_ROOT='${exec_prefix}/${target_noncanonical}/sys-root' ;;
+ *) TARGET_SYSTEM_ROOT=$with_sysroot ;;
+ esac
+
+ TARGET_SYSTEM_ROOT_DEFINE='-DTARGET_SYSTEM_ROOT=\"$(TARGET_SYSTEM_ROOT)\"'
+ CROSS_SYSTEM_HEADER_DIR='$(TARGET_SYSTEM_ROOT)$${sysroot_headers_suffix}$(NATIVE_SYSTEM_HEADER_DIR)'
+
+ case ${TARGET_SYSTEM_ROOT} in
+ "${test_prefix}"|"${test_prefix}/"*|\
+ "${test_exec_prefix}"|"${test_exec_prefix}/"*|\
+ '${prefix}'|'${prefix}/'*|\
+ '${exec_prefix}'|'${exec_prefix}/'*)
+   t="$TARGET_SYSTEM_ROOT_DEFINE -DTARGET_SYSTEM_ROOT_RELOCATABLE"
+   TARGET_SYSTEM_ROOT_DEFINE="$t"
+   ;;
+ esac
+
+else
+
+ TARGET_SYSTEM_ROOT=
+ TARGET_SYSTEM_ROOT_DEFINE=
+ CROSS_SYSTEM_HEADER_DIR='$(gcc_tooldir)/sys-include'
+
+fi
+
+
+
+
+
 # Don't set gcc_gxx_include_dir to gxx_include_dir since that's only
 # passed in by the toplevel make and thus we'd get different behavior
 # depending on where we built the sources.
@@ -3493,7 +3570,9 @@ gcc_gxx_include_dir_add_sysroot=0
 if test "${with_sysroot+set}" = set; then
   gcc_gxx_without_sysroot=`expr "${gcc_gxx_include_dir}" : "${with_sysroot}"'\(.*\)'`
   if test "${gcc_gxx_without_sysroot}"; then
-    gcc_gxx_include_dir="${gcc_gxx_without_sysroot}"
+    if test x${with_sysroot} != x/; then
+      gcc_gxx_include_dir="${gcc_gxx_without_sysroot}"
+    fi
     gcc_gxx_include_dir_add_sysroot=1
   fi
 fi
@@ -7474,79 +7553,6 @@ if test "${enable_shared+set}" = set; then :
 else
   enable_shared=yes
 fi
-
-
-
-
-# Check whether --with-native-system-header-dir was given.
-if test "${with_native_system_header_dir+set}" = set; then :
-  withval=$with_native_system_header_dir;
- case ${with_native_system_header_dir} in
- yes|no) as_fn_error "bad value ${withval} given for --with-native-system-header-dir" "$LINENO" 5 ;;
- /* | [A-Za-z]:[\\/]*) ;;
- *) as_fn_error "--with-native-system-header-dir argument ${withval} must be an absolute directory" "$LINENO" 5 ;;
- esac
- configured_native_system_header_dir="${withval}"
-
-else
-  configured_native_system_header_dir=
-fi
-
-
-
-# Check whether --with-build-sysroot was given.
-if test "${with_build_sysroot+set}" = set; then :
-  withval=$with_build_sysroot; if test x"$withval" != x ; then
-     SYSROOT_CFLAGS_FOR_TARGET="--sysroot=$withval"
-   fi
-else
-  SYSROOT_CFLAGS_FOR_TARGET=
-fi
-
-
-
-if test "x$prefix" = xNONE; then
- test_prefix=/usr/local
-else
- test_prefix=$prefix
-fi
-if test "x$exec_prefix" = xNONE; then
- test_exec_prefix=$test_prefix
-else
- test_exec_prefix=$exec_prefix
-fi
-
-
-# Check whether --with-sysroot was given.
-if test "${with_sysroot+set}" = set; then :
-  withval=$with_sysroot;
- case ${with_sysroot} in
- yes) TARGET_SYSTEM_ROOT='${exec_prefix}/${target_noncanonical}/sys-root' ;;
- *) TARGET_SYSTEM_ROOT=$with_sysroot ;;
- esac
-
- TARGET_SYSTEM_ROOT_DEFINE='-DTARGET_SYSTEM_ROOT=\"$(TARGET_SYSTEM_ROOT)\"'
- CROSS_SYSTEM_HEADER_DIR='$(TARGET_SYSTEM_ROOT)$${sysroot_headers_suffix}$(NATIVE_SYSTEM_HEADER_DIR)'
-
- case ${TARGET_SYSTEM_ROOT} in
- "${test_prefix}"|"${test_prefix}/"*|\
- "${test_exec_prefix}"|"${test_exec_prefix}/"*|\
- '${prefix}'|'${prefix}/'*|\
- '${exec_prefix}'|'${exec_prefix}/'*)
-   t="$TARGET_SYSTEM_ROOT_DEFINE -DTARGET_SYSTEM_ROOT_RELOCATABLE"
-   TARGET_SYSTEM_ROOT_DEFINE="$t"
-   ;;
- esac
-
-else
-
- TARGET_SYSTEM_ROOT=
- TARGET_SYSTEM_ROOT_DEFINE=
- CROSS_SYSTEM_HEADER_DIR='$(gcc_tooldir)/sys-include'
-
-fi
-
-
 
 
 
@@ -18302,7 +18308,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 18301 "configure"
+#line 18307 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18408,7 +18414,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 18407 "configure"
+#line 18413 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -28887,6 +28893,30 @@ if test "$gcc_cv_no_pie" = "yes"; then
   NO_PIE_FLAG="-no-pie"
 fi
 
+
+# Check linker supports '-z bndplt'
+ld_bndplt_support=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking linker -z bndplt option" >&5
+$as_echo_n "checking linker -z bndplt option... " >&6; }
+if test x"$ld_is_gold" = xno; then
+  if test $in_tree_ld = yes ; then
+    if test "$gcc_cv_gld_major_version" -eq 2 -a "$gcc_cv_gld_minor_version" -ge 25 -o "$gcc_cv_gld_major_version" -gt 2; then
+      ld_bndplt_support=yes
+    fi
+  elif test x$gcc_cv_ld != x; then
+    # Check if linker supports -a bndplt option
+    if $gcc_cv_ld --help 2>/dev/null | grep -- '-z bndplt' > /dev/null; then
+      ld_bndplt_support=yes
+    fi
+  fi
+fi
+if test x"$ld_bndplt_support" = xyes; then
+
+$as_echo "#define HAVE_LD_BNDPLT_SUPPORT 1" >>confdefs.h
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ld_bndplt_support" >&5
+$as_echo "$ld_bndplt_support" >&6; }
 
 # Configure the subdirectories
 # AC_CONFIG_SUBDIRS($subdirs)
