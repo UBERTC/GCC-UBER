@@ -6732,6 +6732,29 @@ alloc_scalar_allocatable_for_subcomponent_assignment (stmtblock_t *block,
 				       TREE_TYPE (tmp), tmp,
 				       fold_convert (TREE_TYPE (tmp), size));
     }
+  else if (cm->ts.type == BT_CLASS)
+    {
+      gcc_assert (expr2->ts.type == BT_CLASS || expr2->ts.type == BT_DERIVED);
+      if (expr2->ts.type == BT_DERIVED)
+	{
+	  tmp = gfc_get_symbol_decl (expr2->ts.u.derived);
+	  size = TYPE_SIZE_UNIT (tmp);
+	}
+      else
+	{
+	  gfc_expr *e2vtab;
+	  gfc_se se;
+	  e2vtab = gfc_find_and_cut_at_last_class_ref (expr2);
+	  gfc_add_vptr_component (e2vtab);
+	  gfc_add_size_component (e2vtab);
+	  gfc_init_se (&se, NULL);
+	  gfc_conv_expr (&se, e2vtab);
+	  gfc_add_block_to_block (block, &se.pre);
+	  size = fold_convert (size_type_node, se.expr);
+	  gfc_free_expr (e2vtab);
+	}
+      size_in_bytes = size;
+    }
   else
     {
       /* Otherwise use the length in bytes of the rhs.  */
@@ -6859,7 +6882,8 @@ gfc_trans_subcomponent_assign (tree dest, gfc_component * cm, gfc_expr * expr,
       gfc_add_expr_to_block (&block, tmp);
     }
   else if (init && (cm->attr.allocatable
-	   || (cm->ts.type == BT_CLASS && CLASS_DATA (cm)->attr.allocatable)))
+	   || (cm->ts.type == BT_CLASS && CLASS_DATA (cm)->attr.allocatable
+	       && expr->ts.type != BT_CLASS)))
     {
       /* Take care about non-array allocatable components here.  The alloc_*
 	 routine below is motivated by the alloc_scalar_allocatable_for_
@@ -8984,7 +9008,7 @@ gfc_trans_assignment_1 (gfc_expr * expr1, gfc_expr * expr2, bool init_flag,
   if (scalar_to_array && dealloc)
     {
       tmp = gfc_deallocate_alloc_comp_no_caf (expr2->ts.u.derived, rse.expr, 0);
-      gfc_add_expr_to_block (&loop.post, tmp);
+      gfc_prepend_expr_to_block (&loop.post, tmp);
     }
 
   /* When assigning a character function result to a deferred-length variable,

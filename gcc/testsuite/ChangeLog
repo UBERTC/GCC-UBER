@@ -1,3 +1,162 @@
+2015-07-31  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR debug/66691
+	* gcc.target/i386/pr66691.c: New.
+
+2015-07-28  Alex Velenko  <Alex.Velenko@arm.com>
+
+	backport from trunk:
+	2015-07-21  Alex Velenko  <Alex.Velenko@arm.com>
+
+        * gcc.target/arm/split-live-ranges-for-shrink-wrap.c (dg-skip-if):
+	Skip -march=armv4t.
+        (dg-additional-options): Set armv5t flag.
+
+2015-07-25  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	2015-07-25  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/graphite/graphite.exp: Include uns-*.c files in
+	interchange_files and block_files variables.
+	* gcc.dg/graphite/uns-block-1.c (main): Change signed into unsigned
+	arithmetic.
+	* gcc.dg/graphite/uns-interchange-12.c: Same.
+	* gcc.dg/graphite/uns-interchange-14.c: Same.
+	* gcc.dg/graphite/uns-interchange-15.c: Same.
+	* gcc.dg/graphite/uns-interchange-9.c (foo): Same.
+	* gcc.dg/graphite/uns-interchange-mvt.c: Same.
+
+	2015-07-24  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/graphite/block-1.c: Xfail scan.
+	* gcc.dg/graphite/interchange-12.c: Same.
+	* gcc.dg/graphite/interchange-14.c: Same.
+	* gcc.dg/graphite/interchange-15.c: Same.
+	* gcc.dg/graphite/interchange-9.c: Same.
+	* gcc.dg/graphite/interchange-mvt.c: Same.
+	* gcc.dg/graphite/uns-block-1.c: New test.
+	* gcc.dg/graphite/uns-interchange-12.c: New test.
+	* gcc.dg/graphite/uns-interchange-14.c: New test.
+	* gcc.dg/graphite/uns-interchange-15.c: New test.
+	* gcc.dg/graphite/uns-interchange-9.c: New test.
+	* gcc.dg/graphite/uns-interchange-mvt.c: New test.
+
+2015-07-24  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r226155.
+	2015-07-24  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR ipa/66566
+	* gcc.target/i386/mpx/pr66566.c: New test.
+
+2015-07-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2015-07-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66891
+	* gcc.target/i386/pr66891.c: New test.
+
+2015-07-23  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r224643.
+	2015-06-19  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR middle-end/pr66581
+	* gcc.target/i386/mpx/pr66581.c: New test.
+
+2015-07-23  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r224602.
+	2015-06-18  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/66569
+	* gcc.target/i386/mpx/chkp-vararg.c: New test.
+
+2015-07-23  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r224601.
+	2015-06-18  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR middle-end/66568
+	* gcc.target/i386/mpx/pr66568.c: New test.
+
+	Backport from mainline r225296.
+	2015-07-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/mpx/pr66568.c (exit): New prototype.
+2015-07-23  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r224600.
+	2015-06-18  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR middle-end/66567
+	* gcc.target/i386/mpx/pr66567.c: New test.
+
+2015-07-23  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r223215.
+	2015-05-15  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR middle-end/66134
+	* gcc.target/i386/mpx/pr66134.c: New test.
+
+2015-07-23  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r223114.
+	2015-05-13  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR target/66048
+	* gcc.target/i386/mpx/pr66048.cc: New.
+
+2015-07-23  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r223216.
+	2015-05-15  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.dg/lto/chkp-wrap-asm-name_0.c: New.
+
+2015-07-23  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r224074.
+	2015-06-03  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	* gcc.dg/lto/chkp-removed-alias_0.c: New.
+
+2015-07-21  Alex Velenko  <Alex.Velenko@arm.com>
+
+	Backport from mainline:
+	2015-07-21  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* gcc.target/arm/thumb-bitfld1.c (foo): Add explicit return type.
+
+2015-07-21  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/66035
+	* gfortran.dg/structure_constructor_13.f03: New test.
+
+2015-07-21  Alex Velenko  <Alex.Velenko@arm.com>
+
+	Backport from mainline:
+	2015-05-20  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* gcc.target/arm/thumb1-far-jump-2.c (r4): Added int in definition.
+
+2015-07-21  Alex Velenko  <Alex.Velenko@arm.com>
+
+	Backport from mainline:
+	2015-06-01  Alex Velenko  <Alex.Velenko@arm.com>
+
+	* gcc.target/arm/thumb-ltu.c (foo): Predefined.
+	(bar): Predefined.
+
+2015-07-21  Mantas Mikaitis  <mantas.mikaitis@arm.com>
+
+	* gcc.target/arm/macro_defs0.c: Add directive to skip
+	test if -marm is present.
+	* gcc.target/arm/macro_defs1.c: Likewise.
+
 2015-07-18  Uros Bizjak  <ubizjak@gmail.com>
 
 	PR target/66922
