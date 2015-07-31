@@ -5652,6 +5652,8 @@ build_new_op_1 (location_t loc, enum tree_code code, int flags, tree arg1,
 	  && ((code_orig_arg1 == BOOLEAN_TYPE)
 	      ^ (code_orig_arg2 == BOOLEAN_TYPE)))
 	maybe_warn_bool_compare (loc, code, arg1, arg2);
+      if (complain & tf_warning && warn_tautological_compare)
+	warn_tautological_cmp (loc, code, arg1, arg2);
       /* Fall through.  */
     case PLUS_EXPR:
     case MINUS_EXPR:
@@ -5842,7 +5844,7 @@ build_op_delete_call (enum tree_code code, tree addr, tree size,
 	    = G_("exception cleanup for this placement new selects "
 		 "non-placement operator delete");
 	  const char *msg2
-	    = G_("%q+D is a usual (non-placement) deallocation "
+	    = G_("%qD is a usual (non-placement) deallocation "
 		 "function in C++14 (or with -fsized-deallocation)");
 
 	  /* But if the class has an operator delete (void *), then that is
@@ -5864,7 +5866,7 @@ build_op_delete_call (enum tree_code code, tree addr, tree size,
 	    {
 	      if ((complain & tf_warning)
 		  && warning (OPT_Wc__14_compat, msg1))
-		inform (0, msg2, fn);
+		inform (DECL_SOURCE_LOCATION (fn), msg2, fn);
 	      goto ok;
 	    }
 
@@ -5874,9 +5876,10 @@ build_op_delete_call (enum tree_code code, tree addr, tree size,
 		{
 		  /* Only mention C++14 for namespace-scope delete.  */
 		  if (DECL_NAMESPACE_SCOPE_P (fn))
-		    inform (0, msg2, fn);
+		    inform (DECL_SOURCE_LOCATION (fn), msg2, fn);
 		  else
-		    inform (0, "%q+D is a usual (non-placement) deallocation "
+		    inform (DECL_SOURCE_LOCATION (fn),
+			    "%qD is a usual (non-placement) deallocation "
 			    "function", fn);
 		}
 	    }
@@ -6332,8 +6335,8 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
 	  build_user_type_conversion (totype, convs->u.expr, LOOKUP_NORMAL,
 				      complain);
 	  if (fn)
-	    inform (input_location, "  initializing argument %P of %q+D",
-		    argnum, fn);
+	    inform (DECL_SOURCE_LOCATION (fn),
+		    "  initializing argument %P of %qD", argnum, fn);
 	}
       return error_mark_node;
 
@@ -6485,8 +6488,8 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
 	      gcc_unreachable ();
 	    maybe_print_user_conv_context (convs);
 	    if (fn)
-	      inform (input_location,
-		      "  initializing argument %P of %q+D", argnum, fn);
+	      inform (DECL_SOURCE_LOCATION (fn),
+		      "  initializing argument %P of %qD", argnum, fn);
 	    return error_mark_node;
 	  }
 
@@ -7306,7 +7309,8 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
 	      pedwarn (input_location, 0, "deducing %qT as %qT",
 		       non_reference (TREE_TYPE (patparm)),
 		       non_reference (type));
-	      pedwarn (input_location, 0, "  in call to %q+D", cand->fn);
+	      pedwarn (DECL_SOURCE_LOCATION (cand->fn), 0,
+		       "  in call to %qD", cand->fn);
 	      pedwarn (input_location, 0,
 		       "  (you can disable this with -fno-deduce-init-list)");
 	    }

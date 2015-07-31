@@ -9251,7 +9251,8 @@ cp_parser_lambda_introducer (cp_parser* parser, tree lambda_expr)
 	      error_at (capture_token->location,
 			"capture of non-variable %qD ",
 			capture_init_expr);
-	      inform (0, "%q+#D declared here", capture_init_expr);
+	      inform (DECL_SOURCE_LOCATION (capture_init_expr),
+		      "%q#D declared here", capture_init_expr);
 	      continue;
 	    }
 	  if (VAR_P (capture_init_expr)
@@ -9260,7 +9261,8 @@ cp_parser_lambda_introducer (cp_parser* parser, tree lambda_expr)
 	      if (pedwarn (capture_token->location, 0, "capture of variable "
 			   "%qD with non-automatic storage duration",
 			   capture_init_expr))
-		inform (0, "%q+#D declared here", capture_init_expr);
+		inform (DECL_SOURCE_LOCATION (capture_init_expr),
+			"%q#D declared here", capture_init_expr);
 	      continue;
 	    }
 
@@ -11660,7 +11662,8 @@ cp_parser_simple_declaration (cp_parser* parser,
 	{
 	  /* If we have already issued an error message we don't need
 	     to issue another one.  */
-	  if (decl != error_mark_node
+	  if ((decl != error_mark_node
+	       && DECL_INITIAL (decl) != error_mark_node)
 	      || cp_parser_uncommitted_to_tentative_parse_p (parser))
 	    cp_parser_error (parser, "expected %<,%> or %<;%>");
 	  /* Skip tokens until we reach the end of the statement.  */

@@ -125,8 +125,8 @@ only one of these two forms, whichever one is not the default.
 * C++ Dialect Options:: Variations on C++.
 * Objective-C and Objective-C++ Dialect Options:: Variations on Objective-C
                         and Objective-C++.
-* Language Independent Options:: Controlling how diagnostics should be
-                        formatted.
+* Diagnostic Message Formatting Options:: Controlling how diagnostics should
+                        be formatted.
 * Warning Options::     How picky should the compiler be?
 * Debugging Options::   Symbol tables, measurements, and debugging dumps.
 * Optimize Options::    How much optimization?
@@ -228,8 +228,8 @@ Objective-C and Objective-C++ Dialects}.
 -Wstrict-selector-match @gol
 -Wundeclared-selector}
 
-@item Language Independent Options
-@xref{Language Independent Options,,Options to Control Diagnostic Messages Formatting}.
+@item Diagnostic Message Formatting Options
+@xref{Diagnostic Message Formatting Options,,Options to Control Diagnostic Messages Formatting}.
 @gccoptlist{-fmessage-length=@var{n}  @gol
 -fdiagnostics-show-location=@r{[}once@r{|}every-line@r{]}  @gol
 -fdiagnostics-color=@r{[}auto@r{|}never@r{|}always@r{]}  @gol
@@ -273,6 +273,7 @@ Objective-C and Objective-C++ Dialects}.
 -Wpointer-arith  -Wno-pointer-to-int-cast @gol
 -Wredundant-decls  -Wno-return-local-addr @gol
 -Wreturn-type  -Wsequence-point  -Wshadow  -Wno-shadow-ivar @gol
+-Wshift-overflow -Wshift-overflow=@var{n} @gol
 -Wshift-count-negative -Wshift-count-overflow -Wshift-negative-value @gol
 -Wsign-compare  -Wsign-conversion -Wfloat-conversion @gol
 -Wsizeof-pointer-memaccess  -Wsizeof-array-argument @gol
@@ -282,7 +283,8 @@ Objective-C and Objective-C++ Dialects}.
 -Wsuggest-final-types @gol -Wsuggest-final-methods -Wsuggest-override @gol
 -Wmissing-format-attribute @gol
 -Wswitch  -Wswitch-default  -Wswitch-enum -Wswitch-bool -Wsync-nand @gol
--Wsystem-headers  -Wtrampolines  -Wtrigraphs  -Wtype-limits  -Wundef @gol
+-Wsystem-headers  -Wtautological-compare  -Wtrampolines  -Wtrigraphs @gol
+-Wtype-limits  -Wundef @gol
 -Wuninitialized  -Wunknown-pragmas  -Wno-pragmas @gol
 -Wunsuffixed-float-constants  -Wunused  -Wunused-function @gol
 -Wunused-label  -Wunused-local-typedefs -Wunused-parameter @gol
@@ -3152,7 +3154,7 @@ value, if any.
 
 @end table
 
-@node Language Independent Options
+@node Diagnostic Message Formatting Options
 @section Options to Control Diagnostic Messages Formatting
 @cindex options to control diagnostics formatting
 @cindex diagnostic messages
@@ -3451,6 +3453,7 @@ Options} and @ref{Objective-C and Objective-C++ Dialect Options}.
 -Wenum-compare @r{(in C/ObjC; this is on by default in C++)} @gol
 -Wimplicit-int @r{(C and Objective-C only)} @gol
 -Wimplicit-function-declaration @r{(C and Objective-C only)} @gol
+-Wbool-compare  @gol
 -Wcomment  @gol
 -Wformat   @gol
 -Wmain @r{(only for C/ObjC and unless} @option{-ffreestanding}@r{)}  @gol
@@ -3467,6 +3470,7 @@ Options} and @ref{Objective-C and Objective-C++ Dialect Options}.
 -Wstrict-aliasing  @gol
 -Wstrict-overflow=1  @gol
 -Wswitch  @gol
+-Wtautological-compare  @gol
 -Wtrigraphs  @gol
 -Wuninitialized  @gol
 -Wunknown-pragmas  @gol
@@ -3982,6 +3986,26 @@ Warn if shift count >= width of type. This warning is enabled by default.
 Warn if left shifting a negative value.  This warning is enabled by
 @option{-Wextra} in C99 and C++11 modes (and newer).
 
+@item -Wshift-overflow
+@itemx -Wshift-overflow=@var{n}
+@opindex Wshift-overflow
+@opindex Wno-shift-overflow
+Warn about left shift overflows.  This warning is enabled by
+default in C99 and C++11 modes (and newer).
+
+@table @gcctabopt
+@item -Wshift-overflow=1
+This is the warning level of @option{-Wshift-overflow} and is enabled
+by default in C99 and C++11 modes (and newer).  This warning level does
+not warn about left-shifting 1 into the sign bit.  (However, in C, such
+an overflow is still rejected in contexts where an integer constant expression
+is required.)
+
+@item -Wshift-overflow=2
+This warning level also warns about left-shifting 1 into the sign bit,
+unless C++14 mode is active.
+@end table
+
 @item -Wswitch
 @opindex Wswitch
 @opindex Wno-switch
@@ -4491,6 +4515,18 @@ GCC to emit warnings from system headers as if they occurred in user
 code.  However, note that using @option{-Wall} in conjunction with this
 option does @emph{not} warn about unknown pragmas in system
 headers---for that, @option{-Wunknown-pragmas} must also be used.
+
+@item -Wtautological-compare
+@opindex Wtautological-compare
+@opindex Wno-tautological-compare
+Warn if a self-comparison always evaluates to true or false.  This
+warning detects various mistakes such as:
+@smallexample
+int i = 1;
+@dots{}
+if (i > i) @{ @dots{} @}
+@end smallexample
+This warning is enabled by @option{-Wall}.
 
 @item -Wtrampolines
 @opindex Wtrampolines
@@ -13287,7 +13323,7 @@ of the @option{-mcpu=} option.  Permissible names are: @samp{armv2},
 @samp{armv2a}, @samp{armv3}, @samp{armv3m}, @samp{armv4}, @samp{armv4t},
 @samp{armv5}, @samp{armv5t}, @samp{armv5e}, @samp{armv5te},
 @samp{armv6}, @samp{armv6j},
-@samp{armv6t2}, @samp{armv6z}, @samp{armv6zk}, @samp{armv6-m},
+@samp{armv6t2}, @samp{armv6z}, @samp{armv6kz}, @samp{armv6-m},
 @samp{armv7}, @samp{armv7-a}, @samp{armv7-r}, @samp{armv7-m}, @samp{armv7e-m},
 @samp{armv7ve}, @samp{armv8-a}, @samp{armv8-a+crc},
 @samp{iwmmxt}, @samp{iwmmxt2}, @samp{ep9312}.
@@ -17024,9 +17060,12 @@ The processor names are:
 @samp{34kc}, @samp{34kf2_1}, @samp{34kf1_1}, @samp{34kn},
 @samp{74kc}, @samp{74kf2_1}, @samp{74kf1_1}, @samp{74kf3_2},
 @samp{1004kc}, @samp{1004kf2_1}, @samp{1004kf1_1},
+@samp{i6400},
+@samp{interaptiv},
 @samp{loongson2e}, @samp{loongson2f}, @samp{loongson3a},
 @samp{m4k},
 @samp{m14k}, @samp{m14kc}, @samp{m14ke}, @samp{m14kec},
+@samp{m5100}, @samp{m5101},
 @samp{octeon}, @samp{octeon+}, @samp{octeon2}, @samp{octeon3},
 @samp{orion},
 @samp{p5600},

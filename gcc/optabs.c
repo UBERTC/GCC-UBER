@@ -4484,16 +4484,15 @@ prepare_float_lib_cmp (rtx x, rtx y, enum rtx_code comparison,
 /* Generate code to indirectly jump to a location given in the rtx LOC.  */
 
 void
-emit_indirect_jump (rtx loc ATTRIBUTE_UNUSED)
+emit_indirect_jump (rtx loc)
 {
-#ifndef HAVE_indirect_jump
-  sorry ("indirect jumps are not available on this target");
-#else
+  if (!targetm.have_indirect_jump ())
+    sorry ("indirect jumps are not available on this target");
+
   struct expand_operand ops[1];
   create_address_operand (&ops[0], loc);
-  expand_jump_insn (CODE_FOR_indirect_jump, 1, ops);
+  expand_jump_insn (targetm.code_for_indirect_jump, 1, ops);
   emit_barrier ();
-#endif
 }
 
 
@@ -4852,10 +4851,8 @@ can_extend_p (machine_mode to_mode, machine_mode from_mode,
 	      int unsignedp)
 {
   convert_optab tab;
-#ifdef HAVE_ptr_extend
-  if (unsignedp < 0)
-    return CODE_FOR_ptr_extend;
-#endif
+  if (unsignedp < 0 && targetm.have_ptr_extend ())
+    return targetm.code_for_ptr_extend;
 
   tab = unsignedp ? zext_optab : sext_optab;
   return convert_optab_handler (tab, to_mode, from_mode);
@@ -7261,35 +7258,30 @@ maybe_emit_compare_and_swap_exchange_loop (rtx target, rtx mem, rtx val)
    using the atomic_test_and_set instruction pattern.  A boolean value
    is returned from the operation, using TARGET if possible.  */
 
-#ifndef HAVE_atomic_test_and_set
-#define HAVE_atomic_test_and_set 0
-#define CODE_FOR_atomic_test_and_set CODE_FOR_nothing
-#endif
-
 static rtx
 maybe_emit_atomic_test_and_set (rtx target, rtx mem, enum memmodel model)
 {
   machine_mode pat_bool_mode;
   struct expand_operand ops[3];
 
-  if (!HAVE_atomic_test_and_set)
+  if (!targetm.have_atomic_test_and_set ())
     return NULL_RTX;
 
   /* While we always get QImode from __atomic_test_and_set, we get
      other memory modes from __sync_lock_test_and_set.  Note that we
      use no endian adjustment here.  This matches the 4.6 behavior
      in the Sparc backend.  */
-  gcc_checking_assert
-    (insn_data[CODE_FOR_atomic_test_and_set].operand[1].mode == QImode);
+  enum insn_code icode = targetm.code_for_atomic_test_and_set;
+  gcc_checking_assert (insn_data[icode].operand[1].mode == QImode);
   if (GET_MODE (mem) != QImode)
     mem = adjust_address_nv (mem, QImode, 0);
 
-  pat_bool_mode = insn_data[CODE_FOR_atomic_test_and_set].operand[0].mode;
+  pat_bool_mode = insn_data[icode].operand[0].mode;
   create_output_operand (&ops[0], target, pat_bool_mode);
   create_fixed_operand (&ops[1], mem);
   create_integer_operand (&ops[2], model);
 
-  if (maybe_expand_insn (CODE_FOR_atomic_test_and_set, 3, ops))
+  if (maybe_expand_insn (icode, 3, ops))
     return ops[0].value;
   return NULL_RTX;
 }

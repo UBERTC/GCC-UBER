@@ -549,6 +549,14 @@ take_address_of (tree obj, tree type, edge entry,
   return name;
 }
 
+static tree
+reduc_stmt_res (gimple stmt)
+{
+  return (gimple_code (stmt) == GIMPLE_PHI
+	  ? gimple_phi_result (stmt)
+	  : gimple_assign_lhs (stmt));
+}
+
 /* Callback for htab_traverse.  Create the initialization statement
    for reduction described in SLOT, and place it at the preheader of
    the loop described in DATA.  */
@@ -575,7 +583,7 @@ initialize_reductions (reduction_info **slot, struct loop *loop)
   c = build_omp_clause (gimple_location (reduc->reduc_stmt),
 			OMP_CLAUSE_REDUCTION);
   OMP_CLAUSE_REDUCTION_CODE (c) = reduc->reduction_code;
-  OMP_CLAUSE_DECL (c) = SSA_NAME_VAR (gimple_assign_lhs (reduc->reduc_stmt));
+  OMP_CLAUSE_DECL (c) = SSA_NAME_VAR (reduc_stmt_res (reduc->reduc_stmt));
 
   init = omp_reduction_init (c, TREE_TYPE (bvar));
   reduc->init = init;
@@ -982,7 +990,7 @@ add_field_for_reduction (reduction_info **slot, tree type)
 {
 
   struct reduction_info *const red = *slot;
-  tree var = gimple_assign_lhs (red->reduc_stmt);
+  tree var = reduc_stmt_res (red->reduc_stmt);
   tree field = build_decl (gimple_location (red->reduc_stmt), FIELD_DECL,
 			   SSA_NAME_IDENTIFIER (var), TREE_TYPE (var));
 
@@ -1024,30 +1032,31 @@ create_phi_for_local_result (reduction_info **slot, struct loop *loop)
   struct reduction_info *const reduc = *slot;
   edge e;
   gphi *new_phi;
-  basic_block store_bb;
+  basic_block store_bb, continue_bb;
   tree local_res;
   source_location locus;
 
   /* STORE_BB is the block where the phi
      should be stored.  It is the destination of the loop exit.
      (Find the fallthru edge from GIMPLE_OMP_CONTINUE).  */
-  store_bb = FALLTHRU_EDGE (loop->latch)->dest;
+  continue_bb = single_pred (loop->latch);
+  store_bb = FALLTHRU_EDGE (continue_bb)->dest;
 
   /* STORE_BB has two predecessors.  One coming from  the loop
      (the reduction's result is computed at the loop),
      and another coming from a block preceding the loop,
      when no iterations
      are executed (the initial value should be taken).  */
-  if (EDGE_PRED (store_bb, 0) == FALLTHRU_EDGE (loop->latch))
+  if (EDGE_PRED (store_bb, 0) == FALLTHRU_EDGE (continue_bb))
     e = EDGE_PRED (store_bb, 1);
   else
     e = EDGE_PRED (store_bb, 0);
-  local_res = copy_ssa_name (gimple_assign_lhs (reduc->reduc_stmt));
+  tree lhs = reduc_stmt_res (reduc->reduc_stmt);
+  local_res = copy_ssa_name (lhs);
   locus = gimple_location (reduc->reduc_stmt);
   new_phi = create_phi_node (local_res, store_bb);
   add_phi_arg (new_phi, reduc->init, e, locus);
-  add_phi_arg (new_phi, gimple_assign_lhs (reduc->reduc_stmt),
-	       FALLTHRU_EDGE (loop->latch), locus);
+  add_phi_arg (new_phi, lhs, FALLTHRU_EDGE (continue_bb), locus);
   reduc->new_phi = new_phi;
 
   return 1;
@@ -1126,7 +1135,8 @@ create_call_for_reduction (struct loop *loop,
 {
   reduction_list->traverse <struct loop *, create_phi_for_local_result> (loop);
   /* Find the fallthru edge from GIMPLE_OMP_CONTINUE.  */
-  ld_st_data->load_bb = FALLTHRU_EDGE (loop->latch)->dest;
+  basic_block continue_bb = single_pred (loop->latch);
+  ld_st_data->load_bb = FALLTHRU_EDGE (continue_bb)->dest;
   reduction_list
     ->traverse <struct clsn_data *, create_call_for_reduction_1> (ld_st_data);
 }
@@ -1140,7 +1150,7 @@ create_loads_for_reductions (reduction_info **slot, struct clsn_data *clsn_data)
   struct reduction_info *const red = *slot;
   gimple stmt;
   gimple_stmt_iterator gsi;
-  tree type = TREE_TYPE (gimple_assign_lhs (red->reduc_stmt));
+  tree type = TREE_TYPE (reduc_stmt_res (red->reduc_stmt));
   tree load_struct;
   tree name;
   tree x;
@@ -1205,7 +1215,7 @@ create_stores_for_reduction (reduction_info **slot, struct clsn_data *clsn_data)
   tree t;
   gimple stmt;
   gimple_stmt_iterator gsi;
-  tree type = TREE_TYPE (gimple_assign_lhs (red->reduc_stmt));
+  tree type = TREE_TYPE (reduc_stmt_res (red->reduc_stmt));
 
   gsi = gsi_last_bb (clsn_data->store_bb);
   t = build3 (COMPONENT_REF, type, clsn_data->store, red->field, NULL_TREE);
@@ -1973,7 +1983,7 @@ create_parallel_loop (struct loop *loop, tree loop_fn, tree data,
 		      tree new_data, unsigned n_threads, location_t loc)
 {
   gimple_stmt_iterator gsi;
-  basic_block bb, paral_bb, for_bb, ex_bb;
+  basic_block bb, paral_bb, for_bb, ex_bb, continue_bb;
   tree t, param;
   gomp_parallel *omp_par_stmt;
   gimple omp_return_stmt1, omp_return_stmt2;
@@ -2044,8 +2054,12 @@ create_parallel_loop (struct loop *loop, tree loop_fn, tree data,
   gcc_assert (exit == single_dom_exit (loop));
 
   guard = make_edge (for_bb, ex_bb, 0);
-  single_succ_edge (loop->latch)->flags = 0;
-  end = make_edge (loop->latch, ex_bb, EDGE_FALLTHRU);
+  /* Split the latch edge, so LOOPS_HAVE_SIMPLE_LATCHES is still valid.  */
+  loop->latch = split_edge (single_succ_edge (loop->latch));
+  single_pred_edge (loop->latch)->flags = 0;
+  end = make_edge (single_pred (loop->latch), ex_bb, EDGE_FALLTHRU);
+  rescan_loop_exit (end, true, false);
+
   for (gphi_iterator gpi = gsi_start_phis (ex_bb);
        !gsi_end_p (gpi); gsi_next (&gpi))
     {
@@ -2094,7 +2108,8 @@ create_parallel_loop (struct loop *loop, tree loop_fn, tree data,
   SSA_NAME_DEF_STMT (initvar) = for_stmt;
 
   /* Emit GIMPLE_OMP_CONTINUE.  */
-  gsi = gsi_last_bb (loop->latch);
+  continue_bb = single_pred (loop->latch);
+  gsi = gsi_last_bb (continue_bb);
   omp_cont_stmt = gimple_build_omp_continue (cvar_next, cvar);
   gimple_set_location (omp_cont_stmt, loc);
   gsi_insert_after (&gsi, omp_cont_stmt, GSI_NEW_STMT);
@@ -2246,7 +2261,15 @@ gen_parallel_loop (struct loop *loop,
      increment) and immediately follows the loop exit test.  Attempt to move the
      entry of the loop directly before the exit check and increase the number of
      iterations of the loop by one.  */
-  if (!try_transform_to_exit_first_loop_alt (loop, reduction_list, nit))
+  if (try_transform_to_exit_first_loop_alt (loop, reduction_list, nit))
+    {
+      if (dump_file
+	  && (dump_flags & TDF_DETAILS))
+	fprintf (dump_file,
+		 "alternative exit-first loop transform succeeded"
+		 " for loop %d\n", loop->num);
+    }
+  else
     {
       /* Fall back on the method that handles more cases, but duplicates the
 	 loop body: move the exit condition of LOOP to the beginning of its
@@ -2281,10 +2304,6 @@ gen_parallel_loop (struct loop *loop,
     create_call_for_reduction (loop, reduction_list, &clsn_data);
 
   scev_reset ();
-
-  /* Cancel the loop (it is simpler to do it here rather than to teach the
-     expander to do it).  */
-  cancel_loop_tree (loop);
 
   /* Free loop bound estimations that could contain references to
      removed statements.  */
@@ -2322,6 +2341,7 @@ build_new_reduction (reduction_info_table_type *reduction_list,
 {
   reduction_info **slot;
   struct reduction_info *new_reduction;
+  enum tree_code reduction_code;
 
   gcc_assert (reduc_stmt);
 
@@ -2333,12 +2353,22 @@ build_new_reduction (reduction_info_table_type *reduction_list,
       fprintf (dump_file, "\n");
     }
 
+  if (gimple_code (reduc_stmt) == GIMPLE_PHI)
+    {
+      tree op1 = PHI_ARG_DEF (reduc_stmt, 0);
+      gimple def1 = SSA_NAME_DEF_STMT (op1);
+      reduction_code = gimple_assign_rhs_code (def1);
+    }
+
+  else
+    reduction_code = gimple_assign_rhs_code (reduc_stmt);
+
   new_reduction = XCNEW (struct reduction_info);
 
   new_reduction->reduc_stmt = reduc_stmt;
   new_reduction->reduc_phi = phi;
   new_reduction->reduc_version = SSA_NAME_VERSION (gimple_phi_result (phi));
-  new_reduction->reduction_code = gimple_assign_rhs_code (reduc_stmt);
+  new_reduction->reduction_code = reduction_code;
   slot = reduction_list->find_slot (new_reduction, INSERT);
   *slot = new_reduction;
 }
@@ -2360,8 +2390,12 @@ gather_scalar_reductions (loop_p loop, reduction_info_table_type *reduction_list
 {
   gphi_iterator gsi;
   loop_vec_info simple_loop_info;
+  loop_vec_info simple_inner_loop_info = NULL;
+  bool allow_double_reduc = true;
 
   simple_loop_info = vect_analyze_loop_form (loop);
+  if (simple_loop_info == NULL)
+    return;
 
   for (gsi = gsi_start_phis (loop->header); !gsi_end_p (gsi); gsi_next (&gsi))
     {
@@ -2373,17 +2407,52 @@ gather_scalar_reductions (loop_p loop, reduction_info_table_type *reduction_list
       if (virtual_operand_p (res))
 	continue;
 
-      if (!simple_iv (loop, loop, res, &iv, true)
-	&& simple_loop_info)
+      if (simple_iv (loop, loop, res, &iv, true))
+	continue;
+
+      gimple reduc_stmt
+	= vect_force_simple_reduction (simple_loop_info, phi, true,
+				       &double_reduc, true);
+      if (!reduc_stmt)
+	continue;
+
+      if (double_reduc)
 	{
-           gimple reduc_stmt = vect_force_simple_reduction (simple_loop_info,
-							    phi, true,
-							    &double_reduc);
-	   if (reduc_stmt && !double_reduc)
-              build_new_reduction (reduction_list, reduc_stmt, phi);
-        }
+	  if (!allow_double_reduc
+	      || loop->inner->inner != NULL)
+	    continue;
+
+	  if (!simple_inner_loop_info)
+	    {
+	      simple_inner_loop_info = vect_analyze_loop_form (loop->inner);
+	      if (!simple_inner_loop_info)
+		{
+		  allow_double_reduc = false;
+		  continue;
+		}
+	    }
+
+	  use_operand_p use_p;
+	  gimple inner_stmt;
+	  bool single_use_p = single_imm_use (res, &use_p, &inner_stmt);
+	  gcc_assert (single_use_p);
+	  gphi *inner_phi = as_a <gphi *> (inner_stmt);
+	  if (simple_iv (loop->inner, loop->inner, PHI_RESULT (inner_phi),
+			 &iv, true))
+	    continue;
+
+	  gimple inner_reduc_stmt
+	    = vect_force_simple_reduction (simple_inner_loop_info, inner_phi,
+					   true, &double_reduc, true);
+	  gcc_assert (!double_reduc);
+	  if (inner_reduc_stmt == NULL)
+	    continue;
+	}
+
+      build_new_reduction (reduction_list, reduc_stmt, phi);
     }
   destroy_loop_vec_info (simple_loop_info, true);
+  destroy_loop_vec_info (simple_inner_loop_info, true);
 
   /* As gimple_uid is used by the vectorizer in between vect_analyze_loop_form
      and destroy_loop_vec_info, we can set gimple_uid of reduc_phi stmts
@@ -2521,6 +2590,7 @@ parallelize_loops (void)
   unsigned n_threads = flag_tree_parallelize_loops;
   bool changed = false;
   struct loop *loop;
+  struct loop *skip_loop = NULL;
   struct tree_niter_desc niter_desc;
   struct obstack parloop_obstack;
   HOST_WIDE_INT estimated;
@@ -2538,6 +2608,19 @@ parallelize_loops (void)
 
   FOR_EACH_LOOP (loop, 0)
     {
+      if (loop == skip_loop)
+	{
+	  if (dump_file && (dump_flags & TDF_DETAILS))
+	    fprintf (dump_file,
+		     "Skipping loop %d as inner loop of parallelized loop\n",
+		     loop->num);
+
+	  skip_loop = loop->inner;
+	  continue;
+	}
+      else
+	skip_loop = NULL;
+
       reduction_list.empty ();
       if (dump_file && (dump_flags & TDF_DETAILS))
       {
@@ -2597,6 +2680,7 @@ parallelize_loops (void)
 	continue;
 
       changed = true;
+      skip_loop = loop->inner;
       if (dump_file && (dump_flags & TDF_DETAILS))
       {
 	if (loop->inner)
@@ -2663,6 +2747,11 @@ pass_parallelize_loops::execute (function *fun)
   if (parallelize_loops ())
     {
       fun->curr_properties &= ~(PROP_gimple_eomp);
+
+#ifdef ENABLE_CHECKING
+      verify_loop_structure ();
+#endif
+
       return TODO_update_ssa;
     }
 

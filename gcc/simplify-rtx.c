@@ -957,6 +957,32 @@ simplify_unary_operation_1 (enum rtx_code code, machine_mode mode, rtx op)
       if (GET_CODE (op) == NEG)
 	return XEXP (op, 0);
 
+      /* (neg (x ? (neg y) : y)) == !x ? (neg y) : y.
+	 If comparison is not reversible use
+	 x ? y : (neg y).  */
+      if (GET_CODE (op) == IF_THEN_ELSE)
+	{
+	  rtx cond = XEXP (op, 0);
+	  rtx true_rtx = XEXP (op, 1);
+	  rtx false_rtx = XEXP (op, 2);
+
+	  if ((GET_CODE (true_rtx) == NEG
+	       && rtx_equal_p (XEXP (true_rtx, 0), false_rtx))
+	       || (GET_CODE (false_rtx) == NEG
+		   && rtx_equal_p (XEXP (false_rtx, 0), true_rtx)))
+	    {
+	      if (reversed_comparison_code (cond, NULL_RTX) != UNKNOWN)
+		temp = reversed_comparison (cond, mode);
+	      else
+		{
+		  temp = cond;
+		  std::swap (true_rtx, false_rtx);
+		}
+	      return simplify_gen_ternary (IF_THEN_ELSE, mode,
+					    mode, temp, true_rtx, false_rtx);
+	    }
+	}
+
       /* (neg (plus X 1)) can become (not X).  */
       if (GET_CODE (op) == PLUS
 	  && XEXP (op, 1) == const1_rtx)
@@ -1405,7 +1431,7 @@ simplify_unary_operation_1 (enum rtx_code code, machine_mode mode, rtx op)
 	    }
 	}
 
-#if defined(POINTERS_EXTEND_UNSIGNED) && !defined(HAVE_ptr_extend)
+#if defined(POINTERS_EXTEND_UNSIGNED)
       /* As we do not know which address space the pointer is referring to,
 	 we can do this only if the target does not support different pointer
 	 or address modes depending on the address space.  */
@@ -1416,7 +1442,8 @@ simplify_unary_operation_1 (enum rtx_code code, machine_mode mode, rtx op)
 	      || (GET_CODE (op) == SUBREG
 		  && REG_P (SUBREG_REG (op))
 		  && REG_POINTER (SUBREG_REG (op))
-		  && GET_MODE (SUBREG_REG (op)) == Pmode)))
+		  && GET_MODE (SUBREG_REG (op)) == Pmode))
+	  && !targetm.have_ptr_extend ())
 	return convert_memory_address (Pmode, op);
 #endif
       break;
@@ -1526,7 +1553,7 @@ simplify_unary_operation_1 (enum rtx_code code, machine_mode mode, rtx op)
 				     GET_MODE (SUBREG_REG (op)));
 	}
 
-#if defined(POINTERS_EXTEND_UNSIGNED) && !defined(HAVE_ptr_extend)
+#if defined(POINTERS_EXTEND_UNSIGNED)
       /* As we do not know which address space the pointer is referring to,
 	 we can do this only if the target does not support different pointer
 	 or address modes depending on the address space.  */
@@ -1537,7 +1564,8 @@ simplify_unary_operation_1 (enum rtx_code code, machine_mode mode, rtx op)
 	      || (GET_CODE (op) == SUBREG
 		  && REG_P (SUBREG_REG (op))
 		  && REG_POINTER (SUBREG_REG (op))
-		  && GET_MODE (SUBREG_REG (op)) == Pmode)))
+		  && GET_MODE (SUBREG_REG (op)) == Pmode))
+	  && !targetm.have_ptr_extend ())
 	return convert_memory_address (Pmode, op);
 #endif
       break;
@@ -1572,7 +1600,7 @@ simplify_const_unary_operation (enum rtx_code code, machine_mode mode,
       if (CONST_SCALAR_INT_P (op) || CONST_DOUBLE_AS_FLOAT_P (op)
 	  || GET_CODE (op) == CONST_VECTOR)
 	{
-          int elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode));
+	  int elt_size = GET_MODE_UNIT_SIZE (mode);
           unsigned n_elts = (GET_MODE_SIZE (mode) / elt_size);
 	  rtvec v = rtvec_alloc (n_elts);
 	  unsigned int i;
@@ -1583,7 +1611,7 @@ simplify_const_unary_operation (enum rtx_code code, machine_mode mode,
 	  else
 	    {
 	      machine_mode inmode = GET_MODE (op);
-              int in_elt_size = GET_MODE_SIZE (GET_MODE_INNER (inmode));
+	      int in_elt_size = GET_MODE_UNIT_SIZE (inmode);
               unsigned in_n_elts = (GET_MODE_SIZE (inmode) / in_elt_size);
 
 	      gcc_assert (in_n_elts < n_elts);
@@ -1597,10 +1625,10 @@ simplify_const_unary_operation (enum rtx_code code, machine_mode mode,
 
   if (VECTOR_MODE_P (mode) && GET_CODE (op) == CONST_VECTOR)
     {
-      int elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode));
+      int elt_size = GET_MODE_UNIT_SIZE (mode);
       unsigned n_elts = (GET_MODE_SIZE (mode) / elt_size);
       machine_mode opmode = GET_MODE (op);
-      int op_elt_size = GET_MODE_SIZE (GET_MODE_INNER (opmode));
+      int op_elt_size = GET_MODE_UNIT_SIZE (opmode);
       unsigned op_n_elts = (GET_MODE_SIZE (opmode) / op_elt_size);
       rtvec v = rtvec_alloc (n_elts);
       unsigned int i;
@@ -3196,9 +3224,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 				     GET_MODE (SUBREG_REG (op0)),
 				     XEXP (SUBREG_REG (op0), 0),
 				     tmp);
-	  return simplify_gen_subreg (mode, tmp, inner_mode,
-				      subreg_lowpart_offset (mode,
-							     inner_mode));
+	  return lowpart_subreg (mode, tmp, inner_mode);
 	}
     canonicalize_shift:
       if (SHIFT_COUNT_TRUNCATED && CONST_INT_P (op1))
@@ -3321,7 +3347,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 	      rtx op1 = XEXP (trueop0, 1);
 
 	      machine_mode opmode = GET_MODE (op0);
-	      int elt_size = GET_MODE_SIZE (GET_MODE_INNER (opmode));
+	      int elt_size = GET_MODE_UNIT_SIZE (opmode);
 	      int n_elts = GET_MODE_SIZE (opmode) / elt_size;
 
 	      int i = INTVAL (XVECEXP (trueop1, 0, 0));
@@ -3351,7 +3377,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 		  /* Find out number of elements of each operand.  */
 		  if (VECTOR_MODE_P (mode00))
 		    {
-		      elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode00));
+		      elt_size = GET_MODE_UNIT_SIZE (mode00);
 		      n_elts00 = GET_MODE_SIZE (mode00) / elt_size;
 		    }
 		  else
@@ -3359,7 +3385,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 
 		  if (VECTOR_MODE_P (mode01))
 		    {
-		      elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode01));
+		      elt_size = GET_MODE_UNIT_SIZE (mode01);
 		      n_elts01 = GET_MODE_SIZE (mode01) / elt_size;
 		    }
 		  else
@@ -3400,7 +3426,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 
 	  if (GET_CODE (trueop0) == CONST_VECTOR)
 	    {
-	      int elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode));
+	      int elt_size = GET_MODE_UNIT_SIZE (mode);
 	      unsigned n_elts = (GET_MODE_SIZE (mode) / elt_size);
 	      rtvec v = rtvec_alloc (n_elts);
 	      unsigned int i;
@@ -3481,7 +3507,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 	      rtx subop1 = XEXP (trueop0, 1);
 	      machine_mode mode0 = GET_MODE (subop0);
 	      machine_mode mode1 = GET_MODE (subop1);
-	      int li = GET_MODE_SIZE (GET_MODE_INNER (mode0));
+	      int li = GET_MODE_UNIT_SIZE (mode0);
 	      int l0 = GET_MODE_SIZE (mode0) / li;
 	      int l1 = GET_MODE_SIZE (mode1) / li;
 	      int i0 = INTVAL (XVECEXP (trueop1, 0, 0));
@@ -3641,7 +3667,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 		|| CONST_SCALAR_INT_P (trueop1) 
 		|| CONST_DOUBLE_AS_FLOAT_P (trueop1)))
 	  {
-	    int elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode));
+	    int elt_size = GET_MODE_UNIT_SIZE (mode);
 	    unsigned n_elts = (GET_MODE_SIZE (mode) / elt_size);
 	    rtvec v = rtvec_alloc (n_elts);
 	    unsigned int i;
@@ -5327,7 +5353,7 @@ simplify_ternary_operation (enum rtx_code code, machine_mode mode,
       trueop2 = avoid_constant_pool_reference (op2);
       if (CONST_INT_P (trueop2))
 	{
-	  int elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode));
+	  int elt_size = GET_MODE_UNIT_SIZE (mode);
 	  unsigned n_elts = (GET_MODE_SIZE (mode) / elt_size);
 	  unsigned HOST_WIDE_INT sel = UINTVAL (trueop2);
 	  unsigned HOST_WIDE_INT mask;
@@ -5622,21 +5648,17 @@ simplify_immed_subreg (machine_mode outermode, rtx op,
   value_start = byte * (BITS_PER_UNIT / value_bit);
 
   /* Re-pack the value.  */
+  num_elem = GET_MODE_NUNITS (outermode);
 
   if (VECTOR_MODE_P (outermode))
     {
-      num_elem = GET_MODE_NUNITS (outermode);
       result_v = rtvec_alloc (num_elem);
       elems = &RTVEC_ELT (result_v, 0);
-      outer_submode = GET_MODE_INNER (outermode);
     }
   else
-    {
-      num_elem = 1;
-      elems = &result_s;
-      outer_submode = outermode;
-    }
+    elems = &result_s;
 
+  outer_submode = GET_MODE_INNER (outermode);
   outer_class = GET_MODE_CLASS (outer_submode);
   elem_bitsize = GET_MODE_BITSIZE (outer_submode);
 
@@ -6001,6 +6023,17 @@ simplify_gen_subreg (machine_mode outermode, rtx op,
     return gen_rtx_SUBREG (outermode, op, byte);
 
   return NULL_RTX;
+}
+
+/* Generates a subreg to get the least significant part of EXPR (in mode
+   INNER_MODE) to OUTER_MODE.  */
+
+rtx
+lowpart_subreg (machine_mode outer_mode, rtx expr,
+			     machine_mode inner_mode)
+{
+  return simplify_gen_subreg (outer_mode, expr, inner_mode,
+			      subreg_lowpart_offset (outer_mode, inner_mode));
 }
 
 /* Simplify X, an rtx expression.

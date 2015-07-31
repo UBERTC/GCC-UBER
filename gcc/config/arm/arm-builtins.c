@@ -75,7 +75,9 @@ enum arm_type_qualifiers
   /* qualifier_const_pointer | qualifier_map_mode  */
   qualifier_const_pointer_map_mode = 0x86,
   /* Polynomial types.  */
-  qualifier_poly = 0x100
+  qualifier_poly = 0x100,
+  /* Lane indices - must be within range of previous argument = a vector.  */
+  qualifier_lane_index = 0x200
 };
 
 /*  The qualifier_internal allows generation of a unary builtin from
@@ -106,21 +108,40 @@ arm_ternop_qualifiers[SIMD_MAX_BUILTIN_ARGS]
 
 /* T (T, immediate).  */
 static enum arm_type_qualifiers
-arm_getlane_qualifiers[SIMD_MAX_BUILTIN_ARGS]
+arm_binop_imm_qualifiers[SIMD_MAX_BUILTIN_ARGS]
   = { qualifier_none, qualifier_none, qualifier_immediate };
+#define BINOP_IMM_QUALIFIERS (arm_binop_imm_qualifiers)
+
+/* T (T, lane index).  */
+static enum arm_type_qualifiers
+arm_getlane_qualifiers[SIMD_MAX_BUILTIN_ARGS]
+  = { qualifier_none, qualifier_none, qualifier_lane_index };
 #define GETLANE_QUALIFIERS (arm_getlane_qualifiers)
 
 /* T (T, T, T, immediate).  */
 static enum arm_type_qualifiers
-arm_lanemac_qualifiers[SIMD_MAX_BUILTIN_ARGS]
+arm_mac_n_qualifiers[SIMD_MAX_BUILTIN_ARGS]
   = { qualifier_none, qualifier_none, qualifier_none,
       qualifier_none, qualifier_immediate };
-#define LANEMAC_QUALIFIERS (arm_lanemac_qualifiers)
+#define MAC_N_QUALIFIERS (arm_mac_n_qualifiers)
+
+/* T (T, T, T, lane index).  */
+static enum arm_type_qualifiers
+arm_mac_lane_qualifiers[SIMD_MAX_BUILTIN_ARGS]
+  = { qualifier_none, qualifier_none, qualifier_none,
+      qualifier_none, qualifier_lane_index };
+#define MAC_LANE_QUALIFIERS (arm_mac_lane_qualifiers)
 
 /* T (T, T, immediate).  */
 static enum arm_type_qualifiers
-arm_setlane_qualifiers[SIMD_MAX_BUILTIN_ARGS]
+arm_ternop_imm_qualifiers[SIMD_MAX_BUILTIN_ARGS]
   = { qualifier_none, qualifier_none, qualifier_none, qualifier_immediate };
+#define TERNOP_IMM_QUALIFIERS (arm_ternop_imm_qualifiers)
+
+/* T (T, T, lane index).  */
+static enum arm_type_qualifiers
+arm_setlane_qualifiers[SIMD_MAX_BUILTIN_ARGS]
+  = { qualifier_none, qualifier_none, qualifier_none, qualifier_lane_index };
 #define SETLANE_QUALIFIERS (arm_setlane_qualifiers)
 
 /* T (T, T).  */
@@ -511,12 +532,16 @@ enum arm_builtins
 #undef CRYPTO2
 #undef CRYPTO3
 
+  ARM_BUILTIN_NEON_BASE,
+  ARM_BUILTIN_NEON_LANE_CHECK = ARM_BUILTIN_NEON_BASE,
+
 #include "arm_neon_builtins.def"
 
   ARM_BUILTIN_MAX
 };
 
-#define ARM_BUILTIN_NEON_BASE (ARM_BUILTIN_MAX - ARRAY_SIZE (neon_builtin_data))
+#define ARM_BUILTIN_NEON_PATTERN_START \
+    (ARM_BUILTIN_MAX - ARRAY_SIZE (neon_builtin_data))
 
 #undef CF
 #undef VAR1
@@ -875,7 +900,7 @@ arm_init_simd_builtin_scalar_types (void)
 static void
 arm_init_neon_builtins (void)
 {
-  unsigned int i, fcode = ARM_BUILTIN_NEON_BASE;
+  unsigned int i, fcode = ARM_BUILTIN_NEON_PATTERN_START;
 
   arm_init_simd_builtin_types ();
 
@@ -884,6 +909,15 @@ arm_init_neon_builtins (void)
      removed once all the intrinsics become strongly typed using the qualifier
      system.  */
   arm_init_simd_builtin_scalar_types ();
+
+  tree lane_check_fpr = build_function_type_list (void_type_node,
+						  intSI_type_node,
+						  intSI_type_node,
+						  NULL);
+  arm_builtin_decls[ARM_BUILTIN_NEON_LANE_CHECK] =
+      add_builtin_function ("__builtin_arm_lane_check", lane_check_fpr,
+			    ARM_BUILTIN_NEON_LANE_CHECK, BUILT_IN_MD,
+			    NULL, NULL_TREE);
 
   for (i = 0; i < ARRAY_SIZE (neon_builtin_data); i++, fcode++)
     {
@@ -1925,6 +1959,7 @@ arm_expand_unop_builtin (enum insn_code icode,
 typedef enum {
   NEON_ARG_COPY_TO_REG,
   NEON_ARG_CONSTANT,
+  NEON_ARG_LANE_INDEX,
   NEON_ARG_MEMORY,
   NEON_ARG_STOP
 } builtin_arg;
@@ -2041,6 +2076,16 @@ arm_expand_neon_args (rtx target, machine_mode map_mode, int fcode,
 		op[argc] = copy_to_mode_reg (mode[argc], op[argc]);
 	      break;
 
+	    case NEON_ARG_LANE_INDEX:
+	      /* Previous argument must be a vector, which this indexes.  */
+	      gcc_assert (argc > 0);
+	      if (CONST_INT_P (op[argc]))
+		{
+		  enum machine_mode vmode = mode[argc - 1];
+		  neon_lane_bounds (op[argc], 0, GET_MODE_NUNITS (vmode), exp);
+		}
+	      /* Fall through - if the lane index isn't a constant then
+		 the next case will error.  */
 	    case NEON_ARG_CONSTANT:
 	      if (!(*insn_data[icode].operand[opno].predicate)
 		  (op[argc], mode[argc]))
@@ -2137,14 +2182,31 @@ arm_expand_neon_args (rtx target, machine_mode map_mode, int fcode,
   return target;
 }
 
-/* Expand a Neon builtin. These are "special" because they don't have symbolic
+/* Expand a Neon builtin, i.e. those registered only if TARGET_NEON holds.
+   Most of these are "special" because they don't have symbolic
    constants defined per-instruction or per instruction-variant. Instead, the
    required info is looked up in the table neon_builtin_data.  */
 static rtx
 arm_expand_neon_builtin (int fcode, tree exp, rtx target)
 {
+  if (fcode == ARM_BUILTIN_NEON_LANE_CHECK)
+    {
+      /* Builtin is only to check bounds of the lane passed to some intrinsics
+	 that are implemented with gcc vector extensions in arm_neon.h.  */
+
+      tree nlanes = CALL_EXPR_ARG (exp, 0);
+      gcc_assert (TREE_CODE (nlanes) == INTEGER_CST);
+      rtx lane_idx = expand_normal (CALL_EXPR_ARG (exp, 1));
+      if (CONST_INT_P (lane_idx))
+	neon_lane_bounds (lane_idx, 0, TREE_INT_CST_LOW (nlanes), exp);
+      else
+	error ("%Klane index must be a constant immediate", exp);
+      /* Don't generate any RTL.  */
+      return const0_rtx;
+    }
+
   neon_builtin_datum *d =
-		&neon_builtin_data[fcode - ARM_BUILTIN_NEON_BASE];
+		&neon_builtin_data[fcode - ARM_BUILTIN_NEON_PATTERN_START];
   enum insn_code icode = d->code;
   builtin_arg args[SIMD_MAX_BUILTIN_ARGS];
   int num_args = insn_data[d->code].n_operands;
@@ -2168,7 +2230,9 @@ arm_expand_neon_builtin (int fcode, tree exp, rtx target)
       int operands_k = k - is_void;
       int expr_args_k = k - 1;
 
-      if (d->qualifiers[qualifiers_k] & qualifier_immediate)
+      if (d->qualifiers[qualifiers_k] & qualifier_lane_index)
+	args[k] = NEON_ARG_LANE_INDEX;
+      else if (d->qualifiers[qualifiers_k] & qualifier_immediate)
 	args[k] = NEON_ARG_CONSTANT;
       else if (d->qualifiers[qualifiers_k] & qualifier_maybe_immediate)
 	{

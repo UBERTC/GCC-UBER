@@ -86,7 +86,7 @@ extern void neon_pairwise_reduce (rtx, rtx, machine_mode,
 extern rtx neon_make_constant (rtx);
 extern tree arm_builtin_vectorized_function (tree, tree, tree);
 extern void neon_expand_vector_init (rtx, rtx);
-extern void neon_lane_bounds (rtx, HOST_WIDE_INT, HOST_WIDE_INT);
+extern void neon_lane_bounds (rtx, HOST_WIDE_INT, HOST_WIDE_INT, const_tree);
 extern void neon_const_bounds (rtx, HOST_WIDE_INT, HOST_WIDE_INT);
 extern HOST_WIDE_INT neon_element_bits (machine_mode);
 extern void neon_reinterpret (rtx, rtx);
@@ -382,6 +382,7 @@ extern bool arm_is_constant_pool_ref (rtx);
 
 #define FL_IWMMXT     (1 << 29)	      /* XScale v2 or "Intel Wireless MMX technology".  */
 #define FL_IWMMXT2    (1 << 30)       /* "Intel Wireless MMX2 technology".  */
+#define FL_ARCH6KZ    (1 << 31)       /* ARMv6KZ architecture.  */
 
 /* Flags that only effect tuning, not available instructions.  */
 #define FL_TUNE		(FL_WBUF | FL_VFPV2 | FL_STRONG | FL_LDSCHED \
@@ -401,7 +402,7 @@ extern bool arm_is_constant_pool_ref (rtx);
 #define FL_FOR_ARCH6J	FL_FOR_ARCH6
 #define FL_FOR_ARCH6K	(FL_FOR_ARCH6 | FL_ARCH6K)
 #define FL_FOR_ARCH6Z	FL_FOR_ARCH6
-#define FL_FOR_ARCH6ZK	FL_FOR_ARCH6K
+#define FL_FOR_ARCH6KZ	(FL_FOR_ARCH6K | FL_ARCH6KZ)
 #define FL_FOR_ARCH6T2	(FL_FOR_ARCH6 | FL_THUMB2)
 #define FL_FOR_ARCH6M	(FL_FOR_ARCH6 & ~FL_NOTM)
 #define FL_FOR_ARCH7	((FL_FOR_ARCH6T2 & ~FL_NOTM) | FL_ARCH7)
@@ -440,6 +441,9 @@ extern int arm_arch6;
 
 /* Nonzero if this chip supports the ARM 6K extensions.  */
 extern int arm_arch6k;
+
+/* Nonzero if this chip supports the ARM 6KZ extensions.  */
+extern int arm_arch6kz;
 
 /* Nonzero if instructions present in ARMv6-M can be used.  */
 extern int arm_arch6m;

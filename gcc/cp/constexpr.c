@@ -829,7 +829,8 @@ explain_invalid_constexpr_fn (tree fun)
 
   save_loc = input_location;
   input_location = DECL_SOURCE_LOCATION (fun);
-  inform (0, "%q+D is not usable as a constexpr function because:", fun);
+  inform (input_location,
+	  "%qD is not usable as a constexpr function because:", fun);
   /* First check the declaration.  */
   if (is_valid_constexpr_fn (fun, true))
     {
@@ -1289,7 +1290,7 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
   tree result = NULL_TREE;
 
   constexpr_call *entry = NULL;
-  if (!non_constant_args)
+  if (depth_ok && !non_constant_args)
     {
       new_call.hash = iterative_hash_template_arg
 	(new_call.bindings, constexpr_fundef_hasher::hash (new_call.fundef));

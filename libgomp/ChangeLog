@@ -1,3 +1,58 @@
+2015-07-28  Tom de Vries  <tom@codesourcery.com>
+
+	* testsuite/libgomp.c/uns-outer-4.c: New test.
+
+2015-07-24  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* testsuite/libgomp.c/pr66714.c: New test.
+
+2015-07-22  Maxim Blumenthal  <maxim.blumenthal@intel.com>
+
+	PR libgomp/66950
+	* testsuite/libgomp.c/examples-4/simd-7.c (N): Change to 30 from 45.
+	(fib_ref): New function.
+	(fib): Correct corner cases in the recursion.
+	(main): Replace the non-simd loop with fib_ref call.
+	* testsuite/libgomp.fortran/examples-4/simd-7.f90: (fib_ref): New
+	subroutine.
+	(fibonacci): Lower the parameter N to 30.  Correct accordingly check
+	for the last array element value.  Replace the non-simd loop with
+	fib_ref call.  Remove redundant b_ref array.  Remove the comparison
+	of the last array element with according Fibonacci sequence element.
+	(fib): Correct corner cases in the recursion.
+
+2015-07-21  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* target.c (gomp_offload_image_to_device): Rename to ...
+	(gomp_load_image_to_device): ... here.
+	(GOMP_offload_register): Adjust call.
+	(gomp_init_device): Likewise.
+	(gomp_unload_image_from_device): New.  Broken out of ...
+	(GOMP_offload_unregister): ... here.  Call it.
+	(gomp_unload_device): New.
+	* libgomp.h (gomp_unload_device): Declare.
+	* oacc-init.c (acc_shutdown_1): Unload from device before deleting
+	mem maps.
+
+2015-07-20  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* oacc-parallel.c (GOACC_parallel): Move variadic handling into
+	wait=-specific if.
+	(GOACC_enter_exit_data, GOACC_update): Use consistent num_waits
+	!=0 condition.
+	(goacc_waits): Move !num_waits handling to ...
+	(GOACC_wait): ... here, the only caller that might have zero waits.
+
+	* plugin/plugin-nvptx.c (struct targ_fn_descriptor): Move later.
+	(struct ptx_image_data): Move earlier, add fns field.
+	(struct ptx_device): Add images and image_lock fields.
+	(ptx_images, ptx_image_lock): Delete.
+	(nvptx_open_device): Initialize images and image_lock fields.
+	(nvptx_close_device): Destroy image_lock.
+	(GOMP_OFFLOAD_load_image): Register image to device-specific fields.
+	(GOMP_OFFLOAD_unload_image): Unregister image from device-specific
+	fields.
+
 2015-07-17  Nathan Sidwell  <nathan@codesourcery.com>
 
 	* target.c (GOMP_offload_register): Use int for device type arg.

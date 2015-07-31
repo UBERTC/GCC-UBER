@@ -787,9 +787,11 @@ Parse::parameters(Typed_identifier_list** pparams, bool* is_varargs)
   // The optional trailing comma is picked up in parameter_list.
 
   if (!token->is_op(OPERATOR_RPAREN))
-    error_at(this->location(), "expected %<)%>");
-  else
-    this->advance_token();
+    {
+      error_at(this->location(), "expected %<)%>");
+      return false;
+    }
+  this->advance_token();
 
   if (saw_error)
     return false;
@@ -1225,7 +1227,11 @@ Parse::interface_type(bool record)
       methods = NULL;
     }
 
-  Interface_type* ret = Type::make_interface_type(methods, location);
+  Interface_type* ret;
+  if (methods == NULL)
+    ret = Type::make_empty_interface_type(location);
+  else
+    ret = Type::make_interface_type(methods, location);
   if (record)
     this->gogo_->record_interface_type(ret);
   return ret;
