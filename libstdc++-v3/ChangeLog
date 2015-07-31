@@ -1,3 +1,93 @@
+2015-07-30  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/experimental/filesystem/operations/current_path.cc: Use
+	canonical paths for comparisons.
+
+2015-07-30  Tim Shen  <timshen@google.com>
+
+	* include/bits/regex_automaton.h (_State_base, _State<>):
+	Remove _TraitsT dependency from _State<>; Make matcher member
+	into the union to reduce struct size.
+	* include/bits/regex_automaton.tcc (_State_base<>::_M_print,
+	_State_base<>::_M_dot, _StateSeq<>::_M_clone):
+	Adjust to fit the interface. Factor out common parts in
+	_M_clone as _State<>::_M_has_alt.
+	* include/bits/regex_executor.h (_Executer<>::_M_lookahead):
+	Only pass state id instead of the whole state.
+	* include/bits/regex_executor.tcc (_Executer<>::_M_dfs,
+	_Executer<>::_M_lookahead): Adjust to fit the interface.
+	* include/std/regex: Include <ext/aligned_buffer.h>
+
+2015-07-30  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/experimental/any (any::operator=(const any&)): Check for
+	self-assignment.
+	* testsuite/experimental/any/assign/self.cc: New.
+	* testsuite/experimental/any/misc/any_cast_neg.cc: Adjust dg-error.
+
+2015-07-29  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/66829
+	* testsuite/lib/libstdc++.exp (v3-build_support): Compile
+	testsuite_shared.cc with -std=gnu++98.
+
+2015-07-29  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	* include/bits/range_access.h: Change class to typename in every
+	template.
+	(size, empty, data): New functions from N4280.
+	* testsuite/24_iterators/container_access.cc: New.
+
+	PR libstdc++/60970
+	* include/bits/functional_hash.h (__hash_enum): New.
+	(hash): Derive from __hash_enum.
+	* testsuite/20_util/hash/60970.cc: New.
+
+2015-07-29  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/67015
+	* include/bits/regex_compiler.h (_Compiler<>::_M_expression_term,
+	_BracketMatcher<>::_M_add_collating_element): Change signature
+	to make checking the and of bracket expression easier.
+	* include/bits/regex_compiler.tcc (_Compiler<>::_M_expression_term):
+	Treat '-' as a valid literal if it's at the end of bracket expression.
+	* testsuite/28_regex/algorithms/regex_match/cstring_bracket_01.cc:
+	New testcases.
+
+2015-07-24  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/atomic_futex.h [_GLIBCXX_HAVE_LINUX_FUTEX]
+	(_M_load_and_test_until): Whitespace.
+	(_M_load_and_test): Value-initialize the unused durations.
+	(_M_load_when_equal): Add missing return value.
+
+2015-07-24  Michael Haubenwallner  <michael.haubenwallner@ssi-schaefer.com>
+
+	* fragment.am (AM_CPPFLAGS): Add CPPFLAGS.
+	* Makefile.in: Regenerate.
+	* doc/Makefile.in: Regenerate.
+	* include/Makefile.in: Regenerate.
+	* libsupc++/Makefile.in: Regenerate.
+	* po/Makefile.in: Regenerate.
+	* python/Makefile.in: Regenerate.
+	* src/Makefile.in: Regenerate.
+	* src/c++11/Makefile.in: Regenerate.
+	* src/c++98/Makefile.in: Regenerate.
+	* src/filesystem/Makefile.in: Regenerate.
+	* testsuite/Makefile.in: Regenerate.
+
+2015-07-23  DJ Delorie  <dj@redhat.com>
+
+	* include/bits/functional_hash.h: Add specializations for __intN
+	types.
+
+	* include/ext/pb_ds/detail/thin_heap_/thin_heap_.hpp (__gnu_pbds):
+	Guard against values that might exceed size_t's precision.
+
+2015-07-20  Jason Merrill  <jason@redhat.com>
+
+	* include/bits/c++config: Fix abi_tag in special modes.
+
 2015-07-19  Jonathan Wakely  <jwakely@redhat.com>
 
 	* doc/xml/manual/status_cxx2017.xml: Fix URL for N4279.

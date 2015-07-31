@@ -3288,6 +3288,7 @@ get_member_function_from_ptrfunc (tree *instance_ptrptr, tree function,
       idx = build1 (NOP_EXPR, vtable_index_type, e3);
       switch (TARGET_PTRMEMFUNC_VBIT_LOCATION)
 	{
+	  int flag_sanitize_save;
 	case ptrmemfunc_vbit_in_pfn:
 	  e1 = cp_build_binary_op (input_location,
 				   BIT_AND_EXPR, idx, integer_one_node,
@@ -3303,9 +3304,15 @@ get_member_function_from_ptrfunc (tree *instance_ptrptr, tree function,
 	  e1 = cp_build_binary_op (input_location,
 				   BIT_AND_EXPR, delta, integer_one_node,
 				   complain);
+	  /* Don't instrument the RSHIFT_EXPR we're about to create because
+	     we're going to use DELTA number of times, and that wouldn't play
+	     well with SAVE_EXPRs therein.  */
+	  flag_sanitize_save = flag_sanitize;
+	  flag_sanitize = 0;
 	  delta = cp_build_binary_op (input_location,
 				      RSHIFT_EXPR, delta, integer_one_node,
 				      complain);
+	  flag_sanitize = flag_sanitize_save;
 	  if (delta == error_mark_node)
 	    return error_mark_node;
 	  break;
@@ -4350,6 +4357,9 @@ cp_build_binary_op (location_t location,
 		    warning (OPT_Wshift_count_overflow,
 			     "left shift count >= width of type");
 		}
+	      else if (TREE_CODE (const_op0) == INTEGER_CST
+		       && (complain & tf_warning))
+		maybe_warn_shift_overflow (location, const_op0, const_op1);
 	    }
 	  /* Avoid converting op1 to result_type later.  */
 	  converted = 1;
@@ -8365,8 +8375,8 @@ convert_for_initialization (tree exp, tree type, tree rhs, int flags,
 
       if (fndecl
 	  && (warningcount + werrorcount > savew || errorcount > savee))
-	inform (input_location,
-		"in passing argument %P of %q+D", parmnum, fndecl);
+	inform (DECL_SOURCE_LOCATION (fndecl),
+		"in passing argument %P of %qD", parmnum, fndecl);
 
       return rhs;
     }
@@ -8445,14 +8455,18 @@ maybe_warn_about_returning_address_of_local (tree retval)
 	   || TREE_PUBLIC (whats_returned)))
     {
       if (TREE_CODE (valtype) == REFERENCE_TYPE)
-	warning (OPT_Wreturn_local_addr, "reference to local variable %q+D returned",
-		 whats_returned);
+	warning_at (DECL_SOURCE_LOCATION (whats_returned),
+		    OPT_Wreturn_local_addr,
+		    "reference to local variable %qD returned",
+		    whats_returned);
       else if (TREE_CODE (whats_returned) == LABEL_DECL)
-	warning (OPT_Wreturn_local_addr, "address of label %q+D returned",
-		 whats_returned);
+	warning_at (DECL_SOURCE_LOCATION (whats_returned),
+		    OPT_Wreturn_local_addr, "address of label %qD returned",
+		    whats_returned);
       else
-	warning (OPT_Wreturn_local_addr, "address of local variable %q+D "
-		 "returned", whats_returned);
+	warning_at (DECL_SOURCE_LOCATION (whats_returned),
+		    OPT_Wreturn_local_addr, "address of local variable %qD "
+		    "returned", whats_returned);
       return true;
     }
 
@@ -8512,12 +8526,19 @@ check_return_expr (tree retval, bool *no_warning)
       return NULL_TREE;
     }
 
+  const tree saved_retval = retval;
+
   if (processing_template_decl)
     {
       current_function_returns_value = 1;
+
       if (check_for_bare_parameter_packs (retval))
-        retval = error_mark_node;
-      return retval;
+	return error_mark_node;
+
+      if (WILDCARD_TYPE_P (TREE_TYPE (DECL_RESULT (current_function_decl)))
+	  || (retval != NULL_TREE
+	      && type_dependent_expression_p (retval)))
+        return retval;
     }
 
   functype = TREE_TYPE (TREE_TYPE (current_function_decl));
@@ -8561,14 +8582,10 @@ check_return_expr (tree retval, bool *no_warning)
       functype = type;
     }
 
-  /* When no explicit return-value is given in a function with a named
-     return value, the named return value is used.  */
   result = DECL_RESULT (current_function_decl);
   valtype = TREE_TYPE (result);
   gcc_assert (valtype != NULL_TREE);
   fn_returns_value_p = !VOID_TYPE_P (valtype);
-  if (!retval && DECL_NAME (result) && fn_returns_value_p)
-    retval = result;
 
   /* Check for a return statement with no return value in a function
      that's supposed to return a value.  */
@@ -8651,6 +8668,13 @@ check_return_expr (tree retval, bool *no_warning)
 
       if (warn)
 	warning (OPT_Weffc__, "%<operator=%> should return a reference to %<*this%>");
+    }
+
+  if (processing_template_decl)
+    {
+      /* We should not have changed the return value.  */
+      gcc_assert (retval == saved_retval);
+      return retval;
     }
 
   /* The fabled Named Return Value optimization, as per [class.copy]/15:

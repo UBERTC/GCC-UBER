@@ -569,10 +569,8 @@ if test x$ac_tree_checking != x ; then
   AC_DEFINE(ENABLE_TREE_CHECKING, 1,
 [Define if you want all operations on trees (the basic data
    structure of the front ends) to be checked for dynamic type safety
-   at runtime.  This is moderately expensive.  The tree browser debugging
-   routines will also be enabled by this option.
+   at runtime.  This is moderately expensive.
    ])
-  TREEBROWSER=tree-browser.o
   TREECHECKING=yes
 fi
 if test x$ac_types_checking != x ; then
@@ -581,7 +579,6 @@ if test x$ac_types_checking != x ; then
    This is cheap.
    ])
 fi
-AC_SUBST(TREEBROWSER)
 AC_SUBST(TREECHECKING)
 if test x$ac_rtl_checking != x ; then
   AC_DEFINE(ENABLE_RTL_CHECKING, 1,
@@ -2091,7 +2088,7 @@ m4_pattern_allow([AS_FOR_TARGET])dnl
 AS_VAR_SET_IF(gcc_cv_as,, [
 if test -x "$DEFAULT_ASSEMBLER"; then
 	gcc_cv_as="$DEFAULT_ASSEMBLER"
-elif test -f $gcc_cv_as_gas_srcdir/configure.in \
+elif test -f $gcc_cv_as_gas_srcdir/configure.ac \
      && test -f ../gas/Makefile \
      && test x$build = x$host; then
 	gcc_cv_as=../gas/as-new$build_exeext
@@ -2180,7 +2177,7 @@ elif test $install_gold_as_default = yes \
      && test -f ../gold/Makefile \
      && test x$build = x$host; then
 	gcc_cv_ld=../gold/ld-new$build_exeext
-elif test -f $gcc_cv_ld_gld_srcdir/configure.in \
+elif test -f $gcc_cv_ld_gld_srcdir/configure.ac \
      && test -f ../ld/Makefile \
      && test x$build = x$host; then
 	gcc_cv_ld=../ld/ld-new$build_exeext
@@ -2244,7 +2241,7 @@ if test "$gcc_cv_ld" = ../ld/ld-new$build_exeext \
 	elif test "$ld_is_gold" = yes; then
 	  in_tree_ld_is_elf=yes
 	fi
-	for f in $gcc_cv_ld_bfd_srcdir/configure $gcc_cv_ld_gld_srcdir/configure $gcc_cv_ld_gld_srcdir/configure.in $gcc_cv_ld_gld_srcdir/Makefile.in
+	for f in $gcc_cv_ld_bfd_srcdir/configure $gcc_cv_ld_gld_srcdir/configure $gcc_cv_ld_gld_srcdir/configure.ac $gcc_cv_ld_gld_srcdir/Makefile.in
 	do
 changequote(,)dnl
 		gcc_cv_gld_version=`sed -n -e 's/^[ 	]*VERSION=[^0-9A-Za-z_]*\([0-9]*\.[0-9]*.*\)/VERSION=\1/p' < $f`
@@ -2277,7 +2274,7 @@ AC_SUBST(ORIGINAL_LD_GOLD_FOR_TARGET)
 # Figure out what nm we will be using.
 gcc_cv_binutils_srcdir=`echo $srcdir | sed -e 's,/gcc$,,'`/binutils
 AS_VAR_SET_IF(gcc_cv_nm,, [
-if test -f $gcc_cv_binutils_srcdir/configure.in \
+if test -f $gcc_cv_binutils_srcdir/configure.ac \
      && test -f ../binutils/Makefile \
      && test x$build = x$host; then
 	gcc_cv_nm=../binutils/nm-new$build_exeext
@@ -2309,7 +2306,7 @@ esac
 
 # Figure out what objdump we will be using.
 AS_VAR_SET_IF(gcc_cv_objdump,, [
-if test -f $gcc_cv_binutils_srcdir/configure.in \
+if test -f $gcc_cv_binutils_srcdir/configure.ac \
      && test -f ../binutils/Makefile \
      && test x$build = x$host; then
 	# Single tree build which includes binutils.
@@ -2334,7 +2331,7 @@ fi
 
 # Figure out what readelf we will be using.
 AS_VAR_SET_IF(gcc_cv_readelf,, [
-if test -f $gcc_cv_binutils_srcdir/configure.in \
+if test -f $gcc_cv_binutils_srcdir/configure.ac \
      && test -f ../binutils/Makefile \
      && test x$build = x$host; then
 	# Single tree build which includes binutils.
@@ -5752,6 +5749,8 @@ fi
 
 # Check whether isl_schedule_constraints_compute_schedule is available;
 # it's new in ISL-0.13.
+# Check whether isl_options_set_schedule_serialize_sccs is available;
+# it's new in ISL-0.15.
 if test "x${ISLLIBS}" != "x" ; then
   saved_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS $ISLINC"
@@ -5765,12 +5764,24 @@ if test "x${ISLLIBS}" != "x" ; then
               [ac_has_isl_schedule_constraints_compute_schedule=no])
   AC_MSG_RESULT($ac_has_isl_schedule_constraints_compute_schedule)
 
+  AC_MSG_CHECKING([Checking for isl_options_set_schedule_serialize_sccs])
+  AC_TRY_LINK([#include <isl/schedule.h>],
+              [isl_options_set_schedule_serialize_sccs (NULL, 0);],
+              [ac_has_isl_options_set_schedule_serialize_sccs=yes],
+              [ac_has_isl_options_set_schedule_serialize_sccs=no])
+  AC_MSG_RESULT($ac_has_isl_options_set_schedule_serialize_sccs)
+
   LIBS="$saved_LIBS"
   CXXFLAGS="$saved_CXXFLAGS"
 
   if test x"$ac_has_isl_schedule_constraints_compute_schedule" = x"yes"; then
      AC_DEFINE(HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE, 1,
                [Define if isl_schedule_constraints_compute_schedule exists.])
+  fi
+
+  if test x"$ac_has_isl_options_set_schedule_serialize_sccs" = x"yes"; then
+     AC_DEFINE(HAVE_ISL_OPTIONS_SET_SCHEDULE_SERIALIZE_SCCS, 1,
+               [Define if isl_options_set_schedule_serialize_sccs exists.])
   fi
 fi
 

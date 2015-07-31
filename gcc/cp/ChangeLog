@@ -1,3 +1,127 @@
+2015-07-31  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/66977
+	* typeck.c (get_member_function_from_ptrfunc): Don't sanitize
+	RSHIFT_EXPR.
+
+2015-07-30  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* class.c (check_for_override): Use DECL_SOURCE_LOCATION and "%qD"
+	in warning_at instead of "%q+D" in warning.
+	(warn_hidden): Likewise but use location_of.
+	(finish_struct_anon_r): Likewise use DECL_SOURCE_LOCATION in permerror.
+	(check_bitfield_decl, check_field_decls): Likewise in warning_at.
+	(check_field_decls): Likewise for permerror.
+	(explain_non_literal_class): Likewise for inform.
+	(check_bases_and_members, layout_class_type): Likewise for warning_at.
+	(note_name_declared_in_class): Use location_of in permerror.
+	* name-lookup.c (diagnose_name_conflict): Use location_of in inform.
+	(pushdecl_maybe_friend_1): Use DECL_SOURCE_LOCATION in pedwarn,
+	inform, and warning_at.
+	(check_for_out_of_scope_variable): Likewise for warning_at and
+	permerror.
+
+2015-07-30  Jason Merrill  <jason@redhat.com>
+
+	DR 1558
+	PR c++/67021
+	* pt.c (tsubst_decl) [TYPE_DECL]: Clear TYPE_DEPENDENT_P_VALID.
+
+2015-07-28  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* call.c (build_op_delete_call, convert_like_real, build_over_call):
+	Use Use DECL_SOURCE_LOCATION and "%qD" in inform and pedwarn instead
+	of "%q+D".
+	* constexpr.c (explain_invalid_constexpr_fn): Likewise.
+	* decl.c (duplicate_decls): Likewise for warning/warning_at.
+	* except.c (maybe_noexcept_warning): Likewise.
+	* friend.c (make_friend_class): Likewise for inform.
+	* mangle.c (mangle_decl): Likewise for warning/warning_at.
+	* method.c (process_subob_fn, walk_field_subobs,
+	maybe_explain_implicit_delete): Likewise for inform.
+	* parser.c (cp_parser_lambda_introducer): Likewise.
+	* pt.c (check_specialization_namespace,
+	maybe_process_partial_specialization): Likewise for permerror.
+	(redeclare_class_template): Likewise for inform_n.
+	(coerce_template_parms, tsubst_copy_and_build): Likewise for inform.
+	* search.c (check_final_overrider): Likewise.
+	* semantics.c (process_outer_var_ref): Likewise.
+
+2015-07-27  Jason Merrill  <jason@redhat.com>
+
+	* constexpr.c (cxx_eval_call_expression): Don't add this call to
+	the hash table if !depth_ok.
+
+2015-07-27  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/66555
+	PR c/54979
+	* call.c (build_new_op_1): Call warn_tautological_cmp.
+	* pt.c (tsubst_copy_and_build): Use sentinel to suppress tautological
+	compare warnings.
+
+2015-07-26  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/18969
+	* typeck.c (check_return_expr): Also do the basic return-value
+	validity checking if processing_template_decl and yet types are
+	not dependent.  Remove obsolete code.
+
+2015-07-26  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* decl.c (poplevel): Use Use DECL_SOURCE_LOCATION and "%qD"
+	in warning_at instead of "%q+D" in warning.
+	(warn_extern_redeclared_static): Likewise for inform.
+	(check_redeclaration_no_default_args): Likewise for permerror.
+	(duplicate_decls): Likewise.
+	(check_previous_goto_1): Likewise for inform.
+	(check_goto, start_decl, check_for_uninitialized_const_var,
+	start_preparsed_function, finish_function§): Likewise.
+	* decl2.c (build_anon_union_vars, c_parse_final_cleanups): Likewise.
+	* init.c (sort_mem_initializers): Likewise.
+	* typeck.c (convert_for_initialization): Likewise for inform.
+	(maybe_warn_about_returning_address_of_local): Likewise.
+	* typeck2.c (abstract_virtuals_error_sfinae): Likewise for inform.
+	(cxx_incomplete_type_diagnostic): Likewise for emit_diagnostic.
+
+2015-07-25  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/66857
+	* cvt.c (ocp_convert): Don't call scalar_constant_value when
+	converting to a class type.
+
+2015-07-24  Jason Merrill  <jason@redhat.com>
+
+	PR c++/64969
+	* pt.c (splice_late_return_type): Correct deduced return type for
+	abbreviated function template.
+
+2015-07-24  Richard Biener  <rguenther@suse.de>
+
+	* init.c (build_vec_init): Build iterator bound in the same
+	type as the iterator.
+
+2015-07-23  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/66572
+	* pt.c (tsubst_copy_and_build): Add warn_logical_op sentinel.
+
+2015-07-23  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/52987
+	* parser.c (cp_parser_simple_declaration): Robustify check avoiding
+	redundant error messages.
+
+2015-07-21  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* decl.c (grokdeclarator): For an erroneous template parameter
+	propagate error_mark_node as type.
+
+2015-07-20  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/55095
+	* typeck.c (cp_build_binary_op): Warn about left shift overflows.
+
 2015-07-15  Jason Merrill  <jason@redhat.com>
 
 	PR c++/65091

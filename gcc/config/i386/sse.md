@@ -11821,7 +11821,7 @@
 {
   int mask,selector;
   mask = INTVAL (operands[3]);
-  selector = GET_MODE_SIZE (GET_MODE_INNER (<MODE>mode)) == 4 ?
+  selector = GET_MODE_UNIT_SIZE (<MODE>mode) == 4 ?
     0xFFFF ^ (0xF000 >> mask * 4)
     : 0xFF ^ (0xC0 >> mask * 2);
   emit_insn (gen_<extract_type>_vinsert<shuffletype><extract_suf>_1_mask
@@ -12971,7 +12971,7 @@
   [(set (match_operand:SWI48x 0 "nonimmediate_operand")
 	(match_operand:SWI48x 1 "register_operand"))]
   "can_create_pseudo_p ()
-   && GET_CODE (operands[1]) == SUBREG
+   && SUBREG_P (operands[1])
    && REG_P (SUBREG_REG (operands[1]))
    && (GET_MODE_CLASS (GET_MODE (SUBREG_REG (operands[1]))) == MODE_VECTOR_INT
        || (GET_MODE_CLASS (GET_MODE (SUBREG_REG (operands[1])))
@@ -17621,8 +17621,8 @@
 	  [(match_operand 3 "const_int_operand" "n, n")])))]
   "TARGET_SSSE3"
 {
-  machine_mode imode = GET_MODE_INNER (GET_MODE (operands[0]));
-  operands[2] = GEN_INT (INTVAL (operands[3]) * GET_MODE_SIZE (imode));
+  operands[2] =
+   GEN_INT (INTVAL (operands[3]) * GET_MODE_UNIT_SIZE (GET_MODE (operands[0])));
 
   switch (which_alternative)
     {

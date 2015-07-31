@@ -8092,26 +8092,21 @@ maybe_canonicalize_comparison_1 (location_t loc, enum tree_code code, tree type,
   enum tree_code code0 = TREE_CODE (arg0);
   tree t, cst0 = NULL_TREE;
   int sgn0;
-  bool swap = false;
 
-  /* Match A +- CST code arg1 and CST code arg1.  We can change the
-     first form only if overflow is undefined.  */
-  if (!(((ANY_INTEGRAL_TYPE_P (TREE_TYPE (arg0))
-	  && TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (arg0)))
-	 /* In principle pointers also have undefined overflow behavior,
-	    but that causes problems elsewhere.  */
-	 && !POINTER_TYPE_P (TREE_TYPE (arg0))
-	 && (code0 == MINUS_EXPR
-	     || code0 == PLUS_EXPR)
-         && TREE_CODE (TREE_OPERAND (arg0, 1)) == INTEGER_CST)
-	|| code0 == INTEGER_CST))
+  /* Match A +- CST code arg1.  We can change this only if overflow
+     is undefined.  */
+  if (!((ANY_INTEGRAL_TYPE_P (TREE_TYPE (arg0))
+	 && TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (arg0)))
+	/* In principle pointers also have undefined overflow behavior,
+	   but that causes problems elsewhere.  */
+	&& !POINTER_TYPE_P (TREE_TYPE (arg0))
+	&& (code0 == MINUS_EXPR
+	    || code0 == PLUS_EXPR)
+	&& TREE_CODE (TREE_OPERAND (arg0, 1)) == INTEGER_CST))
     return NULL_TREE;
 
   /* Identify the constant in arg0 and its sign.  */
-  if (code0 == INTEGER_CST)
-    cst0 = arg0;
-  else
-    cst0 = TREE_OPERAND (arg0, 1);
+  cst0 = TREE_OPERAND (arg0, 1);
   sgn0 = tree_int_cst_sgn (cst0);
 
   /* Overflowed constants and zero will cause problems.  */
@@ -8121,47 +8116,25 @@ maybe_canonicalize_comparison_1 (location_t loc, enum tree_code code, tree type,
 
   /* See if we can reduce the magnitude of the constant in
      arg0 by changing the comparison code.  */
-  if (code0 == INTEGER_CST)
-    {
-      /* CST <= arg1  ->  CST-1 < arg1.  */
-      if (code == LE_EXPR && sgn0 == 1)
-	code = LT_EXPR;
-      /* -CST < arg1  ->  -CST-1 <= arg1.  */
-      else if (code == LT_EXPR && sgn0 == -1)
-	code = LE_EXPR;
-      /* CST > arg1  ->  CST-1 >= arg1.  */
-      else if (code == GT_EXPR && sgn0 == 1)
-	code = GE_EXPR;
-      /* -CST >= arg1  ->  -CST-1 > arg1.  */
-      else if (code == GE_EXPR && sgn0 == -1)
-	code = GT_EXPR;
-      else
-        return NULL_TREE;
-      /* arg1 code' CST' might be more canonical.  */
-      swap = true;
-    }
+  /* A - CST < arg1  ->  A - CST-1 <= arg1.  */
+  if (code == LT_EXPR
+      && code0 == ((sgn0 == -1) ? PLUS_EXPR : MINUS_EXPR))
+    code = LE_EXPR;
+  /* A + CST > arg1  ->  A + CST-1 >= arg1.  */
+  else if (code == GT_EXPR
+	   && code0 == ((sgn0 == -1) ? MINUS_EXPR : PLUS_EXPR))
+    code = GE_EXPR;
+  /* A + CST <= arg1  ->  A + CST-1 < arg1.  */
+  else if (code == LE_EXPR
+	   && code0 == ((sgn0 == -1) ? MINUS_EXPR : PLUS_EXPR))
+    code = LT_EXPR;
+  /* A - CST >= arg1  ->  A - CST-1 > arg1.  */
+  else if (code == GE_EXPR
+	   && code0 == ((sgn0 == -1) ? PLUS_EXPR : MINUS_EXPR))
+    code = GT_EXPR;
   else
-    {
-      /* A - CST < arg1  ->  A - CST-1 <= arg1.  */
-      if (code == LT_EXPR
-	  && code0 == ((sgn0 == -1) ? PLUS_EXPR : MINUS_EXPR))
-	code = LE_EXPR;
-      /* A + CST > arg1  ->  A + CST-1 >= arg1.  */
-      else if (code == GT_EXPR
-	       && code0 == ((sgn0 == -1) ? MINUS_EXPR : PLUS_EXPR))
-	code = GE_EXPR;
-      /* A + CST <= arg1  ->  A + CST-1 < arg1.  */
-      else if (code == LE_EXPR
-	       && code0 == ((sgn0 == -1) ? MINUS_EXPR : PLUS_EXPR))
-	code = LT_EXPR;
-      /* A - CST >= arg1  ->  A - CST-1 > arg1.  */
-      else if (code == GE_EXPR
-	       && code0 == ((sgn0 == -1) ? PLUS_EXPR : MINUS_EXPR))
-	code = GT_EXPR;
-      else
-	return NULL_TREE;
-      *strict_overflow_p = true;
-    }
+    return NULL_TREE;
+  *strict_overflow_p = true;
 
   /* Now build the constant reduced in magnitude.  But not if that
      would produce one outside of its types range.  */
@@ -8172,21 +8145,14 @@ maybe_canonicalize_comparison_1 (location_t loc, enum tree_code code, tree type,
 	  || (sgn0 == -1
 	      && TYPE_MAX_VALUE (TREE_TYPE (cst0))
 	      && tree_int_cst_equal (cst0, TYPE_MAX_VALUE (TREE_TYPE (cst0))))))
-    /* We cannot swap the comparison here as that would cause us to
-       endlessly recurse.  */
     return NULL_TREE;
 
   t = int_const_binop (sgn0 == -1 ? PLUS_EXPR : MINUS_EXPR,
 		       cst0, build_int_cst (TREE_TYPE (cst0), 1));
-  if (code0 != INTEGER_CST)
-    t = fold_build2_loc (loc, code0, TREE_TYPE (arg0), TREE_OPERAND (arg0, 0), t);
+  t = fold_build2_loc (loc, code0, TREE_TYPE (arg0), TREE_OPERAND (arg0, 0), t);
   t = fold_convert (TREE_TYPE (arg1), t);
 
-  /* If swapping might yield to a more canonical form, do so.  */
-  if (swap)
-    return fold_build2_loc (loc, swap_tree_comparison (code), type, arg1, t);
-  else
-    return fold_build2_loc (loc, code, type, t, arg1);
+  return fold_build2_loc (loc, code, type, t, arg1);
 }
 
 /* Canonicalize the comparison ARG0 CODE ARG1 with type TYPE with undefined
@@ -8467,33 +8433,9 @@ fold_comparison (location_t loc, enum tree_code code, tree type,
 	    }
 	}
 
-      /* A local variable can never be pointed to by
-         the default SSA name of an incoming parameter.  */
-      if ((TREE_CODE (arg0) == ADDR_EXPR
-           && indirect_base0
-           && TREE_CODE (base0) == VAR_DECL
-           && auto_var_in_fn_p (base0, current_function_decl)
-           && !indirect_base1
-           && TREE_CODE (base1) == SSA_NAME
-           && SSA_NAME_IS_DEFAULT_DEF (base1)
-	   && TREE_CODE (SSA_NAME_VAR (base1)) == PARM_DECL)
-          || (TREE_CODE (arg1) == ADDR_EXPR
-              && indirect_base1
-              && TREE_CODE (base1) == VAR_DECL
-              && auto_var_in_fn_p (base1, current_function_decl)
-              && !indirect_base0
-              && TREE_CODE (base0) == SSA_NAME
-              && SSA_NAME_IS_DEFAULT_DEF (base0)
-	      && TREE_CODE (SSA_NAME_VAR (base0)) == PARM_DECL))
-        {
-          if (code == NE_EXPR)
-            return constant_boolean_node (1, type);
-          else if (code == EQ_EXPR)
-            return constant_boolean_node (0, type);
-        }
       /* If we have equivalent bases we might be able to simplify.  */
-      else if (indirect_base0 == indirect_base1
-               && operand_equal_p (base0, base1, 0))
+      if (indirect_base0 == indirect_base1
+	  && operand_equal_p (base0, base1, 0))
 	{
 	  /* We can fold this expression to a constant if the non-constant
 	     offset parts are equal.  */
@@ -8568,30 +8510,6 @@ fold_comparison (location_t loc, enum tree_code code, tree type,
 
 	      return fold_build2_loc (loc, code, type, offset0, offset1);
 	    }
-	}
-      /* For non-equal bases we can simplify if they are addresses
-	 declarations with different addresses.  */
-      else if (indirect_base0 && indirect_base1
-	       /* We know that !operand_equal_p (base0, base1, 0)
-		  because the if condition was false.  But make
-		  sure two decls are not the same.  */
-	       && base0 != base1
-	       && TREE_CODE (arg0) == ADDR_EXPR
-	       && TREE_CODE (arg1) == ADDR_EXPR
-	       && DECL_P (base0)
-	       && DECL_P (base1)
-	       /* Watch for aliases.  */
-	       && (!decl_in_symtab_p (base0)
-		   || !decl_in_symtab_p (base1)
-		   || !symtab_node::get_create (base0)->equal_address_to
-			 (symtab_node::get_create (base1))))
-	{
-	  if (code == EQ_EXPR)
-	    return omit_two_operands_loc (loc, type, boolean_false_node,
-				      arg0, arg1);
-	  else if (code == NE_EXPR)
-	    return omit_two_operands_loc (loc, type, boolean_true_node,
-				      arg0, arg1);
 	}
       /* For equal offsets we can simplify to a comparison of the
 	 base addresses.  */
@@ -9503,7 +9421,7 @@ fold_binary_loc (location_t loc,
 	    /* Only create rotates in complete modes.  Other cases are not
 	       expanded properly.  */
 	    && (element_precision (rtype)
-		== element_precision (TYPE_MODE (rtype))))
+		== GET_MODE_PRECISION (GET_MODE_INNER (TYPE_MODE (rtype)))))
 	  {
 	    tree tree01, tree11;
 	    enum tree_code code01, code11;
@@ -10804,7 +10722,9 @@ fold_binary_loc (location_t loc,
 	 after the last round to changes to the DIV code in expmed.c.  */
       if ((code == CEIL_DIV_EXPR || code == FLOOR_DIV_EXPR)
 	  && multiple_of_p (type, arg0, arg1))
-	return fold_build2_loc (loc, EXACT_DIV_EXPR, type, arg0, arg1);
+	return fold_build2_loc (loc, EXACT_DIV_EXPR, type,
+				fold_convert (type, arg0),
+				fold_convert (type, arg1));
 
       strict_overflow_p = false;
       if (TREE_CODE (arg1) == INTEGER_CST
@@ -11081,40 +11001,6 @@ fold_binary_loc (location_t loc,
       if (TREE_CODE (arg0) == TRUTH_NOT_EXPR && integer_zerop (arg1)
 	  && code == NE_EXPR)
         return non_lvalue_loc (loc, fold_convert_loc (loc, type, arg0));
-
-      /* If this is an equality comparison of the address of two non-weak,
-	 unaliased symbols neither of which are extern (since we do not
-	 have access to attributes for externs), then we know the result.  */
-      if (TREE_CODE (arg0) == ADDR_EXPR
-	  && DECL_P (TREE_OPERAND (arg0, 0))
-	  && TREE_CODE (arg1) == ADDR_EXPR
-	  && DECL_P (TREE_OPERAND (arg1, 0)))
-	{
-	  int equal;
-
-	  if (decl_in_symtab_p (TREE_OPERAND (arg0, 0))
-	      && decl_in_symtab_p (TREE_OPERAND (arg1, 0)))
-	    equal = symtab_node::get_create (TREE_OPERAND (arg0, 0))
-		    ->equal_address_to (symtab_node::get_create
-					  (TREE_OPERAND (arg1, 0)));
-	  else
-	    equal = TREE_OPERAND (arg0, 0) == TREE_OPERAND (arg1, 0);
-	  if (equal != 2)
-	    return constant_boolean_node (equal
-				          ? code == EQ_EXPR : code != EQ_EXPR,
-				          type);
-	}
-
-      /* Similarly for a BIT_XOR_EXPR;  X ^ C1 == C2 is X == (C1 ^ C2).  */
-      if (TREE_CODE (arg0) == BIT_XOR_EXPR
-	  && TREE_CODE (arg1) == INTEGER_CST
-	  && TREE_CODE (TREE_OPERAND (arg0, 1)) == INTEGER_CST)
-	return fold_build2_loc (loc, code, type, TREE_OPERAND (arg0, 0),
-			    fold_build2_loc (loc, BIT_XOR_EXPR, TREE_TYPE (arg0),
-					 fold_convert_loc (loc,
-							   TREE_TYPE (arg0),
-							   arg1),
-					 TREE_OPERAND (arg0, 1)));
 
       /* Transform comparisons of the form X +- Y CMP X to Y CMP 0.  */
       if ((TREE_CODE (arg0) == PLUS_EXPR
@@ -11698,123 +11584,6 @@ fold_binary_loc (location_t loc,
 	    }
 	}
 
-      /* Comparisons with the highest or lowest possible integer of
-	 the specified precision will have known values.  */
-      {
-	tree arg1_type = TREE_TYPE (arg1);
-	unsigned int prec = TYPE_PRECISION (arg1_type);
-
-	if (TREE_CODE (arg1) == INTEGER_CST
-	    && (INTEGRAL_TYPE_P (arg1_type) || POINTER_TYPE_P (arg1_type)))
-	  {
-	    wide_int max = wi::max_value (arg1_type);
-	    wide_int signed_max = wi::max_value (prec, SIGNED);
-	    wide_int min = wi::min_value (arg1_type);
-
-	    if (wi::eq_p (arg1, max))
-	      switch (code)
-		{
-		case GT_EXPR:
-		  return omit_one_operand_loc (loc, type, integer_zero_node, arg0);
-
-		case GE_EXPR:
-		  return fold_build2_loc (loc, EQ_EXPR, type, op0, op1);
-
-		case LE_EXPR:
-		  return omit_one_operand_loc (loc, type, integer_one_node, arg0);
-
-		case LT_EXPR:
-		  return fold_build2_loc (loc, NE_EXPR, type, op0, op1);
-
-		/* The GE_EXPR and LT_EXPR cases above are not normally
-		   reached because of previous transformations.  */
-
-		default:
-		  break;
-		}
-	    else if (wi::eq_p (arg1, max - 1))
-	      switch (code)
-		{
-		case GT_EXPR:
-		  arg1 = const_binop (PLUS_EXPR, arg1,
-				      build_int_cst (TREE_TYPE (arg1), 1));
-		  return fold_build2_loc (loc, EQ_EXPR, type,
-				      fold_convert_loc (loc,
-							TREE_TYPE (arg1), arg0),
-				      arg1);
-		case LE_EXPR:
-		  arg1 = const_binop (PLUS_EXPR, arg1,
-				      build_int_cst (TREE_TYPE (arg1), 1));
-		  return fold_build2_loc (loc, NE_EXPR, type,
-				      fold_convert_loc (loc, TREE_TYPE (arg1),
-							arg0),
-				      arg1);
-		default:
-		  break;
-		}
-	    else if (wi::eq_p (arg1, min))
-	      switch (code)
-		{
-		case LT_EXPR:
-		  return omit_one_operand_loc (loc, type, integer_zero_node, arg0);
-
-		case LE_EXPR:
-		  return fold_build2_loc (loc, EQ_EXPR, type, op0, op1);
-
-		case GE_EXPR:
-		  return omit_one_operand_loc (loc, type, integer_one_node, arg0);
-
-		case GT_EXPR:
-		  return fold_build2_loc (loc, NE_EXPR, type, op0, op1);
-
-		default:
-		  break;
-		}
-	    else if (wi::eq_p (arg1, min + 1))
-	      switch (code)
-		{
-		case GE_EXPR:
-		  arg1 = const_binop (MINUS_EXPR, arg1,
-				      build_int_cst (TREE_TYPE (arg1), 1));
-		  return fold_build2_loc (loc, NE_EXPR, type,
-				      fold_convert_loc (loc,
-							TREE_TYPE (arg1), arg0),
-				      arg1);
-		case LT_EXPR:
-		  arg1 = const_binop (MINUS_EXPR, arg1,
-				      build_int_cst (TREE_TYPE (arg1), 1));
-		  return fold_build2_loc (loc, EQ_EXPR, type,
-				      fold_convert_loc (loc, TREE_TYPE (arg1),
-							arg0),
-				      arg1);
-		default:
-		  break;
-		}
-
-	    else if (wi::eq_p (arg1, signed_max)
-		     && TYPE_UNSIGNED (arg1_type)
-		     /* We will flip the signedness of the comparison operator
-			associated with the mode of arg1, so the sign bit is
-			specified by this mode.  Check that arg1 is the signed
-			max associated with this sign bit.  */
-		     && prec == GET_MODE_PRECISION (TYPE_MODE (arg1_type))
-		     /* signed_type does not work on pointer types.  */
-		     && INTEGRAL_TYPE_P (arg1_type))
-	      {
-		/* The following case also applies to X < signed_max+1
-		   and X >= signed_max+1 because previous transformations.  */
-		if (code == LE_EXPR || code == GT_EXPR)
-		  {
-		    tree st = signed_type_for (arg1_type);
-		    return fold_build2_loc (loc,
-					code == LE_EXPR ? GE_EXPR : LT_EXPR,
-					type, fold_convert_loc (loc, st, arg0),
-					build_int_cst (st, 0));
-		  }
-	      }
-	  }
-      }
-
       /* If we are comparing an ABS_EXPR with a constant, we can
 	 convert all the cases into explicit comparisons, but they may
 	 well not be faster than doing the ABS and one comparison.
@@ -11913,45 +11682,6 @@ fold_binary_loc (location_t loc,
     case UNGE_EXPR:
     case UNEQ_EXPR:
     case LTGT_EXPR:
-      if (TREE_CODE (arg0) == REAL_CST && TREE_CODE (arg1) == REAL_CST)
-	{
-	  t1 = fold_relational_const (code, type, arg0, arg1);
-	  if (t1 != NULL_TREE)
-	    return t1;
-	}
-
-      /* If the first operand is NaN, the result is constant.  */
-      if (TREE_CODE (arg0) == REAL_CST
-	  && REAL_VALUE_ISNAN (TREE_REAL_CST (arg0))
-	  && (code != LTGT_EXPR || ! flag_trapping_math))
-	{
-	  t1 = (code == ORDERED_EXPR || code == LTGT_EXPR)
-	       ? integer_zero_node
-	       : integer_one_node;
-	  return omit_one_operand_loc (loc, type, t1, arg1);
-	}
-
-      /* If the second operand is NaN, the result is constant.  */
-      if (TREE_CODE (arg1) == REAL_CST
-	  && REAL_VALUE_ISNAN (TREE_REAL_CST (arg1))
-	  && (code != LTGT_EXPR || ! flag_trapping_math))
-	{
-	  t1 = (code == ORDERED_EXPR || code == LTGT_EXPR)
-	       ? integer_zero_node
-	       : integer_one_node;
-	  return omit_one_operand_loc (loc, type, t1, arg0);
-	}
-
-      /* Simplify unordered comparison of something with itself.  */
-      if ((code == UNLE_EXPR || code == UNGE_EXPR || code == UNEQ_EXPR)
-	  && operand_equal_p (arg0, arg1, 0))
-	return constant_boolean_node (1, type);
-
-      if (code == LTGT_EXPR
-	  && !flag_trapping_math
-	  && operand_equal_p (arg0, arg1, 0))
-	return constant_boolean_node (0, type);
-
       /* Fold (double)float1 CMP (double)float2 into float1 CMP float2.  */
       {
 	tree targ0 = strip_float_extensions (arg0);

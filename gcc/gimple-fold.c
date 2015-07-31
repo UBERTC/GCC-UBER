@@ -413,60 +413,6 @@ fold_gimple_assign (gimple_stmt_iterator *si)
       break;
 
     case GIMPLE_BINARY_RHS:
-      /* Try to canonicalize for boolean-typed X the comparisons
-	 X == 0, X == 1, X != 0, and X != 1.  */
-      if (gimple_assign_rhs_code (stmt) == EQ_EXPR
-	  || gimple_assign_rhs_code (stmt) == NE_EXPR)
-        {
-	  tree lhs = gimple_assign_lhs (stmt);
-	  tree op1 = gimple_assign_rhs1 (stmt);
-	  tree op2 = gimple_assign_rhs2 (stmt);
-	  tree type = TREE_TYPE (op1);
-
-	  /* Check whether the comparison operands are of the same boolean
-	     type as the result type is.
-	     Check that second operand is an integer-constant with value
-	     one or zero.  */
-	  if (TREE_CODE (op2) == INTEGER_CST
-	      && (integer_zerop (op2) || integer_onep (op2))
-	      && useless_type_conversion_p (TREE_TYPE (lhs), type))
-	    {
-	      enum tree_code cmp_code = gimple_assign_rhs_code (stmt);
-	      bool is_logical_not = false;
-
-	      /* X == 0 and X != 1 is a logical-not.of X
-	         X == 1 and X != 0 is X  */
-	      if ((cmp_code == EQ_EXPR && integer_zerop (op2))
-	          || (cmp_code == NE_EXPR && integer_onep (op2)))
-	        is_logical_not = true;
-
-	      if (is_logical_not == false)
-	        result = op1;
-	      /* Only for one-bit precision typed X the transformation
-	         !X -> ~X is valied.  */
-	      else if (TYPE_PRECISION (type) == 1)
-		result = build1_loc (gimple_location (stmt), BIT_NOT_EXPR,
-				     type, op1);
-	      /* Otherwise we use !X -> X ^ 1.  */
-	      else
-	        result = build2_loc (gimple_location (stmt), BIT_XOR_EXPR,
-				     type, op1, build_int_cst (type, 1));
-	     
-	    }
-	}
-
-      if (!result)
-        result = fold_binary_loc (loc, subcode,
-				  TREE_TYPE (gimple_assign_lhs (stmt)),
-				  gimple_assign_rhs1 (stmt),
-				  gimple_assign_rhs2 (stmt));
-
-      if (result)
-        {
-          STRIP_USELESS_TYPE_CONVERSION (result);
-          if (valid_gimple_rhs_p (result))
-	    return result;
-        }
       break;
 
     case GIMPLE_TERNARY_RHS:
@@ -527,33 +473,6 @@ fold_gimple_assign (gimple_stmt_iterator *si)
     }
 
   return NULL_TREE;
-}
-
-/* Attempt to fold a conditional statement. Return true if any changes were
-   made. We only attempt to fold the condition expression, and do not perform
-   any transformation that would require alteration of the cfg.  It is
-   assumed that the operands have been previously folded.  */
-
-static bool
-fold_gimple_cond (gcond *stmt)
-{
-  tree result = fold_binary_loc (gimple_location (stmt),
-			     gimple_cond_code (stmt),
-                             boolean_type_node,
-                             gimple_cond_lhs (stmt),
-                             gimple_cond_rhs (stmt));
-
-  if (result)
-    {
-      STRIP_USELESS_TYPE_CONVERSION (result);
-      if (is_gimple_condexpr (result) && valid_gimple_rhs_p (result))
-        {
-          gimple_cond_set_condition_from_tree (stmt, result);
-          return true;
-        }
-    }
-
-  return false;
 }
 
 
@@ -3307,6 +3226,19 @@ gimple_fold_call (gimple_stmt_iterator *gsi, bool inplace)
 }
 
 
+/* Return true whether NAME has a use on STMT.  */
+
+static bool
+has_use_on_stmt (tree name, gimple stmt)
+{
+  imm_use_iterator iter;
+  use_operand_p use_p;
+  FOR_EACH_IMM_USE_FAST (use_p, iter, name)
+    if (USE_STMT (use_p) == stmt)
+      return true;
+  return false;
+}
+
 /* Worker for fold_stmt_1 dispatch to pattern based folding with
    gimple_simplify.
 
@@ -3322,15 +3254,20 @@ replace_stmt_with_simplification (gimple_stmt_iterator *gsi,
   gimple stmt = gsi_stmt (*gsi);
 
   /* Play safe and do not allow abnormals to be mentioned in
-     newly created statements.  See also maybe_push_res_to_seq.  */
+     newly created statements.  See also maybe_push_res_to_seq.
+     As an exception allow such uses if there was a use of the
+     same SSA name on the old stmt.  */
   if ((TREE_CODE (ops[0]) == SSA_NAME
-       && SSA_NAME_OCCURS_IN_ABNORMAL_PHI (ops[0]))
+       && SSA_NAME_OCCURS_IN_ABNORMAL_PHI (ops[0])
+       && !has_use_on_stmt (ops[0], stmt))
       || (ops[1]
 	  && TREE_CODE (ops[1]) == SSA_NAME
-	  && SSA_NAME_OCCURS_IN_ABNORMAL_PHI (ops[1]))
+	  && SSA_NAME_OCCURS_IN_ABNORMAL_PHI (ops[1])
+	  && !has_use_on_stmt (ops[1], stmt))
       || (ops[2]
 	  && TREE_CODE (ops[2]) == SSA_NAME
-	  && SSA_NAME_OCCURS_IN_ABNORMAL_PHI (ops[2])))
+	  && SSA_NAME_OCCURS_IN_ABNORMAL_PHI (ops[2])
+	  && !has_use_on_stmt (ops[2], stmt)))
     return false;
 
   if (gcond *cond_stmt = dyn_cast <gcond *> (stmt))
@@ -3397,6 +3334,19 @@ replace_stmt_with_simplification (gimple_stmt_iterator *gsi,
 	  gsi_insert_seq_before (gsi, *seq, GSI_SAME_STMT);
 	  return true;
 	}
+    }
+  else if (rcode.is_fn_code ()
+	   && gimple_call_builtin_p (stmt, rcode))
+    {
+      unsigned i;
+      for (i = 0; i < gimple_call_num_args (stmt); ++i)
+	{
+	  gcc_assert (ops[i] != NULL_TREE);
+	  gimple_call_set_arg (stmt, i, ops[i]);
+	}
+      if (i < 3)
+	gcc_assert (ops[i] == NULL_TREE);
+      return true;
     }
   else if (!inplace)
     {
@@ -3518,7 +3468,8 @@ fold_stmt_1 (gimple_stmt_iterator *gsi, bool inplace, tree (*valueize) (tree))
      after propagation.
      ???  This shouldn't be done in generic folding but in the
      propagation helpers which also know whether an address was
-     propagated.  */
+     propagated.
+     Also canonicalize operand order.  */
   switch (gimple_code (stmt))
     {
     case GIMPLE_ASSIGN:
@@ -3533,6 +3484,27 @@ fold_stmt_1 (gimple_stmt_iterator *gsi, bool inplace, tree (*valueize) (tree))
 	  if (REFERENCE_CLASS_P (*lhs)
 	      && maybe_canonicalize_mem_ref_addr (lhs))
 	    changed = true;
+	}
+      else
+	{
+	  /* Canonicalize operand order.  */
+	  enum tree_code code = gimple_assign_rhs_code (stmt);
+	  if (TREE_CODE_CLASS (code) == tcc_comparison
+	      || commutative_tree_code (code)
+	      || commutative_ternary_tree_code (code))
+	    {
+	      tree rhs1 = gimple_assign_rhs1 (stmt);
+	      tree rhs2 = gimple_assign_rhs2 (stmt);
+	      if (tree_swap_operands_p (rhs1, rhs2, false))
+		{
+		  gimple_assign_set_rhs1 (stmt, rhs2);
+		  gimple_assign_set_rhs2 (stmt, rhs1);
+		  if (TREE_CODE_CLASS (code) == tcc_comparison)
+		    gimple_assign_set_rhs_code (stmt,
+						swap_tree_comparison (code));
+		  changed = true;
+		}
+	    }
 	}
       break;
     case GIMPLE_CALL:
@@ -3584,6 +3556,21 @@ fold_stmt_1 (gimple_stmt_iterator *gsi, bool inplace, tree (*valueize) (tree))
 	    changed = true;
 	}
       break;
+    case GIMPLE_COND:
+      {
+	/* Canonicalize operand order.  */
+	tree lhs = gimple_cond_lhs (stmt);
+	tree rhs = gimple_cond_rhs (stmt);
+	if (tree_swap_operands_p (lhs, rhs, false))
+	  {
+	    gcond *gc = as_a <gcond *> (stmt);
+	    gimple_cond_set_lhs (gc, rhs);
+	    gimple_cond_set_rhs (gc, lhs);
+	    gimple_cond_set_code (gc,
+				  swap_tree_comparison (gimple_cond_code (gc)));
+	    changed = true;
+	  }
+      }
     default:;
     }
 
@@ -3612,23 +3599,51 @@ fold_stmt_1 (gimple_stmt_iterator *gsi, bool inplace, tree (*valueize) (tree))
     {
     case GIMPLE_ASSIGN:
       {
-	unsigned old_num_ops = gimple_num_ops (stmt);
-	enum tree_code subcode = gimple_assign_rhs_code (stmt);
-	tree lhs = gimple_assign_lhs (stmt);
-	tree new_rhs;
-	/* First canonicalize operand order.  This avoids building new
-	   trees if this is the only thing fold would later do.  */
-	if ((commutative_tree_code (subcode)
-	     || commutative_ternary_tree_code (subcode))
-	    && tree_swap_operands_p (gimple_assign_rhs1 (stmt),
-				     gimple_assign_rhs2 (stmt), false))
+	/* Try to canonicalize for boolean-typed X the comparisons
+	   X == 0, X == 1, X != 0, and X != 1.  */
+	if (gimple_assign_rhs_code (stmt) == EQ_EXPR
+	    || gimple_assign_rhs_code (stmt) == NE_EXPR)
 	  {
-	    tree tem = gimple_assign_rhs1 (stmt);
-	    gimple_assign_set_rhs1 (stmt, gimple_assign_rhs2 (stmt));
-	    gimple_assign_set_rhs2 (stmt, tem);
-	    changed = true;
+	    tree lhs = gimple_assign_lhs (stmt);
+	    tree op1 = gimple_assign_rhs1 (stmt);
+	    tree op2 = gimple_assign_rhs2 (stmt);
+	    tree type = TREE_TYPE (op1);
+
+	    /* Check whether the comparison operands are of the same boolean
+	       type as the result type is.
+	       Check that second operand is an integer-constant with value
+	       one or zero.  */
+	    if (TREE_CODE (op2) == INTEGER_CST
+		&& (integer_zerop (op2) || integer_onep (op2))
+		&& useless_type_conversion_p (TREE_TYPE (lhs), type))
+	      {
+		enum tree_code cmp_code = gimple_assign_rhs_code (stmt);
+		bool is_logical_not = false;
+
+		/* X == 0 and X != 1 is a logical-not.of X
+		   X == 1 and X != 0 is X  */
+		if ((cmp_code == EQ_EXPR && integer_zerop (op2))
+		    || (cmp_code == NE_EXPR && integer_onep (op2)))
+		  is_logical_not = true;
+
+		if (is_logical_not == false)
+		  gimple_assign_set_rhs_with_ops (gsi, TREE_CODE (op1), op1);
+		/* Only for one-bit precision typed X the transformation
+		   !X -> ~X is valied.  */
+		else if (TYPE_PRECISION (type) == 1)
+		  gimple_assign_set_rhs_with_ops (gsi, BIT_NOT_EXPR, op1);
+		/* Otherwise we use !X -> X ^ 1.  */
+		else
+		  gimple_assign_set_rhs_with_ops (gsi, BIT_XOR_EXPR, op1,
+						  build_int_cst (type, 1));
+		changed = true;
+		break;
+	      }
 	  }
-	new_rhs = fold_gimple_assign (gsi);
+
+	unsigned old_num_ops = gimple_num_ops (stmt);
+	tree lhs = gimple_assign_lhs (stmt);
+	tree new_rhs = fold_gimple_assign (gsi);
 	if (new_rhs
 	    && !useless_type_conversion_p (TREE_TYPE (lhs),
 					   TREE_TYPE (new_rhs)))
@@ -3642,10 +3657,6 @@ fold_stmt_1 (gimple_stmt_iterator *gsi, bool inplace, tree (*valueize) (tree))
 	  }
 	break;
       }
-
-    case GIMPLE_COND:
-      changed |= fold_gimple_cond (as_a <gcond *> (stmt));
-      break;
 
     case GIMPLE_CALL:
       changed |= gimple_fold_call (gsi, inplace);

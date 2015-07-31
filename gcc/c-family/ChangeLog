@@ -1,3 +1,49 @@
+2015-07-30  Jason Merrill  <jason@redhat.com>
+
+	* c-pretty-print.c (unary_expression) [INDIRECT_REF]: Don't print
+	'*' for reference decay.
+
+2015-07-30  Marek Polacek  <polacek@redhat.com>
+
+	* c-common.c (warn_tautological_cmp): Bail for float types.
+
+2015-07-27  Marek Polacek  <polacek@redhat.com>
+
+	PR bootstrap/67030
+	* c-common.c (warn_tautological_cmp): Don't warn for macro expansion.
+
+2015-07-27  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/66555
+	PR c/54979
+	* c-common.c (find_array_ref_with_const_idx_r): New function.
+	(warn_tautological_cmp): New function.
+	* c-common.h (warn_tautological_cmp): Declare.
+	* c.opt (Wtautological-compare): New option.
+
+2015-07-23  Marek Polacek  <polacek@redhat.com>
+
+	* c-ubsan.c (ubsan_instrument_division): Use unshare_expr throughout.
+	(ubsan_instrument_shift): Likewise.
+
+2015-07-23  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/66908
+	* c-ubsan.c: Include gimplify.h.
+	(ubsan_instrument_division): Unshare OP0 and OP1.
+	(ubsan_instrument_shift): Likewise.
+
+2015-07-20  Marek Polacek  <polacek@redhat.com>
+	    Richard Sandiford  <richard.sandiford@arm.com>
+
+	PR c++/55095
+	* c-common.c (c_fully_fold_internal): Warn about left shift overflows.
+	Use EXPR_LOC_OR_LOC.
+	(maybe_warn_shift_overflow): New function.
+	* c-common.h (maybe_warn_shift_overflow): Declare.
+	* c-opts.c (c_common_post_options): Set warn_shift_overflow.
+	* c.opt (Wshift-overflow): New option.
+
 2015-07-16  Martin Liska  <mliska@suse.cz>
 
 	* c-format.c (static void check_format_info_main): Use

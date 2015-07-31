@@ -69,6 +69,8 @@
   p5600
   w32
   w64
+  m5100
+  i6400
 ])
 
 (define_c_enum "unspec" [
@@ -1085,7 +1087,9 @@
   (eq_attr "type" "ghost")
   "nothing")
 
+(include "i6400.md")
 (include "p5600.md")
+(include "m5100.md")
 (include "4k.md")
 (include "5k.md")
 (include "20kc.md")

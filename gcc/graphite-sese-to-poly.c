@@ -24,6 +24,7 @@ along with GCC; see the file COPYING3.  If not see
 /* Workaround for GMP 5.1.3 bug, see PR56019.  */
 #include <stddef.h>
 
+#include <isl/constraint.h>
 #include <isl/set.h>
 #include <isl/map.h>
 #include <isl/union_map.h>
@@ -2604,9 +2605,17 @@ is_reduction_operation_p (gimple stmt)
   gcc_assert (is_gimple_assign (stmt));
   code = gimple_assign_rhs_code (stmt);
 
-  return flag_associative_math
-    && commutative_tree_code (code)
-    && associative_tree_code (code);
+  if (!commutative_tree_code (code)
+      || !associative_tree_code (code))
+    return false;
+
+  tree type = TREE_TYPE (gimple_assign_lhs (stmt));
+
+  if (FLOAT_TYPE_P (type))
+    return flag_associative_math;
+
+  return (INTEGRAL_TYPE_P (type)
+	  && TYPE_OVERFLOW_WRAPS (type));
 }
 
 /* Returns true when PHI contains an argument ARG.  */
@@ -3147,8 +3156,7 @@ build_poly_scop (scop_p scop)
   if (!scop_ivs_can_be_represented (scop))
     return;
 
-  if (flag_associative_math)
-    rewrite_commutative_reductions_out_of_ssa (scop);
+  rewrite_commutative_reductions_out_of_ssa (scop);
 
   build_sese_loop_nests (region);
   /* Record all conditions in REGION.  */

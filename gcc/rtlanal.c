@@ -3571,10 +3571,7 @@ subreg_get_info (unsigned int xregno, machine_mode xmode,
       machine_mode xmode_unit;
 
       nregs_xmode = HARD_REGNO_NREGS_WITH_PADDING (xregno, xmode);
-      if (GET_MODE_INNER (xmode) == VOIDmode)
-	xmode_unit = xmode;
-      else
-	xmode_unit = GET_MODE_INNER (xmode);
+      xmode_unit = GET_MODE_INNER (xmode);
       gcc_assert (HARD_REGNO_NREGS_HAS_PADDING (xregno, xmode_unit));
       gcc_assert (nregs_xmode
 		  == (GET_MODE_NUNITS (xmode)
@@ -4278,7 +4275,7 @@ nonzero_bits1 (const_rtx x, machine_mode mode, const_rtx known_x,
   switch (code)
     {
     case REG:
-#if defined(POINTERS_EXTEND_UNSIGNED) && !defined(HAVE_ptr_extend)
+#if defined(POINTERS_EXTEND_UNSIGNED)
       /* If pointers extend unsigned and this is a pointer in Pmode, say that
 	 all the bits above ptr_mode are known to be zero.  */
       /* As we do not know which address space the pointer is referring to,
@@ -4286,7 +4283,8 @@ nonzero_bits1 (const_rtx x, machine_mode mode, const_rtx known_x,
 	 or address modes depending on the address space.  */
       if (target_default_pointer_address_modes_p ()
 	  && POINTERS_EXTEND_UNSIGNED && GET_MODE (x) == Pmode
-	  && REG_POINTER (x))
+	  && REG_POINTER (x)
+	  && !targetm.have_ptr_extend ())
 	nonzero &= GET_MODE_MASK (ptr_mode);
 #endif
 
@@ -4785,7 +4783,7 @@ num_sign_bit_copies1 (const_rtx x, machine_mode mode, const_rtx known_x,
     {
     case REG:
 
-#if defined(POINTERS_EXTEND_UNSIGNED) && !defined(HAVE_ptr_extend)
+#if defined(POINTERS_EXTEND_UNSIGNED)
       /* If pointers extend signed and this is a pointer in Pmode, say that
 	 all the bits above ptr_mode are known to be sign bit copies.  */
       /* As we do not know which address space the pointer is referring to,
@@ -4793,7 +4791,8 @@ num_sign_bit_copies1 (const_rtx x, machine_mode mode, const_rtx known_x,
 	 or address modes depending on the address space.  */
       if (target_default_pointer_address_modes_p ()
 	  && ! POINTERS_EXTEND_UNSIGNED && GET_MODE (x) == Pmode
-	  && mode == Pmode && REG_POINTER (x))
+	  && mode == Pmode && REG_POINTER (x)
+	  && !targetm.have_ptr_extend ())
 	return GET_MODE_PRECISION (Pmode) - GET_MODE_PRECISION (ptr_mode) + 1;
 #endif
 

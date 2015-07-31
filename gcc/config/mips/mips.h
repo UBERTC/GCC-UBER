@@ -277,6 +277,7 @@ struct mips_cpu_info {
 #define TUNE_SB1                    (mips_tune == PROCESSOR_SB1		\
 				     || mips_tune == PROCESSOR_SB1A)
 #define TUNE_P5600                  (mips_tune == PROCESSOR_P5600)
+#define TUNE_I6400                  (mips_tune == PROCESSOR_I6400)
 
 /* Whether vector modes and intrinsics for ST Microelectronics
    Loongson-2E/2F processors should be enabled.  In o32 pairs of
@@ -722,16 +723,17 @@ struct mips_cpu_info {
        |march=r10000|march=r12000|march=r14000|march=r16000:-mips4} \
      %{march=mips32|march=4kc|march=4km|march=4kp|march=4ksc:-mips32} \
      %{march=mips32r2|march=m4k|march=4ke*|march=4ksd|march=24k* \
-       |march=34k*|march=74k*|march=m14k*|march=1004k*: -mips32r2} \
+       |march=34k*|march=74k*|march=m14k*|march=1004k* \
+       |march=interaptiv: -mips32r2} \
      %{march=mips32r3: -mips32r3} \
-     %{march=mips32r5|march=p5600: -mips32r5} \
+     %{march=mips32r5|march=p5600|march=m5100|march=m5101: -mips32r5} \
      %{march=mips32r6: -mips32r6} \
      %{march=mips64|march=5k*|march=20k*|march=sb1*|march=sr71000 \
        |march=xlr: -mips64} \
      %{march=mips64r2|march=loongson3a|march=octeon|march=xlp: -mips64r2} \
      %{march=mips64r3: -mips64r3} \
      %{march=mips64r5: -mips64r5} \
-     %{march=mips64r6: -mips64r6}}"
+     %{march=mips64r6|march=i6400: -mips64r6}}"
 
 /* A spec that injects the default multilib ISA if no architecture is
    specified.  */
@@ -748,7 +750,7 @@ struct mips_cpu_info {
   "%{mhard-float|msoft-float|mno-float|march=mips*:; \
      march=vr41*|march=m4k|march=4k*|march=24kc|march=24kec \
      |march=34kc|march=34kn|march=74kc|march=1004kc|march=5kc \
-     |march=m14k*|march=octeon|march=xlr: -msoft-float;		  \
+     |march=m14k*|march=m5101|march=octeon|march=xlr: -msoft-float; \
      march=*: -mhard-float}"
 
 /* A spec condition that matches 32-bit options.  It only works if
@@ -771,7 +773,8 @@ struct mips_cpu_info {
 
 /* Infer a -mnan=2008 setting from a -mips argument.  */
 #define MIPS_ISA_NAN2008_SPEC \
-  "%{mnan*:;mips32r6|mips64r6:-mnan=2008}"
+  "%{mnan*:;mips32r6|mips64r6:-mnan=2008;march=m51*: \
+					 %{!msoft-float:-mnan=2008}}"
 
 #if (MIPS_ABI_DEFAULT == ABI_O64 \
      || MIPS_ABI_DEFAULT == ABI_N32 \
@@ -825,7 +828,8 @@ struct mips_cpu_info {
 #define BASE_DRIVER_SELF_SPECS \
   MIPS_ISA_NAN2008_SPEC,       \
   "%{!mno-dsp: \
-     %{march=24ke*|march=34kc*|march=34kf*|march=34kx*|march=1004k*: -mdsp} \
+     %{march=24ke*|march=34kc*|march=34kf*|march=34kx*|march=1004k* \
+       |march=interaptiv: -mdsp} \
      %{march=74k*|march=m14ke*: %{!mno-dspr2: -mdspr2 -mdsp}}}"
 
 #define DRIVER_SELF_SPECS \

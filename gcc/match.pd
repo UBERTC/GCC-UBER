@@ -26,10 +26,12 @@ along with GCC; see the file COPYING3.  If not see
 /* Generic tree predicates we inherit.  */
 (define_predicates
    integer_onep integer_zerop integer_all_onesp integer_minus_onep
-   integer_each_onep integer_truep
+   integer_each_onep integer_truep integer_nonzerop
    real_zerop real_onep real_minus_onep
    CONSTANT_CLASS_P
-   tree_expr_nonnegative_p)
+   tree_expr_nonnegative_p
+   integer_pow2p
+   HONOR_NANS)
 
 /* Operator lists.  */
 (define_operator_list tcc_comparison
@@ -280,6 +282,20 @@ along with GCC; see the file COPYING3.  If not see
 	&& integer_pow2p (@2) && tree_int_cst_sgn (@2) > 0)
    (bit_and @0 (convert (minus @1 { build_int_cst (TREE_TYPE (@1), 1); }))))))
 
+/* Simplify (unsigned t * 2)/2 -> unsigned t & 0x7FFFFFFF.  */
+(simplify
+ (trunc_div (mult @0 integer_pow2p@1) @1)
+ (if (TYPE_UNSIGNED (TREE_TYPE (@0)))
+  (bit_and @0 { wide_int_to_tree
+		(type, wi::mask (TYPE_PRECISION (type) - wi::exact_log2 (@1),
+				 false, TYPE_PRECISION (type))); })))
+
+/* Simplify (unsigned t / 2) * 2 -> unsigned t & ~1.  */
+(simplify
+ (mult (trunc_div @0 integer_pow2p@1) @1)
+ (if (TYPE_UNSIGNED (TREE_TYPE (@0)))
+  (bit_and @0 (negate @1))))
+
 /* X % Y is smaller than Y.  */
 (for cmp (lt ge)
  (simplify
@@ -510,8 +526,8 @@ along with GCC; see the file COPYING3.  If not see
 /* A - B -> A + (-B) if B is easily negatable.  */
 (simplify
  (minus @0 negate_expr_p@1)
- (plus @0 (negate @1)))
-
+ (if (!FIXED_POINT_TYPE_P (type))
+ (plus @0 (negate @1))))
 
 /* Try to fold (type) X op CST -> (type) (X op ((type-x) CST))
    when profitable.
@@ -1052,7 +1068,7 @@ along with GCC; see the file COPYING3.  If not see
    (X & C2) >> C1 into (X >> C1) & (C2 >> C1).  */
 (for shift (lshift rshift)
  (simplify
-  (shift (convert? (bit_and @0 INTEGER_CST@2)) INTEGER_CST@1)
+  (shift (convert?:s (bit_and:s @0 INTEGER_CST@2)) INTEGER_CST@1)
   (if (tree_nop_conversion_p (type, TREE_TYPE (@0)))
    (with { tree mask = int_const_binop (shift, fold_convert (type, @2), @1); }
     (bit_and (shift (convert @0) @1) { mask; })))))
@@ -1356,6 +1372,23 @@ along with GCC; see the file COPYING3.  If not see
 
 /* Simplifications of comparisons.  */
 
+/* See if we can reduce the magnitude of a constant involved in a
+   comparison by changing the comparison code.  This is a canonicalization
+   formerly done by maybe_canonicalize_comparison_1.  */
+(for cmp  (le gt)
+     acmp (lt ge)
+ (simplify
+  (cmp @0 INTEGER_CST@1)
+  (if (tree_int_cst_sgn (@1) == -1)
+   (acmp @0 { wide_int_to_tree (TREE_TYPE (@1), wi::add (@1, 1)); }))))
+(for cmp  (ge lt)
+     acmp (gt le)
+ (simplify
+  (cmp @0 INTEGER_CST@1)
+  (if (tree_int_cst_sgn (@1) == 1)
+   (acmp @0 { wide_int_to_tree (TREE_TYPE (@1), wi::sub (@1, 1)); }))))
+
+
 /* We can simplify a logical negation of a comparison to the
    inverted comparison.  As we cannot compute an expression
    operator using invert_tree_comparison we have to simulate
@@ -1438,6 +1471,14 @@ along with GCC; see the file COPYING3.  If not see
        || ! FLOAT_TYPE_P (TREE_TYPE (@0))
        || ! HONOR_NANS (TYPE_MODE (TREE_TYPE (@0))))
    { constant_boolean_node (false, type); })))
+(for cmp (unle unge uneq)
+ (simplify
+  (cmp @0 @0)
+  { constant_boolean_node (true, type); }))
+(simplify
+ (ltgt @0 @0)
+ (if (!flag_trapping_math)
+  { constant_boolean_node (false, type); }))
 
 /* Fold ~X op ~Y as Y op X.  */
 (for cmp (simple_comparison)
@@ -1679,7 +1720,8 @@ along with GCC; see the file COPYING3.  If not see
 	  type on targets that require function pointer canonicalization.  */
        && !(targetm.have_canonicalize_funcptr_for_compare ()
 	    && TREE_CODE (TREE_TYPE (@00)) == POINTER_TYPE
-	    && TREE_CODE (TREE_TYPE (TREE_TYPE (@00))) == FUNCTION_TYPE))
+	    && TREE_CODE (TREE_TYPE (TREE_TYPE (@00))) == FUNCTION_TYPE)
+       && single_use (@0))
    (if (TYPE_PRECISION (TREE_TYPE (@00)) == TYPE_PRECISION (TREE_TYPE (@0))
 	&& (TREE_CODE (@10) == INTEGER_CST
 	    || (@1 != @10 && types_match (TREE_TYPE (@10), TREE_TYPE (@00))))
@@ -1727,6 +1769,21 @@ along with GCC; see the file COPYING3.  If not see
 	   (if (cmp == GT_EXPR || cmp == GE_EXPR)
 	    { constant_boolean_node (above ? false : true, type); }))))))))))))
 
+(for cmp (eq ne)
+ /* A local variable can never be pointed to by
+    the default SSA name of an incoming parameter.
+    SSA names are canonicalized to 2nd place.  */
+ (simplify
+  (cmp addr@0 SSA_NAME@1)
+  (if (SSA_NAME_IS_DEFAULT_DEF (@1)
+       && TREE_CODE (SSA_NAME_VAR (@1)) == PARM_DECL)
+   (with { tree base = get_base_address (TREE_OPERAND (@0, 0)); }
+    (if (TREE_CODE (base) == VAR_DECL
+         && auto_var_in_fn_p (base, current_function_decl))
+     (if (cmp == NE_EXPR)
+      { constant_boolean_node (true, type); }
+      { constant_boolean_node (false, type); }))))))
+
 /* Equality compare simplifications from fold_binary  */
 (for cmp (eq ne)
 
@@ -1753,20 +1810,173 @@ along with GCC; see the file COPYING3.  If not see
  (simplify
   (cmp (convert?@3 (bit_xor @0 INTEGER_CST@1)) INTEGER_CST@2)
   (if (tree_nop_conversion_p (TREE_TYPE (@3), TREE_TYPE (@0)))
-   (cmp @0 (bit_xor @1 (convert @2))))))
+   (cmp @0 (bit_xor @1 (convert @2)))))
+
+ (simplify
+  (cmp (convert? addr@0) integer_zerop)
+  (if (tree_single_nonzero_warnv_p (@0, NULL))
+   { constant_boolean_node (cmp == NE_EXPR, type); })))
+
+/* When the addresses are not directly of decls compare base and offset.
+   This implements some remaining parts of fold_comparison address
+   comparisons but still no complete part of it.  Still it is good
+   enough to make fold_stmt not regress when not dispatching to fold_binary.  */
+(for cmp (simple_comparison)
+ (simplify
+  (cmp (convert1?@2 addr@0) (convert2? addr@1))
+  (with
+   {
+     HOST_WIDE_INT off0, off1;
+     tree base0 = get_addr_base_and_unit_offset (TREE_OPERAND (@0, 0), &off0);
+     tree base1 = get_addr_base_and_unit_offset (TREE_OPERAND (@1, 0), &off1);
+     if (base0 && TREE_CODE (base0) == MEM_REF)
+       {
+	 off0 += mem_ref_offset (base0).to_short_addr ();
+         base0 = TREE_OPERAND (base0, 0);
+       }
+     if (base1 && TREE_CODE (base1) == MEM_REF)
+       {
+         off1 += mem_ref_offset (base1).to_short_addr ();
+         base1 = TREE_OPERAND (base1, 0);
+       }
+   }
+   (if (base0 && base1)
+    (with
+     {
+       int equal;
+       if (decl_in_symtab_p (base0)
+	   && decl_in_symtab_p (base1))
+         equal = symtab_node::get_create (base0)
+	           ->equal_address_to (symtab_node::get_create (base1));
+       else
+         equal = operand_equal_p (base0, base1, 0);
+     }
+     (if (equal == 1
+	  && (cmp == EQ_EXPR || cmp == NE_EXPR
+	      /* If the offsets are equal we can ignore overflow.  */
+	      || off0 == off1
+	      || POINTER_TYPE_OVERFLOW_UNDEFINED
+	      /* Or if we compare using pointers to decls.  */
+	      || (POINTER_TYPE_P (TREE_TYPE (@2))
+		  && DECL_P (base0))))
+      (switch
+       (if (cmp == EQ_EXPR)
+	{ constant_boolean_node (off0 == off1, type); })
+       (if (cmp == NE_EXPR)
+	{ constant_boolean_node (off0 != off1, type); })
+       (if (cmp == LT_EXPR)
+	{ constant_boolean_node (off0 < off1, type); })
+       (if (cmp == LE_EXPR)
+	{ constant_boolean_node (off0 <= off1, type); })
+       (if (cmp == GE_EXPR)
+	{ constant_boolean_node (off0 >= off1, type); })
+       (if (cmp == GT_EXPR)
+	{ constant_boolean_node (off0 > off1, type); }))
+      (if (equal == 0
+	   && DECL_P (base0) && DECL_P (base1)
+	   /* If we compare this as integers require equal offset.  */
+	   && (!INTEGRAL_TYPE_P (TREE_TYPE (@2))
+	       || off0 == off1))
+       (switch
+	(if (cmp == EQ_EXPR)
+	 { constant_boolean_node (false, type); })
+	(if (cmp == NE_EXPR)
+	 { constant_boolean_node (true, type); })))))))))
+
+/* Non-equality compare simplifications from fold_binary  */
+(for cmp (lt gt le ge)
+ /* Comparisons with the highest or lowest possible integer of
+    the specified precision will have known values.  */
+ (simplify
+  (cmp (convert?@2 @0) INTEGER_CST@1)
+  (if ((INTEGRAL_TYPE_P (TREE_TYPE (@1)) || POINTER_TYPE_P (TREE_TYPE (@1)))
+       && tree_nop_conversion_p (TREE_TYPE (@2), TREE_TYPE (@0)))
+   (with
+    {
+      tree arg1_type = TREE_TYPE (@1);
+      unsigned int prec = TYPE_PRECISION (arg1_type);
+      wide_int max = wi::max_value (arg1_type);
+      wide_int signed_max = wi::max_value (prec, SIGNED);
+      wide_int min = wi::min_value (arg1_type);
+    }
+    (switch
+     (if (wi::eq_p (@1, max))
+      (switch
+       (if (cmp == GT_EXPR)
+	{ constant_boolean_node (false, type); })
+       (if (cmp == GE_EXPR)
+	(eq @2 @1))
+       (if (cmp == LE_EXPR)
+	{ constant_boolean_node (true, type); })
+       (if (cmp == LT_EXPR)
+	(ne @2 @1))))
+     (if (wi::eq_p (@1, min))
+      (switch
+       (if (cmp == LT_EXPR)
+        { constant_boolean_node (false, type); })
+       (if (cmp == LE_EXPR)
+        (eq @2 @1))
+       (if (cmp == GE_EXPR)
+        { constant_boolean_node (true, type); })
+       (if (cmp == GT_EXPR)
+        (ne @2 @1))))
+     (if (wi::eq_p (@1, max - 1))
+      (switch
+       (if (cmp == GT_EXPR)
+        (eq @2 { wide_int_to_tree (TREE_TYPE (@1), wi::add (@1, 1)); }))
+       (if (cmp == LE_EXPR)
+        (ne @2 { wide_int_to_tree (TREE_TYPE (@1), wi::add (@1, 1)); }))))
+     (if (wi::eq_p (@1, min + 1))
+      (switch
+       (if (cmp == GE_EXPR)
+        (ne @2 { wide_int_to_tree (TREE_TYPE (@1), wi::sub (@1, 1)); }))
+       (if (cmp == LT_EXPR)
+        (eq @2 { wide_int_to_tree (TREE_TYPE (@1), wi::sub (@1, 1)); }))))
+     (if (wi::eq_p (@1, signed_max)
+	  && TYPE_UNSIGNED (arg1_type)
+	  /* We will flip the signedness of the comparison operator
+	     associated with the mode of @1, so the sign bit is
+	     specified by this mode.  Check that @1 is the signed
+	     max associated with this sign bit.  */
+	  && prec == GET_MODE_PRECISION (TYPE_MODE (arg1_type))
+	  /* signed_type does not work on pointer types.  */
+	  && INTEGRAL_TYPE_P (arg1_type))
+      /* The following case also applies to X < signed_max+1
+	 and X >= signed_max+1 because previous transformations.  */
+      (if (cmp == LE_EXPR || cmp == GT_EXPR)
+       (with { tree st = signed_type_for (arg1_type); }
+        (if (cmp == LE_EXPR)
+	 (ge (convert:st @0) { build_zero_cst (st); })
+	 (lt (convert:st @0) { build_zero_cst (st); }))))))))))
+ 
+(for cmp (unordered ordered unlt unle ungt unge uneq ltgt)
+ /* If the second operand is NaN, the result is constant.  */
+ (simplify
+  (cmp @0 REAL_CST@1)
+  (if (REAL_VALUE_ISNAN (TREE_REAL_CST (@1))
+       && (cmp != LTGT_EXPR || ! flag_trapping_math))
+   { constant_boolean_node (cmp == ORDERED_EXPR || code == LTGT_EXPR
+			    ? false : true, type); })))
 
 /* bool_var != 0 becomes bool_var.  */
 (simplify
- (ne @0 integer_zerop@1)
+ (ne @0 integer_zerop)
  (if (TREE_CODE (TREE_TYPE (@0)) == BOOLEAN_TYPE
       && types_match (type, TREE_TYPE (@0)))
   (non_lvalue @0)))
 /* bool_var == 1 becomes bool_var.  */
 (simplify
- (eq @0 integer_onep@1)
+ (eq @0 integer_onep)
  (if (TREE_CODE (TREE_TYPE (@0)) == BOOLEAN_TYPE
       && types_match (type, TREE_TYPE (@0)))
   (non_lvalue @0)))
+/* Do not handle
+   bool_var == 0 becomes !bool_var or
+   bool_var != 1 becomes !bool_var
+   here because that only is good in assignment context as long
+   as we require a tcc_comparison in GIMPLE_CONDs where we'd
+   replace if (x == 0) with tem = ~x; if (tem != 0) which is
+   clearly less optimal and which we'll transform again in forwprop.  */
 
 
 /* Simplification of math builtins.  */

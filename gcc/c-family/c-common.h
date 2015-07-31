@@ -812,6 +812,7 @@ extern bool warn_if_unused_value (const_tree, location_t);
 extern void warn_logical_operator (location_t, enum tree_code, tree,
 				   enum tree_code, tree, enum tree_code, tree);
 extern void warn_logical_not_parentheses (location_t, enum tree_code, tree);
+extern void warn_tautological_cmp (location_t, enum tree_code, tree, tree);
 extern void check_main_parameter_types (tree decl);
 extern bool c_determine_visibility (tree);
 extern bool vector_types_compatible_elements_p (tree, tree);
@@ -1052,6 +1053,7 @@ extern void record_locally_defined_typedef (tree);
 extern void maybe_record_typedef_use (tree);
 extern void maybe_warn_unused_local_typedefs (void);
 extern void maybe_warn_bool_compare (location_t, enum tree_code, tree, tree);
+extern bool maybe_warn_shift_overflow (location_t, tree, tree);
 extern vec<tree, va_gc> *make_tree_vector (void);
 extern void release_tree_vector (vec<tree, va_gc> *);
 extern vec<tree, va_gc> *make_tree_vector_single (tree);
