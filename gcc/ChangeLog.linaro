@@ -1,5 +1,9 @@
 2015-08-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
+	* LINARO-VERSION: Bump version.
+
+2015-08-05  Christophe Lyon  <christophe.lyon@linaro.org>
+
 	GCC Linaro 4.9-2015.06-1 snapshot.
 	* LINARO-VERSION: Update.
 
