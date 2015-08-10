@@ -1,3 +1,169 @@
+2015-08-07  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	Backport from mainline
+	2015-08-07  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/67002
+	* config/sh/sh.c (sh_recog_treg_set_expr): Return false when
+	currently_expanding_to_rtl is set.
+
+2015-08-07  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* config/i386/i386.md (define_attr "isa"): Addd avx512vl and
+	noavx512vl.
+	(define_attr "enabled"): Handle avx521vl and noavx512vl.
+	* config/i386/sse.md (define_insn "vec_dupv2df<mask_name>"): Split
+	AVX-512 alternative out of SSE.
+	(define_insn "*vec_concatv2df"): Ditto.
+
+2015-08-05  Matthew Wahab  <matthew.wahab@arm.com>
+
+	Backport from trunk:
+	2015-06-29  Matthew Wahab  <matthew.wahab@arm.com>
+
+	PR target/65697
+	* config/arm/arm.c (arm_split_compare_and_swap): For ARMv8,
+	replace an initial acquire barrier with final barrier.
+
+2015-08-05  Matthew Wahab  <matthew.wahab@arm.com>
+
+	Backport from trunk:
+	2015-06-29  Matthew Wahab  <matthew.wahab@arm.com>
+
+	PR target/65697
+	* config/arm/arm.c (arm_split_atomic_op): For ARMv8, replace an
+	initial acquire barrier with final barrier.
+
+2015-08-05  Matthew Wahab  <matthew.wahab@arm.com>
+
+	Backport from trunk.
+	2015-06-01  Matthew Wahab  <matthew.wahab@arm.com>
+
+	PR target/65697
+	* config/aarch64/aarch64.c (aarch64_split_compare_and_swap): Check
+	for __sync memory models, emit initial loads and final barriers as
+	appropriate.
+
+2015-08-05  Matthew Wahab  <matthew.wahab@arm.com>
+
+	Backport from trunk.
+	2015-06-01  Matthew Wahab  <matthew.wahab@arm.com>
+
+	PR target/65697
+	* config/aarch64/aarch64.c (aarch64_emit_post_barrier): New.
+	(aarch64_split_atomic_op): Check for __sync memory models, emit
+	appropriate initial loads and final barriers.
+
+2015-08-05  Matthew Wahab  <matthew.wahab@arm.com>
+
+	Backport from trunk
+	2015-05-12  Andrew MacLeod  <amacleod@redhat.com>
+
+	PR target/65697
+	* coretypes.h (MEMMODEL_SYNC, MEMMODEL_BASE_MASK): New macros.
+	(enum memmodel): Add SYNC_{ACQUIRE,RELEASE,SEQ_CST}.
+	* tree.h (memmodel_from_int, memmodel_base, is_mm_relaxed)
+	(is_mm_consume,is_mm_acquire, is_mm_release, is_mm_acq_rel)
+	(is_mm_seq_cst, is_mm_sync): New accessor functions.
+	* builtins.c (expand_builtin_sync_operation)
+	(expand_builtin_compare_and_swap): Use MEMMODEL_SYNC_SEQ_CST.
+	(expand_builtin_sync_lock_release): Use MEMMODEL_SYNC_RELEASE.
+	(get_memmodel,  expand_builtin_atomic_compare_exchange)
+	(expand_builtin_atomic_load, expand_builtin_atomic_store)
+	(expand_builtin_atomic_clear): Use new accessor routines.
+	(expand_builtin_sync_synchronize): Use MEMMODEL_SYNC_SEQ_CST.
+	* optabs.c (expand_compare_and_swap_loop): Use MEMMODEL_SYNC_SEQ_CST.
+	(maybe_emit_sync_lock_test_and_set): Use new accessors and
+	MEMMODEL_SYNC_ACQUIRE.
+	(expand_sync_lock_test_and_set): Use MEMMODEL_SYNC_ACQUIRE.
+	(expand_mem_thread_fence, expand_mem_signal_fence, expand_atomic_load)
+	(expand_atomic_store): Use new accessors.
+	* emit-rtl.c (need_atomic_barrier_p): Add additional enum cases.
+	* tsan.c (instrument_builtin_call): Update check for memory model beyond
+	final enum to use MEMMODEL_LAST.
+	* c-family/c-common.c: Use new accessor for memmodel_base.
+	* config/aarch64/aarch64.c (aarch64_expand_compare_and_swap): Use new
+	accessors.
+	* config/aarch64/atomics.md (atomic_load<mode>,atomic_store<mode>)
+	(arch64_load_exclusive<mode>, aarch64_store_exclusive<mode>)
+	(mem_thread_fence, *dmb): Likewise.
+	* config/alpha/alpha.c (alpha_split_compare_and_swap)
+	(alpha_split_compare_and_swap_12): Likewise.
+	* config/arm/arm.c (arm_expand_compare_and_swap)
+	(arm_split_compare_and_swap, arm_split_atomic_op): Likewise.
+	* config/arm/sync.md (atomic_load<mode>, atomic_store<mode>)
+	(atomic_loaddi): Likewise.
+	* config/i386/i386.c (ix86_destroy_cost_data, ix86_memmodel_check):
+	Likewise.
+	* config/i386/sync.md (mem_thread_fence, atomic_store<mode>): Likewise.
+	* config/ia64/ia64.c (ia64_expand_atomic_op): Add new memmodel cases and
+	use new accessors.
+	* config/ia64/sync.md (mem_thread_fence, atomic_load<mode>)
+	(atomic_store<mode>, atomic_compare_and_swap<mode>)
+	(atomic_exchange<mode>): Use new accessors.
+	* config/mips/mips.c (mips_process_sync_loop): Likewise.
+	* config/pa/pa.md (atomic_loaddi, atomic_storedi): Likewise.
+	* config/rs6000/rs6000.c (rs6000_pre_atomic_barrier)
+	(rs6000_post_atomic_barrier): Add new cases.
+	(rs6000_expand_atomic_compare_and_swap): Use new accessors.
+	* config/rs6000/sync.md (mem_thread_fence): Add new cases.
+	(atomic_load<mode>): Add new cases and use new accessors.
+	(store_quadpti): Add new cases.
+	* config/s390/s390.md (mem_thread_fence, atomic_store<mode>): Use new
+	accessors.
+	* config/sparc/sparc.c (sparc_emit_membar_for_model): Use new accessors.
+	* doc/extend.texi: Update docs to indicate 16 bits are used for memory
+	model, not 8.
+
+2015-08-04  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	Backport from mainline:
+	2015-08-04  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	PR target/66731
+	* config/aarch64/aarch64.c (aarch64_rtx_costs): Fix NEG cost for FNMUL.
+	(aarch64_rtx_mult_cost): Fix MULT cost with -frounding-math.
+
+	2015-07-06  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	PR target/66731
+	* config/aarch64/aarch64.md (fnmul<mode>3): Handle -frounding-math.
+
+2015-08-03  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline:
+	2015-08-03  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* config/rs6000/htm.md (tabort.): Restrict the source operand to
+	using a base register.
+
+2015-08-03  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/67060
+	* config/pa/pa.md (call_reg_64bit): Remove reg:DI 1 clobber.
+	Adjust splits to match new pattern.
+
+2015-08-03  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	Backport form mainline r226496.
+	2015-08-03  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	PR target/66731
+	* config/arm/vfp.md (negmuldf3_vfp): Add new pattern.
+	(negmulsf3_vfp): Likewise.
+	(muldf3negdf_vfp): Disable for -frounding-math.
+	(mulsf3negsf_vfp): Likewise.
+	* config/arm/arm.c (arm_new_rtx_costs): Fix NEG cost for VNMUL,
+	fix MULT cost with -frounding-math.
+
+2015-07-31  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	Backport form mainline
+	2015-07-31  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/67049
+	* config/sh/sh.md (GOTaddr2picreg): Fix typo.
+
 2015-07-31  Vladimir Makarov  <vmakarov@redhat.com>
 
 	PR debug/66691
