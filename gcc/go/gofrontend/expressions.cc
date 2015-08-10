@@ -2396,7 +2396,7 @@ class Complex_expression : public Expression
 
   void
   do_dump_expression(Ast_dump_context*) const;
-  
+
  private:
   // The complex value.
   mpc_t val_;
@@ -2423,8 +2423,7 @@ Complex_expression::do_determine_type(const Type_context* context)
 {
   if (this->type_ != NULL && !this->type_->is_abstract())
     ;
-  else if (context->type != NULL
-	   && context->type->complex_type() != NULL)
+  else if (context->type != NULL && context->type->is_numeric_type())
     this->type_ = context->type;
   else if (!context->may_be_abstract)
     this->type_ = Type::lookup_complex_type("complex128");
@@ -8499,7 +8498,8 @@ Call_expression::do_lower(Gogo* gogo, Named_object* function,
     {
       if (!this->fn_->type()->is_error())
 	this->report_error(_("expected function"));
-      return Expression::make_error(loc);
+      this->set_is_error();
+      return this;
     }
 
   // Handle an argument which is a call to a function which returns

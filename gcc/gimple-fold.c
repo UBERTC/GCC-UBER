@@ -416,49 +416,11 @@ fold_gimple_assign (gimple_stmt_iterator *si)
       break;
 
     case GIMPLE_TERNARY_RHS:
-      /* Try to fold a conditional expression.  */
-      if (gimple_assign_rhs_code (stmt) == COND_EXPR)
-	{
-	  tree op0 = gimple_assign_rhs1 (stmt);
-	  tree tem;
-	  bool set = false;
-	  location_t cond_loc = gimple_location (stmt);
-
-	  if (COMPARISON_CLASS_P (op0))
-	    {
-	      fold_defer_overflow_warnings ();
-	      tem = fold_binary_loc (cond_loc,
-				     TREE_CODE (op0), TREE_TYPE (op0),
-				     TREE_OPERAND (op0, 0),
-				     TREE_OPERAND (op0, 1));
-	      /* This is actually a conditional expression, not a GIMPLE
-		 conditional statement, however, the valid_gimple_rhs_p
-		 test still applies.  */
-	      set = (tem && is_gimple_condexpr (tem)
-		     && valid_gimple_rhs_p (tem));
-	      fold_undefer_overflow_warnings (set, stmt, 0);
-	    }
-	  else if (is_gimple_min_invariant (op0))
-	    {
-	      tem = op0;
-	      set = true;
-	    }
-	  else
-	    return NULL_TREE;
-
-	  if (set)
-	    result = fold_build3_loc (cond_loc, COND_EXPR,
-				      TREE_TYPE (gimple_assign_lhs (stmt)), tem,
-				      gimple_assign_rhs2 (stmt),
-				      gimple_assign_rhs3 (stmt));
-	}
-
-      if (!result)
-	result = fold_ternary_loc (loc, subcode,
-				   TREE_TYPE (gimple_assign_lhs (stmt)),
-				   gimple_assign_rhs1 (stmt),
-				   gimple_assign_rhs2 (stmt),
-				   gimple_assign_rhs3 (stmt));
+      result = fold_ternary_loc (loc, subcode,
+				 TREE_TYPE (gimple_assign_lhs (stmt)),
+				 gimple_assign_rhs1 (stmt),
+				 gimple_assign_rhs2 (stmt),
+				 gimple_assign_rhs3 (stmt));
 
       if (result)
         {
@@ -5046,28 +5008,48 @@ gimple_fold_stmt_to_constant_1 (gimple stmt, tree (*valueize) (tree),
 	    return NULL_TREE;
 
           case GIMPLE_BINARY_RHS:
-            {
-              /* Handle binary operators that can appear in GIMPLE form.  */
-              tree op0 = (*valueize) (gimple_assign_rhs1 (stmt));
-              tree op1 = (*valueize) (gimple_assign_rhs2 (stmt));
-
-	      /* Translate &x + CST into an invariant form suitable for
-	         further propagation.  */
-	      if (gimple_assign_rhs_code (stmt) == POINTER_PLUS_EXPR
-		  && TREE_CODE (op0) == ADDR_EXPR
-		  && TREE_CODE (op1) == INTEGER_CST)
-		{
-		  tree off = fold_convert (ptr_type_node, op1);
-		  return build_fold_addr_expr_loc
-			   (loc,
-			    fold_build2 (MEM_REF,
-					 TREE_TYPE (TREE_TYPE (op0)),
-					 unshare_expr (op0), off));
-		}
-
-              return fold_binary_loc (loc, subcode,
-				      gimple_expr_type (stmt), op0, op1);
-            }
+	    /* Translate &x + CST into an invariant form suitable for
+	       further propagation.  */
+	    if (subcode == POINTER_PLUS_EXPR)
+	      {
+		tree op0 = (*valueize) (gimple_assign_rhs1 (stmt));
+		tree op1 = (*valueize) (gimple_assign_rhs2 (stmt));
+		if (TREE_CODE (op0) == ADDR_EXPR
+		    && TREE_CODE (op1) == INTEGER_CST)
+		  {
+		    tree off = fold_convert (ptr_type_node, op1);
+		    return build_fold_addr_expr_loc
+			(loc,
+			 fold_build2 (MEM_REF,
+				      TREE_TYPE (TREE_TYPE (op0)),
+				      unshare_expr (op0), off));
+		  }
+	      }
+	    /* Canonicalize bool != 0 and bool == 0 appearing after
+	       valueization.  While gimple_simplify handles this
+	       it can get confused by the ~X == 1 -> X == 0 transform
+	       which we cant reduce to a SSA name or a constant
+	       (and we have no way to tell gimple_simplify to not
+	       consider those transforms in the first place).  */
+	    else if (subcode == EQ_EXPR
+		     || subcode == NE_EXPR)
+	      {
+		tree lhs = gimple_assign_lhs (stmt);
+		tree op0 = gimple_assign_rhs1 (stmt);
+		if (useless_type_conversion_p (TREE_TYPE (lhs),
+					       TREE_TYPE (op0)))
+		  {
+		    tree op1 = (*valueize) (gimple_assign_rhs2 (stmt));
+		    op0 = (*valueize) (op0);
+		    if (TREE_CODE (op0) == INTEGER_CST)
+		      std::swap (op0, op1);
+		    if (TREE_CODE (op1) == INTEGER_CST
+			&& ((subcode == NE_EXPR && integer_zerop (op1))
+			    || (subcode == EQ_EXPR && integer_onep (op1))))
+		      return op0;
+		  }
+	      }
+	    return NULL_TREE;
 
           case GIMPLE_TERNARY_RHS:
             {
@@ -5075,20 +5057,6 @@ gimple_fold_stmt_to_constant_1 (gimple stmt, tree (*valueize) (tree),
               tree op0 = (*valueize) (gimple_assign_rhs1 (stmt));
               tree op1 = (*valueize) (gimple_assign_rhs2 (stmt));
               tree op2 = (*valueize) (gimple_assign_rhs3 (stmt));
-
-	      /* Fold embedded expressions in ternary codes.  */
-	      if ((subcode == COND_EXPR
-		   || subcode == VEC_COND_EXPR)
-		  && COMPARISON_CLASS_P (op0))
-		{
-		  tree op00 = (*valueize) (TREE_OPERAND (op0, 0));
-		  tree op01 = (*valueize) (TREE_OPERAND (op0, 1));
-		  tree tem = fold_binary_loc (loc, TREE_CODE (op0),
-					      TREE_TYPE (op0), op00, op01);
-		  if (tem)
-		    op0 = tem;
-		}
-
               return fold_ternary_loc (loc, subcode,
 				       gimple_expr_type (stmt), op0, op1, op2);
             }

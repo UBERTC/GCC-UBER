@@ -180,6 +180,8 @@ NOCOMMON_FLAG = @nocommon_flag@
 
 NOEXCEPTION_FLAGS = @noexception_flags@
 
+ALIASING_FLAGS = @aliasing_flags@
+
 # This is set by --disable-maintainer-mode (default) to "#"
 # FIXME: 'MAINT' will always be set to an empty string, no matter if
 # --disable-maintainer-mode is used or not.  This is because the
@@ -986,7 +988,8 @@ ALL_CFLAGS = $(T_CFLAGS) $(CFLAGS-$@) \
 
 # The C++ version.
 ALL_CXXFLAGS = $(T_CFLAGS) $(CFLAGS-$@) $(CXXFLAGS) $(INTERNAL_CFLAGS) \
-  $(COVERAGE_FLAGS) $(NOEXCEPTION_FLAGS) $(WARN_CXXFLAGS) @DEFS@
+  $(COVERAGE_FLAGS) $(ALIASING_FLAGS) $(NOEXCEPTION_FLAGS) \
+  $(WARN_CXXFLAGS) @DEFS@
 
 # Likewise.  Put INCLUDES at the beginning: this way, if some autoconf macro
 # puts -I options in CPPFLAGS, our include files in the srcdir will always
@@ -1162,10 +1165,12 @@ C_COMMON_OBJS = c-family/c-common.o c-family/c-cppbuiltin.o c-family/c-dump.o \
   c-family/array-notation-common.o c-family/cilk.o c-family/c-ubsan.o
 
 # Language-independent object files.
-# We put the insn-*.o files first so that a parallel make will build
-# them sooner, because they are large and otherwise tend to be the
-# last objects to finish building.
+# We put the *-match.o and insn-*.o files first so that a parallel make
+# will build them sooner, because they are large and otherwise tend to be
+# the last objects to finish building.
 OBJS = \
+	gimple-match.o \
+	generic-match.o \
 	insn-attrtab.o \
 	insn-automata.o \
 	insn-dfatab.o \
@@ -1260,8 +1265,6 @@ OBJS = \
 	gimple-fold.o \
 	gimple-laddress.o \
 	gimple-low.o \
-	gimple-match.o \
-	generic-match.o \
 	gimple-pretty-print.o \
 	gimple-ssa-isolate-paths.o \
 	gimple-ssa-strength-reduction.o \
@@ -3071,7 +3074,7 @@ doc/%.7: %.pod
 	$(STAMP) $@
 	-$(TEXI2POD) -DBUGURL="$(BUGURL_TEXI)" $< > $@
 
-.INTERMEDIATE: cpp.pod gcc.pod gfdl.pod fsf-funding.pod
+.INTERMEDIATE: cpp.pod gcc.pod gfdl.pod fsf-funding.pod gpl.pod
 cpp.pod: cpp.texi cppenv.texi cppopts.texi
 
 # These next rules exist because the output name is not the same as
