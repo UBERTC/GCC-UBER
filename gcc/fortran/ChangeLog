@@ -1,3 +1,83 @@
+2015-08-08  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/67059
+	* gfortranspec.c (lang_specific_driver): Adjust --version output.
+
+2015-08-08  Bud Davis  <jmdavis@link.com>
+	    Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/59746
+	* symbol.c (gfc_restore_last_undo_checkpoint): Delete a common block
+	symbol if it was put in the list.
+
+2015-08-07  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/64104
+	* expr.c (gfc_check_init_expr): Allow some IEEE functions in
+	constant expressions.
+	(external_spec_function): Allow some IEEE functions in specification
+	expressions.
+	* simplify.c (gfc_simplify_ieee_selected_real_kind): Remove.
+	(simplify_ieee_selected_real_kind, simplify_ieee_support,
+	matches_ieee_function_name, gfc_simplify_ieee_functions): New
+	functions.
+	* gfortran.h (gfc_simplify_ieee_selected_real_kind): Remove
+	prototype.
+	(gfc_simplify_ieee_functions): Add prototype.
+
+2015-08-06  Mikael Morin  <mikael@gcc.gnu.org>
+
+	* trans.h (gfc_trans_scalar_assign): Remove fourth argument.
+	* trans-expr.c (gfc_trans_scalar_assign): Merge fourth into sixth
+	argument.
+	(gfc_conv_subref_array_arg, gfc_trans_subarray_assign,
+	 gfc_trans_subcomponent_assign, gfc_trans_assignment_1): Update callers.
+	* trans-array.c (gfc_conv_expr_descriptor): Ditto.
+	* trans-stmt.c (forall_make_variable_temp,
+	generate_loop_for_temp_to_lhs, generate_loop_for_rhs_to_temp,
+	gfc_trans_where_assign, gfc_trans_where_3): Ditto.
+
+2015-08-05  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/52846
+	* module.c (check_access): Return true if new static flag
+	'dump_smod' is true..
+	(gfc_dump_module): Rename original 'dump_module' and call from
+	new version. Use 'dump_smod' rather than the stack state to
+	determine if a submodule is being processed. The new version of
+	this procedure sets 'dump_smod' depending on the stack state and
+	then writes both the mod and smod files if a module is being
+	processed or just the smod for a submodule.
+	(gfc_use_module): Eliminate the check for module_name and
+	submodule_name being the same.
+	* trans-decl.c (gfc_finish_var_decl, gfc_build_qualified_array,
+	get_proc_pointer_decl): Set TREE_PUBLIC unconditionally and use
+	the conditions to set DECL_VISIBILITY as hidden and to set as
+	true DECL_VISIBILITY_SPECIFIED.
+
+2015-08-04  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/64022
+	* simplify.c (gfc_simplify_ieee_selected_real_kind): Extend IEEE
+	support to all real kinds.
+
+2015-08-03  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66942
+	* trans-expr.c (gfc_conv_procedure_call): Avoid NULL pointer reference
+
+2015-08-03  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/64921
+	* class.c (generate_finalization_wrapper): Set finalization
+	procedure symbol's always_explicit attribute.
+
+2015-08-01  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/67091
+	* trans-intrinsic.c (gfc_conv_associated): Add the pre and post
+	blocks for the second argument to se.
+
 2015-07-27  Thomas Schwinge  <thomas@codesourcery.com>
 
 	* parse.c (parse_oacc_structured_block): Fix logic error.

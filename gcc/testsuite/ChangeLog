@@ -1,3 +1,319 @@
+2015-08-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR fortran/64022
+	* gfortran.dg/ieee/large_4.f90: New test.
+
+2015-08-08  Bud Davis  <jmdavis@link.com>
+
+	PR fortran/59746
+	* gfortran.dg/common_22.f90: New.
+
+2015-08-08  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/67028
+	* gcc.dg/pr67028.c: New testcase.
+
+2015-08-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/67029
+	* gcc.dg/pr67029.c: New test.
+
+2015-08-07  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/64104
+	* gfortran.dg/ieee/ieee_8.f90: New test.
+
+2015-08-07  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/noplt_1.c: Check branch type instead of relocation
+	modifers.
+	* gcc.target/aarch64/noplt_2.c: Likewise.
+	* gcc.target/aarch64/noplt_3.c: Likewise.
+
+2015-08-06  David Malcolm  <dmalcolm@redhat.com>
+
+	* jit.dg/test-benchmark.c (main): Record all elapsed times at each
+	optimization level, and print a summary at the end.
+
+2015-08-06  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/tlsdesc_hoist.c: New testcase.
+
+2015-08-06  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/noplt_3.c: New testcase.
+
+2015-08-06  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/noplt_1.c: New testcase.
+	* gcc.target/aarch64/noplt_2.c: Likewise.
+
+2015-08-06  Venkataramanan Kumar  <Venkataramanan.kumar@amd.com>
+
+	* gcc.dg/vect/vect-mult-pattern-1.c: New test.
+	* gcc.dg/vect/vect-mult-pattern-2.c: New test.
+
+2015-08-06  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/dwarfregtable-1.c: New test.
+	* gcc.target/s390/dwarfregtable-2.c: New test.
+	* gcc.target/s390/dwarfregtable-3.c: New test.
+
+2015-08-06  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/htm-builtins-z13-1.c: New test.
+
+2015-08-06  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/64022
+	* gfortran.dg/ieee/large_2.f90: New test.
+	* gfortran.dg/ieee/large_3.F90: New test.
+
+2015-08-06  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/64022
+	* gfortran.dg/ieee/large_1.f90: Adjust test.
+
+2015-08-05  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+	    Jeff Law  <law@redhat.com>
+
+	PR c/16351
+	* gcc.dg/tree-ssa/isolate-2.c: Close comment.
+	* gcc.dg/tree-ssa/isolate-4.c: Likewise.
+	* gcc.dg/tree-ssa/wnull-dereference.c: New test.
+	* gcc.dg/tree-ssa/isolate-1.c: Test warnings with -Wnull-dereference.
+	* gcc.dg/tree-ssa/isolate-3.c: Likewise.
+	* gcc.dg/tree-ssa/isolate-5.c: Likewise.
+
+2015-08-05  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR middle-end/66311
+	* gfortran.dg/pr66311.f90: New file.
+
+2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67121
+	* gcc.dg/torture/pr67121.c: New testcase.
+
+2015-08-05  Nick Clifton  <nickc@redhat.com>
+
+	* gcc.target/rl78: New directory.
+	* gcc.target/rl78/rl78.exp: New file: Test driver.
+	* gcc.target/rl78/test_addm3.c: New file: Test adds.
+
+2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67120
+	* gcc.dg/torture/pr67120.c: New testcase.
+
+2015-08-05  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/52846
+
+	* lib/fortran-modules.exp: Call cleanup-submodules from
+	cleanup-modules.
+	* gfortran.dg/public_private_module_2.f90: Add two XFAILS to
+	cover the cases where private entities are no longer optimized
+	away.
+	* gfortran.dg/public_private_module_6.f90: Add an XFAIL for the
+	same reason.
+	* gfortran.dg/submodule_1.f08: Change cleanup module names.
+	* gfortran.dg/submodule_5.f08: The same.
+	* gfortran.dg/submodule_9.f08: The same.
+	* gfortran.dg/submodule_10.f08: New test.
+
+2015-08-05  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/66595
+	* g++.dg/cpp1y/var-templ35.C: New.
+
+2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67055
+	* g++.dg/torture/pr67055.C: New testcase.
+
+2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67109
+	* gcc.dg/torture/pr67109.c: New testcase.
+	* gcc.dg/vect/vect-119.c: Adjust.
+
+2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67107
+	* gcc.dg/pr67107.c: New testcase.
+
+2015-08-04  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/66197
+	* g++.dg/cpp1z/abbrev2.C: New.
+
+2015-08-04  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* g++.dg/cpp1z/static_assert-nomsg.C: Fix DejaGnu directive.
+
+2015-08-04  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/66392
+	* g++.dg/init/explicit4.C: New.
+
+2015-08-04  Bill Schmidt  <wschmidt@vnet.linux.ibm.com>
+
+	* gcc.target/powerpc/vec-cmp-sel.c: Avoid test failure on machines
+	without VSX an Power8 vector support.
+
+2015-08-04  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/tree-ssa/ssa-ccp-38.c: New testcase.
+
+2015-08-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/67110
+	* gcc.target/i386/iamcu/abi-iamcu.exp (additional_flags): Add
+	-fno-pie -no-pie.
+
+2015-08-04  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/66427
+	* g++.dg/cpp1y/var-templ34.C: New.
+
+2015-08-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/pragma_cpp_predefs_1.c: New test.
+	* gcc.target/aarch64/target_attr_1.c: Likewise.
+	* gcc.target/aarch64/target_attr_2.c: Likewise.
+	* gcc.target/aarch64/target_attr_3.c: Likewise.
+	* gcc.target/aarch64/target_attr_4.c: Likewise.
+	* gcc.target/aarch64/target_attr_5.c: Likewise.
+	* gcc.target/aarch64/target_attr_6.c: Likewise.
+	* gcc.target/aarch64/target_attr_7.c: Likewise.
+	* gcc.target/aarch64/target_attr_8.c: Likewise.
+	* gcc.target/aarch64/target_attr_9.c: Likewise.
+	* gcc.target/aarch64/target_attr_10.c: Likewise.
+	* gcc.target/aarch64/target_attr_11.c: Likewise.
+	* gcc.target/aarch64/target_attr_12.c: Likewise.
+	* gcc.target/aarch64/target_attr_13.c: Likewise.
+	* gcc.target/aarch64/target_attr_14.c: Likewise.
+	* gcc.target/aarch64/target_attr_15.c: Likewise.
+
+2015-08-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/target_attr_crypto_ice_1.c: New test.
+
+2015-08-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/arm_neon-nosimd-error.c: Delete.
+
+2015-08-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/cpu-diagnostics-3.c: Update expected error
+	message.
+
+2015-08-04  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/64022
+	* gfortran.dg/ieee/ieee_7.f90: Adjust test.
+	* gfortran.dg/ieee/large_1.f90: New test.
+
+2015-08-04  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/67043
+	* gcc.dg/pr67043.c: New test.
+
+2015-08-03  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* gcc.target/powerpc/htm-tabort-no-r0.c: New test.
+
+2015-08-03  David Malcolm  <dmalcolm@redhat.com>
+
+	* jit.dg/test-benchmark.c (test_jit): Add param "timer" and use
+	it to push/pop timing items.
+	(main): For each optimization level, create a gcc_jit_timer, and
+	time all of the iteration within that level cumulatively.
+	* jit.dg/test-error-gcc_jit_timer_pop-mismatch.c: New test case.
+	* jit.dg/test-error-gcc_jit_timer_pop-too-many.c: New test case.
+
+2015-08-03  Alexander Basov <coohpt@gmail.com>
+
+	PR middle-end/64744
+	PR middle-end/48470
+	PR middle-end/43404
+	* gcc.target/arm/pr43404.c : New testcase.
+	* gcc.target/arm/pr48470.c : New testcase.
+	* gcc.target/arm/pr64744-1.c : New testcase.
+	* gcc.target/arm/pr64744-2.c : New testcase.
+
+2015-08-03  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR tree-optimization/67077
+	* gcc.dg/pr67077.c: New test.
+
+2015-08-03  Jeff Law  <law@redhat.com>
+
+	PR middle-end/66314
+	PR gcov-profile/66899
+	* gcc.dg/pr66899.c: New test.
+	* gcc.dg/pr66314.c: New test.
+
+2015-08-03  Marek Polacek  <polacek@redhat.com>
+
+	PR c/67088
+	* gcc.dg/pr67088.c: New test.
+
+2015-08-03  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	PR target/66731
+	* gcc.target/arm/vnmul-1.c: New.
+	* gcc.target/arm/vnmul-2.c: New.
+	* gcc.target/arm/vnmul-3.c: New.
+	* gcc.target/arm/vnmul-4.c: New.
+
+2015-08-03  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/64921
+	* gfortran.dg/class_allocate_20.f90: New.
+
+2015-08-03  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/csel_bfx_1.c: New test.
+	* gcc.target/aarch64/csel_imms_inc_1.c: Likewise.
+
+2015-08-02  Martin Sebor  <msebor@redhat.com>
+
+	* g++.dg/Wframe-address-in-Wall.C: New test.
+	* g++.dg/Wframe-address.C: New test.
+	* g++.dg/Wno-frame-address.C: New test.
+	* gcc.dg/Wframe-address-in-Wall.c: New test.
+	* gcc.dg/Wframe-address.c: New test.
+	* gcc.dg/Wno-frame-address.c: New test.
+
+2015-08-02  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	* c-c++-common/Wmisleading-indentation.c: Add more tests.
+
+2015-08-01  Michael Collison  <michael.collison@linaro.org
+	    Ramana Radhakrishnan  <ramana.radhakrishnan@linaro.org>
+
+	* gcc.target/arm/mincmp.c: New test.
+
+2015-08-01  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/67091
+	* gfortran.dg/associated_target_6.f03: New test
+
+2015-08-01  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/autopar/reduc-2char.c (init_arrays): Mark with attribute
+	optimize ("-ftree-parallelize-loops=0").
+	Add successful scans for 2 detected reductions.	 Add xfail scans for 3
+	detected reductions.
+	* gcc.dg/autopar/reduc-2short.c: Same.
+	* gcc.dg/autopar/reduc-8.c (init_arrays): Mark with attribute
+	optimize ("-ftree-parallelize-loops=0").  Add successful scans for 2
+	detected reductions.
+	* gcc.dg/vect/trapv-vect-reduc-4.c: Update scan to match vectorized min
+	and max reductions.
+
 2015-07-31  Marek Polacek  <polacek@redhat.com>
 
 	PR sanitizer/66977

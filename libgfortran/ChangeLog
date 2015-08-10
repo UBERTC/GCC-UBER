@@ -1,3 +1,31 @@
+2015-08-09  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR libfortran/66936
+	* io/unix.c (__MINGW32__): Undefine HAVE_UMASK.
+
+2015-08-07  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR libfortran/66458
+	* runtime/main.c (init): Only call set_fpu() if requested by user.
+
+2015-08-06  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* runtime/compile_options.c (set_options): Fix typos.
+
+2015-08-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/fpu-387.h (get_fpu_trap_exceptions): Add temporary variable
+	to improve generated code.
+
+2015-08-04  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/64022
+	* ieee/ieee_exceptions.F90: Support all real kinds.
+	* ieee/ieee_arithmetic.F90: Likewise.
+	* ieee/ieee_helper.c (ieee_class_helper_10,
+	ieee_class_helper_16): New functions
+	* gfortran.map (GFORTRAN_1.7): Add entries.
+
 2015-07-29  Uros Bizjak  <ubizjak@gmail.com>
 
 	PR libgfortran/66650

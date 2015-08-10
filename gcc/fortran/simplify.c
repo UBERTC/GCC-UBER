@@ -5553,87 +5553,6 @@ gfc_simplify_selected_real_kind (gfc_expr *p, gfc_expr *q, gfc_expr *rdx)
 
 
 gfc_expr *
-gfc_simplify_ieee_selected_real_kind (gfc_expr *expr)
-{
-  gfc_actual_arglist *arg = expr->value.function.actual;
-  gfc_expr *p = arg->expr, *r = arg->next->expr,
-	   *rad = arg->next->next->expr;
-  int precision, range, radix, res;
-  int found_precision, found_range, found_radix, i;
-
-  if (p)
-  {
-    if (p->expr_type != EXPR_CONSTANT
-	|| gfc_extract_int (p, &precision) != NULL)
-      return NULL;
-  }
-  else
-    precision = 0;
-
-  if (r)
-  {
-    if (r->expr_type != EXPR_CONSTANT
-	|| gfc_extract_int (r, &range) != NULL)
-      return NULL;
-  }
-  else
-    range = 0;
-
-  if (rad)
-  {
-    if (rad->expr_type != EXPR_CONSTANT
-	|| gfc_extract_int (rad, &radix) != NULL)
-      return NULL;
-  }
-  else
-    radix = 0;
-
-  res = INT_MAX;
-  found_precision = 0;
-  found_range = 0;
-  found_radix = 0;
-
-  for (i = 0; gfc_real_kinds[i].kind != 0; i++)
-    {
-      /* We only support the target's float and double types.  */
-      if (!gfc_real_kinds[i].c_float && !gfc_real_kinds[i].c_double)
-	continue;
-
-      if (gfc_real_kinds[i].precision >= precision)
-	found_precision = 1;
-
-      if (gfc_real_kinds[i].range >= range)
-	found_range = 1;
-
-      if (radix == 0 || gfc_real_kinds[i].radix == radix)
-	found_radix = 1;
-
-      if (gfc_real_kinds[i].precision >= precision
-	  && gfc_real_kinds[i].range >= range
-	  && (radix == 0 || gfc_real_kinds[i].radix == radix)
-	  && gfc_real_kinds[i].kind < res)
-	res = gfc_real_kinds[i].kind;
-    }
-
-  if (res == INT_MAX)
-    {
-      if (found_radix && found_range && !found_precision)
-	res = -1;
-      else if (found_radix && found_precision && !found_range)
-	res = -2;
-      else if (found_radix && !found_precision && !found_range)
-	res = -3;
-      else if (found_radix)
-	res = -4;
-      else
-	res = -5;
-    }
-
-  return gfc_get_int_expr (gfc_default_integer_kind, &expr->where, res);
-}
-
-
-gfc_expr *
 gfc_simplify_set_exponent (gfc_expr *x, gfc_expr *i)
 {
   gfc_expr *result;
@@ -7021,4 +6940,63 @@ gfc_simplify_compiler_version (void)
   snprintf (buffer, len + 1, "GCC version %s", version_string);
   return gfc_get_character_expr (gfc_default_character_kind,
                                 &gfc_current_locus, buffer, len);
+}
+
+/* Simplification routines for intrinsics of IEEE modules.  */
+
+gfc_expr *
+simplify_ieee_selected_real_kind (gfc_expr *expr)
+{
+  gfc_actual_arglist *arg = expr->value.function.actual;
+  gfc_expr *p = arg->expr, *q = arg->next->expr,
+	   *rdx = arg->next->next->expr;
+
+  /* Currently, if IEEE is supported and this module is built, it means
+     all our floating-point types conform to IEEE. Hence, we simply handle
+     IEEE_SELECTED_REAL_KIND like SELECTED_REAL_KIND.  */
+  return gfc_simplify_selected_real_kind (p, q, rdx);
+}
+
+gfc_expr *
+simplify_ieee_support (gfc_expr *expr)
+{
+  /* We consider that if the IEEE modules are loaded, we have full support
+     for flags, halting and rounding, which are the three functions
+     (IEEE_SUPPORT_{FLAG,HALTING,ROUNDING}) allowed in constant
+     expressions. One day, we will need libgfortran to detect support and
+     communicate it back to us, allowing for partial support.  */
+
+  return gfc_get_logical_expr (gfc_default_logical_kind, &expr->where,
+			       true);
+}
+
+bool
+matches_ieee_function_name (gfc_symbol *sym, const char *name)
+{
+  int n = strlen(name);
+
+  if (!strncmp(sym->name, name, n))
+    return true;
+
+  /* If a generic was used and renamed, we need more work to find out.
+     Compare the specific name.  */
+  if (sym->generic && !strncmp(sym->generic->sym->name, name, n))
+    return true;
+
+  return false;
+}
+
+gfc_expr *
+gfc_simplify_ieee_functions (gfc_expr *expr)
+{
+  gfc_symbol* sym = expr->symtree->n.sym;
+
+  if (matches_ieee_function_name(sym, "ieee_selected_real_kind"))
+    return simplify_ieee_selected_real_kind (expr);
+  else if (matches_ieee_function_name(sym, "ieee_support_flag")
+	   || matches_ieee_function_name(sym, "ieee_support_halting")
+	   || matches_ieee_function_name(sym, "ieee_support_rounding"))
+    return simplify_ieee_support (expr);
+  else
+    return NULL;
 }

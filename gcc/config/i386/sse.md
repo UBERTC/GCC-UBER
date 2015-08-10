@@ -299,6 +299,12 @@
    V8DI (V4DI "TARGET_AVX512VL") (V2DI "TARGET_AVX512VL")])
 
 ;; All DImode vector integer modes
+(define_mode_iterator V_AVX
+  [V16QI V8HI V4SI V2DI V4SF V2DF
+   (V32QI "TARGET_AVX") (V16HI "TARGET_AVX")
+   (V8SI "TARGET_AVX") (V4DI "TARGET_AVX")
+   (V8SF "TARGET_AVX") (V4DF"TARGET_AVX")])
+
 (define_mode_iterator VI8
   [(V8DI "TARGET_AVX512F") (V4DI "TARGET_AVX") V2DI])
 
@@ -566,7 +572,11 @@
 (define_mode_attr sse4_1
   [(V4SF "sse4_1") (V2DF "sse4_1")
    (V8SF "avx") (V4DF "avx")
-   (V8DF "avx512f")])
+   (V8DF "avx512f")
+   (V4DI "avx") (V2DI "sse4_1")
+   (V8SI "avx") (V4SI "sse4_1")
+   (V16QI "sse4_1") (V32QI "avx")
+   (V8HI "sse4_1") (V16HI "avx")])
 
 (define_mode_attr avxsizesuffix
   [(V64QI "512") (V32HI "512") (V16SI "512") (V8DI "512")
@@ -8638,44 +8648,50 @@
    (set_attr "mode" "DF,DF,V1DF,V1DF,V1DF,V2DF,V1DF,V1DF,V1DF")])
 
 (define_insn "vec_dupv2df<mask_name>"
-  [(set (match_operand:V2DF 0 "register_operand"     "=x,v")
+  [(set (match_operand:V2DF 0 "register_operand"     "=x,x,v")
 	(vec_duplicate:V2DF
-	  (match_operand:DF 1 "nonimmediate_operand" " 0,vm")))]
+	  (match_operand:DF 1 "nonimmediate_operand" " 0,xm,vm")))]
   "TARGET_SSE2 && <mask_avx512vl_condition>"
   "@
    unpcklpd\t%0, %0
-   %vmovddup\t{%1, %0<mask_operand2>|%0<mask_operand2>, %1}"
-  [(set_attr "isa" "noavx,sse3")
+   %vmovddup\t{%1, %0<mask_operand2>|%0<mask_operand2>, %1}
+   vmovddup\t{%1, %0<mask_operand2>|%0<mask_operand2>, %1}"
+  [(set_attr "isa" "noavx,sse3,avx512vl")
    (set_attr "type" "sselog1")
-   (set_attr "prefix" "orig,maybe_vex")
-   (set_attr "mode" "V2DF,DF")])
+   (set_attr "prefix" "orig,maybe_vex,evex")
+   (set_attr "mode" "V2DF,DF,DF")])
 
 (define_insn "*vec_concatv2df"
-  [(set (match_operand:V2DF 0 "register_operand"     "=x,v,v,x,x,v,x,x")
+  [(set (match_operand:V2DF 0 "register_operand"     "=x,x,v,x,v,x,x,v,x,x")
 	(vec_concat:V2DF
-	  (match_operand:DF 1 "nonimmediate_operand" " 0,v,m,0,x,m,0,0")
-	  (match_operand:DF 2 "vector_move_operand"  " x,v,1,m,m,C,x,m")))]
+	  (match_operand:DF 1 "nonimmediate_operand" " 0,x,v,m,m,0,x,m,0,0")
+	  (match_operand:DF 2 "vector_move_operand"  " x,x,v,1,1,m,m,C,x,m")))]
   "TARGET_SSE
    && (!(MEM_P (operands[1]) && MEM_P (operands[2]))
        || (TARGET_SSE3 && rtx_equal_p (operands[1], operands[2])))"
   "@
    unpcklpd\t{%2, %0|%0, %2}
    vunpcklpd\t{%2, %1, %0|%0, %1, %2}
+   vunpcklpd\t{%2, %1, %0|%0, %1, %2}
    %vmovddup\t{%1, %0|%0, %1}
+   vmovddup\t{%1, %0|%0, %1}
    movhpd\t{%2, %0|%0, %2}
    vmovhpd\t{%2, %1, %0|%0, %1, %2}
    %vmovsd\t{%1, %0|%0, %1}
    movlhps\t{%2, %0|%0, %2}
    movhps\t{%2, %0|%0, %2}"
-  [(set_attr "isa" "sse2_noavx,avx,sse3,sse2_noavx,avx,sse2,noavx,noavx")
+  [(set_attr "isa" "sse2_noavx,avx,avx512vl,sse3,avx512vl,sse2_noavx,avx,sse2,noavx,noavx")
    (set (attr "type")
      (if_then_else
-       (eq_attr "alternative" "0,1,2")
+       (eq_attr "alternative" "0,1,2,3,4")
        (const_string "sselog")
        (const_string "ssemov")))
-   (set_attr "prefix_data16" "*,*,*,1,*,*,*,*")
-   (set_attr "prefix" "orig,vex,maybe_vex,orig,vex,maybe_vex,orig,orig")
-   (set_attr "mode" "V2DF,V2DF,DF,V1DF,V1DF,DF,V4SF,V2SF")])
+   (set (attr "prefix_data16")
+	(if_then_else (eq_attr "alternative" "5")
+		      (const_string "1")
+		      (const_string "*")))
+   (set_attr "prefix" "orig,vex,evex,maybe_vex,evex,orig,vex,maybe_vex,orig,orig")
+   (set_attr "mode" "V2DF,V2DF,V2DF, DF, DF, V1DF,V1DF,DF,V4SF,V2SF")])
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -14640,30 +14656,23 @@
 
 ;; ptest is very similar to comiss and ucomiss when setting FLAGS_REG.
 ;; But it is not a really compare instruction.
-(define_insn "avx_ptest256"
+(define_insn "<sse4_1>_ptest<mode>"
   [(set (reg:CC FLAGS_REG)
-	(unspec:CC [(match_operand:V4DI 0 "register_operand" "x")
-		    (match_operand:V4DI 1 "nonimmediate_operand" "xm")]
-		   UNSPEC_PTEST))]
-  "TARGET_AVX"
-  "vptest\t{%1, %0|%0, %1}"
-  [(set_attr "type" "ssecomi")
-   (set_attr "prefix_extra" "1")
-   (set_attr "prefix" "vex")
-   (set_attr "btver2_decode" "vector")
-   (set_attr "mode" "OI")])
-
-(define_insn "sse4_1_ptest"
-  [(set (reg:CC FLAGS_REG)
-	(unspec:CC [(match_operand:V2DI 0 "register_operand" "Yr,*x")
-		    (match_operand:V2DI 1 "nonimmediate_operand" "Yrm,*xm")]
+	(unspec:CC [(match_operand:V_AVX 0 "register_operand" "Yr, *x, x")
+		    (match_operand:V_AVX 1 "nonimmediate_operand" "Yrm, *xm, xm")]
 		   UNSPEC_PTEST))]
   "TARGET_SSE4_1"
   "%vptest\t{%1, %0|%0, %1}"
-  [(set_attr "type" "ssecomi")
+  [(set_attr "isa" "*,*,avx")
+   (set_attr "type" "ssecomi")
    (set_attr "prefix_extra" "1")
    (set_attr "prefix" "maybe_vex")
-   (set_attr "mode" "TI")])
+   (set (attr "btver2_decode")
+     (if_then_else
+       (match_test "<sseinsnmode>mode==OImode")
+     (const_string "vector")
+     (const_string "*")))
+   (set_attr "mode" "<sseinsnmode>")])
 
 (define_insn "<sse4_1>_round<ssemodesuffix><avxsizesuffix>"
   [(set (match_operand:VF_128_256 0 "register_operand" "=Yr,*x")

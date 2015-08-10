@@ -2168,6 +2168,8 @@ rs6000_debug_reg_global (void)
 	   "wk reg_class = %s\n"
 	   "wl reg_class = %s\n"
 	   "wm reg_class = %s\n"
+	   "wp reg_class = %s\n"
+	   "wq reg_class = %s\n"
 	   "wr reg_class = %s\n"
 	   "ws reg_class = %s\n"
 	   "wt reg_class = %s\n"
@@ -2191,6 +2193,8 @@ rs6000_debug_reg_global (void)
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wk]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wl]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wm]],
+	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wp]],
+	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wq]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wr]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_ws]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wt]],
@@ -2856,6 +2860,13 @@ rs6000_init_hard_regno_mode_ok (bool global_init_p)
 
   if (TARGET_LFIWZX)
     rs6000_constraints[RS6000_CONSTRAINT_wz] = FLOAT_REGS;	/* DImode  */
+
+  if (TARGET_FLOAT128)
+    {
+      rs6000_constraints[RS6000_CONSTRAINT_wq] = VSX_REGS;	/* KFmode  */
+      if (rs6000_ieeequad)
+	rs6000_constraints[RS6000_CONSTRAINT_wp] = VSX_REGS;	/* TFmode  */
+    }
 
   /* Set up the reload helper and direct move functions.  */
   if (TARGET_VSX || TARGET_ALTIVEC)
@@ -23737,6 +23748,11 @@ rs6000_emit_prologue (void)
   int using_static_chain_p = (cfun->static_chain_decl != NULL_TREE
 			      && df_regs_ever_live_p (STATIC_CHAIN_REGNUM)
 			      && call_used_regs[STATIC_CHAIN_REGNUM]);
+  int using_split_stack = (flag_split_stack
+                           && (lookup_attribute ("no_split_stack",
+                                                 DECL_ATTRIBUTES (cfun->decl))
+                               == NULL));
+ 
   /* Offset to top of frame for frame_reg and sp respectively.  */
   HOST_WIDE_INT frame_off = 0;
   HOST_WIDE_INT sp_off = 0;
@@ -24007,7 +24023,7 @@ rs6000_emit_prologue (void)
       && info->cr_save_p
       && REGNO (frame_reg_rtx) != cr_save_regno
       && !(using_static_chain_p && cr_save_regno == 11)
-      && !(flag_split_stack && cr_save_regno == 12 && sp_adjust))
+      && !(using_split_stack && cr_save_regno == 12 && sp_adjust))
     {
       cr_save_rtx = gen_rtx_REG (SImode, cr_save_regno);
       START_USE (cr_save_regno);
@@ -24585,7 +24601,7 @@ rs6000_emit_prologue (void)
       if ((DEFAULT_ABI == ABI_AIX || DEFAULT_ABI == ABI_ELFv2)
 	  && !using_static_chain_p)
 	save_regno = 11;
-      else if (flag_split_stack || REGNO (frame_reg_rtx) == 12)
+      else if (using_split_stack || REGNO (frame_reg_rtx) == 12)
 	{
 	  save_regno = 11;
 	  if (using_static_chain_p)
@@ -24688,7 +24704,7 @@ rs6000_emit_prologue (void)
       emit_insn (gen_frame_store (reg, sp_reg_rtx, RS6000_TOC_SAVE_SLOT));
     }
 
-  if (flag_split_stack && split_stack_arg_pointer_used_p ())
+  if (using_split_stack && split_stack_arg_pointer_used_p ())
     {
       /* Set up the arg pointer (r12) for -fsplit-stack code.  If
 	 __morestack was called, it left the arg pointer to the old
@@ -26276,7 +26292,10 @@ rs6000_expand_split_stack_prologue (void)
 static rtx
 rs6000_internal_arg_pointer (void)
 {
-  if (flag_split_stack)
+  if (flag_split_stack
+     && (lookup_attribute ("no_split_stack", DECL_ATTRIBUTES (cfun->decl))
+         == NULL))
+
     {
       if (cfun->machine->split_stack_arg_pointer == NULL_RTX)
 	{

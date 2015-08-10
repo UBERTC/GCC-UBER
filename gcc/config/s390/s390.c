@@ -6497,6 +6497,10 @@ s390_dwarf_frame_reg_mode (int regno)
 {
   machine_mode save_mode = default_dwarf_frame_reg_mode (regno);
 
+  /* Make sure not to return DImode for any GPR with -m31 -mzarch.  */
+  if (GENERAL_REGNO_P (regno))
+    save_mode = Pmode;
+
   /* The rightmost 64 bits of vector registers are call-clobbered.  */
   if (GET_MODE_SIZE (save_mode) > 8)
     save_mode = DImode;
@@ -11623,7 +11627,14 @@ s390_expand_tbegin (rtx dest, rtx tdb, rtx retry, bool clobber_fprs_p)
     }
 
   if (clobber_fprs_p)
-    emit_insn (gen_tbegin_1 (gen_rtx_CONST_INT (VOIDmode, TBEGIN_MASK), tdb));
+    {
+      if (TARGET_VX)
+	emit_insn (gen_tbegin_1_z13 (gen_rtx_CONST_INT (VOIDmode, TBEGIN_MASK),
+				     tdb));
+      else
+	emit_insn (gen_tbegin_1 (gen_rtx_CONST_INT (VOIDmode, TBEGIN_MASK),
+				 tdb));
+    }
   else
     emit_insn (gen_tbegin_nofloat_1 (gen_rtx_CONST_INT (VOIDmode, TBEGIN_MASK),
 				     tdb));

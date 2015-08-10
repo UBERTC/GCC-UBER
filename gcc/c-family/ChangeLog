@@ -1,3 +1,45 @@
+2015-08-09  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	* c.opt (Wchkp): Use LangEnabledBy instead of EnabledBy.
+
+2015-08-06  Andrew Sutton  <andrew.n.sutton@gmail.com>
+	    Braden Obrzut  <admin@maniacsvault.net>
+	    Jason Merrill  <jason@redhat.com>
+
+	Add C++ Concepts TS support.
+	* c-common.c (c_common_reswords): Add __is_same_as, concept, requires.
+	* c-common.h (enum rid): Add RID_IS_SAME_AS, RID_CONCEPT, RID_REQUIRES.
+	(D_CXX_CONCEPTS, D_CXX_CONCEPTS_FLAGS): New.
+	* c-cppbuiltin.c (c_cpp_builtins): Define __cpp_concepts.
+	* c-opts.c (set_std_cxx1z): Set flag_concepts.
+	* c.opt (fconcepts): New.
+
+2015-08-02  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	* c-indentation.c (should_warn_for_misleading_indentation):
+	Improve heuristics.
+
+2015-08-02  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	* c-indentation.c (get_visual_column): Add parameter first_nws,
+	use it.  Update comment documenting the function.
+	(is_first_nonwhitespace_on_line): Remove.
+	(should_warn_for_misleading_indentation): Replace usage of
+	of is_first_nonwhitespace_on_line with get_visual_column.
+
+2015-08-02  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	* c-indentation.h (struct token_indent_info): Define.
+	(get_token_indent_info): Define.
+	(warn_for_misleading_information): Declare.
+	* c-common.h (warn_for_misleading_information): Remove.
+	* c-identation.c (warn_for_misleading_indentation):
+	Change declaration to take three token_indent_infos.  Adjust
+	accordingly.
+	* c-identation.c (should_warn_for_misleading_indentation):
+	Likewise.  Bail out early if the body is a compound statement.
+	(guard_tinfo_to_string): Define.
+
 2015-07-30  Jason Merrill  <jason@redhat.com>
 
 	* c-pretty-print.c (unary_expression) [INDIRECT_REF]: Don't print
