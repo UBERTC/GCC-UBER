@@ -38,6 +38,10 @@ check_intel_cpu_model (unsigned int family, unsigned int model,
 	      /* Silvermont.  */
 	      assert (__builtin_cpu_is ("silvermont"));
 	      break;
+	    case 0x57:
+	      /* Knights Landing.  */
+	      assert (__builtin_cpu_is ("knl"));
+	      break;
 	    case 0x1a:
 	    case 0x1e:
 	    case 0x1f:
@@ -74,11 +78,18 @@ check_intel_cpu_model (unsigned int family, unsigned int model,
 	      assert (__builtin_cpu_is ("haswell"));
 	      break;
 	    case 0x3d:
+	    case 0x47:
 	    case 0x4f:
 	    case 0x56:
 	      /* Broadwell.  */
 	      assert (__builtin_cpu_is ("corei7"));
 	      assert (__builtin_cpu_is ("broadwell"));
+	      break;
+	    case 0x4e:
+	    case 0x5e:
+	      /* Skylake.  */
+	      assert (__builtin_cpu_is ("corei7"));
+	      assert (__builtin_cpu_is ("skylake"));
 	      break;
 	    case 0x17:
 	    case 0x1d:

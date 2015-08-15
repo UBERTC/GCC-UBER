@@ -339,6 +339,11 @@ dump_template_bindings (cxx_pretty_printer *pp, tree parms, tree args,
       && !DECL_LANG_SPECIFIC (current_function_decl))
     return;
 
+  /* Don't try to do this once cgraph starts throwing away front-end
+     information.  */
+  if (at_eof >= 2)
+    return;
+
   FOR_EACH_VEC_SAFE_ELT (typenames, i, t)
     {
       if (need_semicolon)
@@ -1212,7 +1217,8 @@ dump_decl (cxx_pretty_printer *pp, tree t, int flags)
 	if (args == error_mark_node)
 	  pp_string (pp, M_("<template arguments error>"));
 	else if (args)
-	  dump_template_argument_list (pp, args, flags);
+	  dump_template_argument_list
+	    (pp, args, flags|TFF_NO_OMIT_DEFAULT_TEMPLATE_ARGUMENTS);
       	pp_cxx_end_template_argument_list (pp);
       }
       break;
