@@ -15041,6 +15041,9 @@ case "$host" in
   *-*-rtems*)
     # RTEMS supports Pthreads, but the library is not available at GCC build time.
     ;;
+  nvptx*-*-*)
+    # NVPTX does not support Pthreads, has its own code replacement.
+    ;;
   *)
     # Check to see if -pthread or -lpthread is needed.  Prefer the former.
     # In case the pthread.h system header is not found, this test will fail.
@@ -15167,7 +15170,6 @@ if test x"$plugin_support" = xyes; then
 
 $as_echo "#define PLUGIN_SUPPORT 1" >>confdefs.h
 
-  offload_targets=host_nonshm
 elif test "x${enable_offload_targets-no}" != xno; then
   as_fn_error "Can't support offloading without support for plugins" "$LINENO" 5
 fi

@@ -1,3 +1,24 @@
+2015-08-14  Yuri Rumyantsev  <ysrumyan@gmail.com>
+
+	* config/i386/cpuinfo.c (enum processor_subtypes): Add skylake.
+	(get_intel_cpu): Likewise.
+
+2015-08-12  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/i386/cpuinfo.c (processor_types): Add INTEL_KNL.
+	(get_intel_cpu): Add Knights Landing support.
+
+2015-08-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66954
+	* config/i386/cpuinfo.c (enum processor_features): Add FEATURE_PCLMUL.
+	(get_available_features): Handle FEATURE_PCLMUL.
+
+2015-08-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/i386/cpuinfo.c (get_intel_cpu): Treat model == 0x4f as
+	Broadwell.
+
 2015-07-22  Uros Bizjak  <ubizjak@gmail.com>
 
 	PR target/66954
