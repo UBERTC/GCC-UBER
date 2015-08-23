@@ -361,7 +361,9 @@ static const struct tune_params generic_tunings =
   4,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
-  1	/* vec_reassoc_width.  */
+  1,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2	/* min_div_recip_mul_df.  */
 };
 
 static const struct tune_params cortexa53_tunings =
@@ -380,7 +382,9 @@ static const struct tune_params cortexa53_tunings =
   4,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
-  1	/* vec_reassoc_width.  */
+  1,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2	/* min_div_recip_mul_df.  */
 };
 
 static const struct tune_params cortexa57_tunings =
@@ -399,7 +403,9 @@ static const struct tune_params cortexa57_tunings =
   4,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
-  1	/* vec_reassoc_width.  */
+  1,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2	/* min_div_recip_mul_df.  */
 };
 
 static const struct tune_params thunderx_tunings =
@@ -417,7 +423,9 @@ static const struct tune_params thunderx_tunings =
   8,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
-  1	/* vec_reassoc_width.  */
+  1,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2	/* min_div_recip_mul_df.  */
 };
 
 static const struct tune_params xgene1_tunings =
@@ -435,7 +443,9 @@ static const struct tune_params xgene1_tunings =
   16,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
-  1	/* vec_reassoc_width.  */
+  1,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2	/* min_div_recip_mul_df.  */
 };
 
 /* A processor implementing AArch64.  */
@@ -524,9 +534,11 @@ static const char * const aarch64_condition_codes[] =
 };
 
 static unsigned int
-aarch64_min_divisions_for_recip_mul (enum machine_mode mode ATTRIBUTE_UNUSED)
+aarch64_min_divisions_for_recip_mul (enum machine_mode mode)
 {
-  return 2;
+  if (GET_MODE_UNIT_SIZE (mode) == 4)
+    return aarch64_tune_params->min_div_recip_mul_sf;
+  return aarch64_tune_params->min_div_recip_mul_df;
 }
 
 static int
