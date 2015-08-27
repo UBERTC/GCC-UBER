@@ -5620,16 +5620,6 @@ aarch64_rtx_costs (rtx x, int code, int outer ATTRIBUTE_UNUSED,
      above this default.  */
   *cost = COSTS_N_INSNS (1);
 
-  /* TODO: The cost infrastructure currently does not handle
-     vector operations.  Assume that all vector operations
-     are equally expensive.  */
-  if (VECTOR_MODE_P (mode))
-    {
-      if (speed)
-	*cost += extra_cost->vect.alu;
-      return true;
-    }
-
   switch (code)
     {
     case SET:
@@ -5644,7 +5634,9 @@ aarch64_rtx_costs (rtx x, int code, int outer ATTRIBUTE_UNUSED,
 	  if (speed)
 	    {
 	      rtx address = XEXP (op0, 0);
-	      if (GET_MODE_CLASS (mode) == MODE_INT)
+	      if (VECTOR_MODE_P (mode))
+		*cost += extra_cost->ldst.storev;
+	      else if (GET_MODE_CLASS (mode) == MODE_INT)
 		*cost += extra_cost->ldst.store;
 	      else if (mode == SFmode)
 		*cost += extra_cost->ldst.storef;
@@ -5665,15 +5657,22 @@ aarch64_rtx_costs (rtx x, int code, int outer ATTRIBUTE_UNUSED,
 
 	  /* Fall through.  */
 	case REG:
+	  /* The cost is one per vector-register copied.  */
+	  if (VECTOR_MODE_P (GET_MODE (op0)) && REG_P (op1))
+	    {
+	      int n_minus_1 = (GET_MODE_SIZE (GET_MODE (op0)) - 1)
+			      / GET_MODE_SIZE (V4SImode);
+	      *cost = COSTS_N_INSNS (n_minus_1 + 1);
+	    }
 	  /* const0_rtx is in general free, but we will use an
 	     instruction to set a register to 0.  */
-          if (REG_P (op1) || op1 == const0_rtx)
-            {
-              /* The cost is 1 per register copied.  */
-              int n_minus_1 = (GET_MODE_SIZE (GET_MODE (op0)) - 1)
+	  else if (REG_P (op1) || op1 == const0_rtx)
+	    {
+	      /* The cost is 1 per register copied.  */
+	      int n_minus_1 = (GET_MODE_SIZE (GET_MODE (op0)) - 1)
 			      / UNITS_PER_WORD;
-              *cost = COSTS_N_INSNS (n_minus_1 + 1);
-            }
+	      *cost = COSTS_N_INSNS (n_minus_1 + 1);
+	    }
           else
 	    /* Cost is just the cost of the RHS of the set.  */
 	    *cost += rtx_cost (op1, SET, 1, speed);
@@ -5771,7 +5770,9 @@ aarch64_rtx_costs (rtx x, int code, int outer ATTRIBUTE_UNUSED,
 	     approximation for the additional cost of the addressing
 	     mode.  */
 	  rtx address = XEXP (x, 0);
-	  if (GET_MODE_CLASS (mode) == MODE_INT)
+	  if (VECTOR_MODE_P (mode))
+	    *cost += extra_cost->ldst.loadv;
+	  else if (GET_MODE_CLASS (mode) == MODE_INT)
 	    *cost += extra_cost->ldst.load;
 	  else if (mode == SFmode)
 	    *cost += extra_cost->ldst.loadf;
@@ -5787,6 +5788,16 @@ aarch64_rtx_costs (rtx x, int code, int outer ATTRIBUTE_UNUSED,
 
     case NEG:
       op0 = XEXP (x, 0);
+
+      if (VECTOR_MODE_P (mode))
+	{
+	  if (speed)
+	    {
+	      /* FNEG.  */
+	      *cost += extra_cost->vect.alu;
+	    }
+	  return false;
+	}
 
       if (GET_MODE_CLASS (GET_MODE (x)) == MODE_INT)
        {
@@ -5826,7 +5837,12 @@ aarch64_rtx_costs (rtx x, int code, int outer ATTRIBUTE_UNUSED,
     case CLRSB:
     case CLZ:
       if (speed)
-        *cost += extra_cost->alu.clz;
+	{
+	  if (VECTOR_MODE_P (mode))
+	    *cost += extra_cost->vect.alu;
+	  else
+	    *cost += extra_cost->alu.clz;
+	}
 
       return false;
 
@@ -5912,6 +5928,20 @@ aarch64_rtx_costs (rtx x, int code, int outer ATTRIBUTE_UNUSED,
           return false;
         }
 
+      if (VECTOR_MODE_P (mode))
+	{
+	  /* Vector compare.  */
+	  if (speed)
+	    *cost += extra_cost->vect.alu;
+
+	  if (aarch64_float_const_zero_rtx_p (op1))
+	    {
+	      /* Vector cm (eq|ge|gt|lt|le) supports constant 0.0 for no extra
+		 cost.  */
+	      return true;
+	    }
+	  return false;
+	}
       return false;
 
     case MINUS:
@@ -5964,12 +5994,21 @@ cost_minus:
 
 	if (speed)
 	  {
-	    if (GET_MODE_CLASS (mode) == MODE_INT)
-	      /* SUB(S).  */
-	      *cost += extra_cost->alu.arith;
+	    if (VECTOR_MODE_P (mode))
+	      {
+		/* Vector SUB.  */
+		*cost += extra_cost->vect.alu;
+	      }
+	    else if (GET_MODE_CLASS (mode) == MODE_INT)
+	      {
+		/* SUB(S).  */
+		*cost += extra_cost->alu.arith;
+	      }
 	    else if (GET_MODE_CLASS (mode) == MODE_FLOAT)
-	      /* FSUB.  */
-	      *cost += extra_cost->fp[mode == DFmode].addsub;
+	      {
+		/* FSUB.  */
+		*cost += extra_cost->fp[mode == DFmode].addsub;
+	      }
 	  }
 	return true;
       }
@@ -6033,12 +6072,21 @@ cost_plus:
 
 	if (speed)
 	  {
-	    if (GET_MODE_CLASS (mode) == MODE_INT)
-	      /* ADD.  */
-	      *cost += extra_cost->alu.arith;
+	    if (VECTOR_MODE_P (mode))
+	      {
+		/* Vector ADD.  */
+		*cost += extra_cost->vect.alu;
+	      }
+	    else if (GET_MODE_CLASS (mode) == MODE_INT)
+	      {
+		/* ADD.  */
+		*cost += extra_cost->alu.arith;
+	      }
 	    else if (GET_MODE_CLASS (mode) == MODE_FLOAT)
-	      /* FADD.  */
-	      *cost += extra_cost->fp[mode == DFmode].addsub;
+	      {
+		/* FADD.  */
+		*cost += extra_cost->fp[mode == DFmode].addsub;
+	      }
 	  }
 	return true;
       }
@@ -6047,8 +6095,12 @@ cost_plus:
       *cost = COSTS_N_INSNS (1);
 
       if (speed)
-        *cost += extra_cost->alu.rev;
-
+	{
+	  if (VECTOR_MODE_P (mode))
+	    *cost += extra_cost->vect.alu;
+	  else
+	    *cost += extra_cost->alu.rev;
+	}
       return false;
 
     case IOR:
@@ -6056,10 +6108,14 @@ cost_plus:
         {
           *cost = COSTS_N_INSNS (1);
 
-          if (speed)
-            *cost += extra_cost->alu.rev;
-
-          return true;
+	  if (speed)
+	    {
+	      if (VECTOR_MODE_P (mode))
+		*cost += extra_cost->vect.alu;
+	      else
+		*cost += extra_cost->alu.rev;
+	    }
+	  return true;
         }
 
       if (aarch64_extr_rtx_p (x, &op0, &op1))
@@ -6077,6 +6133,13 @@ cost_plus:
     cost_logic:
       op0 = XEXP (x, 0);
       op1 = XEXP (x, 1);
+
+      if (VECTOR_MODE_P (mode))
+	{
+	  if (speed)
+	    *cost += extra_cost->vect.alu;
+	  return true;
+	}
 
       if (code == AND
           && GET_CODE (op0) == MULT
@@ -6145,6 +6208,13 @@ cost_plus:
     case NOT:
       x = XEXP (x, 0);
       op0 = aarch64_strip_shift (x);
+
+      if (VECTOR_MODE_P (mode))
+	{
+	  /* Vector NOT.  */
+	  *cost += extra_cost->vect.alu;
+	  return false;
+	}
 
       /* MVN-shifted-reg.  */
       if (op0 != x)
@@ -6217,10 +6287,19 @@ cost_plus:
 	  return true;
 	}
 
-      /* UXTB/UXTH.  */
       if (speed)
-	*cost += extra_cost->alu.extend;
-
+	{
+	  if (VECTOR_MODE_P (mode))
+	    {
+	      /* UMOV.  */
+	      *cost += extra_cost->vect.alu;
+	    }
+	  else
+	    {
+	      /* UXTB/UXTH.  */
+	      *cost += extra_cost->alu.extend;
+	    }
+	}
       return false;
 
     case SIGN_EXTEND:
@@ -6240,7 +6319,12 @@ cost_plus:
 	}
 
       if (speed)
-	*cost += extra_cost->alu.extend;
+	{
+	  if (VECTOR_MODE_P (mode))
+	    *cost += extra_cost->vect.alu;
+	  else
+	    *cost += extra_cost->alu.extend;
+	}
       return false;
 
     case ASHIFT:
@@ -6249,10 +6333,20 @@ cost_plus:
 
       if (CONST_INT_P (op1))
         {
-	  /* LSL (immediate), UBMF, UBFIZ and friends.  These are all
-	     aliases.  */
 	  if (speed)
-	    *cost += extra_cost->alu.shift;
+	    {
+	      if (VECTOR_MODE_P (mode))
+		{
+		  /* Vector shift (immediate).  */
+		  *cost += extra_cost->vect.alu;
+		}
+	      else
+		{
+		  /* LSL (immediate), UBMF, UBFIZ and friends.  These are all
+		     aliases.  */
+		  *cost += extra_cost->alu.shift;
+		}
+	    }
 
           /* We can incorporate zero/sign extend for free.  */
           if (GET_CODE (op0) == ZERO_EXTEND
@@ -6264,10 +6358,19 @@ cost_plus:
         }
       else
         {
-	  /* LSLV.  */
 	  if (speed)
-	    *cost += extra_cost->alu.shift_reg;
-
+	    {
+	      if (VECTOR_MODE_P (mode))
+		{
+		  /* Vector shift (register).  */
+		  *cost += extra_cost->vect.alu;
+		}
+	      else
+		{
+		  /* LSLV.  */
+		  *cost += extra_cost->alu.shift_reg;
+		}
+	    }
 	  return false;  /* All arguments need to be in registers.  */
         }
 
@@ -6282,7 +6385,12 @@ cost_plus:
 	{
 	  /* ASR (immediate) and friends.  */
 	  if (speed)
-	    *cost += extra_cost->alu.shift;
+	    {
+	      if (VECTOR_MODE_P (mode))
+		*cost += extra_cost->vect.alu;
+	      else
+		*cost += extra_cost->alu.shift;
+	    }
 
 	  *cost += rtx_cost (op0, (enum rtx_code) code, 0, speed);
 	  return true;
@@ -6292,8 +6400,12 @@ cost_plus:
 
 	  /* ASR (register) and friends.  */
 	  if (speed)
-	    *cost += extra_cost->alu.shift_reg;
-
+	    {
+	      if (VECTOR_MODE_P (mode))
+		*cost += extra_cost->vect.alu;
+	      else
+		*cost += extra_cost->alu.shift_reg;
+	    }
 	  return false;  /* All arguments need to be in registers.  */
 	}
 
@@ -6341,7 +6453,12 @@ cost_plus:
     case SIGN_EXTRACT:
       /* UBFX/SBFX.  */
       if (speed)
-	*cost += extra_cost->alu.bfx;
+	{
+	  if (VECTOR_MODE_P (mode))
+	    *cost += extra_cost->vect.alu;
+	  else
+	    *cost += extra_cost->alu.bfx;
+	}
 
       /* We can trust that the immediates used will be correct (there
 	 are no by-register forms), so we need only cost op0.  */
@@ -6358,7 +6475,9 @@ cost_plus:
     case UMOD:
       if (speed)
 	{
-	  if (GET_MODE_CLASS (GET_MODE (x)) == MODE_INT)
+	  if (VECTOR_MODE_P (mode))
+	    *cost += extra_cost->vect.alu;
+	  else if (GET_MODE_CLASS (GET_MODE (x)) == MODE_INT)
 	    *cost += (extra_cost->mult[GET_MODE (x) == DImode].add
 		      + extra_cost->mult[GET_MODE (x) == DImode].idiv);
 	  else if (GET_MODE (x) == DFmode)
@@ -6375,7 +6494,9 @@ cost_plus:
     case SQRT:
       if (speed)
 	{
-	  if (GET_MODE_CLASS (mode) == MODE_INT)
+	  if (VECTOR_MODE_P (mode))
+	    *cost += extra_cost->vect.alu;
+	  else if (GET_MODE_CLASS (mode) == MODE_INT)
 	    /* There is no integer SQRT, so only DIV and UDIV can get
 	       here.  */
 	    *cost += extra_cost->mult[mode == DImode].idiv;
@@ -6407,7 +6528,12 @@ cost_plus:
       op2 = XEXP (x, 2);
 
       if (speed)
-	*cost += extra_cost->fp[mode == DFmode].fma;
+	{
+	  if (VECTOR_MODE_P (mode))
+	    *cost += extra_cost->vect.alu;
+	  else
+	    *cost += extra_cost->fp[mode == DFmode].fma;
+	}
 
       /* FMSUB, FNMADD, and FNMSUB are free.  */
       if (GET_CODE (op0) == NEG)
@@ -6453,12 +6579,28 @@ cost_plus:
 
     case FLOAT_EXTEND:
       if (speed)
-	*cost += extra_cost->fp[mode == DFmode].widen;
+	{
+	  if (VECTOR_MODE_P (mode))
+	    {
+	      /*Vector truncate.  */
+	      *cost += extra_cost->vect.alu;
+	    }
+	  else
+	    *cost += extra_cost->fp[mode == DFmode].widen;
+	}
       return false;
 
     case FLOAT_TRUNCATE:
       if (speed)
-	*cost += extra_cost->fp[mode == DFmode].narrow;
+	{
+	  if (VECTOR_MODE_P (mode))
+	    {
+	      /*Vector conversion.  */
+	      *cost += extra_cost->vect.alu;
+	    }
+	  else
+	    *cost += extra_cost->fp[mode == DFmode].narrow;
+	}
       return false;
 
     case FIX:
@@ -6479,13 +6621,23 @@ cost_plus:
         }
 
       if (speed)
-        *cost += extra_cost->fp[GET_MODE (x) == DFmode].toint;
-
+	{
+	  if (VECTOR_MODE_P (mode))
+	    *cost += extra_cost->vect.alu;
+	  else
+	    *cost += extra_cost->fp[GET_MODE (x) == DFmode].toint;
+	}
       *cost += rtx_cost (x, (enum rtx_code) code, 0, speed);
       return true;
 
     case ABS:
-      if (GET_MODE_CLASS (mode) == MODE_FLOAT)
+      if (VECTOR_MODE_P (mode))
+	{
+	  /* ABS (vector).  */
+	  if (speed)
+	    *cost += extra_cost->vect.alu;
+	}
+      else if (GET_MODE_CLASS (mode) == MODE_FLOAT)
 	{
 	  op0 = XEXP (x, 0);
 
@@ -6518,10 +6670,15 @@ cost_plus:
     case SMIN:
       if (speed)
 	{
-	  /* FMAXNM/FMINNM/FMAX/FMIN.
-	     TODO: This may not be accurate for all implementations, but
-	     we do not model this in the cost tables.  */
-	  *cost += extra_cost->fp[mode == DFmode].addsub;
+	  if (VECTOR_MODE_P (mode))
+	    *cost += extra_cost->vect.alu;
+	  else
+	    {
+	      /* FMAXNM/FMINNM/FMAX/FMIN.
+	         TODO: This may not be accurate for all implementations, but
+	         we do not model this in the cost tables.  */
+	      *cost += extra_cost->fp[mode == DFmode].addsub;
+	    }
 	}
       return false;
 

@@ -1029,7 +1029,9 @@ const struct cpu_cost_table cortexa9_extra_costs =
     2,			/* stm_regs_per_insn_subsequent.  */
     COSTS_N_INSNS (1),	/* storef.  */
     COSTS_N_INSNS (1),	/* stored.  */
-    COSTS_N_INSNS (1)	/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* loadv.  */
+    COSTS_N_INSNS (1)	/* storev.  */
   },
   {
     /* FP SFmode */
@@ -1130,7 +1132,9 @@ const struct cpu_cost_table cortexa8_extra_costs =
     2,			/* stm_regs_per_insn_subsequent.  */
     COSTS_N_INSNS (1),	/* storef.  */
     COSTS_N_INSNS (1),	/* stored.  */
-    COSTS_N_INSNS (1)	/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* loadv.  */
+    COSTS_N_INSNS (1)	/* storev.  */
   },
   {
     /* FP SFmode */
@@ -1232,7 +1236,9 @@ const struct cpu_cost_table cortexa5_extra_costs =
     2,			/* stm_regs_per_insn_subsequent.  */
     COSTS_N_INSNS (2),	/* storef.  */
     COSTS_N_INSNS (2),	/* stored.  */
-    COSTS_N_INSNS (1)	/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* loadv.  */
+    COSTS_N_INSNS (1)	/* storev.  */
   },
   {
     /* FP SFmode */
@@ -1335,7 +1341,9 @@ const struct cpu_cost_table cortexa7_extra_costs =
     2,			/* stm_regs_per_insn_subsequent.  */
     COSTS_N_INSNS (2),	/* storef.  */
     COSTS_N_INSNS (2),	/* stored.  */
-    COSTS_N_INSNS (1)	/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* loadv.  */
+    COSTS_N_INSNS (1)	/* storev.  */
   },
   {
     /* FP SFmode */
@@ -1436,7 +1444,9 @@ const struct cpu_cost_table cortexa12_extra_costs =
     2,			/* stm_regs_per_insn_subsequent.  */
     COSTS_N_INSNS (2),	/* storef.  */
     COSTS_N_INSNS (2),	/* stored.  */
-    0			/* store_unaligned.  */
+    0,			/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* loadv.  */
+    COSTS_N_INSNS (1)	/* storev.  */
   },
   {
     /* FP SFmode */
@@ -1537,7 +1547,9 @@ const struct cpu_cost_table cortexa15_extra_costs =
     2,			/* stm_regs_per_insn_subsequent.  */
     0,			/* storef.  */
     0,			/* stored.  */
-    0			/* store_unaligned.  */
+    0,			/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* loadv.  */
+    COSTS_N_INSNS (1)	/* storev.  */
   },
   {
     /* FP SFmode */
@@ -1638,7 +1650,9 @@ const struct cpu_cost_table v7m_extra_costs =
     1,			/* stm_regs_per_insn_subsequent.  */
     COSTS_N_INSNS (2),	/* storef.  */
     COSTS_N_INSNS (3),	/* stored.  */
-    COSTS_N_INSNS (1)  /* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* store_unaligned.  */
+    COSTS_N_INSNS (1),	/* loadv.  */
+    COSTS_N_INSNS (1)	/* storev.  */
   },
   {
     /* FP SFmode */
