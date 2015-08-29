@@ -1,3 +1,86 @@
+2015-08-27  Pat Haugen  <pthaugen@us.ibm.com>
+
+	Backport from mainline:
+	2015-08-27  Pat Haugen  <pthaugen@us.ibm.com>
+
+	* config/rs6000/vector.md (vec_shr_<mode>): Fix to do a shift
+	instead of a rotate.
+
+2015-08-26  Renlin Li  <renlin.li@arm.com>
+
+	Backport from mainline
+	2015-08-24  Renlin Li  <renlin.li@arm.com>
+
+	* config/arm/arm-protos.h (arm_valid_symbolic_address_p): Declare.
+	* config/arm/arm.c (arm_valid_symbolic_address_p): Define.
+	* config/arm/arm.md (arm_movt): Use arm_valid_symbolic_address_p.
+	* config/arm/constraints.md ("j"): Add check for high code.
+
+2015-08-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-08-21  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+    	* config/s390/s390-builtins.def: Fix value range of vec_load_bndry.
+
+2015-08-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from mainline:
+	2015-08-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/67211
+	* config/rs6000/rs6000-cpus.def (ISA_2_7_MASKS_SERVER): Set
+	-mefficient-unaligned-vsx on ISA 2.7.
+
+	* config/rs6000/rs6000.opt (-mefficient-unaligned-vsx): Convert
+	option to a masked option.
+
+	* config/rs6000/rs6000.c (rs6000_option_override_internal): Rework
+	logic for -mefficient-unaligned-vsx so that it is set via an arch
+	ISA option, instead of being set if -mtune=power8 is set. Move
+	-mefficient-unaligned-vsx and -mallow-movmisalign handling to be
+	near other default option handling.
+
+2015-08-20  Georg-Johann Lay  <avr@gjlay.de>
+
+	* config/avr/avr.c (avr_insert_attributes): In diagnostic essage:
+	Multiply argument avr_n_flash by 64 to match unit of "KiB".
+	(avr_pgm_check_var_decl): Same.
+
+2015-08-18  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backport from mainline:
+	2015-08-08  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/67028
+	* combine.c (simplify_comparison): Fix comment.  Rearrange code.
+	Add test to see if a const_int fits in the new mode.
+
+2015-08-17  Jason Merrill  <jason@redhat.com>
+
+	PR c++/65734
+	* stor-layout.c (layout_type): Layout the TYPE_MAIN_VARIANT.
+	(finalize_type_size): Respect TYPE_USER_ALIGN.
+	(layout_type) [ARRAY_TYPE]: Likewise.
+
+2015-08-17  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from mainline:
+	2015-08-12  Yvan Roux  <yvan.roux@linaro.org>
+
+	PR target/67127
+	* config/arm/arm.md (movdi): Restrict illegitimate ldrd/strd checking
+	to ARM core registers.
+
+2015-08-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline:
+	2015-07-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66648
+	* config/i386/i386.c (ix86_expand_set_or_movmem): Emit main loop
+	execution guard when min_size is less than size_needed.
+
 2015-08-11  Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
 	Backport from mainline
