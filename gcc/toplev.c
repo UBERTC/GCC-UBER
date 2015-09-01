@@ -580,15 +580,6 @@ compile_file (void)
   if (seen_error ())
     return;
 
-  /* After the parser has generated debugging information, augment
-     this information with any new location/etc information that may
-     have become available after the compilation proper.  */
-  timevar_start (TV_PHASE_DBGINFO);
-  symtab_node *node;
-  FOR_EACH_DEFINED_SYMBOL (node)
-    debug_hooks->late_global_decl (node->decl);
-  timevar_stop (TV_PHASE_DBGINFO);
-
   timevar_start (TV_PHASE_LATE_ASM);
 
   /* Compilation unit is finalized.  When producing non-fat LTO object, we are
@@ -1325,12 +1316,9 @@ process_options (void)
 
 #ifndef HAVE_isl
   if (flag_graphite
+      || flag_loop_optimize_isl
       || flag_graphite_identity
-      || flag_loop_block
-      || flag_loop_interchange
-      || flag_loop_strip_mine
-      || flag_loop_parallelize_all
-      || flag_loop_unroll_jam)
+      || flag_loop_parallelize_all)
     sorry ("Graphite loop optimizations cannot be used (ISL is not available)" 
 	   "(-fgraphite, -fgraphite-identity, -floop-block, "
 	   "-floop-interchange, -floop-strip-mine, -floop-parallelize-all, "

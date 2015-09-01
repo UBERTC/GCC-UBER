@@ -58,7 +58,7 @@ static void make_close_phi_nodes_unique (basic_block);
 
 /* The type of the analyzed basic block.  */
 
-typedef enum gbb_type {
+enum gbb_type {
   GBB_UNKNOWN,
   GBB_LOOP_SING_EXIT_HEADER,
   GBB_LOOP_MULT_EXIT_HEADER,
@@ -66,7 +66,7 @@ typedef enum gbb_type {
   GBB_COND_HEADER,
   GBB_SIMPLE,
   GBB_LAST
-} gbb_type;
+};
 
 /* Detect the type of BB.  Loop headers are only marked, if they are
    new.  This means their loop_father is different to LAST_LOOP.
@@ -128,7 +128,7 @@ get_bb_type (basic_block bb, struct loop *last_loop)
      9	<- exit  */
 
 
-typedef struct sd_region_p
+struct sd_region
 {
   /* The entry bb dominates all bbs in the sd_region.  It is part of
      the region.  */
@@ -137,7 +137,7 @@ typedef struct sd_region_p
   /* The exit bb postdominates all bbs in the sd_region, but is not
      part of the region.  */
   basic_block exit;
-} sd_region;
+};
 
 
 
@@ -409,8 +409,8 @@ stmt_simple_for_scop_p (basic_block scop_entry, loop_p outermost_loop,
 	  {
 	    tree op = gimple_op (stmt, i);
 	    if (!graphite_can_represent_expr (scop_entry, loop, op)
-		/* We can not handle REAL_TYPE. Failed for pr39260.  */
-		|| TREE_CODE (TREE_TYPE (op)) == REAL_TYPE)
+		/* We can only constrain on integer type.  */
+		|| (TREE_CODE (TREE_TYPE (op)) != INTEGER_TYPE))
 	      {
 		if (dump_file && (dump_flags & TDF_DETAILS))
 		  {

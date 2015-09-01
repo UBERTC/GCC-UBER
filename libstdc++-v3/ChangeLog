@@ -1,3 +1,199 @@
+2015-08-28  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/67362
+	* include/bits/regex_scanner.tcc (_Scanner<>::_M_scan_normal):
+	Always returns ordinary char token if the char isn't
+	considered a special char.
+	* testsuite/28_regex/regression.cc: New test file for collecting
+	regression testcases from, typically, bugzilla.
+
+2015-08-27  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/67374
+	* include/bits/range_access.h (valarray, begin, end): Declare.
+	* testsuite/26_numerics/valarray/range_access.cc: Test const
+	overloads.
+	* testsuite/26_numerics/valarray/range_access2.cc: New.
+
+2015-08-27  John Marino  <gnugcc@marino.st>
+
+	* acinclude.m4 (*-*-dragonfly*): Change 7 locale support files
+	from generic to new DragonFly versions.
+	* configure: Regenerate.
+	* config/locale/dragonfly/c_locale.cc: Improve locale support.
+	* config/locale/dragonfly/ctype_members.cc: Likewise.
+	* config/os/bsd/dragonfly/ctype_configure_char.cc: Likewise.
+	* config/os/bsd/dragonfly/os_defines.h: Define _GLIBCXX_USE_C99.
+	* config/locale/dragonfly/c_locale.h: New.
+	* config/locale/dragonfly/codecvt_members.cc: New.
+	* config/locale/dragonfly/collate_members.cc: New.
+	* config/locale/dragonfly/monetary_members.cc: New.
+	* config/locale/dragonfly/numeric_members.cc: New.
+	* config/locale/dragonfly/time_members.cc: New.
+	* config/locale/dragonfly/time_members.h: New.
+
+2015-08-27  Jonathan Wakely  <jwakely@redhat.com>
+
+	* configure: Regenerate.
+
+2015-08-26  Edward Smith-Rowland  <3dw4rd@verizon.net>
+	    Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/64351
+	PR libstdc++/63176
+	* include/bits/random.tcc (generate_canonical): Loop until we get a
+	result less than one.
+	* testsuite/26_numerics/random/uniform_real_distribution/operators/
+	64351.cc: New.
+
+2015-08-26  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/shared_ptr.h (__enable_shared_from_this_helper): Use
+	nullptr.
+	* include/bits/shared_ptr_base.h (weak_ptr::_M_assign): Don't assign
+	if ownership is already shared with a shared_ptr object.
+	(__enable_shared_from_this_helper): Use nullptr.
+	* testsuite/20_util/enable_shared_from_this/members/const.cc: New.
+	* testsuite/20_util/enable_shared_from_this/members/reinit.cc: New.
+	* testsuite/20_util/enable_shared_from_this/requirements/
+	explicit_instantiation.cc: Instantiate with const and incomplete types.
+
+	* include/debug/map.h (map::try_emplace, map::insert_or_assign):
+	Define.
+	* include/debug/unordered_map (unordered_map::try_emplace,
+	unordered_map::insert_or_assign): Define.
+
+	PR libstdc++/66902
+	* src/c++11/debug.cc (_S_debug_messages): Give internal linkage.
+
+2015-08-24  François Dumont  <fdumont@gcc.gnu.org>
+
+	PR libstdc++/60519
+	* include/debug/formatter.h (_Debug_msg_id::__msg_irreflexive_ordering):
+	New enum entry.
+	* include/debug/functions.h (_Irreflexive_checker): New.
+	(__is_irreflexive, __is_irreflexive_pred): New.
+	* include/debug/macros.h
+	(__glibcxx_check_irreflexive, __glibcxx_check_irreflexive_pred): New
+	macros.
+	(__glibcxx_check_irreflexive2, __glibcxx_check_irreflexive_pred2): New
+	macros limited to post-C++11 mode.
+	* include/debug/debug.h
+	(__glibcxx_requires_irreflexive, __glibcxx_requires_irreflexive_pred):
+	New macros, use latter.
+	(__glibcxx_requires_irreflexive2, __glibcxx_requires_irreflexive_pred2):
+	Likewise.
+	* include/bits/stl_algo.h
+	(partial_sort_copy): Add irreflexive debug check.
+	(partial_sort_copy): Likewise.
+	(lower_bound): Likewise.
+	(upper_bound): Likewise.
+	(equal_range): Likewise.
+	(binary_search): Likewise.
+	(inplace_merge): Likewise.
+	(includes): Likewise.
+	(next_permutation): Likewise.
+	(prev_permutation): Likewise.
+	(is_sorted_until): Likewise.
+	(minmax_element): Likewise.
+	(partial_sort): Likewise.
+	(nth_element): Likewise.
+	(sort): Likewise.
+	(merge): Likewise.
+	(stable_sort): Likewise.
+	(set_union): Likewise.
+	(set_intersection): Likewise.
+	(set_difference): Likewise.
+	(set_symmetric_difference): Likewise.
+	(min_element): Likewise.
+	(max_element): Likewise.
+	* include/bits/stl_algobase.h
+	(lower_bound): Likewise.
+	(lexicographical_compare): Likewise.
+	* include/bits/stl_heap.h
+	(push_heap): Likewise.
+	(pop_heap): Likewise.
+	(make_heap): Likewise.
+	(sort_heap): Likewise.
+	(is_heap_until): Likewise.
+	* testsuite/25_algorithms/lexicographical_compare/debug/
+	irreflexive_neg.cc: New.
+	* testsuite/25_algorithms/lower_bound/debug/irreflexive.cc: New.
+	* testsuite/25_algorithms/partial_sort_copy/debug/irreflexive_neg.cc:
+	New.
+
+2015-08-24  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/65049
+	* include/bits/char_traits.h (char_traits<char>::compare,
+	char_traits<char>::find, char_traits<char>::move,
+	char_traits<char>::copy, char_traits<char>::assign): Check for zero
+	length.
+	(char_traits<wchar_t>::compare, char_traits<wchar_t>::find,
+	char_traits<wchar_t>::move, char_traits<wchar_t>::copy,
+	char_traits<wchar_t>::assign): Likewise.
+	(char_traits<char16_t>::move, char_traits<char16_t>::copy): Likewise.
+	(char_traits<char32_t>::move, char_traits<char32_t>::copy): Likewise.
+	* include/ext/pod_char_traits.h (char_traits<character<>>::move,
+	char_traits<character<>>::copy): Likewise.
+	* testsuite/21_strings/char_traits/requirements/char/65049.cc: New.
+	* testsuite/21_strings/char_traits/requirements/char16_t/65049.cc:
+	New.
+	* testsuite/21_strings/char_traits/requirements/char32_t/65049.cc:
+	New.
+	* testsuite/21_strings/char_traits/requirements/wchar_t/65049.cc:
+	New.
+
+	PR libstdc++/67309
+	* include/bits/random.tcc
+	(poisson_distribution::param_type::_M_initialize): Use max<double>.
+	(binomial_distribution::param_type::_M_initialize): Likewise.
+	* testsuite/17_intro/headers/c++200x/67309.cc: New.
+	* testsuite/17_intro/headers/c++200x/all_attributes.cc: Remove
+	redundant header.
+
+2015-08-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/67294
+	* testsuite/30_threads/recursive_timed_mutex/unlock/2.cc: Do not run
+	on Darwin.
+	* testsuite/30_threads/timed_mutex/unlock/2.cc: Likewise.
+
+	* include/experimental/any (__any_caster): Define at namespace scope
+	so the name is visible to name lookup.
+	* testsuite/experimental/any/misc/any_cast_neg.cc: Adjust dg-error.
+
+	* python/Makefile.am: Ensure gdb.py is installed for libstdc++ not
+	libstdc++fs.
+	* python/Makefile.in: Regenerate.
+
+2015-08-19  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/c_global/cmath: Fix typo in comment.
+
+2015-08-19  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/c_global/cmath: Revert fix for libstdc++/58625, no
+	longer necessary (__builtin_signbit is now type-generic).
+
+2015-08-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR c++/67216
+	* testsuite/tr1/2_general_utilities/shared_ptr/observers/bool_conv.cc:
+	Fix use of safe-bool idiom that isn't valid in C++11.
+
+	* include/bits/ptr_traits.h: Include <bits/move.h> for addressof.
+
+	PR libstdc++/67066
+	* doc/xml/manual/configure.xml (manual.intro.setup.configure): Add
+	caveats for --enable-concept-checks. Improve link text.
+	* doc/xml/manual/diagnostics.xml (std.diagnostics.concept_checking):
+	Clarify caveats.
+	* doc/html/*: Regenerate.
+	* include/bits/stl_deque.h (deque): Only use concept checks in C++03.
+	* include/bits/stl_stack.h (stack): Likewise.
+	* include/bits/stl_vector.h (vector): Likewise.
+
 2015-08-14  Jonathan Wakely  <jwakely@redhat.com>
 
 	* include/experimental/any (any::operator=(const any&)): Move check

@@ -1,3 +1,60 @@
+2015-08-29  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/46193
+	* testsuite/libgomp.c/pr46193.c: New test.
+
+2015-08-24  Nathan Sidwell  <nathan@codesourcery.com>
+
+	libgomp/
+	* libgomp.map: Add 4.0.2 version.
+	* target.c (offload_image_descr): Add version field.
+	(gomp_load_image_to_device): Add version argument.  Adjust plugin
+	call.  Improve load mismatch diagnostic.
+	(gomp_unload_image_from_device): Add version argument.  Adjust plugin
+	call.
+	(GOMP_offload_regster): Make stub function, move bulk to ...
+	(GOMP_offload_register_ver): ... here.  Process version argument.
+	(GOMP_offload_unregister): Make stub function, move bulk to ...
+	(GOMP_offload_unregister_ver): ... here.  Process version argument.
+	(gomp_init_device): Process version field.
+	(gomp_unload_device): Process version field.
+	(gomp_load_plugin_for_device): Reimplement DLSYM & DLSYM_OPT
+	macros.  Check plugin version.
+	* libgomp.h (gomp_device_descr): Add version function field.  Adjust
+	loader and unloader types.
+	* oacc-host.c: Include gomp-constants.h.
+	(host_version): New.
+	(host_load_image, host_unload_image): Adjust.
+	(host_dispatch): Add host_version.
+	* plugin/plugin-nvptx.c: Include gomp-constants.h.
+	(GOMP_OFFLOAD_version): New.
+	(GOMP_OFFLOAD_load_image): Add version arg and check it.
+	(GOMP_OFFLOAD_unload_image): Likewise.
+	* plugin/plugin-host.c: Include gomp-constants.h.
+	(GOMP_OFFLOAD_version): New.
+	(GOMP_OFFLOAD_load_image): Add version arg.
+	(GOMP_OFFLOAD_unload_image): Likewise.
+
+2015-08-24  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65468
+	* testsuite/libgomp.oacc-c-c++-common/vector-loop.c: New test.
+
+2015-08-24  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65468
+	* testsuite/libgomp.c/static-chunk-size-one.c: New test.
+
+2015-08-24  Joost VandeVondele  <vondele@gnu.gcc.org>
+
+	PR libgomp/66761
+	PR libgomp/67303
+	* iter.c (gomp_iter_dynamic_next): Employ an atomic load.
+	(gomp_iter_guided_next): Idem.
+	* iter_ull.c (gomp_iter_ull_dynamic_next): Idem.
+	(gomp_iter_ull_guided_next): Idem.
+	* config/linux/wait.h (do_spin): Idem.
+
 2015-08-10  Thomas Schwinge  <thomas@codesourcery.com>
 
 	* libgomp-plugin.h (enum offload_target_type): Remove

@@ -5774,7 +5774,7 @@
   [(set (match_operand:SI 0 "nonimmediate_operand" "=r")
 	(lo_sum:SI (match_operand:SI 1 "nonimmediate_operand" "0")
 		   (match_operand:SI 2 "general_operand"      "i")))]
-  "arm_arch_thumb2"
+  "arm_arch_thumb2 && arm_valid_symbolic_address_p (operands[2])"
   "movt%?\t%0, #:upper16:%c2"
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")
@@ -8162,8 +8162,7 @@
         size += GET_MODE_SIZE (GET_MODE (src));
       }
 
-    emit_call_insn (GEN_CALL_VALUE (par, operands[0], const0_rtx, NULL,
-				    const0_rtx));
+    emit_call_insn (gen_call_value (par, operands[0], const0_rtx, NULL));
 
     size = 0;
 

@@ -1,3 +1,71 @@
+2015-08-31  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/54833
+	* trans.c (gfc_call_free): Don't check if pointer is NULL.
+	* trans.h (gfc_call_free): Adjust comment.
+
+2015-08-29  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* trans.c (gfc_call_malloc, gfc_allocate_using_malloc,
+	gfc_allocate_using_lib, gfc_allocate_allocatable,
+	gfc_call_realloc): Simplify code.
+	* trans-array.c (gfc_trans_allocate_array_storage,
+	gfc_trans_auto_array_allocation, gfc_conv_array_parameter): Do not
+	convert gfc_call_free() argument.
+	* trans-expr.c (gfc_conv_string_tmp, gfc_conv_procedure_call,
+	fcncall_realloc_result): Likewise.
+	* trans-intrinsic.c (gfc_conv_intrinsic_transfer): Likewise.
+
+2015-08-28  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/53668
+	* intrinsic.c (add_functions, add_subroutines): Remove resolution
+	functions for FREE and MALLOC.
+	* intrinsic.h (gfc_resolve_malloc, gfc_resolve_free): Remove.
+	* iresolve.c (gfc_resolve_malloc, gfc_resolve_free): Remove.
+	* trans-intrinsic.c (conv_intrinsic_free,
+	gfc_conv_intrinsic_malloc): New functions.
+
+2015-08-24  Louis Krupp <louis.krupp@zoho.com>
+
+	PR fortran/62536
+	PR fortran/66175
+	* decl.c (gfc_match_end): Clean up nested BLOCKs.
+	* parse.c (parse_block_construct): Deal gracefully with cleaned-up
+	BLOCKs.
+
+2015-08-23  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR libfortran/54572
+	* config-lang.in: Add libbacktrace to target_libs.
+
+2015-08-18  Trevor Saunders  <tbsaunde@tbsaunde.org>
+
+	* dependency.c, dependency.h, gfortran.h, io.c, module.c,
+	parse.h, resolve.c, trans-types.h, trans.h: remove useless typedefs.
+
+2015-08-16  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/54656
+	* trans-intrinsic.c (gfc_build_intrinsic_lib_fndecls): Add decl
+	for quadruple precision BUILT_IN_SQRT.
+
+2015-08-16  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* trans-intrinsic.c (conv_intrinsic_ieee_is_negative): Use type
+	generic BUILT_IN_SIGNBIT.
+	(conv_intrinsic_ieee_copy_sign): Likewise.
+	* f95-lang.c (gfc_init_builtin_functions): Add BUILT_IN_ISINF,
+	BUILT_IN_ISINF_SIGN, BUILT_IN_SIGNBIT, BUILT_IN_ISLESS,
+	BUILT_IN_ISLESSGREATER, BUILT_IN_ISGREATER. Remove non-type generic
+	variants of BUILT_IN_SIGNBIT.
+	* mathbuiltins.def: Remove SIGNBIT.
+
+2015-08-16  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR fortran/41387
+	* gfortran.texi: New section "File operations on symbolic links".
+
 2015-08-08  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
 
 	PR fortran/67059

@@ -1,3 +1,35 @@
+2015-08-25  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/67330
+	* c-common.c (handle_weak_attribute): Don't check whether the
+	visibility can be changed here.
+
+2015-08-22  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	* c-lex.c (c_lex_with_flags): Use explicit locations.
+
+2015-08-18  Trevor Saunders  <tbsaunde@tbsaunde.org>
+
+	* c-ada-spec.h, c-common.c, c-common.h, c-format.c, c-format.h,
+	c-objc.h, c-ppoutput.c, c-pragma.c, c-pragma.h: Remove useless
+
+2015-08-18  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR middle-end/36757
+	* c-common.c (check_builtin_function_arguments): Add check
+	for BUILT_IN_SIGNBIT argument.
+
+2015-08-18  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67160
+	* c-cppbuiltin.c (c_cpp_builtins): Fix __cpp_static_assert value
+	in c++1z mode.
+
+2015-08-17  Marek Polacek  <polacek@redhat.com>
+
+	* c-pretty-print.c (pp_c_cv_qualifiers): Remove code dealing
+	with whitespaces before qualifier names.
+
 2015-08-12  Marek Polacek  <polacek@redhat.com>
 
 	PR c++/55095

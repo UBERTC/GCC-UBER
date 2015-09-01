@@ -6469,16 +6469,18 @@ convert_nontype_argument (tree type, tree expr, tsubst_flags_t complain)
 	{
 	  if (complain & tf_error)
 	    error ("%qE is not a valid template argument for type %qT "
-		   "because it is not an object with external linkage",
+		   "because it is not an object with linkage",
 		   expr, type);
 	  return NULL_TREE;
 	}
 
-      if (!DECL_EXTERNAL_LINKAGE_P (expr))
+      /* DR 1155 allows internal linkage in C++11 and up.  */
+      linkage_kind linkage = decl_linkage (expr);
+      if (linkage < (cxx_dialect >= cxx11 ? lk_internal : lk_external))
 	{
 	  if (complain & tf_error)
 	    error ("%qE is not a valid template argument for type %qT "
-		   "because object %qD has not external linkage",
+		   "because object %qD does not have linkage",
 		   expr, type, expr);
 	  return NULL_TREE;
 	}
@@ -16344,6 +16346,8 @@ tsubst_copy_and_build (tree t,
 
 	LAMBDA_EXPR_THIS_CAPTURE (r) = NULL_TREE;
 
+	insert_pending_capture_proxies ();
+
 	RETURN (build_lambda_object (r));
       }
 
@@ -22669,7 +22673,8 @@ resolve_typename_type (tree type, bool only_current_p)
     return type;
   /* If SCOPE isn't the template itself, it will not have a valid
      TYPE_FIELDS list.  */
-  if (same_type_p (scope, CLASSTYPE_PRIMARY_TEMPLATE_TYPE (scope)))
+  if (CLASS_TYPE_P (scope)
+      && same_type_p (scope, CLASSTYPE_PRIMARY_TEMPLATE_TYPE (scope)))
     /* scope is either the template itself or a compatible instantiation
        like X<T>, so look up the name in the original template.  */
     scope = CLASSTYPE_PRIMARY_TEMPLATE_TYPE (scope);

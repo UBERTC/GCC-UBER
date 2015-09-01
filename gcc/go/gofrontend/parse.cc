@@ -1741,6 +1741,14 @@ Parse::init_vars_from_call(const Typed_identifier_list* vars, Type* type,
 	    first_var = no;
 	  else
 	    {
+              // If the current object is a redefinition of another object, we
+              // might have already recorded the dependency relationship between
+              // it and the first variable.  Either way, an error will be
+              // reported for the redefinition and we don't need to properly
+              // record dependency information for an invalid program.
+              if (no->is_redefinition())
+                continue;
+
 	      // The subsequent vars have an implicit dependency on
 	      // the first one, so that everything gets initialized in
 	      // the right order and so that we detect cycles
@@ -2305,8 +2313,20 @@ Parse::function_decl(bool saw_nointerface)
 
   if (!this->peek_token()->is_op(OPERATOR_LCURLY))
     {
-      if (named_object == NULL && !Gogo::is_sink_name(name))
+      if (named_object == NULL)
 	{
+          // Function declarations with the blank identifier as a name are
+          // mostly ignored since they cannot be called.  We make an object
+          // for this declaration for type-checking purposes.
+          if (Gogo::is_sink_name(name))
+            {
+              static int count;
+              char buf[30];
+              snprintf(buf, sizeof buf, ".$sinkfndecl%d", count);
+              ++count;
+              name = std::string(buf);
+            }
+
 	  if (fntype == NULL
               || (expected_receiver && rec == NULL))
 	    this->gogo_->add_erroneous_name(name);

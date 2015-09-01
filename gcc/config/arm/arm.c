@@ -97,6 +97,7 @@ static void arm_add_gc_roots (void);
 static int arm_gen_constant (enum rtx_code, machine_mode, rtx,
 			     HOST_WIDE_INT, rtx, rtx, int, int);
 static unsigned bit_count (unsigned long);
+static unsigned feature_count (const arm_feature_set*);
 static int arm_address_register_rtx_p (rtx, int);
 static int arm_legitimate_index_p (machine_mode, rtx, RTX_CODE, int);
 static bool is_called_in_ARM_mode (tree);
@@ -767,11 +768,11 @@ static int thumb_call_reg_needed;
 
 /* The bits in this mask specify which
    instructions we are allowed to generate.  */
-unsigned long insn_flags = 0;
+arm_feature_set insn_flags = ARM_FSET_EMPTY;
 
 /* The bits in this mask specify which instruction scheduling options should
    be used.  */
-unsigned long tune_flags = 0;
+arm_feature_set tune_flags = ARM_FSET_EMPTY;
 
 /* The highest ARM architecture version supported by the
    target.  */
@@ -927,7 +928,7 @@ struct processors
   enum processor_type core;
   const char *arch;
   enum base_architecture base_arch;
-  const unsigned long flags;
+  const arm_feature_set flags;
   const struct tune_params *const tune;
 };
 
@@ -2196,10 +2197,10 @@ static const struct processors all_cores[] =
   /* ARM Cores */
 #define ARM_CORE(NAME, X, IDENT, ARCH, FLAGS, COSTS) \
   {NAME, IDENT, #ARCH, BASE_ARCH_##ARCH,	  \
-    FLAGS | FL_FOR_ARCH##ARCH, &arm_##COSTS##_tune},
+   FLAGS, &arm_##COSTS##_tune},
 #include "arm-cores.def"
 #undef ARM_CORE
-  {NULL, arm_none, NULL, BASE_ARCH_0, 0, NULL}
+  {NULL, arm_none, NULL, BASE_ARCH_0, ARM_FSET_EMPTY, NULL}
 };
 
 static const struct processors all_architectures[] =
@@ -2212,7 +2213,7 @@ static const struct processors all_architectures[] =
   {NAME, CORE, #ARCH, BASE_ARCH_##ARCH, FLAGS, NULL},
 #include "arm-arches.def"
 #undef ARM_ARCH
-  {NULL, arm_none, NULL, BASE_ARCH_0, 0, NULL}
+  {NULL, arm_none, NULL, BASE_ARCH_0, ARM_FSET_EMPTY, NULL}
 };
 
 
@@ -2276,6 +2277,14 @@ bit_count (unsigned long value)
     }
 
   return count;
+}
+
+/* Return the number of features in feature-set SET.  */
+static unsigned
+feature_count (const arm_feature_set * set)
+{
+  return (bit_count (ARM_FSET_CPU1 (*set))
+	  + bit_count (ARM_FSET_CPU2 (*set)));
 }
 
 typedef struct
@@ -2703,7 +2712,7 @@ arm_option_check_internal (struct gcc_options *opts)
 
   /* Make sure that the processor choice does not conflict with any of the
      other command line choices.  */
-  if (TARGET_ARM_P (flags) && !(insn_flags & FL_NOTM))
+  if (TARGET_ARM_P (flags) && !ARM_FSET_HAS_CPU1 (insn_flags, FL_NOTM))
     error ("target CPU does not support ARM mode");
 
   /* TARGET_BACKTRACE calls leaf_function_p, which causes a crash if done
@@ -2803,7 +2812,8 @@ static void
 arm_option_override_internal (struct gcc_options *opts,
 			      struct gcc_options *opts_set)
 {
-  if (TARGET_THUMB_P (opts->x_target_flags) && !(insn_flags & FL_THUMB))
+  if (TARGET_THUMB_P (opts->x_target_flags)
+      && !(ARM_FSET_HAS_CPU1 (insn_flags, FL_THUMB)))
     {
       warning (0, "target CPU does not support THUMB instructions");
       opts->x_target_flags &= ~MASK_THUMB;
@@ -2890,8 +2900,13 @@ arm_option_override (void)
     {
       if (arm_selected_cpu)
 	{
+	  const arm_feature_set tuning_flags = ARM_FSET_MAKE_CPU1 (FL_TUNE);
+	  arm_feature_set selected_flags;
+	  ARM_FSET_XOR (selected_flags, arm_selected_cpu->flags,
+			arm_selected_arch->flags);
+	  ARM_FSET_EXCLUDE (selected_flags, selected_flags, tuning_flags);
 	  /* Check for conflict between mcpu and march.  */
-	  if ((arm_selected_cpu->flags ^ arm_selected_arch->flags) & ~FL_TUNE)
+	  if (!ARM_FSET_IS_EMPTY (selected_flags))
 	    {
 	      warning (0, "switch -mcpu=%s conflicts with -march=%s switch",
 		       arm_selected_cpu->name, arm_selected_arch->name);
@@ -2915,7 +2930,7 @@ arm_option_override (void)
   if (!arm_selected_cpu)
     {
       const struct processors * sel;
-      unsigned int        sought;
+      arm_feature_set sought = ARM_FSET_EMPTY;;
 
       arm_selected_cpu = &all_cores[TARGET_CPU_DEFAULT];
       if (!arm_selected_cpu->name)
@@ -2935,26 +2950,27 @@ arm_option_override (void)
 
       /* Now check to see if the user has specified some command line
 	 switch that require certain abilities from the cpu.  */
-      sought = 0;
 
       if (TARGET_INTERWORK || TARGET_THUMB)
 	{
-	  sought |= (FL_THUMB | FL_MODE32);
+	  ARM_FSET_ADD_CPU1 (sought, FL_THUMB);
+	  ARM_FSET_ADD_CPU1 (sought, FL_MODE32);
 
 	  /* There are no ARM processors that support both APCS-26 and
 	     interworking.  Therefore we force FL_MODE26 to be removed
 	     from insn_flags here (if it was set), so that the search
 	     below will always be able to find a compatible processor.  */
-	  insn_flags &= ~FL_MODE26;
+	  ARM_FSET_DEL_CPU1 (insn_flags, FL_MODE26);
 	}
 
-      if (sought != 0 && ((sought & insn_flags) != sought))
+      if (!ARM_FSET_IS_EMPTY (sought)
+	  && !(ARM_FSET_CPU_SUBSET (sought, insn_flags)))
 	{
 	  /* Try to locate a CPU type that supports all of the abilities
 	     of the default CPU, plus the extra abilities requested by
 	     the user.  */
 	  for (sel = all_cores; sel->name != NULL; sel++)
-	    if ((sel->flags & sought) == (sought | insn_flags))
+	    if (ARM_FSET_CPU_SUBSET (sought, sel->flags))
 	      break;
 
 	  if (sel->name == NULL)
@@ -2974,19 +2990,23 @@ arm_option_override (void)
 		 command line options we scan the array again looking
 		 for a best match.  */
 	      for (sel = all_cores; sel->name != NULL; sel++)
-		if ((sel->flags & sought) == sought)
-		  {
-		    unsigned count;
+		{
+		  arm_feature_set required = ARM_FSET_EMPTY;
+		  ARM_FSET_UNION (required, sought, insn_flags);
+		  if (ARM_FSET_CPU_SUBSET (required, sel->flags))
+		    {
+		      unsigned count;
+		      arm_feature_set flags;
+		      ARM_FSET_INTER (flags, sel->flags, insn_flags);
+		      count = feature_count (&flags);
 
-		    count = bit_count (sel->flags & insn_flags);
-
-		    if (count >= current_bit_count)
-		      {
-			best_fit = sel;
-			current_bit_count = count;
-		      }
-		  }
-
+		      if (count >= current_bit_count)
+			{
+			  best_fit = sel;
+			  current_bit_count = count;
+			}
+		    }
+		}
 	      gcc_assert (best_fit);
 	      sel = best_fit;
 	    }
@@ -3014,7 +3034,8 @@ arm_option_override (void)
 
   /* BPABI targets use linker tricks to allow interworking on cores
      without thumb support.  */
-  if (TARGET_INTERWORK && !((insn_flags & FL_THUMB) || TARGET_BPABI))
+  if (TARGET_INTERWORK
+      && !(ARM_FSET_HAS_CPU1 (insn_flags, FL_THUMB) || TARGET_BPABI))
     {
       warning (0, "target CPU does not support interworking" );
       target_flags &= ~MASK_INTERWORK;
@@ -3039,34 +3060,34 @@ arm_option_override (void)
     warning (0, "passing floating point arguments in fp regs not yet supported");
 
   /* Initialize boolean versions of the flags, for use in the arm.md file.  */
-  arm_arch3m = (insn_flags & FL_ARCH3M) != 0;
-  arm_arch4 = (insn_flags & FL_ARCH4) != 0;
-  arm_arch4t = arm_arch4 & ((insn_flags & FL_THUMB) != 0);
-  arm_arch5 = (insn_flags & FL_ARCH5) != 0;
-  arm_arch5e = (insn_flags & FL_ARCH5E) != 0;
-  arm_arch6 = (insn_flags & FL_ARCH6) != 0;
-  arm_arch6k = (insn_flags & FL_ARCH6K) != 0;
-  arm_arch6kz = arm_arch6k && (insn_flags & FL_ARCH6KZ);
-  arm_arch_notm = (insn_flags & FL_NOTM) != 0;
+  arm_arch3m = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH3M);
+  arm_arch4 = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH4);
+  arm_arch4t = arm_arch4 && (ARM_FSET_HAS_CPU1 (insn_flags, FL_THUMB));
+  arm_arch5 = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH5);
+  arm_arch5e = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH5E);
+  arm_arch6 = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH6);
+  arm_arch6k = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH6K);
+  arm_arch6kz = arm_arch6k && ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH6KZ);
+  arm_arch_notm = ARM_FSET_HAS_CPU1 (insn_flags, FL_NOTM);
   arm_arch6m = arm_arch6 && !arm_arch_notm;
-  arm_arch7 = (insn_flags & FL_ARCH7) != 0;
-  arm_arch7em = (insn_flags & FL_ARCH7EM) != 0;
-  arm_arch8 = (insn_flags & FL_ARCH8) != 0;
-  arm_arch_thumb2 = (insn_flags & FL_THUMB2) != 0;
-  arm_arch_xscale = (insn_flags & FL_XSCALE) != 0;
+  arm_arch7 = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH7);
+  arm_arch7em = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH7EM);
+  arm_arch8 = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH8);
+  arm_arch_thumb2 = ARM_FSET_HAS_CPU1 (insn_flags, FL_THUMB2);
+  arm_arch_xscale = ARM_FSET_HAS_CPU1 (insn_flags, FL_XSCALE);
 
-  arm_ld_sched = (tune_flags & FL_LDSCHED) != 0;
-  arm_tune_strongarm = (tune_flags & FL_STRONG) != 0;
-  arm_tune_wbuf = (tune_flags & FL_WBUF) != 0;
-  arm_tune_xscale = (tune_flags & FL_XSCALE) != 0;
-  arm_arch_iwmmxt = (insn_flags & FL_IWMMXT) != 0;
-  arm_arch_iwmmxt2 = (insn_flags & FL_IWMMXT2) != 0;
-  arm_arch_thumb_hwdiv = (insn_flags & FL_THUMB_DIV) != 0;
-  arm_arch_arm_hwdiv = (insn_flags & FL_ARM_DIV) != 0;
-  arm_arch_no_volatile_ce = (insn_flags & FL_NO_VOLATILE_CE) != 0;
+  arm_ld_sched = ARM_FSET_HAS_CPU1 (tune_flags, FL_LDSCHED);
+  arm_tune_strongarm = ARM_FSET_HAS_CPU1 (tune_flags, FL_STRONG);
+  arm_tune_wbuf = ARM_FSET_HAS_CPU1 (tune_flags, FL_WBUF);
+  arm_tune_xscale = ARM_FSET_HAS_CPU1 (tune_flags, FL_XSCALE);
+  arm_arch_iwmmxt = ARM_FSET_HAS_CPU1 (insn_flags, FL_IWMMXT);
+  arm_arch_iwmmxt2 = ARM_FSET_HAS_CPU1 (insn_flags, FL_IWMMXT2);
+  arm_arch_thumb_hwdiv = ARM_FSET_HAS_CPU1 (insn_flags, FL_THUMB_DIV);
+  arm_arch_arm_hwdiv = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARM_DIV);
+  arm_arch_no_volatile_ce = ARM_FSET_HAS_CPU1 (insn_flags, FL_NO_VOLATILE_CE);
   arm_tune_cortex_a9 = (arm_tune == cortexa9) != 0;
-  arm_arch_crc = (insn_flags & FL_CRC32) != 0;
-  arm_m_profile_small_mul = (insn_flags & FL_SMALLMUL) != 0;
+  arm_arch_crc = ARM_FSET_HAS_CPU1 (insn_flags, FL_CRC32);
+  arm_m_profile_small_mul = ARM_FSET_HAS_CPU1 (insn_flags, FL_SMALLMUL);
 
   /* V5 code we generate is completely interworking capable, so we turn off
      TARGET_INTERWORK here to avoid many tests later on.  */
@@ -3158,7 +3179,7 @@ arm_option_override (void)
 
   /* For arm2/3 there is no need to do any scheduling if we are doing
      software floating-point.  */
-  if (TARGET_SOFT_FLOAT && (tune_flags & FL_MODE32) == 0)
+  if (TARGET_SOFT_FLOAT && !ARM_FSET_HAS_CPU1 (tune_flags, FL_MODE32))
     flag_schedule_insns = flag_schedule_insns_after_reload = 0;
 
   /* Use the cp15 method if it is available.  */
@@ -12607,22 +12628,12 @@ neon_vdup_constant (rtx vals)
 {
   machine_mode mode = GET_MODE (vals);
   machine_mode inner_mode = GET_MODE_INNER (mode);
-  int n_elts = GET_MODE_NUNITS (mode);
-  bool all_same = true;
   rtx x;
-  int i;
 
   if (GET_CODE (vals) != CONST_VECTOR || GET_MODE_SIZE (inner_mode) > 4)
     return NULL_RTX;
 
-  for (i = 0; i < n_elts; ++i)
-    {
-      x = XVECEXP (vals, 0, i);
-      if (i > 0 && !rtx_equal_p (x, XVECEXP (vals, 0, 0)))
-	all_same = false;
-    }
-
-  if (!all_same)
+  if (!const_vec_duplicate_p (vals, &x))
     /* The elements are not all the same.  We could handle repeating
        patterns of a mode larger than INNER_MODE here (e.g. int8x8_t
        {0, C, 0, C, 0, C, 0, C} which can be loaded using
@@ -12633,7 +12644,7 @@ neon_vdup_constant (rtx vals)
      single ARM register.  This will be cheaper than a vector
      load.  */
 
-  x = copy_to_mode_reg (inner_mode, XVECEXP (vals, 0, 0));
+  x = copy_to_mode_reg (inner_mode, x);
   return gen_rtx_VEC_DUPLICATE (mode, x);
 }
 
@@ -12809,10 +12820,10 @@ bounds_check (rtx operand, HOST_WIDE_INT low, HOST_WIDE_INT high,
   if (lane < low || lane >= high)
     {
       if (exp)
-	error ("%K%s %lld out of range %lld - %lld",
+	error ("%K%s %wd out of range %wd - %wd",
 	       exp, desc, lane, low, high - 1);
       else
-	error ("%s %lld out of range %lld - %lld", desc, lane, low, high - 1);
+	error ("%s %wd out of range %wd - %wd", desc, lane, low, high - 1);
     }
 }
 
@@ -12836,7 +12847,7 @@ neon_const_bounds (rtx operand, HOST_WIDE_INT low, HOST_WIDE_INT high)
 HOST_WIDE_INT
 neon_element_bits (machine_mode mode)
 {
-  return GET_MODE_BITSIZE (GET_MODE_INNER (mode));
+  return GET_MODE_UNIT_BITSIZE (mode);
 }
 
 
@@ -14412,7 +14423,10 @@ arm_block_move_unaligned_straight (rtx dstbase, rtx srcbase,
 				srcoffset + j * UNITS_PER_WORD - src_autoinc);
 	  mem = adjust_automodify_address (srcbase, SImode, addr,
 					   srcoffset + j * UNITS_PER_WORD);
-	  emit_insn (gen_unaligned_loadsi (regs[j], mem));
+	  if (src_aligned)
+	    emit_move_insn (regs[j], mem);
+	  else
+	    emit_insn (gen_unaligned_loadsi (regs[j], mem));
 	}
       srcoffset += words * UNITS_PER_WORD;
     }
@@ -14431,7 +14445,10 @@ arm_block_move_unaligned_straight (rtx dstbase, rtx srcbase,
 				dstoffset + j * UNITS_PER_WORD - dst_autoinc);
 	  mem = adjust_automodify_address (dstbase, SImode, addr,
 					   dstoffset + j * UNITS_PER_WORD);
-	  emit_insn (gen_unaligned_storesi (mem, regs[j]));
+	  if (dst_aligned)
+	    emit_move_insn (mem, regs[j]);
+	  else
+	    emit_insn (gen_unaligned_storesi (mem, regs[j]));
 	}
       dstoffset += words * UNITS_PER_WORD;
     }
@@ -28672,6 +28689,38 @@ arm_emit_coreregs_64bit_shift (enum rtx_code code, rtx out, rtx in,
   #undef BRANCH
 }
 
+/* Returns true if the pattern is a valid symbolic address, which is either a
+   symbol_ref or (symbol_ref + addend).
+
+   According to the ARM ELF ABI, the initial addend of REL-type relocations
+   processing MOVW and MOVT instructions is formed by interpreting the 16-bit
+   literal field of the instruction as a 16-bit signed value in the range
+   -32768 <= A < 32768.  */
+
+bool
+arm_valid_symbolic_address_p (rtx addr)
+{
+  rtx xop0, xop1 = NULL_RTX;
+  rtx tmp = addr;
+
+  if (GET_CODE (tmp) == SYMBOL_REF || GET_CODE (tmp) == LABEL_REF)
+    return true;
+
+  /* (const (plus: symbol_ref const_int))  */
+  if (GET_CODE (addr) == CONST)
+    tmp = XEXP (addr, 0);
+
+  if (GET_CODE (tmp) == PLUS)
+    {
+      xop0 = XEXP (tmp, 0);
+      xop1 = XEXP (tmp, 1);
+
+      if (GET_CODE (xop0) == SYMBOL_REF && CONST_INT_P (xop1))
+	  return IN_RANGE (INTVAL (xop1), -0x8000, 0x7fff);
+    }
+
+  return false;
+}
 
 /* Returns true if a valid comparison operation and makes
    the operands in a form that is valid.  */

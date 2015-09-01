@@ -1155,7 +1155,9 @@ check_noexcept_r (tree *tp, int * /*walk_subtrees*/, void * /*data*/)
          We could use TREE_NOTHROW (t) for !TREE_PUBLIC fns, though... */
       tree fn = (code == AGGR_INIT_EXPR
 		 ? AGGR_INIT_EXPR_FN (t) : CALL_EXPR_FN (t));
-      tree type = TREE_TYPE (TREE_TYPE (fn));
+      tree type = TREE_TYPE (fn);
+      gcc_assert (POINTER_TYPE_P (type));
+      type = TREE_TYPE (type);
 
       STRIP_NOPS (fn);
       if (TREE_CODE (fn) == ADDR_EXPR)
@@ -1184,10 +1186,10 @@ check_noexcept_r (tree *tp, int * /*walk_subtrees*/, void * /*data*/)
 /* If a function that causes a noexcept-expression to be false isn't
    defined yet, remember it and check it for TREE_NOTHROW again at EOF.  */
 
-typedef struct GTY(()) pending_noexcept {
+struct GTY(()) pending_noexcept {
   tree fn;
   location_t loc;
-} pending_noexcept;
+};
 static GTY(()) vec<pending_noexcept, va_gc> *pending_noexcept_checks;
 
 /* FN is a FUNCTION_DECL that caused a noexcept-expr to be false.  Warn if

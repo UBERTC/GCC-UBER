@@ -1043,7 +1043,6 @@ align_variable (tree decl, bool dont_output_data)
 	  if (! DECL_THREAD_LOCAL_P (decl) || data_align <= BITS_PER_WORD)
 	    align = data_align;
 #endif
-#ifdef CONSTANT_ALIGNMENT
 	  if (DECL_INITIAL (decl) != 0
 	      /* In LTO we have no errors in program; error_mark_node is used
 		 to mark offlined constructors.  */
@@ -1056,7 +1055,6 @@ align_variable (tree decl, bool dont_output_data)
 	      if (! DECL_THREAD_LOCAL_P (decl) || const_align <= BITS_PER_WORD)
 		align = const_align;
 	    }
-#endif
 	}
     }
 
@@ -1097,7 +1095,6 @@ get_variable_align (tree decl)
       if (! DECL_THREAD_LOCAL_P (decl) || data_align <= BITS_PER_WORD)
 	align = data_align;
 #endif
-#ifdef CONSTANT_ALIGNMENT
       if (DECL_INITIAL (decl) != 0
 	  /* In LTO we have no errors in program; error_mark_node is used
 	     to mark offlined constructors.  */
@@ -1110,7 +1107,6 @@ get_variable_align (tree decl)
 	  if (! DECL_THREAD_LOCAL_P (decl) || const_align <= BITS_PER_WORD)
 	    align = const_align;
 	}
-#endif
     }
 
   return align;
@@ -3286,9 +3282,7 @@ build_constant_desc (tree exp)
      architectures so use DATA_ALIGNMENT as well, except for strings.  */
   if (TREE_CODE (exp) == STRING_CST)
     {
-#ifdef CONSTANT_ALIGNMENT
       DECL_ALIGN (decl) = CONSTANT_ALIGNMENT (exp, DECL_ALIGN (decl));
-#endif
     }
   else
     align_variable (decl, 0);
@@ -3743,13 +3737,10 @@ force_const_mem (machine_mode mode, rtx x)
 
   /* Align the location counter as required by EXP's data type.  */
   align = GET_MODE_ALIGNMENT (mode == VOIDmode ? word_mode : mode);
-#ifdef CONSTANT_ALIGNMENT
-  {
-    tree type = lang_hooks.types.type_for_mode (mode, 0);
-    if (type != NULL_TREE)
-      align = CONSTANT_ALIGNMENT (make_tree (type, x), align);
-  }
-#endif
+
+  tree type = lang_hooks.types.type_for_mode (mode, 0);
+  if (type != NULL_TREE)
+    align = CONSTANT_ALIGNMENT (make_tree (type, x), align);
 
   pool->offset += (align / BITS_PER_UNIT) - 1;
   pool->offset &= ~ ((align / BITS_PER_UNIT) - 1);
@@ -4640,10 +4631,10 @@ initializer_constant_valid_for_bitfield_p (tree value)
 /* output_constructor outer state of relevance in recursive calls, typically
    for nested aggregate bitfields.  */
 
-typedef struct {
+struct oc_outer_state {
   unsigned int bit_offset;  /* current position in ...  */
   int byte;                 /* ... the outer byte buffer.  */
-} oc_outer_state;
+};
 
 static unsigned HOST_WIDE_INT
   output_constructor (tree, unsigned HOST_WIDE_INT, unsigned int,
@@ -4883,7 +4874,7 @@ array_size_for_constructor (tree val)
 
 /* output_constructor local state to support interaction with helpers.  */
 
-typedef struct {
+struct oc_local_state {
 
   /* Received arguments.  */
   tree exp;                     /* Constructor expression.  */
@@ -4904,7 +4895,7 @@ typedef struct {
   tree val;        /* Current element value.  */
   tree index;      /* Current element index.  */
 
-} oc_local_state;
+};
 
 /* Helper for output_constructor.  From the current LOCAL state, output a
    RANGE_EXPR element.  */
@@ -5412,7 +5403,10 @@ declare_weak (tree decl)
 {
   gcc_assert (TREE_CODE (decl) != FUNCTION_DECL || !TREE_ASM_WRITTEN (decl));
   if (! TREE_PUBLIC (decl))
-    error ("weak declaration of %q+D must be public", decl);
+    {
+      error ("weak declaration of %q+D must be public", decl);
+      return;
+    }
   else if (!TARGET_SUPPORTS_WEAK)
     warning (0, "weak declaration of %q+D not supported", decl);
 
@@ -5829,12 +5823,12 @@ get_tm_clone_pair (tree o)
   return NULL_TREE;
 }
 
-typedef struct tm_alias_pair
+struct tm_alias_pair
 {
   unsigned int uid;
   tree from;
   tree to;
-} tm_alias_pair;
+};
 
 
 /* Dump the actual pairs to the .tm_clone_table section.  */

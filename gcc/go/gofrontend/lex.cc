@@ -1047,7 +1047,7 @@ Lex::gather_number()
 	  pnum = p;
 	  while (p < pend)
 	    {
-	      if (*p < '0' || *p > '7')
+	      if (*p < '0' || *p > '9')
 		break;
 	      ++p;
 	    }
@@ -1060,7 +1060,13 @@ Lex::gather_number()
 	  std::string s(pnum, p - pnum);
 	  mpz_t val;
 	  int r = mpz_init_set_str(val, s.c_str(), base);
-	  go_assert(r == 0);
+          if (r != 0)
+            {
+              if (base == 8)
+                error_at(this->location(), "invalid octal literal");
+              else
+                error_at(this->location(), "invalid hex literal");
+            }
 
 	  if (neg)
 	    mpz_neg(val, val);
@@ -1683,6 +1689,16 @@ Lex::skip_cpp_comment()
       && memcmp(p, "line ", 5) == 0)
     {
       p += 5;
+
+      // Before finding FILE:LINENO, make sure line has valid characters.
+      const char* pcheck = p;
+      while (pcheck < pend)
+        {
+          unsigned int c;
+          bool issued_error;
+          pcheck = this->advance_one_utf8_char(pcheck, &c, &issued_error);
+        }
+
       while (p < pend && *p == ' ')
 	++p;
       const char* pcolon = static_cast<const char*>(memchr(p, ':', pend - p));
