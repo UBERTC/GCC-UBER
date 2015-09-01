@@ -649,16 +649,11 @@ internal_proto(get_args);
 extern void store_exe_path (const char *);
 export_proto(store_exe_path);
 
-extern char * full_exe_path (void);
-internal_proto(full_exe_path);
-
-extern void find_addr2line (void);
-internal_proto(find_addr2line);
-
 /* backtrace.c */
 
-extern void backtrace (void);
-iexport_proto(backtrace);
+extern void show_backtrace (int);
+internal_proto(show_backtrace);
+
 
 /* error.c */
 
@@ -795,14 +790,8 @@ internal_proto(xrealloc);
 
 /* environ.c */
 
-extern int check_buffered (int);
-internal_proto(check_buffered);
-
 extern void init_variables (void);
 internal_proto(init_variables);
-
-extern void show_variables (void);
-internal_proto(show_variables);
 
 unit_convert get_unformatted_convert (int);
 internal_proto(get_unformatted_convert);

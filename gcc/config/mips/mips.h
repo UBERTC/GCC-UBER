@@ -1876,6 +1876,9 @@ FP_ASM_SPEC "\
 #define HARD_REGNO_MODE_OK(REGNO, MODE)					\
   mips_hard_regno_mode_ok[ (int)(MODE) ][ (REGNO) ]
 
+#define HARD_REGNO_RENAME_OK(OLD_REG, NEW_REG)				\
+  mips_hard_regno_rename_ok (OLD_REG, NEW_REG)
+
 /* Select a register mode required for caller save of hard regno REGNO.  */
 #define HARD_REGNO_CALLER_SAVE_MODE(REGNO, NREGS, MODE) \
   mips_hard_regno_caller_save_mode (REGNO, NREGS, MODE)
@@ -2977,6 +2980,9 @@ while (0)
 
 #undef PTRDIFF_TYPE
 #define PTRDIFF_TYPE (POINTER_SIZE == 64 ? "long int" : "int")
+
+/* The minimum alignment of any expanded block move.  */
+#define MIPS_MIN_MOVE_MEM_ALIGN 16
 
 /* The maximum number of bytes that can be copied by one iteration of
    a movmemsi loop; see mips_block_move_loop.  */

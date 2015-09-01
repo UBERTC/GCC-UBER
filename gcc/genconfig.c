@@ -348,6 +348,8 @@ main (int argc, char **argv)
 
   if (have_cond_exec_flag)
     printf ("#define HAVE_conditional_execution 1\n");
+  else
+    printf ("#define HAVE_conditional_execution 0\n");
 
   if (have_lo_sum_flag)
     printf ("#define HAVE_lo_sum 1\n");
@@ -369,6 +371,11 @@ main (int argc, char **argv)
     {
       printf ("#define HAVE_peephole2 1\n");
       printf ("#define MAX_INSNS_PER_PEEP2 %d\n", max_insns_per_peep2);
+    }
+  else
+    {
+      printf ("#define HAVE_peephole2 0\n");
+      printf ("#define MAX_INSNS_PER_PEEP2 0\n");
     }
 
   puts ("\n#endif /* GCC_INSN_CONFIG_H */");

@@ -90,6 +90,7 @@
     UNSPEC_GOTSMALLPIC28K
     UNSPEC_GOTSMALLTLS
     UNSPEC_GOTTINYPIC
+    UNSPEC_GOTTINYTLS
     UNSPEC_LD1
     UNSPEC_LD2
     UNSPEC_LD2_DUP
@@ -117,7 +118,10 @@
     UNSPEC_ST4_LANE
     UNSPEC_TLS
     UNSPEC_TLSDESC
-    UNSPEC_TLSLE
+    UNSPEC_TLSLE12
+    UNSPEC_TLSLE24
+    UNSPEC_TLSLE32
+    UNSPEC_TLSLE48
     UNSPEC_USHL_2S
     UNSPEC_VSTRUCTDUMMY
     UNSPEC_SP_SET
@@ -180,6 +184,13 @@
 	     (eq (symbol_ref "TARGET_SIMD") (const_int 0))))
 	     (const_string "no")
 	] (const_string "yes")))
+
+;; Attribute that specifies whether we are dealing with a branch to a
+;; label that is far away, i.e. further away than the maximum/minimum
+;; representable in a signed 21-bits number.
+;; 0 :=: no
+;; 1 :=: yes
+(define_attr "far_branch" "" (const_int 0))
 
 ;; -------------------------------------------------------------------
 ;; Pipeline descriptions and scheduling
@@ -308,8 +319,23 @@
 			   (label_ref (match_operand 2 "" ""))
 			   (pc)))]
   ""
-  "b%m0\\t%l2"
-  [(set_attr "type" "branch")]
+  {
+    if (get_attr_length (insn) == 8)
+      return aarch64_gen_far_branch (operands, 2, "Lbcond", "b%M0\\t");
+    else
+      return  "b%m0\\t%l2";
+  }
+  [(set_attr "type" "branch")
+   (set (attr "length")
+	(if_then_else (and (ge (minus (match_dup 2) (pc)) (const_int -1048576))
+			   (lt (minus (match_dup 2) (pc)) (const_int 1048572)))
+		      (const_int 4)
+		      (const_int 8)))
+   (set (attr "far_branch")
+	(if_then_else (and (ge (minus (match_dup 2) (pc)) (const_int -1048576))
+			   (lt (minus (match_dup 2) (pc)) (const_int 1048572)))
+		      (const_int 0)
+		      (const_int 1)))]
 )
 
 (define_expand "casesi"
@@ -488,9 +514,23 @@
 			   (label_ref (match_operand 1 "" ""))
 			   (pc)))]
   ""
-  "<cbz>\\t%<w>0, %l1"
-  [(set_attr "type" "branch")]
-
+  {
+    if (get_attr_length (insn) == 8)
+      return aarch64_gen_far_branch (operands, 1, "Lcb", "<inv_cb>\\t%<w>0, ");
+    else
+      return "<cbz>\\t%<w>0, %l1";
+  }
+  [(set_attr "type" "branch")
+   (set (attr "length")
+	(if_then_else (and (ge (minus (match_dup 1) (pc)) (const_int -1048576))
+			   (lt (minus (match_dup 1) (pc)) (const_int 1048572)))
+		      (const_int 4)
+		      (const_int 8)))
+   (set (attr "far_branch")
+	(if_then_else (and (ge (minus (match_dup 2) (pc)) (const_int -1048576))
+			   (lt (minus (match_dup 2) (pc)) (const_int 1048572)))
+		      (const_int 0)
+		      (const_int 1)))]
 )
 
 (define_insn "*tb<optab><mode>1"
@@ -506,8 +546,14 @@
   {
     if (get_attr_length (insn) == 8)
       {
-	operands[1] = GEN_INT (HOST_WIDE_INT_1U << UINTVAL (operands[1]));
-	return "tst\t%<w>0, %1\;<bcond>\t%l2";
+	if (get_attr_far_branch (insn) == 1)
+	  return aarch64_gen_far_branch (operands, 2, "Ltb",
+					 "<inv_tb>\\t%<w>0, %1, ");
+	else
+	  {
+	    operands[1] = GEN_INT (HOST_WIDE_INT_1U << UINTVAL (operands[1]));
+	    return "tst\t%<w>0, %1\;<bcond>\t%l2";
+	  }
       }
     else
       return "<tbz>\t%<w>0, %1, %l2";
@@ -517,7 +563,13 @@
 	(if_then_else (and (ge (minus (match_dup 2) (pc)) (const_int -32768))
 			   (lt (minus (match_dup 2) (pc)) (const_int 32764)))
 		      (const_int 4)
-		      (const_int 8)))]
+		      (const_int 8)))
+   (set (attr "far_branch")
+	(if_then_else (and (ge (minus (match_dup 2) (pc)) (const_int -1048576))
+			   (lt (minus (match_dup 2) (pc)) (const_int 1048572)))
+		      (const_int 0)
+		      (const_int 1)))]
+
 )
 
 (define_insn "*cb<optab><mode>1"
@@ -530,12 +582,18 @@
   {
     if (get_attr_length (insn) == 8)
       {
-	char buf[64];
-	uint64_t val = ((uint64_t ) 1)
-			<< (GET_MODE_SIZE (<MODE>mode) * BITS_PER_UNIT - 1);
-	sprintf (buf, "tst\t%%<w>0, %" PRId64, val);
-	output_asm_insn (buf, operands);
-	return "<bcond>\t%l1";
+	if (get_attr_far_branch (insn) == 1)
+	  return aarch64_gen_far_branch (operands, 1, "Ltb",
+					 "<inv_tb>\\t%<w>0, <sizem1>, ");
+	else
+	  {
+	    char buf[64];
+	    uint64_t val = ((uint64_t) 1)
+		<< (GET_MODE_SIZE (<MODE>mode) * BITS_PER_UNIT - 1);
+	    sprintf (buf, "tst\t%%<w>0, %" PRId64, val);
+	    output_asm_insn (buf, operands);
+	    return "<bcond>\t%l1";
+	  }
       }
     else
       return "<tbz>\t%<w>0, <sizem1>, %l1";
@@ -545,7 +603,12 @@
 	(if_then_else (and (ge (minus (match_dup 1) (pc)) (const_int -32768))
 			   (lt (minus (match_dup 1) (pc)) (const_int 32764)))
 		      (const_int 4)
-		      (const_int 8)))]
+		      (const_int 8)))
+   (set (attr "far_branch")
+	(if_then_else (and (ge (minus (match_dup 1) (pc)) (const_int -1048576))
+			   (lt (minus (match_dup 1) (pc)) (const_int 1048572)))
+		      (const_int 0)
+		      (const_int 1)))]
 )
 
 ;; -------------------------------------------------------------------
@@ -768,7 +831,7 @@
 {
   int i;
 
-  emit_call_insn (GEN_CALL (operands[0], const0_rtx, NULL, const0_rtx));
+  emit_call_insn (gen_call (operands[0], const0_rtx, NULL));
 
   for (i = 0; i < XVECLEN (operands[2], 0); i++)
     {
@@ -3923,6 +3986,16 @@
   [(set_attr "type" "bfm")]
 )
 
+(define_insn "*aarch64_bfi<GPI:mode><ALLX:mode>4"
+  [(set (zero_extract:GPI (match_operand:GPI 0 "register_operand" "+r")
+			  (match_operand 1 "const_int_operand" "n")
+			  (match_operand 2 "const_int_operand" "n"))
+	(zero_extend:GPI (match_operand:ALLX 3  "register_operand" "r")))]
+  "UINTVAL (operands[1]) <= <ALLX:sizen>"
+  "bfi\\t%<GPI:w>0, %<GPI:w>3, %2, %1"
+  [(set_attr "type" "bfm")]
+)
+
 (define_insn "*extr_insv_lower_reg<mode>"
   [(set (zero_extract:GPI (match_operand:GPI 0 "register_operand" "+r")
 			  (match_operand 1 "const_int_operand" "n")
@@ -4512,29 +4585,70 @@
    (set_attr "length" "8")]
 )
 
-(define_expand "tlsle"
-  [(set (match_operand 0 "register_operand" "=r")
-        (unspec [(match_operand 1 "register_operand" "r")
-                   (match_operand 2 "aarch64_tls_le_symref" "S")]
-                   UNSPEC_TLSLE))]
+(define_insn "tlsie_tiny_<mode>"
+  [(set (match_operand:PTR 0 "register_operand" "=&r")
+	(unspec:PTR [(match_operand 1 "aarch64_tls_ie_symref" "S")
+		     (match_operand:PTR 2 "register_operand" "r")]
+		   UNSPEC_GOTTINYTLS))]
   ""
-{
-  machine_mode mode = GET_MODE (operands[0]);
-  emit_insn ((mode == DImode
-	      ? gen_tlsle_di
-	      : gen_tlsle_si) (operands[0], operands[1], operands[2]));
-  DONE;
-})
+  "ldr\\t%<w>0, %L1\;add\\t%<w>0, %<w>0, %<w>2"
+  [(set_attr "type" "multiple")
+   (set_attr "length" "8")]
+)
 
-(define_insn "tlsle_<mode>"
+(define_insn "tlsie_tiny_sidi"
+  [(set (match_operand:DI 0 "register_operand" "=&r")
+	(zero_extend:DI
+	  (unspec:SI [(match_operand 1 "aarch64_tls_ie_symref" "S")
+		      (match_operand:DI 2 "register_operand" "r")
+		      ]
+		      UNSPEC_GOTTINYTLS)))]
+  ""
+  "ldr\\t%w0, %L1\;add\\t%<w>0, %<w>0, %<w>2"
+  [(set_attr "type" "multiple")
+   (set_attr "length" "8")]
+)
+
+(define_insn "tlsle12_<mode>"
   [(set (match_operand:P 0 "register_operand" "=r")
-        (unspec:P [(match_operand:P 1 "register_operand" "r")
-                   (match_operand 2 "aarch64_tls_le_symref" "S")]
-		   UNSPEC_TLSLE))]
+	(unspec:P [(match_operand:P 1 "register_operand" "r")
+		   (match_operand 2 "aarch64_tls_le_symref" "S")]
+		   UNSPEC_TLSLE12))]
+  ""
+  "add\\t%<w>0, %<w>1, #%L2";
+  [(set_attr "type" "alu_sreg")
+   (set_attr "length" "4")]
+)
+
+(define_insn "tlsle24_<mode>"
+  [(set (match_operand:P 0 "register_operand" "=r")
+	(unspec:P [(match_operand:P 1 "register_operand" "r")
+		   (match_operand 2 "aarch64_tls_le_symref" "S")]
+		   UNSPEC_TLSLE24))]
   ""
   "add\\t%<w>0, %<w>1, #%G2, lsl #12\;add\\t%<w>0, %<w>0, #%L2"
-  [(set_attr "type" "alu_sreg")
+  [(set_attr "type" "multiple")
    (set_attr "length" "8")]
+)
+
+(define_insn "tlsle32_<mode>"
+  [(set (match_operand:P 0 "register_operand" "=r")
+	(unspec:P [(match_operand 1 "aarch64_tls_le_symref" "S")]
+		   UNSPEC_TLSLE32))]
+  ""
+  "movz\\t%<w>0, #:tprel_g1:%1\;movk\\t%<w>0, #:tprel_g0_nc:%1"
+  [(set_attr "type" "multiple")
+   (set_attr "length" "8")]
+)
+
+(define_insn "tlsle48_<mode>"
+  [(set (match_operand:P 0 "register_operand" "=r")
+	(unspec:P [(match_operand 1 "aarch64_tls_le_symref" "S")]
+		   UNSPEC_TLSLE48))]
+  ""
+  "movz\\t%<w>0, #:tprel_g2:%1\;movk\\t%<w>0, #:tprel_g1_nc:%1\;movk\\t%<w>0, #:tprel_g0_nc:%1"
+  [(set_attr "type" "multiple")
+   (set_attr "length" "12")]
 )
 
 (define_insn "tlsdesc_small_<mode>"

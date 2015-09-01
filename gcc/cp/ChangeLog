@@ -1,3 +1,94 @@
+2015-08-29  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	PR c++/67371
+	* constexpr.c (potential_constant_expression_1): Remove IF_STMT
+	case. Move label to COND_EXPR case. Remove checking of
+	SWITCH_STMT_BODY.
+
+2015-08-22  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/63693
+	* pt.c (resolve_typename_type): Use CLASSTYPE_PRIMARY_TEMPLATE_TYPE
+	only on class types.
+
+2015-08-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67240
+	* constraint.cc (satisfy_implicit_conversion_constraint): Also
+	check for NULL_TREE.
+
+2015-08-21  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* decl.c (grokvardecl): Simplify the latter.
+
+2015-08-21  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* decl.c (grokvardecl): Complete check added for c++/67065.
+
+2015-08-20  Jason Merrill  <jason@redhat.com>
+
+	* name-lookup.c (hidden_name_p): Handle OVERLOAD.
+
+2015-08-20  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67065
+	* decl.c (grokvardecl): Reject 'main' as global variable.
+
+2015-08-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66957
+	* search.c (protected_accessible_p): Remove redundant access_in_type.
+	Add otype parm instead of walking binfo.
+	(friend_accessible_p): Check SCOPE itself.  Handle class
+	templates.  Pass through otype.
+	(dfs_accessible_post): Handle all accessibility cases.
+	(dfs_accessible_pre): New.
+	(accessible_p): Use it.  Don't check protected access here.  Pass
+	decl and otype to dfs_walk.
+	(member_declared_in_type, dfs_access_in_type_pre): New.
+	(access_in_type): Use dfs_access_in_type_pre.
+	* friend.c (add_friend): Fix multiple friends with the same name.
+
+	* lambda.c (current_nonlambda_scope): New.
+
+2015-08-18  Trevor Saunders  <tbsaunde@tbsaunde.org>
+
+	* call.c, class.c, cp-tree.h, decl.c, except.c, mangle.c,
+	method.c, name-lookup.h, parser.c, parser.h, rtti.c,
+	semantics.c, typeck2.c: Remove useless typedefs.
+
+2015-08-18  Jason Merrill  <jason@redhat.com>
+
+	DR 1155
+	* pt.c (convert_nontype_argument): Allow internal linkage in C++11
+	and up.
+
+2015-08-17  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67216
+	* call.c (null_ptr_cst_p): In C++11 return 'false' for 'false'.
+
+2015-08-17  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67244
+	* pt.c (tsubst_copy_and_build): Call insert_pending_capture_proxies.
+
+	PR c++/67104
+	* constexpr.c (array_index_cmp, find_array_ctor_elt): New.
+	(cxx_eval_array_reference, cxx_eval_store_expression): Use them.
+
+	* constexpr.c (cxx_eval_store_expression): Don't set
+	CONSTRUCTOR_NO_IMPLICIT_ZERO if we have an enclosing CONSTRUCTOR
+	without it.
+	(cxx_eval_array_reference): Check it.
+
+	* except.c (check_noexcept_r): Assert that fn is POINTER_TYPE_P.
+
+2015-08-14  Jason Merrill  <jason@redhat.com>
+
+	PR c++/65974
+	* decl2.c (mark_vtable_entries): Suppress -Wdeprecated.
+
 2015-08-12  Jason Merrill  <jason@redhat.com>
 
 	PR c++/67104

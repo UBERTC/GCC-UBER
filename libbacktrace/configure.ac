@@ -79,7 +79,7 @@ case "$AWK" in
 "") AC_MSG_ERROR([can't build without awk]) ;;
 esac
 
-LT_INIT([disable-shared])
+LT_INIT
 AM_PROG_LIBTOOL
 
 backtrace_supported=yes
@@ -161,18 +161,11 @@ else
   fi
 fi
 
-# When building as a target library, shared libraries may want to link
-# this in.  We don't want to provide another shared library to
-# complicate dependencies.  Instead, we just compile with -fPIC.
-PIC_FLAG=
-if test -n "${with_target_subdir}"; then
-  PIC_FLAG=-fPIC
-fi
-# Similarly, use -fPIC with --enable-host-shared:
+# Enable --enable-host-shared.
 AC_ARG_ENABLE(host-shared,
 [AS_HELP_STRING([--enable-host-shared],
 		[build host code as shared libraries])],
-[PIC_FLAG=-fPIC], [])
+[PIC_FLAG=-fPIC], [PIC_FLAG=])
 AC_SUBST(PIC_FLAG)
 
 # Test for __sync support.
@@ -273,6 +266,12 @@ else
     # When built as a GCC target library, we can't do a link test.  We
     # simply assume that if we have mman.h, we have mmap.
     have_mmap=yes
+    case "${host}" in
+    spu-*-*)
+        # The SPU does not have mmap, but it has a sys/mman.h header file
+        # containing "mmap_eaddr" and the mmap flags, confusing the test.
+	have_mmap=no ;;
+    esac
   else
     AC_CHECK_FUNC(mmap, [have_mmap=yes], [have_mmap=no])
   fi
@@ -326,6 +325,7 @@ fi
 if test -n "${with_target_subdir}"; then
    case "${host}" in
    *-*-mingw*) have_fcntl=no ;;
+   spu-*-*) have_fcntl=no ;;
    *) have_fcntl=yes ;;
    esac
 else

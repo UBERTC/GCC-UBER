@@ -951,6 +951,8 @@ BU_ALTIVEC_X (VEC_EXT_V4SF,	"vec_ext_v4sf",     CONST)
    before we get to the point about classifying the builtin type.  */
 
 /* 3 argument Altivec overloaded builtins.  */
+BU_ALTIVEC_OVERLOAD_3 (ADDE,	   "adde")
+BU_ALTIVEC_OVERLOAD_3 (ADDEC,	   "addec")
 BU_ALTIVEC_OVERLOAD_3 (MADD,       "madd")
 BU_ALTIVEC_OVERLOAD_3 (MADDS,      "madds")
 BU_ALTIVEC_OVERLOAD_3 (MLADD,      "mladd")
@@ -1447,6 +1449,9 @@ BU_VSX_OVERLOAD_2 (XXMRGLW,  "xxmrglw")
 BU_VSX_OVERLOAD_2 (XXSPLTD,  "xxspltd")
 BU_VSX_OVERLOAD_2 (XXSPLTW,  "xxspltw")
 
+/* 1 argument VSX overloaded builtin functions.  */
+BU_VSX_OVERLOAD_1 (DOUBLE,   "double")
+
 /* VSX builtins that are handled as special cases.  */
 BU_VSX_OVERLOAD_X (LD,	     "ld")
 BU_VSX_OVERLOAD_X (ST,	     "st")
@@ -1484,6 +1489,10 @@ BU_P8V_AV_2 (VPKUDUM,		"vpkudum",	CONST,	altivec_vpkudum)
 BU_P8V_AV_2 (VPKSDSS,		"vpksdss",	CONST,	altivec_vpksdss)
 BU_P8V_AV_2 (VPKUDUS,		"vpkudus",	CONST,	altivec_vpkudus)
 BU_P8V_AV_2 (VPKSDUS,		"vpksdus",	CONST,	altivec_vpksdus)
+BU_P8V_AV_2 (VPMSUMB,		"vpmsumb",	CONST,	crypto_vpmsumb)
+BU_P8V_AV_2 (VPMSUMH,		"vpmsumh",	CONST,	crypto_vpmsumh)
+BU_P8V_AV_2 (VPMSUMW,		"vpmsumw",	CONST,	crypto_vpmsumw)
+BU_P8V_AV_2 (VPMSUMD,		"vpmsumd",	CONST,	crypto_vpmsumd)
 BU_P8V_AV_2 (VRLD,		"vrld",		CONST,	vrotlv2di3)
 BU_P8V_AV_2 (VSLD,		"vsld",		CONST,	vashlv2di3)
 BU_P8V_AV_2 (VSRD,		"vsrd",		CONST,	vlshrv2di3)
@@ -1565,6 +1574,7 @@ BU_P8V_OVERLOAD_2 (VPKSDSS,	"vpksdss")
 BU_P8V_OVERLOAD_2 (VPKSDUS,	"vpksdus")
 BU_P8V_OVERLOAD_2 (VPKUDUM,	"vpkudum")
 BU_P8V_OVERLOAD_2 (VPKUDUS,	"vpkudus")
+BU_P8V_OVERLOAD_2 (VPMSUM,      "vpmsum")
 BU_P8V_OVERLOAD_2 (VRLD,	"vrld")
 BU_P8V_OVERLOAD_2 (VSLD,	"vsld")
 BU_P8V_OVERLOAD_2 (VSRAD,	"vsrad")

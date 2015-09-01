@@ -3156,6 +3156,7 @@ Check_types_traverse::variable(Named_object* named_object)
 	    error_at(var->location(),
 		     "incompatible type in initialization (%s)",
 		     reason.c_str());
+          init = Expression::make_error(named_object->location());
 	  var->clear_init();
 	}
       else if (init != NULL
@@ -3180,13 +3181,13 @@ Check_types_traverse::variable(Named_object* named_object)
                        no->message_name().c_str());
             }
         }
-      else if (!var->is_used()
-	       && !var->is_global()
-	       && !var->is_parameter()
-	       && !var->is_receiver()
-	       && !var->type()->is_error()
-	       && (init == NULL || !init->is_error_expression())
-	       && !Lex::is_invalid_identifier(named_object->name()))
+      if (!var->is_used()
+          && !var->is_global()
+          && !var->is_parameter()
+          && !var->is_receiver()
+          && !var->type()->is_error()
+          && (init == NULL || !init->is_error_expression())
+          && !Lex::is_invalid_identifier(named_object->name()))
 	error_at(var->location(), "%qs declared and not used",
 		 named_object->message_name().c_str());
     }
@@ -6753,7 +6754,8 @@ Unknown_name::set_real_named_object(Named_object* no)
 Named_object::Named_object(const std::string& name,
 			   const Package* package,
 			   Classification classification)
-  : name_(name), package_(package), classification_(classification)
+  : name_(name), package_(package), classification_(classification),
+    is_redefinition_(false)
 {
   if (Gogo::is_sink_name(name))
     go_assert(classification == NAMED_OBJECT_SINK);
@@ -7439,6 +7441,8 @@ Bindings::new_definition(Named_object* old_object, Named_object* new_object)
   else
     error_at(new_object->location(), "redefinition of %qs: %s", n.c_str(),
 	     reason.c_str());
+  old_object->set_is_redefinition();
+  new_object->set_is_redefinition();
 
   inform(old_object->location(), "previous definition of %qs was here",
 	 n.c_str());

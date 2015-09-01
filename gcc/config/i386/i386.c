@@ -73,7 +73,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "cselib.h"
 #include "debug.h"
 #include "sched-int.h"
-#include "fibheap.h"
 #include "opts.h"
 #include "diagnostic.h"
 #include "dumpfile.h"
@@ -437,7 +436,7 @@ struct processor_costs iamcu_cost = {
   COSTS_N_INSNS (3),			/* cost of movsx */
   COSTS_N_INSNS (2),			/* cost of movzx */
   8,					/* "large" insn */
-  6,					/* MOVE_RATIO */
+  9,					/* MOVE_RATIO */
   6,				     /* cost for loading QImode using movzbl */
   {2, 4, 2},				/* cost of loading integer registers
 					   in QImode, HImode and SImode.
@@ -21789,7 +21788,7 @@ ix86_expand_int_vcond (rtx operands[])
 	  || (TARGET_AVX2 && GET_MODE_SIZE (data_mode) == 32)))
     {
       rtx negop = operands[2 - (code == LT)];
-      int shift = GET_MODE_BITSIZE (GET_MODE_INNER (data_mode)) - 1;
+      int shift = GET_MODE_UNIT_BITSIZE (data_mode) - 1;
       if (negop == CONST1_RTX (data_mode))
 	{
 	  rtx res = expand_simple_binop (mode, LSHIFTRT, cop0, GEN_INT (shift),
@@ -25532,7 +25531,7 @@ ix86_expand_strlensi_unroll_1 (rtx out, rtx src, rtx align_rtx)
 
   /* Avoid branch in fixing the byte.  */
   tmpreg = gen_lowpart (QImode, tmpreg);
-  emit_insn (gen_addqi3_cc (tmpreg, tmpreg, tmpreg));
+  emit_insn (gen_addqi3_cconly_overflow (tmpreg, tmpreg));
   tmp = gen_rtx_REG (CCmode, FLAGS_REG);
   cmp = gen_rtx_LTU (VOIDmode, tmp, const0_rtx);
   emit_insn (ix86_gen_sub3_carry (out, out, GEN_INT (3), tmp, cmp));
@@ -36227,7 +36226,7 @@ ix86_expand_multi_arg_builtin (enum insn_code icode, tree exp, rtx target,
 		xop_rotl:
 		  if (CONST_INT_P (op))
 		    {
-		      int mask = GET_MODE_BITSIZE (GET_MODE_INNER (tmode)) - 1;
+		      int mask = GET_MODE_UNIT_BITSIZE (tmode) - 1;
 		      op = GEN_INT (INTVAL (op) & mask);
 		      gcc_checking_assert
 			(insn_data[icode].operand[i + 1].predicate (op, mode));
@@ -39511,60 +39510,57 @@ rdseed_step:
       return target;
 
     case IX86_BUILTIN_SBB32:
-      icode = CODE_FOR_subsi3_carry;
+      icode = CODE_FOR_subborrowsi;
       mode0 = SImode;
-      goto addcarryx;
+      goto handlecarry;
 
     case IX86_BUILTIN_SBB64:
-      icode = CODE_FOR_subdi3_carry;
+      icode = CODE_FOR_subborrowdi;
       mode0 = DImode;
-      goto addcarryx;
+      goto handlecarry;
 
     case IX86_BUILTIN_ADDCARRYX32:
-      icode = TARGET_ADX ? CODE_FOR_adcxsi3 : CODE_FOR_addsi3_carry;
+      icode = CODE_FOR_addcarrysi;
       mode0 = SImode;
-      goto addcarryx;
+      goto handlecarry;
 
     case IX86_BUILTIN_ADDCARRYX64:
-      icode = TARGET_ADX ? CODE_FOR_adcxdi3 : CODE_FOR_adddi3_carry;
+      icode = CODE_FOR_addcarrydi;
       mode0 = DImode;
 
-addcarryx:
+    handlecarry:
       arg0 = CALL_EXPR_ARG (exp, 0); /* unsigned char c_in.  */
       arg1 = CALL_EXPR_ARG (exp, 1); /* unsigned int src1.  */
       arg2 = CALL_EXPR_ARG (exp, 2); /* unsigned int src2.  */
       arg3 = CALL_EXPR_ARG (exp, 3); /* unsigned int *sum_out.  */
 
-      op0 = gen_reg_rtx (QImode);
-
-      /* Generate CF from input operand.  */
       op1 = expand_normal (arg0);
       op1 = copy_to_mode_reg (QImode, convert_to_mode (QImode, op1, 1));
-      emit_insn (gen_addqi3_cc (op0, op1, constm1_rtx));
 
-      /* Gen ADCX instruction to compute X+Y+CF.  */
       op2 = expand_normal (arg1);
-      op3 = expand_normal (arg2);
-
-      if (!REG_P (op2))
+      if (!register_operand (op2, mode0))
 	op2 = copy_to_mode_reg (mode0, op2);
-      if (!REG_P (op3))
+
+      op3 = expand_normal (arg2);
+      if (!register_operand (op3, mode0))
 	op3 = copy_to_mode_reg (mode0, op3);
 
-      op0 = gen_reg_rtx (mode0);
-
-      op4 = gen_rtx_REG (CCCmode, FLAGS_REG);
-      pat = gen_rtx_LTU (VOIDmode, op4, const0_rtx);
-      emit_insn (GEN_FCN (icode) (op0, op2, op3, op4, pat));
-
-      /* Store the result.  */
       op4 = expand_normal (arg3);
       if (!address_operand (op4, VOIDmode))
 	{
 	  op4 = convert_memory_address (Pmode, op4);
 	  op4 = copy_addr_to_reg (op4);
 	}
-      emit_move_insn (gen_rtx_MEM (mode0, op4), op0);
+
+      /* Generate CF from input operand.  */
+      emit_insn (gen_addqi3_cconly_overflow (op1, constm1_rtx));
+
+      /* Generate instruction that consumes CF.  */
+      op0 = gen_reg_rtx (mode0);
+
+      op1 = gen_rtx_REG (CCCmode, FLAGS_REG);
+      pat = gen_rtx_LTU (mode0, op1, const0_rtx);
+      emit_insn (GEN_FCN (icode) (op0, op2, op3, op1, pat));
 
       /* Return current CF value.  */
       if (target == 0)
@@ -39572,6 +39568,10 @@ addcarryx:
 
       PUT_MODE (pat, QImode);
       emit_insn (gen_rtx_SET (target, pat));
+
+      /* Store the result.  */
+      emit_move_insn (gen_rtx_MEM (mode0, op4), op0);
+
       return target;
 
     case IX86_BUILTIN_READ_FLAGS:
@@ -45571,12 +45571,12 @@ ix86_expand_reduc (rtx (*fn) (rtx, rtx, rtx), rtx dest, rtx in)
     }
 
   for (i = GET_MODE_BITSIZE (mode);
-       i > GET_MODE_BITSIZE (GET_MODE_INNER (mode));
+       i > GET_MODE_UNIT_BITSIZE (mode);
        i >>= 1)
     {
       half = gen_reg_rtx (mode);
       emit_reduc_half (half, vec, i);
-      if (i == GET_MODE_BITSIZE (GET_MODE_INNER (mode)) * 2)
+      if (i == GET_MODE_UNIT_BITSIZE (mode) * 2)
 	dst = dest;
       else
 	dst = gen_reg_rtx (mode);
@@ -47959,7 +47959,7 @@ expand_vec_perm_palignr (struct expand_vec_perm_d *d, bool single_insn_only_p)
       return expand_vec_perm_1 (&dcopy);
     }
 
-  shift = GEN_INT (min * GET_MODE_BITSIZE (GET_MODE_INNER (d->vmode)));
+  shift = GEN_INT (min * GET_MODE_UNIT_BITSIZE (d->vmode));
   if (GET_MODE_SIZE (d->vmode) == 16)
     {
       target = gen_reg_rtx (TImode);
@@ -50409,8 +50409,7 @@ ix86_expand_sse2_abs (rtx target, rtx input)
 	 value of X is (((signed) X >> (W-1)) ^ X) - ((signed) X >> (W-1)).  */
       case V4SImode:
 	tmp0 = expand_simple_binop (mode, ASHIFTRT, input,
-				    GEN_INT (GET_MODE_BITSIZE
-					     (GET_MODE_INNER (mode)) - 1),
+				    GEN_INT (GET_MODE_UNIT_BITSIZE (mode) - 1),
 				    NULL, 0, OPTAB_DIRECT);
 	tmp1 = expand_simple_binop (mode, XOR, tmp0, input,
 				    NULL, 0, OPTAB_DIRECT);

@@ -580,7 +580,10 @@ proc check_profiling_available { test_what } {
 # in Section 4 of C99 standard. Effectively, it is a target which supports no
 # extra headers or libraries other than what is considered essential.
 proc check_effective_target_freestanding { } {
-	return 0
+    if { [istarget nvptx-*-*] } {
+	return 1
+    }
+    return 0
 }
 
 # Return 1 if target has packed layout of structure members by
@@ -638,6 +641,15 @@ proc check_effective_target_indirect_jumps {} {
 # Return 1 if nonlocal goto is supported, 0 otherwise.
 
 proc check_effective_target_nonlocal_goto {} {
+    if { [istarget nvptx-*-*] } {
+	return 0
+    }
+    return 1
+}
+
+# Return 1 if global constructors are supported, 0 otherwise.
+
+proc check_effective_target_global_constructor {} {
     if { [istarget nvptx-*-*] } {
 	return 0
     }
@@ -807,6 +819,10 @@ proc check_effective_target_fgraphite {} {
 # code, 0 otherwise.
 
 proc check_effective_target_fopenacc {} {
+    # nvptx can be built with the device-side bits of openacc, but it
+    # does not make sense to test it as an openacc host.
+    if [istarget nvptx-*-*] { return 0 }
+
     return [check_no_compiler_messages fopenacc object {
 	void foo (void) { }
     } "-fopenacc"]
@@ -816,6 +832,10 @@ proc check_effective_target_fopenacc {} {
 # code, 0 otherwise.
 
 proc check_effective_target_fopenmp {} {
+    # nvptx can be built with the device-side bits of libgomp, but it
+    # does not make sense to test it as an openmp host.
+    if [istarget nvptx-*-*] { return 0 }
+
     return [check_no_compiler_messages fopenmp object {
 	void foo (void) { }
     } "-fopenmp"]
@@ -951,6 +971,23 @@ proc check_effective_target_aarch64_small_fpic { } {
     if { [istarget aarch64*-*-*] } {
 	return [check_no_compiler_messages aarch64_small_fpic object {
 	    void foo (void) { asm ("ldr	x0, [x2, #:gotpage_lo15:globalsym]"); }
+	}]
+    } else {
+	return 0
+    }
+}
+
+# On AArch64, instruction sequence for TLS LE under -mtls-size=32 will utilize
+# the relocation modifier "tprel_g0_nc" together with MOVK, it's only supported
+# in binutils since 2015-03-04 as PR gas/17843.
+#
+# This test directive make sure binutils support all features needed by TLS LE
+# under -mtls-size=32 on AArch64.
+
+proc check_effective_target_aarch64_tlsle32 { } {
+    if { [istarget aarch64*-*-*] } {
+	return [check_no_compiler_messages aarch64_tlsle32 object {
+	    void foo (void) { asm ("movk x1,#:tprel_g0_nc:t1"); }
 	}]
     } else {
 	return 0
@@ -1142,6 +1179,17 @@ proc check_effective_target_pie_enabled { } {
 	#ifndef __PIE__
 	#error unsupported
 	#endif
+    }]
+}
+
+# Return 1 if the target generates -fstack-protector by default.
+
+proc check_effective_target_fstack_protector_enabled {} {
+    return [ check_no_compiler_messages fstack_protector_enabled assembly {
+    #if !defined(__SSP__) && !defined(__SSP_ALL__) && \
+      !defined(__SSP_STRONG__) && !defined(__SSP_EXPICIT__)
+    #error unsupported
+    #endif
     }]
 }
 
@@ -2703,7 +2751,11 @@ proc check_effective_target_arm_neon_fp16_ok_nocache { } {
     set et_arm_neon_fp16_flags ""
     if { [check_effective_target_arm32] } {
 	foreach flags {"" "-mfloat-abi=softfp" "-mfpu=neon-fp16"
-	               "-mfpu=neon-fp16 -mfloat-abi=softfp"} {
+		       "-mfpu=neon-fp16 -mfloat-abi=softfp"
+		       "-mfp16-format=ieee"
+		       "-mfloat-abi=softfp -mfp16-format=ieee"
+		       "-mfpu=neon-fp16 -mfp16-format=ieee"
+		       "-mfpu=neon-fp16 -mfloat-abi=softfp -mfp16-format=ieee"} {
 	    if { [check_no_compiler_messages_nocache arm_neon_fp_16_ok object {
 		#include "arm_neon.h"
 		float16x4_t
@@ -3659,6 +3711,8 @@ proc check_effective_target_vect_double { } {
 	    }
 	} elseif { [istarget spu-*-*] } {
 	   set et_vect_double_saved 1
+	} elseif { [istarget powerpc*-*-*] && [check_vsx_hw_available] } {
+	   set et_vect_double_saved 1
 	}
     }
 
@@ -3692,23 +3746,23 @@ proc check_effective_target_vect_long_long { } {
 #
 # This won't change for different subtargets so cache the result.
 
-proc check_effective_target_vect_no_int_max { } {
-    global et_vect_no_int_max_saved
+proc check_effective_target_vect_no_int_min_max { } {
+    global et_vect_no_int_min_max_saved
 
-    if [info exists et_vect_no_int_max_saved] {
-	verbose "check_effective_target_vect_no_int_max: using cached result" 2
+    if [info exists et_vect_no_int_min_max_saved] {
+	verbose "check_effective_target_vect_no_int_min_max: using cached result" 2
     } else {
-	set et_vect_no_int_max_saved 0
+	set et_vect_no_int_min_max_saved 0
 	if { [istarget sparc*-*-*]
 	     || [istarget spu-*-*]
 	     || [istarget alpha*-*-*]
 	     || ([istarget mips*-*-*]
 		 && [check_effective_target_mips_loongson]) } {
-	    set et_vect_no_int_max_saved 1
+	    set et_vect_no_int_min_max_saved 1
 	}
     }
-    verbose "check_effective_target_vect_no_int_max: returning $et_vect_no_int_max_saved" 2
-    return $et_vect_no_int_max_saved
+    verbose "check_effective_target_vect_no_int_min_max: returning $et_vect_no_int_min_max_saved" 2
+    return $et_vect_no_int_min_max_saved
 }
 
 # Return 1 if the target plus current options does not support a vector

@@ -3943,9 +3943,8 @@ Unary_expression::do_check_types(Gogo*)
       break;
 
     case OPERATOR_XOR:
-      if (type->integer_type() == NULL
-	  && !type->is_boolean_type())
-	this->report_error(_("expected integer or boolean type"));
+      if (type->integer_type() == NULL)
+	this->report_error(_("expected integer"));
       break;
 
     case OPERATOR_AND:
@@ -6589,7 +6588,11 @@ Builtin_call_expression::Builtin_call_expression(Gogo* gogo,
     recover_arg_is_set_(false)
 {
   Func_expression* fnexp = this->fn()->func_expression();
-  go_assert(fnexp != NULL);
+  if (fnexp == NULL)
+    {
+      this->code_ = BUILTIN_INVALID;
+      return;
+    }
   const std::string& name(fnexp->named_object()->name());
   if (name == "append")
     this->code_ = BUILTIN_APPEND;
@@ -6662,7 +6665,7 @@ Expression*
 Builtin_call_expression::do_lower(Gogo* gogo, Named_object* function,
 				  Statement_inserter* inserter, int)
 {
-  if (this->classification() == EXPRESSION_ERROR)
+  if (this->is_error_expression())
     return this;
 
   Location loc = this->location();
@@ -7501,11 +7504,13 @@ Builtin_call_expression::do_discarding_value()
 Type*
 Builtin_call_expression::do_type()
 {
+  if (this->is_error_expression())
+    return Type::make_error_type();
   switch (this->code_)
     {
     case BUILTIN_INVALID:
     default:
-      go_unreachable();
+      return Type::make_error_type();
 
     case BUILTIN_NEW:
     case BUILTIN_MAKE:
@@ -8176,6 +8181,12 @@ Builtin_call_expression::do_get_backend(Translate_context* context)
               print_stmts = Expression::make_compound(print_stmts, print_nl,
                                                       location);
 	  }
+
+        // There aren't any arguments to the print builtin.  The compiler
+        // issues a warning for this so we should avoid getting the backend
+        // representation for this call.  Instead, perform a no-op.
+        if (print_stmts == NULL)
+          return context->backend()->boolean_constant_expression(false);
 
         return print_stmts->get_backend(context);
       }
@@ -10335,7 +10346,10 @@ String_index_expression::do_check_types(Gogo*)
     {
       ival_valid = true;
       if (mpz_sgn(ival) < 0
-	  || (sval_valid && mpz_cmp_ui(ival, sval.length()) >= 0))
+	  || (sval_valid
+	      && (this->end_ == NULL
+		  ? mpz_cmp_ui(ival, sval.length()) >= 0
+		  : mpz_cmp_ui(ival, sval.length()) > 0)))
 	{
 	  error_at(this->start_->location(), "string index out of bounds");
 	  this->set_is_error();
@@ -15142,7 +15156,11 @@ Numeric_constant::set_type(Type* type, bool issue_error, Location loc)
   else if (type->complex_type() != NULL)
     ret = this->check_complex_type(type->complex_type(), issue_error, loc);
   else
-    go_unreachable();
+    {
+      ret = false;
+      if (issue_error)
+        go_assert(saw_errors());
+    }
   if (ret)
     this->type_ = type;
   return ret;

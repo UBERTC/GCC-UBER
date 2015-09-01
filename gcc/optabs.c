@@ -4488,11 +4488,13 @@ emit_indirect_jump (rtx loc)
 {
   if (!targetm.have_indirect_jump ())
     sorry ("indirect jumps are not available on this target");
-
-  struct expand_operand ops[1];
-  create_address_operand (&ops[0], loc);
-  expand_jump_insn (targetm.code_for_indirect_jump, 1, ops);
-  emit_barrier ();
+  else
+    {
+      struct expand_operand ops[1];
+      create_address_operand (&ops[0], loc);
+      expand_jump_insn (targetm.code_for_indirect_jump, 1, ops);
+      emit_barrier ();
+    }
 }
 
 
@@ -6588,7 +6590,7 @@ static rtx
 shift_amt_for_vec_perm_mask (rtx sel)
 {
   unsigned int i, first, nelt = GET_MODE_NUNITS (GET_MODE (sel));
-  unsigned int bitsize = GET_MODE_BITSIZE (GET_MODE_INNER (GET_MODE (sel)));
+  unsigned int bitsize = GET_MODE_UNIT_BITSIZE (GET_MODE (sel));
 
   if (GET_CODE (sel) != CONST_VECTOR)
     return NULL_RTX;

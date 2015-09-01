@@ -1654,6 +1654,90 @@ cxx_eval_conditional_expression (const constexpr_ctx *ctx, tree t,
 				       jump_target);
 }
 
+/* Returns less than, equal to, or greater than zero if KEY is found to be
+   less than, to match, or to be greater than the constructor_elt's INDEX.  */
+
+static int
+array_index_cmp (tree key, tree index)
+{
+  gcc_assert (TREE_CODE (key) == INTEGER_CST);
+
+  switch (TREE_CODE (index))
+    {
+    case INTEGER_CST:
+      return tree_int_cst_compare (key, index);
+    case RANGE_EXPR:
+      {
+	tree lo = TREE_OPERAND (index, 0);
+	tree hi = TREE_OPERAND (index, 1);
+	if (tree_int_cst_lt (key, lo))
+	  return -1;
+	else if (tree_int_cst_lt (hi, key))
+	  return 1;
+	else
+	  return 0;
+      }
+    default:
+      gcc_unreachable ();
+    }
+}
+
+/* Returns the index of the constructor_elt of ARY which matches DINDEX, or -1
+   if none.  If INSERT is true, insert a matching element rather than fail.  */
+
+static HOST_WIDE_INT
+find_array_ctor_elt (tree ary, tree dindex, bool insert = false)
+{
+  if (tree_int_cst_sgn (dindex) < 0)
+    return -1;
+
+  unsigned HOST_WIDE_INT i = tree_to_uhwi (dindex);
+  vec<constructor_elt, va_gc> *elts = CONSTRUCTOR_ELTS (ary);
+  unsigned HOST_WIDE_INT len = vec_safe_length (elts);
+
+  unsigned HOST_WIDE_INT end = len;
+  unsigned HOST_WIDE_INT begin = 0;
+
+  /* If the last element of the CONSTRUCTOR has its own index, we can assume
+     that the same is true of the other elements and index directly.  */
+  if (end > 0)
+    {
+      tree cindex = (*elts)[end-1].index;
+      if (TREE_CODE (cindex) == INTEGER_CST
+	  && compare_tree_int (cindex, end-1) == 0)
+	{
+	  if (i < end)
+	    return i;
+	  else
+	    begin = end;
+	}
+    }
+
+  /* Otherwise, find a matching index by means of a binary search.  */
+  while (begin != end)
+    {
+      unsigned HOST_WIDE_INT middle = (begin + end) / 2;
+
+      int cmp = array_index_cmp (dindex, (*elts)[middle].index);
+      if (cmp < 0)
+	end = middle;
+      else if (cmp > 0)
+	begin = middle + 1;
+      else
+	return middle;
+    }
+
+  if (insert)
+    {
+      constructor_elt e = { dindex, NULL_TREE };
+      vec_safe_insert (CONSTRUCTOR_ELTS (ary), end, e);
+      return end;
+    }
+
+  return -1;
+}
+
+
 /* Subroutine of cxx_eval_constant_expression.
    Attempt to reduce a reference to an array slot.  */
 
@@ -1699,39 +1783,41 @@ cxx_eval_array_reference (const constexpr_ctx *ctx, tree t,
     }
 
   i = tree_to_shwi (index);
-  bool found = true;
-  if (TREE_CODE (ary) == CONSTRUCTOR && len
-      && (TREE_CODE (CONSTRUCTOR_ELT (ary, len-1)->index) == RANGE_EXPR
-	  || compare_tree_int (CONSTRUCTOR_ELT (ary, len-1)->index, len-1)))
+  if (i < 0)
     {
-      /* The last element doesn't match its position in the array; this must be
-	 a sparse array from cxx_eval_store_expression.  So iterate.  */
-      found = false;
-      vec<constructor_elt, va_gc> *v = CONSTRUCTOR_ELTS (ary);
-      constructor_elt *e;
-      for (unsigned ix = 0; vec_safe_iterate (v, ix, &e); ++ix)
-	{
-	  if (TREE_CODE (e->index) == RANGE_EXPR)
-	    {
-	      tree lo = TREE_OPERAND (e->index, 0);
-	      tree hi = TREE_OPERAND (e->index, 1);
-	      if (tree_int_cst_le (lo, index) && tree_int_cst_le (index, hi))
-		found = true;
-	    }
-	  else if (tree_int_cst_equal (e->index, index))
-	    found = true;
-	  if (found)
-	    {
-	      i = ix;
-	      break;
-	    }
-	}
+      if (!ctx->quiet)
+	error ("negative array subscript");
+      *non_constant_p = true;
+      return t;
     }
 
-  if (i >= len || !found)
+  bool found;
+  if (TREE_CODE (ary) == CONSTRUCTOR)
+    {
+      HOST_WIDE_INT ix = find_array_ctor_elt (ary, index);
+      found = (ix >= 0);
+      if (found)
+	i = ix;
+    }
+  else
+    found = (i < len);
+
+  if (!found)
     {
       if (tree_int_cst_lt (index, array_type_nelts_top (TREE_TYPE (ary))))
 	{
+	  if (TREE_CODE (ary) == CONSTRUCTOR
+	      && CONSTRUCTOR_NO_IMPLICIT_ZERO (ary))
+	    {
+	      /* 'ary' is part of the aggregate initializer we're currently
+		 building; if there's no initializer for this element yet,
+		 that's an error. */
+	      if (!ctx->quiet)
+		error ("accessing uninitialized array element");
+	      *non_constant_p = true;
+	      return t;
+	    }
+
 	  /* If it's within the array bounds but doesn't have an explicit
 	     initializer, it's value-initialized.  */
 	  tree val = build_value_init (elem_type, tf_warning_or_error);
@@ -1742,13 +1828,6 @@ cxx_eval_array_reference (const constexpr_ctx *ctx, tree t,
 
       if (!ctx->quiet)
 	error ("array subscript out of bound");
-      *non_constant_p = true;
-      return t;
-    }
-  else if (i < 0)
-    {
-      if (!ctx->quiet)
-	error ("negative array subscript");
       *non_constant_p = true;
       return t;
     }
@@ -2674,29 +2753,45 @@ cxx_eval_store_expression (const constexpr_ctx *ctx, tree t,
       return t;
     }
   type = TREE_TYPE (object);
+  bool no_zero_init = true;
   while (!refs->is_empty())
     {
       if (*valp == NULL_TREE)
 	{
 	  *valp = build_constructor (type, NULL);
-	  CONSTRUCTOR_NO_IMPLICIT_ZERO (*valp) = true;
+	  CONSTRUCTOR_NO_IMPLICIT_ZERO (*valp) = no_zero_init;
 	}
+      /* If the value of object is already zero-initialized, any new ctors for
+	 subobjects will also be zero-initialized.  */
+      no_zero_init = CONSTRUCTOR_NO_IMPLICIT_ZERO (*valp);
 
-      constructor_elt ce;
+      enum tree_code code = TREE_CODE (type);
       type = refs->pop();
-      ce.index = refs->pop();
-      ce.value = NULL_TREE;
+      tree index = refs->pop();
 
-      unsigned HOST_WIDE_INT idx = 0;
       constructor_elt *cep = NULL;
-      for (idx = 0;
-	   vec_safe_iterate (CONSTRUCTOR_ELTS (*valp), idx, &cep);
-	   idx++)
-	/* ??? slow */
-	if (cp_tree_equal (ce.index, cep->index))
-	  break;
-      if (!cep)
-	cep = vec_safe_push (CONSTRUCTOR_ELTS (*valp), ce);
+      if (code == ARRAY_TYPE)
+	{
+	  HOST_WIDE_INT i
+	    = find_array_ctor_elt (*valp, index, /*insert*/true);
+	  gcc_assert (i >= 0);
+	  cep = CONSTRUCTOR_ELT (*valp, i);
+	  gcc_assert (TREE_CODE (cep->index) != RANGE_EXPR);
+	}
+      else
+	{
+	  gcc_assert (TREE_CODE (index) == FIELD_DECL);
+	  for (unsigned HOST_WIDE_INT idx = 0;
+	       vec_safe_iterate (CONSTRUCTOR_ELTS (*valp), idx, &cep);
+	       idx++)
+	    if (index == cep->index)
+	      break;
+	  if (!cep)
+	    {
+	      constructor_elt ce = { index, NULL_TREE };
+	      cep = vec_safe_push (CONSTRUCTOR_ELTS (*valp), ce);
+	    }
+	}
       valp = &cep->value;
     }
   release_tree_vector (refs);
@@ -2708,7 +2803,7 @@ cxx_eval_store_expression (const constexpr_ctx *ctx, tree t,
       new_ctx.ctor = build_constructor (type, NULL);
       if (*valp == NULL_TREE)
 	*valp = new_ctx.ctor;
-      CONSTRUCTOR_NO_IMPLICIT_ZERO (new_ctx.ctor) = true;
+      CONSTRUCTOR_NO_IMPLICIT_ZERO (new_ctx.ctor) = no_zero_init;
       new_ctx.object = target;
     }
 
@@ -4178,15 +4273,6 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
 	return false;
       return true;
 
-    case IF_STMT:
-      if (!RECUR (IF_COND (t), rval))
-	return false;
-      if (!RECUR (THEN_CLAUSE (t), any))
-	return false;
-      if (!RECUR (ELSE_CLAUSE (t), any))
-	return false;
-      return true;
-
     case DO_STMT:
       if (!RECUR (DO_COND (t), rval))
 	return false;
@@ -4215,8 +4301,8 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
     case SWITCH_STMT:
       if (!RECUR (SWITCH_STMT_COND (t), rval))
 	return false;
-      if (!RECUR (SWITCH_STMT_BODY (t), any))
-	return false;
+      /* FIXME we don't check SWITCH_STMT_BODY currently, because even
+	 unreachable labels would be checked.  */
       return true;
 
     case STMT_EXPR:
@@ -4497,6 +4583,7 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
 	return false;
      return true;
 
+    case IF_STMT:
     case COND_EXPR:
     case VEC_COND_EXPR:
       /* If the condition is a known constant, we know which of the legs we

@@ -319,6 +319,7 @@ extern int vfp3_const_double_for_bits (rtx);
 
 extern void arm_emit_coreregs_64bit_shift (enum rtx_code, rtx, rtx, rtx, rtx,
 					   rtx);
+extern bool arm_valid_symbolic_address_p (rtx);
 extern bool arm_validize_comparison (rtx *, rtx *, rtx *);
 #endif /* RTX_CODE */
 
@@ -346,6 +347,8 @@ extern bool arm_is_constant_pool_ref (rtx);
 /* Flags used to identify the presence of processor capabilities.  */
 
 /* Bit values used to identify processor capabilities.  */
+#define FL_NONE	      (0)	      /* No flags.  */
+#define FL_ANY	      (0xffffffff)    /* All flags.  */
 #define FL_CO_PROC    (1 << 0)        /* Has external co-processor bus */
 #define FL_ARCH3M     (1 << 1)        /* Extended multiply */
 #define FL_MODE26     (1 << 2)        /* 26-bit mode support */
@@ -413,13 +416,116 @@ extern bool arm_is_constant_pool_ref (rtx);
 #define FL_FOR_ARCH7EM  (FL_FOR_ARCH7M | FL_ARCH7EM)
 #define FL_FOR_ARCH8A	(FL_FOR_ARCH7VE | FL_ARCH8)
 
+/* There are too many feature bits to fit in a single word so the set of cpu and
+   fpu capabilities is a structure.  A feature set is created and manipulated
+   with the ARM_FSET macros.  */
+
+typedef struct
+{
+  unsigned long cpu[2];
+} arm_feature_set;
+
+
+/* Initialize a feature set.  */
+
+#define ARM_FSET_MAKE(CPU1,CPU2) { { (CPU1), (CPU2) } }
+
+#define ARM_FSET_MAKE_CPU1(CPU1) ARM_FSET_MAKE ((CPU1), (FL_NONE))
+#define ARM_FSET_MAKE_CPU2(CPU2) ARM_FSET_MAKE ((FL_NONE), (CPU2))
+
+/* Accessors.  */
+
+#define ARM_FSET_CPU1(S) ((S).cpu[0])
+#define ARM_FSET_CPU2(S) ((S).cpu[1])
+
+/* Useful combinations.  */
+
+#define ARM_FSET_EMPTY ARM_FSET_MAKE (FL_NONE, FL_NONE)
+#define ARM_FSET_ANY ARM_FSET_MAKE (FL_ANY, FL_ANY)
+
+/* Tests for a specific CPU feature.  */
+
+#define ARM_FSET_HAS_CPU1(A, F)  \
+  (((A).cpu[0] & ((unsigned long)(F))) == ((unsigned long)(F)))
+#define ARM_FSET_HAS_CPU2(A, F)  \
+  (((A).cpu[1] & ((unsigned long)(F))) == ((unsigned long)(F)))
+#define ARM_FSET_HAS_CPU(A, F1, F2)				\
+  (ARM_FSET_HAS_CPU1 ((A), (F1)) && ARM_FSET_HAS_CPU2 ((A), (F2)))
+
+/* Add a feature to a feature set.  */
+
+#define ARM_FSET_ADD_CPU1(DST, F)		\
+  do {						\
+    (DST).cpu[0] |= (F);			\
+  } while (0)
+
+#define ARM_FSET_ADD_CPU2(DST, F)		\
+  do {						\
+    (DST).cpu[1] |= (F);			\
+  } while (0)
+
+/* Remove a feature from a feature set.  */
+
+#define ARM_FSET_DEL_CPU1(DST, F)		\
+  do {						\
+    (DST).cpu[0] &= ~(F);			\
+  } while (0)
+
+#define ARM_FSET_DEL_CPU2(DST, F)		\
+  do {						\
+    (DST).cpu[1] &= ~(F);			\
+  } while (0)
+
+/* Union of feature sets.  */
+
+#define ARM_FSET_UNION(DST,F1,F2)		\
+  do {						\
+    (DST).cpu[0] = (F1).cpu[0] | (F2).cpu[0];	\
+    (DST).cpu[1] = (F1).cpu[1] | (F2).cpu[1];	\
+  } while (0)
+
+/* Intersection of feature sets.  */
+
+#define ARM_FSET_INTER(DST,F1,F2)		\
+  do {						\
+    (DST).cpu[0] = (F1).cpu[0] & (F2).cpu[0];	\
+    (DST).cpu[1] = (F1).cpu[1] & (F2).cpu[1];	\
+  } while (0)
+
+/* Exclusive disjunction.  */
+
+#define ARM_FSET_XOR(DST,F1,F2)				\
+  do {							\
+    (DST).cpu[0] = (F1).cpu[0] ^ (F2).cpu[0];		\
+    (DST).cpu[1] = (F1).cpu[1] ^ (F2).cpu[1];		\
+  } while (0)
+
+/* Difference of feature sets: F1 excluding the elements of F2.  */
+
+#define ARM_FSET_EXCLUDE(DST,F1,F2)		\
+  do {						\
+    (DST).cpu[0] = (F1).cpu[0] & ~(F2).cpu[0];	\
+    (DST).cpu[1] = (F1).cpu[1] & ~(F2).cpu[1];	\
+  } while (0)
+
+/* Test for an empty feature set.  */
+
+#define ARM_FSET_IS_EMPTY(A)		\
+  (!((A).cpu[0]) && !((A).cpu[1]))
+
+/* Tests whether the cpu features of A are a subset of B.  */
+
+#define ARM_FSET_CPU_SUBSET(A,B)					\
+  ((((A).cpu[0] & (B).cpu[0]) == (A).cpu[0])				\
+   && (((A).cpu[1] & (B).cpu[1]) == (A).cpu[1]))
+
 /* The bits in this mask specify which
    instructions we are allowed to generate.  */
-extern unsigned long insn_flags;
+extern arm_feature_set insn_flags;
 
 /* The bits in this mask specify which instruction scheduling options should
    be used.  */
-extern unsigned long tune_flags;
+extern arm_feature_set tune_flags;
 
 /* Nonzero if this chip supports the ARM Architecture 3M extensions.  */
 extern int arm_arch3m;

@@ -6311,11 +6311,11 @@ build_va_arg (location_t loc, tree expr, tree type)
 
 /* Linked list of disabled built-in functions.  */
 
-typedef struct disabled_builtin
+struct disabled_builtin
 {
   const char *name;
   struct disabled_builtin *next;
-} disabled_builtin;
+};
 static disabled_builtin *disabled_builtins = NULL;
 
 static bool builtin_function_disabled_p (const char *);
@@ -8328,12 +8328,7 @@ handle_weak_attribute (tree *node, tree name,
       return NULL_TREE;
     }
   else if (VAR_OR_FUNCTION_DECL_P (*node))
-    {
-      struct symtab_node *n = symtab_node::get (*node);
-      if (n && n->refuse_visibility_changes)
-	error ("%+D declared weak after being used", *node);
-      declare_weak (*node);
-    }
+    declare_weak (*node);
   else
     warning (OPT_Wattributes, "%qE attribute ignored", name);
 
@@ -10151,6 +10146,7 @@ check_builtin_function_arguments (tree fndecl, int nargs, tree *args)
     case BUILT_IN_ISINF_SIGN:
     case BUILT_IN_ISNAN:
     case BUILT_IN_ISNORMAL:
+    case BUILT_IN_SIGNBIT:
       if (builtin_function_validate_nargs (fndecl, nargs, 1))
 	{
 	  if (TREE_CODE (TREE_TYPE (args[0])) != REAL_TYPE)
