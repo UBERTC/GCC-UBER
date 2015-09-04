@@ -410,7 +410,7 @@ getScheduleMap(isl_schedule *Schedule)
   return ScheduleMap;
 }
 
-static int_stat
+static isl_stat
 getSingleMap(__isl_take isl_map *map, void *user)
 {
   isl_map **singleMap = (isl_map **) user;
