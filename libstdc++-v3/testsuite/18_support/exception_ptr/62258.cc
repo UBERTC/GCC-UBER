@@ -1,7 +1,7 @@
-// { dg-do compile }
 // { dg-options "-std=gnu++11" }
+// { dg-require-atomic-builtins "" }
 
-// Copyright (C) 2010-2015 Free Software Foundation, Inc.
+// Copyright (C) 2015 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -18,17 +18,44 @@
 // with this library; see the file COPYING3.  If not see
 // <http://www.gnu.org/licenses/>.
 
-// 26.6.10 valarray range access: [valarray.range]
+// PR libstdc++/62258
 
-#include <valarray>
+#include <exception>
+#include <testsuite_hooks.h>
 
-void
-test01()
+struct check_on_destruct
 {
-  std::valarray<double> va{1.0, 2.0, 3.0};
-  std::begin(va);
-  std::end(va);
-  const auto& cva = va;
-  std::begin(cva);
-  std::end(cva);
+  ~check_on_destruct();
+};
+
+check_on_destruct::~check_on_destruct()
+{
+  VERIFY(std::uncaught_exception());
+}
+
+int main ()
+{
+  VERIFY(!std::uncaught_exception());
+
+  try
+    {
+      check_on_destruct check;
+
+      try
+        {
+          throw 1;
+        }
+      catch (...)
+        {
+          VERIFY(!std::uncaught_exception());
+
+          std::rethrow_exception(std::current_exception());
+        }
+    }
+  catch (...)
+    {
+      VERIFY(!std::uncaught_exception());
+    }
+
+  VERIFY(!std::uncaught_exception());
 }

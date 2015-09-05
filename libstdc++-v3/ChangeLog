@@ -1,3 +1,49 @@
+2015-09-03  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/shared_mutex (shared_timed_mutex::shared_timed_mutex):
+	Replace throw with __throw_bad_alloc.
+
+	PR libstdc++/66998
+	* include/experimental/functional (_Not_fn): Add exception
+	specifications and non-deduced return types.
+	(not_fn): Add exception specification and wrap pointer-to-member.
+	* testsuite/experimental/functional/not_fn.cc: Test in SFINAE context
+	and test pointer-to-member.
+
+	Backport from mainline
+	2015-08-27  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/67374
+	* include/bits/range_access.h (valarray, begin, end): Declare.
+	* testsuite/26_numerics/valarray/range_access.cc: Test const
+	overloads.
+	* testsuite/26_numerics/valarray/range_access2.cc: New.
+
+	Backport from mainline
+	2015-07-24  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/atomic_futex.h [_GLIBCXX_HAVE_LINUX_FUTEX]
+	(_M_load_and_test_until): Whitespace.
+	(_M_load_and_test): Value-initialize the unused durations.
+	(_M_load_when_equal): Add missing return value.
+
+	Backport from mainline
+	2015-07-13  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/66855
+	* src/c++11/codecvt.cc (__codecvt_utf8_utf16_base::do_in): Override
+	endianness bit in mode.
+	* testsuite/22_locale/codecvt/codecvt_utf8_utf16/66855.cc: New.
+
+	Backport from mainline
+	2015-04-27  Dmitry Prokoptsev  <dprokoptsev@gmail.com>
+		    Michael Hanselmann  <public@hansmi.ch>
+
+	PR libstdc++/62258
+	* libsupc++/eh_ptr.cc (rethrow_exception): Increment count of
+	uncaught exceptions.
+	* testsuite/18_support/exception_ptr/62258.cc: New.
+
 2015-08-28  Tim Shen  <timshen@google.com>
 
 	Backport from mainline
