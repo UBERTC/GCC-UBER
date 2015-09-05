@@ -572,6 +572,7 @@ extern int field_decl_cmp (const void *, const void *);
 extern void resort_sorted_fields (void *, void *, gt_pointer_operator,
 				  void *);
 extern bool has_c_linkage (const_tree decl);
+extern bool c_decl_implicit (const_tree);
 
 /* Switches common to the C front ends.  */
 
@@ -1424,6 +1425,8 @@ extern vec <tree, va_gc> *fix_sec_implicit_args
 extern tree insert_cilk_frame (tree);
 extern void cilk_init_builtins (void);
 extern int gimplify_cilk_spawn (tree *);
+extern void cilk_gimplify_call_params_in_spawned_fn (tree *, gimple_seq *,
+						     gimple_seq *);
 extern void cilk_install_body_with_frame_cleanup (tree, tree, void *);
 extern bool cilk_detect_spawn_and_unwrap (tree *);
 extern bool cilk_set_spawn_marker (location_t, tree);
@@ -1437,5 +1440,6 @@ extern bool contains_cilk_spawn_stmt (tree);
 extern tree cilk_for_number_of_iterations (tree);
 extern bool check_no_cilk (tree, const char *, const char *,
 		           location_t loc = UNKNOWN_LOCATION);
+extern bool reject_gcc_builtin (const_tree, location_t = UNKNOWN_LOCATION);
 
 #endif /* ! GCC_C_COMMON_H */

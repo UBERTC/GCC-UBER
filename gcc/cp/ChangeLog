@@ -1,3 +1,31 @@
+2015-09-03  Martin Sebor  <msebor@redhat.com>
+
+	PR c/66516
+	* cp-tree.h (mark_rvalue_use, decay_conversion): Add new
+	argument(s).
+	* expr.c (mark_rvalue_use): Use new argument.
+	* call.c (build_addr_func): Call decay_conversion with new
+	argument.
+	* pt.c (convert_template_argument): Call reject_gcc_builtin.
+	* typeck.c (decay_conversion): Use new argument.
+	(c_decl_implicit): Define.
+
+2015-09-02  Balaji V. Iyer  <balaji.v.iyer@intel.com>
+
+	PR middle-end/60586
+	* cp-gimplify.c (cilk_cp_gimplify_call_params_in_spawned_fn): New
+	function.
+	(cp_gimplify_expr): Added a call to the function
+	cilk_cp_gimplify_call_params_in_spawned_fn.
+
+2015-09-01  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/61753
+	* decl.c (smallest_type_quals_location): New.
+	(check_special_function_return_type): Use the latter; add int and
+	const location_t* parameters.
+	(grokdeclarator): Adjust check_special_function_return_type call.
+
 2015-08-29  Markus Trippelsdorf  <markus@trippelsdorf.de>
 
 	PR c++/67371

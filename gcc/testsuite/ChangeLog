@@ -1,3 +1,183 @@
+2015-09-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/67452
+	* gcc.dg/lto/pr67452_0.c: New test.
+
+2015-09-02  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	PR target/65210
+	* gcc.target/avr/pr65210.c: New test.
+
+2015-09-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR testsuite/67450
+	* lib/target-supports.exp (check_cached_effective_target):
+	Apppend $prop to et_prop_list only if needed.
+
+2015-09-04  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/67279
+	* gcc.dg/ubsan/pr67279.c: New test.
+
+2015-09-04  Andrey Turetskiy  <andrey.turetskiy@intel.com>
+	    Petr Murzin  <petr.murzin@intel.com>
+	    Kirill Yukhin <kirill.yukhin@intel.com>
+
+	* gcc.target/i386/avx512f-scatter-1.c: New.
+	* gcc.target/i386/avx512f-scatter-2.c: Ditto.
+	* gcc.target/i386/avx512f-scatter-3.c: Ditto.
+
+2015-09-04  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	* gfortran.dg/read_dir.f90: Delete empty directory when closing
+	rather than calling rmdir, cleanup if open fails.
+
+2015-09-03  Bill Schmidt  <wschmidt@vnet.linux.ibm.com>
+
+	* gcc.target/powerpc/vec-mult-char-1.c: New test.
+	* gcc.target/powerpc/vec-mult-char-2.c: New test.
+	* lib/target-supports.exp (check_effective_target_vect_char_mult):
+	Return true for PowerPC targets that implement Altivec.
+
+2015-09-03  Renlin Li  <renlin.li@arm.com>
+
+	* gcc.target/aarch64/arm_align_max_pwr.c: Make it a compile test case,
+	check the assembly.
+	* gcc.target/aarch64/arm_align_max_stack_pwr.c: Likewise.
+
+2015-09-03  Martin Sebor  <msebor@redhat.com>
+
+	PR c/66516
+	* g++.dg/addr_builtin-1.C: New test.
+	* gcc.dg/addr_builtin-1.c: New test.
+
+2015-09-03  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/vec-shift.c: New test.
+
+2015-09-03  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65637
+	* gcc.dg/autopar/reduc-4.c: New test.
+
+2015-09-03  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65637
+	* gcc.dg/autopar/pr46099-2.c: New test.
+
+2015-09-03  Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	PR middle-end/67351
+	* g++.dg/pr67351.C: New test.
+
+2015-09-03  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/66705
+	* g++.dg/lto/pr66705_0.C: New testcase.
+
+2015-09-02  Balaji V. Iyer  <balaji.v.iyer@intel.com>
+
+	PR middle-end/60586
+	* c-c++-common/cilk-plus/CK/pr60586.c: New file.
+	* g++.dg/cilk-plus/CK/pr60586.cc: Likewise.
+
+2015-09-02  Marek Polacek  <polacek@redhat.com>
+
+	PR c/67432
+	* gcc.dg/pr67432.c: New test.
+
+2015-09-02  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* lib/target-supports.exp (clear_effective_target_cache): New.
+	(check_cached_effective_target): Update et_prop_list.
+	* lib/asan-dg.exp (asan_finish): Call clear_effective_target_cache.
+	* g++.dg/compat/compat.exp: Likewise.
+	* g++.dg/compat/struct-layout-1.exp: Likewise.
+	* lib/asan-dg.exp: Likewise.
+	* lib/atomic-dg.exp: Likewise.
+	* lib/cilk-plus-dg.exp: Likewise.
+	* lib/clearcap.exp: Likewise.
+	* lib/mpx-dg.exp: Likewise.
+	* lib/tsan-dg.exp: Likewise.
+	* lib/ubsan-dg.exp: Likewise.
+
+2015-09-01  Kenneth Zadeck <zadeck@naturalbridge.com>
+        * gcc.c-torture/execute/ieee/20000320-1.c Fixed misplaced test case.
+
+2015-09-01  Matthew Fortune  <matthew.fortune@imgtec.com>
+	    Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* gcc.target/mips/mips.exp (mips-dg-options): Handle the
+	dependencies between ISA level and compact-branches.
+	* gcc.target/mips/branch-10.c: Update expected output to allow
+	compact forms of b/bal.
+	* gcc.target/mips/branch-11.c: Likewise.
+	* gcc.target/mips/branch-12.c: Likewise.
+	* gcc.target/mips/branch-13.c: Likewise.
+	* gcc.target/mips/branch-3.c: Likewise.
+	* gcc.target/mips/branch-4.c: Likewise.
+	* gcc.target/mips/branch-5.c: Likewise.
+	* gcc.target/mips/branch-6.c: Likewise.
+	* gcc.target/mips/branch-7.c: Likewise.
+	* gcc.target/mips/branch-8.c: Likewise.
+	* gcc.target/mips/branch-9.c: Likewise.
+	* gcc.target/mips/branch-cost-1.c: Likewise.
+	* gcc.target/mips/call-1.c: Likewise.
+	* gcc.target/mips/call-2.c: Likewise.
+	* gcc.target/mips/call-3.c: Likewise.
+	* gcc.target/mips/call-4.c: Likewise.
+	* gcc.target/mips/call-5.c: Likewise.
+	* gcc.target/mips/call-6.c: Likewise.
+	* gcc.target/mips/lazy-binding-1.c: Likewise.
+	* gcc.target/mips/near-far-1.c: Likewise.
+	* gcc.target/mips/near-far-2.c: Likewise.
+	* gcc.target/mips/near-far-3.c: Likewise.
+	* gcc.target/mips/near-far-4.c: Likewise.
+	* gcc.target/mips/umips-branch-3.c: Ensure the test is
+	run with compact branches allowed.
+	* gcc.target/mips/compact-branches-1.c: New file.
+	* gcc.target/mips/compact-branches-2.c: Likewise.
+	* gcc.target/mips/compact-branches-3.c: Likewise.
+	* gcc.target/mips/compact-branches-4.c: Likewise.
+	* gcc.target/mips/compact-branches-5.c: Likewise.
+	* gcc.target/mips/compact-branches-6.c: Likewise.
+	* gcc.target/mips/compact-branches-7.c: Likewise.
+
+2015-09-01  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* gfortran.dg/read_dir.f90: XFAIL this testcase on FreeBSD.
+	Clean-up a created directory if testcase fails.
+
+2015-09-01  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/67405
+	* g++.dg/pr67405.C: New test.
+
+2015-09-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* gcc.dg/vect/no-scevccp-outer-11.c: Don't xfail scan-tree-dump-times.
+
+2015-09-01  Kyrylo Tkachov <kyrylo.tkachov@arm.com>
+
+	* gcc.dg/ifcvt-1.c: New test.
+	* gcc.dg/ifcvt-2.c: Likewise.
+	* gcc.dg/ifcvt-3.c: Likewise.
+
+2015-09-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR libfortran/67412
+	* gfortran.dg/execute_command_line_2.f90: XFAIL execution on
+	*-*-solaris2.10.
+
+2015-09-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/target_attr_crypto_ice_2.c: New test.
+
+2015-09-01  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/61753
+	* g++.dg/other/pr61753.C: New.
+
 2015-08-31  Marc Glisse  <marc.glisse@inria.fr>
 
 	* gcc.dg/tree-ssa/cmp-1.c: New file.
