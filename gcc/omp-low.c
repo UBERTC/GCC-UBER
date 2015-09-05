@@ -6885,6 +6885,24 @@ expand_omp_for_static_nochunk (struct omp_region *region,
     }
 }
 
+/* Return phi in E->DEST with ARG on edge E.  */
+
+static gphi *
+find_phi_with_arg_on_edge (tree arg, edge e)
+{
+  basic_block bb = e->dest;
+
+  for (gphi_iterator gpi = gsi_start_phis (bb);
+       !gsi_end_p (gpi);
+       gsi_next (&gpi))
+    {
+      gphi *phi = gpi.phi ();
+      if (PHI_ARG_DEF_FROM_EDGE (phi, e) == arg)
+	return phi;
+    }
+
+  return NULL;
+}
 
 /* A subroutine of expand_omp_for.  Generate code for a parallel
    loop with static schedule and a specified chunk size.  Given
@@ -6960,7 +6978,8 @@ expand_omp_for_static_chunk (struct omp_region *region,
   body_bb = single_succ (seq_start_bb);
   if (!broken_loop)
     {
-      gcc_assert (BRANCH_EDGE (cont_bb)->dest == body_bb);
+      gcc_assert (BRANCH_EDGE (cont_bb)->dest == body_bb
+		  || single_succ (BRANCH_EDGE (cont_bb)->dest) == body_bb);
       gcc_assert (EDGE_COUNT (cont_bb->succs) == 2);
       trip_update_bb = split_edge (FALLTHRU_EDGE (cont_bb));
     }
@@ -7016,7 +7035,7 @@ expand_omp_for_static_chunk (struct omp_region *region,
       se->probability = REG_BR_PROB_BASE / 2000 - 1;
       if (gimple_in_ssa_p (cfun))
 	{
-	  int dest_idx = find_edge (entry_bb, fin_bb)->dest_idx;
+	  int dest_idx = find_edge (iter_part_bb, fin_bb)->dest_idx;
 	  for (gphi_iterator gpi = gsi_start_phis (fin_bb);
 	       !gsi_end_p (gpi); gsi_next (&gpi))
 	    {
@@ -7261,6 +7280,11 @@ expand_omp_for_static_chunk (struct omp_region *region,
   if (!broken_loop)
     {
       se = find_edge (cont_bb, body_bb);
+      if (se == NULL)
+	{
+	  se = BRANCH_EDGE (cont_bb);
+	  gcc_assert (single_succ (se->dest) == body_bb);
+	}
       if (gimple_omp_for_combined_p (fd->for_stmt))
 	{
 	  remove_edge (se);
@@ -7292,7 +7316,7 @@ expand_omp_for_static_chunk (struct omp_region *region,
       /* When we redirect the edge from trip_update_bb to iter_part_bb, we
 	 remove arguments of the phi nodes in fin_bb.  We need to create
 	 appropriate phi nodes in iter_part_bb instead.  */
-      se = single_pred_edge (fin_bb);
+      se = find_edge (iter_part_bb, fin_bb);
       re = single_succ_edge (trip_update_bb);
       vec<edge_var_map> *head = redirect_edge_var_map_vector (re);
       ene = single_succ_edge (entry_bb);
@@ -7307,6 +7331,10 @@ expand_omp_for_static_chunk (struct omp_region *region,
 	  phi = psi.phi ();
 	  t = gimple_phi_result (phi);
 	  gcc_assert (t == redirect_edge_var_map_result (vm));
+
+	  if (!single_pred_p (fin_bb))
+	    t = copy_ssa_name (t, phi);
+
 	  nphi = create_phi_node (t, iter_part_bb);
 
 	  t = PHI_ARG_DEF_FROM_EDGE (phi, se);
@@ -7318,17 +7346,33 @@ expand_omp_for_static_chunk (struct omp_region *region,
 	    t = vextra;
 	  add_phi_arg (nphi, t, ene, locus);
 	  locus = redirect_edge_var_map_location (vm);
-	  add_phi_arg (nphi, redirect_edge_var_map_def (vm), re, locus);
+	  tree back_arg = redirect_edge_var_map_def (vm);
+	  add_phi_arg (nphi, back_arg, re, locus);
+	  edge ce = find_edge (cont_bb, body_bb);
+	  if (ce == NULL)
+	    {
+	      ce = BRANCH_EDGE (cont_bb);
+	      gcc_assert (single_succ (ce->dest) == body_bb);
+	      ce = single_succ_edge (ce->dest);
+	    }
+	  gphi *inner_loop_phi = find_phi_with_arg_on_edge (back_arg, ce);
+	  gcc_assert (inner_loop_phi != NULL);
+	  add_phi_arg (inner_loop_phi, gimple_phi_result (nphi),
+		       find_edge (seq_start_bb, body_bb), locus);
+
+	  if (!single_pred_p (fin_bb))
+	    add_phi_arg (phi, gimple_phi_result (nphi), se, locus);
 	}
-      gcc_assert (gsi_end_p (psi) && i == head->length ());
+      gcc_assert (gsi_end_p (psi) && (head == NULL || i == head->length ()));
       redirect_edge_var_map_clear (re);
-      while (1)
-	{
-	  psi = gsi_start_phis (fin_bb);
-	  if (gsi_end_p (psi))
-	    break;
-	  remove_phi_node (&psi, false);
-	}
+      if (single_pred_p (fin_bb))
+	while (1)
+	  {
+	    psi = gsi_start_phis (fin_bb);
+	    if (gsi_end_p (psi))
+	      break;
+	    remove_phi_node (&psi, false);
+	  }
 
       /* Make phi node for trip.  */
       phi = create_phi_node (trip_main, iter_part_bb);
@@ -7351,14 +7395,24 @@ expand_omp_for_static_chunk (struct omp_region *region,
 
   if (!broken_loop)
     {
+      struct loop *loop = body_bb->loop_father;
       struct loop *trip_loop = alloc_loop ();
       trip_loop->header = iter_part_bb;
       trip_loop->latch = trip_update_bb;
       add_loop (trip_loop, iter_part_bb->loop_father);
 
+      if (loop != entry_bb->loop_father)
+	{
+	  gcc_assert (loop->header == body_bb);
+	  gcc_assert (loop->latch == region->cont
+		      || single_pred (loop->latch) == region->cont);
+	  trip_loop->inner = loop;
+	  return;
+	}
+
       if (!gimple_omp_for_combined_p (fd->for_stmt))
 	{
-	  struct loop *loop = alloc_loop ();
+	  loop = alloc_loop ();
 	  loop->header = body_bb;
 	  if (collapse_bb == NULL)
 	    loop->latch = cont_bb;

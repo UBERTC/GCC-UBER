@@ -1,3 +1,340 @@
+2015-09-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/67452
+	* tree-ssa-live.c: Include cfgloop.h.
+	(remove_unused_locals): Clear loop->simduid if simduid is about
+	to be removed from cfun->local_decls.
+
+2015-09-02  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	PR target/65210
+	* config/avr/avr.c (avr_eval_addr_attrib): Look for io_low
+	attribute as well.
+
+2015-09-04  Tom de Vries  <tom@codesourcery.com>
+
+	* doc/invoke.texi (@item -ftrapv, @item -fwrapv): Document interaction.
+
+2015-09-04  Jeff Law  <law@redhat.com>
+
+	* tree-ssa-scopedtables.c (const_and_copies::const_and_copies): Remove
+	unnecessary constructor.  It's now trivial and implemented inside...
+	* tree-ssa-scopedtables.h (const_and_copies): Implement trivial
+	constructor.  Add comments to various methods.  Remove unused
+	private fields.
+	* tree-ssa-dom.c (pass_dominator::execute): Corresponding changes.
+	* tree-vrp.c (identify_jump_threads): Likewise.
+	* tree-ssa-threadedge.c (thread_through_normal_block): Fix minor
+	indentation issues.
+	(thread_across_edge): Similarly.
+	(record_temporary_equivalences_from_stmts_at_dest): Remove unused
+	arguments in constructor call.
+
+2015-09-04  Jonas Hahnfeld  <Hahnfeld@itc.rwth-aachen.de>
+
+	* config/i386/intelmic-mkoffload.c (prepare_target_image): Fix if the
+	temp path contains a '-'.
+
+2015-09-04  Andrey Turetskiy  <andrey.turetskiy@intel.com>
+	    Petr Murzin  <petr.murzin@intel.com>
+	    Kirill Yukhin <kirill.yukhin@intel.com>
+
+	* config/i386/i386-builtin-types.def
+	(VOID_PFLOAT_HI_V8DI_V16SF_INT): New.
+	(VOID_PDOUBLE_QI_V16SI_V8DF_INT): Ditto.
+	(VOID_PINT_HI_V8DI_V16SI_INT): Ditto.
+	(VOID_PLONGLONG_QI_V16SI_V8DI_INT): Ditto.
+	* config/i386/i386.c
+	(ix86_builtins): Add IX86_BUILTIN_SCATTERALTSIV8DF,
+	IX86_BUILTIN_SCATTERALTDIV16SF, IX86_BUILTIN_SCATTERALTSIV8DI,
+	IX86_BUILTIN_SCATTERALTDIV16SI.
+	(ix86_init_mmx_sse_builtins): Define __builtin_ia32_scatteraltsiv8df,
+	__builtin_ia32_scatteraltdiv8sf, __builtin_ia32_scatteraltsiv8di,
+	__builtin_ia32_scatteraltdiv8si.
+	(ix86_expand_builtin): Handle IX86_BUILTIN_SCATTERALTSIV8DF,
+	IX86_BUILTIN_SCATTERALTDIV16SF, IX86_BUILTIN_SCATTERALTSIV8DI,
+	IX86_BUILTIN_SCATTERALTDIV16SI.
+	(ix86_vectorize_builtin_scatter): New.
+	(TARGET_VECTORIZE_BUILTIN_SCATTER): Define as
+	ix86_vectorize_builtin_scatter.
+
+2015-09-04  Andrey Turetskiy  <andrey.turetskiy@intel.com>
+	    Petr Murzin  <petr.murzin@intel.com>
+	    Kirill Yukhin <kirill.yukhin@intel.com>
+
+	* doc/tm.texi.in (TARGET_VECTORIZE_BUILTIN_SCATTER): New.
+	* doc/tm.texi: Regenerate.
+	* target.def: Add scatter builtin.
+	* tree-vectorizer.h: Rename gather_p to gather_scatter_p and use it
+	for loads/stores in case of gather/scatter accordingly.
+	(STMT_VINFO_GATHER_SCATTER_P(S)): Use it instead of STMT_VINFO_GATHER_P(S).
+	(vect_check_gather): Rename to ...
+	(vect_check_gather_scatter): this.
+	* tree-vect-data-refs.c (vect_analyze_data_ref_dependence): Use
+	STMT_VINFO_GATHER_SCATTER_P instead of STMT_VINFO_SCATTER_P.
+	(vect_check_gather_scatter): Use it instead of vect_check_gather.
+	(vect_analyze_data_refs): Add gatherscatter enum and maybe_scatter variable
+	and new checkings for it accordingly.
+	* tree-vect-stmts.c
+	(STMT_VINFO_GATHER_SCATTER_P(S)): Use it instead of STMT_VINFO_GATHER_P(S).
+	(vect_check_gather_scatter): Use it instead of vect_check_gather.
+	(vectorizable_store): Add checkings for STMT_VINFO_GATHER_SCATTER_P.
+
+2015-09-03  Bill Schmidt  <wschmidt@vnet.linux.ibm.com>
+
+	* config/rs6000/altivec.md (altivec_vperm_v8hiv16qi): New
+	define_insn.
+	(mulv16qi3): New define_expand.
+
+2015-09-03  Martin Sebor  <msebor@redhat.com>
+
+	PR c/66516
+	* doc/extend.texi (Other Builtins): Document when the address
+	of a built-in function can be taken.
+
+2015-09-03  Richard Biener  <rguenther@suse.de>
+
+	* dwarf2out.c (flush_limbo_die_list): Split out from ...
+	(dwarf2out_early_finish): ... here.
+	(dwarf2out_finish): Do not call dwarf2out_early_finish but
+	flush_limbo_die_list.  Assert we have no deferred asm names.
+
+2015-09-03  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* optabs.c (expand_binop): Don't create a broadcast vector with a
+	source element wider than the inner mode.
+
+2015-09-03  Richard Biener  <rguenther@suse.de>
+
+	* varasm.c (output_constant): Use fold_convert instead of
+	wide_int_to_tree.
+
+2015-09-03  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65637
+	* omp-low.c (expand_omp_for_static_chunk): Handle case that fin_bb has 2
+	predecessors.
+
+2015-09-03  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65637
+	* omp-low.c (find_phi_with_arg_on_edge): New function.
+	(expand_omp_for_static_chunk): Fix inner loop phi.
+
+2015-09-03  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/65637
+	* omp-low.c (expand_omp_for_static_chunk): Fix gcc_assert for the case
+	that head is NULL.
+
+2015-09-03  Tom de Vries  <tom@codesourcery.com>
+
+	* omp-low.c (expand_omp_for_static_chunk): Handle simple latch bb.
+
+2015-09-03  Tom de Vries  <tom@codesourcery.com>
+
+	* doc/invoke.texi (parloops-chunk-size): Add item.
+	* params.def (PARAM_PARLOOPS_CHUNK_SIZE): Add DEFPARAM.
+	* tree-parloops.c: Include params.h.
+	(create_parallel_loop): Set chunk-size of schedule of omp-for loop, if
+	param parloops-chunk-size is used.
+
+2015-09-03  Naveen H.S  <Naveen.Hurugalawadi@caviumnetworks.com>
+
+	PR middle-end/67351
+	* fold-const.c (fold_binary_loc) : Move 
+	Transform (x >> c) << c into x & (-1<<c) or
+	transform (x << c) >> c into x & ((unsigned)-1 >> c) for unsigned
+	types using simplify and match.
+	* match.pd (lshift (rshift @0 INTEGER_CST@1) @1) : New simplifier.
+	(rshift (lshift @0 INTEGER_CST@1) @1) : New Simplifier
+
+2015-09-03  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/66705
+	* tree-ssa-structalias.c (ctor_for_analysis): New function.
+	(create_variable_info_for_1): Use ctor_for_analysis instead
+	of get_constructor.
+	(create_variable_info_for): Likewise.
+
+2015-09-02  Charles Baylis  <charles.baylis@linaro.org>
+
+	* cgraphunit.c (cgraph_node::create_wrapper): Set can_throw_external
+	in new callgraph edge.
+
+2015-09-02  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	PR target/59810
+	PR target/63652
+	PR target/63653
+	* config/aarch64/aarch64-simd.md
+	(aarch64_ld<VSTRUCT:nregs><VQ:mode>): Call
+	gen_aarch64_simd_ld<VSTRUCT:nregs><VQ:mode>.
+	(aarch64_st<VSTRUCT:nregs><VQ:mode>): Call
+	gen_aarch64_simd_st<VSTRUCT:nregs><VQ:mode>.
+
+2015-09-02  Alan Modra  <amodra@gmail.com>
+
+	* config/rs6000/sysv4le.h (LINK_TARGET_SPEC): Don't define.
+	* config/rs6000/sysv4.h (LINK_TARGET_SPEC): Likewise.
+	(LINK_SPEC, SUBTARGET_EXTRA_SPECS): Delete link_target.
+
+2015-09-02  Alan Modra  <amodra@gmail.com>
+
+	PR target/67417
+	* config/rs6000/predicates.md (current_file_function_operand): Don't
+	return true for weak symbols.
+	* config/rs6000/rs6000.c (rs6000_function_ok_for_sibcall): Likewise.
+
+2015-09-01  Matthew Fortune  <matthew.fortune@imgtec.com>
+	    Andrew Bennett  <andrew.bennett@imgtec.com>
+
+	* config/mips/mips-opts.h (mips_cb_setting): New enum.
+	* config/mips/mips-protos.h: Add definitions for
+	mips_output_jump and mips_output_equal_conditional_branch
+	* gcc/config/mips/mips.c (MIPS_JR): Change to support the
+	JIC instruction.
+	(mips_emit_compare): Add support for the MIPS R6 conditional
+	compact branches.
+	(mips_process_sync_loop): Likewise.
+	(mips_output_order_conditional_branch): Likewise.
+	(mips16_build_call_stub): Change MIPS_CALL to
+	mips_output_jump.
+	(mips_print_operand_punctuation): Update 's' case to only
+	apply to micromips r2.
+	(mips_adjust_insn_length): Add support for forbidden slot
+	hazards.
+	(mips_avoid_hazard): Likewise.
+	(mips_reorg_process_insns): Likewise.
+	(mips_output_jump): New function.
+	(mips_output_equal_conditional_branch): Likewise.
+	(mips_output_conditional_branch): Use jrc/bc if compact
+	branch support is enabled.  Ensure the forbidden slots
+	between the two branch instructions is filled with a nop.
+	(mips_option_override): Add support to process the compact
+	branch option and set the correct defaults.  Prevent
+	non-explict relocs being using for MIPS R6.
+	(mips_trampoline_init): Add compact branch support.
+	(mips_mult_zero_zero_cost): Allow zero initialisation of
+	accumulators with TARGET_DSP.
+	* gcc/config/mips/mips.h (TARGET_CB_NEVER): New define.
+	(TARGET_CB_MAYBE): New define.
+	(TARGET_CB_ALWAYS): New define.
+	(ISA_HAS_DELAY_SLOTS): New define.
+	(ISA_HAS_COMPACT_BRANCHES): New define.
+	(ISA_HAS_JRC): New define.
+	(MIPS_BRANCH_C): New define.
+	(MIPS_CALL): Removed.
+	(MICROMIPS_J): Removed.
+	* config/mips/mips.md (compact_form): New attr.
+	(hazard): Add support for forbidden slots.
+	(define_delay): Add support for compact branches.
+	(*branch_order<mode>): Likewise.
+	(*branch_order<mode>_inverted): Likewise.
+	(*branch_equality<mode>): Likewise.
+	(*branch_equality<mode>_inverted): Likewise.
+	(*jump_absolute): Likewise.
+	(*jump_pic): Likewise.
+	(indirect_jump): Use mips_output_jump to produce assembly output.
+	(tablejump_<mode>"): Likewise.
+	(*<optab>"): Likewise.
+	(<optab>_internal): Likewise.
+	(sibcall_internal): Likewise.
+	(sibcall_value_internal): Likewise.
+	(sibcall_value_multiple_internal): Likewise.
+	(call_internal): Likewise.
+	(call_split): Likewise.
+	(call_internal_direct): Likewise.
+	(call_direct_split): Likewise.
+	(call_value_internal): Likewise.
+	(call_value_split): Likewise.
+	(call_value_internal_direct): Likewise.
+	(call_value_direct_split): Likewise.
+	(call_value_multiple_internal): Likewise.
+	(call_value_multiple_split): Likewise.
+	(mips_get_fcsr_mips16_<mode>): Likewise.
+	(mips_set_fcsr_mips16_<mode>): Likewise.
+	(tls_get_tp_mips16_<mode>): Likewise.
+	* config/mips/mips.opt: Add -mcompact-branches option.
+	* config/mips/predicates.md (order_operator): Ensure the
+	conditional compact branches are only used if the ISA them.
+	* doc/invoke.texi: Document -mcompact-branches option.
+
+2015-09-01  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/61578
+	* lra-lives.c (process_bb_lives): Process move pseudos with the
+	same value for copies and preferences
+	* lra-constraints.c (match_reload): Create match reload pseudo
+	with the same value from single dying input pseudo.
+
+2015-09-01  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/67405
+	* tree-chkp.c (chkp_find_bound_slots_1): Add NULL check.
+
+2015-09-01  Aldy Hernandez  <aldyh@redhat.com>
+
+	* trans-mem.c: Add contributed-by.
+	* trans-mem.h: Same.
+
+2015-09-01  Richard Biener  <rguenther@suse.de>
+
+	* expr.c (expand_expr_real_1): For expanding TERed defs
+	set the current location to that of the def if not UNKNOWN.
+
+2015-09-01  David Sherwood  <david.sherwood@arm.com>
+
+	* genmodes.c: Add CONST_MODE_UNIT_SIZE modifier.
+
+2015-09-01  Kyrylo Tkachov <kyrylo.tkachov@arm.com>
+
+	* ifcvt.c (struct noce_if_info): Add then_simple, else_simple,
+	then_cost, else_cost fields.  Change branch_cost field to unsigned
+	int.
+	(end_ifcvt_sequence): Call set_used_flags on each insn in the
+	sequence.
+	Include rtl-iter.h.
+	(noce_simple_bbs): New function.
+	(noce_try_move): Bail if basic blocks are not simple.
+	(noce_try_store_flag): Likewise.
+	(noce_try_store_flag_constants): Likewise.
+	(noce_try_addcc): Likewise.
+	(noce_try_store_flag_mask): Likewise.
+	(noce_try_cmove): Likewise.
+	(noce_try_minmax): Likewise.
+	(noce_try_abs): Likewise.
+	(noce_try_sign_mask): Likewise.
+	(noce_try_bitop): Likewise.
+	(bbs_ok_for_cmove_arith): New function.
+	(noce_emit_all_but_last): Likewise.
+	(noce_emit_insn): Likewise.
+	(noce_emit_bb): Likewise.
+	(noce_try_cmove_arith): Handle non-simple basic blocks.
+	(insn_valid_noce_process_p): New function.
+	(contains_mem_rtx_p): Likewise.
+	(bb_valid_for_noce_process_p): Likewise.
+	(noce_process_if_block): Allow non-simple basic blocks
+	where appropriate.
+
+2015-08-31  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* tree-ssa-dom.c (record_equivalences_from_phis,
+	record_equivalences_from_stmt, optimize_stmt): Use dom_valueize.
+	(lookup_avail_expr): Likewise, and remove comment and unused temp.
+
+2015-09-01  Nick Clifton  <nickc@redhat.com>
+
+	* config/msp430/msp430.opt (mcpu): Fix typo.
+
+2015-09-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_set_current_function):
+	Re-layout any vector parameters have non-simd layout.
+	* config/aarch64/aarch64-builtins.c (aarch64_relayout_simd_param):
+	Delete.
+	(aarch64_simd_expand_args): Delete call to the above.
+
 2015-08-31  Mike Frysinger  <vapier@gentoo.org>
 
 	* doc/invoke.texi (asan-stack): Add space before option.

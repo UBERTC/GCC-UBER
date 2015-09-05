@@ -3039,6 +3039,25 @@ Type_conversion_expression::do_lower(Gogo*, Named_object*,
 	}
     }
 
+  // According to the language specification on string conversions
+  // (http://golang.org/ref/spec#Conversions_to_and_from_a_string_type):
+  // When converting an integer into a string, the string will be a UTF-8
+  // representation of the integer and integers "outside the range of valid
+  // Unicode code points are converted to '\uFFFD'."
+  if (type->is_string_type())
+    {
+      Numeric_constant nc;
+      if (val->numeric_constant_value(&nc) && nc.is_int())
+        {
+          // An integer value doesn't fit in the Unicode code point range if it
+          // overflows the Go "int" type or is negative.
+          unsigned long ul;
+          if (!nc.set_type(Type::lookup_integer_type("int"), false, location)
+              || nc.to_unsigned_long(&ul) == Numeric_constant::NC_UL_NEGATIVE)
+            return Expression::make_string("\ufffd", location);
+        }
+    }
+
   if (type->is_slice_type())
     {
       Type* element_type = type->array_type()->element_type()->forwarded();
@@ -4548,6 +4567,7 @@ Binary_expression::eval_integer(Operator op, const Numeric_constant* left_nc,
       if (mpz_sizeinbase(val, 2) > 0x100000)
 	{
 	  error_at(location, "constant addition overflow");
+          nc->set_invalid();
 	  mpz_set_ui(val, 1);
 	}
       break;
@@ -4556,6 +4576,7 @@ Binary_expression::eval_integer(Operator op, const Numeric_constant* left_nc,
       if (mpz_sizeinbase(val, 2) > 0x100000)
 	{
 	  error_at(location, "constant subtraction overflow");
+          nc->set_invalid();
 	  mpz_set_ui(val, 1);
 	}
       break;
@@ -4570,6 +4591,7 @@ Binary_expression::eval_integer(Operator op, const Numeric_constant* left_nc,
       if (mpz_sizeinbase(val, 2) > 0x100000)
 	{
 	  error_at(location, "constant multiplication overflow");
+          nc->set_invalid();
 	  mpz_set_ui(val, 1);
 	}
       break;
@@ -4579,6 +4601,7 @@ Binary_expression::eval_integer(Operator op, const Numeric_constant* left_nc,
       else
 	{
 	  error_at(location, "division by zero");
+          nc->set_invalid();
 	  mpz_set_ui(val, 0);
 	}
       break;
@@ -4588,6 +4611,7 @@ Binary_expression::eval_integer(Operator op, const Numeric_constant* left_nc,
       else
 	{
 	  error_at(location, "division by zero");
+          nc->set_invalid();
 	  mpz_set_ui(val, 0);
 	}
       break;
@@ -4599,6 +4623,7 @@ Binary_expression::eval_integer(Operator op, const Numeric_constant* left_nc,
 	else
 	  {
 	    error_at(location, "shift count overflow");
+            nc->set_invalid();
 	    mpz_set_ui(val, 1);
 	  }
 	break;
@@ -4610,6 +4635,7 @@ Binary_expression::eval_integer(Operator op, const Numeric_constant* left_nc,
 	if (mpz_cmp_ui(right_val, shift) != 0)
 	  {
 	    error_at(location, "shift count overflow");
+            nc->set_invalid();
 	    mpz_set_ui(val, 1);
 	  }
 	else
@@ -4704,6 +4730,7 @@ Binary_expression::eval_float(Operator op, const Numeric_constant* left_nc,
       else
 	{
 	  error_at(location, "division by zero");
+          nc->set_invalid();
 	  mpfr_set_ui(val, 0, GMP_RNDN);
 	}
       break;
@@ -4768,6 +4795,7 @@ Binary_expression::eval_complex(Operator op, const Numeric_constant* left_nc,
       if (mpc_cmp_si(right_val, 0) == 0)
 	{
 	  error_at(location, "division by zero");
+          nc->set_invalid();
 	  mpc_set_ui(val, 0, MPC_RNDNN);
 	  break;
 	}
@@ -4830,7 +4858,14 @@ Binary_expression::do_lower(Gogo* gogo, Named_object*,
 	    Numeric_constant nc;
 	    if (!Binary_expression::eval_constant(op, &left_nc, &right_nc,
 						  location, &nc))
-	      return this;
+              {
+                if (nc.is_invalid())
+                  {
+                    go_assert(saw_errors());
+                    return Expression::make_error(location);
+                  }
+                return this;
+              }
 	    return nc.expression(location);
 	  }
       }
@@ -15170,7 +15205,7 @@ Numeric_constant::set_type(Type* type, bool issue_error, Location loc)
 
 bool
 Numeric_constant::check_int_type(Integer_type* type, bool issue_error,
-				 Location location) const
+				 Location location)
 {
   mpz_t val;
   switch (this->classification_)
@@ -15184,7 +15219,11 @@ Numeric_constant::check_int_type(Integer_type* type, bool issue_error,
       if (!mpfr_integer_p(this->u_.float_val))
 	{
 	  if (issue_error)
-	    error_at(location, "floating point constant truncated to integer");
+            {
+              error_at(location,
+                       "floating point constant truncated to integer");
+              this->set_invalid();
+            }
 	  return false;
 	}
       mpz_init(val);
@@ -15196,7 +15235,10 @@ Numeric_constant::check_int_type(Integer_type* type, bool issue_error,
 	  || !mpfr_zero_p(mpc_imagref(this->u_.complex_val)))
 	{
 	  if (issue_error)
-	    error_at(location, "complex constant truncated to integer");
+            {
+              error_at(location, "complex constant truncated to integer");
+              this->set_invalid();
+            }
 	  return false;
 	}
       mpz_init(val);
@@ -15234,7 +15276,10 @@ Numeric_constant::check_int_type(Integer_type* type, bool issue_error,
     }
 
   if (!ret && issue_error)
-    error_at(location, "integer constant overflow");
+    {
+      error_at(location, "integer constant overflow");
+      this->set_invalid();
+    }
 
   return ret;
 }
@@ -15262,7 +15307,10 @@ Numeric_constant::check_float_type(Float_type* type, bool issue_error,
       if (!mpfr_zero_p(mpc_imagref(this->u_.complex_val)))
 	{
 	  if (issue_error)
-	    error_at(location, "complex constant truncated to float");
+            {
+              this->set_invalid();
+              error_at(location, "complex constant truncated to float");
+            }
 	  return false;
 	}
       mpfr_init_set(val, mpc_realref(this->u_.complex_val), GMP_RNDN);
@@ -15325,7 +15373,10 @@ Numeric_constant::check_float_type(Float_type* type, bool issue_error,
   mpfr_clear(val);
 
   if (!ret && issue_error)
-    error_at(location, "floating point constant overflow");
+    {
+      error_at(location, "floating point constant overflow");
+      this->set_invalid();
+    }
 
   return ret;
 } 
@@ -15380,7 +15431,10 @@ Numeric_constant::check_complex_type(Complex_type* type, bool issue_error,
       && mpfr_get_exp(mpc_realref(val)) > max_exp)
     {
       if (issue_error)
-	error_at(location, "complex real part overflow");
+        {
+          error_at(location, "complex real part overflow");
+          this->set_invalid();
+        }
       ret = false;
     }
 
@@ -15390,7 +15444,10 @@ Numeric_constant::check_complex_type(Complex_type* type, bool issue_error,
       && mpfr_get_exp(mpc_imagref(val)) > max_exp)
     {
       if (issue_error)
-	error_at(location, "complex imaginary part overflow");
+        {
+          error_at(location, "complex imaginary part overflow");
+          this->set_invalid();
+        }
       ret = false;
     }
 
@@ -15436,6 +15493,9 @@ Numeric_constant::expression(Location loc) const
       return Expression::make_float(&this->u_.float_val, this->type_, loc);
     case NC_COMPLEX:
       return Expression::make_complex(&this->u_.complex_val, this->type_, loc);
+    case NC_INVALID:
+      go_assert(saw_errors());
+      return Expression::make_error(loc);
     default:
       go_unreachable();
     }
