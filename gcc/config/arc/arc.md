@@ -188,7 +188,7 @@
 
 
 ;; Attribute describing the processor
-(define_attr "cpu" "none,A5,ARC600,ARC700"
+(define_attr "cpu" "none,ARC600,ARC700"
   (const (symbol_ref "arc_cpu_attr")))
 
 ;; true for compact instructions (those with _s suffix)
@@ -337,8 +337,12 @@
 	(match_test "GET_CODE (PATTERN (insn)) == COND_EXEC") (const_int 4)]
       (const_int 2))
 
-    (eq_attr "iscompact" "true_limm,maybe_limm")
+    (eq_attr "iscompact" "true_limm")
     (const_int 6)
+
+    (eq_attr "iscompact" "maybe_limm")
+    (cond [(match_test "GET_CODE (PATTERN (insn)) == COND_EXEC") (const_int 8)]
+	  (const_int 6))
 
     (eq_attr "type" "load")
     (if_then_else
@@ -4899,9 +4903,7 @@
 
 ; operand 0 is the loop count pseudo register
 ; operand 1 is the label to jump to at the top of the loop
-; Use this for the ARC600 and ARC700.  For ARCtangent-A5, this is unsafe
-; without further checking for nearby branches etc., and without proper
-; annotation of shift patterns that clobber lp_count
+; Use this for the ARC600 and ARC700.
 ; ??? ARC600 might want to check if the loop has few iteration and only a
 ; single insn - loop setup is expensive then.
 (define_expand "doloop_end"

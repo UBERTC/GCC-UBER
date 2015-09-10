@@ -1,3 +1,418 @@
+2015-09-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67439
+	* config/arm/arm.md (*arm32_movhf): Remove !arm_restrict_it from
+	predicate.  Set predicable_short_it attr to "no".
+
+2015-09-10  Jiong Wang  <jiong.wang@arm.com>
+
+	PR rtl-optimization/67421
+	* expr.c (expand_expr_real_2): Cost instrcution sequences when doing
+	left wide shift tranformation.
+
+2015-09-10  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* common/config/arc/arc-common.c: Remove references to A5.
+	* config/arc/arc-opts.h: Likewise.
+	* config/arc/arc.c, config/arc/arc.h, config/arc/arc.md: Likewise.
+	* config/arc/arc.opt, config/arc/constraints.md: Likewise.
+	* config/arc/t-arc-newlib: Likewise.
+
+2015-09-10  Claudiu Zissulescu <claziss@synopsys.com>
+
+	* config/arc/arc.md (length): Fix attribute length for conditional
+	executed instructions with long immediate.
+
+2015-09-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.md (*and<mode>3nr_compare0): Use logics_imm
+	type for second alternative.
+
+2015-09-10  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	* doc/invoke.texi (Downloading GCC): Mention
+	contrib/download_prerequisites script.
+
+2015-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67523
+	* gimplify.c (gimplify_omp_for): If inner stmt is not found
+	for combined loop, assert seen_error () and return GS_ERROR.
+
+	PR middle-end/67521
+	* gimplify.c (gimplify_omp_for): Don't call omp_add_variable
+	if decl is already in outer->variables.
+
+	PR middle-end/67517
+	* gimplify.c (gimplify_scan_omp_clauses): Instead of
+	asserting that decl is not specified in octx->variables,
+	break out of the loop if it is.
+
+	PR c++/67514
+	* gimplify.c (gimplify_omp_for): For loop SIMD construct, if
+	iterator is not explicitly determined, but is defined inside
+	of the combined workshare region, handle it like if it has
+	DECL_EXPR in OMP_FOR_PRE_BODY.
+
+2015-09-09  Nathan Sidwell  <nathan@acm.org>
+
+	* config/nvptx/nvptx.md (call_operation): Move bound out of loop.
+	(*cmp<mode>): Add assembler spacing.
+	(setcc_int<mode>, set_cc_float<mode>): Likewise.
+	* config/nvptx/nvptx.c (nvptx_option_override): Override debug
+	level.
+	(write_func_decl_from_insn): Refactor argument loops & comma emission.
+	(nvptx_expand_call): Likewise.
+	(nvptx_output_call_insn): Likewise.
+	(nvptx_reorg_subreg): Add spacing.
+
+2015-09-09  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/67512
+	* tree-ssa-uninit.c (pred_equal_p): Only call invert_tree_comparison
+	for comparisons.
+
+2015-09-09  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/53184
+	* doc/invoke.texi ([Wsubobject-linkage]): Document.
+
+2015-09-09  Tom de Vries  <tom@codesourcery.com>
+
+	* params-list.h: Add missing copyright notice.
+
+2015-09-09  Nathan Sidwell  <nathan@acm.org>
+
+	* config/nvptx/nvptx.md (atomic_compare_and_swap<mode>): Use
+	sel_truesi, not andsi.
+
+2015-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/arm.md (*subsi3_compare0): Rename to...
+	(subsi3_compare0): ... This.
+	(modsi3): New define_expand.
+	* config/arm/arm.c (arm_new_rtx_costs, MOD case): Handle case
+	when operand is power of 2.
+
+2015-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.md (mod<mode>3): New define_expand.
+	(*neg<mode>2_compare0): Rename to...
+	(neg<mode>2_compare0): ... This.
+	* config/aarch64/aarch64.c (aarch64_rtx_costs, MOD case):
+	Move check for speed inside the if-then-elses.  Reflect
+	CSNEG sequence in MOD by power of 2 case.
+
+2015-09-09  Alan Modra  <amodra@gmail.com>
+
+	PR target/67378
+	* config/rs6000/rs6000.c (rs6000_secondary_reload_gpr): Find
+	reload replacement for PRE_MODIFY address reg.
+
+2015-09-09  Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/53852
+	* config.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac (HAVE_ISL_CTX_MAX_OPERATIONS): Detect.
+	* graphite-optimize-isl.c (optimize_isl): Stop computation when
+	PARAM_MAX_ISL_OPERATIONS is reached.
+	* params.def (PARAM_MAX_ISL_OPERATIONS): Add.
+	* graphite-dependences.c (extend_schedule): Remove gcc_asserts on
+	result equal to isl_stat_ok as the status now can be isl_error_quota.
+	(subtract_commutative_associative_deps): Same.
+	(compute_deps): Same.
+
+2015-09-08  Aditya Kumar  <hiraditya@msn.com>
+            Sebastian Pop  <s.pop@samsung.com>
+
+	* graphite-isl-ast-to-gimple.c (gcc_expression_from_isl_ast_expr_id):
+	Return the parameter if it was saved in corresponding
+	parameter_rename_map of the region.
+	(copy_def): Copy def from sese region to the newly created region.
+	(copy_internal_parameters): Copy all the internal parameters defined
+	within a region to the newly created region.
+	(graphite_regenerate_ast_isl): Copy parameters to the new region before
+	translating isl to gimple.
+	* graphite-scop-detection.c (graphite_can_represent_loop): Bail out if
+	the loop-nest does not have any data-references.
+	(build_graphite_scops): Create a scop only when there is at least one
+	loop inside it.
+	(contains_only_close_phi_nodes): Deleted.
+	(print_graphite_scop_statistics): Deleted
+	(print_graphite_statistics): Deleted
+	(limit_scops): Deleted.
+	(build_scops): Removed call to limit_scops.
+	* sese.c (new_sese): Construct.
+	(free_sese): Destruct.
+	(sese_add_exit_phis_edge): update_stmt after exit phi edge has been
+	added.
+	(set_rename): Pass sese region so that parameters inside the region can
+	be added to its parameter_rename_map.
+	(rename_uses): Pass sese region.
+	(graphite_copy_stmts_from_block): Do not copy parameters that have been
+	generated in the header of the scop. For each SSA_NAME in the
+	parameter_rename_map rename its usage.
+	(invariant_in_sese_p_rec): Return false if tree t is defined outside
+	sese region.
+	(scalar_evolution_in_region): If the tree t is invariant just return t.
+	* sese.h: Added a parameter renamne map (parameter_rename_map_t) to
+	struct sese to keep track of all the parameters which need renaming.
+	* tree-data-ref.c (loop_nest_has_data_refs): Check if a loop nest has
+	any data-refs.
+	* tree-data-ref.h: Declaration of loop_nest_has_data_refs.
+
+2015-09-08  Tom de Vries  <tom@codesourcery.com>
+
+	* Makefile.in (generated_files): Add params.list.
+	(params.list, s-params.list): Add rule.
+	* params.h (enum compiler_param): Include params-list.h.  Move define
+	DEFPARAM, include params.def and undef DEFPARAM ...
+	* params-list.h: ... here.  New file.
+
+2015-09-08  David Malcolm  <dmalcolm@redhat.com>
+
+	* pretty-print.h (printer_fn): Fix typo in comment.
+
+2015-09-07  Jeff Law  <law@redhat.com>
+
+	* tree-ssa-scopedtables.h (class const_and_copies): Fix comment typo.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* doc/sourcebuild.texi (arm_neon_fp16): Correct cross-reference.
+	(arm_neon_fp16_ok): Document adding of -mfp16-format=ieee flag.
+	(arm_neon_fp16_hw): New.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* fold-const.c (native_interpret_real): Fix HFmode for bigendian where
+	UNITS_PER_WORD >= 4.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-simd.md (aarch64_simd_vec_unpacks_lo_<mode>,
+	aarch64_simd_vec_unpacks_hi_<mode>): New insn.
+	(vec_unpacks_lo_v4sf, vec_unpacks_hi_v4sf): Delete insn.
+	(vec_unpacks_lo_<mode>, vec_unpacks_hi_<mode>): New expand.
+	(aarch64_float_extend_lo_v2df): Rename to...
+	(aarch64_float_extend_lo_<Vwide>): this, using VDF and so adding V4SF.
+
+	* config/aarch64/aarch64-simd-builtins.def (vec_unpacks_hi): Add v8hf.
+	(float_extend_lo): Add v4sf.
+
+	* config/aarch64/arm_neon.h (vcvt_f32_f16, vcvt_high_f32_f16): New.
+	* config/aarch64/iterators.md (VQ_HSF): New iterator.
+	(VWIDE, Vwtype, Vhalftype): Add V8HF, V4SF.
+	(Vwide): New mode_attr.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-simd.md (aarch64_simd_dup<mode>,
+	aarch64_dup_lane<mode>, aarch64_dup_lane_<vswap_width_name><mode>,
+	aarch64_simd_vec_set<mode>, vec_set<mode>, vec_perm_const<mode>,
+	vec_init<mode>, *aarch64_simd_ld1r<mode>, vec_extract<mode>): Add
+	V4HF and V8HF variants to iterator.
+
+	* config/aarch64/aarch64.c (aarch64_evpc_dup): Add V4HF and V8HF cases.
+
+	* config/aarch64/iterators.md (VDQF_F16): New.
+	(VSWAP_WIDTH, vswap_width_name): Add V4HF and V8HF cases.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/arm_neon.h (vreinterpret_p8_f16, vreinterpret_p16_f16,
+	vreinterpret_f16_f64, vreinterpret_f16_s8, vreinterpret_f16_s16,
+	vreinterpret_f16_s32, vreinterpret_f16_s64, vreinterpret_f16_f32,
+	vreinterpret_f16_u8, vreinterpret_f16_u16, vreinterpret_f16_u32,
+	vreinterpret_f16_u64, vreinterpret_f16_p8, vreinterpret_f16_p16,
+	vreinterpretq_f16_f64, vreinterpretq_f16_s8, vreinterpretq_f16_s16,
+	vreinterpretq_f16_s32, vreinterpretq_f16_s64, vreinterpretq_f16_f32,
+	vreinterpretq_f16_u8, vreinterpretq_f16_u16, vreinterpretq_f16_u32,
+	vreinterpretq_f16_u64, vreinterpretq_f16_p8, vreinterpretq_f16_p16,
+	vreinterpret_f32_f16, vreinterpret_f64_f16, vreinterpret_s64_f16,
+	vreinterpret_u64_f16, vreinterpretq_u64_f16, vreinterpret_s8_f16,
+	vreinterpret_s16_f16, vreinterpret_s32_f16, vreinterpret_u8_f16,
+	vreinterpret_u16_f16, vreinterpret_u32_f16, vreinterpretq_p8_f16,
+	vreinterpretq_p16_f16, vreinterpretq_f32_f16, vreinterpretq_f64_f16,
+	vreinterpretq_s64_f16, vreinterpretq_s8_f16, vreinterpretq_s16_f16,
+	vreinterpretq_s32_f16, vreinterpretq_u8_f16, vreinterpretq_u16_f16,
+	vreinterpretq_u32_f16, vget_low_f16, vget_high_f16, vld1_dup_f16,
+	vld1q_dup_f16): New.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64-simd.md (aarch64_float_truncate_lo_v2sf):
+	Reparameterize to...
+	(aarch64_float_truncate_lo_<mode>): ...this, for both V2SF and V4HF.
+	(aarch64_float_truncate_hi_v4sf): Reparameterize to...
+	(aarch64_float_truncate_hi_<Vdbl>): ...this, for both V4SF and V8HF.
+
+	* config/aarch64/aarch64-simd-builtins.def (float_truncate_hi_): Add
+	v8hf variant.
+	(float_truncate_lo_): Use BUILTIN_VDF iterator.
+
+	* config/aarch64/arm_neon.h (vcvt_f16_f32, vcvt_high_f16_f32): New.
+
+	* config/aarch64/iterators.md (VDF, Vdtype): New.
+	(VWIDE, Vmwtype): Add cases for V4HF and V2SF.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_split_simd_combine): Add V4HFmode.
+	* config/aarch64/aarch64-builtins.c (VAR13, VAR14): New.
+	(aarch64_scalar_builtin_types, aarch64_init_simd_builtin_scalar_types):
+	Add __builtin_aarch64_simd_hf.
+	* config/aarch64/arm_neon.h (float16x4x2_t, float16x8x2_t,
+	float16x4x3_t, float16x8x3_t, float16x4x4_t, float16x8x4_t,
+	vcombine_f16, vst2_lane_f16, vst2q_lane_f16, vst3_lane_f16,
+	vst3q_lane_f16, vst4_lane_f16, vst4q_lane_f16, vld2_f16, vld2q_f16,
+	vld3_f16, vld3q_f16, vld4_f16, vld4q_f16, vld2_dup_f16, vld2q_dup_f16,
+	vld3_dup_f16, vld3q_dup_f16, vld4_dup_f16, vld4q_dup_f16,
+	vld2_lane_f16, vld2q_lane_f16, vld3_lane_f16, vld3q_lane_f16,
+	vld4_lane_f16, vld4q_lane_f16, vst2_f16, vst2q_f16, vst3_f16,
+	vst3q_f16, vst4_f16, vst4q_f16, vcreate_f16): New.
+
+	* config/aarch64/iterators.md (VALLDIF, Vtype, Vetype, Vbtype,
+	V_cmp_result, v_cmp_result): Add cases for V4HF and V8HF.
+	(VDC, Vdbl): Add V4HF.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/aarch64/aarch64.c (aarch64_vector_mode_supported_p): Support
+	V4HFmode and V8HFmode.
+	(aarch64_split_simd_move): Add case for V8HFmode.
+	* config/aarch64/aarch64-builtins.c (v4hf_UP, v8hf_UP): Define.
+	(aarch64_simd_builtin_std_type): Handle HFmode.
+	(aarch64_init_simd_builtin_types): Include Float16x4_t and Float16x8_t.
+
+	* config/aarch64/aarch64-simd.md (mov<mode>, aarch64_get_lane<mode>,
+	aarch64_ld1<VALL:mode>, aarch64_st1<VALL:mode): Use VALL_F16 iterator.
+	(aarch64_be_ld1<mode>, aarch64_be_st1<mode>): Use VALLDI_F16 iterator.
+
+	* config/aarch64/aarch64-simd-builtin-types.def: Add Float16x4_t,
+	Float16x8_t.
+
+	* config/aarch64/aarch64-simd-builtins.def (ld1, st1): Use VALL_F16.
+	* config/aarch64/arm_neon.h (float16x4_t, float16x8_t, float16_t):
+	New typedefs.
+	(vget_lane_f16, vgetq_lane_f16, vset_lane_f16, vsetq_lane_f16,
+	vld1_f16, vld1q_f16, vst1_f16, vst1q_f16, vst1_lane_f16,
+	vst1q_lane_f16): New.
+	* config/aarch64/iterators.md (VD, VQ, VQ_NO2E): Add vectors of HFmode.
+	(VALLDI_F16, VALL_F16): New.
+	(Vmtype, VEL, VCONQ, VHALF, V_TWO_ELEM, V_THREE_ELEM, V_FOUR_ELEM, q):
+	Add cases for V4HF and V8HF.
+	(VDBL, VRL2, VRL3, VRL4): Add V4HF case.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/arm/arm-builtins.c (VAR11, VAR12): New.
+	* config/arm/arm_neon_builtins.def (vcombine, vld2_dup, vld3_dup,
+	vld4_dup): Add v4hf variant.
+	(vget_high, vget_low): Add v8hf variant.
+	(vld1, vst1, vst1_lane, vld2, vld2_lane, vst2, vst2_lane, vld3,
+	vld3_lane, vst3, vst3_lane, vld4, vld4_lane, vst4, vst4_lane): Add
+	v4hf and v8hf variants.
+
+	* config/arm/iterators.md (VD_LANE, VD_RE, VQ2, VQ_HS): New.
+	(VDX): Add V4HF.
+	(V_DOUBLE): Add case for V4HF.
+	(VQX): Add V8HF.
+	(V_HALF): Add case for V8HF.
+	(VDQX): Add V4HF, V8HF.
+	(V_elem, V_two_elem, V_three_elem, V_four_elem, V_cmp_result,
+	V_uf_sclr, V_sz_elem, V_mode_nunits, q): Add cases for V4HF & V8HF.
+
+	* config/arm/neon.md (vec_set<mode>internal, vec_extract<mode>,
+	neon_vget_lane<mode>_sext_internal, neon_vget_lane<mode>_zext_internal,
+	vec_load_lanesoi<mode>, neon_vld2<mode>, vec_store_lanesoi<mode>,
+	neon_vst2<mode>, vec_load_lanesci<mode>, neon_vld3<mode>,
+	neon_vld3qa<mode>, neon_vld3qb<mode>, vec_store_lanesci<mode>,
+	neon_vst3<mode>, neon_vst3qa<mode>, neon_vst3qb<mode>,
+	vec_load_lanesxi<mode>, neon_vld4<mode>, neon_vld4qa<mode>,
+	neon_vld4qb<mode>, vec_store_lanesxi<mode>, neon_vst4<mode>,
+	neon_vst4qa<mode>, neon_vst4qb<mode>): Change VQ iterator to VQ2.
+
+	(neon_vcreate, neon_vreinterpretv8qi<mode>,
+	neon_vreinterpretv4hi<mode>, neon_vreinterpretv2si<mode>,
+	neon_vreinterpretv2sf<mode>, neon_vreinterpretdi<mode>):
+	Change VDX to VD_RE.
+
+	(neon_vld2_lane<mode>, neon_vst2_lane<mode>, neon_vld3_lane<mode>,
+	neon_vst3_lane<mode>, neon_vld4_lane<mode>, neon_vst4_lane<mode>):
+	Change VD iterator to VD_LANE, and VMQ iterator to VQ_HS.
+
+	* config/arm/arm_neon.h (float16x4x2_t, float16x8x2_t, float16x4x3_t,
+	float16x8x3_t, float16x4x4_t, float16x8x4_t, vcombine_f16,
+	vget_high_f16, vget_low_f16, vld1_f16, vld1q_f16, vst1_f16, vst1q_f16,
+	vst1_lane_f16, vst1q_lane_f16, vld2_f16, vld2q_f16, vld2_lane_f16,
+	vld2q_lane_f16, vld2_dup_f16, vst2_f16, vst2q_f16, vst2_lane_f16,
+	vst2q_lane_f16, vld3_f16, vld3q_f16, vld3_lane_f16, vld3q_lane_f16,
+	vld3_dup_f16, vst3_f16, vst3q_f16, vst3_lane_f16, vst3q_lane_f16,
+	vld4_f16, vld4q_f16, vld4_lane_f16, vld4q_lane_f16, vld4_dup_f16,
+	vst4_f16, vst4q_f16, vst4_lane_f16, vst4q_lane_f16): New.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/arm/arm_neon.h (vgetq_lane_f16, vsetq_lane_f16, vld1q_lane_f16,
+	vld1q_dup_f16, vreinterpretq_p8_f16, vreinterpretq_p16_f16,
+	vreinterpretq_f16_p8, vreinterpretq_f16_p16, vreinterpretq_f16_f32,
+	vreinterpretq_f16_p64, vreinterpretq_f16_p128, vreinterpretq_f16_s64,
+	vreinterpretq_f16_u64, vreinterpretq_f16_s8, vreinterpretq_f16_s16,
+	vreinterpretq_f16_s32, vreinterpretq_f16_u8, vreinterpretq_f16_u16,
+	vreinterpretq_f16_u32, vreinterpretq_f32_f16, vreinterpretq_p64_f16,
+	vreinterpretq_p128_f16, vreinterpretq_s64_f16, vreinterpretq_u64_f16,
+	vreinterpretq_s8_f16, vreinterpretq_s16_f16, vreinterpretq_s32_f16,
+	vreinterpretq_u8_f16, vreinterpretq_u16_f16, vreinterpretq_u32_f16):
+	New.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/arm/arm.h (VALID_NEON_QREG_MODE): Add V8HFmode.
+
+	* config/arm/arm.c (arm_vector_mode_supported_p): Support V8HFmode.
+
+	* config/arm/arm-builtins.c (v8hf_UP): New.
+	(arm_init_simd_builtin_types): Initialise Float16x8_t.
+
+	* config/arm/arm-simd-builtin-types.def (Float16x8_t): New.
+
+	* config/arm/arm_neon.h (float16x8_t): New typedef.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* config/arm/arm_neon.h (float16_t, vget_lane_f16, vset_lane_f16,
+	vcreate_f16, vld1_lane_f16, vld1_dup_f16, vreinterpret_p8_f16,
+	vreinterpret_p16_f16, vreinterpret_f16_p8, vreinterpret_f16_p16,
+	vreinterpret_f16_f32, vreinterpret_f16_p64, vreinterpret_f16_s64,
+	vreinterpret_f16_u64, vreinterpret_f16_s8, vreinterpret_f16_s16,
+	vreinterpret_f16_s32, vreinterpret_f16_u8, vreinterpret_f16_u16,
+	vreinterpret_f16_u32, vreinterpret_f32_f16, vreinterpret_p64_f16,
+	vreinterpret_s64_f16, vreinterpret_u64_f16, vreinterpret_s8_f16,
+	vreinterpret_s16_f16, vreinterpret_s32_f16, vreinterpret_u8_f16,
+	vreinterpret_u16_f16, vreinterpret_u32_f16): New.
+
+2015-09-07  Ilya Verbin  <ilya.verbin@intel.com>
+
+	* config/i386/intelmic-mkoffload.c (prepare_target_image): Handle all
+	non-alphanumeric characters in the symbol name.
+
+2015-09-07  Marek Polacek  <polacek@redhat.com>
+
+	PR inline-asm/67448
+	* gimplify.c (gimplify_asm_expr): Don't allow MODIFY_EXPR as
+	a memory input.
+
+2015-09-07  Marek Polacek  <polacek@redhat.com>
+
+	* system.h (INTTYPE_MINIMUM): Rewrite to avoid shift warning.
+
+2015-09-04  Paolo Bonzini  <bonzini@gnu.org>
+
+	* config/i386/cygming.h (SUBTARGET_OVERRIDE_OPTIONS): Do
+	not warn.
+
 2015-09-04  Jakub Jelinek  <jakub@redhat.com>
 
 	PR middle-end/67452
@@ -159,6 +574,7 @@
 
 2015-09-02  Charles Baylis  <charles.baylis@linaro.org>
 
+	PR ipa/67280
 	* cgraphunit.c (cgraph_node::create_wrapper): Set can_throw_external
 	in new callgraph edge.
 

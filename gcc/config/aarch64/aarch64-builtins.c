@@ -61,6 +61,7 @@
 
 #define v8qi_UP  V8QImode
 #define v4hi_UP  V4HImode
+#define v4hf_UP  V4HFmode
 #define v2si_UP  V2SImode
 #define v2sf_UP  V2SFmode
 #define v1df_UP  V1DFmode
@@ -68,6 +69,7 @@
 #define df_UP    DFmode
 #define v16qi_UP V16QImode
 #define v8hi_UP  V8HImode
+#define v8hf_UP  V8HFmode
 #define v4si_UP  V4SImode
 #define v4sf_UP  V4SFmode
 #define v2di_UP  V2DImode
@@ -295,6 +297,12 @@ aarch64_types_storestruct_lane_qualifiers[SIMD_MAX_BUILTIN_ARGS]
 #define VAR12(T, N, MAP, A, B, C, D, E, F, G, H, I, J, K, L) \
   VAR11 (T, N, MAP, A, B, C, D, E, F, G, H, I, J, K) \
   VAR1 (T, N, MAP, L)
+#define VAR13(T, N, MAP, A, B, C, D, E, F, G, H, I, J, K, L, M) \
+  VAR12 (T, N, MAP, A, B, C, D, E, F, G, H, I, J, K, L) \
+  VAR1 (T, N, MAP, M)
+#define VAR14(T, X, MAP, A, B, C, D, E, F, G, H, I, J, K, L, M, N) \
+  VAR13 (T, X, MAP, A, B, C, D, E, F, G, H, I, J, K, L, M) \
+  VAR1 (T, X, MAP, N)
 
 #include "aarch64-builtin-iterators.h"
 
@@ -372,6 +380,7 @@ const char *aarch64_scalar_builtin_types[] = {
   "__builtin_aarch64_simd_qi",
   "__builtin_aarch64_simd_hi",
   "__builtin_aarch64_simd_si",
+  "__builtin_aarch64_simd_hf",
   "__builtin_aarch64_simd_sf",
   "__builtin_aarch64_simd_di",
   "__builtin_aarch64_simd_df",
@@ -520,6 +529,8 @@ aarch64_simd_builtin_std_type (enum machine_mode mode,
       return aarch64_simd_intCI_type_node;
     case XImode:
       return aarch64_simd_intXI_type_node;
+    case HFmode:
+      return aarch64_fp16_type_node;
     case SFmode:
       return float_type_node;
     case DFmode:
@@ -604,6 +615,8 @@ aarch64_init_simd_builtin_types (void)
   aarch64_simd_types[Poly64x2_t].eltype = aarch64_simd_types[Poly64_t].itype;
 
   /* Continue with standard types.  */
+  aarch64_simd_types[Float16x4_t].eltype = aarch64_fp16_type_node;
+  aarch64_simd_types[Float16x8_t].eltype = aarch64_fp16_type_node;
   aarch64_simd_types[Float32x2_t].eltype = float_type_node;
   aarch64_simd_types[Float32x4_t].eltype = float_type_node;
   aarch64_simd_types[Float64x1_t].eltype = double_type_node;
@@ -655,6 +668,8 @@ aarch64_init_simd_builtin_scalar_types (void)
 					     "__builtin_aarch64_simd_qi");
   (*lang_hooks.types.register_builtin_type) (intHI_type_node,
 					     "__builtin_aarch64_simd_hi");
+  (*lang_hooks.types.register_builtin_type) (aarch64_fp16_type_node,
+					     "__builtin_aarch64_simd_hf");
   (*lang_hooks.types.register_builtin_type) (intSI_type_node,
 					     "__builtin_aarch64_simd_si");
   (*lang_hooks.types.register_builtin_type) (float_type_node,
