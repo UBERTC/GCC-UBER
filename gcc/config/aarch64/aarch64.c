@@ -1335,6 +1335,9 @@ aarch64_split_simd_combine (rtx dst, rtx src1, rtx src2)
 	case V2SImode:
 	  gen = gen_aarch64_simd_combinev2si;
 	  break;
+	case V4HFmode:
+	  gen = gen_aarch64_simd_combinev4hf;
+	  break;
 	case V2SFmode:
 	  gen = gen_aarch64_simd_combinev2sf;
 	  break;
@@ -1382,6 +1385,9 @@ aarch64_split_simd_move (rtx dst, rtx src)
 	  break;
 	case V2DImode:
 	  gen = gen_aarch64_split_simd_movv2di;
+	  break;
+	case V8HFmode:
+	  gen = gen_aarch64_split_simd_movv8hf;
 	  break;
 	case V4SFmode:
 	  gen = gen_aarch64_split_simd_movv4sf;
@@ -6763,6 +6769,25 @@ cost_plus:
       return true;
 
     case MOD:
+    /* We can expand signed mod by power of 2 using a NEGS, two parallel
+       ANDs and a CSNEG.  Assume here that CSNEG is the same as the cost of
+       an unconditional negate.  This case should only ever be reached through
+       the set_smod_pow2_cheap check in expmed.c.  */
+      if (CONST_INT_P (XEXP (x, 1))
+	  && exact_log2 (INTVAL (XEXP (x, 1))) > 0
+	  && (mode == SImode || mode == DImode))
+	{
+	  /* We expand to 4 instructions.  Reset the baseline.  */
+	  *cost = COSTS_N_INSNS (4);
+
+	  if (speed)
+	    *cost += 2 * extra_cost->alu.logical
+		     + 2 * extra_cost->alu.arith;
+
+	  return true;
+	}
+
+    /* Fall-through.  */
     case UMOD:
       if (speed)
 	{
@@ -9780,6 +9805,7 @@ aarch64_vector_mode_supported_p (machine_mode mode)
 	  || mode == V2SImode  || mode == V4HImode
 	  || mode == V8QImode || mode == V2SFmode
 	  || mode == V4SFmode || mode == V2DFmode
+	  || mode == V4HFmode || mode == V8HFmode
 	  || mode == V1DFmode))
     return true;
 
@@ -11899,6 +11925,8 @@ aarch64_evpc_dup (struct expand_vec_perm_d *d)
     case V4SImode: gen = gen_aarch64_dup_lanev4si; break;
     case V2SImode: gen = gen_aarch64_dup_lanev2si; break;
     case V2DImode: gen = gen_aarch64_dup_lanev2di; break;
+    case V8HFmode: gen = gen_aarch64_dup_lanev8hf; break;
+    case V4HFmode: gen = gen_aarch64_dup_lanev4hf; break;
     case V4SFmode: gen = gen_aarch64_dup_lanev4sf; break;
     case V2SFmode: gen = gen_aarch64_dup_lanev2sf; break;
     case V2DFmode: gen = gen_aarch64_dup_lanev2df; break;

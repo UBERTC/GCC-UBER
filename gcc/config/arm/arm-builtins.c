@@ -190,6 +190,7 @@ arm_storestruct_lane_qualifiers[SIMD_MAX_BUILTIN_ARGS]
 #define di_UP    DImode
 #define v16qi_UP V16QImode
 #define v8hi_UP  V8HImode
+#define v8hf_UP  V8HFmode
 #define v4si_UP  V4SImode
 #define v4sf_UP  V4SFmode
 #define v2di_UP  V2DImode
@@ -238,6 +239,12 @@ typedef struct {
 #define VAR10(T, N, A, B, C, D, E, F, G, H, I, J) \
   VAR9 (T, N, A, B, C, D, E, F, G, H, I) \
   VAR1 (T, N, J)
+#define VAR11(T, N, A, B, C, D, E, F, G, H, I, J, K) \
+  VAR10 (T, N, A, B, C, D, E, F, G, H, I, J) \
+  VAR1 (T, N, K)
+#define VAR12(T, N, A, B, C, D, E, F, G, H, I, J, K, L) \
+  VAR11 (T, N, A, B, C, D, E, F, G, H, I, J, K) \
+  VAR1 (T, N, L)
 
 /* The NEON builtin data can be found in arm_neon_builtins.def.
    The mode entries in the following table correspond to the "key" type of the
@@ -819,6 +826,7 @@ arm_init_simd_builtin_types (void)
   /* The __builtin_simd{64,128}_float16 types are kept private unless
      we have a scalar __fp16 type.  */
   arm_simd_types[Float16x4_t].eltype = arm_simd_floatHF_type_node;
+  arm_simd_types[Float16x8_t].eltype = arm_simd_floatHF_type_node;
   arm_simd_types[Float32x2_t].eltype = float_type_node;
   arm_simd_types[Float32x4_t].eltype = float_type_node;
 

@@ -1,3 +1,234 @@
+2015-09-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67439
+	* gcc.target/arm/pr67439_1.c: New test.
+
+2015-09-10  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/pic-small.c (dg-skip-if): Skip tiny and large code
+	model.
+
+2015-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67523
+	* g++.dg/gomp/pr67523.C: New test.
+
+	PR c++/67522
+	* g++.dg/gomp/pr67522.C: New test.
+
+	PR middle-end/67521
+	* c-c++-common/gomp/pr67521.c: New test.
+
+	PR middle-end/67517
+	* c-c++-common/gomp/pr67517.c: New test.
+
+	PR c++/67514
+	* g++.dg/gomp/pr67514.C: New test.
+
+	PR c++/67511
+	* g++.dg/gomp/pr67511.C: New test.
+
+	PR c/67502
+	* c-c++-common/gomp/pr67502.c: New test.
+
+2015-09-09  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/67512
+	* gcc.dg/pr67512.c: New test.
+
+2015-09-09  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/53184
+	* g++.dg/warn/Wsubobject-linkage-1.C: New.
+	* g++.dg/warn/Wsubobject-linkage-2.C: Likewise.
+	* g++.dg/warn/Wsubobject-linkage-3.C: Likewise.
+	* g++.dg/warn/Wsubobject-linkage-4.C: Likewise.
+
+2015-09-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/mod_2.x: New file.
+	* gcc.target/aarch64/mod_256.x: Likewise.
+	* gcc.target/arm/mod_2.c: New test.
+	* gcc.target/arm/mod_256.c: Likewise.
+	* gcc.target/aarch64/mod_2.c: Likewise.
+	* gcc.target/aarch64/mod_256.c: Likewise.
+
+2015-09-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67504
+	* g++.dg/gomp/pr67504.C: New test.
+
+	PR c/67501
+	* c-c++-common/gomp/pr67501.c: New test.
+
+	PR c/67500
+	* gcc.dg/gomp/pr67500.c: New test.
+
+	PR c/67495
+	* gcc.dg/gomp/pr67495.c: New test.
+
+2015-09-09  Aditya Kumar  <hiraditya@msn.com>
+            Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/53852
+	* gcc.dg/graphite/uns-interchange-12.c: Adjust pattern to pass with
+	both isl-0.12 and isl-0.15.
+	* gcc.dg/graphite/uns-interchange-14.c: Same.
+	* gcc.dg/graphite/uns-interchange-15.c: Same.
+	* gcc.dg/graphite/uns-interchange-mvt.c: Same.
+
+2015-09-08  Aditya Kumar  <hiraditya@msn.com>
+            Sebastian Pop  <s.pop@samsung.com>
+
+	* gcc.dg/graphite/block-0.c: Modifed test case to match current output.
+	* gcc.dg/graphite/block-1.c: Same.
+	* gcc.dg/graphite/block-5.c: Same.
+	* gcc.dg/graphite/block-6.c: Same.
+	* gcc.dg/graphite/interchange-1.c: Same.
+	* gcc.dg/graphite/interchange-10.c: Same.
+	* gcc.dg/graphite/interchange-11.c: Same.
+	* gcc.dg/graphite/interchange-13.c: Same.
+	* gcc.dg/graphite/interchange-14.c: Same.
+	* gcc.dg/graphite/interchange-3.c: Same.
+	* gcc.dg/graphite/interchange-4.c: Same.
+	* gcc.dg/graphite/interchange-7.c: Same.
+	* gcc.dg/graphite/interchange-8.c: Same.
+	* gcc.dg/graphite/interchange-9.c: Same.
+	* gcc.dg/graphite/isl-codegen-loop-dumping.c: Same.
+	* gcc.dg/graphite/pr35356-1.c (foo): Same.
+	* gcc.dg/graphite/pr37485.c: Same.
+	* gcc.dg/graphite/scop-0.c (int toto): Same.
+	* gcc.dg/graphite/scop-1.c: Same.
+	* gcc.dg/graphite/scop-10.c: Same.
+	* gcc.dg/graphite/scop-11.c: Same.
+	* gcc.dg/graphite/scop-12.c: Same.
+	* gcc.dg/graphite/scop-13.c: Same.
+	* gcc.dg/graphite/scop-16.c: Same.
+	* gcc.dg/graphite/scop-17.c: Same.
+	* gcc.dg/graphite/scop-18.c: Same.
+	* gcc.dg/graphite/scop-2.c: Same.
+	* gcc.dg/graphite/scop-21.c (int test): Same.
+	* gcc.dg/graphite/scop-22.c (void foo): Same.
+	* gcc.dg/graphite/scop-4.c: Same.
+	* gcc.dg/graphite/scop-5.c: Same.
+	* gcc.dg/graphite/scop-6.c: Same.
+	* gcc.dg/graphite/scop-7.c: Same.
+	* gcc.dg/graphite/scop-8.c: Same.
+	* gcc.dg/graphite/scop-9.c: Same.
+	* gcc.dg/graphite/scop-mvt.c (void mvt): Introduced dependency so that
+	data-refs remain inside the inner loop.
+	* gcc.dg/graphite/uns-block-1.c: Modifed test case to match o/p.
+	* gcc.dg/graphite/uns-interchange-14.c: Same.
+	* gcc.dg/graphite/uns-interchange-9.c: Same.
+	* gfortran.dg/graphite/interchange-3.f90
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR target/63870
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_f16_indices_1.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_f16_indices_1.c: New.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vcvt_f16.c: New.
+	* lib/target-supports.exp
+	(check_effective_target_arm_neon_fp16_hw): New.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/advsimd-intrinsics/advsimd-intrinsics.exp:
+	Set additional_flags for neon-fp16 if supported, else fallback to neon.
+
+	* gcc.target/aarch64/advsimd-intrinsics/arm-neon-ref.h
+	(hfloat16_t): New.
+	(result, expected, clean_results, DECL_VARIABLE_64BITS_VARIANTS,
+	DECL_VARIABLE_128BITS_VARIANTS): Add float16x4_t and float16x8_t cases
+	if supported.
+	(CHECK_RESULTS): Redefine using CHECK_RESULTS_NAMED.
+	(CHECK_RESULTS_NAMED): Move body to CHECK_RESULTS_NAMED_NO_FP16;
+	redefine in terms of CHECK_RESULTS_NAMED_NO_FP16 with float16 variants
+	when those are supported.
+	(CHECK_RESULTS_NAMED_NO_FP16, CHECK_RESULTS_NO_FP16): New.
+	(vdup_n_f16): New.
+
+	* gcc.target/aarch64/advsimd-intrinsics/compute-ref-data.h (buffer,
+	buffer_pad, buffer_dup, buffer_dup_pad): Add float16x4 and float16x8_t
+	cases if supported.
+
+	* gcc.target/aarch64/advsimd-intrinsics/vbsl.c (exec_vbsl):
+	Use CHECK_RESULTS_NO_FP16 in place of CHECK_RESULTS.
+	* gcc.target/aarch64/advsimd-intrinsics/vdup-vmov.c (exec_vdup_vmov):
+	Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vdup_lane.c (exec_vdup_lane):
+	Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vext.c (exec_vext): Likewise.
+
+	* gcc.target/aarch64/advsimd-intrinsics/vcombine.c (expected):
+	Add float16x8_t case.
+	(main, exec_vcombine): test float16x4_t -> float16x8_t, if supported.
+	* gcc.target/aarch64/advsimd-intrinsics/vcreate.c (expected,
+	main, exec_vcreate): Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vget_high (expected,
+	exec_vget_high): Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vget_low.c (expected,
+	exec_vget_low): Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vld1.c (expected, exec_vld1):
+	Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vld1_dup.c (expected,
+	exec_vld1_dup): Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vld1_lane.c (expected,
+	exec_vld1_lane): Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vldX.c (expected, exec_vldX):
+	Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vldX_dup.c (expected,
+	exec_vldX_dup): Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vldX_lane.c (expected,
+	exec_vldX_lane): Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vset_lane.c (expected,
+	exec_vset_lane): Likewise.
+	* gcc.target/aarch64/advsimd-intrinsics/vst1_lane.c (expected,
+	exec_vst1_lane): Likewise.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/vget_high_1.c: Add float16x8->float16x4 case.
+	* gcc.target/aarch64/vget_low_1.c: Likewise.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/vldN_1.c: Add float16x4_t and float16x8_t cases.
+	* gcc.target/aarch64/vldN_dup_1.c: Likewise.
+	* gcc.target/aarch64/vldN_lane_1.c: Likewise.
+	(main): update orig_data to avoid float16 NaN on bigendian.
+
+2015-09-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* g++.dg/abi/mangle-neon-aarch64.C: Add cases for float16x4_t and
+	float16x8_t.
+	* gcc.target/aarch64/vset_lane_1.c: Likewise.
+	* gcc.target/aarch64/vld1-vst1_1.c: Likewise.
+	* gcc.target/aarch64/vld1_lane.c: Likewise.
+
+2015-09-08  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67369
+	* g++.dg/cpp1y/lambda-generic-ice4.C: New.
+
+2015-09-07  Marek Polacek  <polacek@redhat.com>
+
+	PR inline-asm/67448
+	* gcc.dg/asm-10.c: New test.
+
 2015-09-04  Jakub Jelinek  <jakub@redhat.com>
 
 	PR middle-end/67452
