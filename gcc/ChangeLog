@@ -1,3 +1,44 @@
+2015-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67523
+	* gimplify.c (gimplify_omp_for): If inner stmt is not found
+	for combined loop, assert seen_error () and return GS_ERROR.
+
+	PR middle-end/67521
+	* gimplify.c (gimplify_omp_for): Don't call omp_add_variable
+	if decl is already in outer->variables.
+
+	PR middle-end/67517
+	* gimplify.c (gimplify_scan_omp_clauses): Instead of
+	asserting that decl is not specified in octx->variables,
+	break out of the loop if it is.
+
+	PR c++/67514
+	* gimplify.c (gimplify_omp_for): For loop SIMD construct, if
+	iterator is not explicitly determined, but is defined inside
+	of the combined workshare region, handle it like if it has
+	DECL_EXPR in OMP_FOR_PRE_BODY.
+
+2015-09-09  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline:
+	2015-09-09  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/67512
+	* tree-ssa-uninit.c (pred_equal_p): Only call invert_tree_comparison
+	for comparisons.
+
+2015-09-09  Alan Modra  <amodra@gmail.com>
+
+	PR target/67378
+	* config/rs6000/rs6000.c (rs6000_secondary_reload_gpr): Find
+	reload replacement for PRE_MODIFY address reg.
+
+2015-09-07  Ilya Verbin  <ilya.verbin@intel.com>
+
+	* config/i386/intelmic-mkoffload.c (prepare_target_image): Handle all
+	non-alphanumeric characters in the symbol name.
+
 2015-09-04  Jakub Jelinek  <jakub@redhat.com>
 
 	PR middle-end/67452
