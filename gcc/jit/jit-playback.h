@@ -276,6 +276,9 @@ protected:
 		 bool shared,
 		 bool run_linker);
 
+  void
+  add_multilib_driver_arguments (vec <char *> *argvec);
+
   result *
   dlopen_built_dso ();
 
@@ -441,6 +444,19 @@ private:
   vec<block *> m_blocks;
 };
 
+struct case_
+{
+  case_ (rvalue *min_value, rvalue *max_value, block *dest_block)
+  : m_min_value (min_value),
+    m_max_value (max_value),
+    m_dest_block (dest_block)
+  {}
+
+  rvalue *m_min_value;
+  rvalue *m_max_value;
+  block *m_dest_block;
+};
+
 class block : public wrapper
 {
 public:
@@ -450,6 +466,8 @@ public:
   void finalizer ();
 
   tree as_label_decl () const { return m_label_decl; }
+
+  function *get_function () const { return m_func; }
 
   void
   add_eval (location *loc,
@@ -481,6 +499,12 @@ public:
   void
   add_return (location *loc,
 	      rvalue *rvalue);
+
+  void
+  add_switch (location *loc,
+	      rvalue *expr,
+	      block *default_block,
+	      const auto_vec <case_> *cases);
 
 private:
   void

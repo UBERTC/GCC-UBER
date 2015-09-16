@@ -8914,9 +8914,9 @@ functions map any run-time value to @code{__ATOMIC_SEQ_CST} rather
 than invoke a runtime library call or inline a switch statement.  This is
 standard compliant, safe, and the simplest approach for now.
 
-The memory model parameter is a signed int, but only the lower 8 bits are
+The memory model parameter is a signed int, but only the lower 16 bits are
 reserved for the memory model.  The remainder of the signed int is reserved
-for future use and should be 0.  Use of the predefined atomic values
+for target use and should be 0.  Use of the predefined atomic values
 ensures proper usage.
 
 @deftypefn {Built-in Function} @var{type} __atomic_load_n (@var{type} *ptr, int memmodel)
@@ -17777,6 +17777,13 @@ int __builtin_ia32_xbegin ()
 void __builtin_ia32_xend ()
 void __builtin_ia32_xabort (status)
 int __builtin_ia32_xtest ()
+@end smallexample
+
+The following built-in functions are available when @option{-mmwaitx} is used.
+All of them generate the machine instruction that is part of the name.
+@smallexample
+void __builtin_ia32_monitorx (void *, unsigned int, unsigned int)
+void __builtin_ia32_mwaitx (unsigned int, unsigned int, unsigned int)
 @end smallexample
 
 @node x86 transactional memory intrinsics

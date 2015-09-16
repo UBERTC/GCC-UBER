@@ -1,3 +1,124 @@
+2015-09-10  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67526
+	* expr.c (gfc_check_init_expr): Do not dereference a NULL pointer.
+
+2015-09-04  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR fortran/67429
+	* error.c (gfc_clear_pp_buffer): Reset last_location, otherwise
+	caret lines might be skipped when actually giving a diagnostic.
+
+2015-08-07  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/66929
+	* trans-array.c (gfc_get_proc_ifc_for_expr): Use esym as procedure
+	symbol if available.
+
+2015-08-05  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/64921
+	* class.c (generate_finalization_wrapper): Set finalization
+	procedure symbol's always_explicit attribute.
+
+2015-08-03  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66942
+	* trans-expr.c (gfc_conv_procedure_call): Avoid NULL pointer reference
+
+2015-07-25  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/64986
+	* trans-expr.c (gfc_trans_assignment_1): Put component deallocation
+	code at the beginning of the block.
+
+2015-07-21  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/66035
+	* trans-expr.c (alloc_scalar_allocatable_for_subcomponent_assignment):
+	Compute the size to allocate for class and derived type objects
+	correclty.
+	(gfc_trans_subcomponent_assign): Only allocate memory for a
+	component when the object to assign is not an allocatable class
+	object (the memory is already present for allocatable class objects).
+	Furthermore use copy_class_to_class for assigning the rhs to the
+	component (may happen for dummy class objects on the rhs).
+
+2015-07-17  Alessandro Fanfarillo  <fanfarillo.gcc@gmail.com>
+
+	* trans-intrinsic.c (conv_co_collective): Remove redundant address
+	operator in the generated code.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66724
+	PR fortran/66724
+	* io.c (is_char_type): Call gfc_resolve_expr ().
+	(match_open_element, match_dt_element, match_inquire_element): Fix
+	ASYNCHRONOUS case.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66864
+	* simplify.c (gfc_simplify_floor): Set precision of temporary to
+	that of arg.
+
+2015-07-16  Steven G. Kargl   <kargl@gcc.gnu.org>
+
+	PR fortran/66545
+	* primary.c (match_sym_complex_part): Do not dereference NULL pointer.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/56520
+	* match.c (gfc_match_name): Special case unary minus and plus.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* io.c (check_char_variable): New function.
+	(match_open_element, match_close_element, match_file_element,
+	match_dt_element, match_inquire_element, match_wait_element): Use it.
+
+2015-07-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66725
+	* io.c (is_char_type): New function to test for BT_CHARACTER
+	(gfc_match_open, gfc_match_close, match_dt_element): Use it.
+
+2015-07-16  Release Manager
+
+	* GCC 5.2.0 released.
+
+2015-06-24  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/66549
+	* resolve.c (resolve_global_procedure): Don't save and restore
+	OpenMP state around the call to gfc_resolve.
+	(gfc_resolve): Save OpenMP state on entry and restore it on return.
+
+2015-06-14  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/66385
+	Backport from trunk
+	* frontend-passes.c (combine_array_constructor): Return early if
+	inside a FORALL loop.
+
+2015-06-14  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	* intrinsic.texi:  Change \leq to < in descrition of imaginary
+	part in argument to log.
+
+2015-06-11  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* f95-lang.c (gfc_create_decls): Register the main translation unit
+	through the new debug hook.
+
+2015-06-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66245
+	* match.c (gfc_match_type_is, gfc_match_class_is):  Check if the
+	return type spec or derived type spec is validate.
+
 2015-06-05  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/66347
@@ -60,7 +181,7 @@
 2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/66052
-	* decl.c(gfc_match_protected): Prevent dereference of NULL pointer. 
+	* decl.c(gfc_match_protected): Prevent dereference of NULL pointer.
 
 2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
 
@@ -72,7 +193,7 @@
 
 	PR fortran/66044
 	* decl.c(gfc_match_entry):  Change a gfc_internal_error() into
-	a gfc_error() 
+	a gfc_error()
 
 2015-05-19  Steven G. Kargl  <kargl@gcc.gnu.org>
 

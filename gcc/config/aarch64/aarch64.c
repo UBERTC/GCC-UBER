@@ -1669,7 +1669,7 @@ aarch64_function_value_regno_p (const unsigned int regno)
   /* Up to four fp/simd registers can return a function value, e.g. a
      homogeneous floating-point aggregate having four members.  */
   if (regno >= V0_REGNUM && regno < V0_REGNUM + HA_MAX_NUM_FLDS)
-    return !TARGET_GENERAL_REGS_ONLY;
+    return TARGET_FLOAT;
 
   return false;
 }
@@ -4786,7 +4786,7 @@ aarch64_secondary_reload (bool in_p ATTRIBUTE_UNUSED, rtx x,
   /* A TFmode or TImode memory access should be handled via an FP_REGS
      because AArch64 has richer addressing modes for LDR/STR instructions
      than LDP/STP instructions.  */
-  if (!TARGET_GENERAL_REGS_ONLY && rclass == GENERAL_REGS
+  if (TARGET_FLOAT && rclass == GENERAL_REGS
       && GET_MODE_SIZE (mode) == 16 && MEM_P (x))
     return FP_REGS;
 
@@ -5306,11 +5306,17 @@ aarch64_rtx_mult_cost (rtx x, int code, int outer, bool speed)
       if (speed)
 	{
 	  /* Floating-point FMA/FMUL can also support negations of the
-	     operands.  */
-	  if (GET_CODE (op0) == NEG)
-	    op0 = XEXP (op0, 0);
-	  if (GET_CODE (op1) == NEG)
-	    op1 = XEXP (op1, 0);
+	     operands, unless the rounding mode is upward or downward in
+	     which case FNMUL is different than FMUL with operand negation.  */
+	  bool neg0 = GET_CODE (op0) == NEG;
+	  bool neg1 = GET_CODE (op1) == NEG;
+	  if (compound_p || !flag_rounding_math || (neg0 && neg1))
+	    {
+	      if (neg0)
+		op0 = XEXP (op0, 0);
+	      if (neg1)
+		op1 = XEXP (op1, 0);
+	    }
 
 	  if (compound_p)
 	    /* FMADD/FNMADD/FNMSUB/FMSUB.  */
@@ -5827,6 +5833,12 @@ aarch64_rtx_costs (rtx x, int code, int outer ATTRIBUTE_UNUSED,
               *cost = rtx_cost (op0, NEG, 0, speed);
               return true;
             }
+	  if (GET_CODE (op0) == MULT)
+	    {
+	      /* FNMUL.  */
+	      *cost = rtx_cost (op0, NEG, 0, speed);
+	      return true;
+	    }
 	  if (speed)
 	    /* FNEG.  */
 	    *cost += extra_cost->fp[mode == DFmode].neg;
@@ -7571,7 +7583,7 @@ aarch64_expand_builtin_va_start (tree valist, rtx nextarg ATTRIBUTE_UNUSED)
   vr_save_area_size
     = (NUM_FP_ARG_REGS - cum->aapcs_nvrn) * UNITS_PER_VREG;
 
-  if (TARGET_GENERAL_REGS_ONLY)
+  if (!TARGET_FLOAT)
     {
       if (cum->aapcs_nvrn > 0)
 	sorry ("%qs and floating point or vector arguments",
@@ -7681,7 +7693,7 @@ aarch64_gimplify_va_arg_expr (tree valist, tree type, gimple_seq *pre_p,
 					       &is_ha))
     {
       /* TYPE passed in fp/simd registers.  */
-      if (TARGET_GENERAL_REGS_ONLY)
+      if (!TARGET_FLOAT)
 	sorry ("%qs and floating point or vector arguments",
 	       "-mgeneral-regs-only");
 
@@ -7918,7 +7930,7 @@ aarch64_setup_incoming_varargs (cumulative_args_t cum_v, machine_mode mode,
   gr_saved = NUM_ARG_REGS - local_cum.aapcs_ncrn;
   vr_saved = NUM_FP_ARG_REGS - local_cum.aapcs_nvrn;
 
-  if (TARGET_GENERAL_REGS_ONLY)
+  if (!TARGET_FLOAT)
     {
       if (local_cum.aapcs_nvrn > 0)
 	sorry ("%qs and floating point or vector arguments",
@@ -9363,8 +9375,8 @@ aarch64_expand_compare_and_swap (rtx operands[])
      unlikely event of fail being ACQUIRE and succ being RELEASE we need to
      promote succ to ACQ_REL so that we don't lose the acquire semantics.  */
 
-  if (INTVAL (mod_f) == MEMMODEL_ACQUIRE
-      && INTVAL (mod_s) == MEMMODEL_RELEASE)
+  if (is_mm_acquire (memmodel_from_int (INTVAL (mod_f)))
+      && is_mm_release (memmodel_from_int (INTVAL (mod_s))))
     mod_s = GEN_INT (MEMMODEL_ACQ_REL);
 
   switch (mode)
@@ -9409,6 +9421,23 @@ aarch64_expand_compare_and_swap (rtx operands[])
   emit_insn (gen_rtx_SET (VOIDmode, bval, x));
 }
 
+/* Emit a barrier, that is appropriate for memory model MODEL, at the end of a
+   sequence implementing an atomic operation.  */
+
+static void
+aarch64_emit_post_barrier (enum memmodel model)
+{
+  const enum memmodel base_model = memmodel_base (model);
+
+  if (is_mm_sync (model)
+      && (base_model == MEMMODEL_ACQUIRE
+	  || base_model == MEMMODEL_ACQ_REL
+	  || base_model == MEMMODEL_SEQ_CST))
+    {
+      emit_insn (gen_mem_thread_fence (GEN_INT (MEMMODEL_SEQ_CST)));
+    }
+}
+
 /* Split a compare and swap pattern.  */
 
 void
@@ -9419,14 +9448,18 @@ aarch64_split_compare_and_swap (rtx operands[])
   bool is_weak;
   rtx_code_label *label1, *label2;
   rtx x, cond;
+  enum memmodel model;
+  rtx model_rtx;
 
   rval = operands[0];
   mem = operands[1];
   oldval = operands[2];
   newval = operands[3];
   is_weak = (operands[4] != const0_rtx);
+  model_rtx = operands[5];
   scratch = operands[7];
   mode = GET_MODE (mem);
+  model = memmodel_from_int (INTVAL (model_rtx));
 
   label1 = NULL;
   if (!is_weak)
@@ -9436,7 +9469,13 @@ aarch64_split_compare_and_swap (rtx operands[])
     }
   label2 = gen_label_rtx ();
 
-  aarch64_emit_load_exclusive (mode, rval, mem, operands[5]);
+  /* The initial load can be relaxed for a __sync operation since a final
+     barrier will be emitted to stop code hoisting.  */
+  if (is_mm_sync (model))
+    aarch64_emit_load_exclusive (mode, rval, mem,
+				 GEN_INT (MEMMODEL_RELAXED));
+  else
+    aarch64_emit_load_exclusive (mode, rval, mem, model_rtx);
 
   cond = aarch64_gen_compare_reg (NE, rval, oldval);
   x = gen_rtx_NE (VOIDmode, cond, const0_rtx);
@@ -9444,7 +9483,7 @@ aarch64_split_compare_and_swap (rtx operands[])
 			    gen_rtx_LABEL_REF (Pmode, label2), pc_rtx);
   aarch64_emit_unlikely_jump (gen_rtx_SET (VOIDmode, pc_rtx, x));
 
-  aarch64_emit_store_exclusive (mode, scratch, mem, newval, operands[5]);
+  aarch64_emit_store_exclusive (mode, scratch, mem, newval, model_rtx);
 
   if (!is_weak)
     {
@@ -9461,6 +9500,10 @@ aarch64_split_compare_and_swap (rtx operands[])
     }
 
   emit_label (label2);
+
+  /* Emit any final barrier needed for a __sync operation.  */
+  if (is_mm_sync (model))
+    aarch64_emit_post_barrier (model);
 }
 
 /* Split an atomic operation.  */
@@ -9471,6 +9514,8 @@ aarch64_split_atomic_op (enum rtx_code code, rtx old_out, rtx new_out, rtx mem,
 {
   machine_mode mode = GET_MODE (mem);
   machine_mode wmode = (mode == DImode ? DImode : SImode);
+  const enum memmodel model = memmodel_from_int (INTVAL (model_rtx));
+  const bool is_sync = is_mm_sync (model);
   rtx_code_label *label;
   rtx x;
 
@@ -9485,7 +9530,13 @@ aarch64_split_atomic_op (enum rtx_code code, rtx old_out, rtx new_out, rtx mem,
     old_out = new_out;
   value = simplify_gen_subreg (wmode, value, mode, 0);
 
-  aarch64_emit_load_exclusive (mode, old_out, mem, model_rtx);
+  /* The initial load can be relaxed for a __sync operation since a final
+     barrier will be emitted to stop code hoisting.  */
+ if (is_sync)
+    aarch64_emit_load_exclusive (mode, old_out, mem,
+				 GEN_INT (MEMMODEL_RELAXED));
+  else
+    aarch64_emit_load_exclusive (mode, old_out, mem, model_rtx);
 
   switch (code)
     {
@@ -9521,6 +9572,10 @@ aarch64_split_atomic_op (enum rtx_code code, rtx old_out, rtx new_out, rtx mem,
   x = gen_rtx_IF_THEN_ELSE (VOIDmode, x,
 			    gen_rtx_LABEL_REF (Pmode, label), pc_rtx);
   aarch64_emit_unlikely_jump (gen_rtx_SET (VOIDmode, pc_rtx, x));
+
+  /* Emit any final barrier needed for a __sync operation.  */
+  if (is_sync)
+    aarch64_emit_post_barrier (model);
 }
 
 static void
@@ -11804,6 +11859,9 @@ aarch64_gen_adjusted_ldpstp (rtx *operands, bool load,
 
 #undef TARGET_SCHED_FUSION_PRIORITY
 #define TARGET_SCHED_FUSION_PRIORITY aarch64_sched_fusion_priority
+
+#undef TARGET_RELAXED_ORDERING
+#define TARGET_RELAXED_ORDERING true
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

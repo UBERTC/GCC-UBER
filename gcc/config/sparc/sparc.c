@@ -4779,10 +4779,14 @@ enum sparc_mode_class {
 #define CCFP_MODES (1 << (int) CCFP_MODE)
 
 /* Value is 1 if register/mode pair is acceptable on sparc.
+
    The funny mixture of D and T modes is because integer operations
    do not specially operate on tetra quantities, so non-quad-aligned
    registers can hold quadword quantities (except %o4 and %i4 because
-   they cross fixed registers).  */
+   they cross fixed registers).
+
+   ??? Note that, despite the settings, non-double-aligned parameter
+   registers can hold double-word quantities in 32-bit mode.  */
 
 /* This points to either the 32 bit or the 64 bit version.  */
 const int *hard_regno_mode_classes;
@@ -11674,9 +11678,8 @@ sparc_emit_membar_for_model (enum memmodel model,
 
   if (before_after & 1)
     {
-      if (model == MEMMODEL_RELEASE
-	  || model == MEMMODEL_ACQ_REL
-	  || model == MEMMODEL_SEQ_CST)
+      if (is_mm_release (model) || is_mm_acq_rel (model)
+	  || is_mm_seq_cst (model))
 	{
 	  if (load_store & 1)
 	    mm |= LoadLoad | StoreLoad;
@@ -11686,9 +11689,8 @@ sparc_emit_membar_for_model (enum memmodel model,
     }
   if (before_after & 2)
     {
-      if (model == MEMMODEL_ACQUIRE
-	  || model == MEMMODEL_ACQ_REL
-	  || model == MEMMODEL_SEQ_CST)
+      if (is_mm_acquire (model) || is_mm_acq_rel (model)
+	  || is_mm_seq_cst (model))
 	{
 	  if (load_store & 1)
 	    mm |= LoadLoad | LoadStore;

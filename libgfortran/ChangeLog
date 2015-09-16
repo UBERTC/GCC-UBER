@@ -1,3 +1,36 @@
+2015-09-02  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR libfortran/67414
+	* runtime/error.c (gf_strerror): Handle newlocale() failure.
+
+2015-08-28  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* configure.ac: Define HAVE_FTRUNCATE for ARM/AArch64/SH newlib
+	builds.
+	* configure: Regenerate.
+
+2015-08-18  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR libfortran/66936
+	* io/unix.c (__MINGW32__): Undefine HAVE_UMASK.
+
+2015-07-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR libgfortran/66650
+	* libgfortran.h (GFC_DTYPE_SIZE_MASK): Rewrite to avoid
+	"left shift of negative value" warning.
+
+2015-07-16  Release Manager
+
+	* GCC 5.2.0 released.
+
+2015-07-15  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR libfortran/66861
+	* io/unix.c (compare_file_filename): Verify that u->filename is
+	non-NULL before strcmp.
+	(find_file0): Likewise.
+
 2015-04-22  Release Manager
 
 	* GCC 5.1.0 released.

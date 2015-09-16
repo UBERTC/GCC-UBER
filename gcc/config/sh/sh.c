@@ -1843,12 +1843,13 @@ prepare_move_operands (rtx operands[], machine_mode mode)
 		  || tls_kind == TLS_MODEL_LOCAL_DYNAMIC
 		  || tls_kind == TLS_MODEL_INITIAL_EXEC))
 	    {
+	      static int got_labelno;
 	      /* Don't schedule insns for getting GOT address when
 		 the first scheduling is enabled, to avoid spill
 		 failures for R0.  */
 	      if (flag_schedule_insns)
 		emit_insn (gen_blockage ());
-	      emit_insn (gen_GOTaddr2picreg ());
+	      emit_insn (gen_GOTaddr2picreg (GEN_INT (++got_labelno)));
 	      emit_use (gen_rtx_REG (SImode, PIC_REG));
 	      if (flag_schedule_insns)
 		emit_insn (gen_blockage ());
@@ -7937,7 +7938,7 @@ sh_expand_prologue (void)
     }
 
   if (flag_pic && df_regs_ever_live_p (PIC_OFFSET_TABLE_REGNUM))
-    emit_insn (gen_GOTaddr2picreg ());
+    emit_insn (gen_GOTaddr2picreg (const0_rtx));
 
   if (SHMEDIA_REGS_STACK_ADJUST ())
     {
@@ -13885,6 +13886,7 @@ sh_split_movrt_negc_to_movt_xor (rtx_insn* curr_insn, rtx operands[])
       && !sh_insn_operands_modified_between_p (t_before_negc.insn,
 					       t_before_negc.insn,
 					       t_after_negc.insn)
+      && !modified_between_p (get_t_reg_rtx (), curr_insn, t_after_negc.insn)
       && !sh_unspec_insn_p (t_after_negc.insn)
       && !volatile_insn_p (PATTERN (t_after_negc.insn))
       && !side_effects_p (PATTERN (t_after_negc.insn))
@@ -13991,6 +13993,9 @@ sh_extending_set_of_reg::use_as_extended_reg (rtx_insn* use_at_insn) const
   else
     {
       rtx extension_dst = XEXP (set_rtx, 0);
+      if (GET_MODE (extension_dst) != SImode)
+	extension_dst = simplify_gen_subreg (SImode, extension_dst,
+					     GET_MODE (extension_dst), 0);
       if (modified_between_p (extension_dst, insn, use_at_insn))
 	{
 	  if (dump_file)
@@ -14159,6 +14164,12 @@ sh_recog_treg_set_expr (rtx op, machine_mode mode)
     return false;
 
   if (!can_create_pseudo_p ())
+    return false;
+
+  /* expand_debug_locations may call this to compute rtx costs at
+     very early stage.  In that case, don't make new insns here to
+     avoid codegen differences with -g. */
+  if (currently_expanding_to_rtl)
     return false;
 
   /* We are going to invoke recog in a re-entrant way and thus

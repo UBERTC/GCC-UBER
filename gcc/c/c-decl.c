@@ -1207,6 +1207,7 @@ pop_scope (void)
     {
       tree file_decl = build_translation_unit_decl (NULL_TREE);
       context = file_decl;
+      debug_hooks->register_main_translation_unit (file_decl);
     }
   else
     context = block;
@@ -8882,7 +8883,8 @@ temp_pop_parm_decls (void)
   current_scope->bindings = NULL;
   for (; b; b = free_binding_and_advance (b))
     {
-      gcc_assert (TREE_CODE (b->decl) == PARM_DECL);
+      gcc_assert (TREE_CODE (b->decl) == PARM_DECL
+		  || b->decl == error_mark_node);
       gcc_assert (I_SYMBOL_BINDING (b->id) == b);
       I_SYMBOL_BINDING (b->id) = b->shadowed;
       if (b->shadowed && b->shadowed->u.type)

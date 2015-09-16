@@ -479,6 +479,21 @@ chkp_gimple_call_builtin_p (gimple call,
   return false;
 }
 
+/* Emit code to build zero bounds and return RTL holding
+   the result.  */
+rtx
+chkp_expand_zero_bounds ()
+{
+  tree zero_bnd;
+
+  if (flag_chkp_use_static_const_bounds)
+    zero_bnd = chkp_get_zero_bounds_var ();
+  else
+    zero_bnd = chkp_build_make_bounds_call (integer_zero_node,
+					    integer_zero_node);
+  return expand_normal (zero_bnd);
+}
+
 /* Emit code to store zero bounds for PTR located at MEM.  */
 void
 chkp_expand_bounds_reset_for_mem (tree mem, tree ptr)
@@ -527,6 +542,71 @@ chkp_insert_retbnd_call (tree bndval, tree retval,
   gsi_insert_after (gsi, call, GSI_CONTINUE_LINKING);
 
   return bndval;
+}
+
+/* Build a GIMPLE_CALL identical to CALL but skipping bounds
+   arguments.  */
+
+gcall *
+chkp_copy_call_skip_bounds (gcall *call)
+{
+  bitmap bounds;
+  unsigned i;
+
+  bitmap_obstack_initialize (NULL);
+  bounds = BITMAP_ALLOC (NULL);
+
+  for (i = 0; i < gimple_call_num_args (call); i++)
+    if (POINTER_BOUNDS_P (gimple_call_arg (call, i)))
+      bitmap_set_bit (bounds, i);
+
+  if (!bitmap_empty_p (bounds))
+    call = gimple_call_copy_skip_args (call, bounds);
+  gimple_call_set_with_bounds (call, false);
+
+  BITMAP_FREE (bounds);
+  bitmap_obstack_release (NULL);
+
+  return call;
+}
+
+/* Redirect edge E to the correct node according to call_stmt.
+   Return 1 if bounds removal from call_stmt should be done
+   instead of redirection.  */
+
+bool
+chkp_redirect_edge (cgraph_edge *e)
+{
+  bool instrumented = false;
+  tree decl = e->callee->decl;
+
+  if (e->callee->instrumentation_clone
+      || chkp_function_instrumented_p (decl))
+    instrumented = true;
+
+  if (instrumented
+      && !gimple_call_with_bounds_p (e->call_stmt))
+    e->redirect_callee (cgraph_node::get_create (e->callee->orig_decl));
+  else if (!instrumented
+	   && gimple_call_with_bounds_p (e->call_stmt)
+	   && !chkp_gimple_call_builtin_p (e->call_stmt, BUILT_IN_CHKP_BNDCL)
+	   && !chkp_gimple_call_builtin_p (e->call_stmt, BUILT_IN_CHKP_BNDCU)
+	   && !chkp_gimple_call_builtin_p (e->call_stmt, BUILT_IN_CHKP_BNDSTX))
+    {
+      if (e->callee->instrumented_version)
+	e->redirect_callee (e->callee->instrumented_version);
+      else
+	{
+	  tree args = TYPE_ARG_TYPES (TREE_TYPE (decl));
+	  /* Avoid bounds removal if all args will be removed.  */
+	  if (!args || TREE_VALUE (args) != void_type_node)
+	    return true;
+	  else
+	    gimple_call_set_with_bounds (e->call_stmt, false);
+	}
+    }
+
+  return false;
 }
 
 /* Mark statement S to not be instrumented.  */
@@ -1096,7 +1176,20 @@ chkp_get_bounds_var (tree ptr_var)
   return bnd_var;
 }
 
+/* If BND is an abnormal bounds copy, return a copied value.
+   Otherwise return BND.  */
+static tree
+chkp_get_orginal_bounds_for_abnormal_copy (tree bnd)
+{
+  if (bitmap_bit_p (chkp_abnormal_copies, SSA_NAME_VERSION (bnd)))
+    {
+      gimple bnd_def = SSA_NAME_DEF_STMT (bnd);
+      gcc_checking_assert (gimple_code (bnd_def) == GIMPLE_ASSIGN);
+      bnd = gimple_assign_rhs1 (bnd_def);
+    }
 
+  return bnd;
+}
 
 /* Register bounds BND for object PTR in global bounds table.
    A copy of bounds may be created for abnormal ssa names.
@@ -1140,11 +1233,7 @@ chkp_maybe_copy_and_register_bounds (tree ptr, tree bnd)
       /* For abnormal copies we may just find original
 	 bounds and use them.  */
       if (!abnormal_ptr && !SSA_NAME_IS_DEFAULT_DEF (bnd))
-	{
-	  gimple bnd_def = SSA_NAME_DEF_STMT (bnd);
-	  gcc_checking_assert (gimple_code (bnd_def) == GIMPLE_ASSIGN);
-	  bnd = gimple_assign_rhs1 (bnd_def);
-	}
+	bnd = chkp_get_orginal_bounds_for_abnormal_copy (bnd);
       /* For undefined values we usually use none bounds
 	 value but in case of abnormal edge it may cause
 	 coalescing failures.  Use default definition of
@@ -1176,6 +1265,7 @@ chkp_maybe_copy_and_register_bounds (tree ptr, tree bnd)
 	    copy = make_temp_ssa_name (pointer_bounds_type_node,
 				       gimple_build_nop (),
 				       CHKP_BOUND_TMP_NAME);
+	  bnd = chkp_get_orginal_bounds_for_abnormal_copy (bnd);
 	  assign = gimple_build_assign (copy, bnd);
 
 	  if (dump_file && (dump_flags & TDF_DETAILS))
@@ -2448,6 +2538,7 @@ chkp_compute_bounds_for_assignment (tree node, gimple assign)
   tree rhs1 = gimple_assign_rhs1 (assign);
   tree bounds = NULL_TREE;
   gimple_stmt_iterator iter = gsi_for_stmt (assign);
+  tree base = NULL;
 
   if (dump_file && (dump_flags & TDF_DETAILS))
     {
@@ -2474,6 +2565,7 @@ chkp_compute_bounds_for_assignment (tree node, gimple assign)
     case INTEGER_CST:
       /* Bounds are just propagated from RHS.  */
       bounds = chkp_find_bounds (rhs1, &iter);
+      base = rhs1;
       break;
 
     case VIEW_CONVERT_EXPR:
@@ -2544,6 +2636,8 @@ chkp_compute_bounds_for_assignment (tree node, gimple assign)
 	     (e.g. pointer minus pointer).  In such case
 	     use default invalid op bounds.  */
 	  bounds = chkp_get_invalid_op_bounds ();
+
+	base = (bounds == bnd1) ? rhs1 : (bounds == bnd2) ? rhs2 : NULL;
       }
       break;
 
@@ -2638,6 +2732,19 @@ chkp_compute_bounds_for_assignment (tree node, gimple assign)
     }
 
   gcc_assert (bounds);
+
+  /* We may reuse bounds of other pointer we copy/modify.  But it is not
+     allowed for abnormal ssa names.  If we produced a pointer using
+     abnormal ssa name, we better make a bounds copy to avoid coalescing
+     issues.  */
+  if (base
+      && TREE_CODE (base) == SSA_NAME
+      && SSA_NAME_OCCURS_IN_ABNORMAL_PHI (base))
+    {
+      gimple stmt = gimple_build_assign (chkp_get_tmp_reg (NULL), bounds);
+      gsi_insert_after (&iter, stmt, GSI_SAME_STMT);
+      bounds = gimple_assign_lhs (stmt);
+    }
 
   if (node)
     bounds = chkp_maybe_copy_and_register_bounds (node, bounds);
@@ -4025,7 +4132,7 @@ chkp_replace_function_pointer (tree *op, int *walk_subtrees,
 			       void *data ATTRIBUTE_UNUSED)
 {
   if (TREE_CODE (*op) == FUNCTION_DECL
-      && !lookup_attribute ("bnd_legacy", DECL_ATTRIBUTES (*op))
+      && chkp_instrumentable_p (*op)
       && (DECL_BUILT_IN_CLASS (*op) == NOT_BUILT_IN
 	  /* For builtins we replace pointers only for selected
 	     function and functions having definitions.  */

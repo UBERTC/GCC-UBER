@@ -101,6 +101,12 @@ id_from_fd (const int fd)
 }
 
 #endif /* HAVE_WORKING_STAT */
+
+
+/* On mingw, we don't use umask in tempfile_open(), because it
+   doesn't support the user/group/other-based permissions.  */
+#undef HAVE_UMASK
+
 #endif /* __MINGW32__ */
 
 
@@ -1525,7 +1531,10 @@ compare_file_filename (gfc_unit *u, const char *name, int len)
       goto done;
     }
 # endif
-  ret = (strcmp(path, u->filename) == 0);
+  if (u->filename)
+    ret = (strcmp(path, u->filename) == 0);
+  else
+    ret = 0;
 #endif
  done:
   free (path);
@@ -1570,7 +1579,7 @@ find_file0 (gfc_unit *u, FIND_FILE0_DECL)
     }
   else
 # endif
-    if (strcmp (u->filename, path) == 0)
+    if (u->filename && strcmp (u->filename, path) == 0)
       return u;
 #endif
 

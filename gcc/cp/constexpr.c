@@ -543,8 +543,17 @@ build_constexpr_constructor_member_initializers (tree type, tree body)
       || TREE_CODE (body) == EH_SPEC_BLOCK)
     body = TREE_OPERAND (body, 0);
   if (TREE_CODE (body) == STATEMENT_LIST)
-    body = STATEMENT_LIST_HEAD (body)->stmt;
-  body = BIND_EXPR_BODY (body);
+    {
+      for (tree_stmt_iterator i = tsi_start (body);
+	   !tsi_end_p (i); tsi_next (&i))
+	{
+	  body = tsi_stmt (i);
+	  if (TREE_CODE (body) == BIND_EXPR)
+	    break;
+	}
+    }
+  if (TREE_CODE (body) == BIND_EXPR)
+    body = BIND_EXPR_BODY (body);
   if (TREE_CODE (body) == CLEANUP_POINT_EXPR)
     {
       body = TREE_OPERAND (body, 0);
@@ -1741,7 +1750,38 @@ cxx_eval_array_reference (const constexpr_ctx *ctx, tree t,
       VERIFY_CONSTANT (ary);
       gcc_unreachable ();
     }
-  if (compare_tree_int (index, len) >= 0)
+
+  i = tree_to_shwi (index);
+  bool found = true;
+  if (TREE_CODE (ary) == CONSTRUCTOR && len
+      && (TREE_CODE (CONSTRUCTOR_ELT (ary, len-1)->index) == RANGE_EXPR
+	  || compare_tree_int (CONSTRUCTOR_ELT (ary, len-1)->index, len-1)))
+    {
+      /* The last element doesn't match its position in the array; this must be
+	 a sparse array from cxx_eval_store_expression.  So iterate.  */
+      found = false;
+      vec<constructor_elt, va_gc> *v = CONSTRUCTOR_ELTS (ary);
+      constructor_elt *e;
+      for (unsigned ix = 0; vec_safe_iterate (v, ix, &e); ++ix)
+	{
+	  if (TREE_CODE (e->index) == RANGE_EXPR)
+	    {
+	      tree lo = TREE_OPERAND (e->index, 0);
+	      tree hi = TREE_OPERAND (e->index, 1);
+	      if (tree_int_cst_le (lo, index) && tree_int_cst_le (index, hi))
+		found = true;
+	    }
+	  else if (tree_int_cst_equal (e->index, index))
+	    found = true;
+	  if (found)
+	    {
+	      i = ix;
+	      break;
+	    }
+	}
+    }
+
+  if (i >= len || !found)
     {
       if (tree_int_cst_lt (index, array_type_nelts_top (TREE_TYPE (ary))))
 	{
@@ -1758,14 +1798,14 @@ cxx_eval_array_reference (const constexpr_ctx *ctx, tree t,
       *non_constant_p = true;
       return t;
     }
-  else if (tree_int_cst_lt (index, integer_zero_node))
+  else if (i < 0)
     {
       if (!ctx->quiet)
 	error ("negative array subscript");
       *non_constant_p = true;
       return t;
     }
-  i = tree_to_shwi (index);
+
   if (TREE_CODE (ary) == CONSTRUCTOR)
     return (*CONSTRUCTOR_ELTS (ary))[i].value;
   else if (elem_nchars == 1)
@@ -2706,11 +2746,13 @@ cxx_eval_store_expression (const constexpr_ctx *ctx, tree t,
     }
   release_tree_vector (refs);
 
-  if ((AGGREGATE_TYPE_P (TREE_TYPE (t)) || VECTOR_TYPE_P (TREE_TYPE (t))))
+  if (AGGREGATE_TYPE_P (type) || VECTOR_TYPE_P (type))
     {
       /* Create a new CONSTRUCTOR in case evaluation of the initializer
 	 wants to modify it.  */
-      *valp = new_ctx.ctor = build_constructor (TREE_TYPE (t), NULL);
+      new_ctx.ctor = build_constructor (type, NULL);
+      if (*valp == NULL_TREE)
+	*valp = new_ctx.ctor;
       CONSTRUCTOR_NO_IMPLICIT_ZERO (new_ctx.ctor) = true;
       new_ctx.object = target;
     }
@@ -2718,8 +2760,16 @@ cxx_eval_store_expression (const constexpr_ctx *ctx, tree t,
   init = cxx_eval_constant_expression (&new_ctx, init, false,
 				       non_constant_p, overflow_p);
   if (target == object)
-    /* The hash table might have moved since the get earlier.  */
-    ctx->values->put (object, init);
+    {
+      /* The hash table might have moved since the get earlier.  */
+      valp = ctx->values->get (object);
+      if (TREE_CODE (init) == CONSTRUCTOR)
+	/* An outer ctx->ctor might be pointing to *valp, so just replace
+	   its contents.  */
+	CONSTRUCTOR_ELTS (*valp) = CONSTRUCTOR_ELTS (init);
+      else
+	*valp = init;
+    }
   else
     *valp = init;
 
@@ -3221,6 +3271,7 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 
     case NON_LVALUE_EXPR:
     case TRY_CATCH_EXPR:
+    case TRY_BLOCK:
     case CLEANUP_POINT_EXPR:
     case MUST_NOT_THROW_EXPR:
     case EXPR_STMT:
@@ -3229,6 +3280,17 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 					lval,
 					non_constant_p, overflow_p,
 					jump_target);
+      break;
+
+    case TRY_FINALLY_EXPR:
+      r = cxx_eval_constant_expression (ctx, TREE_OPERAND (t, 0), lval,
+					non_constant_p, overflow_p,
+					jump_target);
+      if (!*non_constant_p)
+	/* Also evaluate the cleanup.  */
+	cxx_eval_constant_expression (ctx, TREE_OPERAND (t, 1), true,
+				      non_constant_p, overflow_p,
+				      jump_target);
       break;
 
       /* These differ from cxx_eval_unary_expression in that this doesn't
@@ -4323,6 +4385,7 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
     case CLEANUP_POINT_EXPR:
     case MUST_NOT_THROW_EXPR:
     case TRY_CATCH_EXPR:
+    case TRY_BLOCK:
     case EH_SPEC_BLOCK:
     case EXPR_STMT:
     case PAREN_EXPR:
@@ -4331,6 +4394,10 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
       /* For convenience.  */
     case RETURN_EXPR:
       return RECUR (TREE_OPERAND (t, 0), want_rval);
+
+    case TRY_FINALLY_EXPR:
+      return (RECUR (TREE_OPERAND (t, 0), want_rval)
+	      && RECUR (TREE_OPERAND (t, 1), any));
 
     case SCOPE_REF:
       return RECUR (TREE_OPERAND (t, 1), want_rval);
@@ -4517,6 +4584,11 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
 	  diagnose_non_constexpr_vec_init (t);
 	}
       return false;
+
+    case TYPE_DECL:
+    case TAG_DEFN:
+      /* We can see these in statement-expressions.  */
+      return true;
 
     default:
       if (objc_is_property_ref (t))

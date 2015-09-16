@@ -4728,7 +4728,7 @@ inherit_reload_reg (bool def_p, int original_regno,
 	}
       return false;
     }
-  lra_substitute_pseudo_within_insn (insn, original_regno, new_reg);
+  lra_substitute_pseudo_within_insn (insn, original_regno, new_reg, false);
   lra_update_insn_regno_info (insn);
   if (! def_p)
     /* We now have a new usage insn for original regno.  */
@@ -4760,7 +4760,7 @@ inherit_reload_reg (bool def_p, int original_regno,
 	  lra_assert (DEBUG_INSN_P (usage_insn));
 	  next_usage_insns = XEXP (next_usage_insns, 1);
 	}
-      lra_substitute_pseudo (&usage_insn, original_regno, new_reg);
+      lra_substitute_pseudo (&usage_insn, original_regno, new_reg, false);
       lra_update_insn_regno_info (as_a <rtx_insn *> (usage_insn));
       if (lra_dump_file != NULL)
 	{
@@ -5022,7 +5022,7 @@ split_reg (bool before_p, int original_regno, rtx_insn *insn,
       usage_insn = XEXP (next_usage_insns, 0);
       lra_assert (DEBUG_INSN_P (usage_insn));
       next_usage_insns = XEXP (next_usage_insns, 1);
-      lra_substitute_pseudo (&usage_insn, original_regno, new_reg);
+      lra_substitute_pseudo (&usage_insn, original_regno, new_reg, false);
       lra_update_insn_regno_info (as_a <rtx_insn *> (usage_insn));
       if (lra_dump_file != NULL)
 	{
@@ -5171,6 +5171,11 @@ update_ebb_live_info (rtx_insn *head, rtx_insn *tail)
       for (reg = curr_static_id->hard_regs; reg != NULL; reg = reg->next)
 	if (reg->type == OP_OUT && ! reg->subreg_p)
 	  bitmap_clear_bit (&live_regs, reg->regno);
+      if (curr_id->arg_hard_regs != NULL)
+	/* Make clobbered argument hard registers die.  */
+	for (i = 0; (regno = curr_id->arg_hard_regs[i]) >= 0; i++)
+	  if (regno >= FIRST_PSEUDO_REGISTER)
+	    bitmap_clear_bit (&live_regs, regno - FIRST_PSEUDO_REGISTER);
       /* Mark each used value as live.  */
       for (reg = curr_id->regs; reg != NULL; reg = reg->next)
 	if (reg->type != OP_OUT
@@ -5181,9 +5186,10 @@ update_ebb_live_info (rtx_insn *head, rtx_insn *tail)
 	    && bitmap_bit_p (&check_only_regs, reg->regno))
 	  bitmap_set_bit (&live_regs, reg->regno);
       if (curr_id->arg_hard_regs != NULL)
-	/* Make argument hard registers live.  */
+	/* Make used argument hard registers live.  */
 	for (i = 0; (regno = curr_id->arg_hard_regs[i]) >= 0; i++)
-	  if (bitmap_bit_p (&check_only_regs, regno))
+	  if (regno < FIRST_PSEUDO_REGISTER
+	      && bitmap_bit_p (&check_only_regs, regno))
 	    bitmap_set_bit (&live_regs, regno);
       /* It is quite important to remove dead move insns because it
 	 means removing dead store.  We don't need to process them for
@@ -5493,6 +5499,12 @@ inherit_in_ebb (rtx_insn *head, rtx_insn *tail)
 			}
 		    }
 		}
+	  /* Process clobbered call regs.  */
+	  if (curr_id->arg_hard_regs != NULL)
+	    for (i = 0; (dst_regno = curr_id->arg_hard_regs[i]) >= 0; i++)
+	      if (dst_regno >= FIRST_PSEUDO_REGISTER)
+		usage_insns[dst_regno - FIRST_PSEUDO_REGISTER].check
+		  = -(int) INSN_UID (curr_insn);
 	  if (! JUMP_P (curr_insn))
 	    for (i = 0; i < to_inherit_num; i++)
 	      if (inherit_reload_reg (true, to_inherit[i].regno,
@@ -5600,7 +5612,7 @@ inherit_in_ebb (rtx_insn *head, rtx_insn *tail)
 		      add_next_usage_insn (src_regno, use_insn, reloads_num);
 		    }
 		}
-	  /* Process call args.  */
+	  /* Process used call regs.  */
 	  if (curr_id->arg_hard_regs != NULL)
 	    for (i = 0; (src_regno = curr_id->arg_hard_regs[i]) >= 0; i++)
 	      if (src_regno < FIRST_PSEUDO_REGISTER)
@@ -5942,8 +5954,9 @@ remove_inheritance_pseudos (bitmap remove_pseudos)
 		    {
 		      if (change_p && bitmap_bit_p (remove_pseudos, regno))
 			{
-			  lra_substitute_pseudo_within_insn (
-			    curr_insn, regno, regno_reg_rtx[restore_regno]);
+			  lra_substitute_pseudo_within_insn
+			    (curr_insn, regno, regno_reg_rtx[restore_regno],
+			     false);
 			  restored_regs_p = true;
 			}
 		      else
@@ -6066,9 +6079,9 @@ undo_optional_reloads (void)
 		 we remove the inheritance pseudo and the optional
 		 reload.  */
 	    }
-	  lra_substitute_pseudo_within_insn (
-	    insn, regno,
-	    regno_reg_rtx[lra_reg_info[regno].restore_regno]);
+	  lra_substitute_pseudo_within_insn
+	    (insn, regno, regno_reg_rtx[lra_reg_info[regno].restore_regno],
+	     false);
 	  lra_update_insn_regno_info (insn);
 	  if (lra_dump_file != NULL)
 	    {

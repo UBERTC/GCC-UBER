@@ -80,6 +80,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "pass_manager.h"
 #include "ipa-utils.h"
 #include "omp-low.h"
+#include "ipa-chkp.h"
 
 /* True when asm nodes has been output.  */
 bool asm_nodes_output = false;
@@ -805,8 +806,33 @@ output_refs (lto_symtab_encoder_t encoder)
     {
       symtab_node *node = lto_symtab_encoder_deref (encoder, i);
 
+      /* IPA_REF_ALIAS and IPA_REF_CHKP references are always preserved
+	 in the boundary.  Alias node can't have other references and
+	 can be always handled as if it's not in the boundary.  */
       if (!node->alias && !lto_symtab_encoder_in_partition_p (encoder, node))
-	continue;
+	{
+	  cgraph_node *cnode = dyn_cast <cgraph_node *> (node);
+	  /* Output IPA_REF_CHKP reference.  */
+	  if (cnode
+	      && cnode->instrumented_version
+	      && !cnode->instrumentation_clone)
+	    {
+	      for (int i = 0; node->iterate_reference (i, ref); i++)
+		if (ref->use == IPA_REF_CHKP)
+		  {
+		    if (lto_symtab_encoder_lookup (encoder, ref->referred)
+			!= LCC_NOT_FOUND)
+		      {
+			int nref = lto_symtab_encoder_lookup (encoder, node);
+			streamer_write_gcov_count_stream (ob->main_stream, 1);
+			streamer_write_uhwi_stream (ob->main_stream, nref);
+			lto_output_ref (ob, ref, encoder);
+		      }
+		    break;
+		  }
+	    }
+	  continue;
+	}
 
       count = node->ref_list.nreferences ();
       if (count)
@@ -1616,10 +1642,13 @@ input_cgraph_1 (struct lto_file_decl_data *file_data,
 		    cnode->instrumented_version->instrumented_version = cnode;
 		}
 
-	      /* Restore decl names reference.  */
-	      IDENTIFIER_TRANSPARENT_ALIAS (DECL_ASSEMBLER_NAME (cnode->decl)) = 1;
-	      TREE_CHAIN (DECL_ASSEMBLER_NAME (cnode->decl))
-		  = DECL_ASSEMBLER_NAME (cnode->orig_decl);
+	      /* Restore decl names reference except for wrapper functions.  */
+	      if (!chkp_wrap_function (cnode->orig_decl))
+		{
+		  tree name = DECL_ASSEMBLER_NAME (cnode->decl);
+		  IDENTIFIER_TRANSPARENT_ALIAS (name) = 1;
+		  TREE_CHAIN (name) = DECL_ASSEMBLER_NAME (cnode->orig_decl);
+		}
 	    }
 	}
 

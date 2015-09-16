@@ -1,3 +1,29 @@
+2015-08-11  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2015-08-03  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/66908
+	* c-ubsan.c: Include gimplify.h.
+	(ubsan_instrument_division): Unshare OP0 and OP1.
+	(ubsan_instrument_shift): Likewise.
+
+2015-07-16  Release Manager
+
+	* GCC 5.2.0 released.
+
+2015-07-10  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-07-08  Jakub Jelinek  <jakub@redhat.com>
+
+	* c-omp.c (c_omp_declare_simd_clauses_to_numbers): If all clauses
+	are to be removed, return NULL rather than original clauses list.
+
+2015-07-01  Jason Merrill  <jason@redhat.com>
+
+	* c-opts.c (c_common_post_options): Highest ABI version is 9.
+
 2015-04-28  Eric Botcazou  <ebotcazou@adacore.com>
             Pierre-Marie de Rodat  <derodat@adacore.com>
 

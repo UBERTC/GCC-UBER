@@ -1989,14 +1989,23 @@ fixup_attribute_variants (tree t)
   if (!t)
     return;
 
+  tree attrs = TYPE_ATTRIBUTES (t);
+  unsigned align = TYPE_ALIGN (t);
+  bool user_align = TYPE_USER_ALIGN (t);
+
   for (variants = TYPE_NEXT_VARIANT (t);
        variants;
        variants = TYPE_NEXT_VARIANT (variants))
     {
       /* These are the two fields that check_qualified_type looks at and
 	 are affected by attributes.  */
-      TYPE_ATTRIBUTES (variants) = TYPE_ATTRIBUTES (t);
-      TYPE_ALIGN (variants) = TYPE_ALIGN (t);
+      TYPE_ATTRIBUTES (variants) = attrs;
+      unsigned valign = align;
+      if (TYPE_USER_ALIGN (variants))
+	valign = MAX (valign, TYPE_ALIGN (variants));
+      else
+	TYPE_USER_ALIGN (variants) = user_align;
+      TYPE_ALIGN (variants) = valign;
     }
 }
 
@@ -4285,6 +4294,25 @@ layout_nonempty_base_or_field (record_layout_info rli,
 				       ? CLASSTYPE_ALIGN (type)
 				       : TYPE_ALIGN (type)));
 	  normalize_rli (rli);
+	}
+      else if (TREE_CODE (type) == NULLPTR_TYPE
+	       && warn_abi && abi_version_crosses (9))
+	{
+	  /* Before ABI v9, we were giving nullptr_t alignment of 1; if
+	     the offset wasn't aligned like a pointer when we started to
+	     layout this field, that affects its position.  */
+	  tree pos = rli_size_unit_so_far (&old_rli);
+	  if (int_cst_value (pos) % TYPE_ALIGN_UNIT (ptr_type_node) != 0)
+	    {
+	      if (abi_version_at_least (9))
+		warning_at (DECL_SOURCE_LOCATION (decl), OPT_Wabi,
+			    "alignment of %qD increased in -fabi-version=9 "
+			    "(GCC 5.2)", decl);
+	      else
+		warning_at (DECL_SOURCE_LOCATION (decl), OPT_Wabi, "alignment "
+			    "of %qD will increase in -fabi-version=9", decl);
+	    }
+	  break;
 	}
       else
 	/* There was no conflict.  We're done laying out this field.  */
@@ -6825,6 +6853,7 @@ finish_struct (tree t, tree attributes)
   unreverse_member_declarations (t);
 
   cplus_decl_attributes (&t, attributes, (int) ATTR_FLAG_TYPE_IN_PLACE);
+  fixup_attribute_variants (t);
 
   /* Nadger the current location so that diagnostics point to the start of
      the struct, not the end.  */

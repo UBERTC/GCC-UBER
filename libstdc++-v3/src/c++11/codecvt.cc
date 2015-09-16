@@ -319,7 +319,7 @@ namespace
       {
 	if (to.size() > 0)
 	  {
-	    *to.next = codepoint;
+	    *to.next = adjust_byte_order(codepoint, mode);
 	    ++to.next;
 	    return true;
 	  }
@@ -1124,7 +1124,7 @@ do_length(state_type&, const extern_type* __from,
 
 int
 __codecvt_utf16_base<char32_t>::do_max_length() const throw()
-{ return 3; }
+{ return 4; }
 
 #ifdef _GLIBCXX_USE_WCHAR_T
 // Define members of codecvt_utf16<wchar_t> base class implementation.
@@ -1264,7 +1264,11 @@ do_in(state_type&, const extern_type* __from, const extern_type* __from_end,
 {
   range<const char> from{ __from, __from_end };
   range<char16_t> to{ __to, __to_end };
-  auto res = utf16_in(from, to, _M_maxcode, _M_mode);
+  codecvt_mode mode = codecvt_mode(_M_mode | (consume_header|generate_header));
+#if __BYTE_ORDER__ != __ORDER_BIG_ENDIAN__
+  mode = codecvt_mode(mode | little_endian);
+#endif
+  auto res = utf16_in(from, to, _M_maxcode, mode);
   __from_next = from.next;
   __to_next = to.next;
   return res;

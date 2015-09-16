@@ -3109,6 +3109,8 @@ process_outer_var_ref (tree decl, tsubst_flags_t complain)
   if (cp_unevaluated_operand)
     /* It's not a use (3.2) if we're in an unevaluated context.  */
     return decl;
+  if (decl == error_mark_node)
+    return decl;
 
   tree context = DECL_CONTEXT (decl);
   tree containing_function = current_function_decl;
@@ -3133,7 +3135,11 @@ process_outer_var_ref (tree decl, tsubst_flags_t complain)
 	   form, so wait until instantiation time.  */
 	return decl;
       else if (decl_constant_var_p (decl))
-	return scalar_constant_value (decl);
+	{
+	  tree t = maybe_constant_value (convert_from_reference (decl));
+	  if (TREE_CONSTANT (t))
+	    return t;
+	}
     }
 
   if (parsing_nsdmi ())
@@ -3574,6 +3580,7 @@ finish_id_expression (tree id_expression,
 	{
 	  decl = finish_template_variable (decl);
 	  mark_used (decl);
+	  decl = convert_from_reference (decl);
 	}
       else if (scope)
 	{
@@ -4288,8 +4295,6 @@ handle_omp_array_sections_1 (tree c, tree t, vec<tree> &types,
     {
       if (error_operand_p (t))
 	return error_mark_node;
-      if (type_dependent_expression_p (t))
-	return NULL_TREE;
       if (TREE_CODE (t) != VAR_DECL && TREE_CODE (t) != PARM_DECL)
 	{
 	  if (processing_template_decl)
@@ -4312,6 +4317,8 @@ handle_omp_array_sections_1 (tree c, tree t, vec<tree> &types,
 		    omp_clause_code_name[OMP_CLAUSE_CODE (c)]);
 	  return error_mark_node;
 	}
+      if (type_dependent_expression_p (t))
+	return NULL_TREE;
       t = convert_from_reference (t);
       return t;
     }
@@ -5326,7 +5333,8 @@ finish_omp_clauses (tree clauses)
 	  goto check_dup_generic;
 	case OMP_CLAUSE_LINEAR:
 	  t = OMP_CLAUSE_DECL (c);
-	  if (!type_dependent_expression_p (t)
+	  if ((VAR_P (t) || TREE_CODE (t) == PARM_DECL)
+	      && !type_dependent_expression_p (t)
 	      && !INTEGRAL_TYPE_P (TREE_TYPE (t))
 	      && TREE_CODE (TREE_TYPE (t)) != POINTER_TYPE)
 	    {
@@ -5353,7 +5361,9 @@ finish_omp_clauses (tree clauses)
 	  else
 	    {
 	      t = mark_rvalue_use (t);
-	      if (!processing_template_decl)
+	      if (!processing_template_decl
+		  && (VAR_P (OMP_CLAUSE_DECL (c))
+		      || TREE_CODE (OMP_CLAUSE_DECL (c)) == PARM_DECL))
 		{
 		  if (TREE_CODE (OMP_CLAUSE_DECL (c)) == PARM_DECL)
 		    t = maybe_constant_value (t);
@@ -6446,7 +6456,8 @@ handle_omp_for_class_iterator (int i, location_t locus, tree declv, tree initv,
   iter_init = build_x_modify_expr (elocus,
 				   iter, PLUS_EXPR, iter_init,
 				   tf_warning_or_error);
-  iter_init = build1 (NOP_EXPR, void_type_node, iter_init);
+  if (iter_init != error_mark_node)
+    iter_init = build1 (NOP_EXPR, void_type_node, iter_init);
   finish_expr_stmt (iter_init);
   finish_expr_stmt (build_x_modify_expr (elocus,
 					 last, NOP_EXPR, decl,

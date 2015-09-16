@@ -4432,7 +4432,8 @@ cp_parser_primary_expression (cp_parser *parser,
 	parser->greater_than_is_operator_p
 	  = saved_greater_than_is_operator_p;
 	/* Consume the `)'.  */
-	if (!cp_parser_require (parser, CPP_CLOSE_PAREN, RT_CLOSE_PAREN))
+	if (!cp_parser_require (parser, CPP_CLOSE_PAREN, RT_CLOSE_PAREN)
+	    && !cp_parser_uncommitted_to_tentative_parse_p (parser))
 	  cp_parser_skip_to_end_of_statement (parser);
 
 	return expr;
@@ -14933,6 +14934,30 @@ cp_parser_simple_type_specifier (cp_parser* parser,
       maybe_warn_cpp0x (CPP0X_AUTO);
       if (parser->auto_is_implicit_function_template_parm_p)
 	{
+	  /* The 'auto' might be the placeholder return type for a function decl
+	     with trailing return type.  */
+	  bool have_trailing_return_fn_decl = false;
+	  if (cp_lexer_peek_nth_token (parser->lexer, 2)->type
+	      == CPP_OPEN_PAREN)
+	    {
+	      cp_parser_parse_tentatively (parser);
+	      cp_lexer_consume_token (parser->lexer);
+	      cp_lexer_consume_token (parser->lexer);
+	      if (cp_parser_skip_to_closing_parenthesis (parser,
+							 /*recovering*/false,
+							 /*or_comma*/false,
+							 /*consume_paren*/true))
+		have_trailing_return_fn_decl
+		  = cp_lexer_next_token_is (parser->lexer, CPP_DEREF);
+	      cp_parser_abort_tentative_parse (parser);
+	    }
+
+	  if (have_trailing_return_fn_decl)
+	    {
+	      type = make_auto ();
+	      break;
+	    }
+
 	  if (cxx_dialect >= cxx14)
 	    type = synthesize_implicit_template_parm (parser);
 	  else
@@ -28157,8 +28182,8 @@ cp_parser_omp_clause_collapse (cp_parser *parser, tree list, location_t location
   if (num == error_mark_node)
     return list;
   num = fold_non_dependent_expr (num);
-  if (!INTEGRAL_TYPE_P (TREE_TYPE (num))
-      || !tree_fits_shwi_p (num)
+  if (!tree_fits_shwi_p (num)
+      || !INTEGRAL_TYPE_P (TREE_TYPE (num))
       || (n = tree_to_shwi (num)) <= 0
       || (int) n != n)
     {

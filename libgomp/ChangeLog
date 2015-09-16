@@ -1,3 +1,55 @@
+2015-08-24  Joost VandeVondele  <vondele@gnu.gcc.org>
+
+	PR libgomp/66761
+	PR libgomp/67303
+	* iter.c (gomp_iter_dynamic_next): Employ an atomic load.
+	(gomp_iter_guided_next): Idem.
+	* iter_ull.c (gomp_iter_ull_dynamic_next): Idem.
+	(gomp_iter_ull_guided_next): Idem.
+	* config/linux/wait.h (do_spin): Idem.
+
+2015-07-16  Release Manager
+
+	* GCC 5.2.0 released.
+
+2015-07-15  Thomas Schwinge  <thomas@codesourcery.com>
+
+	Backport trunk r225560:
+
+	2015-07-08  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR libgomp/65099
+	* plugin/plugin-nvptx.c (nvptx_get_num_devices): Return 0 if not
+	in a 64-bit configuration.
+	* testsuite/libgomp.oacc-c++/c++.exp: Don't attempt nvidia
+	offloading testing if no such device is available.
+	* testsuite/libgomp.oacc-c/c.exp: Likewise.
+	* testsuite/libgomp.oacc-fortran/fortran.exp: Likewise.
+
+	Backport trunk r223801:
+
+	2015-05-28  Julian Brown  <julian@codesourcery.com>
+
+	PR libgomp/65742
+
+	* oacc-init.c (plugin/plugin-host.h): Include.
+	(acc_on_device): Check whether we're in an offloaded region for
+	host_nonshm
+	plugin. Don't use __builtin_acc_on_device.
+	* plugin/plugin-host.c (GOMP_OFFLOAD_openacc_parallel): Set
+	nonshm_exec flag in thread-local data.
+	(GOMP_OFFLOAD_openacc_create_thread_data): Allocate thread-local
+	data for host_nonshm plugin.
+	(GOMP_OFFLOAD_openacc_destroy_thread_data): Free thread-local data
+	for host_nonshm plugin.
+	* plugin/plugin-host.h: New.
+
+2015-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/66702
+	* testsuite/libgomp.c++/pr66702-1.C: New test.
+	* testsuite/libgomp.c++/pr66702-2.C: New test.
+
 2015-05-22  Jakub Jelinek  <jakub@redhat.com>
 
 	Backported from mainline
