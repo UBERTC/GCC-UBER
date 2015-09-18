@@ -374,7 +374,29 @@ AC_COMPILE_IFELSE([[int i;]],
 [libgo_cv_c_split_stack_supported=yes],
 [libgo_cv_c_split_stack_supported=no])
 CFLAGS=$CFLAGS_hold])
-if test "$libgo_cv_c_split_stack_supported" = yes; then
+
+dnl Make sure the linker permits -fsplit-stack.  Old versions of gold will
+dnl reject split-stack code calling non-split-stack code on targets
+dnl they don't support.
+AC_CACHE_CHECK([whether linker supports split/non-split linked together],
+[libgo_cv_c_linker_split_non_split],
+[cat > conftest1.c << EOF
+extern void f();
+int main() { f(); return 0; }
+EOF
+cat > conftest2.c << EOF
+void f() {}
+EOF
+$CC -c -fsplit-stack $CFLAGS $CPPFLAGS conftest1.c
+$CC -c $CFLAGS $CPPFLAGS conftest2.c
+if $CC -o conftest conftest1.$ac_objext conftest2.$ac_objext; then
+  libgo_cv_c_linker_split_non_split=yes
+else
+  libgo_cv_c_linker_split_non_split=no
+fi
+rm -f conftest1.* conftest2.* conftest])
+
+if test "$libgo_cv_c_split_stack_supported" = yes -a "$libgo_cv_c_linker_split_non_split" = yes; then
   SPLIT_STACK=-fsplit-stack
   AC_DEFINE(USING_SPLIT_STACK, 1,
 		[Define if the compiler supports -fsplit-stack])
@@ -383,13 +405,24 @@ else
 fi
 AC_SUBST(SPLIT_STACK)
 AM_CONDITIONAL(USING_SPLIT_STACK,
-	test "$libgo_cv_c_split_stack_supported" = yes)
+	test "$libgo_cv_c_split_stack_supported" = yes -a "$libgo_cv_c_linker_split_non_split" = yes)
+
+dnl If the compiler supports split-stack but the linker does not, then
+dnl we need to explicitly disable split-stack for Go.
+if test "$libgo_cv_c_split_stack_supported" = yes -a "$libgo_cv_c_linker_split_non_split" = no; then
+  GO_SPLIT_STACK=-fno-split-stack
+else
+  GO_SPLIT_STACK=
+fi
+AC_SUBST(GO_SPLIT_STACK)
 
 dnl Check whether the linker does stack munging when calling from
 dnl split-stack into non-split-stack code.  We check this by looking
 dnl at the --help output.  FIXME: This is only half right: it's
 dnl possible for the linker to support this for some targets but not
 dnl others.
+dnl This is slightly different from the above check, which is whether
+dnl the linker permits the call at all.
 AC_CACHE_CHECK([whether linker supports split stack],
 [libgo_cv_c_linker_supports_split_stack],
 [libgo_cv_c_linker_supports_split_stack=no
@@ -644,6 +677,12 @@ AC_CACHE_CHECK([epoll_event data.fd offset],
 [libgo_cv_c_epoll_event_fd_offset=0])])
 STRUCT_EPOLL_EVENT_FD_OFFSET=${libgo_cv_c_epoll_event_fd_offset}
 AC_SUBST(STRUCT_EPOLL_EVENT_FD_OFFSET)
+
+dnl Check if <sys/stat.h> uses timespec_t for st_?tim members.  Introduced
+dnl in Solaris 12 for XPG7 compatibility.
+AC_EGREP_HEADER([timespec_t.*st_atim], [sys/stat.h],
+		[have_stat_timespec=yes], [have_stat_timespec=no])
+AM_CONDITIONAL(HAVE_STAT_TIMESPEC, test $have_stat_timespec = yes)
 
 dnl See if struct exception is defined in <math.h>.
 AC_CHECK_TYPE([struct exception],

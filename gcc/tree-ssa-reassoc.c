@@ -43,15 +43,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-loop-niter.h"
 #include "tree-ssa-loop.h"
 #include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
 #include "tree-dfa.h"
 #include "tree-ssa.h"
 #include "tree-iterator.h"
@@ -65,7 +56,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "builtins.h"
 #include "gimplify.h"
 #include "insn-codes.h"
-#include "optabs.h"
+#include "optabs-tree.h"
 
 /*  This is a simple global reassociation pass.  It is, in part, based
     on the LLVM pass of the same name (They do some things more/less
@@ -209,8 +200,8 @@ typedef struct operand_entry
   unsigned int count;
 } *operand_entry_t;
 
-static object_allocator<operand_entry> operand_entry_pool ("operand entry pool",
-							 30);
+static object_allocator<operand_entry> operand_entry_pool
+  ("operand entry pool");
 
 /* This is used to assign a unique ID to each struct operand_entry
    so that qsort results are identical on different hosts.  */

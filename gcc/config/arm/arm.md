@@ -7891,7 +7891,7 @@
    /* Switch mode now when possible.  */
    if (SYMBOL_REF_DECL (op) && !TREE_PUBLIC (SYMBOL_REF_DECL (op))
         && arm_arch5 && arm_change_mode_p (SYMBOL_REF_DECL (op)))
-      return NEED_PLT_RELOC ? \"blx%?\\t%a0(PLT)\" : \"blx%?\\t(%a0)\";
+      return NEED_PLT_RELOC ? \"blx%?\\t%a1(PLT)\" : \"blx%?\\t(%a1)\";
 
     return NEED_PLT_RELOC ? \"bl%?\\t%a1(PLT)\" : \"bl%?\\t%a1\";
   }"
@@ -8257,6 +8257,30 @@
   ""
   [(set_attr "length" "0")
    (set_attr "type" "block")]
+)
+
+(define_insn "probe_stack"
+  [(set (match_operand 0 "memory_operand" "=m")
+        (unspec [(const_int 0)] UNSPEC_PROBE_STACK))]
+  "TARGET_32BIT"
+{
+  return "str%?\\tr0, %0";
+}
+  [(set_attr "type" "store1")
+   (set_attr "predicable" "yes")]
+)
+
+(define_insn "probe_stack_range"
+  [(set (match_operand:SI 0 "register_operand" "=r")
+	(unspec_volatile:SI [(match_operand:SI 1 "register_operand" "0")
+			     (match_operand:SI 2 "register_operand" "r")]
+			     UNSPEC_PROBE_STACK_RANGE))]
+  "TARGET_32BIT"
+{
+  return output_probe_stack_range (operands[0], operands[2]);
+}
+  [(set_attr "type" "multiple")
+   (set_attr "conds" "clob")]
 )
 
 (define_expand "casesi"

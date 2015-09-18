@@ -55,33 +55,6 @@ along with GCC; see the file COPYING3.  If not see
 
 /* This file implements optimizations on the dominator tree.  */
 
-/* Representation of a "naked" right-hand-side expression, to be used
-   in recording available expressions in the expression hash table.  */
-
-enum expr_kind
-{
-  EXPR_SINGLE,
-  EXPR_UNARY,
-  EXPR_BINARY,
-  EXPR_TERNARY,
-  EXPR_CALL,
-  EXPR_PHI
-};
-
-struct hashable_expr
-{
-  tree type;
-  enum expr_kind kind;
-  union {
-    struct { tree rhs; } single;
-    struct { enum tree_code op;  tree opnd; } unary;
-    struct { enum tree_code op;  tree opnd0, opnd1; } binary;
-    struct { enum tree_code op;  tree opnd0, opnd1, opnd2; } ternary;
-    struct { gcall *fn_from; bool pure; size_t nargs; tree *args; } call;
-    struct { size_t nargs; tree *args; } phi;
-  } ops;
-};
-
 /* Structure for recording known values of a conditional expression
    at the exits from its block.  */
 
@@ -91,9 +64,7 @@ struct cond_equivalence
   tree value;
 };
 
-
-/* Structure for recording edge equivalences as well as any pending
-   edge redirections during the dominator optimizer.
+/* Structure for recording edge equivalences.
 
    Computing and storing the edge equivalences instead of creating
    them on-demand can save significant amounts of time, particularly
@@ -101,10 +72,7 @@ struct cond_equivalence
 
    These structures live for a single iteration of the dominator
    optimizer in the edge's AUX field.  At the end of an iteration we
-   free each of these structures and update the AUX field to point
-   to any requested redirection target (the code for updating the
-   CFG and SSA graph for edge redirection expects redirection edge
-   targets to be in the AUX field for each edge.  */
+   free each of these structures.  */
 
 struct edge_info
 {
@@ -118,88 +86,6 @@ struct edge_info
   vec<cond_equivalence> cond_equivalences;
 };
 
-/* Stack of available expressions in AVAIL_EXPRs.  Each block pushes any
-   expressions it enters into the hash table along with a marker entry
-   (null).  When we finish processing the block, we pop off entries and
-   remove the expressions from the global hash table until we hit the
-   marker.  */
-typedef struct expr_hash_elt * expr_hash_elt_t;
-
-static vec<std::pair<expr_hash_elt_t, expr_hash_elt_t> > avail_exprs_stack;
-
-/* Structure for entries in the expression hash table.  */
-
-struct expr_hash_elt
-{
-  /* The value (lhs) of this expression.  */
-  tree lhs;
-
-  /* The expression (rhs) we want to record.  */
-  struct hashable_expr expr;
-
-  /* The virtual operand associated with the nearest dominating stmt
-     loading from or storing to expr.  */
-  tree vop;
-
-  /* The hash value for RHS.  */
-  hashval_t hash;
-
-  /* A unique stamp, typically the address of the hash
-     element itself, used in removing entries from the table.  */
-  struct expr_hash_elt *stamp;
-};
-
-/* Hashtable helpers.  */
-
-static bool hashable_expr_equal_p (const struct hashable_expr *,
-				   const struct hashable_expr *);
-static void free_expr_hash_elt (void *);
-
-struct expr_elt_hasher : pointer_hash <expr_hash_elt>
-{
-  static inline hashval_t hash (const value_type &);
-  static inline bool equal (const value_type &, const compare_type &);
-  static inline void remove (value_type &);
-};
-
-inline hashval_t
-expr_elt_hasher::hash (const value_type &p)
-{
-  return p->hash;
-}
-
-inline bool
-expr_elt_hasher::equal (const value_type &p1, const compare_type &p2)
-{
-  const struct hashable_expr *expr1 = &p1->expr;
-  const struct expr_hash_elt *stamp1 = p1->stamp;
-  const struct hashable_expr *expr2 = &p2->expr;
-  const struct expr_hash_elt *stamp2 = p2->stamp;
-
-  /* This case should apply only when removing entries from the table.  */
-  if (stamp1 == stamp2)
-    return true;
-
-  if (p1->hash != p2->hash)
-    return false;
-
-  /* In case of a collision, both RHS have to be identical and have the
-     same VUSE operands.  */
-  if (hashable_expr_equal_p (expr1, expr2)
-      && types_compatible_p (expr1->type, expr2->type))
-    return true;
-
-  return false;
-}
-
-/* Delete an expr_hash_elt and reclaim its storage.  */
-
-inline void
-expr_elt_hasher::remove (value_type &element)
-{
-  free_expr_hash_elt (element);
-}
-
 /* Hash table with expressions made available during the renaming process.
    When an assignment of the form X_i = EXPR is found, the statement is
    stored in this table.  If the same expression EXPR is later found on the
@@ -209,8 +95,9 @@ expr_elt_hasher::remove (value_type &element)
    in this table.  */
 static hash_table<expr_elt_hasher> *avail_exprs;
 
-/* Unwindable const/copy equivalences.  */
+/* Unwindable equivalences, both const/copy and expression varieties.  */
 static const_and_copies *const_and_copies;
+static avail_exprs_stack *avail_exprs_stack;
 
 /* Track whether or not we have changed the control flow graph.  */
 static bool cfg_altered;
@@ -235,7 +122,6 @@ static struct opt_stats_d opt_stats;
 /* Local functions.  */
 static void optimize_stmt (basic_block, gimple_stmt_iterator);
 static tree lookup_avail_expr (gimple, bool);
-static hashval_t avail_expr_hash (const void *);
 static void htab_statistics (FILE *,
 			     const hash_table<expr_elt_hasher> &);
 static void record_cond (cond_equivalence *);
@@ -244,513 +130,20 @@ static void record_equivalences_from_phis (basic_block);
 static void record_equivalences_from_incoming_edge (basic_block);
 static void eliminate_redundant_computations (gimple_stmt_iterator *);
 static void record_equivalences_from_stmt (gimple, int);
-static void remove_local_expressions_from_table (void);
 static edge single_incoming_edge_ignoring_loop_edges (basic_block);
 
-
-/* Given a statement STMT, initialize the hash table element pointed to
-   by ELEMENT.  */
+/* Free the edge_info data attached to E, if it exists.  */
 
 static void
-initialize_hash_element (gimple stmt, tree lhs,
-                         struct expr_hash_elt *element)
+free_edge_info (edge e)
 {
-  enum gimple_code code = gimple_code (stmt);
-  struct hashable_expr *expr = &element->expr;
+  struct edge_info *edge_info = (struct edge_info *)e->aux;
 
-  if (code == GIMPLE_ASSIGN)
+  if (edge_info)
     {
-      enum tree_code subcode = gimple_assign_rhs_code (stmt);
-
-      switch (get_gimple_rhs_class (subcode))
-        {
-        case GIMPLE_SINGLE_RHS:
-	  expr->kind = EXPR_SINGLE;
-	  expr->type = TREE_TYPE (gimple_assign_rhs1 (stmt));
-	  expr->ops.single.rhs = gimple_assign_rhs1 (stmt);
-	  break;
-        case GIMPLE_UNARY_RHS:
-	  expr->kind = EXPR_UNARY;
-	  expr->type = TREE_TYPE (gimple_assign_lhs (stmt));
-	  if (CONVERT_EXPR_CODE_P (subcode))
-	    subcode = NOP_EXPR;
-	  expr->ops.unary.op = subcode;
-	  expr->ops.unary.opnd = gimple_assign_rhs1 (stmt);
-	  break;
-        case GIMPLE_BINARY_RHS:
-	  expr->kind = EXPR_BINARY;
-	  expr->type = TREE_TYPE (gimple_assign_lhs (stmt));
-	  expr->ops.binary.op = subcode;
-	  expr->ops.binary.opnd0 = gimple_assign_rhs1 (stmt);
-	  expr->ops.binary.opnd1 = gimple_assign_rhs2 (stmt);
-	  break;
-        case GIMPLE_TERNARY_RHS:
-	  expr->kind = EXPR_TERNARY;
-	  expr->type = TREE_TYPE (gimple_assign_lhs (stmt));
-	  expr->ops.ternary.op = subcode;
-	  expr->ops.ternary.opnd0 = gimple_assign_rhs1 (stmt);
-	  expr->ops.ternary.opnd1 = gimple_assign_rhs2 (stmt);
-	  expr->ops.ternary.opnd2 = gimple_assign_rhs3 (stmt);
-	  break;
-        default:
-          gcc_unreachable ();
-        }
+      edge_info->cond_equivalences.release ();
+      free (edge_info);
     }
-  else if (code == GIMPLE_COND)
-    {
-      expr->type = boolean_type_node;
-      expr->kind = EXPR_BINARY;
-      expr->ops.binary.op = gimple_cond_code (stmt);
-      expr->ops.binary.opnd0 = gimple_cond_lhs (stmt);
-      expr->ops.binary.opnd1 = gimple_cond_rhs (stmt);
-    }
-  else if (gcall *call_stmt = dyn_cast <gcall *> (stmt))
-    {
-      size_t nargs = gimple_call_num_args (call_stmt);
-      size_t i;
-
-      gcc_assert (gimple_call_lhs (call_stmt));
-
-      expr->type = TREE_TYPE (gimple_call_lhs (call_stmt));
-      expr->kind = EXPR_CALL;
-      expr->ops.call.fn_from = call_stmt;
-
-      if (gimple_call_flags (call_stmt) & (ECF_CONST | ECF_PURE))
-        expr->ops.call.pure = true;
-      else
-        expr->ops.call.pure = false;
-
-      expr->ops.call.nargs = nargs;
-      expr->ops.call.args = XCNEWVEC (tree, nargs);
-      for (i = 0; i < nargs; i++)
-        expr->ops.call.args[i] = gimple_call_arg (call_stmt, i);
-    }
-  else if (gswitch *swtch_stmt = dyn_cast <gswitch *> (stmt))
-    {
-      expr->type = TREE_TYPE (gimple_switch_index (swtch_stmt));
-      expr->kind = EXPR_SINGLE;
-      expr->ops.single.rhs = gimple_switch_index (swtch_stmt);
-    }
-  else if (code == GIMPLE_GOTO)
-    {
-      expr->type = TREE_TYPE (gimple_goto_dest (stmt));
-      expr->kind = EXPR_SINGLE;
-      expr->ops.single.rhs = gimple_goto_dest (stmt);
-    }
-  else if (code == GIMPLE_PHI)
-    {
-      size_t nargs = gimple_phi_num_args (stmt);
-      size_t i;
-
-      expr->type = TREE_TYPE (gimple_phi_result (stmt));
-      expr->kind = EXPR_PHI;
-      expr->ops.phi.nargs = nargs;
-      expr->ops.phi.args = XCNEWVEC (tree, nargs);
-
-      for (i = 0; i < nargs; i++)
-        expr->ops.phi.args[i] = gimple_phi_arg_def (stmt, i);
-    }
-  else
-    gcc_unreachable ();
-
-  element->lhs = lhs;
-  element->vop = gimple_vuse (stmt);
-  element->hash = avail_expr_hash (element);
-  element->stamp = element;
-}
-
-/* Given a conditional expression COND as a tree, initialize
-   a hashable_expr expression EXPR.  The conditional must be a
-   comparison or logical negation.  A constant or a variable is
-   not permitted.  */
-
-static void
-initialize_expr_from_cond (tree cond, struct hashable_expr *expr)
-{
-  expr->type = boolean_type_node;
-
-  if (COMPARISON_CLASS_P (cond))
-    {
-      expr->kind = EXPR_BINARY;
-      expr->ops.binary.op = TREE_CODE (cond);
-      expr->ops.binary.opnd0 = TREE_OPERAND (cond, 0);
-      expr->ops.binary.opnd1 = TREE_OPERAND (cond, 1);
-    }
-  else if (TREE_CODE (cond) == TRUTH_NOT_EXPR)
-    {
-      expr->kind = EXPR_UNARY;
-      expr->ops.unary.op = TRUTH_NOT_EXPR;
-      expr->ops.unary.opnd = TREE_OPERAND (cond, 0);
-    }
-  else
-    gcc_unreachable ();
-}
-
-/* Given a hashable_expr expression EXPR and an LHS,
-   initialize the hash table element pointed to by ELEMENT.  */
-
-static void
-initialize_hash_element_from_expr (struct hashable_expr *expr,
-                                   tree lhs,
-                                   struct expr_hash_elt *element)
-{
-  element->expr = *expr;
-  element->lhs = lhs;
-  element->vop = NULL_TREE;
-  element->hash = avail_expr_hash (element);
-  element->stamp = element;
-}
-
-/* Compare two hashable_expr structures for equivalence.  They are
-   considered equivalent when the expressions they denote must
-   necessarily be equal.  The logic is intended to follow that of
-   operand_equal_p in fold-const.c */
-
-static bool
-hashable_expr_equal_p (const struct hashable_expr *expr0,
-                        const struct hashable_expr *expr1)
-{
-  tree type0 = expr0->type;
-  tree type1 = expr1->type;
-
-  /* If either type is NULL, there is nothing to check.  */
-  if ((type0 == NULL_TREE) ^ (type1 == NULL_TREE))
-    return false;
-
-  /* If both types don't have the same signedness, precision, and mode,
-     then we can't consider  them equal.  */
-  if (type0 != type1
-      && (TREE_CODE (type0) == ERROR_MARK
-	  || TREE_CODE (type1) == ERROR_MARK
-	  || TYPE_UNSIGNED (type0) != TYPE_UNSIGNED (type1)
-	  || TYPE_PRECISION (type0) != TYPE_PRECISION (type1)
-	  || TYPE_MODE (type0) != TYPE_MODE (type1)))
-    return false;
-
-  if (expr0->kind != expr1->kind)
-    return false;
-
-  switch (expr0->kind)
-    {
-    case EXPR_SINGLE:
-      return operand_equal_p (expr0->ops.single.rhs,
-                              expr1->ops.single.rhs, 0);
-
-    case EXPR_UNARY:
-      if (expr0->ops.unary.op != expr1->ops.unary.op)
-        return false;
-
-      if ((CONVERT_EXPR_CODE_P (expr0->ops.unary.op)
-           || expr0->ops.unary.op == NON_LVALUE_EXPR)
-          && TYPE_UNSIGNED (expr0->type) != TYPE_UNSIGNED (expr1->type))
-        return false;
-
-      return operand_equal_p (expr0->ops.unary.opnd,
-                              expr1->ops.unary.opnd, 0);
-
-    case EXPR_BINARY:
-      if (expr0->ops.binary.op != expr1->ops.binary.op)
-	return false;
-
-      if (operand_equal_p (expr0->ops.binary.opnd0,
-			   expr1->ops.binary.opnd0, 0)
-	  && operand_equal_p (expr0->ops.binary.opnd1,
-			      expr1->ops.binary.opnd1, 0))
-	return true;
-
-      /* For commutative ops, allow the other order.  */
-      return (commutative_tree_code (expr0->ops.binary.op)
-	      && operand_equal_p (expr0->ops.binary.opnd0,
-				  expr1->ops.binary.opnd1, 0)
-	      && operand_equal_p (expr0->ops.binary.opnd1,
-				  expr1->ops.binary.opnd0, 0));
-
-    case EXPR_TERNARY:
-      if (expr0->ops.ternary.op != expr1->ops.ternary.op
-	  || !operand_equal_p (expr0->ops.ternary.opnd2,
-			       expr1->ops.ternary.opnd2, 0))
-	return false;
-
-      if (operand_equal_p (expr0->ops.ternary.opnd0,
-			   expr1->ops.ternary.opnd0, 0)
-	  && operand_equal_p (expr0->ops.ternary.opnd1,
-			      expr1->ops.ternary.opnd1, 0))
-	return true;
-
-      /* For commutative ops, allow the other order.  */
-      return (commutative_ternary_tree_code (expr0->ops.ternary.op)
-	      && operand_equal_p (expr0->ops.ternary.opnd0,
-				  expr1->ops.ternary.opnd1, 0)
-	      && operand_equal_p (expr0->ops.ternary.opnd1,
-				  expr1->ops.ternary.opnd0, 0));
-
-    case EXPR_CALL:
-      {
-        size_t i;
-
-        /* If the calls are to different functions, then they
-           clearly cannot be equal.  */
-        if (!gimple_call_same_target_p (expr0->ops.call.fn_from,
-                                        expr1->ops.call.fn_from))
-          return false;
-
-        if (! expr0->ops.call.pure)
-          return false;
-
-        if (expr0->ops.call.nargs !=  expr1->ops.call.nargs)
-          return false;
-
-        for (i = 0; i < expr0->ops.call.nargs; i++)
-          if (! operand_equal_p (expr0->ops.call.args[i],
-                                 expr1->ops.call.args[i], 0))
-            return false;
-
-	if (stmt_could_throw_p (expr0->ops.call.fn_from))
-	  {
-	    int lp0 = lookup_stmt_eh_lp (expr0->ops.call.fn_from);
-	    int lp1 = lookup_stmt_eh_lp (expr1->ops.call.fn_from);
-	    if ((lp0 > 0 || lp1 > 0) && lp0 != lp1)
-	      return false;
-	  }
-
-        return true;
-      }
-
-    case EXPR_PHI:
-      {
-        size_t i;
-
-        if (expr0->ops.phi.nargs !=  expr1->ops.phi.nargs)
-          return false;
-
-        for (i = 0; i < expr0->ops.phi.nargs; i++)
-          if (! operand_equal_p (expr0->ops.phi.args[i],
-                                 expr1->ops.phi.args[i], 0))
-            return false;
-
-        return true;
-      }
-
-    default:
-      gcc_unreachable ();
-    }
-}
-
-/* Generate a hash value for a pair of expressions.  This can be used
-   iteratively by passing a previous result in HSTATE.
-
-   The same hash value is always returned for a given pair of expressions,
-   regardless of the order in which they are presented.  This is useful in
-   hashing the operands of commutative functions.  */
-
-namespace inchash
-{
-
-static void
-add_expr_commutative (const_tree t1, const_tree t2, hash &hstate)
-{
-  hash one, two;
-
-  inchash::add_expr (t1, one);
-  inchash::add_expr (t2, two);
-  hstate.add_commutative (one, two);
-}
-
-/* Compute a hash value for a hashable_expr value EXPR and a
-   previously accumulated hash value VAL.  If two hashable_expr
-   values compare equal with hashable_expr_equal_p, they must
-   hash to the same value, given an identical value of VAL.
-   The logic is intended to follow inchash::add_expr in tree.c.  */
-
-static void
-add_hashable_expr (const struct hashable_expr *expr, hash &hstate)
-{
-  switch (expr->kind)
-    {
-    case EXPR_SINGLE:
-      inchash::add_expr (expr->ops.single.rhs, hstate);
-      break;
-
-    case EXPR_UNARY:
-      hstate.add_object (expr->ops.unary.op);
-
-      /* Make sure to include signedness in the hash computation.
-         Don't hash the type, that can lead to having nodes which
-         compare equal according to operand_equal_p, but which
-         have different hash codes.  */
-      if (CONVERT_EXPR_CODE_P (expr->ops.unary.op)
-          || expr->ops.unary.op == NON_LVALUE_EXPR)
-        hstate.add_int (TYPE_UNSIGNED (expr->type));
-
-      inchash::add_expr (expr->ops.unary.opnd, hstate);
-      break;
-
-    case EXPR_BINARY:
-      hstate.add_object (expr->ops.binary.op);
-      if (commutative_tree_code (expr->ops.binary.op))
-	inchash::add_expr_commutative (expr->ops.binary.opnd0,
-					  expr->ops.binary.opnd1, hstate);
-      else
-        {
-          inchash::add_expr (expr->ops.binary.opnd0, hstate);
-          inchash::add_expr (expr->ops.binary.opnd1, hstate);
-        }
-      break;
-
-    case EXPR_TERNARY:
-      hstate.add_object (expr->ops.ternary.op);
-      if (commutative_ternary_tree_code (expr->ops.ternary.op))
-	inchash::add_expr_commutative (expr->ops.ternary.opnd0,
-					  expr->ops.ternary.opnd1, hstate);
-      else
-        {
-          inchash::add_expr (expr->ops.ternary.opnd0, hstate);
-          inchash::add_expr (expr->ops.ternary.opnd1, hstate);
-        }
-      inchash::add_expr (expr->ops.ternary.opnd2, hstate);
-      break;
-
-    case EXPR_CALL:
-      {
-        size_t i;
-        enum tree_code code = CALL_EXPR;
-        gcall *fn_from;
-
-        hstate.add_object (code);
-        fn_from = expr->ops.call.fn_from;
-        if (gimple_call_internal_p (fn_from))
-          hstate.merge_hash ((hashval_t) gimple_call_internal_fn (fn_from));
-        else
-          inchash::add_expr (gimple_call_fn (fn_from), hstate);
-        for (i = 0; i < expr->ops.call.nargs; i++)
-          inchash::add_expr (expr->ops.call.args[i], hstate);
-      }
-      break;
-
-    case EXPR_PHI:
-      {
-        size_t i;
-
-        for (i = 0; i < expr->ops.phi.nargs; i++)
-          inchash::add_expr (expr->ops.phi.args[i], hstate);
-      }
-      break;
-
-    default:
-      gcc_unreachable ();
-    }
-}
-
-}
-
-/* Print a diagnostic dump of an expression hash table entry.  */
-
-static void
-print_expr_hash_elt (FILE * stream, const struct expr_hash_elt *element)
-{
-  fprintf (stream, "STMT ");
-
-  if (element->lhs)
-    {
-      print_generic_expr (stream, element->lhs, 0);
-      fprintf (stream, " = ");
-    }
-
-  switch (element->expr.kind)
-    {
-      case EXPR_SINGLE:
-        print_generic_expr (stream, element->expr.ops.single.rhs, 0);
-        break;
-
-      case EXPR_UNARY:
-	fprintf (stream, "%s ", get_tree_code_name (element->expr.ops.unary.op));
-        print_generic_expr (stream, element->expr.ops.unary.opnd, 0);
-        break;
-
-      case EXPR_BINARY:
-        print_generic_expr (stream, element->expr.ops.binary.opnd0, 0);
-	fprintf (stream, " %s ", get_tree_code_name (element->expr.ops.binary.op));
-        print_generic_expr (stream, element->expr.ops.binary.opnd1, 0);
-        break;
-
-      case EXPR_TERNARY:
-	fprintf (stream, " %s <", get_tree_code_name (element->expr.ops.ternary.op));
-        print_generic_expr (stream, element->expr.ops.ternary.opnd0, 0);
-	fputs (", ", stream);
-        print_generic_expr (stream, element->expr.ops.ternary.opnd1, 0);
-	fputs (", ", stream);
-        print_generic_expr (stream, element->expr.ops.ternary.opnd2, 0);
-	fputs (">", stream);
-        break;
-
-      case EXPR_CALL:
-        {
-          size_t i;
-          size_t nargs = element->expr.ops.call.nargs;
-          gcall *fn_from;
-
-          fn_from = element->expr.ops.call.fn_from;
-          if (gimple_call_internal_p (fn_from))
-            fputs (internal_fn_name (gimple_call_internal_fn (fn_from)),
-                   stream);
-          else
-            print_generic_expr (stream, gimple_call_fn (fn_from), 0);
-          fprintf (stream, " (");
-          for (i = 0; i < nargs; i++)
-            {
-              print_generic_expr (stream, element->expr.ops.call.args[i], 0);
-              if (i + 1 < nargs)
-                fprintf (stream, ", ");
-            }
-          fprintf (stream, ")");
-        }
-        break;
-
-      case EXPR_PHI:
-        {
-          size_t i;
-          size_t nargs = element->expr.ops.phi.nargs;
-
-          fprintf (stream, "PHI <");
-          for (i = 0; i < nargs; i++)
-            {
-              print_generic_expr (stream, element->expr.ops.phi.args[i], 0);
-              if (i + 1 < nargs)
-                fprintf (stream, ", ");
-            }
-          fprintf (stream, ">");
-        }
-        break;
-    }
-
-  if (element->vop)
-    {
-      fprintf (stream, " with ");
-      print_generic_expr (stream, element->vop, 0);
-    }
-
-  fprintf (stream, "\n");
-}
-
-/* Delete variable sized pieces of the expr_hash_elt ELEMENT.  */
-
-static void
-free_expr_hash_elt_contents (struct expr_hash_elt *element)
-{
-  if (element->expr.kind == EXPR_CALL)
-    free (element->expr.ops.call.args);
-  else if (element->expr.kind == EXPR_PHI)
-    free (element->expr.ops.phi.args);
-}
-
-/* Delete an expr_hash_elt and reclaim its storage.  */
-
-static void
-free_expr_hash_elt (void *elt)
-{
-  struct expr_hash_elt *element = ((struct expr_hash_elt *)elt);
-  free_expr_hash_elt_contents (element);
-  free (element);
 }
 
 /* Allocate an EDGE_INFO for edge E and attach it to E.
@@ -760,6 +153,9 @@ static struct edge_info *
 allocate_edge_info (edge e)
 {
   struct edge_info *edge_info;
+
+  /* Free the old one, if it exists.  */
+  free_edge_info (e);
 
   edge_info = XCNEW (struct edge_info);
 
@@ -784,14 +180,8 @@ free_all_edge_infos (void)
     {
       FOR_EACH_EDGE (e, ei, bb->preds)
         {
-	 struct edge_info *edge_info = (struct edge_info *) e->aux;
-
-	  if (edge_info)
-	    {
-	      edge_info->cond_equivalences.release ();
-	      free (edge_info);
-	      e->aux = NULL;
-	    }
+	  free_edge_info (e);
+	  e->aux = NULL;
 	}
     }
 }
@@ -1167,7 +557,7 @@ pass_dominator::execute (function *fun)
 
   /* Create our hash tables.  */
   avail_exprs = new hash_table<expr_elt_hasher> (1024);
-  avail_exprs_stack.create (20);
+  avail_exprs_stack = new class avail_exprs_stack (avail_exprs);
   const_and_copies = new class const_and_copies ();
   need_eh_cleanup = BITMAP_ALLOC (NULL);
   need_noreturn_fixup.create (0);
@@ -1194,6 +584,16 @@ pass_dominator::execute (function *fun)
      for jump threading; this may include back edges that are not part of
      a single loop.  */
   mark_dfs_back_edges ();
+
+  /* We want to create the edge info structures before the dominator walk
+     so that they'll be in place for the jump threader, particularly when
+     threading through a join block.
+
+     The conditions will be lazily updated with global equivalences as
+     we reach them during the dominator walk.  */
+  basic_block bb;
+  FOR_EACH_BB_FN (bb, fun)
+    record_edge_info (bb);
 
   /* Recursively walk the dominator tree optimizing statements.  */
   dom_opt_dom_walker (CDI_DOMINATORS).walk (fun->cfg->x_entry_block_ptr);
@@ -1290,7 +690,7 @@ pass_dominator::execute (function *fun)
   /* Free asserted bitmaps and stacks.  */
   BITMAP_FREE (need_eh_cleanup);
   need_noreturn_fixup.release ();
-  avail_exprs_stack.release ();
+  delete avail_exprs_stack;
   delete const_and_copies;
 
   /* Free the value-handle array.  */
@@ -1348,47 +748,6 @@ canonicalize_comparison (gcond *condstmt)
 
           update_stmt (condstmt);
 	}
-    }
-}
-
-/* Initialize local stacks for this optimizer and record equivalences
-   upon entry to BB.  Equivalences can come from the edge traversed to
-   reach BB or they may come from PHI nodes at the start of BB.  */
-
-/* Remove all the expressions in LOCALS from TABLE, stopping when there are
-   LIMIT entries left in LOCALs.  */
-
-static void
-remove_local_expressions_from_table (void)
-{
-  /* Remove all the expressions made available in this block.  */
-  while (avail_exprs_stack.length () > 0)
-    {
-      std::pair<expr_hash_elt_t, expr_hash_elt_t> victim
-	= avail_exprs_stack.pop ();
-      expr_hash_elt **slot;
-
-      if (victim.first == NULL)
-	break;
-
-      /* This must precede the actual removal from the hash table,
-         as ELEMENT and the table entry may share a call argument
-         vector which will be freed during removal.  */
-      if (dump_file && (dump_flags & TDF_DETAILS))
-        {
-          fprintf (dump_file, "<<<< ");
-          print_expr_hash_elt (dump_file, victim.first);
-        }
-
-      slot = avail_exprs->find_slot (victim.first, NO_INSERT);
-      gcc_assert (slot && *slot == victim.first);
-      if (victim.second != NULL)
-	{
-	  free_expr_hash_elt (*slot);
-	  *slot = victim.second;
-	}
-      else
-	avail_exprs->clear_slot (slot);
     }
 }
 
@@ -1526,8 +885,7 @@ dom_opt_dom_walker::thread_across_edge (edge e)
 
   /* Push a marker on both stacks so we can unwind the tables back to their
      current state.  */
-  avail_exprs_stack.safe_push
-    (std::pair<expr_hash_elt_t, expr_hash_elt_t> (NULL, NULL));
+  avail_exprs_stack->push_marker ();
   const_and_copies->push_marker ();
 
   /* Traversing E may result in equivalences we can utilize.  */
@@ -1536,16 +894,16 @@ dom_opt_dom_walker::thread_across_edge (edge e)
   /* With all the edge equivalences in the tables, go ahead and attempt
      to thread through E->dest.  */
   ::thread_across_edge (m_dummy_cond, e, false,
-		        const_and_copies,
+		        const_and_copies, avail_exprs_stack,
 		        simplify_stmt_for_jump_threading);
 
   /* And restore the various tables to their state before
-     we threaded this edge. 
+     we threaded this edge.
 
      XXX The code in tree-ssa-threadedge.c will restore the state of
      the const_and_copies table.  We we just have to restore the expression
      table.  */
-  remove_local_expressions_from_table ();
+  avail_exprs_stack->pop_to_marker ();
 }
 
 /* PHI nodes can create equivalences too.
@@ -1703,27 +1061,18 @@ htab_statistics (FILE *file, const hash_table<expr_elt_hasher> &htab)
 static void
 record_cond (cond_equivalence *p)
 {
-  struct expr_hash_elt *element = XCNEW (struct expr_hash_elt);
+  class expr_hash_elt *element = new expr_hash_elt (&p->cond, p->value);
   expr_hash_elt **slot;
 
-  initialize_hash_element_from_expr (&p->cond, p->value, element);
-
-  slot = avail_exprs->find_slot_with_hash (element, element->hash, INSERT);
+  slot = avail_exprs->find_slot_with_hash (element, element->hash (), INSERT);
   if (*slot == NULL)
     {
       *slot = element;
 
-      if (dump_file && (dump_flags & TDF_DETAILS))
-        {
-          fprintf (dump_file, "1>>> ");
-          print_expr_hash_elt (dump_file, element);
-        }
-
-      avail_exprs_stack.safe_push
-	(std::pair<expr_hash_elt_t, expr_hash_elt_t> (element, NULL));
+      avail_exprs_stack->record_expr (element, NULL, '1');
     }
   else
-    free_expr_hash_elt (element);
+    delete element;
 }
 
 /* Return the loop depth of the basic block of the defining statement of X.
@@ -1945,8 +1294,7 @@ dom_opt_dom_walker::before_dom_children (basic_block bb)
 
   /* Push a marker on the stacks of local information so that we know how
      far to unwind when we finalize this block.  */
-  avail_exprs_stack.safe_push
-    (std::pair<expr_hash_elt_t, expr_hash_elt_t> (NULL, NULL));
+  avail_exprs_stack->push_marker ();
   const_and_copies->push_marker ();
 
   record_equivalences_from_incoming_edge (bb);
@@ -1957,11 +1305,10 @@ dom_opt_dom_walker::before_dom_children (basic_block bb)
   /* Create equivalences from redundant PHIs.  PHIs are only truly
      redundant when they exist in the same block, so push another
      marker and unwind right afterwards.  */
-  avail_exprs_stack.safe_push
-    (std::pair<expr_hash_elt_t, expr_hash_elt_t> (NULL, NULL));
+  avail_exprs_stack->push_marker ();
   for (gsi = gsi_start_phis (bb); !gsi_end_p (gsi); gsi_next (&gsi))
     eliminate_redundant_computations (&gsi);
-  remove_local_expressions_from_table ();
+  avail_exprs_stack->pop_to_marker ();
 
   for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
     optimize_stmt (bb, gsi);
@@ -2012,7 +1359,7 @@ dom_opt_dom_walker::after_dom_children (basic_block bb)
     }
 
   /* These remove expressions local to BB from the tables.  */
-  remove_local_expressions_from_table ();
+  avail_exprs_stack->pop_to_marker ();
   const_and_copies->pop_to_marker ();
 }
 
@@ -2554,7 +1901,6 @@ lookup_avail_expr (gimple stmt, bool insert)
 {
   expr_hash_elt **slot;
   tree lhs;
-  struct expr_hash_elt element;
 
   /* Get LHS of phi, assignment, or call; else NULL_TREE.  */
   if (gimple_code (stmt) == GIMPLE_PHI)
@@ -2562,52 +1908,42 @@ lookup_avail_expr (gimple stmt, bool insert)
   else
     lhs = gimple_get_lhs (stmt);
 
-  initialize_hash_element (stmt, lhs, &element);
+  class expr_hash_elt element (stmt, lhs);
 
   if (dump_file && (dump_flags & TDF_DETAILS))
     {
       fprintf (dump_file, "LKUP ");
-      print_expr_hash_elt (dump_file, &element);
+      element.print (dump_file);
     }
 
   /* Don't bother remembering constant assignments and copy operations.
      Constants and copy operations are handled by the constant/copy propagator
      in optimize_stmt.  */
-  if (element.expr.kind == EXPR_SINGLE
-      && (TREE_CODE (element.expr.ops.single.rhs) == SSA_NAME
-          || is_gimple_min_invariant (element.expr.ops.single.rhs)))
+  if (element.expr()->kind == EXPR_SINGLE
+      && (TREE_CODE (element.expr()->ops.single.rhs) == SSA_NAME
+          || is_gimple_min_invariant (element.expr()->ops.single.rhs)))
     return NULL_TREE;
 
   /* Finally try to find the expression in the main expression hash table.  */
   slot = avail_exprs->find_slot (&element, (insert ? INSERT : NO_INSERT));
   if (slot == NULL)
     {
-      free_expr_hash_elt_contents (&element);
       return NULL_TREE;
     }
   else if (*slot == NULL)
     {
-      struct expr_hash_elt *element2 = XNEW (struct expr_hash_elt);
-      *element2 = element;
-      element2->stamp = element2;
+      class expr_hash_elt *element2 = new expr_hash_elt (element);
       *slot = element2;
 
-      if (dump_file && (dump_flags & TDF_DETAILS))
-        {
-          fprintf (dump_file, "2>>> ");
-          print_expr_hash_elt (dump_file, element2);
-        }
-
-      avail_exprs_stack.safe_push
-	(std::pair<expr_hash_elt_t, expr_hash_elt_t> (element2, NULL));
+      avail_exprs_stack->record_expr (element2, NULL, '2');
       return NULL_TREE;
     }
 
   /* If we found a redundant memory operation do an alias walk to
      check if we can re-use it.  */
-  if (gimple_vuse (stmt) != (*slot)->vop)
+  if (gimple_vuse (stmt) != (*slot)->vop ())
     {
-      tree vuse1 = (*slot)->vop;
+      tree vuse1 = (*slot)->vop ();
       tree vuse2 = gimple_vuse (stmt);
       /* If we have a load of a register and a candidate in the
 	 hash with vuse1 then try to reach its stmt by walking
@@ -2623,30 +1959,21 @@ lookup_avail_expr (gimple stmt, bool insert)
 	{
 	  if (insert)
 	    {
-	      struct expr_hash_elt *element2 = XNEW (struct expr_hash_elt);
-	      *element2 = element;
-	      element2->stamp = element2;
+	      class expr_hash_elt *element2 = new expr_hash_elt (element);
 
 	      /* Insert the expr into the hash by replacing the current
 		 entry and recording the value to restore in the
 		 avail_exprs_stack.  */
-	      avail_exprs_stack.safe_push (std::make_pair (element2, *slot));
+	      avail_exprs_stack->record_expr (element2, *slot, '2');
 	      *slot = element2;
-	      if (dump_file && (dump_flags & TDF_DETAILS))
-		{
-		  fprintf (dump_file, "2>>> ");
-		  print_expr_hash_elt (dump_file, *slot);
-		}
 	    }
 	  return NULL_TREE;
 	}
     }
 
-  free_expr_hash_elt_contents (&element);
-
   /* Extract the LHS of the assignment so that it can be used as the current
      definition of another variable.  */
-  lhs = (*slot)->lhs;
+  lhs = (*slot)->lhs ();
 
   lhs = dom_valueize (lhs);
 
@@ -2658,21 +1985,6 @@ lookup_avail_expr (gimple stmt, bool insert)
     }
 
   return lhs;
-}
-
-/* Hashing and equality functions for AVAIL_EXPRS.  We compute a value number
-   for expressions using the code of the expression and the SSA numbers of
-   its operands.  */
-
-static hashval_t
-avail_expr_hash (const void *p)
-{
-  const struct hashable_expr *expr = &((const struct expr_hash_elt *)p)->expr;
-  inchash::hash hstate;
-
-  inchash::add_hashable_expr (expr, hstate);
-
-  return hstate.end ();
 }
 
 /* PHI-ONLY copy and constant propagation.  This pass is meant to clean

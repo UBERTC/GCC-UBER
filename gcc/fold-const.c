@@ -76,7 +76,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "builtins.h"
 #include "cgraph.h"
 #include "generic-match.h"
-#include "optabs.h"
+#include "optabs-query.h"
 
 #ifndef LOAD_EXTEND_OP
 #define LOAD_EXTEND_OP(M) UNKNOWN
@@ -2752,10 +2752,33 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 				   TREE_OPERAND (arg1, 0), flags);
     }
 
-  if (TREE_CODE (arg0) != TREE_CODE (arg1)
+  if (TREE_CODE (arg0) != TREE_CODE (arg1))
+    {
       /* NOP_EXPR and CONVERT_EXPR are considered equal.  */
-      && !(CONVERT_EXPR_P (arg0) && CONVERT_EXPR_P (arg1)))
-    return 0;
+      if (CONVERT_EXPR_P (arg0) && CONVERT_EXPR_P (arg1))
+	;
+      else if (flags & OEP_ADDRESS_OF)
+	{
+	  /* If we are interested in comparing addresses ignore
+	     MEM_REF wrappings of the base that can appear just for
+	     TBAA reasons.  */
+	  if (TREE_CODE (arg0) == MEM_REF
+	      && DECL_P (arg1)
+	      && TREE_CODE (TREE_OPERAND (arg0, 0)) == ADDR_EXPR
+	      && TREE_OPERAND (TREE_OPERAND (arg0, 0), 0) == arg1
+	      && integer_zerop (TREE_OPERAND (arg0, 1)))
+	    return 1;
+	  else if (TREE_CODE (arg1) == MEM_REF
+		   && DECL_P (arg0)
+		   && TREE_CODE (TREE_OPERAND (arg1, 0)) == ADDR_EXPR
+		   && TREE_OPERAND (TREE_OPERAND (arg1, 0), 0) == arg0
+		   && integer_zerop (TREE_OPERAND (arg1, 1)))
+	    return 1;
+	  return 0;
+	}
+      else
+	return 0;
+    }
 
   /* This is needed for conversions and for COMPONENT_REF.
      Might as well play it safe and always test this.  */
@@ -6166,8 +6189,12 @@ extract_muldiv_1 (tree t, tree c, enum tree_code code, tree wide_type,
 	      && ((sign == UNSIGNED && tcode != MULT_EXPR) || sign == SIGNED))
 	    overflow_p = true;
 	  if (!overflow_p)
-	    return fold_build2 (tcode, ctype, fold_convert (ctype, op0),
-				wide_int_to_tree (ctype, mul));
+	    {
+	      mul = wide_int::from (mul, TYPE_PRECISION (ctype),
+				    TYPE_SIGN (TREE_TYPE (op1)));
+	      return fold_build2 (tcode, ctype, fold_convert (ctype, op0),
+				  wide_int_to_tree (ctype, mul));
+	    }
 	}
 
       /* If these operations "cancel" each other, we have the main
@@ -7106,6 +7133,10 @@ native_encode_string (const_tree expr, unsigned char *ptr, int len, int off)
 int
 native_encode_expr (const_tree expr, unsigned char *ptr, int len, int off)
 {
+  /* We don't support starting at negative offset and -1 is special.  */
+  if (off < -1)
+    return 0;
+
   switch (TREE_CODE (expr))
     {
     case INTEGER_CST:

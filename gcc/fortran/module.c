@@ -193,6 +193,11 @@ static gzFile module_fp;
 static const char *module_name;
 /* The name of the .smod file that the submodule will write to.  */
 static const char *submodule_name;
+
+/* Suppress the output of a .smod file by module, if no module
+   procedures have been seen.  */
+static bool no_module_procedures;
+
 static gfc_use_list *module_list;
 
 /* If we're reading an intrinsic module, this is its ID.  */
@@ -798,7 +803,7 @@ gfc_match_submodule (void)
   /* Just retain the ultimate .(s)mod file for reading, since it
      contains all the information in its ancestors.  */
   use_list = module_list;
-  for (; module_list->next; use_list = use_list->next)
+  for (; module_list->next; use_list = module_list)
     {
       module_list = use_list->next;
       free (use_list);
@@ -2222,7 +2227,10 @@ mio_symbol_attribute (symbol_attribute *attr)
       if (attr->array_outer_dependency)
 	MIO_NAME (ab_attribute) (AB_ARRAY_OUTER_DEPENDENCY, attr_bits);
       if (attr->module_procedure)
+	{
 	MIO_NAME (ab_attribute) (AB_MODULE_PROCEDURE, attr_bits);
+	  no_module_procedures = false;
+	}
 
       mio_rparen ();
 
@@ -5132,7 +5140,8 @@ read_module (void)
 
 	  st = gfc_find_symtree (gfc_current_ns->sym_root, p);
 
-	  if (st != NULL)
+	  if (st != NULL
+	      && !(st->n.sym && st->n.sym->attr.used_in_submodule))
 	    {
 	      /* Check for ambiguous symbols.  */
 	      if (check_for_ambiguous (st, info))
@@ -5142,14 +5151,23 @@ read_module (void)
 	    }
 	  else
 	    {
-	      st = gfc_find_symtree (gfc_current_ns->sym_root, name);
-
-	      /* Create a symtree node in the current namespace for this
-		 symbol.  */
-	      st = check_unique_name (p)
-		   ? gfc_get_unique_symtree (gfc_current_ns)
-		   : gfc_new_symtree (&gfc_current_ns->sym_root, p);
-	      st->ambiguous = ambiguous;
+	      if (st)
+		{
+		  /* This symbol is host associated from a module in a
+		     submodule.  Hide it with a unique symtree.  */
+		  gfc_symtree *s = gfc_get_unique_symtree (gfc_current_ns);
+		  s->n.sym = st->n.sym;
+		  st->n.sym = NULL;
+		}
+	      else
+		{
+		  /* Create a symtree node in the current namespace for this
+		     symbol.  */
+		  st = check_unique_name (p)
+		       ? gfc_get_unique_symtree (gfc_current_ns)
+		       : gfc_new_symtree (&gfc_current_ns->sym_root, p);
+		  st->ambiguous = ambiguous;
+		}
 
 	      sym = info->u.rsym.sym;
 
@@ -6071,9 +6089,10 @@ gfc_dump_module (const char *name, int dump_flag)
   else
     dump_smod =false;
 
+  no_module_procedures = true;
   dump_module (name, dump_flag);
 
-  if (dump_smod)
+  if (no_module_procedures || dump_smod)
     return;
 
   /* Write a submodule file from a module.  The 'dump_smod' flag switches

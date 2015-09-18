@@ -953,9 +953,9 @@ ao_ref_init_from_vn_reference (ao_ref *ref,
   unsigned i;
   tree base = NULL_TREE;
   tree *op0_p = &base;
-  HOST_WIDE_INT offset = 0;
-  HOST_WIDE_INT max_size;
-  HOST_WIDE_INT size = -1;
+  offset_int offset = 0;
+  offset_int max_size;
+  offset_int size = -1;
   tree size_tree = NULL_TREE;
   alias_set_type base_alias_set = -1;
 
@@ -971,15 +971,11 @@ ao_ref_init_from_vn_reference (ao_ref *ref,
       if (mode == BLKmode)
 	size_tree = TYPE_SIZE (type);
       else
-        size = GET_MODE_BITSIZE (mode);
+	size = int (GET_MODE_BITSIZE (mode));
     }
-  if (size_tree != NULL_TREE)
-    {
-      if (!tree_fits_uhwi_p (size_tree))
-	size = -1;
-      else
-	size = tree_to_uhwi (size_tree);
-    }
+  if (size_tree != NULL_TREE
+      && TREE_CODE (size_tree) == INTEGER_CST)
+    size = wi::to_offset (size_tree);
 
   /* Initially, maxsize is the same as the accessed element size.
      In the following it will only grow (or become -1).  */
@@ -1034,7 +1030,7 @@ ao_ref_init_from_vn_reference (ao_ref *ref,
 
 	/* And now the usual component-reference style ops.  */
 	case BIT_FIELD_REF:
-	  offset += tree_to_shwi (op->op1);
+	  offset += wi::to_offset (op->op1);
 	  break;
 
 	case COMPONENT_REF:
@@ -1043,15 +1039,16 @@ ao_ref_init_from_vn_reference (ao_ref *ref,
 	    /* We do not have a complete COMPONENT_REF tree here so we
 	       cannot use component_ref_field_offset.  Do the interesting
 	       parts manually.  */
+	    tree this_offset = DECL_FIELD_OFFSET (field);
 
-	    if (op->op1
-		|| !tree_fits_uhwi_p (DECL_FIELD_OFFSET (field)))
+	    if (op->op1 || TREE_CODE (this_offset) != INTEGER_CST)
 	      max_size = -1;
 	    else
 	      {
-		offset += (tree_to_uhwi (DECL_FIELD_OFFSET (field))
-			   * BITS_PER_UNIT);
-		offset += TREE_INT_CST_LOW (DECL_FIELD_BIT_OFFSET (field));
+		offset_int woffset = wi::lshift (wi::to_offset (this_offset),
+						 LOG2_BITS_PER_UNIT);
+		woffset += wi::to_offset (DECL_FIELD_BIT_OFFSET (field));
+		offset += woffset;
 	      }
 	    break;
 	  }
@@ -1059,17 +1056,18 @@ ao_ref_init_from_vn_reference (ao_ref *ref,
 	case ARRAY_RANGE_REF:
 	case ARRAY_REF:
 	  /* We recorded the lower bound and the element size.  */
-	  if (!tree_fits_shwi_p (op->op0)
-	      || !tree_fits_shwi_p (op->op1)
-	      || !tree_fits_shwi_p (op->op2))
+	  if (TREE_CODE (op->op0) != INTEGER_CST
+	      || TREE_CODE (op->op1) != INTEGER_CST
+	      || TREE_CODE (op->op2) != INTEGER_CST)
 	    max_size = -1;
 	  else
 	    {
-	      HOST_WIDE_INT hindex = tree_to_shwi (op->op0);
-	      hindex -= tree_to_shwi (op->op1);
-	      hindex *= tree_to_shwi (op->op2);
-	      hindex *= BITS_PER_UNIT;
-	      offset += hindex;
+	      offset_int woffset
+		= wi::sext (wi::to_offset (op->op0) - wi::to_offset (op->op1),
+			    TYPE_PRECISION (TREE_TYPE (op->op0)));
+	      woffset *= wi::to_offset (op->op2);
+	      woffset = wi::lshift (woffset, LOG2_BITS_PER_UNIT);
+	      offset += woffset;
 	    }
 	  break;
 
@@ -1102,9 +1100,6 @@ ao_ref_init_from_vn_reference (ao_ref *ref,
 
   ref->ref = NULL_TREE;
   ref->base = base;
-  ref->offset = offset;
-  ref->size = size;
-  ref->max_size = max_size;
   ref->ref_alias_set = set;
   if (base_alias_set != -1)
     ref->base_alias_set = base_alias_set;
@@ -1112,6 +1107,30 @@ ao_ref_init_from_vn_reference (ao_ref *ref,
     ref->base_alias_set = get_alias_set (base);
   /* We discount volatiles from value-numbering elsewhere.  */
   ref->volatile_p = false;
+
+  if (!wi::fits_shwi_p (size) || wi::neg_p (size))
+    {
+      ref->offset = 0;
+      ref->size = -1;
+      ref->max_size = -1;
+      return true;
+    }
+
+  ref->size = size.to_shwi ();
+
+  if (!wi::fits_shwi_p (offset))
+    {
+      ref->offset = 0;
+      ref->max_size = -1;
+      return true;
+    }
+
+  ref->offset = offset.to_shwi ();
+
+  if (!wi::fits_shwi_p (max_size) || wi::neg_p (max_size))
+    ref->max_size = -1;
+  else
+    ref->max_size = max_size.to_shwi ();
 
   return true;
 }
@@ -1165,7 +1184,7 @@ copy_reference_ops_from_call (gcall *call,
 
 /* Fold *& at position *I_P in a vn_reference_op_s vector *OPS.  Updates
    *I_P to point to the last element of the replacement.  */
-void
+static bool
 vn_reference_fold_indirect (vec<vn_reference_op_s> *ops,
 			    unsigned int *i_p)
 {
@@ -1191,12 +1210,14 @@ vn_reference_fold_indirect (vec<vn_reference_op_s> *ops,
 	mem_op->off = tree_to_shwi (mem_op->op0);
       else
 	mem_op->off = -1;
+      return true;
     }
+  return false;
 }
 
 /* Fold *& at position *I_P in a vn_reference_op_s vector *OPS.  Updates
    *I_P to point to the last element of the replacement.  */
-static void
+static bool
 vn_reference_maybe_forwprop_address (vec<vn_reference_op_s> *ops,
 				     unsigned int *i_p)
 {
@@ -1209,12 +1230,12 @@ vn_reference_maybe_forwprop_address (vec<vn_reference_op_s> *ops,
 
   def_stmt = SSA_NAME_DEF_STMT (op->op0);
   if (!is_gimple_assign (def_stmt))
-    return;
+    return false;
 
   code = gimple_assign_rhs_code (def_stmt);
   if (code != ADDR_EXPR
       && code != POINTER_PLUS_EXPR)
-    return;
+    return false;
 
   off = offset_int::from (mem_op->op0, SIGNED);
 
@@ -1246,11 +1267,11 @@ vn_reference_maybe_forwprop_address (vec<vn_reference_op_s> *ops,
 	  ops->pop ();
 	  ops->safe_splice (tem);
 	  --*i_p;
-	  return;
+	  return true;
 	}
       if (!addr_base
 	  || TREE_CODE (addr_base) != MEM_REF)
-	return;
+	return false;
 
       off += addr_offset;
       off += mem_ref_offset (addr_base);
@@ -1263,7 +1284,7 @@ vn_reference_maybe_forwprop_address (vec<vn_reference_op_s> *ops,
       ptroff = gimple_assign_rhs2 (def_stmt);
       if (TREE_CODE (ptr) != SSA_NAME
 	  || TREE_CODE (ptroff) != INTEGER_CST)
-	return;
+	return false;
 
       off += wi::to_offset (ptroff);
       op->op0 = ptr;
@@ -1284,6 +1305,7 @@ vn_reference_maybe_forwprop_address (vec<vn_reference_op_s> *ops,
     vn_reference_maybe_forwprop_address (ops, i_p);
   else if (TREE_CODE (op->op0) == ADDR_EXPR)
     vn_reference_fold_indirect (ops, i_p);
+  return true;
 }
 
 /* Optimize the reference REF to a constant if possible or return
@@ -1456,11 +1478,17 @@ valueize_refs_1 (vec<vn_reference_op_s> orig, bool *valueized_anything)
 	  && vro->op0
 	  && TREE_CODE (vro->op0) == ADDR_EXPR
 	  && orig[i - 1].opcode == MEM_REF)
-	vn_reference_fold_indirect (&orig, &i);
+	{
+	  if (vn_reference_fold_indirect (&orig, &i))
+	    *valueized_anything = true;
+	}
       else if (i > 0
 	       && vro->opcode == SSA_NAME
 	       && orig[i - 1].opcode == MEM_REF)
-	vn_reference_maybe_forwprop_address (&orig, &i);
+	{
+	  if (vn_reference_maybe_forwprop_address (&orig, &i))
+	    *valueized_anything = true;
+	}
       /* If it transforms a non-constant ARRAY_REF into a constant
 	 one, adjust the constant offset.  */
       else if (vro->opcode == ARRAY_REF
@@ -1861,7 +1889,7 @@ vn_reference_lookup_3 (ao_ref *ref, tree vuse, void *vr_,
 	       || handled_component_p (gimple_assign_rhs1 (def_stmt))))
     {
       tree base2;
-      HOST_WIDE_INT offset2, size2, maxsize2;
+      HOST_WIDE_INT maxsize2;
       int i, j;
       auto_vec<vn_reference_op_s> rhs;
       vn_reference_op_t vro;
@@ -1872,8 +1900,6 @@ vn_reference_lookup_3 (ao_ref *ref, tree vuse, void *vr_,
 
       /* See if the assignment kills REF.  */
       base2 = ao_ref_base (&lhs_ref);
-      offset2 = lhs_ref.offset;
-      size2 = lhs_ref.size;
       maxsize2 = lhs_ref.max_size;
       if (maxsize2 == -1
 	  || (base != base2
@@ -1882,8 +1908,7 @@ vn_reference_lookup_3 (ao_ref *ref, tree vuse, void *vr_,
 		  || TREE_OPERAND (base, 0) != TREE_OPERAND (base2, 0)
 		  || !tree_int_cst_equal (TREE_OPERAND (base, 1),
 					  TREE_OPERAND (base2, 1))))
-	  || offset2 > offset
-	  || offset2 + size2 < offset + maxsize)
+	  || !stmt_kills_ref_p (def_stmt, ref))
 	return (void *)-1;
 
       /* Find the common base of ref and the lhs.  lhs_ops already
@@ -4146,9 +4171,9 @@ allocate_vn_table (vn_tables_t table)
   table->references = new vn_reference_table_type (23);
 
   gcc_obstack_init (&table->nary_obstack);
-  table->phis_pool = new object_allocator<vn_phi_s> ("VN phis", 30);
+  table->phis_pool = new object_allocator<vn_phi_s> ("VN phis");
   table->references_pool = new object_allocator<vn_reference_s>
-    ("VN references", 30);
+    ("VN references");
 }
 
 /* Free a value number table.  */
