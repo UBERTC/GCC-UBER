@@ -1,3 +1,32 @@
+2015-09-17  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline:
+	2015-08-18  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/67222
+	* gcc.dg/torture/pr67222.c: New test.
+
+2015-09-11  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* gcc.dg/pie-link.c: Add -pie to dg-options.
+
+2015-09-11  Alex Velenko  <Alex.Velenko@arm.com>
+
+	Backport from mainline
+	* gcc.target/arm/pr63210.c (dg-skip-if): Skip armv4t.
+	(dg-additional-options): Add -march=armv5t if arm_arch_v5t_ok.
+
+2015-09-10  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67526
+	* gfortran.dg/pr67526.f90: New test.
+
+2015-09-10  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	PR target/67506
+	* gcc.c-torture/compile/pr67506.c: New test.
+
 2015-09-10  Jakub Jelinek  <jakub@redhat.com>
 
 	PR c++/67523
