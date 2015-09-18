@@ -1,3 +1,66 @@
+2015-09-17  Andrew Sutton  <andrew.n.sutton@gmail.com>
+	    Jason Merrill  <jason@redhat.com>
+
+	Implement N4295 fold-expressions.
+	* cp-tree.def: Add UNARY_LEFT_FOLD_EXPR, UNARY_RIGHT_FOLD_EXPR,
+	BINARY_LEFT_FOLD_EXPR, BINARY_RIGHT_FOLD_EXPR.
+	* cp-objcp-common.c (cp_common_init_ts): Handle them.
+	* cp-tree.h (FOLD_EXPR_CHECK, BINARY_FOLD_EXPR_CHECK, FOLD_EXPR_P)
+	(FOLD_EXPR_MODIFY_P, FOLD_EXPR_OP, FOLD_EXPR_PACK, FOLD_EXPR_INIT): New.
+	* parser.c (cp_parser_skip_to_closing_parenthesis): Split out...
+	(cp_parser_skip_to_closing_parenthesis_1): This function.  Change
+	or_comma parameter to or_ttype.
+	(cp_parser_fold_operator, cp_parser_fold_expr_p)
+	(cp_parser_fold_expression): New.
+	(cp_parser_primary_expression): Use them.
+	* pt.c (expand_empty_fold, fold_expression, tsubst_fold_expr_pack)
+	(tsubst_fold_expr_init, expand_left_fold, tsubst_unary_left_fold)
+	(tsubst_binary_left_fold, expand_right_fold)
+	(tsubst_unary_right_fold, tsubst_binary_right_fold): New.
+	(tsubst_copy): Use them.
+	(type_dependent_expression_p): Handle fold-expressions.
+	* semantics.c (finish_unary_fold_expr)
+	(finish_left_unary_fold_expr, finish_right_unary_fold_expr)
+	(finish_binary_fold_expr): New.
+
+2015-09-17  Richard Biener  <rguenther@suse.de>
+
+	* cp-tree.h (note_decl_for_pch): Remove.
+	* class.c (build_clone): Do not call note_decl_for_pch.
+	* semantics.c (finish_member_declaration): Likewise.
+	(note_decl_for_pch): Remove.
+	* decl2.c (c_parse_final_cleanups): Mangle all globals before
+	writing the PCH.
+
+2015-09-14  Jason Merrill  <jason@redhat.com>
+
+	PR c++/44282
+	* mangle.c (write_CV_qualifiers_for_type): Also warn about regparm
+	mangling with lower -fabi-version.
+
+2015-09-14  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/51911
+	* parser.c (cp_parser_new_expression): Enforce 5.3.4/2 (as amended
+	per the spirit of DR 1467).
+
+2015-09-11  Mark Wielaard  <mjw@redhat.com>
+
+	PR c/28901
+	* cp-objcp-common.c (cxx_warn_unused_global_decl): Remove hard-coded
+	VAR_P TREE_READONLY override.
+
+2015-09-10  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67318
+	* parser.c (cp_parser_parameter_declaration): Consume the ellipsis
+	and set template_parameter_pack_p also when the type is null.
+
+2015-09-09  Mark Wielaard  <mjw@redhat.com>
+
+	* typeck.c (cp_build_binary_op): Check and warn when nonnull arg
+	parm against NULL.
+
 2015-09-10  Jakub Jelinek  <jakub@redhat.com>
 
 	PR c++/67522

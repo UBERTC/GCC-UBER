@@ -1247,7 +1247,7 @@ AC_CHECK_DECLS([basename(const char*), strstr(const char*,const char*)], , ,[
 
 gcc_AC_CHECK_DECLS(getenv atol atoll asprintf sbrk abort atof getcwd getwd \
 	madvise stpcpy strnlen strsignal strverscmp \
-	strtol strtoul strtoll strtoull \
+	strtol strtoul strtoll strtoull setenv unsetenv \
 	errno snprintf vsnprintf vasprintf malloc realloc calloc \
 	free getopt clock getpagesize ffs gcc_UNLOCKED_FUNCS, , ,[
 #include "ansidecl.h"
@@ -3325,7 +3325,7 @@ foo:	.long	25
 	tls_first_minor=14
 	tls_as_opt="-m64 -Aesame --fatal-warnings"
 	;;
-  sh-*-* | sh[34]-*-*)
+  sh-*-* | sh[123456789lbe]*-*-*)
     conftest_s='
 	.section ".tdata","awT",@progbits
 foo:	.long	25

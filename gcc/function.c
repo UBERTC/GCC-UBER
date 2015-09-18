@@ -56,6 +56,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "stmt.h"
 #include "expr.h"
 #include "insn-codes.h"
+#include "optabs-tree.h"
 #include "optabs.h"
 #include "libfuncs.h"
 #include "regs.h"
@@ -6667,6 +6668,10 @@ rest_of_handle_thread_prologue_and_epilogue (void)
      it and the rest of the code and also allows delayed branch
      scheduling to operate in the epilogue.  */
   thread_prologue_and_epilogue_insns ();
+
+  /* Some non-cold blocks may now be only reachable from cold blocks.
+     Fix that up.  */
+  fixup_partitions ();
 
   /* Shrink-wrapping can result in unreachable edges in the epilogue,
      see PR57320.  */

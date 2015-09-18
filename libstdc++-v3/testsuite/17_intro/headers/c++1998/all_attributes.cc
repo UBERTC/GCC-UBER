@@ -35,7 +35,6 @@
 #define unused 1
 #endif
 
-#include <bits/stdc++.h> // TODO: this is missing from <bits/extc++.h>
 #include <bits/extc++.h>
 
 int

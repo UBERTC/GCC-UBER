@@ -1099,8 +1099,8 @@
 })
 
 (define_expand "mov<mode>"
-  [(set (match_operand:GPF_F16 0 "nonimmediate_operand" "")
-	(match_operand:GPF_F16 1 "general_operand" ""))]
+  [(set (match_operand:GPF_TF_F16 0 "nonimmediate_operand" "")
+	(match_operand:GPF_TF_F16 1 "general_operand" ""))]
   ""
   {
     if (!TARGET_FLOAT)
@@ -1172,24 +1172,6 @@
    mov\\t%x0, %x1"
   [(set_attr "type" "f_mcr,f_mrc,fmov,fconstd,\
                      f_loadd,f_stored,load1,store1,mov_reg")]
-)
-
-(define_expand "movtf"
-  [(set (match_operand:TF 0 "nonimmediate_operand" "")
-	(match_operand:TF 1 "general_operand" ""))]
-  ""
-  {
-    if (!TARGET_FLOAT)
-      {
-	aarch64_err_no_fpadvsimd (TFmode, "code");
-	FAIL;
-      }
-
-    if (GET_CODE (operands[0]) == MEM
-        && ! (GET_CODE (operands[1]) == CONST_DOUBLE
-	      && aarch64_float_const_zero_rtx_p (operands[1])))
-      operands[1] = force_reg (TFmode, operands[1]);
-  }
 )
 
 (define_insn "*movtf_aarch64"
@@ -4430,9 +4412,81 @@
   [(set_attr "type" "f_minmax<s>")]
 )
 
+;; For copysign (x, y), we want to generate:
+;;
+;;   LDR d2, #(1 << 63)
+;;   BSL v2.8b, [y], [x]
+;;
+;; or another, equivalent, sequence using one of BSL/BIT/BIF.
+;; aarch64_simd_bsldf will select the best suited of these instructions
+;; to generate based on register allocation, and knows how to partially
+;; constant fold based on the values of X and Y, so expand through that.
+
+(define_expand "copysigndf3"
+  [(match_operand:DF 0 "register_operand")
+   (match_operand:DF 1 "register_operand")
+   (match_operand:DF 2 "register_operand")]
+  "TARGET_FLOAT && TARGET_SIMD"
+{
+  rtx mask = gen_reg_rtx (DImode);
+  emit_move_insn (mask, GEN_INT (HOST_WIDE_INT_1U << 63));
+  emit_insn (gen_aarch64_simd_bsldf (operands[0], mask,
+				     operands[2], operands[1]));
+  DONE;
+}
+)
+
+;; As above, but we must first get to a 64-bit value if we wish to use
+;; aarch64_simd_bslv2sf.
+
+(define_expand "copysignsf3"
+  [(match_operand:SF 0 "register_operand")
+   (match_operand:SF 1 "register_operand")
+   (match_operand:SF 2 "register_operand")]
+  "TARGET_FLOAT && TARGET_SIMD"
+{
+  rtx mask = gen_reg_rtx (DImode);
+
+  /* Juggle modes to get us in to a vector mode for BSL.  */
+  rtx op1 = lowpart_subreg (V2SFmode, operands[1], SFmode);
+  rtx op2 = lowpart_subreg (V2SFmode, operands[2], SFmode);
+  rtx tmp = gen_reg_rtx (V2SFmode);
+  emit_move_insn (mask, GEN_INT (HOST_WIDE_INT_1U << 31));
+  emit_insn (gen_aarch64_simd_bslv2sf (tmp, mask, op2, op1));
+  emit_move_insn (operands[0], lowpart_subreg (SFmode, tmp, V2SFmode));
+  DONE;
+}
+)
+
 ;; -------------------------------------------------------------------
 ;; Reload support
 ;; -------------------------------------------------------------------
+;; Reload Scalar Floating point modes from constant pool.
+;; The AArch64 port doesn't have __int128 constant move support.
+(define_expand "aarch64_reload_movcp<GPF_TF:mode><P:mode>"
+ [(set (match_operand:GPF_TF 0 "register_operand" "=w")
+       (mem:GPF_TF (match_operand 1 "aarch64_constant_pool_symref" "S")))
+  (clobber (match_operand:P 2 "register_operand" "=&r"))]
+ "TARGET_FLOAT && nopcrelative_literal_loads"
+ {
+   aarch64_expand_mov_immediate (operands[2], XEXP (operands[1], 0));
+   emit_move_insn (operands[0], gen_rtx_MEM (<GPF_TF:MODE>mode, operands[2]));
+   DONE;
+ }
+)
+
+;; Reload Vector modes from constant pool.
+(define_expand "aarch64_reload_movcp<VALL:mode><P:mode>"
+ [(set (match_operand:VALL 0 "register_operand" "=w")
+       (mem:VALL (match_operand 1 "aarch64_constant_pool_symref" "S")))
+  (clobber (match_operand:P 2 "register_operand" "=&r"))]
+ "TARGET_FLOAT && nopcrelative_literal_loads"
+ {
+   aarch64_expand_mov_immediate (operands[2], XEXP (operands[1], 0));
+   emit_move_insn (operands[0], gen_rtx_MEM (<VALL:MODE>mode, operands[2]));
+   DONE;
+ }
+)
 
 (define_expand "aarch64_reload_mov<mode>"
   [(set (match_operand:TX 0 "register_operand" "=w")

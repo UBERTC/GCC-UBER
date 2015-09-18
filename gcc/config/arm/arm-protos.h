@@ -146,6 +146,7 @@ extern const char *output_add_immediate (rtx *);
 extern const char *arithmetic_instr (rtx, int);
 extern void output_ascii_pseudo_op (FILE *, const unsigned char *, int);
 extern const char *output_return_instruction (rtx, bool, bool, bool);
+extern const char *output_probe_stack_range (rtx, rtx);
 extern void arm_poke_function_name (FILE *, const char *);
 extern void arm_final_prescan_insn (rtx_insn *);
 extern int arm_debugger_arg_offset (int, rtx);
@@ -340,7 +341,6 @@ extern const char *arm_rewrite_selected_cpu (const char *name);
 extern void arm_lang_object_attributes_init (void);
 extern void arm_register_target_pragmas (void);
 extern void arm_cpu_cpp_builtins (struct cpp_reader *);
-extern void arm_cpu_builtins (struct cpp_reader *, int);
 
 extern bool arm_is_constant_pool_ref (rtx);
 

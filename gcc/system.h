@@ -465,12 +465,20 @@ extern char *getwd (char *);
 extern void *sbrk (int);
 #endif
 
+#if defined (HAVE_DECL_SETENV) && !HAVE_DECL_SETENV
+int setenv(const char *, const char *, int);
+#endif
+
 #if defined (HAVE_DECL_STRSTR) && !HAVE_DECL_STRSTR
 extern char *strstr (const char *, const char *);
 #endif
 
 #if defined (HAVE_DECL_STPCPY) && !HAVE_DECL_STPCPY
 extern char *stpcpy (char *, const char *);
+#endif
+
+#if defined (HAVE_DECL_UNSETENV) && !HAVE_DECL_UNSETENV
+int unsetenv(const char *);
 #endif
 
 #ifdef __cplusplus
@@ -948,7 +956,7 @@ extern void fancy_abort (const char *, int, const char *) ATTRIBUTE_NORETURN;
 	EXTRA_ADDRESS_CONSTRAINT CONST_DOUBLE_OK_FOR_CONSTRAINT_P	   \
 	CALLER_SAVE_PROFITABLE LARGEST_EXPONENT_IS_NORMAL		   \
 	ROUND_TOWARDS_ZERO SF_SIZE DF_SIZE XF_SIZE TF_SIZE LIBGCC2_TF_CEXT \
-	LIBGCC2_LONG_DOUBLE_TYPE_SIZE
+	LIBGCC2_LONG_DOUBLE_TYPE_SIZE STRUCT_VALUE
 
 /* Hooks that are no longer used.  */
  #pragma GCC poison LANG_HOOKS_FUNCTION_MARK LANG_HOOKS_FUNCTION_FREE	\

@@ -1,3 +1,177 @@
+2015-09-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/precompiled/extc++.h: Fix bootstrap error due to
+	unconditional inclusion of <ext/enc_filebuf.h>.
+	* include/ext/random: Check for definition of UINT32_C.
+
+2015-09-17  Catherine Moore  <clm@codesourcery.com>
+
+	* src/c++11/debug.cc: Include <cstdio>.
+
+2015-09-17  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* src/c++11/random.cc: Include <cerrno>.
+
+2015-09-17  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/debug/formatter.h
+	(_Error_formatter::_Parameter::_M_print_field): Deprecate.
+	(_Error_formatter::_Parameter::_M_print_description): Likewise.
+	(_Error_formatter::_M_format_word): Likewise.
+	(_Error_formatter::_M_print_word): Likewise.
+	(_Error_formatter::_M_print_string): Likewise.
+	(_Error_formatter::_M_get_max_length): Likewise.
+	(_Error_formatter::_M_max_length): Delete.
+	(_Error_formatter::_M_indent): Likewise.
+	(_Error_formatter::_M_column): Likewise.
+	(_Error_formatter::_M_first_line): Likewise.
+	(_Error_formatter::_M_wordwrap): Likewise.
+	* src/c++11/debug.cc: Adapt.
+
+2015-09-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/65913
+	* include/bits/atomic_base.h (__atomic_base<_TTp>::is_lock_free(),
+	__atomic_base<_PTp*>::is_lock_free()): Call the built-in with the
+	immediate pointer value, not a variable.
+	* include/std/atomic (atomic<T>::is_lock_free()): Likewise.
+	* testsuite/29_atomics/atomic/65913.cc: New.
+
+	* testsuite/experimental/filesystem/operations/canonical.cc: Remove
+	non-deterministic part of the test.
+
+	PR libstdc++/65142
+	* src/c++11/random.cc (random_device::_M_getval()): Retry after short
+	reads.
+
+	* include/std/system_error (error_code::operator bool(),
+	error_condition::operator bool()): Remove redundant conditional
+	expression.
+
+	* include/bits/allocator.h (__shrink_to_fit_aux<T, true>::_S_do_it):
+	Do nothing if exceptions are disabled.
+	* include/bits/basic_string.h (basic_string::shrink_to_fit): Likewise.
+
+2015-09-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/67173
+	* acinclude.m4 (GLIBCXX_CHECK_FILESYSTEM_DEPS): Check _XOPEN_VERSION
+	and PATH_MAX for _GLIBCXX_USE_REALPATH.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* src/filesystem/ops.cc: (canonical) [!_GLIBCXX_USE_REALPATH]: Add
+	alternative implementation.
+	* testsuite/experimental/filesystem/operations/canonical.cc: New.
+	* testsuite/experimental/filesystem/operations/exists.cc: Add more
+	tests.
+	* testsuite/experimental/filesystem/operations/absolute.cc: Add test
+	variables.
+	* testsuite/experimental/filesystem/operations/copy.cc: Likewise.
+	* testsuite/experimental/filesystem/operations/current_path.cc:
+	Likewise.
+	* testsuite/experimental/filesystem/operations/file_size.cc: Likewise.
+	* testsuite/experimental/filesystem/operations/status.cc: Likewise.
+	* testsuite/experimental/filesystem/operations/temp_directory_path.cc:
+	Likewise.
+
+2015-09-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/67173
+	* src/filesystem/ops.cc (filesystem::canonical): Allocate buffer for
+	realpath on Solaris 10.
+
+	PR libstdc++/65142
+	* src/c++11/random.cc (random_device::_M_getval()): Check read result.
+
+2015-09-11  John Marino  <gnugcc@marino.st>
+	    Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/67096
+	* testsuite/22_locale/codecvt/in/wchar_t/4.cc: Do not test code points
+	above U+10FFFF.
+	* testsuite/22_locale/codecvt/in/wchar_t/8.cc: Likewise.
+	* testsuite/22_locale/codecvt/in/wchar_t/9.cc: Likewise.
+	* testsuite/22_locale/codecvt/length/wchar_t/4.cc: Likewise.
+	* testsuite/22_locale/codecvt/out/wchar_t/4.cc: Likewise.
+	* testsuite/22_locale/codecvt/unshift/wchar_t/4.cc: Likewise.
+	* testsuite/27_io/basic_filebuf/seekoff/wchar_t/1.cc: Likewise.
+	* testsuite/27_io/basic_filebuf/seekpos/wchar_t/9874.cc: Likewise.
+	* testsuite/27_io/basic_filebuf/underflow/wchar_t/1.cc: Likewise.
+	* testsuite/27_io/basic_filebuf/underflow/wchar_t/2.cc: Likewise.
+	* testsuite/27_io/basic_filebuf/underflow/wchar_t/3.cc: Likewise.
+	* testsuite/27_io/objects/wchar_t/10.cc: Likewise.
+	* testsuite/27_io/objects/wchar_t/11.cc: Likewise.
+	* testsuite/27_io/objects/wchar_t/12.cc: Likewise.
+	* testsuite/27_io/objects/wchar_t/13.cc: Likewise.
+
+2015-09-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/64857
+	* doc/xml/manual/using.xml: Improve aggregate header documentation.
+	* doc/html/manual/*: Regenerate.
+	* include/precompiled/extc++.h: Include <bits/stdc++.h> for C++11
+	and later and include more extension headers.
+	* testsuite/17_intro/headers/c++1998/all_attributes.cc: Remove
+	redundant header.
+	* testsuite/17_intro/headers/c++200x/: Rename to c++2011.
+	* testsuite/17_intro/headers/c++2014/all_attributes.cc: Remove
+	redundant headers.
+	* testsuite/17_intro/headers/c++2014/all_no_exceptions.cc: New.
+	* testsuite/17_intro/headers/c++2014/all_no_rtti.cc: New.
+	* testsuite/17_intro/headers/c++2014/all_pedantic_errors.cc: New.
+	* testsuite/17_intro/headers/c++2014/operator_names.cc: New.
+	* testsuite/17_intro/headers/c++2014/stdc++.cc: New.
+	* testsuite/17_intro/headers/c++2014/stdc++_multiple_inclusion.cc:
+	New.
+
+	PR libstdc++/58265
+	* doc/xml/manual/intro.xml: Document LWG 2063 and 2064 resolutions.
+	* doc/html/manual/bugs.html: Regenerate.
+	* include/bits/basic_string.h (basic_string): Implement N4258. Add
+	correct exception-specifications and propagate allocators correctly.
+	* include/bits/basic_string.tcc (basic_string::swap): Propagate
+	allocators correctly.
+	* include/debug/string (__gnu_debug::basic_string): Add correct
+	exceptions-specifications and allcoator-extended constructors.
+	* testsuite/21_strings/basic_string/allocator/char/copy.cc: New.
+	* testsuite/21_strings/basic_string/allocator/char/copy_assign.cc:
+	New.
+	* testsuite/21_strings/basic_string/allocator/char/minimal.cc: New.
+	* testsuite/21_strings/basic_string/allocator/char/move.cc: New.
+	* testsuite/21_strings/basic_string/allocator/char/move_assign.cc:
+	New.
+	* testsuite/21_strings/basic_string/allocator/char/noexcept.cc: New.
+	* testsuite/21_strings/basic_string/allocator/char/swap.cc: New.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/copy.cc: New.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/copy_assign.cc:
+	New.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/minimal.cc: New.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/move.cc: New.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/move_assign.cc:
+	New.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/noexcept.cc: New.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/swap.cc: New.
+	* testsuite/util/testsuite_allocator.h (tracker_allocator): Define
+	defaulted assignment operators.
+
+	PR libstdc++/65092
+	* include/bits/stl_queue.h (queue, priority_queue): Add
+	allocator-extended constructors.
+	* include/bits/stl_stack.h (stack): Likewise.
+	* testsuite/23_containers/priority_queue/requirements/
+	uses_allocator.cc: Test allocator-extended constructors.
+	* testsuite/23_containers/queue/requirements/uses_allocator.cc:
+	Likewise.
+	* testsuite/23_containers/stack/requirements/uses_allocator.cc:
+	Likewise.
+
+2015-09-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/util/testsuite_allocator.h (PointerBase::operator[]): Add.
+
+	* testsuite/21_strings/basic_string/operators/char/1.cc: Verify the
+	string contents.
+
 2015-09-09  Jonathan Wakely  <jwakely@redhat.com>
 
 	* doc/xml/manual/using.xml (_GLIBCXX_ASSERTIONS): Document.

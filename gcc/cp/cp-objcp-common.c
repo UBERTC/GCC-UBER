@@ -62,10 +62,6 @@ cxx_warn_unused_global_decl (const_tree decl)
   if (DECL_IN_SYSTEM_HEADER (decl))
     return false;
 
-  /* Const variables take the place of #defines in C++.  */
-  if (VAR_P (decl) && TREE_READONLY (decl))
-    return false;
-
   return true;
 }
 
@@ -315,6 +311,10 @@ cp_common_init_ts (void)
   MARK_TS_TYPED (CTOR_INITIALIZER);
   MARK_TS_TYPED (ARRAY_NOTATION_REF);
   MARK_TS_TYPED (REQUIRES_EXPR);
+  MARK_TS_TYPED (UNARY_LEFT_FOLD_EXPR);
+  MARK_TS_TYPED (UNARY_RIGHT_FOLD_EXPR);
+  MARK_TS_TYPED (BINARY_LEFT_FOLD_EXPR);
+  MARK_TS_TYPED (BINARY_RIGHT_FOLD_EXPR);
 }
 
 #include "gt-cp-cp-objcp-common.h"
