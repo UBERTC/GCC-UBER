@@ -44,6 +44,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-scopedtables.h"
 #include "tree-ssa-threadedge.h"
 #include "tree-ssa-loop.h"
+#include "tree-ssa-dom.h"
 #include "builtins.h"
 #include "cfganal.h"
 
@@ -55,6 +56,8 @@ static int stmt_count;
 
 /* Array to record value-handles per SSA_NAME.  */
 vec<tree> ssa_name_values;
+
+typedef tree (pfn_simplify) (gimple *, gimple *, class avail_exprs_stack *);
 
 /* Set the value for the SSA name NAME to VALUE.  */
 
@@ -94,12 +97,12 @@ potentially_threadable_block (basic_block bb)
   /* Special case.  We can get blocks that are forwarders, but are
      not optimized away because they forward from outside a loop
      to the loop header.   We want to thread through them as we can
-     sometimes thread to the loop exit, which is obviously profitable. 
+     sometimes thread to the loop exit, which is obviously profitable.
      the interesting case here is when the block has PHIs.  */
   if (gsi_end_p (gsi_start_nondebug_bb (bb))
       && !gsi_end_p (gsi_start_phis (bb)))
     return true;
-  
+
   /* If BB has a single successor or a single predecessor, then
      there is no threading opportunity.  */
   if (single_succ_p (bb) || single_pred_p (bb))
@@ -123,10 +126,10 @@ potentially_threadable_block (basic_block bb)
    BB.  If no such ASSERT_EXPR is found, return OP.  */
 
 static tree
-lhs_of_dominating_assert (tree op, basic_block bb, gimple stmt)
+lhs_of_dominating_assert (tree op, basic_block bb, gimple *stmt)
 {
   imm_use_iterator imm_iter;
-  gimple use_stmt;
+  gimple *use_stmt;
   use_operand_p use_p;
 
   FOR_EACH_IMM_USE_FAST (use_p, imm_iter, op)
@@ -148,7 +151,7 @@ lhs_of_dominating_assert (tree op, basic_block bb, gimple stmt)
    edge E.  Record unwind information for the equivalences onto STACK.
 
    If a PHI which prevents threading is encountered, then return FALSE
-   indicating we should not thread this edge, else return TRUE. 
+   indicating we should not thread this edge, else return TRUE.
 
    If SRC_MAP/DST_MAP exist, then mark the source and destination SSA_NAMEs
    of any equivalences recorded.  We use this to make invalidation after
@@ -191,7 +194,7 @@ record_temporary_equivalences_from_phis (edge e, const_and_copies *const_and_cop
    May return NULL_TREE if no simplification is possible.  */
 
 static tree
-fold_assignment_stmt (gimple stmt)
+fold_assignment_stmt (gimple *stmt)
 {
   enum tree_code subcode = gimple_assign_rhs_code (stmt);
 
@@ -254,14 +257,14 @@ fold_assignment_stmt (gimple stmt)
    a context sensitive equivalence which may help us simplify
    later statements in E->dest.  */
 
-static gimple
+static gimple *
 record_temporary_equivalences_from_stmts_at_dest (edge e,
-						  const_and_copies *const_and_copies,
-						  tree (*simplify) (gimple,
-								    gimple),
-						  bool backedge_seen)
+    const_and_copies *const_and_copies,
+    avail_exprs_stack *avail_exprs_stack,
+    pfn_simplify simplify,
+    bool backedge_seen)
 {
-  gimple stmt = NULL;
+  gimple *stmt = NULL;
   gimple_stmt_iterator gsi;
   int max_stmt_count;
 
@@ -412,7 +415,7 @@ record_temporary_equivalences_from_stmts_at_dest (edge e,
           if (!cached_lhs
               || (TREE_CODE (cached_lhs) != SSA_NAME
                   && !is_gimple_min_invariant (cached_lhs)))
-            cached_lhs = (*simplify) (stmt, stmt);
+            cached_lhs = (*simplify) (stmt, stmt, avail_exprs_stack);
 
 	  /* Restore the statement's original uses/defs.  */
 	  i = 0;
@@ -423,10 +426,10 @@ record_temporary_equivalences_from_stmts_at_dest (edge e,
 	}
 
       /* Record the context sensitive equivalence if we were able
-	 to simplify this statement. 
+	 to simplify this statement.
 
 	 If we have traversed a backedge at some point during threading,
-	 then always enter something here.  Either a real equivalence, 
+	 then always enter something here.  Either a real equivalence,
 	 or a NULL_TREE equivalence which is effectively invalidation of
 	 prior equivalences.  */
       if (cached_lhs
@@ -445,7 +448,8 @@ record_temporary_equivalences_from_stmts_at_dest (edge e,
    necessarily valid.  We use this callback rather than the ones provided by
    DOM/VRP to achieve that effect.  */
 static tree
-dummy_simplify (gimple stmt1 ATTRIBUTE_UNUSED, gimple stmt2 ATTRIBUTE_UNUSED)
+dummy_simplify (gimple *stmt1 ATTRIBUTE_UNUSED, gimple *stmt2 ATTRIBUTE_UNUSED,
+		class avail_exprs_stack *avail_exprs_stack ATTRIBUTE_UNUSED)
 {
   return NULL_TREE;
 }
@@ -459,13 +463,16 @@ dummy_simplify (gimple stmt1 ATTRIBUTE_UNUSED, gimple stmt2 ATTRIBUTE_UNUSED)
    a condition using pass specific information.
 
    Return the simplified condition or NULL if simplification could
-   not be performed.  */
+   not be performed. 
+
+   The available expression table is referenced via AVAIL_EXPRS_STACK.  */
 
 static tree
 simplify_control_stmt_condition (edge e,
-				 gimple stmt,
+				 gimple *stmt,
+				 class avail_exprs_stack *avail_exprs_stack,
 				 gcond *dummy_cond,
-				 tree (*simplify) (gimple, gimple),
+				 pfn_simplify simplify,
 				 bool handle_dominating_asserts)
 {
   tree cond, cached_lhs;
@@ -552,7 +559,7 @@ simplify_control_stmt_condition (edge e,
 	 then use the pass specific callback to simplify the condition.  */
       if (!cached_lhs
           || !is_gimple_min_invariant (cached_lhs))
-        cached_lhs = (*simplify) (dummy_cond, stmt);
+        cached_lhs = (*simplify) (dummy_cond, stmt, avail_exprs_stack);
 
       /* If we were just testing that an integral type was != 0, and that
 	 failed, just return the first operand.  This gives the FSM code a
@@ -614,7 +621,7 @@ simplify_control_stmt_condition (edge e,
       /* If we haven't simplified to an invariant yet, then use the
 	 pass specific callback to try and simplify it further.  */
       if (cached_lhs && ! is_gimple_min_invariant (cached_lhs))
-        cached_lhs = (*simplify) (stmt, stmt);
+        cached_lhs = (*simplify) (stmt, stmt, avail_exprs_stack);
 
       /* We couldn't find an invariant.  But, callers of this
 	 function may be able to do something useful with the
@@ -651,7 +658,7 @@ propagate_threaded_block_debug_into (basic_block dest, basic_block src)
   for (gimple_stmt_iterator si = gsi;
        i * 4 <= alloc_count * 3 && !gsi_end_p (si); gsi_next (&si))
     {
-      gimple stmt = gsi_stmt (si);
+      gimple *stmt = gsi_stmt (si);
       if (!is_gimple_debug (stmt))
 	break;
       i++;
@@ -671,7 +678,7 @@ propagate_threaded_block_debug_into (basic_block dest, basic_block src)
      duplicates in FEWVARS.  */
   for (gimple_stmt_iterator si = gsi; !gsi_end_p (si); gsi_next (&si))
     {
-      gimple stmt = gsi_stmt (si);
+      gimple *stmt = gsi_stmt (si);
       if (!is_gimple_debug (stmt))
 	break;
 
@@ -698,7 +705,7 @@ propagate_threaded_block_debug_into (basic_block dest, basic_block src)
       for (gimple_stmt_iterator si = gsi_last_bb (bb);
 	   !gsi_end_p (si); gsi_prev (&si))
 	{
-	  gimple stmt = gsi_stmt (si);
+	  gimple *stmt = gsi_stmt (si);
 	  if (!is_gimple_debug (stmt))
 	    continue;
 
@@ -764,19 +771,23 @@ propagate_threaded_block_debug_into (basic_block dest, basic_block src)
    return false.
 
    DUMMY_COND, HANDLE_DOMINATING_ASSERTS and SIMPLIFY are used to
-   try and simplify the condition at the end of TAKEN_EDGE->dest.  */
+   try and simplify the condition at the end of TAKEN_EDGE->dest. 
+
+   The available expression table is referenced via AVAIL_EXPRS_STACK.  */
+
 static bool
 thread_around_empty_blocks (edge taken_edge,
 			    gcond *dummy_cond,
+			    class avail_exprs_stack *avail_exprs_stack,
 			    bool handle_dominating_asserts,
-			    tree (*simplify) (gimple, gimple),
+			    pfn_simplify simplify,
 			    bitmap visited,
 			    vec<jump_thread_edge *> *path,
 			    bool *backedge_seen_p)
 {
   basic_block bb = taken_edge->dest;
   gimple_stmt_iterator gsi;
-  gimple stmt;
+  gimple *stmt;
   tree cond;
 
   /* The key property of these blocks is that they need not be duplicated
@@ -818,6 +829,7 @@ thread_around_empty_blocks (edge taken_edge,
 		simplify = dummy_simplify;
 	      return thread_around_empty_blocks (taken_edge,
 						 dummy_cond,
+						 avail_exprs_stack,
 						 handle_dominating_asserts,
 						 simplify,
 						 visited,
@@ -846,7 +858,8 @@ thread_around_empty_blocks (edge taken_edge,
     simplify = dummy_simplify;
 
   /* Extract and simplify the condition.  */
-  cond = simplify_control_stmt_condition (taken_edge, stmt, dummy_cond,
+  cond = simplify_control_stmt_condition (taken_edge, stmt,
+					  avail_exprs_stack, dummy_cond,
 					  simplify, handle_dominating_asserts);
 
   /* If the condition can be statically computed and we have not already
@@ -869,6 +882,7 @@ thread_around_empty_blocks (edge taken_edge,
 
       thread_around_empty_blocks (taken_edge,
 				  dummy_cond,
+				  avail_exprs_stack,
 				  handle_dominating_asserts,
 				  simplify,
 				  visited,
@@ -927,7 +941,7 @@ fsm_find_control_statement_thread_paths (tree expr,
 					 bool seen_loop_phi)
 {
   tree var = SSA_NAME_VAR (expr);
-  gimple def_stmt = SSA_NAME_DEF_STMT (expr);
+  gimple *def_stmt = SSA_NAME_DEF_STMT (expr);
   basic_block var_bb = gimple_bb (def_stmt);
 
   if (var == NULL || var_bb == NULL)
@@ -1090,7 +1104,7 @@ fsm_find_control_statement_thread_paths (tree expr,
 
 	  for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
 	    {
-	      gimple stmt = gsi_stmt (gsi);
+	      gimple *stmt = gsi_stmt (gsi);
 	      /* Do not count empty statements and labels.  */
 	      if (gimple_code (stmt) != GIMPLE_NOP
 		  && gimple_code (stmt) != GIMPLE_LABEL
@@ -1187,7 +1201,8 @@ thread_through_normal_block (edge e,
 			     gcond *dummy_cond,
 			     bool handle_dominating_asserts,
 			     const_and_copies *const_and_copies,
-			     tree (*simplify) (gimple, gimple),
+			     avail_exprs_stack *avail_exprs_stack,
+			     pfn_simplify simplify,
 			     vec<jump_thread_edge *> *path,
 			     bitmap visited,
 			     bool *backedge_seen_p)
@@ -1199,6 +1214,10 @@ thread_through_normal_block (edge e,
   if (*backedge_seen_p)
     simplify = dummy_simplify;
 
+  /* We want to record any equivalences created by traversing E.  */
+  if (!handle_dominating_asserts)
+    record_temporary_equivalences (e, const_and_copies, avail_exprs_stack);
+
   /* PHIs create temporary equivalences.
      Note that if we found a PHI that made the block non-threadable, then
      we need to bubble that up to our caller in the same manner we do
@@ -1208,8 +1227,9 @@ thread_through_normal_block (edge e,
 
   /* Now walk each statement recording any context sensitive
      temporary equivalences we can detect.  */
-  gimple stmt
+  gimple *stmt
     = record_temporary_equivalences_from_stmts_at_dest (e, const_and_copies,
+							avail_exprs_stack,
 							simplify,
 							*backedge_seen_p);
 
@@ -1238,7 +1258,7 @@ thread_through_normal_block (edge e,
       /* Second case.  */
       return -1;
     }
-  
+
   /* If we stopped at a COND_EXPR or SWITCH_EXPR, see if we know which arm
      will be taken.  */
   if (gimple_code (stmt) == GIMPLE_COND
@@ -1248,7 +1268,8 @@ thread_through_normal_block (edge e,
       tree cond;
 
       /* Extract and simplify the condition.  */
-      cond = simplify_control_stmt_condition (e, stmt, dummy_cond, simplify,
+      cond = simplify_control_stmt_condition (e, stmt, avail_exprs_stack,
+					      dummy_cond, simplify,
 					      handle_dominating_asserts);
 
       if (!cond)
@@ -1285,7 +1306,7 @@ thread_through_normal_block (edge e,
 
 	  /* See if we can thread through DEST as well, this helps capture
 	     secondary effects of threading without having to re-run DOM or
-	     VRP. 
+	     VRP.
 
 	     We don't want to thread back to a block we have already
  	     visited.  This may be overly conservative.  */
@@ -1293,6 +1314,7 @@ thread_through_normal_block (edge e,
 	  bitmap_set_bit (visited, e->dest->index);
 	  thread_around_empty_blocks (taken_edge,
 				      dummy_cond,
+				      avail_exprs_stack,
 				      handle_dominating_asserts,
 				      simplify,
 				      visited,
@@ -1348,8 +1370,10 @@ thread_through_normal_block (edge e,
    the simplified condition with left-hand sides of ASSERT_EXPRs they are
    used in.
 
-   STACK is used to undo temporary equivalences created during the walk of
-   E->dest.
+   CONST_AND_COPIES is used to undo temporary equivalences created during the
+   walk of E->dest.
+
+   The available expression table is referenced vai AVAIL_EXPRS_STACK.
 
    SIMPLIFY is a pass-specific function used to simplify statements.  */
 
@@ -1357,9 +1381,10 @@ void
 thread_across_edge (gcond *dummy_cond,
 		    edge e,
 		    bool handle_dominating_asserts,
-		    const_and_copies *const_and_copies,
-		    avail_exprs_stack *avail_exprs_stack,
-		    tree (*simplify) (gimple, gimple))
+		    class const_and_copies *const_and_copies,
+		    class avail_exprs_stack *avail_exprs_stack,
+		    tree (*simplify) (gimple *, gimple *,
+				      class avail_exprs_stack *))
 {
   bitmap visited = BITMAP_ALLOC (NULL);
   bool backedge_seen;
@@ -1376,7 +1401,9 @@ thread_across_edge (gcond *dummy_cond,
 
   int threaded = thread_through_normal_block (e, dummy_cond,
 					      handle_dominating_asserts,
-					      const_and_copies, simplify, path,
+					      const_and_copies,
+					      avail_exprs_stack,
+					      simplify, path,
 					      visited, &backedge_seen);
   if (threaded > 0)
     {
@@ -1445,7 +1472,7 @@ thread_across_edge (gcond *dummy_cond,
 	const_and_copies->push_marker ();
 	if (avail_exprs_stack)
 	  avail_exprs_stack->push_marker ();
-     
+
 	/* Avoid threading to any block we have already visited.  */
 	bitmap_clear (visited);
 	bitmap_set_bit (visited, e->src->index);
@@ -1467,6 +1494,7 @@ thread_across_edge (gcond *dummy_cond,
 	  simplify = dummy_simplify;
 	found = thread_around_empty_blocks (taken_edge,
 					    dummy_cond,
+					    avail_exprs_stack,
 					    handle_dominating_asserts,
 					    simplify,
 					    visited,
@@ -1479,7 +1507,9 @@ thread_across_edge (gcond *dummy_cond,
 	if (!found)
 	  found = thread_through_normal_block (path->last ()->e, dummy_cond,
 					       handle_dominating_asserts,
-					       const_and_copies, simplify, path,
+					       const_and_copies,
+					       avail_exprs_stack,
+					       simplify, path,
 					       visited, &backedge_seen) > 0;
 
 	/* If we were able to thread through a successor of E->dest, then
