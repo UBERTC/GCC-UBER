@@ -1,3 +1,204 @@
+2015-09-20  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/47679
+	* tree-ssa-dom.c (record_temporary_equivalences): No longer static.
+	* tree-ssa-dom.h (record_temporary_equivalences): Add prototype.
+	* tree-ssa-threadedge.c: Include tree-ssa-dom.h.
+	(thread_through_normal_block): Use record_temporary_equivalences.
+
+2015-09-19  Trevor Saunders  <tbsaunde@tbsaunde.org>
+
+	* coretypes.h (gimple): Change typedef to be a forward
+	declaration.
+	* gimple.h (gimple_statement_base): rename to gimple.
+	* (all functions and types using gimple): Adjust.
+	* *.[ch]: Likewise.
+
+2015-09-19  Andrew Dixie  <andrewd@gentrack.com>
+	    David Edelsohn  <dje.gcc@gmail.com>
+
+	* config/rs6000/xcoff.h (EH_FRAME_IN_DATA_SECTION): Delete.
+	(ASM_PREFERRED_EH_DATA_FORMAT): Define.
+	(EH_FRAME_THROUGH_COLLECT2): Define.
+	(EH_TABLES_CAN_BE_READ_ONLY): Define.
+	(ASM_OUTPUT_DWARF_PCREL): Define.
+	(ASM_OUTPUT_DWARF_DATAREL): Define.
+
+2015-09-19  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.c (pa_function_ok_for_sibcall): Remove special treatment
+	of TARGET_ELF32.
+
+2015-09-18  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/47679
+	* tree-ssa-dom.c (avail_exprs_stack): No longer file scoped.  Move
+	it here ...
+	(dom_opt_dom_walker): New private member holding the avail_exprs_stack
+	object.  Update constructor.
+	(pass_dominator::execute):  Corresponding chagnes to declaration
+	and initialization of avail_exprs_stack.  Update constructor call
+	for dom_opt_dom_walker object.
+	(lookup_avail_expr, record_cond): Accept additional argument.  Pass
+	it down to children as needed.
+	(record_equivalences_from_incoming_edge): Likewise.
+	(eliminate_redundant_computations): Likewise.
+	(record_equivalences_from_stmt): Likewise.
+	(simplify_stmt_for_jump_threading): Likewise.
+	(record_temporary_equivalences): Likewise.
+	(optimize_stmt): Likewise.
+	(dom_opt_dom_walker::thread_across_edge): Update access to
+	avail_exprs_stack object and pass it to children as needed.
+	(dom_opt_dom_walker::before_dom_children): Similarly.
+	(dom_opt_dom_walker::after_dom_children): Similarly.
+	* tree-ssa-threadedge.c (pfn_simplify): New typedef.
+	(record_temporary_equivalences_from_stmts_at_dest): Use new typedef.
+	Add avail_expr_stack argument.  Pass it to children as needed.
+	(dummy_simplify): Likewise.
+	(simplify_control_stmt_condition): Likewise.
+	(thread_around_empty_blocks): Likewise.
+	(thread_through_normal_block): Likewise.
+	(thread_across_edge): Likewise.
+	* tree-ssa-threadedge.h (thread_across_edge): Update prototype.
+	* tree-vrp.c (simplify_stmt_for_jump_threading): Update.
+
+	PR tree-optimization/47679
+	* tree-ssa-dom.c (const_and_copies): No longer file scoped.  Move
+	it here ...
+	(dom_opt_dom_walker): New private member holding the const_and_copies
+	object.  Update constructor.
+	(pass_dominator::execute): Corresponding changes to declaration
+	and initialization of const_and_copies.  Update constructor call
+	for the dom_opt_dom_walker object.
+	(record_temporary_equivalences): Accept const_and_copies argument
+	pass it down to children as needed.
+	(record_equality): Likewise.
+	(record_equivalences_from_incoming_edge): Likewise.
+	(cprop_into_successor_phis, optimize_stmt): Likewise.
+	(eliminate_redundant_computations): Likewise.
+	(dom_opt_dom_walker::thread_across_edge): Update access to
+	const_and_copies object and pass it to children as needed.
+	(dom_opt_dom_walker::before_dom_children): Similarly.
+	(dom_opt_dom_walker::after_dom_children): Similarly.
+
+	PR tree-optimization/47679
+	* tree-ssa-dom.c (avail_exprs): No longer file scoped.  Bury
+	it into the avail_exprs_stack class.
+	(pass_dominator::execute): Corresponding changes to declaration
+	and initialization of avail_exprs.  Pass avail_exprs to
+	dump_dominator_optimization_stats.
+	(record_cond): Extract avail_exprs from avail_exprs_stack.
+	(lookup_avail_expr): Similarly.
+	(htab_staticstics): Remove unnecessary prototype.  Move to earlier
+	position in file.
+	(dump_dominator_optimization_stats): Make static and prototype.
+	Add argument for the hash table to dump.
+	(debug_dominator_optimization_stats): Remove.
+	* tree-ssa-dom.h (dump_dominator_optimization_stats): Remove
+	prototype.
+	(debug_dominator_optimization_stats): Similarly.
+	* tree-ssa-scopedtables.h (class avail_exprs_stack): Add missing
+	"void" in prototype for pop_to_marker method.  Add accessor method
+	for the underlying avail_exprs table.
+	
+	* tree-ssa-threadedge.c: Remove trailing whitespace.
+
+2014-09-18  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa-protos.h (pa_cint_ok_for_move): Change argument type to
+	unsigned.
+	(pa_ldil_cint_p): Likewise.
+	* config/pa/pa.c (pa_cint_ok_for_move): likewise.
+	(pa_ldil_cint_p): Likewise. Change signed casts to unsigned.
+	Update callers.
+	* config/pa/pa.md: Likewise.
+
+2015-09-18  David Malcolm  <dmalcolm@redhat.com>
+
+	* Makefile.in (OBJS-libcommon): Add diagnostic-show-locus.o.
+	* diagnostic.c (adjust_line): Move to diagnostic-show-locus.c.
+	(diagnostic_show_locus): Likewise.
+	(diagnostic_print_caret_line): Likewise.
+	* diagnostic-show-locus.c: New file.
+
+2015-09-18  David Edelsohn  <dje.gcc@gmail.com>
+
+	* dwarf2out.c (switch_to_eh_frame_section): Add ATTRIBUTE_UNUSED to
+	"back" parameter. Declare label in #if block.
+
+2015-09-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR middle-end/67619
+	* except.c (expand_builtin_eh_return): Use copy_addr_to_reg to copy
+	the address to a register.
+
+2015-09-18  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/47679
+	* Makefile.in (OBJS): Add tree-ssa-phionlycprop.o
+	* tree-ssa-dom.c: Remove unnecessary header includes.
+	(remove_stmt_or_phi): Moved from here into tree-ssa-phionlycprop.c
+	(get_rhs_or_phi_arg, get_lhs_or_phi_result): Likewise.
+	(propagate_rhs_into_lhs, eliminate_const_or_copy): Likewise.
+	(eliminate_degenerate_phis_1, pass_phi_only_cprop): Likewise.
+	(pass_phi_only_cprop::execute): Likewise.
+	(make_pass_phi_only_cprop): Likewise.
+	* tree-ssa-phionlycprop.c: New file with moved code.  Eliminate
+	uses of file scoped statics by passing the required objects
+	as parameters wherever needed.
+
+2015-09-18  Andrew Dixie  <andrewd@gentrack.com>
+	    David Edelsohn  <dje.gcc@gmail.com>
+
+	* defaults.h (EH_FRAME_SECTION_NAME): Depend on
+	EH_FRAME_THROUGH_COLLECT2.
+	* dwarf2asm.c (dw2_asm_output_encoded_addr_rtx): Add case for
+	DW_EH_PE_datarel.
+	* dwarf2out.c (switch_to_eh_frame_section): Use a read-only section
+	even if EH_FRAME_SECTION_NAME is undefined.  Restrict special
+	collect2 labels to EH_FRAME_THROUGH_COLLECT2.
+	* except.c (switch_to_exception_section): Use a read-only section
+	even if EH_FRAME_SECTION_NAME is undefined.
+	* system.h (EH_FRAME_IN_DATA_SECTION): Poison.
+	* collect2.c (write_c_file_stat): Provide dbase on AIX.
+	(scan_prog_file): Don't export __dso_handle nor
+	__gcc_unwind_dbase.
+	* config/rs6000/aix.h (ASM_PREFERRED_EH_DATA_FORMAT): Define.
+	(EH_TABLES_CAN_BE_READ_ONLY): Define.
+	(ASM_OUTPUT_DWARF_PCREL): Define.
+	(ASM_OUTPUT_DWARF_DATAREL): Define.
+	(EH_FRAME_THROUGH_COLLECT2): Define.
+	(EH_FRAME_IN_DATA_SECTION): Delete.
+	* config/rs6000/aix61.h (STARTFILE_SPEC): Add crtdbase.o.
+	* config/rs6000/rs6000-protos.h (rs6000_asm_output_dwarf_pcrel):
+	Declare.
+	(rs6000_asm_output_dwarf_datarel): Declare.
+	* config/rs6000/rs6000.c (rs6000_aix_asm_output_dwarf_pcrel): New.
+	(rs6000_aix_asm_output_dwarf_datarel): New.
+	(rs6000_xcoff_asm_init_sections): Don't	set exception_section.
+	* config/spu/spu-elf.h (EH_FRAME_IN_DATA_SECTION): Delete.
+	(EH_FRAME_THROUGH_COLLECT2): Define.
+	* config/i386/i386-interix.h (EH_FRAME_IN_DATA_SECTION): Delete.
+	(EH_FRAME_THROUGH_COLLECT2): Define.
+	(EH_TABLES_CAN_BE_READ_ONLY): Define.
+	* doc/tm.texi.in (EH_FRAME_IN_DATA_SECTION): Delete.
+	(EH_FRAME_THROUGH_COLLECT2): New.
+	(ASM_OUTPUT_DWARF_DATAREL): New.
+	* doc/tm.texi: Regenerate.
+
+2015-09-18  Richard Biener  <rguenther@suse.de>
+
+	* dwarf2out.c (append_entry_to_tmpl_value_parm_die_table): Assert
+	we're in early phase.
+	(schedule_generic_params_dies_gen): Likewise.
+	(gen_remaining_tmpl_value_param_die_attribute): Do only as much
+	work as possible, retaining unhandled cases.
+	(gen_scheduled_generic_parms_dies): Set early-dwarf flag and
+	clear out generic_type_instances at the end.
+	(dwarf2out_finish): Move call to gen_scheduled_generic_parms_dies...
+	(dwarf2out_early_finish): ... here.  Do most of
+	gen_remaining_tmpl_value_param_die_attribute here.
+
 2015-09-18  Alan Lawrence  <alan.lawrence@arm.com>
 
 	PR tree-optimization/67283
