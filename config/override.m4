@@ -29,7 +29,7 @@ m4_copy_force([_AC_PREREQ], [AC_PREREQ])
 
 dnl Ensure exactly this Autoconf version is used
 m4_ifndef([_GCC_AUTOCONF_VERSION],
-  [m4_define([_GCC_AUTOCONF_VERSION], [2.64])])
+  [m4_define([_GCC_AUTOCONF_VERSION], [2.69])])
 
 dnl Test for the exact version when AC_INIT is expanded.
 dnl This allows to update the tree in steps (for testing)
@@ -54,9 +54,9 @@ m4_if(m4_index([..wi.d.], [.d.]), [-1],
 GNU M4 1.4.16 or newer and set the M4 environment variable]))])
 
 
-dnl Fix 2.64 cross compile detection for AVR and RTEMS
+dnl Fix 2.69 cross compile detection for AVR and RTEMS
 dnl by not trying to compile fopen.
-m4_if(m4_defn([m4_PACKAGE_VERSION]), [2.64],
+m4_if(m4_defn([m4_PACKAGE_VERSION]), [2.69],
   [m4_foreach([_GCC_LANG], [C, C++, Fortran, Fortran 77],
      [m4_define([_AC_LANG_IO_PROGRAM(]_GCC_LANG[)], m4_defn([AC_LANG_PROGRAM(]_GCC_LANG[)]))])])
 
