@@ -1,3 +1,81 @@
+2015-09-25  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/64906
+	* c-c++-common/ubsan/pr64906.c: New test.
+
+2015-09-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-09-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67439
+	* gcc.target/arm/pr67439_1.c: New test.
+
+2015-09-23  Matthew Wahab  <matthew.wahab@arm.com>
+
+	Backport from mainline
+	2015-08-14  Matthew Wahab  <matthew.wahab@arm.com>
+		    Matthias Klose  <doko@debian.org>
+
+	PR target/67143
+	* gcc.c-torture/compile/pr67143.c: New
+	* gcc.target/aarch64/atomic-op-imm.c
+	(atomic_fetch_add_negative_RELAXED): New.
+	(atomic_fetch_sub_negative_ACQUIRE): New.
+
+2015-09-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-07-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66952
+	* gcc.dg/torture/pr66952.c: Use signed char.
+
+2015-09-21  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67615
+	* gfortran.dg/pr67615.f90: new test.
+
+2015-09-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR middle-end/67619
+	* gcc.dg/torture/pr67619.c: New test.
+	* lib/target-supports.exp (check_effective_target_builtin_eh_return):
+	New procedure.
+
+2015-09-21  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66793
+	* gcc.dg/torture/pr66793.c: New testcase.
+
+	2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67055
+	* g++.dg/torture/pr67055.C: New testcase.
+
+	2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67121
+	* gcc.dg/torture/pr67121.c: New testcase.
+
+	2015-09-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67271
+	* gcc.dg/pr67271.c: New testcase.
+
+	2015-07-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66952
+	* gcc.dg/torture/pr66952.c: New testcase.
+
+	2015-09-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67470
+	* gcc.dg/torture/pr67470.c: New testcase.
+
 2015-09-17  Marek Polacek  <polacek@redhat.com>
 
 	Backport from mainline:

@@ -2089,11 +2089,6 @@
 {
   if (TARGET_SHMEDIA)
     operands[1] = force_reg (SImode, operands[1]);
-  else if (! arith_operand (operands[2], SImode))
-    {
-      if (reg_overlap_mentioned_p (operands[0], operands[1]))
-	FAIL;
-    }
 })
 
 (define_insn "addsi3_media"
@@ -2132,10 +2127,7 @@
   [(set (match_operand:SI 0 "arith_reg_dest" "=r,&u")
 	(plus:SI (match_operand:SI 1 "arith_operand" "%0,r")
 		 (match_operand:SI 2 "arith_or_int_operand" "rI08,rn")))]
-  "TARGET_SH1
-   && ((rtx_equal_p (operands[0], operands[1])
-        && arith_operand (operands[2], SImode))
-       || ! reg_overlap_mentioned_p (operands[0], operands[1]))"
+  "TARGET_SH1"
   "@
 	add	%2,%0
 	#"
@@ -9422,7 +9414,7 @@ label:
    (use (reg:SI FPSCR_MODES_REG))
    (use (reg:SI PIC_REG))
    (clobber (reg:SI PR_REG))
-   (clobber (match_scratch:SI 2 "=r"))]
+   (clobber (match_scratch:SI 2 "=&r"))]
   "TARGET_SH2"
   "#"
   "reload_completed"
@@ -9556,7 +9548,7 @@ label:
    (use (reg:SI FPSCR_MODES_REG))
    (use (reg:SI PIC_REG))
    (clobber (reg:SI PR_REG))
-   (clobber (match_scratch:SI 3 "=r"))]
+   (clobber (match_scratch:SI 3 "=&r"))]
   "TARGET_SH2"
   "#"
   "reload_completed"
@@ -9957,7 +9949,7 @@ label:
   [(call (mem:SI (match_operand:SI 0 "symbol_ref_operand" ""))
 	 (match_operand 1 "" ""))
    (use (reg:SI FPSCR_MODES_REG))
-   (clobber (match_scratch:SI 2 "=k"))
+   (clobber (match_scratch:SI 2 "=&k"))
    (return)]
   "TARGET_SH2"
   "#"
@@ -10149,7 +10141,7 @@ label:
 	(call (mem:SI (match_operand:SI 1 "symbol_ref_operand" ""))
 	      (match_operand 2 "" "")))
    (use (reg:SI FPSCR_MODES_REG))
-   (clobber (match_scratch:SI 3 "=k"))
+   (clobber (match_scratch:SI 3 "=&k"))
    (return)]
   "TARGET_SH2"
   "#"
@@ -14644,7 +14636,7 @@ label:
   [(const_int 0)]
 {
   emit_insn (gen_addsi3 (operands[1], operands[1], operands[2]));
-  sh_check_add_incdec_notes (emit_move_insn (operands[3], operands[1]));
+  sh_peephole_emit_move_insn (operands[3], operands[1]);
 })
 
 ;;	mov.l	@(r0,r9),r1
@@ -14657,7 +14649,7 @@ label:
   "TARGET_SH1 && peep2_reg_dead_p (2, operands[0])"
   [(const_int 0)]
 {
-  sh_check_add_incdec_notes (emit_move_insn (operands[2], operands[1]));
+  sh_peephole_emit_move_insn (operands[2], operands[1]);
 })
 
 (define_peephole2
@@ -14668,7 +14660,7 @@ label:
   "TARGET_SH1 && peep2_reg_dead_p (2, operands[0])"
   [(const_int 0)]
 {
-  sh_check_add_incdec_notes (emit_move_insn (operands[2], operands[1]));
+  sh_peephole_emit_move_insn (operands[2], operands[1]);
 })
 
 (define_peephole2
@@ -14680,7 +14672,7 @@ label:
   [(const_int 0)]
 {
   sh_check_add_incdec_notes (emit_insn (gen_extend<mode>si2 (operands[2],
-							     operands[1])));
+		   sh_remove_overlapping_post_inc (operands[2], operands[1]))));
 })
 
 ;;	mov.w	@(18,r1),r0 (r0 = HImode)
@@ -14710,8 +14702,9 @@ label:
 
   // We don't know what the new set insn will be in detail.  Just make sure
   // that it still can be recognized and the constraints are satisfied.
-  rtx_insn* i = emit_insn (gen_rtx_SET (VOIDmode, operands[2], operands[3]));
-						     
+  rtx_insn* i = emit_insn (gen_rtx_SET (VOIDmode, operands[2],
+		    sh_remove_overlapping_post_inc (operands[2], operands[3])));
+
   recog_data_d prev_recog_data = recog_data;
   bool i_invalid = insn_invalid_p (i, false); 
   recog_data = prev_recog_data;
@@ -14749,7 +14742,8 @@ label:
 {
   // We don't know what the new set insn will be in detail.  Just make sure
   // that it still can be recognized and the constraints are satisfied.
-  rtx_insn* i = emit_insn (gen_rtx_SET (VOIDmode, operands[2], operands[3]));
+  rtx_insn* i = emit_insn (gen_rtx_SET (VOIDmode, operands[2],
+		    sh_remove_overlapping_post_inc (operands[2], operands[3])));
 
   recog_data_d prev_recog_data = recog_data;
   bool i_invalid = insn_invalid_p (i, false); 

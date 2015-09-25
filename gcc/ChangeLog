@@ -1,3 +1,148 @@
+2015-09-24  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa-linux.h (HAVE_sync_compare_and_swapdi): Define.
+	* config/pa/pa-protos.h (pa_maybe_emit_compare_and_swap_exchange_loop):
+	Declare.
+	* config/pa/pa.c (pa_init_libfuncs): Init sync libfuncs up to 8 bytes.
+	(pa_expand_compare_and_swap_loop): New.
+	(pa_maybe_emit_compare_and_swap_exchange_loop): New.
+	* config/pa/pa.md (atomic_storeqi, atomic_storehi, atomic_storesi,
+	atomic_storesf, atomic_loaddf, atomic_storedf): New expanders.
+	(atomic_loaddf_1, atomic_storedf_1): New insn patterns.
+	(atomic_loaddi, atomic_loaddi_1, atomic_storedi, atomic_storedi_1):
+	Revise.
+
+2015-09-24  Alan Modra  <amodra@gmail.com>
+
+	Apply from mainline
+	2015-09-02  Alan Modra  <amodra@gmail.com>
+	* config/rs6000/sysv4le.h (LINK_TARGET_SPEC): Don't define.
+	* config/rs6000/sysv4.h (LINK_TARGET_SPEC): Likewise.
+	(LINK_SPEC, SUBTARGET_EXTRA_SPECS): Delete link_target.
+
+2015-09-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/67391
+	* config/sh/sh.md (addsi3, *addsi3_compact): Don't check for overlapping
+	regs when matching the pattern.
+
+2015-09-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-09-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67439
+	* config/arm/arm.md (*arm32_movhf): Remove !arm_restrict_it from
+	predicate.  Set predicable_short_it attr to "no".
+
+2015-09-23  Matthew Wahab  <matthew.wahab@arm.com>
+
+	Backport from mainline
+	2015-08-14  Matthew Wahab  <matthew.wahab@arm.com>
+
+	PR target/67143
+	* config/aarch64/atomics.md (atomic_<optab><mode>): Replace
+	'lconst_atomic' with 'const_atomic'.
+	(atomic_fetch_<optab><mode>): Likewise.
+	(atomic_<optab>_fetch<mode>): Likewise.
+	* config/aarch64/iterators.md (lconst-atomic): Move below
+	'const_atomic'.
+	(const_atomic): New.
+
+2015-09-22  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Backport from mainline
+	2015-09-22  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* config/nios2/nios2.c (nios2_legitimize_address): When handling
+	'reg + reloc' cases, allow first operand to be non-REG, and use
+	force_reg() to enforce address pattern.
+
+2015-09-22  Kirill Yukhin <kirill.yukhin@intel.com>
+
+	* gcc/config/i386/i386.md (define_insn "kunpckhi"): Fix
+	operand in pattern.
+	(define_insn "kunpcksi"): Ditto.
+	(define_insn "kunpckdi"): Ditto.
+
+2015-09-22  Kirill Yukhin <kirill.yukhin@intel.com>
+
+	* gcc/config/i386/i386.md (define_split not/xor SWI1248x): Use
+	iterator instead of fixed modes.
+
+2015-09-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR middle-end/67619
+	* except.c (expand_builtin_eh_return): Use copy_addr_to_reg to copy
+	the address to a register.
+
+2015-09-21  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-21  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/67657
+	* config/sh/sh.c (sh_remove_overlapping_post_inc,
+	sh_peephole_emit_move_insn): Add new functions.
+	* config/sh/sh-protos.h (sh_remove_overlapping_post_inc,
+	sh_peephole_emit_move_insn): Declere them.
+	* config/sh/sh.md: Use them in various peephole2 patterns.
+
+2015-09-21  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66793
+	* gimple-ssa-isolate-paths.c (insert_trap_and_remove_trailing_statemen):
+	Properly split the block after stmts ending it.
+
+	2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67055
+	* tree-ssa-ccp.c (fold_builtin_alloca_with_align): Handle
+	NULL gimple_block.
+
+	2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67121
+	* tree-if-conv.c (combine_blocks): Clear range-info produced
+	by stmts no longer executed conditionally.
+
+	2015-09-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67271
+	* fold-const.c (native_encode_expr): Bail out on bogus offsets.
+
+	2015-07-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66952
+	* tree-ssa-ifcombine.c (pass_tree_ifcombine::execute): For
+	blocks we end up executing unconditionally reset all SSA
+	info such as range and alignment.
+	* tree-ssanames.h (reset_flow_sensitive_info): Declare.
+	* tree-ssanames.c (reset_flow_sensitive_info): New function.
+
+	2015-09-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67470
+	* tree-ssa-loop-im.c (execute_sm_if_changed): Preserve PHI
+	structure for PHI hoisting by inserting a forwarder block
+	if appropriate.
+
+2015-09-21  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-16  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/67573
+	* config/sh/sh.md (call_pcrel): Add early clobber to scratch
+	operand.
+	(call_value_pcrel, sibcall_pcrel, sibcall_value_pcrel): Likewise.
+
 2015-09-20  Oleg Endo  <olegendo@gcc.gnu.org>
 
 	Backport from mainline
