@@ -5675,7 +5675,7 @@ create_variable_info_for_1 (tree decl, const char *name)
 
   /* If we didn't end up collecting sub-variables create a full
      variable for the decl.  */
-  if (fieldstack.length () <= 1
+  if (fieldstack.length () == 0
       || fieldstack.length () > MAX_FIELDS_FOR_FIELD_SENSITIVE)
     {
       vi = new_var_info (decl, name);
@@ -5684,6 +5684,9 @@ create_variable_info_for_1 (tree decl, const char *name)
       vi->fullsize = tree_to_uhwi (declsize);
       vi->size = vi->fullsize;
       vi->is_full_var = true;
+      if (POINTER_TYPE_P (TREE_TYPE (decl))
+	  && TYPE_RESTRICT (TREE_TYPE (decl)))
+	vi->only_restrict_pointers = 1;
       fieldstack.release ();
       return vi;
     }
@@ -5694,19 +5697,26 @@ create_variable_info_for_1 (tree decl, const char *name)
        fieldstack.iterate (i, &fo);
        ++i, newvi = vi_next (newvi))
     {
-      const char *newname = "NULL";
+      const char *newname = NULL;
       char *tempname;
 
       if (dump_file)
 	{
-	  tempname
-	    = xasprintf ("%s." HOST_WIDE_INT_PRINT_DEC
-			 "+" HOST_WIDE_INT_PRINT_DEC, name,
-			 fo->offset, fo->size);
-	  newname = ggc_strdup (tempname);
-	  free (tempname);
+	  if (fieldstack.length () != 1)
+	    {
+	      tempname
+		= xasprintf ("%s." HOST_WIDE_INT_PRINT_DEC
+			     "+" HOST_WIDE_INT_PRINT_DEC, name,
+			     fo->offset, fo->size);
+	      newname = ggc_strdup (tempname);
+	      free (tempname);
+	    }
 	}
-      newvi->name = newname;
+      else
+	newname = "NULL";
+
+      if (newname)
+	  newvi->name = newname;
       newvi->offset = fo->offset;
       newvi->size = fo->size;
       newvi->fullsize = vi->fullsize;
@@ -5847,12 +5857,12 @@ intra_create_variable_infos (struct function *fn)
     {
       varinfo_t p = get_vi_for_tree (t);
 
-      /* For restrict qualified pointers to objects passed by
-         reference build a real representative for the pointed-to object.
-	 Treat restrict qualified references the same.  */
-      if (TYPE_RESTRICT (TREE_TYPE (t))
-	  && ((DECL_BY_REFERENCE (t) && POINTER_TYPE_P (TREE_TYPE (t)))
-	      || TREE_CODE (TREE_TYPE (t)) == REFERENCE_TYPE)
+      /* For restrict qualified pointers build a representative for
+	 the pointed-to object.  Note that this ends up handling
+	 out-of-bound references conservatively by aggregating them
+	 in the first/last subfield of the object.  */
+      if (POINTER_TYPE_P (TREE_TYPE (t))
+	  && TYPE_RESTRICT (TREE_TYPE (t))
 	  && !type_contains_placeholder_p (TREE_TYPE (TREE_TYPE (t))))
 	{
 	  struct constraint_expr lhsc, rhsc;
@@ -6942,10 +6952,11 @@ visit_loadstore (gimple *, tree base, tree ref, void *clique_)
       || TREE_CODE (base) == TARGET_MEM_REF)
     {
       tree ptr = TREE_OPERAND (base, 0);
-      if (TREE_CODE (ptr) == SSA_NAME)
+      if (TREE_CODE (ptr) == SSA_NAME
+	  && ! SSA_NAME_IS_DEFAULT_DEF (ptr))
 	{
 	  /* ???  We need to make sure 'ptr' doesn't include any of
-	     the restrict tags in its points-to set.  */
+	     the restrict tags we added bases for in its points-to set.  */
 	  return false;
 	}
 

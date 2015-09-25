@@ -85,6 +85,24 @@ fs::absolute(const path& p, const path& base)
 
 namespace
 {
+#ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS
+  inline bool is_dot(wchar_t c) { return c == L'.'; }
+#else
+  inline bool is_dot(char c) { return c == '.'; }
+#endif
+
+  inline bool is_dot(const fs::path& path)
+  {
+    const auto& filename = path.native();
+    return filename.size() == 1 && is_dot(filename[0]);
+  }
+
+  inline bool is_dotdot(const fs::path& path)
+  {
+    const auto& filename = path.native();
+    return filename.size() == 2 && is_dot(filename[0]) && is_dot(filename[1]);
+  }
+
   struct free_as_in_malloc
   {
     void operator()(void* p) const { ::free(p); }
@@ -98,6 +116,7 @@ fs::canonical(const path& p, const path& base, error_code& ec)
 {
   const path pa = absolute(p, base);
   path result;
+
 #ifdef _GLIBCXX_USE_REALPATH
   char_ptr buf{ nullptr };
 # if _XOPEN_VERSION < 700
@@ -119,18 +138,9 @@ fs::canonical(const path& p, const path& base, error_code& ec)
     }
 #endif
 
-  auto fail = [&ec, &result](int e) mutable {
-      if (!ec.value())
-	ec.assign(e, std::generic_category());
-      result.clear();
-  };
-
   if (!exists(pa, ec))
-    {
-      fail(ENOENT);
-      return result;
-    }
-  // else we can assume no unresolvable symlink loops
+    return result;
+  // else: we know there are (currently) no unresolvable symlink loops
 
   result = pa.root_path();
 
@@ -138,20 +148,19 @@ fs::canonical(const path& p, const path& base, error_code& ec)
   for (auto& f : pa.relative_path())
     cmpts.push_back(f);
 
-  while (!cmpts.empty())
+  int max_allowed_symlinks = 40;
+
+  while (!cmpts.empty() && !ec)
     {
       path f = std::move(cmpts.front());
       cmpts.pop_front();
 
-      if (f.compare(".") == 0)
+      if (is_dot(f))
 	{
-	  if (!is_directory(result, ec))
-	    {
-	      fail(ENOTDIR);
-	      break;
-	    }
+	  if (!is_directory(result, ec) && !ec)
+	    ec.assign(ENOTDIR, std::generic_category());
 	}
-      else if (f.compare("..") == 0)
+      else if (is_dotdot(f))
 	{
 	  auto parent = result.parent_path();
 	  if (parent.empty())
@@ -166,27 +175,30 @@ fs::canonical(const path& p, const path& base, error_code& ec)
 	  if (is_symlink(result, ec))
 	    {
 	      path link = read_symlink(result, ec);
-	      if (!ec.value())
+	      if (!ec)
 		{
-		  if (link.is_absolute())
-		    {
-		      result = link.root_path();
-		      link = link.relative_path();
-		    }
+		  if (--max_allowed_symlinks == 0)
+		    ec.assign(ELOOP, std::generic_category());
 		  else
-		    result.remove_filename();
+		    {
+		      if (link.is_absolute())
+			{
+			  result = link.root_path();
+			  link = link.relative_path();
+			}
+		      else
+			result.remove_filename();
 
-		  cmpts.insert(cmpts.begin(), link.begin(), link.end());
+		      cmpts.insert(cmpts.begin(), link.begin(), link.end());
+		    }
 		}
-	    }
-
-	  if (ec.value() || !exists(result, ec))
-	    {
-	      fail(ENOENT);
-	      break;
 	    }
 	}
     }
+
+  if (ec || !exists(result, ec))
+    result.clear();
+
   return result;
 }
 
@@ -576,19 +588,36 @@ fs::create_directories(const path& p)
 bool
 fs::create_directories(const path& p, error_code& ec) noexcept
 {
+  if (p.empty())
+    {
+      ec = std::make_error_code(errc::invalid_argument);
+      return false;
+    }
   std::stack<path> missing;
   path pp = p;
-  ec.clear();
-  while (!p.empty() && !exists(pp, ec) && !ec.value())
+
+  while (!pp.empty() && status(pp, ec).type() == file_type::not_found)
     {
-      missing.push(pp);
-      pp = pp.parent_path();
+      ec.clear();
+      const auto& filename = pp.filename();
+      if (!is_dot(filename) && !is_dotdot(filename))
+	missing.push(pp);
+      pp.remove_filename();
     }
-  while (!missing.empty() && !ec.value())
+
+  if (ec || missing.empty())
+    return false;
+
+  do
     {
-      create_directory(missing.top(), ec);
+      const path& top = missing.top();
+      create_directory(top, ec);
+      if (ec && is_directory(top))
+	ec.clear();
       missing.pop();
     }
+  while (!missing.empty() && !ec);
+
   return missing.empty();
 }
 

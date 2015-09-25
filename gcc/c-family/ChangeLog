@@ -1,3 +1,48 @@
+2015-09-25  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/64906
+	* c-ubsan.c (ubsan_instrument_division): Also pre-evaluate OP1.
+
+2015-09-24  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	* c-indentation.c (should_warn_for_misleading_indentation):
+	Compare next_stmt_vis_column with guard_line_first_nws instead
+	of with guard_line_vis_column.
+
+2015-09-23  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR c/49654
+	PR c/49655
+	* c-pragma.c (handle_pragma_diagnostic): Detect non-warning
+	options and options not valid for the current language.
+
+2015-09-22  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	* c-indentation.c (should_warn_for_misleading_indentation):
+	Float out and consolidate the calls to get_visual_column that
+	are passed guard_exploc as an argument.  Compare
+	next_stmt_vis_column with guard_line_first_nws instead of with
+	body_line_first_nws.
+
+2015-09-22  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* c.opt (Wmultiple-inheritance, Wvirtual-inheritance, Wtemplates,
+	Wnamespaces): New C++ warnings.
+
+2015-09-22  Jason Merrill  <jason@redhat.com>
+
+	* c-common.h (abi_compat_version_crosses): New.
+	(warn_abi_version): Declare.
+	* c-common.c: Define it.
+	* c-opts.c (c_common_post_options): Handle it.
+	flag_abi_compat_version defaults to 8.
+
+2015-09-21  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Complete the implementation of N4230, Nested namespace definition.
+	* c-cppbuiltin.c: Add __cpp_namespace_attributes and
+	__cpp_nested_namespace_definitions.
+
 2015-09-18  Manuel López-Ibáñez  <manu@gcc.gnu.org>
 
 	* c-pragma.c (handle_pragma_diagnostic): Fix wrong return.

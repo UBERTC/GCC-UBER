@@ -83,6 +83,9 @@ typedef struct vn_reference_op_struct
   ENUM_BITFIELD(tree_code) opcode : 16;
   /* 1 for instrumented calls.  */
   unsigned with_bounds : 1;
+  /* Dependence info, used for [TARGET_]MEM_REF only.  */
+  unsigned short clique;
+  unsigned short base;
   /* Constant offset this op adds or -1 if it is variable.  */
   HOST_WIDE_INT off;
   tree type;
@@ -201,7 +204,6 @@ tree vn_nary_op_lookup_stmt (gimple *, vn_nary_op_t *);
 tree vn_nary_op_lookup_pieces (unsigned int, enum tree_code,
 			       tree, tree *, vn_nary_op_t *);
 vn_nary_op_t vn_nary_op_insert (tree, tree);
-vn_nary_op_t vn_nary_op_insert_stmt (gimple, tree);
 vn_nary_op_t vn_nary_op_insert_pieces (unsigned int, enum tree_code,
 				       tree, tree *, tree, unsigned int);
 bool ao_ref_init_from_vn_reference (ao_ref *, alias_set_type, tree,

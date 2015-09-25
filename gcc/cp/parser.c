@@ -11645,6 +11645,9 @@ cp_parser_declaration (cp_parser* parser)
 	       (token2.type == CPP_NAME
 		&& (cp_lexer_peek_nth_token (parser->lexer, 3)->type
 		    != CPP_EQ))
+               || (token2.type == CPP_OPEN_SQUARE
+                   && cp_lexer_peek_nth_token (parser->lexer, 3)->type
+                   == CPP_OPEN_SQUARE)
 	       /* An unnamed namespace definition.  */
 	       || token2.type == CPP_OPEN_BRACE
 	       || token2.keyword == RID_ATTRIBUTE))
@@ -16969,6 +16972,9 @@ cp_parser_namespace_definition (cp_parser* parser)
   /* Look for the `namespace' keyword.  */
   token = cp_parser_require_keyword (parser, RID_NAMESPACE, RT_NAMESPACE);
 
+  /* Parse any specified attributes before the identifier.  */
+  attribs = cp_parser_attributes_opt (parser);
+
   /* Get the name of the namespace.  We do not attempt to distinguish
      between an original-namespace-definition and an
      extension-namespace-definition at this point.  The semantic
@@ -16978,8 +16984,15 @@ cp_parser_namespace_definition (cp_parser* parser)
   else
     identifier = NULL_TREE;
 
-  /* Parse any specified attributes.  */
-  attribs = cp_parser_attributes_opt (parser);
+  /* Parse any specified attributes after the identifier.  */
+  tree post_ident_attribs = cp_parser_attributes_opt (parser);
+  if (post_ident_attribs)
+    {
+      if (attribs)
+        attribs = chainon (attribs, post_ident_attribs);
+      else
+        attribs = post_ident_attribs;
+    }
 
   /* Start the namespace.  */
   push_namespace (identifier);
@@ -17029,6 +17042,8 @@ cp_parser_namespace_definition (cp_parser* parser)
     }
 
   has_visibility = handle_namespace_attrs (current_namespace, attribs);
+
+  warning  (OPT_Wnamespaces, "namespace %qD entered", current_namespace);
 
   /* Parse the body of the namespace.  */
   cp_parser_namespace_body (parser);
