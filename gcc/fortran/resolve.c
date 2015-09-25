@@ -9844,8 +9844,8 @@ nonscalar_typebound_assign (gfc_symbol *derived, int depth)
    "An intrinsic assignment where the variable is of derived type is
    performed as if each component of the variable were assigned from the
    corresponding component of expr using pointer assignment (7.2.2) for
-   each pointer component, deﬁned assignment for each nonpointer
-   nonallocatable component of a type that has a type-bound deﬁned
+   each pointer component, defined assignment for each nonpointer
+   nonallocatable component of a type that has a type-bound defined
    assignment consistent with the component, intrinsic assignment for
    each other nonpointer nonallocatable component, ..."
 
@@ -10377,15 +10377,18 @@ gfc_resolve_code (gfc_code *code, gfc_namespace *ns)
 	  }
 
 	case EXEC_ARITHMETIC_IF:
-	  if (t
-	      && code->expr1->ts.type != BT_INTEGER
-	      && code->expr1->ts.type != BT_REAL)
-	    gfc_error ("Arithmetic IF statement at %L requires a numeric "
-		       "expression", &code->expr1->where);
+	  {
+	    gfc_expr *e = code->expr1;
 
-	  resolve_branch (code->label1, code);
-	  resolve_branch (code->label2, code);
-	  resolve_branch (code->label3, code);
+	    if (t && (e->rank > 0
+		      || !(e->ts.type == BT_REAL || e->ts.type == BT_INTEGER)))
+	      gfc_error ("Arithmetic IF statement at %L requires a scalar "
+			 "REAL or INTEGER expression", &code->expr1->where);
+
+	    resolve_branch (code->label1, code);
+	    resolve_branch (code->label2, code);
+	    resolve_branch (code->label3, code);
+	  }
 	  break;
 
 	case EXEC_IF:

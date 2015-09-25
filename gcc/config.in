@@ -1474,7 +1474,7 @@
 #endif
 
 
-/* Define if your linker supports -pie option. */
+/* Define if your linker supports PIE option. */
 #ifndef USED_FOR_TARGET
 #undef HAVE_LD_PIE
 #endif
@@ -1628,6 +1628,12 @@
 /* Define to 1 if you have the `setrlimit' function. */
 #ifndef USED_FOR_TARGET
 #undef HAVE_SETRLIMIT
+#endif
+
+
+/* Define if the system-provided CRTs are present on Solaris. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_SOLARIS_CRTS
 #endif
 
 
@@ -1913,7 +1919,7 @@
 #endif
 
 
-/* Define to hold the list of target names suitable for offloading. */
+/* Define to offload targets, separated by commas. */
 #ifndef USED_FOR_TARGET
 #undef OFFLOAD_TARGETS
 #endif

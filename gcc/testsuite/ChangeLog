@@ -1,6 +1,314 @@
+2015-09-25  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/64906
+	* c-c++-common/ubsan/pr64906.c: New test.
+
+2015-09-24  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/pr66749.c (dg-options): Replace -mtune=iamcu
+	with -mtune=lakemount.
+	* gcc.target/i386/pr66821.c (dg-options): Likewise.
+	* gcc.target/i386/pr67329.c (dg-options): Likewise.
+
+2015-09-24  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR driver/67640
+	* gcc.dg/Werror-13.c: New test.
+
+2015-09-24  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* gcc.target/aarch64/target_attr_10.c (foo): Use dg-message for note.
+
+2015-09-24  Richard Biener  <rguenther@suse.de>
+
+	PR lto/67699
+	* g++.dg/pr67699.C: New testcase.
+
+2015-09-24  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR libgcc/67624
+	* gcc.target/arm/fp16-inf.c: New test.
+
+2015-09-24  Kirill Yukhin <kirill.yukhin@intel.com>
+
+	* gcc.target/i386/avx512vbmi-check.h (main): Fix register
+	name while checking for AVX-512VBMI presence.
+
+2015-09-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* lib/target-supports.exp (check_effective_target_pie): Check for
+	PIE support on Solaris 11.x and 12.
+
+2015-09-24  Richard Biener  <rguenther@suse.de>
+
+	* g++.dg/tree-ssa/restrict3.C: New testcase.
+
+2015-09-24  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/48885
+	* gcc.dg/tree-ssa/restrict-6.c: New testcase.
+
+2015-09-24  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	* c-c++-common/Wmisleading-indentation.c: Augment test.
+
+2015-09-23  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Fix small typos in the coding rule enforcement warnings.
+	* g++.dg/diagnostic/disable.C: Replace 'namepace'
+	with 'namespace'.
+
+2015-09-23  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67662
+	* gcc.dg/ubsan/pr67662.c: New testcase.
+
+2015-09-23  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR c/49655
+	* gcc.dg/pragma-diag-6.c: New test.
+
+2015-09-23  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vcvt_high_1.c: New.
+
+2015-09-23  Richard Biener  <rguenther@suse.de>
+
+	* g++.dg/tree-ssa/restrict2.C: Un-XFAIL testcase.
+
+2015-09-22  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	* c-c++-common/Wmisleading-indentation.c: Augment test.
+
+2015-09-22  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* g++.dg/diagostic/disable.C: New.
+
+2015-09-22  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/67671
+	* g++.dg/pr67671.C: New test.
+
+2015-09-22  Alexander Fomin <alexander.fomin@intel.com>
+
+	PR target/67480
+	* gcc.target/i386/pr67480.c: New test.
+
+2015-09-22  Kirill Yukhin <kirill.yukhin@intel.com>
+
+	* gcc.target/i386/funcspec-5.c: Test avx512vl, avx512bw,
+	avx512dq, avx512cd, avx512er, avx512pf and skylake-avx512.
+	* gcc.target/i386/builtin_target.c: Test  avx512vl, avx512bw,
+	avx512dq, avx512cd, avx512er and avx512pf.
+
+2015-09-22  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* gcc.target/aarch64/atomic-inst-ldadd.c: Add tests for
+	update-fetch operations.
+	* gcc.target/aarch64/atomic-inst-ldlogic.c: Likewise.
+
+2015-09-22  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* gcc.target/aarch64/atomic-inst-ldadd.c: New.
+	* gcc.target/aarch64/atomic-inst-ldlogic.c: New.
+
+2015-09-22  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* gcc.target/aarch64/atomic-inst-ops.inc: (TEST_MODEL): New.
+	(TEST_ONE): New.
+	* gcc.target/aarch64/atomic-inst-swap.c: New.
+
+2015-09-22  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	* gcc.target/i386/inline_error.c (int bar): Use dg-message for note.
+	* gcc.target/i386/pr57756.c (static __inline int caller): Likewise.
+	* gcc.target/i386/pr59789.c (f1): Likewise.
+	* gcc.target/i386/intrinsics_5.c (__m128i foo): Likewise.
+	* gcc.target/i386/intrinsics_6.c: Likewise.
+	* gcc.dg/winline-5.c (int t): Likewise.
+	* gcc.dg/winline-9.c (t): Likewise.
+	* gcc.dg/always_inline2.c (q): Likewise.
+	* gcc.dg/winline-2.c (inline int t): Likewise.
+	* gcc.dg/winline-6.c: Likewise.
+	* gcc.dg/winline-10.c (void g): Likewise.
+	* gcc.dg/pr49243.c (void parse): Likewise.
+	* gcc.dg/always_inline3.c (q2): Likewise.
+	* gcc.dg/winline-3.c: Likewise.
+	* gcc.dg/winline-7.c (inline void *t): Likewise.
+
+2015-09-22  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/67666
+	* g++.dg/pr67666.C: New test.
+
+2015-09-21  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67615
+	* gfortran.dg/pr67615.f90: new test.
+
+2015-09-21  Jeff Law  <law@redhat.com>
+
+	* gcc.target/h8300/andsi3_ashift_n_lower.c: New test.
+
+2015-09-21  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Complete the implementation of N4230, Nested namespace definition.
+	* g++.dg/cpp1y/feat-cxx11-neg.C: Add tests for C++17 namespace
+	attributes and nested namespace definitions.
+	* g++.dg/cpp1y/feat-cxx98-neg.C: Likewise.
+	* g++.dg/cpp1z/feat-cxx1z.C: Likewise.
+	* g++.dg/cpp1y/feat-cxx14-neg.C: New.
+	* g++.dg/cpp1z/namespace-attribs.C: Likewise.
+	* g++.dg/cpp1z/nested-namespace-def1.C: Add tests for attributes
+	appearing before the namespace identifier.
+
+2015-09-21  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR c/66415
+	* gcc.dg/cpp/pr66415-1.c: Test column number.
+
+2015-09-21  Richard Biener  <rguenther@suse.de>
+
+	* g++.dg/ext/attr-alias-3.C: Add -g.
+
+2015-09-21  Richard Biener  <rguenther@suse.de>
+
+	PR debug/67664
+	* g++.dg/debug/dwarf2/pr67764.C: New testcase.
+
+2015-09-21  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/64345
+	* gcc.target/sh/pr64345-1.c: Adjust expected insn counts for SH2A.
+
+2015-09-21  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	* gcc.dg/pragma-diag-5.c: Fix excess warning.
+
+2015-09-21  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR middle-end/60832
+	* gcc.dg/pr53265.c: Update.
+
+2015-09-21  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/arm/stack-checking.c: Skip for Thumb1.
+
+2015-09-21  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/59478
+	* gcc.target/sh/pr59478.c: New.
+
+2015-09-21  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/67126
+	* gcc.target/sh/pr51244-12.c: Adjust testcase.
+	* gcc.target/sh/pr54236-2.c: Likewise.
+
+2015-09-20  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	* gcc.target/sh/pr43417.c: Move target independent test to ...
+	* gcc.c-torture/compile/pr43417.c: ... here.
+
+2015-09-20  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	* gcc.target/sh/sh.exp (check_effective_target_sh4a,
+	check_effective_target_big_endian, check_effective_target_little_endian,
+	check_effective_target_any_fpu, check_effective_target_double_fpu,
+	check_effective_target_use_single_only_fpu,
+	check_effective_target_default_single_fpu,
+	check_effective_target_no_fpu, check_effective_target_has_xf_regs,
+	check_effective_target_has_fsca, check_effective_target_has_fsrra,
+	check_effective_target_has_fpchg, check_effective_target_has_dyn_shift,
+	check_effective_target_fmovd_enabled,
+	check_effective_target_has_privileged, check_effective_target_has_pref,
+	check_effective_target_banked_r0r7_isr,
+	check_effective_target_stack_save_isr): New effective target checks.
+	* gcc.target/sh/pr51244-16.c: Merge into pr51244-15.c.
+	* gcc.target/sh/pr51244-20-sh2a.c: Merge into pr51244-20.c.
+	* gcc.target/sh/pr51244-3.c: Merge into pr51244-2.c
+	* gcc.target/sh/pr54089-5.c: Merge into pr54089-4.c.
+	* gcc.target/sh/20080410-1.c: Use new effective target checks.
+	* gcc.target/sh/attr-isr-nosave_low_regs.c: Likewise.
+	* gcc.target/sh/attr-isr.c: Likewise.
+	* gcc.target/sh/fpul-usage-1.c: Likewise.
+	* gcc.target/sh/hiconst.c: Likewise.
+	* gcc.target/sh/mfmovd.c: Likewise.
+	* gcc.target/sh/pr21255-3.c: Likewise.
+	* gcc.target/sh/pr33135-1.c: Likewise.
+	* gcc.target/sh/pr33135-2.c: Likewise.
+	* gcc.target/sh/pr33135-3.c: Likewise.
+	* gcc.target/sh/pr33135-4.c: Likewise.
+	* gcc.target/sh/pr39423-2.c: Likewise.
+	* gcc.target/sh/pr49880-4.c: Likewise.
+	* gcc.target/sh/pr49880-5.c: Likewise.
+	* gcc.target/sh/pr50749-sf-postinc-1.c: Likewise.
+	* gcc.target/sh/pr50749-sf-postinc-2.c: Likewise.
+	* gcc.target/sh/pr50749-sf-postinc-3.c: Likewise.
+	* gcc.target/sh/pr50749-sf-postinc-4.c: Likewise.
+	* gcc.target/sh/pr50749-sf-predec-1.c: Likewise.
+	* gcc.target/sh/pr50749-sf-predec-2.c: Likewise.
+	* gcc.target/sh/pr50749-sf-predec-3.c: Likewise.
+	* gcc.target/sh/pr50749-sf-predec-4.c: Likewise.
+	* gcc.target/sh/pr50751-2.c: Likewise.
+	* gcc.target/sh/pr50751-3.c: Likewise.
+	* gcc.target/sh/pr50751-5.c: Likewise.
+	* gcc.target/sh/pr50751-6.c: Likewise.
+	* gcc.target/sh/pr50751-8.c: Likewise.
+	* gcc.target/sh/pr51244-15.c: Likewise.
+	* gcc.target/sh/pr51244-2.c: Likewise.
+	* gcc.target/sh/pr51244-20.c: Likewise.
+	* gcc.target/sh/pr51244-6.c: Likewise.
+	* gcc.target/sh/pr52483-4.c: Likewise.
+	* gcc.target/sh/pr53511-1.c: Likewise.
+	* gcc.target/sh/pr53512-1.c: Likewise.
+	* gcc.target/sh/pr53512-2.c: Likewise.
+	* gcc.target/sh/pr53512-3.c: Likewise.
+	* gcc.target/sh/pr53512-4.c: Likewise.
+	* gcc.target/sh/pr53513-1.c: Likewise.
+	* gcc.target/sh/pr54089-2.c: Likewise.
+	* gcc.target/sh/pr54089-3.c: Likewise.
+	* gcc.target/sh/pr54089-4.c: Likewise.
+	* gcc.target/sh/pr54602-2.c: Likewise.
+	* gcc.target/sh/pr54602-3.c: Likewise.
+	* gcc.target/sh/pr54602-4.c: Likewise.
+	* gcc.target/sh/pr54680.c: Likewise.
+	* gcc.target/sh/pr55303-1.c: Likewise.
+	* gcc.target/sh/pr55303-2.c: Likewise.
+	* gcc.target/sh/pr55303-3.c: Likewise.
+	* gcc.target/sh/pr56547-1.c: Likewise.
+	* gcc.target/sh/pr56547-2.c: Likewise.
+	* gcc.target/sh/pr61195.c: Likewise.
+	* gcc.target/sh/pr61996.c: Likewise.
+	* gcc.target/sh/pr6526.c: Likewise.
+	* gcc.target/sh/pragma-isr-nosave_low_regs.c: Likewise.
+	* gcc.target/sh/pragma-isr-trapa2.c: Likewise.
+	* gcc.target/sh/prefetch.c: Likewise.
+	* gcc.target/sh/rte-delay-slot.c: Likewise.
+	* gcc.target/sh/sh2a-band.c: Likewise.
+	* gcc.target/sh/sh2a-bclr.c: Likewise.
+	* gcc.target/sh/sh2a-bclrmem.c: Likewise.
+	* gcc.target/sh/sh2a-bld.c: Likewise.
+	* gcc.target/sh/sh2a-bor.c: Likewise.
+	* gcc.target/sh/sh2a-bset.c: Likewise.
+	* gcc.target/sh/sh2a-bsetmem.c: Likewise.
+	* gcc.target/sh/sh2a-bxor.c: Likewise.
+	* gcc.target/sh/sh2a-jsrn.c: Likewise.
+	* gcc.target/sh/sh2a-movi20s.c: Likewise.
+	* gcc.target/sh/sh2a-movrt.c: Likewise.
+	* gcc.target/sh/sh2a-resbank.c: Likewise.
+	* gcc.target/sh/sh2a-rtsn.c: Likewise.
+	* gcc.target/sh/sh2a-tbr-jump.c: Likewise.
+	* gcc.target/sh/sh4a-bitmovua.c: Likewise.
+	* gcc.target/sh/sh4a-cosf.c: Likewise.
+	* gcc.target/sh/sh4a-fsrra.c: Likewise.
+	* gcc.target/sh/sh4a-memmovua.c: Likewise.
+	* gcc.target/sh/sh4a-sincosf.c: Likewise.
+	* gcc.target/sh/sh4a-sinf.c: Likewise.
+
 2015-09-20  Jeff Law  <law@redhat.com>
 
-        PR tree-optimization/47679
+	PR tree-optimization/47679
 	* g++.dg/warn/Wuninitialized-6.C: New test.
 
 2015-09-18  Ville Voutilainen  <ville.voutilainen@gmail.com>
@@ -20,6 +328,8 @@
 
 	PR middle-end/67619
 	* gcc.dg/torture/pr67619.c: New test.
+	* lib/target-supports.exp (check_effective_target_builtin_eh_return):
+	New procedure.
 
 2015-09-18  Alan Lawrence  <alan.lawrence@arm.com>
 
@@ -1228,7 +1538,7 @@
 	* gfortran.dg/norm2_4.f90: this.
 	* gfortran.dg/norm2_5.f90: New test.
 
-2015-08-14  Alexandre Oliva <aoliva@redhat.com>
+2015-08-14  Alexandre Oliva  <aoliva@redhat.com>
 
 	* gcc.dg/guality/pr54200.c: Add -fno-tree-coalesce-vars.
 	* gcc.dg/ssp-1.c: Make counter a register.
@@ -1850,7 +2160,7 @@
 2015-07-25  David Edelsohn  <dje.gcc@gmail.com>
 
 	Revert:
-	2015-07-23  Alexandre Oliva <aoliva@redhat.com>
+	2015-07-23  Alexandre Oliva  <aoliva@redhat.com>
 
 	PR rtl-optimization/64164
 	* gcc.dg/guality/pr54200.c: Add -fno-tree-coalesce-vars.
@@ -1942,7 +2252,7 @@
 	PR c++/66572
 	* g++.dg/warn/Wlogical-op-2.C: New test.
 
-2015-07-23  Alexandre Oliva <aoliva@redhat.com>
+2015-07-23  Alexandre Oliva  <aoliva@redhat.com>
 
 	PR rtl-optimization/64164
 	* gcc.dg/guality/pr54200.c: Add -fno-tree-coalesce-vars.
@@ -3940,10 +4250,10 @@
 	* gcc.target/arm/pr65710.c: Do not override -mfloat-abi directives
 	passed by the testsuite driver.
 
-2015-06-09  Alexandre Oliva <aoliva@redhat.com>
+2015-06-09  Alexandre Oliva  <aoliva@redhat.com>
 
 	Revert:
-	2015-06-09  Alexandre Oliva <aoliva@redhat.com>
+	2015-06-09  Alexandre Oliva  <aoliva@redhat.com>
 	* gcc.dg/guality/pr54200.c: Add -fno-tree-coalesce-vars.
 	* gcc.dg/ssp-1.c: Make counter a register.
 	* gcc.dg/ssp-2.c: Likewise.
@@ -3990,7 +4300,7 @@
 	PR middle-end/66413
 	* gcc.dg/torture/pr66413.c: New testcase.
 
-2015-06-09  Alexandre Oliva <aoliva@redhat.com>
+2015-06-09  Alexandre Oliva  <aoliva@redhat.com>
 
 	* gcc.dg/guality/pr54200.c: Add -fno-tree-coalesce-vars.
 	* gcc.dg/ssp-1.c: Make counter a register.
@@ -8991,7 +9301,7 @@
 	* gcc.dg/guality/pr41447-1.c: Remove xfail.
 	* gcc.dg/guality/pr41616-1.c: Ditto.
 
-2015-02-04  Alexandre Oliva <aoliva@redhat.com>
+2015-02-04  Alexandre Oliva  <aoliva@redhat.com>
 
 	PR debug/64817
 	* gcc.dg/pr64817-3.c: New.

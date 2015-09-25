@@ -141,7 +141,7 @@ RTEMS Ports		Sebastian Huber		<sebastian.huber@embedded-brains.de>
 VMS			Douglas Rupp		<douglas.b.rupp@gmail.com>
 VMS			Tristan Gingold		<tgingold@free.fr>
 VxWorks ports		Nathan Sidwell		<nathan@codesourcery.com>
-windows, cygwin, mingw	Kai Tietz		<ktietz@redhat.com>
+windows, cygwin, mingw	Kai Tietz		<ktietz70@googlemail.com>
 windows, cygwin, mingw	Dave Korn		<dave.korn.cygwin@gmail.com>
 
 			Language Front Ends Maintainers
@@ -357,7 +357,7 @@ Christian Bruel					<christian.bruel@st.com>
 Iain Buclaw					<ibuclaw@gdcproject.org>
 Kevin Buettner					<kevinb@redhat.com>
 Adam Butcher					<adam@jessamine.co.uk>
-Andrew Cagney					<cagney@redhat.com>
+Andrew Cagney					<cagney@gnu.org>
 Daniel Carrera					<dcarrera@gmail.com>
 Stephane Carrez					<stcarrez@nerim.fr>
 Gabriel Charette				<gchare@google.com>

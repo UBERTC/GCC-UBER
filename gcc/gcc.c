@@ -284,7 +284,8 @@ static const char *const spec_version = DEFAULT_TARGET_VERSION;
 static const char *spec_machine = DEFAULT_TARGET_MACHINE;
 static const char *spec_host_machine = DEFAULT_REAL_TARGET_MACHINE;
 
-/* List of offload targets.  */
+/* List of offload targets.  Separated by colon.  Empty string for
+   -foffload=disable.  */
 
 static char *offload_targets = NULL;
 
@@ -908,7 +909,9 @@ proper position among the other output files.  */
 
 #ifndef LINK_PIE_SPEC
 #ifdef HAVE_LD_PIE
+#ifndef LD_PIE_SPEC
 #define LD_PIE_SPEC "-pie"
+#endif
 #else
 #define LD_PIE_SPEC ""
 #endif
@@ -3656,10 +3659,9 @@ handle_foffload_option (const char *arg)
 	      size_t offload_targets_len = strlen (offload_targets);
 	      offload_targets
 		= XRESIZEVEC (char, offload_targets,
-			      offload_targets_len + next - cur + 2);
-	      if (offload_targets_len)
-		offload_targets[offload_targets_len++] = ':';
-	      memcpy (offload_targets + offload_targets_len, target, next - cur);
+			      offload_targets_len + 1 + next - cur + 1);
+	      offload_targets[offload_targets_len++] = ':';
+	      memcpy (offload_targets + offload_targets_len, target, next - cur + 1);
 	    }
 	}
 
@@ -4375,6 +4377,13 @@ process_command (unsigned int decoded_options_count,
 			   decoded_options + j, UNKNOWN_LOCATION,
 			   CL_DRIVER, &handlers, global_dc);
     }
+
+#ifdef ENABLE_OFFLOADING
+  /* If the user didn't specify any, default to all configured offload
+     targets.  */
+  if (offload_targets == NULL)
+    handle_foffload_option (OFFLOAD_TARGETS);
+#endif
 
   if (output_file
       && strcmp (output_file, "-") != 0
@@ -7572,22 +7581,17 @@ driver::maybe_putenv_COLLECT_LTO_WRAPPER () const
 void
 driver::maybe_putenv_OFFLOAD_TARGETS () const
 {
-  const char *targets = offload_targets;
-
-  /* If no targets specified by -foffload, use all available targets.  */
-  if (!targets)
-    targets = OFFLOAD_TARGETS;
-
-  if (strlen (targets) > 0)
+  if (offload_targets && offload_targets[0] != '\0')
     {
       obstack_grow (&collect_obstack, "OFFLOAD_TARGET_NAMES=",
 		    sizeof ("OFFLOAD_TARGET_NAMES=") - 1);
-      obstack_grow (&collect_obstack, targets,
-		    strlen (targets) + 1);
+      obstack_grow (&collect_obstack, offload_targets,
+		    strlen (offload_targets) + 1);
       xputenv (XOBFINISH (&collect_obstack, char *));
     }
 
   free (offload_targets);
+  offload_targets = NULL;
 }
 
 /* Reject switches that no pass was interested in.  */

@@ -198,12 +198,13 @@ in the following sections.
 -fvisibility-ms-compat @gol
 -fext-numeric-literals @gol
 -Wabi=@var{n}  -Wabi-tag  -Wconversion-null  -Wctor-dtor-privacy @gol
--Wdelete-non-virtual-dtor -Wliteral-suffix -Wnarrowing @gol
+-Wdelete-non-virtual-dtor -Wliteral-suffix -Wmultiple-inheritance @gol
+-Wnamespaces -Wnarrowing @gol
 -Wnoexcept -Wnon-virtual-dtor  -Wreorder @gol
--Weffc++  -Wstrict-null-sentinel @gol
+-Weffc++  -Wstrict-null-sentinel -Wtemplates @gol
 -Wno-non-template-friend  -Wold-style-cast @gol
 -Woverloaded-virtual  -Wno-pmf-conversions @gol
--Wsign-promo}
+-Wsign-promo -Wvirtual-inheritance}
 
 @item Objective-C and Objective-C++ Language Options
 @xref{Objective-C and Objective-C++ Dialect Options,,Options Controlling
@@ -983,16 +984,12 @@ See RS/6000 and PowerPC Options.
 -m3  -m3e @gol
 -m4-nofpu  -m4-single-only  -m4-single  -m4 @gol
 -m4a-nofpu -m4a-single-only -m4a-single -m4a -m4al @gol
--m5-64media  -m5-64media-nofpu @gol
--m5-32media  -m5-32media-nofpu @gol
--m5-compact  -m5-compact-nofpu @gol
 -mb  -ml  -mdalign  -mrelax @gol
--mbigtable -mfmovd -mhitachi -mrenesas -mno-renesas -mnomacsave @gol
+-mbigtable -mfmovd -mrenesas -mno-renesas -mnomacsave @gol
 -mieee -mno-ieee -mbitops  -misize  -minline-ic_invalidate -mpadstruct @gol
 -mspace -mprefergot  -musermode -multcost=@var{number} -mdiv=@var{strategy} @gol
 -mdivsi3_libfunc=@var{name} -mfixed-range=@var{register-range} @gol
--mindexed-addressing -mgettrcost=@var{number} -mpt-fixed @gol
--maccumulate-outgoing-args -minvalid-symbols @gol
+-maccumulate-outgoing-args @gol
 -matomic-model=@var{atomic-model} @gol
 -mbranch-cost=@var{num} -mzdcbranch -mno-zdcbranch @gol
 -mcbranch-force-delay-slot @gol
@@ -2134,6 +2131,13 @@ scope.
 Version 8, which first appeared in G++ 4.9, corrects the substitution
 behavior of function types with function-cv-qualifiers.
 
+Version 9, which first appeared in G++ 5.2, corrects the alignment of
+@code{nullptr_t}.
+
+Version 10, which first appeared in G++ 6.1, adds mangling of
+attributes that affect type identity, such as ia32 calling convention
+attributes (e.g. @samp{stdcall}).
+
 See also @option{-Wabi}.
 
 @item -fabi-compat-version=@var{n}
@@ -2143,10 +2147,15 @@ works around mangling changes by creating an alias with the correct
 mangled name when defining a symbol with an incorrect mangled name.
 This switch specifies which ABI version to use for the alias.
 
-With @option{-fabi-version=0} (the default), this defaults to 2.  If
-another ABI version is explicitly selected, this defaults to 0.
+With @option{-fabi-version=0} (the default), this defaults to 8 (GCC 5
+compatibility).  If another ABI version is explicitly selected, this
+defaults to 0.  For compatibility with GCC versions 3.2 through 4.9,
+use @option{-fabi-compat-version=2}.
 
-The compatibility version is also set by @option{-Wabi=@var{n}}.
+If this option is not provided but @option{-Wabi=@var{n}} is, that
+version is used for compatibility aliases.  If this option is provided
+along with @option{-Wabi} (without the version), the version from this
+option is used for the warning.
 
 @item -fno-access-control
 @opindex fno-access-control
@@ -2559,13 +2568,25 @@ have meanings only for C++ programs:
 @item -Wabi @r{(C, Objective-C, C++ and Objective-C++ only)}
 @opindex Wabi
 @opindex Wno-abi
-When an explicit @option{-fabi-version=@var{n}} option is used, causes
-G++ to warn when it generates code that is probably not compatible with the
-vendor-neutral C++ ABI@.  Since G++ now defaults to
-@option{-fabi-version=0}, @option{-Wabi} has no effect unless either
-an older ABI version is selected (with @option{-fabi-version=@var{n}})
-or an older compatibility version is selected (with
-@option{-Wabi=@var{n}} or @option{-fabi-compat-version=@var{n}}).
+Warn when G++ it generates code that is probably not compatible with
+the vendor-neutral C++ ABI@.  Since G++ now defaults to updating the
+ABI with each major release, normally @option{-Wabi} will warn only if
+there is a check added later in a release series for an ABI issue
+discovered since the initial release.  @option{-Wabi} will warn about
+more things if an older ABI version is selected (with
+@option{-fabi-version=@var{n}}).
+
+@option{-Wabi} can also be used with an explicit version number to
+warn about compatibility with a particular @option{-fabi-version}
+level, e.g. @option{-Wabi=2} to warn about changes relative to
+@option{-fabi-version=2}.
+
+If an explicit version number is provided and
+@option{-fabi-compat-version} is not specified, the version number
+from this option is used for compatibility aliases.  If no explicit
+version number is provided with this option, but
+@option{-fabi-compat-version} is specified, that version number is
+used for ABI warnings.
 
 Although an effort has been made to warn about
 all such cases, there are probably some cases that are not warned about,
@@ -2577,13 +2598,7 @@ You should rewrite your code to avoid these warnings if you are
 concerned about the fact that code generated by G++ may not be binary
 compatible with code generated by other compilers.
 
-@option{-Wabi} can also be used with an explicit version number to
-warn about compatibility with a particular @option{-fabi-version}
-level, e.g. @option{-Wabi=2} to warn about changes relative to
-@option{-fabi-version=2}.  Specifying a version number also sets
-@option{-fabi-compat-version=@var{n}}.
-
-The known incompatibilities in @option{-fabi-version=2} (which was the
+Known incompatibilities in @option{-fabi-version=2} (which was the
 default from GCC 3.4 to 4.9) include:
 
 @itemize @bullet
@@ -2635,7 +2650,24 @@ When mangling a function type with function-cv-qualifiers, the
 un-qualified function type was incorrectly treated as a substitution
 candidate.
 
-This was fixed in @option{-fabi-version=8}.
+This was fixed in @option{-fabi-version=8}, the default for GCC 5.1.
+
+@item
+@code{decltype(nullptr)} incorrectly had an alignment of 1, leading to
+unaligned accesses.  Note that this did not affect the ABI of a
+function with a @code{nullptr_t} parameter, as parameters have a
+minimum alignment.
+
+This was fixed in @option{-fabi-version=9}, the default for GCC 5.2.
+
+@item
+Target-specific attributes that affect the identity of a type, such as
+ia32 calling conventions on a function type (stdcall, regparm, etc.),
+did not affect the mangled name, leading to name collisions when
+function pointers were used as template arguments.
+
+This was fixed in @option{-fabi-version=10}, the default for GCC 6.1.
+
 @end itemize
 
 It also warns about psABI-related changes.  The known psABI changes at this
@@ -2902,6 +2934,37 @@ Warn when overload resolution chooses a promotion from unsigned or
 enumerated type to a signed type, over a conversion to an unsigned type of
 the same size.  Previous versions of G++ tried to preserve
 unsignedness, but the standard mandates the current behavior.
+
+@item -Wtemplates @r{(C++ and Objective-C++ only)}
+@opindex Wtemplates
+Warn when a primary template declaration is encountered.  Some coding
+rules disallow templates, and this may be used to enforce that rule.
+The warning is inactive inside a system header file, such as the STL, so
+one can still use the STL.  One may also instantiate or specialize
+templates.
+
+@item -Wmultiple-inheritance @r{(C++ and Objective-C++ only)}
+@opindex Wmultiple-inheritance
+Warn when a class is defined with multiple direct base classes.  Some
+coding rules disallow multiple inheritance, and this may be used to
+enforce that rule.  The warning is inactive inside a system header file,
+such as the STL, so one can still use the STL.  One may also define
+classes that indirectly use multiple inheritance.
+
+@item -Wvirtual-inheritance
+@opindex Wvirtual-inheritance
+Warn when a class is defined with a virtual direct base classe.  Some
+coding rules disallow multiple inheritance, and this may be used to
+enforce that rule.  The warning is inactive inside a system header file,
+such as the STL, so one can still use the STL.  One may also define
+classes that indirectly use virtual inheritance.
+
+@item -Wnamespaces
+@opindex Wnamespaces
+Warn when a namespace definition is opened.  Some coding rules disallow
+namespaces, and this may be used to enforce that rule.  The warning is
+inactive inside a system header file, such as the STL, so one can still
+use the STL.  One may also use using directives and qualified names.
 
 @item -Wno-terminate @r{(C++ and Objective-C++ only)}
 @opindex Wterminate
@@ -20809,33 +20872,6 @@ Same as @option{-m4a-nofpu}, except that it implicitly passes
 @option{-dsp} to the assembler.  GCC doesn't generate any DSP
 instructions at the moment.
 
-@item -m5-32media
-@opindex m5-32media
-Generate 32-bit code for SHmedia.
-
-@item -m5-32media-nofpu
-@opindex m5-32media-nofpu
-Generate 32-bit code for SHmedia in such a way that the
-floating-point unit is not used.
-
-@item -m5-64media
-@opindex m5-64media
-Generate 64-bit code for SHmedia.
-
-@item -m5-64media-nofpu
-@opindex m5-64media-nofpu
-Generate 64-bit code for SHmedia in such a way that the
-floating-point unit is not used.
-
-@item -m5-compact
-@opindex m5-compact
-Generate code for SHcompact.
-
-@item -m5-compact-nofpu
-@opindex m5-compact-nofpu
-Generate code for SHcompact in such a way that the
-floating-point unit is not used.
-
 @item -mb
 @opindex mb
 Compile code for the processor in big-endian mode.
@@ -21010,65 +21046,7 @@ Set the cost to assume for a multiply insn.
 @item -mdiv=@var{strategy}
 @opindex mdiv=@var{strategy}
 Set the division strategy to be used for integer division operations.
-For SHmedia @var{strategy} can be one of: 
-
-@table @samp
-
-@item fp 
-Performs the operation in floating point.  This has a very high latency,
-but needs only a few instructions, so it might be a good choice if
-your code has enough easily-exploitable ILP to allow the compiler to
-schedule the floating-point instructions together with other instructions.
-Division by zero causes a floating-point exception.
-
-@item inv
-Uses integer operations to calculate the inverse of the divisor,
-and then multiplies the dividend with the inverse.  This strategy allows
-CSE and hoisting of the inverse calculation.  Division by zero calculates
-an unspecified result, but does not trap.
-
-@item inv:minlat
-A variant of @samp{inv} where, if no CSE or hoisting opportunities
-have been found, or if the entire operation has been hoisted to the same
-place, the last stages of the inverse calculation are intertwined with the
-final multiply to reduce the overall latency, at the expense of using a few
-more instructions, and thus offering fewer scheduling opportunities with
-other code.
-
-@item call
-Calls a library function that usually implements the @samp{inv:minlat}
-strategy.
-This gives high code density for @code{m5-*media-nofpu} compilations.
-
-@item call2
-Uses a different entry point of the same library function, where it
-assumes that a pointer to a lookup table has already been set up, which
-exposes the pointer load to CSE and code hoisting optimizations.
-
-@item inv:call
-@itemx inv:call2
-@itemx inv:fp
-Use the @samp{inv} algorithm for initial
-code generation, but if the code stays unoptimized, revert to the @samp{call},
-@samp{call2}, or @samp{fp} strategies, respectively.  Note that the
-potentially-trapping side effect of division by zero is carried by a
-separate instruction, so it is possible that all the integer instructions
-are hoisted out, but the marker for the side effect stays where it is.
-A recombination to floating-point operations or a call is not possible
-in that case.
-
-@item inv20u
-@itemx inv20l
-Variants of the @samp{inv:minlat} strategy.  In the case
-that the inverse calculation is not separated from the multiply, they speed
-up division where the dividend fits into 20 bits (plus sign where applicable)
-by inserting a test to skip a number of operations in this case; this test
-slows down the case of larger dividends.  @samp{inv20u} assumes the case of a such
-a small dividend to be unlikely, and @samp{inv20l} assumes it to be likely.
-
-@end table
-
-For targets other than SHmedia @var{strategy} can be one of:
+@var{strategy} can be one of: 
 
 @table @samp
 
@@ -21108,9 +21086,9 @@ needed for unwinding to avoid changing the stack frame around conditional code.
 @opindex mdivsi3_libfunc=@var{name}
 Set the name of the library function used for 32-bit signed division to
 @var{name}.
-This only affects the name used in the @samp{call} and @samp{inv:call}
-division strategies, and the compiler still expects the same
-sets of input/output/clobbered registers as if this option were not present.
+This only affects the name used in the @samp{call} division strategies, and
+the compiler still expects the same sets of input/output/clobbered registers as
+if this option were not present.
 
 @item -mfixed-range=@var{register-range}
 @opindex mfixed-range
@@ -21119,57 +21097,6 @@ A fixed register is one that the register allocator can not use.  This is
 useful when compiling kernel code.  A register range is specified as
 two registers separated by a dash.  Multiple register ranges can be
 specified separated by a comma.
-
-@item -mindexed-addressing
-@opindex mindexed-addressing
-Enable the use of the indexed addressing mode for SHmedia32/SHcompact.
-This is only safe if the hardware and/or OS implement 32-bit wrap-around
-semantics for the indexed addressing mode.  The architecture allows the
-implementation of processors with 64-bit MMU, which the OS could use to
-get 32-bit addressing, but since no current hardware implementation supports
-this or any other way to make the indexed addressing mode safe to use in
-the 32-bit ABI, the default is @option{-mno-indexed-addressing}.
-
-@item -mgettrcost=@var{number}
-@opindex mgettrcost=@var{number}
-Set the cost assumed for the @code{gettr} instruction to @var{number}.
-The default is 2 if @option{-mpt-fixed} is in effect, 100 otherwise.
-
-@item -mpt-fixed
-@opindex mpt-fixed
-Assume @code{pt*} instructions won't trap.  This generally generates
-better-scheduled code, but is unsafe on current hardware.
-The current architecture
-definition says that @code{ptabs} and @code{ptrel} trap when the target 
-anded with 3 is 3.
-This has the unintentional effect of making it unsafe to schedule these
-instructions before a branch, or hoist them out of a loop.  For example,
-@code{__do_global_ctors}, a part of @file{libgcc}
-that runs constructors at program
-startup, calls functions in a list which is delimited by @minus{}1.  With the
-@option{-mpt-fixed} option, the @code{ptabs} is done before testing against @minus{}1.
-That means that all the constructors run a bit more quickly, but when
-the loop comes to the end of the list, the program crashes because @code{ptabs}
-loads @minus{}1 into a target register.  
-
-Since this option is unsafe for any
-hardware implementing the current architecture specification, the default
-is @option{-mno-pt-fixed}.  Unless specified explicitly with 
-@option{-mgettrcost}, @option{-mno-pt-fixed} also implies @option{-mgettrcost=100};
-this deters register allocation from using target registers for storing
-ordinary integers.
-
-@item -minvalid-symbols
-@opindex minvalid-symbols
-Assume symbols might be invalid.  Ordinary function symbols generated by
-the compiler are always valid to load with
-@code{movi}/@code{shori}/@code{ptabs} or
-@code{movi}/@code{shori}/@code{ptrel},
-but with assembler and/or linker tricks it is possible
-to generate symbols that cause @code{ptabs} or @code{ptrel} to trap.
-This option is only meaningful when @option{-mno-pt-fixed} is in effect.
-It prevents cross-basic-block CSE, hoisting and most scheduling
-of symbol loads.  The default is @option{-mno-invalid-symbols}.
 
 @item -mbranch-cost=@var{num}
 @opindex mbranch-cost=@var{num}
@@ -22296,8 +22223,8 @@ Intel i486 CPU@.  (No scheduling is implemented for this chip.)
 @itemx pentium
 Intel Pentium CPU with no MMX support.
 
-@item iamcu
-Intel MCU, based on Intel Pentium CPU.
+@item lakemount
+Intel Lakemount MCU, based on Intel Pentium CPU.
 
 @item pentium-mmx
 Intel Pentium MMX CPU, based on Pentium core with MMX instruction set support.
@@ -22385,6 +22312,12 @@ Intel Knight's Landing CPU with 64-bit extensions, MOVBE, MMX, SSE, SSE2, SSE3,
 SSSE3, SSE4.1, SSE4.2, POPCNT, AVX, AVX2, AES, PCLMUL, FSGSBASE, RDRND, FMA,
 BMI, BMI2, F16C, RDSEED, ADCX, PREFETCHW, AVX512F, AVX512PF, AVX512ER and
 AVX512CD instruction set support.
+
+@item skylake-avx512
+Intel Skylake Server CPU with 64-bit extensions, MOVBE, MMX, SSE, SSE2, SSE3,
+SSSE3, SSE4.1, SSE4.2, POPCNT, AVX, AVX2, AES, PCLMUL, FSGSBASE, RDRND, FMA,
+BMI, BMI2, F16C, RDSEED, ADCX, PREFETCHW, CLFLUSHOPT, XSAVEC, XSAVES, AVX512F,
+AVX512VL, AVX512BW, AVX512DQ and AVX512CD instruction set support.
 
 @item k6
 AMD K6 CPU with MMX instruction set support.

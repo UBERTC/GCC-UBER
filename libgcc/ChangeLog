@@ -1,3 +1,74 @@
+2015-09-24  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR libgcc/67624
+	* config/arm/fp16.c (__gnu_f2h_internal): Handle infinity correctly.
+
+2015-09-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* config.host (*-*-solaris2*): Add t-crtstuff-pic to tmake_file.
+	Add crtbeginS.o, crtendS.o to extra_parts if libgcc_cv_solaris_crts.
+	* config/sol2/gmon.c: (monstartup): Don't write trailing NUL of
+	messages.
+	(internal_mcount): Likewise.
+	* config/sol2/t-sol2 (crtp.o, crtpg.o, gmon.o): Compile with
+	crt_compile, add CRTSTUFF_T_CFLAGS_S.
+
+2015-09-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (libgcc_cv_solaris_crts): New test.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+	* config/sol2/crtp.c, config/sol2/crtpg.c: New files.
+	* config/gmon-sol2.c: Rename to ...
+	* config/sol2/gmon.c: ... this.
+	Include auto-target.h.
+	(internal_mcount): Wrap setup handling in !HAVE_SOLARIS_CRTS.
+	* config/t-sol2: Rename to ...
+	* config/sol2/t-sol2: ... this.
+	(gmon.o): Reflect renaming.
+	(crtp.o, crtpg.o): New rules.
+	* config.host (*-*-solaris2*): Reflect renaming.
+	Use system CRTs if present.
+	Remove default CRT case.
+
+2015-09-23  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/linux-atomic.c (__kernel_cmpxchg2): Reorder error checks.
+	(__sync_fetch_and_##OP##_##WIDTH): Change result to match type of
+	__kernel_cmpxchg2.
+	(__sync_##OP##_and_fetch_##WIDTH): Likewise.
+	(__sync_val_compare_and_swap_##WIDTH): Likewise.
+	(__sync_bool_compare_and_swap_##WIDTH): Likewise.
+	(__sync_lock_test_and_set_##WIDTH): Likewise.
+	(__sync_lock_release_##WIDTH): Likewise.
+	(__sync_fetch_and_##OP##_4): Change result to match type of
+	__kernel_cmpxchg.
+	(__sync_##OP##_and_fetch_4): Likewise.
+	(__sync_val_compare_and_swap_4): Likewise.
+	(__sync_bool_compare_and_swap_4): likewise.
+	(__sync_lock_test_and_set_4): Likewise.
+	(__sync_lock_release_4): Likewise.
+	(FETCH_AND_OP_2): Add long long variants.
+	(OP_AND_FETCH_2): Likewise.
+	(COMPARE_AND_SWAP_2 ): Likewise.
+	(SYNC_LOCK_TEST_AND_SET_2): Likewise.
+	(SYNC_LOCK_RELEASE_2): Likewise.
+	(__sync_bool_compare_and_swap_##WIDTH): Correct return.
+
+2015-09-22  Kirill Yukhin <kirill.yukhin@intel.com>
+
+	* libgcc/config/i386/cpuinfo.c (enum processor_features): Add
+	FEATURE_AVX512VL, FEATURE_AVX512BW, FEATURE_AVX512DQ,
+	FEATURE_AVX512CD, FEATURE_AVX512ER, FEATURE_AVX512PF.
+	(get_available_features): Habdle new features.
+
+2015-09-21  James Bowman  <james.bowman@ftdichip.com>
+
+	* config/ft32/crti-hw.S: Use __PMSIZE to allow configurable
+	memory layout. Deal correctly with BSS region larger than 32K.
+	Handle a watchdog reset like a power-on reset. Clean up unused
+	code.
+
 2015-09-18  Andrew Dixie  <andrewd@gentrack.com>
 	    David Edelsohn  <dje.gcc@gmail.com>
 
