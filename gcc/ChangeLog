@@ -1,3 +1,156 @@
+2015-09-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2015-08-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/67029
+	* ira-color.c: Include "recog.h" before including "ira-int.h".
+	* target-globals.c: Likewise.
+	* ira-lives.c (ira_implicitly_set_insn_hard_regs): Add an
+	adds an alternative_mask argument and use it instead of
+	preferred_alternatives.
+	* ira.h (ira_implicitly_set_insn_hard_regs): Moved to ...
+	* ira-int.h (ira_implicitly_set_insn_hard_regs): Here.
+	* sched-deps.c: Include "ira-int.h" after including "ira.h".
+	(sched_analyze_insn): Update call to
+	ira_implicitly_set_insn_hard_regs.
+	* sel-sched.c: Include "ira-int.h" after including "ira.h".
+	(implicit_clobber_conflict_p): Update call to
+	ira_implicitly_set_insn_hard_regs.
+
+2015-09-30  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-09-30  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67690
+	* tree-ssa-ifcombine.c (pass_tree_ifcombine::execute): Call
+	reset_flow_sensitive_info_in_bb.
+	* tree-ssa-tail-merge.c: Include "stringpool.h" and "tree-ssanames.h".
+	(replace_block_by): Call reset_flow_sensitive_info_in_bb.
+	* tree-ssanames.c: Include "gimple-iterator.h".
+	(reset_flow_sensitive_info_in_bb): New function.
+	* tree-ssanames.h (reset_flow_sensitive_info_in_bb): Declare.
+
+2015-09-29  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from mainline
+	2015-07-21  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR ipa/66424.
+	* lra-remat.c (operand_to_remat): Prevent using insns with input
+	subregs processed separately by IRA.
+
+2015-09-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-09-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_contiguous_bitmask_vector_p): Reject if
+	the vector element is bigger than 64 bit.
+
+2015-09-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-09-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vx-builtins.md ("vec_vmal<mode>", "vec_vmah<mode>")
+	("vec_vmalh<mode>"): Change mode iterator from VI_HW to VI_HW_QHS.
+
+2015-09-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-09-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c: Add V1TImode to constant pool modes.
+
+2015-09-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vx-builtins.md
+	("vec_scatter_element<mode>_<non_vec_int>")
+	("vec_scatter_element<V_HW_64:mode>_SI"): Replace gf mode
+	attribute with bhfgq.
+
+2015-09-29  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64.md (prefetch):
+	Change the predicate of operand 0 to register_operand.
+
+2015-09-28  Daniel Hellstrom  <daniel@gaisler.com>
+
+	* config/sparc/t-rtems: Remove -muser-mode. Add ut699, at697f and leon.
+
+2015-09-28  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-27  Oleg Endo  <olegendo@gcc.gnu.org>
+		    Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/67391
+	* config/sh/sh-protos.h (sh_lra_p): Declare.
+	* config/sh/sh.c (sh_lra_p): Make non-static.
+	* config/sh/sh.md (addsi3): Use arith_reg_dest for operands[0] and
+	arith_reg_operand for operands[1].  Remove TARGET_SHMEDIA case.
+	Expand into addsi3_scr if operands[2] if needed.
+	(*addsi3_compact): Rename to *addsi3_compact_lra.  Use
+	arith_reg_operand for operands[1].  Allow it only when LRA is enabled.
+	(addsi3_scr, *addsi3): New insn_and_split patterns.
+
+2015-09-28  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-08-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66917
+	* tree-vectorizer.h (struct dataref_aux): Add base_element_aligned
+	field.
+	(DR_VECT_AUX): New macro.
+	(set_dr_misalignment): Adjust.
+	(dr_misalignment): Likewise.
+	* tree-vect-data-refs.c (vect_compute_data_ref_alignment):
+	Compute whether the base is at least element aligned.
+	* tree-vect-stmts.c (ensure_base_align): Adjust.
+	(vectorizable_store): If the base is not element aligned
+	preserve alignment of the original access if misalignment is unknown.
+	(vectorizable_load): Likewise.
+
+	2015-09-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67442
+	* fold-const.c (extract_muldiv_1): Properly extend multiplication
+	result before builting a tree via wide_int_to_tree.
+
+2015-09-28  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/driver-sparc.c: map LEON to leon3
+
+2015-09-28  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/sparc.opt: Rename mask from USER_MODE to SV_MODE
+	  and make it inverse to change default
+	* config/sparc/sync.md: Only use supervisor ASI for CASA when in
+	  supervisor mode
+	* doc/invoke.texi: Document change of default
+
+2015-09-28  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/sparc.c (sparc_function_value_regno_p): Do not return
+	true on %f0 for a target without FPU.
+	* config/sparc/sparc.md (untyped_call): Do not save %f0 for a target
+	without FPU.
+	(untyped_return): Do not load %f0 for a target without FPU.
+
+2015-09-25  Tobias Burnus  <burnus@net-b.de>
+
+	* doc/invoke.texi (-fsanitize): Minor wording tweak.
+
+2015-09-25  Tobias Burnus  <burnus@net-b.de>
+
+	* doc/invoke.texi (-fsanitize): Update URLs.
+
 2015-09-24  John David Anglin  <danglin@gcc.gnu.org>
 
 	* config/pa/pa-linux.h (HAVE_sync_compare_and_swapdi): Define.
@@ -1040,20 +1193,7 @@
 	* doc/invoke.texi (i386 and x86-64 Options): -mno-fancy-math-387
 	is not actually the default on FreeBSD.
 
-2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
-
-	Backport from mainline
-	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
-
-	* config/s390/vx-builtins.md
-	("vec_scatter_element<mode>_<non_vec_int>")
-	("vec_scatter_element<V_HW_64:mode>_SI"): Replace gf mode
-	attribute with bhfgq.
-
-2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
-
-	Backport from mainline
-	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
 
 	* config/s390/s390-builtins.def: Fix vpopct instruction comments.
 
