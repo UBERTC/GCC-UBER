@@ -126,8 +126,7 @@ static id_map *var_ids, **vars_tail = &var_ids;
 static const char *ptx_name;
 static const char *ptx_cfile_name;
 
-/* Shows if we should compile binaries for i386 instead of x86-64.  */
-bool target_ilp32 = false;
+enum offload_abi offload_abi = OFFLOAD_ABI_UNSET;
 
 /* Delete tempfiles.  */
 
@@ -842,35 +841,55 @@ process (FILE *in, FILE *out)
 {
   const char *input = read_file (in);
   Token *tok = tokenize (input);
+  const char *comma;
+  id_map const *id;
+  unsigned obj_count = 0;
+  unsigned ix;
 
   do
     tok = parse_file (tok);
   while (tok->kind);
 
-  fprintf (out, "static const char ptx_code[] = \n");
+  fprintf (out, "static const char ptx_code_%u[] = \n", obj_count++);
   write_stmts (out, rev_stmts (decls));
   write_stmts (out, rev_stmts (vars));
   write_stmts (out, rev_stmts (fns));
   fprintf (out, ";\n\n");
 
-  fprintf (out, "static const char *const var_mappings[] = {\n");
-  for (id_map *id = var_ids; id; id = id->next)
-    fprintf (out, "\t\"%s\"%s\n", id->ptx_name, id->next ? "," : "");
-  fprintf (out, "};\n\n");
-  fprintf (out, "static const char *const func_mappings[] = {\n");
-  for (id_map *id = func_ids; id; id = id->next)
-    fprintf (out, "\t\"%s\"%s\n", id->ptx_name, id->next ? "," : "");
-  fprintf (out, "};\n\n");
+  /* Dump out array of pointers to ptx object strings.  */
+  fprintf (out, "static const struct ptx_obj {\n"
+	   "  const char *code;\n"
+	   "  __SIZE_TYPE__ size;\n"
+	   "} ptx_objs[] = {");
+  for (comma = "", ix = 0; ix != obj_count; comma = ",", ix++)
+    fprintf (out, "%s\n\t{ptx_code_%u, sizeof (ptx_code_%u)}", comma, ix, ix);
+  fprintf (out, "\n};\n\n");
+
+  /* Dump out variable idents.  */
+  fprintf (out, "static const char *const var_mappings[] = {");
+  for (comma = "", id = var_ids; id; comma = ",", id = id->next)
+    fprintf (out, "%s\n\t%s", comma, id->ptx_name);
+  fprintf (out, "\n};\n\n");
+
+  /* Dump out function idents.  */
+  fprintf (out, "static const struct nvptx_fn {\n"
+	   "  const char *name;\n"
+	   "  unsigned short dim[%d];\n"
+	   "} func_mappings[] = {\n", GOMP_DIM_MAX);
+  for (comma = "", id = func_ids; id; comma = ",", id = id->next)
+    fprintf (out, "%s\n\t{%s}", comma, id->ptx_name);
+  fprintf (out, "\n};\n\n");
 
   fprintf (out,
 	   "static const struct nvptx_tdata {\n"
-	   "  const char *ptx_src;\n"
+	   "  const struct ptx_obj *ptx_objs;\n"
+	   "  unsigned ptx_num;\n"
 	   "  const char *const *var_names;\n"
-	   "  __SIZE_TYPE__ var_num;\n"
-	   "  const char *const *fn_names;\n"
-	   "  __SIZE_TYPE__ fn_num;\n"
+	   "  unsigned var_num;\n"
+	   "  const struct nvptx_fn *fn_names;\n"
+	   "  unsigned fn_num;\n"
 	   "} target_data = {\n"
-	   "  ptx_code,\n"
+	   "  ptx_objs, sizeof (ptx_objs) / sizeof (ptx_objs[0]),\n"
 	   "  var_mappings,"
 	   "  sizeof (var_mappings) / sizeof (var_mappings[0]),\n"
 	   "  func_mappings,"
@@ -920,7 +939,19 @@ compile_native (const char *infile, const char *outfile, const char *compiler)
   struct obstack argv_obstack;
   obstack_init (&argv_obstack);
   obstack_ptr_grow (&argv_obstack, compiler);
-  obstack_ptr_grow (&argv_obstack, target_ilp32 ? "-m32" : "-m64");
+  if (verbose)
+    obstack_ptr_grow (&argv_obstack, "-v");
+  switch (offload_abi)
+    {
+    case OFFLOAD_ABI_LP64:
+      obstack_ptr_grow (&argv_obstack, "-m64");
+      break;
+    case OFFLOAD_ABI_ILP32:
+      obstack_ptr_grow (&argv_obstack, "-m32");
+      break;
+    default:
+      gcc_unreachable ();
+    }
   obstack_ptr_grow (&argv_obstack, infile);
   obstack_ptr_grow (&argv_obstack, "-c");
   obstack_ptr_grow (&argv_obstack, "-o");
@@ -998,23 +1029,42 @@ main (int argc, char **argv)
      passed with @file.  Expand them into argv before processing.  */
   expandargv (&argc, &argv);
 
-  /* Find out whether we should compile binaries for i386 or x86-64.  */
-  for (int i = argc - 1; i > 0; i--)
-    if (strncmp (argv[i], "-foffload-abi=", sizeof ("-foffload-abi=") - 1) == 0)
-      {
-	if (strstr (argv[i], "ilp32"))
-	  target_ilp32 = true;
-	else if (!strstr (argv[i], "lp64"))
-	  fatal_error (input_location,
-		       "unrecognizable argument of option -foffload-abi");
-	break;
-      }
+  /* Scan the argument vector.  */
+  for (int i = 1; i < argc; i++)
+    {
+#define STR "-foffload-abi="
+      if (strncmp (argv[i], STR, strlen (STR)) == 0)
+	{
+	  if (strcmp (argv[i] + strlen (STR), "lp64") == 0)
+	    offload_abi = OFFLOAD_ABI_LP64;
+	  else if (strcmp (argv[i] + strlen (STR), "ilp32") == 0)
+	    offload_abi = OFFLOAD_ABI_ILP32;
+	  else
+	    fatal_error (input_location,
+			 "unrecognizable argument of option " STR);
+	}
+#undef STR
+      else if (strcmp (argv[i], "-v") == 0)
+	verbose = true;
+    }
 
   struct obstack argv_obstack;
   obstack_init (&argv_obstack);
   obstack_ptr_grow (&argv_obstack, driver);
+  if (verbose)
+    obstack_ptr_grow (&argv_obstack, "-v");
   obstack_ptr_grow (&argv_obstack, "-xlto");
-  obstack_ptr_grow (&argv_obstack, target_ilp32 ? "-m32" : "-m64");
+  switch (offload_abi)
+    {
+    case OFFLOAD_ABI_LP64:
+      obstack_ptr_grow (&argv_obstack, "-m64");
+      break;
+    case OFFLOAD_ABI_ILP32:
+      obstack_ptr_grow (&argv_obstack, "-m32");
+      break;
+    default:
+      gcc_unreachable ();
+    }
   obstack_ptr_grow (&argv_obstack, "-S");
 
   for (int ix = 1; ix != argc; ix++)
@@ -1033,7 +1083,7 @@ main (int argc, char **argv)
 
   /* PR libgomp/65099: Currently, we only support offloading in 64-bit
      configurations.  */
-  if (!target_ilp32)
+  if (offload_abi == OFFLOAD_ABI_LP64)
     {
       ptx_name = make_temp_file (".mkoffload");
       obstack_ptr_grow (&argv_obstack, "-o");

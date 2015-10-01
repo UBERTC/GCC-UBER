@@ -1,12 +1,76 @@
+2015-09-28  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/40054
+	PR fortran/63921
+	* decl.c (get_proc_name): Return if statement function is
+	found.
+	* expr.c (gfc_check_vardef_context): Add error return for
+	derived type expression lacking the derived type itself.
+	* match.c (gfc_match_ptr_fcn_assign): New function.
+	* match.h : Add prototype for gfc_match_ptr_fcn_assign.
+	* parse.c : Add static flag 'in_specification_block'.
+	(decode_statement): If in specification block match a statement
+	function, then, if no error arising from statement function
+	matching, try to match pointer function assignment.
+	(parse_interface): Set 'in_specification_block' on exiting from
+	parse_spec.
+	(parse_spec): Set and then reset 'in_specification_block'.
+	(gfc_parse_file): Set 'in_specification_block'.
+	* resolve.c (get_temp_from_expr): Extend to include functions
+	and array constructors as rvalues..
+	(resolve_ptr_fcn_assign): New function.
+	(gfc_resolve_code): Call it on finding a pointer function as an
+	lvalue. If valid or on error, go back to start of resolve_code.
+	* symbol.c (gfc_add_procedure): Add a sentence to the error to
+	flag up the ambiguity between a statement function and pointer
+	function assignment at the end of the specification block.
+
+2015-09-28  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* f95-lang.c (DEF_FUNCTION_TYPE_VAR_6): New.
+	(DEF_FUNCTION_TYPE_VAR_11): Delete.
+	* types.def (DEF_FUNCTION_TYPE_VAR_6): New.
+	(DEF_FUNCTION_TYPE_VAR_11): Delete.
+
+2015-09-26  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/67721
+	* trans-expr.c (gfc_trans_assignment_1): Remove the non-constantness
+	condition guarding deep copy.
+
+2013-09-26  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/67567
+	* resolve.c (resolve_fl_procedure): For module procedures, take
+	the parent module name and the submodule name from the name of
+	the namespace.
+
+2015-09-25  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67614
+	* resolve.c (gfc_resolve_code): Prevent ICE for invalid EXPR_NULL.
+
+2015-09-25  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67525
+	* parse.c (match_deferred_characteristics): Remove an assert, which
+	allows an invalid SELECT TYPE selector to be detected.
+
+2015-09-25  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR pretty-print/67567
+	* resolve.c (resolve_fl_procedure): Work-around when iface->module
+	== NULL.
+
 2015-09-21  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	* resolve.c (nonscalar_typebound_assign): Fix typos in comment.
- 
+
 
 2015-09-21  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/67615
-	* resolve.c (gfc_resolve_code): Check for scalar expression in 
+	* resolve.c (gfc_resolve_code): Check for scalar expression in
 	arithmetic-if.
 
 2015-09-17  Paul Thomas  <pault@gcc.gnu.org>

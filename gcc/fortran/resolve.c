@@ -8635,7 +8635,7 @@ resolve_transfer (gfc_code *code)
 	  return;
 	}
     }
-   
+
   if (exp->expr_type == EXPR_STRUCTURE)
     return;
 
@@ -9735,12 +9735,10 @@ get_temp_from_expr (gfc_expr *e, gfc_namespace *ns)
   ref = NULL;
   aref = NULL;
 
-  /* This function could be expanded to support other expression type
-     but this is not needed here.  */
-  gcc_assert (e->expr_type == EXPR_VARIABLE);
-
   /* Obtain the arrayspec for the temporary.  */
-  if (e->rank)
+   if (e->rank && e->expr_type != EXPR_ARRAY
+       && e->expr_type != EXPR_FUNCTION
+       && e->expr_type != EXPR_OP)
     {
       aref = gfc_find_array_ref (e);
       if (e->expr_type == EXPR_VARIABLE
@@ -9771,6 +9769,16 @@ get_temp_from_expr (gfc_expr *e, gfc_namespace *ns)
 	ref = e->ref;
       if (as->type == AS_DEFERRED)
 	tmp->n.sym->attr.allocatable = 1;
+    }
+  else if (e->rank && (e->expr_type == EXPR_ARRAY
+		       || e->expr_type == EXPR_FUNCTION
+		       || e->expr_type == EXPR_OP))
+    {
+      tmp->n.sym->as = gfc_get_array_spec ();
+      tmp->n.sym->as->type = AS_DEFERRED;
+      tmp->n.sym->as->rank = e->rank;
+      tmp->n.sym->attr.allocatable = 1;
+      tmp->n.sym->attr.dimension = 1;
     }
   else
     tmp->n.sym->attr.dimension = 0;
@@ -10133,6 +10141,66 @@ generate_component_assignments (gfc_code **code, gfc_namespace *ns)
 }
 
 
+/* F2008: Pointer function assignments are of the form:
+	ptr_fcn (args) = expr
+   This function breaks these assignments into two statements:
+	temporary_pointer => ptr_fcn(args)
+	temporary_pointer = expr  */
+
+static bool
+resolve_ptr_fcn_assign (gfc_code **code, gfc_namespace *ns)
+{
+  gfc_expr *tmp_ptr_expr;
+  gfc_code *this_code;
+  gfc_component *comp;
+  gfc_symbol *s;
+
+  if ((*code)->expr1->expr_type != EXPR_FUNCTION)
+    return false;
+
+  /* Even if standard does not support this feature, continue to build
+     the two statements to avoid upsetting frontend_passes.c.  */
+  gfc_notify_std (GFC_STD_F2008, "Pointer procedure assignment at "
+		  "%L", &(*code)->loc);
+
+  comp = gfc_get_proc_ptr_comp ((*code)->expr1);
+
+  if (comp)
+    s = comp->ts.interface;
+  else
+    s = (*code)->expr1->symtree->n.sym;
+
+  if (s == NULL || !s->result->attr.pointer)
+    {
+      gfc_error ("The function result on the lhs of the assignment at "
+		 "%L must have the pointer attribute.",
+		 &(*code)->expr1->where);
+      (*code)->op = EXEC_NOP;
+      return false;
+    }
+
+  tmp_ptr_expr = get_temp_from_expr ((*code)->expr2, ns);
+
+  /* get_temp_from_expression is set up for ordinary assignments. To that
+     end, where array bounds are not known, arrays are made allocatable.
+     Change the temporary to a pointer here.  */
+  tmp_ptr_expr->symtree->n.sym->attr.pointer = 1;
+  tmp_ptr_expr->symtree->n.sym->attr.allocatable = 0;
+  tmp_ptr_expr->where = (*code)->loc;
+
+  this_code = build_assignment (EXEC_ASSIGN,
+				tmp_ptr_expr, (*code)->expr2,
+				NULL, NULL, (*code)->loc);
+  this_code->next = (*code)->next;
+  (*code)->next = this_code;
+  (*code)->op = EXEC_POINTER_ASSIGN;
+  (*code)->expr2 = (*code)->expr1;
+  (*code)->expr1 = tmp_ptr_expr;
+
+  return true;
+}
+
+
 /* Given a block of code, recursively resolve everything pointed to by this
    code block.  */
 
@@ -10228,7 +10296,7 @@ gfc_resolve_code (gfc_code *code, gfc_namespace *ns)
 	  if (omp_workshare_save != -1)
 	    omp_workshare_flag = omp_workshare_save;
 	}
-
+start:
       t = true;
       if (code->op != EXEC_COMPCALL && code->op != EXEC_CALL_PPC)
 	t = gfc_resolve_expr (code->expr1);
@@ -10318,6 +10386,14 @@ gfc_resolve_code (gfc_code *code, gfc_namespace *ns)
 	      && code->expr1->value.function.isym->id == GFC_ISYM_CAF_GET)
 	    remove_caf_get_intrinsic (code->expr1);
 
+	  /* If this is a pointer function in an lvalue variable context,
+	     the new code will have to be resolved afresh. This is also the
+	     case with an error, where the code is transformed into NOP to
+	     prevent ICEs downstream.  */
+	  if (resolve_ptr_fcn_assign (&code, ns)
+	      || code->op == EXEC_NOP)
+	    goto start;
+
 	  if (!gfc_check_vardef_context (code->expr1, false, false, false,
 					 _("assignment")))
 	    break;
@@ -10332,6 +10408,7 @@ gfc_resolve_code (gfc_code *code, gfc_namespace *ns)
 
 	  /* F03 7.4.1.3 for non-allocatable, non-pointer components.  */
 	  if (code->op != EXEC_CALL && code->expr1->ts.type == BT_DERIVED
+	      && code->expr1->ts.u.derived
 	      && code->expr1->ts.u.derived->attr.defined_assign_comp)
 	    generate_component_assignments (&code, ns);
 
@@ -10380,10 +10457,14 @@ gfc_resolve_code (gfc_code *code, gfc_namespace *ns)
 	  {
 	    gfc_expr *e = code->expr1;
 
+	    gfc_resolve_expr (e);
+	    if (e->expr_type == EXPR_NULL)
+	      gfc_error ("Invalid NULL at %L", &e->where);
+
 	    if (t && (e->rank > 0
 		      || !(e->ts.type == BT_REAL || e->ts.type == BT_INTEGER)))
 	      gfc_error ("Arithmetic IF statement at %L requires a scalar "
-			 "REAL or INTEGER expression", &code->expr1->where);
+			 "REAL or INTEGER expression", &e->where);
 
 	    resolve_branch (code->label1, code);
 	    resolve_branch (code->label2, code);
@@ -11729,6 +11810,12 @@ resolve_fl_procedure (gfc_symbol *sym, int mp_flag)
       && sym->attr.if_source == IFSRC_DECL)
     {
       gfc_symbol *iface;
+      char name[2*GFC_MAX_SYMBOL_LEN + 1];
+      char *module_name;
+      char *submodule_name;
+      strcpy (name, sym->ns->proc_name->name);
+      module_name = strtok (name, ".");
+      submodule_name = strtok (NULL, ".");
 
       /* Stop the dummy characteristics test from using the interface
 	 symbol instead of 'sym'.  */
@@ -11743,7 +11830,7 @@ resolve_fl_procedure (gfc_symbol *sym, int mp_flag)
 	{
 	  gfc_error ("Mismatch in PURE attribute between MODULE "
 		     "PROCEDURE at %L and its interface in %s",
-		     &sym->declared_at, iface->module);
+		     &sym->declared_at, module_name);
 	  return false;
 	}
 
@@ -11751,7 +11838,7 @@ resolve_fl_procedure (gfc_symbol *sym, int mp_flag)
 	{
 	  gfc_error ("Mismatch in ELEMENTAL attribute between MODULE "
 		     "PROCEDURE at %L and its interface in %s",
-		     &sym->declared_at, iface->module);
+		     &sym->declared_at, module_name);
 	  return false;
 	}
 
@@ -11759,7 +11846,7 @@ resolve_fl_procedure (gfc_symbol *sym, int mp_flag)
 	{
 	  gfc_error ("Mismatch in RECURSIVE attribute between MODULE "
 		     "PROCEDURE at %L and its interface in %s",
-		     &sym->declared_at, iface->module);
+		     &sym->declared_at, module_name);
 	  return false;
 	}
 
@@ -11768,8 +11855,8 @@ resolve_fl_procedure (gfc_symbol *sym, int mp_flag)
 	{
 	  gfc_error ("%s between the MODULE PROCEDURE declaration "
 		     "in module %s and the declaration at %L in "
-		     "SUBMODULE %s", errmsg, iface->module,
-		     &sym->declared_at, sym->ns->proc_name->name);
+		     "SUBMODULE %s", errmsg, module_name,
+		     &sym->declared_at, submodule_name);
 	  return false;
 	}
 

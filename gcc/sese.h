@@ -64,6 +64,7 @@ extern edge copy_bb_and_scalar_dependences (basic_block, sese, edge,
 					    vec<tree> , bool *);
 extern struct loop *outermost_loop_in_sese (sese, basic_block);
 extern tree scalar_evolution_in_region (sese, loop_p, tree);
+extern bool invariant_in_sese_p_rec (tree, sese);
 
 /* Check that SESE contains LOOP.  */
 
@@ -171,11 +172,6 @@ sese_loop_depth (sese region, loop_p loop)
 {
   unsigned int depth = 0;
 
-  gcc_assert ((!loop_in_sese_p (loop, region)
-	       && (SESE_ENTRY_BB (region)->loop_father == loop
-	           || SESE_EXIT (region)->src->loop_father == loop))
-              || loop_in_sese_p (loop, region));
-
   while (loop_in_sese_p (loop, region))
     {
       depth++;
@@ -262,6 +258,9 @@ recompute_all_dominators (void)
   mark_irreducible_loops ();
   free_dominance_info (CDI_DOMINATORS);
   calculate_dominance_info (CDI_DOMINATORS);
+
+  free_dominance_info (CDI_POST_DOMINATORS);
+  calculate_dominance_info (CDI_POST_DOMINATORS);
 }
 
 typedef struct gimple_bb

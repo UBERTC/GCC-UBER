@@ -5857,25 +5857,26 @@ many times it is given.  This is mainly intended to be used with
 Enable AddressSanitizer, a fast memory error detector.
 Memory access instructions are instrumented to detect
 out-of-bounds and use-after-free bugs.
-See @uref{http://code.google.com/p/address-sanitizer/} for
+See @uref{https://github.com/google/sanitizers/wiki/AddressSanitizer} for
 more details.  The run-time behavior can be influenced using the
-@env{ASAN_OPTIONS} environment variable; see
-@url{https://code.google.com/p/address-sanitizer/wiki/Flags#Run-time_flags} for
-a list of supported options.
+@env{ASAN_OPTIONS} environment variable.  When set to @code{help=1},
+the available options are shown at startup of the instrumended program.  See
+@url{https://github.com/google/sanitizers/wiki/AddressSanitizerFlags#run-time-flags}
+for a list of supported options.
 
 @item -fsanitize=kernel-address
 @opindex fsanitize=kernel-address
 Enable AddressSanitizer for Linux kernel.
-See @uref{http://code.google.com/p/address-sanitizer/wiki/AddressSanitizerForKernel} for more details.
+See @uref{https://github.com/google/kasan/wiki} for more details.
 
 @item -fsanitize=thread
 @opindex fsanitize=thread
 Enable ThreadSanitizer, a fast data race detector.
 Memory access instructions are instrumented to detect
-data race bugs.  See @uref{http://code.google.com/p/thread-sanitizer/} for more
+data race bugs.  See @uref{https://github.com/google/sanitizers/wiki#threadsanitizer} for more
 details. The run-time behavior can be influenced using the @env{TSAN_OPTIONS}
 environment variable; see
-@url{https://code.google.com/p/thread-sanitizer/wiki/Flags} for a list of
+@url{https://github.com/google/sanitizers/wiki/ThreadSanitizerFlags} for a list of
 supported options.
 
 @item -fsanitize=leak
@@ -5885,7 +5886,7 @@ This option only matters for linking of executables and if neither
 @option{-fsanitize=address} nor @option{-fsanitize=thread} is used.  In that
 case the executable is linked against a library that overrides @code{malloc}
 and other allocator functions.  See
-@uref{https://code.google.com/p/address-sanitizer/wiki/LeakSanitizer} for more
+@uref{https://github.com/google/sanitizers/wiki/AddressSanitizerLeakSanitizer} for more
 details.  The run-time behavior can be influenced using the
 @env{LSAN_OPTIONS} environment variable.
 
@@ -7245,6 +7246,11 @@ is made by appending @file{.slp} to the source file name.
 @opindex fdump-tree-vrp
 Dump each function after Value Range Propagation (VRP).  The file name
 is made by appending @file{.vrp} to the source file name.
+
+@item oaccdevlow
+@opindex fdump-tree-oaccdevlow
+Dump each function after applying device-specific OpenACC transformations.
+The file name is made by appending @file{.oaccdevlow} to the source file name.
 
 @item all
 @opindex fdump-tree-all
@@ -8866,12 +8872,13 @@ profitable to parallelize the loops.
 
 @item -ftree-coalesce-vars
 @opindex ftree-coalesce-vars
-Tell the compiler to attempt to combine small user-defined variables
-too, instead of just compiler temporaries.  This may severely limit the
-ability to debug an optimized program compiled with
+While transforming the program out of the SSA representation, attempt to
+reduce copying by coalescing versions of different user-defined
+variables, instead of just compiler temporaries.  This may severely
+limit the ability to debug an optimized program compiled with
 @option{-fno-var-tracking-assignments}.  In the negated form, this flag
 prevents SSA coalescing of user variables.  This option is enabled by
-default if optimization is enabled.
+default if optimization is enabled, and it does very little otherwise.
 
 @item -ftree-loop-if-convert
 @opindex ftree-loop-if-convert
@@ -21301,8 +21308,8 @@ in a performance loss, especially for floating-point code.
 @opindex muser-mode
 @opindex mno-user-mode
 Do not generate code that can only run in supervisor mode.  This is relevant
-only for the @code{casa} instruction emitted for the LEON3 processor.  The
-default is @option{-mno-user-mode}.
+only for the @code{casa} instruction emitted for the LEON3 processor.  This
+is the default.
 
 @item -mno-faster-structs
 @itemx -mfaster-structs
@@ -22223,8 +22230,8 @@ Intel i486 CPU@.  (No scheduling is implemented for this chip.)
 @itemx pentium
 Intel Pentium CPU with no MMX support.
 
-@item lakemount
-Intel Lakemount MCU, based on Intel Pentium CPU.
+@item lakemont
+Intel Lakemont MCU, based on Intel Pentium CPU.
 
 @item pentium-mmx
 Intel Pentium MMX CPU, based on Pentium core with MMX instruction set support.

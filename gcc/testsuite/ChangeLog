@@ -1,3 +1,273 @@
+2015-09-30  Jeff Law  <law@redhat.com>
+
+	* gcc.dg/tree-ssa/ssa-dom-branch-1.c: New test.
+
+2015-09-30  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR rtl-optimization/67037
+	* gcc.c-torture/execute/pr67037.c: New test.
+
+2015-09-30  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* lib/target-supports.exp (check_effective_target_sync_int_128):
+	Return 1 on spu-*-* targets.
+	(check_effective_target_sync_int_128_runtime): Likewise.
+	(check_effective_target_sync_long_long): Likewise.
+	(check_effective_target_sync_long_long_runtime): Likewise.
+	(check_effective_target_sync_int_long): Likewise.
+	(check_effective_target_sync_char_short): Likewise.
+
+2015-09-30  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* gcc.target/i386/pr67761.c: New test.
+
+2015-09-30  Marek Polacek  <polacek@redhat.com>
+
+	PR c/67730
+	* gcc.dg/pr67730.c: New test.
+
+2015-09-30  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67690
+	* gcc.dg/torture/pr67690.c: New test.
+
+2015-09-30  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* g++.dg/cpp0x/stdint.C: Move dg-require-effective-target after
+	dg-do.
+	* g++.dg/gomp/tls-wrap4.C: Likewise.
+	* gcc.dg/atomic-op-optimize.c: Likewise.
+	* gcc.dg/pr54087.c: Likewise.
+	* gcc.dg/tls/section-2.c: Likewise.
+	* gcc.dg/vect/costmodel/ppc/costmodel-bb-slp-9a-pr63175.c:
+	Likewise.
+	* gcc.dg/vect/costmodel/ppc/costmodel-pr37194.c: Likewise.
+	* gcc.dg/vect/trapv-vect-reduc-4.c: Likewise.
+	* gcc.target/arm/divzero.c: Likewise.
+	* gcc.target/arm/sibcall-2.c: Likewise.
+	* gcc.target/arm/thumb1-Os-mult.c: Likewise.
+	* gcc.target/arm/thumb1-load-64bit-constant-1.c: Likewise.
+	* gcc.target/arm/thumb1-load-64bit-constant-2.c: Likewise.
+	* gcc.target/arm/thumb1-load-64bit-constant-3.c: Likewise.
+	* gcc.target/arm/volatile-bitfields-1.c: Likewise.
+	* gcc.target/arm/volatile-bitfields-2.c: Likewise.
+	* gcc.target/arm/volatile-bitfields-3.c: Likewise.
+	* gcc.target/arm/volatile-bitfields-4.c: Likewise.
+	* gfortran.dg/default_format_2.f90: Likewise.
+	* gfortran.dg/default_format_denormal_2.f90: Likewise.
+
+2015-09-29  Jonathan Roelofs  <jonathan@codesourcery.com>
+
+	* gcc.dg/debug/pr65771.c: Use tls_runtime instead of tls.
+
+2015-09-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	gfortran.dg/ieee/ieee_4.f90: xfail on i386-*-freebsd*
+	gfortran.dg/round_4.f90: ditto.
+
+2015-09-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67170
+	* gfortran.dg/pr67170.f90: New testcase.
+
+2015-09-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67741
+	* gcc.dg/torture/pr67741.c: New testcase.
+
+2015-09-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.dg/tg-tests.h (foo_1) [UNSAFE]: Also check if f and ld are
+	non-zero for __builtin_signbit tests.
+
+2015-09-29  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/65105
+	* gcc.target/i386/pr65105-1.c: New.
+	* gcc.target/i386/pr65105-2.c: New.
+	* gcc.target/i386/pr65105-3.c: New.
+	* gcc.target/i386/pr65105-4.C: New.
+	* gcc.dg/lower-subreg-1.c: Add -mno-stv options for ia32.
+
+2015-09-28  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* gcc.dg/asm-4.c: Use braced words for the regular expressions.
+
+2015-09-28  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/40054
+	PR fortran/63921
+	* gfortran.dg/fmt_tab_1.f90: Change from run to compile and set
+	standard as legacy.
+	* gfortran.dg/fmt_tab_2.f90: Add extra tab error.
+	* gfortran.dg/function_types_3.f90: Change error message to
+	"Type inaccessible...."
+	* gfortran.dg/ptr_func_assign_1.f08: New test.
+	* gfortran.dg/ptr_func_assign_2.f08: New test.
+
+2015-09-25  Mikael Morin  <mikael.morin@sfr.fr>
+
+	PR fortran/40054
+	PR fortran/63921
+	* gfortran.dg/ptr_func_assign_3.f08: New test.
+	* gfortran.dg/ptr_func_assign_4.f08: New test.
+
+2015-09-28  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	* gcc/testsuite/gcc.dg/graphite/run-id-pr67700-1.c: New test case.
+	* gcc.dg/graphite/block-1.c: Modified to match the pattern.
+	* gcc.dg/graphite/block-3.c: Same.
+	* gcc.dg/graphite/block-4.c: Same.
+	* gcc.dg/graphite/block-5.c: Same.
+	* gcc.dg/graphite/block-6.c: Same.
+	* gcc.dg/graphite/block-7.c: Same.
+	* gcc.dg/graphite/block-8.c: Same.
+	* gcc.dg/graphite/block-pr47654.c: Same.
+	* gcc.dg/graphite/interchange-0.c: Same.
+	* gcc.dg/graphite/interchange-1.c: Same.
+	* gcc.dg/graphite/interchange-10.c: Same.
+	* gcc.dg/graphite/interchange-11.c: Same.
+	* gcc.dg/graphite/interchange-12.c: Same.
+	* gcc.dg/graphite/interchange-13.c: Same.
+	* gcc.dg/graphite/interchange-14.c: Same.
+	* gcc.dg/graphite/interchange-15.c: Same.
+	* gcc.dg/graphite/interchange-3.c: Same.
+	* gcc.dg/graphite/interchange-4.c: Same.
+	* gcc.dg/graphite/interchange-5.c: Same.
+	* gcc.dg/graphite/interchange-6.c: Same.
+	* gcc.dg/graphite/interchange-7.c: Same.
+	* gcc.dg/graphite/interchange-8.c: Same.
+	* gcc.dg/graphite/interchange-9.c: Same.
+	* gcc.dg/graphite/interchange-mvt.c: Same.
+	* gcc.dg/graphite/pr35356-1.c: Same.
+	* gcc.dg/graphite/pr35356-3.c: Same.
+	* gcc.dg/graphite/pr37485.c: Same.
+	* gcc.dg/graphite/scop-1.c: Same.
+	* gcc.dg/graphite/scop-11.c: Same.
+	* gcc.dg/graphite/scop-5.c: Same.
+	* gcc.dg/graphite/uns-block-1.c: Same.
+	* gcc.dg/graphite/uns-interchange-9.c: Same.
+	* gfortran.dg/graphite/block-1.f90: Same.
+	* gfortran.dg/graphite/interchange-3.f90: Same.
+	* gfortran.dg/graphite/pr14741.f90: Same.
+	* gfortran.dg/graphite/block-2.f: Same.
+
+2015-09-28  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/67700
+	* testsuite/gcc.dg/graphite/run-id-pr67700.c: New.
+
+2015-09-28  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/54236
+	* gcc.target/sh/pr54236-1.c (test_09, test_10, test_11): New.
+	* gcc.target/sh/pr59533-1.c (test_23, test_24, test_25, test_26,
+	test_27): New.
+	* gcc.target/sh/pr54236-5.c: New.
+	* gcc.target/sh/pr54236-6.c: New.
+
+2015-09-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/67456
+	PR rtl-optimization/67464
+	PR rtl-optimization/67465
+	* gcc.dg/pr67465.c: New test.
+
+2015-09-28  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/62171
+	* gcc.dg/vect/pr62171.c: New test.
+
+2015-09-27  David Edelsohn  <dje.gcc@gmail.com>
+
+	* g++.dg/debug/dwarf2/pr44641.C: Revert line number change. Remove
+	skip on AIX.  XFAIL individual line tests.
+
+2015-09-27  Alexandre Oliva <aoliva@redhat.com>
+
+	PR rtl-optimization/64164
+	PR tree-optimization/67312
+	* gcc.dg/pr67312.c: New.  From Zdenek Sojka.
+	* gcc.target/i386/stackalign/return-4.c: Add -O.
+
+2015-09-27  David Edelsohn  <dje.gcc@gmail.com>
+
+	* g++.dg/debug/dwarf2/pr44641.C: Add one to expected line numbers.
+
+2015-09-26  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/67721
+	* gfortran.dg/alloc_comp_deep_copy_3.f03: New.
+
+2015-09-26  David Edelsohn  <dje.gcc@gmail.com>
+
+	* gcc.dg/pr64935-1.c: XFAIL on AIX.
+	* gcc.dg/pr64935-2.c: XFAIL on AIX.
+	* gcc.dg/debug/dwarf2/dwarf2-macro2.c: XFAIL Start new file on AIX.
+	* gcc.dg/debug/dwarf2/dwarf2-macro2.c: XFAIL At line number on AIX.
+	* gcc.dg/debug/dwarf2/global-used-types.c: XFAIL ascii on AIX.
+	* gcc.dg/debug/dwarf2/noreturn-function-keyword.c: XFAIL
+	DW_AT_noreturn on AIX.
+	* gcc.dg/debug/dwarf2/noreturn-function-attribute.c: XFAIL
+	DW_AT_noreturn on AIX.
+	* gcc.dg/debug/dwarf2/lang-c89.c: XFAIL DW_AT_language on AIX.
+	* gcc.dg/debug/dwarf2/stacked-qualified-types-3.c: XFAIL DW_TAG on AIX.
+	* g++.dg/debug/dwarf2/deleted-member-function.C: XFAIL
+	DW_AT_GNU_deleted on AIX.
+	* g++.dg/debug/dwarf2/noreturn-function.C: XFAIL DW_AT_noreturn on AIX.
+	* g++.dg/debug/dwarf2/template-params-6.C: XFAIL ascii on AIX.
+	* g++.dg/debug/dwarf2/dwarf4-nested.C: XFAIL ascii on AIX.
+	* g++.dg/debug/dwarf2/pubnames-2.C: Skip on AIX.
+	* g++.dg/debug/dwarf2/pr44641.C: Skip on AIX.
+	* g++.dg/debug/dwarf2/pr46527.C: XFAIL on AIX.
+	* g++.dg/debug/dwarf2/imported-decl-2.C: XFAIL ascii on AIX.
+	* g++.dg/debug/dwarf2/namespace-1.C: XFAIL ascii on AIX.
+	* g++.dg/debug/dwarf2/global-used-types-1.C: XFAIL ascii on AIX.
+	* g++.dg/debug/dwarf2/lambda1.C: XFAIL ascii on AIX.
+	* g++.dg/debug/dwarf2/pubnames-3.C: Skip on AIX.
+	* g++.dg/debug/dwarf2/pr61433.C: XFAIL on AIX.
+	* g++.dg/debug/dwarf2/nested-4.C: XFAIL on AIX.
+	* g++.dg/debug/dwarf2/template-func-params-6.C: XFAIL ascii on AIX.
+	* g++.dg/debug/dwarf2/lineno-simple1.C: XFAIL on AIX.
+
+2015-09-25  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67614
+	* gfortran.dg/pr67614.f90: New test.
+
+2015-09-25  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67525
+	* gfortran.dg/pr67525.f90: New test.
+
+2015-09-25  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/55603
+	* gfortran.dg/allocatable_function_9.f90: New.
+
+2015-09-25  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/67675
+	* gcc.target/sh/pr67675.c: New.
+
+2015-09-25  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gcc.target/aarch64/fpcr_fpsr_1.c: New file.
+
+2015-09-25  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/pr66749.c (dg-options): Replace
+	-mtune=lakemount with -mtune=lakemont.
+	* gcc.target/i386/pr66821.c (dg-options): Likewise.
+	* gcc.target/i386/pr67329.c (dg-options): Likewise.
+
+2015-09-25  Marek Polacek  <polacek@redhat.com>
+
+	* c-c++-common/ubsan/bounds-11.c: New test.
+	* c-c++-common/ubsan/bounds-12.c: New test.
+
 2015-09-25  Marek Polacek  <polacek@redhat.com>
 
 	PR sanitizer/64906

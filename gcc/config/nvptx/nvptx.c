@@ -56,6 +56,8 @@
 #include "cfgrtl.h"
 #include "stor-layout.h"
 #include "builtins.h"
+#include "omp-low.h"
+#include "gomp-constants.h"
 
 /* This file should be included last.  */
 #include "target-def.h"
@@ -2066,9 +2068,51 @@ nvptx_vector_alignment (const_tree type)
 static void
 nvptx_record_offload_symbol (tree decl)
 {
-  fprintf (asm_out_file, "//:%s_MAP %s\n",
-	   TREE_CODE (decl) == VAR_DECL ? "VAR" : "FUNC",
-	   IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (decl)));
+  switch (TREE_CODE (decl))
+    {
+    case VAR_DECL:
+      fprintf (asm_out_file, "//:VAR_MAP \"%s\"\n",
+	       IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (decl)));
+      break;
+
+    case FUNCTION_DECL:
+      {
+	tree attr = get_oacc_fn_attrib (decl);
+	tree dims = NULL_TREE;
+	unsigned ix;
+
+	if (attr)
+	  dims = TREE_VALUE (attr);
+	fprintf (asm_out_file, "//:FUNC_MAP \"%s\"",
+		 IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (decl)));
+
+	for (ix = 0; ix != GOMP_DIM_MAX; ix++)
+	  {
+	    int size = 1;
+
+	    /* TODO: This check can go away once the dimension default
+	       machinery is merged to trunk.  */
+	    if (dims)
+	      {
+		tree dim = TREE_VALUE (dims);
+
+		if (dim)
+		  size = TREE_INT_CST_LOW (dim);
+
+		gcc_assert (!TREE_PURPOSE (dims));
+		dims = TREE_CHAIN (dims);
+	      }
+	    
+	    fprintf (asm_out_file, ", %#x", size);
+	  }
+	
+	fprintf (asm_out_file, "\n");
+      }
+      break;
+  
+    default:
+      gcc_unreachable ();
+    }
 }
 
 /* Implement TARGET_ASM_FILE_START.  Write the kinds of things ptxas expects
@@ -2095,6 +2139,22 @@ nvptx_file_end (void)
   FOR_EACH_HASH_TABLE_ELEMENT (*needed_fndecls_htab, decl, tree, iter)
     nvptx_record_fndecl (decl, true);
   fputs (func_decls.str().c_str(), asm_out_file);
+}
+
+/* Validate compute dimensions of an OpenACC offload or routine, fill
+   in non-unity defaults.  FN_LEVEL indicates the level at which a
+   routine might spawn a loop.  It is negative for non-routines.  */
+
+static bool
+nvptx_goacc_validate_dims (tree ARG_UNUSED (decl), int *ARG_UNUSED (dims),
+			   int ARG_UNUSED (fn_level))
+{
+  bool changed = false;
+
+  /* TODO: Leave dimensions unaltered.  Partitioned execution needs
+     porting before filtering dimensions makes sense.  */
+
+  return changed;
 }
 
 #undef TARGET_OPTION_OVERRIDE
@@ -2182,6 +2242,9 @@ nvptx_file_end (void)
 
 #undef TARGET_VECTOR_ALIGNMENT
 #define TARGET_VECTOR_ALIGNMENT nvptx_vector_alignment
+
+#undef TARGET_GOACC_VALIDATE_DIMS
+#define TARGET_GOACC_VALIDATE_DIMS nvptx_goacc_validate_dims
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
