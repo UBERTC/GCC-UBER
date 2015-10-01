@@ -945,6 +945,12 @@ match_reload (signed char out, signed char *ins, enum reg_class goal_class,
 	= (ins[1] < 0 && REG_P (in_rtx)
 	   && (int) REGNO (in_rtx) < lra_new_regno_start
 	   && find_regno_note (curr_insn, REG_DEAD, REGNO (in_rtx))
+	   /* We can not use the same value if the pseudo is mentioned
+	      in the output, e.g. as an address part in memory,
+	      becuase output reload will actually extend the pseudo
+	      liveness.  We don't care about eliminable hard regs here
+	      as we are interesting only in pseudos.  */
+	   && (out < 0 || regno_use_in (REGNO (in_rtx), out_rtx) == NULL_RTX)
 	   ? lra_create_new_reg (inmode, in_rtx, goal_class, "")
 	   : lra_create_new_reg_with_unique_value (outmode, out_rtx,
 						   goal_class, ""));
@@ -1333,7 +1339,7 @@ process_addr_reg (rtx *loc, bool check_only_p, rtx_insn **before, rtx_insn **aft
   if (after != NULL)
     {
       start_sequence ();
-      lra_emit_move (reg, new_reg);
+      lra_emit_move (before_p ? copy_rtx (reg) : reg, new_reg);
       emit_insn (*after);
       *after = get_insns ();
       end_sequence ();

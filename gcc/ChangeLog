@@ -1,3 +1,763 @@
+2015-10-01  Lynn Boger  <laboger@linux.vnet.ibm.com>
+
+	PR target/66870
+	* config/rs6000/sysv4.h (TARGET_CAN_SPLIT_STACK_64BIT): Define.
+	* configure.ac: Define HAVE_GOLD_ALTERNATE_SPLIT_STACK on Power
+	based on gold linker version.
+	* gcc.c: Add -fuse-ld=gold to STACK_SPLIT_SPEC if
+	HAVE_GOLD_ALTERNATE_SPLIT_STACK defined.
+	* configure, config.in: Regenerate.
+
+2015-10-01  Alan Modra  <amodra@gmail.com>
+
+	* config/rs6000/rs6000.c (rs6000_emit_prologue): Don't set
+	r2_setup_needed when TARGET_SINGLE_PIC_BASE.
+	(rs6000_output_mi_thunk): Likewise.
+
+2015-09-30  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* config/nvptx/mkoffload.c (process): Change offload data format.
+
+2015-09-30  Jeff Law  <law@redhat.com>
+
+	* tree-ssa-dom.c (optimize_stmt): Collapse control flow statements
+	with constant conditions.
+	* tree-ssa-threadupdate.c (remove_jump_threads_starting_at): New.
+	(remove_ctrl_stmt_and_useless_edges): No longer static.
+	* tree-ssa-threadupdate.h (remove_jump_threads_starting_at): Prototype.
+	(remove_ctrl_stmt_and_useless_edges): Likewise.
+
+2015-09-30  Nathan Sidwell  <nathan@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+
+	* config/nvptx/nvptx.c (nvptx_goacc_validate_dims): New.
+	(TARGET_GOACC_VALIDATE_DIMS): Override.
+	* target.def (TARGET_GOACC): New target hook prefix.
+	(validate_dims): New hook.
+	* targhooks.h (default_goacc_validate_dims): New.
+	* omp-low.c (oacc_validate_dims): New.
+	(execute_oacc_device_lower): New.
+	(default_goacc_validate_dims): New.
+	(pass_data_oacc_device_lower): New.
+	(pass_oacc_device_lower): New pass.
+	(make_pass_oacc_device_lower): New.
+	* tree-pass.h (make_pass_oacc_device_lower): Declare.
+	* passes.def (pass_oacc_device_lower): Add it.
+	* doc/tm.texi: Rebuilt.
+	* doc/tm.texi.in (TARGET_GOACC_VALIDATE_DIMS): Add hook.
+	* doc/invoke.texi (oaccdevlow): Document tree dump flag.
+
+2015-09-30  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR rtl-optimization/67037
+	* lra-constraints.c (process_addr_reg): Use copy_rtx when necessary.
+
+2015-09-30  Bernd Schmidt  <bernds@redhat.com>
+
+	* gimple-ssa.h (gimple_df): Add free_ssanames_queue field.
+	* passes.c: Include tree-ssanames.h.
+	(execute_function_todo): Flush the pending free SSA_NAMEs after
+	eliminating unreachable basic blocks.
+	* tree-ssanames.c (FREE_SSANAMES_QUEUE): new.
+	(init_ssanames): Initialize FREE_SSANAMES_QUEUE.
+	(fini_ssanames): Finalize FREE_SSANAMES_QUEUE.
+	(flush_ssanames_freelist): New function.
+	(release_ssaname_fn): Put released names on the queue.
+	(pass_release_ssa_names::execute): Call flush_ssanames_freelist.
+	* tree-ssanames.h (flush_ssanames_freelist): Declare.
+
+2015-09-30  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* config/i386/intelmic-mkoffload.c (main): Parse "-v" flag.
+	(generate_target_descr_file, generate_target_offloadend_file)
+	(generate_host_descr_file, prepare_target_image, main): Pass it
+	on.
+	* config/nvptx/mkoffload.c (main): Parse "-v" flag.
+	(compile_native, main): Pass it on.
+	* lto-wrapper.c (compile_offload_image): Likewise.
+
+2015-09-30  Thomas Schwinge  <thomas@codesourcery.com>
+	    Ilya Verbin  <ilya.verbin@intel.com>
+	    Andrey Turetskiy  <andrey.turetskiy@intel.com>
+
+	* config/i386/intelmic-mkoffload.c (generate_host_descr_file)
+	(prepare_target_image, main): Refactor argv building to use
+	obstacks.
+
+2015-09-30  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	* config/spu/spu-protos.h (spu_expand_atomic_op): Add prototype.
+	* config/spu/spu.c (spu_expand_atomic_op): New function.
+	* config/spu/spu.md (AINT): New mode iterator.
+	(ATOMIC): New code iterator.
+	(atomic_name, atomic_pred): New code predicates.
+	("atomic_load<mode>", "atomic_store<mode>"): New expanders.
+	("atomic_compare_and_swap<mode>", "atomic_exchange<mode>"): Likewise.
+	(""atomic_<atomic_name><mode>", "atomic_fetch_<atomic_name><mode>",
+	"atomic_<atomic_name>_fetch<mode>"): Likewise.
+
+2015-09-30  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* config/i386/i386.c (scalar_chain::analyze_register_chain): Ignore
+	debug insns.
+	(scalar_chain::convert_reg): Likewise.
+
+2015-09-30  Richard Biener  <rguenther@suse.de>
+
+	* builtins.c: Add comment that no new simplifications shouldd
+	be added here.
+
+2015-09-30  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67690
+	* tree-ssa-ifcombine.c (pass_tree_ifcombine::execute): Call
+	reset_flow_sensitive_info_in_bb.
+	* tree-ssa-tail-merge.c (replace_block_by): Likewise.
+	* tree-ssanames.c: Include "gimple-iterator.h".
+	(reset_flow_sensitive_info_in_bb): New function.
+	* tree-ssanames.h (reset_flow_sensitive_info_in_bb): Declare.
+
+2015-09-30  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* config/i386/intelmic-mkoffload.c (target_ilp32): Remove
+	variable, replacing it with...
+	(offload_abi): ... this new variable.  Adjust all users.
+	* config/nvptx/mkoffload.c (target_ilp32, offload_abi): Likewise.
+
+2015-09-30  Matthias Klose  <doko@ubuntu.com>
+
+	* configure.ac: Remove extraneous ;;.
+	* configure: Regenerate.
+
+2015-09-29  James Bowman  <james.bowman@ftdichip.com>
+
+	* config/ft32/predicates.md (ft32_imm_operand): New predicate.
+	* config/ft32/ft32.md (movmemsi, setmemsi): Use ft32_imm_operand
+	predicate, disallow register for operand 2.
+
+2015-09-29  Aditya Kumar  <aditya.k7@samsung.com>
+
+	* graphite-dependences.c (scop_get_dependences): Moved in down
+	in order to be visible to its caller.
+	* graphite-poly.h: Removed compute_deps, and extend_schedule.
+
+2015-09-29  Sebastian Pop  <s.pop@samsung.com>
+	    Aditya Kumar  <aditya.k7@samsung.com>
+
+	PR tree-optimization/67754
+	* graphite-optimize-isl.c (optimize_isl): Call
+	isl_options_set_schedule_fuse with ISL_SCHEDULE_FUSE_MIN for ISL-14.
+
+2015-09-29  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* builtins.c (expand_builtin_acc_on_device): Delete.
+	(expand_builtin): Don't call it.
+	(fold_builtin_1): Fold acc_on_device.
+
+2015-09-29  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/i386/i386.c (ix86_function_arg): Fix typo in comments.
+	(ix86_nsaved_sseregs): Likewise.
+
+2015-09-29  Jeff Law  <law@redhat.com>
+
+	* config/microblaze/microblaze.c (microblaze_version_to_int): Remove
+	computation of unused value.
+
+	* config/pdp11/pdp11.c (pdp11_branch_cost): New function.
+	* config/pdp11/pdp11.h (BRANCH_COST): Call function rather than
+	inline macro expansion.
+
+	* config/i386/t-interix (winnt-stubs.o): Fix compilation rule.
+
+	* config/sh/sh.c (gen_shl_and): Fix undefined left shift
+	behaviour.
+	(gen_shl_sext): Likewise.
+	* config/sh/sh.md (divsi3): Likewise.
+	(imm->ext_dest_operand splitter): Likewise.
+
+2015-09-29  Sebastian Pop  <s.pop@samsung.com>
+	    Aditya Kumar  <aditya.k7@samsung.com>
+
+	* graphite-sese-to-poly.c (gsi_for_phi_node): Remove.
+	(nb_data_writes_in_bb): Remove.
+	(split_pbb): Remove.
+	(split_reduction_stmt): Remove.
+	(is_reduction_operation_p): Remove.
+	(phi_contains_arg): Remove.
+	(follow_ssa_with_commutative_ops): Remove.
+	(detect_commutative_reduction_arg): Remove.
+	(detect_commutative_reduction_assign): Remove.
+	(follow_inital_value_to_phi): Remove.
+	(edge_initial_value_for_loop_phi): Remove.
+	(initial_value_for_loop_phi): Remove.
+	(used_outside_reduction): Remove.
+	(detect_commutative_reduction): Remove.
+	(translate_scalar_reduction_to_array_for_stmt): Remove.
+	(remove_phi): Remove.
+	(dr_indices_valid_in_loop): Remove.
+	(close_phi_written_to_memory): Remove.
+	(translate_scalar_reduction_to_array): Remove.
+	(rewrite_commutative_reductions_out_of_ssa_close_phi): Remove.
+	(rewrite_commutative_reductions_out_of_ssa_loop): Remove.
+	(rewrite_commutative_reductions_out_of_ssa): Remove.
+	(build_poly_scop): Remove call to
+	rewrite_commutative_reductions_out_of_ssa.
+
+2015-09-29  Evandro Menezes  <e.menezes@samsung.com>
+
+	* config/arm/types.md (neon_ldp, neon_ldp_q, neon_stp, neon_stp_q):
+	Add new insn types for vector load and store pairs.
+	* config/arm/cortex-a53.md (cortex_a53_f_load_2reg): Add insn
+	types "neon_ldp{,_q}".
+	* config/arm/cortex-a57.md (neon_load_c): Add insn types
+	"neon_ldp{,_q}".
+	(neon_store_complex): Add insn types "neon_stp{,_q}".
+	* config/aarch64/aarch64-simd.md (aarch64_be_movoi): Add insn types
+	"neon_{ldp,stp}_q".
+
+2015-09-29  Jeff Law  <law@redhat.com>
+
+	* config/rx/constraints.md (Int08): Fix undefined left shift
+	behaviour.
+	(Sint08, Sint16, Sint24): Likewise.
+	* config/rx/rx.c (rx_get_stack_layout): Likewise.
+
+	* config/rl78/rl78-expand.md (movqi): Fix undefined left shift
+	behaviour.
+
+	* config/msp430/msp430.c (msp430_legitimate_constant): Fix undefined
+	left shift behaviour.
+	* config/msp430/constraints.md ('L' constraint): Similarly.
+	('Ys' constraint): Similarly.
+
+2015-09-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67170
+	* tree-ssa-alias.h (get_continuation_for_phi): Adjust
+	the translate function pointer parameter to get the
+	bool whether to disambiguate only by reference.
+	(walk_non_aliased_vuses): Likewise.
+	* tree-ssa-alias.c (maybe_skip_until): Adjust.
+	(get_continuation_for_phi_1): Likewise.
+	(get_continuation_for_phi): Likewise.
+	(walk_non_aliased_vuses): Likewise.
+	* tree-ssa-sccvn.c (const_parms): New bitmap.
+	(vn_reference_lookup_3): Adjust for interface change.
+	Disambiguate parameters pointing to readonly memory.
+	(free_scc_vn): Free const_parms.
+	(run_scc_vn): Initialize const_parms from a fn spec attribute.
+
+2015-09-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67741
+	* tree-ssa-math-opts.c (pass_cse_sincos::execute): Only recognize
+	builtin calls with correct signature.
+
+2015-09-29  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/65105
+	* config/i386/i386.c: Include dbgcnt.h.
+	(has_non_address_hard_reg): New.
+	(convertible_comparison_p): New.
+	(scalar_to_vector_candidate_p): New.
+	(remove_non_convertible_regs): New.
+	(scalar_chain): New.
+	(scalar_chain::scalar_chain): New.
+	(scalar_chain::~scalar_chain): New.
+	(scalar_chain::add_to_queue): New.
+	(scalar_chain::mark_dual_mode_def): New.
+	(scalar_chain::analyze_register_chain): New.
+	(scalar_chain::add_insn): New.
+	(scalar_chain::build): New.
+	(scalar_chain::compute_convert_gain): New.
+	(scalar_chain::replace_with_subreg): New.
+	(scalar_chain::replace_with_subreg_in_insn): New.
+	(scalar_chain::emit_conversion_insns): New.
+	(scalar_chain::make_vector_copies): New.
+	(scalar_chain::convert_reg): New.
+	(scalar_chain::convert_op): New.
+	(scalar_chain::convert_insn): New.
+	(scalar_chain::convert): New.
+	(convert_scalars_to_vector): New.
+	(pass_data_stv): New.
+	(pass_stv): New.
+	(make_pass_stv): New.
+	(ix86_option_override): Created and register stv pass.
+	(flag_opts): Add -mstv.
+	(ix86_option_override_internal): Likewise.
+	* config/i386/i386.md (SWIM1248x): New.
+	(*movdi_internal): Add xmm to mem alternative for TARGET_STV.
+	(and<mode>3): Use SWIM1248x iterator instead of SWIM.
+	(*anddi3_doubleword): New.
+	(*zext<mode>_doubleword): New.
+	(*zextsi_doubleword): New.
+	(<code><mode>3): Use SWIM1248x iterator instead of SWIM.
+	(*<code>di3_doubleword): New.
+	* config/i386/i386.opt (mstv): New.
+	* dbgcnt.def (stv_conversion): New.
+
+2015-09-29  Tom de Vries  <tom@codesourcery.com>
+
+	* tree-cfg.c (dump_function_to_file): Dump function attributes.
+
+2015-09-29  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/67716
+	* config/sh/sh.c (sh_override_options_after_change): New.
+	(TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE): Define.
+	(sh_option_override): Move align_loops, align_jumps and
+	align_functions handling into sh_override_options_after_change.
+
+2015-09-28  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* config/nvptx/nvptx.c: Include omp-low.h and gomp-constants.h.
+	(nvptx_record_offload_symbol): Record function execution geometry.
+	* config/nvptx/mkoffload.c (process): Include launch geometry in
+	function data.
+	* omp-low.c (oacc_launch_pack): New.
+	(replace_oacc_fn_attrib): New.
+	(set_oacc_fn_attrib): New.
+	(get_oacc_fn_attrib): New.
+	(expand_omp_target): Create keyed varargs for GOACC_parallel call
+	generation.
+	* omp-low.h (get_oacc_fn_attrib): Declare.
+	* builtin-types.def (DEF_FUNCTION_TyPE_VAR_6): New.
+	(DEF_FUNCTION_TYPE_VAR_11): Delete.
+	* tree.h (OMP_CLAUSE_EXPR): New.
+	* omp-builtins.def (BUILT_IN_GOACC_PARALLEL): Change target fn name.
+
+2015-09-28  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	* sese.c (invariant_in_sese_p_rec): Remove unused variable.
+
+2015-09-28  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	* graphite-optimize-isl.c (optimize_isl): Use ISL_SCHEDULE_FUSE_MAX.
+	* graphite-scop-detection.c (struct sese_l): New type.
+	(get_entry_bb): API for getting entry bb of SESE.
+	(get_exit_bb): API for getting exit bb of SESE.
+	(class debug_printer): New type.  Simple printer in debug mode.
+	(trivially_empty_bb_p): New.  Return true when BB is empty or
+	contains only debug instructions.
+	(graphite_can_represent_expr): Call scalar_evoution_in_region
+	instead of analyze_scalar_evolution.  Pass in scop instead of only
+	the scop entry.
+	(stmt_has_simple_data_refs_p): Pass in scop instead of only the
+	scop entry.
+	(stmt_simple_for_scop_p): Same.
+	(harmful_stmt_in_bb): Same.
+	(graphite_can_represent_loop): Deleted.
+	(struct scopdet_info): Deleted.
+	(scopdet_basic_block_info): Deleted.
+	(build_scops_1): Deleted.
+	(bb_in_sd_region): Deleted.
+	(find_single_entry_edge): Deleted.
+	(find_single_exit_edge): Deleted.
+	(create_single_entry_edge): Deleted.
+	(sd_region_without_exit): Deleted.
+	(create_single_exit_edge): Deleted.
+	(unmark_exit_edges): Deleted.
+	(mark_exit_edges): Deleted.
+	(create_sese_edges): Deleted.
+	(build_graphite_scops): Deleted.
+	(canonicalize_loop_closed_ssa): Recompute all dominators at the end.
+	(build_scops): Use the new scop_builder to build scops.
+	(dot_all_scops_1): Use the new pretty printer.  Print loop father
+	as well.
+	(loop_body_is_valid_scop): New.  Return true if loop body is a
+	valid scop.
+	(class scop_builder): New.  Builds SCoPs for polyhedral
+	optimizations.
+	(scop_builder): New constructor.
+	(static sese_l invalid_sese): sese_l with invalid edges.
+	(get_sese): Get an sese (from a loop) if possible, invalid_sese
+	otherwise.
+	(get_nearest_dom_with_single_entry): Get nearest dominator of a
+	basic_block with single entry.  Return NULL if we get to the
+	beginning of a function.
+	(get_nearest_pdom_with_single_exit): Get nearest post-dominator of
+	a basic_block with single exit.  Return NULL if we get to the
+	beginning of a function.
+	(print_sese): Pretty-print SESE.
+	(merge_sese): Merge two SESEs if possible and return the new SESE.
+	(build_scop_depth): Start building the SCoP within a loop nest.
+	(build_scop_breadth): Start building the SCoP at a single loop
+	depth.  Merge adjacent SESEs if valid.
+	(can_represent_loop_1): Returns true if Graphite can represent
+	loop inside SCoP.  Helper for can_represent_loop.
+	(can_represent_loop): Returns true if Graphite can represent LOOP
+	and all its nested loops in SCoP.
+	(loop_is_valid_scop): Returns true if LOOP and all its nests
+	constitute a valid SCoP.
+	(region_has_one_loop): Returns true of a region has only one loop.
+	(add_scop): Add SCoP to the list of valid scops.  Removes an
+	already existing scop if it intersects with or subsumed by this one.
+	(harmful_stmt_in_region): Returns true if SCoP has any statment
+	which cannot be represented by Graphite.
+	(subsumes): Returns true of SCoP S1 subsumes SCoP S2.
+	(remove_subscops): Remove any SCoP from the list of already found
+	SCoPs, if subsumed by S1.
+	(intersects): Return true if region bounded by SCoPs S1 and S2
+	intersect.
+	(remove_intersecting_scops): Remove any SCoP which intersects with S1.
+	* graphite.c (print_graphite_scop_statistics):
+	(print_graphite_statistics): Print SCoP info while debugging.
+	(graphite_initialize): Early exit in case number of loops in a
+	function is less than PARAM_GRAPHITE_MIN_LOOPS_PER_FUNCTION or
+	basic blocks are more than PARAM_GRAPHITE_MAX_BBS_PER_FUNCTION.
+	(graphite_finalize):
+	* params.def: Add PARAM_GRAPHITE_MIN_LOOPS_PER_FUNCTION.
+	* sese.h (sese_loop_depth): Remove unnecessary gcc_assert.
+	(recompute_all_dominators): Recalculate POST_DOMINATORS.
+	* tree-cfg.c (print_loops): Print the function name while printing
+	loops.
+
+2015-09-28  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/67700
+	* graphite-sese-to-poly.c (parameter_index_in_region): Call
+	invariant_in_sese_p_rec.
+	(extract_affine): Same.
+	(rewrite_cross_bb_scalar_deps): Call update_ssa.
+	* sese.c (invariant_in_sese_p_rec): Export.  Handle vdefs and vuses.
+	* sese.h (invariant_in_sese_p_rec): Declare.
+
+2015-09-28  David Wohlferd  <dw@LimeGreenSocks.com>
+
+	* doc/extend.texi (Asm Labels): Break out text for data vs functions.
+
+2015-09-28  Jiong Wang  <jiong.wang@arm.com>
+
+	Revert:
+	2015-08-06  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+		    Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64.d (tlsdesc_small_pseudo_<mode>): New pattern.
+	* config/aarch64/aarch64.h (reg_class): New enumeration FIXED_REG0.
+	(REG_CLASS_NAMES): Likewise.
+	(REG_CLASS_CONTENTS): Likewise.
+	* config/aarch64/aarch64.c (aarch64_class_max_nregs): Likewise.
+	(aarch64_register_move_cost): Likewise.
+	(aarch64_load_symref_appropriately): Invoke the new added pattern if
+	possible.
+	* config/aarch64/constraints.md (Uc0): New constraint.
+
+2015-09-28  Daniel Hellstrom  <daniel@gaisler.com>
+
+	* config/sparc/t-rtems: Remove -muser-mode. Add ut699, at697f and leon.
+
+2015-09-28  David Edelsohn  <dje.gcc@gmail.com>
+
+	* config/rs6000/rs6000.c (rs6000_xcoff_asm_named_section): Place
+	SECTION_EXCLUDE in XO mapping class.
+
+2015-09-28  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/54236
+	* config/sh/predicates.md (t_reg_operand, negt_reg_operand): Allow
+	and handle ne and eq codes.
+	* config/sh/sh.c (sh_rtx_costs): Adjust matching of tst #imm,r0 insn.
+	(sh_recog_treg_set_expr): Early accept negt_reg_operand.  Eearly reject
+	CONST_INT_P.  Use reverse_condition.
+	(sh_split_treg_set_expr): Likewise.
+
+2015-09-28  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/arm/types.md (type): Add rotate_imm.
+	* config/aarch64/aarch64.md (*ror<mode>3_insn): Split out the
+	ROR immediate case.
+	(*rorsi3_insn_uxtw): Likewise.
+	* config/aarch64/thunderx.md (thunderx_shift): Add rotate_imm.
+	* config/arm/cortex-a53.md (cortex_a53_alu_shift): Add rotate_imm.
+	* config/arm/cortex-a57.md (cortex_a53_alu): Add rotate_imm.
+
+2015-09-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/67481
+	* ifcvt.c (contains_ccmode_rtx_p): New function.
+	(insn_valid_noce_process_p): Use it.
+
+2015-09-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/67456
+	PR rtl-optimization/67464
+	PR rtl-optimization/67465
+	* ifcvt.c (noce_try_cmove_arith): Bail out if cannot conditionally
+	move in the mode of x.  Handle combination of complex and simple
+	block pairs as well as the case when one is empty.
+
+2015-09-28  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* doc/gimple.texi: Update references to gimple_statement_base.
+	* gdbhooks.py: Likewise.
+	* gimple.h: Likewise.
+
+2015-09-28  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/driver-sparc.c: map LEON to leon3
+
+2015-09-28  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/sparc.opt: Rename mask from USER_MODE to SV_MODE
+	  and make it inverse to change default
+	* config/sparc/sync.md: Only use supervisor ASI for CASA when in
+	  supervisor mode
+	* doc/invoke.texi: Document change of default
+
+2015-09-28  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/sparc.c (sparc_function_value_regno_p): Do not return
+	true on %f0 for a target without FPU.
+	* config/sparc/sparc.md (untyped_call): Do not save %f0 for a target
+	without FPU.
+	(untyped_return): Do not load %f0 for a target without FPU.
+
+2015-09-28  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64.md (prefetch):
+	Change the predicate of operand 0 to register_operand.
+
+2015-09-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/predicates.md (register_sse4nonimm_operand): New
+	predicate.
+	* config/i386/sse.md (PEXTR_MODE12): New mode iterator.
+	(*vec_extract<mode>): Use PEXTR_MODE12 instead of VI12_128 mode.
+	Use register_sse4nonimm_operand as operand 0 predicate.
+	(*vec_extractv8hi_sse2): Remove insn pattern.
+	(*vec_extract<PEXTR_MODE12:mode>_zext): Merge insn pattern from
+	*vec_extractv8hi_zext and *vec_extractv16qi_zext patterns.
+
+2015-09-27  Oleg Endo  <olegendo@gcc.gnu.org>
+	    Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/67391
+	* config/sh/sh-protos.h (sh_lra_p): Declare.
+	* config/sh/sh.c (sh_lra_p): Make non-static.
+	* config/sh/sh.md (addsi3): Use arith_reg_dest for operands[0] and
+	arith_reg_operand for operands[1].  Remove TARGET_SHMEDIA case.
+	Expand into addsi3_scr if operands[2] if needed.
+	(*addsi3_compact): Rename to *addsi3_compact_lra.  Use
+	arith_reg_operand for operands[1].  Allow it only when LRA is enabled.
+	(addsi3_scr, *addsi3): New insn_and_split patterns.
+
+2015-09-27  Alexandre Oliva <aoliva@redhat.com>
+
+	PR rtl-optimization/64164
+	PR tree-optimization/67312
+	PR middle-end/67340
+	PR middle-end/67490
+	PR bootstrap/67597
+	* cfgexpand.c (parm_in_stack_slot_p): Remove.
+	(ssa_default_def_partition): Remove.
+	(get_rtl_for_parm_ssa_default_def): Remove.
+	(set_rtl): Check that RTL assignments match expectations.
+	Loop on SUBREGs, CONCATs and PARALLELs subexprs.  Set only the
+	default def location for params and results.  Record SSA names
+	or types in REG and MEM attrs, respectively.
+	(set_parm_rtl): New.
+	(expand_one_ssa_partition): Drop logic that assigned MEMs with
+	unassigned addresses.
+	(adjust_one_expanded_partition_var): Don't accept NULL RTL on
+	deferred stack alloc vars.
+	(expand_used_vars): Skip partitions holding parm default defs.
+	Move adjust_one_expanded_partition_var loop...
+	(pass_expand::execute): ... here.  Drop redundant assert.
+	Adjust comments before the final loop over all ssa names.
+	Require assigned rtl of parms and results to match exactly.
+	Reset its attributes to match them, not any other variables in
+	the same partition.
+	(expand_debug_expr): Use entry value for PARM's default defs
+	only iff they have zero nondebug uses.
+	* cfgexpand.h (parm_in_stack_slot_p): Remove.
+	(get_rtl_for_parm_ssa_default_def): Remove.
+	(set_parm_rtl): Declare.
+	* doc/invoke.texi: Improve wording.
+	* explow.c (promote_decl_mode): Fix promote_function_mode for
+	result decls not by reference.
+	(promote_ssa_mode): Disregard BLKmode from promote_decl, and
+	bypass TYPE_MODE to get the actual vector mode.
+	* function.c: Include tree-dfa.h.  Revert 2015-08-14's and
+	2015-08-19's changes as follows.  Drop include of
+	basic-block.h and df.h.
+	(rtl_for_parm): Remove.
+	(maybe_reset_rtl_for_parm): Remove.
+	(parm_in_unassigned_mem_p): Remove.
+	(use_register_for_decl): Add logic for RESULT_DECLs matching
+	assign_parms' behavior.
+	(split_complex_args): Revert.
+	(assign_parms_augmented_arg_list): Revert.  Add comment
+	referencing the logic above.
+	(assign_parm_adjust_stack_rtl): Revert.
+	(assign_parm_setup_block): Revert.  Use set_parm_rtl instead
+	of SET_DECL_RTL.  Set up a REG if the parm demands so.
+	(assign_parm_setup_reg): Revert.  Consolidated SET_DECL_RTL
+	calls into a single set_parm_rtl.  Set up a temporary RTL
+	temporarily for expand_assignment.
+	(assign_parm_setup_stack): Revert.  Use set_parm_rtl.
+	(assign_parms_unsplit_complex): Revert.  Use set_parm_rtl.
+	(assign_bounds): Revert.
+	(assign_parms): Revert.  Use set_parm_rtl.
+	(allocate_struct_function): Relayout result and parms of
+	non-abstruct functions.
+	(expand_function_start): Revert.  Use set_parm_rtl.  If the
+	result is not a hard reg, create a pseudo from the promoted
+	mode of the default def.  Promote static chain mode.
+	* tree-outof-ssa.c (remove_ssa_form): Drop unused
+	partition_has_default_def.  Set up
+	partitions_for_parm_default_defs.
+	(finish_out_of_ssa): Remove partition_has_default_def.
+	Release partitions_for_parm_default_defs.
+	* tree-outof-ssa.h (struct ssaexpand): Remove
+	partition_has_default_def.  Add
+	partitions_for_parm_default_defs.
+	* tree-ssa-coalesce.c: Include tree-dfa.h, tm_p.h and
+	stor-layout.h.
+	(build_ssa_conflict_graph): Fix conflict-detection of default
+	defs of even unused default defs of params and results.
+	(for_all_parms): New.
+	(create_default_def): New.
+	(register_default_def): New.
+	(coalesce_with_default): New.
+	(create_outofssa_var_map): Create default defs for all parms
+	and results, and register their partitions.  Add GIMPLE_RETURN
+	operands as coalesce candidates with results.  Add default
+	defs of each parm or result as coalesce candidates with its
+	other defs.  Mark each result def, and each default def of
+	parms, as used_in_copy.
+	(gimple_can_coalesce_p): Call it.  Call use_register_for_decl
+	with the ssa names, even anonymous ones.  Drop
+	parm_in_stack_slot_p calls.  Require same signedness and
+	alignment.
+	(coalesce_ssa_name): Add coalesce candidates for all defs of
+	each parm and result, even unused ones.
+	(parm_default_def_partition_arg): New type.
+	(set_parm_default_def_partition): New.
+	(get_parm_default_def_partitions): New.
+	* tree-ssa-coalesce.h (get_parm_default_def_partitions): New.
+	* tree-ssa-live.c (partition_view_init): Regard unused defs of
+	parms and results as used.
+	(verify_live_on_entry): Don't error out just because they're
+	not live.
+
+2015-09-26  David Edelsohn  <dje.gcc@gmail.com>
+
+	* dwarf2out.c (XCOFF_DEBUGGING_INFO): Default 0 definition.
+	(HAVE_XCOFF_DWARF_EXTRAS): Default to 0 definition.
+	(output_fde): Don't output length for debug_frame on AIX.
+	(output_call_frame_info): Don't output length for debug_frame on AIX.
+	(have_macinfo): Force to False for XCOFF_DEBUGGING_INFO and not
+	HAVE_XCOFF_DWARF_EXTRAS.
+	(add_AT_loc_list): Return early if XCOFF_DEBUGGING_INFO and not
+	HAVE_XCOFF_DWARF_EXTRAS.
+	(output_compilation_unit_header): Don't output length on AIX.
+	(output_pubnames): Don't output length on AIX.
+	(output_aranges): Delete argument. Compute length locally. Don't
+	output length on AIX.
+	(output_line_info): Don't output length on AIX.
+	(dwarf2out_finish): Don't compute aranges_length.
+	* dwarf2asm.c (XCOFF_DEBUGGING_INFO): Default 0 definition.
+	(dw2_asm_output_nstring): Emit .byte not .ascii on AIX.
+	* config/rs6000/rs6000.c (rs6000_output_dwarf_dtprel): Emit correct
+	symbol decoration for AIX.
+	(rs6000_xcoff_debug_unwind_info): New.
+	(rs6000_xcoff_asm_named_section): Emit .dwsect pseudo-op
+	for SECTION_DEBUG.
+	(rs6000_xcoff_declare_function_name): Emit different
+	.function pseudo-op when DWARF2_DEBUG. Don't call
+	xcoffout_declare_function for DWARF2_DEBUG.
+	* config/rs6000/xcoff.h (TARGET_DEBUG_UNWIND_INFO):
+	Redefine.
+	* config/rs6000/aix71.h: New.
+	* configure.ac (gcc_cv_as_aix_dwloc): Check AIX as for DWARF
+	locations support.
+	* configure: Regenerate.
+	* config.gcc (powerpc-ibm-aix[789]+): New stanza for AIX 7.1+ with
+	DWARF support.
+
+2015-09-26  Jeff Law  <law@redhat.com>
+
+	* config/arc/arc.c (arc_output_addsi): Fix left shift undefined
+	behaviour.
+	* config/arc/constraints.md (Cca, C2a): Fix left shift undefined
+	behaviour.
+
+	* config/sh/sh.h (CONST_OK_FOR_J16): Fix left shift undefined
+	behaviour
+
+	* config/mips/mips.c (mips_compute_frame_info): Fix left shift
+	undefined behaviour.
+
+	* config/cris/cris.md (asrandb): Fix left shift undefined
+	behaviour.
+	(asrandw): Likewise.
+
+2015-09-25  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/61578
+	* lra-constarints.c (match_reload): Check presence of the input pseudo
+	in the output operand.
+
+2015-09-25  Tobias Burnus  <burnus@net-b.de>
+
+	* doc/invoke.texi (-fsanitize): Minor wording tweak.
+
+2015-09-25  Tobias Burnus  <burnus@net-b.de>
+
+	* doc/invoke.texi (-fsanitize): Update URLs.
+
+2015-09-25  Teresa Johnson  <tejohnson@google.com>
+
+	* opts.c (finish_options): Unset -freorder-blocks-and-partition
+	if not using profile.
+
+2015-09-25  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR pretty-print/67567
+	* pretty-print.c (pp_string): Add gcc_checking_assert.
+	* pretty-print.h (output_buffer_append_r): Likewise.
+
+2015-09-25  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/67675
+	* config/sh/sh-mem.cc (sh_expand_cmpstr): Check alignment of addr1 and
+	addr2 individually.  Don't emit logical or insn if one is known to
+	be aligned approriately.
+	(sh_expand_cmpnstr): Likewise.
+
+2015-09-25  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* config/aarch64/aarch64-builtins.c (aarch64_expand_builtin): Force
+	__builtin_aarch64_fp[sc]r arguments into a register.
+
+2015-09-25  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config.gcc (x86_archs): Replace lakemount with lakemont.
+	(with_cpu): Likewise.
+	(with_arch): Likewise.
+	* config/i386/i386-c.c (ix86_target_macros_internal): Replace
+	PROCESSOR_LAKEMOUNT with PROCESSOR_LAKEMONT.  Replace
+	__tune_lakemount__ with __tune_lakemont__.
+	* config/i386/i386.c (lakemount_cost): Renamed to ...
+	(lakemont_cost): This.
+	(m_LAKEMOUNT): Renamed to ...
+	(m_LAKEMONT): This.
+	(initial_ix86_arch_features): Replace m_LAKEMOUNT with m_LAKEMONT.
+	(processor_target_table): Replace "lakemount" with "lakemont".
+	(processor_alias_table): Likewise.
+	(ix86_issue_rate): Replace PROCESSOR_LAKEMOUNT with
+	PROCESSOR_LAKEMONT.
+	(ix86_adjust_cost): Likewise.
+	(ia32_multipass_dfa_lookahead): Likewise.
+	* config/i386/i386.h (processor_type): Likewise.
+	* config/i386/x86-tune.def: Replace m_LAKEMOUNT with m_LAKEMONT.
+	* doc/invoke.texi: Replace lakemount with lakemont.  Replace
+	Lakemount with Lakemont.
+
 2015-09-24  H.J. Lu  <hongjiu.lu@intel.com>
 
 	* config.gcc (x86_archs): Replace iamcu with lakemount.

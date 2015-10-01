@@ -1,3 +1,61 @@
+2015-09-30  François Dumont  <fdumont@gcc.gnu.org>
+	    Jonathan Wakely  <jwakely@redhat.com>
+
+	* config/locale/gnu/messages_members.cc (Catalog_info, Catalogs):
+	Move...
+	* config/locale/gnu/c++locale_internal.h: ...here in std namespace.
+	* config/locale/gnu/c_locale.cc: Move implementation of latter here.
+	* src/c++98/Makefile.am: Compile c++locale.cc with -fimplicit-templates.
+	* src/c++98/Makefile.in: Regenerate.
+	* config/abi/pre/gnu.ver: Adjust.
+
+2015-09-30  Matthias Klose  <doko@ubuntu.com>
+
+	* config/cpu/alpha, config/cpu/ia64: Remove empty directories.
+
+2015-09-29  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/ext/string_conversions.h (__stoa): Save and restore errno.
+	* testsuite/21_strings/basic_string/numeric_conversions/char/errno.cc:
+	New.
+
+	PR libstdc++/67583
+	* testsuite/27_io/basic_stringbuf/seekoff/char/1.cc: Fix sputn call
+	with mismatched arguments.
+	* testsuite/27_io/basic_stringbuf/seekoff/wchar_t/1.cc: Likewise.
+
+	PR libstdc++/65393
+	* config/abi/pre/gnu.ver: Export new symbols.
+	* include/std/thread (thread::_State, thread::_State_impl): New types.
+	(thread::_M_start_thread): Add overload taking unique_ptr<_State>.
+	(thread::_M_make_routine): Remove.
+	(thread::_S_make_state): Add.
+	(thread::_Impl_base, thread::_Impl, thread::_M_start_thread)
+	[_GLIBCXX_THREAD_ABI_COMPAT] Only declare conditionally.
+	* src/c++11/thread.cc (execute_native_thread_routine): Rename to
+	execute_native_thread_routine_compat and re-define to use _State.
+	(thread::_State::~_State()): Define.
+	(thread::_M_make_thread): Define new overload.
+	(thread::_M_make_thread) [_GLIBCXX_THREAD_ABI_COMPAT]: Only define old
+	overloads conditionally.
+
+2015-09-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/condition_variable (condition_variable::wait): Add
+	noexcept.
+	* src/c++11/condition_variable.cc (condition_variable::wait): Call
+	std::terminate on error (DR 2135).
+
+2015-09-25  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Avoid creating dangling references in case of nested tuples
+	for tuple constructors that construct from other tuples.
+	* include/std/tuple (_TC::_NonNestedTuple): New.
+	* include/std/tuple (tuple::_TNTC): New.
+	* include/std/tuple (tuple(const tuple<_UElements...>&),
+	tuple(tuple<_UElements...>&&): Use _TNTC.
+	* testsuite/20_util/tuple/cons/nested_tuple_construct.cc: New.
+
 2015-09-24  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR libstdc++/67707

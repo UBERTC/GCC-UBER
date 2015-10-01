@@ -76,7 +76,7 @@
                         alu_sreg,alus_sreg,logic_reg,logics_reg,\
                         adc_imm,adcs_imm,adc_reg,adcs_reg,\
                         adr,bfm,csel,clz,rbit,rev,alu_dsp_reg,\
-                        shift_imm,shift_reg,\
+                        rotate_imm,shift_imm,shift_reg,\
                         mov_imm,mov_reg,mvn_imm,mvn_reg,\
                         mrs,multiple,no_insn"))
   "cortex_a53_slot_any")
@@ -325,7 +325,7 @@
 
 (define_insn_reservation "cortex_a53_f_load_2reg" 5
   (and (eq_attr "tune" "cortexa53")
-       (eq_attr "type" "neon_load2_2reg_q"))
+       (eq_attr "type" "neon_ldp, neon_ldp_q, neon_load2_2reg_q"))
   "(cortex_a53_slot_any+cortex_a53_ls)*2")
 
 (define_insn_reservation "cortex_a53_f_loadq" 5
