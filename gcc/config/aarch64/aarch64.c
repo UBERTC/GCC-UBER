@@ -95,6 +95,7 @@
 #include "rtl-iter.h"
 #include "tm-constrs.h"
 #include "sched-int.h"
+#include "cortex-a57-fma-steering.h"
 
 /* Defined for convenience.  */
 #define POINTER_BYTES (POINTER_SIZE / BITS_PER_UNIT)
@@ -7221,6 +7222,9 @@ aarch64_override_options (void)
       aarch64_fix_a53_err835769 = 0;
 #endif
     }
+
+  if (AARCH64_TUNE_FMA_STEERING)
+    aarch64_register_fma_steering ();
 
   aarch64_override_options_after_change ();
 }
