@@ -6236,8 +6236,12 @@ extract_muldiv_1 (tree t, tree c, enum tree_code code, tree wide_type,
 	      && ((sign == UNSIGNED && tcode != MULT_EXPR) || sign == SIGNED))
 	    overflow_p = true;
 	  if (!overflow_p)
-	    return fold_build2 (tcode, ctype, fold_convert (ctype, op0),
-				wide_int_to_tree (ctype, mul));
+	    {
+	      mul = wide_int::from (mul, TYPE_PRECISION (ctype),
+				    TYPE_SIGN (TREE_TYPE (op1)));
+	      return fold_build2 (tcode, ctype, fold_convert (ctype, op0),
+				  wide_int_to_tree (ctype, mul));
+	    }
 	}
 
       /* If these operations "cancel" each other, we have the main
@@ -7519,6 +7523,10 @@ native_encode_string (const_tree expr, unsigned char *ptr, int len, int off)
 int
 native_encode_expr (const_tree expr, unsigned char *ptr, int len, int off)
 {
+  /* We don't support starting at negative offset and -1 is special.  */
+  if (off < -1)
+    return 0;
+
   switch (TREE_CODE (expr))
     {
     case INTEGER_CST:

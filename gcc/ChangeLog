@@ -1,3 +1,417 @@
+2015-10-05  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-10-05  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67821
+	* tree-ssanames.c (duplicate_ssa_name_range_info): Remove an assert.
+
+2015-10-03  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-29  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/67716
+	* config/sh/sh.c (sh_override_options_after_change): New.
+	(TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE): Define.
+	(sh_option_override): Move align_loops, align_jumps and
+	align_functions handling into sh_override_options_after_change.
+
+2015-10-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-09-15  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_const_operand_ok): Add missing
+	brackets.
+
+2015-10-01  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-10-01  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67769
+	* tree-ssa-phiopt.c (conditional_replacement): Call
+	reset_flow_sensitive_info_in_bb.
+	(minmax_replacement): Likewise.
+	(abs_replacement): Likewise.
+
+2015-10-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2015-09-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (gcc_cv_ld_pie): Check for gld >= 2.26 on Solaris.
+	Check for ld -type pie on Solaris 11.x and 12.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+
+	* config/sol2.h (STARTFILE_CRTBEGIN_SPEC): Define.
+	(STARTFILE_SPEC): Use it.
+	(ENDFILE_CRTEND_SPEC): Define.
+	(ENDFILE_SPEC): Use it and ENDFILE_ARCH_SPEC.
+	(SUBTARGET_EXTRA_SPECS): Add STARTFILE_CRTBEGIN_SPEC,
+	ENDFILE_ARCH_SPEC, ENDFILE_CRTEND_SPEC.
+	(LINK_PIE_SPEC): Define.
+	* config/i386/sol2.h (ENDFILE_SPEC): Remove.
+	(ENDFILE_ARCH_SPEC): Define.
+	* config/sparc/sol2.h (ENDFILE_ARCH_SPEC): Define.
+
+2015-10-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2015-09-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (gcc_cv_solaris_crts): New test.
+	* configure. Regenerate.
+	* config.in: Regenerate.
+	* config/sol2.h (STARTFILE_SPEC): Simplify, provide
+	HAVE_SOLARIS_CRTS variant.
+
+2015-10-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-06-09  Shiva Chen  <shiva0217@gmail.com>
+
+	* sync.md (atomic_load<mode>): Add conditional code for lda/ldr
+	(atomic_store<mode>): Likewise.
+
+2015-09-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2015-08-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/67029
+	* ira-color.c: Include "recog.h" before including "ira-int.h".
+	* target-globals.c: Likewise.
+	* ira-lives.c (ira_implicitly_set_insn_hard_regs): Add an
+	adds an alternative_mask argument and use it instead of
+	preferred_alternatives.
+	* ira.h (ira_implicitly_set_insn_hard_regs): Moved to ...
+	* ira-int.h (ira_implicitly_set_insn_hard_regs): Here.
+	* sched-deps.c: Include "ira-int.h" after including "ira.h".
+	(sched_analyze_insn): Update call to
+	ira_implicitly_set_insn_hard_regs.
+	* sel-sched.c: Include "ira-int.h" after including "ira.h".
+	(implicit_clobber_conflict_p): Update call to
+	ira_implicitly_set_insn_hard_regs.
+
+2015-09-30  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-09-30  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67690
+	* tree-ssa-ifcombine.c (pass_tree_ifcombine::execute): Call
+	reset_flow_sensitive_info_in_bb.
+	* tree-ssa-tail-merge.c: Include "stringpool.h" and "tree-ssanames.h".
+	(replace_block_by): Call reset_flow_sensitive_info_in_bb.
+	* tree-ssanames.c: Include "gimple-iterator.h".
+	(reset_flow_sensitive_info_in_bb): New function.
+	* tree-ssanames.h (reset_flow_sensitive_info_in_bb): Declare.
+
+2015-09-29  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from mainline
+	2015-07-21  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR ipa/66424.
+	* lra-remat.c (operand_to_remat): Prevent using insns with input
+	subregs processed separately by IRA.
+
+2015-09-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-09-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_contiguous_bitmask_vector_p): Reject if
+	the vector element is bigger than 64 bit.
+
+2015-09-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-09-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vx-builtins.md ("vec_vmal<mode>", "vec_vmah<mode>")
+	("vec_vmalh<mode>"): Change mode iterator from VI_HW to VI_HW_QHS.
+
+2015-09-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-09-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c: Add V1TImode to constant pool modes.
+
+2015-09-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vx-builtins.md
+	("vec_scatter_element<mode>_<non_vec_int>")
+	("vec_scatter_element<V_HW_64:mode>_SI"): Replace gf mode
+	attribute with bhfgq.
+
+2015-09-29  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64.md (prefetch):
+	Change the predicate of operand 0 to register_operand.
+
+2015-09-28  Daniel Hellstrom  <daniel@gaisler.com>
+
+	* config/sparc/t-rtems: Remove -muser-mode. Add ut699, at697f and leon.
+
+2015-09-28  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-27  Oleg Endo  <olegendo@gcc.gnu.org>
+		    Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/67391
+	* config/sh/sh-protos.h (sh_lra_p): Declare.
+	* config/sh/sh.c (sh_lra_p): Make non-static.
+	* config/sh/sh.md (addsi3): Use arith_reg_dest for operands[0] and
+	arith_reg_operand for operands[1].  Remove TARGET_SHMEDIA case.
+	Expand into addsi3_scr if operands[2] if needed.
+	(*addsi3_compact): Rename to *addsi3_compact_lra.  Use
+	arith_reg_operand for operands[1].  Allow it only when LRA is enabled.
+	(addsi3_scr, *addsi3): New insn_and_split patterns.
+
+2015-09-28  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-08-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66917
+	* tree-vectorizer.h (struct dataref_aux): Add base_element_aligned
+	field.
+	(DR_VECT_AUX): New macro.
+	(set_dr_misalignment): Adjust.
+	(dr_misalignment): Likewise.
+	* tree-vect-data-refs.c (vect_compute_data_ref_alignment):
+	Compute whether the base is at least element aligned.
+	* tree-vect-stmts.c (ensure_base_align): Adjust.
+	(vectorizable_store): If the base is not element aligned
+	preserve alignment of the original access if misalignment is unknown.
+	(vectorizable_load): Likewise.
+
+	2015-09-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67442
+	* fold-const.c (extract_muldiv_1): Properly extend multiplication
+	result before builting a tree via wide_int_to_tree.
+
+2015-09-28  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/driver-sparc.c: map LEON to leon3
+
+2015-09-28  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/sparc.opt: Rename mask from USER_MODE to SV_MODE
+	  and make it inverse to change default
+	* config/sparc/sync.md: Only use supervisor ASI for CASA when in
+	  supervisor mode
+	* doc/invoke.texi: Document change of default
+
+2015-09-28  Daniel Cederman  <cederman@gaisler.com>
+
+	* config/sparc/sparc.c (sparc_function_value_regno_p): Do not return
+	true on %f0 for a target without FPU.
+	* config/sparc/sparc.md (untyped_call): Do not save %f0 for a target
+	without FPU.
+	(untyped_return): Do not load %f0 for a target without FPU.
+
+2015-09-25  Tobias Burnus  <burnus@net-b.de>
+
+	* doc/invoke.texi (-fsanitize): Minor wording tweak.
+
+2015-09-25  Tobias Burnus  <burnus@net-b.de>
+
+	* doc/invoke.texi (-fsanitize): Update URLs.
+
+2015-09-24  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa-linux.h (HAVE_sync_compare_and_swapdi): Define.
+	* config/pa/pa-protos.h (pa_maybe_emit_compare_and_swap_exchange_loop):
+	Declare.
+	* config/pa/pa.c (pa_init_libfuncs): Init sync libfuncs up to 8 bytes.
+	(pa_expand_compare_and_swap_loop): New.
+	(pa_maybe_emit_compare_and_swap_exchange_loop): New.
+	* config/pa/pa.md (atomic_storeqi, atomic_storehi, atomic_storesi,
+	atomic_storesf, atomic_loaddf, atomic_storedf): New expanders.
+	(atomic_loaddf_1, atomic_storedf_1): New insn patterns.
+	(atomic_loaddi, atomic_loaddi_1, atomic_storedi, atomic_storedi_1):
+	Revise.
+
+2015-09-24  Alan Modra  <amodra@gmail.com>
+
+	Apply from mainline
+	2015-09-02  Alan Modra  <amodra@gmail.com>
+	* config/rs6000/sysv4le.h (LINK_TARGET_SPEC): Don't define.
+	* config/rs6000/sysv4.h (LINK_TARGET_SPEC): Likewise.
+	(LINK_SPEC, SUBTARGET_EXTRA_SPECS): Delete link_target.
+
+2015-09-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-23  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/67391
+	* config/sh/sh.md (addsi3, *addsi3_compact): Don't check for overlapping
+	regs when matching the pattern.
+
+2015-09-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-09-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67439
+	* config/arm/arm.md (*arm32_movhf): Remove !arm_restrict_it from
+	predicate.  Set predicable_short_it attr to "no".
+
+2015-09-23  Matthew Wahab  <matthew.wahab@arm.com>
+
+	Backport from mainline
+	2015-08-14  Matthew Wahab  <matthew.wahab@arm.com>
+
+	PR target/67143
+	* config/aarch64/atomics.md (atomic_<optab><mode>): Replace
+	'lconst_atomic' with 'const_atomic'.
+	(atomic_fetch_<optab><mode>): Likewise.
+	(atomic_<optab>_fetch<mode>): Likewise.
+	* config/aarch64/iterators.md (lconst-atomic): Move below
+	'const_atomic'.
+	(const_atomic): New.
+
+2015-09-22  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Backport from mainline
+	2015-09-22  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* config/nios2/nios2.c (nios2_legitimize_address): When handling
+	'reg + reloc' cases, allow first operand to be non-REG, and use
+	force_reg() to enforce address pattern.
+
+2015-09-22  Kirill Yukhin <kirill.yukhin@intel.com>
+
+	* gcc/config/i386/i386.md (define_insn "kunpckhi"): Fix
+	operand in pattern.
+	(define_insn "kunpcksi"): Ditto.
+	(define_insn "kunpckdi"): Ditto.
+
+2015-09-22  Kirill Yukhin <kirill.yukhin@intel.com>
+
+	* gcc/config/i386/i386.md (define_split not/xor SWI1248x): Use
+	iterator instead of fixed modes.
+
+2015-09-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR middle-end/67619
+	* except.c (expand_builtin_eh_return): Use copy_addr_to_reg to copy
+	the address to a register.
+
+2015-09-21  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-21  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/67657
+	* config/sh/sh.c (sh_remove_overlapping_post_inc,
+	sh_peephole_emit_move_insn): Add new functions.
+	* config/sh/sh-protos.h (sh_remove_overlapping_post_inc,
+	sh_peephole_emit_move_insn): Declere them.
+	* config/sh/sh.md: Use them in various peephole2 patterns.
+
+2015-09-21  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66793
+	* gimple-ssa-isolate-paths.c (insert_trap_and_remove_trailing_statemen):
+	Properly split the block after stmts ending it.
+
+	2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67055
+	* tree-ssa-ccp.c (fold_builtin_alloca_with_align): Handle
+	NULL gimple_block.
+
+	2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67121
+	* tree-if-conv.c (combine_blocks): Clear range-info produced
+	by stmts no longer executed conditionally.
+
+	2015-09-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67271
+	* fold-const.c (native_encode_expr): Bail out on bogus offsets.
+
+	2015-07-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66952
+	* tree-ssa-ifcombine.c (pass_tree_ifcombine::execute): For
+	blocks we end up executing unconditionally reset all SSA
+	info such as range and alignment.
+	* tree-ssanames.h (reset_flow_sensitive_info): Declare.
+	* tree-ssanames.c (reset_flow_sensitive_info): New function.
+
+	2015-09-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67470
+	* tree-ssa-loop-im.c (execute_sm_if_changed): Preserve PHI
+	structure for PHI hoisting by inserting a forwarder block
+	if appropriate.
+
+2015-09-21  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-16  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/67573
+	* config/sh/sh.md (call_pcrel): Add early clobber to scratch
+	operand.
+	(call_value_pcrel, sibcall_pcrel, sibcall_value_pcrel): Likewise.
+
+2015-09-20  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-14  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/67061
+	* config/sh/sh-protos.h (sh_find_set_of_reg): Simplfiy for-loop.
+	Handle call insns.
+
+2015-09-19  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.c (pa_function_ok_for_sibcall): Remove special treatment
+	of TARGET_ELF32.
+
+2015-09-18  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR middle-end/67401
+	* optabs.c (expand_atomic_compare_and_swap): Move result of emitting
+	sync_compare_and_swap_optab libcall to target_oval.
+
+2015-09-17  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/66790
+	* df-problems.c (LIVE): Amend documentation.
+
+2015-09-17  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline:
+	2015-08-18  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/67222
+	* gimple-low.c (lower_stmt): Don't lower BUILT_IN_POSIX_MEMALIGN
+	if the call isn't valid.
+	* tree-ssa-alias.c (ref_maybe_used_by_call_p_1): Check builtins using
+	gimple_call_builtin_p.
+	(call_may_clobber_ref_p_1): Likewise.
+	(stmt_kills_ref_p): Likewise.
+
 2015-09-12  John David Anglin  <danglin@gcc.gnu.org>
 
 	* config/pa/pa.c (pa_output_move_double): Enhance to handle HIGH
@@ -857,20 +1271,7 @@
 	* doc/invoke.texi (i386 and x86-64 Options): -mno-fancy-math-387
 	is not actually the default on FreeBSD.
 
-2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
-
-	Backport from mainline
-	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
-
-	* config/s390/vx-builtins.md
-	("vec_scatter_element<mode>_<non_vec_int>")
-	("vec_scatter_element<V_HW_64:mode>_SI"): Replace gf mode
-	attribute with bhfgq.
-
-2015-07-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
-
-	Backport from mainline
-	2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+2015-06-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
 
 	* config/s390/s390-builtins.def: Fix vpopct instruction comments.
 

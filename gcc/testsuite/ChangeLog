@@ -1,3 +1,217 @@
+2015-10-05  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-10-05  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67821
+	* gcc.dg/torture/pr67821-2.c: New test.
+	* gcc.dg/torture/pr67821.c: New test.
+
+2015-10-05  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-10-02  Marek Polacek  <polacek@redhat.com>
+
+	PR c/67730
+	* gcc.dg/pr67730-1.c: New test.
+	* gcc.dg/pr67730-2.c: New test.
+	* gcc.dg/pr67730.h: New test.
+
+2015-10-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67802
+	* gfortran.dg/pr67802.f90: New test.
+
+2015-10-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67616
+	* gfortran.dg/pr67616.f90: New test.
+
+2015-10-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66979
+	gfortran.dg/pr66979.f90: new test.
+
+2015-10-01  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-10-01  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67769
+	* gcc.dg/torture/pr67769.c: New test.
+
+2015-10-01  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/67721
+	* gfortran.dg/alloc_comp_deep_copy_3.f03: New.
+
+2015-10-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.dg/lto/pr55113_0.c: Skip on all x86 targets.
+
+2015-10-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2015-09-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* lib/target-supports.exp (check_effective_target_pie): Check for
+	PIE support on Solaris 11.x and 12.
+
+2015-10-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-06-09  Shiva Chen  <shiva0217@gmail.com>
+
+	* gcc.target/arm/stl-cond.c: New test.
+
+2015-09-30  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2015-08-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR rtl-optimization/67029
+	* gcc.dg/pr67029.c: New test.
+
+2015-09-30  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-09-30  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67690
+	* gcc.dg/torture/pr67690.c: New test.
+
+	PR c/67730
+	* gcc.dg/pr67730.c: New test.
+
+2015-09-29  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backport from mainline
+	2015-07-21  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR ipa/66424.
+	* gcc.target/i386/pr66424.c: New.
+
+2015-09-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-09-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/vector/vec-genbytemask-1.c: Add check for V1TI
+	initialization with a byte mask.  No change expected here.
+	* gcc.target/s390/vector/vec-genmask-1.c: Fix whitespace.
+	* gcc.target/s390/vector/vec-genmask-2.c: Add check for V1TI
+	initialization with contigious bitmask.  Literal pool is expectd
+	to be used here.
+
+2015-09-28  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-09-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67442
+	* gcc.dg/torture/pr67442.c: New testcase.
+
+2015-04-28  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+        * gcc.target/i386/avx512vbmi-check.h (main): Fix register
+        name while checking for AVX-512VBMI presence.
+
+2015-09-25  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67614
+	* gfortran.dg/pr67614.f90: New test.
+
+2015-09-25  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67525
+	* gfortran.dg/pr67525.f90: New test.
+
+2015-09-25  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/64906
+	* c-c++-common/ubsan/pr64906.c: New test.
+
+2015-09-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-09-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67439
+	* gcc.target/arm/pr67439_1.c: New test.
+
+2015-09-23  Matthew Wahab  <matthew.wahab@arm.com>
+
+	Backport from mainline
+	2015-08-14  Matthew Wahab  <matthew.wahab@arm.com>
+		    Matthias Klose  <doko@debian.org>
+
+	PR target/67143
+	* gcc.c-torture/compile/pr67143.c: New
+	* gcc.target/aarch64/atomic-op-imm.c
+	(atomic_fetch_add_negative_RELAXED): New.
+	(atomic_fetch_sub_negative_ACQUIRE): New.
+
+2015-09-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-07-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66952
+	* gcc.dg/torture/pr66952.c: Use signed char.
+
+2015-09-21  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67615
+	* gfortran.dg/pr67615.f90: new test.
+
+2015-09-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR middle-end/67619
+	* gcc.dg/torture/pr67619.c: New test.
+	* lib/target-supports.exp (check_effective_target_builtin_eh_return):
+	New procedure.
+
+2015-09-21  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-07-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66793
+	* gcc.dg/torture/pr66793.c: New testcase.
+
+	2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67055
+	* g++.dg/torture/pr67055.C: New testcase.
+
+	2015-08-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67121
+	* gcc.dg/torture/pr67121.c: New testcase.
+
+	2015-09-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67271
+	* gcc.dg/pr67271.c: New testcase.
+
+	2015-07-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66952
+	* gcc.dg/torture/pr66952.c: New testcase.
+
+	2015-09-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/67470
+	* gcc.dg/torture/pr67470.c: New testcase.
+
+2015-09-17  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline:
+	2015-08-18  Marek Polacek  <polacek@redhat.com>
+
+	PR middle-end/67222
+	* gcc.dg/torture/pr67222.c: New test.
+
 2015-09-11  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
 
 	* gcc.dg/pie-link.c: Add -pie to dg-options.
