@@ -201,6 +201,11 @@ extern unsigned aarch64_architecture_version;
 #define AARCH64_FL_CRC        (1 << 3)	/* Has CRC.  */
 /* Has static dispatch of FMA.  */
 #define AARCH64_FL_USE_FMA_STEERING_PASS (1 << 4)
+/* ARMv8.1 architecture extensions.  */
+#define AARCH64_FL_LSE	      (1 << 5)  /* Has Large System Extensions.  */
+#define AARCH64_FL_PAN	      (1 << 6)  /* Has Privileged Access Never.  */
+#define AARCH64_FL_LOR	      (1 << 7)  /* Has Limited Ordering regions.  */
+#define AARCH64_FL_RDMA	      (1 << 8)  /* Has ARMv8.1 Adv.SIMD.  */
 
 /* Has FP and SIMD.  */
 #define AARCH64_FL_FPSIMD     (AARCH64_FL_FP | AARCH64_FL_SIMD)
@@ -210,6 +215,9 @@ extern unsigned aarch64_architecture_version;
 
 /* Architecture flags that effect instruction selection.  */
 #define AARCH64_FL_FOR_ARCH8       (AARCH64_FL_FPSIMD)
+#define AARCH64_FL_FOR_ARCH8_1			       \
+  (AARCH64_FL_FOR_ARCH8 | AARCH64_FL_LSE | AARCH64_FL_PAN \
+   | AARCH64_FL_LOR | AARCH64_FL_RDMA)
 
 /* Macros to test ISA flags.  */
 extern unsigned long aarch64_isa_flags;
@@ -217,6 +225,7 @@ extern unsigned long aarch64_isa_flags;
 #define AARCH64_ISA_CRYPTO         (aarch64_isa_flags & AARCH64_FL_CRYPTO)
 #define AARCH64_ISA_FP             (aarch64_isa_flags & AARCH64_FL_FP)
 #define AARCH64_ISA_SIMD           (aarch64_isa_flags & AARCH64_FL_SIMD)
+#define AARCH64_ISA_LSE		   (aarch64_isa_flags & AARCH64_FL_LSE)
 
 /* Macros to test tuning flags.  */
 extern unsigned long aarch64_tune_flags;
@@ -228,6 +237,9 @@ extern unsigned long aarch64_tune_flags;
 
 /* CRC instructions that can be enabled through +crc arch extension.  */
 #define TARGET_CRC32 (AARCH64_ISA_CRC)
+
+/* Atomic instructions that can be enabled through the +lse extension.  */
+#define TARGET_LSE (AARCH64_ISA_LSE)
 
 /* Standard register usage.  */
 

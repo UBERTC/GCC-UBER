@@ -9362,7 +9362,23 @@ aarch64_expand_compare_and_swap (rtx operands[])
 {
   rtx bval, rval, mem, oldval, newval, is_weak, mod_s, mod_f, x;
   machine_mode mode, cmp_mode;
-  rtx (*gen) (rtx, rtx, rtx, rtx, rtx, rtx, rtx);
+  typedef rtx (*gen_cas_fn) (rtx, rtx, rtx, rtx, rtx, rtx, rtx);
+  int idx;
+  gen_cas_fn gen;
+  const gen_cas_fn split_cas[] =
+  {
+    gen_aarch64_compare_and_swapqi,
+    gen_aarch64_compare_and_swaphi,
+    gen_aarch64_compare_and_swapsi,
+    gen_aarch64_compare_and_swapdi
+  };
+  const gen_cas_fn atomic_cas[] =
+  {
+    gen_aarch64_compare_and_swapqi_lse,
+    gen_aarch64_compare_and_swaphi_lse,
+    gen_aarch64_compare_and_swapsi_lse,
+    gen_aarch64_compare_and_swapdi_lse
+  };
 
   bval = operands[0];
   rval = operands[1];
@@ -9407,13 +9423,17 @@ aarch64_expand_compare_and_swap (rtx operands[])
 
   switch (mode)
     {
-    case QImode: gen = gen_atomic_compare_and_swapqi_1; break;
-    case HImode: gen = gen_atomic_compare_and_swaphi_1; break;
-    case SImode: gen = gen_atomic_compare_and_swapsi_1; break;
-    case DImode: gen = gen_atomic_compare_and_swapdi_1; break;
+    case QImode: idx = 0; break;
+    case HImode: idx = 1; break;
+    case SImode: idx = 2; break;
+    case DImode: idx = 3; break;
     default:
       gcc_unreachable ();
     }
+  if (TARGET_LSE)
+    gen = atomic_cas[idx];
+  else
+    gen = split_cas[idx];
 
   emit_insn (gen (rval, mem, oldval, newval, is_weak, mod_s, mod_f));
 
@@ -9423,6 +9443,32 @@ aarch64_expand_compare_and_swap (rtx operands[])
   x = gen_rtx_REG (CCmode, CC_REGNUM);
   x = gen_rtx_EQ (SImode, x, const0_rtx);
   emit_insn (gen_rtx_SET (VOIDmode, bval, x));
+}
+
+/* Test whether the target supports using a atomic load-operate instruction.
+   CODE is the operation and AFTER is TRUE if the data in memory after the
+   operation should be returned and FALSE if the data before the operation
+   should be returned.  Returns FALSE if the operation isn't supported by the
+   architecture.  */
+
+bool
+aarch64_atomic_ldop_supported_p (enum rtx_code code)
+{
+  if (!TARGET_LSE)
+    return false;
+
+  switch (code)
+    {
+    case SET:
+    case AND:
+    case IOR:
+    case XOR:
+    case MINUS:
+    case PLUS:
+      return true;
+    default:
+      return false;
+    }
 }
 
 /* Emit a barrier, that is appropriate for memory model MODEL, at the end of a
@@ -9440,6 +9486,42 @@ aarch64_emit_post_barrier (enum memmodel model)
     {
       emit_insn (gen_mem_thread_fence (GEN_INT (MEMMODEL_SEQ_CST)));
     }
+}
+
+/* Emit an atomic compare-and-swap operation.  RVAL is the destination register
+   for the data in memory.  EXPECTED is the value expected to be in memory.
+   DESIRED is the value to store to memory.  MEM is the memory location.  MODEL
+   is the memory ordering to use.  */
+
+void
+aarch64_gen_atomic_cas (rtx rval, rtx mem,
+			rtx expected, rtx desired,
+			rtx model)
+{
+  rtx (*gen) (rtx, rtx, rtx, rtx);
+  machine_mode mode;
+
+  mode = GET_MODE (mem);
+
+  switch (mode)
+    {
+    case QImode: gen = gen_aarch64_atomic_casqi; break;
+    case HImode: gen = gen_aarch64_atomic_cashi; break;
+    case SImode: gen = gen_aarch64_atomic_cassi; break;
+    case DImode: gen = gen_aarch64_atomic_casdi; break;
+    default:
+      gcc_unreachable ();
+    }
+
+  /* Move the expected value into the CAS destination register.  */
+  emit_insn (gen_rtx_SET (VOIDmode, rval, expected));
+
+  /* Emit the CAS.  */
+  emit_insn (gen (rval, mem, desired, model));
+
+  /* Compare the expected value with the value loaded by the CAS, to establish
+     whether the swap was made.  */
+  aarch64_gen_compare_reg (EQ, rval, expected);
 }
 
 /* Split a compare and swap pattern.  */
@@ -9510,11 +9592,257 @@ aarch64_split_compare_and_swap (rtx operands[])
     aarch64_emit_post_barrier (model);
 }
 
+/* Emit a BIC instruction.  */
+
+static void
+aarch64_emit_bic (machine_mode mode, rtx dst, rtx s1, rtx s2, int shift)
+{
+  rtx shift_rtx = GEN_INT (shift);
+  rtx (*gen) (rtx, rtx, rtx, rtx);
+
+  switch (mode)
+    {
+    case SImode: gen = gen_and_one_cmpl_lshrsi3; break;
+    case DImode: gen = gen_and_one_cmpl_lshrdi3; break;
+    default:
+      gcc_unreachable ();
+    }
+
+  emit_insn (gen (dst, s2, shift_rtx, s1));
+}
+
+/* Emit an atomic swap.  */
+
+static void
+aarch64_emit_atomic_swap (machine_mode mode, rtx dst, rtx value,
+			  rtx mem, rtx model)
+{
+  rtx (*gen) (rtx, rtx, rtx, rtx);
+
+  switch (mode)
+    {
+    case QImode: gen = gen_aarch64_atomic_swpqi; break;
+    case HImode: gen = gen_aarch64_atomic_swphi; break;
+    case SImode: gen = gen_aarch64_atomic_swpsi; break;
+    case DImode: gen = gen_aarch64_atomic_swpdi; break;
+    default:
+      gcc_unreachable ();
+    }
+
+  emit_insn (gen (dst, mem, value, model));
+}
+
+/* Operations supported by aarch64_emit_atomic_load_op.  */
+
+enum aarch64_atomic_load_op_code
+{
+  AARCH64_LDOP_PLUS,	/* A + B  */
+  AARCH64_LDOP_XOR,	/* A ^ B  */
+  AARCH64_LDOP_OR,	/* A | B  */
+  AARCH64_LDOP_BIC	/* A & ~B  */
+};
+
+/* Emit an atomic load-operate.  */
+
+static void
+aarch64_emit_atomic_load_op (enum aarch64_atomic_load_op_code code,
+			     machine_mode mode, rtx dst, rtx src,
+			     rtx mem, rtx model)
+{
+  typedef rtx (*aarch64_atomic_load_op_fn) (rtx, rtx, rtx, rtx);
+  const aarch64_atomic_load_op_fn plus[] =
+  {
+    gen_aarch64_atomic_loadaddqi,
+    gen_aarch64_atomic_loadaddhi,
+    gen_aarch64_atomic_loadaddsi,
+    gen_aarch64_atomic_loadadddi
+  };
+  const aarch64_atomic_load_op_fn eor[] =
+  {
+    gen_aarch64_atomic_loadeorqi,
+    gen_aarch64_atomic_loadeorhi,
+    gen_aarch64_atomic_loadeorsi,
+    gen_aarch64_atomic_loadeordi
+  };
+  const aarch64_atomic_load_op_fn ior[] =
+  {
+    gen_aarch64_atomic_loadsetqi,
+    gen_aarch64_atomic_loadsethi,
+    gen_aarch64_atomic_loadsetsi,
+    gen_aarch64_atomic_loadsetdi
+  };
+  const aarch64_atomic_load_op_fn bic[] =
+  {
+    gen_aarch64_atomic_loadclrqi,
+    gen_aarch64_atomic_loadclrhi,
+    gen_aarch64_atomic_loadclrsi,
+    gen_aarch64_atomic_loadclrdi
+  };
+  aarch64_atomic_load_op_fn gen;
+  int idx = 0;
+
+  switch (mode)
+    {
+    case QImode: idx = 0; break;
+    case HImode: idx = 1; break;
+    case SImode: idx = 2; break;
+    case DImode: idx = 3; break;
+    default:
+      gcc_unreachable ();
+    }
+
+  switch (code)
+    {
+    case AARCH64_LDOP_PLUS: gen = plus[idx]; break;
+    case AARCH64_LDOP_XOR: gen = eor[idx]; break;
+    case AARCH64_LDOP_OR: gen = ior[idx]; break;
+    case AARCH64_LDOP_BIC: gen = bic[idx]; break;
+    default:
+      gcc_unreachable ();
+    }
+
+  emit_insn (gen (dst, mem, src, model));
+}
+
+/* Emit an atomic load+operate.  CODE is the operation.  OUT_DATA is the
+   location to store the data read from memory.  OUT_RESULT is the location to
+   store the result of the operation.  MEM is the memory location to read and
+   modify.  MODEL_RTX is the memory ordering to use.  VALUE is the second
+   operand for the operation.  Either OUT_DATA or OUT_RESULT, but not both, can
+   be NULL.  */
+
+void
+aarch64_gen_atomic_ldop (enum rtx_code code, rtx out_data, rtx out_result,
+			 rtx mem, rtx value, rtx model_rtx)
+{
+  machine_mode mode = GET_MODE (mem);
+  machine_mode wmode = (mode == DImode ? DImode : SImode);
+  const bool short_mode = (mode < SImode);
+  aarch64_atomic_load_op_code ldop_code;
+  rtx src;
+  rtx x;
+
+  if (out_data)
+    out_data = gen_lowpart (mode, out_data);
+
+  if (out_result)
+    out_result = gen_lowpart (mode, out_result);
+
+  /* Make sure the value is in a register, putting it into a destination
+     register if it needs to be manipulated.  */
+  if (!register_operand (value, mode)
+      || code == AND || code == MINUS)
+    {
+      src = out_result ? out_result : out_data;
+      emit_move_insn (src, gen_lowpart (mode, value));
+    }
+  else
+    src = value;
+  gcc_assert (register_operand (src, mode));
+
+  /* Preprocess the data for the operation as necessary.  If the operation is
+     a SET then emit a swap instruction and finish.  */
+  switch (code)
+    {
+    case SET:
+      aarch64_emit_atomic_swap (mode, out_data, src, mem, model_rtx);
+      return;
+
+    case MINUS:
+      /* Negate the value and treat it as a PLUS.  */
+      {
+	rtx neg_src;
+
+	/* Resize the value if necessary.  */
+	if (short_mode)
+	  src = gen_lowpart (wmode, src);
+
+	neg_src = gen_rtx_NEG (wmode, src);
+	emit_insn (gen_rtx_SET (VOIDmode, src, neg_src));
+
+	if (short_mode)
+	  src = gen_lowpart (mode, src);
+      }
+      /* Fall-through.  */
+    case PLUS:
+      ldop_code = AARCH64_LDOP_PLUS;
+      break;
+
+    case IOR:
+      ldop_code = AARCH64_LDOP_OR;
+      break;
+
+    case XOR:
+      ldop_code = AARCH64_LDOP_XOR;
+      break;
+
+    case AND:
+      {
+	rtx not_src;
+
+	/* Resize the value if necessary.  */
+	if (short_mode)
+	  src = gen_lowpart (wmode, src);
+
+	not_src = gen_rtx_NOT (wmode, src);
+	emit_insn (gen_rtx_SET (VOIDmode, src, not_src));
+
+	if (short_mode)
+	  src = gen_lowpart (mode, src);
+      }
+      ldop_code = AARCH64_LDOP_BIC;
+      break;
+
+    default:
+      /* The operation can't be done with atomic instructions.  */
+      gcc_unreachable ();
+    }
+
+  aarch64_emit_atomic_load_op (ldop_code, mode, out_data, src, mem, model_rtx);
+
+  /* If necessary, calculate the data in memory after the update by redoing the
+     operation from values in registers.  */
+  if (!out_result)
+    return;
+
+  if (short_mode)
+    {
+      src = gen_lowpart (wmode, src);
+      out_data = gen_lowpart (wmode, out_data);
+      out_result = gen_lowpart (wmode, out_result);
+    }
+
+  x = NULL_RTX;
+
+  switch (code)
+    {
+    case MINUS:
+    case PLUS:
+      x = gen_rtx_PLUS (wmode, out_data, src);
+      break;
+    case IOR:
+      x = gen_rtx_IOR (wmode, out_data, src);
+      break;
+    case XOR:
+      x = gen_rtx_XOR (wmode, out_data, src);
+      break;
+    case AND:
+      aarch64_emit_bic (wmode, out_result, out_data, src, 0);
+      return;
+    default:
+      gcc_unreachable ();
+    }
+
+  emit_set_insn (out_result, x);
+
+  return;
+}
+
 /* Split an atomic operation.  */
 
 void
 aarch64_split_atomic_op (enum rtx_code code, rtx old_out, rtx new_out, rtx mem,
-		     rtx value, rtx model_rtx, rtx cond)
+			 rtx value, rtx model_rtx, rtx cond)
 {
   machine_mode mode = GET_MODE (mem);
   machine_mode wmode = (mode == DImode ? DImode : SImode);
@@ -9523,6 +9851,7 @@ aarch64_split_atomic_op (enum rtx_code code, rtx old_out, rtx new_out, rtx mem,
   rtx_code_label *label;
   rtx x;
 
+  /* Split the atomic operation into a sequence.  */
   label = gen_label_rtx ();
   emit_label (label);
 
