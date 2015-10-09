@@ -94,10 +94,12 @@
 #include "opts.h"
 #include "dumpfile.h"
 #include "gimple-expr.h"
+#include "target-globals.h"
 #include "builtins.h"
 #include "tm-constrs.h"
 #include "rtl-iter.h"
 #include "sched-int.h"
+#include "tree.h"
 
 /* Forward definitions of types.  */
 typedef struct minipool_node    Mnode;
@@ -121,6 +123,7 @@ static int arm_gen_constant (enum rtx_code, machine_mode, rtx,
 static unsigned bit_count (unsigned long);
 static int arm_address_register_rtx_p (rtx, int);
 static int arm_legitimate_index_p (machine_mode, rtx, RTX_CODE, int);
+static bool is_called_in_ARM_mode (tree);
 static int thumb2_legitimate_index_p (machine_mode, rtx, int);
 static int thumb1_base_register_rtx_p (rtx, machine_mode, int);
 static rtx arm_legitimize_address (rtx, rtx, machine_mode);
@@ -231,6 +234,7 @@ static void arm_encode_section_info (tree, rtx, int);
 
 static void arm_file_end (void);
 static void arm_file_start (void);
+static void arm_insert_attributes (tree, tree *);
 
 static void arm_setup_incoming_varargs (cumulative_args_t, machine_mode,
 					tree, int *, int);
@@ -264,6 +268,10 @@ static tree arm_build_builtin_va_list (void);
 static void arm_expand_builtin_va_start (tree, rtx);
 static tree arm_gimplify_va_arg_expr (tree, tree, gimple_seq *, gimple_seq *);
 static void arm_option_override (void);
+static void arm_option_print (FILE *, int, struct cl_target_option *);
+static void arm_set_current_function (tree);
+static bool arm_can_inline_p (tree, tree);
+static bool arm_valid_target_attribute_p (tree, tree, tree, int);
 static unsigned HOST_WIDE_INT arm_shift_truncation_mask (machine_mode);
 static bool arm_macro_fusion_p (void);
 static bool arm_cannot_copy_insn_p (rtx_insn *);
@@ -386,6 +394,9 @@ static const struct attribute_spec arm_attribute_table[] =
 #undef  TARGET_ATTRIBUTE_TABLE
 #define TARGET_ATTRIBUTE_TABLE arm_attribute_table
 
+#undef  TARGET_INSERT_ATTRIBUTES
+#define TARGET_INSERT_ATTRIBUTES arm_insert_attributes
+
 #undef TARGET_ASM_FILE_START
 #define TARGET_ASM_FILE_START arm_file_start
 #undef TARGET_ASM_FILE_END
@@ -412,8 +423,14 @@ static const struct attribute_spec arm_attribute_table[] =
 #undef  TARGET_ASM_FUNCTION_EPILOGUE
 #define TARGET_ASM_FUNCTION_EPILOGUE arm_output_function_epilogue
 
+#undef TARGET_CAN_INLINE_P
+#define TARGET_CAN_INLINE_P arm_can_inline_p
+
 #undef  TARGET_OPTION_OVERRIDE
 #define TARGET_OPTION_OVERRIDE arm_option_override
+
+#undef TARGET_OPTION_PRINT
+#define TARGET_OPTION_PRINT arm_option_print
 
 #undef  TARGET_COMP_TYPE_ATTRIBUTES
 #define TARGET_COMP_TYPE_ATTRIBUTES arm_comp_type_attributes
@@ -429,6 +446,12 @@ static const struct attribute_spec arm_attribute_table[] =
 
 #undef  TARGET_SCHED_ADJUST_COST
 #define TARGET_SCHED_ADJUST_COST arm_adjust_cost
+
+#undef TARGET_SET_CURRENT_FUNCTION
+#define TARGET_SET_CURRENT_FUNCTION arm_set_current_function
+
+#undef TARGET_OPTION_VALID_ATTRIBUTE_P
+#define TARGET_OPTION_VALID_ATTRIBUTE_P arm_valid_target_attribute_p
 
 #undef TARGET_SCHED_REORDER
 #define TARGET_SCHED_REORDER arm_sched_reorder
@@ -845,12 +868,6 @@ int arm_tune_wbuf = 0;
 
 /* Nonzero if tuning for Cortex-A9.  */
 int arm_tune_cortex_a9 = 0;
-
-/* Nonzero if generating Thumb instructions.  */
-int thumb_code = 0;
-
-/* Nonzero if generating Thumb-1 instructions.  */
-int thumb1_code = 0;
 
 /* Nonzero if we should define __THUMB_INTERWORK__ in the
    preprocessor.
@@ -2703,6 +2720,171 @@ arm_gimplify_va_arg_expr (tree valist, tree type, gimple_seq *pre_p,
   return std_gimplify_va_arg_expr (valist, type, pre_p, post_p);
 }
 
+/* Check any incompatible options that the user has specified.  */
+static void
+arm_option_check_internal (struct gcc_options *opts)
+{
+  int flags = opts->x_target_flags;
+
+  /* Make sure that the processor choice does not conflict with any of the
+     other command line choices.  */
+  if (TARGET_ARM_P (flags) && !(insn_flags & FL_NOTM))
+    error ("target CPU does not support ARM mode");
+
+  /* TARGET_BACKTRACE calls leaf_function_p, which causes a crash if done
+     from here where no function is being compiled currently.  */
+  if ((TARGET_TPCS_FRAME || TARGET_TPCS_LEAF_FRAME) && TARGET_ARM_P (flags))
+    warning (0, "enabling backtrace support is only meaningful when compiling for the Thumb");
+
+  if (TARGET_ARM_P (flags) && TARGET_CALLEE_INTERWORKING)
+    warning (0, "enabling callee interworking support is only meaningful when compiling for the Thumb");
+
+  /* If this target is normally configured to use APCS frames, warn if they
+     are turned off and debugging is turned on.  */
+  if (TARGET_ARM_P (flags)
+      && write_symbols != NO_DEBUG
+      && !TARGET_APCS_FRAME
+      && (TARGET_DEFAULT & MASK_APCS_FRAME))
+    warning (0, "-g with -mno-apcs-frame may not give sensible debugging");
+
+  /* iWMMXt unsupported under Thumb mode.  */
+  if (TARGET_THUMB_P (flags) && TARGET_IWMMXT)
+    error ("iWMMXt unsupported under Thumb mode");
+
+  if (TARGET_HARD_TP && TARGET_THUMB1_P (flags))
+    error ("can not use -mtp=cp15 with 16-bit Thumb");
+
+  if (TARGET_THUMB_P (flags) && TARGET_VXWORKS_RTP && flag_pic)
+    {
+      error ("RTP PIC is incompatible with Thumb");
+      flag_pic = 0;
+    }
+
+  /* We only support -mslow-flash-data on armv7-m targets.  */
+  if (target_slow_flash_data
+      && ((!(arm_arch7 && !arm_arch_notm) && !arm_arch7em)
+	  || (TARGET_THUMB1_P (flags) || flag_pic || TARGET_NEON)))
+    error ("-mslow-flash-data only supports non-pic code on armv7-m targets");
+}
+
+/* Recompute the global settings depending on target attribute options.  */
+
+static void
+arm_option_params_internal (void)
+{
+  /* If we are not using the default (ARM mode) section anchor offset
+     ranges, then set the correct ranges now.  */
+  if (TARGET_THUMB1)
+    {
+      /* Thumb-1 LDR instructions cannot have negative offsets.
+         Permissible positive offset ranges are 5-bit (for byte loads),
+         6-bit (for halfword loads), or 7-bit (for word loads).
+         Empirical results suggest a 7-bit anchor range gives the best
+         overall code size.  */
+      targetm.min_anchor_offset = 0;
+      targetm.max_anchor_offset = 127;
+    }
+  else if (TARGET_THUMB2)
+    {
+      /* The minimum is set such that the total size of the block
+         for a particular anchor is 248 + 1 + 4095 bytes, which is
+         divisible by eight, ensuring natural spacing of anchors.  */
+      targetm.min_anchor_offset = -248;
+      targetm.max_anchor_offset = 4095;
+    }
+  else
+    {
+      targetm.min_anchor_offset = TARGET_MIN_ANCHOR_OFFSET;
+      targetm.max_anchor_offset = TARGET_MAX_ANCHOR_OFFSET;
+    }
+
+  if (optimize_size)
+    {
+      /* If optimizing for size, bump the number of instructions that we
+         are prepared to conditionally execute (even on a StrongARM).  */
+      max_insns_skipped = 6;
+
+      /* For THUMB2, we limit the conditional sequence to one IT block.  */
+      if (TARGET_THUMB2)
+        max_insns_skipped = arm_restrict_it ? 1 : 4;
+    }
+  else
+    /* When -mrestrict-it is in use tone down the if-conversion.  */
+    max_insns_skipped = (TARGET_THUMB2 && arm_restrict_it)
+      ? 1 : current_tune->max_insns_skipped;
+}
+
+/* True if -mflip-thumb should next add an attribute for the default
+   mode, false if it should next add an attribute for the opposite mode.  */
+static GTY(()) bool thumb_flipper;
+
+/* Options after initial target override.  */
+static GTY(()) tree init_optimize;
+
+/* Reset options between modes that the user has specified.  */
+static void
+arm_option_override_internal (struct gcc_options *opts,
+			      struct gcc_options *opts_set)
+{
+  if (TARGET_THUMB_P (opts->x_target_flags) && !(insn_flags & FL_THUMB))
+    {
+      warning (0, "target CPU does not support THUMB instructions");
+      opts->x_target_flags &= ~MASK_THUMB;
+    }
+
+  if (TARGET_APCS_FRAME && TARGET_THUMB_P (opts->x_target_flags))
+    {
+      /* warning (0, "ignoring -mapcs-frame because -mthumb was used"); */
+      opts->x_target_flags &= ~MASK_APCS_FRAME;
+    }
+
+  /* Callee super interworking implies thumb interworking.  Adding
+     this to the flags here simplifies the logic elsewhere.  */
+  if (TARGET_THUMB_P (opts->x_target_flags) && TARGET_CALLEE_INTERWORKING)
+    opts->x_target_flags |= MASK_INTERWORK;
+
+  /* need to remember initial values so combinaisons of options like
+     -mflip-thumb -mthumb -fno-schedule-insns work for any attribute.  */
+  cl_optimization *to = TREE_OPTIMIZATION (init_optimize);
+
+  if (! opts_set->x_arm_restrict_it)
+    opts->x_arm_restrict_it = arm_arch8;
+
+  if (!TARGET_THUMB2_P (opts->x_target_flags))
+    opts->x_arm_restrict_it = 0;
+
+  /* Don't warn since it's on by default in -O2.  */
+  if (TARGET_THUMB1_P (opts->x_target_flags))
+    opts->x_flag_schedule_insns = 0;
+  else
+    opts->x_flag_schedule_insns = to->x_flag_schedule_insns;
+
+  /* Disable shrink-wrap when optimizing function for size, since it tends to
+     generate additional returns.  */
+  if (optimize_function_for_size_p (cfun)
+      && TARGET_THUMB2_P (opts->x_target_flags))
+    opts->x_flag_shrink_wrap = false;
+  else
+    opts->x_flag_shrink_wrap = to->x_flag_shrink_wrap;
+
+  /* In Thumb1 mode, we emit the epilogue in RTL, but the last insn
+     - epilogue_insns - does not accurately model the corresponding insns
+     emitted in the asm file.  In particular, see the comment in thumb_exit
+     'Find out how many of the (return) argument registers we can corrupt'.
+     As a consequence, the epilogue may clobber registers without fipa-ra
+     finding out about it.  Therefore, disable fipa-ra in Thumb1 mode.
+     TODO: Accurately model clobbers for epilogue_insns and reenable
+     fipa-ra.  */
+  if (TARGET_THUMB1_P (opts->x_target_flags))
+    opts->x_flag_ipa_ra = 0;
+  else
+    opts->x_flag_ipa_ra = to->x_flag_ipa_ra;
+
+  /* Thumb2 inline assembly code should always use unified syntax.
+     This will apply to ARM and Thumb1 eventually.  */
+  opts->x_inline_asm_unified = TARGET_THUMB2_P (opts->x_target_flags);
+}
+
 /* Fix up any incompatible options that the user has specified.  */
 static void
 arm_option_override (void)
@@ -2849,10 +3031,9 @@ arm_option_override (void)
   tune_flags = arm_selected_tune->flags;
   current_tune = arm_selected_tune->tune;
 
-  /* Make sure that the processor choice does not conflict with any of the
-     other command line choices.  */
-  if (TARGET_ARM && !(insn_flags & FL_NOTM))
-    error ("target CPU does not support ARM mode");
+  /* TBD: Dwarf info for apcs frame is not handled yet.  */
+  if (TARGET_APCS_FRAME)
+    flag_shrink_wrap = false;
 
   /* BPABI targets use linker tricks to allow interworking on cores
      without thumb support.  */
@@ -2861,31 +3042,6 @@ arm_option_override (void)
       warning (0, "target CPU does not support interworking" );
       target_flags &= ~MASK_INTERWORK;
     }
-
-  if (TARGET_THUMB && !(insn_flags & FL_THUMB))
-    {
-      warning (0, "target CPU does not support THUMB instructions");
-      target_flags &= ~MASK_THUMB;
-    }
-
-  if (TARGET_APCS_FRAME && TARGET_THUMB)
-    {
-      /* warning (0, "ignoring -mapcs-frame because -mthumb was used"); */
-      target_flags &= ~MASK_APCS_FRAME;
-    }
-
-  /* Callee super interworking implies thumb interworking.  Adding
-     this to the flags here simplifies the logic elsewhere.  */
-  if (TARGET_THUMB && TARGET_CALLEE_INTERWORKING)
-    target_flags |= MASK_INTERWORK;
-
-  /* TARGET_BACKTRACE calls leaf_function_p, which causes a crash if done
-     from here where no function is being compiled currently.  */
-  if ((TARGET_TPCS_FRAME || TARGET_TPCS_LEAF_FRAME) && TARGET_ARM)
-    warning (0, "enabling backtrace support is only meaningful when compiling for the Thumb");
-
-  if (TARGET_ARM && TARGET_CALLEE_INTERWORKING)
-    warning (0, "enabling callee interworking support is only meaningful when compiling for the Thumb");
 
   if (TARGET_APCS_STACK && !TARGET_APCS_FRAME)
     {
@@ -2901,14 +3057,6 @@ arm_option_override (void)
 
   if (TARGET_APCS_REENT)
     warning (0, "APCS reentrant code not supported.  Ignored");
-
-  /* If this target is normally configured to use APCS frames, warn if they
-     are turned off and debugging is turned on.  */
-  if (TARGET_ARM
-      && write_symbols != NO_DEBUG
-      && !TARGET_APCS_FRAME
-      && (TARGET_DEFAULT & MASK_APCS_FRAME))
-    warning (0, "-g with -mno-apcs-frame may not give sensible debugging");
 
   if (TARGET_APCS_FLOAT)
     warning (0, "passing floating point arguments in fp regs not yet supported");
@@ -2931,8 +3079,6 @@ arm_option_override (void)
 
   arm_ld_sched = (tune_flags & FL_LDSCHED) != 0;
   arm_tune_strongarm = (tune_flags & FL_STRONG) != 0;
-  thumb_code = TARGET_ARM == 0;
-  thumb1_code = TARGET_THUMB1 != 0;
   arm_tune_wbuf = (tune_flags & FL_WBUF) != 0;
   arm_tune_xscale = (tune_flags & FL_XSCALE) != 0;
   arm_arch_iwmmxt = (insn_flags & FL_IWMMXT) != 0;
@@ -2943,32 +3089,6 @@ arm_option_override (void)
   arm_tune_cortex_a9 = (arm_tune == cortexa9) != 0;
   arm_arch_crc = (insn_flags & FL_CRC32) != 0;
   arm_m_profile_small_mul = (insn_flags & FL_SMALLMUL) != 0;
-  if (arm_restrict_it == 2)
-    arm_restrict_it = arm_arch8 && TARGET_THUMB2;
-
-  if (!TARGET_THUMB2)
-    arm_restrict_it = 0;
-
-  /* If we are not using the default (ARM mode) section anchor offset
-     ranges, then set the correct ranges now.  */
-  if (TARGET_THUMB1)
-    {
-      /* Thumb-1 LDR instructions cannot have negative offsets.
-         Permissible positive offset ranges are 5-bit (for byte loads),
-         6-bit (for halfword loads), or 7-bit (for word loads).
-         Empirical results suggest a 7-bit anchor range gives the best
-         overall code size.  */
-      targetm.min_anchor_offset = 0;
-      targetm.max_anchor_offset = 127;
-    }
-  else if (TARGET_THUMB2)
-    {
-      /* The minimum is set such that the total size of the block
-         for a particular anchor is 248 + 1 + 4095 bytes, which is
-         divisible by eight, ensuring natural spacing of anchors.  */
-      targetm.min_anchor_offset = -248;
-      targetm.max_anchor_offset = 4095;
-    }
 
   /* V5 code we generate is completely interworking capable, so we turn off
      TARGET_INTERWORK here to avoid many tests later on.  */
@@ -3028,10 +3148,6 @@ arm_option_override (void)
   if (TARGET_IWMMXT && TARGET_NEON)
     error ("iWMMXt and NEON are incompatible");
 
-  /* iWMMXt unsupported under Thumb mode.  */
-  if (TARGET_THUMB && TARGET_IWMMXT)
-    error ("iWMMXt unsupported under Thumb mode");
-
   /* __fp16 support currently assumes the core has ldrh.  */
   if (!arm_arch4 && arm_fp16_format != ARM_FP16_FORMAT_NONE)
     sorry ("__fp16 and no ldrh");
@@ -3076,9 +3192,6 @@ arm_option_override (void)
 	target_thread_pointer = TP_SOFT;
     }
 
-  if (TARGET_HARD_TP && TARGET_THUMB1)
-    error ("can not use -mtp=cp15 with 16-bit Thumb");
-
   /* Override the default structure alignment for AAPCS ABI.  */
   if (!global_options_set.x_arm_structure_size_boundary)
     {
@@ -3099,12 +3212,6 @@ arm_option_override (void)
 	  arm_structure_size_boundary
 	    = (TARGET_AAPCS_BASED ? 8 : DEFAULT_STRUCTURE_SIZE_BOUNDARY);
 	}
-    }
-
-  if (!TARGET_ARM && TARGET_VXWORKS_RTP && flag_pic)
-    {
-      error ("RTP PIC is incompatible with Thumb");
-      flag_pic = 0;
     }
 
   /* If stack checking is disabled, we can use r10 as the PIC register,
@@ -3173,25 +3280,6 @@ arm_option_override (void)
       warning (0, "target CPU does not support unaligned accesses");
       unaligned_access = 0;
     }
-
-  if (TARGET_THUMB1 && flag_schedule_insns)
-    {
-      /* Don't warn since it's on by default in -O2.  */
-      flag_schedule_insns = 0;
-    }
-
-  if (optimize_size)
-    {
-      /* If optimizing for size, bump the number of instructions that we
-         are prepared to conditionally execute (even on a StrongARM).  */
-      max_insns_skipped = 6;
-
-      /* For THUMB2, we limit the conditional sequence to one IT block.  */
-      if (TARGET_THUMB2)
-	max_insns_skipped = MAX_INSN_PER_IT_BLOCK;
-    }
-  else
-    max_insns_skipped = current_tune->max_insns_skipped;
 
   /* Hot/Cold partitioning is not currently supported, since we can't
      handle literal pool placement in that case.  */
@@ -3283,28 +3371,9 @@ arm_option_override (void)
 			 global_options.x_param_values,
 			 global_options_set.x_param_values);
 
-  /* Disable shrink-wrap when optimizing function for size, since it tends to
-     generate additional returns.  */
-  if (optimize_function_for_size_p (cfun) && TARGET_THUMB2)
-    flag_shrink_wrap = false;
-  /* TBD: Dwarf info for apcs frame is not handled yet.  */
-  if (TARGET_APCS_FRAME)
-    flag_shrink_wrap = false;
-
-  /* We only support -mslow-flash-data on armv7-m targets.  */
-  if (target_slow_flash_data
-      && ((!(arm_arch7 && !arm_arch_notm) && !arm_arch7em)
-	  || (TARGET_THUMB1 || flag_pic || TARGET_NEON)))
-    error ("-mslow-flash-data only supports non-pic code on armv7-m targets");
-
   /* Currently, for slow flash data, we just disable literal pools.  */
   if (target_slow_flash_data)
     arm_disable_literal_pool = true;
-
-  /* Thumb2 inline assembly code should always use unified syntax.
-     This will apply to ARM and Thumb1 eventually.  */
-  if (TARGET_THUMB2)
-    inline_asm_unified = 1;
 
   /* Disable scheduling fusion by default if it's not armv7 processor
      or doesn't prefer ldrd/strd.  */
@@ -3312,19 +3381,23 @@ arm_option_override (void)
       && (!arm_arch7 || !current_tune->prefer_ldrd_strd))
     flag_schedule_fusion = 0;
 
-  /* In Thumb1 mode, we emit the epilogue in RTL, but the last insn
-     - epilogue_insns - does not accurately model the corresponding insns
-     emitted in the asm file.  In particular, see the comment in thumb_exit
-     'Find out how many of the (return) argument registers we can corrupt'.
-     As a consequence, the epilogue may clobber registers without fipa-ra
-     finding out about it.  Therefore, disable fipa-ra in Thumb1 mode.
-     TODO: Accurately model clobbers for epilogue_insns and reenable
-     fipa-ra.  */
-  if (TARGET_THUMB1)
-    flag_ipa_ra = 0;
+  /* Need to remember initial options before they are overriden.  */
+  init_optimize = build_optimization_node (&global_options);
+
+  arm_option_override_internal (&global_options, &global_options_set);
+  arm_option_check_internal (&global_options);
+  arm_option_params_internal ();
 
   /* Register global variables with the garbage collector.  */
   arm_add_gc_roots ();
+
+  /* Save the initial options in case the user does function specific
+     options.  */
+  target_option_default_node = target_option_current_node
+    = build_target_option_node (&global_options);
+
+  /* Init initial mode for testing.  */
+  thumb_flipper = TARGET_THUMB;
 }
 
 static void
@@ -3478,13 +3551,20 @@ arm_warn_func_return (tree decl)
 static void
 arm_asm_trampoline_template (FILE *f)
 {
+  if (TARGET_UNIFIED_ASM)
+    fprintf (f, "\t.syntax unified\n");
+  else
+    fprintf (f, "\t.syntax divided\n");
+
   if (TARGET_ARM)
     {
+      fprintf (f, "\t.arm\n");
       asm_fprintf (f, "\tldr\t%r, [%r, #0]\n", STATIC_CHAIN_REGNUM, PC_REGNUM);
       asm_fprintf (f, "\tldr\t%r, [%r, #0]\n", PC_REGNUM, PC_REGNUM);
     }
   else if (TARGET_THUMB2)
     {
+      fprintf (f, "\t.thumb\n");
       /* The Thumb-2 trampoline is similar to the arm implementation.
 	 Unlike 16-bit Thumb, we enter the stub in thumb mode.  */
       asm_fprintf (f, "\tldr.w\t%r, [%r, #4]\n",
@@ -23941,19 +24021,19 @@ thumb_far_jump_used_p (void)
 }
 
 /* Return nonzero if FUNC must be entered in ARM mode.  */
-int
+static bool
 is_called_in_ARM_mode (tree func)
 {
   gcc_assert (TREE_CODE (func) == FUNCTION_DECL);
 
   /* Ignore the problem about functions whose address is taken.  */
   if (TARGET_CALLEE_INTERWORKING && TREE_PUBLIC (func))
-    return TRUE;
+    return true;
 
 #ifdef ARM_PE
   return lookup_attribute ("interfacearm", DECL_ATTRIBUTES (func)) != NULL_TREE;
 #else
-  return FALSE;
+  return false;
 #endif
 }
 
@@ -24239,6 +24319,24 @@ arm_init_expanders (void)
     mark_reg_pointer (arg_pointer_rtx, PARM_BOUNDARY);
 }
 
+/* Check that FUNC is called with a different mode.  */
+
+bool
+arm_change_mode_p (tree func)
+{
+  if (TREE_CODE (func) != FUNCTION_DECL)
+    return false;
+
+  tree callee_tree = DECL_FUNCTION_SPECIFIC_TARGET (func);
+
+  if (!callee_tree)
+    callee_tree = target_option_default_node;
+
+  struct cl_target_option *callee_opts = TREE_TARGET_OPTION (callee_tree);
+  int flags = callee_opts->x_target_flags;
+
+  return (TARGET_THUMB_P (flags) != TARGET_THUMB);
+}
 
 /* Like arm_compute_initial_elimination offset.  Simpler because there
    isn't an ABI specified frame pointer for Thumb.  Instead, we set it
@@ -25566,9 +25664,6 @@ static void
 arm_file_start (void)
 {
   int val;
-
-  if (TARGET_UNIFIED_ASM)
-    asm_fprintf (asm_out_file, "\t.syntax unified\n");
 
   if (TARGET_BPABI)
     {
@@ -29363,6 +29458,273 @@ arm_is_constant_pool_ref (rtx x)
   return (MEM_P (x)
 	  && GET_CODE (XEXP (x, 0)) == SYMBOL_REF
 	  && CONSTANT_POOL_ADDRESS_P (XEXP (x, 0)));
+}
+
+/* Remember the last target of arm_set_current_function.  */
+static GTY(()) tree arm_previous_fndecl;
+
+/* Invalidate arm_previous_fndecl.  */
+void
+arm_reset_previous_fndecl (void)
+{
+  arm_previous_fndecl = NULL_TREE;
+}
+
+/* Establish appropriate back-end context for processing the function
+   FNDECL.  The argument might be NULL to indicate processing at top
+   level, outside of any function scope.  */
+static void
+arm_set_current_function (tree fndecl)
+{
+  if (!fndecl || fndecl == arm_previous_fndecl)
+    return;
+
+  tree old_tree = (arm_previous_fndecl
+		   ? DECL_FUNCTION_SPECIFIC_TARGET (arm_previous_fndecl)
+		   : NULL_TREE);
+
+  tree new_tree = DECL_FUNCTION_SPECIFIC_TARGET (fndecl);
+
+  arm_previous_fndecl = fndecl;
+  if (old_tree == new_tree)
+    return;
+
+  if (new_tree && new_tree != target_option_default_node)
+    {
+      cl_target_option_restore (&global_options,
+				TREE_TARGET_OPTION (new_tree));
+
+      if (TREE_TARGET_GLOBALS (new_tree))
+	restore_target_globals (TREE_TARGET_GLOBALS (new_tree));
+      else
+	TREE_TARGET_GLOBALS (new_tree)
+	  = save_target_globals_default_opts ();
+    }
+
+  else if (old_tree && old_tree != target_option_default_node)
+    {
+      new_tree = target_option_current_node;
+
+      cl_target_option_restore (&global_options,
+				TREE_TARGET_OPTION (new_tree));
+      if (TREE_TARGET_GLOBALS (new_tree))
+	restore_target_globals (TREE_TARGET_GLOBALS (new_tree));
+      else if (new_tree == target_option_default_node)
+	restore_target_globals (&default_target_globals);
+      else
+	TREE_TARGET_GLOBALS (new_tree)
+	  = save_target_globals_default_opts ();
+    }
+
+  arm_option_params_internal ();
+}
+
+/* Implement TARGET_OPTION_PRINT.  */
+
+static void
+arm_option_print (FILE *file, int indent, struct cl_target_option *ptr)
+{
+  int flags = ptr->x_target_flags;
+
+  fprintf (file, "%*sselected arch %s\n", indent, "",
+	   TARGET_THUMB2_P (flags) ? "thumb2" :
+	   TARGET_THUMB_P (flags) ? "thumb1" :
+	   "arm");
+}
+
+/* Hook to determine if one function can safely inline another.  */
+
+static bool
+arm_can_inline_p (tree caller ATTRIBUTE_UNUSED, tree callee ATTRIBUTE_UNUSED)
+{
+  /* Overidde default hook: Always OK to inline between different modes. 
+     Function with mode specific instructions, e.g using asm, must be explicitely 
+     protected with noinline.  */
+  return true;
+}
+
+/* Inner function to process the attribute((target(...))), take an argument and
+   set the current options from the argument.  If we have a list, recursively
+   go over the list.  */
+
+static bool
+arm_valid_target_attribute_rec (tree args, struct gcc_options *opts)
+{
+  if (TREE_CODE (args) == TREE_LIST)
+    {
+      bool ret = true;
+      for (; args; args = TREE_CHAIN (args))
+	if (TREE_VALUE (args)
+	    && !arm_valid_target_attribute_rec (TREE_VALUE (args), opts))
+	  ret = false;
+      return ret;
+    }
+
+  else if (TREE_CODE (args) != STRING_CST)
+    {
+      error ("attribute %<target%> argument not a string");
+      return false;
+    }
+
+  char *argstr = ASTRDUP (TREE_STRING_POINTER (args));
+  while (argstr && *argstr != '\0')
+    {
+      while (ISSPACE (*argstr))
+	argstr++;
+
+      if (!strcmp (argstr, "thumb"))
+	{
+	  opts->x_target_flags |= MASK_THUMB;
+	  arm_option_check_internal (opts);
+	  return true;
+	}
+
+      if (!strcmp (argstr, "arm"))
+	{
+	  opts->x_target_flags &= ~MASK_THUMB;
+	  arm_option_check_internal (opts);
+	  return true;
+	}
+
+      warning (0, "attribute(target(\"%s\")) is unknown", argstr);
+      return false;
+    }
+
+  return false;
+}
+
+/* Return a TARGET_OPTION_NODE tree of the target options listed or NULL.  */
+
+tree
+arm_valid_target_attribute_tree (tree args, struct gcc_options *opts,
+				 struct gcc_options *opts_set)
+{
+  if (!arm_valid_target_attribute_rec (args, opts))
+    return NULL_TREE;
+
+  /* Do any overrides, such as global options arch=xxx.  */
+  arm_option_override_internal (opts, opts_set);
+
+  return build_target_option_node (opts);
+}
+
+static void 
+add_attribute  (const char * mode, tree *attributes)
+{
+  size_t len = strlen (mode);
+  tree value = build_string (len, mode);
+
+  TREE_TYPE (value) = build_array_type (char_type_node,
+					build_index_type (size_int (len)));
+
+  *attributes = tree_cons (get_identifier ("target"),
+			   build_tree_list (NULL_TREE, value),
+			   *attributes);
+}
+
+/* For testing. Insert thumb or arm modes alternatively on functions.  */
+
+static void
+arm_insert_attributes (tree fndecl, tree * attributes)
+{
+  const char *mode;
+
+  if (! TARGET_FLIP_THUMB)
+    return;
+
+  if (TREE_CODE (fndecl) != FUNCTION_DECL || DECL_EXTERNAL(fndecl)
+      || DECL_BUILT_IN (fndecl) || DECL_ARTIFICIAL (fndecl))
+   return;
+
+  /* Nested definitions must inherit mode.  */
+  if (current_function_decl)
+   {
+     mode = TARGET_THUMB ? "thumb" : "arm";      
+     add_attribute (mode, attributes);
+     return;
+   }
+
+  /* If there is already a setting don't change it.  */
+  if (lookup_attribute ("target", *attributes) != NULL)
+    return;
+
+  mode = thumb_flipper ? "thumb" : "arm";
+  add_attribute (mode, attributes);
+
+  thumb_flipper = !thumb_flipper;
+}
+
+/* Hook to validate attribute((target("string"))).  */
+
+static bool
+arm_valid_target_attribute_p (tree fndecl, tree ARG_UNUSED (name),
+			      tree args, int ARG_UNUSED (flags))
+{
+  bool ret = true;
+  struct gcc_options func_options;
+  tree cur_tree, new_optimize;
+  gcc_assert ((fndecl != NULL_TREE) && (args != NULL_TREE));
+
+  /* Get the optimization options of the current function.  */
+  tree func_optimize = DECL_FUNCTION_SPECIFIC_OPTIMIZATION (fndecl);
+
+  /* If the function changed the optimization levels as well as setting target
+     options, start with the optimizations specified.  */
+  if (!func_optimize)
+    func_optimize = optimization_default_node;
+
+  /* Init func_options.  */
+  memset (&func_options, 0, sizeof (func_options));
+  init_options_struct (&func_options, NULL);
+  lang_hooks.init_options_struct (&func_options);
+
+  /* Initialize func_options to the defaults.  */
+  cl_optimization_restore (&func_options,
+			   TREE_OPTIMIZATION (func_optimize));
+
+  cl_target_option_restore (&func_options,
+			    TREE_TARGET_OPTION (target_option_default_node));
+
+  /* Set func_options flags with new target mode.  */
+  cur_tree = arm_valid_target_attribute_tree (args, &func_options,
+					      &global_options_set);
+
+  if (cur_tree == NULL_TREE)
+    ret = false;
+
+  new_optimize = build_optimization_node (&func_options);
+
+  DECL_FUNCTION_SPECIFIC_TARGET (fndecl) = cur_tree;
+
+  DECL_FUNCTION_SPECIFIC_OPTIMIZATION (fndecl) = new_optimize;
+
+  return ret;
+}
+
+void
+arm_declare_function_name (FILE *stream, const char *name, tree decl)
+{
+  if (TARGET_UNIFIED_ASM)
+    fprintf (stream, "\t.syntax unified\n");
+  else
+    fprintf (stream, "\t.syntax divided\n");
+
+  if (TARGET_THUMB)
+    {
+      if (is_called_in_ARM_mode (decl)
+	  || (TARGET_THUMB1 && !TARGET_THUMB1_ONLY
+	      && cfun->is_thunk))
+	fprintf (stream, "\t.code 32\n");
+      else if (TARGET_THUMB1)
+	fprintf (stream, "\t.code\t16\n\t.thumb_func\n");
+      else
+	fprintf (stream, "\t.thumb\n\t.thumb_func\n");
+    }
+  else
+    fprintf (stream, "\t.arm\n");
+
+  if (TARGET_POKE_FUNCTION_NAME)
+    arm_poke_function_name (stream, (const char *) name);
 }
 
 /* If MEM is in the form of [base+offset], extract the two parts

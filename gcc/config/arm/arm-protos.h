@@ -30,6 +30,7 @@ extern void arm_load_pic_register (unsigned long);
 extern int arm_volatile_func (void);
 extern void arm_expand_prologue (void);
 extern void arm_expand_epilogue (bool);
+extern void arm_declare_function_name (FILE *, const char *, tree);
 extern void thumb2_expand_return (bool);
 extern const char *arm_strip_name_encoding (const char *);
 extern void arm_asm_output_labelref (FILE *, const char *);
@@ -181,9 +182,6 @@ extern const char *thumb1_unexpanded_epilogue (void);
 extern void thumb1_expand_prologue (void);
 extern void thumb1_expand_epilogue (void);
 extern const char *thumb1_output_interwork (void);
-#ifdef TREE_CODE
-extern int is_called_in_ARM_mode (tree);
-#endif
 extern int thumb_shiftable_const (unsigned HOST_WIDE_INT);
 #ifdef RTX_CODE
 extern enum arm_cond_code maybe_get_arm_condition_code (rtx);
@@ -212,13 +210,14 @@ extern int arm_dllexport_p (tree);
 extern int arm_dllimport_p (tree);
 extern void arm_mark_dllexport (tree);
 extern void arm_mark_dllimport (tree);
+extern bool arm_change_mode_p (tree);
 #endif
 
+extern tree arm_valid_target_attribute_tree (tree, struct gcc_options *,
+					     struct gcc_options *);
 extern void arm_pr_long_calls (struct cpp_reader *);
 extern void arm_pr_no_long_calls (struct cpp_reader *);
 extern void arm_pr_long_calls_off (struct cpp_reader *);
-
-extern void arm_lang_object_attributes_init(void);
 
 extern const char *arm_mangle_type (const_tree);
 extern const char *arm_mangle_builtin_type (const_tree);
@@ -332,8 +331,15 @@ extern bool arm_autoinc_modes_ok_p (machine_mode, enum arm_auto_incmodes);
 
 extern void arm_emit_eabi_attribute (const char *, int, int);
 
+extern void arm_reset_previous_fndecl (void);
+
 /* Defined in gcc/common/config/arm-common.c.  */
 extern const char *arm_rewrite_selected_cpu (const char *name);
+
+/* Defined in gcc/common/config/arm-c.c.  */
+extern void arm_lang_object_attributes_init (void);
+extern void arm_register_target_pragmas (void);
+extern void arm_cpu_cpp_builtins (struct cpp_reader *);
 
 extern bool arm_is_constant_pool_ref (rtx);
 
@@ -474,12 +480,6 @@ extern int arm_tune_wbuf;
 
 /* Nonzero if tuning for Cortex-A9.  */
 extern int arm_tune_cortex_a9;
-
-/* Nonzero if generating Thumb instructions.  */
-extern int thumb_code;
-
-/* Nonzero if generating Thumb-1 instructions.  */
-extern int thumb1_code;
 
 /* Nonzero if we should define __THUMB_INTERWORK__ in the
    preprocessor.
