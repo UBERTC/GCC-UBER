@@ -1,3 +1,91 @@
+2015-10-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-09-15  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67563
+	* gcc.dg/pr67563.c: New testcase.
+
+	2015-09-24  Richard Biener  <rguenther@suse.de>
+
+	PR lto/67699
+	* g++.dg/pr67699.C: New testcase.
+
+2015-10-06  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* gcc.target/i386/vect-pack-trunc-1.c: New test.
+	* gcc.target/i386/vect-pack-trunc-2.c: Ditto.
+	* gcc.target/i386/vect-perm-even-1.c: Ditto.
+	* gcc.target/i386/vect-perm-odd-1.c: Ditto.
+	* gcc.target/i386/vect-unpack-1.c: Ditto.
+	* gcc.target/i386/vect-unpack-2.c: Ditto.
+
+2015-10-05  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-10-05  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67821
+	* gcc.dg/torture/pr67821-2.c: New test.
+	* gcc.dg/torture/pr67821.c: New test.
+
+2015-10-05  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-10-02  Marek Polacek  <polacek@redhat.com>
+
+	PR c/67730
+	* gcc.dg/pr67730-1.c: New test.
+	* gcc.dg/pr67730-2.c: New test.
+	* gcc.dg/pr67730.h: New test.
+
+2015-10-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67802
+	* gfortran.dg/pr67802.f90: New test.
+
+2015-10-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67616
+	* gfortran.dg/pr67616.f90: New test.
+
+2015-10-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66979
+	gfortran.dg/pr66979.f90: new test.
+
+2015-10-01  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-10-01  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67769
+	* gcc.dg/torture/pr67769.c: New test.
+
+2015-10-01  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/67721
+	* gfortran.dg/alloc_comp_deep_copy_3.f03: New.
+
+2015-10-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.dg/lto/pr55113_0.c: Skip on all x86 targets.
+
+2015-10-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2015-09-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* lib/target-supports.exp (check_effective_target_pie): Check for
+	PIE support on Solaris 11.x and 12.
+
+2015-10-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-06-09  Shiva Chen  <shiva0217@gmail.com>
+
+	* gcc.target/arm/stl-cond.c: New test.
+
 2015-09-30  H.J. Lu  <hongjiu.lu@intel.com>
 
 	Backport from mainline

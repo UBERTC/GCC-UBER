@@ -4748,19 +4748,41 @@ AC_MSG_RESULT($gcc_cv_ld_eh_frame_ciev3)
 AC_MSG_CHECKING(linker position independent executable support)
 gcc_cv_ld_pie=no
 if test $in_tree_ld = yes ; then
-  if test "$gcc_cv_gld_major_version" -eq 2 -a "$gcc_cv_gld_minor_version" -ge 15 -o "$gcc_cv_gld_major_version" -gt 2 \
+  case "$target" in
+    # Full PIE support on Solaris was only introduced in gld 2.26.
+    *-*-solaris2*)  gcc_gld_pie_min_version=26 ;;
+    *) 		    gcc_gld_pie_min_version=15 ;;
+  esac
+  if test "$gcc_cv_gld_major_version" -eq 2 -a "$gcc_cv_gld_minor_version" -ge "$gcc_gld_pie_min_version" -o "$gcc_cv_gld_major_version" -gt 2 \
      && test $in_tree_ld_is_elf = yes; then
     gcc_cv_ld_pie=yes
   fi
 elif test x$gcc_cv_ld != x; then
-	# Check if linker supports -pie option
-	if $gcc_cv_ld --help 2>/dev/null | grep -- -pie > /dev/null; then
-		gcc_cv_ld_pie=yes
+  # Check if linker supports -pie option
+  if $gcc_cv_ld --help 2>/dev/null | grep -- -pie > /dev/null; then
+    gcc_cv_ld_pie=yes
+    case "$target" in
+      *-*-solaris2*)
+	if echo "$ld_ver" | grep GNU > /dev/null \
+	  && test "$ld_vers_major" -eq 2 -a "$ld_vers_minor" -lt 26; then
+	  gcc_cv_ld_pie=no
 	fi
+	;;
+    esac
+  else
+    case "$target" in
+      *-*-solaris2.1[[1-9]]*)
+	# Solaris 11.x and Solaris 12 added PIE support.
+	if $gcc_cv_ld -z help 2>&1 | grep -- type.*pie > /dev/null; then
+	  gcc_cv_ld_pie=yes
+	fi
+	;;
+    esac
+  fi
 fi
 if test x"$gcc_cv_ld_pie" = xyes; then
 	AC_DEFINE(HAVE_LD_PIE, 1,
-[Define if your linker supports -pie option.])
+[Define if your linker supports PIE option.])
 fi
 AC_MSG_RESULT($gcc_cv_ld_pie)
 
@@ -5252,6 +5274,37 @@ if test x"$gcc_cv_ld_sysroot" = xyes; then
   AC_DEFINE(HAVE_LD_SYSROOT, 1,
   [Define if your linker supports --sysroot.])
 fi	  
+
+case $target in
+*-*-solaris2*)
+  # Check for system-provided CRTs on Solaris 11.x and Solaris 12.
+  AC_CACHE_CHECK([system-provided CRTs on Solaris],
+    gcc_cv_solaris_crts,
+    [gcc_cv_solaris_crts=no
+     if test x$host != x$target; then
+       if test "x$with_sysroot" = xyes; then
+         target_sysroot="${test_exec_prefix}/${target_noncanonical}/sys-root"
+       else
+         target_sysroot="${with_sysroot}"
+       fi
+     fi
+     target_libdir="$target_sysroot/usr/lib"
+     # At the time they were added, gcrt1.o became a symlink for backwards
+     # compatibility on x86, while crt1.o was added on sparc, so check for that.
+     case $target in
+       i?86-*-solaris2* | x86_64-*-solaris2*)
+         if test -h "$target_libdir/gcrt1.o"; then gcc_cv_solaris_crts=yes; fi
+	 ;;
+       sparc*-*-solaris2*)
+         if test -f "$target_libdir/crt1.o"; then gcc_cv_solaris_crts=yes; fi
+	 ;;
+     esac])
+  ;;
+esac
+if test x$gcc_cv_solaris_crts = xyes; then
+  AC_DEFINE(HAVE_SOLARIS_CRTS, 1,
+  	    [Define if the system-provided CRTs are present on Solaris.])
+fi
 
 # Test for stack protector support in target C library.
 AC_CACHE_CHECK(__stack_chk_fail in target C library,

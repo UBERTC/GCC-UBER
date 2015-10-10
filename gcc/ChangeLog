@@ -1,3 +1,130 @@
+2015-10-08  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2015-09-17  Richard Henderson  <rth@redhat.com>
+
+	PR libstdc++/65913
+	* builtins.c (fold_builtin_atomic_always_lock_free): Handle fake
+	pointers that encode the alignment of the object.
+
+2015-10-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-09-15  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67563
+	* gimple-fold.c (gimplify_and_update_call_from_tree): Do not
+	transfer EH info from old to new stmt.
+	(replace_call_with_value): Likewise.
+	(replace_call_with_call_and_fold): Likewise.
+	(gimple_fold_builtin_memory_op): Likewise.
+	(gimple_fold_builtin_memset): Likewise.
+	(gimple_fold_builtin_stpcpy): Likewise.
+	(gimple_fold_call): Likewise.
+
+	2015-09-24  Richard Biener  <rguenther@suse.de>
+
+	PR lto/67699
+	* lto-cgraph.c (compute_ltrans_boundary): Do not stream
+	abstract origins.
+
+2015-10-06  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* config/i386/i386.c (expand_vec_perm_even_odd_trunc): New.
+	(expand_vec_perm_even_odd_1): Handle V64QImode.
+	(ix86_expand_vec_perm_const_1): Try expansion with
+	expand_vec_perm_even_odd_trunc as well.
+	* config/i386/sse.md (VI124_AVX512F): Rename to ...
+	(define_mode_iterator VI124_AVX2_24_AVX512F_1_AVX512BW): This. Extend
+	to V54QI.
+	(define_mode_iterator VI248_AVX2_8_AVX512F): Rename to ...
+	(define_mode_iterator VI248_AVX2_8_AVX512F_24_AVX512BW): This. Extend
+	to V32HI and V16SI.
+	(define_insn "avx512bw_<code>v32hiv32qi2"): Unhide pattern name.
+	(define_expand "vec_pack_trunc_<mode>"): Update iterator name.
+	(define_expand "vec_unpacks_lo_<mode>"): Ditto.
+	(define_expand "vec_unpacks_hi_<mode>"): Ditto.
+	(define_expand "vec_unpacku_lo_<mode>"): Ditto.
+	(define_expand "vec_unpacku_hi_<mode>"): Ditto.
+
+2015-10-05  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-10-05  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67821
+	* tree-ssanames.c (duplicate_ssa_name_range_info): Remove an assert.
+
+2015-10-03  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-09-29  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/67716
+	* config/sh/sh.c (sh_override_options_after_change): New.
+	(TARGET_OVERRIDE_OPTIONS_AFTER_CHANGE): Define.
+	(sh_option_override): Move align_loops, align_jumps and
+	align_functions handling into sh_override_options_after_change.
+
+2015-10-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-09-15  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_const_operand_ok): Add missing
+	brackets.
+
+2015-10-01  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-10-01  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/67769
+	* tree-ssa-phiopt.c (conditional_replacement): Call
+	reset_flow_sensitive_info_in_bb.
+	(minmax_replacement): Likewise.
+	(abs_replacement): Likewise.
+
+2015-10-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2015-09-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (gcc_cv_ld_pie): Check for gld >= 2.26 on Solaris.
+	Check for ld -type pie on Solaris 11.x and 12.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+
+	* config/sol2.h (STARTFILE_CRTBEGIN_SPEC): Define.
+	(STARTFILE_SPEC): Use it.
+	(ENDFILE_CRTEND_SPEC): Define.
+	(ENDFILE_SPEC): Use it and ENDFILE_ARCH_SPEC.
+	(SUBTARGET_EXTRA_SPECS): Add STARTFILE_CRTBEGIN_SPEC,
+	ENDFILE_ARCH_SPEC, ENDFILE_CRTEND_SPEC.
+	(LINK_PIE_SPEC): Define.
+	* config/i386/sol2.h (ENDFILE_SPEC): Remove.
+	(ENDFILE_ARCH_SPEC): Define.
+	* config/sparc/sol2.h (ENDFILE_ARCH_SPEC): Define.
+
+2015-10-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2015-09-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* configure.ac (gcc_cv_solaris_crts): New test.
+	* configure. Regenerate.
+	* config.in: Regenerate.
+	* config/sol2.h (STARTFILE_SPEC): Simplify, provide
+	HAVE_SOLARIS_CRTS variant.
+
+2015-10-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-06-09  Shiva Chen  <shiva0217@gmail.com>
+
+	* sync.md (atomic_load<mode>): Add conditional code for lda/ldr
+	(atomic_store<mode>): Likewise.
+
 2015-09-30  H.J. Lu  <hongjiu.lu@intel.com>
 
 	Backport from mainline

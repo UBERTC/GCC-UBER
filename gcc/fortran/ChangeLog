@@ -1,3 +1,27 @@
+2015-10-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67802
+	* decl.c (add_init_expr_to_sym): Numeric constant for character
+	length must be an INTEGER.
+
+2015-10-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67616
+	* primary.c (gfc_match_structure_constructor): Use a possibly
+	host-associated symtree to prevent ICE.
+
+2015-10-02  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/66979
+	* io.c (gfc_resolve_filepos): Check for a UNIT number.  Add a nearby
+	missing 'return false'.
+
+2015-10-01  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/67721
+	* trans-expr.c (gfc_trans_assignment_1): Remove the non-constantness
+	condition guarding deep copy.
+
 2015-09-25  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/67614
