@@ -171,23 +171,64 @@ struct cpu_branch_cost
 
 struct tune_params
 {
-  const struct cpu_cost_table *const insn_extra_cost;
-  const struct cpu_addrcost_table *const addr_cost;
-  const struct cpu_regmove_cost *const regmove_cost;
-  const struct cpu_vector_cost *const vec_costs;
-  const struct cpu_branch_cost *const branch_costs;
-  const int memmov_cost;
-  const int issue_rate;
-  const unsigned int fusible_ops;
-  const int function_align;
-  const int jump_align;
-  const int loop_align;
-  const int int_reassoc_width;
-  const int fp_reassoc_width;
-  const int vec_reassoc_width;
-  const int min_div_recip_mul_sf;
-  const int min_div_recip_mul_df;
+  const struct cpu_cost_table *insn_extra_cost;
+  const struct cpu_addrcost_table *addr_cost;
+  const struct cpu_regmove_cost *regmove_cost;
+  const struct cpu_vector_cost *vec_costs;
+  const struct cpu_branch_cost *branch_costs;
+  int memmov_cost;
+  int issue_rate;
+  unsigned int fusible_ops;
+  int function_align;
+  int jump_align;
+  int loop_align;
+  int int_reassoc_width;
+  int fp_reassoc_width;
+  int vec_reassoc_width;
+  int min_div_recip_mul_sf;
+  int min_div_recip_mul_df;
+  unsigned int extra_tuning_flags;
 };
+
+#define AARCH64_FUSION_PAIR(x, name, index) \
+  AARCH64_FUSE_##name = (1 << index),
+/* Supported fusion operations.  */
+enum aarch64_fusion_pairs
+{
+  AARCH64_FUSE_NOTHING = 0,
+#include "aarch64-fusion-pairs.def"
+
+/* Hacky macro to build AARCH64_FUSE_ALL.  The sequence below expands
+   to:
+   AARCH64_FUSE_ALL = 0 | AARCH64_FUSE_index1 | AARCH64_FUSE_index2 ...  */
+#undef AARCH64_FUSION_PAIR
+#define AARCH64_FUSION_PAIR(x, name, y) \
+  | AARCH64_FUSE_##name
+
+  AARCH64_FUSE_ALL = 0
+#include "aarch64-fusion-pairs.def"
+};
+#undef AARCH64_FUSION_PAIR
+
+#define AARCH64_EXTRA_TUNING_OPTION(x, name, index) \
+  AARCH64_EXTRA_TUNE_##name = (1 << index),
+/* Supported tuning flags.  */
+enum aarch64_extra_tuning_flags
+{
+  AARCH64_EXTRA_TUNE_NONE = 0,
+#include "aarch64-tuning-flags.def"
+
+/* Hacky macro to build the "all" flag mask.
+   Expands to 0 | AARCH64_TUNE_index0 | AARCH64_TUNE_index1 , etc.  */
+#undef AARCH64_EXTRA_TUNING_OPTION
+#define AARCH64_EXTRA_TUNING_OPTION(x, name, y) \
+  | AARCH64_EXTRA_TUNE_##name
+  AARCH64_EXTRA_TUNE_ALL = 0
+#include "aarch64-tuning-flags.def"
+};
+#undef AARCH64_EXTRA_TUNING_OPTION
+
+extern struct tune_params aarch64_tune_params;
 
 HOST_WIDE_INT aarch64_initial_elimination_offset (unsigned, unsigned);
 int aarch64_get_condition_code (rtx);
