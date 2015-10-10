@@ -83,7 +83,7 @@ constant_for_folding (tree t)
    *RES_CODE and *RES_OPS with a simplified and/or canonicalized
    result and returns whether any change was made.  */
 
-static bool
+bool
 gimple_resimplify1 (gimple_seq *seq,
 		    code_helper *res_code, tree type, tree *res_ops,
 		    tree (*valueize)(tree))
@@ -139,7 +139,7 @@ gimple_resimplify1 (gimple_seq *seq,
    *RES_CODE and *RES_OPS with a simplified and/or canonicalized
    result and returns whether any change was made.  */
 
-static bool
+bool
 gimple_resimplify2 (gimple_seq *seq,
 		    code_helper *res_code, tree type, tree *res_ops,
 		    tree (*valueize)(tree))
@@ -208,7 +208,7 @@ gimple_resimplify2 (gimple_seq *seq,
    *RES_CODE and *RES_OPS with a simplified and/or canonicalized
    result and returns whether any change was made.  */
 
-static bool
+bool
 gimple_resimplify3 (gimple_seq *seq,
 		    code_helper *res_code, tree type, tree *res_ops,
 		    tree (*valueize)(tree))
@@ -293,6 +293,8 @@ maybe_build_generic_op (enum tree_code code, tree type,
     }
 }
 
+tree (*mprts_hook) (code_helper, tree, tree *);
+
 /* Push the exploded expression described by RCODE, TYPE and OPS
    as a statement to SEQ if necessary and return a gimple value
    denoting the value of the expression.  If RES is not NULL
@@ -306,10 +308,14 @@ maybe_push_res_to_seq (code_helper rcode, tree type, tree *ops,
   if (rcode.is_tree_code ())
     {
       if (!res
-	  && (TREE_CODE_LENGTH ((tree_code) rcode) == 0
-	      || ((tree_code) rcode) == ADDR_EXPR)
-	  && is_gimple_val (ops[0]))
+	  && gimple_simplified_result_is_gimple_val (rcode, ops))
 	return ops[0];
+      if (mprts_hook)
+	{
+	  tree tem = mprts_hook (rcode, type, ops);
+	  if (tem)
+	    return tem;
+	}
       if (!seq)
 	return NULL_TREE;
       /* Play safe and do not allow abnormals to be mentioned in

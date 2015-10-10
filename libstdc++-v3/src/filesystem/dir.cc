@@ -22,6 +22,10 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
+#ifndef _GLIBCXX_USE_CXX11_ABI
+# define _GLIBCXX_USE_CXX11_ABI 1
+#endif
+
 #include <experimental/filesystem>
 #include <utility>
 #include <stack>
@@ -69,15 +73,17 @@ struct fs::_Dir
 namespace
 {
   template<typename Bitmask>
-    inline bool is_set(Bitmask obj, Bitmask bits)
+    inline bool
+    is_set(Bitmask obj, Bitmask bits)
     {
       return (obj & bits) != Bitmask::none;
     }
 
   // Returns {dirp, p} on success, {nullptr, p} on error.
   // If an ignored EACCES error occurs returns {}.
-  fs::_Dir
-  open_dir(const fs::path& p, fs::directory_options options, std::error_code* ec)
+  inline fs::_Dir
+  open_dir(const fs::path& p, fs::directory_options options,
+	   std::error_code* ec)
   {
     if (ec)
       ec->clear();
@@ -100,7 +106,7 @@ namespace
   }
 
   inline fs::file_type
-  get_file_type(const dirent& d __attribute__((__unused__)))
+  get_file_type(const ::dirent& d __attribute__((__unused__)))
   {
 #ifdef _GLIBCXX_HAVE_STRUCT_DIRENT_D_TYPE
     switch (d.d_type)
@@ -128,19 +134,8 @@ namespace
     return fs::file_type::none;
 #endif
   }
-
-  int
-  native_readdir(DIR* dirp, ::dirent*& entryp)
-  {
-#ifdef _GLIBCXX_FILESYSTEM_IS_WINDOWS
-    if ((entryp = ::readdir(dirp)))
-      return 0;
-    return errno;
-#else
-    return ::readdir_r(dirp, entryp, &entryp);
-#endif
-  }
 }
+
 
 // Returns false when the end of the directory entries is reached.
 // Reports errors by setting ec or throwing.
@@ -150,9 +145,20 @@ fs::_Dir::advance(error_code* ec, directory_options options)
   if (ec)
     ec->clear();
 
-  ::dirent ent;
-  ::dirent* result = &ent;
-  if (int err = native_readdir(dirp, result))
+  int err = std::exchange(errno, 0);
+  const auto entp = readdir(dirp);
+  std::swap(errno, err);
+
+  if (entp)
+    {
+      // skip past dot and dot-dot
+      if (!strcmp(entp->d_name, ".") || !strcmp(entp->d_name, ".."))
+	return advance(ec, options);
+      entry = fs::directory_entry{path / entp->d_name};
+      type = get_file_type(*entp);
+      return true;
+    }
+  else if (err)
     {
       if (err == EACCES
         && is_set(options, directory_options::skip_permission_denied))
@@ -163,15 +169,6 @@ fs::_Dir::advance(error_code* ec, directory_options options)
 	      "directory iterator cannot advance",
 	      std::error_code(err, std::generic_category())));
       ec->assign(err, std::generic_category());
-      return true;
-    }
-  else if (result != nullptr)
-    {
-      // skip past dot and dot-dot
-      if (!strcmp(ent.d_name, ".") || !strcmp(ent.d_name, ".."))
-	return advance(ec, options);
-      entry = fs::directory_entry{path / ent.d_name};
-      type = get_file_type(ent);
       return true;
     }
   else
@@ -251,10 +248,10 @@ recursive_directory_iterator(const path& p, directory_options options,
 {
   if (DIR* dirp = ::opendir(p.c_str()))
     {
-      _M_dirs = std::make_shared<_Dir_stack>();
-      _M_dirs->push(_Dir{ dirp, p });
-      if (!_M_dirs->top().advance(ec))
-	_M_dirs.reset();
+      auto sp = std::make_shared<_Dir_stack>();
+      sp->push(_Dir{ dirp, p });
+      if (sp->top().advance(ec))
+	_M_dirs.swap(sp);
     }
   else
     {

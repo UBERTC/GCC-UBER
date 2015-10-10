@@ -144,7 +144,7 @@ print_graphite_scop_statistics (FILE* file, scop_p scop)
       gimple_stmt_iterator psi;
       loop_p loop = bb->loop_father;
 
-      if (!bb_in_sese_p (bb, SCOP_REGION (scop)))
+      if (!bb_in_sese_p (bb, scop->region->region))
 	continue;
 
       n_bbs++;
@@ -162,7 +162,7 @@ print_graphite_scop_statistics (FILE* file, scop_p scop)
 	  n_p_stmts += bb->count;
 	}
 
-      if (loop->header == bb && loop_in_sese_p (loop, SCOP_REGION (scop)))
+      if (loop->header == bb && loop_in_sese_p (loop, scop->region->region))
 	{
 	  n_loops++;
 	  n_p_loops += bb->count;
@@ -171,8 +171,8 @@ print_graphite_scop_statistics (FILE* file, scop_p scop)
 
   fprintf (file, "\nFunction Name: %s\n", current_function_name ());
 
-  edge scop_begin = scop->region->entry;
-  edge scop_end = scop->region->exit;
+  edge scop_begin = scop->region->region.entry;
+  edge scop_end = scop->region->region.exit;
 
   fprintf (file, "\nSCoP (entry_edge (bb_%d, bb_%d), ",
 	   scop_begin->src->index, scop_begin->dest->index);
@@ -278,6 +278,20 @@ graphite_finalize (bool need_cfg_cleanup_p)
     print_loops (dump_file, 3);
 }
 
+/* Deletes all scops in SCOPS.  */
+
+static void
+free_scops (vec<scop_p> scops)
+{
+  int i;
+  scop_p scop;
+
+  FOR_EACH_VEC_ELT (scops, i, scop)
+    free_scop (scop);
+
+  scops.release ();
+}
+
 isl_ctx *the_isl_ctx;
 
 /* Perform a set of linear transforms on the loops of the current
@@ -314,7 +328,7 @@ graphite_transform_loops (void)
   FOR_EACH_VEC_ELT (scops, i, scop)
     if (dbg_cnt (graphite_scop))
       {
-	scop->ctx = ctx;
+	scop->isl_context = ctx;
 	build_poly_scop (scop);
 
 	if (dump_file && dump_flags)

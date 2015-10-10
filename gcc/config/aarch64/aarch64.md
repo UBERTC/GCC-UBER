@@ -3010,6 +3010,18 @@
   [(set_attr "type" "csel")]
 )
 
+(define_insn "*cmovdi_insn_uxtw"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+	(if_then_else:DI
+	 (match_operator 1 "aarch64_comparison_operator"
+	  [(match_operand 2 "cc_register" "") (const_int 0)])
+	 (zero_extend:DI (match_operand:SI 3 "register_operand" "r"))
+	 (zero_extend:DI (match_operand:SI 4 "register_operand" "r"))))]
+  ""
+  "csel\\t%w0, %w3, %w4, %m1"
+  [(set_attr "type" "csel")]
+)
+
 (define_insn "*cmov<mode>_insn"
   [(set (match_operand:GPF 0 "register_operand" "=w")
 	(if_then_else:GPF
@@ -3129,6 +3141,18 @@
 	  (match_operand:GPI 3 "aarch64_reg_or_zero" "rZ")))]
   ""
   "csinv\\t%<w>0, %<w>3, %<w>2, %M1"
+  [(set_attr "type" "csel")]
+)
+
+(define_insn "csneg3_uxtw_insn"
+  [(set (match_operand:DI 0 "register_operand" "=r")
+	(zero_extend:DI
+	  (if_then_else:SI
+	    (match_operand 1 "aarch64_comparison_operation" "")
+	    (neg:SI (match_operand:SI 2 "register_operand" "r"))
+	    (match_operand:SI 3 "aarch64_reg_or_zero" "rZ"))))]
+  ""
+  "csneg\\t%w0, %w3, %w2, %M1"
   [(set_attr "type" "csel")]
 )
 
@@ -4714,7 +4738,7 @@
 		      ]
 		      UNSPEC_GOTTINYTLS)))]
   ""
-  "ldr\\t%w0, %L1\;add\\t%<w>0, %<w>0, %<w>2"
+  "ldr\\t%w0, %L1\;add\\t%w0, %w0, %w2"
   [(set_attr "type" "multiple")
    (set_attr "length" "8")]
 )

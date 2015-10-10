@@ -9708,17 +9708,6 @@ array of @code{HOST_WIDE_INT}, but all code should treat it as an opaque
 quantity.
 @end defmac
 
-@deftypefn Macro int REAL_VALUES_EQUAL (REAL_VALUE_TYPE @var{x}, REAL_VALUE_TYPE @var{y})
-Compares for equality the two values, @var{x} and @var{y}.  If the target
-floating point format supports negative zeroes and/or NaNs,
-@samp{REAL_VALUES_EQUAL (-0.0, 0.0)} is true, and
-@samp{REAL_VALUES_EQUAL (NaN, NaN)} is false.
-@end deftypefn
-
-@deftypefn Macro int REAL_VALUES_LESS (REAL_VALUE_TYPE @var{x}, REAL_VALUE_TYPE @var{y})
-Tests whether @var{x} is less than @var{y}.
-@end deftypefn
-
 @deftypefn Macro HOST_WIDE_INT REAL_VALUE_FIX (REAL_VALUE_TYPE @var{x})
 Truncates @var{x} to a signed integer, rounding toward zero.
 @end deftypefn
@@ -9745,21 +9734,6 @@ Determines whether @var{x} represents infinity (positive or negative).
 
 @deftypefn Macro int REAL_VALUE_ISNAN (REAL_VALUE_TYPE @var{x})
 Determines whether @var{x} represents a ``NaN'' (not-a-number).
-@end deftypefn
-
-@deftypefn Macro void REAL_ARITHMETIC (REAL_VALUE_TYPE @var{output}, enum tree_code @var{code}, REAL_VALUE_TYPE @var{x}, REAL_VALUE_TYPE @var{y})
-Calculates an arithmetic operation on the two floating point values
-@var{x} and @var{y}, storing the result in @var{output} (which must be a
-variable).
-
-The operation to be performed is specified by @var{code}.  Only the
-following codes are supported: @code{PLUS_EXPR}, @code{MINUS_EXPR},
-@code{MULT_EXPR}, @code{RDIV_EXPR}, @code{MAX_EXPR}, @code{MIN_EXPR}.
-
-If @code{REAL_ARITHMETIC} is asked to evaluate division by zero and the
-target's floating point format cannot represent infinity, it will call
-@code{abort}.  Callers should check for this situation first, using
-@code{MODE_HAS_INFINITIES}.  @xref{Storage Layout}.
 @end deftypefn
 
 @deftypefn Macro REAL_VALUE_TYPE REAL_VALUE_NEGATE (REAL_VALUE_TYPE @var{x})

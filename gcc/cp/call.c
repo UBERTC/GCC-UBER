@@ -51,6 +51,7 @@ along with GCC; see the file COPYING3.  If not see
 enum conversion_kind {
   ck_identity,
   ck_lvalue,
+  ck_tsafe,
   ck_qual,
   ck_std,
   ck_ptr,
@@ -1264,6 +1265,17 @@ standard_conversion (tree to, tree from, tree expr, bool c_cast_p,
 	  from = build_pointer_type (from);
 	  conv = build_conv (ck_ptr, from, conv);
 	  conv->base_p = true;
+	}
+      else if (tx_safe_fn_type_p (TREE_TYPE (from)))
+	{
+	  /* A prvalue of type "pointer to transaction_safe function" can be
+	     converted to a prvalue of type "pointer to function". */
+	  tree unsafe = tx_unsafe_fn_variant (TREE_TYPE (from));
+	  if (same_type_p (unsafe, TREE_TYPE (to)))
+	    {
+	      from = build_pointer_type (unsafe);
+	      conv = build_conv (ck_tsafe, from, conv);
+	    }
 	}
 
       if (tcode == POINTER_TYPE)
@@ -5133,7 +5145,7 @@ build_conditional_expr_1 (location_t loc, tree arg1, tree arg2, tree arg3,
     return error_mark_node;
 
  valid_operands:
-  result = build3 (COND_EXPR, result_type, arg1, arg2, arg3);
+  result = build3_loc (loc, COND_EXPR, result_type, arg1, arg2, arg3);
   if (!cp_unevaluated_operand)
     /* Avoid folding within decltype (c++/42013) and noexcept.  */
     result = fold_if_not_in_template (result);
@@ -6639,6 +6651,11 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
     case ck_lvalue:
       return decay_conversion (expr, complain);
 
+    case ck_tsafe:
+      /* ??? Should the address of a transaction-safe pointer point to the TM
+	 clone, and this conversion look up the primary function?  */
+      return build_nop (totype, expr);
+
     case ck_qual:
       /* Warn about deprecated conversion if appropriate.  */
       string_conv_p (totype, expr, 1);
@@ -7078,6 +7095,39 @@ call_copy_ctor (tree a, tsubst_flags_t complain)
   return r;
 }
 
+/* Return true iff T refers to a base field.  */
+
+static bool
+is_base_field_ref (tree t)
+{
+  STRIP_NOPS (t);
+  if (TREE_CODE (t) == ADDR_EXPR)
+    t = TREE_OPERAND (t, 0);
+  if (TREE_CODE (t) == COMPONENT_REF)
+    t = TREE_OPERAND (t, 1);
+  if (TREE_CODE (t) == FIELD_DECL)
+    return DECL_FIELD_IS_BASE (t);
+  return false;
+}
+
+/* We can't elide a copy from a function returning by value to a base
+   subobject, as the callee might clobber tail padding.  Return true iff this
+   could be that case.  */
+
+static bool
+unsafe_copy_elision_p (tree target, tree exp)
+{
+  tree type = TYPE_MAIN_VARIANT (TREE_TYPE (exp));
+  if (type == CLASSTYPE_AS_BASE (type))
+    return false;
+  if (!is_base_field_ref (target)
+      && resolves_to_fixed_type_p (target, NULL))
+    return false;
+  tree init = TARGET_EXPR_INITIAL (exp);
+  return (TREE_CODE (init) == AGGR_INIT_EXPR
+	  && !AGGR_INIT_VIA_CTOR_P (init));
+}
+
 /* Subroutine of the various build_*_call functions.  Overload resolution
    has chosen a winning candidate CAND; build up a CALL_EXPR accordingly.
    ARGS is a TREE_LIST of the unconverted arguments to the call.  FLAGS is a
@@ -7497,7 +7547,9 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
 	  else if (trivial)
 	    return force_target_expr (DECL_CONTEXT (fn), arg, complain);
 	}
-      else if (TREE_CODE (arg) == TARGET_EXPR || trivial)
+      else if (trivial
+	       || (TREE_CODE (arg) == TARGET_EXPR
+		   && !unsafe_copy_elision_p (fa, arg)))
 	{
 	  tree to = stabilize_reference (cp_build_indirect_ref (fa, RO_NULL,
 								complain));

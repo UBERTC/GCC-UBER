@@ -199,12 +199,12 @@ check_pow (gcall *pow_call)
       /* Only handle a fixed range of constant.  */
       REAL_VALUE_TYPE mv;
       REAL_VALUE_TYPE bcv = TREE_REAL_CST (base);
-      if (REAL_VALUES_EQUAL (bcv, dconst1))
+      if (real_equal (&bcv, &dconst1))
         return false;
-      if (REAL_VALUES_LESS (bcv, dconst1))
+      if (real_less (&bcv, &dconst1))
         return false;
       real_from_integer (&mv, TYPE_MODE (TREE_TYPE (base)), 256, UNSIGNED);
-      if (REAL_VALUES_LESS (mv, bcv))
+      if (real_less (&mv, &bcv))
         return false;
       return true;
     }
@@ -420,10 +420,10 @@ gen_conditions_for_pow_cst_base (tree base, tree expn,
      sure it is consistent with check_pow.  */
   REAL_VALUE_TYPE mv;
   REAL_VALUE_TYPE bcv = TREE_REAL_CST (base);
-  gcc_assert (!REAL_VALUES_EQUAL (bcv, dconst1)
-              && !REAL_VALUES_LESS (bcv, dconst1));
+  gcc_assert (!real_equal (&bcv, &dconst1)
+              && !real_less (&bcv, &dconst1));
   real_from_integer (&mv, TYPE_MODE (TREE_TYPE (base)), 256, UNSIGNED);
-  gcc_assert (!REAL_VALUES_LESS (mv, bcv));
+  gcc_assert (!real_less (&mv, &bcv));
 
   exp_domain = get_domain (0, false, false,
                            127, true, false);

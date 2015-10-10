@@ -3763,15 +3763,12 @@ aarch64_legitimate_address_p (machine_mode mode, rtx x,
 bool
 aarch64_float_const_zero_rtx_p (rtx x)
 {
-  REAL_VALUE_TYPE r;
-
   if (GET_MODE (x) == VOIDmode)
     return false;
 
-  REAL_VALUE_FROM_CONST_DOUBLE (r, x);
-  if (REAL_VALUE_MINUS_ZERO (r))
+  if (REAL_VALUE_MINUS_ZERO (*CONST_DOUBLE_REAL_VALUE (x)))
     return !HONOR_SIGNED_ZEROS (GET_MODE (x));
-  return REAL_VALUES_EQUAL (r, dconst0);
+  return real_equal (CONST_DOUBLE_REAL_VALUE (x), &dconst0);
 }
 
 /* Return the fixed registers used for condition codes.  */
@@ -4401,9 +4398,8 @@ aarch64_print_operand (FILE *f, rtx x, char code)
 	    {
 #define buf_size 20
 	      char float_buf[buf_size] = {'\0'};
-	      REAL_VALUE_TYPE r;
-	      REAL_VALUE_FROM_CONST_DOUBLE (r, x);
-	      real_to_decimal_for_mode (float_buf, &r,
+	      real_to_decimal_for_mode (float_buf,
+					CONST_DOUBLE_REAL_VALUE (x),
 					buf_size, buf_size,
 					1, GET_MODE (x));
 	      asm_fprintf (asm_out_file, "%s", float_buf);
@@ -10568,80 +10564,6 @@ aarch64_shift_truncation_mask (machine_mode mode)
      || aarch64_vect_struct_mode_p (mode)) ? 0 : (GET_MODE_BITSIZE (mode) - 1);
 }
 
-#ifndef TLS_SECTION_ASM_FLAG
-#define TLS_SECTION_ASM_FLAG 'T'
-#endif
-
-void
-aarch64_elf_asm_named_section (const char *name, unsigned int flags,
-			       tree decl ATTRIBUTE_UNUSED)
-{
-  char flagchars[10], *f = flagchars;
-
-  /* If we have already declared this section, we can use an
-     abbreviated form to switch back to it -- unless this section is
-     part of a COMDAT groups, in which case GAS requires the full
-     declaration every time.  */
-  if (!(HAVE_COMDAT_GROUP && (flags & SECTION_LINKONCE))
-      && (flags & SECTION_DECLARED))
-    {
-      fprintf (asm_out_file, "\t.section\t%s\n", name);
-      return;
-    }
-
-  if (!(flags & SECTION_DEBUG))
-    *f++ = 'a';
-  if (flags & SECTION_WRITE)
-    *f++ = 'w';
-  if (flags & SECTION_CODE)
-    *f++ = 'x';
-  if (flags & SECTION_SMALL)
-    *f++ = 's';
-  if (flags & SECTION_MERGE)
-    *f++ = 'M';
-  if (flags & SECTION_STRINGS)
-    *f++ = 'S';
-  if (flags & SECTION_TLS)
-    *f++ = TLS_SECTION_ASM_FLAG;
-  if (HAVE_COMDAT_GROUP && (flags & SECTION_LINKONCE))
-    *f++ = 'G';
-  *f = '\0';
-
-  fprintf (asm_out_file, "\t.section\t%s,\"%s\"", name, flagchars);
-
-  if (!(flags & SECTION_NOTYPE))
-    {
-      const char *type;
-      const char *format;
-
-      if (flags & SECTION_BSS)
-	type = "nobits";
-      else
-	type = "progbits";
-
-#ifdef TYPE_OPERAND_FMT
-      format = "," TYPE_OPERAND_FMT;
-#else
-      format = ",@%s";
-#endif
-
-      fprintf (asm_out_file, format, type);
-
-      if (flags & SECTION_ENTSIZE)
-	fprintf (asm_out_file, ",%d", flags & SECTION_ENTSIZE);
-      if (HAVE_COMDAT_GROUP && (flags & SECTION_LINKONCE))
-	{
-	  if (TREE_CODE (decl) == IDENTIFIER_NODE)
-	    fprintf (asm_out_file, ",%s,comdat", IDENTIFIER_POINTER (decl));
-	  else
-	    fprintf (asm_out_file, ",%s,comdat",
-		     IDENTIFIER_POINTER (DECL_COMDAT_GROUP (decl)));
-	}
-    }
-
-  putc ('\n', asm_out_file);
-}
-
 /* Select a format to encode pointers in exception handling data.  */
 int
 aarch64_asm_preferred_eh_data_format (int code ATTRIBUTE_UNUSED, int global)
@@ -11383,7 +11305,7 @@ aarch64_float_const_representable_p (rtx x)
   if (GET_MODE (x) == VOIDmode || GET_MODE (x) == HFmode)
     return false;
 
-  REAL_VALUE_FROM_CONST_DOUBLE (r, x);
+  r = *CONST_DOUBLE_REAL_VALUE (x);
 
   /* We cannot represent infinities, NaNs or +/-zero.  We won't
      know if we have +zero until we analyse the mantissa, but we
@@ -11475,10 +11397,10 @@ aarch64_output_simd_mov_immediate (rtx const_vector,
       else
 	{
 #define buf_size 20
-	  REAL_VALUE_TYPE r;
-	  REAL_VALUE_FROM_CONST_DOUBLE (r, info.value);
 	  char float_buf[buf_size] = {'\0'};
-	  real_to_decimal_for_mode (float_buf, &r, buf_size, buf_size, 1, mode);
+	  real_to_decimal_for_mode (float_buf,
+				    CONST_DOUBLE_REAL_VALUE (info.value),
+				    buf_size, buf_size, 1, mode);
 #undef buf_size
 
 	  if (lane_count == 1)

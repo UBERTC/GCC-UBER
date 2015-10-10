@@ -3076,7 +3076,7 @@ compare_constant (const tree t1, const tree t2)
       if (TYPE_PRECISION (TREE_TYPE (t1)) != TYPE_PRECISION (TREE_TYPE (t2)))
 	return 0;
 
-      return REAL_VALUES_IDENTICAL (TREE_REAL_CST (t1), TREE_REAL_CST (t2));
+      return real_identical (&TREE_REAL_CST (t1), &TREE_REAL_CST (t2));
 
     case FIXED_CST:
       /* Fixed constants are the same only if the same width of type.  */
@@ -3841,11 +3841,8 @@ output_constant_pool_2 (machine_mode mode, rtx x, unsigned int align)
     case MODE_FLOAT:
     case MODE_DECIMAL_FLOAT:
       {
-	REAL_VALUE_TYPE r;
-
 	gcc_assert (CONST_DOUBLE_AS_FLOAT_P (x));
-	REAL_VALUE_FROM_CONST_DOUBLE (r, x);
-	assemble_real (r, mode, align);
+	assemble_real (*CONST_DOUBLE_REAL_VALUE (x), mode, align);
 	break;
       }
 
@@ -6236,7 +6233,7 @@ default_no_named_section (const char *name ATTRIBUTE_UNUSED,
 
 void
 default_elf_asm_named_section (const char *name, unsigned int flags,
-			       tree decl ATTRIBUTE_UNUSED)
+			       tree decl)
 {
   char flagchars[10], *f = flagchars;
 

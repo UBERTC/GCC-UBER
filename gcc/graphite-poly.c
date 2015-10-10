@@ -87,7 +87,7 @@ print_iteration_domains (FILE *file, scop_p scop, int verbosity)
   int i;
   poly_bb_p pbb;
 
-  FOR_EACH_VEC_ELT (SCOP_BBS (scop), i, pbb)
+  FOR_EACH_VEC_ELT (scop->pbbs, i, pbb)
     print_iteration_domain (file, pbb, verbosity);
 }
 
@@ -136,15 +136,14 @@ apply_poly_transforms (scop_p scop)
    NB_SUBSCRIPTS.  */
 
 void
-new_poly_dr (poly_bb_p pbb, int dr_base_object_set,
-	     enum poly_dr_type type, void *cdr, graphite_dim_t nb_subscripts,
+new_poly_dr (poly_bb_p pbb, enum poly_dr_type type, data_reference_p cdr,
+	     graphite_dim_t nb_subscripts,
 	     isl_map *acc, isl_set *subscript_sizes)
 {
   static int id = 0;
   poly_dr_p pdr = XNEW (struct poly_dr);
 
   PDR_ID (pdr) = id++;
-  PDR_BASE_OBJECT_SET (pdr) = dr_base_object_set;
   PDR_NB_REFS (pdr) = 1;
   PDR_PBB (pdr) = pbb;
   pdr->accesses = acc;
@@ -168,7 +167,7 @@ free_poly_dr (poly_dr_p pdr)
 /* Create a new polyhedral black box.  */
 
 poly_bb_p
-new_poly_bb (scop_p scop, void *black_box)
+new_poly_bb (scop_p scop, gimple_poly_bb_p black_box)
 {
   poly_bb_p pbb = XNEW (struct poly_bb);
 
@@ -180,7 +179,7 @@ new_poly_bb (scop_p scop, void *black_box)
   pbb_set_black_box (pbb, black_box);
   PBB_DRS (pbb).create (3);
   PBB_IS_REDUCTION (pbb) = false;
-  GBB_PBB ((gimple_bb_p) black_box) = pbb;
+  GBB_PBB ((gimple_poly_bb_p) black_box) = pbb;
 
   return pbb;
 }
@@ -257,14 +256,57 @@ debug_pdr (poly_dr_p pdr, int verbosity)
   print_pdr (stderr, pdr, verbosity);
 }
 
-/* Creates a new SCOP containing REGION.  */
+/* Store the GRAPHITE representation of BB.  */
+
+gimple_poly_bb_p
+new_gimple_poly_bb (basic_block bb, vec<data_reference_p> drs)
+{
+  gimple_poly_bb_p gbb;
+
+  gbb = XNEW (struct gimple_poly_bb);
+  bb->aux = gbb;
+  GBB_BB (gbb) = bb;
+  GBB_DATA_REFS (gbb) = drs;
+  GBB_CONDITIONS (gbb).create (0);
+  GBB_CONDITION_CASES (gbb).create (0);
+
+  return gbb;
+}
+
+/* Frees GBB.  */
+
+void
+free_gimple_poly_bb (gimple_poly_bb_p gbb)
+{
+  free_data_refs (GBB_DATA_REFS (gbb));
+
+  GBB_CONDITIONS (gbb).release ();
+  GBB_CONDITION_CASES (gbb).release ();
+  GBB_BB (gbb)->aux = 0;
+  XDELETE (gbb);
+}
+
+/* Deletes all gimple bbs in SCOP.  */
+
+static void
+remove_gbbs_in_scop (scop_p scop)
+{
+  int i;
+  poly_bb_p pbb;
+
+  FOR_EACH_VEC_ELT (scop->pbbs, i, pbb)
+    free_gimple_poly_bb (PBB_BLACK_BOX (pbb));
+}
+
+/* Creates a new SCOP containing the region (ENTRY, EXIT).  */
 
 scop_p
-new_scop (sese region)
+new_scop (edge entry, edge exit)
 {
+  sese_info_p region = new_sese_info (entry, exit);
   scop_p scop = XNEW (struct scop);
 
-  scop->context = NULL;
+  scop->param_context = NULL;
   scop->must_raw = NULL;
   scop->may_raw = NULL;
   scop->must_raw_no_source = NULL;
@@ -278,8 +320,9 @@ new_scop (sese region)
   scop->must_waw_no_source = NULL;
   scop->may_waw_no_source = NULL;
   scop_set_region (scop, region);
-  SCOP_BBS (scop).create (3);
+  scop->pbbs.create (3);
   POLY_SCOP_P (scop) = false;
+  scop->drs.create (3);
 
   return scop;
 }
@@ -292,12 +335,15 @@ free_scop (scop_p scop)
   int i;
   poly_bb_p pbb;
 
-  FOR_EACH_VEC_ELT (SCOP_BBS (scop), i, pbb)
+  remove_gbbs_in_scop (scop);
+  free_sese_info (SCOP_REGION (scop));
+
+  FOR_EACH_VEC_ELT (scop->pbbs, i, pbb)
     free_poly_bb (pbb);
 
-  SCOP_BBS (scop).release ();
+  scop->pbbs.release ();
 
-  isl_set_free (scop->context);
+  isl_set_free (scop->param_context);
   isl_union_map_free (scop->must_raw);
   isl_union_map_free (scop->may_raw);
   isl_union_map_free (scop->must_raw_no_source);
@@ -324,7 +370,7 @@ print_pbb_domain (FILE *file, poly_bb_p pbb, int verbosity ATTRIBUTE_UNUSED)
 /* Dump the cases of a graphite basic block GBB on FILE.  */
 
 static void
-dump_gbb_cases (FILE *file, gimple_bb_p gbb)
+dump_gbb_cases (FILE *file, gimple_poly_bb_p gbb)
 {
   int i;
   gimple *stmt;
@@ -351,7 +397,7 @@ dump_gbb_cases (FILE *file, gimple_bb_p gbb)
 /* Dump conditions of a graphite basic block GBB on FILE.  */
 
 static void
-dump_gbb_conditions (FILE *file, gimple_bb_p gbb)
+dump_gbb_conditions (FILE *file, gimple_poly_bb_p gbb)
 {
   int i;
   gimple *stmt;
@@ -556,8 +602,8 @@ print_scop_context (FILE *file, scop_p scop, int verbosity)
   if (verbosity > 0)
     fprintf (file, "# Context (\n");
 
-  if (scop->context)
-    print_isl_set (file, scop->context);
+  if (scop->param_context)
+    print_isl_set (file, scop->param_context);
 
   if (verbosity > 0)
     fprintf (file, "# )\n");
@@ -579,9 +625,9 @@ print_scop (FILE *file, scop_p scop, int verbosity)
   if (verbosity > 0)
     fprintf (file, "# Number of statements\n");
 
-  fprintf (file, "%d\n", SCOP_BBS (scop).length ());
+  fprintf (file, "%d\n", scop->pbbs.length ());
 
-  FOR_EACH_VEC_ELT (SCOP_BBS (scop), i, pbb)
+  FOR_EACH_VEC_ELT (scop->pbbs, i, pbb)
     print_pbb (file, pbb, verbosity);
 
   fprintf (file, "#)\n");

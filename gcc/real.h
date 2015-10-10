@@ -247,8 +247,10 @@ extern bool real_isneg (const REAL_VALUE_TYPE *);
 /* Determine whether a floating-point value X is minus zero.  */
 extern bool real_isnegzero (const REAL_VALUE_TYPE *);
 
-/* Compare two floating-point objects for bitwise identity.  */
+/* Test relationships between reals.  */
 extern bool real_identical (const REAL_VALUE_TYPE *, const REAL_VALUE_TYPE *);
+extern bool real_equal (const REAL_VALUE_TYPE *, const REAL_VALUE_TYPE *);
+extern bool real_less (const REAL_VALUE_TYPE *, const REAL_VALUE_TYPE *);
 
 /* Extend or truncate to a new mode.  */
 extern void real_convert (REAL_VALUE_TYPE *, machine_mode,
@@ -329,13 +331,6 @@ extern const struct real_format arm_half_format;
 /* ====================================================================== */
 /* Crap.  */
 
-#define REAL_ARITHMETIC(value, code, d1, d2) \
-  real_arithmetic (&(value), code, &(d1), &(d2))
-
-#define REAL_VALUES_IDENTICAL(x, y)	real_identical (&(x), &(y))
-#define REAL_VALUES_EQUAL(x, y)		real_compare (EQ_EXPR, &(x), &(y))
-#define REAL_VALUES_LESS(x, y)		real_compare (LT_EXPR, &(x), &(y))
-
 /* Determine whether a floating-point value X is infinite.  */
 #define REAL_VALUE_ISINF(x)		real_isinf (&(x))
 
@@ -387,7 +382,7 @@ extern REAL_VALUE_TYPE real_from_string2 (const char *, machine_mode);
   real_from_string2 (s, m)
 
 #define CONST_DOUBLE_ATOF(s, m) \
-  CONST_DOUBLE_FROM_REAL_VALUE (real_from_string2 (s, m), m)
+  const_double_from_real_value (real_from_string2 (s, m), m)
 
 #define REAL_VALUE_FIX(r) \
   real_to_integer (&(r))
@@ -414,15 +409,21 @@ extern REAL_VALUE_TYPE dconst2;
 extern REAL_VALUE_TYPE dconstm1;
 extern REAL_VALUE_TYPE dconsthalf;
 
-#define dconst_e()  (*dconst_e_ptr ())
-#define dconst_third()  (*dconst_third_ptr ())
-#define dconst_sqrt2()  (*dconst_sqrt2_ptr ())
+#define dconst_e() (*dconst_e_ptr ())
+#define dconst_third() (*dconst_third_ptr ())
+#define dconst_quarter() (*dconst_quarter_ptr ())
+#define dconst_sixth() (*dconst_sixth_ptr ())
+#define dconst_ninth() (*dconst_ninth_ptr ())
+#define dconst_sqrt2() (*dconst_sqrt2_ptr ())
 
 /* Function to return the real value special constant 'e'.  */
 extern const REAL_VALUE_TYPE * dconst_e_ptr (void);
 
-/* Returns the special REAL_VALUE_TYPE corresponding to 1/3.  */
-extern const REAL_VALUE_TYPE * dconst_third_ptr (void);
+/* Returns a cached REAL_VALUE_TYPE corresponding to 1/n, for various n.  */
+extern const REAL_VALUE_TYPE *dconst_third_ptr (void);
+extern const REAL_VALUE_TYPE *dconst_quarter_ptr (void);
+extern const REAL_VALUE_TYPE *dconst_sixth_ptr (void);
+extern const REAL_VALUE_TYPE *dconst_ninth_ptr (void);
 
 /* Returns the special REAL_VALUE_TYPE corresponding to sqrt(2).  */
 extern const REAL_VALUE_TYPE * dconst_sqrt2_ptr (void);
@@ -431,13 +432,7 @@ extern const REAL_VALUE_TYPE * dconst_sqrt2_ptr (void);
    from a given integer constant.  */
 REAL_VALUE_TYPE real_value_from_int_cst (const_tree, const_tree);
 
-/* Given a CONST_DOUBLE in FROM, store into TO the value it represents.  */
-#define REAL_VALUE_FROM_CONST_DOUBLE(to, from) \
-  ((to) = *CONST_DOUBLE_REAL_VALUE (from))
-
 /* Return a CONST_DOUBLE with value R and mode M.  */
-#define CONST_DOUBLE_FROM_REAL_VALUE(r, m) \
-  const_double_from_real_value (r, m)
 extern rtx const_double_from_real_value (REAL_VALUE_TYPE, machine_mode);
 
 /* Replace R by 1/R in the given machine mode, if the result is exact.  */
@@ -450,6 +445,9 @@ bool real_can_shorten_arithmetic (machine_mode, machine_mode);
 
 /* In tree.c: wrap up a REAL_VALUE_TYPE in a tree node.  */
 extern tree build_real (tree, REAL_VALUE_TYPE);
+
+/* Likewise, but first truncate the value to the type.  */
+extern tree build_real_truncate (tree, REAL_VALUE_TYPE);
 
 /* Calculate R as X raised to the integer exponent N in mode MODE.  */
 extern bool real_powi (REAL_VALUE_TYPE *, machine_mode,

@@ -4490,6 +4490,12 @@ more_aggr_init_expr_args_p (const aggr_init_expr_arg_iterator *iter)
 #define TARGET_EXPR_DIRECT_INIT_P(NODE) \
   TREE_LANG_FLAG_2 (TARGET_EXPR_CHECK (NODE))
 
+/* True if NODE is a TARGET_EXPR that just expresses a copy of its INITIAL; if
+   the initializer has void type, it's doing something more complicated.  */
+#define SIMPLE_TARGET_EXPR_P(NODE)				\
+  (TREE_CODE (NODE) == TARGET_EXPR				\
+   && !VOID_TYPE_P (TREE_TYPE (TARGET_EXPR_INITIAL (NODE))))
+
 /* True if EXPR expresses direct-initialization of a TYPE.  */
 #define DIRECT_INIT_EXPR_P(TYPE,EXPR)					\
   (TREE_CODE (EXPR) == TARGET_EXPR && TREE_LANG_FLAG_2 (EXPR)		\
@@ -5317,6 +5323,8 @@ struct cp_declarator {
       cp_virt_specifiers virt_specifiers;
       /* The ref-qualifier for the function.  */
       cp_ref_qualifier ref_qualifier;
+      /* The transaction-safety qualifier for the function.  */
+      tree tx_qualifier;
       /* The exception-specification for the function.  */
       tree exception_specification;
       /* The late-specified return type, if any.  */
@@ -5604,6 +5612,9 @@ extern tree convert_force			(tree, tree, int,
 extern tree build_expr_type_conversion		(int, tree, bool);
 extern tree type_promotes_to			(tree);
 extern tree perform_qualification_conversions	(tree, tree);
+extern bool tx_safe_fn_type_p			(tree);
+extern tree tx_unsafe_fn_variant		(tree);
+extern bool can_convert_tx_safety		(tree, tree);
 
 /* in name-lookup.c */
 extern tree pushdecl				(tree);
@@ -6218,9 +6229,11 @@ extern void finish_cleanup			(tree, tree);
 extern bool is_this_parameter                   (tree);
 
 enum {
+  BCS_NORMAL = 0,
   BCS_NO_SCOPE = 1,
   BCS_TRY_BLOCK = 2,
-  BCS_FN_BODY = 4
+  BCS_FN_BODY = 4,
+  BCS_TRANSACTION = 8
 };
 extern tree begin_compound_stmt			(unsigned int);
 

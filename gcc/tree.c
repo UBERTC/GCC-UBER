@@ -1877,6 +1877,14 @@ build_real (tree type, REAL_VALUE_TYPE d)
   return v;
 }
 
+/* Like build_real, but first truncate D to the type.  */
+
+tree
+build_real_truncate (tree type, REAL_VALUE_TYPE d)
+{
+  return build_real (type, real_value_truncate (TYPE_MODE (type), d));
+}
+
 /* Return a new REAL_CST node whose type is TYPE
    and whose value is the integer value of the INTEGER_CST node I.  */
 
@@ -2546,7 +2554,7 @@ real_zerop (const_tree expr)
   switch (TREE_CODE (expr))
     {
     case REAL_CST:
-      return REAL_VALUES_EQUAL (TREE_REAL_CST (expr), dconst0)
+      return real_equal (&TREE_REAL_CST (expr), &dconst0)
 	     && !(DECIMAL_FLOAT_MODE_P (TYPE_MODE (TREE_TYPE (expr))));
     case COMPLEX_CST:
       return real_zerop (TREE_REALPART (expr))
@@ -2576,7 +2584,7 @@ real_onep (const_tree expr)
   switch (TREE_CODE (expr))
     {
     case REAL_CST:
-      return REAL_VALUES_EQUAL (TREE_REAL_CST (expr), dconst1)
+      return real_equal (&TREE_REAL_CST (expr), &dconst1)
 	     && !(DECIMAL_FLOAT_MODE_P (TYPE_MODE (TREE_TYPE (expr))));
     case COMPLEX_CST:
       return real_onep (TREE_REALPART (expr))
@@ -2605,7 +2613,7 @@ real_minus_onep (const_tree expr)
   switch (TREE_CODE (expr))
     {
     case REAL_CST:
-      return REAL_VALUES_EQUAL (TREE_REAL_CST (expr), dconstm1)
+      return real_equal (&TREE_REAL_CST (expr), &dconstm1)
 	     && !(DECIMAL_FLOAT_MODE_P (TYPE_MODE (TREE_TYPE (expr))));
     case COMPLEX_CST:
       return real_minus_onep (TREE_REALPART (expr))
@@ -5017,6 +5025,8 @@ comp_type_attributes (const_tree type1, const_tree type2)
       if (!a)
         return 1;
     }
+  if (lookup_attribute ("transaction_safe", CONST_CAST_TREE (a)))
+    return 0;
   /* As some type combinations - like default calling-convention - might
      be compatible, we have to call the target hook to get the final result.  */
   return targetm.comp_type_attributes (type1, type2);
@@ -7360,7 +7370,7 @@ simple_cst_equal (const_tree t1, const_tree t2)
       return wi::to_widest (t1) == wi::to_widest (t2);
 
     case REAL_CST:
-      return REAL_VALUES_IDENTICAL (TREE_REAL_CST (t1), TREE_REAL_CST (t2));
+      return real_identical (&TREE_REAL_CST (t1), &TREE_REAL_CST (t2));
 
     case FIXED_CST:
       return FIXED_VALUES_IDENTICAL (TREE_FIXED_CST (t1), TREE_FIXED_CST (t2));
@@ -12091,7 +12101,7 @@ strip_float_extensions (tree exp)
 	       && exact_real_truncate (TYPE_MODE (double_type_node), &orig))
 	type = double_type_node;
       if (type)
-	return build_real (type, real_value_truncate (TYPE_MODE (type), orig));
+	return build_real_truncate (type, orig);
     }
 
   if (!CONVERT_EXPR_P (exp))

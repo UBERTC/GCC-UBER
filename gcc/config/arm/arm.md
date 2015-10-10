@@ -6634,12 +6634,11 @@
       return \"mov%?\\t%0, %1\\t%@ __fp16\";
     case 3:	/* ARM register from constant */
       {
-	REAL_VALUE_TYPE r;
 	long bits;
 	rtx ops[4];
 
-	REAL_VALUE_FROM_CONST_DOUBLE (r, operands[1]);
-	bits = real_to_target (NULL, &r, HFmode);
+	bits = real_to_target (NULL, CONST_DOUBLE_REAL_VALUE (operands[1]),
+			       HFmode);
 	ops[0] = operands[0];
 	ops[1] = GEN_INT (bits);
 	ops[2] = GEN_INT (bits & 0xff00);
@@ -8263,9 +8262,7 @@
   [(set (match_operand 0 "memory_operand" "=m")
         (unspec [(const_int 0)] UNSPEC_PROBE_STACK))]
   "TARGET_32BIT"
-{
-  return "str%?\\tr0, %0";
-}
+  "str%?\\tr0, %0"
   [(set_attr "type" "store1")
    (set_attr "predicable" "yes")]
 )
@@ -10854,12 +10851,9 @@
     switch (GET_MODE_CLASS (GET_MODE (x)))
       {
       case MODE_FLOAT:
-	{
-	  REAL_VALUE_TYPE r;
-	  REAL_VALUE_FROM_CONST_DOUBLE (r, x);
-	  assemble_real (r, GET_MODE (x), BITS_PER_WORD);
-	  break;
-	}
+	assemble_real (*CONST_DOUBLE_REAL_VALUE (x), GET_MODE (x),
+		       BITS_PER_WORD);
+	break;
       default:
 	/* XXX: Sometimes gcc does something really dumb and ends up with
 	   a HIGH in a constant pool entry, usually because it's trying to
@@ -10886,13 +10880,10 @@
     making_const_table = TRUE;
     switch (GET_MODE_CLASS (GET_MODE (operands[0])))
       {
-       case MODE_FLOAT:
-        {
-          REAL_VALUE_TYPE r;
-          REAL_VALUE_FROM_CONST_DOUBLE (r, operands[0]);
-          assemble_real (r, GET_MODE (operands[0]), BITS_PER_WORD);
-          break;
-        }
+      case MODE_FLOAT:
+	assemble_real (*CONST_DOUBLE_REAL_VALUE (operands[0]),
+		       GET_MODE (operands[0]), BITS_PER_WORD);
+	break;
       default:
         assemble_integer (operands[0], 8, BITS_PER_WORD, 1);
         break;
@@ -10911,13 +10902,10 @@
     making_const_table = TRUE;
     switch (GET_MODE_CLASS (GET_MODE (operands[0])))
       {
-       case MODE_FLOAT:
-        {
-          REAL_VALUE_TYPE r;
-          REAL_VALUE_FROM_CONST_DOUBLE (r, operands[0]);
-          assemble_real (r, GET_MODE (operands[0]), BITS_PER_WORD);
-          break;
-        }
+      case MODE_FLOAT:
+	assemble_real (*CONST_DOUBLE_REAL_VALUE (operands[0]),
+		       GET_MODE (operands[0]), BITS_PER_WORD);
+	break;
       default:
         assemble_integer (operands[0], 16, BITS_PER_WORD, 1);
         break;
@@ -11515,6 +11503,41 @@
      DONE;
   }"
 )
+
+;; movmisalign patterns for HImode and SImode.
+(define_expand "movmisalign<mode>"
+  [(match_operand:HSI 0 "general_operand")
+   (match_operand:HSI 1 "general_operand")]
+  "unaligned_access"
+{
+  /* This pattern is not permitted to fail during expansion: if both arguments
+     are non-registers (e.g. memory := constant), force operand 1 into a
+     register.  */
+  rtx (* gen_unaligned_load)(rtx, rtx);
+  rtx tmp_dest = operands[0];
+  if (!s_register_operand (operands[0], <MODE>mode)
+      && !s_register_operand (operands[1], <MODE>mode))
+    operands[1] = force_reg (<MODE>mode, operands[1]);
+
+  if (<MODE>mode == HImode)
+   {
+    gen_unaligned_load = gen_unaligned_loadhiu;
+    tmp_dest = gen_reg_rtx (SImode);
+   }
+  else
+    gen_unaligned_load = gen_unaligned_loadsi;
+
+  if (MEM_P (operands[1]))
+   {
+    emit_insn (gen_unaligned_load (tmp_dest, operands[1]));
+    if (<MODE>mode == HImode)
+      emit_move_insn (operands[0], gen_lowpart (HImode, tmp_dest));
+   }
+  else
+    emit_insn (gen_unaligned_store<mode> (operands[0], operands[1]));
+
+  DONE;
+})
 
 ;; Vector bits common to IWMMXT and Neon
 (include "vec-common.md")

@@ -242,7 +242,7 @@ Objective-C and Objective-C++ Dialects}.
 -pedantic-errors @gol
 -w  -Wextra  -Wall  -Waddress  -Waggregate-return  @gol
 -Waggressive-loop-optimizations -Warray-bounds -Warray-bounds=@var{n} @gol
--Wbool-compare -Wframe-address @gol
+-Wbool-compare -Wduplicated-cond -Wframe-address @gol
 -Wno-attributes -Wno-builtin-macro-redefined @gol
 -Wc90-c99-compat -Wc99-c11-compat @gol
 -Wc++-compat -Wc++11-compat -Wc++14-compat -Wcast-align  -Wcast-qual  @gol
@@ -430,6 +430,7 @@ Objective-C and Objective-C++ Dialects}.
 -fprofile-use -fprofile-use=@var{path} -fprofile-values @gol
 -fprofile-reorder-functions @gol
 -freciprocal-math -free -frename-registers -freorder-blocks @gol
+-freorder-blocks-algorithm=@var{algorithm} @gol
 -freorder-blocks-and-partition -freorder-functions @gol
 -frerun-cse-after-loop -freschedule-modulo-scheduled-loops @gol
 -frounding-math -fsched2-use-superblocks -fsched-pressure @gol
@@ -817,7 +818,8 @@ Objective-C and Objective-C++ Dialects}.
 -mbranch-cost=@var{num}  -mbranch-likely  -mno-branch-likely @gol
 -mfp-exceptions -mno-fp-exceptions @gol
 -mvr4130-align -mno-vr4130-align -msynci -mno-synci @gol
--mrelax-pic-calls -mno-relax-pic-calls -mmcount-ra-address}
+-mrelax-pic-calls -mno-relax-pic-calls -mmcount-ra-address @gol
+-mframe-header-opt -mno-frame-header-opt}
 
 @emph{MMIX Options}
 @gccoptlist{-mlibfuncs  -mno-libfuncs  -mepsilon  -mno-epsilon  -mabi=gnu @gol
@@ -1084,9 +1086,10 @@ See RS/6000 and PowerPC Options.
 -mrecip -mrecip=@var{opt} @gol
 -mvzeroupper -mprefer-avx128 @gol
 -mmmx  -msse  -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -msse4 -mavx @gol
--mavx2 -mavx512f -mavx512pf -mavx512er -mavx512cd -msha @gol
--maes -mpclmul -mfsgsbase -mrdrnd -mf16c -mfma -mprefetchwt1 @gol
--mclflushopt -mxsavec -mxsaves @gol
+-mavx2 -mavx512f -mavx512pf -mavx512er -mavx512cd -mavx512vl @gol
+-mavx512bw -mavx512dq -mavx512ifma -mavx512vbmi -msha -maes @gol
+-mpclmul -mfsgsbase -mrdrnd -mf16c -mfma @gol
+-mprefetchwt1 -mclflushopt -mxsavec -mxsaves @gol
 -msse4a -m3dnow -mpopcnt -mabm -mbmi -mtbm -mfma4 -mxop -mlzcnt @gol
 -mbmi2 -mfxsr -mxsave -mxsaveopt -mrtm -mlwp -mmpx -mmwaitx -mthreads @gol
 -mno-align-stringops  -minline-all-stringops @gol
@@ -2083,11 +2086,11 @@ regardless of what language your program is in.  For example, you
 might compile a file @file{firstClass.C} like this:
 
 @smallexample
-g++ -g -frepo -O -c firstClass.C
+g++ -g -fstrict-enums -O -c firstClass.C
 @end smallexample
 
 @noindent
-In this example, only @option{-frepo} is an option meant
+In this example, only @option{-fstrict-enums} is an option meant
 only for C++ programs; you can use the other options with any
 language supported by GCC@.
 
@@ -3521,6 +3524,7 @@ Options} and @ref{Objective-C and Objective-C++ Dialect Options}.
 -Wimplicit-int @r{(C and Objective-C only)} @gol
 -Wimplicit-function-declaration @r{(C and Objective-C only)} @gol
 -Wbool-compare  @gol
+-Wduplicated-cond  @gol
 -Wcomment  @gol
 -Wformat   @gol
 -Wmain @r{(only for C/ObjC and unless} @option{-ffreestanding}@r{)}  @gol
@@ -4549,6 +4553,17 @@ always false:
 int n = 5;
 @dots{}
 if ((n > 1) == 2) @{ @dots{} @}
+@end smallexample
+This warning is enabled by @option{-Wall}.
+
+@item -Wduplicated-cond
+@opindex Wno-duplicated-cond
+@opindex Wduplicated-cond
+Warn about duplicated conditions in an if-else-if chain.  For instance,
+warn for the following code:
+@smallexample
+if (p->q != NULL) @{ @dots{} @}
+else if (p->q != NULL) @{ @dots{} @}
 @end smallexample
 This warning is enabled by @option{-Wall}.
 
@@ -7689,6 +7704,7 @@ compilation time.
 -fipa-reference @gol
 -fmerge-constants @gol
 -fmove-loop-invariants @gol
+-freorder-blocks @gol
 -fshrink-wrap @gol
 -fsplit-wide-types @gol
 -ftree-bit-ccp @gol
@@ -7745,7 +7761,8 @@ also turns on the following optimization flags:
 -foptimize-strlen @gol
 -fpartial-inlining @gol
 -fpeephole2 @gol
--freorder-blocks -freorder-blocks-and-partition -freorder-functions @gol
+-freorder-blocks-algorithm=stc @gol
+-freorder-blocks-and-partition -freorder-functions @gol
 -frerun-cse-after-loop  @gol
 -fsched-interblock  -fsched-spec @gol
 -fschedule-insns  -fschedule-insns2 @gol
@@ -7782,8 +7799,8 @@ optimizations designed to reduce code size.
 
 @option{-Os} disables the following optimization flags:
 @gccoptlist{-falign-functions  -falign-jumps  -falign-loops @gol
--falign-labels  -freorder-blocks  -freorder-blocks-and-partition @gol
--fprefetch-loop-arrays}
+-falign-labels  -freorder-blocks  -freorder-blocks-algorithm=stc @gol
+-freorder-blocks-and-partition  -fprefetch-loop-arrays}
 
 @item -Ofast
 @opindex Ofast
@@ -9134,7 +9151,19 @@ The default is @option{-fguess-branch-probability} at levels
 Reorder basic blocks in the compiled function in order to reduce number of
 taken branches and improve code locality.
 
-Enabled at levels @option{-O2}, @option{-O3}.
+Enabled at levels @option{-O}, @option{-O2}, @option{-O3}, @option{-Os}.
+
+@item -freorder-blocks-algorithm=@var{algorithm}
+@opindex freorder-blocks-algorithm
+Use the specified algorithm for basic block reordering.  The
+@var{algorithm} argument can be @samp{simple}, which does not increase
+code size (except sometimes due to secondary effects like alignment),
+or @samp{stc}, the ``software trace cache'' algorithm, which tries to
+put all often executed code together, minimizing the number of branches
+executed by making extra copies of code.
+
+The default is @samp{simple} at levels @option{-O}, @option{-Os}, and
+@samp{stc} at levels @option{-O2}, @option{-O3}.
 
 @item -freorder-blocks-and-partition
 @opindex freorder-blocks-and-partition
@@ -11104,6 +11133,10 @@ automaton.  The default is 50.
 Chunk size of omp schedule for loops parallelized by parloops.  The default
 is 0.
 
+@item max-ssa-name-query-depth
+Maximum depth of recursion when querying properties of SSA names in things
+like fold routines.  One level of recursion corresponds to following a
+use-def chain.
 @end table
 @end table
 
@@ -18080,6 +18113,17 @@ if @var{ra-address} is nonnull.
 
 The default is @option{-mno-mcount-ra-address}.
 
+@item -mframe-header-opt
+@itemx -mno-frame-header-opt
+@opindex mframe-header-opt
+Enable (disable) frame header optimization in the o32 ABI.  When using the
+o32 ABI, calling functions will allocate 16 bytes on the stack for the called
+function to write out register arguments.  When enabled, this optimization
+will suppress the allocation of the frame header if it can be determined that
+it is unused.
+
+This optimization is off by default at all optimization levels.
+
 @end table
 
 @node MMIX Options
@@ -18511,13 +18555,14 @@ Do not generate GP-relative accesses.
 
 @item local
 Generate GP-relative accesses for small data objects that are not 
-external or weak.  Also use GP-relative addressing for objects that
+external, weak, or uninitialized common symbols.  
+Also use GP-relative addressing for objects that
 have been explicitly placed in a small data section via a @code{section}
 attribute.
 
 @item global
 As for @samp{local}, but also generate GP-relative accesses for
-small data objects that are external or weak.  If you use this option,
+small data objects that are external, weak, or common.  If you use this option,
 you must ensure that all parts of your program (including libraries) are
 compiled with the same @option{-G} setting.
 
@@ -22384,6 +22429,13 @@ supersets BMI, BMI2, TBM, F16C, FMA, FMA4, FSGSBASE, AVX, AVX2, XOP, LWP,
 AES, PCL_MUL, CX16, MOVBE, MMX, SSE, SSE2, SSE3, SSE4A, SSSE3, SSE4.1, 
 SSE4.2, ABM and 64-bit instruction set extensions.
 
+@item znver1
+AMD Family 17h core based CPUs with x86-64 instruction set support.  (This
+supersets BMI, BMI2, F16C, FMA, FSGSBASE, AVX, AVX2, ADCX, RDSEED, MWAITX,
+SHA, CLZERO, AES, PCL_MUL, CX16, MOVBE, MMX, SSE, SSE2, SSE3, SSE4A, SSSE3,
+SSE4.1, SSE4.2, ABM, XSAVEC, XSAVES, CLFLUSHOPT, POPCNT, and 64-bit
+instruction set extensions.
+
 @item btver1
 CPUs based on AMD Family 14h cores with x86-64 instruction set support.  (This
 supersets MMX, SSE, SSE2, SSE3, SSSE3, SSE4A, CX16, ABM and 64-bit
@@ -22799,31 +22851,58 @@ preferred alignment to @option{-mpreferred-stack-boundary=2}.
 @opindex msse
 @need 200
 @itemx -msse2
+@opindex msse2
 @need 200
 @itemx -msse3
+@opindex msse3
 @need 200
 @itemx -mssse3
+@opindex mssse3
 @need 200
 @itemx -msse4
+@opindex msse4
 @need 200
 @itemx -msse4a
+@opindex msse4a
 @need 200
 @itemx -msse4.1
+@opindex msse4.1
 @need 200
 @itemx -msse4.2
+@opindex msse4.2
 @need 200
 @itemx -mavx
 @opindex mavx
 @need 200
 @itemx -mavx2
+@opindex mavx2
 @need 200
 @itemx -mavx512f
+@opindex mavx512f
 @need 200
 @itemx -mavx512pf
+@opindex mavx512pf
 @need 200
 @itemx -mavx512er
+@opindex mavx512er
 @need 200
 @itemx -mavx512cd
+@opindex mavx512cd
+@need 200
+@itemx -mavx512vl
+@opindex mavx512vl
+@need 200
+@itemx -mavx512bw
+@opindex mavx512bw
+@need 200
+@itemx -mavx512dq
+@opindex mavx512dq
+@need 200
+@itemx -mavx512ifma
+@opindex mavx512ifma
+@need 200
+@itemx -mavx512vbmi
+@opindex mavx512vbmi
 @need 200
 @itemx -msha
 @opindex msha
@@ -22850,8 +22929,10 @@ preferred alignment to @option{-mpreferred-stack-boundary=2}.
 @opindex mfma
 @need 200
 @itemx -mfma4
+@opindex mfma4
 @need 200
 @itemx -mno-fma4
+@opindex mno-fma4
 @need 200
 @itemx -mprefetchwt1
 @opindex mprefetchwt1
@@ -22908,7 +22989,8 @@ preferred alignment to @option{-mpreferred-stack-boundary=2}.
 These switches enable the use of instructions in the MMX, SSE,
 SSE2, SSE3, SSSE3, SSE4.1, AVX, AVX2, AVX512F, AVX512PF, AVX512ER, AVX512CD,
 SHA, AES, PCLMUL, FSGSBASE, RDRND, F16C, FMA, SSE4A, FMA4, XOP, LWP, ABM,
-BMI, BMI2, FXSR, XSAVE, XSAVEOPT, LZCNT, RTM, MPX, MWAITX or 3DNow!@:
+AVX512VL, AVX512BW, AVX512DQ, AVX512IFMA AVX512VBMI, BMI, BMI2, FXSR,
+XSAVE, XSAVEOPT, LZCNT, RTM, MPX, MWAITX or 3DNow!@:
 extended instruction sets.  Each has a corresponding @option{-mno-} option
 to disable use of these instructions.
 

@@ -1,3 +1,109 @@
+2015-10-09  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/experimental/erase_if.h: Move to ...
+	* include/experimental/bits/erase_if.h: New.
+	* include/experimental/fs_dir.h: Move to ...
+	* include/experimental/bits/fs_dir.h: New.
+	* include/experimental/fs_fwd.h: Move to ...
+	* include/experimental/bits/fs_fwd.h: New.
+	* include/experimental/fs_ops.h: Move to ...
+	* include/experimental/bits/fs_ops.h: New.
+	* include/experimental/fs_path.h: Move to ...
+	* include/experimental/bits/fs_path.h: New.
+	* include/experimental/string_view.tcc: Move to ...
+	* include/experimental/bits/string_view.tcc: New.
+	* include/Makefile.am: Add include/experimental/bits sub-directory.
+	* include/Makefile.in: Regenerate.
+	* include/experimental/filesystem: Adjust includes.
+	* include/experimental/map: Likewise.
+	* include/experimental/set: Likewise.
+	* include/experimental/string_view: Likewise.
+	* include/experimental/unordered_map: Likewise.
+	* include/experimental/unordered_set: Likewise.
+
+2015-10-05  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR 67844.
+	* include/std/tuple (_TC::_NonNestedTuple): Eagerly reject
+	conversions from tuple types same as the target tuple.
+	* testsuite/20_util/tuple/67844.cc: New.
+	* testsuite/20_util/tuple/cons/nested_tuple_construct.cc: Add
+	a missing copyright header.
+
+2015-10-03  Jonathan Wakely  <jwakely@redhat.com>
+
+	* python/libstdcxx/v6/printers.py (StdExpAnyPrinter): Remove support
+	for _Manager_alloc.
+
+	* src/c++98/locale.cc: Fix comment.
+	* src/c++98/locale_init.cc: Likewise.
+
+	* testsuite/21_strings/basic_string/literals/types.cc: Guard use of
+	wchar_t with _GLIBCXX_USE_WCHAR_T.
+	* testsuite/21_strings/basic_string/literals/values.cc: Likewise.
+	* testsuite/21_strings/basic_string/requirements/citerators.cc:
+	Likewise.
+	* testsuite/22_locale/messages/13631.cc: Likewise.
+	* testsuite/experimental/string_view/literals/types.cc: Likewise.
+	* testsuite/experimental/string_view/literals/values.cc: Likewise.
+
+	* src/filesystem/Makefile.am: Add cxx11_abi_sources.
+	* src/filesystem/Makefile.in: Regenerate.
+	* src/filesystem/cow-dir.cc: New.
+	* src/filesystem/cow-ops.cc: New.
+	* src/filesystem/cow-path.cc: New.
+	* src/filesystem/dir.cc: Define macro for new ABI.
+	* src/filesystem/ops.cc: Likewise.
+	* src/filesystem/path.cc: Likewise.
+
+2015-10-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/21_strings/basic_string/allocator/wchar_t/minimal.cc:
+	Minor tweaks to match narrow char version.
+
+	* testsuite/21_strings/basic_string/allocator/char/minimal.cc: Guard
+	explicit instantiation with check for new ABI.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/minimal.cc:
+	Likewise. Use wchar_t as char_type.
+
+	* include/bits/basic_string.h [!_GLIBCXX_USE_CXX11_ABI]
+	(basic_string::front() const, basic_string::back() const): Use
+	noexcept instead of _GLIBCXX_NOEXCEPT macro.
+	(__versa_string::front, __versa_string::back): Likewise.
+
+	* acinclude.m4 (GLIBCXX_ENABLE_DEBUG_FLAGS): Fix comment.
+
+	* include/bits/locale_conv.h [!_GLIBCXX_USE_WCHAR_T]
+	(__do_str_codecvt, __str_codecvt_in, __str_codecvt_out): Enable.
+	* include/experimental/fs_path.h [!_GLIBCXX_USE_WCHAR_T]
+	(path::wstring, path::generic_wstring): Disable.
+	* src/filesystem/path.cc (path::_S_convert_loc)
+	[!_GLIBCXX_USE_WCHAR_T]: Skip conversion.
+	* testsuite/experimental/filesystem/path/assign/assign.cc: Check for
+	wchar_t support.
+	* testsuite/experimental/filesystem/path/concat/strings.cc: Likewise.
+	* testsuite/experimental/filesystem/path/construct/range.cc: Likewise.
+
+	* testsuite/util/testsuite_fs.h (nonexistent_path): Use less generic
+	name for paths. Prefer snprintf to sprintf.
+
+	PR libstdc++/67747
+	* src/filesystem/dir.cc (native_readdir): Remove.
+	(_Dir::advance): Use readdir instead of native_readdir.
+	(recursive_directory_iterator(const path&, directory_options,
+	error_code*)): Use swap instead of reset.
+
+2015-10-01  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/html/manual/errno.html: Add new file.
+
+	* doc/xml/manual/diagnostics.xml: Document use of errno.
+	* doc/html/*: Regenerate.
+	* config/locale/generic/c_locale.cc (_Save_errno): New helper.
+	(__convert_to_v): Use _Save_errno.
+	* include/ext/string_conversions.h (__stoa): Only restore errno when
+	it isn't set to non-zero.
+
 2015-09-30  François Dumont  <fdumont@gcc.gnu.org>
 	    Jonathan Wakely  <jwakely@redhat.com>
 
