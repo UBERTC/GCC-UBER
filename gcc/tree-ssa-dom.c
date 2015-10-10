@@ -1158,7 +1158,7 @@ record_equality (tree x, tree y, class const_and_copies *const_and_copies)
      nonzero.  */
   if (HONOR_SIGNED_ZEROS (x)
       && (TREE_CODE (y) != REAL_CST
-	  || REAL_VALUES_EQUAL (dconst0, TREE_REAL_CST (y))))
+	  || real_equal (&dconst0, &TREE_REAL_CST (y))))
     return;
 
   const_and_copies->record_const_or_copy (x, y, prev_x);
@@ -1840,8 +1840,13 @@ optimize_stmt (basic_block bb, gimple_stmt_iterator si,
 	  edge taken_edge = find_taken_edge (bb, val);
 	  if (taken_edge)
 	    {
-	      /* Delete threads that start at BB.  */
-	      remove_jump_threads_starting_at (bb);
+
+	      /* We need to remove any queued jump threads that
+		 reference outgoing edges from this block.  */
+	      edge_iterator ei;
+	      edge e;
+	      FOR_EACH_EDGE (e, ei, bb->succs)
+		remove_jump_threads_including (e);
 
 	      /* Now clean up the control statement at the end of
 		 BB and remove unexecutable edges.  */

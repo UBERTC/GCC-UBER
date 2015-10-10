@@ -4940,8 +4940,15 @@ check_default_tmpl_args (tree decl, tree parms, bool is_primary,
   else if (is_partial)
     msg = G_("default template arguments may not be used in "
 	     "partial specializations");
-  else
+  else if (current_class_type && CLASSTYPE_IS_TEMPLATE (current_class_type))
     msg = G_("default argument for template parameter for class enclosing %qD");
+  else
+    /* Per [temp.param]/9, "A default template-argument shall not be
+       specified in the template-parameter-lists of the definition of
+       a member of a class template that appears outside of the member's
+       class.", thus if we aren't handling a member of a class template
+       there is no need to examine the parameters.  */
+    return true;
 
   if (current_class_type && TYPE_BEING_DEFINED (current_class_type))
     /* If we're inside a class definition, there's no need to
@@ -10625,6 +10632,8 @@ tsubst_unary_left_fold (tree t, tree args, tsubst_flags_t complain,
                         tree in_decl)
 {
   tree pack = tsubst_fold_expr_pack (t, args, complain, in_decl);
+  if (pack == error_mark_node)
+    return error_mark_node;
   if (TREE_VEC_LENGTH (pack) == 0)
     return expand_empty_fold (t, complain);
   else
@@ -10641,7 +10650,11 @@ tsubst_binary_left_fold (tree t, tree args, tsubst_flags_t complain,
                          tree in_decl)
 {
   tree pack = tsubst_fold_expr_pack (t, args, complain, in_decl);
+  if (pack == error_mark_node)
+    return error_mark_node;
   tree init = tsubst_fold_expr_init (t, args, complain, in_decl);
+  if (init == error_mark_node)
+    return error_mark_node;
 
   tree vec = make_tree_vec (TREE_VEC_LENGTH (pack) + 1);
   TREE_VEC_ELT (vec, 0) = init;
@@ -10682,6 +10695,8 @@ tsubst_unary_right_fold (tree t, tree args, tsubst_flags_t complain,
                          tree in_decl)
 {
   tree pack = tsubst_fold_expr_pack (t, args, complain, in_decl);
+  if (pack == error_mark_node)
+    return error_mark_node;
   if (TREE_VEC_LENGTH (pack) == 0)
     return expand_empty_fold (t, complain);
   else
@@ -10698,7 +10713,11 @@ tsubst_binary_right_fold (tree t, tree args, tsubst_flags_t complain,
                          tree in_decl)
 {
   tree pack = tsubst_fold_expr_pack (t, args, complain, in_decl);
+  if (pack == error_mark_node)
+    return error_mark_node;
   tree init = tsubst_fold_expr_init (t, args, complain, in_decl);
+  if (init == error_mark_node)
+    return error_mark_node;
 
   int n = TREE_VEC_LENGTH (pack);
   tree vec = make_tree_vec (n + 1);

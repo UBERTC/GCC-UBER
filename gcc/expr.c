@@ -3626,11 +3626,11 @@ compress_float_constant (rtx x, rtx y)
   machine_mode dstmode = GET_MODE (x);
   machine_mode orig_srcmode = GET_MODE (y);
   machine_mode srcmode;
-  REAL_VALUE_TYPE r;
+  const REAL_VALUE_TYPE *r;
   int oldcost, newcost;
   bool speed = optimize_insn_for_speed_p ();
 
-  REAL_VALUE_FROM_CONST_DOUBLE (r, y);
+  r = CONST_DOUBLE_REAL_VALUE (y);
 
   if (targetm.legitimate_constant_p (dstmode, y))
     oldcost = set_src_cost (y, orig_srcmode, speed);
@@ -3651,10 +3651,10 @@ compress_float_constant (rtx x, rtx y)
 	continue;
 
       /* Skip if the narrowed value isn't exact.  */
-      if (! exact_real_truncate (srcmode, &r))
+      if (! exact_real_truncate (srcmode, r))
 	continue;
 
-      trunc_y = CONST_DOUBLE_FROM_REAL_VALUE (r, srcmode);
+      trunc_y = const_double_from_real_value (*r, srcmode);
 
       if (targetm.legitimate_constant_p (srcmode, trunc_y))
 	{
@@ -5424,6 +5424,14 @@ store_expr_with_bounds (tree exp, rtx target, int call_param_p,
       && GET_MODE (target) != TYPE_MODE (TREE_TYPE (exp)))
     temp = convert_modes (GET_MODE (target), TYPE_MODE (TREE_TYPE (exp)),
 			  temp, TYPE_UNSIGNED (TREE_TYPE (exp)));
+
+  /* We allow move between structures of same size but different mode.
+     If source is in memory and the mode differs, simply change the memory.  */
+  if (GET_MODE (temp) == BLKmode && GET_MODE (target) != BLKmode)
+    {
+      gcc_assert (MEM_P (temp));
+      temp = adjust_address_nv (temp, GET_MODE (target), 0);
+    }
 
   /* If value was not generated in the target, store it there.
      Convert the value to TARGET's type first if necessary and emit the
@@ -9708,7 +9716,7 @@ expand_expr_real_1 (tree exp, rtx target, machine_mode tmode,
 	 many insns, so we'd end up copying it to a register in any case.
 
 	 Now, we do the copying in expand_binop, if appropriate.  */
-      return CONST_DOUBLE_FROM_REAL_VALUE (TREE_REAL_CST (exp),
+      return const_double_from_real_value (TREE_REAL_CST (exp),
 					   TYPE_MODE (TREE_TYPE (exp)));
 
     case FIXED_CST:
@@ -11339,7 +11347,7 @@ const_vector_from_tree (tree exp)
       elt = VECTOR_CST_ELT (exp, i);
 
       if (TREE_CODE (elt) == REAL_CST)
-	RTVEC_ELT (v, i) = CONST_DOUBLE_FROM_REAL_VALUE (TREE_REAL_CST (elt),
+	RTVEC_ELT (v, i) = const_double_from_real_value (TREE_REAL_CST (elt),
 							 inner);
       else if (TREE_CODE (elt) == FIXED_CST)
 	RTVEC_ELT (v, i) = CONST_FIXED_FROM_FIXED_VALUE (TREE_FIXED_CST (elt),

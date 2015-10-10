@@ -1,3 +1,126 @@
+2015-10-08  Jason Merrill  <jason@redhat.com>
+
+	* cp-tree.h (SIMPLE_TARGET_EXPR_P): New.
+	* init.c (get_nsdmi): Use it.
+	* typeck2.c (massage_init_elt): Use it.
+
+2015-10-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67557
+	* call.c (is_base_field_ref): New.
+	(unsafe_copy_elision_p): New.
+	(build_over_call): Use it.
+
+2015-10-07  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/67867
+	* search.c (accessible_p): Initialize OTYPE to NULL_TREE.
+
+2015-10-07  Marek Polacek  <polacek@redhat.com>
+
+	* cp-gimplify.c (genericize_if_stmt): Use protected_set_expr_location.
+	(genericize_cp_loop): Likewise.
+	* decl.c (cxx_maybe_build_cleanup): Likewise.
+	* parser.c (cp_parser_binary_expression): Likewise.
+	(cp_parser_omp_for_loop): Likewise.
+	(cp_parser_omp_construct): Likewise.
+	* semantics.c (finish_transaction_stmt): Likewise.
+	(build_transaction_expr): Likewise.
+
+2015-10-06  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67810
+	* parser.c (cp_parser_fold_expr_p): Remove.
+	(is_binary_op): New.
+	(cp_parser_fold_expression): Take LHS as parameter.
+	(cp_parser_primary_expression): Call it after parsing an expression.
+	(cp_parser_binary_expression, cp_parser_assignment_operator_opt)
+	(cp_parser_expression): Ignore an operator followed by '...'.
+	(is_binary_op): New.
+	* pt.c (tsubst_unary_left_fold, tsubst_binary_left_fold)
+	(tsubst_unary_right_fold, tsubst_binary_right_fold): Handle errors.
+
+2015-10-06  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/67863
+	* call.c (build_conditional_expr_1): Build the COND_EXPR with
+	a location.
+
+2015-10-05  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/53856
+	* pt.c (check_default_tmpl_args): Per [temp.param]/9, do not
+	reject default template arguments in out of class definitions
+	of members of non-template classes.
+
+2015-10-05  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* tree.c (cp_tree_equal): Use real_equal instead of
+	REAL_VALUES_EQUAL.
+
+2015-10-04  Jason Merrill  <jason@redhat.com>
+
+	Implement N4514, C++ Extensions for Transactional Memory.
+	* cp-tree.h (struct cp_declarator): Add tx_qualifier field.
+	(BCS_NORMAL, BCS_TRANSACTION): New enumerators.
+	* lex.c (init_reswords): Limit TM kewords to -fgnu-tm.
+	* parser.c (cp_lexer_get_preprocessor_token): Fix @synchronized.
+	(make_call_declarator): Take tx_qualifier.
+	(cp_parser_tx_qualifier_opt): New.
+	(cp_parser_lambda_declarator_opt): Use it.
+	(cp_parser_direct_declarator): Likewise.
+	(cp_parser_statement): Handle atomic_noexcept, atomic_cancel.
+	(cp_parser_compound_statement): Change in_try parameter to bcs_flags.
+	(cp_parser_std_attribute): Map optimize_for_synchronized to
+	transaction_callable.
+	(cp_parser_transaction): Take the token.  Handle atomic_noexcept.
+	* lambda.c (maybe_add_lambda_conv_op): Handle transaction-safety.
+	* call.c (enum conversion_kind): Add ck_tsafe.
+	(standard_conversion): Handle transaction-safety conversion.
+	(convert_like_real, resolve_address_of_overloaded_function): Likewise.
+	(check_methods): Diagnose transaction_safe_dynamic on non-virtual
+	function.
+	(look_for_tm_attr_overrides): Don't inherit transaction_safe_dynamic.
+	* cvt.c (tx_safe_fn_type_p, tx_unsafe_fn_variant)
+	(can_convert_tx_safety): New.
+	* typeck.c (composite_pointer_type): Handle transaction-safety.
+	* name-lookup.h (enum scope_kind): Add sk_transaction.
+	* name-lookup.c (begin_scope): Handle it.
+	* semantics.c (begin_compound_stmt): Pass it.
+	* decl.c (check_previous_goto_1): Check it.
+	(struct named_label_entry): Add in_transaction_scope.
+	(poplevel_named_label_1): Set it.
+	(check_goto): Check it.
+	(duplicate_decls): A specialization can be transaction_safe
+	independently of its template.
+	(grokdeclarator): Handle tx-qualifier.
+	* rtti.c (ptr_initializer): Handle transaction-safe.
+	* search.c (check_final_overrider): Check transaction_safe_dynamic.
+	Don't check transaction_safe.
+	* mangle.c (write_function_type): Mangle transaction_safe here.
+	(write_CV_qualifiers_for_type): Not here.
+	(write_type): Preserve transaction_safe when stripping attributes.
+	* error.c (dump_type_suffix): Print transaction_safe.
+
+2015-10-02  Marek Polacek  <polacek@redhat.com>
+
+	PR c/64249
+	* parser.c (cp_parser_statement): Add CHAIN parameter and pass it
+	down to cp_parser_selection_statement.
+	(cp_parser_selection_statement): Add CHAIN parameter.  Add code to
+	warn about duplicated if-else-if conditions.
+	(cp_parser_implicitly_scoped_statement): Add CHAIN parameter and pass
+	it down to cp_parser_statement.
+
+2015-10-01  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR c++/54430
+	* name-lookup.c (push_binding): Make non-static.
+	* name-lookup.h (push_binding): Declare it.
+	* parser.c (cp_parser_range_for): Use it, get the range
+	declaration away from the scope until the range expression
+	has been parsed, then restore the declaration.
+
 2015-09-23  Ville Voutilainen  <ville.voutilainen@gmail.com>
 
 	Fix small typos in the coding rule enforcement warnings.

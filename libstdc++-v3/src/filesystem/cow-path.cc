@@ -1,4 +1,4 @@
-// <experimental/erase_if.h> -*- C++ -*-
+// Class filesystem::path -*- C++ -*-
 
 // Copyright (C) 2015 Free Software Foundation, Inc.
 //
@@ -22,49 +22,5 @@
 // see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 // <http://www.gnu.org/licenses/>.
 
-/** @file experimental/erase_if.h
- *  This is an internal header file, included by other library headers.
- *  Do not attempt to use it directly.
- */
-
-#ifndef _GLIBCXX_EXPERIMENTAL_ERASE_IF_H
-#define _GLIBCXX_EXPERIMENTAL_ERASE_IF_H 1
-
-#pragma GCC system_header
-
-#if __cplusplus <= 201103L
-# include <bits/c++14_warning.h>
-#else
-
-namespace std
-{
-namespace experimental
-{
-inline namespace fundamentals_v2
-{
-
-  namespace __detail
-  {
-    template<typename _Container, typename _Predicate>
-      void
-      __erase_nodes_if(_Container& __cont, _Predicate __pred)
-      {
-	for (auto __iter = __cont.begin(), __last = __cont.end();
-	     __iter != __last;)
-	{
-	  if (__pred(*__iter))
-	    __iter = __cont.erase(__iter);
-	  else
-	    ++__iter;
-	}
-      }
-  }
-
-
-} // inline namespace fundamentals_v2
-} // namespace experimental
-} // namespace std
-
-#endif // C++14
-
-#endif // _GLIBCXX_EXPERIMENTAL_ERASE_IF_H
+#define _GLIBCXX_USE_CXX11_ABI 0
+#include "path.cc"

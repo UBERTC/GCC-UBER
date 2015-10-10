@@ -8011,10 +8011,8 @@ label:
 {
   int endian = WORDS_BIG_ENDIAN ? 1 : 0;
   long values[2];
-  REAL_VALUE_TYPE value;
 
-  REAL_VALUE_FROM_CONST_DOUBLE (value, operands[1]);
-  REAL_VALUE_TO_TARGET_DOUBLE (value, values);
+  REAL_VALUE_TO_TARGET_DOUBLE (*CONST_DOUBLE_REAL_VALUE (operands[1]), values);
 
   if (HOST_BITS_PER_WIDE_INT >= 64)
     operands[2] = immed_double_const ((unsigned long) values[endian]
@@ -8718,10 +8716,8 @@ label:
   [(set (match_dup 3) (match_dup 2))]
 {
   long values;
-  REAL_VALUE_TYPE value;
 
-  REAL_VALUE_FROM_CONST_DOUBLE (value, operands[1]);
-  REAL_VALUE_TO_TARGET_SINGLE (value, values);
+  REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (operands[1]), values);
   operands[2] = GEN_INT (values);
 
   operands[3] = gen_rtx_REG (DImode, true_regnum (operands[0]));
@@ -12454,11 +12450,8 @@ label:
  ""
 {
   if (operands[1] != const0_rtx)
-    {
-      REAL_VALUE_TYPE d;
-      REAL_VALUE_FROM_CONST_DOUBLE (d, operands[0]);
-      assemble_real (d, SFmode, GET_MODE_ALIGNMENT (SFmode));
-    }
+    assemble_real (*CONST_DOUBLE_REAL_VALUE (operands[0]),
+		   SFmode, GET_MODE_ALIGNMENT (SFmode));
   return "";
 }
  [(set_attr "length" "4")
@@ -12472,11 +12465,8 @@ label:
  ""
 {
   if (operands[1] != const0_rtx)
-    {
-      REAL_VALUE_TYPE d;
-      REAL_VALUE_FROM_CONST_DOUBLE (d, operands[0]);
-      assemble_real (d, DFmode, GET_MODE_ALIGNMENT (DFmode));
-    }
+    assemble_real (*CONST_DOUBLE_REAL_VALUE (operands[0]),
+		   DFmode, GET_MODE_ALIGNMENT (DFmode));
   return "";
 }
  [(set_attr "length" "8")
@@ -14858,6 +14848,46 @@ label:
   
   emit_insn (gen_tstsi_t (operands[2],
 			  gen_rtx_REG (SImode, (REGNO (operands[1])))));
+})
+
+;; This is not a peephole, but it's here because it's actually supposed
+;; to be one.  It tries to convert a sequence such as
+;;	movt	r2	->	movt	r2
+;;	movt	r13		mov	r2,r13
+;; This gives the schduler a bit more freedom to hoist a following
+;; comparison insn.  Moreover, it the reg-reg mov insn is MT group which has
+;; better chances for parallel execution.
+;; We can do this with a peephole2 pattern, but then the cprop_hardreg
+;; pass will revert the change.  See also PR 64331.
+;; Thus do it manually in one of the split passes after register allocation.
+;; Sometimes the cprop_hardreg pass might also eliminate the reg-reg copy.
+(define_split
+  [(set (match_operand:SI 0 "arith_reg_dest")
+	(match_operand:SI 1 "t_reg_operand"))]
+  "TARGET_SH1 && reload_completed"
+  [(set (match_dup 0) (match_dup 1))]
+{
+  rtx t_reg = get_t_reg_rtx ();
+
+  for (rtx_insn* i = prev_nonnote_insn_bb (curr_insn); i != NULL;
+       i = prev_nonnote_insn_bb (i))
+    {
+      if (!INSN_P (i) || DEBUG_INSN_P (i))
+	continue;
+
+      if (modified_in_p (t_reg, i) || BARRIER_P (i))
+	FAIL;
+
+      if (sh_is_movt_insn (i))
+	{
+	  rtx r = sh_movt_set_dest (i);
+	  if (!modified_between_p (r, i, curr_insn))
+	    {
+	      operands[1] = r;
+	      break;
+	   }
+	}
+    }
 })
 
 (define_peephole

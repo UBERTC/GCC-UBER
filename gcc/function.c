@@ -156,9 +156,7 @@ static void do_use_return_reg (rtx, void *);
 /* Stack of nested functions.  */
 /* Keep track of the cfun stack.  */
 
-typedef struct function *function_p;
-
-static vec<function_p> function_context_stack;
+static vec<function *> function_context_stack;
 
 /* Save the current context for compilation of a nested function.
    This is called from language-specific code.  */
@@ -4745,7 +4743,7 @@ set_cfun (struct function *new_cfun)
 
 /* Initialized with NOGC, making this poisonous to the garbage collector.  */
 
-static vec<function_p> cfun_stack;
+static vec<function *> cfun_stack;
 
 /* Push the current cfun onto the stack, and set cfun to new_cfun.  Also set
    current_function_decl accordingly.  */
@@ -5448,18 +5446,6 @@ expand_function_end (void)
 			      decl_rtl);
 	      shift_return_value (GET_MODE (decl_rtl), true, real_decl_rtl);
 	    }
-	  /* If a named return value dumped decl_return to memory, then
-	     we may need to re-do the PROMOTE_MODE signed/unsigned
-	     extension.  */
-	  else if (GET_MODE (real_decl_rtl) != GET_MODE (decl_rtl))
-	    {
-	      int unsignedp = TYPE_UNSIGNED (TREE_TYPE (decl_result));
-	      promote_function_mode (TREE_TYPE (decl_result),
-				     GET_MODE (decl_rtl), &unsignedp,
-				     TREE_TYPE (current_function_decl), 1);
-
-	      convert_move (real_decl_rtl, decl_rtl, unsignedp);
-	    }
 	  else if (GET_CODE (real_decl_rtl) == PARALLEL)
 	    {
 	      /* If expand_function_start has created a PARALLEL for decl_rtl,
@@ -5489,6 +5475,18 @@ expand_function_end (void)
 
 	      emit_move_insn (tmp, decl_rtl);
 	      emit_move_insn (real_decl_rtl, tmp);
+	    }
+	  /* If a named return value dumped decl_return to memory, then
+	     we may need to re-do the PROMOTE_MODE signed/unsigned
+	     extension.  */
+	  else if (GET_MODE (real_decl_rtl) != GET_MODE (decl_rtl))
+	    {
+	      int unsignedp = TYPE_UNSIGNED (TREE_TYPE (decl_result));
+	      promote_function_mode (TREE_TYPE (decl_result),
+				     GET_MODE (decl_rtl), &unsignedp,
+				     TREE_TYPE (current_function_decl), 1);
+
+	      convert_move (real_decl_rtl, decl_rtl, unsignedp);
 	    }
 	  else
 	    emit_move_insn (real_decl_rtl, decl_rtl);

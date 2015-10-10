@@ -1140,12 +1140,12 @@ representable_as_half_series_p (REAL_VALUE_TYPE c, unsigned n,
       REAL_VALUE_TYPE res;
 
       /* If something inexact happened bail out now.  */
-      if (REAL_ARITHMETIC (res, MINUS_EXPR, remainder, factor))
+      if (real_arithmetic (&res, MINUS_EXPR, &remainder, &factor))
 	return false;
 
       /* We have hit zero.  The number is representable as a sum
          of powers of 0.5.  */
-      if (REAL_VALUES_EQUAL (res, dconst0))
+      if (real_equal (&res, &dconst0))
 	{
 	  info->factors[i] = true;
 	  info->deepest = i + 1;
@@ -1160,7 +1160,7 @@ representable_as_half_series_p (REAL_VALUE_TYPE c, unsigned n,
       else
 	info->factors[i] = false;
 
-      REAL_ARITHMETIC (factor, MULT_EXPR, factor, dconsthalf);
+      real_arithmetic (&factor, MULT_EXPR, &factor, &dconsthalf);
     }
   return false;
 }
@@ -1317,7 +1317,7 @@ expand_pow_as_sqrts (gimple_stmt_iterator *gsi, location_t loc,
   REAL_VALUE_TYPE frac_part;
 
   real_floor (&whole_part, mode, &exp);
-  REAL_ARITHMETIC (frac_part, MINUS_EXPR, exp, whole_part);
+  real_arithmetic (&frac_part, MINUS_EXPR, &exp, &whole_part);
 
 
   REAL_VALUE_TYPE ceil_whole = dconst0;
@@ -1326,7 +1326,7 @@ expand_pow_as_sqrts (gimple_stmt_iterator *gsi, location_t loc,
   if (neg_exp)
     {
       real_ceil (&ceil_whole, mode, &exp);
-      REAL_ARITHMETIC (ceil_fract, MINUS_EXPR, ceil_whole, exp);
+      real_arithmetic (&ceil_fract, MINUS_EXPR, &ceil_whole, &exp);
     }
 
   if (!representable_as_half_series_p (frac_part, max_depth, &synth_info))
@@ -1509,7 +1509,7 @@ gimple_expand_builtin_pow (gimple_stmt_iterator *gsi, location_t loc,
      unless signed zeros must be maintained.  pow(-0,0.5) = +0, while
      sqrt(-0) = -0.  */
   if (sqrtfn
-      && REAL_VALUES_EQUAL (c, dconsthalf)
+      && real_equal (&c, &dconsthalf)
       && !HONOR_SIGNED_ZEROS (mode))
     return build_and_insert_call (gsi, loc, sqrtfn, arg0);
 
@@ -1526,8 +1526,8 @@ gimple_expand_builtin_pow (gimple_stmt_iterator *gsi, location_t loc,
 
   if (flag_unsafe_math_optimizations
       && cbrtfn
-      && (gimple_val_nonnegative_real_p (arg0) || !HONOR_NANS (mode))
-      && REAL_VALUES_EQUAL (c, dconst1_3))
+      && (!HONOR_NANS (mode) || tree_expr_nonnegative_p (arg0))
+      && real_equal (&c, &dconst1_3))
     return build_and_insert_call (gsi, loc, cbrtfn, arg0);
   
   /* Optimize pow(x,1./6.) = cbrt(sqrt(x)).  Don't do this optimization
@@ -1538,10 +1538,10 @@ gimple_expand_builtin_pow (gimple_stmt_iterator *gsi, location_t loc,
   if (flag_unsafe_math_optimizations
       && sqrtfn
       && cbrtfn
-      && (gimple_val_nonnegative_real_p (arg0) || !HONOR_NANS (mode))
+      && (!HONOR_NANS (mode) || tree_expr_nonnegative_p (arg0))
       && speed_p
       && hw_sqrt_exists
-      && REAL_VALUES_EQUAL (c, dconst1_6))
+      && real_equal (&c, &dconst1_6))
     {
       /* sqrt(x)  */
       sqrt_arg0 = build_and_insert_call (gsi, loc, sqrtfn, arg0);
@@ -1556,7 +1556,7 @@ gimple_expand_builtin_pow (gimple_stmt_iterator *gsi, location_t loc,
   if (flag_unsafe_math_optimizations
       && sqrtfn
       && hw_sqrt_exists
-      && (speed_p || REAL_VALUES_EQUAL (c, dconst1_4))
+      && (speed_p || real_equal (&c, &dconst1_4))
       && !HONOR_SIGNED_ZEROS (mode))
     {
       unsigned int max_depth = speed_p
@@ -1594,7 +1594,7 @@ gimple_expand_builtin_pow (gimple_stmt_iterator *gsi, location_t loc,
 
   if (flag_unsafe_math_optimizations
       && cbrtfn
-      && (gimple_val_nonnegative_real_p (arg0) || !HONOR_NANS (mode))
+      && (!HONOR_NANS (mode) || tree_expr_nonnegative_p (arg0))
       && real_identical (&c2, &c)
       && !c2_is_int
       && optimize_function_for_speed_p (cfun)
@@ -3589,9 +3589,9 @@ pass_optimize_widening_mul::execute (function *fun)
 		      case BUILT_IN_POW:
 		      case BUILT_IN_POWL:
 			if (TREE_CODE (gimple_call_arg (stmt, 1)) == REAL_CST
-			    && REAL_VALUES_EQUAL
-			         (TREE_REAL_CST (gimple_call_arg (stmt, 1)),
-				  dconst2)
+			    && real_equal
+			         (&TREE_REAL_CST (gimple_call_arg (stmt, 1)),
+				  &dconst2)
 			    && convert_mult_to_fma (stmt,
 						    gimple_call_arg (stmt, 0),
 						    gimple_call_arg (stmt, 0)))

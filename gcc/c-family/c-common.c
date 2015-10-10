@@ -594,6 +594,12 @@ const struct c_common_resword c_common_reswords[] =
   { "wchar_t",		RID_WCHAR,	D_CXXONLY },
   { "while",		RID_WHILE,	0 },
 
+  /* C++ transactional memory.  */
+  { "synchronized",	RID_SYNCHRONIZED, D_CXX_OBJC | D_TRANSMEM },
+  { "atomic_noexcept",	RID_ATOMIC_NOEXCEPT, D_CXXONLY | D_TRANSMEM },
+  { "atomic_cancel",	RID_ATOMIC_CANCEL, D_CXXONLY | D_TRANSMEM },
+  { "atomic_commit",	RID_TRANSACTION_ATOMIC, D_CXXONLY | D_TRANSMEM },
+
   /* Concepts-related keywords */
   { "concept",		RID_CONCEPT,	D_CXX_CONCEPTS_FLAGS | D_CXXWARN },
   { "requires", 	RID_REQUIRES,	D_CXX_CONCEPTS_FLAGS | D_CXXWARN },
@@ -609,7 +615,6 @@ const struct c_common_resword c_common_reswords[] =
   { "protocol",		RID_AT_PROTOCOL,	D_OBJC },
   { "selector",		RID_AT_SELECTOR,	D_OBJC },
   { "finally",		RID_AT_FINALLY,		D_OBJC },
-  { "synchronized",	RID_AT_SYNCHRONIZED,	D_OBJC },
   { "optional",		RID_AT_OPTIONAL,	D_OBJC },
   { "required",		RID_AT_REQUIRED,	D_OBJC },
   { "property",		RID_AT_PROPERTY,	D_OBJC },
@@ -728,8 +733,10 @@ const struct attribute_spec c_common_attribute_table[] =
   { "transaction_callable",   0, 0, false, true,  false,
 			      handle_tm_attribute, false },
   { "transaction_unsafe",     0, 0, false, true,  false,
-			      handle_tm_attribute, false },
+			      handle_tm_attribute, true },
   { "transaction_safe",       0, 0, false, true,  false,
+			      handle_tm_attribute, true },
+  { "transaction_safe_dynamic", 0, 0, true, false,  false,
 			      handle_tm_attribute, false },
   { "transaction_may_cancel_outer", 0, 0, false, true, false,
 			      handle_tm_attribute, false },
@@ -9136,6 +9143,23 @@ handle_tm_attribute (tree *node, tree name, tree args,
       }
       break;
 
+    case FUNCTION_DECL:
+      {
+	/* transaction_safe_dynamic goes on the FUNCTION_DECL, but we also
+	   want to set transaction_safe on the type.  */
+	gcc_assert (is_attribute_p ("transaction_safe_dynamic", name));
+	if (!TYPE_P (DECL_CONTEXT (*node)))
+	  error_at (DECL_SOURCE_LOCATION (*node),
+		    "%<transaction_safe_dynamic%> may only be specified for "
+		    "a virtual function");
+	*no_add_attrs = false;
+	decl_attributes (&TREE_TYPE (*node),
+			 build_tree_list (get_identifier ("transaction_safe"),
+					  NULL_TREE),
+			 0);
+	break;
+      }
+
     case POINTER_TYPE:
       {
 	enum tree_code subcode = TREE_CODE (TREE_TYPE (*node));
@@ -12919,6 +12943,47 @@ reject_gcc_builtin (const_tree expr, location_t loc /* = UNKNOWN_LOCATION */)
     }
 
   return false;
+}
+
+/* If we're creating an if-else-if condition chain, first see if we
+   already have this COND in the CHAIN.  If so, warn and don't add COND
+   into the vector, otherwise add the COND there.  LOC is the location
+   of COND.  */
+
+void
+warn_duplicated_cond_add_or_warn (location_t loc, tree cond, vec<tree> **chain)
+{
+  /* No chain has been created yet.  Do nothing.  */
+  if (*chain == NULL)
+    return;
+
+  if (TREE_SIDE_EFFECTS (cond))
+    {
+      /* Uh-oh!  This condition has a side-effect, thus invalidates
+	 the whole chain.  */
+      delete *chain;
+      *chain = NULL;
+      return;
+    }
+
+  unsigned int ix;
+  tree t;
+  bool found = false;
+  FOR_EACH_VEC_ELT (**chain, ix, t)
+    if (operand_equal_p (cond, t, 0))
+      {
+	if (warning_at (loc, OPT_Wduplicated_cond,
+			"duplicated %<if%> condition"))
+	  inform (EXPR_LOCATION (t), "previously used here");
+	found = true;
+	break;
+      }
+
+  if (!found
+      && !CONSTANT_CLASS_P (cond)
+      /* Don't infinitely grow the chain.  */
+      && (*chain)->length () < 512)
+    (*chain)->safe_push (cond);
 }
 
 #include "gt-c-family-c-common.h"

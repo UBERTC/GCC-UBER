@@ -912,12 +912,18 @@ resolve_entries (gfc_namespace *ns)
 
 /* Resolve common variables.  */
 static void
-resolve_common_vars (gfc_symbol *sym, bool named_common)
+resolve_common_vars (gfc_common_head *common_block, bool named_common)
 {
-  gfc_symbol *csym = sym;
+  gfc_symbol *csym = common_block->head;
 
   for (; csym; csym = csym->common_next)
     {
+      /* gfc_add_in_common may have been called before, but the reported errors
+	 have been ignored to continue parsing.
+	 We do the checks again here.  */
+      if (!csym->attr.use_assoc)
+	gfc_add_in_common (&csym->attr, csym->name, &common_block->where);
+
       if (csym->value || csym->attr.data)
 	{
 	  if (!csym->ns->is_block_data)
@@ -972,7 +978,7 @@ resolve_common_blocks (gfc_symtree *common_root)
   if (common_root->right)
     resolve_common_blocks (common_root->right);
 
-  resolve_common_vars (common_root->n.common->head, true);
+  resolve_common_vars (common_root->n.common, true);
 
   /* The common name is a global name - in Fortran 2003 also if it has a
      C binding name, since Fortran 2008 only the C binding name is a global
@@ -4537,10 +4543,15 @@ gfc_resolve_substring_charlen (gfc_expr *e)
 {
   gfc_ref *char_ref;
   gfc_expr *start, *end;
+  gfc_typespec *ts = NULL;
 
   for (char_ref = e->ref; char_ref; char_ref = char_ref->next)
-    if (char_ref->type == REF_SUBSTRING)
-      break;
+    {
+      if (char_ref->type == REF_SUBSTRING)
+      	break;
+      if (char_ref->type == REF_COMPONENT)
+	ts = &char_ref->u.c.component->ts;
+    }
 
   if (!char_ref)
     return;
@@ -4570,7 +4581,11 @@ gfc_resolve_substring_charlen (gfc_expr *e)
   if (char_ref->u.ss.end)
     end = gfc_copy_expr (char_ref->u.ss.end);
   else if (e->expr_type == EXPR_VARIABLE)
-    end = gfc_copy_expr (e->symtree->n.sym->ts.u.cl->length);
+    {
+      if (!ts)
+	ts = &e->symtree->n.sym->ts;
+      end = gfc_copy_expr (ts->u.cl->length);
+    }
   else
     end = NULL;
 
@@ -15289,7 +15304,7 @@ resolve_types (gfc_namespace *ns)
 
   resolve_entries (ns);
 
-  resolve_common_vars (ns->blank_common.head, false);
+  resolve_common_vars (&ns->blank_common, false);
   resolve_common_blocks (ns->common_root);
 
   resolve_contained_functions (ns);

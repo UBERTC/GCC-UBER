@@ -68,7 +68,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "cgraph.h"
 #include "tree-chkp.h"
 #include "rtl-chkp.h"
-#include "gomp-constants.h"
 
 
 static tree do_mpc_arg1 (tree, tree, int (*)(mpc_ptr, mpc_srcptr, mpc_rnd_t));
@@ -159,8 +158,6 @@ static bool integer_valued_real_p (tree);
 static tree fold_trunc_transparent_mathfn (location_t, tree, tree);
 static rtx expand_builtin_fabs (tree, rtx, rtx);
 static rtx expand_builtin_signbit (tree, rtx);
-static tree fold_builtin_sqrt (location_t, tree, tree);
-static tree fold_builtin_cbrt (location_t, tree, tree);
 static tree fold_builtin_pow (location_t, tree, tree, tree, tree);
 static tree fold_builtin_powi (location_t, tree, tree, tree, tree);
 static tree fold_builtin_cos (location_t, tree, tree, tree);
@@ -7593,12 +7590,10 @@ fold_builtin_cabs (location_t loc, tree arg, tree type, tree fndecl)
       if (flag_unsafe_math_optimizations
 	  && operand_equal_p (real, imag, OEP_PURE_SAME))
         {
-	  const REAL_VALUE_TYPE sqrt2_trunc
-	    = real_value_truncate (TYPE_MODE (type), dconst_sqrt2 ());
 	  STRIP_NOPS (real);
 	  return fold_build2_loc (loc, MULT_EXPR, type,
-			      fold_build1_loc (loc, ABS_EXPR, type, real),
-			      build_real (type, sqrt2_trunc));
+				  fold_build1_loc (loc, ABS_EXPR, type, real),
+				  build_real_truncate (type, dconst_sqrt2 ()));
 	}
     }
 
@@ -7706,171 +7701,6 @@ fold_builtin_cproj (location_t loc, tree arg, tree type)
 						     (imag)->sign), arg);
     }
 
-  return NULL_TREE;
-}
-
-/* Fold a builtin function call to sqrt, sqrtf, or sqrtl with argument ARG.
-   Return NULL_TREE if no simplification can be made.  */
-
-static tree
-fold_builtin_sqrt (location_t loc, tree arg, tree type)
-{
-
-  enum built_in_function fcode;
-  tree res;
-
-  if (!validate_arg (arg, REAL_TYPE))
-    return NULL_TREE;
-
-  /* Calculate the result when the argument is a constant.  */
-  if ((res = do_mpfr_arg1 (arg, type, mpfr_sqrt, &dconst0, NULL, true)))
-    return res;
-
-  /* Optimize sqrt(expN(x)) = expN(x*0.5).  */
-  fcode = builtin_mathfn_code (arg);
-  if (flag_unsafe_math_optimizations && BUILTIN_EXPONENT_P (fcode))
-    {
-      tree expfn = TREE_OPERAND (CALL_EXPR_FN (arg), 0);
-      arg = fold_build2_loc (loc, MULT_EXPR, type,
-			 CALL_EXPR_ARG (arg, 0),
-			 build_real (type, dconsthalf));
-      return build_call_expr_loc (loc, expfn, 1, arg);
-    }
-
-  /* Optimize sqrt(Nroot(x)) -> pow(x,1/(2*N)).  */
-  if (flag_unsafe_math_optimizations && BUILTIN_ROOT_P (fcode))
-    {
-      tree powfn = mathfn_built_in (type, BUILT_IN_POW);
-
-      if (powfn)
-	{
-	  tree arg0 = CALL_EXPR_ARG (arg, 0);
-	  tree tree_root;
-	  /* The inner root was either sqrt or cbrt.  */
-	  /* This was a conditional expression but it triggered a bug
-	     in Sun C 5.5.  */
-	  REAL_VALUE_TYPE dconstroot;
-	  if (BUILTIN_SQRT_P (fcode))
-	    dconstroot = dconsthalf;
-	  else
-	    dconstroot = dconst_third ();
-
-	  /* Adjust for the outer root.  */
-	  SET_REAL_EXP (&dconstroot, REAL_EXP (&dconstroot) - 1);
-	  dconstroot = real_value_truncate (TYPE_MODE (type), dconstroot);
-	  tree_root = build_real (type, dconstroot);
-	  return build_call_expr_loc (loc, powfn, 2, arg0, tree_root);
-	}
-    }
-
-  /* Optimize sqrt(pow(x,y)) = pow(|x|,y*0.5).  */
-  if (flag_unsafe_math_optimizations
-      && (fcode == BUILT_IN_POW
-	  || fcode == BUILT_IN_POWF
-	  || fcode == BUILT_IN_POWL))
-    {
-      tree powfn = TREE_OPERAND (CALL_EXPR_FN (arg), 0);
-      tree arg0 = CALL_EXPR_ARG (arg, 0);
-      tree arg1 = CALL_EXPR_ARG (arg, 1);
-      tree narg1;
-      if (!tree_expr_nonnegative_p (arg0))
-	arg0 = build1 (ABS_EXPR, type, arg0);
-      narg1 = fold_build2_loc (loc, MULT_EXPR, type, arg1,
-			   build_real (type, dconsthalf));
-      return build_call_expr_loc (loc, powfn, 2, arg0, narg1);
-    }
-
-  return NULL_TREE;
-}
-
-/* Fold a builtin function call to cbrt, cbrtf, or cbrtl with argument ARG.
-   Return NULL_TREE if no simplification can be made.  */
-
-static tree
-fold_builtin_cbrt (location_t loc, tree arg, tree type)
-{
-  const enum built_in_function fcode = builtin_mathfn_code (arg);
-  tree res;
-
-  if (!validate_arg (arg, REAL_TYPE))
-    return NULL_TREE;
-
-  /* Calculate the result when the argument is a constant.  */
-  if ((res = do_mpfr_arg1 (arg, type, mpfr_cbrt, NULL, NULL, 0)))
-    return res;
-
-  if (flag_unsafe_math_optimizations)
-    {
-      /* Optimize cbrt(expN(x)) -> expN(x/3).  */
-      if (BUILTIN_EXPONENT_P (fcode))
-	{
-	  tree expfn = TREE_OPERAND (CALL_EXPR_FN (arg), 0);
-	  const REAL_VALUE_TYPE third_trunc =
-	    real_value_truncate (TYPE_MODE (type), dconst_third ());
-	  arg = fold_build2_loc (loc, MULT_EXPR, type,
-			     CALL_EXPR_ARG (arg, 0),
-			     build_real (type, third_trunc));
-	  return build_call_expr_loc (loc, expfn, 1, arg);
-	}
-
-      /* Optimize cbrt(sqrt(x)) -> pow(x,1/6).  */
-      if (BUILTIN_SQRT_P (fcode))
-	{
-	  tree powfn = mathfn_built_in (type, BUILT_IN_POW);
-
-	  if (powfn)
-	    {
-	      tree arg0 = CALL_EXPR_ARG (arg, 0);
-	      tree tree_root;
-	      REAL_VALUE_TYPE dconstroot = dconst_third ();
-
-	      SET_REAL_EXP (&dconstroot, REAL_EXP (&dconstroot) - 1);
-	      dconstroot = real_value_truncate (TYPE_MODE (type), dconstroot);
-	      tree_root = build_real (type, dconstroot);
-	      return build_call_expr_loc (loc, powfn, 2, arg0, tree_root);
-	    }
-	}
-
-      /* Optimize cbrt(cbrt(x)) -> pow(x,1/9) iff x is nonnegative.  */
-      if (BUILTIN_CBRT_P (fcode))
-	{
-	  tree arg0 = CALL_EXPR_ARG (arg, 0);
-	  if (tree_expr_nonnegative_p (arg0))
-	    {
-	      tree powfn = mathfn_built_in (type, BUILT_IN_POW);
-
-	      if (powfn)
-		{
-		  tree tree_root;
-		  REAL_VALUE_TYPE dconstroot;
-
-		  real_arithmetic (&dconstroot, MULT_EXPR,
-                                   dconst_third_ptr (), dconst_third_ptr ());
-		  dconstroot = real_value_truncate (TYPE_MODE (type), dconstroot);
-		  tree_root = build_real (type, dconstroot);
-		  return build_call_expr_loc (loc, powfn, 2, arg0, tree_root);
-		}
-	    }
-	}
-
-      /* Optimize cbrt(pow(x,y)) -> pow(x,y/3) iff x is nonnegative.  */
-      if (fcode == BUILT_IN_POW
-          || fcode == BUILT_IN_POWF
-	  || fcode == BUILT_IN_POWL)
-	{
-	  tree arg00 = CALL_EXPR_ARG (arg, 0);
-	  tree arg01 = CALL_EXPR_ARG (arg, 1);
-	  if (tree_expr_nonnegative_p (arg00))
-	    {
-	      tree powfn = TREE_OPERAND (CALL_EXPR_FN (arg), 0);
-	      const REAL_VALUE_TYPE dconstroot
-		= real_value_truncate (TYPE_MODE (type), dconst_third ());
-	      tree narg01 = fold_build2_loc (loc, MULT_EXPR, type, arg01,
-					 build_real (type, dconstroot));
-	      return build_call_expr_loc (loc, powfn, 2, arg00, narg01);
-	    }
-	}
-    }
   return NULL_TREE;
 }
 
@@ -8392,13 +8222,9 @@ fold_builtin_hypot (location_t loc, tree fndecl,
   /* hypot(x,x) -> fabs(x)*sqrt(2).  */
   if (flag_unsafe_math_optimizations
       && operand_equal_p (arg0, arg1, OEP_PURE_SAME))
-    {
-      const REAL_VALUE_TYPE sqrt2_trunc
-	= real_value_truncate (TYPE_MODE (type), dconst_sqrt2 ());
-      return fold_build2_loc (loc, MULT_EXPR, type,
-			  fold_build1_loc (loc, ABS_EXPR, type, arg0),
-			  build_real (type, sqrt2_trunc));
-    }
+    return fold_build2_loc (loc, MULT_EXPR, type,
+			    fold_build1_loc (loc, ABS_EXPR, type, arg0),
+			    build_real_truncate (type, dconst_sqrt2 ()));
 
   return NULL_TREE;
 }
@@ -8433,22 +8259,22 @@ fold_builtin_pow (location_t loc, tree fndecl, tree arg0, tree arg1, tree type)
       c = TREE_REAL_CST (arg1);
 
       /* Optimize pow(x,0.0) = 1.0.  */
-      if (REAL_VALUES_EQUAL (c, dconst0))
+      if (real_equal (&c, &dconst0))
 	return omit_one_operand_loc (loc, type, build_real (type, dconst1),
 				 arg0);
 
       /* Optimize pow(x,1.0) = x.  */
-      if (REAL_VALUES_EQUAL (c, dconst1))
+      if (real_equal (&c, &dconst1))
 	return arg0;
 
       /* Optimize pow(x,-1.0) = 1.0/x.  */
-      if (REAL_VALUES_EQUAL (c, dconstm1))
+      if (real_equal (&c, &dconstm1))
 	return fold_build2_loc (loc, RDIV_EXPR, type,
 			    build_real (type, dconst1), arg0);
 
       /* Optimize pow(x,0.5) = sqrt(x).  */
       if (flag_unsafe_math_optimizations
-	  && REAL_VALUES_EQUAL (c, dconsthalf))
+	  && real_equal (&c, &dconsthalf))
 	{
 	  tree sqrtfn = mathfn_built_in (type, BUILT_IN_SQRT);
 
@@ -8462,7 +8288,7 @@ fold_builtin_pow (location_t loc, tree fndecl, tree arg0, tree arg1, tree type)
 	  const REAL_VALUE_TYPE dconstroot
 	    = real_value_truncate (TYPE_MODE (type), dconst_third ());
 
-	  if (REAL_VALUES_EQUAL (c, dconstroot))
+	  if (real_equal (&c, &dconstroot))
 	    {
 	      tree cbrtfn = mathfn_built_in (type, BUILT_IN_CBRT);
 	      if (cbrtfn != NULL_TREE)
@@ -8481,7 +8307,7 @@ fold_builtin_pow (location_t loc, tree fndecl, tree arg0, tree arg1, tree type)
 	      && !TREE_OVERFLOW (arg0)
 	      && (n > 0
 		  || (!flag_trapping_math && !flag_errno_math)
-		  || !REAL_VALUES_EQUAL (TREE_REAL_CST (arg0), dconst0)))
+		  || !real_equal (&TREE_REAL_CST (arg0), &dconst0)))
 	    {
 	      REAL_VALUE_TYPE x;
 	      bool inexact;
@@ -8530,10 +8356,8 @@ fold_builtin_pow (location_t loc, tree fndecl, tree arg0, tree arg1, tree type)
 	  tree arg = CALL_EXPR_ARG (arg0, 0);
 	  if (tree_expr_nonnegative_p (arg))
 	    {
-	      const REAL_VALUE_TYPE dconstroot
-		= real_value_truncate (TYPE_MODE (type), dconst_third ());
-	      tree narg1 = fold_build2_loc (loc, MULT_EXPR, type, arg1,
-					build_real (type, dconstroot));
+	      tree c = build_real_truncate (type, dconst_third ());
+	      tree narg1 = fold_build2_loc (loc, MULT_EXPR, type, arg1, c);
 	      return build_call_expr_loc (loc, fndecl, 2, arg, narg1);
 	    }
 	}
@@ -9374,7 +9198,7 @@ fold_builtin_load_exponent (location_t loc, tree arg0, tree arg1,
 
 		  /* Only proceed if the target mode can hold the
 		     resulting value.  */
-		  if (REAL_VALUES_EQUAL (initial_result, trunc_result))
+		  if (real_equal (&initial_result, &trunc_result))
 		    return build_real (type, trunc_result);
 		}
 	    }
@@ -9975,10 +9799,14 @@ fold_builtin_1 (location_t loc, tree fndecl, tree arg0)
       return fold_builtin_carg (loc, arg0, type);
 
     CASE_FLT_FN (BUILT_IN_SQRT):
-      return fold_builtin_sqrt (loc, arg0, type);
+      if (validate_arg (arg0, REAL_TYPE))
+	return do_mpfr_arg1 (arg0, type, mpfr_sqrt, &dconst0, NULL, true);
+      break;
 
     CASE_FLT_FN (BUILT_IN_CBRT):
-      return fold_builtin_cbrt (loc, arg0, type);
+      if (validate_arg (arg0, REAL_TYPE))
+	return do_mpfr_arg1 (arg0, type, mpfr_cbrt, NULL, NULL, 0);
+      break;
 
     CASE_FLT_FN (BUILT_IN_ASIN):
       if (validate_arg (arg0, REAL_TYPE))
@@ -10232,27 +10060,6 @@ fold_builtin_1 (location_t loc, tree fndecl, tree arg0)
     case BUILT_IN_FREE:
       if (integer_zerop (arg0))
 	return build_empty_stmt (loc);
-      break;
-
-    case BUILT_IN_ACC_ON_DEVICE:
-      /* Don't fold on_device until we know which compiler is active.  */
-      if (symtab->state == EXPANSION)
-	{
-	  unsigned val_host = GOMP_DEVICE_HOST;
-	  unsigned val_dev = GOMP_DEVICE_NONE;
-
-#ifdef ACCEL_COMPILER
-	  val_host = GOMP_DEVICE_NOT_HOST;
-	  val_dev = ACCEL_COMPILER_acc_device;
-#endif
-	  tree host = build2 (EQ_EXPR, boolean_type_node, arg0,
-			      build_int_cst (integer_type_node, val_host));
-	  tree dev = build2 (EQ_EXPR, boolean_type_node, arg0,
-			     build_int_cst (integer_type_node, val_dev));
-
-	  tree result = build2 (TRUTH_OR_EXPR, boolean_type_node, host, dev);
-	  return fold_convert (integer_type_node, result);
-	}
       break;
 
     default:

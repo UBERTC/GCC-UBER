@@ -594,32 +594,36 @@ struct diagnose_tm
   gimple *stmt;
 };
 
-/* Return true if T is a volatile variable of some kind.  */
+/* Return true if T is a volatile lvalue of some kind.  */
 
 static bool
-volatile_var_p (tree t)
+volatile_lvalue_p (tree t)
 {
-  return (SSA_VAR_P (t)
+  return ((SSA_VAR_P (t) || REFERENCE_CLASS_P (t))
 	  && TREE_THIS_VOLATILE (TREE_TYPE (t)));
 }
 
 /* Tree callback function for diagnose_tm pass.  */
 
 static tree
-diagnose_tm_1_op (tree *tp, int *walk_subtrees ATTRIBUTE_UNUSED,
-		  void *data)
+diagnose_tm_1_op (tree *tp, int *walk_subtrees, void *data)
 {
   struct walk_stmt_info *wi = (struct walk_stmt_info *) data;
   struct diagnose_tm *d = (struct diagnose_tm *) wi->info;
 
-  if (volatile_var_p (*tp)
-      && d->block_flags & DIAG_TM_SAFE
-      && !d->saw_volatile)
+  if (TYPE_P (*tp))
+    *walk_subtrees = false;
+  else if (volatile_lvalue_p (*tp)
+	   && !d->saw_volatile)
     {
       d->saw_volatile = 1;
-      error_at (gimple_location (d->stmt),
-		"invalid volatile use of %qD inside transaction",
-		*tp);
+      if (d->block_flags & DIAG_TM_SAFE)
+	error_at (gimple_location (d->stmt),
+		  "invalid use of volatile lvalue inside transaction");
+      else if (d->func_flags & DIAG_TM_SAFE)
+	error_at (gimple_location (d->stmt),
+		  "invalid use of volatile lvalue inside %<transaction_safe%>"
+		  "function");
     }
 
   return NULL_TREE;
@@ -927,7 +931,7 @@ make_pass_diagnose_tm_blocks (gcc::context *ctxt)
 /* One individual log entry.  We may have multiple statements for the
    same location if neither dominate each other (on different
    execution paths).  */
-typedef struct tm_log_entry
+struct tm_log_entry
 {
   /* Address to save.  */
   tree addr;
@@ -940,7 +944,7 @@ typedef struct tm_log_entry
      save/restore sequence.  Later, when generating the save sequence
      we place the SSA temp generated here.  */
   tree save_var;
-} *tm_log_entry_t;
+};
 
 
 /* Log entry hashtable helpers.  */
@@ -1009,29 +1013,29 @@ enum thread_memory_type
     mem_max
   };
 
-typedef struct tm_new_mem_map
+struct tm_new_mem_map
 {
   /* SSA_NAME being dereferenced.  */
   tree val;
   enum thread_memory_type local_new_memory;
-} tm_new_mem_map_t;
+};
 
 /* Hashtable helpers.  */
 
-struct tm_mem_map_hasher : free_ptr_hash <tm_new_mem_map_t>
+struct tm_mem_map_hasher : free_ptr_hash <tm_new_mem_map>
 {
-  static inline hashval_t hash (const tm_new_mem_map_t *);
-  static inline bool equal (const tm_new_mem_map_t *, const tm_new_mem_map_t *);
+  static inline hashval_t hash (const tm_new_mem_map *);
+  static inline bool equal (const tm_new_mem_map *, const tm_new_mem_map *);
 };
 
 inline hashval_t
-tm_mem_map_hasher::hash (const tm_new_mem_map_t *v)
+tm_mem_map_hasher::hash (const tm_new_mem_map *v)
 {
   return (intptr_t)v->val >> 4;
 }
 
 inline bool
-tm_mem_map_hasher::equal (const tm_new_mem_map_t *v, const tm_new_mem_map_t *c)
+tm_mem_map_hasher::equal (const tm_new_mem_map *v, const tm_new_mem_map *c)
 {
   return v->val == c->val;
 }
@@ -1362,8 +1366,8 @@ thread_private_new_memory (basic_block entry_block, tree x)
 {
   gimple *stmt = NULL;
   enum tree_code code;
-  tm_new_mem_map_t **slot;
-  tm_new_mem_map_t elt, *elt_p;
+  tm_new_mem_map **slot;
+  tm_new_mem_map elt, *elt_p;
   tree val = x;
   enum thread_memory_type retval = mem_transaction_local;
 
@@ -1383,7 +1387,7 @@ thread_private_new_memory (basic_block entry_block, tree x)
 
   /* Optimistically assume the memory is transaction local during
      processing.  This catches recursion into this variable.  */
-  *slot = elt_p = XNEW (tm_new_mem_map_t);
+  *slot = elt_p = XNEW (tm_new_mem_map);
   elt_p->val = val;
   elt_p->local_new_memory = mem_transaction_local;
 
@@ -1864,8 +1868,6 @@ public:
   bitmap irr_blocks;
 };
 
-typedef struct tm_region *tm_region_p;
-
 /* True if there are pending edge statements to be committed for the
    current function being scanned in the tmmark pass.  */
 bool pending_edge_inserts_p;
@@ -1970,7 +1972,7 @@ tm_region_init (struct tm_region *region)
   auto_vec<basic_block> queue;
   bitmap visited_blocks = BITMAP_ALLOC (NULL);
   struct tm_region *old_region;
-  auto_vec<tm_region_p> bb_regions;
+  auto_vec<tm_region *> bb_regions;
 
   all_tm_regions = region;
   bb = single_succ (ENTRY_BLOCK_PTR_FOR_FN (cfun));
@@ -2594,7 +2596,7 @@ get_tm_region_blocks (basic_block entry_block,
 // Callback data for collect_bb2reg.
 struct bb2reg_stuff
 {
-  vec<tm_region_p> *bb2reg;
+  vec<tm_region *> *bb2reg;
   bool include_uninstrumented_p;
 };
 
@@ -2603,7 +2605,7 @@ static void *
 collect_bb2reg (struct tm_region *region, void *data)
 {
   struct bb2reg_stuff *stuff = (struct bb2reg_stuff *)data;
-  vec<tm_region_p> *bb2reg = stuff->bb2reg;
+  vec<tm_region *> *bb2reg = stuff->bb2reg;
   vec<basic_block> queue;
   unsigned int i;
   basic_block bb;
@@ -2647,13 +2649,13 @@ collect_bb2reg (struct tm_region *region, void *data)
 // ??? There is currently a hack inside tree-ssa-pre.c to work around the
 // only known instance of this block sharing.
 
-static vec<tm_region_p>
+static vec<tm_region *>
 get_bb_regions_instrumented (bool traverse_clones,
 			     bool include_uninstrumented_p)
 {
   unsigned n = last_basic_block_for_fn (cfun);
   struct bb2reg_stuff stuff;
-  vec<tm_region_p> ret;
+  vec<tm_region *> ret;
 
   ret.create (n);
   ret.safe_grow_cleared (n);
@@ -2986,7 +2988,7 @@ execute_tm_mark (void)
 
   tm_log_init ();
 
-  vec<tm_region_p> bb_regions
+  vec<tm_region *> bb_regions
     = get_bb_regions_instrumented (/*traverse_clones=*/true,
 				   /*include_uninstrumented_p=*/false);
   struct tm_region *r;
@@ -3223,7 +3225,7 @@ public:
 unsigned int
 pass_tm_edges::execute (function *fun)
 {
-  vec<tm_region_p> bb_regions
+  vec<tm_region *> bb_regions
     = get_bb_regions_instrumented (/*traverse_clones=*/false,
 				   /*include_uninstrumented_p=*/true);
   struct tm_region *r;
@@ -3307,13 +3309,13 @@ expand_regions (struct tm_region *region,
 
 
 /* A unique TM memory operation.  */
-typedef struct tm_memop
+struct tm_memop
 {
   /* Unique ID that all memory operations to the same location have.  */
   unsigned int value_id;
   /* Address of load/store.  */
   tree addr;
-} *tm_memop_t;
+};
 
 /* TM memory operation hashtable helpers.  */
 
@@ -4300,7 +4302,7 @@ ipa_tm_scan_irr_block (basic_block bb)
 	    {
 	      tree lhs = gimple_assign_lhs (stmt);
 	      tree rhs = gimple_assign_rhs1 (stmt);
-	      if (volatile_var_p (lhs) || volatile_var_p (rhs))
+	      if (volatile_lvalue_p (lhs) || volatile_lvalue_p (rhs))
 		return true;
 	    }
 	  break;
@@ -4308,7 +4310,7 @@ ipa_tm_scan_irr_block (basic_block bb)
 	case GIMPLE_CALL:
 	  {
 	    tree lhs = gimple_call_lhs (stmt);
-	    if (lhs && volatile_var_p (lhs))
+	    if (lhs && volatile_lvalue_p (lhs))
 	      return true;
 
 	    if (is_tm_pure_call (stmt))

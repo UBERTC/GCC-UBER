@@ -997,17 +997,12 @@ HOST_WIDE_INT
 const_double_to_hwint (rtx x)
 {
   HOST_WIDE_INT val;
-  REAL_VALUE_TYPE rv;
   if (GET_MODE (x) == SFmode)
-    {
-      REAL_VALUE_FROM_CONST_DOUBLE (rv, x);
-      REAL_VALUE_TO_TARGET_SINGLE (rv, val);
-    }
+    REAL_VALUE_TO_TARGET_SINGLE (*CONST_DOUBLE_REAL_VALUE (x), val);
   else if (GET_MODE (x) == DFmode)
     {
       long l[2];
-      REAL_VALUE_FROM_CONST_DOUBLE (rv, x);
-      REAL_VALUE_TO_TARGET_DOUBLE (rv, l);
+      REAL_VALUE_TO_TARGET_DOUBLE (*CONST_DOUBLE_REAL_VALUE (x), l);
       val = l[0];
       val = (val << 32) | (l[1] & 0xffffffff);
     }
@@ -1031,7 +1026,7 @@ hwint_to_const_double (machine_mode mode, HOST_WIDE_INT v)
       tv[0] = v >> 32;
     }
   real_from_target (&rv, tv, mode);
-  return CONST_DOUBLE_FROM_REAL_VALUE (rv, mode);
+  return const_double_from_real_value (rv, mode);
 }
 
 void
@@ -3075,7 +3070,7 @@ spu_float_const (const char *string, machine_mode mode)
 {
   REAL_VALUE_TYPE value;
   value = REAL_VALUE_ATOF (string, mode);
-  return CONST_DOUBLE_FROM_REAL_VALUE (value, mode);
+  return const_double_from_real_value (value, mode);
 }
 
 int

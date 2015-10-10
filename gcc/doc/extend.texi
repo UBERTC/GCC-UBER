@@ -3319,6 +3319,24 @@ one pass over the objects and does the best that it can.  Using the
 options can help the packing however, since they produce smaller,
 easier to pack regions.
 
+@item reentrant
+On the MSP430 a function can be given the @code{reentant} attribute.
+This makes the function disable interrupts upon entry and enable
+interrupts upon exit.  Reentrant functions cannot be @code{naked}.
+
+@item critical
+On the MSP430 a function can be given the @code{critical} attribute.
+This makes the function disable interrupts upon entry and restore the
+previous interrupt enabled/disabled state upon exit.  A function
+cannot have both the @code{reentrant} and @code{critical} attributes.
+Critical functions cannot be @code{naked}.
+
+@item wakeup
+On the MSP430 a function can be given the @code{wakeup} attribute.
+Such a function must also have the @code{interrupt} attribute.  When a
+function with the @code{wakeup} attribute exists the processor will be
+woken up from any low-power state in which it may be residing.
+
 @end table
 
 @c This is the end of the target-independent attribute table
@@ -5264,6 +5282,7 @@ attributes.
 * M32R/D Variable Attributes::
 * MeP Variable Attributes::
 * Microsoft Windows Variable Attributes::
+* MSP430 Variable Attributes::
 * PowerPC Variable Attributes::
 * SPU Variable Attributes::
 * x86 Variable Attributes::
@@ -5852,6 +5871,38 @@ linkers work.  See @code{section} attribute for more information.
 
 The @code{shared} attribute is only available on Microsoft Windows@.
 
+@end table
+
+@node MSP430 Variable Attributes
+@subsection MSP430 Variable Attributes
+
+@table @code
+@item noinit
+@cindex @code{noinit} MSP430 variable attribute
+Any data with the @code{noinit} attribute will not be initialised by
+the C runtime startup code, or the program loader.  Not initialising
+data in this way can reduce program startup times.
+
+@item persistent
+@cindex @code{persistent} MSP430 variable attribute
+Any variable with the @code{persistent} attribute will not be
+initialised by the C runtime startup code.  Instead its value will be
+set once, when the application is loaded, and then never initialised
+again, even if the processor is reset or the program restarts.
+Persistent data is intended to be placed into FLASH RAM, where its
+value will be retained across resets.  The linker script being used to
+create the application should ensure that persistent data is correctly
+placed.
+
+@item lower
+@itemx upper
+@itemx either
+@cindex @code{lower} memory region on the MSP430
+@cindex @code{upper} memory region on the MSP430
+@cindex @code{either} memory region on the MSP430
+These attributes are the same as the MSP430 function attributes of the
+same name.  These attributes can be applied to both functions and
+variables.
 @end table
 
 @node PowerPC Variable Attributes
@@ -19574,8 +19625,8 @@ If any calls are not inlined, you will get linker errors.
 @section Where's the Template?
 @cindex template instantiation
 
-C++ templates are the first language feature to require more
-intelligence from the environment than one usually finds on a UNIX
+C++ templates were the first language feature to require more
+intelligence from the environment than was traditionally found on a UNIX
 system.  Somehow the compiler and linker have to make sure that each
 template instance occurs exactly once in the executable if it is needed,
 and not at all otherwise.  There are two basic approaches to this
@@ -19588,7 +19639,7 @@ equivalent of common blocks to their linker; the compiler emits template
 instances in each translation unit that uses them, and the linker
 collapses them together.  The advantage of this model is that the linker
 only has to consider the object files themselves; there is no external
-complexity to worry about.  This disadvantage is that compilation time
+complexity to worry about.  The disadvantage is that compilation time
 is increased because the template code is being compiled repeatedly.
 Code written for this model tends to include definitions of all
 templates in the header file, since they must be seen to be
@@ -19614,46 +19665,35 @@ of non-inline member templates into a separate file, which should be
 compiled separately.
 @end table
 
-When used with GNU ld version 2.8 or later on an ELF system such as
-GNU/Linux or Solaris 2, or on Microsoft Windows, G++ supports the
-Borland model.  On other systems, G++ implements neither automatic
-model.
+G++ implements the Borland model on targets where the linker supports it,
+including ELF targets (such as GNU/Linux), Mac OS X and Microsoft Windows.
+Otherwise G++ implements neither automatic model.
 
 You have the following options for dealing with template instantiations:
 
 @enumerate
 @item
-@opindex frepo
-Compile your template-using code with @option{-frepo}.  The compiler
-generates files with the extension @samp{.rpo} listing all of the
-template instantiations used in the corresponding object files that
-could be instantiated there; the link wrapper, @samp{collect2},
-then updates the @samp{.rpo} files to tell the compiler where to place
-those instantiations and rebuild any affected object files.  The
-link-time overhead is negligible after the first pass, as the compiler
-continues to place the instantiations in the same files.
+Do nothing.  Code written for the Borland model works fine, but
+each translation unit contains instances of each of the templates it
+uses.  The duplicate instances will be discarded by the linker, but in
+a large program, this can lead to an unacceptable amount of code
+duplication in object files or shared libraries.
 
-This is your best option for application code written for the Borland
-model, as it just works.  Code written for the Cfront model 
-needs to be modified so that the template definitions are available at
-one or more points of instantiation; usually this is as simple as adding
-@code{#include <tmethods.cc>} to the end of each template header.
+Duplicate instances of a template can be avoided by defining an explicit
+instantiation in one object file, and preventing the compiler from doing
+implicit instantiations in any other object files by using an explicit
+instantiation declaration, using the @code{extern template} syntax:
 
-For library code, if you want the library to provide all of the template
-instantiations it needs, just try to link all of its object files
-together; the link will fail, but cause the instantiations to be
-generated as a side effect.  Be warned, however, that this may cause
-conflicts if multiple libraries try to provide the same instantiations.
-For greater control, use explicit instantiation as described in the next
-option.
+@smallexample
+extern template int max (int, int);
+@end smallexample
 
-@item
-@opindex fno-implicit-templates
-Compile your code with @option{-fno-implicit-templates} to disable the
-implicit generation of template instances, and explicitly instantiate
-all the ones you use.  This approach requires more knowledge of exactly
-which instances you need than do the others, but it's less
-mysterious and allows greater control.  You can scatter the explicit
+This syntax is defined in the C++ 2011 standard, but has been supported by
+G++ and other compilers since well before 2011.
+
+Explicit instantiations can be used for the largest or most frequently
+duplicated instances, without having to know exactly which other instances
+are used in the rest of the program.  You can scatter the explicit
 instantiations throughout your program, perhaps putting them in the
 translation units where the instances are used or the translation units
 that define the templates themselves; you can put all of the explicit
@@ -19673,6 +19713,45 @@ template ostream& operator <<
 for each of the instances you need, and create a template instantiation
 library from those.
 
+This is the simplest option, but also offers flexibility and
+fine-grained control when necessary. It is also the most portable
+alternative and programs using this approach will work with most modern
+compilers.
+
+@item
+@opindex frepo
+Compile your template-using code with @option{-frepo}.  The compiler
+generates files with the extension @samp{.rpo} listing all of the
+template instantiations used in the corresponding object files that
+could be instantiated there; the link wrapper, @samp{collect2},
+then updates the @samp{.rpo} files to tell the compiler where to place
+those instantiations and rebuild any affected object files.  The
+link-time overhead is negligible after the first pass, as the compiler
+continues to place the instantiations in the same files.
+
+This can be a suitable option for application code written for the Borland
+model, as it usually just works.  Code written for the Cfront model 
+needs to be modified so that the template definitions are available at
+one or more points of instantiation; usually this is as simple as adding
+@code{#include <tmethods.cc>} to the end of each template header.
+
+For library code, if you want the library to provide all of the template
+instantiations it needs, just try to link all of its object files
+together; the link will fail, but cause the instantiations to be
+generated as a side effect.  Be warned, however, that this may cause
+conflicts if multiple libraries try to provide the same instantiations.
+For greater control, use explicit instantiation as described in the next
+option.
+
+@item
+@opindex fno-implicit-templates
+Compile your code with @option{-fno-implicit-templates} to disable the
+implicit generation of template instances, and explicitly instantiate
+all the ones you use.  This approach requires more knowledge of exactly
+which instances you need than do the others, but it's less
+mysterious and allows greater control if you want to ensure that only
+the intended instances are used.
+
 If you are using Cfront-model code, you can probably get away with not
 using @option{-fno-implicit-templates} when compiling files that don't
 @samp{#include} the member template definitions.
@@ -19682,9 +19761,8 @@ compile it without @option{-fno-implicit-templates} so you get all of the
 instances required by your explicit instantiations (but not by any
 other files) without having to specify them as well.
 
-The ISO C++ 2011 standard allows forward declaration of explicit
-instantiations (with @code{extern}). G++ supports explicit instantiation
-declarations in C++98 mode and has extended the template instantiation
+In addition to forward declaration of explicit instantiations
+(with @code{extern}), G++ has extended the template instantiation
 syntax to support instantiation of the compiler support data for a
 template class (i.e.@: the vtable) without instantiating any of its
 members (with @code{inline}), and instantiation of only the static data
@@ -19692,17 +19770,9 @@ members of a template class, without the support data or member
 functions (with @code{static}):
 
 @smallexample
-extern template int max (int, int);
 inline template class Foo<int>;
 static template class Foo<int>;
 @end smallexample
-
-@item
-Do nothing.  Pretend G++ does implement automatic instantiation
-management.  Code written for the Borland model works fine, but
-each translation unit contains instances of each of the templates it
-uses.  In a large program, this can lead to an unacceptable amount of code
-duplication.
 @end enumerate
 
 @node Bound member functions
