@@ -317,6 +317,118 @@ in_mem_p (int regno)
   return get_reg_class (regno) == NO_REGS;
 }
 
+/* Return 1 if ADDR is a valid memory address for mode MODE in address
+   space AS, and check that each pseudo has the proper kind of hard
+   reg.	 */
+static int
+valid_address_p (enum machine_mode mode ATTRIBUTE_UNUSED,
+		 rtx addr, addr_space_t as)
+{
+#ifdef GO_IF_LEGITIMATE_ADDRESS
+  lra_assert (ADDR_SPACE_GENERIC_P (as));
+  GO_IF_LEGITIMATE_ADDRESS (mode, addr, win);
+  return 0;
+
+ win:
+  return 1;
+#else
+  return targetm.addr_space.legitimate_address_p (mode, addr, 0, as);
+#endif
+}
+
+namespace {
+  /* Temporarily eliminates registers in an address (for the lifetime of
+     the object).  */
+  class address_eliminator {
+  public:
+    address_eliminator (struct address_info *ad);
+    ~address_eliminator ();
+
+  private:
+    struct address_info *m_ad;
+    rtx *m_base_loc;
+    rtx m_base_reg;
+    rtx *m_index_loc;
+    rtx m_index_reg;
+  };
+}
+
+address_eliminator::address_eliminator (struct address_info *ad)
+  : m_ad (ad),
+    m_base_loc (strip_subreg (ad->base_term)),
+    m_base_reg (NULL_RTX),
+    m_index_loc (strip_subreg (ad->index_term)),
+    m_index_reg (NULL_RTX)
+{
+  if (m_base_loc != NULL)
+    {
+      m_base_reg = *m_base_loc;
+      lra_eliminate_reg_if_possible (m_base_loc);
+      if (m_ad->base_term2 != NULL)
+	*m_ad->base_term2 = *m_ad->base_term;
+    }
+  if (m_index_loc != NULL)
+    {
+      m_index_reg = *m_index_loc;
+      lra_eliminate_reg_if_possible (m_index_loc);
+    }
+}
+
+address_eliminator::~address_eliminator ()
+{
+  if (m_base_loc && *m_base_loc != m_base_reg)
+    {
+      *m_base_loc = m_base_reg;
+      if (m_ad->base_term2 != NULL)
+	*m_ad->base_term2 = *m_ad->base_term;
+    }
+  if (m_index_loc && *m_index_loc != m_index_reg)
+    *m_index_loc = m_index_reg;
+}
+
+/* Return true if the eliminated form of AD is a legitimate target address.  */
+static bool
+valid_address_p (struct address_info *ad)
+{
+  address_eliminator eliminator (ad);
+  return valid_address_p (ad->mode, *ad->outer, ad->as);
+}
+
+#ifdef EXTRA_CONSTRAINT_STR
+/* Return true if the eliminated form of memory reference OP satisfies
+   extra memory constraint CONSTRAINT.  */
+static bool
+satisfies_memory_constraint_p (rtx op, const char *constraint)
+{
+  struct address_info ad;
+
+  decompose_mem_address (&ad, op);
+  address_eliminator eliminator (&ad);
+  return EXTRA_CONSTRAINT_STR (op, *constraint, constraint);
+}
+
+/* Return true if the eliminated form of address AD satisfies extra
+   address constraint CONSTRAINT.  */
+static bool
+satisfies_address_constraint_p (struct address_info *ad,
+				const char *constraint)
+{
+  address_eliminator eliminator (ad);
+  return EXTRA_CONSTRAINT_STR (*ad->outer, *constraint, constraint);
+}
+
+/* Return true if the eliminated form of address OP satisfies extra
+   address constraint CONSTRAINT.  */
+static bool
+satisfies_address_constraint_p (rtx op, const char *constraint)
+{
+  struct address_info ad;
+
+  decompose_lea_address (&ad, &op);
+  return satisfies_address_constraint_p (&ad, constraint);
+}
+#endif
+
 /* Initiate equivalences for LRA.  As we keep original equivalences
    before any elimination, we need to make copies otherwise any change
    in insns might change the equivalences.  */
@@ -1959,7 +2071,8 @@ process_alt_operands (int only_alternative)
 #ifdef EXTRA_CONSTRAINT_STR
 		      if (EXTRA_MEMORY_CONSTRAINT (c, p))
 			{
-			  if (EXTRA_CONSTRAINT_STR (op, c, p))
+			  if (MEM_P (op)
+			      && satisfies_memory_constraint_p (op, p))
 			    win = true;
 			  else if (spilled_pseudo_p (op))
 			    win = true;
@@ -1978,7 +2091,7 @@ process_alt_operands (int only_alternative)
 			}
 		      if (EXTRA_ADDRESS_CONSTRAINT (c, p))
 			{
-			  if (EXTRA_CONSTRAINT_STR (op, c, p))
+			  if (satisfies_address_constraint_p (op, p))
 			    win = true;
 
 			  /* If we didn't already win, we can reload
@@ -2594,58 +2707,37 @@ process_alt_operands (int only_alternative)
   return ok_p;
 }
 
-/* Return 1 if ADDR is a valid memory address for mode MODE in address
-   space AS, and check that each pseudo has the proper kind of hard
-   reg.	 */
-static int
-valid_address_p (enum machine_mode mode ATTRIBUTE_UNUSED,
-		 rtx addr, addr_space_t as)
+/* Make reload base reg from address AD.  */
+static rtx
+base_to_reg (struct address_info *ad)
 {
-#ifdef GO_IF_LEGITIMATE_ADDRESS
-  lra_assert (ADDR_SPACE_GENERIC_P (as));
-  GO_IF_LEGITIMATE_ADDRESS (mode, addr, win);
-  return 0;
+  enum reg_class cl;
+  int code = -1;
+  rtx new_inner = NULL_RTX;
+  rtx new_reg = NULL_RTX;
+  rtx insn;
+  rtx last_insn = get_last_insn();
 
- win:
-  return 1;
-#else
-  return targetm.addr_space.legitimate_address_p (mode, addr, 0, as);
-#endif
-}
+  lra_assert (ad->base == ad->base_term && ad->disp == ad->disp_term);
+  cl = base_reg_class (ad->mode, ad->as, ad->base_outer_code,
+                       get_index_code (ad));
+  new_reg = lra_create_new_reg (GET_MODE (*ad->base_term), NULL_RTX,
+                                cl, "base");
+  new_inner = simplify_gen_binary (PLUS, GET_MODE (new_reg), new_reg,
+                                   ad->disp_term == NULL
+                                   ? gen_int_mode (0, ad->mode)
+                                   : *ad->disp_term);
+  if (!valid_address_p (ad->mode, new_inner, ad->as))
+    return NULL_RTX;
+  insn = emit_insn (gen_rtx_SET (ad->mode, new_reg, *ad->base_term));
+  code = recog_memoized (insn);
+  if (code < 0)
+    {
+      delete_insns_since (last_insn);
+      return NULL_RTX;
+    }
 
-/* Return whether address AD is valid.  */
-
-static bool
-valid_address_p (struct address_info *ad)
-{
-  /* Some ports do not check displacements for eliminable registers,
-     so we replace them temporarily with the elimination target.  */
-  rtx saved_base_reg = NULL_RTX;
-  rtx saved_index_reg = NULL_RTX;
-  rtx *base_term = strip_subreg (ad->base_term);
-  rtx *index_term = strip_subreg (ad->index_term);
-  if (base_term != NULL)
-    {
-      saved_base_reg = *base_term;
-      lra_eliminate_reg_if_possible (base_term);
-      if (ad->base_term2 != NULL)
-	*ad->base_term2 = *ad->base_term;
-    }
-  if (index_term != NULL)
-    {
-      saved_index_reg = *index_term;
-      lra_eliminate_reg_if_possible (index_term);
-    }
-  bool ok_p = valid_address_p (ad->mode, *ad->outer, ad->as);
-  if (saved_base_reg != NULL_RTX)
-    {
-      *base_term = saved_base_reg;
-      if (ad->base_term2 != NULL)
-	*ad->base_term2 = *ad->base_term;
-    }
-  if (saved_index_reg != NULL_RTX)
-    *index_term = saved_index_reg;
-  return ok_p;
+  return new_inner;
 }
 
 /* Make reload base reg + disp from address AD.  Return the new pseudo.  */
@@ -2855,7 +2947,7 @@ process_address_1 (int nop, rtx *before, rtx *after)
      EXTRA_CONSTRAINT_STR for the validation.  */
   if (constraint[0] != 'p'
       && EXTRA_ADDRESS_CONSTRAINT (constraint[0], constraint)
-      && EXTRA_CONSTRAINT_STR (op, constraint[0], constraint))
+      && satisfies_address_constraint_p (&ad, constraint))
     return change_p;
 #endif
 
@@ -2869,6 +2961,8 @@ process_address_1 (int nop, rtx *before, rtx *after)
      force_const_to_mem.
 
      3) the address is a frame address with an invalid offset.
+
+     4) the address is a frame address with an invalid base.
 
      All these cases involve a non-autoinc address, so there is no
      point revalidating other types.  */
@@ -2951,14 +3045,19 @@ process_address_1 (int nop, rtx *before, rtx *after)
       int regno;
       enum reg_class cl;
       rtx set, insns, last_insn;
+      /* Try to reload base into register only if the base is invalid
+         for the address but with valid offset, case (4) above.  */
+      start_sequence ();
+      new_reg = base_to_reg (&ad);
+
       /* base + disp => new base, cases (1) and (3) above.  */
       /* Another option would be to reload the displacement into an
 	 index register.  However, postreload has code to optimize
 	 address reloads that have the same base and different
 	 displacements, so reloading into an index register would
 	 not necessarily be a win.  */
-      start_sequence ();
-      new_reg = base_plus_disp_to_reg (&ad);
+      if (new_reg == NULL_RTX)
+        new_reg = base_plus_disp_to_reg (&ad);
       insns = get_insns ();
       last_insn = get_last_insn ();
       /* If we generated at least two insns, try last insn source as
@@ -3581,7 +3680,7 @@ curr_insn_transform (void)
 		  break;
 #ifdef EXTRA_CONSTRAINT_STR
 		if (EXTRA_MEMORY_CONSTRAINT (c, constraint)
-		    && EXTRA_CONSTRAINT_STR (tem, c, constraint))
+		    && satisfies_memory_constraint_p (tem, constraint))
 		  break;
 #endif
 	      }
@@ -3699,6 +3798,7 @@ curr_insn_transform (void)
 				  (ira_class_hard_regs[goal_alt[i]][0],
 				   GET_MODE (reg), byte, mode) >= 0)))))
 		{
+		  type = OP_INOUT;
 		  loc = &SUBREG_REG (*loc);
 		  mode = GET_MODE (*loc);
 		}

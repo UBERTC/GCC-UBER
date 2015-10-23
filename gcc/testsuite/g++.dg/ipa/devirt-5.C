@@ -2,7 +2,7 @@
    ones even when a typecast to an ancestor is involved along the way
    and that ancestor is not the first one with virtual functions.  */
 /* { dg-do run } */
-/* { dg-options "-O3 -fno-early-inlining -fno-inline -fdump-ipa-cp -fdump-tree-optimized"  } */
+/* { dg-options "-O3 -fno-early-inlining -fno-inline -fdump-ipa-cp -fdump-tree-optimized -fdevirtualize"  } */
 
 extern "C" void abort (void);
 

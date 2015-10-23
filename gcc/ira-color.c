@@ -128,6 +128,13 @@ struct allocno_color_data
      conflicting with given pseudo.  They should be of the allocno
      class.  */
   HARD_REG_SET profitable_hard_regs;
+  /* Record hard regs which has been newly assigned to other pseudo regs
+     which are conflicting with given pseduo when coloring current region.
+     For hardregs in new_conflict_hard_regs, the updated_hard_reg_costs
+     and updated_conflict_hard_reg_costs of the hardregs for given pseudo
+     are stale, so they should not be used for cost update in
+     update_conflict_hard_regno_costs.  */
+  HARD_REG_SET new_conflict_hard_regs;
   /* The allocno hard registers node.  */
   allocno_hard_regs_node_t hard_regs_node;
   /* Array of structures allocno_hard_regs_subnode representing
@@ -1052,6 +1059,10 @@ setup_profitable_hard_regs (void)
 				      OBJECT_TOTAL_CONFLICT_HARD_REGS (obj));
 	    }
 	}
+      /* If loop region is marked as !fp_is_free, all the allocnos inside it will
+	 not use fp as a free register.  */
+      if (frame_pointer_partially_needed && !a->loop_tree_node->fp_is_free)
+	CLEAR_HARD_REG_BIT (data->profitable_hard_regs, HARD_FRAME_POINTER_REGNUM);
     }
   /* Exclude hard regs already assigned for conflicting objects.  */
   EXECUTE_IF_SET_IN_BITMAP (consideration_allocno_bitmap, 0, i, bi)
@@ -1178,6 +1189,20 @@ free_update_cost_record_list (struct update_cost_record *list)
     }
 }
 
+/* Free memory for CURR record in LIST.  */
+static void
+free_a_update_cost_record (struct update_cost_record **list,
+			   struct update_cost_record *prev,
+			   struct update_cost_record *curr)
+{
+  if (prev == NULL)
+    *list = curr->next;
+  else
+    prev->next = curr->next;
+  pool_free (update_cost_record_pool, curr);
+}
+
+
 /* Free memory allocated for all update cost records.  */
 static void
 finish_update_cost_records (void)
@@ -1201,10 +1226,10 @@ struct update_cost_queue_elem
      connecting this allocno to the one being allocated.  */
   int divisor;
 
-  /* Allocno from which we are chaning costs of connected allocnos.
+  /* Copy from which we are chaning costs of connected allocnos.
      It is used not go back in graph of allocnos connected by
      copies.  */
-  ira_allocno_t from;
+  ira_copy_t from;
 
   /* The next allocno in the queue, or null if this is the last element.  */
   ira_allocno_t next;
@@ -1264,7 +1289,7 @@ start_update_cost (void)
 /* Add (ALLOCNO, FROM, DIVISOR) to the end of update_cost_queue, unless
    ALLOCNO is already in the queue, or has NO_REGS class.  */
 static inline void
-queue_update_cost (ira_allocno_t allocno, ira_allocno_t from, int divisor)
+queue_update_cost (ira_allocno_t allocno, ira_copy_t from, int divisor)
 {
   struct update_cost_queue_elem *elem;
 
@@ -1288,7 +1313,7 @@ queue_update_cost (ira_allocno_t allocno, ira_allocno_t from, int divisor)
    false if the queue was empty, otherwise make (*ALLOCNO, *FROM,
    *DIVISOR) describe the removed element.  */
 static inline bool
-get_next_update_cost (ira_allocno_t *allocno, ira_allocno_t *from, int *divisor)
+get_next_update_cost (ira_allocno_t *allocno, ira_copy_t *from, int *divisor)
 {
   struct update_cost_queue_elem *elem;
 
@@ -1329,16 +1354,19 @@ update_allocno_cost (ira_allocno_t allocno, int hard_regno, int update_cost)
 /* Update (decrease if DECR_P) HARD_REGNO cost of allocnos connected
    by copies to ALLOCNO to increase chances to remove some copies as
    the result of subsequent assignment.  Record cost updates if
-   RECORD_P is true.  */
+   RECORD_P is true. CONFLICT_P shows whether this is updating cost
+   for allocno known conflicting with another allocno assigned to
+   HARD_REGNO.  */
 static void
 update_costs_from_allocno (ira_allocno_t allocno, int hard_regno,
-			   int divisor, bool decr_p, bool record_p)
+			   int divisor, bool decr_p, bool record_p,
+			   bool conflict_p)
 {
   int cost, update_cost;
   enum machine_mode mode;
   enum reg_class rclass, aclass;
-  ira_allocno_t another_allocno, from = NULL;
-  ira_copy_t cp, next_cp;
+  ira_allocno_t another_allocno;
+  ira_copy_t cp, next_cp, from = NULL;
 
   rclass = REGNO_REG_CLASS (hard_regno);
   do
@@ -1360,7 +1388,23 @@ update_costs_from_allocno (ira_allocno_t allocno, int hard_regno,
 	  else
 	    gcc_unreachable ();
 
-	  if (another_allocno == from)
+	  if (from != NULL
+	      && (another_allocno == from->first
+	          || another_allocno == from->second))
+	    continue;
+
+	  /* For a = b * c; if there are copies (a, b) and (a, c),
+	     it makes no sense to propagate cost from b to a then to c.  */
+          if (from != NULL
+	      && from->insn == cp->insn)
+	    continue;
+
+          /* For a = b * c; if there are copies (a, b) and (a, c),
+             and if we know b is conflicting with hardreg r1, sometimes it is
+	     bad to propagate the disfavor of r1 from b to a because the
+	     alterate copy (a, c) may still want to choose r1.  */
+	  if (conflict_p
+	      && find_alternate_copy (cp, another_allocno))
 	    continue;
 
 	  aclass = ALLOCNO_CLASS (another_allocno);
@@ -1381,10 +1425,11 @@ update_costs_from_allocno (ira_allocno_t allocno, int hard_regno,
 
 	  if (! update_allocno_cost (another_allocno, hard_regno, update_cost))
 	    continue;
-	  queue_update_cost (another_allocno, allocno, divisor * COST_HOP_DIVISOR);
+
+	  queue_update_cost (another_allocno, cp, divisor * COST_HOP_DIVISOR);
 	  if (record_p && ALLOCNO_COLOR_DATA (another_allocno) != NULL)
 	    ALLOCNO_COLOR_DATA (another_allocno)->update_cost_records
-	      = get_update_cost_record (hard_regno, divisor,
+	      = get_update_cost_record (hard_regno, divisor * COST_HOP_DIVISOR,
 					ALLOCNO_COLOR_DATA (another_allocno)
 					->update_cost_records);
 	}
@@ -1402,7 +1447,7 @@ update_costs_from_prefs (ira_allocno_t allocno)
   start_update_cost ();
   for (pref = ALLOCNO_PREFS (allocno); pref != NULL; pref = pref->next_pref)
     update_costs_from_allocno (allocno, pref->hard_regno,
-			       COST_HOP_DIVISOR, true, true);
+			       COST_HOP_DIVISOR, true, true, false);
 }
 
 /* Update (decrease if DECR_P) the cost of allocnos connected to
@@ -1417,7 +1462,8 @@ update_costs_from_copies (ira_allocno_t allocno, bool decr_p, bool record_p)
   hard_regno = ALLOCNO_HARD_REGNO (allocno);
   ira_assert (hard_regno >= 0 && ALLOCNO_CLASS (allocno) != NO_REGS);
   start_update_cost ();
-  update_costs_from_allocno (allocno, hard_regno, 1, decr_p, record_p);
+  update_costs_from_allocno (allocno, hard_regno, 1, decr_p,
+			     record_p, false);
 }
 
 /* Restore costs of allocnos connected to ALLOCNO by copies as it was
@@ -1436,10 +1482,117 @@ restore_costs_from_copies (ira_allocno_t allocno)
   records = ALLOCNO_COLOR_DATA (allocno)->update_cost_records;
   start_update_cost ();
   for (curr = records; curr != NULL; curr = curr->next)
+  {
     update_costs_from_allocno (allocno, curr->hard_regno,
-			       curr->divisor, true, false);
+			       curr->divisor, false, false,
+			       false);
+  }
   free_update_cost_record_list (records);
   ALLOCNO_COLOR_DATA (allocno)->update_cost_records = NULL;
+}
+
+/* If HARDREG is assigned to A, pseudo reg B conflicting with A
+   will not be assigned to HARDREG anymore. It is better to
+   take the fact into consideration of cost propagation. So this
+   func revokes the previous HARDREG related updates originated
+   from B, then propagates the disfavor of the HARDREG to other
+   pseudos connecting with B.
+
+   Note: We only propagate cost to the copies connecting with B.
+   The updated_hard_reg_costs and updated_conflict_hard_reg_costs
+   of B are not updated here. The impact of hardreg conflicting
+   may be little underestimated compared with the impact of
+   preference (For hardreg preference propagation,
+   updated_hard_reg_costs of A is updated, then B connecting with
+   A will be updated. When assign_hard_reg for A, the update to B
+   will be superimposed on the preference of A). In addition, by
+   updating updated_hard_reg_costs and updated_conflict_hard_reg_costs
+   of B, the impact to improve_allocation is unclear. So for now,
+   updated_hard_reg_costs and updated_conflict_hard_reg_costs of B
+   are not updated. new_conflict_hard_regs is created to prevent
+   using updated_hard_reg_costs and updated_conflict_hard_reg_costs
+   of B in update_conflict_hard_regno_costs func.  */
+
+static void
+restore_costs_from_conflicts (ira_allocno_t a, int hardreg)
+{
+  int word, nwords;
+  enum machine_mode mode;
+
+  nwords = ALLOCNO_NUM_OBJECTS (a);
+  mode = ALLOCNO_MODE (a);
+  ira_init_register_move_cost_if_necessary (mode);
+
+  curr_allocno_process++;
+  for (word = 0; word < nwords; word++)
+    {
+      ira_object_t conflict_obj;
+      ira_object_t obj = ALLOCNO_OBJECT (a, word);
+      ira_object_conflict_iterator oci;
+
+      /* Update conflicting allocnos.  */
+      FOR_EACH_OBJECT_CONFLICT (obj, conflict_obj, oci)
+        {
+	  ira_allocno_t conflict_a = OBJECT_ALLOCNO (conflict_obj);
+	  struct update_cost_record *curr, *prev, *next;
+          allocno_color_data_t data = ALLOCNO_COLOR_DATA (conflict_a);
+
+	  if (!bitmap_bit_p (consideration_allocno_bitmap,
+			     ALLOCNO_NUM (conflict_a))
+	      || ALLOCNO_ASSIGNED_P (conflict_a)
+	      || (data == NULL)
+	      || (data->last_process == curr_allocno_process))
+	    continue;
+
+	  data->last_process = curr_allocno_process;
+	  /* Record that hardreg will not be assigned to conflict_a in
+	     ira coloring unless improve_allocation adjusts the overall
+	     coloring later.  */
+	  SET_HARD_REG_BIT (data->new_conflict_hard_regs, hardreg);
+
+	  start_update_cost ();
+	  /* Revoke the hardreg related cost update records saved in
+	     ALLOCNO_COLOR_DATA (conflict_a), then remove those records
+	     from head of data->update_cost_records list.  */
+	  curr = data->update_cost_records;
+	  prev = data->update_cost_records;
+	  while (curr != NULL && curr->hard_regno == hardreg)
+	    {
+	      update_costs_from_allocno (conflict_a, curr->hard_regno,
+					 curr->divisor, false, false,
+					 false);
+	      /* Delete current record.  */
+	      free_a_update_cost_record (&data->update_cost_records,
+					 NULL, curr);
+	      curr = data->update_cost_records;
+	      prev = data->update_cost_records;
+	    }
+	  if (curr != NULL)
+	    curr = curr->next;
+	  /* Revoke the hardreg related cost update records saved in
+	     ALLOCNO_COLOR_DATA (conflict_a), then remove those records
+	     from the rest of data->update_cost_records list.  */
+	  for (; curr != NULL; curr = next)
+	    {
+	      next = curr->next;
+	      if (curr->hard_regno == hardreg)
+		{
+		  update_costs_from_allocno (conflict_a, curr->hard_regno,
+					     curr->divisor, false, false,
+					     false);
+		  /* Delete current record.  */
+		  free_a_update_cost_record (&data->update_cost_records,
+					     prev, curr);
+	        }
+	      else
+		prev = curr;
+	    }
+	  /* Propagate the disfavor of hardreg from conflict_a to the
+	     allocnos connecting with conflict_a via copies.  */
+	  update_costs_from_allocno (conflict_a, hardreg,
+				     1, false, true, true);
+	}
+    }
 }
 
 /* This function updates COSTS (decrease if DECR_P) for hard_registers
@@ -1455,8 +1608,8 @@ update_conflict_hard_regno_costs (int *costs, enum reg_class aclass,
   int *conflict_costs;
   bool cont_p;
   enum reg_class another_aclass;
-  ira_allocno_t allocno, another_allocno, from;
-  ira_copy_t cp, next_cp;
+  ira_allocno_t allocno, another_allocno;
+  ira_copy_t cp, next_cp, from;
 
   while (get_next_update_cost (&allocno, &from, &divisor))
     for (cp = ALLOCNO_COPIES (allocno); cp != NULL; cp = next_cp)
@@ -1474,7 +1627,15 @@ update_conflict_hard_regno_costs (int *costs, enum reg_class aclass,
 	else
 	  gcc_unreachable ();
 
-	if (another_allocno == from)
+	if (from != NULL
+	    && (another_allocno == from->first
+		|| another_allocno == from->second))
+	  continue;
+
+	/* For a = b * c; if there are copies (a, b) and (a, c),
+	   it makes no sense to propagate cost from b to a then to c.  */
+	if (from != NULL
+	    && from->insn == cp->insn)
 	  continue;
 
  	another_aclass = ALLOCNO_CLASS (another_allocno);
@@ -1505,6 +1666,16 @@ update_conflict_hard_regno_costs (int *costs, enum reg_class aclass,
 		index = ira_class_hard_reg_index[aclass][hard_regno];
 		if (index < 0)
 		  continue;
+		/* If it is known that hard_regno will not be assigned to
+		   another_allocno, don't use conflict_costs[i] of
+		   another_allocno to update costs[i].  */
+		if (!TEST_HARD_REG_BIT (ALLOCNO_COLOR_DATA (another_allocno)
+					->profitable_hard_regs,
+					hard_regno)
+		    || TEST_HARD_REG_BIT (ALLOCNO_COLOR_DATA (another_allocno)
+					  ->new_conflict_hard_regs,
+					  hard_regno))
+		  continue;
 		cost = (int) ((unsigned) conflict_costs [i] * mult) / div;
 		if (cost == 0)
 		  continue;
@@ -1520,7 +1691,7 @@ update_conflict_hard_regno_costs (int *costs, enum reg_class aclass,
 			   * COST_HOP_DIVISOR
 			   * COST_HOP_DIVISOR
 			   * COST_HOP_DIVISOR))
-	  queue_update_cost (another_allocno, allocno, divisor * COST_HOP_DIVISOR);
+	  queue_update_cost (another_allocno, cp, divisor * COST_HOP_DIVISOR);
       }
 }
 
@@ -1613,7 +1784,9 @@ calculate_saved_nregs (int hard_regno, enum machine_mode mode)
   ira_assert (hard_regno >= 0);
   for (i = hard_regno_nregs[hard_regno][mode] - 1; i >= 0; i--)
     if (!allocated_hardreg_p[hard_regno + i]
-	&& !TEST_HARD_REG_BIT (call_used_reg_set, hard_regno + i)
+	&& (!TEST_HARD_REG_BIT (call_used_reg_set, hard_regno + i)
+	    || (frame_pointer_partially_needed
+		&& (hard_regno + i == HARD_FRAME_POINTER_REGNUM)))
 	&& !LOCAL_REGNO (hard_regno + i))
       nregs++;
   return nregs;
@@ -1784,6 +1957,16 @@ assign_hard_reg (ira_allocno_t a, bool retry_p)
 		    k = ira_class_hard_reg_index[conflict_aclass][hard_regno];
 		    if (k < 0)
 		      continue;
+		    /* If it is known that hard_regno will not be assigned to
+		       conflict_a, don't use conflict_costs[i] of conflict_a
+		       to update full_costs[i].  */
+		    if (!TEST_HARD_REG_BIT (ALLOCNO_COLOR_DATA (conflict_a)
+					    ->profitable_hard_regs,
+					    hard_regno)
+			|| TEST_HARD_REG_BIT (ALLOCNO_COLOR_DATA (conflict_a)
+					      ->new_conflict_hard_regs,
+					      hard_regno))
+		      continue;
 		    full_costs[j] -= conflict_costs[k];
 		  }
 	      queue_update_cost (conflict_a, NULL, COST_HOP_DIVISOR);
@@ -1864,6 +2047,8 @@ assign_hard_reg (ira_allocno_t a, bool retry_p)
   ALLOCNO_ASSIGNED_P (a) = true;
   if (best_hard_regno >= 0)
     update_costs_from_copies (a, true, ! retry_p);
+  if (! retry_p && (best_hard_regno >= 0))
+    restore_costs_from_conflicts (a, best_hard_regno);
   ira_assert (ALLOCNO_CLASS (a) == aclass);
   /* We don't need updated costs anymore: */
   ira_free_allocno_updated_costs (a);

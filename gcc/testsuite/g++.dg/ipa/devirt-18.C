@@ -1,7 +1,7 @@
 /* We shall devirtualize to unreachable.  No anonymous type method should surivve
    reachability.  */
 /* { dg-do compile } */
-/* { dg-options "-O2 -fdump-tree-ssa"  } */
+/* { dg-options "-O2 -fdump-tree-ssa -fdevirtualize"  } */
 namespace {
 class B {
 public:

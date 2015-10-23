@@ -1,3 +1,156 @@
+2015-01-19  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/64649
+	Backported from mainline
+	2015-01-19  Tim Shen  <timshen@google.com>
+
+	* include/bits/regex.tcc (regex_traits<>::lookup_collatename,
+	regex_traits<>::lookup_classname): Support forward iterators.
+	* testsuite/28_regex/traits/char/lookup_classname.cc: New testcases.
+	* testsuite/28_regex/traits/char/lookup_collatename.cc: New testcase.
+
+2015-01-19  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/64584
+	PR libstdc++/64585
+	* include/bits/regex.h (basic_regex<>::basic_regex,
+	basic_regex<>::assign, basic_regex<>::imbue,
+	basic_regex<>::swap, basic_regex<>::mark_count): Drop NFA after
+	imbuing basic_regex; Make assign() transactional against exception.
+	* testsuite/28_regex/basic_regex/assign/char/string.cc: New testcase.
+	* testsuite/28_regex/basic_regex/imbue/string.cc: New testcase.
+
+2015-01-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/64646
+	* include/bits/stl_algo.h (__is_permutation): Also test for reaching
+	end of the second range.
+	* testsuite/25_algorithms/is_permutation/64646.cc: New.
+
+2015-01-09  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/64476
+	* include/bits/stl_uninitialized.h (uninitialized_copy): Fix
+	is_assignable arguments.
+	* testsuite/20_util/specialized_algorithms/uninitialized_copy/64476.cc:
+	New.
+
+2015-01-09  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60966
+	* include/std/future (packaged_task::operator()): Increment the
+	reference count on the shared state until the function returns.
+
+2015-01-09  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/64239
+	Backported form mainline
+	2015-01-09  Tim Shen  <timshen@google.com>
+
+	* include/bits/regex.h (match_results<>::swap): Use std::swap
+	instead of swap.
+	* include/bits/regex_compiler.tcc (_Compiler<>::_M_quantifier):
+	Likewise.
+	* testsuite/28_regex/match_results/swap.cc: New testcase.
+
+2014-12-17  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/64302
+	PR libstdc++/64303
+	Backported form mainline
+	2014-12-17  Tim Shen  <timshen@google.com>
+
+	* include/bits/regex.h (match_results::cbegin, match_results::cend,
+	regex_token_iterator::regex_token_iterator,
+	regex_token_iterator::_M_normalize_result): Fix match_results cbegin
+	and cend and regex_token_iterator::_M_result invariant.
+	* include/bits/regex.tcc: Fix regex_token_iterator::_M_result invariant.
+	* testsuite/28_regex/iterators/regex_token_iterator/64303.cc: Testcase.
+
+2014-12-13  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/64239
+	* include/bits/regex.h (match_results<>::match_results,
+	match_results<>::operator=, match_results<>::position,
+	match_results<>::swap): Fix ctor/assign/swap.
+	* include/bits/regex.tcc: (__regex_algo_impl<>,
+	regex_iterator<>::operator++): Set match_results::_M_begin as
+	"start position".
+	* testsuite/28_regex/iterators/regex_iterator/char/
+	string_position_01.cc: Test cases.
+
+2014-12-09  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/64203
+	* include/std/shared_mutex: Fix preprocessor conditions.
+	* testsuite/experimental/feat-cxx14.cc: Check conditions.
+
+2014-12-06  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/63840
+	* include/std/functional (function::function(const function&)): Set
+	_M_manager after operations that might throw.
+	* include/tr1/functional (function::function(const function&),
+	function::function(_Functor, _Useless)): Likewise.
+	* testsuite/20_util/function/63840.cc: New.
+	* testsuite/tr1/3_function_objects/function/63840.cc: New.
+
+	PR libstdc++/61947
+	* include/std/tuple (_Head_base): Use allocator_arg_t parameters to
+	disambiguate unary constructors.
+	(_Tuple_impl): Pass allocator_arg_t arguments.
+	* testsuite/20_util/tuple/61947.cc: New.
+	* testsuite/20_util/uses_allocator/cons_neg.cc: Adjust dg-error line.
+
+2014-12-06  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/64140
+	Backport form mainline
+	2014-12-04  Tim Shen  <timshen@google.com>
+
+	* include/bits/regex.tcc (regex_iterator<>::operator++): Update
+	prefix.matched after modifying prefix.first.
+	* testsuite/28_regex/iterators/regex_iterator/char/64140.cc: New
+	testcase.
+
+2014-12-02  Matthias Klose  <doko@ubuntu.com>
+
+	PR libstdc++/64103
+	Backport from mainline
+	2014-11-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* include/parallel/algo.h: Do not use default arguments in function
+	template redeclarations (definitions).
+
+	2014-11-04  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/parallel/numeric.h: Do not use default arguments in function
+	template redeclarations (definitions).
+
+2014-11-28  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/63497
+	* include/bits/regex_executor.tcc (_Executor::_M_dfs,
+	_Executor::_M_word_boundary): Avoid dereferecing _M_current at _M_end
+	or other invalid position.
+
+2014-11-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2014-09-10  Tony Wang  <tony.wang@arm.com>
+
+	PR target/56846
+	* libsupc++/eh_personality.cc (PERSONALITY_FUNCTION):
+	Return with CONTINUE_UNWINDING when the state pattern
+	contains: _US_VIRTUAL_UNWIND_FRAME | _US_FORCE_UNWIND
+
+2014-10-30  David Edelsohn  <dje.gcc@gmail.com>
+
+	Backported from mainline.
+	2014-10-30  David Edelsohn  <dje.gcc@gmail.com>
+
+	* configure.host (aix4.3+, 5+): Do not use -G in link command.
+
 2014-10-30  Release Manager
 
 	* GCC 4.9.2 released.

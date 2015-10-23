@@ -134,55 +134,9 @@ allocate_filename_struct (struct gcov_filename_aux *gf)
   gf->gcov_prefix_strip = gcov_prefix_strip;
 }
 
-/* Open a gcda file specified by GI_FILENAME.
-   Return -1 on error.  Return 0 on success.  */
-
 static int
-gcov_exit_open_gcda_file (struct gcov_info *gi_ptr, struct gcov_filename_aux *gf)
+gcov_open_by_filename (char *gi_filename)
 {
-  int gcov_prefix_strip;
-  size_t prefix_length;
-  char *gi_filename_up;
-  const char *fname, *s;
-
-  gcov_prefix_strip = gf->gcov_prefix_strip;
-  gi_filename_up = gf->gi_filename_up;
-  prefix_length = gf->prefix_length;
-  fname = gi_ptr->filename;
-
-  /* Avoid to add multiple drive letters into combined path.  */
-  if (prefix_length != 0 && HAS_DRIVE_SPEC(fname))
-    fname += 2;
-
-  /* Build relocated filename, stripping off leading
-     directories from the initial filename if requested. */
-  if (gcov_prefix_strip > 0)
-    {
-      int level = 0;
-
-      s = fname;
-      if (IS_DIR_SEPARATOR(*s))
-        ++s;
-
-      /* Skip selected directory levels. */
-      for (; (*s != '\0') && (level < gcov_prefix_strip); s++)
-        if (IS_DIR_SEPARATOR(*s))
-          {
-            fname = s;
-            level++;
-          }
-    }
-
-  /* Update complete filename with stripped original. */
-  if (prefix_length != 0 && !IS_DIR_SEPARATOR (*fname))
-    {
-      /* If prefix is given, add directory separator.  */
-      strcpy (gi_filename_up, "/");
-      strcpy (gi_filename_up + 1, fname);
-    }
-  else
-    strcpy (gi_filename_up, fname);
-
   if (!gcov_open (gi_filename))
     {
       /* Open failed likely due to missed directory.
@@ -198,6 +152,46 @@ gcov_exit_open_gcda_file (struct gcov_info *gi_ptr, struct gcov_filename_aux *gf
           return -1;
         }
     }
-
   return 0;
+}
+
+
+/* Strip GCOV_PREFIX_STRIP levels of leading '/' from FILENAME and
+   put the result into GI_FILENAME_UP.  */
+
+static void
+gcov_strip_leading_dirs (int prefix_length, int gcov_prefix_strip,
+      			 const char *filename, char *gi_filename_up)
+{
+  /* Avoid to add multiple drive letters into combined path.  */
+  if (prefix_length != 0 && HAS_DRIVE_SPEC(filename))
+    filename += 2;
+
+  /* Build relocated filename, stripping off leading
+     directories from the initial filename if requested. */
+  if (gcov_prefix_strip > 0)
+    {
+      int level = 0;
+      const char *s = filename;
+      if (IS_DIR_SEPARATOR(*s))
+      	++s;
+
+      /* Skip selected directory levels. */
+      for (; (*s != '\0') && (level < gcov_prefix_strip); s++)
+        if (IS_DIR_SEPARATOR(*s))
+          {
+            filename = s;
+            level++;
+          }
+    }
+
+  /* Update complete filename with stripped original. */
+  if (prefix_length != 0 && !IS_DIR_SEPARATOR (*filename))
+    {
+      /* If prefix is given, add directory separator.  */
+      strcpy (gi_filename_up, "/");
+      strcpy (gi_filename_up + 1, filename);
+    }
+  else
+    strcpy (gi_filename_up, filename);
 }

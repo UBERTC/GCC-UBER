@@ -9918,12 +9918,6 @@ alpha_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
 #undef TARGET_EXPAND_BUILTIN_VA_START
 #define TARGET_EXPAND_BUILTIN_VA_START alpha_va_start
 
-/* The Alpha architecture does not require sequential consistency.  See
-   http://www.cs.umd.edu/~pugh/java/memoryModel/AlphaReordering.html
-   for an example of how it can be violated in practice.  */
-#undef TARGET_RELAXED_ORDERING
-#define TARGET_RELAXED_ORDERING true
-
 #undef TARGET_OPTION_OVERRIDE
 #define TARGET_OPTION_OVERRIDE alpha_option_override
 

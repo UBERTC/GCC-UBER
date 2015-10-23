@@ -63,6 +63,20 @@
 #include <initializer_list>
 #endif
 
+#ifdef _GLIBCXX_ADDRESS_SANITIZER_ANNOTATIONS
+extern "C" void
+__sanitizer_annotate_contiguous_container(const void *, const void *,
+					  const void *, const void *);
+#else
+// When sanitizer annotataions are off, avoid bazillion of no-op
+// functions that blow up debug binary size.
+#define __sanitizer_vector_annotate_new()
+#define __sanitizer_vector_annotate_delete()
+#define __sanitizer_vector_annotate_increase(a)
+#define __sanitizer_vector_annotate_shrink(a)
+#endif  // _GLIBCXX_ADDRESS_SANITIZER_ANNOTATIONS
+
+
 namespace std _GLIBCXX_VISIBILITY(default)
 {
 _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
@@ -158,7 +172,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 
       ~_Vector_base() _GLIBCXX_NOEXCEPT
       { _M_deallocate(this->_M_impl._M_start, this->_M_impl._M_end_of_storage
-		      - this->_M_impl._M_start); }
+		      - this->_M_impl._M_start);
+#if __google_stl_debug_dangling_vector
+        this->_M_impl._M_start = 0;
+        this->_M_impl._M_finish = reinterpret_cast<_Tp*>(~0UL);
+#endif
+      }
 
     public:
       _Vector_impl _M_impl;
@@ -242,6 +261,31 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       using _Base::_M_deallocate;
       using _Base::_M_impl;
       using _Base::_M_get_Tp_allocator;
+
+      bool _M_is_valid() const
+      {
+        if (this->_M_impl._M_end_of_storage == 0
+	    && this->_M_impl._M_start == 0
+	    && this->_M_impl._M_finish == 0)
+	  return true;
+
+	if (this->_M_impl._M_start <= this->_M_impl._M_finish
+	    && this->_M_impl._M_finish <= this->_M_impl._M_end_of_storage)
+	  {
+	    if (this->_M_impl._M_start < this->_M_impl._M_end_of_storage)
+	      return true;
+	    else if (this->_M_impl._M_start == this->_M_impl._M_end_of_storage
+		     && this->_M_impl._M_start == this->_M_impl._M_finish)
+	      {
+		pointer _0xcdcd;
+
+		__builtin_memset(&_0xcdcd, 0xcd, sizeof(_0xcdcd));
+		return this->_M_impl._M_finish != _0xcdcd;
+	      }
+	  }
+
+	return false;
+      }
 
     public:
       // [23.2.4.1] construct/copy/destroy
@@ -545,7 +589,13 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       iterator
       begin() _GLIBCXX_NOEXCEPT
-      { return iterator(this->_M_impl._M_start); }
+      {
+#if __google_stl_debug_dangling_vector
+        if (!this->_M_is_valid())
+          __throw_logic_error("begin() on corrupt (dangling?) vector");
+#endif
+	return iterator(this->_M_impl._M_start);
+      }
 
       /**
        *  Returns a read-only (constant) iterator that points to the
@@ -554,7 +604,13 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       const_iterator
       begin() const _GLIBCXX_NOEXCEPT
-      { return const_iterator(this->_M_impl._M_start); }
+      {
+#if __google_stl_debug_dangling_vector
+        if (!this->_M_is_valid())
+          __throw_logic_error("begin() on corrupt (dangling?) vector");
+#endif
+	return const_iterator(this->_M_impl._M_start);
+      }
 
       /**
        *  Returns a read/write iterator that points one past the last
@@ -563,7 +619,13 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       iterator
       end() _GLIBCXX_NOEXCEPT
-      { return iterator(this->_M_impl._M_finish); }
+      {
+#if __google_stl_debug_dangling_vector
+        if (!this->_M_is_valid())
+          __throw_logic_error("end() on corrupt (dangling?) vector");
+#endif
+	return iterator(this->_M_impl._M_finish);
+      }
 
       /**
        *  Returns a read-only (constant) iterator that points one past
@@ -572,7 +634,13 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       const_iterator
       end() const _GLIBCXX_NOEXCEPT
-      { return const_iterator(this->_M_impl._M_finish); }
+      {
+#if __google_stl_debug_dangling_vector
+        if (!this->_M_is_valid())
+          __throw_logic_error("end() on corrupt (dangling?) vector");
+#endif
+	return const_iterator(this->_M_impl._M_finish);
+      }
 
       /**
        *  Returns a read/write reverse iterator that points to the
@@ -652,7 +720,13 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       /**  Returns the number of elements in the %vector.  */
       size_type
       size() const _GLIBCXX_NOEXCEPT
-      { return size_type(this->_M_impl._M_finish - this->_M_impl._M_start); }
+      {
+#if __google_stl_debug_dangling_vector
+        if (!this->_M_is_valid())
+          __throw_logic_error("size() on corrupt (dangling?) vector");
+#endif
+	return size_type(this->_M_impl._M_finish - this->_M_impl._M_start);
+      }
 
       /**  Returns the size() of the largest possible %vector.  */
       size_type
@@ -732,7 +806,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       size_type
       capacity() const _GLIBCXX_NOEXCEPT
-      { return size_type(this->_M_impl._M_end_of_storage
+      {
+#if __google_stl_debug_dangling_vector
+        if (!this->_M_is_valid())
+          __throw_logic_error("capacity() on corrupt (dangling?) vector");
+#endif
+	return size_type(this->_M_impl._M_end_of_storage
 			 - this->_M_impl._M_start); }
 
       /**
@@ -774,10 +853,18 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        *  Note that data access with this operator is unchecked and
        *  out_of_range lookups are not defined. (For checked lookups
        *  see at().)
+       *
+       *  Local modification: range checks are performed if
+       *  __google_stl_debug_vector is defined to non-zero.
        */
       reference
       operator[](size_type __n) _GLIBCXX_NOEXCEPT
-      { return *(this->_M_impl._M_start + __n); }
+      {
+#if __google_stl_debug_vector
+	_M_range_check(__n);
+#endif
+	return *(this->_M_impl._M_start + __n);
+      }
 
       /**
        *  @brief  Subscript access to the data contained in the %vector.
@@ -789,10 +876,18 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        *  Note that data access with this operator is unchecked and
        *  out_of_range lookups are not defined. (For checked lookups
        *  see at().)
+       *
+       *  Local modification: range checks are performed if
+       *  __google_stl_debug_vector is defined to non-zero.
        */
       const_reference
       operator[](size_type __n) const _GLIBCXX_NOEXCEPT
-      { return *(this->_M_impl._M_start + __n); }
+      {
+#if __google_stl_debug_vector
+	_M_range_check(__n);
+#endif
+	return *(this->_M_impl._M_start + __n);
+      }
 
     protected:
       /// Safety check used only from at().
@@ -849,7 +944,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       reference
       front() _GLIBCXX_NOEXCEPT
-      { return *begin(); }
+      {
+#if __google_stl_debug_vector
+        if (empty()) __throw_logic_error("front() on empty vector");
+#endif
+        return *begin();
+      }
 
       /**
        *  Returns a read-only (constant) reference to the data at the first
@@ -857,7 +957,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       const_reference
       front() const _GLIBCXX_NOEXCEPT
-      { return *begin(); }
+      {
+#if __google_stl_debug_vector
+        if (empty()) __throw_logic_error("front() on empty vector");
+#endif
+        return *begin();
+      }
 
       /**
        *  Returns a read/write reference to the data at the last
@@ -865,7 +970,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       reference
       back() _GLIBCXX_NOEXCEPT
-      { return *(end() - 1); }
+      {
+#if __google_stl_debug_vector
+        if (empty()) __throw_logic_error("back() on empty vector");
+#endif
+        return *(end() - 1);
+      }
       
       /**
        *  Returns a read-only (constant) reference to the data at the
@@ -873,7 +983,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       const_reference
       back() const _GLIBCXX_NOEXCEPT
-      { return *(end() - 1); }
+      {
+#if __google_stl_debug_vector
+        if (empty()) __throw_logic_error("back() on empty vector");
+#endif
+        return *(end() - 1);
+      }
 
       // _GLIBCXX_RESOLVE_LIB_DEFECTS
       // DR 464. Suggestion for new member functions in standard containers.
@@ -888,7 +1003,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       pointer
 #endif
       data() _GLIBCXX_NOEXCEPT
-      { return _M_data_ptr(this->_M_impl._M_start); }
+      {
+#if __google_stl_debug_vector
+        if (empty()) return 0;
+#endif
+        return _M_data_ptr(this->_M_impl._M_start); 
+      }
 
 #if __cplusplus >= 201103L
       const _Tp*
@@ -896,7 +1016,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       const_pointer
 #endif
       data() const _GLIBCXX_NOEXCEPT
-      { return _M_data_ptr(this->_M_impl._M_start); }
+      {
+#if __google_stl_debug_vector
+        if (empty()) return 0;
+#endif
+        return _M_data_ptr(this->_M_impl._M_start);
+      }
 
       // [23.2.4.3] modifiers
       /**
@@ -914,6 +1039,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       {
 	if (this->_M_impl._M_finish != this->_M_impl._M_end_of_storage)
 	  {
+	    __sanitizer_vector_annotate_increase(1);
 	    _Alloc_traits::construct(this->_M_impl, this->_M_impl._M_finish,
 	                             __x);
 	    ++this->_M_impl._M_finish;
@@ -948,8 +1074,14 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       void
       pop_back() _GLIBCXX_NOEXCEPT
       {
+#if __google_stl_debug_vector
+	if (this->empty())
+	  __throw_logic_error(__N("pop_back() on empty vector"));
+#endif
+	size_type __old_size = size();
 	--this->_M_impl._M_finish;
 	_Alloc_traits::destroy(this->_M_impl, this->_M_impl._M_finish);
+	__sanitizer_vector_annotate_shrink(__old_size);
       }
 
 #if __cplusplus >= 201103L
@@ -1050,6 +1182,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       iterator
       insert(const_iterator __position, size_type __n, const value_type& __x)
       {
+#if __google_stl_debug_vector
+	if (__position < this->begin() || __position > this->end())
+	  __throw_out_of_range(__N("insert() at invalid position"));
+#endif
 	difference_type __offset = __position - cbegin();
 	_M_fill_insert(begin() + __offset, __n, __x);
 	return begin() + __offset;
@@ -1070,7 +1206,13 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       void
       insert(iterator __position, size_type __n, const value_type& __x)
-      { _M_fill_insert(__position, __n, __x); }
+      {
+#if __google_stl_debug_vector
+	if (__position < this->begin() || __position > this->end())
+	  __throw_out_of_range(__N("insert() at invalid position"));
+#endif
+	_M_fill_insert(__position, __n, __x);
+      }
 #endif
 
 #if __cplusplus >= 201103L
@@ -1095,6 +1237,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
         insert(const_iterator __position, _InputIterator __first,
 	       _InputIterator __last)
         {
+#if __google_stl_debug_vector
+	  if (__position < this->begin() || __position > this->end())
+	    __throw_out_of_range(__N("insert() at invalid position"));
+#endif
 	  difference_type __offset = __position - cbegin();
 	  _M_insert_dispatch(begin() + __offset,
 			     __first, __last, __false_type());
@@ -1120,6 +1266,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
         insert(iterator __position, _InputIterator __first,
 	       _InputIterator __last)
         {
+#if __google_stl_debug_vector
+	  if (__position < this->begin() || __position > this->end())
+	    __throw_out_of_range(__N("insert() at invalid position"));
+#endif
 	  // Check whether it's an integral type.  If so, it's not an iterator.
 	  typedef typename std::__is_integer<_InputIterator>::__type _Integral;
 	  _M_insert_dispatch(__position, __first, __last, _Integral());
@@ -1196,6 +1346,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       noexcept(_Alloc_traits::_S_nothrow_swap())
 #endif
       {
+#if __google_stl_debug_dangling_vector
+        if (!this->_M_is_valid() || !__x._M_is_valid())
+          __throw_logic_error("swap() on corrupt (dangling?) vector");
+#endif
 	this->_M_impl._M_swap_data(__x._M_impl);
 	_Alloc_traits::_S_on_swap(_M_get_Tp_allocator(),
 	                          __x._M_get_Tp_allocator());
@@ -1209,7 +1363,13 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       void
       clear() _GLIBCXX_NOEXCEPT
-      { _M_erase_at_end(this->_M_impl._M_start); }
+      {
+#if __google_stl_debug_dangling_vector
+        if (!this->_M_is_valid())
+          __throw_logic_error("clear() on corrupt (dangling?) vector");
+#endif
+	_M_erase_at_end(this->_M_impl._M_start);
+      }
 
     protected:
       /**
@@ -1435,8 +1595,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       void
       _M_erase_at_end(pointer __pos) _GLIBCXX_NOEXCEPT
       {
+	size_type __old_size = size();
 	std::_Destroy(__pos, this->_M_impl._M_finish, _M_get_Tp_allocator());
 	this->_M_impl._M_finish = __pos;
+	__sanitizer_vector_annotate_shrink(__old_size);
       }
 
       iterator
@@ -1493,6 +1655,72 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	_M_data_ptr(_Ptr __ptr) const
 	{ return __ptr; }
 #endif
+
+#ifdef _GLIBCXX_ADDRESS_SANITIZER_ANNOTATIONS
+    private:
+      template<class T, class U>
+      struct __is_same_allocator {
+	static void __annotate_contiguous_container(pointer __beg,
+						    pointer __end,
+						    pointer __old_mid,
+						    pointer __new_mid) { }
+      };
+      // The following functions are no-ops outside of AddressSanitizer mode.
+      // We call annotatations only for the default Allocator because
+      // other allocators may not meet the AddressSanitizer alignment
+      // constraints.
+      // See the documentation for __sanitizer_annotate_contiguous_container
+      // for more details.
+      template <class T> struct __is_same_allocator<T, T> {
+	static void __annotate_contiguous_container(pointer __beg,
+						    pointer __end,
+						    pointer __old_mid,
+						    pointer __new_mid) {
+	  if (__beg)
+	    __sanitizer_annotate_contiguous_container(__beg,
+						      __end,
+						      __old_mid,
+						      __new_mid);
+	}
+      };
+
+      void __annotate_contiguous_container(pointer __beg,
+					   pointer __end,
+					   pointer __old_mid,
+					   pointer __new_mid)
+      {
+	__is_same_allocator<_Alloc, std::allocator<_Tp> >::
+	  __annotate_contiguous_container(__beg, __end, __old_mid, __new_mid);
+      }
+      void __sanitizer_vector_annotate_new()
+      {
+	__annotate_contiguous_container(_M_impl._M_start,
+					_M_impl._M_end_of_storage,
+					_M_impl._M_end_of_storage,
+					_M_impl._M_finish);
+      }
+      void __sanitizer_vector_annotate_delete()
+      {
+	__annotate_contiguous_container(_M_impl._M_start,
+					_M_impl._M_end_of_storage,
+					_M_impl._M_finish,
+					_M_impl._M_end_of_storage);
+      }
+      void __sanitizer_vector_annotate_increase(size_type __n)
+      {
+	__annotate_contiguous_container(_M_impl._M_start,
+					_M_impl._M_end_of_storage,
+					_M_impl._M_finish,
+					_M_impl._M_finish + __n);
+      }
+      void __sanitizer_vector_annotate_shrink(size_type __old_size)
+      {
+	__annotate_contiguous_container(_M_impl._M_start,
+					_M_impl._M_end_of_storage,
+					_M_impl._M_start + __old_size,
+					_M_impl._M_finish);
+      }
+#endif	// _GLIBCXX_ADDRESS_SANITIZER_ANNOTATIONS
     };
 
 

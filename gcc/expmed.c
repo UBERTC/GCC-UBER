@@ -113,7 +113,7 @@ init_expmed_one_conv (struct init_expmed_rtl *all, enum machine_mode to_mode,
 	     - (GET_MODE_CLASS (to_mode) == MODE_PARTIAL_INT));
   from_size = (GET_MODE_BITSIZE (from_mode)
 	       - (GET_MODE_CLASS (from_mode) == MODE_PARTIAL_INT));
-  
+
   /* Assume cost of zero-extend and sign-extend is the same.  */
   which = (to_size < from_size ? &all->trunc : &all->zext);
 
@@ -463,7 +463,7 @@ strict_volatile_bitfield_p (rtx op0, unsigned HOST_WIDE_INT bitsize,
   /* Check for cases where the C++ memory model applies.  */
   if (bitregion_end != 0
       && (bitnum - bitnum % modesize < bitregion_start
-	  || bitnum - bitnum % modesize + modesize > bitregion_end))
+	  || bitnum - bitnum % modesize + modesize - 1 > bitregion_end))
     return false;
 
   return true;
@@ -1770,7 +1770,7 @@ extract_bit_field (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
 
       return convert_extracted_bit_field (result, mode, tmode, unsignedp);
     }
-  
+
   return extract_bit_field_1 (str_rtx, bitsize, bitnum, unsignedp,
 			      target, mode, tmode, true);
 }
@@ -1914,7 +1914,7 @@ lshift_value (enum machine_mode mode, unsigned HOST_WIDE_INT value,
 	      int bitpos)
 {
   double_int val;
-  
+
   val = double_int::from_uhwi (value);
   val = val.llshift (bitpos, HOST_BITS_PER_DOUBLE_INT);
 
@@ -3321,6 +3321,9 @@ expand_widening_mult (enum machine_mode mode, rtx op0, rtx op1, rtx target,
       enum mult_variant variant;
       struct algorithm algorithm;
 
+      if (coeff == 0)
+	return CONST0_RTX (mode);
+
       /* Special case powers of two.  */
       if (EXACT_POWER_OF_2_OR_ZERO_P (coeff))
 	{
@@ -3384,7 +3387,7 @@ choose_multiplier (unsigned HOST_WIDE_INT d, int n, int precision,
 
   /* mlow = 2^(N + lgup)/d */
   double_int val = double_int_zero.set_bit (pow);
-  mlow = val.div (double_int::from_uhwi (d), true, TRUNC_DIV_EXPR); 
+  mlow = val.div (double_int::from_uhwi (d), true, TRUNC_DIV_EXPR);
 
   /* mhigh = (2^(N + lgup) + 2^(N + lgup - precision))/d */
   val |= double_int_zero.set_bit (pow2);
@@ -4045,7 +4048,7 @@ expand_divmod (int rem_flag, enum tree_code code, enum machine_mode mode,
   /* Only deduct something for a REM if the last divide done was
      for a different constant.   Then set the constant of the last
      divide.  */
-  max_cost = (unsignedp 
+  max_cost = (unsignedp
 	      ? udiv_cost (speed, compute_mode)
 	      : sdiv_cost (speed, compute_mode));
   if (rem_flag && ! (last_div_const != 0 && op1_is_constant

@@ -35,6 +35,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "hash-table.h"
 #include "plugin.h"
 
+
 /* Table of the tables of attributes (common, language, format, machine)
    searched.  */
 static const struct attribute_spec *attribute_tables[4];

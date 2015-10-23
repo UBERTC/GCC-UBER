@@ -781,6 +781,18 @@ mrtm
 Target Report Mask(ISA_RTM) Var(ix86_isa_flags) Save
 Support RTM built-in functions and code generation
 
+mpatch-functions-for-instrumentation
+Target RejectNegative Report Var(patch_functions_for_instrumentation) Save
+Patch function prologue and epilogue with custom NOPs for dynamic instrumentation. By default, functions with loops (controlled by -mpatch-functions-without-loop) or functions having instructions more than -mpatch-functions-min-instructions are patched.
+
+mpatch-functions-ignore-loops
+Target RejectNegative Report Var(patch_functions_ignore_loops) Save
+Ignore loops when deciding whether to patch a function for instrumentation (for use with -mpatch-functions-for-instrumentation).
+
+mno-patch-functions-main-always
+Target Report RejectNegative Var(patch_functions_dont_always_patch_main) Save
+Treat 'main' as any other function and only patch it if it meets the criteria for loops and minimum number of instructions (for use with -mpatch-functions-for-instrumentation).
+
 mstack-protector-guard=
 Target RejectNegative Joined Enum(stack_protector_guard) Var(ix86_stack_protector_guard) Init(SSP_TLS)
 Use given stack-protector guard

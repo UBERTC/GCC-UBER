@@ -52,6 +52,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "hashtab.h"
 #include "tree-pass.h"
 #include "diagnostic-core.h"
+#include "l-ipo.h"
 #include "cfgloop.h"
 #include "cfgexpand.h"
 

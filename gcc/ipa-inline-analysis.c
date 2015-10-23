@@ -861,9 +861,19 @@ evaluate_conditions_for_known_args (struct cgraph_node *node,
 	}
       if (c->code == IS_NOT_CONSTANT || c->code == CHANGED)
 	continue;
-      res = fold_binary_to_constant (c->code, boolean_type_node, val, c->val);
-      if (res && integer_zerop (res))
-	continue;
+
+      if (operand_equal_p (TYPE_SIZE (TREE_TYPE (c->val)),
+			   TYPE_SIZE (TREE_TYPE (val)), 0))
+	{
+	  val = fold_unary (VIEW_CONVERT_EXPR, TREE_TYPE (c->val), val);
+
+	  res = val
+	    ? fold_binary_to_constant (c->code, boolean_type_node, val, c->val)
+	    : NULL;
+
+	  if (res && integer_zerop (res))
+	    continue;
+	}
       clause |= 1 << (i + predicate_first_dynamic_condition);
     }
   return clause;
@@ -1007,7 +1017,6 @@ reset_inline_summary (struct cgraph_node *node)
   info->self_size = info->self_time = 0;
   info->estimated_stack_size = 0;
   info->estimated_self_stack_size = 0;
-  info->stack_frame_offset = 0;
   info->size = 0;
   info->time = 0;
   info->growth = 0;
@@ -1351,10 +1360,9 @@ dump_inline_edge_summary (FILE *f, int indent, struct cgraph_node *node,
 	  }
       if (!edge->inline_failed)
 	{
-	  fprintf (f, "%*sStack frame offset %i, callee self size %i,"
+	  fprintf (f, "%*sCallee self size %i,"
 		   " callee size %i\n",
 		   indent + 2, "",
-		   (int) inline_summary (callee)->stack_frame_offset,
 		   (int) inline_summary (callee)->estimated_self_stack_size,
 		   (int) inline_summary (callee)->estimated_stack_size);
 	  dump_inline_edge_summary (f, indent + 2, callee, info);
@@ -2161,6 +2169,8 @@ param_change_prob (gimple stmt, int i)
 	return 0;
       if (!bb->frequency)
 	return REG_BR_PROB_BASE;
+      if (!optimize)
+	return REG_BR_PROB_BASE;
       ao_ref_init (&refd, op);
       info.stmt = stmt;
       info.bb_set = BITMAP_ALLOC (NULL);
@@ -2436,7 +2446,8 @@ estimate_function_body_sizes (struct cgraph_node *node, bool early)
 {
   gcov_type time = 0;
   /* Estimate static overhead for function prologue/epilogue and alignment. */
-  int size = 2;
+  int overhead = PARAM_VALUE (PARAM_INLINE_FUNCTION_OVERHEAD_SIZE);
+  int size = overhead;
   /* Benefits are scaled by probability of elimination that is in range
      <0,2>.  */
   basic_block bb;
@@ -2478,7 +2489,7 @@ estimate_function_body_sizes (struct cgraph_node *node, bool early)
   account_size_time (info, 0, 0, &bb_predicate);
 
   bb_predicate = not_inlined_predicate ();
-  account_size_time (info, 2 * INLINE_SIZE_SCALE, 0, &bb_predicate);
+  account_size_time (info, overhead * INLINE_SIZE_SCALE, 0, &bb_predicate);
 
   gcc_assert (my_function && my_function->cfg);
   if (parms_info)
@@ -2850,7 +2861,6 @@ compute_inline_parameters (struct cgraph_node *node, bool early)
   self_stack_size = optimize ? estimated_stack_frame_size (node) : 0;
   info->estimated_self_stack_size = self_stack_size;
   info->estimated_stack_size = self_stack_size;
-  info->stack_frame_offset = 0;
 
   /* Can this function be inlined at all?  */
   if (!optimize && !lookup_attribute ("always_inline",
@@ -2892,7 +2902,6 @@ compute_inline_parameters (struct cgraph_node *node, bool early)
   /* Inlining characteristics are maintained by the cgraph_mark_inline.  */
   info->time = info->self_time;
   info->size = info->self_size;
-  info->stack_frame_offset = 0;
   info->estimated_stack_size = info->estimated_self_stack_size;
 #ifdef ENABLE_CHECKING
   inline_update_overall_summary (node);
@@ -3317,16 +3326,12 @@ inline_update_callee_summaries (struct cgraph_node *node, int depth)
 {
   struct cgraph_edge *e;
   struct inline_summary *callee_info = inline_summary (node);
-  struct inline_summary *caller_info = inline_summary (node->callers->caller);
-  HOST_WIDE_INT peak;
 
-  callee_info->stack_frame_offset
-    = caller_info->stack_frame_offset
-    + caller_info->estimated_self_stack_size;
-  peak = callee_info->stack_frame_offset
-    + callee_info->estimated_self_stack_size;
-  if (inline_summary (node->global.inlined_to)->estimated_stack_size < peak)
-      inline_summary (node->global.inlined_to)->estimated_stack_size = peak;
+  /* Pessimistically assume no sharing of stack space.  That is, the
+    frame size of a function is estimated as the original frame size
+    plus the sum of the frame sizes of all inlined callees.  */
+  inline_summary (node->global.inlined_to)->estimated_stack_size +=
+      callee_info->estimated_self_stack_size;
   ipa_propagate_frequency (node);
   for (e = node->callees; e; e = e->next_callee)
     {

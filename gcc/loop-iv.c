@@ -3022,8 +3022,12 @@ get_simple_loop_desc (struct loop *loop)
   /* At least desc->infinite is not always initialized by
      find_simple_loop_exit.  */
   desc = ggc_alloc_cleared_niter_desc ();
-  iv_analysis_loop_init (loop);
-  find_simple_exit (loop, desc);
+  if (loop->latch != EXIT_BLOCK_PTR_FOR_FN (cfun))
+    {
+      iv_analysis_loop_init (loop);
+      find_simple_exit (loop, desc);
+    }
+  analyze_loop_insns (loop, desc);
   loop->simple_loop_desc = desc;
 
   if (desc->simple_p && (desc->assumptions || desc->infinite))

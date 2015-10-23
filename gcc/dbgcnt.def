@@ -141,6 +141,7 @@ echo ubound: $ub
 */
 
 /* Debug counter definitions.  */
+DEBUG_COUNTER (alias)
 DEBUG_COUNTER (auto_inc_dec)
 DEBUG_COUNTER (ccp)
 DEBUG_COUNTER (cfg_cleanup)
@@ -165,6 +166,7 @@ DEBUG_COUNTER (if_conversion)
 DEBUG_COUNTER (if_conversion_tree)
 DEBUG_COUNTER (if_after_combine)
 DEBUG_COUNTER (if_after_reload)
+DEBUG_COUNTER (inl)
 DEBUG_COUNTER (local_alloc_for_sched)
 DEBUG_COUNTER (postreload_cse)
 DEBUG_COUNTER (pre)
@@ -189,3 +191,4 @@ DEBUG_COUNTER (split_for_sched2)
 DEBUG_COUNTER (tail_call)
 DEBUG_COUNTER (ira_move)
 DEBUG_COUNTER (registered_jump_thread)
+DEBUG_COUNTER (fpset_insert)

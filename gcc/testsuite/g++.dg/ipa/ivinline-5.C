@@ -1,7 +1,7 @@
 /* Verify that virtual call inlining does not pick a wrong method when
    there is a user defined ancestor in an object.  */
 /* { dg-do run { target nonpic } } */
-/* { dg-options "-O3 -fdump-ipa-inline -fno-early-inlining -fno-ipa-cp"  } */
+/* { dg-options "-O3 -fdump-ipa-inline -fno-early-inlining -fno-ipa-cp -fdevirtualize"  } */
 
 extern "C" void abort (void);
 

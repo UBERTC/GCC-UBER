@@ -1,5 +1,5 @@
 // { dg-do compile }
-// { dg-options "-O2" }
+// { dg-options "-O2 -fdevirtualize" }
 /* Using -mshort-calls avoids loading the function addresses in
    registers and thus getting the counts wrong.  */
 // { dg-additional-options "-mshort-calls" {target epiphany-*-*} }

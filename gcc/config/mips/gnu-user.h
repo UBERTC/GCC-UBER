@@ -36,6 +36,7 @@ along with GCC; see the file COPYING3.  If not see
     /* The GNU C++ standard library requires this.  */		\
     if (c_dialect_cxx ())					\
       builtin_define ("_GNU_SOURCE");				\
+    ANDROID_TARGET_OS_CPP_BUILTINS();				\
   } while (0)
 
 #undef SUBTARGET_CPP_SPEC
@@ -52,22 +53,27 @@ along with GCC; see the file COPYING3.  If not see
 #undef MIPS_DEFAULT_GVALUE
 #define MIPS_DEFAULT_GVALUE 0
 
-/* Borrowed from sparc/linux.h */
 #undef GNU_USER_TARGET_LINK_SPEC
-#define GNU_USER_TARGET_LINK_SPEC \
- "%(endian_spec) \
-  %{shared:-shared} \
-  %{!shared: \
-    %{!static: \
-      %{rdynamic:-export-dynamic} \
-      -dynamic-linker " GNU_USER_DYNAMIC_LINKER "} \
-      %{static:-static}}"
+#define GNU_USER_TARGET_LINK_SPEC "\
+  %{G*} %{EB} %{EL} %{mips*} %{shared} \
+   %{!shared: \
+     %{!static: \
+       %{rdynamic:-export-dynamic} \
+       %{mabi=n32: -dynamic-linker " GNU_USER_DYNAMIC_LINKERN32 "} \
+       %{mabi=64: -dynamic-linker " GNU_USER_DYNAMIC_LINKER64 "} \
+       %{mabi=32: -dynamic-linker " GNU_USER_DYNAMIC_LINKER32 "}} \
+    %{static}} \
+  %{mabi=n32:-m" GNU_USER_LINK_EMULATIONN32 "} \
+  %{mabi=64:-m" GNU_USER_LINK_EMULATION64 "} \
+  %{mabi=32:-m" GNU_USER_LINK_EMULATION32 "}"
+
 #undef LINK_SPEC
 #define LINK_SPEC GNU_USER_TARGET_LINK_SPEC
-
+ 
 #undef SUBTARGET_ASM_SPEC
 #define SUBTARGET_ASM_SPEC \
-  "%{!mno-abicalls:%{mplt:-call_nonpic;:-KPIC}}"
+  "%{!mno-abicalls:%{mplt:-call_nonpic;:-KPIC}} " \
+  LINUX_OR_ANDROID_CC ("", ANDROID_ASM_SPEC)
 
 /* The MIPS assembler has different syntax for .set. We set it to
    .dummy to trap any errors.  */
@@ -116,16 +122,19 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
 #endif
 
 #define LINUX_DRIVER_SELF_SPECS \
-  NO_SHARED_SPECS							\
+  LINUX_OR_ANDROID_CC(NO_SHARED_SPECS, "")                              \
   MARCH_MTUNE_NATIVE_SPECS,						\
   /* -mplt has no effect without -mno-shared.  Simplify later		\
      specs handling by removing a redundant option.  */			\
   "%{!mno-shared:%<mplt}",						\
   /* -mplt likewise has no effect for -mabi=64 without -msym32.  */	\
-  "%{mabi=64:%{!msym32:%<mplt}}"
+  "%{mabi=64:%{!msym32:%<mplt}}",					\
+  "%{!EB:%{!EL:%(endian_spec)}}",					\
+  "%{!mabi=*: -" MULTILIB_ABI_DEFAULT "}"
 
 #undef DRIVER_SELF_SPECS
 #define DRIVER_SELF_SPECS \
+  MIPS_ISA_LEVEL_SPEC,    \
   BASE_DRIVER_SELF_SPECS, \
   LINUX_DRIVER_SELF_SPECS
 
@@ -137,3 +146,6 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
 #define ENDFILE_SPEC \
   GNU_USER_TARGET_MATHFILE_SPEC " " \
   GNU_USER_TARGET_ENDFILE_SPEC
+
+#undef LOCAL_LABEL_PREFIX
+#define LOCAL_LABEL_PREFIX (TARGET_OLDABI ? "$" : ".")

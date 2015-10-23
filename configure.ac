@@ -959,6 +959,9 @@ case "${target}" in
   arc-*-*|arceb-*-*)
     noconfigdirs="$noconfigdirs target-libgloss"
     ;;
+  arm*-*-linux-androideabi)
+    noconfigdirs="$noconfigdirs target-libiberty"
+    ;;
   arm-*-pe*)
     noconfigdirs="$noconfigdirs target-libgloss"
     ;;
@@ -1106,7 +1109,7 @@ case "${target}" in
   microblaze*)
     noconfigdirs="$noconfigdirs gprof"
     ;;
-  mips*-sde-elf* | mips*-mti-elf*)
+  mips*-sde-elf* | mips*-mti-elf* | mips*-img-elf*)
     if test x$with_newlib = xyes; then
       noconfigdirs="$noconfigdirs gprof"
     fi
@@ -1658,6 +1661,9 @@ if test "x$with_isl" != "xno" &&
     ISL_CHECK_VERSION(0,11)
     if test "${gcc_cv_isl}" = no ; then
       ISL_CHECK_VERSION(0,12)
+      if test "${gcc_cv_isl}" = no ; then
+        ISL_CHECK_VERSION(0,14)
+      fi
     fi
   fi
   dnl Only execute fail-action, if ISL has been requested.
@@ -1706,6 +1712,8 @@ enable_lto=yes; default_enable_lto=yes)
 
 ACX_ELF_TARGET_IFELSE([# ELF platforms build the lto-plugin always.
   build_lto_plugin=yes
+  # Allow ELF platforms to build the function_reordering_plugin always.
+  build_function_reordering_plugin=yes
 ],[if test x"$default_enable_lto" = x"yes" ; then
     case $target in
       *-apple-darwin9* | *-cygwin* | *-mingw*) ;;
@@ -1845,6 +1853,11 @@ if test -d ${srcdir}/gcc; then
       extra_host_libiberty_configure_flags=--enable-shared
     fi
   fi
+  if test "${build_function_reordering_plugin}" = "yes" ; then
+    configdirs="$configdirs function_reordering_plugin"
+    extra_host_libiberty_configure_flags=--enable-shared
+  fi
+
   AC_SUBST(extra_host_libiberty_configure_flags)
 
   missing_languages=`echo ",$enable_languages," | sed -e s/,all,/,/ -e s/,c,/,/ `
@@ -2364,7 +2377,7 @@ case "${target}" in
   spu-*-*)
     target_makefile_frag="config/mt-spu"
     ;;
-  mips*-sde-elf* | mips*-mti-elf*)
+  mips*-sde-elf* | mips*-mti-elf* | mips*-img-elf*)
     target_makefile_frag="config/mt-sde"
     ;;
   mipsisa*-*-elfoabi*)

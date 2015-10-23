@@ -1,3 +1,39 @@
+2015-03-11  Junmo Park  <junmoz.park@samsung.com>
+
+        * config/arm/cortex-a57.md (cortex_a57_crypto_simple): Add
+        crypto_sha256_fast.
+        (cortex_a57_crypto_complex): Add crypto_sha256_slow.
+
+2015-01-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+        * config/arm/cortex-a57.md: Remove duplicate of file accidentally
+        introduced in revision 219724.
+
+2015-01-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+        * config/arm/cortex-a57.md: New.
+        * config/aarch64/aarch64.md: Include it.
+        * config/aarch64/aarch64-cores.def (cortex-a57): Tune for it.
+        * config/aarch64/aarch64-tune.md: Regenerate.
+
+2014-12-04  Tobias Burnus  <burnus@net-b.de>
+
+	* configure.ac: Permit also ISL 0.14 with CLooG.
+	* Makefile.def: Make more dependent on mpfr, mpc, isl, and cloog.
+	* Makefile.in: Regenerate.
+	* configure: Regenerate.
+
+2014-11-19  Wilco Dijkstra  <wdijkstr@arm.com>
+
+       PR target/61915
+       * config/aarch64/aarch64.c (generic_regmove_cost): Increase FP move
+       cost.
+
+2014-11-19  Renlin Li  <Renlin.Li@arm.com>
+
+	PR middle-end/63762
+	* ira.c (ira): Update preferred class.
+
 2014-10-30  Release Manager
 
 	* GCC 4.9.2 released.

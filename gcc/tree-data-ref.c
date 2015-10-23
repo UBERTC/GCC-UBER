@@ -663,6 +663,9 @@ split_constant_offset_1 (tree type, tree op0, enum tree_code code, tree op1,
 
     case SSA_NAME:
       {
+	if (SSA_NAME_OCCURS_IN_ABNORMAL_PHI (op0))
+	  return false;
+
 	gimple def_stmt = SSA_NAME_DEF_STMT (op0);
 	enum tree_code subcode;
 
@@ -970,6 +973,24 @@ dr_analyze_indices (struct data_reference *dr, loop_p nest, loop_p loop)
 				fold_convert (ssizetype, memoff));
 	      memoff = build_int_cst (TREE_TYPE (memoff), 0);
 	    }
+	  /* Adjust the offset so it is a multiple of the access type
+	     size and thus we separate bases that can possibly be used
+	     to produce partial overlaps (which the access_fn machinery
+	     cannot handle).  */
+	  double_int rem;
+	  if (TYPE_SIZE_UNIT (TREE_TYPE (ref))
+	      && TREE_CODE (TYPE_SIZE_UNIT (TREE_TYPE (ref))) == INTEGER_CST
+	      && !integer_zerop (TYPE_SIZE_UNIT (TREE_TYPE (ref))))
+	    rem = tree_to_double_int (off).mod
+                (tree_to_double_int (TYPE_SIZE_UNIT (TREE_TYPE (ref))), false,
+                 TRUNC_MOD_EXPR);
+	  else
+	    /* If we can't compute the remainder simply force the initial
+	       condition to zero.  */
+	    rem = tree_to_double_int (off);
+	  off = double_int_to_tree (ssizetype, tree_to_double_int (off) - rem);
+	  memoff = double_int_to_tree (TREE_TYPE (memoff), rem);
+	  /* And finally replace the initial condition.  */
 	  access_fn = chrec_replace_initial_condition
 	      (access_fn, fold_convert (orig_type, off));
 	  /* ???  This is still not a suitable base object for
@@ -979,9 +1000,12 @@ dr_analyze_indices (struct data_reference *dr, loop_p nest, loop_p loop)
 	     guaranteed.
 	     As a band-aid, mark the access so we can special-case
 	     it in dr_may_alias_p.  */
+	  tree old = ref;
 	  ref = fold_build2_loc (EXPR_LOCATION (ref),
 				 MEM_REF, TREE_TYPE (ref),
 				 base, memoff);
+	  MR_DEPENDENCE_CLIQUE (ref) = MR_DEPENDENCE_CLIQUE (old);
+	  MR_DEPENDENCE_BASE (ref) = MR_DEPENDENCE_BASE (old);
 	  access_fns.safe_push (access_fn);
 	}
     }
@@ -1387,6 +1411,12 @@ dr_may_alias_p (const struct data_reference *a, const struct data_reference *b,
       if (aff_comb_cannot_overlap_p (&off2, size1, size2))
 	return false;
     }
+
+  if ((TREE_CODE (addr_a) == MEM_REF || TREE_CODE (addr_a) == TARGET_MEM_REF)
+      && (TREE_CODE (addr_b) == MEM_REF || TREE_CODE (addr_b) == TARGET_MEM_REF)
+      && MR_DEPENDENCE_CLIQUE (addr_a) == MR_DEPENDENCE_CLIQUE (addr_b)
+      && MR_DEPENDENCE_BASE (addr_a) != MR_DEPENDENCE_BASE (addr_b))
+    return false;
 
   /* If we had an evolution in a pointer-based MEM_REF BASE_OBJECT we
      do not know the size of the base-object.  So we cannot do any

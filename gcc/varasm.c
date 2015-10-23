@@ -52,6 +52,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "targhooks.h"
 #include "cgraph.h"
 #include "pointer-set.h"
+#include "l-ipo.h"
 #include "asan.h"
 #include "basic-block.h"
 
@@ -94,11 +95,6 @@ tree last_assemble_variable_decl;
    in a function belongs to the cold partition or not.  */
 
 bool first_function_block_is_cold;
-
-/* We give all constants their own alias set.  Perhaps redundant with
-   MEM_READONLY_P, but pre-dates it.  */
-
-static alias_set_type const_alias_set;
 
 /* Whether we saw any functions with no_split_stack.  */
 
@@ -167,6 +163,13 @@ section *in_section;
 /* True if code for the current function is currently being directed
    at the cold section.  */
 bool in_cold_section_p;
+
+/* The following global holds the "function name" for the code in the
+   cold section of a function, if hot/cold function splitting is enabled
+   and there was actually code that went into the cold section.  A
+   pseudo function name is needed for the cold section of code for some
+   debugging tools that perform symbolization. */
+tree cold_function_name = NULL_TREE;
 
 /* A linked list of all the unnamed sections.  */
 static GTY(()) section *unnamed_sections;
@@ -1548,6 +1551,13 @@ notice_global_symbol (tree decl)
       || !MEM_P (DECL_RTL (decl)))
     return;
 
+  if (L_IPO_COMP_MODE
+      && ((TREE_CODE (decl) == FUNCTION_DECL
+           && cgraph_is_auxiliary (decl))
+          || (TREE_CODE (decl) == VAR_DECL && varpool_get_node (decl)
+              && varpool_is_auxiliary (varpool_get_node (decl)))))
+    return;
+
   /* We win when global object is found, but it is useful to know about weak
      symbol as well so we can produce nicer unique names.  */
   if (DECL_WEAK (decl) || DECL_ONE_ONLY (decl) || flag_shlib)
@@ -1616,6 +1626,7 @@ assemble_start_function (tree decl, const char *fnname)
       ASM_GENERATE_INTERNAL_LABEL (tmp_label, "LCOLDE", const_labelno);
       crtl->subsections.cold_section_end_label = ggc_strdup (tmp_label);
       const_labelno++;
+      cold_function_name = NULL_TREE;
     }
   else
     {
@@ -1748,6 +1759,10 @@ assemble_end_function (tree decl, const char *fnname ATTRIBUTE_UNUSED)
 
       save_text_section = in_section;
       switch_to_section (unlikely_text_section ());
+      if (cold_function_name != NULL_TREE)
+       ASM_DECLARE_FUNCTION_SIZE (asm_out_file,
+                                  IDENTIFIER_POINTER (cold_function_name),
+                                  decl);
       ASM_OUTPUT_LABEL (asm_out_file, crtl->subsections.cold_section_end_label);
       if (first_function_block_is_cold)
 	switch_to_section (text_section);
@@ -2287,6 +2302,13 @@ assemble_external (tree decl ATTRIBUTE_UNUSED)
       If it's not, we should not be calling this function.  */
   gcc_assert (asm_out_file);
 
+  /* Processing pending items from auxiliary modules are not supported
+     which means platforms that requires ASM_OUTPUT_EXTERNAL may 
+     have issues.  (TODO : one way is to flush the pending items from
+     auxiliary modules at the end of parsing the module)  */
+  if (L_IPO_IS_AUXILIARY_MODULE)
+    return;
+
   /* In a perfect world, the following condition would be true.
      Sadly, the Java and Go front ends emit assembly *from the front end*,
      bypassing the call graph.  See PR52739.  Fix before GCC 4.8.  */
@@ -2370,7 +2392,7 @@ mark_decl_referenced (tree decl)
 	 functions can be marked reachable, just use the external
 	 definition.  */
       struct cgraph_node *node = cgraph_get_create_node (decl);
-      if (!DECL_EXTERNAL (decl)
+      if (!(DECL_EXTERNAL (decl) || cgraph_is_aux_decl_external (node))
 	  && !node->definition)
 	cgraph_mark_force_output_node (node);
     }
@@ -3250,7 +3272,6 @@ build_constant_desc (tree exp)
   rtl = gen_const_mem (TYPE_MODE (TREE_TYPE (exp)), symbol);
   set_mem_attributes (rtl, exp, 1);
   set_mem_alias_set (rtl, 0);
-  set_mem_alias_set (rtl, const_alias_set);
 
   /* We cannot share RTX'es in pool entries.
      Mark this piece of RTL as required for unsharing.  */
@@ -5550,6 +5571,11 @@ do_assemble_alias (tree decl, tree target)
   if (TREE_ASM_WRITTEN (decl))
     return;
 
+  if (L_IPO_COMP_MODE
+      && lookup_attribute ("weakref", DECL_ATTRIBUTES (decl))
+      && TREE_ASM_WRITTEN (DECL_ASSEMBLER_NAME (decl)))
+    return;
+
   /* We must force creation of DECL_RTL for debug info generation, even though
      we don't use it here.  */
   make_decl_rtl (decl);
@@ -5647,6 +5673,12 @@ void
 assemble_alias (tree decl, tree target)
 {
   tree target_decl;
+
+  if (L_IPO_IS_AUXILIARY_MODULE)
+    {
+      if (!lookup_attribute ("weakref", DECL_ATTRIBUTES (decl)))
+        return;
+    }
 
   if (lookup_attribute ("weakref", DECL_ATTRIBUTES (decl)))
     {
@@ -5957,7 +5989,6 @@ init_varasm_once (void)
   const_desc_htab = htab_create_ggc (1009, const_desc_hash,
 				     const_desc_eq, NULL);
 
-  const_alias_set = new_alias_set ();
   shared_constant_pool = create_constant_pool ();
 
 #ifdef TEXT_SECTION_ASM_OP

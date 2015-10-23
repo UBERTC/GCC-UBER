@@ -941,7 +941,7 @@ scale_bbs_frequencies_int (basic_block *bbs, int nbbs, int num, int den)
       if (num > 1000000)
 	return;
 
-      num = RDIV (1000 * num, den);
+      num = RDIV (1000.0 * num, den);
       den = 1000;
     }
   if (num > 100 * den)
@@ -954,9 +954,9 @@ scale_bbs_frequencies_int (basic_block *bbs, int nbbs, int num, int den)
       /* Make sure the frequencies do not grow over BB_FREQ_MAX.  */
       if (bbs[i]->frequency > BB_FREQ_MAX)
 	bbs[i]->frequency = BB_FREQ_MAX;
-      bbs[i]->count = RDIV (bbs[i]->count * num, den);
+      bbs[i]->count = RDIV ((double)bbs[i]->count * num, den);
       FOR_EACH_EDGE (e, ei, bbs[i]->succs)
-	e->count = RDIV (e->count * num, den);
+	e->count = RDIV ((double)e->count * num, den);
     }
 }
 
@@ -973,7 +973,7 @@ scale_bbs_frequencies_gcov_type (basic_block *bbs, int nbbs, gcov_type num,
 {
   int i;
   edge e;
-  gcov_type fraction = RDIV (num * 65536, den);
+  gcov_type fraction = RDIV (num * 65536.0, den);
 
   gcc_assert (fraction >= 0);
 
@@ -983,14 +983,14 @@ scale_bbs_frequencies_gcov_type (basic_block *bbs, int nbbs, gcov_type num,
 	edge_iterator ei;
 	bbs[i]->frequency = RDIV (bbs[i]->frequency * num, den);
 	if (bbs[i]->count <= MAX_SAFE_MULTIPLIER)
-	  bbs[i]->count = RDIV (bbs[i]->count * num, den);
+	  bbs[i]->count = RDIV ((double)bbs[i]->count * num, den);
 	else
-	  bbs[i]->count = RDIV (bbs[i]->count * fraction, 65536);
+	  bbs[i]->count = RDIV ((double)bbs[i]->count * fraction, 65536);
 	FOR_EACH_EDGE (e, ei, bbs[i]->succs)
 	  if (bbs[i]->count <= MAX_SAFE_MULTIPLIER)
-	    e->count = RDIV (e->count * num, den);
+	    e->count = RDIV ((double)e->count * num, den);
 	  else
-	    e->count = RDIV (e->count * fraction, 65536);
+	    e->count = RDIV ((double)e->count * fraction, 65536);
       }
    else
     for (i = 0; i < nbbs; i++)
@@ -1000,9 +1000,9 @@ scale_bbs_frequencies_gcov_type (basic_block *bbs, int nbbs, gcov_type num,
 	  bbs[i]->frequency = RDIV (bbs[i]->frequency * num, den);
 	else
 	  bbs[i]->frequency = RDIV (bbs[i]->frequency * fraction, 65536);
-	bbs[i]->count = RDIV (bbs[i]->count * fraction, 65536);
+	bbs[i]->count = RDIV ((double)bbs[i]->count * fraction, 65536);
 	FOR_EACH_EDGE (e, ei, bbs[i]->succs)
-	  e->count = RDIV (e->count * fraction, 65536);
+	  e->count = RDIV ((double)e->count * fraction, 65536);
       }
 }
 

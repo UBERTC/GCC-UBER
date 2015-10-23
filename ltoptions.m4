@@ -328,7 +328,22 @@ m4_define([_LT_WITH_PIC],
 [AC_ARG_WITH([pic],
     [AS_HELP_STRING([--with-pic],
 	[try to use only PIC/non-PIC objects @<:@default=use both@:>@])],
-    [pic_mode="$withval"],
+    [p=${PACKAGE-default}
+    case "$withval" in
+    yes|no) pic_mode="$withval" ;;
+    *)
+      pic_mode=default
+      # Look at the argument we got.  We use all the common list separators.
+      lt_save_ifs="$IFS"; IFS="${IFS}$PATH_SEPARATOR,"
+      for pkg in $withval; do
+	IFS="$lt_save_ifs"
+	if test "X$pkg" = "X$p"; then
+	  pic_mode=yes
+	fi
+      done
+      IFS="$lt_save_ifs"
+      ;;
+    esac],
     [pic_mode=default])
 
 test -z "$pic_mode" && pic_mode=m4_default([$1], [default])

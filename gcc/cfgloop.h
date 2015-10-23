@@ -100,6 +100,14 @@ enum loop_estimation
   EST_LAST
 };
 
+/* The structure describing non-overflow control induction variable for
+   loop's exit edge.  */
+struct GTY ((chain_next ("%h.next"))) control_iv {
+  tree base;
+  tree step;
+  struct control_iv *next;
+};
+
 /* Structure to hold information for each natural loop.  */
 struct GTY ((chain_next ("%h.next"))) loop {
   /* Index into loops array.  */
@@ -186,6 +194,9 @@ struct GTY ((chain_next ("%h.next"))) loop {
 
   /* Upper bound on number of iterations of a loop.  */
   struct nb_iter_bound *bounds;
+
+  /* Non-overflow control ivs of a loop.  */
+  struct control_iv *control_ivs;
 
   /* Head of the cyclic list of the exits of the loop.  */
   struct loop_exit *exits;
@@ -278,7 +289,6 @@ extern basic_block *get_loop_body_in_custom_order (const struct loop *,
 extern vec<edge> get_loop_exit_edges (const struct loop *);
 extern edge single_exit (const struct loop *);
 extern edge single_likely_exit (struct loop *loop);
-extern unsigned num_loop_branches (const struct loop *);
 
 extern edge loop_preheader_edge (const struct loop *);
 extern edge loop_latch_edge (const struct loop *);
@@ -381,7 +391,8 @@ struct rtx_iv
 };
 
 /* The description of an exit from the loop and of the number of iterations
-   till we take the exit.  */
+   till we take the exit. Also includes other information used primarily
+   by the loop unroller.  */
 
 struct GTY(()) niter_desc
 {
@@ -419,6 +430,18 @@ struct GTY(()) niter_desc
 
   /* The number of iterations of the loop.  */
   rtx niter_expr;
+
+  /* The number of branches in the loop.  */
+  unsigned num_branches;
+
+  /* The number of executed branches per iteration.  */
+  unsigned av_num_branches;
+
+  /* Whether the loop contains a call instruction.  */
+  bool has_call;
+
+  /* Whether the loop contains fp instructions.  */
+  bool has_fp;
 };
 
 extern void iv_analysis_loop_init (struct loop *);
@@ -432,6 +455,7 @@ extern void iv_analysis_done (void);
 
 extern struct niter_desc *get_simple_loop_desc (struct loop *loop);
 extern void free_simple_loop_desc (struct loop *loop);
+void analyze_loop_insns (const struct loop *, struct niter_desc *desc);
 
 static inline struct niter_desc *
 simple_loop_desc (struct loop *loop)

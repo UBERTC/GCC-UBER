@@ -69,7 +69,7 @@ libstdc___la_DEPENDENCIES = \
 	$(top_builddir)/src/c++11/libc++11convenience.la
 
 libstdc___la_LDFLAGS = \
-	-version-info $(libtool_VERSION) ${version_arg} -lm
+	${libtool_version_info_string} ${version_arg} -lm
 
 libstdc___la_LINK = $(CXXLINK) $(libstdc___la_LDFLAGS)
 
@@ -170,7 +170,8 @@ LTCXXCOMPILE = \
 	$(LIBTOOL) --tag CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=compile $(CXX) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $(EXTRA_CXX_FLAGS)
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(EXTRA_CXX_FLAGS) -Xcompiler-static -UPIC
 
 LTLDFLAGS = $(shell $(SHELL) $(top_srcdir)/../libtool-ldflags $(LDFLAGS))
 

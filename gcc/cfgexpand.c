@@ -74,6 +74,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "recog.h"
 #include "output.h"
 
+/* In coverage.c  */
+extern void coverage_has_asm_stmt (void);
+
 /* Some systems use __main in a way incompatible with its use in gcc, in these
    cases use the macros NAME__MAIN to give a quoted symbol and SYMBOL__MAIN to
    give the same symbol without quotes for an alternative entry point.  You
@@ -2874,6 +2877,7 @@ expand_asm_operands (tree string, tree outputs, tree inputs,
       emit_move_insn (real_output_rtx[i], output_rtx[i]);
 
   crtl->has_asm_statement = 1;
+  coverage_has_asm_stmt ();
   free_temp_slots ();
 }
 
@@ -3681,6 +3685,7 @@ expand_debug_expr (tree exp)
 	{
 	case COND_EXPR:
 	case DOT_PROD_EXPR:
+	case SAD_EXPR:
 	case WIDEN_MULT_PLUS_EXPR:
 	case WIDEN_MULT_MINUS_EXPR:
 	case FMA_EXPR:

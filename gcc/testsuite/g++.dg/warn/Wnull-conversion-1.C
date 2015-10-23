@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-void func1(int* ptr);
+void func1 (int *ptr);
 
 void func2() {
   int* t = false;             // { dg-warning "converting 'false' to pointer" }

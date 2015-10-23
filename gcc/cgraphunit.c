@@ -193,6 +193,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "intl.h"
 #include "function.h"
 #include "ipa-prop.h"
+#include "gcov-io.h"
 #include "tree-iterator.h"
 #include "tree-pass.h"
 #include "tree-dump.h"
@@ -203,6 +204,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "ipa-inline.h"
 #include "ipa-utils.h"
 #include "lto-streamer.h"
+#include "l-ipo.h"
 #include "except.h"
 #include "cfgloop.h"
 #include "regset.h"     /* FIXME: For reg_obstack.  */
@@ -243,7 +245,8 @@ decide_is_symbol_needed (symtab_node *node)
   /* Double check that no one output the function into assembly file
      early.  */
   gcc_checking_assert (!DECL_ASSEMBLER_NAME_SET_P (decl)
-	               || !TREE_SYMBOL_REFERENCED (DECL_ASSEMBLER_NAME (decl)));
+	               || (L_IPO_COMP_MODE
+                           || !TREE_SYMBOL_REFERENCED (DECL_ASSEMBLER_NAME (decl))));
 
   if (!node->definition)
     return false;
@@ -289,6 +292,12 @@ enqueue_node (symtab_node *node)
   gcc_checking_assert (queued_nodes);
   node->aux = queued_nodes;
   queued_nodes = node;
+}
+
+void
+cgraph_enqueue_node (struct cgraph_node *node)
+{
+  enqueue_node ((symtab_node *) node);
 }
 
 /* Process CGRAPH_NEW_FUNCTIONS and perform actions necessary to add these
@@ -490,6 +499,7 @@ cgraph_add_new_function (tree fndecl, bool lowered)
 {
   gcc::pass_manager *passes = g->get_passes ();
   struct cgraph_node *node;
+
   switch (cgraph_state)
     {
       case CGRAPH_STATE_PARSING:
@@ -550,7 +560,6 @@ cgraph_add_new_function (tree fndecl, bool lowered)
 	pop_cfun ();
 	expand_function (node);
 	break;
-
       default:
 	gcc_unreachable ();
     }
@@ -971,7 +980,8 @@ analyze_functions (void)
 		fprintf (cgraph_dump_file, "Trivially needed symbols:");
 	      changed = true;
 	      if (cgraph_dump_file)
-		fprintf (cgraph_dump_file, " %s", node->asm_name ());
+		fprintf (cgraph_dump_file, " %s/%d", node->asm_name (),
+                         node->order);
 	      if (!changed && cgraph_dump_file)
 		fprintf (cgraph_dump_file, "\n");
 	    }
@@ -1040,6 +1050,7 @@ analyze_functions (void)
 		  struct cgraph_node *origin_node
 		    = cgraph_get_create_node (DECL_ABSTRACT_ORIGIN (decl));
 		  origin_node->used_as_abstract_origin = true;
+		  enqueue_node (origin_node);
 		}
 	    }
 	  else
@@ -1084,7 +1095,7 @@ analyze_functions (void)
       if (!node->aux && !referred_to_p (node))
 	{
 	  if (cgraph_dump_file)
-	    fprintf (cgraph_dump_file, " %s", node->name ());
+	    fprintf (cgraph_dump_file, " %s/%d", node->name (), node->order);
 	  symtab_remove_node (node);
 	  continue;
 	}
@@ -1204,6 +1215,137 @@ handle_alias_pairs (void)
   vec_free (alias_pairs);
 }
 
+/* Hash function for symbol (function) resolution.  */
+
+static hashval_t
+hash_node_by_assembler_name (const void *p)
+{
+  const struct cgraph_node *n = (const struct cgraph_node *) p;
+  return (hashval_t) decl_assembler_name_hash (
+      DECL_ASSEMBLER_NAME (n->decl));
+}
+
+/* Equality function for cgraph_node table.  */
+
+static int
+eq_node_assembler_name (const void *p1, const void *p2)
+{
+  const struct cgraph_node *n1 = (const struct cgraph_node *) p1;
+  const_tree name = (const_tree)p2;
+  return (decl_assembler_name_equal (n1->decl, name));
+}
+
+/* In l-ipo mode compilation (light weight IPO), multiple bodies may
+   be available for the same inline declared function. cgraph linking
+   does not really merge them in order to keep the context (module info)
+   of each body. After inlining, the linkage of the function may require
+   them to be output (even if it is defined in an auxiliary module). This
+   in term may result in duplicate emission.  */
+
+static GTY((param_is (symtab_node))) htab_t output_node_hash = NULL;
+
+/* Add NODE that is expanded into the hashtable.  */
+
+static struct cgraph_node *
+cgraph_add_output_node (struct cgraph_node *node)
+{
+  void **aslot;
+  tree name;
+
+  if (!L_IPO_COMP_MODE)
+    return node;
+
+  /* Never common non public names except for compiler
+     generated static functions. (they are not promoted
+     to globals either.  */
+  if (!TREE_PUBLIC (node->decl)
+      && !(DECL_ARTIFICIAL (node->decl)
+	   && DECL_ASSEMBLER_NAME_SET_P (node->decl)))
+    return node;
+
+  if (!output_node_hash)
+      output_node_hash =
+	htab_create_ggc (10, hash_node_by_assembler_name,
+                         eq_node_assembler_name, NULL);
+
+  name = DECL_ASSEMBLER_NAME (node->decl);
+
+  aslot = htab_find_slot_with_hash (output_node_hash, name,
+                                    decl_assembler_name_hash (name),
+                                    INSERT);
+  if (*aslot == NULL)
+    {
+      *aslot = node;
+      return node;
+    }
+  else
+    return (struct cgraph_node *)(*aslot);
+}
+
+#if ENABLE_CHECKING
+/* Return the cgraph_node if the function symbol for NODE is
+   expanded in the output. Returns NULL otherwise.  */
+
+static struct cgraph_node *
+cgraph_find_output_node (struct cgraph_node *node)
+{
+  void **aslot;
+  tree name;
+
+  if (!L_IPO_COMP_MODE)
+    return node;
+
+  /* We do not track non-public functions.  */
+  if (!TREE_PUBLIC (node->decl))
+    return NULL;
+
+  /* Never addedd.  */
+  if (!output_node_hash)
+    return NULL;
+
+  name = DECL_ASSEMBLER_NAME (node->decl);
+
+  aslot = htab_find_slot_with_hash (output_node_hash, name,
+                                    decl_assembler_name_hash (name),
+                                    NO_INSERT);
+  if (!aslot)
+    return NULL;
+
+  return (struct cgraph_node *)(*aslot);
+}
+#endif
+
+
+#if ENABLE_CHECKING
+/* A function used in validation. Return true if NODE was
+   not expanded and its body was not reclaimed.  */
+
+static bool
+cgraph_node_expansion_skipped (struct cgraph_node *node)
+{
+  struct cgraph_node *output_node;
+
+  if (!L_IPO_COMP_MODE)
+    return false;
+
+  output_node = cgraph_find_output_node (node);
+
+  if (output_node == node)
+    return false;
+
+  if (output_node)
+    return true;
+
+  /* No output, no duplicate being output, and the node is not
+     inlined (and reclaimed) either -- check if the caller node
+     is output/expanded or not.  */
+  if (node->global.inlined_to)
+    return cgraph_node_expansion_skipped (node->global.inlined_to);
+
+  /* External functions not marked for output.  */
+  return true;
+}
+#endif
 
 /* Figure out what functions we want to assemble.  */
 
@@ -1234,8 +1376,10 @@ mark_functions_to_output (void)
 	  && !node->alias
 	  && !node->global.inlined_to
 	  && !TREE_ASM_WRITTEN (decl)
-	  && !DECL_EXTERNAL (decl))
+	  && !(DECL_EXTERNAL (decl) || cgraph_is_aux_decl_external (node)))
 	{
+          if (cgraph_add_output_node (node) == node) {
+          /* Do not fix indentation.  */
 	  node->process = 1;
 	  if (node->same_comdat_group)
 	    {
@@ -1244,9 +1388,11 @@ mark_functions_to_output (void)
 		   next != node;
 		   next = cgraph (next->same_comdat_group))
 		if (!next->thunk.thunk_p && !next->alias
+                    && cgraph_add_output_node (next) == next
 		    && !symtab_comdat_local_p (next))
 		  next->process = 1;
 	    }
+          }
 	}
       else if (node->same_comdat_group)
 	{
@@ -1265,6 +1411,7 @@ mark_functions_to_output (void)
 		 have analyzed node pointing to it.  */
 	      && !node->in_other_partition
 	      && !node->alias
+              && !cgraph_is_auxiliary (node->decl)
 	      && !node->clones
 	      && !DECL_EXTERNAL (decl))
 	    {
@@ -1277,13 +1424,14 @@ mark_functions_to_output (void)
 		      || node->in_other_partition
 		      || node->clones
 		      || DECL_ARTIFICIAL (decl)
-		      || DECL_EXTERNAL (decl));
+		      || DECL_EXTERNAL (decl)
+                      || cgraph_is_auxiliary (node->decl));
 
 	}
 
     }
 #ifdef ENABLE_CHECKING
-  if (check_same_comdat_groups)
+  if (check_same_comdat_groups && !L_IPO_COMP_MODE)
     FOR_EACH_FUNCTION (node)
       if (node->same_comdat_group && !node->process)
 	{
@@ -1296,7 +1444,8 @@ mark_functions_to_output (void)
 		 analyzed node pointing to it.  */
 	      && !node->in_other_partition
 	      && !node->clones
-	      && !DECL_EXTERNAL (decl))
+	      && !(DECL_EXTERNAL (decl) || cgraph_is_aux_decl_external (node))
+	      && !L_IPO_COMP_MODE)
 	    {
 	      dump_cgraph_node (stderr, node);
 	      internal_error ("failed to reclaim unneeded function in same "
@@ -1963,6 +2112,8 @@ output_in_order (void)
   max = symtab_order;
   nodes = XCNEWVEC (struct cgraph_order_sort, max);
 
+  varpool_remove_duplicate_weak_decls ();
+
   FOR_EACH_DEFINED_FUNCTION (pf)
     {
       if (pf->process && !pf->thunk.thunk_p && !pf->alias)
@@ -2058,8 +2209,11 @@ ipa_passes (void)
 
   if (!in_lto_p)
     {
-      /* Generate coverage variables and constructors.  */
-      coverage_finish ();
+      /* Generate coverage variables and constructors.
+         In LIPO mode, delay this until direct call profiling
+         is done.   */
+      if (!flag_dyn_ipa)
+        coverage_finish ();
 
       /* Process new functions added.  */
       set_cfun (NULL);
@@ -2165,6 +2319,12 @@ compile (void)
     fprintf (stderr, "Performing interprocedural optimizations\n");
   cgraph_state = CGRAPH_STATE_IPA;
 
+  if (L_IPO_COMP_MODE)
+    {
+      cgraph_init_gid_map ();
+      cgraph_add_fake_indirect_call_edges ();
+    }
+
   /* If LTO is enabled, initialize the streamer hooks needed by GIMPLE.  */
   if (flag_lto)
     lto_streamer_hooks_init ();
@@ -2250,6 +2410,7 @@ compile (void)
       output_asm_statements ();
 
       expand_all_functions ();
+      varpool_remove_duplicate_weak_decls ();
       varpool_output_variables ();
     }
 
@@ -2265,15 +2426,21 @@ compile (void)
 #ifdef ENABLE_CHECKING
   verify_symtab ();
   /* Double check that all inline clones are gone and that all
-     function bodies have been released from memory.  */
+     function bodies have been released from memory.
+     As an exception, allow inline clones in the callgraph if
+     they are auxiliary functions. This is because we don't
+     expand any of the auxiliary functions, which may result
+     in inline clones of some auxiliary functions to be left
+     in the callgraph.  */
   if (!seen_error ())
     {
       struct cgraph_node *node;
       bool error_found = false;
 
       FOR_EACH_DEFINED_FUNCTION (node)
-	if (node->global.inlined_to
+	if (((node->global.inlined_to && !cgraph_is_auxiliary (node->decl))
 	    || gimple_has_body_p (node->decl))
+            && !cgraph_node_expansion_skipped (node))
 	  {
 	    error_found = true;
 	    dump_cgraph_node (stderr, node);

@@ -1,4 +1,4 @@
-/* { dg-options "-O2 -fdump-ipa-profile" } */
+/* { dg-options "-O2 -fdump-ipa-profile --param=profile-values-time=1" } */
 
 #include <unistd.h>
 

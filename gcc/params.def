@@ -78,6 +78,11 @@ DEFPARAM (PARAM_MAX_INLINE_INSNS_AUTO,
 	  "The maximum number of instructions when automatically inlining",
 	  40, 0, 0)
 
+DEFPARAM (PARAM_MAX_GROWTH_AUTO_INLINE_FUNC,
+	  "max-growth-auto-inline-func",
+	  "The maximum size growth when inlining functions without inline declared in plain mode",
+	  25, 0, 0)
+
 DEFPARAM (PARAM_MAX_INLINE_INSNS_RECURSIVE,
 	  "max-inline-insns-recursive",
 	  "The maximum number of instructions inline function can grow to via recursive inlining",
@@ -102,6 +107,33 @@ DEFPARAM (PARAM_MIN_INLINE_RECURSIVE_PROBABILITY,
 	  "min-inline-recursive-probability",
 	  "Inline recursively only when the probability of call being executed exceeds the parameter",
 	  10, 0, 0)
+
+DEFPARAM (PARAM_INLINE_FUNCTION_OVERHEAD_SIZE,
+	  "inline-function-overhead-size",
+	  "Size estimate of function overhead (prologue/epilogue) for inlining purposes",
+	  7, 0, 0)
+
+/* Knob to control hot-caller heuristic. 0 means it is turned off, 1 means
+   it is always applied, and 2 means it is applied only if the footprint is
+   smaller than PARAM_HOT_CALLER_CODESIZE_THRESHOLD.  */
+DEFPARAM (PARAM_INLINE_HOT_CALLER,
+	  "inline-hot-caller",
+	  "Consider cold callsites for inlining if caller contains hot code",
+	  2, 0, 2)
+
+/* The maximum code size estimate under which hot caller heuristic is
+   applied.  */
+DEFPARAM(PARAM_HOT_CALLER_CODESIZE_THRESHOLD,
+	"hot-caller-codesize-threshold",
+	"Maximum profile-based code size footprint estimate for "
+	"hot caller heuristic  ",
+	10000, 0, 0)
+
+DEFPARAM (PARAM_INLINE_USEFUL_COLD_CALLEE,
+	  "inline-useful-cold-callee",
+	  "Only consider cold callsites for inlining if analysis estimates "
+	  "downstream optimization opportunities",
+	  1, 0, 1)
 
 /* Limit of iterations of early inliner.  This basically bounds number of
    nested indirect calls early inliner can resolve.  Deeper chains are still
@@ -199,6 +231,14 @@ DEFPARAM(PARAM_EARLY_INLINING_INSNS,
 	 "early-inlining-insns",
 	 "Maximal estimated growth of function body caused by early inlining of single call",
 	 11, 0, 0)
+DEFPARAM(PARAM_EARLY_INLINING_INSNS_ANY,
+	 "early-inlining-insns-any",
+	 "Early inline calls if growth does not exceed this limit",
+	 0, 0, 0)
+DEFPARAM(PARAM_EARLY_INLINING_INSNS_COMDAT,
+	 "early-inlining-insns-comdat",
+	 "Early inline calls to comdate functions if growth does not exceed this limit",
+	 15, 0, 0)
 DEFPARAM(PARAM_LARGE_STACK_FRAME,
 	 "large-stack-frame",
 	 "The size of stack frame to be considered large",
@@ -303,6 +343,11 @@ DEFPARAM(PARAM_MAX_PEEL_BRANCHES,
 DEFPARAM(PARAM_MAX_COMPLETELY_PEELED_INSNS,
 	"max-completely-peeled-insns",
 	"The maximum number of insns of a completely peeled loop",
+	200, 0, 0)
+/* The default maximum number of insns of a peeled loop, with -O2.  */
+DEFPARAM(PARAM_MAX_DEFAULT_COMPLETELY_PEELED_INSNS,
+	"max-default-completely-peeled-insns",
+	"The maximum number of insns of a completely peeled loop",
 	100, 0, 0)
 /* The maximum number of peelings of a single loop that is peeled completely.  */
 DEFPARAM(PARAM_MAX_COMPLETELY_PEEL_TIMES,
@@ -319,6 +364,32 @@ DEFPARAM(PARAM_MAX_UNROLL_ITERATIONS,
 	 "max-completely-peel-loop-nest-depth",
 	 "The maximum depth of a loop nest we completely peel",
 	 8, 0, 0)
+/* The maximum code size estimate under which loop unrolling and peeling
+ * is allowed in a profile feedback compile. This currently applies to loops
+ * with non-constant iteration counts and no floating point computations.  */
+DEFPARAM(PARAM_UNROLLPEEL_CODESIZE_THRESHOLD,
+	"unrollpeel-codesize-threshold",
+	"Maximum profile-based code size footprint estimate for loop unrolling "
+	"and peeling",
+	15000, 0, 0)
+/* The maximum ratio of total profiled execution counts to loop entry block
+   count that must be exceeded to ignore most code size limits when unrolling
+   and peeling.  */
+DEFPARAM(PARAM_UNROLLPEEL_HOTNESS_THRESHOLD,
+        "unrollpeel-hotness-threshold",
+        "Maximum ratio of total profiled execution count to loop entry "
+        "block count under which most codesize limits for unrolling and "
+        "peeling will be ignored",
+        100, 1, 0)
+
+DEFPARAM(PARAM_MIN_ITER_UNROLL_WITH_BRANCHES,
+	"min-iter-unroll-with-branches",
+	"Minimum iteration count to ignore branch effects when unrolling",
+	50, 0, 0)
+DEFPARAM(PARAM_UNROLL_OUTER_LOOP_BRANCH_BUDGET,
+	"unroll-outer-loop-branch-budget",
+	"Maximum number of branches allowed in hot outer loop region after unroll",
+	25, 0, 0)
 
 /* The maximum number of insns of an unswitched loop.  */
 DEFPARAM(PARAM_MAX_UNSWITCH_INSNS,
@@ -388,6 +459,11 @@ DEFPARAM (PARAM_ALIGN_LOOP_ITERATIONS,
 	  "Loops iterating at least selected number of iterations will get loop alignement.",
 	  4, 0, 0)
 
+DEFPARAM (PARAM_ALIGN_LOOP_SIZE,
+	  "align-loop-size",
+	  "For loop small enough, try to align them more strictly.",
+	  10, 0, 0)
+
 /* For guessed profiles, the loops having unknown number of iterations
    are predicted to iterate relatively few (10) times at average.
    For functions containing one loop with large known number of iterations
@@ -403,6 +479,14 @@ DEFPARAM(PARAM_MAX_PREDICTED_ITERATIONS,
 	 "max-predicted-iterations",
 	 "The maximum number of loop iterations we predict statically",
 	 100, 0, 0)
+
+/* This parameter controls the maximum iterations that AutoFDO profile
+   prpagation algorithm will run for a specific CFG.  */
+
+DEFPARAM(PARAM_AUTOFDO_MAX_PROPAGATE_ITERATIONS,
+         "max-autofdo-max-propagate-iterations",
+         "The maximum number of AutoFDO profile propagation iterations",
+         100, 0, 0)
 
 /* This parameter controls the probability of builtin_expect. The default
    value is 90%. This empirical value is obtained through the weighted
@@ -869,6 +953,191 @@ DEFPARAM (PARAM_LOOP_INVARIANT_MAX_BBS_IN_LOOP,
 	  "Max basic blocks number in loop for loop invariant motion",
 	  10000, 0, 0)
 
+/* Promote indirect call to conditional direct call only
+   when the percentage of the target count over the total
+   indirect call count is no smaller than the threshold.  */
+DEFPARAM (PARAM_ICALL_PROMOTE_PERCENT_THRESHOLD,
+	  "icall-promote-target-percent-threshold",
+	  "percentage threshold for direct call promotion"
+          " of a callee target",
+	  30, 0, 100)
+
+DEFPARAM (PARAM_ICALL_PROMOTE_COUNT_THRESHOLD,
+	  "icall-promote-target_count-threshold",
+	  "call count threshold for direct call promotion"
+          " of a callee target",
+	  1, 0, 0)
+
+/* 0: do not always inline icall target:
+   other value: always inline icall target when call count
+   exceeds this value.
+*/
+DEFPARAM (PARAM_ALWAYS_INLINE_ICALL_TARGET,
+	  "always-inline-icall-target",
+	  "force inline indirect call target when promoted",
+          0, 0, 0)
+
+/* When the parameter is 1, use the internal function id
+   to look up for profile data. Otherwise, use a more stable
+   external id based on assembler name and source location. */
+DEFPARAM (PARAM_PROFILE_FUNC_INTERNAL_ID,
+	  "profile-func-internal-id",
+	  "use internal function id in profile lookup",
+          0, 0, 1)
+
+/* Do not check the icall target count distribution, but use
+   hotness info to decide if promotion should be done.  */
+DEFPARAM (PARAM_ICALL_USE_HOTNESS_HEUR,
+	  "icall-use-hotness-heur",
+	  "use hotness based heuristics to match inliner",
+          0, 0, 0)
+
+/* Force the compiler to be in LIPO mode even there is no
+ profile data available. -fripa is also needed. */
+DEFPARAM (PARAM_FORCE_LIPO_MODE, 
+	  "force-lipo",
+	  "force LIPO compilation mode",
+          0, 0, 1)
+
+/* Limit max module group size in LIPO mode.  When the value
+ is set to 0 (which is the default), there is no limit.  */
+DEFPARAM (PARAM_MAX_LIPO_GROUP,
+	  "max-lipo-group",
+	  "maximum module group size.",
+          0, 0, 10000)
+
+/* In LIPO mode, stop processing any further auxiliary modules
+   if current memory consumption exceeds this limit (in kb).  */
+DEFPARAM (PARAM_MAX_LIPO_MEMORY,
+	  "max-lipo-mem",
+	  "don't import aux files if memory consumption exceeds this value",
+	  4000000, 0, 0)
+
+/* In LIPO profile-gen, use this parameter to record the cutoff value used at
+   profile collection runtime.  */
+DEFPARAM (PARAM_LIPO_CUTOFF,
+	  "lipo-cutoff",
+	  "The cutoff value of cumulative profile count. The value is between"
+          "0-99. 100 is reserved as a special value indicating default cutoff" 
+          "which is set at runtime. When the parameter is used and if its value"
+          "is not 100, it overrides the dafault as well as the value set by the"
+          " enviornment variable",
+	  100, 0, 100)
+
+/* In LIPO profile-gen, use this parameter to limit IPA inline.  */
+DEFPARAM (PARAM_LIPO_SKIP_SPECIAL_SECTIONS,
+	  "lipo-skip-special-sections",
+          "In LIPO profile gen compilation, do not generate direct call "
+          "profiling to functions marked with __attribute__((section(...))"
+          "Those functions can not be inlined so there is no point tracking"
+          "them.",
+	  1, 0, 1)
+
+/* In LIPO profile-gen, use this parameter to set random group generation
+   seed value.  */
+DEFPARAM (PARAM_LIPO_RANDOM_SEED,
+	  "lipo-random-seed",
+	  "random seed value used in random group testing",
+	  0, 0, 0)
+
+/* In LIPO profile-gen, use this parmaeter to set random group max size at profile
+   collection runtime.  */
+DEFPARAM (PARAM_LIPO_RANDOM_GROUP_SIZE,
+	  "lipo-random-group-size",
+	  "In LIPO random group testing, this parameter is used to set max group"
+          " size. The default value is 0 which is treated specially and specifies"
+          " no random grouping.",
+	  0, 0, 300)
+
+/* In LIPO profile-gen, use this parameter to specify the scale factor to propagate
+   callee module groups to caller.  */
+DEFPARAM (PARAM_LIPO_PROPAGATE_SCALE,
+	  "lipo-propagate-scale",
+	  "The scale factor to propagate callee module group's weight to the caller.",
+	  100, 0, 100)
+
+/* Choose different module grouping algorithms. This only affects
+   LIPO profile-gen.  */
+DEFPARAM (PARAM_LIPO_GROUPING_ALGORITHM,
+	  "lipo-grouping-algorithm",
+	  "Algorithm 0 uses the eager propagation algorithm."
+	  "Algorithm 1 uses the inclusion_based priority algorithm."
+	  "The default algorithm is 1.",
+	  1, 0, 1)
+
+/* In the inclusion_based_priority grouping algorithm, specify if we combine the
+   the edges b/w modules.  */
+DEFPARAM (PARAM_LIPO_MERGE_MODU_EDGES,
+	  "lipo-merge-modu-edges",
+	  "Default is 0 which not merge."
+	  "If the value is 1, merge the edges.",
+	  0, 0, 1)
+
+/* In the inclusion_based_priority grouping algorithm, specify if we force
+   strict inclusion of modules.  */
+DEFPARAM (PARAM_LIPO_WEAK_INCLUSION,
+	  "lipo-weak-inclusion",
+	  "0: force strict inclusion; 1: weak inclusion."
+	  "Default is 0.",
+	  0, 0, 1)
+
+/* Choose different COMDAT profile fixup algorithm.  This only affects
+   LIPO profile-gen.  */
+DEFPARAM (PARAM_LIPO_COMDAT_ALGORITHM,
+	  "lipo-comdat-algorithm",
+	  "Algorithm 0 performs no fixup."
+	  "Algorithm 1 fixes up only indirect call profile targets."
+	  "Algorithm 2 fixes up only missing counters."
+	  "Algorithm 3 (1|2) fixes up both."
+	  "The default algorithm is 3.",
+	  3, 0, 3)
+
+/* In LIPO profile-use, use this parameter to enable the dumping of module id
+   in inline message.   */
+DEFPARAM (PARAM_INLINE_DUMP_MODULE_ID,
+	  "inline-dump-module-id",
+	  "Default is 1. If the value is 0, dumping is disabled.",
+	  1, 0, 1)
+
+/* In LIPO profile-gen, use this parameter to enable cgraph dumping.   */
+DEFPARAM (PARAM_LIPO_DUMP_CGRAPH,
+	  "lipo-dump-cgraph",
+	  "Default is 0. If the value is 1, text dump is used. If the value "
+	  "is 2, .dot dump is enabled. ", 
+	  0, 0, 2)
+
+DEFPARAM (PARAM_PROFILE_GENERATE_SAMPLING_PERIOD,
+         "profile-generate-sampling-period",
+         "sampling rate with -fprofile-generate-sampling",
+         100, 0, 2000000000)
+
+DEFPARAM (PARAM_LIPO_SAMPLING_PERIOD,
+         "lipo-sampling-period",
+         "sampling rate for lipo direct call and indirect call profile",
+         79, 0, 2000000000)
+
+DEFPARAM (PARAM_PROFILE_VALUES_TIME,
+         "profile-values-time",
+         "Enable time profiling when value profiling",
+         0, 0, 1)
+
+DEFPARAM (PARAM_COVERAGE_CALLBACK,
+         "coverage-callback",
+         "callback a user-define function when for arc counter increments.",
+         0, 0, 1)
+
+DEFPARAM (PARAM_COVERAGE_EXEC_ONCE,
+         "coverage-exec_once",
+         "Stop incrementing arc counts once they become 1.",
+         0, 0, 1)
+
+/* Used for debugging purpose. Tell the compiler to find
+   the gcda file in the current directory.  */
+DEFPARAM (PARAM_GCOV_DEBUG,
+	  "gcov-debug",
+	  "Looking for gcda file in current dir.",
+	  0, 0, 1)
+
 /* Avoid SLP vectorization of large basic blocks.  */
 DEFPARAM (PARAM_SLP_MAX_INSNS_IN_BB,
           "slp-max-insns-in-bb",
@@ -971,6 +1240,12 @@ DEFPARAM (MIN_PARTITION_SIZE,
 	  "Minimal size of a partition for LTO (in estimated instructions)",
 	  1000, 0, 0)
 
+DEFPARAM (PARAM_MIN_MCF_CANCEL_ITERS,
+	  "min-mcf-cancel-iters",
+	  "the minimum number of iterations of negative cycle cancellation "
+	  "in MCF",
+	  10, 1, 0)
+
 /* Diagnostic parameters.  */
 
 DEFPARAM (CXX_MAX_NAMESPACES_FOR_DIAGNOSTIC_HELP,
@@ -978,6 +1253,15 @@ DEFPARAM (CXX_MAX_NAMESPACES_FOR_DIAGNOSTIC_HELP,
 	  "Maximum number of namespaces to search for alternatives when "
 	  "name lookup fails",
 	  1000, 0, 0)
+
+
+/* Only output those call graph edges in .gnu.callgraph.text sections
+   whose count is greater than this value. */
+DEFPARAM (PARAM_GNU_CGRAPH_SECTION_EDGE_THRESHOLD,
+	  "gnu-cgraph-section-edge-threshold",
+	  "minimum call graph edge count for inclusion in "
+          ".gnu.callgraph.text section",
+	  0, 0, 0)
 
 /* Maximum number of conditional store pairs that can be sunk.  */
 DEFPARAM (PARAM_MAX_STORES_TO_SINK,
@@ -1054,6 +1338,15 @@ DEFPARAM (PARAM_MAX_SLSR_CANDIDATE_SCAN,
 	  "strength reduction",
 	  50, 1, 999999)
 
+/* Parameters to be used with -mpatch-functions-for-instrumentation.
+   See config/i386/i386.opt  */
+DEFPARAM (PARAM_FUNCTION_PATCH_MIN_INSTRUCTIONS,
+          "function-patch-min-instructions",
+          "Minimum number of instructions in the function without loop before "
+          "the function is qualified for patching for instrumentation (for use "
+          "with -mpatch-functions-for-instrumentation)",
+          200, 0, 0)
+
 DEFPARAM (PARAM_ASAN_STACK,
          "asan-stack",
          "Enable asan stack protection",
@@ -1095,6 +1388,37 @@ DEFPARAM (PARAM_UNINIT_CONTROL_DEP_ATTEMPTS,
 	  "Maximum number of nested calls to search for control dependencies "
 	  "during uninitialized variable analysis",
 	  1000, 1, 0)
+
+DEFPARAM (PARAM_MAX_FSM_THREAD_PATH_INSNS,
+	  "max-fsm-thread-path-insns",
+	  "Maximum number of instructions to copy when duplicating blocks on a finite state automaton jump thread path",
+	  100, 1, 999999)
+
+DEFPARAM (PARAM_MAX_FSM_THREAD_LENGTH,
+	  "max-fsm-thread-length",
+	  "Maximum number of basic blocks on a finite state automaton jump thread path",
+	  10, 1, 999999)
+
+DEFPARAM (PARAM_MAX_FSM_THREAD_PATHS,
+	  "max-fsm-thread-paths",
+	  "Maximum number of new jump thread paths to create for a finite state automaton",
+	  50, 1, 999999)
+
+/* Fraction of adjusting fp setting cost in framepointer shrinkwrapping.  */
+DEFPARAM (PARAM_FPSET_COST_FRACTION,
+	  "fpset-cost-fraction",
+	  "Adjust the estimation of fp setting insn cost with this fraction in"
+	  "framepointer shrinkwrapping",
+	  10, 1, 100)
+
+/* Fraction of promoting when choose to promote or not to promote fpset in
+   framepointer shrinkwrapping.  */
+DEFPARAM (PARAM_FPSET_PROMOTE_FRACTION,
+	  "fpset-promote-fraction",
+	  "Adjust the estimation of fpset promotion cost with this fraction in"
+	  "framepointer shrinkwrapping",
+	  1, 0, 100)
+
 /*
 
 Local variables:

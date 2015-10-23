@@ -161,11 +161,13 @@ set_hot_bb_threshold (gcov_type min)
 
 /* Return TRUE if frequency FREQ is considered to be hot.  */
 
-static inline bool
+bool
 maybe_hot_count_p (struct function *fun, gcov_type count)
 {
   if (fun && profile_status_for_fn (fun) != PROFILE_READ)
     return true;
+  if (!profile_info)
+    return false;
   /* Code executed at most once is not hot.  */
   if (profile_info->runs >= count)
     return false;
@@ -1033,6 +1035,12 @@ combine_predictions_for_bb (basic_block bb)
     {
       first->probability = combined_probability;
       second->probability = REG_BR_PROB_BASE - combined_probability;
+      if (flag_check_branch_annotation && first_match &&
+	  best_predictor == PRED_BUILTIN_EXPECT)
+	{
+	  first->flags |= EDGE_PREDICTED_BY_EXPECT;
+	  second->flags |= EDGE_PREDICTED_BY_EXPECT;
+	}
     }
 }
 
@@ -2955,7 +2963,7 @@ counts_to_freqs (void)
   /* Don't overwrite the estimated frequencies when the profile for
      the function is missing.  We may drop this function PROFILE_GUESSED
      later in drop_profile ().  */
-  if (!ENTRY_BLOCK_PTR_FOR_FN (cfun)->count)
+  if (!flag_auto_profile && !ENTRY_BLOCK_PTR_FOR_FN (cfun)->count)
     return 0;
 
   FOR_BB_BETWEEN (bb, ENTRY_BLOCK_PTR_FOR_FN (cfun), NULL, next_bb)
@@ -3094,10 +3102,14 @@ compute_function_frequency (void)
   if (DECL_STATIC_DESTRUCTOR (current_function_decl))
     node->only_called_at_exit = true;
 
-  if (profile_status_for_fn (cfun) != PROFILE_READ)
+  if (profile_status_for_fn (cfun) != PROFILE_READ
+      || (flag_auto_profile
+	  && profile_status_for_fn (cfun) == PROFILE_GUESSED))
     {
       int flags = flags_from_decl_or_type (current_function_decl);
-      if (lookup_attribute ("cold", DECL_ATTRIBUTES (current_function_decl))
+      if (profile_info && flag_auto_profile_accurate)
+	node->frequency = NODE_FREQUENCY_UNLIKELY_EXECUTED;
+      else if (lookup_attribute ("cold", DECL_ATTRIBUTES (current_function_decl))
 	  != NULL)
         node->frequency = NODE_FREQUENCY_UNLIKELY_EXECUTED;
       else if (lookup_attribute ("hot", DECL_ATTRIBUTES (current_function_decl))
@@ -3254,7 +3266,8 @@ rebuild_frequencies (void)
     count_max = MAX (bb->count, count_max);
 
   if (profile_status_for_fn (cfun) == PROFILE_GUESSED
-      || (profile_status_for_fn (cfun) == PROFILE_READ && count_max < REG_BR_PROB_BASE/10))
+      || (!flag_auto_profile && profile_status_for_fn (cfun) == PROFILE_READ
+	  && count_max < REG_BR_PROB_BASE/10))
     {
       loop_optimizer_init (0);
       add_noreturn_fake_exit_edges ();

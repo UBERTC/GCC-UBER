@@ -1,7 +1,7 @@
 /* Verify that ipa-cp correctly detects the dynamic type of an object
    under construction when doing devirtualization.  */
 /* { dg-do run } */
-/* { dg-options "-O3 -fno-inline"  } */
+/* { dg-options "-O3 -fno-inline -fdevirtualize"  } */
 
 extern "C" void abort (void);
 

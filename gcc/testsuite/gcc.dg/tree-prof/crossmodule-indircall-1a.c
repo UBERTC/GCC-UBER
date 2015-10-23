@@ -1,6 +1,7 @@
 /* It seems there is no way to avoid the other source of mulitple
    source testcase from being compiled independently.  Just avoid
    error.  */
+/* { dg-require-effective-target lto } */
 #ifdef DOJOB
 extern int a;
 void abort (void);

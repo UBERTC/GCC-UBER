@@ -73,13 +73,16 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
    GLIBC_DYNAMIC_LINKER must be defined for each target using them, or
    GLIBC_DYNAMIC_LINKER32 and GLIBC_DYNAMIC_LINKER64 for targets
    supporting both 32-bit and 64-bit compilation.  */
-#define UCLIBC_DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
-#define UCLIBC_DYNAMIC_LINKER32 "/lib/ld-uClibc.so.0"
-#define UCLIBC_DYNAMIC_LINKER64 "/lib/ld64-uClibc.so.0"
-#define UCLIBC_DYNAMIC_LINKERX32 "/lib/ldx32-uClibc.so.0"
-#define BIONIC_DYNAMIC_LINKER "/system/bin/linker"
-#define BIONIC_DYNAMIC_LINKER32 "/system/bin/linker"
-#define BIONIC_DYNAMIC_LINKER64 "/system/bin/linker64"
+#ifndef RUNTIME_ROOT_PREFIX
+#define RUNTIME_ROOT_PREFIX ""
+#endif
+#define UCLIBC_DYNAMIC_LINKER RUNTIME_ROOT_PREFIX "/lib/ld-uClibc.so.0"
+#define UCLIBC_DYNAMIC_LINKER32 RUNTIME_ROOT_PREFIX "/lib/ld-uClibc.so.0"
+#define UCLIBC_DYNAMIC_LINKER64 RUNTIME_ROOT_PREFIX "/lib/ld64-uClibc.so.0"
+#define UCLIBC_DYNAMIC_LINKERX32 RUNTIME_ROOT_PREFIX "/lib/ldx32-uClibc.so.0"
+#define BIONIC_DYNAMIC_LINKER RUNTIME_ROOT_PREFIX "/system/bin/linker"
+#define BIONIC_DYNAMIC_LINKER32 RUNTIME_ROOT_PREFIX "/system/bin/linker"
+#define BIONIC_DYNAMIC_LINKER64 RUNTIME_ROOT_PREFIX "/system/bin/linker64"
 #define BIONIC_DYNAMIC_LINKERX32 "/system/bin/linkerx32"
 
 #define GNU_USER_DYNAMIC_LINKER						\

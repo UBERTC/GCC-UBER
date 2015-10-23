@@ -178,6 +178,7 @@ extern int default_register_move_cost (enum machine_mode, reg_class_t,
 				       reg_class_t);
 
 extern bool default_profile_before_prologue (void);
+extern rtx default_set_fp_insn (void);
 extern reg_class_t default_preferred_reload_class (rtx, reg_class_t);
 extern reg_class_t default_preferred_output_reload_class (rtx, reg_class_t);
 extern reg_class_t default_preferred_rename_class (reg_class_t rclass);
@@ -194,6 +195,7 @@ extern int default_label_align_max_skip (rtx);
 extern int default_jump_align_max_skip (rtx);
 extern section * default_function_section(tree decl, enum node_frequency freq,
 					  bool startup, bool exit);
+extern enum machine_mode default_dwarf_frame_reg_mode (int);
 extern enum machine_mode default_get_reg_raw_mode (int);
 
 extern void *default_get_pch_validity (size_t *);

@@ -23,12 +23,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm.h"
 #include "linux-protos.h"
 
-/* Android does not support GNU indirect functions.  */
-
 bool
 linux_has_ifunc_p (void)
 {
-  return OPTION_BIONIC ? false : HAVE_GNU_INDIRECT_FUNCTION;
+  return HAVE_GNU_INDIRECT_FUNCTION;
 }
 
 bool
@@ -39,7 +37,8 @@ linux_libc_has_function (enum function_class fn_class)
   if (OPTION_BIONIC)
     if (fn_class == function_c94
 	|| fn_class == function_c99_misc
-	|| fn_class == function_sincos)
+	|| (fn_class == function_sincos && !TARGET_ANDROID)
+       )
 	return true;
 
   return false;

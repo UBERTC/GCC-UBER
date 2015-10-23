@@ -1,6 +1,6 @@
 #include <stdlib.h>
 /* { dg-do compile } */
-/* { dg-options "-O2 -fdump-tree-release_ssa"  } */
+/* { dg-options "-O2 -fdump-tree-release_ssa -fdevirtualize"  } */
 namespace {
 struct A
 { int a; virtual int foo() {return a;} void bar() {a=7;} };

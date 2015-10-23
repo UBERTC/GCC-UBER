@@ -285,7 +285,15 @@ static unsigned arm_add_stmt_cost (void *data, int count,
 
 static void arm_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
 					 bool op0_preserve_value);
+
 static unsigned HOST_WIDE_INT arm_asan_shadow_offset (void);
+
+static rtx arm_get_pic_reg (void);
+static void arm_clear_pic_reg (void);
+static bool arm_can_simplify_got_access (int, int);
+static rtx arm_loaded_global_var (rtx, rtx *, rtx *);
+static void arm_load_global_address (rtx, rtx, rtx, rtx, rtx);
+
 
 /* Table of machine attributes.  */
 static const struct attribute_spec arm_attribute_table[] =
@@ -660,6 +668,21 @@ static const struct attribute_spec arm_attribute_table[] =
   arm_builtin_vectorization_cost
 #undef TARGET_VECTORIZE_ADD_STMT_COST
 #define TARGET_VECTORIZE_ADD_STMT_COST arm_add_stmt_cost
+
+#undef TARGET_GET_PIC_REG
+#define TARGET_GET_PIC_REG arm_get_pic_reg
+
+#undef TARGET_CLEAR_PIC_REG
+#define TARGET_CLEAR_PIC_REG arm_clear_pic_reg
+
+#undef TARGET_LOADED_GLOBAL_VAR
+#define TARGET_LOADED_GLOBAL_VAR arm_loaded_global_var
+
+#undef TARGET_CAN_SIMPLIFY_GOT_ACCESS
+#define TARGET_CAN_SIMPLIFY_GOT_ACCESS arm_can_simplify_got_access
+
+#undef TARGET_LOAD_GLOBAL_ADDRESS
+#define TARGET_LOAD_GLOBAL_ADDRESS arm_load_global_address
 
 #undef TARGET_CANONICALIZE_COMPARISON
 #define TARGET_CANONICALIZE_COMPARISON \
@@ -13928,9 +13951,9 @@ arm_block_move_unaligned_straight (rtx dstbase, rtx srcbase,
   HOST_WIDE_INT srcoffset, dstoffset;
   HOST_WIDE_INT src_autoinc, dst_autoinc;
   rtx mem, addr;
-  
+
   gcc_assert (1 <= interleave_factor && interleave_factor <= 4);
-  
+
   /* Use hard registers if we have aligned source or destination so we can use
      load/store multiple with contiguous registers.  */
   if (dst_aligned || src_aligned)
@@ -13944,7 +13967,7 @@ arm_block_move_unaligned_straight (rtx dstbase, rtx srcbase,
   src = copy_addr_to_reg (XEXP (srcbase, 0));
 
   srcoffset = dstoffset = 0;
-  
+
   /* Calls to arm_gen_load_multiple and arm_gen_store_multiple update SRC/DST.
      For copying the last bytes we want to subtract this offset again.  */
   src_autoinc = dst_autoinc = 0;
@@ -13998,14 +14021,14 @@ arm_block_move_unaligned_straight (rtx dstbase, rtx srcbase,
 
       remaining -= block_size_bytes;
     }
-  
+
   /* Copy any whole words left (note these aren't interleaved with any
      subsequent halfword/byte load/stores in the interests of simplicity).  */
-  
+
   words = remaining / UNITS_PER_WORD;
 
   gcc_assert (words < interleave_factor);
-  
+
   if (src_aligned && words > 1)
     {
       emit_insn (arm_gen_load_multiple (regnos, words, src, TRUE, srcbase,
@@ -14045,11 +14068,11 @@ arm_block_move_unaligned_straight (rtx dstbase, rtx srcbase,
     }
 
   remaining -= words * UNITS_PER_WORD;
-  
+
   gcc_assert (remaining < 4);
-  
+
   /* Copy a halfword if necessary.  */
-  
+
   if (remaining >= 2)
     {
       halfword_tmp = gen_reg_rtx (SImode);
@@ -14073,11 +14096,11 @@ arm_block_move_unaligned_straight (rtx dstbase, rtx srcbase,
       remaining -= 2;
       srcoffset += 2;
     }
-  
+
   gcc_assert (remaining < 2);
-  
+
   /* Copy last byte.  */
-  
+
   if ((remaining & 1) != 0)
     {
       byte_tmp = gen_reg_rtx (SImode);
@@ -14098,9 +14121,9 @@ arm_block_move_unaligned_straight (rtx dstbase, rtx srcbase,
       remaining--;
       srcoffset++;
     }
-  
+
   /* Store last halfword if we haven't done so already.  */
-  
+
   if (halfword_tmp)
     {
       addr = plus_constant (Pmode, dst, dstoffset - dst_autoinc);
@@ -14119,7 +14142,7 @@ arm_block_move_unaligned_straight (rtx dstbase, rtx srcbase,
       emit_move_insn (mem, gen_lowpart (QImode, byte_tmp));
       dstoffset++;
     }
-  
+
   gcc_assert (remaining == 0 && srcoffset == dstoffset);
 }
 
@@ -14138,7 +14161,7 @@ arm_adjust_block_mem (rtx mem, HOST_WIDE_INT length, rtx *loop_reg,
 		      rtx *loop_mem)
 {
   *loop_reg = copy_addr_to_reg (XEXP (mem, 0));
-  
+
   /* Although the new mem does not refer to a known location,
      it does keep up to LENGTH bytes of alignment.  */
   *loop_mem = change_address (mem, BLKmode, *loop_reg);
@@ -14158,14 +14181,14 @@ arm_block_move_unaligned_loop (rtx dest, rtx src, HOST_WIDE_INT length,
 {
   rtx label, src_reg, dest_reg, final_src, test;
   HOST_WIDE_INT leftover;
-  
+
   leftover = length % bytes_per_iter;
   length -= leftover;
-  
+
   /* Create registers and memory references for use within the loop.  */
   arm_adjust_block_mem (src, bytes_per_iter, &src_reg, &src);
   arm_adjust_block_mem (dest, bytes_per_iter, &dest_reg, &dest);
-  
+
   /* Calculate the value that SRC_REG should have after the last iteration of
      the loop.  */
   final_src = expand_simple_binop (Pmode, PLUS, src_reg, GEN_INT (length),
@@ -14174,7 +14197,7 @@ arm_block_move_unaligned_loop (rtx dest, rtx src, HOST_WIDE_INT length,
   /* Emit the start of the loop.  */
   label = gen_label_rtx ();
   emit_label (label);
-  
+
   /* Emit the loop body.  */
   arm_block_move_unaligned_straight (dest, src, bytes_per_iter,
 				     interleave_factor);
@@ -14182,11 +14205,11 @@ arm_block_move_unaligned_loop (rtx dest, rtx src, HOST_WIDE_INT length,
   /* Move on to the next block.  */
   emit_move_insn (src_reg, plus_constant (Pmode, src_reg, bytes_per_iter));
   emit_move_insn (dest_reg, plus_constant (Pmode, dest_reg, bytes_per_iter));
-  
+
   /* Emit the loop condition.  */
   test = gen_rtx_NE (VOIDmode, src_reg, final_src);
   emit_jump_insn (gen_cbranchsi4 (test, src_reg, final_src, label));
-  
+
   /* Mop up any left-over bytes.  */
   if (leftover)
     arm_block_move_unaligned_straight (dest, src, leftover, interleave_factor);
@@ -14200,7 +14223,7 @@ static int
 arm_movmemqi_unaligned (rtx *operands)
 {
   HOST_WIDE_INT length = INTVAL (operands[2]);
-  
+
   if (optimize_size)
     {
       bool src_aligned = MEM_ALIGN (operands[1]) >= BITS_PER_WORD;
@@ -14211,7 +14234,7 @@ arm_movmemqi_unaligned (rtx *operands)
 	 resulting code can be smaller.  */
       unsigned int interleave_factor = (src_aligned || dst_aligned) ? 2 : 1;
       HOST_WIDE_INT bytes_per_iter = (src_aligned || dst_aligned) ? 8 : 4;
-      
+
       if (length > 12)
 	arm_block_move_unaligned_loop (operands[0], operands[1], length,
 				       interleave_factor, bytes_per_iter);
@@ -14229,7 +14252,7 @@ arm_movmemqi_unaligned (rtx *operands)
       else
 	arm_block_move_unaligned_straight (operands[0], operands[1], length, 4);
     }
-  
+
   return 1;
 }
 
@@ -21581,9 +21604,13 @@ arm_print_operand (FILE *stream, rtx x, int code)
 	memsize = MEM_SIZE (x);
 
 	/* Only certain alignment specifiers are supported by the hardware.  */
-	if (memsize == 32 && (align % 32) == 0)
+	/* Note that ARM EABI only guarentees 8-byte stack alignment. While GCC
+	   honors stricter alignment of composite type in user code, it doesn't
+	   observe the alignment of memory passed as an extra argument for function
+	   returning large composite type.  See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=57271 */
+	if (memsize == 32 && (align % 32) == 0 && !TARGET_AAPCS_BASED)
 	  align_bits = 256;
-	else if ((memsize == 16 || memsize == 32) && (align % 16) == 0)
+	else if ((memsize == 16 || memsize == 32) && (align % 16) == 0 && !TARGET_AAPCS_BASED)
 	  align_bits = 128;
 	else if (memsize >= 8 && (align % 8) == 0)
 	  align_bits = 64;
@@ -28492,7 +28519,11 @@ arm_set_return_address (rtx source, rtx scratch)
 
 	  addr = plus_constant (Pmode, addr, delta);
 	}
-      emit_move_insn (gen_frame_mem (Pmode, addr), source);
+      /* The store needs to be marked as frame related in order to prevent
+	 DSE from deleting it as dead if it is based on fp.  */
+      rtx insn = emit_move_insn (gen_frame_mem (Pmode, addr), source);
+      RTX_FRAME_RELATED_P (insn) = 1;
+      add_reg_note (insn, REG_CFA_RESTORE, gen_rtx_REG (Pmode, LR_REGNUM));
     }
 }
 
@@ -28544,7 +28575,11 @@ thumb_set_return_address (rtx source, rtx scratch)
       else
 	addr = plus_constant (Pmode, addr, delta);
 
-      emit_move_insn (gen_frame_mem (Pmode, addr), source);
+      /* The store needs to be marked as frame related in order to prevent
+	 DSE from deleting it as dead if it is based on fp.  */
+      rtx insn = emit_move_insn (gen_frame_mem (Pmode, addr), source);
+      RTX_FRAME_RELATED_P (insn) = 1;
+      add_reg_note (insn, REG_CFA_RESTORE, gen_rtx_REG (Pmode, LR_REGNUM));
     }
   else
     emit_move_insn (gen_rtx_REG (Pmode, LR_REGNUM), source);
@@ -29208,6 +29243,14 @@ arm_output_addr_const_extra (FILE *fp, rtx x)
       fputc (')', fp);
       return TRUE;
     }
+  else if (GET_CODE (x) == UNSPEC && XINT (x, 1) == UNSPEC_GOT_PREL_SYM)
+    {
+      output_addr_const (fp, XVECEXP (x, 0, 0));
+      fputs ("(GOT_PREL)+(", fp);
+      output_addr_const (fp, XVECEXP (x, 0, 1));
+      fputc (')', fp);
+      return TRUE;
+    }
   else if (GET_CODE (x) == CONST_VECTOR)
     return arm_emit_vector_const (fp, x);
 
@@ -29792,10 +29835,10 @@ int
 vfp3_const_double_for_fract_bits (rtx operand)
 {
   REAL_VALUE_TYPE r0;
-  
+
   if (!CONST_DOUBLE_P (operand))
     return 0;
-  
+
   REAL_VALUE_FROM_CONST_DOUBLE (r0, operand);
   if (exact_real_inverse (DFmode, &r0))
     {
@@ -30789,7 +30832,7 @@ arm_autoinc_modes_ok_p (enum machine_mode mode, enum arm_auto_incmodes code)
 	  else
 	    return false;
 	}
-      
+
       return true;
 
     case ARM_POST_DEC:
@@ -30806,10 +30849,10 @@ arm_autoinc_modes_ok_p (enum machine_mode mode, enum arm_auto_incmodes code)
 	return false;
 
       return true;
-     
+
     default:
       return false;
-      
+
     }
 
   return false;
@@ -30820,7 +30863,7 @@ arm_autoinc_modes_ok_p (enum machine_mode mode, enum arm_auto_incmodes code)
    Additionally, the default expansion code is not available or suitable
    for post-reload insn splits (this can occur when the register allocator
    chooses not to do a shift in NEON).
-   
+
    This function is used in both initial expand and post-reload splits, and
    handles all kinds of 64-bit shifts.
 
@@ -31073,7 +31116,7 @@ arm_validize_comparison (rtx *comparison, rtx * op1, rtx * op2)
 {
   enum rtx_code code = GET_CODE (*comparison);
   int code_int;
-  enum machine_mode mode = (GET_MODE (*op1) == VOIDmode) 
+  enum machine_mode mode = (GET_MODE (*op1) == VOIDmode)
     ? GET_MODE (*op2) : GET_MODE (*op1);
 
   gcc_assert (GET_MODE (*op1) != VOIDmode || GET_MODE (*op2) != VOIDmode);
@@ -31127,7 +31170,7 @@ arm_asan_shadow_offset (void)
 
 /* This is a temporary fix for PR60655.  Ideally we need
    to handle most of these cases in the generic part but
-   currently we reject minus (..) (sym_ref).  We try to 
+   currently we reject minus (..) (sym_ref).  We try to
    ameliorate the case with minus (sym_ref1) (sym_ref2)
    where they are in the same section.  */
 
@@ -31164,6 +31207,197 @@ arm_const_not_ok_for_debug_p (rtx p)
     }
 
   return false;
+}
+
+rtx
+arm_get_pic_reg (void)
+{
+  return cfun->machine->pic_reg;
+}
+
+/* Clear the pic_reg to NULL.  */
+void
+arm_clear_pic_reg (void)
+{
+  cfun->machine->pic_reg = NULL_RTX;
+}
+
+/* Determine if it is profitable to simplify GOT accesses.
+
+   The default global address loading instructions are:
+
+   ldr   r3, .L2                              # A
+   ldr   r2, .L2+4                            # B
+.LPIC0:
+   add   r3, pc                               # A
+   ldr   r4, [r3, r2]                         # B
+   ...
+.L2:
+   .word   _GLOBAL_OFFSET_TABLE_-(.LPIC0+4)   # A
+   .word   i(GOT)                             # S
+
+   The new instruction sequence is:
+
+   ldr   r3, .L2                      # C
+.LPIC0:
+   add   r3, pc                       # C
+   ldr   r3, [r3]                     # C
+   ...
+.L2:
+   i(GOT_PREL)+(.-(.LPIC0+4))         # C
+
+   Suppose the number of global address loading is n, the number of
+   accessed global symbol is s, this function should return
+
+        cost(A) + cost(B) * n + cost(S) * s >= cost(C) * n
+
+   From the above code snippets, we can see that
+
+        cost(A) = INSN_LENGTH * 2 + WORD_LENGTH
+        cost(B) = INSN_LENGTH * 2
+        cost(S) = WORD_LENGTH
+        cost(C) = INSN_LENGTH * 3 + WORD_LENGTH
+
+   The length of instruction depends on the target instruction set.  */
+
+#define N_INSNS_A 2
+#define N_INSNS_B 2
+#define N_INSNS_C 3
+
+bool
+arm_can_simplify_got_access (int n_symbol, int n_access)
+{
+  int insn_len = TARGET_THUMB ? 2 : 4;
+  int cost_A = insn_len * N_INSNS_A + UNITS_PER_WORD;
+  int cost_B = insn_len * N_INSNS_B;
+  int cost_S = UNITS_PER_WORD;
+  int cost_C = insn_len * N_INSNS_C + UNITS_PER_WORD;
+
+  return cost_A + cost_B * n_access + cost_S * n_symbol >= cost_C * n_access;
+}
+
+/* Detect if INSN loads a global address. If so returns the symbol.
+   If the GOT offset is loaded in a separate instruction, sets the
+   corresponding OFFSET_REG and OFFSET_INSN. Otherwise fills with NULL.  */
+rtx
+arm_loaded_global_var (rtx insn, rtx *offset_reg, rtx *offset_insn)
+{
+  rtx set = single_set (insn);
+  rtx pic_reg = cfun->machine->pic_reg;
+  gcc_assert (pic_reg);
+
+  /* Global address loading instruction has the pattern:
+        (SET address_reg (MEM (PLUS pic_reg offset_reg)))  */
+  if (set && MEM_P (SET_SRC (set))
+      && (GET_CODE (XEXP (SET_SRC (set),0)) == PLUS))
+    {
+      unsigned int regno;
+      df_ref def;
+      rtx def_insn;
+      rtx src;
+      rtx plus = XEXP (SET_SRC (set),0);
+      rtx op0 = XEXP (plus, 0);
+      rtx op1 = XEXP (plus, 1);
+      if (op1 == pic_reg)
+	{
+	  rtx tmp = op0;
+	  op0 = op1;
+	  op1 = tmp;
+	}
+
+      if (op0 != pic_reg)
+	return NULL_RTX;
+
+      if (REG_P (op1))
+	{
+	  regno = REGNO (op1);
+	  if ((DF_REG_USE_COUNT (regno) != 1)
+	      || (DF_REG_DEF_COUNT (regno) != 1))
+	    return NULL_RTX;
+
+	  /* The offset loading insn has the pattern:
+	     (SET offset_reg (UNSPEC [symbol] UNSPEC_PIC_SYM))  */
+	  def = DF_REG_DEF_CHAIN (regno);
+	  def_insn = DF_REF_INSN (def);
+	  set = single_set (def_insn);
+	  if (SET_DEST (set) != op1)
+	    return NULL_RTX;
+
+	  src = SET_SRC (set);
+	  *offset_reg = op1;
+	  *offset_insn = def_insn;
+	}
+      else
+	{
+	  src = op1;
+	  *offset_reg = NULL;
+	  *offset_insn = NULL;
+	}
+
+      if ((GET_CODE (src) != UNSPEC) || (XINT (src, 1) != UNSPEC_PIC_SYM))
+	return NULL_RTX;
+
+      return RTVEC_ELT (XVEC (src, 0), 0);
+    }
+
+  return NULL_RTX;
+}
+
+/* Rewrite the global address loading instructions.
+   SYMBOL is the global variable. OFFSET_REG contains the offset of the
+   GOT entry. ADDRESS_REG will receive the final global address.
+   LOAD_INSN is the original insn which loads the address from GOT.
+   OFFSET_INSN is the original insn which sets OFFSET_REG.
+   If the GOT offset is not loaded in a separate instruction, OFFSET_REG
+   and OFFSET_INSN should be NULL.  */
+void
+arm_load_global_address (rtx symbol, rtx offset_reg,
+			 rtx address_reg, rtx load_insn, rtx offset_insn)
+{
+  rtx offset, got_prel, new_insn;
+  rtx labelno = GEN_INT (pic_labelno++);
+  rtx l1 = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, labelno), UNSPEC_PIC_LABEL);
+  rtx set = single_set (load_insn);
+
+  rtx tmp_reg = offset_reg;
+  rtx insert_pos = offset_insn;
+  if (offset_reg == NULL)
+    {
+      tmp_reg = address_reg;
+      insert_pos = PREV_INSN (load_insn);
+    }
+
+  /* The first insn:
+         (SET tmp_reg (address_of_GOT_entry(symbol) - pc))
+     The expression (address_of_GOT_entry(symbol) - pc) is expressed by
+     got_prel, which is actually represented by R_ARM_GOT_PREL relocation.  */
+  l1 = gen_rtx_CONST (VOIDmode, l1);
+  l1 = plus_constant (Pmode, l1, TARGET_ARM ? 8 : 4);
+  offset = gen_rtx_MINUS (VOIDmode, pc_rtx, l1);
+  got_prel = gen_rtx_UNSPEC (Pmode, gen_rtvec (2, symbol, offset),
+			     UNSPEC_GOT_PREL_SYM);
+  got_prel = gen_rtx_CONST (Pmode, got_prel);
+  if (TARGET_32BIT)
+    new_insn = emit_insn_after (gen_pic_load_addr_32bit (tmp_reg, got_prel),
+				insert_pos);
+  else
+    new_insn = emit_insn_after (gen_pic_load_addr_thumb1 (tmp_reg, got_prel),
+				insert_pos);
+
+  /* The second insn:
+         (SET tmp_reg (PLUS tmp_reg  pc_rtx))  */
+  if (TARGET_ARM)
+    emit_insn_after (gen_pic_add_dot_plus_eight (tmp_reg, tmp_reg, labelno),
+		     new_insn);
+  else
+    emit_insn_after (gen_pic_add_dot_plus_four (tmp_reg, tmp_reg, labelno),
+		     new_insn);
+
+  /* The last insn to access the GOT entry:
+         (SET address_reg (MEM tmp_reg))
+     We reuse the existed load instruction.  */
+  XEXP (SET_SRC (set), 0) = tmp_reg;
+  df_insn_rescan (load_insn);
 }
 
 /* return TRUE if x is a reference to a value in a constant pool */

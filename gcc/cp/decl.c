@@ -57,6 +57,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "timevar.h"
 #include "pointer-set.h"
 #include "splay-tree.h"
+#include "cgraph.h"
 #include "plugin.h"
 #include "cgraph.h"
 #include "cilk.h"
@@ -561,6 +562,7 @@ poplevel (int keep, int reverse, int functionbody)
   cp_label_binding *label_bind;
 
   bool subtime = timevar_cond_start (TV_NAME_LOOKUP);
+
  restart:
 
   block = NULL_TREE;
@@ -630,8 +632,7 @@ poplevel (int keep, int reverse, int functionbody)
 	   push_local_binding where the list of decls returned by
 	   getdecls is built.  */
 	decl = TREE_CODE (d) == TREE_LIST ? TREE_VALUE (d) : d;
-	// See through references for improved -Wunused-variable (PR 38958).
-	tree type = non_reference (TREE_TYPE (decl));
+	tree type = TREE_TYPE (decl);
 	if (VAR_P (decl)
 	    && (! TREE_USED (decl) || !DECL_READ_P (decl))
 	    && ! DECL_IN_SYSTEM_HEADER (decl)
@@ -870,7 +871,7 @@ walk_namespaces (walk_namespaces_fn f, void* data)
    wrapup_global_declarations for this NAMESPACE.  */
 
 int
-wrapup_globals_for_namespace (tree name_space, void* data)
+wrapup_globals_for_namespace (tree name_space, void *data)
 {
   cp_binding_level *level = NAMESPACE_LEVEL (name_space);
   vec<tree, va_gc> *statics = level->static_decls;
@@ -2467,7 +2468,26 @@ duplicate_decls (tree newdecl, tree olddecl, bool newdecl_is_friend)
   /* The NEWDECL will no longer be needed.  Because every out-of-class
      declaration of a member results in a call to duplicate_decls,
      freeing these nodes represents in a significant savings.  */
-  ggc_free (newdecl);
+  {
+    tree clone;
+    bool found_clone = false;
+    /* Fix dangling reference.  */
+    FOR_EACH_CLONE (clone, newdecl)
+      {
+        if (DECL_CLONED_FUNCTION (clone) == newdecl)
+          {
+            found_clone = true;
+            break;
+          }
+        if (DECL_ABSTRACT_ORIGIN (clone) == newdecl)
+          {
+            found_clone = true;
+            break;
+          }
+      }
+    if (!found_clone)
+      ggc_free (newdecl);
+  }
 
   return olddecl;
 }
@@ -3696,6 +3716,7 @@ cxx_init_decl_processing (void)
 {
   tree void_ftype;
   tree void_ftype_ptr;
+  tree void_ftype_ptr_sizetype;
 
   /* Create all the identifiers we need.  */
   initialize_predefined_identifiers ();
@@ -3757,8 +3778,14 @@ cxx_init_decl_processing (void)
   void_ftype = build_function_type_list (void_type_node, NULL_TREE);
   void_ftype_ptr = build_function_type_list (void_type_node,
 					     ptr_type_node, NULL_TREE);
+  void_ftype_ptr_sizetype = build_function_type_list (void_type_node,
+                                                      ptr_type_node,
+                                                      size_type_node,
+                                                      NULL_TREE);
   void_ftype_ptr
     = build_exception_variant (void_ftype_ptr, empty_except_spec);
+  void_ftype_ptr_sizetype
+    = build_exception_variant (void_ftype_ptr_sizetype, empty_except_spec);
 
   /* C++ extensions */
 
@@ -3809,7 +3836,7 @@ cxx_init_decl_processing (void)
 
   {
     tree newattrs, extvisattr;
-    tree newtype, deltype;
+    tree newtype, deltype, deltype2;
     tree ptr_ftype_sizetype;
     tree new_eh_spec;
 
@@ -3847,10 +3874,12 @@ cxx_init_decl_processing (void)
     newtype = build_exception_variant (newtype, new_eh_spec);
     deltype = cp_build_type_attribute_variant (void_ftype_ptr, extvisattr);
     deltype = build_exception_variant (deltype, empty_except_spec);
+    deltype2 = build_exception_variant (void_ftype_ptr_sizetype, empty_except_spec);
     DECL_IS_OPERATOR_NEW (push_cp_library_fn (NEW_EXPR, newtype, 0)) = 1;
     DECL_IS_OPERATOR_NEW (push_cp_library_fn (VEC_NEW_EXPR, newtype, 0)) = 1;
     global_delete_fndecl = push_cp_library_fn (DELETE_EXPR, deltype, ECF_NOTHROW);
     push_cp_library_fn (VEC_DELETE_EXPR, deltype, ECF_NOTHROW);
+    push_cp_library_fn (DELETE_EXPR, deltype2, ECF_NOTHROW);
 
     nullptr_type_node = make_node (NULLPTR_TYPE);
     TYPE_SIZE (nullptr_type_node) = bitsize_int (GET_MODE_BITSIZE (ptr_mode));
@@ -4792,10 +4821,25 @@ grok_reference_init (tree decl, tree type, tree init, int flags)
     init = build_x_compound_expr_from_list (init, ELK_INIT,
 					    tf_warning_or_error);
 
-  if (TREE_CODE (TREE_TYPE (type)) != ARRAY_TYPE
+  tree ttype = TREE_TYPE (type);
+  if (TREE_CODE (ttype) != ARRAY_TYPE
       && TREE_CODE (TREE_TYPE (init)) == ARRAY_TYPE)
     /* Note: default conversion is only called in very special cases.  */
     init = decay_conversion (init, tf_warning_or_error);
+
+  /* check_initializer handles this for non-reference variables, but for
+     references we need to do it here or the initializer will get the
+     incomplete array type and confuse later calls to
+     cp_complete_array_type.  */
+  if (TREE_CODE (ttype) == ARRAY_TYPE
+      && TYPE_DOMAIN (ttype) == NULL_TREE
+      && (BRACE_ENCLOSED_INITIALIZER_P (init)
+	  || TREE_CODE (init) == STRING_CST))
+    {
+      cp_complete_array_type (&ttype, init, false);
+      if (ttype != TREE_TYPE (type))
+	type = cp_build_reference_type (ttype, TYPE_REF_IS_RVALUE (type));
+    }
 
   /* Convert INIT to the reference type TYPE.  This may involve the
      creation of a temporary, whose lifetime must be the same as that
@@ -5908,6 +5952,10 @@ make_rtl_for_nonlocal_decl (tree decl, tree init, const char* asmspec)
 	   && DECL_IMPLICIT_INSTANTIATION (decl))
     defer_p = 1;
 
+  /* Capture the current module info.  */
+  if (L_IPO_COMP_MODE)
+    varpool_node_for_decl (decl);
+
   /* If we're not deferring, go ahead and assemble the variable.  */
   if (!defer_p)
     rest_of_decl_compilation (decl, toplev, at_eof);
@@ -6987,7 +7035,7 @@ expand_static_init (tree decl, tree init)
 	 looks like:
 
 	   static <type> guard;
-	   if (!guard.first_byte) {
+	   if (!__atomic_load (guard.first_byte)) {
 	     if (__cxa_guard_acquire (&guard)) {
 	       bool flag = false;
 	       try {
@@ -7017,16 +7065,11 @@ expand_static_init (tree decl, tree init)
       /* Create the guard variable.  */
       guard = get_guard (decl);
 
-      /* This optimization isn't safe on targets with relaxed memory
-	 consistency.  On such targets we force synchronization in
-	 __cxa_guard_acquire.  */
-      if (!targetm.relaxed_ordering || !thread_guard)
-	{
-	  /* Begin the conditional initialization.  */
-	  if_stmt = begin_if_stmt ();
-	  finish_if_stmt_cond (get_guard_cond (guard), if_stmt);
-	  then_clause = begin_compound_stmt (BCS_NO_SCOPE);
-	}
+      /* Begin the conditional initialization.  */
+      if_stmt = begin_if_stmt ();
+
+      finish_if_stmt_cond (get_guard_cond (guard, thread_guard), if_stmt);
+      then_clause = begin_compound_stmt (BCS_NO_SCOPE);
 
       if (thread_guard)
 	{
@@ -7095,12 +7138,9 @@ expand_static_init (tree decl, tree init)
 	  finish_if_stmt (inner_if_stmt);
 	}
 
-      if (!targetm.relaxed_ordering || !thread_guard)
-	{
-	  finish_compound_stmt (then_clause);
-	  finish_then_clause (if_stmt);
-	  finish_if_stmt (if_stmt);
-	}
+      finish_compound_stmt (then_clause);
+      finish_then_clause (if_stmt);
+      finish_if_stmt (if_stmt);
     }
   else if (DECL_THREAD_LOCAL_P (decl))
     tls_aggregates = tree_cons (init, decl, tls_aggregates);
@@ -13651,13 +13691,16 @@ begin_destructor_body (void)
       initialize_vtbl_ptrs (current_class_ptr);
       finish_compound_stmt (compound_stmt);
 
-      /* Insert a cleanup to let the back end know that the object is dead
-	 when we exit the destructor, either normally or via exception.  */
-      tree clobber = build_constructor (current_class_type, NULL);
-      TREE_THIS_VOLATILE (clobber) = true;
-      tree exprstmt = build2 (MODIFY_EXPR, current_class_type,
-			      current_class_ref, clobber);
-      finish_decl_cleanup (NULL_TREE, exprstmt);
+      if (flag_lifetime_dse)
+        {
+          /* Insert a cleanup to let the back end know that the object is dead
+             when we exit the destructor, either normally or via exception.  */
+          tree clobber = build_constructor (current_class_type, NULL);
+          TREE_THIS_VOLATILE (clobber) = true;
+          tree exprstmt = build2 (MODIFY_EXPR, current_class_type,
+                                  current_class_ref, clobber);
+          finish_decl_cleanup (NULL_TREE, exprstmt);
+        }
 
       /* And insert cleanups for our bases and members so that they
 	 will be properly destroyed if we throw.  */

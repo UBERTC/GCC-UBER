@@ -15,3 +15,4 @@
 # <http://www.gnu.org/licenses/>.
 
 load_lib "standard.exp"
+load_lib "gompconfig.exp"

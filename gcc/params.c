@@ -70,7 +70,9 @@ void
 global_init_params (void)
 {
   add_params (lang_independent_params, LAST_PARAM);
+#ifndef IN_GCOV_TOOL
   targetm_common.option_default_params ();
+#endif
 }
 
 /* Note that all parameters have been added and all default values
@@ -187,4 +189,19 @@ size_t
 get_num_compiler_params (void)
 {
   return num_compiler_params;
+}
+
+/* Dump values of parameters.  */
+
+void
+dump_params (int *params, int *params_set)
+{
+  size_t i;
+
+  /* Scan the parameter table to find a matching entry.  */
+  for (i = 0; i < num_compiler_params; ++i)
+    {
+      fprintf (stderr, "%s\t%d (%s)\n", compiler_params[i].option,
+               params[i], params_set[i] ? "explicit" : "implicit");
+    }
 }

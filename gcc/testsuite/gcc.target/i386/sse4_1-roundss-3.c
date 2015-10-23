@@ -1,6 +1,6 @@
 /* { dg-do run } */
 /* { dg-require-effective-target sse4 } */
-/* { dg-options "-O2 -msse4.1" } */
+/* { dg-options "-O2 -msse4.1 --param max-default-completely-peeled-insns=0" } */
 /* { dg-skip-if "no M_PI" { vxworks_kernel } } */
 
 #include "sse4_1-check.h"

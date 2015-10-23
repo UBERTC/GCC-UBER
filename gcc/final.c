@@ -125,9 +125,6 @@ static int last_linenum;
 /* Last discriminator written to assembly.  */
 static int last_discriminator;
 
-/* Discriminator of current block.  */
-static int discriminator;
-
 /* Highest line number in current block.  */
 static int high_block_linenum;
 
@@ -137,9 +134,10 @@ static int high_function_linenum;
 /* Filename of last NOTE.  */
 static const char *last_filename;
 
-/* Override filename and line number.  */
+/* Override filename, line number, and discriminator.  */
 static const char *override_filename;
 static int override_linenum;
+static int override_discriminator;
 
 /* Whether to force emission of a line note before the next insn.  */
 static bool force_source_line = false;
@@ -203,6 +201,9 @@ bool final_insns_dump_p;
 
 /* True if profile_function should be called, but hasn't been called yet.  */
 static bool need_profile_function;
+
+/* True if the function has a split cold section.  */
+static bool has_cold_section_p;
 
 static int asm_insn_count (rtx);
 static void profile_function (FILE *);
@@ -787,6 +788,15 @@ compute_alignments (void)
 	    {
 	      max_log = log;
 	      max_skip = targetm.asm_out.loop_align_max_skip (label);
+	    }
+	  /* For small size loop, let them align more strictly.  */
+	  if (targetm.strict_align
+	      && bb->loop_father->num
+	      && (bb->loop_father->ninsns
+		  <= PARAM_VALUE (PARAM_ALIGN_LOOP_SIZE)))
+	    {
+	      max_log = max_log + 1;
+	      max_skip = max_skip * 2;
 	    }
 	}
       LABEL_TO_ALIGNMENT (label) = max_log;
@@ -1735,7 +1745,7 @@ final_start_function (rtx first, FILE *file,
 
   last_filename = LOCATION_FILE (prologue_location);
   last_linenum = LOCATION_LINE (prologue_location);
-  last_discriminator = discriminator = 0;
+  last_discriminator = 0;
 
   high_block_linenum = high_function_linenum = last_linenum;
 
@@ -1792,24 +1802,16 @@ final_start_function (rtx first, FILE *file,
 	profile_function (file);
     }
 
-  /* If debugging, assign block numbers to all of the blocks in this
-     function.  */
-  if (write_symbols)
-    {
-      reemit_insn_block_notes ();
-      number_blocks (current_function_decl);
-      /* We never actually put out begin/end notes for the top-level
-	 block in the function.  But, conceptually, that block is
-	 always needed.  */
-      TREE_ASM_WRITTEN (DECL_INITIAL (current_function_decl)) = 1;
-    }
-
   if (warn_frame_larger_than
     && get_frame_size () > frame_larger_than_size)
   {
-      /* Issue a warning */
+      /* Issue a warning.  (WARN_FRAME_LARGER_THAN_EXTRA_TEXT is
+         provided by configuration.  The way extra text is added
+         here may prevent localization from working properly.
+         It's totally broken.)  */
       warning (OPT_Wframe_larger_than_,
-               "the frame size of %wd bytes is larger than %wd bytes",
+               "the frame size of %wd bytes is larger than %wd bytes"
+               WARN_FRAME_LARGER_THAN_EXTRA_TEXT,
                get_frame_size (), frame_larger_than_size);
   }
 
@@ -1852,7 +1854,7 @@ profile_function (FILE *file ATTRIBUTE_UNUSED)
       int align = MIN (BIGGEST_ALIGNMENT, LONG_TYPE_SIZE);
       switch_to_section (data_section);
       ASM_OUTPUT_ALIGN (file, floor_log2 (align / BITS_PER_UNIT));
-      targetm.asm_out.internal_label (file, "LP", current_function_funcdef_no);
+      targetm.asm_out.internal_label (file, "LP", FUNC_LABEL_ID (cfun));
       assemble_integer (const0_rtx, LONG_TYPE_SIZE / BITS_PER_UNIT, align, 1);
     }
 
@@ -1865,7 +1867,7 @@ profile_function (FILE *file ATTRIBUTE_UNUSED)
     ASM_OUTPUT_REG_PUSH (file, REGNO (chain));
 #endif
 
-  FUNCTION_PROFILER (file, current_function_funcdef_no);
+  FUNCTION_PROFILER (file, FUNC_LABEL_ID (cfun));
 
 #ifdef ASM_OUTPUT_REG_PUSH
   if (chain && REG_P (chain))
@@ -2169,11 +2171,18 @@ final_scan_insn (rtx insn, FILE *file, int optimize_p ATTRIBUTE_UNUSED,
 	     suffixing "cold" to the original function's name.  */
 	  if (in_cold_section_p)
 	    {
-	      tree cold_function_name
+	      cold_function_name
 		= clone_function_name (current_function_decl, "cold");
+#ifdef ASM_DECLARE_FUNCTION_NAME
+              ASM_DECLARE_FUNCTION_NAME (asm_out_file,
+                                         IDENTIFIER_POINTER (cold_function_name),
+                                         current_function_decl);
+#else
 	      ASM_OUTPUT_LABEL (asm_out_file,
 				IDENTIFIER_POINTER (cold_function_name));
+#endif
 	    }
+	  has_cold_section_p = true;
 	  break;
 
 	case NOTE_INSN_BASIC_BLOCK:
@@ -2185,8 +2194,6 @@ final_scan_insn (rtx insn, FILE *file, int optimize_p ATTRIBUTE_UNUSED,
 
 	  if (targetm.asm_out.unwind_emit)
 	    targetm.asm_out.unwind_emit (asm_out_file, insn);
-
-          discriminator = NOTE_BASIC_BLOCK (insn)->discriminator;
 
 	  break;
 
@@ -2280,6 +2287,8 @@ final_scan_insn (rtx insn, FILE *file, int optimize_p ATTRIBUTE_UNUSED,
 		{
 		  override_filename = LOCATION_FILE (*locus_ptr);
 		  override_linenum = LOCATION_LINE (*locus_ptr);
+		  override_discriminator =
+		      get_discriminator_from_locus (*locus_ptr);
 		}
 	    }
 	  break;
@@ -2313,11 +2322,14 @@ final_scan_insn (rtx insn, FILE *file, int optimize_p ATTRIBUTE_UNUSED,
 		{
 		  override_filename = LOCATION_FILE (*locus_ptr);
 		  override_linenum = LOCATION_LINE (*locus_ptr);
+		  override_discriminator =
+		      get_discriminator_from_locus (*locus_ptr);
 		}
 	      else
 		{
 		  override_filename = NULL;
 		  override_linenum = 0;
+		  override_discriminator = 0;
 		}
 	    }
 	  break;
@@ -3000,6 +3012,17 @@ final_scan_insn (rtx insn, FILE *file, int optimize_p ATTRIBUTE_UNUSED,
     }
   return NEXT_INSN (insn);
 }
+
+/* Return discriminator of the statement that produced this insn.  */
+int
+insn_discriminator (const_rtx insn)
+{
+  location_t loc = INSN_LOCATION (insn);
+  if (!loc)
+    return 0;
+  return get_discriminator_from_locus (loc);
+}
+
 
 /* Return whether a source line note needs to be emitted before INSN.
    Sets IS_STMT to TRUE if the line should be marked as a possible
@@ -3010,16 +3033,19 @@ notice_source_line (rtx insn, bool *is_stmt)
 {
   const char *filename;
   int linenum;
+  int discriminator;
 
   if (override_filename)
     {
       filename = override_filename;
       linenum = override_linenum;
+      discriminator = override_discriminator;
     }
   else
     {
       filename = insn_file (insn);
       linenum = insn_line (insn);
+      discriminator = insn_discriminator (insn);
     }
 
   if (filename == NULL)
@@ -4405,13 +4431,55 @@ leaf_renumber_regs_insn (rtx in_rtx)
       }
 }
 #endif
-
+
+/* List the call graph profiled edges whise value is greater than
+   PARAM_NOTE_CGRAPH_SECTION_EDGE_THRESHOLD in the
+   "gnu.callgraph.text" section. */
+static void
+dump_cgraph_profiles (void)
+{
+  struct cgraph_node *node = cgraph_get_node (current_function_decl);
+  struct cgraph_edge *e;
+  struct cgraph_node *callee;
+
+  for (e = node->callees; e != NULL; e = e->next_callee)
+    {
+      if (e->count <= PARAM_VALUE (PARAM_GNU_CGRAPH_SECTION_EDGE_THRESHOLD))
+        continue;
+      callee = e->callee;
+      fprintf (asm_out_file, "\t.string \"%s\"\n",
+               IDENTIFIER_POINTER (decl_assembler_name (callee->decl)));
+      fprintf (asm_out_file, "\t.string \"" HOST_WIDEST_INT_PRINT_DEC "\"\n",
+               e->count);
+    }
+}
+
+/* Iterate through the basic blocks in DECL and get the max count.
+   If COLD is true, find the max count of the cold part of the split.  */
+static gcov_type
+get_max_count (tree decl, bool cold)
+{
+  basic_block bb;
+  gcov_type max_count = cold ? 0 :(cgraph_get_node (decl))->count;
+
+  FOR_EACH_BB_FN (bb, cfun)
+    {
+      if (cold && BB_PARTITION (bb) != BB_COLD_PARTITION)
+        continue;
+      if (bb->count > max_count)
+        max_count = bb->count;
+    }
+  return max_count;
+}
+
 /* Turn the RTL into assembly.  */
 static unsigned int
 rest_of_handle_final (void)
 {
   rtx x;
   const char *fnname;
+  char *profile_fnname;
+  unsigned int flags;
 
   /* Get the function's name, as described by its RTL.  This may be
      different from the DECL_NAME name used in the source file.  */
@@ -4421,6 +4489,20 @@ rest_of_handle_final (void)
   x = XEXP (x, 0);
   gcc_assert (GET_CODE (x) == SYMBOL_REF);
   fnname = XSTR (x, 0);
+
+  has_cold_section_p = false;
+
+  /* If debugging, assign block numbers to all of the blocks in this
+     function.  */
+  if (write_symbols)
+    {
+      reemit_insn_block_notes ();
+      number_blocks (current_function_decl);
+      /* We never actually put out begin/end notes for the top-level
+	 block in the function.  But, conceptually, that block is
+	 always needed.  */
+      TREE_ASM_WRITTEN (DECL_INITIAL (current_function_decl)) = 1;
+    }
 
   assemble_start_function (current_function_decl, fnname);
   final_start_function (get_insns (), asm_out_file, optimize);
@@ -4433,8 +4515,6 @@ rest_of_handle_final (void)
   output_function_exception_table (fnname);
 
   assemble_end_function (current_function_decl, fnname);
-
-  user_defined_section_attribute = false;
 
   /* Free up reg info memory.  */
   free_reg_info ();
@@ -4471,6 +4551,36 @@ rest_of_handle_final (void)
     targetm.asm_out.destructor (XEXP (DECL_RTL (current_function_decl), 0),
 				decl_fini_priority_lookup
 				  (current_function_decl));
+
+  /* With -fcallgraph-profiles-sections and -freorder-functions=,
+     add ".gnu.callgraph.text" section for storing profiling information. */
+  if ((flag_reorder_functions > 1)
+      && (flag_profile_use || flag_auto_profile)
+      && cgraph_get_node (current_function_decl) != NULL
+      && ((cgraph_get_node (current_function_decl))->callees != NULL
+	  || (cgraph_get_node (current_function_decl))->count > 0))
+    {
+      flags = SECTION_DEBUG | SECTION_EXCLUDE;
+      asprintf (&profile_fnname, ".gnu.callgraph.text.%s", fnname);
+      switch_to_section (get_section (profile_fnname, flags, NULL));
+      fprintf (asm_out_file, "\t.string \"Function %s\"\n", fnname);
+      fprintf (asm_out_file, "\t.string \"Weight "
+                            HOST_WIDEST_INT_PRINT_DEC
+                            " "
+                            HOST_WIDEST_INT_PRINT_DEC
+                            "\"\n",
+              (cgraph_get_node (current_function_decl))->count,
+              get_max_count (current_function_decl, false));
+      /* If this function is split into a cold section, record that weight
+        here.  */
+      if (has_cold_section_p)
+        fprintf (asm_out_file, "\t.string \"ColdWeight "
+                 HOST_WIDEST_INT_PRINT_DEC
+                 "\"\n",
+                 get_max_count (current_function_decl, true));
+      dump_cgraph_profiles ();
+      free (profile_fnname);
+    }
   return 0;
 }
 

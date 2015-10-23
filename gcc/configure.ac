@@ -760,6 +760,21 @@ AC_ARG_WITH(build-sysroot,
   [SYSROOT_CFLAGS_FOR_TARGET=])
 AC_SUBST(SYSROOT_CFLAGS_FOR_TARGET)
 
+AC_ARG_WITH([runtime-root-prefix],
+  [  --with-runtime-root-prefix=prefix
+                          prepend prefix to paths used by the compiler to
+                          name the dynamic linker and other files used at
+                          runtime.  Defaults to empty (no prefix).],
+[
+ case ${with_runtime_root_prefix} in
+ yes|no) AC_MSG_ERROR([bad value ${withval} given for runtime root prefix]) ;;
+ /*) ;;
+ *) AC_MSG_ERROR([${withval} should be an absolute directory]) ;;
+ esac
+ RUNTIME_ROOT_PREFIX_DEFINE="-DRUNTIME_ROOT_PREFIX=\\\"${withval}\\\""
+], [RUNTIME_ROOT_PREFIX_DEFINE=""])
+AC_SUBST(RUNTIME_ROOT_PREFIX_DEFINE)
+
 if test "x$prefix" = xNONE; then
  test_prefix=/usr/local
 else
@@ -1946,6 +1961,10 @@ case $use_collect2 in
     ;;
 esac
 
+AC_DEFINE_UNQUOTED(FRPLUGINSONAME,"${host_function_reordering_plugin_soname}",
+[Define to the name of the function reordering plugin DSO that must be
+  passed to the linker's -plugin=LIB option.])
+
 AC_DEFINE_UNQUOTED(LTOPLUGINSONAME,"${host_lto_plugin_soname}",
 [Define to the name of the LTO plugin DSO that must be
   passed to the linker's -plugin=LIB option.])
@@ -2234,8 +2253,10 @@ if test -f $gcc_cv_binutils_srcdir/configure.in \
 	gcc_cv_readelf=../binutils/readelf$build_exeext
 elif test -x readelf$build_exeext; then
 	gcc_cv_readelf=./readelf$build_exeext
+elif ( set dummy $READELF_FOR_TARGET; test -x $[2] ); then
+        gcc_cv_readelf="$READELF_FOR_TARGET"
 else
-        AC_PATH_PROG(gcc_cv_readelf, readelf)
+        AC_PATH_PROG(gcc_cv_readelf, $READELF_FOR_TARGET)
 fi])
 
 AC_MSG_CHECKING(what readelf to use)
@@ -4251,6 +4272,17 @@ LCF0:
       [AC_DEFINE(HAVE_AS_GNU_ATTRIBUTE, 1,
 	  [Define if your assembler supports .gnu_attribute.])])
 
+    gcc_GAS_CHECK_FEATURE([.module support],
+      gcc_cv_as_mips_dot_module,,,
+      [.module fp=32],,
+      [AC_DEFINE(HAVE_AS_DOT_MODULE, 1,
+	  [Define if your assembler supports .module.])])
+    if test x$gcc_cv_as_mips_dot_module = xno \
+       && test x$with_fp_32 != x; then
+      AC_MSG_ERROR(
+	[Requesting --with-fp-32= requires assembler support for .module.])
+    fi
+
     gcc_GAS_CHECK_FEATURE([.micromips support],
       gcc_cv_as_micromips_support,,[--fatal-warnings],
       [.set micromips],,
@@ -4589,6 +4621,36 @@ GCC_TARGET_TEMPLATE([HAVE_LD_EH_FRAME_HDR])
 if test x"$gcc_cv_ld_eh_frame_hdr" = xyes; then
 	AC_DEFINE(HAVE_LD_EH_FRAME_HDR, 1,
 [Define if your linker supports .eh_frame_hdr.])
+  AC_ARG_ENABLE(eh-frame-hdr-for-static,
+   [AS_HELP_STRING([--enable-eh-frame-hdr-for-static],
+     [enable linker PT_GNU_EH_FRAME support for static executable])],
+   [case $enable_eh_frame_hdr_for_static in
+    yes | no) ;;
+    *) AC_MSG_ERROR(['$enable_eh_frame_hdr_for_static' is an invalid
+value for --enable-eh-frame-hdr-for-static.
+Valid choices are 'yes' and 'no'.]) ;;
+    esac])
+## Only support for glibc 2.3.0 or higher with AT_PHDR/AT_PHNUM from
+## Linux kernel.
+#   [[if test x$host = x$build -a x$host = x$target &&
+#       ldd --version 2>&1 >/dev/null &&
+#       glibcver=`ldd --version 2>/dev/null | sed 's/.* //;q'`; then
+#      glibcmajor=`expr "$glibcver" : "\([0-9]*\)"`
+#      glibcminor=`expr "$glibcver" : "[2-9]*\.\([0-9]*\)"`
+#      glibcnum=`expr $glibcmajor \* 1000 + $glibcminor`
+#      if test "$glibcnum" -ge 2003 ; then
+#	auvx=`LD_SHOW_AUXV=1 ldd 2>/dev/null`
+#	if echo "$auvx" | grep AT_PHDR > /dev/null &&
+#	   echo "$auvx" | grep AT_PHNUM > /dev/null; then
+#	  enable_eh_frame_hdr_for_static=yes
+#	fi
+#      fi
+#    fi]])
+
+  if test x$enable_eh_frame_hdr_for_static = xyes; then
+    AC_DEFINE(USE_EH_FRAME_HDR_FOR_STATIC, 1,
+[Define if your system supports PT_GNU_EH_FRAME for static executable.])
+  fi
 fi
 AC_MSG_RESULT($gcc_cv_ld_eh_frame_hdr)
 
@@ -4646,6 +4708,49 @@ if test x"$gcc_cv_ld_pie" = xyes; then
 [Define if your linker supports -pie option.])
 fi
 AC_MSG_RESULT($gcc_cv_ld_pie)
+
+AC_MSG_CHECKING(linker PIE support with copy reloc)
+gcc_cv_ld_pie_copyreloc=no
+if test $gcc_cv_ld_pie = yes ; then
+  if test $in_tree_ld = yes ; then
+    if test "$gcc_cv_gld_major_version" -eq 2 -a "$gcc_cv_gld_minor_version" -ge 25 -o "$gcc_cv_gld_major_version" -gt 2; then
+      gcc_cv_ld_pie_copyreloc=yes
+    fi
+  elif test x$gcc_cv_as != x -a x$gcc_cv_ld != x ; then
+    # Check if linker supports -pie option with copy reloc
+    case "$target" in
+    i?86-*-linux* | x86_64-*-linux*)
+      cat > conftest1.s <<EOF
+	.globl	a_glob
+	.data
+	.type	a_glob, @object
+	.size	a_glob, 4
+a_glob:
+	.long	2
+EOF
+      cat > conftest2.s <<EOF
+	.text
+	.globl	main
+	.type	main, @function
+main:
+	movl	%eax, a_glob(%rip)
+	.size	main, .-main
+EOF
+      if $gcc_cv_as --64 -o conftest1.o conftest1.s > /dev/null 2>&1 \
+         && $gcc_cv_ld -shared -melf_x86_64 -o conftest1.so conftest1.o > /dev/null 2>&1 \
+         && $gcc_cv_as --64 -o conftest2.o conftest2.s > /dev/null 2>&1 \
+         && $gcc_cv_ld -pie -melf_x86_64 -o conftest conftest2.o conftest1.so > /dev/null 2>&1; then
+        gcc_cv_ld_pie_copyreloc=yes
+      fi
+      rm -f conftest conftest1.so conftest1.o conftest2.o conftest1.s conftest2.s
+      ;;
+    esac
+  fi
+fi
+AC_DEFINE_UNQUOTED(HAVE_LD_PIE_COPYRELOC,
+  [`if test x"$gcc_cv_ld_pie_copyreloc" = xyes; then echo 1; else echo 0; fi`],
+  [Define 0/1 if your linker supports -pie option with copy reloc.])
+AC_MSG_RESULT($gcc_cv_ld_pie_copyreloc)
 
 AC_MSG_CHECKING(linker EH-compatible garbage collection of sections)
 gcc_cv_ld_eh_gc_sections=no
@@ -5404,6 +5509,18 @@ AC_ARG_ENABLE(version-specific-runtime-libs,
                 [specify that runtime libraries should be
                  installed in a compiler-specific directory])])
 
+# Set default prefix canonicalization.
+
+AC_ARG_ENABLE(canonical-prefixes,
+[  --enable-canonical-prefixes
+                          enable or disable prefix canonicalization],
+[],
+enable_canonical_prefixes=yes)
+if test x"$enable_canonical_prefixes" = xyes; then
+  AC_DEFINE(ENABLE_CANONICAL_PREFIXES,
+            1, [Define to enable prefix canonicalization.])
+fi
+
 # Substitute configuration variables
 AC_SUBST(subdirs)
 AC_SUBST(srcdir)
@@ -5495,7 +5612,30 @@ AC_ARG_VAR(CLOOGLIBS,[How to link CLOOG])
 AC_ARG_VAR(CLOOGINC,[How to find CLOOG include files])
 if test "x${CLOOGLIBS}" != "x" ; then 
    AC_DEFINE(HAVE_cloog, 1, [Define if cloog is in use.])
+
+  # Check whether isl_schedule_constraints_compute_schedule is available;
+  # it's new in ISL-0.13.
+  saved_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $ISLINC"
+  saved_LIBS="$LIBS"
+  LIBS="$LIBS $CLOOGLIBS $ISLLIBS $GMPLIBS"
+
+  AC_MSG_CHECKING([Checking for isl_schedule_constraints_compute_schedule])
+  AC_TRY_LINK([#include <isl/schedule.h>],
+              [isl_schedule_constraints_compute_schedule (NULL);],
+              [ac_has_isl_schedule_constraints_compute_schedule=yes],
+              [ac_has_isl_schedule_constraints_compute_schedule=no])
+  AC_MSG_RESULT($ac_has_isl_schedule_constraints_compute_schedule)
+
+  LIBS="$saved_LIBS"
+  CFLAGS="$saved_CFLAGS"
+
+  if test x"$ac_has_isl_schedule_constraints_compute_schedule" = x"yes"; then
+     AC_DEFINE(HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE, 1,
+               [Define if isl_schedule_constraints_compute_schedule exists.])
+  fi
 fi
+
 
 # Check for plugin support
 AC_ARG_ENABLE(plugin,
@@ -5621,6 +5761,20 @@ if test "${ENABLE_LIBQUADMATH_SUPPORT}" != "no" ; then
   AC_DEFINE(ENABLE_LIBQUADMATH_SUPPORT, 1,
             [Define to 1 to enable libquadmath support])
 fi
+
+
+warn_frame_larger_than_extra_text=
+AC_ARG_WITH(warn-frame-larger-than-extra-text,
+[  --with-warn-frame-larger-than-extra-text=TEXT
+                          specifies extra text for frame size warnings],
+[case "${withval}" in
+yes)	AC_MSG_ERROR(bad value ${withval} given for frame size warning text) ;;
+no)	;;
+*)	warn_frame_larger_than_extra_text="$withval" ;;
+esac])
+AC_DEFINE_UNQUOTED(WARN_FRAME_LARGER_THAN_EXTRA_TEXT,
+                   "$warn_frame_larger_than_extra_text",
+                   [Define to be extra text for frame size warnings.])
 
 
 # Specify what hash style to use by default.

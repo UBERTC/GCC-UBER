@@ -25,6 +25,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "function.h"
 #include "hashtab.h"
 #include "vec.h"
+#include "l-ipo.h"
 
 /* In order for the format checking to accept the C++ front end
    diagnostic framework extensions, you must include this file before
@@ -1097,6 +1098,18 @@ struct GTY(()) saved_scope {
 #define processing_template_decl scope_chain->x_processing_template_decl
 #define processing_specialization scope_chain->x_processing_specialization
 #define processing_explicit_instantiation scope_chain->x_processing_explicit_instantiation
+
+/* RAII sentinel to disable certain warnings during template substitution
+   and elsewhere.  */
+
+struct warning_sentinel
+{
+  int &flag;
+  int val;
+  warning_sentinel(int& flag, bool suppress=true)
+    : flag(flag), val(flag) { if (suppress) flag = 0; }
+  ~warning_sentinel() { flag = val; }
+};
 
 /* The cached class binding level, from the most recently exited
    class, or NULL if none.  */
@@ -5140,6 +5153,7 @@ extern void note_name_declared_in_class		(tree, tree);
 extern tree get_vtbl_decl_for_binfo		(tree);
 extern void debug_class				(tree);
 extern void debug_thunks			(tree);
+extern tree cp_fold_obj_type_ref		(tree, tree);
 extern void set_linkage_according_to_type	(tree, tree);
 extern void determine_key_method		(tree);
 extern void check_for_override			(tree, tree);
@@ -5327,6 +5341,10 @@ extern bool attributes_naming_typedef_ok	(tree);
 extern void cplus_decl_attributes		(tree *, tree, int);
 extern void finish_anon_union			(tree);
 extern void cp_write_global_declarations	(void);
+extern void cp_process_pending_declarations     (location_t);
+extern void cp_clear_deferred_fns               (void);
+extern void cp_clear_constexpr_hashtable        (void);
+extern void cp_clear_conv_type_map              (void);
 extern tree coerce_new_type			(tree);
 extern tree coerce_delete_type			(tree);
 extern void comdat_linkage			(tree);
@@ -5347,7 +5365,7 @@ extern bool mark_used			        (tree, tsubst_flags_t);
 extern void finish_static_data_member_decl	(tree, tree, bool, tree, int);
 extern tree cp_build_parm_decl			(tree, tree);
 extern tree get_guard				(tree);
-extern tree get_guard_cond			(tree);
+extern tree get_guard_cond			(tree, bool);
 extern tree set_guard				(tree);
 extern tree get_tls_wrapper_fn			(tree);
 extern void mark_needed				(tree);
@@ -5622,6 +5640,7 @@ extern tree get_template_argument_pack_elems	(const_tree);
 extern tree get_function_template_decl		(const_tree);
 extern tree resolve_nondeduced_context		(tree);
 extern hashval_t iterative_hash_template_arg (tree arg, hashval_t val);
+extern void clear_pending_templates (void);
 
 /* in repo.c */
 extern void init_repo				(void);
@@ -6190,6 +6209,7 @@ extern tree mangle_tls_init_fn			(tree);
 extern tree mangle_tls_wrapper_fn		(tree);
 extern bool decl_tls_wrapper_p			(tree);
 extern tree mangle_ref_init_variable		(tree);
+extern void reset_temp_count                    (void);
 extern char * get_mangled_vtable_map_var_name   (tree);
 
 /* in dump.c */
@@ -6205,6 +6225,22 @@ extern void cxx_initialize_diagnostics		(diagnostic_context *);
 extern int cxx_types_compatible_p		(tree, tree);
 extern void init_shadowed_var_for_decl		(void);
 extern bool cxx_block_may_fallthru		(const_tree);
+
+/* LIPO support.  */
+extern bool cp_is_compiler_generated_type        (tree);
+extern void cp_clear_global_name_bindings       (tree);
+extern bool
+cp_is_non_sharable_global_decl                  (tree, void *);
+extern void cp_lipo_dup_lang_type               (tree, tree);
+extern void cp_lipo_copy_lang_type              (tree, tree);
+extern int cp_get_lang_decl_size                (tree);
+extern int cp_cmp_lang_type                     (tree, tree);
+extern void cp_add_built_in_decl                (tree);
+extern void cp_save_built_in_decl_pre_parsing (void);
+extern void cp_restore_built_in_decl_pre_parsing (void);
+extern void cp_save_built_in_decl_post_parsing (void);
+extern void cp_restore_built_in_decl_post_parsing (void);
+
 
 /* in cp-gimplify.c */
 extern int cp_gimplify_expr			(tree *, gimple_seq *,
@@ -6222,6 +6258,7 @@ extern bool cxx_omp_privatize_by_reference	(const_tree);
 /* in name-lookup.c */
 extern void suggest_alternatives_for            (location_t, tree);
 extern tree strip_using_decl                    (tree);
+extern void reset_anon_name                     (void);
 
 /* in vtable-class-hierarchy.c */
 extern void vtv_compute_class_hierarchy_transitive_closure (void);

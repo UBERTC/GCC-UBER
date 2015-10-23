@@ -768,6 +768,7 @@ CONFIGURE_SPECS
 CROSS_SYSTEM_HEADER_DIR
 TARGET_SYSTEM_ROOT_DEFINE
 TARGET_SYSTEM_ROOT
+RUNTIME_ROOT_PREFIX_DEFINE
 SYSROOT_CFLAGS_FOR_TARGET
 enable_shared
 enable_fixed_point
@@ -895,6 +896,7 @@ with_dwarf2
 enable_shared
 with_native_system_header_dir
 with_build_sysroot
+with_runtime_root_prefix
 with_sysroot
 with_specs
 with_pkgversion
@@ -922,6 +924,7 @@ enable_comdat
 enable_fix_cortex_a53_835769
 with_glibc_version
 enable_gnu_unique_object
+enable_eh_frame_hdr_for_static
 enable_linker_build_id
 with_long_double_128
 with_gc
@@ -929,9 +932,11 @@ with_system_zlib
 enable_maintainer_mode
 enable_link_mutex
 enable_version_specific_runtime_libs
+enable_canonical_prefixes
 enable_plugin
 enable_host_shared
 enable_libquadmath_support
+with_warn_frame_larger_than_extra_text
 with_linker_hash_style
 '
       ac_precious_vars='build_alias
@@ -1647,6 +1652,9 @@ Optional Features:
   --enable-gnu-unique-object
                           enable the use of the @gnu_unique_object ELF
                           extension on glibc systems
+  --enable-eh-frame-hdr-for-static
+                          enable linker PT_GNU_EH_FRAME support for static
+                          executable
   --enable-linker-build-id
                           compiler will always pass --build-id to linker
   --enable-maintainer-mode
@@ -1657,6 +1665,8 @@ Optional Features:
   --enable-version-specific-runtime-libs
                           specify that runtime libraries should be installed
                           in a compiler-specific directory
+  --enable-canonical-prefixes
+                          enable or disable prefix canonicalization
   --enable-plugin         enable plugin support
   --enable-host-shared    build host code as shared libraries
   --disable-libquadmath-support
@@ -1684,6 +1694,10 @@ Optional Packages:
                           system header files in.  Defaults to /usr/include.
   --with-build-sysroot=sysroot
                           use sysroot as the system root during the build
+  --with-runtime-root-prefix=prefix
+                          prepend prefix to paths used by the compiler to
+                          name the dynamic linker and other files used at
+                          runtime.  Defaults to empty (no prefix).
   --with-sysroot[=DIR]    search for usr/lib, usr/include, et al, within DIR
   --with-specs=SPECS      add SPECS to driver command-line processing
   --with-pkgversion=PKG   Use PKG in the version string in place of "GCC"
@@ -1703,6 +1717,8 @@ Optional Packages:
                           choose the garbage collection mechanism to use with
                           the compiler
   --with-system-zlib      use installed libz
+  --with-warn-frame-larger-than-extra-text=TEXT
+                          specifies extra text for frame size warnings
   --with-linker-hash-style={sysv,gnu,both}
                           specify the linker hash style
 
@@ -7165,6 +7181,23 @@ fi
 
 
 
+
+# Check whether --with-runtime-root-prefix was given.
+if test "${with_runtime_root_prefix+set}" = set; then :
+  withval=$with_runtime_root_prefix;
+ case ${with_runtime_root_prefix} in
+ yes|no) as_fn_error "bad value ${withval} given for runtime root prefix" "$LINENO" 5 ;;
+ /*) ;;
+ *) as_fn_error "${withval} should be an absolute directory" "$LINENO" 5 ;;
+ esac
+ RUNTIME_ROOT_PREFIX_DEFINE="-DRUNTIME_ROOT_PREFIX=\\\"${withval}\\\""
+
+else
+  RUNTIME_ROOT_PREFIX_DEFINE=""
+fi
+
+
+
 if test "x$prefix" = xNONE; then
  test_prefix=/usr/local
 else
@@ -11845,6 +11878,12 @@ esac
 
 
 cat >>confdefs.h <<_ACEOF
+#define FRPLUGINSONAME "${host_function_reordering_plugin_soname}"
+_ACEOF
+
+
+
+cat >>confdefs.h <<_ACEOF
 #define LTOPLUGINSONAME "${host_lto_plugin_soname}"
 _ACEOF
 
@@ -14537,7 +14576,22 @@ fi
 
 # Check whether --with-pic was given.
 if test "${with_pic+set}" = set; then :
-  withval=$with_pic; pic_mode="$withval"
+  withval=$with_pic; p=${PACKAGE-default}
+    case "$withval" in
+    yes|no) pic_mode="$withval" ;;
+    *)
+      pic_mode=default
+      # Look at the argument we got.  We use all the common list separators.
+      lt_save_ifs="$IFS"; IFS="${IFS}$PATH_SEPARATOR,"
+      for pkg in $withval; do
+	IFS="$lt_save_ifs"
+	if test "X$pkg" = "X$p"; then
+	  pic_mode=yes
+	fi
+      done
+      IFS="$lt_save_ifs"
+      ;;
+    esac
 else
   pic_mode=default
 fi
@@ -17936,7 +17990,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 17939 "configure"
+#line 17993 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18042,7 +18096,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 18045 "configure"
+#line 18099 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -21784,9 +21838,11 @@ if test -f $gcc_cv_binutils_srcdir/configure.in \
 	gcc_cv_readelf=../binutils/readelf$build_exeext
 elif test -x readelf$build_exeext; then
 	gcc_cv_readelf=./readelf$build_exeext
+elif ( set dummy $READELF_FOR_TARGET; test -x $2 ); then
+        gcc_cv_readelf="$READELF_FOR_TARGET"
 else
-        # Extract the first word of "readelf", so it can be a program name with args.
-set dummy readelf; ac_word=$2
+        # Extract the first word of "$READELF_FOR_TARGET", so it can be a program name with args.
+set dummy $READELF_FOR_TARGET; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if test "${ac_cv_path_gcc_cv_readelf+set}" = set; then :
@@ -26140,6 +26196,41 @@ $as_echo "#define HAVE_AS_GNU_ATTRIBUTE 1" >>confdefs.h
 
 fi
 
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking assembler for .module support" >&5
+$as_echo_n "checking assembler for .module support... " >&6; }
+if test "${gcc_cv_as_mips_dot_module+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  gcc_cv_as_mips_dot_module=no
+  if test x$gcc_cv_as != x; then
+    $as_echo '.module fp=32' > conftest.s
+    if { ac_try='$gcc_cv_as $gcc_cv_as_flags  -o conftest.o conftest.s >&5'
+  { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; }
+    then
+	gcc_cv_as_mips_dot_module=yes
+    else
+      echo "configure: failed program was" >&5
+      cat conftest.s >&5
+    fi
+    rm -f conftest.o conftest.s
+  fi
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gcc_cv_as_mips_dot_module" >&5
+$as_echo "$gcc_cv_as_mips_dot_module" >&6; }
+if test $gcc_cv_as_mips_dot_module = yes; then
+
+$as_echo "#define HAVE_AS_DOT_MODULE 1" >>confdefs.h
+
+fi
+    if test x$gcc_cv_as_mips_dot_module = xno \
+       && test x$with_fp_32 != x; then
+      as_fn_error "Requesting --with-fp-32= requires assembler support for .module." "$LINENO" 5
+    fi
+
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking assembler for .micromips support" >&5
 $as_echo_n "checking assembler for .micromips support... " >&6; }
 if test "${gcc_cv_as_micromips_support+set}" = set; then :
@@ -26819,6 +26910,38 @@ if test x"$gcc_cv_ld_eh_frame_hdr" = xyes; then
 
 $as_echo "#define HAVE_LD_EH_FRAME_HDR 1" >>confdefs.h
 
+  # Check whether --enable-eh-frame-hdr-for-static was given.
+if test "${enable_eh_frame_hdr_for_static+set}" = set; then :
+  enableval=$enable_eh_frame_hdr_for_static; case $enable_eh_frame_hdr_for_static in
+    yes | no) ;;
+    *) as_fn_error "'$enable_eh_frame_hdr_for_static' is an invalid
+value for --enable-eh-frame-hdr-for-static.
+Valid choices are 'yes' and 'no'." "$LINENO" 5 ;;
+    esac
+fi
+
+## Only support for glibc 2.3.0 or higher with AT_PHDR/AT_PHNUM from
+## Linux kernel.
+#   [[if test x$host = x$build -a x$host = x$target &&
+#       ldd --version 2>&1 >/dev/null &&
+#       glibcver=`ldd --version 2>/dev/null | sed 's/.* //;q'`; then
+#      glibcmajor=`expr "$glibcver" : "\([0-9]*\)"`
+#      glibcminor=`expr "$glibcver" : "[2-9]*\.\([0-9]*\)"`
+#      glibcnum=`expr $glibcmajor \* 1000 + $glibcminor`
+#      if test "$glibcnum" -ge 2003 ; then
+#	auvx=`LD_SHOW_AUXV=1 ldd 2>/dev/null`
+#	if echo "$auvx" | grep AT_PHDR > /dev/null &&
+#	   echo "$auvx" | grep AT_PHNUM > /dev/null; then
+#	  enable_eh_frame_hdr_for_static=yes
+#	fi
+#      fi
+#    fi]])
+
+  if test x$enable_eh_frame_hdr_for_static = xyes; then
+
+$as_echo "#define USE_EH_FRAME_HDR_FOR_STATIC 1" >>confdefs.h
+
+  fi
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $gcc_cv_ld_eh_frame_hdr" >&5
 $as_echo "$gcc_cv_ld_eh_frame_hdr" >&6; }
@@ -26884,6 +27007,55 @@ $as_echo "#define HAVE_LD_PIE 1" >>confdefs.h
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $gcc_cv_ld_pie" >&5
 $as_echo "$gcc_cv_ld_pie" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking linker PIE support with copy reloc" >&5
+$as_echo_n "checking linker PIE support with copy reloc... " >&6; }
+gcc_cv_ld_pie_copyreloc=no
+if test $gcc_cv_ld_pie = yes ; then
+  if test $in_tree_ld = yes ; then
+    if test "$gcc_cv_gld_major_version" -eq 2 -a "$gcc_cv_gld_minor_version" -ge 25 -o "$gcc_cv_gld_major_version" -gt 2; then
+      gcc_cv_ld_pie_copyreloc=yes
+    fi
+  elif test x$gcc_cv_as != x -a x$gcc_cv_ld != x ; then
+    # Check if linker supports -pie option with copy reloc
+    case "$target" in
+    *android*)
+	;;
+    i?86-*-linux* | x86_64-*-linux*)
+      cat > conftest1.s <<EOF
+	.globl	a_glob
+	.data
+	.type	a_glob, @object
+	.size	a_glob, 4
+a_glob:
+	.long	2
+EOF
+      cat > conftest2.s <<EOF
+	.text
+	.globl	main
+	.type	main, @function
+main:
+	movl	%eax, a_glob(%rip)
+	.size	main, .-main
+EOF
+      if $gcc_cv_as --64 -o conftest1.o conftest1.s > /dev/null 2>&1 \
+         && $gcc_cv_ld -shared -melf_x86_64 -o conftest1.so conftest1.o > /dev/null 2>&1 \
+         && $gcc_cv_as --64 -o conftest2.o conftest2.s > /dev/null 2>&1 \
+         && $gcc_cv_ld -pie -melf_x86_64 -o conftest conftest2.o conftest1.so > /dev/null 2>&1; then
+        gcc_cv_ld_pie_copyreloc=yes
+      fi
+      rm -f conftest conftest1.so conftest1.o conftest2.o conftest1.s conftest2.s
+      ;;
+    esac
+  fi
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_LD_PIE_COPYRELOC `if test x"$gcc_cv_ld_pie_copyreloc" = xyes; then echo 1; else echo 0; fi`
+_ACEOF
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gcc_cv_ld_pie_copyreloc" >&5
+$as_echo "$gcc_cv_ld_pie_copyreloc" >&6; }
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking linker EH-compatible garbage collection of sections" >&5
 $as_echo_n "checking linker EH-compatible garbage collection of sections... " >&6; }
@@ -27758,6 +27930,21 @@ if test "${enable_version_specific_runtime_libs+set}" = set; then :
 fi
 
 
+# Set default prefix canonicalization.
+
+# Check whether --enable-canonical-prefixes was given.
+if test "${enable_canonical_prefixes+set}" = set; then :
+  enableval=$enable_canonical_prefixes;
+else
+  enable_canonical_prefixes=yes
+fi
+
+if test x"$enable_canonical_prefixes" = xyes; then
+
+$as_echo "#define ENABLE_CANONICAL_PREFIXES 1" >>confdefs.h
+
+fi
+
 # Substitute configuration variables
 
 
@@ -27851,7 +28038,47 @@ if test "x${CLOOGLIBS}" != "x" ; then
 
 $as_echo "#define HAVE_cloog 1" >>confdefs.h
 
+
+  # Check whether isl_schedule_constraints_compute_schedule is available;
+  # it's new in ISL-0.13.
+  saved_CFLAGS="$CFLAGS"
+  CFLAGS="$CFLAGS $ISLINC"
+  saved_LIBS="$LIBS"
+  LIBS="$LIBS $CLOOGLIBS $ISLLIBS $GMPLIBS"
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking Checking for isl_schedule_constraints_compute_schedule" >&5
+$as_echo_n "checking Checking for isl_schedule_constraints_compute_schedule... " >&6; }
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <isl/schedule.h>
+int
+main ()
+{
+isl_schedule_constraints_compute_schedule (NULL);
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_has_isl_schedule_constraints_compute_schedule=yes
+else
+  ac_has_isl_schedule_constraints_compute_schedule=no
 fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_has_isl_schedule_constraints_compute_schedule" >&5
+$as_echo "$ac_has_isl_schedule_constraints_compute_schedule" >&6; }
+
+  LIBS="$saved_LIBS"
+  CFLAGS="$saved_CFLAGS"
+
+  if test x"$ac_has_isl_schedule_constraints_compute_schedule" = x"yes"; then
+
+$as_echo "#define HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE 1" >>confdefs.h
+
+  fi
+fi
+
 
 # Check for plugin support
 # Check whether --enable-plugin was given.
@@ -28066,6 +28293,24 @@ if test "${ENABLE_LIBQUADMATH_SUPPORT}" != "no" ; then
 $as_echo "#define ENABLE_LIBQUADMATH_SUPPORT 1" >>confdefs.h
 
 fi
+
+
+warn_frame_larger_than_extra_text=
+
+# Check whether --with-warn-frame-larger-than-extra-text was given.
+if test "${with_warn_frame_larger_than_extra_text+set}" = set; then :
+  withval=$with_warn_frame_larger_than_extra_text; case "${withval}" in
+yes)	as_fn_error "bad value ${withval} given for frame size warning text" "$LINENO" 5 ;;
+no)	;;
+*)	warn_frame_larger_than_extra_text="$withval" ;;
+esac
+fi
+
+
+cat >>confdefs.h <<_ACEOF
+#define WARN_FRAME_LARGER_THAN_EXTRA_TEXT "$warn_frame_larger_than_extra_text"
+_ACEOF
+
 
 
 # Specify what hash style to use by default.

@@ -66,6 +66,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "value-prof.h"
 #include "tree-pass.h"
 #include "target.h"
+#include "langhooks.h"
+#include "l-ipo.h"
 #include "cfgloop.h"
 
 #include "rtl.h"	/* FIXME: For asm_str_count.  */
@@ -785,6 +787,28 @@ is_parm (tree decl)
   return (TREE_CODE (decl) == PARM_DECL);
 }
 
+/* Remap the dependence CLIQUE from the source to the destination function
+   as specified in ID.  */
+
+static unsigned short
+remap_dependence_clique (copy_body_data *id, unsigned short clique)
+{
+  if (clique == 0)
+    return 0;
+  if (!id->dependence_map)
+    id->dependence_map = pointer_map_create ();
+  void **newc = pointer_map_contains (id->dependence_map,
+				      (void *)(uintptr_t)clique);
+  if (!newc)
+    {
+      newc = pointer_map_insert (id->dependence_map,
+			         (void *)(uintptr_t)clique);
+      *newc = (void *)(uintptr_t)++cfun->last_clique;
+    }
+
+  return (uintptr_t)*newc;
+}
+
 /* Remap the GIMPLE operand pointed to by *TP.  DATA is really a
    'struct walk_stmt_info *'.  DATA->INFO is a 'copy_body_data *'.
    WALK_SUBTREES is used to indicate walk_gimple_op whether to keep
@@ -884,6 +908,12 @@ remap_gimple_op_r (tree *tp, int *walk_subtrees, void *data)
 	  TREE_THIS_VOLATILE (*tp) = TREE_THIS_VOLATILE (old);
 	  TREE_SIDE_EFFECTS (*tp) = TREE_SIDE_EFFECTS (old);
 	  TREE_NO_WARNING (*tp) = TREE_NO_WARNING (old);
+	  if (MR_DEPENDENCE_CLIQUE (old) != 0)
+	    {
+	      MR_DEPENDENCE_CLIQUE (*tp)
+	        = remap_dependence_clique (id, MR_DEPENDENCE_CLIQUE (old));
+	      MR_DEPENDENCE_BASE (*tp) = MR_DEPENDENCE_BASE (old);
+	    }
 	  /* We cannot propagate the TREE_THIS_NOTRAP flag if we have
 	     remapped a parameter as the property might be valid only
 	     for the parameter itself.  */
@@ -1137,6 +1167,12 @@ copy_tree_body_r (tree *tp, int *walk_subtrees, void *data)
 	  TREE_THIS_VOLATILE (*tp) = TREE_THIS_VOLATILE (old);
 	  TREE_SIDE_EFFECTS (*tp) = TREE_SIDE_EFFECTS (old);
 	  TREE_NO_WARNING (*tp) = TREE_NO_WARNING (old);
+	  if (MR_DEPENDENCE_CLIQUE (old) != 0)
+	    {
+	      MR_DEPENDENCE_CLIQUE (*tp)
+		= remap_dependence_clique (id, MR_DEPENDENCE_CLIQUE (old));
+	      MR_DEPENDENCE_BASE (*tp) = MR_DEPENDENCE_BASE (old);
+	    }
 	  /* We cannot propagate the TREE_THIS_NOTRAP flag if we have
 	     remapped a parameter as the property might be valid only
 	     for the parameter itself.  */
@@ -1986,7 +2022,8 @@ copy_edges_for_bb (basic_block bb, gcov_type count_scale, basic_block ret_bb,
 	flags = old_edge->flags;
 
 	/* Return edges do get a FALLTHRU flag when the get inlined.  */
-	if (old_edge->dest->index == EXIT_BLOCK && !old_edge->flags
+	if (old_edge->dest->index == EXIT_BLOCK
+	    && !(old_edge->flags & (EDGE_TRUE_VALUE|EDGE_FALSE_VALUE|EDGE_FAKE))
 	    && old_edge->dest->aux != EXIT_BLOCK_PTR_FOR_FN (cfun))
 	  flags |= EDGE_FALLTHRU;
 	new_edge = make_edge (new_bb, (basic_block) old_edge->dest->aux, flags);
@@ -2226,17 +2263,18 @@ initialize_cfun (tree new_fndecl, tree callee_fndecl, gcov_type count)
   cfun->can_delete_dead_exceptions = src_cfun->can_delete_dead_exceptions;
   cfun->returns_struct = src_cfun->returns_struct;
   cfun->returns_pcc_struct = src_cfun->returns_pcc_struct;
+  cfun->module_id = src_cfun->module_id;
 
   init_empty_tree_cfg ();
 
   profile_status_for_fn (cfun) = profile_status_for_fn (src_cfun);
   ENTRY_BLOCK_PTR_FOR_FN (cfun)->count =
-    (ENTRY_BLOCK_PTR_FOR_FN (src_cfun)->count * count_scale /
+    (ENTRY_BLOCK_PTR_FOR_FN (src_cfun)->count * (double)count_scale /
      REG_BR_PROB_BASE);
   ENTRY_BLOCK_PTR_FOR_FN (cfun)->frequency
     = ENTRY_BLOCK_PTR_FOR_FN (src_cfun)->frequency;
   EXIT_BLOCK_PTR_FOR_FN (cfun)->count =
-    (EXIT_BLOCK_PTR_FOR_FN (src_cfun)->count * count_scale /
+    (EXIT_BLOCK_PTR_FOR_FN (src_cfun)->count * (double)count_scale /
      REG_BR_PROB_BASE);
   EXIT_BLOCK_PTR_FOR_FN (cfun)->frequency =
     EXIT_BLOCK_PTR_FOR_FN (src_cfun)->frequency;
@@ -2594,6 +2632,11 @@ copy_cfg_body (copy_body_data * id, gcov_type count, int frequency_scale,
       pointer_map_destroy (id->eh_map);
       id->eh_map = NULL;
     }
+  if (id->dependence_map)
+    {
+      pointer_map_destroy (id->dependence_map);
+      id->dependence_map = NULL;
+    }
 
   return new_fndecl;
 }
@@ -2645,8 +2688,20 @@ copy_debug_stmt (gimple stmt, copy_body_data *id)
       gimple_debug_bind_set_var (stmt, t);
 
       if (gimple_debug_bind_has_value_p (stmt))
-	walk_tree (gimple_debug_bind_get_value_ptr (stmt),
-		   remap_gimple_op_r, &wi, NULL);
+        {
+          tree v = gimple_debug_bind_get_value (stmt);
+          if (TREE_CODE (v) == ADDR_EXPR)
+            v = TREE_OPERAND (v, 0);
+
+          /* The global var may be deleted  */
+          if (L_IPO_COMP_MODE &&
+              ((TREE_CODE (v) != VAR_DECL)
+               || is_global_var (v)))
+            processing_debug_stmt = -1;
+          else
+            walk_tree (gimple_debug_bind_get_value_ptr (stmt),
+                       remap_gimple_op_r, &wi, NULL);
+        }
 
       /* Punt if any decl couldn't be remapped.  */
       if (processing_debug_stmt < 0)
@@ -3524,8 +3579,13 @@ tree_inlinable_function_p (tree fn)
   tree always_inline;
 
   /* If we've already decided this function shouldn't be inlined,
-     there's no need to check again.  */
-  if (DECL_UNINLINABLE (fn))
+     there's no need to check again. But the cached bit from analysis
+     can be reset during decl merge in multi-module compilation (C FE only).
+     The problem is we can not really use a 2 state cached value --
+     can not tell the init state (unknown value) from a computed value.  */
+  if (DECL_UNINLINABLE (fn) 
+      && (!L_IPO_COMP_MODE
+          || lookup_attribute ("noinline", DECL_ATTRIBUTES (fn))))
     return false;
 
   /* We only warn for functions declared `inline' by the user.  */
@@ -3695,6 +3755,7 @@ estimate_operator_cost (enum tree_code code, eni_weights *weights,
     case WIDEN_SUM_EXPR:
     case WIDEN_MULT_EXPR:
     case DOT_PROD_EXPR:
+    case SAD_EXPR:
     case WIDEN_MULT_PLUS_EXPR:
     case WIDEN_MULT_MINUS_EXPR:
     case WIDEN_LSHIFT_EXPR:
@@ -4068,6 +4129,16 @@ add_local_variables (struct function *callee, struct function *caller,
 	  {
 	    tree tem = DECL_DEBUG_EXPR (var);
 	    bool old_regimplify = id->regimplify;
+
+            /* The mapped debug expression might be deleted
+               as a varpool node (the reachbility analysis
+               of varpool node does not check the reference
+               from debug expressions.
+               Set it to 0 for all global vars.  */
+            if (L_IPO_COMP_MODE && tem && TREE_CODE (tem) == VAR_DECL
+                && is_global_var (tem))
+              tem = NULL;
+
 	    id->remapping_type_depth++;
 	    walk_tree (&tem, copy_tree_body_r, id, NULL);
 	    id->remapping_type_depth--;
@@ -4355,7 +4426,7 @@ expand_call_inline (basic_block bb, gimple stmt, copy_body_data *id)
      function in any way before this point, as this CALL_EXPR may be
      a self-referential call; if we're calling ourselves, we need to
      duplicate our body before altering anything.  */
-  copy_body (id, bb->count,
+  copy_body (id, MIN (cg_edge->count, cg_edge->callee->count),
   	     GCOV_COMPUTE_SCALE (cg_edge->frequency, CGRAPH_FREQ_BASE),
 	     bb, return_block, NULL);
 
@@ -4621,7 +4692,7 @@ optimize_inline_calls (tree fn)
 
       /* Double check that we inlined everything we are supposed to inline.  */
       for (e = id.dst_node->callees; e; e = e->next_callee)
-	gcc_assert (e->inline_failed);
+	gcc_assert (e->inline_failed || !e->call_stmt /*fake edge*/);
     }
 #endif
 
@@ -4711,7 +4782,19 @@ copy_tree_r (tree *tp, int *walk_subtrees, void *data ATTRIBUTE_UNUSED)
   else if (TREE_CODE_CLASS (code) == tcc_type)
     *walk_subtrees = 0;
   else if (TREE_CODE_CLASS (code) == tcc_declaration)
-    *walk_subtrees = 0;
+    {
+      *walk_subtrees = 0;
+      if (L_IPO_COMP_MODE
+          && (code == VAR_DECL)
+          && (TREE_STATIC (*tp) || DECL_EXTERNAL (*tp)))
+        {
+          tree resolved_decl = real_varpool_node (*tp)->decl;
+          if (resolved_decl != *tp)
+            {
+              *tp = resolved_decl;
+            }
+        }
+    }
   else if (TREE_CODE_CLASS (code) == tcc_constant)
     *walk_subtrees = 0;
   return NULL_TREE;
@@ -4909,6 +4992,11 @@ copy_gimple_seq_and_replace_locals (gimple_seq seq)
   pointer_map_destroy (id.decl_map);
   if (id.debug_map)
     pointer_map_destroy (id.debug_map);
+  if (id.dependence_map)
+    {
+      pointer_map_destroy (id.dependence_map);
+      id.dependence_map = NULL;
+    }
 
   return copy;
 }

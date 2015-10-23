@@ -1,4 +1,4 @@
-/* { dg-options "-O2 -fdump-tree-optimized" } */
+/* { dg-options "-O2 --param inline-hot-caller=0 -fdump-tree-optimized" } */
 int a;
 int b[100];
 void abort (void);
@@ -34,7 +34,7 @@ main ()
   return 0;
 }
 
-/* cold function should be inlined, while hot function should not.  
+/* cold function should be not inlined, while hot function should be.
    Look for "cold_function () [tail call];" call statement not for the
    declaration or other appearances of the string in dump.  */
 /* { dg-final-use { scan-tree-dump "cold_function ..;" "optimized"} } */

@@ -1247,7 +1247,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       reference
       operator[](size_type __n) _GLIBCXX_NOEXCEPT
-      { return this->_M_impl._M_start[difference_type(__n)]; }
+      {
+#if __google_stl_debug_deque
+	_M_range_check(__n);
+#endif
+	return this->_M_impl._M_start[difference_type(__n)];
+      }
 
       /**
        *  @brief Subscript access to the data contained in the %deque.
@@ -1262,7 +1267,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       const_reference
       operator[](size_type __n) const _GLIBCXX_NOEXCEPT
-      { return this->_M_impl._M_start[difference_type(__n)]; }
+      {
+#if __google_stl_debug_deque
+	_M_range_check(__n);
+#endif
+	return this->_M_impl._M_start[difference_type(__n)];
+      }
 
     protected:
       /// Safety check used only from at().
@@ -1319,7 +1329,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       reference
       front() _GLIBCXX_NOEXCEPT
-      { return *begin(); }
+      {
+#if __google_stl_debug_deque
+	if (empty()) __throw_logic_error("front() on empty deque");
+#endif
+	return *begin();
+      }
 
       /**
        *  Returns a read-only (constant) reference to the data at the first
@@ -1327,7 +1342,12 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       const_reference
       front() const _GLIBCXX_NOEXCEPT
-      { return *begin(); }
+      {
+#if __google_stl_debug_deque
+	if (empty()) __throw_logic_error("front() on empty deque");
+#endif
+	return *begin();
+      }
 
       /**
        *  Returns a read/write reference to the data at the last element of the
@@ -1336,6 +1356,9 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       reference
       back() _GLIBCXX_NOEXCEPT
       {
+#if __google_stl_debug_deque
+	if (empty()) __throw_logic_error("back() on empty deque");
+#endif
 	iterator __tmp = end();
 	--__tmp;
 	return *__tmp;
@@ -1348,6 +1371,9 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       const_reference
       back() const _GLIBCXX_NOEXCEPT
       {
+#if __google_stl_debug_deque
+	if (empty()) __throw_logic_error("back() on empty deque");
+#endif
 	const_iterator __tmp = end();
 	--__tmp;
 	return *__tmp;
@@ -1428,6 +1454,9 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       void
       pop_front() _GLIBCXX_NOEXCEPT
       {
+#if __google_stl_debug_deque
+	if (empty()) __throw_logic_error("pop_front() on empty deque");
+#endif
 	if (this->_M_impl._M_start._M_cur
 	    != this->_M_impl._M_start._M_last - 1)
 	  {
@@ -1449,6 +1478,9 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       void
       pop_back() _GLIBCXX_NOEXCEPT
       {
+#if __google_stl_debug_deque
+	if (empty()) __throw_logic_error("pop_back() on empty deque");
+#endif
 	if (this->_M_impl._M_finish._M_cur
 	    != this->_M_impl._M_finish._M_first)
 	  {
@@ -1540,6 +1572,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
       iterator
       insert(const_iterator __position, size_type __n, const value_type& __x)
       {
+#if __google_stl_debug_deque
+	if (__position < this->begin() || __position > this->end())
+	  __throw_logic_error("insert() at invalid position");
+#endif
 	difference_type __offset = __position - cbegin();
 	_M_fill_insert(__position._M_const_cast(), __n, __x);
 	return begin() + __offset;
@@ -1556,7 +1592,13 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
        */
       void
       insert(iterator __position, size_type __n, const value_type& __x)
-      { _M_fill_insert(__position, __n, __x); }
+      {
+#if __google_stl_debug_deque
+	if (__position < this->begin() || __position > this->end())
+	  __throw_logic_error("insert() at invalid position");
+#endif
+	_M_fill_insert(__position, __n, __x);
+      }
 #endif
 
 #if __cplusplus >= 201103L
@@ -1577,6 +1619,10 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
         insert(const_iterator __position, _InputIterator __first,
 	       _InputIterator __last)
         {
+#if __google_stl_debug_vector
+	  if (__position < this->begin() || __position > this->end())
+	    __throw_out_of_range(__N("insert() at invalid position"));
+#endif
 	  difference_type __offset = __position - cbegin();
 	  _M_insert_dispatch(__position._M_const_cast(),
 			     __first, __last, __false_type());

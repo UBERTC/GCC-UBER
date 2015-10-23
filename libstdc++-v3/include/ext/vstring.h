@@ -39,6 +39,21 @@
 #include <ext/rc_string_base.h>
 #include <ext/sso_string_base.h>
 
+#if __google_stl_debug_string && !defined(_GLIBCXX_DEBUG)
+# undef _GLIBCXX_DEBUG_ASSERT
+# undef _GLIBCXX_DEBUG_PEDASSERT
+// Perform additional checks (but only in this file).
+# define _GLIBCXX_DEBUG_ASSERT(_Condition)                             \
+  if (! (_Condition)) {                                                \
+    char buf[512];                                                     \
+    __builtin_snprintf(buf, sizeof(buf),                               \
+                      "%s:%d: %s: Assertion '%s' failed.\n",           \
+                      __FILE__, __LINE__, __func__, # _Condition);     \
+    std::__throw_runtime_error(buf);                                   \
+  }
+# define _GLIBCXX_DEBUG_PEDASSERT(_Condition) _GLIBCXX_DEBUG_ASSERT(_Condition)
+#endif
+
 namespace __gnu_cxx _GLIBCXX_VISIBILITY(default)
 {
 _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -536,7 +551,15 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       const_reference
       operator[] (size_type __pos) const _GLIBCXX_NOEXCEPT
       {
+#if __google_stl_debug_string && !defined(_GLIBCXX_DEBUG)
+	if (__pos > this->size())
+	  std::__throw_out_of_range_fmt(__N("__versa_string::operator[]: __pos "
+					    "(which is %zu) > this->size() "
+					    "(which is %zu)"),
+					__pos, this->size());
+#else
 	_GLIBCXX_DEBUG_ASSERT(__pos <= this->size());
+#endif
 	return this->_M_data()[__pos];
       }
 
@@ -555,7 +578,15 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       {
         // Allow pos == size() both in C++98 mode, as v3 extension,
 	// and in C++11 mode.
+#if __google_stl_debug_string && !defined(_GLIBCXX_DEBUG)
+	if (__pos > this->size())
+	  std::__throw_out_of_range_fmt(__N("__versa_string::operator[]: __pos "
+					    "(which is %zu) > this->size() "
+					    "(which is %zu)"),
+					__pos, this->size());
+#else
 	_GLIBCXX_DEBUG_ASSERT(__pos <= this->size());
+#endif
         // In pedantic mode be strict in C++98 mode.
 	_GLIBCXX_DEBUG_PEDASSERT(__cplusplus >= 201103L
 				 || __pos < this->size());
@@ -2959,5 +2990,13 @@ _GLIBCXX_END_NAMESPACE_VERSION
 #endif // C++11
 
 #include "vstring.tcc" 
+
+#if __google_stl_debug_string && !defined(_GLIBCXX_DEBUG)
+// Undo our defines, so they don't affect anything else.
+# undef _GLIBCXX_DEBUG_ASSERT
+# undef _GLIBCXX_DEBUG_PEDASSERT
+# define _GLIBCXX_DEBUG_ASSERT(_Condition)
+# define _GLIBCXX_DEBUG_PEDASSERT(_Condition)
+#endif
 
 #endif /* _VSTRING_H */

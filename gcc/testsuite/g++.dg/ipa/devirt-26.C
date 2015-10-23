@@ -1,5 +1,5 @@
 /* { dg-do compile } */
-/* { dg-options "-O3 -fdump-ipa-devirt"  } */
+/* { dg-options "-O3 -fdump-ipa-devirt -fdevirtualize"  } */
 struct A
  {
    int a;

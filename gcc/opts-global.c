@@ -41,7 +41,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "plugin.h"
 #include "toplev.h"
 #include "tree-pass.h"
+#include "params.h"
+#include "l-ipo.h"
 #include "context.h"
+#include "xregex.h"
+#include "attribs.h"
+#include "stringpool.h"
 
 typedef const char *const_char_p; /* For DEF_VEC_P.  */
 
@@ -50,6 +55,13 @@ static vec<const_char_p> ignored_options;
 /* Input file names.  */
 const char **in_fnames;
 unsigned num_in_fnames;
+
+static struct reg_func_attr_patterns
+{
+  regex_t r;
+  const char *attribute;
+  struct reg_func_attr_patterns *next;
+} *reg_func_attr_patterns;
 
 /* Return a malloced slash-separated list of languages in MASK.  */
 
@@ -78,6 +90,62 @@ write_langs (unsigned int mask)
   result[len] = 0;
 
   return result;
+}
+
+/* Add strings like attribute_str:pattern... to attribute pattern list.  */
+
+static void
+add_attribute_pattern (const char *arg)
+{
+  char *tmp;
+  char *pattern_str;
+  struct reg_func_attr_patterns *one_pat;
+  int ec;
+  
+  /* We never free this string.  */
+  tmp = xstrdup (arg);
+
+  pattern_str = strchr (tmp, ':');
+  if (!pattern_str)
+    error ("invalid pattern in -ffunction-attribute-list option: %qs", tmp);
+
+  *pattern_str = '\0';
+  pattern_str ++;
+
+  one_pat = XCNEW (struct reg_func_attr_patterns);
+  one_pat->next = reg_func_attr_patterns;
+  one_pat->attribute = tmp;
+  reg_func_attr_patterns = one_pat;
+  if ((ec= regcomp (&one_pat->r, pattern_str, REG_EXTENDED|REG_NOSUB) != 0))
+    {
+      char err[100];
+      regerror (ec, &one_pat->r, err, 99);
+      error ("invalid pattern in -ffunction-attribute-list option: %qs: %qs",
+	     pattern_str, err);
+    }
+}
+
+/* Match FNDECL's name with user specified patterns, and add attributes
+   to FNDECL.  */
+
+void
+pattern_match_function_attributes (tree fndecl)
+{
+  const char *name;
+  struct reg_func_attr_patterns *one_pat;
+
+  if (!fndecl)
+    return;
+
+  if (!reg_func_attr_patterns)
+    return;
+
+  name = IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (fndecl));
+
+  for (one_pat = reg_func_attr_patterns; one_pat; one_pat = one_pat->next)
+    if (regexec (&one_pat->r, name, 0, NULL, 0) == 0)
+      decl_attributes (&fndecl, tree_cons (
+	  get_identifier (one_pat->attribute), NULL, NULL), 0);
 }
 
 /* Complain that switch DECODED does not apply to this front end (mask
@@ -185,12 +253,46 @@ lang_handle_option (struct gcc_options *opts,
 
 /* Handle FILENAME from the command line.  */
 
-static void
+void
 add_input_filename (const char *filename)
 {
   num_in_fnames++;
   in_fnames = XRESIZEVEC (const char *, in_fnames, num_in_fnames);
   in_fnames[num_in_fnames - 1] = filename;
+}
+
+/* GCC command-line options saved to the LIPO profile data file.
+   See detailed comment in opts.h.  */
+const char **lipo_cl_args;
+unsigned num_lipo_cl_args;
+
+/* Inspect the given GCC command-line arguments, which are part of one GCC
+   switch, and decide whether or not to store these to the LIPO profile data
+   file.  */
+static void
+lipo_save_cl_args (struct cl_decoded_option *decoded)
+{
+  const char *opt = decoded->orig_option_with_args_text;
+  /* Store the following command-line flags to the lipo profile data file:
+     (1) -f... (except -frandom-seed...)
+     (2) -m...
+     (3) -W...
+     (4) -O...
+     (5) --param...
+     (6) -std=... (-std=c99 for restrict keyword)
+  */
+  if (opt[0] == '-'
+      && (opt[1] == 'f' || opt[1] == 'm' || opt[1] == 'W' || opt[1] == 'O'
+	  || (strstr (opt, "--param") == opt)
+	  || (strstr (opt, "-std=")))
+      && !strstr(opt, "-frandom-seed")
+      && !strstr(opt, "-fripa-disallow-opt-mismatch")
+      && !strstr(opt, "-Wripa-opt-mismatch"))
+    {
+      num_lipo_cl_args++;
+      lipo_cl_args = XRESIZEVEC (const char *, lipo_cl_args, num_lipo_cl_args);
+      lipo_cl_args[num_lipo_cl_args - 1] = opt;
+    }
 }
 
 /* Handle the vector of command line options (located at LOC), storing
@@ -209,6 +311,10 @@ read_cmdline_options (struct gcc_options *opts, struct gcc_options *opts_set,
 		      diagnostic_context *dc)
 {
   unsigned int i;
+  int force_multi_module = 0;
+  static int cur_mod_id = 0;
+
+  force_multi_module = PARAM_VALUE (PARAM_FORCE_LIPO_MODE);
 
   for (i = 1; i < decoded_options_count; i++)
     {
@@ -227,12 +333,15 @@ read_cmdline_options (struct gcc_options *opts, struct gcc_options *opts_set,
 				&opts->x_main_input_basename);
 	    }
 	  add_input_filename (decoded_options[i].arg);
+          if (force_multi_module)
+            add_module_info (++cur_mod_id, (num_in_fnames == 1), num_in_fnames - 1);
 	  continue;
 	}
 
       read_cmdline_option (opts, opts_set,
 			   decoded_options + i, loc, lang_mask, handlers,
 			   dc);
+      lipo_save_cl_args (decoded_options + i);
     }
 }
 
@@ -404,6 +513,10 @@ handle_common_deferred_options (void)
 
 	case OPT_frandom_seed_:
 	  set_random_seed (opt->arg);
+	  break;
+
+	case OPT_ffunction_attribute_list_:
+	  add_attribute_pattern (opt->arg);
 	  break;
 
 	case OPT_fstack_limit:

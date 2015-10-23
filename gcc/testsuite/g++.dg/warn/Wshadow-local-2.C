@@ -1,0 +1,63 @@
+/* { dg-do compile } */
+/* { dg-options -Wshadow-local } */
+
+class Bar {
+};
+
+class ChildBar : public Bar {
+};
+
+Bar bar;             // { dg-bogus "shadowed declaration" }
+
+class Foo {
+ private:
+  int val;
+
+ public:
+  int func1(int x) {
+    int val;         // { dg-bogus "shadows a member" }
+    val = x;
+    return val;
+  }
+
+  int func2(int i) { // { dg-warning "shadowed declaration" }
+    int a = 3;       // { dg-warning "shadowed declaration" }
+
+    for (int i = 0; i < 5; ++i) {   // { dg-warning "shadows a parameter" }
+      for (int i = 0; i < 3; ++i) { // { dg-warning "shadows a previous local" }
+        int a = i;   // { dg-warning "shadows a previous local" }
+        func1(a);
+      }
+    }
+
+    return a;
+  }
+
+  int func3() {
+    int bar;         // { dg-bogus "shadows a global" }
+    float func1 = 0.3; // { dg-bogus "shadows a member" }
+    int f = 5;       // { dg-warning "shadowed declaration" }
+
+    if (func1 > 1) {
+      float f = 2.0; // { dg-warning "shadows a previous local" }
+      bar = f;
+    }
+    else
+      bar = 1;
+    return bar;
+  }
+
+  void func4() {
+    Bar *bar;        // { dg-warning "shadowed declaration" }
+    ChildBar *cbp;   // { dg-warning "shadowed declaration" }
+    Bar *bp;         // { dg-warning "shadowed declaration" }
+    if (val) {
+      int bar;       // { dg-warning "shadows a previous local" }
+      Bar *cbp;      // { dg-warning "shadows a previous local" }
+      ChildBar *bp;  // { dg-warning "shadows a previous local" }
+      func1(bar);
+    }
+  }
+};
+
+// { dg-warning "shadowed declaration" "" { target *-*-* } 26 }

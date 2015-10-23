@@ -763,8 +763,8 @@ perform_member_init (tree member, tree init)
 						tf_warning_or_error);
 
       if (init)
-	finish_expr_stmt (cp_build_modify_expr (decl, INIT_EXPR, init,
-						tf_warning_or_error));
+          finish_expr_stmt (cp_build_modify_expr (decl, INIT_EXPR, init,
+                                                  tf_warning_or_error));
     }
 
   if (type_build_dtor_call (type))
@@ -783,6 +783,11 @@ perform_member_init (tree member, tree init)
 	  && TYPE_HAS_NONTRIVIAL_DESTRUCTOR (type))
 	finish_eh_cleanup (expr);
     }
+
+  /* Check for and warn about self-initialization if -Wself-assign is
+     enabled.  */
+  if (warn_self_assign)
+    check_for_self_assign (input_location, decl, init);
 }
 
 /* Returns a TREE_LIST containing (as the TREE_PURPOSE of each node) all
@@ -2581,7 +2586,10 @@ build_new_1 (vec<tree, va_gc> **placement, tree type, tree nelts,
 	    }
 	  /* Perform the overflow check.  */
 	  tree errval = TYPE_MAX_VALUE (sizetype);
-	  if (cxx_dialect >= cxx11 && flag_exceptions)
+	  if (cxx_dialect >= cxx11 && flag_exceptions
+              /* ANDROID - temporarily disable __cxa_throw_bad_array_new_length
+                 call. */
+              && !TARGET_ANDROID)
 	    errval = throw_bad_array_new_length ();
 	  if (outer_nelts_check != NULL_TREE)
             size = fold_build3 (COND_EXPR, sizetype, outer_nelts_check,

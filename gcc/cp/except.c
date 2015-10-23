@@ -1269,6 +1269,8 @@ bool
 nothrow_spec_p (const_tree spec)
 {
   gcc_assert (!DEFERRED_NOEXCEPT_SPEC_P (spec));
+  if (spec == NULL_TREE && flag_default_noexcept)
+    return true;
   if (spec == NULL_TREE
       || TREE_VALUE (spec) != NULL_TREE
       || spec == noexcept_false_spec)
@@ -1290,7 +1292,7 @@ type_noexcept_p (const_tree type)
 {
   tree spec = TYPE_RAISES_EXCEPTIONS (type);
   gcc_assert (!DEFERRED_NOEXCEPT_SPEC_P (spec));
-  if (flag_nothrow_opt)
+  if (flag_nothrow_opt || flag_default_noexcept)
     return nothrow_spec_p (spec);
   else
     return spec == noexcept_true_spec;

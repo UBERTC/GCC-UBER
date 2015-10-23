@@ -93,6 +93,8 @@ DEF_BASIC_BLOCK_FLAG(VISITED, 13)
    demand, and is available after calling compute_transaction_bits().  */
 DEF_BASIC_BLOCK_FLAG(IN_TRANSACTION, 14)
 
+/* Set on blocks that fp could be used freely.  */
+DEF_BASIC_BLOCK_FLAG(FP_IS_FREE, 15)
 #endif
 
 #ifdef DEF_EDGE_FLAG
@@ -176,6 +178,9 @@ DEF_EDGE_FLAG(TM_UNINSTRUMENTED, 15)
 
 /* Abort (over) edge out of a GIMPLE_TRANSACTION statement.  */
 DEF_EDGE_FLAG(TM_ABORT, 16)
+
+/* Edge probability predicted by __builtin_expect.  */
+DEF_EDGE_FLAG(PREDICTED_BY_EXPECT, 18)
 
 #endif
 

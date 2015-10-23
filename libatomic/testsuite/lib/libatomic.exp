@@ -120,7 +120,7 @@ proc libatomic_init { args } {
 	set compiler [lindex $GCC_UNDER_TEST 0]
 
 	if { [is_remote host] == 0 && [which $compiler] != 0 } {
-	  foreach i "[exec $compiler --print-multi-lib]" {
+	  foreach i "[eval "exec $GCC_UNDER_TEST --print-multi-lib"]" {
 	    set mldir ""
 	    regexp -- "\[a-z0-9=_/\.-\]*;" $i mldir
 	    set mldir [string trimright $mldir "\;@"]

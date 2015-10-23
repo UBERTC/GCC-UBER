@@ -1,5 +1,5 @@
 // { dg-do run }
-// { dg-options "-O3 -fdump-ipa-cp" }
+// { dg-options "-O3 -fdump-ipa-cp -fdevirtualize" }
 
 struct Distraction
 {

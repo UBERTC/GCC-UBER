@@ -3,4 +3,4 @@
 
 #include "bmi-bextr-1.c"
 
-/* { dg-final { scan-assembler-times "bmi_bextr_di" 1 } } */
+/* { dg-final { scan-assembler "bmi_bextr_di" } } */

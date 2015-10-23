@@ -1,5 +1,5 @@
 // PR c++/58678
-// { dg-options "-O3 -fdump-ipa-devirt" }
+// { dg-options "-O3 -fdump-ipa-devirt -fdevirtualize" }
 
 // We shouldn't speculatively devirtualize to ~B because B is an abstract
 // class; any actual object passed to f will be of some derived class which

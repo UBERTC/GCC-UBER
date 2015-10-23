@@ -29,6 +29,7 @@ along with Gcov; see the file COPYING3.  If not see
 #include "gcov-io.c"
 
 static void dump_gcov_file (const char *);
+static int dump_aux_modules (const char *);
 static void print_prefix (const char *, unsigned, gcov_position_t);
 static void print_usage (void);
 static void print_version (void);
@@ -38,8 +39,11 @@ static void tag_arcs (const char *, unsigned, unsigned);
 static void tag_lines (const char *, unsigned, unsigned);
 static void tag_counters (const char *, unsigned, unsigned);
 static void tag_summary (const char *, unsigned, unsigned);
+static void tag_module_info (const char *, unsigned, unsigned);
 static void dump_working_sets (const char *filename ATTRIBUTE_UNUSED,
                                const struct gcov_ctr_summary *summary);
+static void tag_zero_fixup (const char *, unsigned, unsigned);
+static void tag_build_info (const char *, unsigned, unsigned);
 extern int main (int, char **);
 
 typedef struct tag_format
@@ -51,7 +55,11 @@ typedef struct tag_format
 
 static int flag_dump_contents = 0;
 static int flag_dump_positions = 0;
+static int flag_dump_aux_modules_only = 0;
 static int flag_dump_working_sets = 0;
+
+static unsigned num_fn_info;
+static int *zero_fixup_flags = NULL;
 
 static const struct option options[] =
 {
@@ -74,6 +82,9 @@ static const tag_format_t tag_table[] =
   {GCOV_TAG_LINES, "LINES", tag_lines},
   {GCOV_TAG_OBJECT_SUMMARY, "OBJECT_SUMMARY", tag_summary},
   {GCOV_TAG_PROGRAM_SUMMARY, "PROGRAM_SUMMARY", tag_summary},
+  {GCOV_TAG_MODULE_INFO, "MODULE INFO", tag_module_info},
+  {GCOV_TAG_COMDAT_ZERO_FIXUP, "ZERO FIXUP", tag_zero_fixup},
+  {GCOV_TAG_BUILD_INFO, "BUILD INFO", tag_build_info},
   {0, NULL, NULL}
 };
 
@@ -97,7 +108,7 @@ main (int argc ATTRIBUTE_UNUSED, char **argv)
 
   diagnostic_initialize (global_dc, 0);
 
-  while ((opt = getopt_long (argc, argv, "hlpvw", options, NULL)) != -1)
+  while ((opt = getopt_long (argc, argv, "hlpvxw", options, NULL)) != -1)
     {
       switch (opt)
 	{
@@ -113,6 +124,9 @@ main (int argc ATTRIBUTE_UNUSED, char **argv)
 	case 'p':
 	  flag_dump_positions = 1;
 	  break;
+	case 'x':
+	  flag_dump_aux_modules_only = 1;
+	  break;
 	case 'w':
 	  flag_dump_working_sets = 1;
 	  break;
@@ -121,6 +135,13 @@ main (int argc ATTRIBUTE_UNUSED, char **argv)
 	}
     }
 
+  if (flag_dump_aux_modules_only)
+    {
+      while (argv[optind])
+	if (dump_aux_modules (argv[optind++]))
+	  return 1;
+    }
+  else
   while (argv[optind])
     dump_gcov_file (argv[optind++]);
   return 0;
@@ -135,6 +156,7 @@ print_usage (void)
   printf ("  -v, --version        Print version number\n");
   printf ("  -l, --long           Dump record contents too\n");
   printf ("  -p, --positions      Dump record positions\n");
+  printf ("  -x                   Dump names of auxiliary modules only\n");
   printf ("  -w, --working-sets   Dump working set computed from summary\n");
 }
 
@@ -157,6 +179,52 @@ print_prefix (const char *filename, unsigned depth, gcov_position_t position)
   if (flag_dump_positions)
     printf ("%lu:", (unsigned long) position);
   printf ("%.*s", (int) depth, prefix);
+}
+
+/* Dump auxiliary module information for gcda file with
+   name FILENAME.  */
+
+static int
+dump_aux_modules (const char *filename)
+{
+  if (!gcov_open (filename, 1))
+    {
+      fprintf (stderr, "%s:cannot open\n", filename);
+      return 1;
+    }
+
+  /* magic */
+  gcov_read_unsigned ();
+  /* version */
+  gcov_read_unsigned ();
+  /* stamp */
+  gcov_read_unsigned ();
+
+  while (1)
+    {
+      gcov_position_t base;
+      unsigned tag, length;
+      int error;
+
+      tag = gcov_read_unsigned ();
+      if (!tag)
+	break;
+      length = gcov_read_unsigned ();
+      base = gcov_position ();
+      if (tag == GCOV_TAG_MODULE_INFO)
+	tag_module_info (filename, tag, length);
+      gcov_sync (base, length);
+      if ((error = gcov_is_error ()))
+	{
+	  printf (error < 0 ? "%s:counter overflow at %lu\n" :
+		  "%s:read error at %lu\n", filename,
+		  (long unsigned) gcov_position ());
+	  return 1;
+	}
+    }
+
+  gcov_close ();
+  return 0;
 }
 
 static void
@@ -210,6 +278,8 @@ dump_gcov_file (const char *filename)
 
     printf ("%s:stamp %lu\n", filename, (unsigned long)stamp);
   }
+
+  num_fn_info = 0;
 
   while (1)
     {
@@ -278,6 +348,7 @@ dump_gcov_file (const char *filename)
 	  break;
 	}
     }
+  free (zero_fixup_flags);
   gcov_close ();
 }
 
@@ -291,7 +362,9 @@ tag_function (const char *filename ATTRIBUTE_UNUSED,
     printf (" placeholder");
   else
     {
-      printf (" ident=%u", gcov_read_unsigned ());
+      int had_fixup = zero_fixup_flags && zero_fixup_flags[num_fn_info];
+      printf (" ident=%u%s", gcov_read_unsigned (),
+              had_fixup ? " (Was 0-count COMDAT)" : "");
       printf (", lineno_checksum=0x%08x", gcov_read_unsigned ());
       printf (", cfg_checksum=0x%08x", gcov_read_unsigned ());
 
@@ -306,6 +379,7 @@ tag_function (const char *filename ATTRIBUTE_UNUSED,
 	  printf (":%u", gcov_read_unsigned ());
 	}
     }
+  num_fn_info++;
 }
 
 static void
@@ -422,7 +496,11 @@ static void
 tag_counters (const char *filename ATTRIBUTE_UNUSED,
 	      unsigned tag ATTRIBUTE_UNUSED, unsigned length ATTRIBUTE_UNUSED)
 {
-  static const char *const counter_names[] = GCOV_COUNTER_NAMES;
+#define DEF_GCOV_COUNTER(COUNTER, NAME, MERGE_FN) NAME,
+  static const char *const counter_names[] = {
+#include "gcov-counter.def"
+};
+#undef DEF_GCOV_COUNTER
   unsigned n_counts = GCOV_TAG_COUNTER_NUM (length);
 
   printf (" %s %u counts",
@@ -495,6 +573,89 @@ tag_summary (const char *filename ATTRIBUTE_UNUSED,
       if (flag_dump_working_sets)
         dump_working_sets (filename, &summary.ctrs[ix]);
     }
+}
+
+static void
+tag_module_info (const char *filename ATTRIBUTE_UNUSED,
+		 unsigned tag ATTRIBUTE_UNUSED, unsigned length)
+{
+  struct gcov_module_info* mod_info;
+
+  mod_info = (struct gcov_module_info *) 
+      alloca ((length + 2) * sizeof (gcov_unsigned_t));
+  gcov_read_module_info (mod_info, length);
+  if (flag_dump_aux_modules_only)
+    {
+      if (!mod_info->is_primary)
+	printf ("%s\n", mod_info->source_filename);
+    }
+  else
+    {
+      const char *primary_suffix =
+               mod_info->is_primary ? "primary" : "auxiliary";
+      const char *export_suffix = "";
+      const char *include_all_suffix = "";
+
+      if (mod_info->is_primary)
+        {
+          if (MODULE_EXPORTED_FLAG (mod_info))
+            export_suffix = ",exported";
+          if (MODULE_INCLUDE_ALL_AUX_FLAG (mod_info))
+            include_all_suffix =",include_all";
+        }
+
+      printf (": %s (ident=%u) [%s%s%s]", mod_info->source_filename,
+              mod_info->ident, primary_suffix, export_suffix,
+              include_all_suffix);
+    }
+}
+
+static void
+tag_zero_fixup (const char *filename,
+                unsigned tag ATTRIBUTE_UNUSED, unsigned length)
+{
+  gcov_unsigned_t num_fns = 0;
+  zero_fixup_flags = gcov_read_comdat_zero_fixup (length, &num_fns);
+  if (!zero_fixup_flags)
+    {
+      printf ("%s:error reading zero fixup flags\n", filename);
+      return;
+    }
+  printf (" num_fns=%u", num_fns);
+  for (unsigned i = 0; i < num_fns; i++)
+    {
+      if (!(i % 32))
+        {
+          printf ("\n");
+          print_prefix (filename, 0, 0);
+          printf ("\t\t");
+        }
+      if (!(i % 8))
+        printf ("%s%4u:", (i%32)?" ":"", i);
+      printf ("%u", zero_fixup_flags[i]);
+    }
+}
+
+static void
+tag_build_info (const char *filename,
+		unsigned tag ATTRIBUTE_UNUSED, unsigned length)
+{
+  gcov_unsigned_t num_strings = 0;
+  char **build_info_strings = gcov_read_build_info (length, &num_strings);
+  if (!build_info_strings)
+    {
+      printf ("%s:error reading build info\n", filename);
+      return;
+    }
+  printf (" num_strings=%u", num_strings);
+  for (unsigned i = 0; i < num_strings; i++)
+    {
+      printf ("\n");
+      print_prefix (filename, 0, 0);
+      printf ("\t\t%s", build_info_strings[i]);
+      free (build_info_strings[i]);
+    }
+  free (build_info_strings);
 }
 
 static void

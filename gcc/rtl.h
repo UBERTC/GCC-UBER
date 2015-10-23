@@ -1920,6 +1920,7 @@ extern rtx prev_cc0_setter (rtx);
 extern int insn_line (const_rtx);
 extern const char * insn_file (const_rtx);
 extern tree insn_scope (const_rtx);
+extern int insn_discriminator (const_rtx);
 extern location_t prologue_location, epilogue_location;
 
 /* In jump.c */

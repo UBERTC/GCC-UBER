@@ -38,6 +38,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "sparseset.h"
 #include "ira-int.h"
 #include "emit-rtl.h"  /* FIXME: Can go away once crtl is moved to rtl.h.  */
+#include "hash-table.h"
 
 static ira_copy_t find_allocno_copy (ira_allocno_t, ira_allocno_t, rtx,
 				     ira_loop_tree_node_t);
@@ -94,6 +95,26 @@ ira_copy_t *ira_copies;
 /* Size of the previous array.  */
 int ira_copies_num;
 
+/* The information of using fp as a free register in a ira_loop_tree_node.  */
+struct fpset_info
+{
+  /* If there is a call, we need to insert fp setting somewhere before it
+     to keep the stack frame chain. fpset_cost is the fpsetting cost in
+     current ira_loop_tree_node, not including those in its sub
+     ira_loop_tree_node.  */
+  int fpset_cost;
+  /* total_fpset_cost is the fpsetting cost in current ira_loop_tree_node
+     and all its sub ira_loop_tree_nodes.  */
+  int total_fpset_cost;
+  /* The frequency of the most frequent bb whose reg pressure is larger
+     than available hard registers.  */
+  int bbfreq_w_high_regpressure;
+  /* has_call indicates whether there is call inside current
+     ira_loop_tree_node and all its sub ira_loop_tree_nodes.  */
+  bool has_call;
+};
+
+#define FPSET_COST_BASE 10
 
 
 /* LAST_BASIC_BLOCK before generating additional insns because of live
@@ -1368,6 +1389,33 @@ static alloc_pool copy_pool;
    container of array ira_copies.  */
 static vec<ira_copy_t> copy_vec;
 
+struct ira_copy_hasher : typed_free_remove <ira_copy_t>
+{
+  typedef ira_copy_t value_type;
+  typedef ira_copy_t compare_type;
+  static inline hashval_t hash (const value_type *);
+  static inline bool equal (const value_type *, const compare_type *);
+};
+
+inline hashval_t
+ira_copy_hasher::hash (const value_type *item)
+{
+  return INSN_UID((*item)->insn);
+}
+
+/* Equality function for ira_copy_hasher.  A and B
+   point to the two hash table entries to compare.  */
+
+inline bool
+ira_copy_hasher::equal (const value_type *a, const compare_type *b)
+{
+  return INSN_UID((*a)->insn) == INSN_UID((*b)->insn);
+}
+
+/* Hash table mapping from insn to the list of ira_copy_t
+   generated from the insn.  */
+static hash_table <ira_copy_hasher> copy_list_table;
+
 /* The function initializes data concerning allocno copies.  */
 static void
 initiate_copies (void)
@@ -1375,6 +1423,7 @@ initiate_copies (void)
   copy_pool
     = create_alloc_pool ("copies", sizeof (struct ira_allocno_copy), 100);
   copy_vec.create (get_max_uid ());
+  copy_list_table.create (get_max_uid ());
   ira_copies = NULL;
   ira_copies_num = 0;
 }
@@ -1424,6 +1473,7 @@ ira_create_copy (ira_allocno_t first, ira_allocno_t second, int freq,
   cp->second = second;
   cp->freq = freq;
   cp->constraint_p = constraint_p;
+  cp->copy_list = NULL;
   cp->insn = insn;
   cp->loop_tree_node = loop_tree_node;
   copy_vec.safe_push (cp);
@@ -1437,6 +1487,7 @@ static void
 add_allocno_copy_to_list (ira_copy_t cp)
 {
   ira_allocno_t first = cp->first, second = cp->second;
+  ira_copy_t **slot;
 
   cp->prev_first_allocno_copy = NULL;
   cp->prev_second_allocno_copy = NULL;
@@ -1458,6 +1509,20 @@ add_allocno_copy_to_list (ira_copy_t cp)
     }
   ALLOCNO_COPIES (first) = cp;
   ALLOCNO_COPIES (second) = cp;
+
+  /* Add copy to corresponding list in copy_list_table.  */
+  slot = copy_list_table.find_slot_with_hash (
+		&cp, INSN_UID (cp->insn), INSERT);
+  if ((*slot) == HTAB_EMPTY_ENTRY)
+    {
+      (*slot) = XNEW (ira_copy_t);
+      (**slot) = cp;
+    }
+  else
+    {
+      cp->copy_list = (**slot);
+      (**slot) = cp;
+    }
 }
 
 /* Make a copy CP a canonical copy where number of the
@@ -1506,6 +1571,30 @@ ira_add_allocno_copy (ira_allocno_t first, ira_allocno_t second, int freq,
   add_allocno_copy_to_list (cp);
   swap_allocno_copy_ends_if_necessary (cp);
   return cp;
+}
+
+/* For insn like "a = b * c", if b and c are dead immediately
+   after a, copy (a, b) and copy (a, c) are alternate copies
+   and a is the connecting allocno. If CP has alternate copy,
+   return the first one in copy_list_table connecting with CP
+   via CONNECT.  */
+ira_copy_t
+find_alternate_copy (ira_copy_t cp, ira_allocno_t connect)
+{
+  ira_copy_t list;
+  ira_copy_t *found = copy_list_table.find_with_hash (&cp,
+					INSN_UID (cp->insn));
+  if (found == NULL)
+    return NULL;
+  list = (*found);
+  while (list)
+    {
+      if ((list->first == connect || list->second == connect)
+	  && list != cp)
+	return list;
+      list = list->copy_list;
+    }
+  return NULL;
 }
 
 /* Print info about copy CP into file F.  */
@@ -1628,6 +1717,7 @@ finish_copies (void)
   FOR_EACH_COPY (cp, ci)
     finish_copy (cp);
   copy_vec.release ();
+  copy_list_table.dispose ();
   free_alloc_pool (copy_pool);
 }
 
@@ -3408,6 +3498,388 @@ update_conflict_hard_reg_costs (void)
     }
 }
 
+/* Return the frequency of the LOOP's preheader bb.  */
+static int
+get_preheader_freq (struct loop *lp)
+{
+  int preheader_freq = 0;
+  edge_iterator ei;
+  edge e;
+
+  FOR_EACH_EDGE (e, ei, lp->header->preds)
+    if (!flow_bb_inside_loop_p (lp, e->src))
+      preheader_freq += EDGE_FREQUENCY (e);
+  return preheader_freq;
+}
+
+/* Collect fp setting information INFOS from LOOP_NODE and its
+   sub loops and bbs.  LOOP_NODE which is not a bb will be saved in
+   SORTED_LOOPS.  */
+static struct fpset_info
+get_fpset_cost (ira_loop_tree_node_t loop_node,
+		ira_loop_tree_node_t *sorted_loops,
+		int *loop_num,
+		struct fpset_info *infos)
+{
+  int fpset_cost = 0, total_fpset_cost = 0, bbfreq_w_high_regpressure = 0;
+  struct fpset_info info = {0, 0, 0, false};
+  loop_node->fp_is_free = false;
+
+  if (loop_node->bb != NULL)
+    {
+      int call_num = 0;
+      rtx insn;
+      FOR_BB_INSNS (loop_node->bb, insn)
+	if (CALL_P (insn))
+	  call_num++;
+      /* Use a simple estimation here, assume there is a fp setting
+	 before every call, which could be improved.  */
+      info.fpset_cost = call_num * loop_node->bb->frequency
+			* (PARAM_VALUE (PARAM_FPSET_COST_FRACTION)
+			   / FPSET_COST_BASE);
+      info.total_fpset_cost = info.fpset_cost;
+      info.bbfreq_w_high_regpressure =
+		(loop_node->reg_pressure[GENERAL_REGS]
+		 > ira_class_hard_regs_num[GENERAL_REGS])
+		* loop_node->bb->frequency;
+      info.has_call = call_num > 0;
+      return info;
+    }
+  else
+    {
+      ira_loop_tree_node_t child_node;
+      gcc_assert ((loop_node == ira_loop_tree_root)
+		  || !loop_node->to_remove_p);
+      /* This loop is to be sorted.  */
+      if (loop_node != ira_loop_tree_root)
+	sorted_loops[(*loop_num)++] = loop_node;
+      for (child_node = loop_node->children; child_node != NULL;
+	   child_node = child_node->next)
+	{
+	  int promoted_fpset_cost;
+	  struct fpset_info child_info;
+
+	  child_info = get_fpset_cost (child_node, sorted_loops,
+				       loop_num, infos);
+	  if (child_node->bb != NULL)
+	    {
+	      /* For child_nodes which are bbs in current loop node.  */
+	      fpset_cost += child_info.fpset_cost;
+	      total_fpset_cost += child_info.total_fpset_cost;
+	      bbfreq_w_high_regpressure = MAX (bbfreq_w_high_regpressure,
+				child_info.bbfreq_w_high_regpressure);
+	    } else {
+	      /* For loops which are independent regalloc regions.  */
+	      int preheader_freq = get_preheader_freq (child_node->loop);
+	      /* If the fp setting in child loop could be promoted, the
+		 fp setting cost of the child loop will be computed
+		 below as promoted_fpset_cost. We cannot know whether fp
+		 setting could be promoted or not before reload complete,
+		 so choose the smaller one between total_fpset_cost and
+		 promoted_fpset_cost as the child loop cost.  */
+	      promoted_fpset_cost = child_info.has_call
+				    ? preheader_freq : 0;
+	      total_fpset_cost += MIN (child_info.total_fpset_cost,
+		 		       promoted_fpset_cost);
+	    }
+	  info.has_call = info.has_call || child_info.has_call;
+	}
+
+      info.fpset_cost = fpset_cost;
+      info.total_fpset_cost = total_fpset_cost;
+      info.bbfreq_w_high_regpressure = bbfreq_w_high_regpressure;
+      infos[loop_node->loop_num] = info;
+      return info;
+    }
+}
+
+/* Mark the loop node LP as fp_is_free if it is cost-effective.
+   Only if the loop is marked as fp_is_free, fp could be allocated to
+   the pseudos inside of it in IRA and LRA. After the loop is processed,
+   set the bitmap LOOP_IS_MARKED. INFOS contains fpset_info collected by
+   get_fpset_cost.
+
+   The factors considered here:
+   1. fpset_cost: if we cannot promote fp setting outside of current
+      loop, how much cost we gonna pay.
+   2. spill_cost: if we cannot use fp as a free register, how much
+      spill cost we gonna pay.
+   3. regmove_cost_fp_free_sub_not_free:
+      If current loop is set to use fp freely and it has high register
+      pressure while its subloop is set not use fp. how much cost we
+      gonna pay for the live range split on the subloop boundary.
+      regmove_cost_fp_not_free_sub_free:
+      If current loop is set not to use fp and its subloop is set to
+      use fp freely, ...
+      regmove_cost_fp_free_parent_not_free:
+      regmove_cost_fp_not_free_parent_free:
+      The same for current loop and its parent loop.
+   4. any_sub_lp_use_fp:
+      If any subloop of current loop has been set to use fp freely,
+      and the subloop has high reg pressure, fp setting in current
+      loop cannot be promoted to its preheader anyway. Adjust the cost
+      accordingly in this case.
+   5. compensate_cost:
+      If parent loop has been set to not use fp freely before current
+      loop is evaluated, it is assumed that fp setting in parent
+      loop could be shrinkwrapped. However, if current loop is set
+      to use fp freely and it has high reg pressure, the fp reference
+      in current loop will inhibit fp setting in its parent loop from
+      being promoted outside. Use compensate_cost to represent the
+      increased cost of the parent loop.  */
+void
+mark_loop_fp_free (ira_loop_tree_node_t lp,
+		   sbitmap loop_is_marked,
+		   struct fpset_info *infos,
+		   FILE *ira_dump_file)
+{
+  int set_fp_free_cost = 0, set_fp_not_free_cost = 0;
+  int fpset_cost = 0;
+  int regmove_cost_fp_free, regmove_cost_fp_not_free;
+  int regmove_cost_fp_free_sub_not_free = 0;
+  int regmove_cost_fp_not_free_sub_free = 0;
+  int regmove_cost_fp_free_parent_not_free = 0;
+  int regmove_cost_fp_not_free_parent_free = 0;
+  int compensate_cost = 0, preheader_freq, promoted_fpset_cost;
+  ira_loop_tree_node_t sub_lp;
+  ira_loop_tree_node_t parent_lp = lp->parent;
+  /* Show is there any subloop using fp as a free register.  */
+  bool any_sub_lp_use_fp = false;
+  bool sub_lp_high_pressure, lp_high_pressure, parent_lp_high_pressure;
+  struct fpset_info *info = &infos[lp->loop_num];
+  lp_high_pressure = info->bbfreq_w_high_regpressure > 0;
+
+  for (sub_lp = lp->subloops; sub_lp != NULL; sub_lp = sub_lp->subloop_next)
+    {
+      struct fpset_info *sinfo = &infos[sub_lp->loop_num];
+      preheader_freq = get_preheader_freq (sub_lp->loop);
+      promoted_fpset_cost = sinfo->has_call ? preheader_freq : 0;
+      sub_lp_high_pressure = sinfo->bbfreq_w_high_regpressure > 0;
+      /* If the subloop has been processed, add cost to current loop
+	 if it chooses to set fp_is_free flag differently with the
+	 subloop.  */
+      if (bitmap_bit_p (loop_is_marked, sub_lp->loop_num))
+	{
+	  fpset_cost += sub_lp->fp_is_free
+			? sinfo->total_fpset_cost
+			: promoted_fpset_cost;
+	  /* For current loop, if its fp_is_free is true and lp_high_pressure
+	     is true, it is very likely fp will be used in current loop.
+	     If adding that subloop's fp_is_free is false, there will be
+	     live range split for fp on loop boarder. regmove_cost_fp_free
+	     is the live range split cost for current loop to being marked as
+	     fp_is_free.  */
+	  regmove_cost_fp_free_sub_not_free += (!sub_lp->fp_is_free
+						&& lp_high_pressure)
+					       ? 2 * preheader_freq : 0;
+	  /* For sub loop, if its fp_is_free is true and sub_lp_high_pressure
+	     is true, it is very likely fp will be used in subloop. If current
+	     loop's fp_is_free is false, there will be live range split
+	     for fp on loop boarder. regmove_cost_fp_not_free is the live range
+	     split cost.  */
+	  regmove_cost_fp_not_free_sub_free += (sub_lp->fp_is_free
+						&& sub_lp_high_pressure)
+					       ? 2 * preheader_freq : 0;
+	  /* If a subloop is marked as fp_is_free and it has high reg pressure,
+	     it will probably use fp.  */
+          any_sub_lp_use_fp = any_sub_lp_use_fp
+				|| (sub_lp_high_pressure && sub_lp->fp_is_free);
+	}
+      else
+	{
+	  fpset_cost += MIN (sinfo->total_fpset_cost,
+			     promoted_fpset_cost);
+	}
+    }
+  regmove_cost_fp_free = regmove_cost_fp_free_sub_not_free;
+  regmove_cost_fp_not_free = regmove_cost_fp_not_free_sub_free;
+
+  preheader_freq = get_preheader_freq (lp->loop);
+
+  if (bitmap_bit_p (loop_is_marked, parent_lp->loop_num))
+    {
+      struct fpset_info *pinfo = &infos[parent_lp->loop_num];
+      parent_lp_high_pressure = pinfo->bbfreq_w_high_regpressure > 0;
+      /* If parent loop and current loop have different choices of fp_is_free
+	 setting, there will be register moves on loop region boarder. Calculate
+	 such cost as regmove_cost_fp_free and regmove_cost_fp_not_free.  */
+      regmove_cost_fp_free_parent_not_free = (!parent_lp->fp_is_free
+					      && lp_high_pressure)
+					     ? 2 * preheader_freq : 0;
+      regmove_cost_fp_not_free_parent_free = (parent_lp->fp_is_free
+					      && parent_lp_high_pressure)
+					     ? 2 * preheader_freq : 0;
+      regmove_cost_fp_free += regmove_cost_fp_free_parent_not_free;
+      regmove_cost_fp_not_free += regmove_cost_fp_not_free_parent_free;
+      /* If parent loop has set not using fp freely and current loop plan
+	 to use fp freely, which means the fp reference in current loop will
+	 prevent fpsetting in parent loop from being promoted. Calculate
+	 such cost as compensate_cost and add it to set_fp_free_cost of
+	 current loop later.  */
+      if (!parent_lp->fp_is_free && (parent_lp != ira_loop_tree_root))
+        compensate_cost = pinfo->total_fpset_cost;
+    }
+
+  /* Add the fpset cost in the current loop.  */
+  fpset_cost += info->fpset_cost;
+  set_fp_free_cost = fpset_cost;
+
+  /* If any subloop has been set to use fp freely, it is impossible
+     for current loop to promote any fpsetting to outerloop. So
+     set_fp_not_free_cost will have at least the same cost as
+     set_fp_free_cost.  */
+  if (any_sub_lp_use_fp)
+    set_fp_not_free_cost = set_fp_free_cost;
+
+  /* Estimation of the spill cost saved by using fp freely.  */
+  if (lp_high_pressure)
+    set_fp_not_free_cost += 2 * info->bbfreq_w_high_regpressure;
+
+  set_fp_free_cost += regmove_cost_fp_free + compensate_cost;
+  set_fp_not_free_cost += regmove_cost_fp_not_free;
+
+  /* If set_fp_free_cost is less than set_fp_not_free_cost, which means
+     use fp freely will have less cost than not use fp, mark current loop
+     as fp_is_free.  */
+  if (set_fp_free_cost < set_fp_not_free_cost)
+    lp->fp_is_free = true;
+  bitmap_set_bit (loop_is_marked, lp->loop_num);
+
+  if (ira_dump_file)
+    fprintf(ira_dump_file, "    fpset_cost from subloops = %d\n"
+			   "    regmove_cost_fp_free_sub_not_free = %d\n"
+			   "    regmove_cost_fp_not_free_sub_free = %d\n"
+			   "    any_sub_lp_use_fp = %d\n"
+			   "    regmove_cost_fp_free_parent_not_free = %d\n"
+			   "    regmove_cost_fp_not_free_parent_free = %d\n"
+			   "    compensate_cost = %d\n"
+			   "    spill cost = %d\n"
+			   "    <set_fp_free_cost = %d,"
+			   "    set_fp_not_free_cost = %d>\n\n",
+			   fpset_cost,
+			   regmove_cost_fp_free_sub_not_free,
+			   regmove_cost_fp_not_free_sub_free,
+			   any_sub_lp_use_fp,
+			   regmove_cost_fp_free_parent_not_free,
+			   regmove_cost_fp_not_free_parent_free,
+			   compensate_cost,
+			   2 * info->bbfreq_w_high_regpressure,
+			   set_fp_free_cost, set_fp_not_free_cost);
+}
+
+/* Sort loops for marking fp_is_free. We put most frequent loops first,
+   and then inner loops next.  */
+static int
+loop_fpset_compare_func (const void *v1p, const void *v2p)
+{
+  int diff;
+  ira_loop_tree_node_t l1 = *(const ira_loop_tree_node_t *) v1p;
+  ira_loop_tree_node_t l2 = *(const ira_loop_tree_node_t *) v2p;
+
+  ira_assert (l1->parent != NULL && l2->parent != NULL);
+  if ((diff = l2->loop->header->frequency - l1->loop->header->frequency) != 0)
+    return diff;
+  if ((diff = (int) loop_depth (l2->loop) - (int) loop_depth (l1->loop)) != 0)
+    return diff;
+  /* Make sorting stable.  */
+  return l2->loop_num - l1->loop_num;
+}
+
+/* Decide whether a loop region node should use fp freely or not based on
+   its reg pressure, calls frequencies inside the loop and those informations
+   from sub and parent loops of current loop.  */
+void
+decide_fp_use_in_loops (FILE *ira_dump_file)
+{
+  int i, n = 0;
+  ira_loop_tree_node_t *sorted_loops;
+  struct fpset_info *infos;
+  /* Record which loops have been marked.  */
+  sbitmap loop_is_marked;
+  basic_block bb;
+
+  /* Initialize.  */
+  sorted_loops
+    = (ira_loop_tree_node_t *) ira_allocate (sizeof (ira_loop_tree_node_t)
+					     * number_of_loops (cfun));
+  memset (sorted_loops, 0, (sizeof (ira_loop_tree_node_t)
+			    * number_of_loops (cfun)));
+  infos
+    = (struct fpset_info *) ira_allocate (sizeof (struct fpset_info)
+					  * number_of_loops (cfun));
+  memset (infos, 0, (sizeof (struct fpset_info)
+		     * number_of_loops (cfun)));
+  get_fpset_cost (ira_loop_tree_root, sorted_loops, &n, infos);
+  loop_is_marked = sbitmap_alloc (number_of_loops (cfun));
+  bitmap_clear (loop_is_marked);
+  ira_loop_tree_root->fp_is_free = true;
+  bitmap_set_bit (loop_is_marked, ira_loop_tree_root->loop_num);
+
+  /* Sort loops according to loop importance.  */
+  qsort (sorted_loops, n, sizeof (ira_loop_tree_node_t),
+	 loop_fpset_compare_func);
+
+  /* mark_loop_fp_free set fp_is_free flags for different loops. The setting
+     for nested loops could affect each other, so we need to sort loops
+     and call mark_loop_fp_free for the most important loop first.  */
+  for (i = 0; i < n; i++)
+    {
+      if (ira_dump_file)
+	{
+	  int loop_num = sorted_loops[i]->loop_num;
+	  struct fpset_info *info = &infos[loop_num];
+	  bool lp_high_pressure = !low_pressure_loop_node_p (sorted_loops[i]);
+	  fprintf(ira_dump_file, "mark loop[%d], header freq: %d,"
+				 " preheader freq: %d, seq: %d\n"
+				 "               fpset_cost: %d,"
+				 " total_fpset_cost: %d, has_call: %d\n"
+				 "               high pressure: %d\n",
+				 sorted_loops[i]->loop_num,
+				 sorted_loops[i]->loop->header->frequency,
+				 get_preheader_freq (sorted_loops[i]->loop),
+				 i,
+				 info->fpset_cost, info->total_fpset_cost,
+				 info->has_call, lp_high_pressure);
+	}
+      mark_loop_fp_free (sorted_loops[i], loop_is_marked,
+			 infos, ira_dump_file);
+    }
+
+  /* Set bb FP_IS_FREE flag according to loop's fp_is_free flag.  */
+  FOR_EACH_BB_FN (bb, cfun)
+    {
+      ira_loop_tree_node_t bb_node = IRA_BB_NODE (bb);
+      ira_loop_tree_node_t parent_node = bb_node->parent;
+      if (parent_node->fp_is_free)
+	bb->flags |= BB_FP_IS_FREE;
+      if (ira_dump_file)
+	fprintf(ira_dump_file, "bb%d [%s]\n", bb->index,
+		  bb->flags & BB_FP_IS_FREE ? "fp" : "");
+    }
+
+  sbitmap_free (loop_is_marked);
+  ira_free (sorted_loops);
+  ira_free (infos);
+}
+
+static void
+dump_loop_fp_free (ira_loop_tree_node_t root, int level)
+{
+  int i;
+  ira_loop_tree_node_t loop;
+  const char *indent = "  ";
+
+  for (i = 0; i < level; i++)
+    fprintf (ira_dump_file, "%s", indent);
+  fprintf (ira_dump_file, "loop %d, level %d, [%s][%s]\n",
+			  root->loop_num, root->level,
+			  root->to_remove_p ? "r" : "",
+			  root->fp_is_free ? "fp" : "");
+
+  for (loop = root->subloops; loop != NULL; loop = loop->subloop_next)
+    dump_loop_fp_free (loop, level + 1);
+}
+
 /* Create a internal representation (IR) for IRA (allocnos, copies,
    loop tree nodes).  The function returns TRUE if we generate loop
    structure (besides nodes representing all function and the basic
@@ -3447,6 +3919,14 @@ ira_build (void)
   setup_min_max_conflict_allocno_ids ();
   ira_build_conflicts ();
   update_conflict_hard_reg_costs ();
+
+  if (frame_pointer_partially_needed)
+    {
+      decide_fp_use_in_loops (ira_dump_file);
+      if (ira_dump_file)
+	dump_loop_fp_free (ira_loop_tree_root, 0);
+    }
+
   if (! ira_conflicts_p)
     {
       ira_allocno_t a;

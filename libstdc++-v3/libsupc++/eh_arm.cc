@@ -29,6 +29,18 @@
 
 using namespace __cxxabiv1;
 
+#if defined (__ANDROID__)
+// The GCC command-line option "-fvisibility=hidden" apparently fails to hide
+// the visibility of the inline assembly function "__cxa_end_cleanup".
+// We need to keep the visibility of the __cxa_* functions coherent otherwise
+// linking eh_arm.o to resolve __cxa_end_cleanup (eg needed by -frtti
+// -fexceptions) will disappoint the linker by exposing __cxa_type_match and
+// __cxa_begin_cleanup (eg needed by __aeabi_idiv from libgcc.a).
+// Therefore as a simple workaround we just force the visibility to default for
+// all these __cxa functions in this module.
+
+#pragma GCC visibility push(default)
+#endif
 
 // Given the thrown type THROW_TYPE, exception object UE_HEADER and a
 // type CATCH_TYPE to compare against, return whether or not there is
@@ -222,6 +234,10 @@ asm ("  .pushsection .text.__cxa_end_cleanup\n"
 "	bl\t_Unwind_Resume @ Never returns\n"
 "	.popsection\n");
 #endif
+#endif
+
+#if defined (__ANDROID__)
+#pragma GCC visibility pop
 #endif
 
 #endif

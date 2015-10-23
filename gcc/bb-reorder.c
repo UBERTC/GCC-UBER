@@ -95,7 +95,6 @@
 #include "expr.h"
 #include "params.h"
 #include "diagnostic-core.h"
-#include "toplev.h" /* user_defined_section_attribute */
 #include "tree-pass.h"
 #include "df.h"
 #include "bb-reorder.h"
@@ -2555,7 +2554,7 @@ gate_handle_partition_blocks (void)
 	     we are going to omit the reordering.  */
 	  && optimize_function_for_speed_p (cfun)
 	  && !DECL_ONE_ONLY (current_function_decl)
-	  && !user_defined_section_attribute);
+	  && !DECL_HAS_EXPLICIT_SECTION_NAME_P(current_function_decl));
 }
 
 /* This function is the main 'entrance' for the optimization that

@@ -3218,6 +3218,17 @@ If not defined, the default is to return @code{NULL_RTX}.",
  rtx, (rtx reg),
  hook_rtx_rtx_null)
 
+/* Given a register return the mode of the corresponding DWARF frame
+   register.  */
+DEFHOOK
+(dwarf_frame_reg_mode,
+ "Given a register, this hook should return the mode which the\n\
+corresponding Dwarf frame register should have.  This is normally\n\
+used to return a smaller mode than the raw mode to prevent call\n\
+clobbered parts of a register altering the frame register size",
+ enum machine_mode, (int regno),
+ default_dwarf_frame_reg_mode)
+
 /* If expand_builtin_init_dwarf_reg_sizes needs to fill in table
    entries not corresponding directly to registers below
    FIRST_PSEUDO_REGISTER, this hook should generate the necessary
@@ -3609,6 +3620,16 @@ Address Sanitizer shadow memory address.  NULL if Address Sanitizer is not\n\
 supported by the target.",
  unsigned HOST_WIDE_INT, (void),
  NULL)
+
+/* Get frame pointer setting insn when flag_shrink_wrap_frame_pointer
+   is true.  */
+DEFHOOK
+(set_fp_insn,
+ "When flag_shrink_wrap_frame_pointer is true, fp setting insn should\n\
+be generated inside function body. The insertion is done after CFA\n\
+information is known.",
+ rtx, (void),
+ default_set_fp_insn)
 
 /* Functions relating to calls - argument passing, returns, etc.  */
 /* Members of struct call have no special macro prefix.  */
@@ -4673,6 +4694,14 @@ five otherwise.  This is best for most machines.",
  unsigned int, (void),
  default_case_values_threshold)
 
+/* Return true if a function is a leaf and its frame pointer can be omitted.  */
+DEFHOOK
+(can_omit_leaf_frame_pointer,
+ "This target hook will return @code{true} if a function is a leaf function and\n\
+its frame pointer can be omitted on the target.",
+ bool, (void),
+ hook_bool_void_false)
+
 /* Retutn true if a function must have and use a frame pointer.  */
 DEFHOOK
 (frame_pointer_required,
@@ -5116,6 +5145,51 @@ specific target options and the caller does not use the same options.",
 
 HOOK_VECTOR_END (target_option)
 
+/* Functions used to simplify GOT access.  */
+#undef HOOK_PREFIX
+#define HOOK_PREFIX "TARGET_"
+HOOK_VECTOR (TARGET_SIMPLIFY_GOT_ACCESS, simplify_got_access)
+
+/* Function to get the pic_reg which holds the base address of GOT.  */
+DEFHOOK
+(get_pic_reg,
+ "",
+ rtx, (void),
+ hook_rtx_void_null)
+
+/* Function to clear the pic_reg which is useless now.  */
+DEFHOOK
+(clear_pic_reg,
+ "",
+ void, (void),
+ NULL)
+
+/* Function to detect if the specified insn loads a global variable's
+   address from GOT. If so returns that symbol.  */
+DEFHOOK
+(loaded_global_var,
+ "",
+ rtx, (rtx insn, rtx *offset_reg, rtx *offset_insn),
+ NULL)
+
+/* This function checks if it satisfies the target dependent conditions
+   that we can simplify GOT accesses.  */
+DEFHOOK
+(can_simplify_got_access,
+ "",
+ bool, (int n_symbol, int n_access),
+ NULL)
+
+/* This function does the actual rewriting of GOT accesses.  */
+DEFHOOK
+(load_global_address,
+ "",
+ void, (rtx symbol, rtx offset_reg, rtx address_reg, rtx load_insn,
+	rtx offset_insn),
+ NULL)
+
+HOOK_VECTOR_END (got_access)
+
 /* For targets that need to mark extra registers as live on entry to
    the function, they should define this target hook and set their
    bits in the bitmap passed in. */
@@ -5296,19 +5370,6 @@ for the primary source file, immediately after printing\n\
 this to be done.  The default is false.",
  bool, false)
 
-/* True if the target is allowed to reorder memory accesses unless
-   synchronization is explicitly requested.  */
-DEFHOOKPOD
-(relaxed_ordering,
- "If set to @code{true}, means that the target's memory model does not\n\
-guarantee that loads which do not depend on one another will access\n\
-main memory in the order of the instruction stream; if ordering is\n\
-important, an explicit memory barrier must be used.  This is true of\n\
-many recent processors which implement a policy of ``relaxed,''\n\
-``weak,'' or ``release'' memory consistency, such as Alpha, PowerPC,\n\
-and ia64.  The default is @code{false}.",
- bool, false)
-
 /* Returns true if we should generate exception tables for use with the
    ARM EABI.  The effects the encoding of function exception specifications.  */
 DEFHOOKPOD
@@ -5342,6 +5403,12 @@ DEFHOOKPOD
 (delay_vartrack, "True if vartrack is not to be run at its normal place.  \
 This usually means it will be run as part of machine-specific reorg.",
 bool, false)
+
+DEFHOOKPOD
+(strict_align,
+ "True if it is beneficial to try stricter function \
+ or loop alignment on the target.",
+ bool, false)
 
 /* Leave the boolean fields at the end.  */
 

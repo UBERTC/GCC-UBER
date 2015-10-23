@@ -1356,43 +1356,38 @@ simplify_gimple_switch_label_vec (gimple stmt, tree index_type)
 static bool
 simplify_gimple_switch (gimple stmt)
 {
-  tree cond = gimple_switch_index (stmt);
-  tree def, to, ti;
-  gimple def_stmt;
-
   /* The optimization that we really care about is removing unnecessary
      casts.  That will let us do much better in propagating the inferred
      constant at the switch target.  */
+  tree cond = gimple_switch_index (stmt);
   if (TREE_CODE (cond) == SSA_NAME)
     {
-      def_stmt = SSA_NAME_DEF_STMT (cond);
-      if (is_gimple_assign (def_stmt))
+      gimple def_stmt = SSA_NAME_DEF_STMT (cond);
+      if (gimple_assign_cast_p (def_stmt))
 	{
-	  if (gimple_assign_rhs_code (def_stmt) == NOP_EXPR)
+	  tree def = gimple_assign_rhs1 (def_stmt);
+	  if (TREE_CODE (def) != SSA_NAME)
+	    return false;
+
+	  /* If we have an extension or sign-change that preserves the
+	     values we check against then we can copy the source value into
+	     the switch.  */
+	  tree ti = TREE_TYPE (def);
+	  if (INTEGRAL_TYPE_P (ti)
+	      && TYPE_PRECISION (ti) <= TYPE_PRECISION (TREE_TYPE (cond)))
 	    {
-	      int need_precision;
-	      bool fail;
-
-	      def = gimple_assign_rhs1 (def_stmt);
-
-	      to = TREE_TYPE (cond);
-	      ti = TREE_TYPE (def);
-
-	      /* If we have an extension that preserves value, then we
-		 can copy the source value into the switch.  */
-
-	      need_precision = TYPE_PRECISION (ti);
-	      fail = false;
-	      if (! INTEGRAL_TYPE_P (ti))
-		fail = true;
-	      else if (TYPE_UNSIGNED (to) && !TYPE_UNSIGNED (ti))
-		fail = true;
-	      else if (!TYPE_UNSIGNED (to) && TYPE_UNSIGNED (ti))
-		need_precision += 1;
-	      if (TYPE_PRECISION (to) < need_precision)
-		fail = true;
-
-	      if (!fail)
+	      size_t n = gimple_switch_num_labels (stmt);
+	      tree min = NULL_TREE, max = NULL_TREE;
+	      if (n > 1)
+		{
+		  min = CASE_LOW (gimple_switch_label (stmt, 1));
+		  if (CASE_HIGH (gimple_switch_label (stmt, n - 1)))
+		    max = CASE_HIGH (gimple_switch_label (stmt, n - 1));
+		  else
+		    max = CASE_LOW (gimple_switch_label (stmt, n - 1));
+		}
+	      if ((!min || int_fits_type_p (min, ti))
+		  && (!max || int_fits_type_p (max, ti)))
 		{
 		  gimple_switch_set_index (stmt, def);
 		  simplify_gimple_switch_label_vec (stmt, ti);
@@ -1534,7 +1529,8 @@ simplify_builtin_call (gimple_stmt_iterator *gsi_p, tree callee2)
 	  use_operand_p use_p;
 
 	  if (!tree_fits_shwi_p (val2)
-	      || !tree_fits_uhwi_p (len2))
+	      || !tree_fits_uhwi_p (len2)
+	      || compare_tree_int (len2, 1024) == 1)
 	    break;
 	  if (is_gimple_call (stmt1))
 	    {
@@ -1600,7 +1596,8 @@ simplify_builtin_call (gimple_stmt_iterator *gsi_p, tree callee2)
 	     is not constant, or is bigger than memcpy length, bail out.  */
 	  if (diff == NULL
 	      || !tree_fits_uhwi_p (diff)
-	      || tree_int_cst_lt (len1, diff))
+	      || tree_int_cst_lt (len1, diff)
+	      || compare_tree_int (diff, 1024) == 1)
 	    break;
 
 	  /* Use maximum of difference plus memset length and memcpy length
@@ -3178,7 +3175,9 @@ simplify_vce (gimple_stmt_iterator *gsi)
 	  && (INTEGRAL_TYPE_P (TREE_TYPE (def_op))
 	      || POINTER_TYPE_P (TREE_TYPE (def_op)))
 	  && (TYPE_PRECISION (TREE_TYPE (op))
-	      == TYPE_PRECISION (TREE_TYPE (def_op))))
+	      == TYPE_PRECISION (TREE_TYPE (def_op)))
+	  && (TYPE_SIZE (TREE_TYPE (op))
+	      == TYPE_SIZE (TREE_TYPE (def_op))))
 	{
 	  TREE_OPERAND (gimple_assign_rhs1 (stmt), 0) = def_op;
 	  update_stmt (stmt);

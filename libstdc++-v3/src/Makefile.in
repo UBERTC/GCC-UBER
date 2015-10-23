@@ -286,6 +286,7 @@ install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
 libtool_VERSION = @libtool_VERSION@
+libtool_version_info_string = @libtool_version_info_string@
 localedir = @localedir@
 localstatedir = @localstatedir@
 lt_host_flags = @lt_host_flags@
@@ -342,7 +343,7 @@ AM_CPPFLAGS = $(GLIBCXX_INCLUDES)
 SUBDIRS = c++98 c++11
 
 # Cross compiler support.
-toolexeclib_LTLIBRARIES = libstdc++.la
+toolexeclib_LTLIBRARIES = libgnustl_shared.la
 @GLIBCXX_LDBL_COMPAT_FALSE@ldbl_compat_sources = 
 @GLIBCXX_LDBL_COMPAT_TRUE@ldbl_compat_sources = compatibility-ldbl.cc
 parallel_compat_sources = \
@@ -375,7 +376,7 @@ libstdc___la_DEPENDENCIES = \
 	$(top_builddir)/src/c++11/libc++11convenience.la
 
 libstdc___la_LDFLAGS = \
-	-version-info $(libtool_VERSION) ${version_arg} -lm
+	${libtool_version_info_string} ${version_arg} -lm
 
 libstdc___la_LINK = $(CXXLINK) $(libstdc___la_LDFLAGS)
 
@@ -442,7 +443,8 @@ LTCXXCOMPILE = \
 	$(LIBTOOL) --tag CXX \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=compile $(CXX) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) $(EXTRA_CXX_FLAGS)
+	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) \
+	$(EXTRA_CXX_FLAGS) -Xcompiler-static -UPIC
 
 LTLDFLAGS = $(shell $(SHELL) $(top_srcdir)/../libtool-ldflags $(LDFLAGS))
 
@@ -550,6 +552,9 @@ clean-toolexeclibLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libstdc++.la: $(libstdc___la_OBJECTS) $(libstdc___la_DEPENDENCIES) 
+	$(libstdc___la_LINK) -rpath $(toolexeclibdir) $(libstdc___la_OBJECTS) $(libstdc___la_LIBADD) $(LIBS)
+
+libgnustl_shared.la: $(libstdc___la_OBJECTS) $(libstdc___la_DEPENDENCIES)
 	$(libstdc___la_LINK) -rpath $(toolexeclibdir) $(libstdc___la_OBJECTS) $(libstdc___la_LIBADD) $(LIBS)
 
 mostlyclean-compile:

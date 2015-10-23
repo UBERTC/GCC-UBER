@@ -2496,3 +2496,18 @@ ggc_pch_read (FILE *f, void *addr)
   /* Update the statistics.  */
   G.allocated = G.allocated_last_gc = offs - (char *)addr;
 }
+
+struct alloc_zone
+{
+  int dummy;
+};
+
+struct alloc_zone rtl_zone;
+struct alloc_zone tree_zone;
+struct alloc_zone tree_id_zone;
+
+size_t
+ggc_total_allocated (void)
+{
+  return G.bytes_mapped;
+}

@@ -1,7 +1,7 @@
 /* Verify that simple virtual calls on an object refrence are
    converted to simple calls by ipa-cp.  */
 /* { dg-do run } */
-/* { dg-options "-O3 -fno-early-inlining -fno-inline -fdump-ipa-cp -fdump-tree-optimized"  } */
+/* { dg-options "-O3 -fno-early-inlining -fno-inline -fdump-ipa-cp -fdump-tree-optimized -fdevirtualize"  } */
 
 extern "C" void abort (void);
 

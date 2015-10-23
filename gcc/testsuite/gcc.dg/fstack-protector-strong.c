@@ -1,9 +1,10 @@
 /* Test that stack protection is done on chosen functions. */
 
-/* { dg-do compile { target i?86-*-* x86_64-*-* rs6000-*-* s390x-*-* } } */
+/* { dg-do compile { target i?86-*-* x86_64-*-* } } */
 /* { dg-options "-O2 -fstack-protector-strong" } */
 
 #include<string.h>
+#include<stdlib.h>
 
 extern int g0;
 extern int* pg0;
@@ -109,7 +110,7 @@ foo8 ()
 int
 foo9 ()
 {
-  char* p = __builtin_alloca (100);
+  char* p = alloca (100);
   return goo ((int *)(p + 50));
 }
 

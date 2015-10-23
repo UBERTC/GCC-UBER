@@ -2,7 +2,7 @@
    object within another one when looking for dynamic type change .  */
 /* { dg-do run } */
 /* { dg-require-effective-target nonpic } */
-/* { dg-options "-O3 -Wno-attributes"  } */
+/* { dg-options "-O3 -Wno-attributes -fdevirtualize"  } */
 
 extern "C" void abort (void);
 namespace std {

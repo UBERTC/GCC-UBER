@@ -65,14 +65,21 @@ along with GCC; see the file COPYING3.  If not see
    When the -shared link option is used a final link is not being
    done.  */
 
+#undef ANDROID_TARGET_CC1_SPEC
+#define ANDROID_TARGET_CC1_SPEC \
+  " -mssse3 -fno-short-enums " \
+
 #undef  ASM_SPEC
 #define ASM_SPEC \
-  "--32 %{!mno-sse2avx:%{mavx:-msse2avx}} %{msse2avx:%{!mavx:-msse2avx}}"
+  "--32 %{!mno-sse2avx:%{mavx:-msse2avx}} %{msse2avx:%{!mavx:-msse2avx}} " \
+  LINUX_OR_ANDROID_CC ("", ANDROID_ASM_SPEC)
 
-#undef  SUBTARGET_EXTRA_SPECS
-#define SUBTARGET_EXTRA_SPECS \
+#undef  SUBTARGET_EXTRA_SPECS_STR
+#define SUBTARGET_EXTRA_SPECS_STR \
   { "link_emulation", GNU_USER_LINK_EMULATION },\
   { "dynamic_linker", GNU_USER_DYNAMIC_LINKER }
+#undef  SUBTARGET_EXTRA_SPECS
+#define SUBTARGET_EXTRA_SPECS SUBTARGET_EXTRA_SPECS_STR
 
 #define GNU_USER_TARGET_LINK_SPEC "-m %(link_emulation) %{shared:-shared} \
   %{!shared: \

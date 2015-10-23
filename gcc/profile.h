@@ -46,7 +46,15 @@ extern gcov_type sum_edge_counts (vec<edge, va_gc> *edges);
 extern void init_node_map (bool);
 extern void del_node_map (void);
 
+/* Implement sampling to avoid writing to edge counters very often.
+   Many concurrent writes to the same counters, or to counters that share
+   the same cache line leads to up to 30x slowdown on an application running
+   on 8 CPUs.  With sampling, the slowdown reduced to 2x.  */
+extern void add_sampling_to_edge_counters (void);
+
+extern void compute_working_sets (void);
 extern void get_working_sets (void);
+extern void add_working_set (gcov_working_set_t *);
 
 /* In predict.c.  */
 extern gcov_type get_hot_bb_threshold (void);

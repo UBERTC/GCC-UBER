@@ -78,6 +78,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "predict.h"
 #include "lto-streamer.h"
 #include "plugin.h"
+#include "l-ipo.h"
 #include "ipa-utils.h"
 #include "tree-pretty-print.h" /* for dump_function_header */
 #include "context.h"
@@ -248,6 +249,13 @@ rest_of_decl_compilation (tree decl,
 				     top_level, at_end);
 	}
 #endif
+      if (L_IPO_COMP_MODE)
+        {
+          /* Create the node early during parsing so
+             that module id can be captured.  */
+          if (TREE_CODE (decl) == VAR_DECL)
+            varpool_node_for_decl (decl);
+        }
 
       timevar_pop (TV_VARCONST);
     }
@@ -384,11 +392,17 @@ make_pass_early_local_passes (gcc::context *ctxt)
   return new pass_early_local_passes (ctxt);
 }
 
+/* Decides if the cgraph callee edges are being cleaned up for the
+   last time.  */
+bool cgraph_callee_edges_final_cleanup = false;
+
 /* Gate: execute, or not, all of the non-trivial optimizations.  */
 
 static bool
 gate_all_early_optimizations (void)
 {
+  /* The cgraph callee edges are being cleaned up for the last time.  */
+  cgraph_callee_edges_final_cleanup = true;
   return (optimize >= 1
 	  /* Don't bother doing anything if the program has errors.  */
 	  && !seen_error ());
@@ -1948,7 +1962,6 @@ verify_curr_properties (void *data)
 bool
 pass_init_dump_file (opt_pass *pass)
 {
-  pass->graph_dump_initialized = false;
   /* If a dump file name is present, open it if enabled.  */
   if (pass->static_pass_number != -1)
     {

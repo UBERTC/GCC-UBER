@@ -634,6 +634,10 @@ add_decl_to_level (tree decl, cp_binding_level *b)
 		    || DECL_DECLARED_INLINE_P (decl))))
 	  vec_safe_push (b->static_decls, decl);
     }
+
+  /* The following call is needed for LIPO mode. In this mode, global
+     scope declarations are tracked on a per-module basis.  */
+  add_decl_to_current_module_scope (decl, b);
 }
 
 /* Record a decl-node X as belonging to the current lexical scope.
@@ -1195,30 +1199,49 @@ pushdecl_maybe_friend_1 (tree x, bool is_friend)
 		  nowarn = true;
 		}
 
-	      if (warn_shadow && !nowarn)
+	      if ((warn_shadow
+		   || warn_shadow_local
+		   || warn_shadow_compatible_local)
+		  && !nowarn)
 		{
-		  bool warned;
-
+                  enum opt_code warning_code;
+                  /* If '-Wshadow-compatible-local' is specified without other
+                     -Wshadow flags, we will warn only when the type of the
+                     shadowing variable (i.e. x) can be converted to that of
+                     the shadowed parameter (oldlocal). The reason why we only
+                     check if x's type can be converted to oldlocal's type
+                     (but not the other way around) is because when users
+                     accidentally shadow a parameter, more than often they
+                     would use the variable thinking (mistakenly) it's still
+                     the parameter. It would be rare that users would use the
+                     variable in the place that expects the parameter but
+                     thinking it's a new decl.  */
+                  if (can_convert (TREE_TYPE (oldlocal), TREE_TYPE (x),
+				   tf_none))
+                    warning_code = OPT_Wshadow_compatible_local;
+                  else
+                    warning_code = OPT_Wshadow_local;
 		  if (TREE_CODE (oldlocal) == PARM_DECL)
-		    warned = warning_at (input_location, OPT_Wshadow,
+		    warning_at (input_location, warning_code,
 				"declaration of %q#D shadows a parameter", x);
 		  else if (is_capture_proxy (oldlocal))
-		    warned = warning_at (input_location, OPT_Wshadow,
+		    warning_at (input_location, warning_code,
 				"declaration of %qD shadows a lambda capture",
 				x);
 		  else
-		    warned = warning_at (input_location, OPT_Wshadow,
+		    warning_at (input_location, warning_code,
 				"declaration of %qD shadows a previous local",
 				x);
-
-		  if (warned)
-		    inform (DECL_SOURCE_LOCATION (oldlocal),
-			    "shadowed declaration is here");
+		   warning_at (DECL_SOURCE_LOCATION (oldlocal), warning_code,
+			       "shadowed declaration is here");
 		}
 	    }
 
 	  /* Maybe warn if shadowing something else.  */
-	  else if (warn_shadow && !DECL_EXTERNAL (x)
+	  else if ((warn_shadow
+		    || warn_shadow_local
+		    || warn_shadow_compatible_local)
+	           && !DECL_EXTERNAL (x)
                    /* No shadow warnings for internally generated vars unless
                       it's an implicit typedef (see create_implicit_typedef
                       in decl.c).  */
@@ -2067,6 +2090,14 @@ constructor_name_p (tree name, tree type)
 /* Counter used to create anonymous type names.  */
 
 static GTY(()) int anon_cnt;
+
+/* Reset static variable anon_cnt to 0.  */
+
+void
+reset_anon_name (void)
+{
+  anon_cnt = 0;
+}
 
 /* Return an IDENTIFIER which can be used as a name for
    anonymous structs and unions.  */
@@ -5079,7 +5110,6 @@ lookup_name_innermost_nonclass_level (tree name)
   timevar_cond_stop (TV_NAME_LOOKUP, subtime);
   return ret;
 }
-
 
 /* Returns true iff DECL is a block-scope extern declaration of a function
    or variable.  */

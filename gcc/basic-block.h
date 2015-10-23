@@ -201,11 +201,6 @@ struct GTY((chain_next ("%h.next_bb"), chain_prev ("%h.prev_bb"))) basic_block_d
 
   /* Expected frequency.  Normalized to be in range 0 to BB_FREQ_MAX.  */
   int frequency;
-
-  /* The discriminator for this block.  The discriminator distinguishes
-     among several basic blocks that share a common locus, allowing for
-     more accurate sample-based profiling.  */
-  int discriminator;
 };
 
 /* This ensures that struct gimple_bb_info is smaller than
@@ -718,6 +713,7 @@ extern struct edge_list *pre_edge_rev_lcm (int, sbitmap *,
 extern void compute_available (sbitmap *, sbitmap *, sbitmap *, sbitmap *);
 
 /* In predict.c */
+extern bool maybe_hot_count_p (struct function *, gcov_type);
 extern bool maybe_hot_bb_p (struct function *, const_basic_block);
 extern bool maybe_hot_edge_p (edge);
 extern bool probably_never_executed_bb_p (struct function *, const_basic_block);

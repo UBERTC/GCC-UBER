@@ -7187,7 +7187,22 @@ fi
 
 # Check whether --with-pic was given.
 if test "${with_pic+set}" = set; then :
-  withval=$with_pic; pic_mode="$withval"
+  withval=$with_pic; p=${PACKAGE-default}
+    case "$withval" in
+    yes|no) pic_mode="$withval" ;;
+    *)
+      pic_mode=default
+      # Look at the argument we got.  We use all the common list separators.
+      lt_save_ifs="$IFS"; IFS="${IFS}$PATH_SEPARATOR,"
+      for pkg in $withval; do
+	IFS="$lt_save_ifs"
+	if test "X$pkg" = "X$p"; then
+	  pic_mode=yes
+	fi
+      done
+      IFS="$lt_save_ifs"
+      ;;
+    esac
 else
   pic_mode=default
 fi
@@ -10586,7 +10601,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10589 "configure"
+#line 10604 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -10692,7 +10707,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 10695 "configure"
+#line 10710 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H

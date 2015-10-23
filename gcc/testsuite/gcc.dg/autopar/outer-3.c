@@ -1,5 +1,5 @@
 /* { dg-do compile } */
-/* { dg-options "-O2 -ftree-parallelize-loops=4 -fdump-tree-parloops-details -fdump-tree-optimized" } */
+/* { dg-options "-O2 -fno-tree-loop-vectorize -ftree-parallelize-loops=4 -fdump-tree-parloops-details -fdump-tree-optimized" } */
 
 void abort (void);
 

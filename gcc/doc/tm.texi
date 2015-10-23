@@ -3801,6 +3801,10 @@ fixed register.  See @code{FIXED_REGISTERS} for more information.
 
 Default return value is @code{false}.
 @end deftypefn
+@deftypefn {Target Hook} bool TARGET_CAN_OMIT_LEAF_FRAME_POINTER (void)
+This target hook will return @code{true} if a function is a leaf function and
+its frame pointer can be omitted on the target.
+@end deftypefn
 
 @findex get_frame_size
 @defmac INITIAL_FRAME_POINTER_OFFSET (@var{depth-var})
@@ -4440,10 +4444,6 @@ that can be performed in some cases.  If you do not define this hook
 to return a nonzero value when it is required, the compiler will run out
 of spill registers and print a fatal error message.
 @end deftypefn
-
-@deftypevr {Target Hook} {unsigned int} TARGET_FLAGS_REGNUM
-If the target has a dedicated flags register, and it needs to use the post-reload comparison elimination pass, then this value should be set appropriately.
-@end deftypevr
 
 @node Scalar Return
 @subsection How Scalar Function Values Are Returned
@@ -6047,10 +6047,11 @@ for comparisons whose argument is a @code{plus}:
 
 @smallexample
 #define SELECT_CC_MODE(OP,X,Y) \
-  (GET_MODE_CLASS (GET_MODE (X)) == MODE_FLOAT          \
-   ? ((OP == EQ || OP == NE) ? CCFPmode : CCFPEmode)    \
-   : ((GET_CODE (X) == PLUS || GET_CODE (X) == MINUS    \
-       || GET_CODE (X) == NEG) \
+  (GET_MODE_CLASS (GET_MODE (X)) == MODE_FLOAT           \
+   ? ((OP == LT || OP == LE || OP == GT || OP == GE)     \
+      ? CCFPEmode : CCFPmode)                            \
+   : ((GET_CODE (X) == PLUS || GET_CODE (X) == MINUS     \
+       || GET_CODE (X) == NEG || GET_CODE (x) == ASHIFT) \
       ? CC_NOOVmode : CCmode))
 @end smallexample
 
@@ -6093,10 +6094,11 @@ then @code{REVERSIBLE_CC_MODE (@var{mode})} must be zero.
 You need not define this macro if it would always returns zero or if the
 floating-point format is anything other than @code{IEEE_FLOAT_FORMAT}.
 For example, here is the definition used on the SPARC, where floating-point
-inequality comparisons are always given @code{CCFPEmode}:
+inequality comparisons are given either @code{CCFPEmode} or @code{CCFPmode}:
 
 @smallexample
-#define REVERSIBLE_CC_MODE(MODE)  ((MODE) != CCFPEmode)
+#define REVERSIBLE_CC_MODE(MODE) \
+   ((MODE) != CCFPEmode && (MODE) != CCFPmode)
 @end smallexample
 @end defmac
 
@@ -6106,7 +6108,7 @@ comparison done in CC_MODE @var{mode}.  The macro is used only in case
 @code{REVERSIBLE_CC_MODE (@var{mode})} is nonzero.  Define this macro in case
 machine has some non-standard way how to reverse certain conditionals.  For
 instance in case all floating point conditions are non-trapping, compiler may
-freely convert unordered compares to ordered one.  Then definition may look
+freely convert unordered compares to ordered ones.  Then definition may look
 like:
 
 @smallexample
@@ -6143,6 +6145,10 @@ The default version of this hook checks whether the modes are the
 same.  If they are, it returns that mode.  If they are different, it
 returns @code{VOIDmode}.
 @end deftypefn
+
+@deftypevr {Target Hook} {unsigned int} TARGET_FLAGS_REGNUM
+If the target has a dedicated flags register, and it needs to use the post-reload comparison elimination pass, then this value should be set appropriately.
+@end deftypevr
 
 @node Costs
 @section Describing Relative Costs of Operations
@@ -9017,6 +9023,13 @@ register in Dwarf.  Otherwise, this hook should return @code{NULL_RTX}.
 If not defined, the default is to return @code{NULL_RTX}.
 @end deftypefn
 
+@deftypefn {Target Hook} {enum machine_mode} TARGET_DWARF_FRAME_REG_MODE (int @var{regno})
+Given a register, this hook should return the mode which the
+corresponding Dwarf frame register should have.  This is normally
+used to return a smaller mode than the raw mode to prevent call
+clobbered parts of a register altering the frame register size
+@end deftypefn
+
 @deftypefn {Target Hook} void TARGET_INIT_DWARF_REG_SIZES_EXTRA (tree @var{address})
 If some registers are represented in Dwarf-2 unwind information in
 multiple pieces, define this hook to fill in information about the
@@ -9514,6 +9527,10 @@ True if sched2 is not to be run at its normal place.  This usually means it will
 True if vartrack is not to be run at its normal place.  This usually means it will be run as part of machine-specific reorg.
 @end deftypevr
 
+@deftypevr {Target Hook} bool TARGET_STRICT_ALIGN
+True if it is beneficial to try stricter function  or loop alignment on the target.
+@end deftypevr
+
 @defmac ASM_OUTPUT_DWARF_DELTA (@var{stream}, @var{size}, @var{label1}, @var{label2})
 A C statement to issue assembly directives that create a difference
 @var{lab1} minus @var{lab2}, using an integer of the given @var{size}.
@@ -9956,6 +9973,43 @@ This target hook returns @code{false} if the @var{caller} function
 cannot inline @var{callee}, based on target specific information.  By
 default, inlining is not allowed if the callee function has function
 specific target options and the caller does not use the same options.
+@end deftypefn
+
+@deftypefn {Target Hook} rtx TARGET_GET_PIC_REG (void)
+Return the pic_reg pseudo register which holds the base address of GOT.
+ It is only required by the simplify-got optimization.
+@end deftypefn
+
+@deftypefn {Target Hook} void TARGET_CLEAR_PIC_REG (void)
+After successful simplify-got optimization, the pic_reg is useless. So a
+ target can use this hook to clear pic_reg.
+@end deftypefn
+
+@deftypefn {Target Hook} rtx TARGET_LOADED_GLOBAL_VAR (rtx @var{insn}, rtx *@var{offset_reg}, rtx *@var{offset_insn})
+This hook is used to detect if the given @var{insn} loads a global
+ variable's address from GOT with the form of
+ @smallexample
+ (set @var{address_reg} (mem (plus pic_reg @var{offset_reg})))
+ @end smallexample
+ If so return the global variable whose address will be loaded and fill in
+ @var{offset_insn} and @var{offset_reg}. @var{offset_reg} is set at
+ @var{offset_insn} to hold the offset from GOT base to the GOT entry of the
+ global variable. Otherwise return @code{NULL_RTX}.
+@end deftypefn
+
+@deftypefn {Target Hook} bool TARGET_CAN_SIMPLIFY_GOT_ACCESS (int @var{n_symbol}, int @var{n_access})
+This hook determines if it satisfy the target dependent conditions to do
+ simplify-got when given the number of global variable accessing and the
+ number of accessed symbols. If the returned value is false the GOT access
+ insns will not be rewritten. Otherwise we will rewrite these insns.
+@end deftypefn
+
+@deftypefn {Target Hook} void TARGET_LOAD_GLOBAL_ADDRESS (rtx @var{symbol}, rtx @var{offset_reg}, rtx @var{address_reg}, rtx @var{load_insn}, rtx @var{offset_insn})
+This hook does the actual rewriting of GOT access insn @var{load_insn}.
+ The global variable is @var{symbol}. The global address should be loaded
+ into @var{address_reg}. The register @var{offset_reg} was previously set
+ in insn @var{offset_insn} to hold the offset from GOT base to the GOT
+ entry of the global variable. Now it can be used as a scratch register.
 @end deftypefn
 
 @node Emulated TLS
@@ -11270,16 +11324,6 @@ routine for target specific customizations of the system printf
 and scanf formatter settings.
 @end defmac
 
-@deftypevr {Target Hook} bool TARGET_RELAXED_ORDERING
-If set to @code{true}, means that the target's memory model does not
-guarantee that loads which do not depend on one another will access
-main memory in the order of the instruction stream; if ordering is
-important, an explicit memory barrier must be used.  This is true of
-many recent processors which implement a policy of ``relaxed,''
-``weak,'' or ``release'' memory consistency, such as Alpha, PowerPC,
-and ia64.  The default is @code{false}.
-@end deftypevr
-
 @deftypefn {Target Hook} {const char *} TARGET_INVALID_ARG_FOR_UNPROTOTYPED_FN (const_tree @var{typelist}, const_tree @var{funcdecl}, const_tree @var{val})
 If defined, this macro returns the diagnostic message when it is
 illegal to pass argument @var{val} to function @var{funcdecl}
@@ -11401,6 +11445,12 @@ is zero, which disables this optimization.
 Return the offset bitwise ored into shifted address to get corresponding
 Address Sanitizer shadow memory address.  NULL if Address Sanitizer is not
 supported by the target.
+@end deftypefn
+
+@deftypefn {Target Hook} rtx TARGET_SET_FP_INSN (void)
+When flag_shrink_wrap_frame_pointer is true, fp setting insn should
+be generated inside function body. The insertion is done after CFA
+information is known.
 @end deftypefn
 
 @deftypefn {Target Hook} {unsigned HOST_WIDE_INT} TARGET_MEMMODEL_CHECK (unsigned HOST_WIDE_INT @var{val})

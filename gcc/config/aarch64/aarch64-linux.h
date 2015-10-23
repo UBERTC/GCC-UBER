@@ -21,11 +21,16 @@
 #ifndef GCC_AARCH64_LINUX_H
 #define GCC_AARCH64_LINUX_H
 
-#define GLIBC_DYNAMIC_LINKER "/lib/ld-linux-aarch64%{mbig-endian:_be}.so.1"
+#ifndef RUNTIME_ROOT_PREFIX
+#define RUNTIME_ROOT_PREFIX ""
+#endif
+#define GLIBC_DYNAMIC_LINKER RUNTIME_ROOT_PREFIX "/lib/ld-linux-aarch64%{mbig-endian:_be}.so.1"
+#define BIONIC_DYNAMIC_LINKER RUNTIME_ROOT_PREFIX "/system/bin/linker64"
+
 
 #define CPP_SPEC "%{pthread:-D_REENTRANT}"
 
-#define LINUX_TARGET_LINK_SPEC  "%{h*}		\
+#define LINUX_TARGET_LINK_SPEC0  "%{h*}		\
    %{static:-Bstatic}				\
    %{shared:-shared}				\
    %{symbolic:-Bsymbolic}			\
@@ -35,7 +40,31 @@
    %{mbig-endian:-EB} %{mlittle-endian:-EL}     \
    -maarch64linux%{mbig-endian:b}"
 
-#define LINK_SPEC LINUX_TARGET_LINK_SPEC
+#ifdef TARGET_FIX_ERR_A53_835769_DEFAULT
+#define CA53_ERR_835769_SPEC \
+  " %{!mno-fix-cortex-a53-835769:--fix-cortex-a53-835769}"
+#else
+#define CA53_ERR_835769_SPEC \
+  " %{mfix-cortex-a53-835769:--fix-cortex-a53-835769}"
+#endif
+
+#define CA53_ERR_843419_SPEC \
+  " %{!mno-fix-cortex-a53-843419:--fix-cortex-a53-843419}"
+
+#define LINUX_TARGET_LINK_SPEC LINUX_TARGET_LINK_SPEC0 \
+                               CA53_ERR_835769_SPEC \
+                               CA53_ERR_843419_SPEC
+
+#ifdef TARGET_FIX_ERR_A53_835769_DEFAULT
+#define CA53_ERR_835769_SPEC \
+  " %{!mno-fix-cortex-a53-835769:--fix-cortex-a53-835769}"
+#else
+#define CA53_ERR_835769_SPEC \
+  " %{mfix-cortex-a53-835769:--fix-cortex-a53-835769}"
+#endif
+
+#define LINK_SPEC LINUX_TARGET_LINK_SPEC \
+                  CA53_ERR_835769_SPEC
 
 #define TARGET_OS_CPP_BUILTINS()		\
   do						\

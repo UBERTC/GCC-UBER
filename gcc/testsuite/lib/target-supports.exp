@@ -382,6 +382,30 @@ proc check_ifunc_available { } {
     }]
 }
 
+# Returns true if tool chain supports "e" section attribute.
+
+proc check_section_exclude_available { } {
+    return [check_runtime_nocache section_exclude_available {
+		asm(".section \".gnu.callgraph.text.main\", \"e\"");
+		int main()
+		{
+		  return 0;
+		}
+  }]
+}
+
+# If this target uses a linker that supports plugins and can load
+# the function reordering linker plugin.
+
+proc check_linker_function_reordering_plugin_supported {} {
+    return [check_runtime_nocache function_reordering_plugin_supported {
+		int main()
+		{
+		  return 0;
+		}    
+  } "-freorder-functions=callgraph"]
+}
+
 # Returns true if --gc-sections is supported on the target.
 
 proc check_gc_sections_available { } {
@@ -931,6 +955,17 @@ proc check_effective_target_nomips16 { } {
     }]
 }
 
+# Return true if the target is a MIPS target that does not produce
+# micromips code.
+
+proc check_effective_target_nomicromips { } {
+    return [check_no_compiler_messages nomicromips object {
+	#ifdef __mips_micromips
+	#error MICROMIPS
+	#endif
+    }]
+}
+
 # Add the options needed for MIPS16 function attributes.  At the moment,
 # we don't support MIPS16 PIC.
 
@@ -1300,6 +1335,42 @@ proc check_sse_hw_available { } {
     }]
 }
 
+# Return 1 if the target supports executing MSA instructions, 0
+# otherwise.  Cache the result.
+
+proc check_msa_hw_available { } {
+    return [check_cached_effective_target msa_hw_available {
+	# If this is not the right target then we can skip the test.
+	if { !([istarget mips*-*-*]) } {
+	    expr 0
+	} else {
+	    check_runtime_nocache msa_hw_available {
+	      #if !defined(__mips_msa)
+	      #error "MSA NOT AVAIL"
+	      #else
+	      #if !(((__mips == 64) || (__mips == 32)) && (__mips_isa_rev >= 2))
+	      #error "MSA NOT AVAIL FOR ISA REV < 2"
+	      #endif
+	      #if !defined(__mips_hard_float)
+	      #error "MSA HARD_FLOAT REQUIRED"
+	      #endif
+	      #if __mips_fpr != 64
+	      #error "MSA 64 FPR REQUIRED"
+	      #endif
+	      #include <msa.h>
+
+	      int main()
+	      {
+	        v8i16 v = __builtin_msa_ldi_h (0);
+	        v[0] = 0;
+	        return v[0];
+	      }
+	      #endif
+	    } "-mmsa"
+	}
+    }]
+}
+
 # Return 1 if the target supports executing SSE2 instructions, 0
 # otherwise.  Cache the result.
 
@@ -1367,6 +1438,24 @@ proc check_effective_target_sse2_runtime { } {
 	return 1
     }
     return 0
+}
+
+# Return 1 if the target supports running SSE2 executables, 0 otherwise.
+
+proc check_effective_target_msa_runtime { } {
+    if { [check_effective_target_mips_msa]
+	 && [check_msa_hw_available] } {
+	return 1
+    }
+    return 0
+}
+
+# Return 1 if msa and not mips16 and not micropmips
+
+proc check_effective_target_mips_msa_nomips16_nomicromips { } {
+  return [check_effective_target_mips_msa]
+      && [check_effective_target_nomip16]
+      && [check_eefective_target_nomicromips]
 }
 
 # Return 1 if the target supports running AVX executables, 0 otherwise.
@@ -2098,7 +2187,8 @@ proc check_effective_target_vect_int { } {
 	      || [istarget aarch64*-*-*]
 	      || [check_effective_target_arm32]
 	      || ([istarget mips*-*-*]
-		  && [check_effective_target_mips_loongson]) } {
+		  && ([check_effective_target_mips_msa_nomips16_nomicromips]
+		      || [check_effective_target_mips_loongson])) } {
 	   set et_vect_int_saved 1
 	}
     }
@@ -2122,7 +2212,9 @@ proc check_effective_target_vect_intfloat_cvt { } {
                    && ![istarget powerpc-*-linux*paired*])
               || [istarget x86_64-*-*] 
               || ([istarget arm*-*-*]
-                  && [check_effective_target_arm_neon_ok])} {
+                  && [check_effective_target_arm_neon_ok])
+	      || ([istarget mips*-*-*]
+	          && [check_effective_target_mips_msa_nomips16_nomicromips]) } {
            set et_vect_intfloat_cvt_saved 1
         }
     }
@@ -2161,7 +2253,9 @@ proc check_effective_target_vect_uintfloat_cvt { } {
 	      || [istarget x86_64-*-*] 
 	      || [istarget aarch64*-*-*]
 	      || ([istarget arm*-*-*]
-		  && [check_effective_target_arm_neon_ok])} {
+		  && [check_effective_target_arm_neon_ok])
+	      || ([istarget mips*-*-*]
+	          && [check_effective_target_mips_msa_nomips16_nomicromips]) } {
            set et_vect_uintfloat_cvt_saved 1
         }
     }
@@ -2186,7 +2280,9 @@ proc check_effective_target_vect_floatint_cvt { } {
                    && ![istarget powerpc-*-linux*paired*])
               || [istarget x86_64-*-*]
               || ([istarget arm*-*-*]
-                  && [check_effective_target_arm_neon_ok])} {
+                  && [check_effective_target_arm_neon_ok])
+	      || ([istarget mips*-*-*]
+	          && [check_effective_target_mips_msa_nomips16_nomicromips]) } {
            set et_vect_floatint_cvt_saved 1
         }
     }
@@ -2208,7 +2304,9 @@ proc check_effective_target_vect_floatuint_cvt { } {
         if { ([istarget powerpc*-*-*]
 	      && ![istarget powerpc-*-linux*paired*])
 	    || ([istarget arm*-*-*]
-	        && [check_effective_target_arm_neon_ok])} {
+	        && [check_effective_target_arm_neon_ok])
+	    || ([istarget mips*-*-*]
+	        && [check_effective_target_mips_msa_nomips16_nomicromips]) } {
            set et_vect_floatuint_cvt_saved 1
         }
     }
@@ -2922,6 +3020,33 @@ proc check_effective_target_mips_loongson { } {
     }]
 }
 
+# Return 1 if a msa program can be compiled to object
+proc check_effective_target_mips_msa { } {
+  return [check_no_compiler_messages msa object {
+     #if !defined(__mips_msa)
+     #error "MSA NOT AVAIL"
+     #else
+     #if !(((__mips == 64) || (__mips == 32)) && (__mips_isa_rev >= 2))
+     #error "MSA NOT AVAIL FOR ISA REV < 2"
+     #endif
+     #if !defined(__mips_hard_float)
+     #error "MSA HARD_FLOAT REQUIRED"
+     #endif
+     #if __mips_fpr != 64
+     #error "MSA 64 FPR REQUIRED"
+     #endif
+     #include <msa.h>
+
+     int main()
+     {
+	v8i16 v = __builtin_msa_ldi_h (1);
+
+	return v[0];
+     }
+     #endif
+  } "-mmsa" ]
+}
+
 # Return 1 if this is an ARM target that adheres to the ABI for the ARM
 # Architecture.
 
@@ -3315,7 +3440,8 @@ proc check_effective_target_vect_shift { } {
 	     || [istarget aarch64*-*-*]
 	     || [check_effective_target_arm32]
 	     || ([istarget mips*-*-*]
-		 && [check_effective_target_mips_loongson]) } {
+		&& ([check_effective_target_mips_msa_nomips16_nomicromips]
+		   || [check_effective_target_mips_loongson])) } {
 	   set et_vect_shift_saved 1
 	}
     }
@@ -3335,7 +3461,9 @@ proc check_effective_target_vect_shift_char { } {
 	set et_vect_shift_char_saved 0
 	if { ([istarget powerpc*-*-*]
              && ![istarget powerpc-*-linux*paired*])
-	     || [check_effective_target_arm32] } {
+	     || [check_effective_target_arm32]
+	     || ([istarget mips*-*-*]
+		 && [check_effective_target_mips_msa_nomips16_nomicromips]) } {
 	   set et_vect_shift_char_saved 1
 	}
     }
@@ -3355,7 +3483,9 @@ proc check_effective_target_vect_long { } {
               && [check_effective_target_ilp32])
 	 || [istarget x86_64-*-*]
 	 || [check_effective_target_arm32]
-	 || ([istarget sparc*-*-*] && [check_effective_target_ilp32]) } {
+	 || ([istarget sparc*-*-*] && [check_effective_target_ilp32])
+	 || ([istarget mips*-*-*]
+	     && [check_effective_target_mips_msa_nomips16_nomicromips]) } {
 	set answer 1
     } else {
 	set answer 0
@@ -3384,6 +3514,8 @@ proc check_effective_target_vect_float { } {
 	      || [istarget x86_64-*-*]
 	      || [istarget ia64-*-*]
 	      || [istarget aarch64*-*-*]
+	      || ([istarget mips*-*-*]
+		  && [check_effective_target_mips_msa_nomips16_nomicromips])
 	      || [check_effective_target_arm32] } {
 	   set et_vect_float_saved 1
 	}
@@ -3418,6 +3550,9 @@ proc check_effective_target_vect_double { } {
 	    }
 	} elseif { [istarget spu-*-*] } {
 	   set et_vect_double_saved 1
+	} elseif { [istarget mips*-*-*]
+		   && [check_effective_target_mips_msa_nomips16_nomicromips] } {
+	   set et_vect_double_saved 1
 	}
     }
 
@@ -3437,7 +3572,9 @@ proc check_effective_target_vect_long_long { } {
     } else {
         set et_vect_long_long_saved 0
         if { [istarget i?86-*-*]
-              || [istarget x86_64-*-*] } {
+              || [istarget x86_64-*-*]
+	      || ([istarget mips*-*-*]
+	          && [check_effective_target_mips_msa_nomips16_nomicromips]) } {
            set et_vect_long_long_saved 1
         }
     }
@@ -3463,7 +3600,8 @@ proc check_effective_target_vect_no_int_max { } {
 	     || [istarget spu-*-*]
 	     || [istarget alpha*-*-*]
 	     || ([istarget mips*-*-*]
-		 && [check_effective_target_mips_loongson]) } {
+		 && (![check_effective_target_mips_msa_nomips16_nomicromips])
+		 &&  [check_effective_target_mips_loongson]) } {
 	    set et_vect_no_int_max_saved 1
 	}
     }
@@ -3529,8 +3667,9 @@ proc check_effective_target_vect_perm { } {
 	     || [istarget i?86-*-*]
 	     || [istarget x86_64-*-*]
 	     || ([istarget mips*-*-*]
-		 && [check_effective_target_mpaired_single]) } {
-            set et_vect_perm_saved 1
+		 && ([check_effective_target_mips_msa_nomips16_nomicromips]
+		     || [check_effective_target_mpaired_single])) } {
+		set et_vect_perm_saved 1
         }
     }
     verbose "check_effective_target_vect_perm: returning $et_vect_perm_saved" 2
@@ -3554,7 +3693,9 @@ proc check_effective_target_vect_perm_byte { } {
 	     || ([istarget aarch64*-*-*]
 		 && [is-effective-target aarch64_little_endian])
 	     || [istarget powerpc*-*-*]
-             || [istarget spu-*-*] } {
+             || [istarget spu-*-*]
+	     || ([istarget mips-*.*]
+	         && [check_effective_target_mips_msa_nomips16_nomicromips]) } {
             set et_vect_perm_byte_saved 1
         }
     }
@@ -3579,7 +3720,9 @@ proc check_effective_target_vect_perm_short { } {
 	     || ([istarget aarch64*-*-*]
 		 && [is-effective-target aarch64_little_endian])
 	     || [istarget powerpc*-*-*]
-             || [istarget spu-*-*] } {
+             || [istarget spu-*-*]
+	     || ([istarget mips*-*-*]
+	          && [check_effective_target_mips_msa_nomips16_nomicromips]) } {
             set et_vect_perm_short_saved 1
         }
     }
@@ -3917,6 +4060,26 @@ proc check_effective_target_vect_udot_hi { } {
     return $et_vect_udot_hi_saved
 }
 
+# Return 1 if the target plus current options supports a vector
+# sad operation of unsigned chars, 0 otherwise.
+#
+# This won't change for different subtargets so cache the result.
+
+proc check_effective_target_vect_usad_char { } {
+    global et_vect_usad_char
+
+    if [info exists et_vect_usad_char_saved] {
+        verbose "check_effective_target_vect_usad_char: using cached result" 2
+    } else {
+        set et_vect_usad_char_saved 0
+        if { ([istarget i?86-*-*]
+             || [istarget x86_64-*-*]) } {
+            set et_vect_usad_char_saved 1
+        }
+    }
+    verbose "check_effective_target_vect_usad_char: returning $et_vect_usad_char_saved" 2
+    return $et_vect_usad_char_saved
+}
 
 # Return 1 if the target plus current options supports a vector
 # demotion (packing) of shorts (to chars) and ints (to shorts) 
@@ -3937,7 +4100,9 @@ proc check_effective_target_vect_pack_trunc { } {
              || [istarget aarch64*-*-*]
              || [istarget spu-*-*]
              || ([istarget arm*-*-*] && [check_effective_target_arm_neon_ok]
-		 && [check_effective_target_arm_little_endian]) } {
+		 && [check_effective_target_arm_little_endian])
+             || ([istarget mips*-*-*]
+                 && [check_effective_target_mips_msa]) } {
             set et_vect_pack_trunc_saved 1
         }
     }
@@ -3963,6 +4128,8 @@ proc check_effective_target_vect_unpack { } {
              || [istarget spu-*-*]
              || [istarget ia64-*-*]
              || [istarget aarch64*-*-*]
+             || ([istarget mips*-*-*]
+		 && [check_effective_target_mips_msa_nomips16_nomicromips])
              || ([istarget arm*-*-*] && [check_effective_target_arm_neon_ok]
 		 && [check_effective_target_arm_little_endian]) } {
             set et_vect_unpack_saved 1
@@ -4007,7 +4174,8 @@ proc check_effective_target_vect_no_align { } {
 	     || [istarget ia64-*-*]
 	     || [check_effective_target_arm_vect_no_misalign]
 	     || ([istarget mips*-*-*]
-		 && [check_effective_target_mips_loongson]) } {
+		 && ![check_effective_target_mips_msa]
+		 &&  [check_effective_target_mips_loongson]) } {
 	    set et_vect_no_align_saved 1
 	}
     }
@@ -4028,7 +4196,8 @@ proc check_effective_target_vect_hw_misalign { } {
         set et_vect_hw_misalign_saved 0
        if { ([istarget x86_64-*-*] 
 	    || [istarget aarch64*-*-*]
-            || [istarget i?86-*-*]) } {
+            || [istarget i?86-*-*])
+	    || ([istarget mips*-*-*] && [check_effective_target_mips_msa_nomips16_nomicromips]) } {
           set et_vect_hw_misalign_saved 1
        }
     }
@@ -4203,6 +4372,8 @@ proc check_effective_target_vect_condition { } {
 	     || [istarget i?86-*-*]
 	     || [istarget spu-*-*]
 	     || [istarget x86_64-*-*]
+	     || [istarget mips*-*-*]
+		 && [check_effective_target_mips_msa_nomips16_nomicromips]
 	     || ([istarget arm*-*-*] && [check_effective_target_arm_neon_ok]) } {
 	   set et_vect_cond_saved 1
 	}
@@ -4224,7 +4395,9 @@ proc check_effective_target_vect_cond_mixed { } {
 	set et_vect_cond_mixed_saved 0
 	if { [istarget i?86-*-*]
 	     || [istarget x86_64-*-*]
-	     || [istarget powerpc*-*-*] } {
+	     || [istarget powerpc*-*-*]
+	     || [istarget mips*-*-*]
+		 && [check_effective_target_mips_msa_nomips16_nomicromips] } {
 	   set et_vect_cond_mixed_saved 1
 	}
     }
@@ -4272,7 +4445,8 @@ proc check_effective_target_vect_short_mult { } {
 	     || [istarget aarch64*-*-*]
 	     || [check_effective_target_arm32]
 	     || ([istarget mips*-*-*]
-		 && [check_effective_target_mips_loongson]) } {
+		 && ([check_effective_target_mips_msa_nomips16_nomicromips]
+		     || [check_effective_target_mips_loongson])) } {
 	   set et_vect_short_mult_saved 1
 	}
     }
@@ -4296,6 +4470,8 @@ proc check_effective_target_vect_int_mult { } {
 	     || [istarget x86_64-*-*]
 	     || [istarget ia64-*-*]
 	     || [istarget aarch64*-*-*]
+	     || ([istarget mips*-*-*]
+		 && [check_effective_target_mips_msa_nomips16_nomicromips])
 	     || [check_effective_target_arm32] } {
 	   set et_vect_int_mult_saved 1
 	}
@@ -4322,7 +4498,8 @@ proc check_effective_target_vect_extract_even_odd { } {
              || [istarget ia64-*-*]
              || [istarget spu-*-*]
 	     || ([istarget mips*-*-*]
-		 && [check_effective_target_mpaired_single]) } {
+		 && ([check_effective_target_mips_msa_nomips16_nomicromips]
+		     || [check_effective_target_mpaired_single])) } {
 	    set et_vect_extract_even_odd_saved 1
         }
     }
@@ -4348,7 +4525,8 @@ proc check_effective_target_vect_interleave { } {
              || [istarget ia64-*-*]
              || [istarget spu-*-*]
 	     || ([istarget mips*-*-*]
-		 && [check_effective_target_mpaired_single]) } {
+		 && ([check_effective_target_mips_msa_nomips16_nomicromips]
+		     || [check_effective_target_mpaired_single])) } {
            set et_vect_interleave_saved 1
         }
     }
@@ -5603,6 +5781,7 @@ proc check_effective_target_mempcpy {} {
 
 proc check_vect_support_and_set_flags { } {
     global DEFAULT_VECTCFLAGS
+    global MULTI_VECTCFLAGS
     global dg-do-what-default
 
     if  [istarget powerpc-*paired*]  {
@@ -5643,14 +5822,25 @@ proc check_vect_support_and_set_flags { } {
         } else {
             set dg-do-what-default compile
         }
-    } elseif { [istarget mips*-*-*]
-               && ([check_effective_target_mpaired_single]
+    } elseif { [istarget mips*-*-*] } {
+        if { 0 && ([check_effective_target_mpaired_single]
                     || [check_effective_target_mips_loongson])
-               && [check_effective_target_nomips16] } {
-        if { [check_effective_target_mpaired_single] } {
-            lappend DEFAULT_VECTCFLAGS "-mpaired-single"
+             && [check_effective_target_nomips16]
+             && [check_effective_target_mpaired_single] } {
+            lappend MULTI_VECTCFLAGS "-mpaired-single"
+            set dg-do-what-default run
         }
-        set dg-do-what-default run
+        if { ([check_effective_target_mips_msa_nomips16_nomicromips]) } {
+            lappend MULTI_VECTCFLAGS "-mmsa"
+
+            if { [check_effective_target_msa_runtime] } {
+                set dg-do-what-default run
+            } else {
+                set dg-do-what-default compile
+            }
+        } else {
+            return 0
+        }
     } elseif [istarget sparc*-*-*] {
         lappend DEFAULT_VECTCFLAGS "-mcpu=ultrasparc" "-mvis"
         if [check_effective_target_ultrasparc_hw] {
@@ -5816,3 +6006,54 @@ proc force_conventional_output_for { test } {
     }
 }
 
+# Return 1 if the x86-64 target supports PIE with copy reloc, 0
+# otherwise.  Cache the result.
+
+proc check_effective_target_pie_copyreloc { } {
+    global pie_copyreloc_available_saved
+    global tool
+    global GCC_UNDER_TEST
+
+    if { !([istarget x86_64-*-*] || [istarget i?86-*-*]) } {
+	return 0
+    }
+
+    # Need auto-host.h to check linker support.
+    if { ![file exists ../../auto-host.h ] } {
+	return 0
+    }
+
+    if [info exists pie_copyreloc_available_saved] {
+	verbose "check_effective_target_pie_copyreloc returning saved $pie_copyreloc_available_saved" 2
+    } else {
+	# Set up and compile to see if linker supports PIE with copy
+	# reloc.  Include the current process ID in the file names to
+	# prevent conflicts with invocations for multiple testsuites.
+
+	set src pie[pid].c
+	set obj pie[pid].o
+
+	set f [open $src "w"]
+	puts $f "#include \"../../auto-host.h\""
+	puts $f "#if HAVE_LD_PIE_COPYRELOC == 0"
+	puts $f "# error Linker does not support PIE with copy reloc."
+	puts $f "#endif"
+	close $f
+
+	verbose "check_effective_target_pie_copyreloc compiling testfile $src" 2
+	set lines [${tool}_target_compile $src $obj object ""]
+
+	file delete $src
+	file delete $obj
+
+	if [string match "" $lines] then {
+	    verbose "check_effective_target_pie_copyreloc testfile compilation passed" 2
+	    set pie_copyreloc_available_saved 1
+	} else {
+	    verbose "check_effective_target_pie_copyreloc testfile compilation failed" 2
+	    set pie_copyreloc_available_saved 0
+	}
+    }
+
+    return $pie_copyreloc_available_saved
+}

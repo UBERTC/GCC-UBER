@@ -43,8 +43,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-inline.h"
 #include "decl.h"
 #include "toplev.h"
+#include "opts.h"
 #include "timevar.h"
 #include "tree-iterator.h"
+#include "cgraph.h"
 #include "type-utils.h"
 #include "gimplify.h"
 
@@ -62,6 +64,13 @@ struct GTY ((chain_next ("%h.next"))) pending_template {
 
 static GTY(()) struct pending_template *pending_templates;
 static GTY(()) struct pending_template *last_pending_template;
+
+void
+clear_pending_templates (void)
+{
+  pending_templates = NULL;
+  last_pending_template = NULL;
+}
 
 int processing_template_parmlist;
 static int template_header_count;
@@ -6084,7 +6093,7 @@ convert_nontype_argument (tree type, tree expr, tsubst_flags_t complain)
      right type?  */
   gcc_assert (same_type_ignoring_top_level_qualifiers_p
 	      (type, TREE_TYPE (expr)));
-  return expr;
+  return convert_from_reference (expr);
 }
 
 /* Subroutine of coerce_template_template_parms, which returns 1 if
@@ -14151,16 +14160,6 @@ tsubst_non_call_postfix_expression (tree t, tree args,
   return t;
 }
 
-/* Sentinel to disable certain warnings during template substitution.  */
-
-struct warning_sentinel {
-  int &flag;
-  int val;
-  warning_sentinel(int& flag, bool suppress=true)
-    : flag(flag), val(flag) { if (suppress) flag = 0; }
-  ~warning_sentinel() { flag = val; }
-};
-
 /* Like tsubst but deals with expressions and performs semantic
    analysis.  FUNCTION_P is true if T is the "F" in "F (ARGS)".  */
 
@@ -14233,11 +14232,7 @@ tsubst_copy_and_build (tree t,
 	if (error_msg)
 	  error (error_msg);
 	if (!function_p && identifier_p (decl))
-	  {
-	    if (complain & tf_error)
-	      unqualified_name_lookup_error (decl);
-	    decl = error_mark_node;
-	  }
+	  decl = unqualified_name_lookup_error (decl);
 	RETURN (decl);
       }
 
@@ -14828,7 +14823,7 @@ tsubst_copy_and_build (tree t,
 
 	/* Remember that there was a reference to this entity.  */
 	if (DECL_P (function))
-	  mark_used (function);
+	  mark_used (function, complain);
 
 	/* Put back tf_decltype for the actual call.  */
 	complain |= decltype_flag;
@@ -14875,11 +14870,13 @@ tsubst_copy_and_build (tree t,
     case COND_EXPR:
       {
 	tree cond = RECUR (TREE_OPERAND (t, 0));
+	tree folded_cond = (maybe_constant_value
+			    (fold_non_dependent_expr_sfinae (cond, tf_none)));
 	tree exp1, exp2;
 
-	if (TREE_CODE (cond) == INTEGER_CST)
+	if (TREE_CODE (folded_cond) == INTEGER_CST)
 	  {
-	    if (integer_zerop (cond))
+	    if (integer_zerop (folded_cond))
 	      {
 		++c_inhibit_evaluation_warnings;
 		exp1 = RECUR (TREE_OPERAND (t, 1));
@@ -14893,6 +14890,7 @@ tsubst_copy_and_build (tree t,
 		exp2 = RECUR (TREE_OPERAND (t, 2));
 		--c_inhibit_evaluation_warnings;
 	      }
+	    cond = folded_cond;
 	  }
 	else
 	  {
@@ -15443,6 +15441,7 @@ check_instantiated_arg (tree tmpl, tree t, tsubst_flags_t complain)
      constant.  */
   else if (TREE_TYPE (t)
 	   && INTEGRAL_OR_ENUMERATION_TYPE_P (TREE_TYPE (t))
+	   && !REFERENCE_REF_P (t)
 	   && !TREE_CONSTANT (t))
     {
       if (complain & tf_error)
@@ -18166,8 +18165,12 @@ unify (tree tparms, tree targs, tree parm, tree arg, int strict,
 
     case INDIRECT_REF:
       if (REFERENCE_REF_P (parm))
-	return unify (tparms, targs, TREE_OPERAND (parm, 0), arg,
-		      strict, explain_p);
+	{
+	  if (REFERENCE_REF_P (arg))
+	    arg = TREE_OPERAND (arg, 0);
+	  return unify (tparms, targs, TREE_OPERAND (parm, 0), arg,
+			strict, explain_p);
+	}
       /* FALLTHRU */
 
     default:
@@ -19830,7 +19833,13 @@ instantiate_decl (tree d, int defer_ok,
 	 when marked as "extern template".  */
       if (!(external_p && VAR_P (d)))
 	add_pending_template (d);
-      goto out;
+      {
+        if (L_IPO_COMP_MODE)
+          /* Capture module info.  */
+          if (TREE_CODE (d) == VAR_DECL)
+            varpool_node_for_decl (d);
+        goto out;
+      }
     }
   /* Tell the repository that D is available in this translation unit
      -- and see if it is supposed to be instantiated here.  */

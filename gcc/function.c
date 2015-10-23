@@ -61,8 +61,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-pass.h"
 #include "predict.h"
 #include "df.h"
+#include "l-ipo.h"
 #include "params.h"
 #include "bb-reorder.h"
+#include "domwalk.h"
+#include "dbgcnt.h"
 
 /* So we can assign to cfun in this file.  */
 #undef cfun
@@ -4470,10 +4473,27 @@ pop_cfun (void)
 }
 
 /* Return value of funcdef and increase it.  */
+
 int
 get_next_funcdef_no (void)
 {
   return funcdef_no++;
+}
+
+/* Restore funcdef_no to FN.  */
+
+void
+set_funcdef_no (int fn)
+{
+  funcdef_no = fn;
+}
+
+/* Reset the funcdef number.  */
+
+void
+reset_funcdef_no (void)
+{
+  funcdef_no = 0;
 }
 
 /* Return value of funcdef.  */
@@ -4517,6 +4537,7 @@ allocate_struct_function (tree fndecl, bool abstract_p)
       DECL_STRUCT_FUNCTION (fndecl) = cfun;
       cfun->decl = fndecl;
       current_function_funcdef_no = get_next_funcdef_no ();
+      cfun->module_id = current_module_id;
     }
 
   invoke_set_current_function_hook (fndecl);
@@ -5579,6 +5600,14 @@ prepare_shrink_wrap (basic_block entry_block)
 	    if (REG_P (x) && HARD_REGISTER_P (x))
 	      SET_HARD_REG_BIT (uses, REGNO (x));
 	  }
+
+	/* If frame_pointer_partially_needed, compiler will
+	   implicitly insert frame pointer setting insn
+	   before call after prologue is generated. So
+	   assume an implicit def immediately before any
+	   call insn.  */
+	if (frame_pointer_partially_needed && CALL_P (insn))
+	  SET_HARD_REG_BIT (defs, HARD_FRAME_POINTER_REGNUM);
       }
 }
 
@@ -5837,6 +5866,698 @@ emit_return_for_exit (edge exit_fallthru_edge, bool simple_p)
 }
 #endif
 
+struct bb_fpset
+{
+  basic_block bb;
+  /* There is call in this bb and there is no fp def or use
+     between the call and bb entry.  */
+  bool has_orig_upexposed_fpset;
+  /* If it is needed to insert fpset on the entry of bb,
+     we tend to insert it before the original call.  */
+  rtx place_for_upexposed_fpset;
+  /* There is call in this bb, it is not bb upward exposed and
+     there is no fp def and use between the call and bb exit.  */
+  bool has_orig_downexposed_fpset;
+
+  /* fpset from bbs below could be moved across the current bb
+     to its dominator. There are two cases when transparent is
+     false:
+     1. There is any fp reference in current bb.
+     2. fp is in the live-out set of current bb.  */
+  bool transparent;
+  /* There is any fp reference in current bb. Only for dumping.  */
+  bool has_fp_ref;
+
+  /* If there is fp setting insn moved to here from other bb.  */
+  bool moved_to_here;
+
+  /* If a fp setting insn to be moved here, insert it
+     in the bb as early as possible. place_to_move is the place
+     to moved to. It is trying not to break the macrofusion of
+     cond and jump.  */
+  rtx place_to_move;
+
+  /* The target bb set the fp setting in current bb could move
+     to, .i.e, any path between target bb and current bb has no
+     fp def or use.  */
+  sbitmap can_move_to;
+
+  /* The list connecting child bbs having upward exposed fp
+     setting which are possible promotion candidates.  */
+  struct bb_fpset *next, *end;
+};
+
+/* The object containing information about fpsetting insns inside
+   a bb. fp setting insns are those insns saving frame address to
+   fp.  */
+static struct bb_fpset *bb_fpsets;
+
+/* Dump the link list connecting all the promotion candidates below
+   the current bb.  */
+DEBUG_FUNCTION static void
+dump_fpset_list (FILE *file, struct bb_fpset *fpset)
+{
+  struct bb_fpset *subnode;
+
+  fprintf (file, "bb%d contains link list:\n", fpset->bb->index);
+  subnode = fpset->next;
+  while (subnode)
+    {
+      fprintf (file, "-> bb%d", subnode->bb->index);
+#ifdef ENABLE_CHECKING
+      gcc_assert(subnode->end == NULL);
+      if (!subnode->next)
+	gcc_assert(fpset->end == subnode);
+#endif
+      subnode = subnode->next;
+    }
+  fprintf (file, "\n");
+}
+
+/* For a link list, only starting node have non-NULL next and end fields.
+   the end field should point to the last node in the link list. For the
+   nodes except the starting one, their end field should be NULL.  */
+DEBUG_FUNCTION static void
+fpset_list_sanity_check (struct bb_fpset *fpset)
+{
+  struct bb_fpset *subnode;
+  subnode = fpset->next;
+  if (!subnode)
+    gcc_assert (!fpset->end);
+  else
+    {
+      while (subnode)
+	{
+	  gcc_assert(subnode->end == NULL);
+	  if (!subnode->next)
+	    gcc_assert(fpset->end == subnode);
+	  subnode = subnode->next;
+	}
+    }
+}
+
+/* Dump the status of shrinkwrapping contained in FPSET.  */
+static void
+dump_bb_fpset (FILE *file, struct bb_fpset *fpset)
+{
+  int place_for_upexposed_fpset = fpset->place_for_upexposed_fpset ?
+				  INSN_UID (fpset->place_for_upexposed_fpset)
+				  : -1;
+  int place_to_move = fpset->place_to_move ? INSN_UID (fpset->place_to_move)
+		      : -1;
+  fprintf(file,
+	  "bb[%d]: upexposed_fpset:   %d, place for upexposed_fpset: %d\n"
+	  "        downexposed_fpset: %d, transparent:               %d\n"
+	  "        moved_to_here:     %d, has_fp_ref:                %d\n"
+	  "        place_to_move:     %d\n",
+	  fpset->bb->index, fpset->has_orig_upexposed_fpset,
+	  place_for_upexposed_fpset,
+	  fpset->has_orig_downexposed_fpset, fpset->transparent,
+	  fpset->moved_to_here, fpset->has_fp_ref, place_to_move);
+  fprintf(file, "        ");
+  dump_bitmap_file (file, fpset->can_move_to);
+}
+
+/* For each bb, initialize the bb_fpset structure for it. struct bb_fpset
+   is the central data structure used in shrinkwrapping. LOCAL_INSERTS
+   record the places where we need a fp setting locally inside bb
+   without the need to move it. CALLS are the call insns needing a
+   reg use note at the end of shrinkwrapping. The reg use notes are
+   used to make sure DCE not to delete inserted fp settings.  */
+static void
+bb_fpset_local_init (vec<rtx> *local_inserts, vec<rtx> *calls)
+{
+  basic_block bb;
+  rtx insn, insert_before = NULL;
+  rtx place_to_move = NULL;
+  bool place_to_move_set = false;
+
+  if (dump_file)
+    fprintf(dump_file, "\nfpset dump after init:\n");
+
+  any_fp_def = false;
+  FOR_EACH_BB_FN (bb, cfun)
+    {
+      bb_fpsets[bb->index].bb = bb;
+      bb_fpsets[bb->index].can_move_to =
+		sbitmap_alloc (last_basic_block_for_fn (cfun));
+      bitmap_clear (bb_fpsets[bb->index].can_move_to);
+      bb_fpsets[bb->index].transparent = true;
+      insert_before = NULL;
+      place_to_move = NULL;
+      place_to_move_set = false;
+
+      FOR_BB_INSNS_REVERSE (bb, insn)
+	{
+	  bool fp_def_use = false;
+
+	  if (CALL_P (insn))
+	    {
+	      /* Check whether fp is explicitly used in call target,
+		 like, call *fp.  */
+	      HARD_REG_SET used;
+	      CLEAR_HARD_REG_SET (used);
+	      note_uses (&PATTERN (insn), record_hard_reg_uses,
+			 &used);
+	      if (TEST_HARD_REG_BIT (used, HARD_FRAME_POINTER_REGNUM))
+		fp_def_use = true;
+	      calls->safe_push (insn);
+	    }
+
+	  /* fp is in DF_INSN_DEFS or DF_INSN_USES of call insn in
+	     order not to move other normal fp def/use insn across call.
+	     For fp setting movement, those DEFS and USES should be
+	     neglected.  */
+	  if (NONDEBUG_INSN_P (insn) && !CALL_P (insn))
+	    {
+	      df_ref *df_rec;
+	      for (df_rec = DF_INSN_DEFS (insn); *df_rec; df_rec++)
+		{
+		  rtx reg = DF_REF_REG (*df_rec);
+
+		  if (REG_P (reg)
+		      && REGNO (reg) == HARD_FRAME_POINTER_REGNUM)
+		    {
+		      fp_def_use = true;
+		      any_fp_def = true;
+		    }
+		}
+
+	      for (df_rec = DF_INSN_USES (insn); *df_rec; df_rec++)
+		{
+		  rtx reg = DF_REF_REG (*df_rec);
+
+		  if (REG_P (reg)
+		      && REGNO (reg) == HARD_FRAME_POINTER_REGNUM)
+		    fp_def_use = true;
+		}
+	    }
+
+	  if (fp_def_use)
+	    {
+	      /* Record place_to_move when the bottom fp reference is seen.  */
+	      if (!place_to_move_set)
+		{
+		  bb_fpsets[bb->index].place_to_move = place_to_move;
+		  place_to_move_set = true;
+		}
+
+	      if (insert_before)
+		{
+		  /* When fp_def_use is seen, fpset should be inserted for
+		     the last seen call. Add the call to local_inserts.  */
+		  local_inserts->safe_push (insert_before);
+		  insert_before = NULL;
+		}
+              bb_fpsets[bb->index].transparent = false;
+              bb_fpsets[bb->index].has_fp_ref = true;
+	    }
+
+	  /* Record the insn just below the bottom fp reference in the bb.
+	     If there is fpset moved from other bbs, the fpset could be placed
+	     before place_to_move.  */
+	  if (!place_to_move_set && NONDEBUG_INSN_P (insn))
+	    place_to_move = insn;
+
+	  if (CALL_P (insn))
+	    {
+	      /* The latest place to insert fp setting.  */
+	      insert_before = insn;
+	      /* No fp def or use below this call, so we have downward exposed
+		 fpset.  */
+	      if (!bb_fpsets[bb->index].has_fp_ref)
+		bb_fpsets[bb->index].has_orig_downexposed_fpset = true;
+	    }
+	}
+
+      /* If there is no fp_def_use in bb, place_to_move will be the first
+	 insn in the bb. before place_to_move is the place to insert fpset
+	 moved from other bbs.  */
+      if (!place_to_move_set)
+	bb_fpsets[bb->index].place_to_move = place_to_move;
+
+      if (insert_before)
+	{
+	  bb_fpsets[bb->index].has_orig_upexposed_fpset = true;
+	  bb_fpsets[bb->index].place_for_upexposed_fpset = insert_before;
+	}
+
+      /* For bb without explicit fp def/use, but it is in a fp live range,
+	 it is impossible to move fpset to this bb or across this bb.  */
+      if (bitmap_bit_p (df_get_live_out (bb), HARD_FRAME_POINTER_REGNUM))
+	{
+	  bb_fpsets[bb->index].transparent = false;
+	  bb_fpsets[bb->index].place_to_move = NULL;
+	}
+
+      if (dump_file)
+	dump_bb_fpset (dump_file, &bb_fpsets[bb->index]);
+    }
+}
+
+/* Set bb_fpsets[bb->index].can_move_to, which indicates the bb set to
+   which fp setting from bb could be moved.
+   Suppose there is a fp setting in BB1, if there is not non-transparent
+   BB on any path from BB2 to BB1, BB2 is the BB that the fp setting in BB1
+   could be moved to.
+
+   The dataflow equation is like this:
+   Initialization before dataflow iterating:
+   For any bb, availin[bb] = {0, 0, ...}
+               availin[bb] = {1, 1, ...}
+   Iterating:
+   availin[bb] = AND (availout[pred])
+   availout[bb] = availloc OR (availin[bb] AND trans).
+
+   After the iterating completes, availin[bb] contains the bitmap of the
+   target bbs, which the fp insns in the bb are allowed to move to.  */
+static void
+set_bbs_move_to ()
+{
+  basic_block bb;
+  sbitmap *availin, *availout, availloc, trans;
+  vec<basic_block> worklist;
+
+  availloc = sbitmap_alloc (last_basic_block_for_fn (cfun));
+  trans = sbitmap_alloc (last_basic_block_for_fn (cfun));
+  availin = sbitmap_vector_alloc (last_basic_block_for_fn (cfun),
+				  last_basic_block_for_fn (cfun));
+  availout = sbitmap_vector_alloc (last_basic_block_for_fn (cfun),
+				   last_basic_block_for_fn (cfun));
+  bitmap_clear (trans);
+  bitmap_vector_clear (availin, last_basic_block_for_fn (cfun));
+  bitmap_vector_clear (availout, last_basic_block_for_fn (cfun));
+  worklist.create (0);
+
+  FOR_EACH_BB_FN (bb, cfun)
+    {
+      bb->aux = bb;
+      worklist.safe_push (bb);
+      bitmap_ones (availout[bb->index]);
+    }
+
+  while (!worklist.is_empty ())
+    {
+      int bb_index;
+      edge_iterator ei;
+      edge e;
+
+      bb = worklist.pop ();
+      bb_index = bb->index;
+      bb->aux = NULL;
+      bitmap_intersection_of_preds (availin[bb_index],
+				    availout, bb);
+      if (!bb_fpsets[bb_index].transparent)
+	bitmap_clear (trans);
+      else
+	bitmap_ones (trans);
+      bitmap_clear (availloc);
+      /* If no place_to_move, it is impossible for fpsets from
+	 other bbs to be moved to here. An example of place_to_move
+	 being NULL is when fp is in the live out set of bb.  */
+      if (bb_fpsets[bb_index].place_to_move)
+	bitmap_set_bit (availloc, bb_index);
+
+      if (bitmap_or_and (availout[bb_index], availloc,
+			 availin[bb_index], trans))
+	FOR_EACH_EDGE (e, ei, bb->succs)
+	  {
+	    if (!e->dest->aux)
+	      {
+	        e->dest->aux = e->dest;
+		worklist.safe_insert (0, e->dest);
+	      }
+	  }
+    }
+
+  FOR_EACH_BB_FN (bb, cfun)
+    bitmap_copy (bb_fpsets[bb->index].can_move_to, availin[bb->index]);
+
+  clear_aux_for_blocks ();
+  sbitmap_free (availloc);
+  sbitmap_vector_free (availin);
+  sbitmap_vector_free (availout);
+}
+
+class promote_fpset_dom_walker : public dom_walker
+{
+public:
+  promote_fpset_dom_walker (cdi_direction direction)
+    : dom_walker (direction) {}
+  virtual void after_dom_children (basic_block);
+};
+
+/* Try to promote fp settings from the bbs in the dominator tree
+   to its root if the promote_cost is less than non_promote_cost.
+   If fp settings move to BBi is decided, bb_fpsets[i].move_to_here
+   will be set to true.  */
+void
+promote_fpset_dom_walker::after_dom_children (basic_block bb ATTRIBUTE_UNUSED)
+{
+  unsigned j;
+  vec<basic_block> children;
+  basic_block child;
+  int non_promote_cost, promote_cost;
+  int bb_index = bb->index;
+  float promote_fraction;
+
+  /* For entry bb, there is nothing to promote.  */
+  if (bb_index == 0)
+    return;
+  /* For leaf bb, there is nothing to promote.  */
+  children = get_dominated_by (CDI_DOMINATORS, bb);
+  if (children.is_empty ())
+    return;
+
+  if (bb_fpsets[bb_index].has_orig_downexposed_fpset
+      || (bb_fpsets[bb_index].has_orig_upexposed_fpset
+	  && bb_fpsets[bb_index].transparent))
+    non_promote_cost = bb->frequency * 10 + (!bb->frequency ? 1 : 0);
+  else
+    non_promote_cost = 0;
+  promote_cost = bb->frequency * 10 + (!bb->frequency ? 1 : 0);
+
+  /* Compute promote_cost and non_promote_cost of all the bbs dominated
+     by current bb.  */
+  FOR_EACH_VEC_ELT (children, j, child)
+    {
+      int index = child->index;
+      struct bb_fpset *fpset = &bb_fpsets[index];
+
+      /* In the following case, fpset cannot be promoted to
+	 bb anyway. No need to involve the child into cost
+	 evaluation.  */
+      if ((!fpset->transparent && !fpset->has_orig_upexposed_fpset)
+	  || !bitmap_bit_p (fpset->can_move_to, bb_index))
+	continue;
+
+      /* If subtree computation didn't choose to move fp setting to
+	 its root.  */
+      if (!fpset->moved_to_here)
+	{
+	  struct bb_fpset *subnode = fpset->next;
+
+	  /* For leaf node on dom tree, its moved_to_here is false,
+	     but it may has_orig_upexposed_fpset.
+	     For non-leaf node, suppose has_orig_upexposed_fpset is
+	     true. If it is non-transparent, we only have a fpset upward
+	     exposed. If it is transparent, moved_to_here has to be true
+	     the program will not take this branch.  */
+	  if (fpset->has_orig_upexposed_fpset)
+	    {
+	      non_promote_cost += child->frequency * 10
+				  + (!child->frequency ? 1 : 0);
+	      continue;
+	    }
+
+	  while (subnode)
+	    {
+	      non_promote_cost += subnode->bb->frequency * 10
+				  + (!subnode->bb->frequency ? 1 : 0);
+	      subnode = subnode->next;
+	    }
+	}
+      else
+	non_promote_cost += child->frequency * 10
+			    + (!child->frequency ? 1 : 0);
+    }
+
+  /* If promote is beneficial, mark that a fp setting to be moved to
+     current bb, and remove upexposed fp settings or fp setting link
+     list from its children.
+     If promote will cost too much, don't move fp settings to current
+     bb, but connect those scattered fp setting with a link list in
+     the bb_fpset of current bb.
+
+     If not-to-promote is chosen, there could be multiple fp setting
+     insns scattered instead of one fp setting insn merged. It means
+     larger code size. Introduce PARAM_FPSET_PROMOTE_FRACTION to find
+     a balance between performance improvement and code size increase.  */
+
+  if (profile_status_for_fn (cfun) == PROFILE_READ)
+    promote_fraction = 1;
+  else
+    promote_fraction = 1 + PARAM_VALUE (PARAM_FPSET_PROMOTE_FRACTION) * 0.1;
+
+  if ((promote_cost <= (non_promote_cost * promote_fraction)
+       && bb_fpsets[bb_index].place_to_move)
+      || bb_fpsets[bb_index].has_orig_downexposed_fpset)
+    {
+      /* move fp set to bb.  */
+      FOR_EACH_VEC_ELT (children, j, child)
+	{
+	  int index = child->index;
+	  struct bb_fpset *fpset = &bb_fpsets[index];
+	  struct bb_fpset *subnode = fpset->next;
+
+	  /* In the following case, fpsets cannot be promoted to
+	     bb. Leave those fpsets unchanged.  */
+          if ((!fpset->transparent && !fpset->has_orig_upexposed_fpset)
+	      || !bitmap_bit_p (fpset->can_move_to, bb_index))
+	    continue;
+
+	  while (subnode)
+	    {
+	      struct bb_fpset *next = subnode->next;
+	      /* Reset the subnode.  */
+	      subnode->next = subnode->end = NULL;
+	      subnode->moved_to_here = false;
+	      subnode->has_orig_upexposed_fpset = false;
+	      subnode = next;
+	    }
+
+	  fpset->next = fpset->end = NULL;
+	  fpset->moved_to_here = false;
+	  fpset->has_orig_upexposed_fpset = false;
+	}
+
+      /* If bb has_orig_downexposed_fpset, there will already be a
+	 fpset inserted by local_inserts, so don't set moved_to_here.  */
+      if (!bb_fpsets[bb_index].has_orig_downexposed_fpset)
+	bb_fpsets[bb_index].moved_to_here = true;
+    }
+  else
+    {
+      /* Connect all the link lists from children and set
+	 bb_fpsets[bb_index].next to the head of it.  */
+      FOR_EACH_VEC_ELT (children, j, child)
+	{
+	  int index = child->index;
+	  struct bb_fpset *fpset = &bb_fpsets[index];
+          if ((!fpset->transparent && !fpset->has_orig_upexposed_fpset)
+	      || !bitmap_bit_p (fpset->can_move_to, bb_index))
+	    continue;
+	  if ((fpset->moved_to_here && fpset->transparent)
+	      || fpset->has_orig_upexposed_fpset)
+	    {
+	      /* Only the child has to be added to the bb's link list.  */
+	      struct bb_fpset *tmp;
+	      tmp = bb_fpsets[bb_index].next;
+	      bb_fpsets[bb_index].next = fpset;
+	      fpset->next = tmp;
+	      if (!bb_fpsets[bb_index].end)
+		bb_fpsets[bb_index].end = fpset;
+	      fpset->end = NULL;
+#ifdef ENABLE_CHECKING
+	      fpset_list_sanity_check (&bb_fpsets[bb_index]);
+#endif
+	    }
+	  else if (!fpset->moved_to_here)
+	    {
+	      /* The link list of the child should be added to the
+		 bb's link list.  */
+
+	      /* If fpset contains an empty link list, nothing has
+		 to be done.  */
+	      if (!fpset->next)
+		{
+		  gcc_assert (!fpset->end);
+		  continue;
+		}
+	      fpset->end->next = bb_fpsets[bb_index].next;
+	      bb_fpsets[bb_index].next = fpset->next;
+	      if (!bb_fpsets[bb_index].end)
+		bb_fpsets[bb_index].end = fpset->end;
+	      fpset->next = fpset->end = NULL;
+#ifdef ENABLE_CHECKING
+	      fpset_list_sanity_check (&bb_fpsets[bb_index]);
+#endif
+	    }
+	}
+    }
+}
+
+/* Choose places to move fp settings. fp settings will be moved
+   to places before insns saved in GLOBAL_INSERTS.  */
+static void
+choose_places (vec<rtx> *global_inserts)
+{
+  basic_block bb;
+  basic_block prologue_bb = single_succ (ENTRY_BLOCK_PTR_FOR_FN (cfun));
+  bool prologue_bb_trans = bb_fpsets[prologue_bb->index].transparent;
+  fpset_needed_in_prologue = false;
+
+  set_bbs_move_to ();
+
+  /* Iterate dominator tree from bottom to top and try to move
+     fp settings upwards.  */
+  calculate_dominance_info (CDI_DOMINATORS);
+  promote_fpset_dom_walker (CDI_DOMINATORS)
+    .walk (cfun->cfg->x_entry_block_ptr);
+  free_dominance_info (CDI_DOMINATORS);
+
+  if (dump_file)
+    {
+      fprintf(dump_file, "\nfpset dump after choose places:\n");
+      FOR_EACH_BB_FN (bb, cfun)
+	dump_bb_fpset (dump_file, &bb_fpsets[bb->index]);
+    }
+
+  calculate_dominance_info (CDI_POST_DOMINATORS);
+  /* Save the places to move fp setting in global_inserts vector.  */
+  FOR_EACH_BB_FN (bb, cfun)
+    {
+      bool postponed_to_prologue = false;
+      struct bb_fpset *fpset = &bb_fpsets[bb->index];
+      /* If a fp setting insn needs to be inserted in a bb equivalent with
+	 prologue bb on dominator tree, and the prologue bb is transparent,
+	 and prologue bb is in the can_move_to set of the target bb, replace
+	 the fp setting insn with "mov sp fp" in prologue. This is to reduce
+	 code size. It will postpone the insertion of move fp setting insn
+	 until prologue generation.  */
+      if (prologue_bb_trans
+	  && (bb == prologue_bb
+	      || (dominated_by_p (CDI_POST_DOMINATORS,
+				  prologue_bb, bb)
+		  && bitmap_bit_p (fpset->can_move_to,
+				   prologue_bb->index))))
+	postponed_to_prologue = true;
+      if (fpset->moved_to_here && !fpset->transparent)
+	{
+	  gcc_assert (fpset->place_to_move);
+	  global_inserts->safe_push (fpset->place_to_move);
+	}
+      else if (fpset->moved_to_here && fpset->transparent
+	       && !fpset->has_orig_upexposed_fpset)
+	{
+	  gcc_assert (fpset->place_to_move);
+	  if (postponed_to_prologue)
+            fpset_needed_in_prologue |= postponed_to_prologue;
+	  else
+	    global_inserts->safe_push (fpset->place_to_move);
+	}
+
+      if (fpset->has_orig_upexposed_fpset)
+	{
+	  if (postponed_to_prologue)
+	    fpset_needed_in_prologue |= postponed_to_prologue;
+	  else
+	    global_inserts->safe_push (fpset->place_for_upexposed_fpset);
+	}
+    }
+  free_dominance_info (CDI_POST_DOMINATORS);
+}
+
+/* Insert frame pointer setting insns before the places specified
+   in LOCAL_INSERTS and GLOBAL_INSERTS.  */
+
+void
+insert_fp_setting (vec<rtx> *local_inserts, vec<rtx> *global_inserts,
+		   vec<rtx> *calls)
+{
+  bool any_insert = false;
+  rtx seq_end, seq_start, dup, insert_before;
+
+  start_sequence ();
+  targetm.set_fp_insn ();
+  seq_start = get_insns ();
+  seq_end = get_last_insn ();
+  end_sequence ();
+
+  if (!seq_start)
+    return;
+
+  while (!local_inserts->is_empty ())
+    {
+      insert_before = local_inserts->pop ();
+      if (dbg_cnt (fpset_insert))
+	{
+	  start_sequence ();
+	  duplicate_insn_chain (seq_start, seq_end);
+	  dup = get_insns ();
+	  end_sequence ();
+	  emit_insn_before (dup, insert_before);
+	  any_insert = true;
+	}
+    }
+
+  while (!global_inserts->is_empty ())
+    {
+      insert_before = global_inserts->pop ();
+      if (dbg_cnt (fpset_insert))
+	{
+	  start_sequence ();
+	  duplicate_insn_chain (seq_start, seq_end);
+	  dup = get_insns ();
+	  end_sequence ();
+	  emit_insn_before (dup, insert_before);
+	  any_insert = true;
+	}
+    }
+
+  /* If there is any fpsetting inserted, add fp use note in every
+     call. This is to avoid DCE to delete fp setting inserted here.  */
+  if (any_insert || fpset_needed_in_prologue)
+    while (!calls->is_empty ())
+      {
+	rtx *call_fusage, call;
+	call = calls->pop();
+	call_fusage = &CALL_INSN_FUNCTION_USAGE (call);
+	use_reg_mode (call_fusage, hard_frame_pointer_rtx,
+		      GET_MODE (hard_frame_pointer_rtx));
+	CALL_INSN_FUNCTION_USAGE (call) = *call_fusage;
+      }
+}
+
+/* FP shrinkwrapping.
+   Initially it is assumed that every call needs a fp setting
+   immediately before it to save the caller's frame address. fp
+   shrinkwrapping will try to promote those fp settings from its
+   original bb to its dominator if it is legal and beneficial.
+   The promotion process is a bottom-up traversal of dominator
+   tree.  */
+
+static void
+move_fp_settings ()
+{
+  /* local_inserts save places to insert local fp settings which
+     could not be promoted outside its original bb. global_inserts
+     save places to insert the rest of fp settings. calls save call
+     insns for which we need to add reg use note.  */
+  vec<rtx> local_inserts, global_inserts, calls;
+
+  local_inserts.create(0);
+  global_inserts.create(0);
+  calls.create(0);
+  bb_fpsets = XNEWVEC (struct bb_fpset, last_basic_block_for_fn (cfun));
+  memset (&bb_fpsets[0], 0,
+	  sizeof (struct bb_fpset) * last_basic_block_for_fn (cfun));
+
+  bb_fpset_local_init (&local_inserts, &calls);
+  choose_places (&global_inserts);
+  insert_fp_setting (&local_inserts, &global_inserts, &calls);
+
+  /* After we insert fp setting and do fp shrinkwrapping, fp will not be
+     invalidated by call implicitly.  */
+  if (frame_pointer_partially_needed)
+    CLEAR_HARD_REG_BIT (regs_invalidated_by_call, HARD_FRAME_POINTER_REGNUM);
+
+  local_inserts.release ();
+  global_inserts.release ();
+  calls.release ();
+  free (bb_fpsets);
+  df_analyze ();
+}
 
 /* Generate the prologue and epilogue RTL if the machine supports it.  Thread
    this into place with notes indicating where the prologue ends and where
@@ -5938,6 +6659,10 @@ thread_prologue_and_epilogue_insns (void)
 #endif
     }
 
+  /* Insert frame pointer setting insns before calls.  */
+  if (frame_pointer_partially_needed)
+    move_fp_settings ();
+
   prologue_seq = NULL_RTX;
 #ifdef HAVE_prologue
   if (HAVE_prologue)
@@ -6031,7 +6756,7 @@ thread_prologue_and_epilogue_insns (void)
       add_to_hard_reg_set (&set_up_by_prologue.set, Pmode,
 			   STACK_POINTER_REGNUM);
       add_to_hard_reg_set (&set_up_by_prologue.set, Pmode, ARG_POINTER_REGNUM);
-      if (frame_pointer_needed)
+      if (frame_pointer_needed || frame_pointer_partially_needed)
 	add_to_hard_reg_set (&set_up_by_prologue.set, Pmode,
 			     HARD_FRAME_POINTER_REGNUM);
       if (pic_offset_table_rtx)

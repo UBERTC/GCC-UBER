@@ -193,7 +193,7 @@ def GetMakefileValue(makefile_name, value_name):
 
 def ValidBuildDirectory(builddir):
   if (not os.path.exists(builddir) or
-      not os.path.exists('%s/Makefile' % builddir)):
+      not os.path.exists('%s/Makefile' % builddir)): 
     return False
   return True
 

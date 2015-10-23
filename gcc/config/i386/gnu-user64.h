@@ -46,6 +46,11 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define SPEC_X32 "mx32"
 #endif
 
+#undef ANDROID_TARGET_CC1_SPEC
+#define ANDROID_TARGET_CC1_SPEC \
+  "%{m32:-mssse3 -fno-short-enums}" \
+  "%{!m32:-msse4.2 -mpopcnt}"
+
 #undef ASM_SPEC
 #define ASM_SPEC "%{" SPEC_32 ":--32} \
  %{" SPEC_64 ":--64} \

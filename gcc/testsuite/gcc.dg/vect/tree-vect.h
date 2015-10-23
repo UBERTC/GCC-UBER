@@ -66,6 +66,8 @@ check_vect (void)
     if (a != 1)
       exit (0);
   }
+#elif defined(__mips)
+  asm volatile ("or.v $w0,$w0,$w0");
 #endif
   signal (SIGILL, SIG_DFL);
 }

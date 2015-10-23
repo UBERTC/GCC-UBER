@@ -1453,7 +1453,24 @@ emit_barrier_after_bb (basic_block bb)
   gcc_assert (current_ir_type () == IR_RTL_CFGRTL
               || current_ir_type () == IR_RTL_CFGLAYOUT);
   if (current_ir_type () == IR_RTL_CFGLAYOUT)
-    BB_FOOTER (bb) = unlink_insn_chain (barrier, barrier);
+    {
+      rtx insn = unlink_insn_chain (barrier, barrier);
+
+      if (BB_FOOTER (bb))
+        { 
+          rtx footer_tail = BB_FOOTER (bb);
+
+          while (NEXT_INSN (footer_tail))
+            footer_tail = NEXT_INSN (footer_tail);
+          if (!BARRIER_P (footer_tail))
+            {
+              NEXT_INSN (footer_tail) = insn;
+              PREV_INSN (insn) = footer_tail;
+            }
+        }
+      else
+        BB_FOOTER (bb) = insn;
+    }
 }
 
 /* Like force_nonfallthru below, but additionally performs redirection
@@ -1761,6 +1778,22 @@ rtl_tidy_fallthru_edge (edge e)
       && (any_uncondjump_p (q)
 	  || single_succ_p (b)))
     {
+      rtx label, table;
+
+      if (tablejump_p (q, &label, &table))
+	{
+	  /* The label is likely mentioned in some instruction before
+	     the tablejump and might not be DCEd, so turn it into
+	     a note instead and move before the tablejump that is going to
+	     be deleted.  */
+	  const char *name = LABEL_NAME (label);
+	  PUT_CODE (label, NOTE);
+	  NOTE_KIND (label) = NOTE_INSN_DELETED_LABEL;
+	  NOTE_DELETED_LABEL_NAME (label) = name;
+	  reorder_insns (label, label, PREV_INSN (q));
+	  delete_insn (table);
+	}
+
 #ifdef HAVE_cc0
       /* If this was a conditional jump, we need to also delete
 	 the insn that set cc0.  */
@@ -2480,7 +2513,8 @@ rtl_verify_edges (void)
 			    | EDGE_IRREDUCIBLE_LOOP
 			    | EDGE_LOOP_EXIT
 			    | EDGE_CROSSING
-			    | EDGE_PRESERVE)) == 0)
+			    | EDGE_PRESERVE
+			    | EDGE_PREDICTED_BY_EXPECT)) == 0)
 	    n_branch++;
 
 	  if (e->flags & EDGE_ABNORMAL_CALL)

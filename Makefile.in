@@ -224,9 +224,6 @@ HOST_EXPORTS = \
 	CLOOGINC="$(HOST_CLOOGINC)"; export CLOOGINC; \
 	LIBELFLIBS="$(HOST_LIBELFLIBS)" ; export LIBELFLIBS; \
 	LIBELFINC="$(HOST_LIBELFINC)" ; export LIBELFINC; \
-@if gcc-bootstrap
-	$(RPATH_ENVVAR)=`echo "$(TARGET_LIB_PATH)$$$(RPATH_ENVVAR)" | sed 's,::*,:,g;s,^:*,,;s,:*$$,,'`; export $(RPATH_ENVVAR); \
-@endif gcc-bootstrap
 	$(RPATH_ENVVAR)=`echo "$(HOST_LIB_PATH)$$$(RPATH_ENVVAR)" | sed 's,::*,:,g;s,^:*,,;s,:*$$,,'`; export $(RPATH_ENVVAR);
 
 POSTSTAGE1_CXX_EXPORT = \
@@ -290,9 +287,6 @@ BASE_TARGET_EXPORTS = \
 	STRIP="$(STRIP_FOR_TARGET)"; export STRIP; \
 	WINDRES="$(WINDRES_FOR_TARGET)"; export WINDRES; \
 	WINDMC="$(WINDMC_FOR_TARGET)"; export WINDMC; \
-@if gcc-bootstrap
-	$(RPATH_ENVVAR)=`echo "$(TARGET_LIB_PATH)$$$(RPATH_ENVVAR)" | sed 's,::*,:,g;s,^:*,,;s,:*$$,,'`; export $(RPATH_ENVVAR); \
-@endif gcc-bootstrap
 	$(RPATH_ENVVAR)=`echo "$(HOST_LIB_PATH)$$$(RPATH_ENVVAR)" | sed 's,::*,:,g;s,^:*,,;s,:*$$,,'`; export $(RPATH_ENVVAR); \
 	TARGET_CONFIGDIRS="$(TARGET_CONFIGDIRS)"; export TARGET_CONFIGDIRS;
 
@@ -925,7 +919,8 @@ configure-host:  \
     maybe-configure-libtermcap \
     maybe-configure-utils \
     maybe-configure-gnattools \
-    maybe-configure-lto-plugin
+    maybe-configure-lto-plugin \
+    maybe-configure-function_reordering_plugin
 .PHONY: configure-target
 configure-target:  \
     maybe-configure-target-libstdc++-v3 \
@@ -1075,6 +1070,9 @@ all-host: maybe-all-gnattools
 @if lto-plugin-no-bootstrap
 all-host: maybe-all-lto-plugin
 @endif lto-plugin-no-bootstrap
+@if function_reordering_plugin-no-bootstrap
+all-host: maybe-all-function_reordering_plugin
+@endif function_reordering_plugin-no-bootstrap
 
 .PHONY: all-target
 
@@ -1173,6 +1171,7 @@ info-host: maybe-info-libtermcap
 info-host: maybe-info-utils
 info-host: maybe-info-gnattools
 info-host: maybe-info-lto-plugin
+info-host: maybe-info-function_reordering_plugin
 
 .PHONY: info-target
 
@@ -1256,6 +1255,7 @@ dvi-host: maybe-dvi-libtermcap
 dvi-host: maybe-dvi-utils
 dvi-host: maybe-dvi-gnattools
 dvi-host: maybe-dvi-lto-plugin
+dvi-host: maybe-dvi-function_reordering_plugin
 
 .PHONY: dvi-target
 
@@ -1339,6 +1339,7 @@ pdf-host: maybe-pdf-libtermcap
 pdf-host: maybe-pdf-utils
 pdf-host: maybe-pdf-gnattools
 pdf-host: maybe-pdf-lto-plugin
+pdf-host: maybe-pdf-function_reordering_plugin
 
 .PHONY: pdf-target
 
@@ -1422,6 +1423,7 @@ html-host: maybe-html-libtermcap
 html-host: maybe-html-utils
 html-host: maybe-html-gnattools
 html-host: maybe-html-lto-plugin
+html-host: maybe-html-function_reordering_plugin
 
 .PHONY: html-target
 
@@ -1505,6 +1507,7 @@ TAGS-host: maybe-TAGS-libtermcap
 TAGS-host: maybe-TAGS-utils
 TAGS-host: maybe-TAGS-gnattools
 TAGS-host: maybe-TAGS-lto-plugin
+TAGS-host: maybe-TAGS-function_reordering_plugin
 
 .PHONY: TAGS-target
 
@@ -1588,6 +1591,7 @@ install-info-host: maybe-install-info-libtermcap
 install-info-host: maybe-install-info-utils
 install-info-host: maybe-install-info-gnattools
 install-info-host: maybe-install-info-lto-plugin
+install-info-host: maybe-install-info-function_reordering_plugin
 
 .PHONY: install-info-target
 
@@ -1671,6 +1675,7 @@ install-pdf-host: maybe-install-pdf-libtermcap
 install-pdf-host: maybe-install-pdf-utils
 install-pdf-host: maybe-install-pdf-gnattools
 install-pdf-host: maybe-install-pdf-lto-plugin
+install-pdf-host: maybe-install-pdf-function_reordering_plugin
 
 .PHONY: install-pdf-target
 
@@ -1754,6 +1759,7 @@ install-html-host: maybe-install-html-libtermcap
 install-html-host: maybe-install-html-utils
 install-html-host: maybe-install-html-gnattools
 install-html-host: maybe-install-html-lto-plugin
+install-html-host: maybe-install-html-function_reordering_plugin
 
 .PHONY: install-html-target
 
@@ -1837,6 +1843,7 @@ installcheck-host: maybe-installcheck-libtermcap
 installcheck-host: maybe-installcheck-utils
 installcheck-host: maybe-installcheck-gnattools
 installcheck-host: maybe-installcheck-lto-plugin
+installcheck-host: maybe-installcheck-function_reordering_plugin
 
 .PHONY: installcheck-target
 
@@ -1920,6 +1927,7 @@ mostlyclean-host: maybe-mostlyclean-libtermcap
 mostlyclean-host: maybe-mostlyclean-utils
 mostlyclean-host: maybe-mostlyclean-gnattools
 mostlyclean-host: maybe-mostlyclean-lto-plugin
+mostlyclean-host: maybe-mostlyclean-function_reordering_plugin
 
 .PHONY: mostlyclean-target
 
@@ -2003,6 +2011,7 @@ clean-host: maybe-clean-libtermcap
 clean-host: maybe-clean-utils
 clean-host: maybe-clean-gnattools
 clean-host: maybe-clean-lto-plugin
+clean-host: maybe-clean-function_reordering_plugin
 
 .PHONY: clean-target
 
@@ -2086,6 +2095,7 @@ distclean-host: maybe-distclean-libtermcap
 distclean-host: maybe-distclean-utils
 distclean-host: maybe-distclean-gnattools
 distclean-host: maybe-distclean-lto-plugin
+distclean-host: maybe-distclean-function_reordering_plugin
 
 .PHONY: distclean-target
 
@@ -2169,6 +2179,7 @@ maintainer-clean-host: maybe-maintainer-clean-libtermcap
 maintainer-clean-host: maybe-maintainer-clean-utils
 maintainer-clean-host: maybe-maintainer-clean-gnattools
 maintainer-clean-host: maybe-maintainer-clean-lto-plugin
+maintainer-clean-host: maybe-maintainer-clean-function_reordering_plugin
 
 .PHONY: maintainer-clean-target
 
@@ -2306,7 +2317,8 @@ check-host:  \
     maybe-check-libtermcap \
     maybe-check-utils \
     maybe-check-gnattools \
-    maybe-check-lto-plugin
+    maybe-check-lto-plugin \
+    maybe-check-function_reordering_plugin
 
 .PHONY: check-target
 check-target:  \
@@ -2415,7 +2427,8 @@ install-host-nogcc:  \
     maybe-install-libtermcap \
     maybe-install-utils \
     maybe-install-gnattools \
-    maybe-install-lto-plugin
+    maybe-install-lto-plugin \
+    maybe-install-function_reordering_plugin
 
 .PHONY: install-host
 install-host:  \
@@ -2462,7 +2475,8 @@ install-host:  \
     maybe-install-libtermcap \
     maybe-install-utils \
     maybe-install-gnattools \
-    maybe-install-lto-plugin
+    maybe-install-lto-plugin \
+    maybe-install-function_reordering_plugin
 
 .PHONY: install-target
 install-target:  \
@@ -2565,7 +2579,8 @@ install-strip-host:  \
     maybe-install-strip-libtermcap \
     maybe-install-strip-utils \
     maybe-install-strip-gnattools \
-    maybe-install-strip-lto-plugin
+    maybe-install-strip-lto-plugin \
+    maybe-install-strip-function_reordering_plugin
 
 .PHONY: install-strip-target
 install-strip-target:  \
@@ -31201,6 +31216,884 @@ maintainer-clean-lto-plugin:
 
 
 
+.PHONY: configure-function_reordering_plugin maybe-configure-function_reordering_plugin
+maybe-configure-function_reordering_plugin:
+@if gcc-bootstrap
+configure-function_reordering_plugin: stage_current
+@endif gcc-bootstrap
+@if function_reordering_plugin
+maybe-configure-function_reordering_plugin: configure-function_reordering_plugin
+configure-function_reordering_plugin: 
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	test ! -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile || exit 0; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin ; \
+	$(HOST_EXPORTS)  \
+	echo Configuring in $(HOST_SUBDIR)/function_reordering_plugin; \
+	cd "$(HOST_SUBDIR)/function_reordering_plugin" || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(HOST_SUBDIR)/function_reordering_plugin/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	srcdiroption="--srcdir=$${topdir}/function_reordering_plugin"; \
+	libsrcdir="$$s/function_reordering_plugin"; \
+	$(SHELL) $${libsrcdir}/configure \
+	  $(HOST_CONFIGARGS) --build=${build_alias} --host=${host_alias} \
+	  --target=${target_alias} $${srcdiroption} --enable-shared \
+	  || exit 1
+@endif function_reordering_plugin
+
+
+
+.PHONY: configure-stage1-function_reordering_plugin maybe-configure-stage1-function_reordering_plugin
+maybe-configure-stage1-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-configure-stage1-function_reordering_plugin: configure-stage1-function_reordering_plugin
+configure-stage1-function_reordering_plugin:
+	@[ $(current_stage) = stage1 ] || $(MAKE) stage1-start
+	@$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGE1_TFLAGS)"; \
+	test ! -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile || exit 0; \
+	$(HOST_EXPORTS) \
+	CFLAGS="$(STAGE1_CFLAGS)"; export CFLAGS; \
+	CXXFLAGS="$(STAGE1_CXXFLAGS)"; export CXXFLAGS; \
+	LIBCFLAGS="$(LIBCFLAGS)"; export LIBCFLAGS;  \
+	echo Configuring stage 1 in $(HOST_SUBDIR)/function_reordering_plugin ; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin ; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(HOST_SUBDIR)/function_reordering_plugin/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	srcdiroption="--srcdir=$${topdir}/function_reordering_plugin"; \
+	libsrcdir="$$s/function_reordering_plugin"; \
+	$(SHELL) $${libsrcdir}/configure \
+	  $(HOST_CONFIGARGS) --build=${build_alias} --host=${host_alias} \
+	  --target=${target_alias} $${srcdiroption} \
+	  $(STAGE1_CONFIGURE_FLAGS) \
+	  --enable-shared
+@endif function_reordering_plugin-bootstrap
+
+.PHONY: configure-stage2-function_reordering_plugin maybe-configure-stage2-function_reordering_plugin
+maybe-configure-stage2-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-configure-stage2-function_reordering_plugin: configure-stage2-function_reordering_plugin
+configure-stage2-function_reordering_plugin:
+	@[ $(current_stage) = stage2 ] || $(MAKE) stage2-start
+	@$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGE2_TFLAGS)"; \
+	test ! -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile || exit 0; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS) \
+	CFLAGS="$(STAGE2_CFLAGS)"; export CFLAGS; \
+	CXXFLAGS="$(STAGE2_CXXFLAGS)"; export CXXFLAGS; \
+	LIBCFLAGS="$(STAGE2_CFLAGS)"; export LIBCFLAGS;  \
+	echo Configuring stage 2 in $(HOST_SUBDIR)/function_reordering_plugin ; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin ; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(HOST_SUBDIR)/function_reordering_plugin/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	srcdiroption="--srcdir=$${topdir}/function_reordering_plugin"; \
+	libsrcdir="$$s/function_reordering_plugin"; \
+	$(SHELL) $${libsrcdir}/configure \
+	  $(HOST_CONFIGARGS) --build=${build_alias} --host=${host_alias} \
+	  --target=${target_alias} $${srcdiroption} \
+	  --with-build-libsubdir=$(HOST_SUBDIR) \
+	  $(STAGE2_CONFIGURE_FLAGS) \
+	  --enable-shared
+@endif function_reordering_plugin-bootstrap
+
+.PHONY: configure-stage3-function_reordering_plugin maybe-configure-stage3-function_reordering_plugin
+maybe-configure-stage3-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-configure-stage3-function_reordering_plugin: configure-stage3-function_reordering_plugin
+configure-stage3-function_reordering_plugin:
+	@[ $(current_stage) = stage3 ] || $(MAKE) stage3-start
+	@$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGE3_TFLAGS)"; \
+	test ! -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile || exit 0; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS) \
+	CFLAGS="$(STAGE3_CFLAGS)"; export CFLAGS; \
+	CXXFLAGS="$(STAGE3_CXXFLAGS)"; export CXXFLAGS; \
+	LIBCFLAGS="$(STAGE3_CFLAGS)"; export LIBCFLAGS;  \
+	echo Configuring stage 3 in $(HOST_SUBDIR)/function_reordering_plugin ; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin ; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(HOST_SUBDIR)/function_reordering_plugin/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	srcdiroption="--srcdir=$${topdir}/function_reordering_plugin"; \
+	libsrcdir="$$s/function_reordering_plugin"; \
+	$(SHELL) $${libsrcdir}/configure \
+	  $(HOST_CONFIGARGS) --build=${build_alias} --host=${host_alias} \
+	  --target=${target_alias} $${srcdiroption} \
+	  --with-build-libsubdir=$(HOST_SUBDIR) \
+	  $(STAGE3_CONFIGURE_FLAGS) \
+	  --enable-shared
+@endif function_reordering_plugin-bootstrap
+
+.PHONY: configure-stage4-function_reordering_plugin maybe-configure-stage4-function_reordering_plugin
+maybe-configure-stage4-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-configure-stage4-function_reordering_plugin: configure-stage4-function_reordering_plugin
+configure-stage4-function_reordering_plugin:
+	@[ $(current_stage) = stage4 ] || $(MAKE) stage4-start
+	@$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGE4_TFLAGS)"; \
+	test ! -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile || exit 0; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS) \
+	CFLAGS="$(STAGE4_CFLAGS)"; export CFLAGS; \
+	CXXFLAGS="$(STAGE4_CXXFLAGS)"; export CXXFLAGS; \
+	LIBCFLAGS="$(STAGE4_CFLAGS)"; export LIBCFLAGS;  \
+	echo Configuring stage 4 in $(HOST_SUBDIR)/function_reordering_plugin ; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin ; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(HOST_SUBDIR)/function_reordering_plugin/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	srcdiroption="--srcdir=$${topdir}/function_reordering_plugin"; \
+	libsrcdir="$$s/function_reordering_plugin"; \
+	$(SHELL) $${libsrcdir}/configure \
+	  $(HOST_CONFIGARGS) --build=${build_alias} --host=${host_alias} \
+	  --target=${target_alias} $${srcdiroption} \
+	  --with-build-libsubdir=$(HOST_SUBDIR) \
+	  $(STAGE4_CONFIGURE_FLAGS) \
+	  --enable-shared
+@endif function_reordering_plugin-bootstrap
+
+.PHONY: configure-stageprofile-function_reordering_plugin maybe-configure-stageprofile-function_reordering_plugin
+maybe-configure-stageprofile-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-configure-stageprofile-function_reordering_plugin: configure-stageprofile-function_reordering_plugin
+configure-stageprofile-function_reordering_plugin:
+	@[ $(current_stage) = stageprofile ] || $(MAKE) stageprofile-start
+	@$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGEprofile_TFLAGS)"; \
+	test ! -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile || exit 0; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS) \
+	CFLAGS="$(STAGEprofile_CFLAGS)"; export CFLAGS; \
+	CXXFLAGS="$(STAGEprofile_CXXFLAGS)"; export CXXFLAGS; \
+	LIBCFLAGS="$(STAGEprofile_CFLAGS)"; export LIBCFLAGS;  \
+	echo Configuring stage profile in $(HOST_SUBDIR)/function_reordering_plugin ; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin ; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(HOST_SUBDIR)/function_reordering_plugin/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	srcdiroption="--srcdir=$${topdir}/function_reordering_plugin"; \
+	libsrcdir="$$s/function_reordering_plugin"; \
+	$(SHELL) $${libsrcdir}/configure \
+	  $(HOST_CONFIGARGS) --build=${build_alias} --host=${host_alias} \
+	  --target=${target_alias} $${srcdiroption} \
+	  --with-build-libsubdir=$(HOST_SUBDIR) \
+	  $(STAGEprofile_CONFIGURE_FLAGS) \
+	  --enable-shared
+@endif function_reordering_plugin-bootstrap
+
+.PHONY: configure-stagefeedback-function_reordering_plugin maybe-configure-stagefeedback-function_reordering_plugin
+maybe-configure-stagefeedback-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-configure-stagefeedback-function_reordering_plugin: configure-stagefeedback-function_reordering_plugin
+configure-stagefeedback-function_reordering_plugin:
+	@[ $(current_stage) = stagefeedback ] || $(MAKE) stagefeedback-start
+	@$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGEfeedback_TFLAGS)"; \
+	test ! -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile || exit 0; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS) \
+	CFLAGS="$(STAGEfeedback_CFLAGS)"; export CFLAGS; \
+	CXXFLAGS="$(STAGEfeedback_CXXFLAGS)"; export CXXFLAGS; \
+	LIBCFLAGS="$(STAGEfeedback_CFLAGS)"; export LIBCFLAGS;  \
+	echo Configuring stage feedback in $(HOST_SUBDIR)/function_reordering_plugin ; \
+	$(SHELL) $(srcdir)/mkinstalldirs $(HOST_SUBDIR)/function_reordering_plugin ; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin || exit 1; \
+	case $(srcdir) in \
+	  /* | [A-Za-z]:[\\/]*) topdir=$(srcdir) ;; \
+	  *) topdir=`echo $(HOST_SUBDIR)/function_reordering_plugin/ | \
+		sed -e 's,\./,,g' -e 's,[^/]*/,../,g' `$(srcdir) ;; \
+	esac; \
+	srcdiroption="--srcdir=$${topdir}/function_reordering_plugin"; \
+	libsrcdir="$$s/function_reordering_plugin"; \
+	$(SHELL) $${libsrcdir}/configure \
+	  $(HOST_CONFIGARGS) --build=${build_alias} --host=${host_alias} \
+	  --target=${target_alias} $${srcdiroption} \
+	  --with-build-libsubdir=$(HOST_SUBDIR) \
+	  $(STAGEfeedback_CONFIGURE_FLAGS) \
+	  --enable-shared
+@endif function_reordering_plugin-bootstrap
+
+
+
+
+
+.PHONY: all-function_reordering_plugin maybe-all-function_reordering_plugin
+maybe-all-function_reordering_plugin:
+@if gcc-bootstrap
+all-function_reordering_plugin: stage_current
+@endif gcc-bootstrap
+@if function_reordering_plugin
+TARGET-function_reordering_plugin=all
+maybe-all-function_reordering_plugin: all-function_reordering_plugin
+all-function_reordering_plugin: configure-function_reordering_plugin
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS)  \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) $(EXTRA_HOST_FLAGS) $(STAGE1_FLAGS_TO_PASS)  \
+		$(TARGET-function_reordering_plugin))
+@endif function_reordering_plugin
+
+
+
+.PHONY: all-stage1-function_reordering_plugin maybe-all-stage1-function_reordering_plugin
+.PHONY: clean-stage1-function_reordering_plugin maybe-clean-stage1-function_reordering_plugin
+maybe-all-stage1-function_reordering_plugin:
+maybe-clean-stage1-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-all-stage1-function_reordering_plugin: all-stage1-function_reordering_plugin
+all-stage1: all-stage1-function_reordering_plugin
+TARGET-stage1-function_reordering_plugin = $(TARGET-function_reordering_plugin)
+all-stage1-function_reordering_plugin: configure-stage1-function_reordering_plugin
+	@[ $(current_stage) = stage1 ] || $(MAKE) stage1-start
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGE1_TFLAGS)"; \
+	$(HOST_EXPORTS)  \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(BASE_FLAGS_TO_PASS) \
+		CFLAGS="$(STAGE1_CFLAGS)" \
+		CXXFLAGS="$(STAGE1_CXXFLAGS)" \
+		LIBCFLAGS="$(LIBCFLAGS)" \
+		CFLAGS_FOR_TARGET="$(CFLAGS_FOR_TARGET)" \
+		CXXFLAGS_FOR_TARGET="$(CXXFLAGS_FOR_TARGET)" \
+		LIBCFLAGS_FOR_TARGET="$(LIBCFLAGS_FOR_TARGET)" \
+		$(EXTRA_HOST_FLAGS)  \
+		$(STAGE1_FLAGS_TO_PASS)  \
+		TFLAGS="$(STAGE1_TFLAGS)" \
+		$(TARGET-stage1-function_reordering_plugin)
+
+maybe-clean-stage1-function_reordering_plugin: clean-stage1-function_reordering_plugin
+clean-stage1: clean-stage1-function_reordering_plugin
+clean-stage1-function_reordering_plugin:
+	@if [ $(current_stage) = stage1 ]; then \
+	  [ -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile ] || exit 0; \
+	else \
+	  [ -f $(HOST_SUBDIR)/stage1-function_reordering_plugin/Makefile ] || exit 0; \
+	  $(MAKE) stage1-start; \
+	fi; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(EXTRA_HOST_FLAGS)  \
+	$(STAGE1_FLAGS_TO_PASS)  clean
+@endif function_reordering_plugin-bootstrap
+
+
+.PHONY: all-stage2-function_reordering_plugin maybe-all-stage2-function_reordering_plugin
+.PHONY: clean-stage2-function_reordering_plugin maybe-clean-stage2-function_reordering_plugin
+maybe-all-stage2-function_reordering_plugin:
+maybe-clean-stage2-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-all-stage2-function_reordering_plugin: all-stage2-function_reordering_plugin
+all-stage2: all-stage2-function_reordering_plugin
+TARGET-stage2-function_reordering_plugin = $(TARGET-function_reordering_plugin)
+all-stage2-function_reordering_plugin: configure-stage2-function_reordering_plugin
+	@[ $(current_stage) = stage2 ] || $(MAKE) stage2-start
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGE2_TFLAGS)"; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS)  \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(BASE_FLAGS_TO_PASS) \
+		CFLAGS="$(STAGE2_CFLAGS)" \
+		CXXFLAGS="$(STAGE2_CXXFLAGS)" \
+		LIBCFLAGS="$(STAGE2_CFLAGS)" \
+		CFLAGS_FOR_TARGET="$(CFLAGS_FOR_TARGET)" \
+		CXXFLAGS_FOR_TARGET="$(CXXFLAGS_FOR_TARGET)" \
+		LIBCFLAGS_FOR_TARGET="$(LIBCFLAGS_FOR_TARGET)" \
+		$(EXTRA_HOST_FLAGS) $(POSTSTAGE1_FLAGS_TO_PASS)  \
+		TFLAGS="$(STAGE2_TFLAGS)" \
+		$(TARGET-stage2-function_reordering_plugin)
+
+maybe-clean-stage2-function_reordering_plugin: clean-stage2-function_reordering_plugin
+clean-stage2: clean-stage2-function_reordering_plugin
+clean-stage2-function_reordering_plugin:
+	@if [ $(current_stage) = stage2 ]; then \
+	  [ -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile ] || exit 0; \
+	else \
+	  [ -f $(HOST_SUBDIR)/stage2-function_reordering_plugin/Makefile ] || exit 0; \
+	  $(MAKE) stage2-start; \
+	fi; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(EXTRA_HOST_FLAGS) $(POSTSTAGE1_FLAGS_TO_PASS)  clean
+@endif function_reordering_plugin-bootstrap
+
+
+.PHONY: all-stage3-function_reordering_plugin maybe-all-stage3-function_reordering_plugin
+.PHONY: clean-stage3-function_reordering_plugin maybe-clean-stage3-function_reordering_plugin
+maybe-all-stage3-function_reordering_plugin:
+maybe-clean-stage3-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-all-stage3-function_reordering_plugin: all-stage3-function_reordering_plugin
+all-stage3: all-stage3-function_reordering_plugin
+TARGET-stage3-function_reordering_plugin = $(TARGET-function_reordering_plugin)
+all-stage3-function_reordering_plugin: configure-stage3-function_reordering_plugin
+	@[ $(current_stage) = stage3 ] || $(MAKE) stage3-start
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGE3_TFLAGS)"; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS)  \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(BASE_FLAGS_TO_PASS) \
+		CFLAGS="$(STAGE3_CFLAGS)" \
+		CXXFLAGS="$(STAGE3_CXXFLAGS)" \
+		LIBCFLAGS="$(STAGE3_CFLAGS)" \
+		CFLAGS_FOR_TARGET="$(CFLAGS_FOR_TARGET)" \
+		CXXFLAGS_FOR_TARGET="$(CXXFLAGS_FOR_TARGET)" \
+		LIBCFLAGS_FOR_TARGET="$(LIBCFLAGS_FOR_TARGET)" \
+		$(EXTRA_HOST_FLAGS) $(POSTSTAGE1_FLAGS_TO_PASS)  \
+		TFLAGS="$(STAGE3_TFLAGS)" \
+		$(TARGET-stage3-function_reordering_plugin)
+
+maybe-clean-stage3-function_reordering_plugin: clean-stage3-function_reordering_plugin
+clean-stage3: clean-stage3-function_reordering_plugin
+clean-stage3-function_reordering_plugin:
+	@if [ $(current_stage) = stage3 ]; then \
+	  [ -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile ] || exit 0; \
+	else \
+	  [ -f $(HOST_SUBDIR)/stage3-function_reordering_plugin/Makefile ] || exit 0; \
+	  $(MAKE) stage3-start; \
+	fi; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(EXTRA_HOST_FLAGS) $(POSTSTAGE1_FLAGS_TO_PASS)  clean
+@endif function_reordering_plugin-bootstrap
+
+
+.PHONY: all-stage4-function_reordering_plugin maybe-all-stage4-function_reordering_plugin
+.PHONY: clean-stage4-function_reordering_plugin maybe-clean-stage4-function_reordering_plugin
+maybe-all-stage4-function_reordering_plugin:
+maybe-clean-stage4-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-all-stage4-function_reordering_plugin: all-stage4-function_reordering_plugin
+all-stage4: all-stage4-function_reordering_plugin
+TARGET-stage4-function_reordering_plugin = $(TARGET-function_reordering_plugin)
+all-stage4-function_reordering_plugin: configure-stage4-function_reordering_plugin
+	@[ $(current_stage) = stage4 ] || $(MAKE) stage4-start
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGE4_TFLAGS)"; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS)  \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(BASE_FLAGS_TO_PASS) \
+		CFLAGS="$(STAGE4_CFLAGS)" \
+		CXXFLAGS="$(STAGE4_CXXFLAGS)" \
+		LIBCFLAGS="$(STAGE4_CFLAGS)" \
+		CFLAGS_FOR_TARGET="$(CFLAGS_FOR_TARGET)" \
+		CXXFLAGS_FOR_TARGET="$(CXXFLAGS_FOR_TARGET)" \
+		LIBCFLAGS_FOR_TARGET="$(LIBCFLAGS_FOR_TARGET)" \
+		$(EXTRA_HOST_FLAGS) $(POSTSTAGE1_FLAGS_TO_PASS)  \
+		TFLAGS="$(STAGE4_TFLAGS)" \
+		$(TARGET-stage4-function_reordering_plugin)
+
+maybe-clean-stage4-function_reordering_plugin: clean-stage4-function_reordering_plugin
+clean-stage4: clean-stage4-function_reordering_plugin
+clean-stage4-function_reordering_plugin:
+	@if [ $(current_stage) = stage4 ]; then \
+	  [ -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile ] || exit 0; \
+	else \
+	  [ -f $(HOST_SUBDIR)/stage4-function_reordering_plugin/Makefile ] || exit 0; \
+	  $(MAKE) stage4-start; \
+	fi; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(EXTRA_HOST_FLAGS) $(POSTSTAGE1_FLAGS_TO_PASS)  clean
+@endif function_reordering_plugin-bootstrap
+
+
+.PHONY: all-stageprofile-function_reordering_plugin maybe-all-stageprofile-function_reordering_plugin
+.PHONY: clean-stageprofile-function_reordering_plugin maybe-clean-stageprofile-function_reordering_plugin
+maybe-all-stageprofile-function_reordering_plugin:
+maybe-clean-stageprofile-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-all-stageprofile-function_reordering_plugin: all-stageprofile-function_reordering_plugin
+all-stageprofile: all-stageprofile-function_reordering_plugin
+TARGET-stageprofile-function_reordering_plugin = $(TARGET-function_reordering_plugin)
+all-stageprofile-function_reordering_plugin: configure-stageprofile-function_reordering_plugin
+	@[ $(current_stage) = stageprofile ] || $(MAKE) stageprofile-start
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGEprofile_TFLAGS)"; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS)  \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(BASE_FLAGS_TO_PASS) \
+		CFLAGS="$(STAGEprofile_CFLAGS)" \
+		CXXFLAGS="$(STAGEprofile_CXXFLAGS)" \
+		LIBCFLAGS="$(STAGEprofile_CFLAGS)" \
+		CFLAGS_FOR_TARGET="$(CFLAGS_FOR_TARGET)" \
+		CXXFLAGS_FOR_TARGET="$(CXXFLAGS_FOR_TARGET)" \
+		LIBCFLAGS_FOR_TARGET="$(LIBCFLAGS_FOR_TARGET)" \
+		$(EXTRA_HOST_FLAGS) $(POSTSTAGE1_FLAGS_TO_PASS)  \
+		TFLAGS="$(STAGEprofile_TFLAGS)" \
+		$(TARGET-stageprofile-function_reordering_plugin)
+
+maybe-clean-stageprofile-function_reordering_plugin: clean-stageprofile-function_reordering_plugin
+clean-stageprofile: clean-stageprofile-function_reordering_plugin
+clean-stageprofile-function_reordering_plugin:
+	@if [ $(current_stage) = stageprofile ]; then \
+	  [ -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile ] || exit 0; \
+	else \
+	  [ -f $(HOST_SUBDIR)/stageprofile-function_reordering_plugin/Makefile ] || exit 0; \
+	  $(MAKE) stageprofile-start; \
+	fi; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(EXTRA_HOST_FLAGS) $(POSTSTAGE1_FLAGS_TO_PASS)  clean
+@endif function_reordering_plugin-bootstrap
+
+
+.PHONY: all-stagefeedback-function_reordering_plugin maybe-all-stagefeedback-function_reordering_plugin
+.PHONY: clean-stagefeedback-function_reordering_plugin maybe-clean-stagefeedback-function_reordering_plugin
+maybe-all-stagefeedback-function_reordering_plugin:
+maybe-clean-stagefeedback-function_reordering_plugin:
+@if function_reordering_plugin-bootstrap
+maybe-all-stagefeedback-function_reordering_plugin: all-stagefeedback-function_reordering_plugin
+all-stagefeedback: all-stagefeedback-function_reordering_plugin
+TARGET-stagefeedback-function_reordering_plugin = $(TARGET-function_reordering_plugin)
+all-stagefeedback-function_reordering_plugin: configure-stagefeedback-function_reordering_plugin
+	@[ $(current_stage) = stagefeedback ] || $(MAKE) stagefeedback-start
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	TFLAGS="$(STAGEfeedback_TFLAGS)"; \
+	$(HOST_EXPORTS) \
+	$(POSTSTAGE1_HOST_EXPORTS)  \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(BASE_FLAGS_TO_PASS) \
+		CFLAGS="$(STAGEfeedback_CFLAGS)" \
+		CXXFLAGS="$(STAGEfeedback_CXXFLAGS)" \
+		LIBCFLAGS="$(STAGEfeedback_CFLAGS)" \
+		CFLAGS_FOR_TARGET="$(CFLAGS_FOR_TARGET)" \
+		CXXFLAGS_FOR_TARGET="$(CXXFLAGS_FOR_TARGET)" \
+		LIBCFLAGS_FOR_TARGET="$(LIBCFLAGS_FOR_TARGET)" \
+		$(EXTRA_HOST_FLAGS) $(POSTSTAGE1_FLAGS_TO_PASS)  \
+		TFLAGS="$(STAGEfeedback_TFLAGS)" \
+		$(TARGET-stagefeedback-function_reordering_plugin)
+
+maybe-clean-stagefeedback-function_reordering_plugin: clean-stagefeedback-function_reordering_plugin
+clean-stagefeedback: clean-stagefeedback-function_reordering_plugin
+clean-stagefeedback-function_reordering_plugin:
+	@if [ $(current_stage) = stagefeedback ]; then \
+	  [ -f $(HOST_SUBDIR)/function_reordering_plugin/Makefile ] || exit 0; \
+	else \
+	  [ -f $(HOST_SUBDIR)/stagefeedback-function_reordering_plugin/Makefile ] || exit 0; \
+	  $(MAKE) stagefeedback-start; \
+	fi; \
+	cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	$(MAKE) $(EXTRA_HOST_FLAGS) $(POSTSTAGE1_FLAGS_TO_PASS)  clean
+@endif function_reordering_plugin-bootstrap
+
+
+
+
+
+.PHONY: check-function_reordering_plugin maybe-check-function_reordering_plugin
+maybe-check-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-check-function_reordering_plugin: check-function_reordering_plugin
+
+check-function_reordering_plugin:
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(FLAGS_TO_PASS)  check)
+
+@endif function_reordering_plugin
+
+.PHONY: install-function_reordering_plugin maybe-install-function_reordering_plugin
+maybe-install-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-install-function_reordering_plugin: install-function_reordering_plugin
+
+install-function_reordering_plugin: installdirs
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(FLAGS_TO_PASS)  install)
+
+@endif function_reordering_plugin
+
+.PHONY: install-strip-function_reordering_plugin maybe-install-strip-function_reordering_plugin
+maybe-install-strip-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-install-strip-function_reordering_plugin: install-strip-function_reordering_plugin
+
+install-strip-function_reordering_plugin: installdirs
+	@: $(MAKE); $(unstage)
+	@r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(FLAGS_TO_PASS)  install-strip)
+
+@endif function_reordering_plugin
+
+# Other targets (info, dvi, pdf, etc.)
+
+.PHONY: maybe-info-function_reordering_plugin info-function_reordering_plugin
+maybe-info-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-info-function_reordering_plugin: info-function_reordering_plugin
+
+info-function_reordering_plugin: \
+    configure-function_reordering_plugin 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing info in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          info) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-dvi-function_reordering_plugin dvi-function_reordering_plugin
+maybe-dvi-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-dvi-function_reordering_plugin: dvi-function_reordering_plugin
+
+dvi-function_reordering_plugin: \
+    configure-function_reordering_plugin 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing dvi in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          dvi) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-pdf-function_reordering_plugin pdf-function_reordering_plugin
+maybe-pdf-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-pdf-function_reordering_plugin: pdf-function_reordering_plugin
+
+pdf-function_reordering_plugin: \
+    configure-function_reordering_plugin 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing pdf in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          pdf) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-html-function_reordering_plugin html-function_reordering_plugin
+maybe-html-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-html-function_reordering_plugin: html-function_reordering_plugin
+
+html-function_reordering_plugin: \
+    configure-function_reordering_plugin 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing html in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          html) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-TAGS-function_reordering_plugin TAGS-function_reordering_plugin
+maybe-TAGS-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-TAGS-function_reordering_plugin: TAGS-function_reordering_plugin
+
+TAGS-function_reordering_plugin: \
+    configure-function_reordering_plugin 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing TAGS in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          TAGS) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-install-info-function_reordering_plugin install-info-function_reordering_plugin
+maybe-install-info-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-install-info-function_reordering_plugin: install-info-function_reordering_plugin
+
+install-info-function_reordering_plugin: \
+    configure-function_reordering_plugin \
+    info-function_reordering_plugin 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing install-info in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          install-info) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-install-pdf-function_reordering_plugin install-pdf-function_reordering_plugin
+maybe-install-pdf-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-install-pdf-function_reordering_plugin: install-pdf-function_reordering_plugin
+
+install-pdf-function_reordering_plugin: \
+    configure-function_reordering_plugin \
+    pdf-function_reordering_plugin 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing install-pdf in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          install-pdf) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-install-html-function_reordering_plugin install-html-function_reordering_plugin
+maybe-install-html-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-install-html-function_reordering_plugin: install-html-function_reordering_plugin
+
+install-html-function_reordering_plugin: \
+    configure-function_reordering_plugin \
+    html-function_reordering_plugin 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing install-html in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          install-html) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-installcheck-function_reordering_plugin installcheck-function_reordering_plugin
+maybe-installcheck-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-installcheck-function_reordering_plugin: installcheck-function_reordering_plugin
+
+installcheck-function_reordering_plugin: \
+    configure-function_reordering_plugin 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing installcheck in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          installcheck) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-mostlyclean-function_reordering_plugin mostlyclean-function_reordering_plugin
+maybe-mostlyclean-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-mostlyclean-function_reordering_plugin: mostlyclean-function_reordering_plugin
+
+mostlyclean-function_reordering_plugin: 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing mostlyclean in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          mostlyclean) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-clean-function_reordering_plugin clean-function_reordering_plugin
+maybe-clean-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-clean-function_reordering_plugin: clean-function_reordering_plugin
+
+clean-function_reordering_plugin: 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing clean in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          clean) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-distclean-function_reordering_plugin distclean-function_reordering_plugin
+maybe-distclean-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-distclean-function_reordering_plugin: distclean-function_reordering_plugin
+
+distclean-function_reordering_plugin: 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing distclean in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          distclean) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+.PHONY: maybe-maintainer-clean-function_reordering_plugin maintainer-clean-function_reordering_plugin
+maybe-maintainer-clean-function_reordering_plugin:
+@if function_reordering_plugin
+maybe-maintainer-clean-function_reordering_plugin: maintainer-clean-function_reordering_plugin
+
+maintainer-clean-function_reordering_plugin: 
+	@[ -f ./function_reordering_plugin/Makefile ] || exit 0; \
+	r=`${PWD_COMMAND}`; export r; \
+	s=`cd $(srcdir); ${PWD_COMMAND}`; export s; \
+	$(HOST_EXPORTS) \
+	for flag in $(EXTRA_HOST_FLAGS) ; do \
+	  eval `echo "$$flag" | sed -e "s|^\([^=]*\)=\(.*\)|\1='\2'; export \1|"`; \
+	done; \
+	echo "Doing maintainer-clean in function_reordering_plugin" ; \
+	(cd $(HOST_SUBDIR)/function_reordering_plugin && \
+	  $(MAKE) $(BASE_FLAGS_TO_PASS) "AR=$${AR}" "AS=$${AS}" \
+	          "CC=$${CC}" "CXX=$${CXX}" "LD=$${LD}" "NM=$${NM}" \
+	          "RANLIB=$${RANLIB}" \
+	          "DLLTOOL=$${DLLTOOL}" "WINDRES=$${WINDRES}" "WINDMC=$${WINDMC}" \
+	          maintainer-clean) \
+	  || exit 1
+
+@endif function_reordering_plugin
+
+
+
 # ---------------------------------------
 # Modules which run on the target machine
 # ---------------------------------------
@@ -44949,6 +45842,11 @@ stage1-start::
 	  mkdir stage1-lto-plugin; \
 	mv stage1-lto-plugin lto-plugin 
 @endif lto-plugin
+@if function_reordering_plugin
+	@cd $(HOST_SUBDIR); [ -d stage1-function_reordering_plugin ] || \
+	  mkdir stage1-function_reordering_plugin; \
+	mv stage1-function_reordering_plugin function_reordering_plugin 
+@endif function_reordering_plugin
 	@[ -d stage1-$(TARGET_SUBDIR) ] || \
 	  mkdir stage1-$(TARGET_SUBDIR); \
 	mv stage1-$(TARGET_SUBDIR) $(TARGET_SUBDIR) 
@@ -45059,6 +45957,11 @@ stage1-end::
 	  cd $(HOST_SUBDIR); mv lto-plugin stage1-lto-plugin  ; \
 	fi
 @endif lto-plugin
+@if function_reordering_plugin
+	@if test -d $(HOST_SUBDIR)/function_reordering_plugin ; then \
+	  cd $(HOST_SUBDIR); mv function_reordering_plugin stage1-function_reordering_plugin  ; \
+	fi
+@endif function_reordering_plugin
 	@if test -d $(TARGET_SUBDIR) ; then \
 	  mv $(TARGET_SUBDIR) stage1-$(TARGET_SUBDIR)  ; \
 	fi
@@ -45233,6 +46136,12 @@ stage2-start::
 	mv stage2-lto-plugin lto-plugin  ; \
 	mv stage1-lto-plugin prev-lto-plugin || test -f stage1-lean 
 @endif lto-plugin
+@if function_reordering_plugin
+	@cd $(HOST_SUBDIR); [ -d stage2-function_reordering_plugin ] || \
+	  mkdir stage2-function_reordering_plugin; \
+	mv stage2-function_reordering_plugin function_reordering_plugin  ; \
+	mv stage1-function_reordering_plugin prev-function_reordering_plugin || test -f stage1-lean 
+@endif function_reordering_plugin
 	@[ -d stage2-$(TARGET_SUBDIR) ] || \
 	  mkdir stage2-$(TARGET_SUBDIR); \
 	mv stage2-$(TARGET_SUBDIR) $(TARGET_SUBDIR)  ; \
@@ -45365,6 +46274,12 @@ stage2-end::
 	  mv prev-lto-plugin stage1-lto-plugin ; :  ; \
 	fi
 @endif lto-plugin
+@if function_reordering_plugin
+	@if test -d $(HOST_SUBDIR)/function_reordering_plugin ; then \
+	  cd $(HOST_SUBDIR); mv function_reordering_plugin stage2-function_reordering_plugin ; \
+	  mv prev-function_reordering_plugin stage1-function_reordering_plugin ; :  ; \
+	fi
+@endif function_reordering_plugin
 	@if test -d $(TARGET_SUBDIR) ; then \
 	  mv $(TARGET_SUBDIR) stage2-$(TARGET_SUBDIR)  ; \
 	  mv prev-$(TARGET_SUBDIR) stage1-$(TARGET_SUBDIR) ; :  ; \
@@ -45563,6 +46478,12 @@ stage3-start::
 	mv stage3-lto-plugin lto-plugin  ; \
 	mv stage2-lto-plugin prev-lto-plugin || test -f stage2-lean 
 @endif lto-plugin
+@if function_reordering_plugin
+	@cd $(HOST_SUBDIR); [ -d stage3-function_reordering_plugin ] || \
+	  mkdir stage3-function_reordering_plugin; \
+	mv stage3-function_reordering_plugin function_reordering_plugin  ; \
+	mv stage2-function_reordering_plugin prev-function_reordering_plugin || test -f stage2-lean 
+@endif function_reordering_plugin
 	@[ -d stage3-$(TARGET_SUBDIR) ] || \
 	  mkdir stage3-$(TARGET_SUBDIR); \
 	mv stage3-$(TARGET_SUBDIR) $(TARGET_SUBDIR)  ; \
@@ -45695,6 +46616,12 @@ stage3-end::
 	  mv prev-lto-plugin stage2-lto-plugin ; :  ; \
 	fi
 @endif lto-plugin
+@if function_reordering_plugin
+	@if test -d $(HOST_SUBDIR)/function_reordering_plugin ; then \
+	  cd $(HOST_SUBDIR); mv function_reordering_plugin stage3-function_reordering_plugin ; \
+	  mv prev-function_reordering_plugin stage2-function_reordering_plugin ; :  ; \
+	fi
+@endif function_reordering_plugin
 	@if test -d $(TARGET_SUBDIR) ; then \
 	  mv $(TARGET_SUBDIR) stage3-$(TARGET_SUBDIR)  ; \
 	  mv prev-$(TARGET_SUBDIR) stage2-$(TARGET_SUBDIR) ; :  ; \
@@ -45949,6 +46876,12 @@ stage4-start::
 	mv stage4-lto-plugin lto-plugin  ; \
 	mv stage3-lto-plugin prev-lto-plugin || test -f stage3-lean 
 @endif lto-plugin
+@if function_reordering_plugin
+	@cd $(HOST_SUBDIR); [ -d stage4-function_reordering_plugin ] || \
+	  mkdir stage4-function_reordering_plugin; \
+	mv stage4-function_reordering_plugin function_reordering_plugin  ; \
+	mv stage3-function_reordering_plugin prev-function_reordering_plugin || test -f stage3-lean 
+@endif function_reordering_plugin
 	@[ -d stage4-$(TARGET_SUBDIR) ] || \
 	  mkdir stage4-$(TARGET_SUBDIR); \
 	mv stage4-$(TARGET_SUBDIR) $(TARGET_SUBDIR)  ; \
@@ -46081,6 +47014,12 @@ stage4-end::
 	  mv prev-lto-plugin stage3-lto-plugin ; :  ; \
 	fi
 @endif lto-plugin
+@if function_reordering_plugin
+	@if test -d $(HOST_SUBDIR)/function_reordering_plugin ; then \
+	  cd $(HOST_SUBDIR); mv function_reordering_plugin stage4-function_reordering_plugin ; \
+	  mv prev-function_reordering_plugin stage3-function_reordering_plugin ; :  ; \
+	fi
+@endif function_reordering_plugin
 	@if test -d $(TARGET_SUBDIR) ; then \
 	  mv $(TARGET_SUBDIR) stage4-$(TARGET_SUBDIR)  ; \
 	  mv prev-$(TARGET_SUBDIR) stage3-$(TARGET_SUBDIR) ; :  ; \
@@ -46323,6 +47262,12 @@ stageprofile-start::
 	mv stageprofile-lto-plugin lto-plugin  ; \
 	mv stage1-lto-plugin prev-lto-plugin || test -f stage1-lean 
 @endif lto-plugin
+@if function_reordering_plugin
+	@cd $(HOST_SUBDIR); [ -d stageprofile-function_reordering_plugin ] || \
+	  mkdir stageprofile-function_reordering_plugin; \
+	mv stageprofile-function_reordering_plugin function_reordering_plugin  ; \
+	mv stage1-function_reordering_plugin prev-function_reordering_plugin || test -f stage1-lean 
+@endif function_reordering_plugin
 	@[ -d stageprofile-$(TARGET_SUBDIR) ] || \
 	  mkdir stageprofile-$(TARGET_SUBDIR); \
 	mv stageprofile-$(TARGET_SUBDIR) $(TARGET_SUBDIR)  ; \
@@ -46455,6 +47400,12 @@ stageprofile-end::
 	  mv prev-lto-plugin stage1-lto-plugin ; :  ; \
 	fi
 @endif lto-plugin
+@if function_reordering_plugin
+	@if test -d $(HOST_SUBDIR)/function_reordering_plugin ; then \
+	  cd $(HOST_SUBDIR); mv function_reordering_plugin stageprofile-function_reordering_plugin ; \
+	  mv prev-function_reordering_plugin stage1-function_reordering_plugin ; :  ; \
+	fi
+@endif function_reordering_plugin
 	@if test -d $(TARGET_SUBDIR) ; then \
 	  mv $(TARGET_SUBDIR) stageprofile-$(TARGET_SUBDIR)  ; \
 	  mv prev-$(TARGET_SUBDIR) stage1-$(TARGET_SUBDIR) ; :  ; \
@@ -46630,6 +47581,12 @@ stagefeedback-start::
 	mv stagefeedback-lto-plugin lto-plugin  ; \
 	mv stageprofile-lto-plugin prev-lto-plugin || test -f stageprofile-lean 
 @endif lto-plugin
+@if function_reordering_plugin
+	@cd $(HOST_SUBDIR); [ -d stagefeedback-function_reordering_plugin ] || \
+	  mkdir stagefeedback-function_reordering_plugin; \
+	mv stagefeedback-function_reordering_plugin function_reordering_plugin  ; \
+	mv stageprofile-function_reordering_plugin prev-function_reordering_plugin || test -f stageprofile-lean 
+@endif function_reordering_plugin
 	@[ -d stagefeedback-$(TARGET_SUBDIR) ] || \
 	  mkdir stagefeedback-$(TARGET_SUBDIR); \
 	mv stagefeedback-$(TARGET_SUBDIR) $(TARGET_SUBDIR)  ; \
@@ -46762,6 +47719,12 @@ stagefeedback-end::
 	  mv prev-lto-plugin stageprofile-lto-plugin ; :  ; \
 	fi
 @endif lto-plugin
+@if function_reordering_plugin
+	@if test -d $(HOST_SUBDIR)/function_reordering_plugin ; then \
+	  cd $(HOST_SUBDIR); mv function_reordering_plugin stagefeedback-function_reordering_plugin ; \
+	  mv prev-function_reordering_plugin stageprofile-function_reordering_plugin ; :  ; \
+	fi
+@endif function_reordering_plugin
 	@if test -d $(TARGET_SUBDIR) ; then \
 	  mv $(TARGET_SUBDIR) stagefeedback-$(TARGET_SUBDIR)  ; \
 	  mv prev-$(TARGET_SUBDIR) stageprofile-$(TARGET_SUBDIR) ; :  ; \
@@ -46988,6 +47951,38 @@ configure-stage3-gcc: maybe-all-stage3-gmp
 configure-stage4-gcc: maybe-all-stage4-gmp
 configure-stageprofile-gcc: maybe-all-stageprofile-gmp
 configure-stagefeedback-gcc: maybe-all-stagefeedback-gmp
+configure-gcc: maybe-all-mpfr
+
+configure-stage1-gcc: maybe-all-stage1-mpfr
+configure-stage2-gcc: maybe-all-stage2-mpfr
+configure-stage3-gcc: maybe-all-stage3-mpfr
+configure-stage4-gcc: maybe-all-stage4-mpfr
+configure-stageprofile-gcc: maybe-all-stageprofile-mpfr
+configure-stagefeedback-gcc: maybe-all-stagefeedback-mpfr
+configure-gcc: maybe-all-mpc
+
+configure-stage1-gcc: maybe-all-stage1-mpc
+configure-stage2-gcc: maybe-all-stage2-mpc
+configure-stage3-gcc: maybe-all-stage3-mpc
+configure-stage4-gcc: maybe-all-stage4-mpc
+configure-stageprofile-gcc: maybe-all-stageprofile-mpc
+configure-stagefeedback-gcc: maybe-all-stagefeedback-mpc
+configure-gcc: maybe-all-isl
+
+configure-stage1-gcc: maybe-all-stage1-isl
+configure-stage2-gcc: maybe-all-stage2-isl
+configure-stage3-gcc: maybe-all-stage3-isl
+configure-stage4-gcc: maybe-all-stage4-isl
+configure-stageprofile-gcc: maybe-all-stageprofile-isl
+configure-stagefeedback-gcc: maybe-all-stagefeedback-isl
+configure-gcc: maybe-all-cloog
+
+configure-stage1-gcc: maybe-all-stage1-cloog
+configure-stage2-gcc: maybe-all-stage2-cloog
+configure-stage3-gcc: maybe-all-stage3-cloog
+configure-stage4-gcc: maybe-all-stage4-cloog
+configure-stageprofile-gcc: maybe-all-stageprofile-cloog
+configure-stagefeedback-gcc: maybe-all-stagefeedback-cloog
 configure-gcc: maybe-all-lto-plugin
 
 configure-stage1-gcc: maybe-all-stage1-lto-plugin
@@ -46996,6 +47991,14 @@ configure-stage3-gcc: maybe-all-stage3-lto-plugin
 configure-stage4-gcc: maybe-all-stage4-lto-plugin
 configure-stageprofile-gcc: maybe-all-stageprofile-lto-plugin
 configure-stagefeedback-gcc: maybe-all-stagefeedback-lto-plugin
+configure-gcc: maybe-all-function_reordering_plugin
+
+configure-stage1-gcc: maybe-all-stage1-function_reordering_plugin
+configure-stage2-gcc: maybe-all-stage2-function_reordering_plugin
+configure-stage3-gcc: maybe-all-stage3-function_reordering_plugin
+configure-stage4-gcc: maybe-all-stage4-function_reordering_plugin
+configure-stageprofile-gcc: maybe-all-stageprofile-function_reordering_plugin
+configure-stagefeedback-gcc: maybe-all-stagefeedback-function_reordering_plugin
 configure-gcc: maybe-all-binutils
 
 configure-stage1-gcc: maybe-all-stage1-binutils
@@ -47172,6 +48175,14 @@ all-stage3-gcc: maybe-all-stage3-lto-plugin
 all-stage4-gcc: maybe-all-stage4-lto-plugin
 all-stageprofile-gcc: maybe-all-stageprofile-lto-plugin
 all-stagefeedback-gcc: maybe-all-stagefeedback-lto-plugin
+all-gcc: maybe-all-function_reordering_plugin
+
+all-stage1-gcc: maybe-all-stage1-function_reordering_plugin
+all-stage2-gcc: maybe-all-stage2-function_reordering_plugin
+all-stage3-gcc: maybe-all-stage3-function_reordering_plugin
+all-stage4-gcc: maybe-all-stage4-function_reordering_plugin
+all-stageprofile-gcc: maybe-all-stageprofile-function_reordering_plugin
+all-stagefeedback-gcc: maybe-all-stagefeedback-function_reordering_plugin
 info-gcc: maybe-all-build-libiberty
 
 info-stage1-gcc: maybe-all-build-libiberty
@@ -47206,8 +48217,10 @@ html-stageprofile-gcc: maybe-all-build-libiberty
 html-stagefeedback-gcc: maybe-all-build-libiberty
 install-gcc: maybe-install-fixincludes
 install-gcc: maybe-install-lto-plugin
+install-gcc: maybe-install-function_reordering_plugin
 install-strip-gcc: maybe-install-strip-fixincludes
 install-strip-gcc: maybe-install-strip-lto-plugin
+install-strip-gcc: maybe-install-strip-function_reordering_plugin
 configure-libcpp: configure-libiberty
 
 configure-stage1-libcpp: configure-stage1-libiberty
@@ -47258,6 +48271,14 @@ all-stage3-lto-plugin: maybe-all-stage3-libiberty
 all-stage4-lto-plugin: maybe-all-stage4-libiberty
 all-stageprofile-lto-plugin: maybe-all-stageprofile-libiberty
 all-stagefeedback-lto-plugin: maybe-all-stagefeedback-libiberty
+all-function_reordering_plugin: maybe-all-libiberty
+
+all-stage1-function_reordering_plugin: maybe-all-stage1-libiberty
+all-stage2-function_reordering_plugin: maybe-all-stage2-libiberty
+all-stage3-function_reordering_plugin: maybe-all-stage3-libiberty
+all-stage4-function_reordering_plugin: maybe-all-stage4-libiberty
+all-stageprofile-function_reordering_plugin: maybe-all-stageprofile-libiberty
+all-stagefeedback-function_reordering_plugin: maybe-all-stagefeedback-libiberty
 all-utils: maybe-all-libiberty
 configure-mpfr: maybe-all-gmp
 

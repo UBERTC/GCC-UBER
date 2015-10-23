@@ -453,6 +453,29 @@ add_path (char *path, int chain, int cxx_aware, bool user_supplied_p)
   add_cpp_dir_path (p, chain);
 }
 
+/* Return the bracket and quote include search paths
+   in *BRACKETS and *QUOTES respectively.  */
+
+void
+get_include_chains (cpp_dir **quotes, cpp_dir **brackets, cpp_dir **systems)
+{
+  *quotes = heads[QUOTE];
+  *brackets = heads[BRACKET];
+  *systems = heads[SYSTEM];
+}
+
+/* Make HEAD and TAIL pointers to include paths resynchronized
+   after appending new paths.  */
+
+void
+clear_include_chains (void)
+{
+  heads[QUOTE] = tails[QUOTE] = NULL;
+  heads[BRACKET] = tails[BRACKET] = NULL;
+  heads[SYSTEM] = tails[SYSTEM] = NULL;
+  heads[AFTER] = tails[AFTER] = NULL;
+}
+
 /* Exported function to handle include chain merging, duplicate
    removal, and registration with cpplib.  */
 void
@@ -514,4 +537,3 @@ static void hook_void_charptr_charptr_int (const char *sysroot ATTRIBUTE_UNUSED,
 #endif
 
 struct target_c_incpath_s target_c_incpath = { TARGET_EXTRA_PRE_INCLUDES, TARGET_EXTRA_INCLUDES };
-

@@ -854,6 +854,10 @@ extern void omp_clause_range_check_failed (const_tree, const char *, int,
 /* In fixed-point types, means a saturating type.  */
 #define TYPE_SATURATING(NODE) (TYPE_CHECK (NODE)->base.u.bits.saturating_flag)
 
+/* Nonzero in an expression, a decl, or a constant node if the node is
+   the result of a successful constant-folding.  */
+#define EXPR_FOLDED(NODE) ((NODE)->base.u.bits.expr_folded_flag)
+
 /* These flags are available for each language front end to use internally.  */
 #define TREE_LANG_FLAG_0(NODE) \
   (TREE_NOT_CHECK2 (NODE, TREE_VEC, SSA_NAME)->base.u.bits.lang_flag_0)
@@ -1075,6 +1079,11 @@ extern void protected_set_expr_location (tree, location_t);
 #define TMR_INDEX(NODE) (TREE_OPERAND (TARGET_MEM_REF_CHECK (NODE), 2))
 #define TMR_STEP(NODE) (TREE_OPERAND (TARGET_MEM_REF_CHECK (NODE), 3))
 #define TMR_INDEX2(NODE) (TREE_OPERAND (TARGET_MEM_REF_CHECK (NODE), 4))
+
+#define MR_DEPENDENCE_CLIQUE(NODE) \
+  (TREE_CHECK2 (NODE, MEM_REF, TARGET_MEM_REF)->base.u.dependence_info.clique)
+#define MR_DEPENDENCE_BASE(NODE) \
+  (TREE_CHECK2 (NODE, MEM_REF, TARGET_MEM_REF)->base.u.dependence_info.base)
 
 /* The operands of a BIND_EXPR.  */
 #define BIND_EXPR_VARS(NODE) (TREE_OPERAND (BIND_EXPR_CHECK (NODE), 0))
@@ -2400,6 +2409,11 @@ extern void decl_value_expr_insert (tree, tree);
    compiler via -ffunction-sections.  */
 #define DECL_HAS_IMPLICIT_SECTION_NAME_P(NODE) \
   (DECL_WITH_VIS_CHECK (NODE)->decl_with_vis.implicit_section_name_p)
+
+/* Specify whether the section name was explicitly set with decl_attributes. */
+#define DECL_HAS_EXPLICIT_SECTION_NAME_P(NODE) \
+  (DECL_SECTION_NAME(NODE) != NULL_TREE \
+   && !DECL_HAS_IMPLICIT_SECTION_NAME_P(NODE))
 
 extern tree decl_debug_expr_lookup (tree);
 extern void decl_debug_expr_insert (tree, tree);

@@ -1,5 +1,5 @@
 /* { dg-do compile } */
-/* { dg-options "-O3 -fno-early-inlining -fno-ipa-sra -fdump-ipa-cp"  } */
+/* { dg-options "-O3 -fno-early-inlining -fno-ipa-sra -fdump-ipa-cp -fdevirtualize"  } */
 class A {};
 class B {
 public:

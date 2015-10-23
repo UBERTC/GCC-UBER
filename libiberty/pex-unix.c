@@ -59,6 +59,10 @@ extern int errno;
 #include <process.h>
 #endif
 
+#ifdef __APPLE__
+#include <crt_externs.h>
+#endif
+
 #ifdef vfork /* Autoconf may define this to fork for us. */
 # define VFORK_STRING "fork"
 #else
@@ -389,7 +393,11 @@ pex_child_error (struct pex_obj *obj, const char *executable,
 
 /* Execute a child.  */
 
+#ifdef __APPLE__
+#define environ (*_NSGetEnviron())
+#else
 extern char **environ;
+#endif
 
 #if defined(HAVE_SPAWNVE) && defined(HAVE_SPAWNVPE)
 /* Implementation of pex->exec_child using the Cygwin spawn operation.  */

@@ -3,4 +3,4 @@
 
 #include "bmi2-pext32-1.c"
 
-/* { dg-final { scan-assembler-times "bmi2_pext_si3" 1 } } */
+/* { dg-final { scan-assembler "bmi2_pext_si3" } } */

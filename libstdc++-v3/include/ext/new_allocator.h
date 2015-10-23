@@ -104,10 +104,17 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	return static_cast<_Tp*>(::operator new(__n * sizeof(_Tp)));
       }
 
+#ifdef __GXX_DELETE_WITH_SIZE__
+      // __p is not permitted to be a null pointer.
+      void
+      deallocate(pointer __p, size_type __t)
+      { ::operator delete(__p, __t * sizeof(_Tp)); }
+#else
       // __p is not permitted to be a null pointer.
       void
       deallocate(pointer __p, size_type)
       { ::operator delete(__p); }
+#endif
 
       size_type
       max_size() const _GLIBCXX_USE_NOEXCEPT

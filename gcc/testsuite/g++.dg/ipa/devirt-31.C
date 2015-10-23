@@ -1,4 +1,4 @@
-/* { dg-options "-O2 -std=c++11 -fdump-ipa-inline"  } */
+/* { dg-options "-O2 -std=c++11 -fdump-ipa-inline -fdevirtualize"  } */
 #include <new>
 
 class EmbeddedObject {

@@ -3527,6 +3527,35 @@ function should not save and restore registers R0..R7.  This can be used on SH3*
 and SH4* targets that have a second R0..R7 register bank for non-reentrant
 interrupt handlers.
 
+@item noplt
+@cindex @code{noplt} function attribute
+The @code{noplt} attribute is the counterpart to option @option{-fno-plt} and
+does not use PLT for calls to functions marked with this attribute in position
+independent code. 
+
+@smallexample
+@group
+/* Externally defined function foo.  */
+int foo () __attribute__ ((noplt));
+
+int
+main (/* @r{@dots{}} */)
+@{
+  /* @r{@dots{}} */
+  foo ();
+  /* @r{@dots{}} */
+@}
+@end group
+@end smallexample
+
+The @code{noplt} attribute on function foo tells the compiler to assume that
+the function foo is externally defined and the call to foo must avoid the PLT
+in position independent code.
+
+Additionally, a few targets also convert calls to those functions that are
+marked to not use the PLT to use the GOT instead for non-position independent
+code.
+
 @item optimize
 @cindex @code{optimize} function attribute
 The @code{optimize} attribute is used to specify that a function is to
@@ -9124,6 +9153,7 @@ instructions, but allow the compiler to schedule those calls.
 * MIPS DSP Built-in Functions::
 * MIPS Paired-Single Support::
 * MIPS Loongson Built-in Functions::
+* MIPS SIMD Architecture Functions::
 * Other MIPS Built-in Functions::
 * MSP430 Built-in Functions::
 * NDS32 Built-in Functions::
@@ -12258,6 +12288,8 @@ value is the upper one.  The opposite order applies to big-endian targets.
 For example, the code above sets the lower half of @code{a} to
 @code{1.5} on little-endian targets and @code{9.1} on big-endian targets.
 
+
+
 @node MIPS Loongson Built-in Functions
 @subsection MIPS Loongson Built-in Functions
 
@@ -12382,6 +12414,786 @@ uint8x8_t punpcklbh_u (uint8x8_t s, uint8x8_t t);
 int32x2_t punpcklwd_s (int32x2_t s, int32x2_t t);
 int16x4_t punpcklhw_s (int16x4_t s, int16x4_t t);
 int8x8_t punpcklbh_s (int8x8_t s, int8x8_t t);
+@end smallexample
+
+@node MIPS SIMD Architecture Functions
+@subsection MIPS SIMD Architecture Functions
+
+GCC provides intrinsics to access the SIMD instructions provided by the
+MSA MIPS SIMD Architecture.  The interface is made available by
+including @code{<msa.h>} and using @option{-mmsa -mhart-float -mfp64 -mnan=2008}
+
+@itemize
+@item @code{v16i8}, a vector of sixteen signed 8-bit integers;
+@item @code{v16u8}, a vector of sixteen unsigned 8-bit integers;
+@item @code{v8i16}, a vector of eight signed 16-bit integers;
+@item @code{v8u16}, a vector of eight unsigned 16-bit integers;
+@item @code{v4i32}, a vector of four signed 32-bit integers;
+@item @code{v4u32}, a vector of four unsigned 32-bit integers;
+@item @code{v2i64}, a vector of two signed 64-bit integers;
+@item @code{v2u64}, a vector of two unsigned 64-bit integers;
+@item @code{v4f32}, a vector of four 32-bit floats;
+@item @code{v2f64}, a vector of two 64-bit doubles.
+@end itemize
+
+@itemize
+@item @code{imm0_1}, an integer literal in range 0 to 1;
+@item @code{imm0_3}, an integer literal in range 0 to 3;
+@item @code{imm0_7}, an integer literal in range 0 to 7;
+@item @code{imm0_15}, an integer literal in range 0 to 15;
+@item @code{imm0_31}, an integer literal in range 0 to 31;
+@item @code{imm0_63}, an integer literal in range 0 to 63;
+@item @code{imm0_255}, an integer literal in range 0 to 255;
+@item @code{imm_n16_15}, an integer literal in range -16 to 15;
+@item @code{imm_n512_511}, an integer literal in range -512 to 511;
+@item @code{imm_n1024_1022}, an integer literal in range -512 to 511 left shifted by 1 bit, i.e., -1024, -1022, @dots{}, 1020, 1022;
+@item @code{imm_n2048_2044}, an integer literal in range -512 to 511 left shifted by 2 bits, i.e., -2048, -2044, @dots{}, 2040, 2044;
+@item @code{imm_n4096_4088}, an integer literal in range -512 to 511 left shifted by 3 bits, i.e., -4096, -4088, @dots{}, 4080, 4088;
+@item @code{imm1_4}, an integer literal in range 1 to 4.
+@end itemize
+
+@smallexample
+@{
+typedef int i32;
+#if __LONG_MAX__ == __LONG_LONG_MAX__
+typedef long i64;
+#else
+typedef long long i64;
+#endif
+
+typedef unsigned int u32;
+#if __LONG_MAX__ == __LONG_LONG_MAX__
+typedef unsigned long u64;
+#else
+typedef unsigned long long u64;
+#endif
+
+typedef double f64;
+typedef float f32;
+@}
+@end smallexample
+
+The intrinsics provided are listed below; each is named after the
+machine instruction.
+
+@smallexample
+v16i8 __builtin_msa_add_a_b (v16i8, v16i8);
+v8i16 __builtin_msa_add_a_h (v8i16, v8i16);
+v4i32 __builtin_msa_add_a_w (v4i32, v4i32);
+v2i64 __builtin_msa_add_a_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_adds_a_b (v16i8, v16i8);
+v8i16 __builtin_msa_adds_a_h (v8i16, v8i16);
+v4i32 __builtin_msa_adds_a_w (v4i32, v4i32);
+v2i64 __builtin_msa_adds_a_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_adds_s_b (v16i8, v16i8);
+v8i16 __builtin_msa_adds_s_h (v8i16, v8i16);
+v4i32 __builtin_msa_adds_s_w (v4i32, v4i32);
+v2i64 __builtin_msa_adds_s_d (v2i64, v2i64);
+
+v16u8 __builtin_msa_adds_u_b (v16u8, v16u8);
+v8u16 __builtin_msa_adds_u_h (v8u16, v8u16);
+v4u32 __builtin_msa_adds_u_w (v4u32, v4u32);
+v2u64 __builtin_msa_adds_u_d (v2u64, v2u64);
+
+v16i8 __builtin_msa_addv_b (v16i8, v16i8);
+v8i16 __builtin_msa_addv_h (v8i16, v8i16);
+v4i32 __builtin_msa_addv_w (v4i32, v4i32);
+v2i64 __builtin_msa_addv_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_addvi_b (v16i8, imm0_31);
+v8i16 __builtin_msa_addvi_h (v8i16, imm0_31);
+v4i32 __builtin_msa_addvi_w (v4i32, imm0_31);
+v2i64 __builtin_msa_addvi_d (v2i64, imm0_31);
+
+v16u8 __builtin_msa_and_v (v16u8, v16u8);
+
+v16u8 __builtin_msa_andi_b (v16u8, imm0_255);
+
+v16i8 __builtin_msa_asub_s_b (v16i8, v16i8);
+v8i16 __builtin_msa_asub_s_h (v8i16, v8i16);
+v4i32 __builtin_msa_asub_s_w (v4i32, v4i32);
+v2i64 __builtin_msa_asub_s_d (v2i64, v2i64);
+
+v16u8 __builtin_msa_asub_u_b (v16u8, v16u8);
+v8u16 __builtin_msa_asub_u_h (v8u16, v8u16);
+v4u32 __builtin_msa_asub_u_w (v4u32, v4u32);
+v2u64 __builtin_msa_asub_u_d (v2u64, v2u64);
+
+v16i8 __builtin_msa_ave_s_b (v16i8, v16i8);
+v8i16 __builtin_msa_ave_s_h (v8i16, v8i16);
+v4i32 __builtin_msa_ave_s_w (v4i32, v4i32);
+v2i64 __builtin_msa_ave_s_d (v2i64, v2i64);
+
+v16u8 __builtin_msa_ave_u_b (v16u8, v16u8);
+v8u16 __builtin_msa_ave_u_h (v8u16, v8u16);
+v4u32 __builtin_msa_ave_u_w (v4u32, v4u32);
+v2u64 __builtin_msa_ave_u_d (v2u64, v2u64);
+
+16i8 __builtin_msa_aver_s_b (v16i8, v16i8);
+8i16 __builtin_msa_aver_s_h (v8i16, v8i16);
+4i32 __builtin_msa_aver_s_w (v4i32, v4i32);
+2i64 __builtin_msa_aver_s_d (v2i64, v2i64);
+
+v16u8 __builtin_msa_aver_u_b (v16u8, v16u8);
+v8u16 __builtin_msa_aver_u_h (v8u16, v8u16);
+v4u32 __builtin_msa_aver_u_w (v4u32, v4u32);
+v2u64 __builtin_msa_aver_u_d (v2u64, v2u64);
+
+v16u8 __builtin_msa_bclr_b (v16u8, v16u8);
+v8u16 __builtin_msa_bclr_h (v8u16, v8u16);
+4u32 __builtin_msa_bclr_w (v4u32, v4u32);
+v2u64 __builtin_msa_bclr_d (v2u64, v2u64);
+
+v16u8 __builtin_msa_bclri_b (v16u8, imm0_7);
+v8u16 __builtin_msa_bclri_h (v8u16, imm0_15);
+v4u32 __builtin_msa_bclri_w (v4u32, imm0_31);
+v2u64 __builtin_msa_bclri_d (v2u64, imm0_63);
+
+v16u8 __builtin_msa_binsl_b (v16u8, v16u8, v16u8);
+v8u16 __builtin_msa_binsl_h (v8u16, v8u16, v8u16);
+v4u32 __builtin_msa_binsl_w (v4u32, v4u32, v4u32);
+v2u64 __builtin_msa_binsl_d (v2u64, v2u64, v2u64);
+
+v16u8 __builtin_msa_binsli_b (v16u8, v16u8, imm0_7);
+v8u16 __builtin_msa_binsli_h (v8u16, v8u16, imm0_15);
+v4u32 __builtin_msa_binsli_w (v4u32, v4u32, imm0_31);
+v2u64 __builtin_msa_binsli_d (v2u64, v2u64, imm0_63);
+
+v16u8 __builtin_msa_binsr_b (v16u8, v16u8, v16u8);
+v8u16 __builtin_msa_binsr_h (v8u16, v8u16, v8u16);
+v4u32 __builtin_msa_binsr_w (v4u32, v4u32, v4u32);
+v2u64 __builtin_msa_binsr_d (v2u64, v2u64, v2u64);
+
+v16u8 __builtin_msa_binsri_b (v16u8, v16u8, imm0_7);
+v8u16 __builtin_msa_binsri_h (v8u16, v8u16, imm0_15);
+v4u32 __builtin_msa_binsri_w (v4u32, v4u32, imm0_31);
+v2u64 __builtin_msa_binsri_d (v2u64, v2u64, imm0_63);
+
+v16u8 __builtin_msa_bmnz_v (v16u8, v16u8, v16u8);
+
+v16u8 __builtin_msa_bmnzi_b (v16u8, v16u8, imm0_255);
+
+v16u8 __builtin_msa_bmz_v (v16u8, v16u8, v16u8);
+
+v16u8 __builtin_msa_bmzi_b (v16u8, v16u8, imm0_255);
+
+v16u8 __builtin_msa_bneg_b (v16u8, v16u8);
+v8u16 __builtin_msa_bneg_h (v8u16, v8u16);
+v4u32 __builtin_msa_bneg_w (v4u32, v4u32);
+v2u64 __builtin_msa_bneg_d (v2u64, v2u64);
+
+v16u8 __builtin_msa_bnegi_b (v16u8, imm0_7);
+v8u16 __builtin_msa_bnegi_h (v8u16, imm0_15);
+v4u32 __builtin_msa_bnegi_w (v4u32, imm0_31);
+v2u64 __builtin_msa_bnegi_d (v2u64, imm0_63);
+
+i32 __builtin_msa_bnz_b (v16u8);
+i32 __builtin_msa_bnz_h (v8u16);
+i32 __builtin_msa_bnz_w (v4u32);
+i32 __builtin_msa_bnz_d (v2u64);
+
+i32 __builtin_msa_bnz_v (v16u8);
+
+v16u8 __builtin_msa_bsel_v (v16u8, v16u8, v16u8);
+
+v16u8 __builtin_msa_bseli_b (v16u8, v16u8, imm0_255);
+
+v16u8 __builtin_msa_bset_b (v16u8, v16u8);
+v8u16 __builtin_msa_bset_h (v8u16, v8u16);
+v4u32 __builtin_msa_bset_w (v4u32, v4u32);
+v2u64 __builtin_msa_bset_d (v2u64, v2u64);
+
+v16u8 __builtin_msa_bseti_b (v16u8, imm0_7);
+v8u16 __builtin_msa_bseti_h (v8u16, imm0_15);
+v4u32 __builtin_msa_bseti_w (v4u32, imm0_31);
+v2u64 __builtin_msa_bseti_d (v2u64, imm0_63);
+
+i32 __builtin_msa_bz_b (v16u8);
+i32 __builtin_msa_bz_h (v8u16);
+i32 __builtin_msa_bz_w (v4u32);
+i32 __builtin_msa_bz_d (v2u64);
+
+i32 __builtin_msa_bz_v (v16u8);
+
+v16i8 __builtin_msa_ceq_b (v16i8, v16i8);
+v8i16 __builtin_msa_ceq_h (v8i16, v8i16);
+v4i32 __builtin_msa_ceq_w (v4i32, v4i32);
+v2i64 __builtin_msa_ceq_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_ceqi_b (v16i8, imm_n16_15);
+v8i16 __builtin_msa_ceqi_h (v8i16, imm_n16_15);
+v4i32 __builtin_msa_ceqi_w (v4i32, imm_n16_15);
+v2i64 __builtin_msa_ceqi_d (v2i64, imm_n16_15);
+
+i32 __builtin_msa_cfcmsa (imm0_31);
+
+v16i8 __builtin_msa_cle_s_b (v16i8, v16i8);
+v8i16 __builtin_msa_cle_s_h (v8i16, v8i16);
+v4i32 __builtin_msa_cle_s_w (v4i32, v4i32);
+v2i64 __builtin_msa_cle_s_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_cle_u_b (v16u8, v16u8);
+v8i16 __builtin_msa_cle_u_h (v8u16, v8u16);
+v4i32 __builtin_msa_cle_u_w (v4u32, v4u32);
+v2i64 __builtin_msa_cle_u_d (v2u64, v2u64);
+
+v16i8 __builtin_msa_clei_s_b (v16i8, imm_n16_15);
+v8i16 __builtin_msa_clei_s_h (v8i16, imm_n16_15);
+v4i32 __builtin_msa_clei_s_w (v4i32, imm_n16_15);
+v2i64 __builtin_msa_clei_s_d (v2i64, imm_n16_15);
+
+v16i8 __builtin_msa_clei_u_b (v16u8, imm0_31);
+v8i16 __builtin_msa_clei_u_h (v8u16, imm0_31);
+v4i32 __builtin_msa_clei_u_w (v4u32, imm0_31);
+v2i64 __builtin_msa_clei_u_d (v2u64, imm0_31);
+
+v16i8 __builtin_msa_clt_s_b (v16i8, v16i8);
+v8i16 __builtin_msa_clt_s_h (v8i16, v8i16);
+v4i32 __builtin_msa_clt_s_w (v4i32, v4i32);
+v2i64 __builtin_msa_clt_s_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_clt_u_b (v16u8, v16u8);
+v8i16 __builtin_msa_clt_u_h (v8u16, v8u16);
+v4i32 __builtin_msa_clt_u_w (v4u32, v4u32);
+v2i64 __builtin_msa_clt_u_d (v2u64, v2u64);
+
+v16i8 __builtin_msa_clti_s_b (v16i8, imm_n16_15);
+v8i16 __builtin_msa_clti_s_h (v8i16, imm_n16_15);
+v4i32 __builtin_msa_clti_s_w (v4i32, imm_n16_15);
+v2i64 __builtin_msa_clti_s_d (v2i64, imm_n16_15);
+
+v16i8 __builtin_msa_clti_u_b (v16u8, imm0_31);
+v8i16 __builtin_msa_clti_u_h (v8u16, imm0_31);
+v4i32 __builtin_msa_clti_u_w (v4u32, imm0_31);
+v2i64 __builtin_msa_clti_u_d (v2u64, imm0_31);
+
+i32 __builtin_msa_copy_s_b (v16i8, imm0_15);
+i32 __builtin_msa_copy_s_h (v8i16, imm0_7);
+i32 __builtin_msa_copy_s_w (v4i32, imm0_3);
+i64 __builtin_msa_copy_s_d (v2i64, imm0_1);
+
+u32 __builtin_msa_copy_u_b (v16i8, imm0_15);
+u32 __builtin_msa_copy_u_h (v8i16, imm0_7);
+u32 __builtin_msa_copy_u_w (v4i32, imm0_3);
+u64 __builtin_msa_copy_u_d (v2i64, imm0_1);
+
+void __builtin_msa_ctcmsa (imm0_31, i32);
+
+v16i8 __builtin_msa_div_s_b (v16i8, v16i8);
+v8i16 __builtin_msa_div_s_h (v8i16, v8i16);
+v4i32 __builtin_msa_div_s_w (v4i32, v4i32);
+v2i64 __builtin_msa_div_s_d (v2i64, v2i64);
+
+v16u8 __builtin_msa_div_u_b (v16u8, v16u8);
+v8u16 __builtin_msa_div_u_h (v8u16, v8u16);
+v4u32 __builtin_msa_div_u_w (v4u32, v4u32);
+v2u64 __builtin_msa_div_u_d (v2u64, v2u64);
+
+v8i16 __builtin_msa_dotp_s_h (v16i8, v16i8);
+v4i32 __builtin_msa_dotp_s_w (v8i16, v8i16);
+v2i64 __builtin_msa_dotp_s_d (v4i32, v4i32);
+
+v8u16 __builtin_msa_dotp_u_h (v16u8, v16u8);
+v4u32 __builtin_msa_dotp_u_w (v8u16, v8u16);
+v2u64 __builtin_msa_dotp_u_d (v4u32, v4u32);
+
+v8i16 __builtin_msa_dpadd_s_h (v8i16, v16i8, v16i8);
+v4i32 __builtin_msa_dpadd_s_w (v4i32, v8i16, v8i16);
+v2i64 __builtin_msa_dpadd_s_d (v2i64, v4i32, v4i32);
+
+v8u16 __builtin_msa_dpadd_u_h (v8u16, v16u8, v16u8);
+v4u32 __builtin_msa_dpadd_u_w (v4u32, v8u16, v8u16);
+v2u64 __builtin_msa_dpadd_u_d (v2u64, v4u32, v4u32);
+
+v8i16 __builtin_msa_dpsub_s_h (v8i16, v16i8, v16i8);
+v4i32 __builtin_msa_dpsub_s_w (v4i32, v8i16, v8i16);
+v2i64 __builtin_msa_dpsub_s_d (v2i64, v4i32, v4i32);
+
+v8i16 __builtin_msa_dpsub_u_h (v8i16, v16u8, v16u8);
+v4i32 __builtin_msa_dpsub_u_w (v4i32, v8u16, v8u16);
+v2i64 __builtin_msa_dpsub_u_d (v2i64, v4u32, v4u32);
+
+v4f32 __builtin_msa_fadd_w (v4f32, v4f32);
+v2f64 __builtin_msa_fadd_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fcaf_w (v4f32, v4f32);
+v2i64 __builtin_msa_fcaf_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fceq_w (v4f32, v4f32);
+v2i64 __builtin_msa_fceq_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fclass_w (v4f32);
+v2i64 __builtin_msa_fclass_d (v2f64);
+
+v4i32 __builtin_msa_fcle_w (v4f32, v4f32);
+v2i64 __builtin_msa_fcle_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fclt_w (v4f32, v4f32);
+v2i64 __builtin_msa_fclt_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fcne_w (v4f32, v4f32);
+v2i64 __builtin_msa_fcne_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fcor_w (v4f32, v4f32);
+v2i64 __builtin_msa_fcor_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fcueq_w (v4f32, v4f32);
+v2i64 __builtin_msa_fcueq_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fcule_w (v4f32, v4f32);
+v2i64 __builtin_msa_fcule_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fcult_w (v4f32, v4f32);
+v2i64 __builtin_msa_fcult_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fcun_w (v4f32, v4f32);
+v2i64 __builtin_msa_fcun_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fcune_w (v4f32, v4f32);
+v2i64 __builtin_msa_fcune_d (v2f64, v2f64);
+
+v4f32 __builtin_msa_fdiv_w (v4f32, v4f32);
+v2f64 __builtin_msa_fdiv_d (v2f64, v2f64);
+
+v8i16 __builtin_msa_fexdo_h (v4f32, v4f32);
+v4f32 __builtin_msa_fexdo_w (v2f64, v2f64);
+
+v4f32 __builtin_msa_fexp2_w (v4f32, v4i32);
+v2f64 __builtin_msa_fexp2_d (v2f64, v2i64);
+
+v4f32 __builtin_msa_fexupl_w (v8i16);
+v2f64 __builtin_msa_fexupl_d (v4f32);
+
+v4f32 __builtin_msa_fexupr_w (v8i16);
+v2f64 __builtin_msa_fexupr_d (v4f32);
+
+v4f32 __builtin_msa_ffint_s_w (v4i32);
+v2f64 __builtin_msa_ffint_s_d (v2i64);
+
+v4f32 __builtin_msa_ffint_u_w (v4u32);
+v2f64 __builtin_msa_ffint_u_d (v2u64);
+
+v4f32 __builtin_msa_ffql_w (v8i16);
+v2f64 __builtin_msa_ffql_d (v4i32);
+
+v4f32 __builtin_msa_ffqr_w (v8i16);
+v2f64 __builtin_msa_ffqr_d (v4i32);
+
+v16i8 __builtin_msa_fill_b (i32);
+v8i16 __builtin_msa_fill_h (i32);
+v4i32 __builtin_msa_fill_w (i32);
+v2i64 __builtin_msa_fill_d (i64);
+
+v4f32 __builtin_msa_flog2_w (v4f32);
+v2f64 __builtin_msa_flog2_d (v2f64);
+
+v4f32 __builtin_msa_fmadd_w (v4f32, v4f32, v4f32);
+v2f64 __builtin_msa_fmadd_d (v2f64, v2f64, v2f64);
+
+v4f32 __builtin_msa_fmax_w (v4f32, v4f32);
+v2f64 __builtin_msa_fmax_d (v2f64, v2f64);
+
+v4f32 __builtin_msa_fmax_a_w (v4f32, v4f32);
+v2f64 __builtin_msa_fmax_a_d (v2f64, v2f64);
+
+v4f32 __builtin_msa_fmin_w (v4f32, v4f32);
+v2f64 __builtin_msa_fmin_d (v2f64, v2f64);
+
+v4f32 __builtin_msa_fmin_a_w (v4f32, v4f32);
+v2f64 __builtin_msa_fmin_a_d (v2f64, v2f64);
+
+v4f32 __builtin_msa_fmsub_w (v4f32, v4f32, v4f32);
+v2f64 __builtin_msa_fmsub_d (v2f64, v2f64, v2f64);
+
+v4f32 __builtin_msa_fmul_w (v4f32, v4f32);
+v2f64 __builtin_msa_fmul_d (v2f64, v2f64);
+
+v4f32 __builtin_msa_frint_w (v4f32);
+v2f64 __builtin_msa_frint_d (v2f64);
+
+v4f32 __builtin_msa_frcp_w (v4f32);
+v2f64 __builtin_msa_frcp_d (v2f64);
+
+v4f32 __builtin_msa_frsqrt_w (v4f32);
+v2f64 __builtin_msa_frsqrt_d (v2f64);
+
+v4i32 __builtin_msa_fsaf_w (v4f32, v4f32);
+v2i64 __builtin_msa_fsaf_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fseq_w (v4f32, v4f32);
+v2i64 __builtin_msa_fseq_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fsle_w (v4f32, v4f32);
+v2i64 __builtin_msa_fsle_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fslt_w (v4f32, v4f32);
+v2i64 __builtin_msa_fslt_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fsne_w (v4f32, v4f32);
+v2i64 __builtin_msa_fsne_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fsor_w (v4f32, v4f32);
+v2i64 __builtin_msa_fsor_d (v2f64, v2f64);
+
+v4f32 __builtin_msa_fsqrt_w (v4f32);
+v2f64 __builtin_msa_fsqrt_d (v2f64);
+
+v4f32 __builtin_msa_fsub_w (v4f32, v4f32);
+v2f64 __builtin_msa_fsub_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fsueq_w (v4f32, v4f32);
+v2i64 __builtin_msa_fsueq_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fsule_w (v4f32, v4f32);
+v2i64 __builtin_msa_fsule_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fsult_w (v4f32, v4f32);
+v2i64 __builtin_msa_fsult_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fsun_w (v4f32, v4f32);
+v2i64 __builtin_msa_fsun_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_fsune_w (v4f32, v4f32);
+v2i64 __builtin_msa_fsune_d (v2f64, v2f64);
+
+v4i32 __builtin_msa_ftint_s_w (v4f32);
+v2i64 __builtin_msa_ftint_s_d (v2f64);
+
+v4u32 __builtin_msa_ftint_u_w (v4f32);
+v2u64 __builtin_msa_ftint_u_d (v2f64);
+
+v8i16 __builtin_msa_ftq_h (v4f32, v4f32);
+v4i32 __builtin_msa_ftq_w (v2f64, v2f64);
+
+v4i32 __builtin_msa_ftrunc_s_w (v4f32);
+v2i64 __builtin_msa_ftrunc_s_d (v2f64);
+
+v4u32 __builtin_msa_ftrunc_u_w (v4f32);
+v2u64 __builtin_msa_ftrunc_u_d (v2f64);
+
+v8i16 __builtin_msa_hadd_s_h (v16i8, v16i8);
+v4i32 __builtin_msa_hadd_s_w (v8i16, v8i16);
+v2i64 __builtin_msa_hadd_s_d (v4i32, v4i32);
+
+v8u16 __builtin_msa_hadd_u_h (v16u8, v16u8);
+v4u32 __builtin_msa_hadd_u_w (v8u16, v8u16);
+v2u64 __builtin_msa_hadd_u_d (v4u32, v4u32);
+
+v8i16 __builtin_msa_hsub_s_h (v16i8, v16i8);
+v4i32 __builtin_msa_hsub_s_w (v8i16, v8i16);
+v2i64 __builtin_msa_hsub_s_d (v4i32, v4i32);
+
+v8i16 __builtin_msa_hsub_u_h (v16u8, v16u8);
+v4i32 __builtin_msa_hsub_u_w (v8u16, v8u16);
+v2i64 __builtin_msa_hsub_u_d (v4u32, v4u32);
+
+v16i8 __builtin_msa_ilvev_b (v16i8, v16i8);
+v8i16 __builtin_msa_ilvev_h (v8i16, v8i16);
+v4i32 __builtin_msa_ilvev_w (v4i32, v4i32);
+v2i64 __builtin_msa_ilvev_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_ilvl_b (v16i8, v16i8);
+v8i16 __builtin_msa_ilvl_h (v8i16, v8i16);
+v4i32 __builtin_msa_ilvl_w (v4i32, v4i32);
+v2i64 __builtin_msa_ilvl_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_ilvod_b (v16i8, v16i8);
+v8i16 __builtin_msa_ilvod_h (v8i16, v8i16);
+v4i32 __builtin_msa_ilvod_w (v4i32, v4i32);
+v2i64 __builtin_msa_ilvod_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_ilvr_b (v16i8, v16i8);
+v8i16 __builtin_msa_ilvr_h (v8i16, v8i16);
+v4i32 __builtin_msa_ilvr_w (v4i32, v4i32);
+v2i64 __builtin_msa_ilvr_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_insert_b (v16i8, imm0_15, i32);
+v8i16 __builtin_msa_insert_h (v8i16, imm0_7, i32);
+v4i32 __builtin_msa_insert_w (v4i32, imm0_3, i32);
+v2i64 __builtin_msa_insert_d (v2i64, imm0_1, i64);
+
+v16i8 __builtin_msa_insve_b (v16i8, imm0_15, v16i8);
+v8i16 __builtin_msa_insve_h (v8i16, imm0_7, v8i16);
+v4i32 __builtin_msa_insve_w (v4i32, imm0_3, v4i32);
+v2i64 __builtin_msa_insve_d (v2i64, imm0_1, v2i64);
+
+v16i8 __builtin_msa_ld_b (void *, imm_n512_511);
+v8i16 __builtin_msa_ld_h (void *, imm_n1024_1022);
+v4i32 __builtin_msa_ld_w (void *, imm_n2048_2044);
+v2i64 __builtin_msa_ld_d (void *, imm_n4096_4088);
+
+v16i8 __builtin_msa_ldi_b (imm_n512_511);
+v8i16 __builtin_msa_ldi_h (imm_n512_511);
+v4i32 __builtin_msa_ldi_w (imm_n512_511);
+v2i64 __builtin_msa_ldi_d (imm_n512_511);
+
+v8i16 __builtin_msa_madd_q_h (v8i16, v8i16, v8i16);
+v4i32 __builtin_msa_madd_q_w (v4i32, v4i32, v4i32);
+
+v8i16 __builtin_msa_maddr_q_h (v8i16, v8i16, v8i16);
+v4i32 __builtin_msa_maddr_q_w (v4i32, v4i32, v4i32);
+
+v16i8 __builtin_msa_maddv_b (v16i8, v16i8, v16i8);
+v8i16 __builtin_msa_maddv_h (v8i16, v8i16, v8i16);
+v4i32 __builtin_msa_maddv_w (v4i32, v4i32, v4i32);
+v2i64 __builtin_msa_maddv_d (v2i64, v2i64, v2i64);
+
+v16i8 __builtin_msa_max_a_b (v16i8, v16i8);
+v8i16 __builtin_msa_max_a_h (v8i16, v8i16);
+v4i32 __builtin_msa_max_a_w (v4i32, v4i32);
+v2i64 __builtin_msa_max_a_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_max_s_b (v16i8, v16i8);
+v8i16 __builtin_msa_max_s_h (v8i16, v8i16);
+v4i32 __builtin_msa_max_s_w (v4i32, v4i32);
+v2i64 __builtin_msa_max_s_d (v2i64, v2i64);
+
+v16u8 __builtin_msa_max_u_b (v16u8, v16u8);
+v8u16 __builtin_msa_max_u_h (v8u16, v8u16);
+v4u32 __builtin_msa_max_u_w (v4u32, v4u32);
+v2u64 __builtin_msa_max_u_d (v2u64, v2u64);
+
+v16i8 __builtin_msa_maxi_s_b (v16i8, imm_n16_15);
+v8i16 __builtin_msa_maxi_s_h (v8i16, imm_n16_15);
+v4i32 __builtin_msa_maxi_s_w (v4i32, imm_n16_15);
+v2i64 __builtin_msa_maxi_s_d (v2i64, imm_n16_15);
+
+v16u8 __builtin_msa_maxi_u_b (v16u8, imm0_31);
+v8u16 __builtin_msa_maxi_u_h (v8u16, imm0_31);
+v4u32 __builtin_msa_maxi_u_w (v4u32, imm0_31);
+v2u64 __builtin_msa_maxi_u_d (v2u64, imm0_31);
+
+v16i8 __builtin_msa_min_a_b (v16i8, v16i8);
+v8i16 __builtin_msa_min_a_h (v8i16, v8i16);
+v4i32 __builtin_msa_min_a_w (v4i32, v4i32);
+v2i64 __builtin_msa_min_a_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_min_s_b (v16i8, v16i8);
+v8i16 __builtin_msa_min_s_h (v8i16, v8i16);
+v4i32 __builtin_msa_min_s_w (v4i32, v4i32);
+v2i64 __builtin_msa_min_s_d (v2i64, v2i64);
+
+v16u8 __builtin_msa_min_u_b (v16u8, v16u8);
+v8u16 __builtin_msa_min_u_h (v8u16, v8u16);
+v4u32 __builtin_msa_min_u_w (v4u32, v4u32);
+v2u64 __builtin_msa_min_u_d (v2u64, v2u64);
+
+v16i8 __builtin_msa_mini_s_b (v16i8, imm_n16_15);
+v8i16 __builtin_msa_mini_s_h (v8i16, imm_n16_15);
+v4i32 __builtin_msa_mini_s_w (v4i32, imm_n16_15);
+v2i64 __builtin_msa_mini_s_d (v2i64, imm_n16_15);
+
+v16u8 __builtin_msa_mini_u_b (v16u8, imm0_31);
+v8u16 __builtin_msa_mini_u_h (v8u16, imm0_31);
+v4u32 __builtin_msa_mini_u_w (v4u32, imm0_31);
+v2u64 __builtin_msa_mini_u_d (v2u64, imm0_31);
+
+v16i8 __builtin_msa_mod_s_b (v16i8, v16i8);
+v8i16 __builtin_msa_mod_s_h (v8i16, v8i16);
+v4i32 __builtin_msa_mod_s_w (v4i32, v4i32);
+v2i64 __builtin_msa_mod_s_d (v2i64, v2i64);
+
+v16u8 __builtin_msa_mod_u_b (v16u8, v16u8);
+v8u16 __builtin_msa_mod_u_h (v8u16, v8u16);
+v4u32 __builtin_msa_mod_u_w (v4u32, v4u32);
+v2u64 __builtin_msa_mod_u_d (v2u64, v2u64);
+
+v16i8 __builtin_msa_move_v_b (v16i8);
+
+v8i16 __builtin_msa_msub_q_h (v8i16, v8i16, v8i16);
+v4i32 __builtin_msa_msub_q_w (v4i32, v4i32, v4i32);
+
+v8i16 __builtin_msa_msubr_q_h (v8i16, v8i16, v8i16);
+v4i32 __builtin_msa_msubr_q_w (v4i32, v4i32, v4i32);
+
+v16i8 __builtin_msa_msubv_b (v16i8, v16i8, v16i8);
+v8i16 __builtin_msa_msubv_h (v8i16, v8i16, v8i16);
+v4i32 __builtin_msa_msubv_w (v4i32, v4i32, v4i32);
+v2i64 __builtin_msa_msubv_d (v2i64, v2i64, v2i64);
+
+v8i16 __builtin_msa_mul_q_h (v8i16, v8i16);
+v4i32 __builtin_msa_mul_q_w (v4i32, v4i32);
+
+v8i16 __builtin_msa_mulr_q_h (v8i16, v8i16);
+v4i32 __builtin_msa_mulr_q_w (v4i32, v4i32);
+
+v16i8 __builtin_msa_mulv_b (v16i8, v16i8);
+v8i16 __builtin_msa_mulv_h (v8i16, v8i16);
+v4i32 __builtin_msa_mulv_w (v4i32, v4i32);
+v2i64 __builtin_msa_mulv_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_nloc_b (v16i8);
+v8i16 __builtin_msa_nloc_h (v8i16);
+v4i32 __builtin_msa_nloc_w (v4i32);
+v2i64 __builtin_msa_nloc_d (v2i64);
+
+v16i8 __builtin_msa_nlzc_b (v16i8);
+v8i16 __builtin_msa_nlzc_h (v8i16);
+v4i32 __builtin_msa_nlzc_w (v4i32);
+v2i64 __builtin_msa_nlzc_d (v2i64);
+
+v16u8 __builtin_msa_nor_v (v16u8, v16u8);
+
+v16u8 __builtin_msa_nori_b (v16u8, imm0_255);
+
+v16u8 __builtin_msa_or_v (v16u8, v16u8);
+
+v16u8 __builtin_msa_ori_b (v16u8, imm0_255);
+
+v16i8 __builtin_msa_pckev_b (v16i8, v16i8);
+v8i16 __builtin_msa_pckev_h (v8i16, v8i16);
+v4i32 __builtin_msa_pckev_w (v4i32, v4i32);
+v2i64 __builtin_msa_pckev_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_pckod_b (v16i8, v16i8);
+v8i16 __builtin_msa_pckod_h (v8i16, v8i16);
+v4i32 __builtin_msa_pckod_w (v4i32, v4i32);
+v2i64 __builtin_msa_pckod_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_pcnt_b (v16i8);
+v8i16 __builtin_msa_pcnt_h (v8i16);
+v4i32 __builtin_msa_pcnt_w (v4i32);
+v2i64 __builtin_msa_pcnt_d (v2i64);
+
+v16i8 __builtin_msa_sat_s_b (v16i8, imm0_7);
+v8i16 __builtin_msa_sat_s_h (v8i16, imm0_15);
+v4i32 __builtin_msa_sat_s_w (v4i32, imm0_31);
+v2i64 __builtin_msa_sat_s_d (v2i64, imm0_63);
+
+v16u8 __builtin_msa_sat_u_b (v16u8, imm0_7);
+v8u16 __builtin_msa_sat_u_h (v8u16, imm0_15);
+v4u32 __builtin_msa_sat_u_w (v4u32, imm0_31);
+v2u64 __builtin_msa_sat_u_d (v2u64, imm0_63);
+
+v16i8 __builtin_msa_shf_b (v16i8, imm0_255);
+
+v8i16 __builtin_msa_shf_h (v8i16, imm0_255);
+
+v4i32 __builtin_msa_shf_w (v4i32, imm0_255);
+
+v16i8 __builtin_msa_sld_b (v16i8, v16i8, i32);
+v8i16 __builtin_msa_sld_h (v8i16, v8i16, i32);
+v4i32 __builtin_msa_sld_w (v4i32, v4i32, i32);
+v2i64 __builtin_msa_sld_d (v2i64, v2i64, i32);
+
+v16i8 __builtin_msa_sldi_b (v16i8, v16i8, imm0_15);
+v8i16 __builtin_msa_sldi_h (v8i16, v8i16, imm0_7);
+v4i32 __builtin_msa_sldi_w (v4i32, v4i32, imm0_3);
+v2i64 __builtin_msa_sldi_d (v2i64, v2i64, imm0_1);
+
+v16i8 __builtin_msa_sll_b (v16i8, v16i8);
+v8i16 __builtin_msa_sll_h (v8i16, v8i16);
+v4i32 __builtin_msa_sll_w (v4i32, v4i32);
+v2i64 __builtin_msa_sll_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_slli_b (v16i8, imm0_7);
+v8i16 __builtin_msa_slli_h (v8i16, imm0_15);
+v4i32 __builtin_msa_slli_w (v4i32, imm0_31);
+v2i64 __builtin_msa_slli_d (v2i64, imm0_63);
+
+v16i8 __builtin_msa_splat_b (v16i8, i32);
+v8i16 __builtin_msa_splat_h (v8i16, i32);
+v4i32 __builtin_msa_splat_w (v4i32, i32);
+v2i64 __builtin_msa_splat_d (v2i64, i32);
+
+v16i8 __builtin_msa_splati_b (v16i8, imm0_15);
+v8i16 __builtin_msa_splati_h (v8i16, imm0_7);
+v4i32 __builtin_msa_splati_w (v4i32, imm0_3);
+v2i64 __builtin_msa_splati_d (v2i64, imm0_1);
+
+v16i8 __builtin_msa_sra_b (v16i8, v16i8);
+v8i16 __builtin_msa_sra_h (v8i16, v8i16);
+v4i32 __builtin_msa_sra_w (v4i32, v4i32);
+v2i64 __builtin_msa_sra_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_srai_b (v16i8, imm0_7);
+v8i16 __builtin_msa_srai_h (v8i16, imm0_15);
+v4i32 __builtin_msa_srai_w (v4i32, imm0_31);
+v2i64 __builtin_msa_srai_d (v2i64, imm0_63);
+
+v16i8 __builtin_msa_srar_b (v16i8, v16i8);
+v8i16 __builtin_msa_srar_h (v8i16, v8i16);
+v4i32 __builtin_msa_srar_w (v4i32, v4i32);
+v2i64 __builtin_msa_srar_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_srari_b (v16i8, imm0_7);
+v8i16 __builtin_msa_srari_h (v8i16, imm0_15);
+v4i32 __builtin_msa_srari_w (v4i32, imm0_31);
+v2i64 __builtin_msa_srari_d (v2i64, imm0_63);
+
+v16i8 __builtin_msa_srl_b (v16i8, v16i8);
+v8i16 __builtin_msa_srl_h (v8i16, v8i16);
+v4i32 __builtin_msa_srl_w (v4i32, v4i32);
+v2i64 __builtin_msa_srl_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_srli_b (v16i8, imm0_7);
+v8i16 __builtin_msa_srli_h (v8i16, imm0_15);
+v4i32 __builtin_msa_srli_w (v4i32, imm0_31);
+v2i64 __builtin_msa_srli_d (v2i64, imm0_63);
+
+v16i8 __builtin_msa_srlr_b (v16i8, v16i8);
+v8i16 __builtin_msa_srlr_h (v8i16, v8i16);
+v4i32 __builtin_msa_srlr_w (v4i32, v4i32);
+v2i64 __builtin_msa_srlr_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_srlri_b (v16i8, imm0_7);
+v8i16 __builtin_msa_srlri_h (v8i16, imm0_15);
+v4i32 __builtin_msa_srlri_w (v4i32, imm0_31);
+v2i64 __builtin_msa_srlri_d (v2i64, imm0_63);
+
+void __builtin_msa_st_b (v16i8, void *, imm_n512_511);
+void __builtin_msa_st_h (v8i16, void *, imm_n1024_1022);
+void __builtin_msa_st_w (v4i32, void *, imm_n2048_2044);
+void __builtin_msa_st_d (v2i64, void *, imm_n4096_4088);
+
+v16i8 __builtin_msa_subs_s_b (v16i8, v16i8);
+v8i16 __builtin_msa_subs_s_h (v8i16, v8i16);
+v4i32 __builtin_msa_subs_s_w (v4i32, v4i32);
+v2i64 __builtin_msa_subs_s_d (v2i64, v2i64);
+
+v16u8 __builtin_msa_subs_u_b (v16u8, v16u8);
+v8u16 __builtin_msa_subs_u_h (v8u16, v8u16);
+v4u32 __builtin_msa_subs_u_w (v4u32, v4u32);
+v2u64 __builtin_msa_subs_u_d (v2u64, v2u64);
+
+v16u8 __builtin_msa_subsus_u_b (v16u8, v16i8);
+v8u16 __builtin_msa_subsus_u_h (v8u16, v8i16);
+v4u32 __builtin_msa_subsus_u_w (v4u32, v4i32);
+v2u64 __builtin_msa_subsus_u_d (v2u64, v2i64);
+
+v16i8 __builtin_msa_subsuu_s_b (v16u8, v16u8);
+v8i16 __builtin_msa_subsuu_s_h (v8u16, v8u16);
+v4i32 __builtin_msa_subsuu_s_w (v4u32, v4u32);
+v2i64 __builtin_msa_subsuu_s_d (v2u64, v2u64);
+
+v16i8 __builtin_msa_subv_b (v16i8, v16i8);
+v8i16 __builtin_msa_subv_h (v8i16, v8i16);
+v4i32 __builtin_msa_subv_w (v4i32, v4i32);
+v2i64 __builtin_msa_subv_d (v2i64, v2i64);
+
+v16i8 __builtin_msa_subvi_b (v16i8, imm0_31);
+v8i16 __builtin_msa_subvi_h (v8i16, imm0_31);
+v4i32 __builtin_msa_subvi_w (v4i32, imm0_31);
+v2i64 __builtin_msa_subvi_d (v2i64, imm0_31);
+
+v16i8 __builtin_msa_vshf_b (v16i8, v16i8, v16i8);
+v8i16 __builtin_msa_vshf_h (v8i16, v8i16, v8i16);
+v4i32 __builtin_msa_vshf_w (v4i32, v4i32, v4i32);
+v2i64 __builtin_msa_vshf_d (v2i64, v2i64, v2i64);
+
+v16u8 __builtin_msa_xor_v (v16u8, v16u8);
+
+v16u8 __builtin_msa_xori_b (v16u8, imm0_255);
+
+v4f32 __builtin_msa_cast_to_vector_float (f32);
+v2f64 __builtin_msa_cast_to_vector_double (f64);
+f32 __builtin_msa_cast_to_scalar_float (v4f32);
+f64 __builtin_msa_cast_to_scalar_double (v2f64);
+
+i32 __builtin_msa_lsa (i32, i32, imm1_4);
+i64 __builtin_msa_dlsa (i64, i64, imm1_4);
 @end smallexample
 
 @menu
@@ -13233,16 +14045,22 @@ vector bool int vec_cmplt (vector unsigned int, vector unsigned int);
 vector bool int vec_cmplt (vector signed int, vector signed int);
 vector bool int vec_cmplt (vector float, vector float);
 
+vector float vec_cpsgn (vector float, vector float);
+
 vector float vec_ctf (vector unsigned int, const int);
 vector float vec_ctf (vector signed int, const int);
+vector double vec_ctf (vector unsigned long, const int);
+vector double vec_ctf (vector signed long, const int);
 
 vector float vec_vcfsx (vector signed int, const int);
 
 vector float vec_vcfux (vector unsigned int, const int);
 
 vector signed int vec_cts (vector float, const int);
+vector signed long vec_cts (vector double, const int);
 
 vector unsigned int vec_ctu (vector float, const int);
+vector unsigned long vec_ctu (vector double, const int);
 
 void vec_dss (const int);
 
@@ -14078,6 +14896,16 @@ vector float vec_splat (vector float, const int);
 vector signed int vec_splat (vector signed int, const int);
 vector unsigned int vec_splat (vector unsigned int, const int);
 vector bool int vec_splat (vector bool int, const int);
+vector signed long vec_splat (vector signed long, const int);
+vector unsigned long vec_splat (vector unsigned long, const int);
+
+vector signed char vec_splats (signed char);
+vector unsigned char vec_splats (unsigned char);
+vector signed short vec_splats (signed short);
+vector unsigned short vec_splats (unsigned short);
+vector signed int vec_splats (signed int);
+vector unsigned int vec_splats (unsigned int);
+vector float vec_splats (float);
 
 vector float vec_vspltw (vector float, const int);
 vector signed int vec_vspltw (vector signed int, const int);
@@ -14782,17 +15610,32 @@ vector double vec_add (vector double, vector double);
 vector double vec_and (vector double, vector double);
 vector double vec_and (vector double, vector bool long);
 vector double vec_and (vector bool long, vector double);
+vector long vec_and (vector long, vector long);
+vector long vec_and (vector long, vector bool long);
+vector long vec_and (vector bool long, vector long);
+vector unsigned long vec_and (vector unsigned long, vector unsigned long);
+vector unsigned long vec_and (vector unsigned long, vector bool long);
+vector unsigned long vec_and (vector bool long, vector unsigned long);
 vector double vec_andc (vector double, vector double);
 vector double vec_andc (vector double, vector bool long);
 vector double vec_andc (vector bool long, vector double);
+vector long vec_andc (vector long, vector long);
+vector long vec_andc (vector long, vector bool long);
+vector long vec_andc (vector bool long, vector long);
+vector unsigned long vec_andc (vector unsigned long, vector unsigned long);
+vector unsigned long vec_andc (vector unsigned long, vector bool long);
+vector unsigned long vec_andc (vector bool long, vector unsigned long);
 vector double vec_ceil (vector double);
 vector bool long vec_cmpeq (vector double, vector double);
 vector bool long vec_cmpge (vector double, vector double);
 vector bool long vec_cmpgt (vector double, vector double);
 vector bool long vec_cmple (vector double, vector double);
 vector bool long vec_cmplt (vector double, vector double);
+vector double vec_cpsgn (vector double, vector double);
 vector float vec_div (vector float, vector float);
 vector double vec_div (vector double, vector double);
+vector long vec_div (vector long, vector long);
+vector unsigned long vec_div (vector unsigned long, vector unsigned long);
 vector double vec_floor (vector double);
 vector double vec_ld (int, const vector double *);
 vector double vec_ld (int, const double *);
@@ -14802,38 +15645,83 @@ vector unsigned char vec_lvsl (int, const volatile double *);
 vector unsigned char vec_lvsr (int, const volatile double *);
 vector double vec_madd (vector double, vector double, vector double);
 vector double vec_max (vector double, vector double);
+vector signed long vec_mergeh (vector signed long, vector signed long);
+vector signed long vec_mergeh (vector signed long, vector bool long);
+vector signed long vec_mergeh (vector bool long, vector signed long);
+vector unsigned long vec_mergeh (vector unsigned long, vector unsigned long);
+vector unsigned long vec_mergeh (vector unsigned long, vector bool long);
+vector unsigned long vec_mergeh (vector bool long, vector unsigned long);
+vector signed long vec_mergel (vector signed long, vector signed long);
+vector signed long vec_mergel (vector signed long, vector bool long);
+vector signed long vec_mergel (vector bool long, vector signed long);
+vector unsigned long vec_mergel (vector unsigned long, vector unsigned long);
+vector unsigned long vec_mergel (vector unsigned long, vector bool long);
+vector unsigned long vec_mergel (vector bool long, vector unsigned long);
 vector double vec_min (vector double, vector double);
 vector float vec_msub (vector float, vector float, vector float);
 vector double vec_msub (vector double, vector double, vector double);
 vector float vec_mul (vector float, vector float);
 vector double vec_mul (vector double, vector double);
+vector long vec_mul (vector long, vector long);
+vector unsigned long vec_mul (vector unsigned long, vector unsigned long);
 vector float vec_nearbyint (vector float);
 vector double vec_nearbyint (vector double);
 vector float vec_nmadd (vector float, vector float, vector float);
 vector double vec_nmadd (vector double, vector double, vector double);
 vector double vec_nmsub (vector double, vector double, vector double);
 vector double vec_nor (vector double, vector double);
+vector long vec_nor (vector long, vector long);
+vector long vec_nor (vector long, vector bool long);
+vector long vec_nor (vector bool long, vector long);
+vector unsigned long vec_nor (vector unsigned long, vector unsigned long);
+vector unsigned long vec_nor (vector unsigned long, vector bool long);
+vector unsigned long vec_nor (vector bool long, vector unsigned long);
 vector double vec_or (vector double, vector double);
 vector double vec_or (vector double, vector bool long);
 vector double vec_or (vector bool long, vector double);
-vector double vec_perm (vector double,
-                        vector double,
-                        vector unsigned char);
+vector long vec_or (vector long, vector long);
+vector long vec_or (vector long, vector bool long);
+vector long vec_or (vector bool long, vector long);
+vector unsigned long vec_or (vector unsigned long, vector unsigned long);
+vector unsigned long vec_or (vector unsigned long, vector bool long);
+vector unsigned long vec_or (vector bool long, vector unsigned long);
+vector double vec_perm (vector double, vector double, vector unsigned char);
+vector long vec_perm (vector long, vector long, vector unsigned char);
+vector unsigned long vec_perm (vector unsigned long, vector unsigned long,
+                               vector unsigned char);
 vector double vec_rint (vector double);
 vector double vec_recip (vector double, vector double);
 vector double vec_rsqrt (vector double);
 vector double vec_rsqrte (vector double);
 vector double vec_sel (vector double, vector double, vector bool long);
 vector double vec_sel (vector double, vector double, vector unsigned long);
-vector double vec_sub (vector double, vector double);
+vector long vec_sel (vector long, vector long, vector long);
+vector long vec_sel (vector long, vector long, vector unsigned long);
+vector long vec_sel (vector long, vector long, vector bool long);
+vector unsigned long vec_sel (vector unsigned long, vector unsigned long,
+                              vector long);
+vector unsigned long vec_sel (vector unsigned long, vector unsigned long,
+                              vector unsigned long);
+vector unsigned long vec_sel (vector unsigned long, vector unsigned long,
+                              vector bool long);
+vector double vec_splats (double);
+vector signed long vec_splats (signed long);
+vector unsigned long vec_splats (unsigned long);
 vector float vec_sqrt (vector float);
 vector double vec_sqrt (vector double);
 void vec_st (vector double, int, vector double *);
 void vec_st (vector double, int, double *);
+vector double vec_sub (vector double, vector double);
 vector double vec_trunc (vector double);
 vector double vec_xor (vector double, vector double);
 vector double vec_xor (vector double, vector bool long);
 vector double vec_xor (vector bool long, vector double);
+vector long vec_xor (vector long, vector long);
+vector long vec_xor (vector long, vector bool long);
+vector long vec_xor (vector bool long, vector long);
+vector unsigned long vec_xor (vector unsigned long, vector unsigned long);
+vector unsigned long vec_xor (vector unsigned long, vector bool long);
+vector unsigned long vec_xor (vector bool long, vector unsigned long);
 int vec_all_eq (vector double, vector double);
 int vec_all_ge (vector double, vector double);
 int vec_all_gt (vector double, vector double);
@@ -14962,17 +15850,30 @@ vector unsigned long long vec_add (vector unsigned long long,
                                    vector unsigned long long);
 
 int vec_all_eq (vector long long, vector long long);
+int vec_all_eq (vector unsigned long long, vector unsigned long long);
 int vec_all_ge (vector long long, vector long long);
+int vec_all_ge (vector unsigned long long, vector unsigned long long);
 int vec_all_gt (vector long long, vector long long);
+int vec_all_gt (vector unsigned long long, vector unsigned long long);
 int vec_all_le (vector long long, vector long long);
+int vec_all_le (vector unsigned long long, vector unsigned long long);
 int vec_all_lt (vector long long, vector long long);
+int vec_all_lt (vector unsigned long long, vector unsigned long long);
 int vec_all_ne (vector long long, vector long long);
+int vec_all_ne (vector unsigned long long, vector unsigned long long);
+
 int vec_any_eq (vector long long, vector long long);
+int vec_any_eq (vector unsigned long long, vector unsigned long long);
 int vec_any_ge (vector long long, vector long long);
+int vec_any_ge (vector unsigned long long, vector unsigned long long);
 int vec_any_gt (vector long long, vector long long);
+int vec_any_gt (vector unsigned long long, vector unsigned long long);
 int vec_any_le (vector long long, vector long long);
+int vec_any_le (vector unsigned long long, vector unsigned long long);
 int vec_any_lt (vector long long, vector long long);
+int vec_any_lt (vector unsigned long long, vector unsigned long long);
 int vec_any_ne (vector long long, vector long long);
+int vec_any_ne (vector unsigned long long, vector unsigned long long);
 
 vector long long vec_eqv (vector long long, vector long long);
 vector long long vec_eqv (vector bool long long, vector long long);
@@ -15009,6 +15910,14 @@ vector unsigned char vec_eqv (vector unsigned char, vector bool unsigned char);
 vector long long vec_max (vector long long, vector long long);
 vector unsigned long long vec_max (vector unsigned long long,
                                    vector unsigned long long);
+
+vector signed int vec_mergee (vector signed int, vector signed int);
+vector unsigned int vec_mergee (vector unsigned int, vector unsigned int);
+vector bool int vec_mergee (vector bool int, vector bool int);
+
+vector signed int vec_mergeo (vector signed int, vector signed int);
+vector unsigned int vec_mergeo (vector unsigned int, vector unsigned int);
+vector bool int vec_mergeo (vector bool int, vector bool int);
 
 vector long long vec_min (vector long long, vector long long);
 vector unsigned long long vec_min (vector unsigned long long,
@@ -15088,6 +15997,8 @@ vector unsigned int vec_packs (vector unsigned long long,
                                vector unsigned long long);
 
 vector unsigned int vec_packsu (vector long long, vector long long);
+vector unsigned int vec_packsu (vector unsigned long long,
+                                vector unsigned long long);
 
 vector long long vec_rl (vector long long,
                          vector unsigned long long);
@@ -15128,6 +16039,15 @@ vector unsigned long long vec_vaddudm (vector unsigned long long,
 
 vector long long vec_vbpermq (vector signed char, vector signed char);
 vector long long vec_vbpermq (vector unsigned char, vector unsigned char);
+
+vector long long vec_cntlz (vector long long);
+vector unsigned long long vec_cntlz (vector unsigned long long);
+vector int vec_cntlz (vector int);
+vector unsigned int vec_cntlz (vector int);
+vector short vec_cntlz (vector short);
+vector unsigned short vec_cntlz (vector unsigned short);
+vector signed char vec_cntlz (vector signed char);
+vector unsigned char vec_cntlz (vector unsigned char);
 
 vector long long vec_vclz (vector long long);
 vector unsigned long long vec_vclz (vector unsigned long long);

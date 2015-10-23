@@ -105,7 +105,9 @@ can_refer_decl_in_current_unit_p (tree decl, tree from_decl)
      external var.  */
   if (!from_decl
       || TREE_CODE (from_decl) != VAR_DECL
-      || !DECL_EXTERNAL (from_decl)
+      || (!DECL_EXTERNAL (from_decl)
+         && (vnode = varpool_get_node (from_decl)) != NULL
+         && vnode->definition)
       || (flag_ltrans
 	  && symtab_get_node (from_decl)->in_other_partition))
     return true;

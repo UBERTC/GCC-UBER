@@ -486,7 +486,47 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	  }	    
 	};
 
+      // Local modification: if __google_stl_debug_rbtree is defined to
+      // non-zero value, check sort predicate for strict weak ordering.
+      // Google ref b/1731200.
+#if __google_stl_debug_rbtree
+      template<typename _KeyCompare>
+      struct _CheckedCompare {
+        _KeyCompare _M_key_compare;
+
+        _CheckedCompare(): _M_key_compare() { }
+        _CheckedCompare(const _KeyCompare & __comp): _M_key_compare(__comp) { }
+
+	// Template arg required to avoid duplicating code in the two op()
+	// operators below.  User-provided _M_key_compare may not be const,
+	// but needs to be callable from our const op().
+	// Google ref. b/1731200.
+	template <typename _KeyCompareT>
+        static bool _M_compare_with(_KeyCompareT& __comp, const _Key& __x, const _Key& __y) {
+          if (__comp(__x, __x))
+            __throw_runtime_error("strict weak ordering: (__x LT __x) != false");
+          if (__comp(__y, __y))
+            __throw_runtime_error("strict weak ordering: (__y LT __y) != false");
+          bool lt = __comp(__x, __y);
+          if (lt && __comp(__y, __x))
+            __throw_runtime_error("strict weak ordering: ((__x LT __y) && (__y LT __x)) != false");
+          return lt;
+        }
+        bool operator()(const _Key& __x, const _Key& __y) const {
+	  return _M_compare_with(_M_key_compare, __x, __y);
+        }
+
+        bool operator()(const _Key& __x, const _Key& __y) {
+	  return _M_compare_with(_M_key_compare, __x, __y);
+        }
+
+        operator _KeyCompare() const { return _M_key_compare; }
+      };
+
+      _Rb_tree_impl<_CheckedCompare<_Compare> > _M_impl;
+#else
       _Rb_tree_impl<_Compare> _M_impl;
+#endif
 
     protected:
       _Base_ptr&

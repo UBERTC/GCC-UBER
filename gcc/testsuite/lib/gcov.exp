@@ -303,6 +303,8 @@ proc run-gcov { args } {
     set gcov_args ""
     set gcov_verify_calls 0
     set gcov_verify_branches 0
+    set gcov_execute_xfail ""
+    set gcov_verify_xfail ""
     set gcov_verify_lines 1
     set gcov_verify_intermediate 0
     set xfailed 0

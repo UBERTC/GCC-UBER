@@ -30,6 +30,22 @@
 
 // Support for Solaris 2.5.1
 
+#if defined (__ANDROID__)
+#if !defined(_U)
+#if !defined(_CTYPE_U)
+#error Bionic header ctype.h does not define either _U nor _CTYPE_U
+#endif
+#define _U _CTYPE_U
+#define _L _CTYPE_L
+#define _N _CTYPE_N
+#define _S _CTYPE_S
+#define _P _CTYPE_P
+#define _C _CTYPE_C
+#define _X _CTYPE_X
+#define _B _CTYPE_B
+#endif
+#endif /* __ANDROID__ */
+
 namespace std _GLIBCXX_VISIBILITY(default)
 {
 _GLIBCXX_BEGIN_NAMESPACE_VERSION

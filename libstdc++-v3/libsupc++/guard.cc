@@ -33,7 +33,12 @@
 #if defined(__GTHREADS) && defined(__GTHREAD_HAS_COND) \
   && (ATOMIC_INT_LOCK_FREE > 1) && defined(_GLIBCXX_HAVE_LINUX_FUTEX)
 # include <climits>
+#if defined(__ANDROID__)
+# include <sys/syscall.h>
+# define SYS_futex __NR_futex
+#else
 # include <syscall.h>
+#endif
 # include <unistd.h>
 # define _GLIBCXX_USE_FUTEX
 # define _GLIBCXX_FUTEX_WAIT 0
@@ -135,6 +140,26 @@ __set_and_release (__cxxabiv1::__guard *g)
 
 #endif /* __GTHREADS */
 
+
+extern "C" void __google_potentially_blocking_region_begin(void)
+  __attribute__((weak));
+extern "C" void __google_potentially_blocking_region_end(void)
+  __attribute__((weak));
+
+struct google_potentially_blocking_region
+{
+  google_potentially_blocking_region()
+  {
+    if (&__google_potentially_blocking_region_begin != 0)
+      __google_potentially_blocking_region_begin();
+  }
+  ~google_potentially_blocking_region()
+  {
+    if (&__google_potentially_blocking_region_end != 0)
+      __google_potentially_blocking_region_end();
+  }
+};
+
 //
 // Here are C++ run-time routines for guarded initialization of static
 // variables. There are 4 scenarios under which these routines are called:
@@ -230,6 +255,8 @@ namespace __cxxabiv1
   extern "C"
   int __cxa_guard_acquire (__guard *g) 
   {
+    google_potentially_blocking_region gpbr;  // RAII
+
 #ifdef __GTHREADS
     // If the target can reorder loads, we need to insert a read memory
     // barrier so that accesses to the guarded variable happen after the

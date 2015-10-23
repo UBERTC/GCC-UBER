@@ -861,6 +861,7 @@ main (int argc, char **argv)
       USE_PLUGIN_LD,
       USE_GOLD_LD,
       USE_BFD_LD,
+      USE_MCLD_LD,
       USE_LD_MAX
     } selected_linker = USE_DEFAULT_LD;
   static const char *const ld_suffixes[USE_LD_MAX] =
@@ -868,7 +869,8 @@ main (int argc, char **argv)
       "ld",
       PLUGIN_LD_SUFFIX,
       "ld.gold",
-      "ld.bfd"
+      "ld.bfd",
+      "ld.mcld"
     };
   static const char *const real_ld_suffix = "real-ld";
   static const char *const collect_ld_suffix = "collect-ld";
@@ -1034,6 +1036,8 @@ main (int argc, char **argv)
 	  selected_linker = USE_BFD_LD;
 	else if (strcmp (argv[i], "-fuse-ld=gold") == 0)
 	  selected_linker = USE_GOLD_LD;
+	else if (strcmp (argv[i], "-fuse-ld=mcld") == 0)
+	  selected_linker = USE_MCLD_LD;
 
 #ifdef COLLECT_EXPORT_LIST
 	/* These flags are position independent, although their order
@@ -1337,7 +1341,7 @@ main (int argc, char **argv)
 	      else if (!use_collect_ld
 		       && strncmp (arg, "-fuse-ld=", 9) == 0)
 		{
-		  /* Do not pass -fuse-ld={bfd|gold} to the linker. */
+		  /* Do not pass -fuse-ld={bfd|gold|mcld} to the linker. */
 		  ld1--;
 		  ld2--;
 		}

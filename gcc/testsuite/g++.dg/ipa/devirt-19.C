@@ -2,7 +2,7 @@
    Previously we were failing by considering CLOBBER statement to be
    a type change.  */
 /* { dg-do compile } */
-/* { dg-options "-O2 -fdump-ipa-cp"  } */
+/* { dg-options "-O2 -fdump-ipa-cp -fdevirtualize"  } */
 struct A {
   void operator==(const A &);
 };

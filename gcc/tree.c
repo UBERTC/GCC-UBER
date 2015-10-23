@@ -75,6 +75,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "except.h"
 #include "debug.h"
 #include "intl.h"
+#include "l-ipo.h"
 
 /* Tree code classes.  */
 
@@ -1120,7 +1121,7 @@ int_cst_hash_hash (const void *x)
   const_tree const t = (const_tree) x;
 
   return (TREE_INT_CST_HIGH (t) ^ TREE_INT_CST_LOW (t)
-	  ^ htab_hash_pointer (TREE_TYPE (t)));
+	  ^ TYPE_UID (TREE_TYPE (t)));
 }
 
 /* Return nonzero if the value represented by *X (an INTEGER_CST tree node)
@@ -6215,8 +6216,11 @@ build_qualified_type (tree type, int type_quals)
       else if (TYPE_CANONICAL (type) != type)
 	/* Build the underlying canonical type, since it is different
 	   from TYPE. */
-	TYPE_CANONICAL (t) = build_qualified_type (TYPE_CANONICAL (type),
-						   type_quals);
+	{
+	  tree c = build_qualified_type (TYPE_CANONICAL (type),
+					 type_quals);
+	  TYPE_CANONICAL (t) = TYPE_CANONICAL (c);
+	}
       else
 	/* T is its own canonical type. */
 	TYPE_CANONICAL (t) = t;
@@ -11903,7 +11907,7 @@ types_same_for_odr (tree type1, tree type2)
   if (!same_for_odr (TYPE_CONTEXT (type1), TYPE_CONTEXT (type2)))
     return false;
   /* When not in LTO the MAIN_VARIANT check should be the same.  */
-  gcc_assert (in_lto_p);
+  gcc_assert (in_lto_p || L_IPO_COMP_MODE);
     
   return true;
 }

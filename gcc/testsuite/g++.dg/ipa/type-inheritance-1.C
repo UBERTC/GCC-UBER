@@ -1,7 +1,7 @@
 /* Verify that callgraph construction keeps FOO for possible devirtualization
    and removes BAR.  */
 /* { dg-do compile } */
-/* { dg-options "-O2 -fdump-ipa-visibility"  } */
+/* { dg-options "-O2 -fdump-ipa-visibility -fdevirtualize"  } */
 
 extern "C" void abort (void);
 

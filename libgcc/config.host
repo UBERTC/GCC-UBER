@@ -229,9 +229,7 @@ case ${host} in
 *-*-linux* | frv-*-*linux* | *-*-kfreebsd*-gnu | *-*-knetbsd*-gnu | *-*-gnu* | *-*-kopensolaris*-gnu)
   tmake_file="$tmake_file t-crtstuff-pic t-libgcc-pic t-eh-dw2-dip t-slibgcc t-slibgcc-gld t-slibgcc-elf-ver t-linux"
   extra_parts="crtbegin.o crtbeginS.o crtbeginT.o crtend.o crtendS.o"
-  if test x$enable_vtable_verify = xyes; then
-    extra_parts="$extra_parts vtv_start.o vtv_end.o vtv_start_preinit.o vtv_end_preinit.o"
-  fi
+  vtv_extra_parts="vtv_start.o vtv_end.o vtv_start_preinit.o vtv_end_preinit.o"
   ;;
 *-*-lynxos*)
   tmake_file="$tmake_file t-lynx $cpu_type/t-crtstuff t-crtstuff-pic t-libgcc-pic"
@@ -814,8 +812,10 @@ mips*-sde-elf*)
 	;;
 mipsisa32-*-elf* | mipsisa32el-*-elf* | \
 mipsisa32r2-*-elf* | mipsisa32r2el-*-elf* | \
+mipsisa32r6-*-elf* | mipsisa32r6el-*-elf* | \
 mipsisa64-*-elf* | mipsisa64el-*-elf* | \
-mipsisa64r2-*-elf* | mipsisa64r2el-*-elf*)
+mipsisa64r2-*-elf* | mipsisa64r2el-*-elf* | \
+mipsisa64r6-*-elf* | mipsisa64r6el-*-elf*)
 	tmake_file="$tmake_file mips/t-elf mips/t-crtstuff mips/t-mips16"
 	extra_parts="$extra_parts crti.o crtn.o"
 	;;
@@ -1279,5 +1279,12 @@ i[34567]86-*-linux* | x86_64-*-linux*)
 		tmake_file="${tmake_file} i386/${host_address}/t-softfp-compat"
 	fi
 	tm_file="${tm_file} i386/value-unwind.h"
+	;;
+esac
+
+case ${host} in
+*-grtev3-* | *-grtev4-* )
+	# Don't hide symbols in static libraries.
+	tmake_file="${tmake_file} t-static-no-vis-hide"
 	;;
 esac

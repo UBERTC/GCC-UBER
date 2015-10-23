@@ -1,5 +1,5 @@
 // PR c++/58678
-// { dg-options "-O3 -fdump-ipa-devirt" }
+// { dg-options "-O3 -fdump-ipa-devirt -fdevirtualize" }
 
 struct A {
   virtual ~A();

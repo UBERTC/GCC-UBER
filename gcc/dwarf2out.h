@@ -83,8 +83,8 @@ struct GTY(()) dw_fde_node {
   int dw_fde_switch_cfi_index; /* Last CFI before switching sections.  */
   HOST_WIDE_INT stack_realignment;
 
-  unsigned funcdef_number;
-  unsigned fde_index;
+  unsigned long funcdef_number;
+  unsigned long fde_index;
 
   /* Dynamic realign argument pointer register.  */
   unsigned int drap_reg;

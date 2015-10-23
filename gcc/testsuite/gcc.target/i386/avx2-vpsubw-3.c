@@ -8,5 +8,5 @@
 
 #include "avx2-vpop-check.h"
 
-/* { dg-final { scan-assembler-times "vpsubw\[ \\t\]+\[^\n\]*%ymm\[0-9\]" 1 } } */
+/* { dg-final { scan-assembler "vpsubw\[ \\t\]+\[^\n\]*%ymm\[0-9\]" } } */
 /* { dg-final { cleanup-saved-temps } } */

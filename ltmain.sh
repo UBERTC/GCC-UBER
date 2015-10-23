@@ -1280,6 +1280,8 @@ func_mode_compile ()
     $opt_debug
     # Get the compilation command and the source file.
     base_compile=
+    shared_compile=
+    static_compile=
     srcfile="$nonopt"  #  always keep a non-empty value in "srcfile"
     suppress_opt=yes
     suppress_output=
@@ -1300,6 +1302,20 @@ func_mode_compile ()
       target )
 	libobj="$arg"
 	arg_mode=normal
+	continue
+	;;
+
+      xcompiler-shared )
+        arg_mode=normal
+	func_quote_for_eval "$arg"
+	shared_compile="$shared_compile $func_quote_for_eval_result"
+	continue
+	;;
+
+      xcompiler-static )
+        arg_mode=normal
+	func_quote_for_eval "$arg"
+	static_compile="$static_compile $func_quote_for_eval_result"
 	continue
 	;;
 
@@ -1332,6 +1348,18 @@ func_mode_compile ()
 	  arg_mode=arg  #  the next one goes into the "base_compile" arg list
 	  continue      #  The current "srcfile" will either be retained or
 	  ;;            #  replaced later.  I would guess that would be a bug.
+
+	-Xcompiler-shared)
+	  arg_mode=xcompiler-shared  #  the next one goes into the
+	                             #  "shared_compile" arg list
+	  continue
+	  ;;
+
+	-Xcompiler-static)
+	  arg_mode=xcompiler-static  #  the next one goes into the
+	                             #  "static_compile" arg list
+	  continue
+	  ;;
 
 	-Wc,*)
 	  func_stripname '-Wc,' '' "$arg"
@@ -1516,10 +1544,10 @@ compiler."
       fbsd_hideous_sh_bug=$base_compile
 
       if test "$pic_mode" != no; then
-	command="$base_compile $qsrcfile $pic_flag"
+	command="$base_compile $qsrcfile $pic_flag $shared_compile"
       else
 	# Don't build PIC code
-	command="$base_compile $qsrcfile"
+	command="$base_compile $qsrcfile $shared_compile"
       fi
 
       func_mkdir_p "$xdir$objdir"
@@ -1568,9 +1596,9 @@ compiler."
     if test "$build_old_libs" = yes; then
       if test "$pic_mode" != yes; then
 	# Don't build PIC code
-	command="$base_compile $qsrcfile$pie_flag"
+	command="$base_compile $qsrcfile$pie_flag $static_compile"
       else
-	command="$base_compile $qsrcfile $pic_flag"
+	command="$base_compile $qsrcfile $pic_flag $static_compile"
       fi
       if test "$compiler_c_o" = yes; then
 	command="$command -o $obj"
@@ -1664,6 +1692,12 @@ This mode accepts the following additional options:
   -shared           do not build a \`.o' file suitable for static linking
   -static           only build a \`.o' file suitable for static linking
   -Wc,FLAG          pass FLAG directly to the compiler
+  -Xcompiler-shared FLAG
+                    pass FLAG directly to the compiler when compiling shared
+		    libraries
+  -Xcompiler-static FLAG
+                    pass FLAG directly to the compiler when compiling static
+		    libraries
 
 COMPILE-COMMAND is a command to be used in creating a \`standard' object file
 from the given SOURCEFILE.
@@ -2932,7 +2966,7 @@ func_extract_archives ()
         func_extract_an_archive "$my_xdir" "$my_xabs"
 	;;
       esac
-      my_oldobjs="$my_oldobjs "`find $my_xdir -name \*.$objext -print -o -name \*.lo -print | $NL2SP`
+      my_oldobjs="$my_oldobjs "`find $my_xdir -name \*.$objext -print -o -name \*.lo -print | sort | $NL2SP`
     done
 
     func_extract_archives_result="$my_oldobjs"

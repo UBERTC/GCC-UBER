@@ -20,4 +20,7 @@ along with GCC; see the file COPYING3.  If not see
 <http://www.gnu.org/licenses/>.  */
 
 #define GNU_USER_LINK_EMULATION "elf_i386"
-#define GLIBC_DYNAMIC_LINKER "/lib/ld-linux.so.2"
+#ifndef RUNTIME_ROOT_PREFIX
+#define RUNTIME_ROOT_PREFIX ""
+#endif
+#define GLIBC_DYNAMIC_LINKER RUNTIME_ROOT_PREFIX "/lib/ld-linux.so.2"

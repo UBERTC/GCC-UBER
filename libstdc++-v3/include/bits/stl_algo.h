@@ -199,6 +199,40 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
   // count_if
   // search
 
+// Local modification: if __google_stl_debug_compare is defined to
+// non-zero value, check sort predicate for strict weak ordering.
+// Google ref b/1731200.
+#if __google_stl_debug_compare
+  template<typename _Compare>
+  struct _CheckedCompare {
+    _Compare _M_compare;
+
+    _CheckedCompare(const _Compare & __comp): _M_compare(__comp) { }
+
+    template <typename _Tp>
+    bool operator()(const _Tp& __x, const _Tp& __y) {
+      if (_M_compare(__x, __x))
+        __throw_runtime_error("strict weak ordering: (__x LT __x) != false");
+      if (_M_compare(__y, __y))
+        __throw_runtime_error("strict weak ordering: (__y LT __y) != false");
+      bool lt = _M_compare(__x, __y);
+      if (lt && _M_compare(__y, __x))
+        __throw_runtime_error("strict weak ordering: ((__x LT __y) && (__y LT __x)) != false");
+      return lt;
+    }
+
+    // Different types; can't perform any checks.
+    template <typename _Tp1, typename _Tp2>
+    bool operator()(const _Tp1& __x, const _Tp2& __y) {
+      return _M_compare(__x, __y);
+    }
+  };
+# define __CheckedCompare(__comp) _CheckedCompare<__typeof__(__comp)>(__comp)
+#else
+# define __CheckedCompare(__comp) __comp
+#endif
+
+
   template<typename _ForwardIterator1, typename _ForwardIterator2,
 	   typename _BinaryPredicate>
     _ForwardIterator1
@@ -1811,7 +1845,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       return std::__partial_sort_copy(__first, __last,
 				      __result_first, __result_last,
-				__gnu_cxx::__ops::__iter_comp_iter(__comp));
+	      __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   /// This is a helper function for the sort routine.
@@ -2033,7 +2067,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 						__val, __comp);
 
       return std::__lower_bound(__first, __last, __val,
-				__gnu_cxx::__ops::__iter_comp_val(__comp));
+		__gnu_cxx::__ops::__iter_comp_val(__CheckedCompare(__comp)));
     }
 
   template<typename _ForwardIterator, typename _Tp, typename _Compare>
@@ -2122,7 +2156,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 						__val, __comp);
 
       return std::__upper_bound(__first, __last, __val,
-				__gnu_cxx::__ops::__val_comp_iter(__comp));
+		__gnu_cxx::__ops::__val_comp_iter(__CheckedCompare(__comp)));
     }
 
   template<typename _ForwardIterator, typename _Tp,
@@ -2237,8 +2271,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 						__val, __comp);
 
       return std::__equal_range(__first, __last, __val,
-				__gnu_cxx::__ops::__iter_comp_val(__comp),
-				__gnu_cxx::__ops::__val_comp_iter(__comp));
+		__gnu_cxx::__ops::__iter_comp_val(__CheckedCompare(__comp)),
+		__gnu_cxx::__ops::__val_comp_iter(__CheckedCompare(__comp)));
     }
 
   /**
@@ -2307,7 +2341,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       _ForwardIterator __i
 	= std::__lower_bound(__first, __last, __val,
-			     __gnu_cxx::__ops::__iter_comp_val(__comp));
+	     __gnu_cxx::__ops::__iter_comp_val(__CheckedCompare(__comp)));
       return __i != __last && !bool(__comp(__val, *__i));
     }
 
@@ -2638,7 +2672,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       __glibcxx_requires_sorted_pred(__middle, __last, __comp);
 
       std::__inplace_merge(__first, __middle, __last,
-			   __gnu_cxx::__ops::__iter_comp_iter(__comp));
+	   __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
 
@@ -2890,7 +2924,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       __glibcxx_requires_sorted_set_pred(__first2, __last2, __first1, __comp);
 
       return std::__includes(__first1, __last1, __first2, __last2,
-			     __gnu_cxx::__ops::__iter_comp_iter(__comp));
+	     __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   // nth_element
@@ -2997,7 +3031,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       __glibcxx_requires_valid_range(__first, __last);
 
       return std::__next_permutation
-	(__first, __last, __gnu_cxx::__ops::__iter_comp_iter(__comp));
+	(__first, __last, __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   template<typename _BidirectionalIterator, typename _Compare>
@@ -3095,7 +3129,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       __glibcxx_requires_valid_range(__first, __last);
 
       return std::__prev_permutation(__first, __last,
-				__gnu_cxx::__ops::__iter_comp_iter(__comp));
+	     __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   // replace
@@ -3282,7 +3316,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       __glibcxx_requires_valid_range(__first, __last);
 
       return std::__is_sorted_until(__first, __last,
-				    __gnu_cxx::__ops::__iter_comp_iter(__comp));
+	    __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   /**
@@ -3430,7 +3464,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       __glibcxx_requires_valid_range(__first, __last);
 
       return std::__minmax_element(__first, __last,
-				   __gnu_cxx::__ops::__iter_comp_iter(__comp));
+	   __gnu_cxx::__ops::__iter_comp_iter(__comp));
     }
 
   // N2722 + DR 915.
@@ -3595,7 +3629,8 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 
       // Efficiently compare identical prefixes:  O(N) if sequences
       // have the same elements in the same order.
-      for (; __first1 != __last1; ++__first1, ++__first2)
+      for (; __first1 != __last1 && __first2 != __last2;
+	  ++__first1, ++__first2)
 	if (!__pred(__first1, __first2))
 	  break;
 
@@ -4579,7 +4614,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
       __glibcxx_requires_valid_range(__middle, __last);
 
       std::__partial_sort(__first, __middle, __last,
-			  __gnu_cxx::__ops::__iter_comp_iter(__comp));
+		  __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   /**
@@ -4654,7 +4689,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
 
       std::__introselect(__first, __nth, __last,
 			 std::__lg(__last - __first) * 2,
-			 __gnu_cxx::__ops::__iter_comp_iter(__comp));
+		 __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   /**
@@ -4713,7 +4748,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
 	    typename iterator_traits<_RandomAccessIterator>::value_type>)
       __glibcxx_requires_valid_range(__first, __last);
 
-      std::__sort(__first, __last, __gnu_cxx::__ops::__iter_comp_iter(__comp));
+      std::__sort(__first, __last, __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   template<typename _InputIterator1, typename _InputIterator2,
@@ -4830,7 +4865,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
 
       return _GLIBCXX_STD_A::__merge(__first1, __last1,
 				__first2, __last2, __result,
-				__gnu_cxx::__ops::__iter_comp_iter(__comp));
+	     __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   template<typename _RandomAccessIterator, typename _Compare>
@@ -4917,7 +4952,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
       __glibcxx_requires_valid_range(__first, __last);
 
       _GLIBCXX_STD_A::__stable_sort(__first, __last,
-				    __gnu_cxx::__ops::__iter_comp_iter(__comp));
+	    __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   template<typename _InputIterator1, typename _InputIterator2,
@@ -5042,7 +5077,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
 
       return _GLIBCXX_STD_A::__set_union(__first1, __last1,
 				__first2, __last2, __result,
-				__gnu_cxx::__ops::__iter_comp_iter(__comp));
+		 __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   template<typename _InputIterator1, typename _InputIterator2,
@@ -5154,7 +5189,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
 
       return _GLIBCXX_STD_A::__set_intersection(__first1, __last1,
 				__first2, __last2, __result,
-				__gnu_cxx::__ops::__iter_comp_iter(__comp));
+		__gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   template<typename _InputIterator1, typename _InputIterator2,
@@ -5272,7 +5307,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
 
       return _GLIBCXX_STD_A::__set_difference(__first1, __last1,
 				   __first2, __last2, __result,
-				   __gnu_cxx::__ops::__iter_comp_iter(__comp));
+	      __gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   template<typename _InputIterator1, typename _InputIterator2,
@@ -5399,7 +5434,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
 
       return _GLIBCXX_STD_A::__set_symmetric_difference(__first1, __last1,
 				__first2, __last2, __result,
-				__gnu_cxx::__ops::__iter_comp_iter(__comp));
+		__gnu_cxx::__ops::__iter_comp_iter(__CheckedCompare(__comp)));
     }
 
   template<typename _ForwardIterator, typename _Compare>
@@ -5459,7 +5494,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
       __glibcxx_requires_valid_range(__first, __last);
 
       return _GLIBCXX_STD_A::__min_element(__first, __last,
-				__gnu_cxx::__ops::__iter_comp_iter(__comp));
+		   __gnu_cxx::__ops::__iter_comp_iter(__comp));
     }
 
   template<typename _ForwardIterator, typename _Compare>
@@ -5518,7 +5553,7 @@ _GLIBCXX_BEGIN_NAMESPACE_ALGO
       __glibcxx_requires_valid_range(__first, __last);
 
       return _GLIBCXX_STD_A::__max_element(__first, __last,
-				__gnu_cxx::__ops::__iter_comp_iter(__comp));
+	   __gnu_cxx::__ops::__iter_comp_iter(__comp));
     }
 
 _GLIBCXX_END_NAMESPACE_ALGO

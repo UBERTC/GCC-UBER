@@ -33,7 +33,7 @@ void test01()
 {
   bool test __attribute__((unused)) = true;
 
-  std::unique(a, a+10, compare);
+  int* dummy __attribute__((unused)) = std::unique(a, a+10, compare);
   VERIFY( compare_count == 9 );
 }
 

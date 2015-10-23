@@ -58,11 +58,13 @@ along with GCC; see the file COPYING3.  If not see
 #include "rtl.h"
 #include "ipa-utils.h"
 #include "lto-streamer.h"
+#include "l-ipo.h"
 #include "ipa-inline.h"
 #include "cfgloop.h"
 #include "gimple-pretty-print.h"
 #include "expr.h"
 #include "tree-dfa.h"
+#include "opts.h"
 
 /* FIXME: Only for PROP_loops, but cgraph shouldn't have to know about this.  */
 #include "tree-pass.h"
@@ -545,6 +547,7 @@ cgraph_create_node (tree decl)
       node->next_nested = node->origin->nested;
       node->origin->nested = node;
     }
+  pattern_match_function_attributes (decl);
   return node;
 }
 
@@ -676,7 +679,11 @@ cgraph_node_for_asm (tree asmname)
     {
       cgraph_node *cn = dyn_cast <cgraph_node> (node);
       if (cn && !cn->global.inlined_to)
-	return cn;
+        {
+          if (L_IPO_COMP_MODE && cgraph_pre_profiling_inlining_done)
+            return cgraph_lipo_get_resolved_node (cn->decl);
+          return cn;
+        }
     }
   return NULL;
 }
@@ -773,7 +780,9 @@ cgraph_edge (struct cgraph_node *node, gimple call_stmt)
     {
       node->call_site_hash = htab_create_ggc (120, edge_hash, edge_eq, NULL);
       for (e2 = node->callees; e2; e2 = e2->next_callee)
-	cgraph_add_edge_to_call_site_hash (e2);
+	/* Skip fake edges.  */
+	if (e2->call_stmt)
+	  cgraph_add_edge_to_call_site_hash (e2);
       for (e2 = node->indirect_calls; e2; e2 = e2->next_callee)
 	cgraph_add_edge_to_call_site_hash (e2);
     }
@@ -822,6 +831,8 @@ cgraph_set_call_stmt (struct cgraph_edge *e, gimple new_stmt,
       /* Constant propagation (and possibly also inlining?) can turn an
 	 indirect call into a direct one.  */
       struct cgraph_node *new_callee = cgraph_get_node (decl);
+      if (L_IPO_COMP_MODE && cgraph_pre_profiling_inlining_done)
+        new_callee = cgraph_lipo_get_resolved_node (decl);
 
       gcc_checking_assert (new_callee);
       e = cgraph_make_edge_direct (e, new_callee);
@@ -1026,7 +1037,7 @@ cgraph_edge_remove_caller (struct cgraph_edge *e)
       else
 	e->caller->callees = e->next_callee;
     }
-  if (e->caller->call_site_hash)
+  if (e->caller->call_site_hash && e->call_stmt)
     htab_remove_elt_with_hash (e->caller->call_site_hash,
 			       e->call_stmt,
 	  		       htab_hash_pointer (e->call_stmt));
@@ -1067,6 +1078,26 @@ cgraph_remove_edge (struct cgraph_edge *e)
   /* Put the edge onto the free list.  */
   cgraph_free_edge (e);
 }
+
+/* Remove fake cgraph edges for indirect calls. NODE is the callee
+   of the edges.  */
+
+void
+cgraph_remove_fake_indirect_call_in_edges (struct cgraph_node *node)
+{
+  struct cgraph_edge *f, *e;
+
+  if (!L_IPO_COMP_MODE)
+    return;
+
+  for (e = node->callers; e; e = f)
+    {
+      f = e->next_caller;
+      if (!e->call_stmt)
+        cgraph_remove_edge (e);
+    }
+}
+
 
 /* Set callee of call graph edge E and add it to the corresponding set of
    callers. */
@@ -1472,6 +1503,12 @@ cgraph_redirect_edge_call_stmt_to_callee (struct cgraph_edge *e)
       new_stmt = e->call_stmt;
       gimple_call_set_fndecl (new_stmt, e->callee->decl);
       update_stmt_fn (DECL_STRUCT_FUNCTION (e->caller->decl), new_stmt);
+      if (L_IPO_COMP_MODE)
+        {
+          int lp_nr = lookup_stmt_eh_lp (e->call_stmt);
+          if (lp_nr != 0 && !stmt_could_throw_p (e->call_stmt))
+            remove_stmt_from_eh_lp (e->call_stmt);
+        }
     }
 
   /* If the call becomes noreturn, remove the lhs.  */
@@ -1679,6 +1716,10 @@ cgraph_node_remove_callers (struct cgraph_node *node)
 void
 release_function_body (tree decl)
 {
+  if (cgraph_get_node (decl)
+      && cgraph_is_aux_decl_external (cgraph_get_node (decl)))
+    DECL_EXTERNAL (decl) = 1;
+
   if (DECL_STRUCT_FUNCTION (decl))
     {
       push_cfun (DECL_STRUCT_FUNCTION (decl));
@@ -1820,7 +1861,9 @@ cgraph_remove_node (struct cgraph_node *node)
 	cgraph_release_function_body (node);
     }
 
+  cgraph_remove_link_node (node);
   node->decl = NULL;
+
   if (node->call_site_hash)
     {
       htab_delete (node->call_site_hash);
@@ -1836,6 +1879,7 @@ cgraph_remove_node (struct cgraph_node *node)
   SET_NEXT_FREE_NODE (node, free_nodes);
   free_nodes = node;
 }
+
 
 /* Likewise indicate that a node is having address taken.  */
 
@@ -1978,6 +2022,9 @@ dump_cgraph_node (FILE *f, struct cgraph_node *node)
   if (node->count)
     fprintf (f, " executed "HOST_WIDEST_INT_PRINT_DEC"x",
 	     (HOST_WIDEST_INT)node->count);
+  if (node->max_bb_count)
+    fprintf (f, " hottest bb executed "HOST_WIDEST_INT_PRINT_DEC"x",
+	     (HOST_WIDEST_INT)node->max_bb_count);
   if (node->origin)
     fprintf (f, " nested in: %s", node->origin->asm_name ());
   if (gimple_has_body_p (node->decl))
@@ -2417,6 +2464,11 @@ cgraph_can_remove_if_no_direct_calls_and_refs_p (struct cgraph_node *node)
   /* Extern inlines can always go, we will use the external definition.  */
   if (DECL_EXTERNAL (node->decl))
     return true;
+  /* Aux functions are safe to remove, but only once static promotion is
+     complete since they may affect promoted names if they are the context
+     for any static variables.  */
+  if (cgraph_pre_profiling_inlining_done && cgraph_is_aux_decl_external (node))
+    return true;
   /* When function is needed, we can not remove it.  */
   if (node->force_output || node->used_from_other_partition)
     return false;
@@ -2604,6 +2656,7 @@ verify_edge_count_and_frequency (struct cgraph_edge *e)
       error_found = true;
     }
   if (gimple_has_body_p (e->caller->decl)
+      && e->call_stmt
       && !e->caller->global.inlined_to
       && !e->speculative
       /* FIXME: Inline-analysis sets frequency to 0 when edge is optimized out.
@@ -2860,7 +2913,9 @@ verify_cgraph_node (struct cgraph_node *node)
 	    error ("Alias has non-alias reference");
 	    error_found = true;
 	  }
-	else if (ref_found)
+	else if (ref_found
+                 /* in LIPO mode, the alias can refer to the real target also  */
+                 && !L_IPO_COMP_MODE)
 	  {
 	    error ("Alias has more than one alias reference");
 	    error_found = true;
@@ -2974,7 +3029,7 @@ verify_cgraph_node (struct cgraph_node *node)
 
       for (e = node->callees; e; e = e->next_callee)
 	{
-	  if (!e->aux)
+	  if (!e->aux && e->call_stmt)
 	    {
 	      error ("edge %s->%s has no corresponding call_stmt",
 		     identifier_to_locale (e->caller->name ()),

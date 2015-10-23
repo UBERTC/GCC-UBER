@@ -479,6 +479,10 @@ record.  @xref{Option file format}.
 The option is omitted from the producer string written by
 @option{-grecord-gcc-switches}.
 
+@item NoDWARFRecord
+The option is omitted from the producer string written by
+@option{-grecord-gcc-switches}.
+
 @item PchIgnore
 Even if this is a target option, this option will not be recorded / compared
 to determine if a precompiled header file matches.

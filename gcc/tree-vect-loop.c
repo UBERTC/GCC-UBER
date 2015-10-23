@@ -1647,6 +1647,13 @@ vect_analyze_loop_2 (loop_vec_info loop_vinfo)
       return false;
     }
 
+  /* Classify all cross-iteration scalar data-flow cycles.
+     Cross-iteration cycles caused by virtual phis are analyzed separately.  */
+
+  vect_analyze_scalar_cycles (loop_vinfo);
+
+  vect_pattern_recog (loop_vinfo, NULL);
+
   /* Analyze the access patterns of the data-refs in the loop (consecutive,
      complex, etc.). FORNOW: Only handle consecutive access pattern.  */
 
@@ -1658,13 +1665,6 @@ vect_analyze_loop_2 (loop_vec_info loop_vinfo)
 			 "bad data access.\n");
       return false;
     }
-
-  /* Classify all cross-iteration scalar data-flow cycles.
-     Cross-iteration cycles caused by virtual phis are analyzed separately.  */
-
-  vect_analyze_scalar_cycles (loop_vinfo);
-
-  vect_pattern_recog (loop_vinfo, NULL);
 
   /* Data-flow analysis to detect stmts that do not need to be vectorized.  */
 
@@ -3695,6 +3695,7 @@ get_initial_def_for_reduction (gimple stmt, tree init_val,
     {
       case WIDEN_SUM_EXPR:
       case DOT_PROD_EXPR:
+      case SAD_EXPR:
       case PLUS_EXPR:
       case MINUS_EXPR:
       case BIT_IOR_EXPR:

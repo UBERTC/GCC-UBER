@@ -8083,6 +8083,16 @@ cp_parser_question_colon_clause (cp_parser* parser, tree logical_or_expr)
                                    tf_warning_or_error);
 }
 
+/* A helpfer function to check if the given expression (EXPR) is of POD type.
+   Note that if the expression's type is NULL (e.g. when its type depends on
+   template parameters), we return false.  */
+
+static bool
+expr_is_pod (tree expr)
+{
+  return TREE_TYPE (expr) && pod_type_p (TREE_TYPE (expr));
+}
+
 /* Parse an assignment-expression.
 
    assignment-expression:
@@ -8141,6 +8151,16 @@ cp_parser_assignment_expression (cp_parser* parser, bool cast_p,
 	      if (cp_parser_non_integral_constant_expression (parser,
 							      NIC_ASSIGNMENT))
 		return error_mark_node;
+
+              /* Check for and warn about self-assignment if -Wself-assign is
+                 enabled and the assignment operator is "=".
+		 Checking for non-POD self-assignment will be performed only
+		 when -Wself-assign-non-pod is enabled. */
+              if (warn_self_assign
+		  && assignment_operator == NOP_EXPR
+		  && (warn_self_assign_non_pod || expr_is_pod (expr)))
+                check_for_self_assign (input_location, expr, rhs);
+
 	      /* Build the assignment expression.  Its default
 		 location is the location of the '=' token.  */
 	      saved_input_location = input_location;
@@ -8479,12 +8499,7 @@ cp_parser_builtin_offsetof (cp_parser *parser)
     }
 
  success:
-  /* If we're processing a template, we can't finish the semantics yet.
-     Otherwise we can fold the entire expression now.  */
-  if (processing_template_decl)
-    expr = build1 (OFFSETOF_EXPR, size_type_node, expr);
-  else
-    expr = finish_offsetof (expr);
+  expr = finish_offsetof (expr);
 
  failure:
   parser->integral_constant_expression_p = save_ice_p;
@@ -12868,6 +12883,9 @@ cp_parser_operator (cp_parser* parser)
 static void
 cp_parser_template_declaration (cp_parser* parser, bool member_p)
 {
+  /* A hack to disable -Wself-assign warning in template parsing.  */
+  int old_warn_self_assign = warn_self_assign;
+  warn_self_assign = 0;
   /* Check for `export'.  */
   if (cp_lexer_next_token_is_keyword (parser->lexer, RID_EXPORT))
     {
@@ -12878,6 +12896,7 @@ cp_parser_template_declaration (cp_parser* parser, bool member_p)
     }
 
   cp_parser_template_declaration_after_export (parser, member_p);
+  warn_self_assign = old_warn_self_assign;
 }
 
 /* Parse a template-parameter-list.
@@ -16111,7 +16130,6 @@ cp_parser_alias_declaration (cp_parser* parser)
   id = cp_parser_identifier (parser);
   if (id == error_mark_node)
     return error_mark_node;
-
   cp_token *attrs_token = cp_lexer_peek_token (parser->lexer);
   attributes = cp_parser_attributes_opt (parser);
   if (attributes == error_mark_node)
@@ -16884,6 +16902,10 @@ cp_parser_init_declarator (cp_parser* parser,
 			 `explicit' constructor cannot be used.  */
 		      ((is_direct_init || !is_initialized)
 		       ? LOOKUP_NORMAL : LOOKUP_IMPLICIT));
+      /* Check for and warn about self-initialization if -Wself-assign is
+         enabled.  */
+      if (warn_self_assign && initializer)
+        check_for_self_assign (input_location, decl, initializer);
     }
   else if ((cxx_dialect != cxx98) && friend_p
 	   && decl && TREE_CODE (decl) == FUNCTION_DECL)
@@ -31686,14 +31708,6 @@ pragma_lex (tree *value)
 void
 c_parse_file (void)
 {
-  static bool already_called = false;
-
-  if (already_called)
-    {
-      sorry ("inter-module optimizations not implemented for C++");
-      return;
-    }
-  already_called = true;
 
   the_parser = cp_parser_new ();
   push_deferring_access_checks (flag_access_control

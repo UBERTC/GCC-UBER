@@ -72,6 +72,9 @@ struct diagnostic_context
   /* True if it has been requested that warnings be treated as errors.  */
   bool warning_as_error_requested;
 
+  /* True if it has been requested that warnings never be promoted to errors.  */
+  bool force_warnings_requested;
+
   /* The number of option indexes that can be passed to warning() et
      al.  */
   int n_opts;

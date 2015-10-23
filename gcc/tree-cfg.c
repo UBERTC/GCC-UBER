@@ -30,6 +30,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "tm_p.h"
 #include "basic-block.h"
 #include "flags.h"
+#include "input.h"
 #include "function.h"
 #include "gimple-pretty-print.h"
 #include "pointer-set.h"
@@ -64,6 +65,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-propagate.h"
 #include "value-prof.h"
 #include "tree-inline.h"
+#include "l-ipo.h"
 #include "target.h"
 #include "tree-ssa-live.h"
 #include "omp-low.h"
@@ -110,7 +112,14 @@ static struct cfg_stats_d cfg_stats;
 struct locus_discrim_map
 {
   location_t locus;
-  int discriminator;
+  /* Different calls belonging to the same source line will be assigned
+     different discriminators. But we want to keep the discriminator of
+     the first call in the same source line to be 0, in order to reduce
+     the .debug_line section size. needs_increment is used for this
+     purpose. It is initialized as false and will be set to true after
+     the first call is seen.  */
+  bool needs_increment:1;
+  int discriminator:31;
 };
 
 /* Hashtable helpers.  */
@@ -942,10 +951,15 @@ make_edges (void)
 /* Find the next available discriminator value for LOCUS.  The
    discriminator distinguishes among several basic blocks that
    share a common locus, allowing for more accurate sample-based
-   profiling.  */
+   profiling. If RETURN_NEXT is true, return the next discriminator
+   anyway. If RETURN_NEXT is not true, we may not increase the
+   discriminator if locus_discrim_map::needs_increment is false,
+   which is used when the stmt is the first call stmt in current
+   source line. locus_discrim_map::needs_increment will be set to
+   true after the first call is seen.  */
 
 static int
-next_discriminator_for_locus (location_t locus)
+next_discriminator_for_locus (location_t locus, bool return_next)
 {
   struct locus_discrim_map item;
   struct locus_discrim_map **slot;
@@ -960,9 +974,13 @@ next_discriminator_for_locus (location_t locus)
       *slot = XNEW (struct locus_discrim_map);
       gcc_assert (*slot);
       (*slot)->locus = locus;
+      (*slot)->needs_increment = false;
       (*slot)->discriminator = 0;
     }
-  (*slot)->discriminator++;
+  if (return_next || (*slot)->needs_increment)
+    (*slot)->discriminator++;
+  else
+    (*slot)->needs_increment = true;
   return (*slot)->discriminator;
 }
 
@@ -988,6 +1006,32 @@ same_line_p (location_t locus1, location_t locus2)
           && filename_cmp (from.file, to.file) == 0);
 }
 
+/* Assign a unique discriminator value to instructions in block BB that
+   have the same LOCUS as its predecessor block.  */
+
+static void
+assign_discriminator (location_t locus, basic_block bb)
+{
+  gimple_stmt_iterator gsi;
+  int discriminator;
+
+  locus = map_discriminator_location (locus);
+
+  if (locus == UNKNOWN_LOCATION)
+    return;
+
+  discriminator = next_discriminator_for_locus (locus, true);
+
+  for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
+    {
+      gimple stmt = gsi_stmt (gsi);
+      location_t stmt_locus = gimple_location (stmt);
+      if (same_line_p (locus, stmt_locus))
+	gimple_set_location (stmt,
+	    location_with_discriminator (stmt_locus, discriminator));
+    }
+}
+
 /* Assign discriminators to each basic block.  */
 
 static void
@@ -999,8 +1043,26 @@ assign_discriminators (void)
     {
       edge e;
       edge_iterator ei;
+      gimple_stmt_iterator gsi;
       gimple last = last_stmt (bb);
       location_t locus = last ? gimple_location (last) : UNKNOWN_LOCATION;
+      location_t curr_locus = UNKNOWN_LOCATION;
+      int curr_discr = 0;
+
+      /* Traverse the basic block, if two function calls within a basic block
+	 are mapped to a same line, assign a new discriminator because a call
+	 stmt could be a split point of a basic block.  */
+      for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
+	{
+	  gimple stmt = gsi_stmt (gsi);
+          if (gimple_code (stmt) == GIMPLE_CALL)
+            {
+	      curr_locus = gimple_location (stmt);
+	      curr_discr = next_discriminator_for_locus (curr_locus, false);
+	      gimple_set_location (stmt, location_with_discriminator (
+		  curr_locus, curr_discr));
+	    }
+	}
 
       if (locus == UNKNOWN_LOCATION)
 	continue;
@@ -1012,10 +1074,12 @@ assign_discriminators (void)
 	  if ((first && same_line_p (locus, gimple_location (first)))
 	      || (last && same_line_p (locus, gimple_location (last))))
 	    {
-	      if (e->dest->discriminator != 0 && bb->discriminator == 0)
-		bb->discriminator = next_discriminator_for_locus (locus);
+	      if (((first && has_discriminator (gimple_location (first)))
+		   || (last && has_discriminator (gimple_location (last))))
+		  && !has_discriminator (locus))
+		assign_discriminator (locus, bb);
 	      else
-		e->dest->discriminator = next_discriminator_for_locus (locus);
+		assign_discriminator (locus, e->dest);
 	    }
 	}
     }
@@ -1894,6 +1958,15 @@ gimple_merge_blocks (basic_block a, basic_block b)
 	}
     }
 
+  /* When merging two BBs, if their counts are different, the larger count
+     is selected as the new bb count. This is to handle inconsistent
+     profiles.  */
+  if (a->loop_father == b->loop_father)
+    {
+      a->count = MAX (a->count, b->count);
+      a->frequency = MAX (a->frequency, b->frequency);
+    }
+
   /* Merge the sequences.  */
   last = gsi_last_bb (a);
   gsi_insert_seq_after (&last, bb_seq (b), GSI_NEW_STMT);
@@ -2594,7 +2667,7 @@ reinstall_phi_args (edge new_edge, edge old_edge)
    near its "logical" location.  This is of most help to humans looking
    at debugging dumps.  */
 
-static basic_block
+basic_block
 split_edge_bb_loc (edge edge_in)
 {
   basic_block dest = edge_in->dest;
@@ -3044,7 +3117,8 @@ verify_types_in_gimple_reference (tree expr, bool require_lvalue)
       /* Verify if the reference array element types are compatible.  */
       if (TREE_CODE (expr) == ARRAY_REF
 	  && !useless_type_conversion_p (TREE_TYPE (expr),
-					 TREE_TYPE (TREE_TYPE (op))))
+					 TREE_TYPE (TREE_TYPE (op)))
+          && !L_IPO_COMP_MODE)
 	{
 	  error ("type mismatch in array reference");
 	  debug_generic_stmt (TREE_TYPE (expr));
@@ -3259,7 +3333,8 @@ verify_gimple_call (gimple stmt)
 	 returning java.lang.Object.
 	 For now simply allow arbitrary pointer type conversions.  */
       && !(POINTER_TYPE_P (TREE_TYPE (gimple_call_lhs (stmt)))
-	   && POINTER_TYPE_P (TREE_TYPE (fntype))))
+	   && POINTER_TYPE_P (TREE_TYPE (fntype)))
+      && !L_IPO_COMP_MODE)
     {
       error ("invalid conversion in gimple call");
       debug_generic_stmt (TREE_TYPE (gimple_call_lhs (stmt)));
@@ -3958,6 +4033,36 @@ verify_gimple_assign_ternary (gimple stmt)
 
       return false;
 
+    case SAD_EXPR:
+      if (!useless_type_conversion_p (rhs1_type, rhs2_type)
+	  || !useless_type_conversion_p (lhs_type, rhs3_type)
+	  || 2 * GET_MODE_BITSIZE (GET_MODE_INNER
+				     (TYPE_MODE (TREE_TYPE (rhs1_type))))
+	       > GET_MODE_BITSIZE (GET_MODE_INNER
+				     (TYPE_MODE (TREE_TYPE (lhs_type)))))
+	{
+	  error ("type mismatch in sad expression");
+	  debug_generic_expr (lhs_type);
+	  debug_generic_expr (rhs1_type);
+	  debug_generic_expr (rhs2_type);
+	  debug_generic_expr (rhs3_type);
+	  return true;
+	}
+
+      if (TREE_CODE (rhs1_type) != VECTOR_TYPE
+	  || TREE_CODE (rhs2_type) != VECTOR_TYPE
+	  || TREE_CODE (rhs3_type) != VECTOR_TYPE)
+	{
+	  error ("vector types expected in sad expression");
+	  debug_generic_expr (lhs_type);
+	  debug_generic_expr (rhs1_type);
+	  debug_generic_expr (rhs2_type);
+	  debug_generic_expr (rhs3_type);
+	  return true;
+	}
+
+      return false;
+
     case DOT_PROD_EXPR:
     case REALIGN_LOAD_EXPR:
       /* FIXME.  */
@@ -3982,7 +4087,9 @@ verify_gimple_assign_single (gimple stmt)
   tree rhs1_type = TREE_TYPE (rhs1);
   bool res = false;
 
-  if (!useless_type_conversion_p (lhs_type, rhs1_type))
+  if (!useless_type_conversion_p (lhs_type, rhs1_type)
+      /* Relax for LIPO. TODO add structural or name check.  */
+      && !L_IPO_COMP_MODE)
     {
       error ("non-trivial conversion at assignment");
       debug_generic_expr (lhs_type);
@@ -4226,7 +4333,8 @@ verify_gimple_return (gimple stmt)
 	  && DECL_BY_REFERENCE (SSA_NAME_VAR (op))))
     op = TREE_TYPE (op);
 
-  if (!useless_type_conversion_p (restype, TREE_TYPE (op)))
+  if (!useless_type_conversion_p (restype, TREE_TYPE (op))
+      && !L_IPO_COMP_MODE)
     {
       error ("invalid conversion in return statement");
       debug_generic_stmt (restype);
@@ -5082,7 +5190,13 @@ gimple_verify_flow_info (void)
       if (gimple_code (stmt) == GIMPLE_LABEL)
 	continue;
 
-      err |= verify_eh_edges (stmt);
+      /* FIXME: there does seem to be an overassertion in eh
+         edge verification -- triggered by -fdyn-ipa: after eh
+         cleanup, there might not be an direct edge from a BB
+         to the parent try block's catch region, but the catch
+         region is still reachable.  */ 
+      if (!flag_dyn_ipa)
+        err |= verify_eh_edges (stmt);
 
       if (is_ctrl_stmt (stmt))
 	{
@@ -7488,7 +7602,8 @@ need_fake_edge_p (gimple t)
   if (is_gimple_call (t)
       && fndecl
       && DECL_BUILT_IN (fndecl)
-      && (call_flags & ECF_NOTHROW)
+      && ((call_flags & ECF_NOTHROW)
+          || DECL_BUILT_IN_CLASS (fndecl) == BUILT_IN_MD)
       && !(call_flags & ECF_RETURNS_TWICE)
       /* fork() doesn't really return twice, but the effect of
          wrapping it in __gcov_fork() which calls __gcov_flush()

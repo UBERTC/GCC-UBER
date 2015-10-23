@@ -325,7 +325,8 @@ vect_stmt_relevant_p (gimple stmt, loop_vec_info loop_vinfo,
 
   /* changing memory.  */
   if (gimple_code (stmt) != GIMPLE_PHI)
-    if (gimple_vdef (stmt))
+    if (gimple_vdef (stmt)
+	&& !gimple_clobber_p (stmt))
       {
 	if (dump_enabled_p ())
 	  dump_printf_loc (MSG_NOTE, vect_location,
@@ -974,9 +975,9 @@ vect_model_store_cost (stmt_vec_info stmt_info, int ncopies,
      include the cost of the permutes.  */
   if (!store_lanes_p && group_size > 1)
     {
-      /* Uses a high and low interleave operation for each needed permute.  */
-      
-      int nstmts = ncopies * exact_log2 (group_size) * group_size;
+      /* Uses a high and low interleave or shuffle operations for each
+	 needed permute.  */
+      int nstmts = ncopies * ceil_log2 (group_size) * group_size;
       inside_cost = record_stmt_cost (body_cost_vec, nstmts, vec_perm,
 				      stmt_info, 0, vect_body);
 
@@ -1091,10 +1092,11 @@ vect_model_load_cost (stmt_vec_info stmt_info, int ncopies,
      include the cost of the permutes.  */
   if (!load_lanes_p && group_size > 1)
     {
-      /* Uses an even and odd extract operations for each needed permute.  */
-      int nstmts = ncopies * exact_log2 (group_size) * group_size;
-      inside_cost += record_stmt_cost (body_cost_vec, nstmts, vec_perm,
-				       stmt_info, 0, vect_body);
+      /* Uses an even and odd extract operations or shuffle operations
+	 for each needed permute.  */
+      int nstmts = ncopies * ceil_log2 (group_size) * group_size;
+      inside_cost = record_stmt_cost (body_cost_vec, nstmts, vec_perm,
+				      stmt_info, 0, vect_body);
 
       if (dump_enabled_p ())
         dump_printf_loc (MSG_NOTE, vect_location,
@@ -3184,7 +3186,7 @@ vectorizable_simd_clone_call (gimple stmt, gimple_stmt_iterator *gsi,
   set_vinfo_for_stmt (new_stmt, stmt_info);
   set_vinfo_for_stmt (stmt, NULL);
   STMT_VINFO_STMT (stmt_info) = new_stmt;
-  gsi_replace (gsi, new_stmt, false);
+  gsi_replace (gsi, new_stmt, true);
   unlink_stmt_vdef (stmt);
 
   return true;

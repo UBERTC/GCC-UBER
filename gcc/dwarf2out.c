@@ -95,6 +95,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "lra.h"
 #include "dumpfile.h"
 #include "opts.h"
+#include "l-ipo.h"
 #include "tree-dfa.h"
 #include "gdb/gdb-index.h"
 
@@ -961,7 +962,7 @@ dwarf2out_do_cfi_startproc (bool second)
 
       enc = ASM_PREFERRED_EH_DATA_FORMAT (/*code=*/0, /*global=*/0);
       ASM_GENERATE_INTERNAL_LABEL (lab, second ? "LLSDAC" : "LLSDA",
-				   current_function_funcdef_no);
+                                   FUNC_LABEL_ID (cfun));
       ref = gen_rtx_SYMBOL_REF (Pmode, lab);
       SYMBOL_REF_FLAGS (ref) = SYMBOL_FLAG_LOCAL;
 
@@ -984,7 +985,7 @@ dwarf2out_alloc_current_fde (void)
 
   fde = ggc_alloc_cleared_dw_fde_node ();
   fde->decl = current_function_decl;
-  fde->funcdef_number = current_function_funcdef_no;
+  fde->funcdef_number = FUNC_LABEL_ID (cfun);
   fde->fde_index = vec_safe_length (fde_vec);
   fde->all_throwers_are_sibcalls = crtl->all_throwers_are_sibcalls;
   fde->uses_eh_lsda = crtl->uses_eh_lsda;
@@ -1026,9 +1027,9 @@ dwarf2out_begin_prologue (unsigned int line ATTRIBUTE_UNUSED,
   fnsec = function_section (current_function_decl);
   switch_to_section (fnsec);
   ASM_GENERATE_INTERNAL_LABEL (label, FUNC_BEGIN_LABEL,
-			       current_function_funcdef_no);
+			       FUNC_LABEL_ID (cfun));
   ASM_OUTPUT_DEBUG_LABEL (asm_out_file, FUNC_BEGIN_LABEL,
-			  current_function_funcdef_no);
+			  FUNC_LABEL_ID (cfun));
   dup_label = xstrdup (label);
   current_function_func_begin_label = dup_label;
 
@@ -1087,9 +1088,9 @@ dwarf2out_vms_end_prologue (unsigned int line ATTRIBUTE_UNUSED,
   /* Output a label to mark the endpoint of the code generated for this
      function.  */
   ASM_GENERATE_INTERNAL_LABEL (label, PROLOGUE_END_LABEL,
-			       current_function_funcdef_no);
+			       FUNC_LABEL_ID (cfun));
   ASM_OUTPUT_DEBUG_LABEL (asm_out_file, PROLOGUE_END_LABEL,
-			  current_function_funcdef_no);
+			  FUNC_LABEL_ID (cfun));
   cfun->fde->dw_fde_vms_end_prologue = xstrdup (label);
 }
 
@@ -1110,9 +1111,9 @@ dwarf2out_vms_begin_epilogue (unsigned int line ATTRIBUTE_UNUSED,
   /* Output a label to mark the endpoint of the code generated for this
      function.  */
   ASM_GENERATE_INTERNAL_LABEL (label, EPILOGUE_BEGIN_LABEL,
-			       current_function_funcdef_no);
+			       FUNC_LABEL_ID (cfun));
   ASM_OUTPUT_DEBUG_LABEL (asm_out_file, EPILOGUE_BEGIN_LABEL,
-			  current_function_funcdef_no);
+			  FUNC_LABEL_ID (cfun));
   fde->dw_fde_vms_begin_epilogue = xstrdup (label);
 }
 
@@ -1136,7 +1137,7 @@ dwarf2out_end_epilogue (unsigned int line ATTRIBUTE_UNUSED,
   /* Output a label to mark the endpoint of the code generated for this
      function.  */
   ASM_GENERATE_INTERNAL_LABEL (label, FUNC_END_LABEL,
-			       current_function_funcdef_no);
+			       FUNC_LABEL_ID (cfun));
   ASM_OUTPUT_LABEL (asm_out_file, label);
   fde = cfun->fde;
   gcc_assert (fde != NULL);
@@ -2435,6 +2436,41 @@ const struct gcc_debug_hooks dwarf2_debug_hooks =
   1,                            /* start_end_main_source_file */
   TYPE_SYMTAB_IS_DIE            /* tree_type_symtab_field */
 };
+
+const struct gcc_debug_hooks auto_profile_debug_hooks =
+{
+  debug_nothing_charstar,
+  debug_nothing_charstar,
+  debug_nothing_void,
+  debug_nothing_int_charstar,
+  debug_nothing_int_charstar,
+  debug_nothing_int_charstar,
+  debug_nothing_int,
+  debug_nothing_int_int,                 /* begin_block */
+  debug_nothing_int_int,                 /* end_block */
+  dwarf2out_ignore_block,                 /* ignore_block */
+  debug_nothing_int_charstar_int_bool,   /* source_line */
+  debug_nothing_int_charstar,            /* begin_prologue */
+  debug_nothing_int_charstar,            /* end_prologue */
+  debug_nothing_int_charstar,            /* begin_epilogue */
+  debug_nothing_int_charstar,            /* end_epilogue */
+  debug_nothing_tree,                    /* begin_function */
+  debug_nothing_int,                     /* end_function */
+  debug_nothing_tree,                    /* function_decl */
+  debug_nothing_tree,                    /* global_decl */
+  debug_nothing_tree_int,                /* type_decl */
+  debug_nothing_tree_tree_tree_bool,     /* imported_module_or_decl */
+  debug_nothing_tree,                    /* deferred_inline_function */
+  debug_nothing_tree,                    /* outlining_inline_function */
+  debug_nothing_rtx,                     /* label */
+  debug_nothing_int,                     /* handle_pch */
+  debug_nothing_rtx,                     /* var_location */
+  debug_nothing_void,                    /* switch_text_section */
+  debug_nothing_tree_tree,               /* set_name */
+  0,                                     /* start_end_main_source_file */
+  TYPE_SYMTAB_IS_ADDRESS                 /* tree_type_symtab_field */
+};
+
 
 /* NOTE: In the comments in this file, many references are made to
    "Debugging Information Entries".  This term is abbreviated as `DIE'
@@ -2516,6 +2552,8 @@ typedef struct GTY(()) dw_line_info_table_struct {
   unsigned int line_num;
   unsigned int column_num;
   int discrim_num;
+  unsigned int subprog_num;
+  unsigned int context;
   bool is_stmt;
   bool in_use;
 
@@ -6827,14 +6865,13 @@ should_move_die_to_comdat (dw_die_ref die)
     case DW_TAG_structure_type:
     case DW_TAG_enumeration_type:
     case DW_TAG_union_type:
-      /* Don't move declarations, inlined instances, or types nested in a
-	 subprogram.  */
+      /* Don't move declarations, inlined instances, types nested in a
+	 subprogram, or types that contain subprogram definitions.  */
       if (is_declaration_die (die)
           || get_AT (die, DW_AT_abstract_origin)
-          || is_nested_in_subprogram (die))
+          || is_nested_in_subprogram (die)
+          || contains_subprogram_definition (die))
         return 0;
-      /* A type definition should never contain a subprogram definition.  */
-      gcc_assert (!contains_subprogram_definition (die));
       return 1;
     case DW_TAG_array_type:
     case DW_TAG_interface_type:
@@ -6923,6 +6960,7 @@ clone_as_declaration (dw_die_ref die)
 
       switch (a->dw_attr)
         {
+        case DW_AT_abstract_origin:
         case DW_AT_artificial:
         case DW_AT_containing_type:
         case DW_AT_external:
@@ -7155,6 +7193,12 @@ generate_skeleton_bottom_up (skeleton_chain_node *parent)
 	    dw_die_ref clone = clone_die (c);
 	    move_all_children (c, clone);
 
+	    /* If the original has a DW_AT_object_pointer attribute,
+	       it would now point to a child DIE just moved to the
+	       cloned tree, so we need to remove that attribute from
+	       the original.  */
+	    remove_AT (c, DW_AT_object_pointer);
+
 	    replace_child (c, clone, prev);
 	    generate_skeleton_ancestor_tree (parent);
 	    add_child_die (parent->new_die, c);
@@ -7296,28 +7340,38 @@ break_out_comdat_types (dw_die_ref die)
   } while (next != NULL);
 }
 
-/* Like clone_tree, but additionally enter all the children into
-   the hash table decl_table.  */
+/* Like clone_tree, but copy DW_TAG_subprogram DIEs as declarations.
+   Enter all the cloned children into the hash table decl_table.  */
 
 static dw_die_ref
-clone_tree_hash (dw_die_ref die, decl_hash_type decl_table)
+clone_tree_partial (dw_die_ref die, decl_hash_type decl_table)
 {
   dw_die_ref c;
-  dw_die_ref clone = clone_die (die);
+  dw_die_ref clone;
   struct decl_table_entry *entry;
-  decl_table_entry **slot = decl_table.find_slot_with_hash (die,
-					  htab_hash_pointer (die), INSERT);
+  decl_table_entry **slot;
+
+  if (die->die_tag == DW_TAG_subprogram)
+    clone = clone_as_declaration (die);
+  else
+    clone = clone_die (die);
+
+  slot = decl_table.find_slot_with_hash (die,
+					 htab_hash_pointer (die), INSERT);
+
   /* Assert that DIE isn't in the hash table yet.  If it would be there
      before, the ancestors would be necessarily there as well, therefore
-     clone_tree_hash wouldn't be called.  */
+     clone_tree_partial wouldn't be called.  */
   gcc_assert (*slot == HTAB_EMPTY_ENTRY);
+
   entry = XCNEW (struct decl_table_entry);
   entry->orig = die;
   entry->copy = clone;
   *slot = entry;
 
-  FOR_EACH_CHILD (die, c,
-		  add_child_die (clone, clone_tree_hash (c, decl_table)));
+  if (die->die_tag != DW_TAG_subprogram)
+    FOR_EACH_CHILD (die, c,
+		    add_child_die (clone, clone_tree_partial (c, decl_table)));
 
   return clone;
 }
@@ -7368,9 +7422,15 @@ copy_decls_walk (dw_die_ref unit, dw_die_ref die, decl_hash_type decl_table)
               entry->copy = copy;
               *slot = entry;
 
-	      FOR_EACH_CHILD (targ, c,
-			      add_child_die (copy,
-					     clone_tree_hash (c, decl_table)));
+	      /* If TARG is not a declaration DIE, we need to copy its
+	         children.  */
+	      if (!is_declaration_die (targ))
+		{
+		  FOR_EACH_CHILD (
+		      targ, c,
+		      add_child_die (copy,
+				     clone_tree_partial (c, decl_table)));
+		}
 
               /* Make sure the cloned tree is marked as part of the
                  type unit.  */
@@ -8908,26 +8968,6 @@ add_top_level_skeleton_die_attrs (dw_die_ref die)
   add_AT_lineptr (die, DW_AT_GNU_addr_base, debug_addr_section_label);
 }
 
-/* Return the single type-unit die for skeleton type units.  */
-
-static dw_die_ref
-get_skeleton_type_unit (void)
-{
-  /* For dwarf_split_debug_sections with use_type info, all type units in the
-     skeleton sections have identical dies (but different headers).  This
-     single die will be output many times.  */
-
-  static dw_die_ref skeleton_type_unit = NULL;
-
-  if (skeleton_type_unit == NULL)
-    {
-      skeleton_type_unit = new_die (DW_TAG_type_unit, NULL, NULL);
-      add_top_level_skeleton_die_attrs (skeleton_type_unit);
-      skeleton_type_unit->die_abbrev = SKELETON_TYPE_DIE_ABBREV;
-    }
-  return skeleton_type_unit;
-}
-
 /* Output skeleton debug sections that point to the dwo file.  */
 
 static void
@@ -8966,8 +9006,6 @@ output_skeleton_debug_sections (dw_die_ref comp_unit)
   ASM_OUTPUT_LABEL (asm_out_file, debug_skeleton_abbrev_section_label);
 
   output_die_abbrevs (SKELETON_COMP_DIE_ABBREV, comp_unit);
-  if (use_debug_types)
-    output_die_abbrevs (SKELETON_TYPE_DIE_ABBREV, get_skeleton_type_unit ());
 
   dw2_asm_output_data (1, 0, "end of skeleton .debug_abbrev");
 }
@@ -9029,38 +9067,6 @@ output_comdat_type_unit (comdat_type_node *node)
   output_die (node->root_die);
 
   unmark_dies (node->root_die);
-
-#if defined (OBJECT_FORMAT_ELF)
-  if (dwarf_split_debug_info)
-    {
-      /* Produce the skeleton type-unit header.  */
-      const char *secname = ".debug_types";
-
-      targetm.asm_out.named_section (secname,
-                                     SECTION_DEBUG | SECTION_LINKONCE,
-                                     comdat_key);
-      if (DWARF_INITIAL_LENGTH_SIZE - DWARF_OFFSET_SIZE == 4)
-        dw2_asm_output_data (4, 0xffffffff,
-          "Initial length escape value indicating 64-bit DWARF extension");
-
-      dw2_asm_output_data (DWARF_OFFSET_SIZE,
-                           DWARF_COMPILE_UNIT_HEADER_SIZE
-                           - DWARF_INITIAL_LENGTH_SIZE
-                           + size_of_die (get_skeleton_type_unit ())
-                           + DWARF_TYPE_SIGNATURE_SIZE + DWARF_OFFSET_SIZE,
-                           "Length of Type Unit Info");
-      dw2_asm_output_data (2, dwarf_version, "DWARF version number");
-      dw2_asm_output_offset (DWARF_OFFSET_SIZE,
-                             debug_skeleton_abbrev_section_label,
-                             debug_abbrev_section,
-                             "Offset Into Abbrev. Section");
-      dw2_asm_output_data (1, DWARF2_ADDR_SIZE, "Pointer Size (in bytes)");
-      output_signature (node->signature, "Type Signature");
-      dw2_asm_output_data (DWARF_OFFSET_SIZE, 0, "Offset to Type DIE");
-
-      output_die (get_skeleton_type_unit ());
-    }
-#endif
 }
 
 /* Return the DWARF2/3 pubname associated with a decl.  */
@@ -13801,7 +13807,7 @@ dw_loc_list (var_loc_list *loc_list, tree decl, int want_address)
 	    else
 	      {
 		ASM_GENERATE_INTERNAL_LABEL (label_id, FUNC_END_LABEL,
-					     current_function_funcdef_no);
+					     FUNC_LABEL_ID (cfun));
 		endname = ggc_strdup (label_id);
 	      }
 
@@ -16601,10 +16607,9 @@ add_src_coords_attributes (dw_die_ref die, tree decl)
 static void
 add_linkage_name (dw_die_ref die, tree decl)
 {
-  if (debug_info_level > DINFO_LEVEL_TERSE
+  if (debug_info_level > DINFO_LEVEL_NONE
       && (TREE_CODE (decl) == FUNCTION_DECL || TREE_CODE (decl) == VAR_DECL)
       && TREE_PUBLIC (decl)
-      && !DECL_ABSTRACT (decl)
       && !(TREE_CODE (decl) == VAR_DECL && DECL_REGISTER (decl))
       && die->die_tag != DW_TAG_member)
     {
@@ -16670,7 +16675,7 @@ dwarf2out_vms_debug_main_pointer (void)
   die->die_tag = DW_TAG_subprogram;
   add_name_attribute (die, VMS_DEBUG_MAIN_POINTER);
   ASM_GENERATE_INTERNAL_LABEL (label, PROLOGUE_END_LABEL,
-			       current_function_funcdef_no);
+			       FUNC_LABEL_ID (cfun));
   add_AT_lbl_id (die, DW_AT_entry_pc, label);
 
   /* Make it the first child of comp_unit_die ().  */
@@ -17774,6 +17779,9 @@ dwarf2out_abstract_function (tree decl)
   int old_call_site_count, old_tail_call_site_count;
   struct call_arg_loc_node *old_call_arg_locations;
 
+  if (debug_line_tables_only)
+    return;
+
   /* Make sure we have the actual abstract inline, not a clone.  */
   decl = DECL_ORIGIN (decl);
 
@@ -18140,9 +18148,9 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
 	      char label_id_low[MAX_ARTIFICIAL_LABEL_BYTES];
 	      char label_id_high[MAX_ARTIFICIAL_LABEL_BYTES];
 	      ASM_GENERATE_INTERNAL_LABEL (label_id_low, FUNC_BEGIN_LABEL,
-					   current_function_funcdef_no);
+					   FUNC_LABEL_ID (cfun));
 	      ASM_GENERATE_INTERNAL_LABEL (label_id_high, FUNC_END_LABEL,
-					   current_function_funcdef_no);
+					   FUNC_LABEL_ID (cfun));
              add_AT_low_high_pc (subr_die, label_id_low, label_id_high,
                                  false);
 	    }
@@ -18892,12 +18900,16 @@ gen_label_die (tree decl, dw_die_ref context_die)
 static inline void
 add_call_src_coords_attributes (tree stmt, dw_die_ref die)
 {
-  expanded_location s = expand_location (BLOCK_SOURCE_LOCATION (stmt));
+  location_t locus = BLOCK_SOURCE_LOCATION (stmt);
+  expanded_location s = expand_location (locus);
 
   if (dwarf_version >= 3 || !dwarf_strict)
     {
       add_AT_file (die, DW_AT_call_file, lookup_filename (s.file));
       add_AT_unsigned (die, DW_AT_call_line, s.line);
+      unsigned discr = get_discriminator_from_locus (locus);
+      if (discr != 0)
+	add_AT_unsigned (die, DW_AT_GNU_discriminator, discr);
     }
 }
 
@@ -20707,7 +20719,51 @@ gen_namelist_decl (tree name, dw_die_ref scope_die, tree item_decls)
 void
 dwarf2out_decl (tree decl)
 {
-  dw_die_ref context_die = comp_unit_die ();
+  dw_die_ref context_die;
+
+  if (debug_line_tables_only)
+    return;
+
+  /* In LIPO mode, we may output some functions whose type is defined
+     in another function that will not be output. This can result in
+     undefined location list symbols in the debug type info.
+     Here we disable the output of the type info for this case.
+     It is safe since this function and its debug info should never
+     be referenced.  */
+  if (L_IPO_COMP_MODE)
+    {
+      tree decl_context, orig_decl;
+
+      decl_context = DECL_CONTEXT (decl);
+      while (decl_context &&
+          TREE_CODE (decl_context) != TRANSLATION_UNIT_DECL)
+      {
+        struct cgraph_node *node;
+
+        /* Refer to cgraph_mark_functions_to_output() in cgraphunit.c,
+           if cgraph_is_aux_decl_external() is true,
+           this function will not be output in LIPO mode.  */
+        if (TREE_CODE (decl_context) == FUNCTION_DECL &&
+            TREE_PUBLIC (decl_context) &&
+            (node = cgraph_get_node (decl_context)) &&
+            cgraph_is_aux_decl_external (node))
+          return;
+
+        if (TYPE_P (decl_context))
+          {
+            decl_context = TYPE_CONTEXT (decl_context);
+            continue;
+          }
+
+        orig_decl = DECL_ORIGIN (decl_context);
+        while (orig_decl != DECL_ORIGIN (orig_decl))
+          orig_decl = DECL_ORIGIN (orig_decl);
+
+        decl_context = DECL_CONTEXT (orig_decl);
+      }
+    }
+
+  context_die = comp_unit_die ();
 
   switch (TREE_CODE (decl))
     {
@@ -20847,6 +20903,10 @@ dwarf2out_function_decl (tree decl)
   htab_empty (cached_dw_loc_list_table);
 }
 
+/* For two-level line tables, we need to remember which block we're in.  */
+
+static vec<unsigned int> block_stack;
+
 /* Output a marker (i.e. a label) for the beginning of the generated code for
    a lexical block.  */
 
@@ -20856,6 +20916,8 @@ dwarf2out_begin_block (unsigned int line ATTRIBUTE_UNUSED,
 {
   switch_to_section (current_function_section ());
   ASM_OUTPUT_DEBUG_LABEL (asm_out_file, BLOCK_BEGIN_LABEL, blocknum);
+  if (flag_two_level_line_tables && DWARF2_ASM_LINE_DEBUG_INFO)
+    block_stack.safe_push (blocknum);
 }
 
 /* Output a marker (i.e. a label) for the end of the generated code for a
@@ -20866,6 +20928,8 @@ dwarf2out_end_block (unsigned int line ATTRIBUTE_UNUSED, unsigned int blocknum)
 {
   switch_to_section (current_function_section ());
   ASM_OUTPUT_DEBUG_LABEL (asm_out_file, BLOCK_END_LABEL, blocknum);
+  if (flag_two_level_line_tables && DWARF2_ASM_LINE_DEBUG_INFO)
+    block_stack.pop ();
 }
 
 /* Returns nonzero if it is appropriate not to emit any debugging
@@ -21120,6 +21184,9 @@ dwarf2out_var_location (rtx loc_note)
   tree decl;
   bool var_loc_p;
 
+  if (debug_line_tables_only)
+    return;
+
   if (!NOTE_P (loc_note))
     {
       if (CALL_P (loc_note))
@@ -21332,6 +21399,8 @@ new_line_info_table (void)
   table = ggc_alloc_cleared_dw_line_info_table_struct ();
   table->file_num = 1;
   table->line_num = 1;
+  table->subprog_num = 0;
+  table->context = 0;
   table->is_stmt = DWARF_LINE_DEFAULT_IS_STMT_START;
 
   return table;
@@ -21371,7 +21440,7 @@ set_cur_line_info_table (section *sec)
 	{
 	  char label[MAX_ARTIFICIAL_LABEL_BYTES];
 	  ASM_GENERATE_INTERNAL_LABEL (label, FUNC_END_LABEL,
-				       current_function_funcdef_no);
+				       FUNC_LABEL_ID (cfun));
 	  end_label = ggc_strdup (label);
 	}
 
@@ -21388,6 +21457,256 @@ set_cur_line_info_table (section *sec)
   cur_line_info_table = table;
 }
 
+/* For two-level line tables, a table of subprograms, keyed by
+   the function decl node.  We number each subprogram when we
+   output the .subprog opcode.  */
+
+struct subprog_entry
+{
+  tree decl;
+  bool is_inlined;
+  unsigned int subprog_num;
+};
+
+struct subprog_hasher : typed_free_remove <subprog_entry>
+{
+  typedef subprog_entry value_type;
+  typedef tree_node compare_type;
+  static hashval_t hash (const value_type *);
+  static bool equal (const value_type *, const compare_type *);
+};
+
+inline hashval_t
+subprog_hasher::hash (const value_type *p)
+{
+  return DECL_UID (p->decl);
+}
+
+inline bool
+subprog_hasher::equal (const value_type *p1, const compare_type *p2)
+{
+  return p1->decl == p2;
+}
+
+static hash_table<subprog_hasher> *subprog_table;
+static unsigned int last_subprog_num = 0;
+
+static subprog_entry *
+add_subprog_entry (tree decl, bool is_inlined)
+{
+  subprog_entry **slot;
+  subprog_entry *entry;
+  
+  slot = subprog_table->find_slot_with_hash (decl, DECL_UID (decl), INSERT);
+  if (*slot == HTAB_EMPTY_ENTRY)
+    {
+      entry = XCNEW (struct subprog_entry);
+      entry->decl = decl;
+      entry->is_inlined = is_inlined;
+      entry->subprog_num = 0;
+      *slot = entry;
+    }
+  else if (is_inlined && !(*slot)->is_inlined)
+    {
+      /* If we've already output this subprogram entry as a non-inlined
+         subprogram, make sure it gets output again, so that we include
+         its linkage name.  */
+      (*slot)->is_inlined = true;
+      (*slot)->subprog_num = 0;
+    }
+  return *slot;
+}
+
+/* For two-level line tables, a map from block number to an
+   inlined call chain.  */
+
+struct block_entry
+{
+  unsigned int block_num;
+  struct subprog_entry *subprog;
+  struct block_entry *caller;
+  location_t caller_loc;
+};
+
+struct block_hasher : typed_free_remove <block_entry>
+{
+  typedef block_entry value_type;
+  typedef unsigned int compare_type;
+  static hashval_t hash (const value_type *);
+  static bool equal (const value_type *, const compare_type *);
+};
+
+inline hashval_t
+block_hasher::hash (const value_type *p)
+{
+  return (hashval_t) p->block_num;
+}
+
+inline bool
+block_hasher::equal (const value_type *p1, const compare_type *p2)
+{
+  return p1->block_num == *p2;
+}
+
+static hash_table<block_hasher> *block_table;
+
+/* For two-level line tables, a table of logical statements.
+   We number each logical statement when we output the .lloc opcode.  */
+
+struct logical_entry
+{
+  unsigned int file_num;
+  unsigned int line_num;
+  int discrim;
+  unsigned int subprog_num;
+  logical_entry *context;
+  unsigned int logical_num;
+};
+
+struct logical_hasher : typed_free_remove <logical_entry>
+{
+  typedef logical_entry value_type;
+  typedef logical_entry compare_type;
+  static hashval_t hash (const value_type *);
+  static bool equal (const value_type *, const compare_type *);
+};
+
+inline hashval_t
+logical_hasher::hash (const value_type *p)
+{
+  hashval_t h = p->file_num;
+  h = iterative_hash_object (p->line_num, h);
+  h = iterative_hash_object (p->discrim, h);
+  h = iterative_hash_object (p->subprog_num, h);
+  h = iterative_hash_object (p->context, h);
+  return h;
+}
+
+inline bool
+logical_hasher::equal (const value_type *p1, const compare_type *p2)
+{
+  return (p1->file_num == p2->file_num
+	  && p1->line_num == p2->line_num
+	  && p1->discrim == p2->discrim
+	  && p1->subprog_num == p2->subprog_num
+	  && p1->context == p2->context);
+}
+
+static hash_table<logical_hasher> *logical_table;
+static unsigned int last_logical_num = 0;
+
+/* Map BLOCK to the SUBPROG it belongs to, adding a block entry to block_table.
+   If BLOCK has been inlined, CALLER points to the block entry for the calling
+   context, and CALLER_LOC is the source location for the call.  Process all
+   the subblocks recursively, so that we can map each block in a function to
+   the call chain leading to it.  */
+
+static void
+scan_blocks_for_inlined_calls (tree block, subprog_entry *subprog,
+			       block_entry *caller, location_t caller_loc)
+{
+  unsigned int block_num;
+  block_entry **slot;
+  block_entry *entry;
+  tree subblock;
+#ifdef DEBUG_TWO_LEVEL
+  static unsigned int level = 0;
+#endif
+
+  if (block == NULL)
+    return;
+
+#ifdef DEBUG_TWO_LEVEL
+  if (level < 6)
+    {
+      unsigned int i;
+
+      for (i = 0; i < level; i++)
+	fprintf(stderr, "  ");
+      fprintf (stderr, "SCAN: [%p] block %d, subprog %s",
+	       (void *) block,
+	       BLOCK_NUMBER (block),
+	       dwarf2_name (subprog->decl, 0));
+      if (caller != NULL)
+	{
+	  expanded_location loc = expand_location (caller_loc);
+	  fprintf (stderr, ", caller %d (file %s line %d discrim %d)",
+		   caller->block_num, loc.file, loc.line,
+		   get_discriminator_from_locus (caller_loc));
+	}
+      fprintf (stderr, "\n");
+    }
+#endif
+
+  block_num = BLOCK_NUMBER (block);
+  slot = block_table->find_slot_with_hash (&block_num, (hashval_t) block_num, INSERT);
+  if (*slot != HTAB_EMPTY_ENTRY)
+    return;
+  entry = XCNEW (struct block_entry);
+  entry->block_num = block_num;
+  entry->subprog = subprog;
+  entry->caller = caller;
+  entry->caller_loc = caller_loc;
+  *slot = entry;
+
+#ifdef DEBUG_TWO_LEVEL
+  level++;
+#endif
+
+  for (subblock = BLOCK_SUBBLOCKS (block);
+       subblock != NULL;
+       subblock = BLOCK_CHAIN (subblock))
+    {
+      if (! BLOCK_ABSTRACT (subblock)
+	  && inlined_function_outer_scope_p (subblock))
+	{
+	  tree origin = block_ultimate_origin (subblock);
+	  location_t loc = LOCATION_LOCUS (BLOCK_SOURCE_LOCATION (subblock));
+
+	  scan_blocks_for_inlined_calls (subblock,
+					 add_subprog_entry (origin, true),
+					 entry, loc);
+	}
+      else
+	scan_blocks_for_inlined_calls (subblock, subprog, caller, caller_loc);
+    }
+
+#ifdef DEBUG_TWO_LEVEL
+  level--;
+#endif
+
+  for (subblock = BLOCK_FRAGMENT_CHAIN (block);
+       subblock != NULL;
+       subblock = BLOCK_FRAGMENT_CHAIN (subblock))
+    {
+#ifdef DEBUG_TWO_LEVEL
+      if (level < 6)
+	{
+	  unsigned int i;
+
+	  for (i = 0; i < level; i++)
+	    fprintf(stderr, "  ");
+	  fprintf (stderr, "SCAN: [%p] block frag %d, origin %d\n",
+		   (void *) subblock,
+		   BLOCK_NUMBER (subblock),
+		   (BLOCK_FRAGMENT_ORIGIN (subblock)
+		    ? BLOCK_NUMBER (BLOCK_FRAGMENT_ORIGIN (subblock))
+		    : -1));
+	}
+#endif
+      block_num = BLOCK_NUMBER (subblock);
+      slot = block_table->find_slot_with_hash (&block_num, (hashval_t) block_num, INSERT);
+      if (*slot == HTAB_EMPTY_ENTRY)
+	{
+	  entry = XCNEW (struct block_entry);
+	  entry->block_num = block_num;
+	  entry->subprog = subprog;
+	  entry->caller = caller;
+	  entry->caller_loc = caller_loc;
+	  *slot = entry;
+	}
+    }
+}
 
 /* We need to reset the locations at the beginning of each
    function. We can't do this in the end_function hook, because the
@@ -21416,6 +21735,20 @@ dwarf2out_begin_function (tree fun)
   tail_call_site_count = 0;
 
   set_cur_line_info_table (sec);
+
+  if (flag_two_level_line_tables && DWARF2_ASM_LINE_DEBUG_INFO)
+    {
+      subprog_entry *subprog;
+
+      block_table->empty ();
+      logical_table->empty ();
+#ifdef DEBUG_TWO_LEVEL
+      fprintf (stderr, "Begin function %s\n", dwarf2_name (fun, 0));
+#endif
+      subprog = add_subprog_entry (fun, false);
+      scan_blocks_for_inlined_calls (DECL_INITIAL (fun), subprog,
+				     NULL, UNKNOWN_LOCATION);
+    }
 }
 
 /* Helper function of dwarf2out_end_function, called only after emitting
@@ -21483,6 +21816,165 @@ push_dw_line_info_entry (dw_line_info_table *table,
   vec_safe_push (table->entries, e);
 }
 
+/* Two-level line tables:  Output a .subprog directive.  */
+
+static void
+out_subprog_directive (subprog_entry *subprog)
+{
+  tree decl = subprog->decl;
+  tree decl_name = DECL_NAME (decl);
+  tree origin = NULL_TREE;
+  const char *name = NULL;
+  unsigned int file_num = 0;
+  unsigned int line_num = 0;
+
+  if (decl_name == NULL || IDENTIFIER_POINTER (decl_name) == NULL)
+    return;
+
+  origin = decl_ultimate_origin (decl);
+  if (origin == NULL_TREE)
+    origin = decl;
+
+  /* For inlined subroutines, use the linkage name.
+     If -ftwo-level-all-subprogs is set, use the linkage name
+     for all subroutines.  */
+  if (subprog->is_inlined || flag_two_level_all_subprogs)
+    {
+      if (DECL_ASSEMBLER_NAME (origin))
+	{
+	  name = IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (origin));
+	  if (name[0] == '*')
+	    name++;
+	}
+      else
+	name = dwarf2_name (origin, 0);
+    }
+  else
+    {
+      /* To save space, we don't emit the name for non-inlined
+         subroutines, whose linkage names are available from the
+         object file's symbol table.  */
+      name = "";
+    }
+
+  if (LOCATION_LOCUS (DECL_SOURCE_LOCATION (decl)) != UNKNOWN_LOCATION)
+    {
+      expanded_location s;
+
+      s = expand_location (DECL_SOURCE_LOCATION (decl));
+      file_num = maybe_emit_file (lookup_filename (s.file));
+      line_num = s.line;
+    }
+
+  subprog->subprog_num = ++last_subprog_num;
+  fprintf (asm_out_file, "\t.subprog %d \"%s\" %d %d\n",
+	   subprog->subprog_num, name, file_num, line_num);
+}
+
+/* Two-level line tables:  Look for an entry in logical_table for a
+   logical row with the given attributes.  Insert a new entry if not
+   present, recursively adding entries for caller contexts as necessary.
+   Output any necessary .lloc directives.  */
+
+static logical_entry *
+out_logical_entry (dw_line_info_table *table, unsigned int file_num,
+		   unsigned int line_num, int discriminator,
+		   block_entry *block, bool is_stmt, bool is_context)
+{
+  subprog_entry *subprog = NULL;
+  unsigned int subprog_num = 0;
+  logical_entry probe;
+  logical_entry **slot;
+  logical_entry *entry;
+  logical_entry *context = NULL;
+
+  /* Find the logical statement for the calling context, generating a new one
+     if necessary.  */
+  if (block != NULL && block->caller != NULL)
+    {
+      expanded_location s = expand_location (block->caller_loc);
+      unsigned int caller_file_num = maybe_emit_file (lookup_filename (s.file));
+      int caller_discrim = get_discriminator_from_locus (block->caller_loc);
+
+      context = out_logical_entry (table, caller_file_num, s.line,
+				   caller_discrim, block->caller,
+				   is_stmt, true);
+    }
+
+  /* Declare the subprogram if it hasn't already been declared.  */
+  if (block != NULL)
+    subprog = block->subprog;
+  if (subprog != NULL && subprog->subprog_num == 0)
+    out_subprog_directive (subprog);
+  if (subprog != NULL)
+    subprog_num = subprog->subprog_num;
+
+  probe.file_num = file_num;
+  probe.line_num = line_num;
+  probe.discrim = discriminator;
+  probe.subprog_num = subprog_num;
+  probe.context = context;
+  probe.logical_num = 0;
+  slot = logical_table->find_slot (&probe, INSERT);
+
+  if (*slot == HTAB_EMPTY_ENTRY)
+    {
+      entry = XCNEW (struct logical_entry);
+      *entry = probe;
+      entry->logical_num = ++last_logical_num;
+      *slot = entry;
+
+      /* Declare a new logical statement.  */
+      fputs ("\t.lloc ", asm_out_file);
+      fprint_ul (asm_out_file, entry->logical_num);
+      putc (' ', asm_out_file);
+      fprint_ul (asm_out_file, file_num);
+      putc (' ', asm_out_file);
+      fprint_ul (asm_out_file, line_num);
+      if (discriminator > 0)
+	{
+	  fputs (" discriminator ", asm_out_file);
+	  fprint_ul (asm_out_file, (unsigned long) discriminator);
+	}
+      if (subprog_num != 0)
+	{
+	  fputs (" subprog ", asm_out_file);
+	  fprint_ul (asm_out_file, subprog_num);
+	}
+      if (context != NULL)
+	{
+	  fputs (" context ", asm_out_file);
+	  fprint_ul (asm_out_file, context->logical_num);
+	}
+      if (is_stmt != table->is_stmt)
+	{
+	  fputs (" is_stmt ", asm_out_file);
+	  putc (is_stmt ? '1' : '0', asm_out_file);
+	  table->is_stmt = is_stmt;
+	}
+      putc ('\n', asm_out_file);
+    }
+  else
+    {
+      entry = *slot;
+
+      /* Switch to a previously-defined logical statement.  */
+      if (!is_context)
+	{
+	  fputs ("\t.lloc ", asm_out_file);
+	  fprint_ul (asm_out_file, entry->logical_num);
+	  putc ('\n', asm_out_file);
+	}
+    }
+
+  table->file_num = file_num;
+  table->line_num = line_num;
+  table->discrim_num = discriminator;
+  table->in_use = true;
+
+  return entry;
+}
+
 /* Output a label to mark the beginning of a source code line entry
    and record information relating to this source line, in
    'line_info_table' for later output of the .debug_line section.  */
@@ -21531,6 +22023,28 @@ dwarf2out_source_line (unsigned int line, const char *filename,
   /* If requested, emit something human-readable.  */
   if (flag_debug_asm)
     fprintf (asm_out_file, "\t%s %s:%d\n", ASM_COMMENT_START, filename, line);
+
+  /* Two-level line tables.  */
+  if (flag_two_level_line_tables && DWARF2_ASM_LINE_DEBUG_INFO)
+    {
+      unsigned int block_num = 0;
+      block_entry **slot;
+      block_entry *block = NULL;
+
+      /* Find the block_entry we created in the begin_function hook,
+         and get the subprogram and caller info.  */
+      if (!block_stack.is_empty ())
+        block_num = block_stack.last ();
+      slot = block_table->find_slot_with_hash (&block_num,
+					       (hashval_t) block_num,
+					       NO_INSERT);
+      if (slot != NULL)
+	block = *slot;
+
+      out_logical_entry (table, file_num, line, discriminator, block, is_stmt,
+			 false);
+      return;
+    }
 
   if (DWARF2_ASM_LINE_DEBUG_INFO)
     {
@@ -22111,6 +22625,17 @@ dwarf2out_init (const char *filename ATTRIBUTE_UNUSED)
   vec_alloc (incomplete_types, 64);
 
   vec_alloc (used_rtx_array, 32);
+
+  /* Allocate the subprogram table and block-to-logical map.  */
+  if (flag_two_level_line_tables && DWARF2_ASM_LINE_DEBUG_INFO)
+    {
+      subprog_table = new hash_table<subprog_hasher> ();
+      subprog_table->create (10);
+      block_table = new hash_table<block_hasher> ();
+      block_table->create (10);
+      logical_table = new hash_table<logical_hasher> ();
+      logical_table->create (10);
+    }
 
   if (!dwarf_split_debug_info)
     {
@@ -24233,7 +24758,6 @@ dwarf2out_finish (const char *filename)
          skeleton die attrs are added when the skeleton type unit is
          created, so ensure it is created by this point.  */
       add_top_level_skeleton_die_attrs (main_comp_unit_die);
-      (void) get_skeleton_type_unit ();
       htab_traverse_noresize (debug_str_hash, index_string, &index);
     }
 
@@ -24302,8 +24826,8 @@ dwarf2out_finish (const char *filename)
     }
 
   /* Output the main compilation unit if non-empty or if .debug_macinfo
-     or .debug_macro will be emitted.  */
-  output_comp_unit (comp_unit_die (), have_macinfo);
+     or .debug_macro will be emitted or if -gline-tables-only is set.  */
+  output_comp_unit (comp_unit_die (), have_macinfo || debug_line_tables_only);
 
   if (dwarf_split_debug_info && info_section_emitted)
     output_skeleton_debug_sections (main_comp_unit_die);
@@ -24332,7 +24856,7 @@ dwarf2out_finish (const char *filename)
      to put in it.  This because the consumer has no way to tell the
      difference between an empty table that we omitted and failure to
      generate a table that would have contained data.  */
-  if (info_section_emitted)
+  if (info_section_emitted && !debug_line_tables_only)
     {
       unsigned long aranges_length = size_of_aranges ();
 

@@ -244,7 +244,7 @@ Objective-C and Objective-C++ Dialects}.
 -Wno-deprecated -Wno-deprecated-declarations -Wdisabled-optimization  @gol
 -Wno-div-by-zero -Wdouble-promotion -Wempty-body  -Wenum-compare @gol
 -Wno-endif-labels -Werror  -Werror=* @gol
--Wfatal-errors  -Wfloat-equal  -Wformat  -Wformat=2 @gol
+-Wfatal-errors  -Wfloat-equal -Wforce-warnings -Wformat  -Wformat=2 @gol
 -Wno-format-contains-nul -Wno-format-extra-args -Wformat-nonliteral @gol
 -Wformat-security  -Wformat-y2k @gol
 -Wframe-larger-than=@var{len} -Wno-free-nonheap-object -Wjump-misses-init @gol
@@ -260,8 +260,9 @@ Objective-C and Objective-C++ Dialects}.
 -Woverlength-strings  -Wpacked  -Wpacked-bitfield-compat  -Wpadded @gol
 -Wparentheses  -Wpedantic-ms-format -Wno-pedantic-ms-format @gol
 -Wpointer-arith  -Wno-pointer-to-int-cast @gol
--Wredundant-decls  -Wno-return-local-addr @gol
--Wreturn-type  -Wsequence-point  -Wshadow @gol
+-Wredundant-decls  -Wno-return-local-addr -Wipa-opt-mismatch @gol
+-Wreturn-type -Wself-assign -Wself-assign-non-pod -Wsequence-point  -Wshadow @gol
+-Wshadow-compatible-local -Wshadow-local @gol
 -Wsign-compare  -Wsign-conversion -Wfloat-conversion @gol
 -Wsizeof-pointer-memaccess @gol
 -Wstack-protector -Wstack-usage=@var{len} -Wstrict-aliasing @gol
@@ -330,16 +331,19 @@ Objective-C and Objective-C++ Dialects}.
 -fenable-@var{kind}-@var{pass} @gol
 -fenable-@var{kind}-@var{pass}=@var{range-list} @gol
 -fdebug-types-section -fmem-report-wpa @gol
+-fenable-@var{kind}-@var{pass} @gol
+-fenable-@var{kind}-@var{pass}=@var{range-list} @gol
+-fdebug-types-section @gol
 -fmem-report -fpre-ipa-mem-report -fpost-ipa-mem-report -fprofile-arcs @gol
+-fprofile-strip=@var{suffix} -frandom-seed=@var{string} -fsched-verbose=@var{n} @gol
 -fopt-info @gol
 -fopt-info-@var{options}@r{[}=@var{file}@r{]} @gol
--frandom-seed=@var{string} -fsched-verbose=@var{n} @gol
 -fsel-sched-verbose -fsel-sched-dump-cfg -fsel-sched-pipelining-verbose @gol
 -fstack-usage  -ftest-coverage  -ftime-report -fvar-tracking @gol
 -fvar-tracking-assignments  -fvar-tracking-assignments-toggle @gol
 -g  -g@var{level}  -gtoggle  -gcoff  -gdwarf-@var{version} @gol
 -ggdb  -grecord-gcc-switches  -gno-record-gcc-switches @gol
--gstabs  -gstabs+  -gstrict-dwarf  -gno-strict-dwarf @gol
+-gmlt -gstabs  -gstabs+  -gstrict-dwarf  -gno-strict-dwarf @gol
 -gvms  -gxcoff  -gxcoff+ @gol
 -fno-merge-debug-strings -fno-dwarf2-cfi-asm @gol
 -fdebug-prefix-map=@var{old}=@var{new} @gol
@@ -359,7 +363,8 @@ Objective-C and Objective-C++ Dialects}.
 -fassociative-math -fauto-inc-dec -fbranch-probabilities @gol
 -fbranch-target-load-optimize -fbranch-target-load-optimize2 @gol
 -fbtr-bb-exclusive -fcaller-saves @gol
--fcheck-data-deps -fcombine-stack-adjustments -fconserve-stack @gol
+-fcheck-branch-annotation -fcheck-data-deps -fclone-hot-version-paths @gol
+-fcombine-stack-adjustments -fconserve-stack @gol
 -fcompare-elim -fcprop-registers -fcrossjumping @gol
 -fcse-follow-jumps -fcse-skip-blocks -fcx-fortran-rules @gol
 -fcx-limited-range @gol
@@ -367,7 +372,8 @@ Objective-C and Objective-C++ Dialects}.
 -fdelete-null-pointer-checks -fdevirtualize -fdevirtualize-speculatively -fdse @gol
 -fearly-inlining -fipa-sra -fexpensive-optimizations -ffat-lto-objects @gol
 -ffast-math -ffinite-math-only -ffloat-store -fexcess-precision=@var{style} @gol
--fforward-propagate -ffp-contract=@var{style} -ffunction-sections @gol
+-fforward-propagate -ffp-contract=@var{style} @gol
+-ffunction-attribute-list -ffunction-sections @gol
 -fgcse -fgcse-after-reload -fgcse-las -fgcse-lm -fgraphite-identity @gol
 -fgcse-sm -fhoist-adjacent-loads -fif-conversion @gol
 -fif-conversion2 -findirect-inlining @gol
@@ -393,12 +399,16 @@ Objective-C and Objective-C++ Dialects}.
 -fpartial-inlining -fpeel-loops -fpredictive-commoning @gol
 -fprefetch-loop-arrays -fprofile-report @gol
 -fprofile-correction -fprofile-dir=@var{path} -fprofile-generate @gol
--fprofile-generate=@var{path} @gol
+-fprofile-generate=@var{path} -fprofile-generate-sampling @gol
 -fprofile-use -fprofile-use=@var{path} -fprofile-values -fprofile-reorder-functions @gol
 -freciprocal-math -free -frename-registers -freorder-blocks @gol
+-frecord-gcc-switches-in-elf@gol
 -freorder-blocks-and-partition -freorder-functions @gol
 -frerun-cse-after-loop -freschedule-modulo-scheduled-loops @gol
--frounding-math -fsched2-use-superblocks -fsched-pressure @gol
+-fripa -fripa-disallow-asm-modules -fripa-disallow-opt-mismatch @gol
+-fripa-inc-path-sub=@var{path_mapping} -fripa-no-promote-always-inline-func @gol
+-fripa-verbose -frounding-math @gol
+-fsched2-use-superblocks -fsched-pressure @gol
 -fsched-spec-load -fsched-spec-load-dangerous @gol
 -fsched-stalled-insns-dep[=@var{n}] -fsched-stalled-insns[=@var{n}] @gol
 -fsched-group-heuristic -fsched-critical-path-heuristic @gol
@@ -453,7 +463,7 @@ Objective-C and Objective-C++ Dialects}.
 @item Linker Options
 @xref{Link Options,,Options for Linking}.
 @gccoptlist{@var{object-file-name}  -l@var{library} @gol
--nostartfiles  -nodefaultlibs  -nostdlib -pie -rdynamic @gol
+-nostartfiles  -nodefaultlibs -no-pie -nostdlib -pie -rdynamic @gol
 -s  -static -static-libgcc -static-libstdc++ @gol
 -static-libasan -static-libtsan -static-liblsan -static-libubsan @gol
 -shared -shared-libgcc  -symbolic @gol
@@ -767,21 +777,24 @@ Objective-C and Objective-C++ Dialects}.
 
 @emph{MIPS Options}
 @gccoptlist{-EL  -EB  -march=@var{arch}  -mtune=@var{arch} @gol
--mips1  -mips2  -mips3  -mips4  -mips32  -mips32r2 @gol
--mips64  -mips64r2 @gol
+-mips1  -mips2  -mips3  -mips4  -mips32  -mips32r2  -mips32r3  -mips32r5 @gol
+-mips32r6  -mips64  -mips64r2  -mips64r3  -mips64r5  -mips64r6 @gol
 -mips16  -mno-mips16  -mflip-mips16 @gol
 -minterlink-compressed -mno-interlink-compressed @gol
 -minterlink-mips16  -mno-interlink-mips16 @gol
 -mabi=@var{abi}  -mabicalls  -mno-abicalls @gol
 -mshared  -mno-shared  -mplt  -mno-plt  -mxgot  -mno-xgot @gol
--mgp32  -mgp64  -mfp32  -mfp64  -mhard-float  -msoft-float @gol
+-mgp32  -mgp64  -mfp32  -mfpxx  -mfp64  -mhard-float  -msoft-float @gol
 -mno-float  -msingle-float  -mdouble-float @gol
+-modd-spreg -mno-odd-spreg @gol
 -mabs=@var{mode}  -mnan=@var{encoding} @gol
 -mdsp  -mno-dsp  -mdspr2  -mno-dspr2 @gol
 -mmcu -mmno-mcu @gol
 -meva -mno-eva @gol
 -mvirt -mno-virt @gol
+-mxpa -mno-xpa @gol
 -mmicromips -mno-micromips @gol
+-mmsa -mno-msa @gol
 -mfpu=@var{fpu-type} @gol
 -msmartmips  -mno-smartmips @gol
 -mpaired-single  -mno-paired-single  -mdmx  -mno-mdmx @gol
@@ -1078,7 +1091,7 @@ See S/390 and zSeries Options.
 -finstrument-functions-exclude-function-list=@var{sym},@var{sym},@dots{} @gol
 -finstrument-functions-exclude-file-list=@var{file},@var{file},@dots{} @gol
 -fno-common  -fno-ident @gol
--fpcc-struct-return  -fpic  -fPIC -fpie -fPIE @gol
+-fpcc-struct-return  -fpic  -fPIC -fpie -fPIE -fno-plt @gol
 -fno-jump-tables @gol
 -frecord-gcc-switches @gol
 -freg-struct-return  -fshort-enums @gol
@@ -1471,11 +1484,20 @@ gcc -c -Q -O2 --help=optimizers > /tmp/O2-opts
 diff /tmp/O2-opts /tmp/O3-opts | grep enabled
 @end smallexample
 
+@item -canonical-prefixes
+@opindex canonical-prefixes
+Always expand any symbolic links, resolve references to @samp{/../}
+or @samp{/./}, and make the path absolute when generating a relative
+prefix.
+
 @item -no-canonical-prefixes
 @opindex no-canonical-prefixes
-Do not expand any symbolic links, resolve references to @samp{/../}
+Never expand any symbolic links, resolve references to @samp{/../}
 or @samp{/./}, or make the path absolute when generating a relative
-prefix.
+prefix. If neither @option{-canonical-prefixes} nor
+@option{-nocanonical-prefixes} is given, GCC tries to set an appropriate
+default by looking for a target-specific subdirectory alongside the
+directory containing the compiler driver.
 
 @item --version
 @opindex version
@@ -3235,6 +3257,11 @@ This option causes the compiler to abort compilation on the first error
 occurred rather than trying to keep going and printing further error
 messages.
 
+@item -Wforce-warnings
+@opindex Wforce-warnings
+This option causes the compiler to ignore @option{-Werror} and
+@option{-Werror=} and suppress promotion of warnings to errors.
+
 @end table
 
 You can request many specific warnings with options beginning with
@@ -3333,6 +3360,7 @@ Options} and @ref{Objective-C and Objective-C++ Dialect Options}.
 -Wpointer-sign  @gol
 -Wreorder   @gol
 -Wreturn-type  @gol
+-Wripa-opt-mismatch @gol
 -Wsequence-point  @gol
 -Wsign-compare @r{(only in C++)}  @gol
 -Wstrict-aliasing  @gol
@@ -3571,7 +3599,7 @@ If @option{-Wformat} is specified, also warn about @code{strftime}
 formats that may yield only a two-digit year.
 @end table
 
-@item -Wnonnull
+@item -Wnonnull @r{(C and Objective-C only)}
 @opindex Wnonnull
 @opindex Wno-nonnull
 Warn about passing a null pointer for arguments marked as
@@ -3769,6 +3797,61 @@ definitions, may be found on the GCC readings page, at
 
 This warning is enabled by @option{-Wall} for C and C++.
 
+@item -Wself-assign
+@opindex Wself-assign
+@opindex Wno-self-assign
+Warn about self-assignment and self-initialization. This warning is intended
+for detecting accidental self-assignment due to typos, and therefore does
+not warn on a statement that is semantically a self-assignment after
+constant folding. Here is an example of what will trigger a self-assign
+warning and what will not:
+
+@smallexample
+@group
+void func()
+@{
+   int i = 2;
+   int x = x;   /* warn */
+   float f = 5.0;
+   double a[3];
+
+   i = i + 0;   /* not warn */
+   f = f / 1;   /* not warn */
+   a[1] = a[1]; /* warn */
+   i += 0;      /* not warn */
+@}
+@end group
+@end smallexample
+
+In C++ it will not warn on self-assignment of non-POD variables unless
+@option{-Wself-assign-non-pod} is also enabled.
+
+@item -Wself-assign-non-pod
+@opindex Wself-assign-non-pod
+@opindex Wno-self-assign-non-pod
+Warn about self-assignment of non-POD variables. This is a C++-specific
+warning and only effective when @option{-Wself-assign} is enabled.
+
+There are cases where self-assignment might be intentional. For example,
+a C++ programmer might write code to test whether an overloaded
+@code{operator=} works when the same object is assigned to itself.
+One way to work around the self-assign warning in such cases when this flag
+is enabled is using the functional form @code{object.operator=(object)}
+instead of the assignment form @code{object = object}, as shown in the
+following example.
+
+@smallexample
+@group
+void test_func()
+@{
+   MyType t;
+
+   t.operator=(t);  // not warn
+   t = t;           // warn
+@}
+@end group
+@end smallexample
+
 @item -Wno-return-local-addr
 @opindex Wno-return-local-addr
 @opindex Wreturn-local-addr
@@ -3788,6 +3871,16 @@ expression in a function whose return type is @code{void}.
 For C++, a function without return type always produces a diagnostic
 message, even when @option{-Wno-return-type} is specified.  The only
 exceptions are @samp{main} and functions defined in system headers.
+
+This warning is enabled by @option{-Wall}.
+
+@item -Wripa-opt-mismatch
+@opindex Wripa-opt-mismatch
+@opindex Wno-ripa-opt-mismatch
+When doing an FDO build with @option{-fprofile-use} and @option{-fripa},
+warn if importing an axuiliary module that was built with a different
+GCC command line during the profile-generate phase than the primary
+module.
 
 This warning is enabled by @option{-Wall}.
 
@@ -3902,6 +3995,10 @@ This warning is enabled by @option{-Wall}.
 
 To suppress this warning use the @samp{unused} attribute
 (@pxref{Variable Attributes}).
+
+Note that a classic way to avoid @option{-Wunused-variable} warning is
+using @code{x = x}, but that does not work with @option{-Wself-assign}.
+Use @code{(void) x} or @code{static_cast<void>(x)} instead.
 
 @item -Wunused-value
 @opindex Wunused-value
@@ -4348,6 +4445,43 @@ Warn whenever a local variable or type declaration shadows another variable,
 parameter, type, or class member (in C++), or whenever a built-in function
 is shadowed. Note that in C++, the compiler warns if a local variable
 shadows an explicit typedef, but not if it shadows a struct/class/enum.
+
+@item -Wshadow-local
+@opindex Wshadow-local
+@opindex Wno-shadow-local
+Warn when a local variable shadows another local variable or parameter.
+
+@item -Wshadow-compatible-local
+@opindex Wshadow-compatible-local
+@opindex Wno-shadow-compatible-local
+Warn when a local variable shadows another local variable or parameter
+whose type is compatible with that of the shadowing variable. In C++,
+type compatibility here means the type of the shadowing variable can be
+converted to that of the shadowed variable. The creation of this flag
+(in addition to @option{-Wshadow-local}) is based on the idea that when
+a local variable shadows another one of incompatible type, it is most
+likely intentional, not a bug or typo, as shown in the following example:
+
+@smallexample
+@group
+for (SomeIterator i = SomeObj.begin(); i != SomeObj.end(); ++i)
+@{
+  for (int i = 0; i < N; ++i)
+  @{
+    ...
+  @}
+  ...
+@}
+@end group
+@end smallexample
+
+Since the two variable @code{i} in the example above have incompatible types, 
+enabling only @option{-Wshadow-compatible-local} will not emit a warning.
+Because their types are incompatible, if a programmer accidentally uses one
+in place of the other, type checking will catch that and emit an error or
+warning. So not warning (about shadowing) in this case will not lead to
+undetected bugs. Use of this flag instead of @option{-Wshadow-local} can
+possibly reduce the number of warnings triggered by intentional shadowing.
 
 @item -Wlarger-than=@var{len}
 @opindex Wlarger-than=@var{len}
@@ -4953,6 +5087,12 @@ Suppress warnings from casts to pointer type of an integer of a
 different size. In C++, casting to a pointer type of smaller size is
 an error. @option{Wint-to-pointer-cast} is enabled by default.
 
+@item max-lipo-mem
+When importing auxiliary modules during profile-use, check current
+memory consumption after parsing each auxiliary module. If it exceeds
+this limit (specified in kb), don't import any more auxiliary modules.
+Specifying a value of 0 means don't enforce this limit. This parameter
+is only useful when using @option{-fprofile-use} and @option{-fripa}.
 
 @item -Wno-pointer-to-int-cast @r{(C and Objective-C only)}
 @opindex Wno-pointer-to-int-cast
@@ -6239,7 +6379,7 @@ passes).
 @item missed
 Enable showing missed optimization information (only available in certain
 passes).
-@item notes
+@item note
 Enable other detailed optimization information (only available in
 certain passes).
 @item =@var{filename}
@@ -7401,6 +7541,16 @@ registers after writing to their lower 32-bit half.
 Enabled for Alpha, AArch64 and x86 at levels @option{-O2},
 @option{-O3}, @option{-Os}.
 
+@item -fno-lifetime-dse
+@opindex fno-lifetime-dse
+In C++ the value of an object is only affected by changes within its
+lifetime: when the constructor begins, the object has an indeterminate
+value, and any changes during the lifetime of the object are dead when
+the object is destroyed.  Normally dead store elimination will take
+advantage of this; if your code relies on the value of the object
+storage persisting beyond the lifetime of the object, you can use this
+flag to disable this optimization.
+
 @item -flive-range-shrinkage
 @opindex flive-range-shrinkage
 Attempt to decrease register pressure through register live range
@@ -8301,6 +8451,10 @@ Also profile feedback must be available to make this option effective.  See
 
 Enabled at levels @option{-O2}, @option{-O3}, @option{-Os}.
 
+@item -freorder-functions=@var{alg}
+@opindex freorder-functions
+This invokes a linker plugin that globally reorders functions in the final binary according to the algorithm specified. Currently, only one type of reordering is supported, @code{callgraph}.  This algorithm places functions that are connected by hot callgraph edges closer.  This option also enables @option{-ffunction-sections}.  Also, profile feedback must be available to makes this option effective.  This option emits callgraph edge profile information in special sections named .gnu.callgraph.text. The params variable "gnu-cgraph-section-edge-threshold" can be used to only list edges above a certain threshold.
+
 @item -fstrict-aliasing
 @opindex fstrict-aliasing
 Allow the compiler to assume the strictest aliasing rules applicable to
@@ -8793,6 +8947,10 @@ Use the @command{bfd} linker instead of the default linker.
 @opindex fuse-ld=gold
 Use the @command{gold} linker instead of the default linker.
 
+@item -fuse-ld=mcld
+@opindex fuse-ld=mcld
+Use the @command{mcld} linker instead of the default linker.
+
 @item -fcprop-registers
 @opindex fcprop-registers
 After register allocation and post-register allocation instruction splitting,
@@ -8800,6 +8958,24 @@ perform a copy-propagation pass to try to reduce scheduling dependencies
 and occasionally eliminate the copy.
 
 Enabled at levels @option{-O}, @option{-O2}, @option{-O3}, @option{-Os}.
+
+@item -fauto-profile
+@itemx -fauto-profile=@var{path}
+@opindex fauto-profile
+Enable auto-profile feedback directed optimizations, and optimizations
+generally profitable only with profile feedback available.
+
+The following options are enabled: @code{-fbranch-probabilities},
+@code{-funroll-loops}, @code{-fpeel-loops}.
+
+If @var{path} is specified, GCC will look at the @var{path} to find
+the profile feedback data files. Otherwise, GCC will find fbdata.afdo
+in the current directory.
+
+@item -fcheck-branch-annotation
+@opindex -fcheck-branch-annotation
+Compare branch prediction result and autofdo profile information, store the
+result in a section in the generated elf file.
 
 @item -fprofile-correction
 @opindex fprofile-correction
@@ -8833,6 +9009,20 @@ The following options are enabled: @code{-fprofile-arcs}, @code{-fprofile-values
 If @var{path} is specified, GCC looks at the @var{path} to find
 the profile feedback data files. See @option{-fprofile-dir}.
 
+@item -fprofile-generate-sampling
+@opindex -fprofile-generate-sampling
+
+Enable sampling for instrumented binaries.  Instead of recording every event,
+record only every N-th event, where N (the sampling period) can be set either
+at compile time using
+@option{--param profile-generate-sampling-period=@var{value}}, or at
+execution start time through environment variable @samp{GCOV_SAMPLING_PERIOD}.
+
+At this time sampling applies only to branch counters.  A sampling period of 100
+decreases instrumentated binary slowdown from up to 20x for heavily threaded
+applications down to around 2x.  @option{-fprofile-correction} is always
+needed with sampling.
+
 @item -fprofile-use
 @itemx -fprofile-use=@var{path}
 @opindex fprofile-use
@@ -8850,6 +9040,59 @@ code.
 
 If @var{path} is specified, GCC looks at the @var{path} to find
 the profile feedback data files. See @option{-fprofile-dir}.
+
+@item -fprofile-strip=@var{base_suffix}
+@opindex fprofile-strip
+
+The option causes the compiler to strip @var{base_suffix} from the
+base file name and use that to find the gcda file.
+
+@item -fripa
+@opindex fripa
+Perform dynamic inter-procedural analysis. This is used in conjunction with
+the @option{-fprofile-generate} and @option{-fprofile-use} options.
+During the @option{-fprofile-generate} phase, this flag turns on some additional
+instrumentation code that enables dynamic call-graph analysis.
+During the @option{-fprofile-use} phase, this flag enables cross-module
+optimizations such as inlining.
+
+@item -fripa-disallow-asm-modules
+@opindex fripa-disallow-asm-modules
+During profile-gen, if this flag is enabled, and the module has asm statements,
+arrange so that a bit recording this information will be set in the profile
+feedback data file.
+During profile-use, if this flag is enabled, and the same bit in auxiliary
+module's profile feedback data is set, don't import this auxiliary module.
+If this is the primary module, don't export it.
+
+@item -fripa-disallow-opt-mismatch
+@opindex fripa-disallow-opt-mismatch
+Don't import an auxiliary module, if the GCC command line options used for this
+auxiliary module during the profile-generate stage were different from those used
+for the primary module. Note that any mismatches in warning-related options are
+ignored for this comparison.
+
+@item -fripa-inc-path-sub=@var{path_mapping}
+@opindex fripa-inc-path-sub
+This option allows LIPO profile data associated with one compiler to be usable
+by another compiler at different installation path. A user can use this option
+to specify an include search path mapping so that the compiler can convert include
+search paths stored in gcda files into exisiting paths. The mapping is specified
+as a comma separated sub path pairs in the form: OLD_SUBPATH:NEW_SUBPATH.
+
+@item -fripa-no-promote-always-inline-func
+@opindex fripa-no-promote-always-inline-func
+Do not promote static functions with always inline attribute in LIPO compilation.
+
+@item -fripa-verbose
+@opindex fripa-verbose
+Enable printing of verbose information about dynamic inter-procedural optimizations.
+This is used in conjunction with the @option{-fripa}.
+
+@item -frecord-gcc-switches-in-elf
+@opindex frecord-gcc-switches-in-elf
+Record the command line options in the .gnu.switches.text elf section for sample
+based LIPO to do module grouping.
 @end table
 
 The following options control compiler behavior regarding floating-point 
@@ -9079,6 +9322,12 @@ whether the result of a complex multiplication or division is @code{NaN
 
 The default is @option{-fno-cx-fortran-rules}.
 
+@item min-mcf-cancel-iters
+The minimum number of iterations of negative cycle cancellation during
+MCF profile correction before early termination.  This parameter is
+only useful when using @option{-fprofile-correction}.
+
+
 @end table
 
 The following options control optimizations that may improve
@@ -9171,6 +9420,14 @@ the loop is entered.  This usually makes programs run more slowly.
 @option{-funroll-all-loops} implies the same options as
 @option{-funroll-loops}.
 
+@item -funroll-codesize-limit
+@opindex funroll-codesize-limit
+Limit loop unrolling of non-const non-FP loops in a profile feedback compilation
+under estimates of a large code footprint. Enabled by default with
+@option{-fprofile-use}. Code size and execution weight thresholds are controlled
+by the @option{unrollpeel-codesize-threshold} and
+@option{unrollpeel-hotness-threshold} parameters.
+
 @item -fpeel-loops
 @opindex fpeel-loops
 Peels loops for which there is enough information that they do not
@@ -9178,6 +9435,14 @@ roll much (from profile feedback).  It also turns on complete loop peeling
 (i.e.@: complete removal of loops with small constant number of iterations).
 
 Enabled with @option{-fprofile-use}.
+
+@item -fpeel-codesize-limit
+@opindex fpeel-codesize-limit
+Limit loop peeling of non-const non-FP loops in a profile feedback compilation
+under estimates of a large code footprint. Enabled by default with
+@option{-fprofile-use}. Code size and execution weight thresholds are controlled
+by the @option{unrollpeel-codesize-threshold} and
+@option{unrollpeel-hotness-threshold} parameters.
 
 @item -fmove-loop-invariants
 @opindex fmove-loop-invariants
@@ -9210,6 +9475,15 @@ create larger object and executable files and are also slower.
 You cannot use @code{gprof} on all systems if you
 specify this option, and you may have problems with debugging if
 you specify both this option and @option{-g}.
+
+@item -ffunction-attribute-list
+@opindex ffunction-attribute-list
+List of function name patterns that will be applied specified attribute.
+For example, the following command line will add "cold" attribute to
+functions that has "ErrorMessage" in its name.
+@smallexample
+gcc -ffunction-atribute-list=cold:ErrorMessage -c foo.c
+@end smallexample
 
 @item -fbranch-target-load-optimize
 @opindex fbranch-target-load-optimize
@@ -9548,11 +9822,26 @@ The maximum number of iterations of a loop to be suitable for complete peeling.
 @item max-completely-peel-loop-nest-depth
 The maximum depth of a loop nest suitable for complete peeling.
 
+@item unrollpeel-codesize-threshold
+Maximum profile-based code size footprint estimate for loop unrolling and
+peeling.
+
+@item unrollpeel-hotness-threshold
+Maximum ratio of total execution count to loop entry block count under which
+most profile-based code size estimates will be ignored for loop unrolling and
+peeling.
+
 @item max-unswitch-insns
 The maximum number of insns of an unswitched loop.
 
 @item max-unswitch-level
 The maximum number of branches unswitched in a single loop.
+
+@item min-iter-unroll-with-branches
+Minimum iteration count to ignore branch effects when unrolling.
+
+@item unroll-outer-loop-branch-budget
+Maximum number of branches allowed in hot outer loop region after unroll.
 
 @item lim-expensive
 The minimum cost of an expensive expression in the loop invariant motion.
@@ -10104,6 +10393,14 @@ The default choice depends on the target.
 Set the maximum number of existing candidates that will be considered when
 seeking a basis for a new straight-line strength reduction candidate.
 
+@item coverage-callback
+Set to 1 to instrument a callback function together with
+arc counter update. The name of the callback function
+is "__coverage_callback".
+
+@item coverage-exec_once
+Set to 1 to update each arc counter only once.
+
 @item asan-globals
 Enable buffer overflow detection for global objects.  This kind
 of protection is enabled by default if you are using
@@ -10144,6 +10441,18 @@ If number of memory accesses in function being instrumented
 is greater or equal to this number, use callbacks instead of inline checks.
 E.g. to disable inline code use
 @option{--param asan-instrumentation-with-call-threshold=0}.
+
+@item max-fsm-thread-path-insns
+Maximum number of instructions to copy when duplicating blocks on a
+finite state automaton jump thread path.  The default is 100.
+
+@item max-fsm-thread-length
+Maximum number of basic blocks on a finite state automaton jump thread
+path.  The default is 10.
+
+@item max-fsm-thread-paths
+Maximum number of new jump thread paths to create for a finite state
+automaton.  The default is 50.
 
 @end table
 @end table
@@ -10221,6 +10530,9 @@ recognize.
 
 If you want to pass an option that takes an argument, you must use
 @option{-Xassembler} twice, once for the option and once for the argument.
+
+@item profile-generate-sampling-rate
+Set the sampling rate with @option{-fprofile-generate-sampling}.
 
 @end table
 
@@ -10307,6 +10619,11 @@ The compiler may generate calls to @code{memcmp},
 These entries are usually resolved by entries in
 libc.  These entry points should be supplied through some other
 mechanism when this option is specified.
+
+@item -no-pie
+@opindex no-pie
+Produce a position dependent executable.  This is the negative of option
+@option{-pie} which produces a position independent executable.
 
 @item -nostdlib
 @opindex nostdlib
@@ -10484,6 +10801,11 @@ Use @var{script} as the linker script.  This option is supported by most
 systems using the GNU linker.  On some targets, such as bare-board
 targets without an operating system, the @option{-T} option may be required
 when linking to avoid references to undefined symbols.
+
+@item -Xclang-only @var{option}
+@opindex Xclang-only
+Ignore @var{option}.  This is used by some custom drivers to pass options
+to Clang but not GCC.
 
 @item -Xlinker @var{option}
 @opindex Xlinker
@@ -11216,6 +11538,12 @@ given to GCC, substitutes @code{Y}; else substitutes @code{D}.  There can
 be as many clauses as you need.  This may be combined with @code{.},
 @code{,}, @code{!}, @code{|}, and @code{*} as needed.
 
+@item max-lipo-mem
+When importing auxiliary modules during profile-use, check current
+memory consumption after parsing each auxiliary module. If it exceeds
+this limit (specified in kb), don't import any more auxiliary modules.
+Specifying a value of 0 means don't enforce this limit. This parameter
+is only useful when using @option{-fprofile-use} and @option{-fripa}.
 
 @end table
 
@@ -17074,7 +17402,9 @@ Generate code that runs on @var{arch}, which can be the name of a
 generic MIPS ISA, or the name of a particular processor.
 The ISA names are:
 @samp{mips1}, @samp{mips2}, @samp{mips3}, @samp{mips4},
-@samp{mips32}, @samp{mips32r2}, @samp{mips64} and @samp{mips64r2}.
+@samp{mips32}, @samp{mips32r2}, @samp{mips32r3}, @samp{mips32r5},
+@samp{mips32r6}, @samp{mips64}, @samp{mips64r2}, @samp{mips64r3},
+@samp{mips64r5} and @samp{mips64r6}.
 The processor names are:
 @samp{4kc}, @samp{4km}, @samp{4kp}, @samp{4ksc},
 @samp{4kec}, @samp{4kem}, @samp{4kep}, @samp{4ksd},
@@ -17088,8 +17418,9 @@ The processor names are:
 @samp{loongson2e}, @samp{loongson2f}, @samp{loongson3a},
 @samp{m4k},
 @samp{m14k}, @samp{m14kc}, @samp{m14ke}, @samp{m14kec},
-@samp{octeon}, @samp{octeon+}, @samp{octeon2},
+@samp{octeon}, @samp{octeon+}, @samp{octeon2}, @samp{octeon3},
 @samp{orion},
+@samp{p5600},
 @samp{r2000}, @samp{r3000}, @samp{r3900}, @samp{r4000}, @samp{r4400},
 @samp{r4600}, @samp{r4650}, @samp{r4700}, @samp{r6000}, @samp{r8000},
 @samp{rm7000}, @samp{rm9000},
@@ -17172,9 +17503,17 @@ Equivalent to @option{-march=mips4}.
 @opindex mips32
 Equivalent to @option{-march=mips32}.
 
-@item -mips32r2
-@opindex mips32r2
-Equivalent to @option{-march=mips32r2}.
+@item -mips32r3
+@opindex mips32r3
+Equivalent to @option{-march=mips32r3}.
+
+@item -mips32r5
+@opindex mips32r5
+Equivalent to @option{-march=mips32r5}.
+
+@item -mips32r6
+@opindex mips32r6
+Equivalent to @option{-march=mips32r6}.
 
 @item -mips64
 @opindex mips64
@@ -17183,6 +17522,18 @@ Equivalent to @option{-march=mips64}.
 @item -mips64r2
 @opindex mips64r2
 Equivalent to @option{-march=mips64r2}.
+
+@item -mips64r3
+@opindex mips64r3
+Equivalent to @option{-march=mips64r3}.
+
+@item -mips64r5
+@opindex mips64r5
+Equivalent to @option{-march=mips64r5}.
+
+@item -mips64r6
+@opindex mips64r6
+Equivalent to @option{-march=mips64r6}.
 
 @item -mips16
 @itemx -mno-mips16
@@ -17244,14 +17595,27 @@ GCC supports a variant of the o32 ABI in which floating-point registers
 are 64 rather than 32 bits wide.  You can select this combination with
 @option{-mabi=32} @option{-mfp64}.  This ABI relies on the @code{mthc1}
 and @code{mfhc1} instructions and is therefore only supported for
-MIPS32R2 processors.
+MIPS32R2, MIPS32R3 and MIPS32R5 processors.
 
 The register assignments for arguments and return values remain the
 same, but each scalar value is passed in a single 64-bit register
 rather than a pair of 32-bit registers.  For example, scalar
 floating-point values are returned in @samp{$f0} only, not a
 @samp{$f0}/@samp{$f1} pair.  The set of call-saved registers also
-remains the same, but all 64 bits are saved.
+remains the same in that the even-numbered double-precision registers
+are saved.
+
+Two additional variants of the o32 ABI are supported to enable
+a transition from 32-bit to 64-bit registers.  These are FPXX
+(@option{-mfpxx}) and FP64A (@option{-mfp64} @option{-mno-odd-spreg}).
+The FPXX extension mandates that all code must execute correctly
+when run using 32-bit or 64-bit registers.  The code can be interlinked
+with either FP32 or FP64, but not both.
+The FP64A extension is similar to the FP64 extension but forbids the
+use of odd-numbered single-precision registers.  This can be used
+in conjunction with the @code{FRE} mode of FPUs in MIPS32R5
+processors and allows both FP32 and FP64A code to interlink and
+run in the same process without changing FPU modes.
 
 @item -mabicalls
 @itemx -mno-abicalls
@@ -17340,6 +17704,10 @@ Assume that floating-point registers are 32 bits wide.
 @opindex mfp64
 Assume that floating-point registers are 64 bits wide.
 
+@item -mfpxx
+@opindex mfpxx
+Do not assume the width of floating-point registers.
+
 @item -mhard-float
 @opindex mhard-float
 Use floating-point coprocessor instructions.
@@ -17370,6 +17738,15 @@ operations.
 @opindex mdouble-float
 Assume that the floating-point coprocessor supports double-precision
 operations.  This is the default.
+
+@item -modd-spreg
+@itemx -mno-odd-spreg
+@opindex modd-spreg
+@opindex mno-odd-spreg
+Enable the use of odd-numbered single-precision floating-point registers
+for the o32 ABI.  This is the default for processors that are known to
+support these registers.  When using the o32 FPXX ABI, @code{-mno-odd-spreg}
+is set by default.
 
 @item -mabs=2008
 @itemx -mabs=legacy
@@ -17509,6 +17886,12 @@ Use (do not use) the MIPS Enhanced Virtual Addressing instructions.
 @opindex mvirt
 @opindex mno-virt
 Use (do not use) the MIPS Virtualization Application Specific instructions.
+
+@item -mxpa
+@itemx -mno-xpa
+@opindex mxpa
+@opindex mno-xpa
+Use (do not use) the MIPS eXtended Physical Address (XPA) instructions.
 
 @item -mlong64
 @opindex mlong64
@@ -21099,8 +21482,8 @@ the rules of the ABI@.
 Set the instruction set, register set, and instruction scheduling parameters
 for machine type @var{cpu_type}.  Supported values for @var{cpu_type} are
 @samp{v7}, @samp{cypress}, @samp{v8}, @samp{supersparc}, @samp{hypersparc},
-@samp{leon}, @samp{leon3}, @samp{sparclite}, @samp{f930}, @samp{f934},
-@samp{sparclite86x}, @samp{sparclet}, @samp{tsc701}, @samp{v9},
+@samp{leon}, @samp{leon3}, @samp{leon3v7}, @samp{sparclite}, @samp{f930},
+@samp{f934}, @samp{sparclite86x}, @samp{sparclet}, @samp{tsc701}, @samp{v9},
 @samp{ultrasparc}, @samp{ultrasparc3}, @samp{niagara}, @samp{niagara2},
 @samp{niagara3} and @samp{niagara4}.
 
@@ -21118,7 +21501,7 @@ implementations.
 
 @table @asis
 @item v7
-cypress
+cypress, leon3v7
 
 @item v8
 supersparc, hypersparc, leon, leon3
@@ -21183,11 +21566,11 @@ option @option{-mcpu=@var{cpu_type}} does.
 The same values for @option{-mcpu=@var{cpu_type}} can be used for
 @option{-mtune=@var{cpu_type}}, but the only useful values are those
 that select a particular CPU implementation.  Those are @samp{cypress},
-@samp{supersparc}, @samp{hypersparc}, @samp{leon}, @samp{leon3}, @samp{f930},
-@samp{f934}, @samp{sparclite86x}, @samp{tsc701}, @samp{ultrasparc},
-@samp{ultrasparc3}, @samp{niagara}, @samp{niagara2}, @samp{niagara3} and
-@samp{niagara4}.  With native Solaris and GNU/Linux toolchains, @samp{native}
-can also be used.
+@samp{supersparc}, @samp{hypersparc}, @samp{leon}, @samp{leon3},
+@samp{leon3v7}, @samp{f930}, @samp{f934}, @samp{sparclite86x}, @samp{tsc701},
+@samp{ultrasparc}, @samp{ultrasparc3}, @samp{niagara}, @samp{niagara2},
+@samp{niagara3} and @samp{niagara4}.  With native Solaris and GNU/Linux
+toolchains, @samp{native} can also be used.
 
 @item -mv8plus
 @itemx -mno-v8plus
@@ -22356,6 +22739,24 @@ used during linking.
 @option{-fpie} and @option{-fPIE} both define the macros
 @code{__pie__} and @code{__PIE__}.  The macros have the value 1
 for @option{-fpie} and 2 for @option{-fPIE}.
+
+@item -fno-plt
+@opindex fno-plt
+Do not use PLT for external function calls in position-independent code.
+Instead, load callee address at call site from GOT and branch to it.
+This leads to more efficient code by eliminating PLT stubs and exposing
+GOT load to optimizations.  On architectures such as 32-bit x86 where
+PLT stubs expect GOT pointer in a specific register, this gives more
+register allocation freedom to the compiler.  Lazy binding requires PLT:
+with @option{-fno-plt} all external symbols are resolved at load time.
+
+Alternatively, function attribute @code{noplt} can be used to avoid PLT
+for calls to specific external functions by marking those functions with
+this attribute.
+
+Additionally, a few targets also convert calls to those functions that are
+marked to not use the PLT to use the GOT instead for non-position independent
+code.
 
 @item -fno-jump-tables
 @opindex fno-jump-tables

@@ -3025,10 +3025,8 @@ operands can be used for microMIPS instructions such as @code{ll} and
 equivalent to @code{R}.
 
 @item ZD
-When compiling microMIPS code, this constraint matches an address operand
-that is formed from a base register and a 12-bit offset.  These operands
-can be used for microMIPS instructions such as @code{prefetch}.  When
-not compiling for microMIPS code, @code{ZD} is equivalent to @code{p}.
+An address suitable for a @code{prefetch} instruction, or for any other
+instruction with the same addressing mode as @code{prefetch}.
 @end table
 
 @item Motorola 680x0---@file{config/m68k/constraints.md}
@@ -4857,6 +4855,16 @@ Operand 1 and operand 2 are of the same mode. Their product, which is of a
 wider mode, is computed and added to operand 3. Operand 3 is of a mode equal or
 wider than the mode of the product. The result is placed in operand 0, which
 is of the same mode as operand 3.
+
+@cindex @code{ssad@var{m}} instruction pattern
+@item @samp{ssad@var{m}}
+@cindex @code{usad@var{m}} instruction pattern
+@item @samp{usad@var{m}}
+Compute the sum of absolute differences of two signed/unsigned elements.
+Operand 1 and operand 2 are of the same mode. Their absolute difference, which
+is of a wider mode, is computed and added to operand 3. Operand 3 is of a mode
+equal or wider than the mode of the absolute difference. The result is placed
+in operand 0, which is of the same mode as operand 3.
 
 @cindex @code{ssum_widen@var{m3}} instruction pattern
 @item @samp{ssum_widen@var{m3}}
@@ -8410,9 +8418,9 @@ must be a @code{label_ref}.
 
 @cindex @code{pc} and attributes
 @item (pc)
-This refers to the address of the @emph{current} insn.  It might have
-been more consistent with other usage to make this the address of the
-@emph{next} insn but this would be confusing because the length of the
+For non-branch instructions and backward branch instructions, this refers
+to the address of the current insn.  But for forward branch instructions,
+this refers to the address of the next insn, because the length of the
 current insn is to be computed.
 @end table
 

@@ -33,6 +33,12 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <unistd.h>
+#if defined (__ANDROID__)
+#include <stdio.h>
+#include <string.h>
+#include <fcntl.h>
+#include <errno.h>
+#endif
 #ifdef HAVE_GETLOADAVG
 # ifdef HAVE_SYS_LOADAVG_H
 #  include <sys/loadavg.h>
@@ -70,6 +76,188 @@ gomp_cpuset_popcount (unsigned long cpusetsize, cpu_set_t *cpusetp)
     }
   return ret;
 #endif
+}
+#endif
+
+#if defined (__ANDROID__)
+/* Read the content of a file.
+ * Return the length of the data, or -1 on error. Does *not*
+ * zero-terminate the content. Will not read more
+ * than 'buffsize' bytes.
+ */
+static int
+read_file(const char*  pathname, char*  buffer, size_t  buffsize)
+{
+    int  fd, len;
+
+    fd = open(pathname, O_RDONLY);
+    if (fd < 0)
+        return -1;
+
+    do {
+        len = read(fd, buffer, buffsize);
+    } while (len < 0 && errno == EINTR);
+
+    close(fd);
+
+    return len;
+}
+
+
+/* Parse a decimal integer starting from 'input', but not going further
+ * than 'limit'. Return the value into '*result'.
+ *
+ * NOTE: Does not skip over leading spaces, or deal with sign characters.
+ * NOTE: Ignores overflows.
+ *
+ * The function returns NULL in case of error (bad format), or the new
+ * position after the decimal number in case of success (which will always
+ * be <= 'limit').
+ */
+static const char*
+parse_decimal(const char* input, const char* limit, int* result)
+{
+    const char* p = input;
+    int val = 0;
+    while (p < limit) {
+        int d = (*p - '0');
+        if ((unsigned)d >= 10U)
+            break;
+        val = val*10 + d;
+        p++;
+    }
+    if (p == input)
+        return NULL;
+
+    *result = val;
+    return p;
+}
+
+
+/* This data type is used to represent a CPU list / mask, as read
+ * from sysfs on Linux. See http://www.kernel.org/doc/Documentation/cputopology.txt
+ */
+typedef struct {
+    int mask;
+} cpuList;
+
+/* Returns Actual CPUs (total installed CPUs) */
+static int
+cpuList_count (cpuList* list) {
+	return list->mask ;
+}
+
+/* Parse a textual list of cpus and store the result inside a cpuList object.
+ * Input format is the following:
+ * - comma-separated list of items (no spaces)
+ * - each item is either a single decimal number (cpu index), or a range made
+ *   of two numbers separated by a single dash (-). Ranges are inclusive.
+ * Examples:
+ *           0
+ *           2,4-127,128-143
+ *           0-1
+ */
+static void
+cpuList_parse (cpuList* list, const char* line, int line_len)
+{
+    const char* p = line;
+    const char* end = p + line_len;
+    const char* q;
+
+    /* NOTE: the input line coming from sysfs typically contains a
+    * trailing newline, so take care of it in the code below
+     */
+    while (p < end && *p != '\n')
+    {
+        int val, start_value, end_value;
+
+        /* Find the end of current item, and put it into 'q' */
+        q = memchr(p, ',', end-p);
+        if (q == NULL) {
+            q = end;
+        }
+
+        /* Get first value */
+        p = parse_decimal(p, q, &start_value);
+        if (p == NULL)
+            goto BAD_FORMAT;
+
+        end_value = start_value;
+
+        /* If we're not at the end of the item, expect a dash and
+         * and integer; extract end value.
+         */
+        if (p < q && *p == '-') {
+            p = parse_decimal(p+1, q, &end_value);
+            if (p == NULL)
+                goto BAD_FORMAT;
+        }
+
+        /* Set CPU list */
+        for (val = start_value; val <= end_value; val++) {
+            list->mask++;
+        }
+
+        /* Jump to next item */
+        p = q;
+        if (p < end)
+            p++;
+    }
+
+BAD_FORMAT:
+    ;
+}
+
+
+/* Read a CPU list from one sysfs file
+ * The below is CPU related sys interface by CPU topologoy.
+ */
+static void
+cpuList_read_from (cpuList* list, const char* filename)
+{
+    char file[64];
+    int filelen;
+
+    list->mask = 0;
+
+    filelen = read_file(filename, file, sizeof file);
+    if (filelen < 0) {
+        fprintf(stderr,"Could not read %s: %s\n", filename, strerror(errno));
+        return;
+    }
+
+    cpuList_parse(list, file, filelen);
+}
+
+
+/* Probe the number of actual CPUs on devices (e.g. Android devices) using
+ * CPU-Hotplug and CPU-DVFS to optimize battery life.
+ * Return the number of CPUs present on a given device.
+ * See http://www.kernel.org/doc/Documentation/cputopology.txt
+ */
+static int
+sc_nprocessors_actu ()
+{
+    char buffer[256];
+    int buffer_len;
+    int cpuCount = 1;
+    cpuList cpus_present[1];
+    char file_name[64] = "/sys/devices/system/cpu/present";
+
+    buffer_len = read_file(file_name, buffer, sizeof buffer);
+
+    if (buffer_len < 0)  /* should not happen */ {
+        fprintf(stderr,"Could not find %s: %s\n", file_name, strerror(errno));
+        return 1;
+    }
+
+    /* Count the CPU cores, the value may be 0 for single-core CPUs */
+    cpuList_read_from(cpus_present, file_name);
+    cpuCount = cpuList_count(cpus_present);
+    if (cpuCount == 0) {
+        cpuCount = 1;
+    }
+    return cpuCount;
 }
 #endif
 
@@ -138,7 +326,9 @@ gomp_init_num_threads (void)
   free (gomp_cpusetp);
   gomp_cpusetp = NULL;
 #endif
-#ifdef _SC_NPROCESSORS_ONLN
+#if defined(__ANDROID__)
+  gomp_global_icv.nthreads_var = sc_nprocessors_actu ();
+#elif defined(_SC_NPROCESSORS_ONLN)
   gomp_global_icv.nthreads_var = sysconf (_SC_NPROCESSORS_ONLN);
 #endif
 }
@@ -169,7 +359,9 @@ get_num_procs (void)
       return gomp_available_cpus;
     }
 #endif
-#ifdef _SC_NPROCESSORS_ONLN
+#if defined(__ANDROID__)
+  return sc_nprocessors_actu ();
+#elif defined(_SC_NPROCESSORS_ONLN)
   return sysconf (_SC_NPROCESSORS_ONLN);
 #else
   return gomp_icv (false)->nthreads_var;

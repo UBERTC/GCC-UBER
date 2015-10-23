@@ -1191,7 +1191,7 @@ sjlj_emit_function_enter (rtx dispatch_label)
       char buf[20];
       rtx sym;
 
-      ASM_GENERATE_INTERNAL_LABEL (buf, "LLSDA", current_function_funcdef_no);
+      ASM_GENERATE_INTERNAL_LABEL (buf, "LLSDA", FUNC_LABEL_ID (cfun));
       sym = gen_rtx_SYMBOL_REF (Pmode, ggc_strdup (buf));
       SYMBOL_REF_FLAGS (sym) = SYMBOL_FLAG_LOCAL;
       emit_move_insn (mem, sym);
@@ -2953,7 +2953,7 @@ output_one_function_exception_table (int section)
 #ifdef HAVE_AS_LEB128
       ASM_GENERATE_INTERNAL_LABEL (ttype_label,
 				   section ? "LLSDATTC" : "LLSDATT",
-				   current_function_funcdef_no);
+                                   FUNC_LABEL_ID (cfun));
 #endif
       tt_format_size = size_of_encoded_value (tt_format);
 
@@ -2961,7 +2961,7 @@ output_one_function_exception_table (int section)
     }
 
   targetm.asm_out.internal_label (asm_out_file, section ? "LLSDAC" : "LLSDA",
-				  current_function_funcdef_no);
+                                  FUNC_LABEL_ID (cfun));
 
   /* The LSDA header.  */
 
@@ -2994,7 +2994,7 @@ output_one_function_exception_table (int section)
       char ttype_after_disp_label[32];
       ASM_GENERATE_INTERNAL_LABEL (ttype_after_disp_label,
 				   section ? "LLSDATTDC" : "LLSDATTD",
-				   current_function_funcdef_no);
+                                   FUNC_LABEL_ID (cfun));
       dw2_asm_output_delta_uleb128 (ttype_label, ttype_after_disp_label,
 				    "@TType base offset");
       ASM_OUTPUT_LABEL (asm_out_file, ttype_after_disp_label);
@@ -3041,10 +3041,10 @@ output_one_function_exception_table (int section)
 #ifdef HAVE_AS_LEB128
   ASM_GENERATE_INTERNAL_LABEL (cs_after_size_label,
 			       section ? "LLSDACSBC" : "LLSDACSB",
-			       current_function_funcdef_no);
+                               FUNC_LABEL_ID (cfun));
   ASM_GENERATE_INTERNAL_LABEL (cs_end_label,
 			       section ? "LLSDACSEC" : "LLSDACSE",
-			       current_function_funcdef_no);
+                               FUNC_LABEL_ID (cfun));
   dw2_asm_output_delta_uleb128 (cs_end_label, cs_after_size_label,
 				"Call-site table length");
   ASM_OUTPUT_LABEL (asm_out_file, cs_after_size_label);

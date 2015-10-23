@@ -3367,6 +3367,7 @@ defined and 0 otherwise.
 This is about eliminating the frame pointer and arg pointer.
 
 @hook TARGET_FRAME_POINTER_REQUIRED
+@hook TARGET_CAN_OMIT_LEAF_FRAME_POINTER
 
 @findex get_frame_size
 @defmac INITIAL_FRAME_POINTER_OFFSET (@var{depth-var})
@@ -3713,8 +3714,6 @@ stack.
 @hook TARGET_ARRAY_MODE_SUPPORTED_P
 
 @hook TARGET_SMALL_REGISTER_CLASSES_FOR_MODE_P
-
-@hook TARGET_FLAGS_REGNUM
 
 @node Scalar Return
 @subsection How Scalar Function Values Are Returned
@@ -4631,10 +4630,11 @@ for comparisons whose argument is a @code{plus}:
 
 @smallexample
 #define SELECT_CC_MODE(OP,X,Y) \
-  (GET_MODE_CLASS (GET_MODE (X)) == MODE_FLOAT          \
-   ? ((OP == EQ || OP == NE) ? CCFPmode : CCFPEmode)    \
-   : ((GET_CODE (X) == PLUS || GET_CODE (X) == MINUS    \
-       || GET_CODE (X) == NEG) \
+  (GET_MODE_CLASS (GET_MODE (X)) == MODE_FLOAT           \
+   ? ((OP == LT || OP == LE || OP == GT || OP == GE)     \
+      ? CCFPEmode : CCFPmode)                            \
+   : ((GET_CODE (X) == PLUS || GET_CODE (X) == MINUS     \
+       || GET_CODE (X) == NEG || GET_CODE (x) == ASHIFT) \
       ? CC_NOOVmode : CCmode))
 @end smallexample
 
@@ -4657,10 +4657,11 @@ then @code{REVERSIBLE_CC_MODE (@var{mode})} must be zero.
 You need not define this macro if it would always returns zero or if the
 floating-point format is anything other than @code{IEEE_FLOAT_FORMAT}.
 For example, here is the definition used on the SPARC, where floating-point
-inequality comparisons are always given @code{CCFPEmode}:
+inequality comparisons are given either @code{CCFPEmode} or @code{CCFPmode}:
 
 @smallexample
-#define REVERSIBLE_CC_MODE(MODE)  ((MODE) != CCFPEmode)
+#define REVERSIBLE_CC_MODE(MODE) \
+   ((MODE) != CCFPEmode && (MODE) != CCFPmode)
 @end smallexample
 @end defmac
 
@@ -4670,7 +4671,7 @@ comparison done in CC_MODE @var{mode}.  The macro is used only in case
 @code{REVERSIBLE_CC_MODE (@var{mode})} is nonzero.  Define this macro in case
 machine has some non-standard way how to reverse certain conditionals.  For
 instance in case all floating point conditions are non-trapping, compiler may
-freely convert unordered compares to ordered one.  Then definition may look
+freely convert unordered compares to ordered ones.  Then definition may look
 like:
 
 @smallexample
@@ -4683,6 +4684,8 @@ like:
 @hook TARGET_FIXED_CONDITION_CODE_REGS
 
 @hook TARGET_CC_MODES_COMPATIBLE
+
+@hook TARGET_FLAGS_REGNUM
 
 @node Costs
 @section Describing Relative Costs of Operations
@@ -6745,6 +6748,8 @@ the target supports DWARF 2 frame unwind information.
 
 @hook TARGET_DWARF_REGISTER_SPAN
 
+@hook TARGET_DWARF_FRAME_REG_MODE
+
 @hook TARGET_INIT_DWARF_REG_SIZES_EXTRA
 
 @hook TARGET_ASM_TTYPE
@@ -7186,6 +7191,8 @@ tables, and hence is desirable if it works.
 
 @hook TARGET_DELAY_VARTRACK
 
+@hook TARGET_STRICT_ALIGN
+
 @defmac ASM_OUTPUT_DWARF_DELTA (@var{stream}, @var{size}, @var{label1}, @var{label2})
 A C statement to issue assembly directives that create a difference
 @var{lab1} minus @var{lab2}, using an integer of the given @var{size}.
@@ -7508,6 +7515,43 @@ on this implementation detail.
 @hook TARGET_OPTION_FUNCTION_VERSIONS
 
 @hook TARGET_CAN_INLINE_P
+
+@hook TARGET_GET_PIC_REG
+Return the pic_reg pseudo register which holds the base address of GOT.
+ It is only required by the simplify-got optimization.
+@end deftypefn
+
+@hook TARGET_CLEAR_PIC_REG
+After successful simplify-got optimization, the pic_reg is useless. So a
+ target can use this hook to clear pic_reg.
+@end deftypefn
+
+@hook TARGET_LOADED_GLOBAL_VAR
+This hook is used to detect if the given @var{insn} loads a global
+ variable's address from GOT with the form of
+ @smallexample
+ (set @var{address_reg} (mem (plus pic_reg @var{offset_reg})))
+ @end smallexample
+ If so return the global variable whose address will be loaded and fill in
+ @var{offset_insn} and @var{offset_reg}. @var{offset_reg} is set at
+ @var{offset_insn} to hold the offset from GOT base to the GOT entry of the
+ global variable. Otherwise return @code{NULL_RTX}.
+@end deftypefn
+
+@hook TARGET_CAN_SIMPLIFY_GOT_ACCESS
+This hook determines if it satisfy the target dependent conditions to do
+ simplify-got when given the number of global variable accessing and the
+ number of accessed symbols. If the returned value is false the GOT access
+ insns will not be rewritten. Otherwise we will rewrite these insns.
+@end deftypefn
+
+@hook TARGET_LOAD_GLOBAL_ADDRESS
+This hook does the actual rewriting of GOT access insn @var{load_insn}.
+ The global variable is @var{symbol}. The global address should be loaded
+ into @var{address_reg}. The register @var{offset_reg} was previously set
+ in insn @var{offset_insn} to hold the offset from GOT base to the GOT
+ entry of the global variable. Now it can be used as a scratch register.
+@end deftypefn
 
 @node Emulated TLS
 @section Emulating TLS
@@ -8366,8 +8410,6 @@ routine for target specific customizations of the system printf
 and scanf formatter settings.
 @end defmac
 
-@hook TARGET_RELAXED_ORDERING
-
 @hook TARGET_INVALID_ARG_FOR_UNPROTOTYPED_FN
 
 @hook TARGET_INVALID_CONVERSION
@@ -8411,6 +8453,8 @@ and the associated definitions of those functions.
 @hook TARGET_CONST_ANCHOR
 
 @hook TARGET_ASAN_SHADOW_OFFSET
+
+@hook TARGET_SET_FP_INSN
 
 @hook TARGET_MEMMODEL_CHECK
 

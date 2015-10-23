@@ -227,9 +227,6 @@ HOST_EXPORTS = \
 	CLOOGINC="$(HOST_CLOOGINC)"; export CLOOGINC; \
 	LIBELFLIBS="$(HOST_LIBELFLIBS)" ; export LIBELFLIBS; \
 	LIBELFINC="$(HOST_LIBELFINC)" ; export LIBELFINC; \
-@if gcc-bootstrap
-	$(RPATH_ENVVAR)=`echo "$(TARGET_LIB_PATH)$$$(RPATH_ENVVAR)" | sed 's,::*,:,g;s,^:*,,;s,:*$$,,'`; export $(RPATH_ENVVAR); \
-@endif gcc-bootstrap
 	$(RPATH_ENVVAR)=`echo "$(HOST_LIB_PATH)$$$(RPATH_ENVVAR)" | sed 's,::*,:,g;s,^:*,,;s,:*$$,,'`; export $(RPATH_ENVVAR);
 
 POSTSTAGE1_CXX_EXPORT = \
@@ -293,9 +290,6 @@ BASE_TARGET_EXPORTS = \
 	STRIP="$(STRIP_FOR_TARGET)"; export STRIP; \
 	WINDRES="$(WINDRES_FOR_TARGET)"; export WINDRES; \
 	WINDMC="$(WINDMC_FOR_TARGET)"; export WINDMC; \
-@if gcc-bootstrap
-	$(RPATH_ENVVAR)=`echo "$(TARGET_LIB_PATH)$$$(RPATH_ENVVAR)" | sed 's,::*,:,g;s,^:*,,;s,:*$$,,'`; export $(RPATH_ENVVAR); \
-@endif gcc-bootstrap
 	$(RPATH_ENVVAR)=`echo "$(HOST_LIB_PATH)$$$(RPATH_ENVVAR)" | sed 's,::*,:,g;s,^:*,,;s,:*$$,,'`; export $(RPATH_ENVVAR); \
 	TARGET_CONFIGDIRS="$(TARGET_CONFIGDIRS)"; export TARGET_CONFIGDIRS;
 

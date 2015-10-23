@@ -948,6 +948,7 @@ stamp-bits: ${bits_headers}
 
 stamp-bits-sup: stamp-bits ${bits_sup_headers}
 	@-cd ${bits_builddir} && $(LN_S) $? . 2>/dev/null
+	@-cd ${bits_builddir} && rm -f stamp-bits && $(STAMP) stamp-bits
 	@$(STAMP) stamp-bits-sup
 
 stamp-c_base: ${c_base_headers}

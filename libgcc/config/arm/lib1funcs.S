@@ -1326,10 +1326,20 @@ LSYM(Lover12):
 	ARM_FUNC_START div0
 #endif
 
+#if defined (__ANDROID__)
+	/* ANDROID LOCAL BEGIN */
+	/* Adding stack unwinding directives to debug divide-by-0 errors */
+	.fnstart
+	.save   {r1, lr}
+#endif
 	do_push	{r1, lr}
 	mov	r0, #SIGFPE
 	bl	SYM(raise) __PLT__
 	RETLDM	r1
+#if defined (__ANDROID__)
+	.fnend
+	/* ANDROID LOCAL END */
+#endif
 
 #ifdef __ARM_EABI__
 	FUNC_END aeabi_ldiv0

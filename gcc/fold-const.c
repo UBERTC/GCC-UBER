@@ -2477,11 +2477,27 @@ combine_comparisons (location_t loc,
 
    If OEP_PURE_SAME is set, then pure functions with identical arguments
    are considered the same.  It is used when the caller has other ways
-   to ensure that global memory is unchanged in between.  */
+   to ensure that global memory is unchanged in between.
+
+   If OEP_ALLOW_NULL is set, this routine will not crash on NULL operands,
+   and two NULL operands are considered equal. This flag is usually set
+   in the context of frontend when ARG0 and/or ARG1 may be NULL mostly due
+   to recursion on partially built expressions (e.g. a CAST_EXPR on a NULL
+   tree.) In this case, we certainly don't want the compiler to crash and
+   it's OK to consider two NULL operands equal. On the other hand, when
+   called in the context of code generation and optimization, if NULL
+   operands are not expected, silently ignoring them could be dangerous
+   and might cause problems downstream that are hard to find/debug. In that
+   case, the flag should probably not be set.  */
 
 int
 operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 {
+  /* If either is NULL, they must be both NULL to be equal. We only do this
+     check when OEP_ALLOW_NULL is set.  */
+  if ((flags & OEP_ALLOW_NULL) && (!arg0 || !arg1))
+    return arg0 == arg1;
+
   /* If either is ERROR_MARK, they aren't equal.  */
   if (TREE_CODE (arg0) == ERROR_MARK || TREE_CODE (arg1) == ERROR_MARK
       || TREE_TYPE (arg0) == error_mark_node
@@ -2491,7 +2507,13 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
   /* Similar, if either does not have a type (like a released SSA name), 
      they aren't equal.  */
   if (!TREE_TYPE (arg0) || !TREE_TYPE (arg1))
-    return 0;
+    {
+      /* If the caller chooses to allow the comparison of operands without
+         types, we will continue the comparison only when both of them don't
+         have a type.  */
+      if (!(flags & OEP_ALLOW_NO_TYPE) || TREE_TYPE (arg0) || TREE_TYPE (arg1))
+        return 0;
+    }
 
   /* Check equality of integer constants before bailing out due to
      precision differences.  */
@@ -2503,14 +2525,17 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
      because they may change the signedness of the arguments.  As pointers
      strictly don't have a signedness, require either two pointers or
      two non-pointers as well.  */
-  if (TYPE_UNSIGNED (TREE_TYPE (arg0)) != TYPE_UNSIGNED (TREE_TYPE (arg1))
-      || POINTER_TYPE_P (TREE_TYPE (arg0)) != POINTER_TYPE_P (TREE_TYPE (arg1)))
+  if (TREE_TYPE (arg0)
+      && (TYPE_UNSIGNED (TREE_TYPE (arg0)) != TYPE_UNSIGNED (TREE_TYPE (arg1))
+          || POINTER_TYPE_P (TREE_TYPE (arg0))
+             != POINTER_TYPE_P (TREE_TYPE (arg1))))
     return 0;
 
   /* We cannot consider pointers to different address space equal.  */
-  if (POINTER_TYPE_P (TREE_TYPE (arg0)) && POINTER_TYPE_P (TREE_TYPE (arg1))
-      && (TYPE_ADDR_SPACE (TREE_TYPE (TREE_TYPE (arg0)))
-	  != TYPE_ADDR_SPACE (TREE_TYPE (TREE_TYPE (arg1)))))
+  if (TREE_TYPE (arg0)
+      && (POINTER_TYPE_P (TREE_TYPE (arg0)) && POINTER_TYPE_P (TREE_TYPE (arg1))
+          && (TYPE_ADDR_SPACE (TREE_TYPE (TREE_TYPE (arg0)))
+              != TYPE_ADDR_SPACE (TREE_TYPE (TREE_TYPE (arg1))))))
     return 0;
 
   /* If both types don't have the same precision, then it is not safe
@@ -2583,7 +2608,8 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 	  return 1;
 
 
-	if (!HONOR_SIGNED_ZEROS (TYPE_MODE (TREE_TYPE (arg0))))
+	if (TREE_TYPE (arg0)
+            && !HONOR_SIGNED_ZEROS (TYPE_MODE (TREE_TYPE (arg0))))
 	  {
 	    /* If we do not distinguish between signed and unsigned zero,
 	       consider them equal.  */
@@ -2650,8 +2676,9 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
         {
 	CASE_CONVERT:
         case FIX_TRUNC_EXPR:
-	  if (TYPE_UNSIGNED (TREE_TYPE (arg0))
-	      != TYPE_UNSIGNED (TREE_TYPE (arg1)))
+	  if (TREE_TYPE (arg0)
+              && (TYPE_UNSIGNED (TREE_TYPE (arg0))
+                  != TYPE_UNSIGNED (TREE_TYPE (arg1))))
 	    return 0;
 	  break;
 	default:
@@ -2707,11 +2734,14 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 	     We can have incomplete types for array references of
 	     variable-sized arrays from the Fortran frontend
 	     though.  Also verify the types are compatible.  */
-	  return ((TYPE_SIZE (TREE_TYPE (arg0)) == TYPE_SIZE (TREE_TYPE (arg1))
-		   || (TYPE_SIZE (TREE_TYPE (arg0))
-		       && TYPE_SIZE (TREE_TYPE (arg1))
-		       && operand_equal_p (TYPE_SIZE (TREE_TYPE (arg0)),
-					   TYPE_SIZE (TREE_TYPE (arg1)), flags)))
+	  return (TREE_TYPE (arg0)
+                  && (TYPE_SIZE (TREE_TYPE (arg0))
+                      == TYPE_SIZE (TREE_TYPE (arg1))
+                      || (TYPE_SIZE (TREE_TYPE (arg0))
+                          && TYPE_SIZE (TREE_TYPE (arg1))
+                          && operand_equal_p (TYPE_SIZE (TREE_TYPE (arg0)),
+                                              TYPE_SIZE (TREE_TYPE (arg1)),
+                                              flags)))
 		  && types_compatible_p (TREE_TYPE (arg0), TREE_TYPE (arg1))
 		  && alias_ptr_types_compatible_p
 		       (TREE_TYPE (TREE_OPERAND (arg0, 1)),
@@ -7837,8 +7867,8 @@ static bool vec_cst_ctor_to_array (tree, tree *);
    OP0.  Return the folded expression if folding is successful.
    Otherwise, return NULL_TREE.  */
 
-tree
-fold_unary_loc (location_t loc, enum tree_code code, tree type, tree op0)
+static tree
+fold_unary_loc_1 (location_t loc, enum tree_code code, tree type, tree op0)
 {
   tree tem;
   tree arg0;
@@ -8559,6 +8589,49 @@ fold_unary_loc (location_t loc, enum tree_code code, tree type, tree op0)
     } /* switch (code) */
 }
 
+/* Given an expression tree EXP, set the EXPR_FOLDED flag, and if it is
+   a nop, recursively set the EXPR_FOLDED flag of its operand.  */
+
+static void
+set_expr_folded_flag (tree exp)
+{
+  /* FIXME -- can not set the flag on SSA_NAME, the flag overlaps
+     with the version member.  */
+  if (TREE_CODE (exp) == SSA_NAME)
+    return;
+
+  EXPR_FOLDED (exp) = 1;
+
+  /* If EXP is a nop (i.e. NON_LVALUE_EXPRs and NOP_EXPRs), we need to
+     recursively set the EXPR_FOLDED flag of its operand because the 
+     expression will be stripped later.  */
+  while ((CONVERT_EXPR_P (exp)
+          || TREE_CODE (exp) == NON_LVALUE_EXPR)
+	 && TREE_OPERAND (exp, 0) != error_mark_node)
+    {
+      exp = TREE_OPERAND (exp, 0);
+      /* FIXME -- can not set the flag on SSA_NAME, the flag overlaps
+         with the version member.  */
+      if (TREE_CODE (exp) != SSA_NAME)
+        EXPR_FOLDED (exp) = 1;
+    }
+}
+
+/* Fold a unary expression of code CODE and type TYPE with operand
+   OP0.  Return the folded expression if folding is successful.
+   Otherwise, return NULL_TREE.
+   This is a wrapper around fold_unary_1 function (which does the
+   actual folding). Set the EXPR_FOLDED flag of the folded expression
+   if folding is successful.  */
+
+tree
+fold_unary_loc (location_t loc, enum tree_code code, tree type, tree op0)
+{
+  tree tem = fold_unary_loc_1 (loc, code, type, op0);
+  if (tem)
+    set_expr_folded_flag (tem);
+  return tem;
+}
 
 /* If the operation was a conversion do _not_ mark a resulting constant
    with TREE_OVERFLOW if the original constant was not.  These conversions
@@ -9024,7 +9097,8 @@ fold_comparison (location_t loc, enum tree_code code, tree type,
       /* If the constant operation overflowed this can be
 	 simplified as a comparison against INT_MAX/INT_MIN.  */
       if (TREE_CODE (lhs) == INTEGER_CST
-	  && TREE_OVERFLOW (lhs))
+	  && TREE_OVERFLOW (lhs)
+	  && !TYPE_OVERFLOW_WRAPS (TREE_TYPE (arg0)))
 	{
 	  int const1_sgn = tree_int_cst_sgn (const1);
 	  enum tree_code code2 = code;
@@ -10101,8 +10175,8 @@ tree_expr_nonzero_p (tree t)
    Return the folded expression if folding is successful.  Otherwise,
    return NULL_TREE.  */
 
-tree
-fold_binary_loc (location_t loc,
+static tree
+fold_binary_loc_1 (location_t loc,
 	     enum tree_code code, tree type, tree op0, tree op1)
 {
   enum tree_code_class kind = TREE_CODE_CLASS (code);
@@ -13295,7 +13369,7 @@ fold_binary_loc (location_t loc,
 	  tree itype = TREE_TYPE (arg00);
 	  if (TREE_INT_CST_HIGH (arg01) == 0
 	      && TREE_INT_CST_LOW (arg01)
-		 == (unsigned HOST_WIDE_INT) (TYPE_PRECISION (itype) - 1))
+		 == (unsigned HOST_WIDE_INT) (element_precision (itype) - 1))
 	    {
 	      if (TYPE_UNSIGNED (itype))
 		{
@@ -14121,6 +14195,22 @@ fold_binary_loc (location_t loc,
     } /* switch (code) */
 }
 
+/* Fold a binary expression of code CODE and type TYPE with operands
+   OP0 and OP1.  Return the folded expression if folding is
+   successful.  Otherwise, return NULL_TREE.
+   This is a wrapper around fold_binary_1 function (which does the
+   actual folding). Set the EXPR_FOLDED flag of the folded expression
+   if folding is successful.  */
+tree
+fold_binary_loc (location_t loc,
+                 enum tree_code code, tree type, tree op0, tree op1)
+{
+  tree tem = fold_binary_loc_1 (loc, code, type, op0, op1);
+  if (tem)
+    set_expr_folded_flag (tem);
+  return tem;
+}
+
 /* Callback for walk_tree, looking for LABEL_EXPR.  Return *TP if it is
    a LABEL_EXPR; otherwise return NULL_TREE.  Do not check the subtrees
    of GOTO_EXPR.  */
@@ -14157,9 +14247,9 @@ contains_label_p (tree st)
    OP0, OP1, and OP2.  Return the folded expression if folding is
    successful.  Otherwise, return NULL_TREE.  */
 
-tree
-fold_ternary_loc (location_t loc, enum tree_code code, tree type,
-		  tree op0, tree op1, tree op2)
+static tree
+fold_ternary_loc_1 (location_t loc, enum tree_code code, tree type,
+                    tree op0, tree op1, tree op2)
 {
   tree tem;
   tree arg0 = NULL_TREE, arg1 = NULL_TREE, arg2 = NULL_TREE;
@@ -14737,6 +14827,23 @@ fold_ternary_loc (location_t loc, enum tree_code code, tree type,
     default:
       return NULL_TREE;
     } /* switch (code) */
+}
+
+/* Fold a ternary expression of code CODE and type TYPE with operands
+   OP0, OP1, and OP2.  Return the folded expression if folding is
+   successful.  Otherwise, return NULL_TREE.
+   This is a wrapper around fold_ternary_1 function (which does the
+   actual folding). Set the EXPR_FOLDED flag of the folded expression
+   if folding is successful.  */
+
+tree
+fold_ternary_loc (location_t loc, enum tree_code code, tree type,
+		  tree op0, tree op1, tree op2)
+{
+  tree tem = fold_ternary_loc_1 (loc, code, type, op0, op1, op2);
+  if (tem)
+    set_expr_folded_flag (tem);
+  return tem;
 }
 
 /* Perform constant folding and related simplification of EXPR.

@@ -108,9 +108,22 @@ enum aarch64_symbol_type
    cost models and vectors for address cost calculations, register
    move costs and memory move costs.  */
 
+/* Scaled addressing modes can vary cost depending on the mode of the
+   value to be loaded/stored.  QImode values cannot use scaled
+   addressing modes.  */
+
+struct scale_addr_mode_cost
+{
+  const int hi;
+  const int si;
+  const int di;
+  const int ti;
+};
+
 /* Additional cost for addresses.  */
 struct cpu_addrcost_table
 {
+  const struct scale_addr_mode_cost addr_scale_costs;
   const int pre_modify;
   const int post_modify;
   const int register_offset;
@@ -291,4 +304,5 @@ extern bool aarch64_madd_needs_nop (rtx);
 extern void aarch64_final_prescan_insn (rtx);
 extern bool
 aarch64_expand_vec_perm_const (rtx target, rtx op0, rtx op1, rtx sel);
+void aarch64_atomic_assign_expand_fenv (tree *, tree *, tree *);
 #endif /* GCC_AARCH64_PROTOS_H */

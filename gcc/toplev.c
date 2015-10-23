@@ -79,6 +79,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "context.h"
 #include "pass_manager.h"
 #include "optabs.h"
+#include "auto-profile.h"
 
 #if defined(DBX_DEBUGGING_INFO) || defined(XCOFF_DEBUGGING_INFO)
 #include "dbxout.h"
@@ -152,11 +153,6 @@ HOST_WIDE_INT random_seed;
    the support provided depends on the backend.  */
 rtx stack_limit_rtx;
 
-/* True if the user has tagged the function with the 'section'
-   attribute.  */
-
-bool user_defined_section_attribute = false;
-
 struct target_flag_state default_target_flag_state;
 #if SWITCHABLE_TARGET
 struct target_flag_state *this_target_flag_state = &default_target_flag_state;
@@ -180,6 +176,19 @@ FILE *stack_usage_file = NULL;
    created.  */
 
 static const char *src_pwd;
+
+/* Primary module's id (non-zero). If no module-info was read in, this will
+   be zero.  */
+
+unsigned primary_module_id = 0;
+
+/* Current module id.  */
+
+unsigned current_module_id = 0;
+
+/* Include all auxiliary modules specified in the profile. This
+   will bypass the ggc_memory limit check.  */
+bool include_all_aux = 0;
 
 /* Initialize src_pwd with the given string, and return true.  If it
    was already initialized, return false.  As a special case, it may
@@ -564,6 +573,9 @@ compile_file (void)
   if (seen_error ())
     return;
 
+  if (flag_dyn_ipa)
+    coverage_finish ();
+
   timevar_start (TV_PHASE_LATE_ASM);
 
   /* Compilation unit is finalized.  When producing non-fat LTO object, we are
@@ -659,6 +671,10 @@ compile_file (void)
       ident_str = ACONCAT (("GCC: ", pkg_version, version_string, NULL));
       targetm.asm_out.output_ident (ident_str);
     }
+
+  /* Auto profile finalization. */
+  if (flag_auto_profile)
+    end_auto_profile ();
 
   /* Invoke registered plugin callbacks.  */
   invoke_plugin_callbacks (PLUGIN_FINISH_UNIT, NULL);
@@ -1421,6 +1437,9 @@ process_options (void)
     error ("target system does not support the \"%s\" debug format",
 	   debug_type_names[write_symbols]);
 
+  if (flag_auto_profile && debug_info_level == DINFO_LEVEL_NONE)
+    debug_hooks = &auto_profile_debug_hooks;
+
   /* We know which debug output will be used so we can set flag_var_tracking
      and flag_var_tracking_uninit if the user has not specified them.  */
   if (debug_info_level < DINFO_LEVEL_NORMAL
@@ -1917,13 +1936,15 @@ do_compile (void)
 
           init_cgraph ();
           init_final (main_input_filename);
-          coverage_init (aux_base_name);
+          coverage_init (aux_base_name, main_input_filename);
           statistics_init ();
           invoke_plugin_callbacks (PLUGIN_START_UNIT, NULL);
 
           timevar_stop (TV_PHASE_SETUP);
 
           compile_file ();
+	  if (flag_record_compilation_info_in_elf)
+	    write_compilation_info_to_asm ();
         }
       else
         {

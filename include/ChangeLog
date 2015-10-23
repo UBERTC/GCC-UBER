@@ -223,6 +223,12 @@
 
 	* ansidecl.h (ENUM_BITFIELD): Always use enum in C++
 
+2012-01-26  Cary Coutant  <ccoutant@google.com>
+
+	* include/dwarf2.h (enum dwarf_form): Update Fission extensions, add
+	wiki reference.
+	(enum dwarf_attribute): Likewise.
+
 2011-09-28  Doug Evans  <dje@google.com>
 
 	* timeval-utils.h: New file.

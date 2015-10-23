@@ -45,6 +45,27 @@ enum c_language_kind c_language = clk_c;
 #undef LANG_HOOKS_INIT_TS
 #define LANG_HOOKS_INIT_TS c_common_init_ts
 
+/* LIPO support.  */
+#undef LANG_HOOKS_ADD_BUILT_IN_DECL
+#define LANG_HOOKS_ADD_BUILT_IN_DECL c_add_built_in_decl
+#undef LANG_HOOKS_SAVE_BUILT_IN_PRE
+#define LANG_HOOKS_SAVE_BUILT_IN_PRE c_save_built_in_decl_pre_parsing
+#undef LANG_HOOKS_RESTORE_BUILT_IN_PRE
+#define LANG_HOOKS_RESTORE_BUILT_IN_PRE c_restore_built_in_decl_pre_parsing
+#undef LANG_HOOKS_SAVE_BUILT_IN_POST
+#define LANG_HOOKS_SAVE_BUILT_IN_POST c_save_built_in_decl_post_parsing
+#undef LANG_HOOKS_RESTORE_BUILT_IN_POST
+#define LANG_HOOKS_RESTORE_BUILT_IN_POST c_restore_built_in_decl_post_parsing
+#undef LANG_HOOKS_HAS_GLOBAL_NAME
+#define LANG_HOOKS_HAS_GLOBAL_NAME c_is_global_scope
+#undef LANG_HOOKS_GET_LANG_DECL_SIZE
+#define LANG_HOOKS_GET_LANG_DECL_SIZE c_get_lang_decl_size
+#undef LANG_HOOKS_IS_GENERATED_TYPE
+#define LANG_HOOKS_IS_GENERATED_TYPE c_is_compiler_generated_type
+#undef LANG_HOOKS_CMP_LANG_TYPE
+#define LANG_HOOKS_CMP_LANG_TYPE c_cmp_lang_type
+
+
 /* Each front end provides its own lang hook initializer.  */
 struct lang_hooks lang_hooks = LANG_HOOKS_INITIALIZER;
 

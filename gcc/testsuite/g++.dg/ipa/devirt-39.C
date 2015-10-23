@@ -1,5 +1,5 @@
 // PR c++/61214
-/* { dg-options "-O2"  } */
+/* { dg-options "-O2 -fdump-tree-optimized -fdevirtualize"  } */
 
 struct Base
 {

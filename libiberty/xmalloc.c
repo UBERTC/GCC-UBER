@@ -70,6 +70,10 @@ function will be called to print an error message and terminate execution.
 
 #include <stddef.h>
 
+#ifdef __APPLE__
+#include <crt_externs.h>
+#endif
+
 #if VMS
 #include <stdlib.h>
 #include <unixlib.h>
@@ -117,7 +121,11 @@ void
 xmalloc_failed (size_t size)
 {
 #ifdef HAVE_SBRK
+#ifdef __APPLE__
+  #define environ (*_NSGetEnviron())
+#else
   extern char **environ;
+#endif
   size_t allocated;
 
   if (first_break != NULL)

@@ -2,7 +2,7 @@
    spot that foo changes the dynamic type of the passed object.  */
 
 /* { dg-do run } */
-/* { dg-options "-O3"  } */
+/* { dg-options "-O3 -fdevirtualize"  } */
 
 extern "C" void abort (void);
 extern "C" void *malloc(__SIZE_TYPE__);

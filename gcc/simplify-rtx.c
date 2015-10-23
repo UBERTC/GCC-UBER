@@ -503,6 +503,12 @@ simplify_replace_fn_rtx (rtx x, const_rtx old_rtx,
 	  if (GET_CODE (op0) == HIGH && rtx_equal_p (XEXP (op0, 0), op1))
 	    return op1;
 
+	  /* (lo_sum (high x) (const (plus x ofs))) -> (const (plus x ofs))  */
+	  if (GET_CODE (op0) == HIGH && GET_CODE (op1) == CONST
+	      && GET_CODE(XEXP (op1, 0)) == PLUS
+	      && rtx_equal_p (XEXP (XEXP (op1, 0), 0), XEXP (op0, 0)))
+	    return op1;
+
 	  if (op0 == XEXP (x, 0) && op1 == XEXP (x, 1))
 	    return x;
 	  return gen_rtx_LO_SUM (mode, op0, op1);
@@ -3330,6 +3336,7 @@ simplify_binary_operation_1 (enum rtx_code code, enum machine_mode mode,
 	 prefer left rotation, if op1 is from bitsize / 2 + 1 to
 	 bitsize - 1, use other direction of rotate with 1 .. bitsize / 2 - 1
 	 amount instead.  */
+#if defined(HAVE_rotate) && defined(HAVE_rotatert)
       if (CONST_INT_P (trueop1)
 	  && IN_RANGE (INTVAL (trueop1),
 		       GET_MODE_BITSIZE (mode) / 2 + (code == ROTATE),
@@ -3337,6 +3344,7 @@ simplify_binary_operation_1 (enum rtx_code code, enum machine_mode mode,
 	return simplify_gen_binary (code == ROTATE ? ROTATERT : ROTATE,
 				    mode, op0, GEN_INT (GET_MODE_BITSIZE (mode)
 							- INTVAL (trueop1)));
+#endif
       /* FALLTHRU */
     case ASHIFTRT:
       if (trueop1 == CONST0_RTX (mode))

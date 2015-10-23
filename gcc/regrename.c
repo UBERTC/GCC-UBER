@@ -420,7 +420,7 @@ rename_chains (void)
 
   CLEAR_HARD_REG_SET (unavailable);
   /* Don't clobber traceback for noreturn functions.  */
-  if (frame_pointer_needed)
+  if (frame_pointer_needed || frame_pointer_partially_needed)
     {
       add_to_hard_reg_set (&unavailable, Pmode, FRAME_POINTER_REGNUM);
 #if !HARD_FRAME_POINTER_IS_FRAME_POINTER
@@ -443,6 +443,7 @@ rename_chains (void)
       if (fixed_regs[reg] || global_regs[reg]
 #if !HARD_FRAME_POINTER_IS_FRAME_POINTER
 	  || (frame_pointer_needed && reg == HARD_FRAME_POINTER_REGNUM)
+	  || (frame_pointer_partially_needed && reg == HARD_FRAME_POINTER_REGNUM)
 #else
 	  || (frame_pointer_needed && reg == FRAME_POINTER_REGNUM)
 #endif

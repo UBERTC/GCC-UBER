@@ -7695,7 +7695,22 @@ fi
 
 # Check whether --with-pic was given.
 if test "${with_pic+set}" = set; then :
-  withval=$with_pic; pic_mode="$withval"
+  withval=$with_pic; p=${PACKAGE-default}
+    case "$withval" in
+    yes|no) pic_mode="$withval" ;;
+    *)
+      pic_mode=default
+      # Look at the argument we got.  We use all the common list separators.
+      lt_save_ifs="$IFS"; IFS="${IFS}$PATH_SEPARATOR,"
+      for pkg in $withval; do
+	IFS="$lt_save_ifs"
+	if test "X$pkg" = "X$p"; then
+	  pic_mode=yes
+	fi
+      done
+      IFS="$lt_save_ifs"
+      ;;
+    esac
 else
   pic_mode=default
 fi
@@ -11094,7 +11109,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11097 "configure"
+#line 11106 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11200,7 +11215,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11203 "configure"
+#line 11212 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -15028,7 +15043,54 @@ _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
   XPCFLAGS=" -Wc,-pthread"
 else
-  CFLAGS="$save_CFLAGS" LIBS="-lpthread $LIBS"
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+CFLAGS="$save_CFLAGS" LIBS="$LIBS"
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <pthread.h>
+     void *g(void *d) { return NULL; }
+int
+main ()
+{
+pthread_t t; pthread_create(&t,NULL,g,NULL);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  :
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+CFLAGS="$save_CFLAGS" LIBS="-lpthread $LIBS"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 #include <pthread.h>
@@ -15045,6 +15107,9 @@ if ac_fn_c_try_link "$LINENO"; then :
 
 else
   as_fn_error "Pthreads are required to build libgomp" "$LINENO" 5
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
@@ -15105,6 +15170,12 @@ case "$target" in
 /* end confdefs.h.  */
 #include <sys/syscall.h>
 	   int lk;
+#if !defined(SYS_gettid)
+#define SYS_gettid __NR_gettid
+#endif
+#if !defined(SYS_futex)
+#define SYS_futex __NR_futex
+#endif
 int
 main ()
 {
@@ -15157,6 +15228,12 @@ rm -f core conftest.err conftest.$ac_objext \
 /* end confdefs.h.  */
 #include <sys/syscall.h>
 	   int lk;
+#if !defined(SYS_gettid)
+#define SYS_gettid __NR_gettid
+#endif
+#if !defined(SYS_futex)
+#define SYS_futex __NR_futex
+#endif
 int
 main ()
 {
@@ -15455,6 +15532,37 @@ $as_echo "$gcc_cv_have_tls" >&6; }
   if test "$enable_tls $gcc_cv_have_tls" = "yes yes"; then
 
 $as_echo "#define HAVE_TLS 1" >>confdefs.h
+
+  fi
+
+# See if we have emulated thread-local storage.
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether the thread-local storage support is from emutls" >&5
+$as_echo_n "checking whether the thread-local storage support is from emutls... " >&6; }
+if test "${gcc_cv_use_emutls+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+
+    gcc_cv_use_emutls=no
+    echo '__thread int a; int b; int main() { return a = b; }' > conftest.c
+    if { ac_try='${CC-cc} -Werror -S -o conftest.s conftest.c 1>&5'
+  { { eval echo "\"\$as_me\":${as_lineno-$LINENO}: \"$ac_try\""; } >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; }; then
+      if grep __emutls_get_address conftest.s > /dev/null; then
+	gcc_cv_use_emutls=yes
+      fi
+    fi
+    rm -f conftest.*
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $gcc_cv_use_emutls" >&5
+$as_echo "$gcc_cv_use_emutls" >&6; }
+  if test "$gcc_cv_use_emutls" = "yes" ; then
+
+$as_echo "#define USE_EMUTLS 1" >>confdefs.h
 
   fi
 
@@ -16269,6 +16377,8 @@ CFLAGS="$save_CFLAGS"
 ac_config_files="$ac_config_files omp.h omp_lib.h omp_lib.f90 libgomp_f.h"
 
 ac_config_files="$ac_config_files Makefile testsuite/Makefile libgomp.spec"
+
+ac_config_files="$ac_config_files testsuite/gompconfig.exp"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -17410,6 +17520,7 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "testsuite/Makefile") CONFIG_FILES="$CONFIG_FILES testsuite/Makefile" ;;
     "libgomp.spec") CONFIG_FILES="$CONFIG_FILES libgomp.spec" ;;
+    "testsuite/gompconfig.exp") CONFIG_FILES="$CONFIG_FILES testsuite/gompconfig.exp" ;;
 
   *) as_fn_error "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

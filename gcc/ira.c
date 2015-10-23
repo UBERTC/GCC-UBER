@@ -1707,7 +1707,8 @@ ira_init (void)
 {
   free_register_move_costs ();
   setup_reg_mode_hard_regset ();
-  setup_alloc_regs (flag_omit_frame_pointer != 0);
+  setup_alloc_regs (flag_omit_frame_pointer != 0
+		    || flag_shrink_wrap_frame_pointer);
   setup_class_subset_and_memory_move_costs ();
   setup_reg_class_nregs ();
   setup_prohibited_class_mode_regs ();
@@ -2391,12 +2392,19 @@ ira_setup_eliminable_regset (void)
   int i;
   static const struct {const int from, to; } eliminables[] = ELIMINABLE_REGS;
 #endif
+  bool can_omit_leaf_frame_pointer = targetm.can_omit_leaf_frame_pointer ();
+  frame_pointer_partially_needed = flag_shrink_wrap_frame_pointer
+				   && crtl->sp_is_unchanging
+				   && !can_omit_leaf_frame_pointer;
+
   /* FIXME: If EXIT_IGNORE_STACK is set, we will not save and restore
      sp for alloca.  So we can't eliminate the frame pointer in that
      case.  At some point, we should improve this by emitting the
      sp-adjusting insns for this case.  */
   frame_pointer_needed
-    = (! flag_omit_frame_pointer
+    = ((!flag_omit_frame_pointer
+	&& !frame_pointer_partially_needed
+	&& !can_omit_leaf_frame_pointer)
        || (cfun->calls_alloca && EXIT_IGNORE_STACK)
        /* We need the frame pointer to catch stack overflow exceptions
 	  if the stack pointer is moving.  */
@@ -2471,7 +2479,116 @@ ira_setup_eliminable_regset (void)
 #endif
 }
 
-
+/* Adjust frame pointer's alloc order. ALLOC_FIRST means giving fp
+   reg first allocation order. !ALLOC_FIRST means giving fp reg last
+   allocation order.  */
+
+void
+adjust_fp_alloc_order (bool alloc_first)
+{
+  int cl, i, hard_regno;
+
+  hard_regno = HARD_FRAME_POINTER_REGNUM;
+  for (cl = (int) N_REG_CLASSES - 1; cl >= 0; cl--)
+    {
+      int fp_index;
+
+      if (!TEST_HARD_REG_BIT (reg_class_contents[cl], hard_regno))
+	continue;
+
+      fp_index = ira_class_hard_reg_index[cl][hard_regno];
+      if (alloc_first)
+	{
+	  for (i = fp_index; i > 0; i--)
+	    {
+	      int hard_reg_tmp;
+	      hard_reg_tmp = ira_class_hard_regs[cl][i-1];
+	      ira_class_hard_regs[cl][i] = hard_reg_tmp;
+	      ira_class_hard_reg_index[cl][hard_reg_tmp] = i;
+	    }
+	  ira_class_hard_regs[cl][0] = hard_regno;
+	  ira_class_hard_reg_index[cl][hard_regno] = 0;
+	}
+      else
+	{
+	  int class_size = ira_class_hard_regs_num[cl];
+	  for (i = fp_index; i < class_size - 1; i++)
+	    {
+	      int hard_reg_tmp;
+	      hard_reg_tmp = ira_class_hard_regs[cl][i+1];
+	      ira_class_hard_regs[cl][i] = hard_reg_tmp;
+	      ira_class_hard_reg_index[cl][hard_reg_tmp] = i;
+	    }
+	  ira_class_hard_regs[cl][class_size - 1] = hard_regno;
+	  ira_class_hard_reg_index[cl][hard_regno] = class_size - 1;
+	}
+    }
+  /* Do we have to reorder reg_alloc_order to make it consistent
+     with ira_class_hard_regs?  */
+}
+
+/* Set frame pointer to be call used.  */
+static void
+set_fp_to_call_used ()
+{
+  int fp = HARD_FRAME_POINTER_REGNUM;
+  call_used_regs[fp] = true;
+  SET_HARD_REG_BIT (call_used_reg_set, fp);
+}
+
+/* Reset frame pointer to be call used.  */
+static void
+reset_fp_to_call_used ()
+{
+  int fp = HARD_FRAME_POINTER_REGNUM;
+  call_used_regs[fp] = false;
+  CLEAR_HARD_REG_BIT (call_used_reg_set, fp);
+}
+
+/* FP shrinkwrapping optimization:
+   Between -fomit-frame-pointer and -fno-omit-frame-pointer,
+   -fpartial-omit-frame-pointer is introduced to do fp shrinkwrapping.
+   In -fno-omit-frame-pointer case, fp is dedicately used to keep the
+   stack frame chain from caller to callee and enable fast stack
+   backtracing. In -fomit-frame-pointer case, fp is dedicately used as
+   a free callee-saved register. In -fpartial-omit-frame-pointer case,
+   fp has two fold usages: it is not only used as the register to pass
+   frame address of caller to callee, but also used as a caller-saved
+   register, so we can achieve of the best of both worlds. But these
+   two usages are conflicted with each other -- using fp as a free
+   register in a hot loop could inhibit frame address saving insn
+   (called as fp setting later) before a call inside the loop from being
+   promoted to the loop preheader. So loop regions in a function should
+   be partitioned for different fp usages. In IRA phase, there is a cost
+   evaluation function to partition all the loops to two sets: either use
+   fp freely or not. LRA will follow the evaluation decision in IRA. In
+   pro_and_epilogue phase, fp setting will be inserted immediately before
+   each call initially, and if IRA and LRA don't generate any normal fp
+   usage in a loop, fp shrinkwrapping could reduce the fp setting cost
+   by promoting it outside of the loop.  */
+
+void
+ira_init_partial_omit_fp ()
+{
+  /* If frame_pointer_needed is true, give up fp-shrinkwrapping.  */
+  if (frame_pointer_needed)
+    frame_pointer_partially_needed = false;
+
+  if (frame_pointer_partially_needed)
+    {
+      set_fp_to_call_used ();
+#ifdef REG_ALLOC_ORDER
+      /* In fp shrinkwrapping, fp is expected to be used in
+	 the lowest priority in GENERAL_REGS.  */
+      adjust_fp_alloc_order (false);
+#endif
+    }
+  else
+    {
+      reset_fp_to_call_used ();
+      return;
+    }
+}
 
 /* Vector of substitutions of register numbers,
    used to map pseudo regs into hardware regs.
@@ -5297,6 +5414,8 @@ ira (FILE *f)
 
   max_regno_before_ira = max_reg_num ();
   ira_setup_eliminable_regset ();
+  if (flag_shrink_wrap_frame_pointer)
+    ira_init_partial_omit_fp ();
 
   ira_overall_cost = ira_reg_cost = ira_mem_cost = 0;
   ira_load_cost = ira_store_cost = ira_shuffle_cost = 0;
@@ -5347,7 +5466,17 @@ ira (FILE *f)
 	      ira_allocno_iterator ai;
 
 	      FOR_EACH_ALLOCNO (a, ai)
-		ALLOCNO_REGNO (a) = REGNO (ALLOCNO_EMIT_DATA (a)->reg);
+		{
+		  int old_regno = ALLOCNO_REGNO (a);
+		  int new_regno = REGNO (ALLOCNO_EMIT_DATA (a)->reg);
+
+		  ALLOCNO_REGNO (a) = new_regno;
+
+		  if (old_regno != new_regno)
+		    setup_reg_classes (new_regno, reg_preferred_class (old_regno),
+				       reg_alternate_class (old_regno),
+				       reg_allocno_class (old_regno));
+		}
 	    }
 	  else
 	    {
@@ -5511,6 +5640,9 @@ do_reload (void)
 #ifndef IRA_NO_OBSTACK
   obstack_free (&ira_obstack, NULL);
 #endif
+
+  if (frame_pointer_partially_needed)
+    SET_HARD_REG_BIT (regs_invalidated_by_call, HARD_FRAME_POINTER_REGNUM);
 
   /* The code after the reload has changed so much that at this point
      we might as well just rescan everything.  Note that

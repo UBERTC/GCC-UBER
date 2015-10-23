@@ -1,5 +1,5 @@
 /* { dg-do run } */
-/* { dg-options "-O3 -fno-partial-inlining -fdump-ipa-cp -fno-devirtualize-speculatively"  } */
+/* { dg-options "-O3 -fno-partial-inlining -fdump-ipa-cp -fno-devirtualize-speculatively -fdevirtualize"  } */
 /* Main purpose is to verify that we do not produce wrong devirtualization to
    C::m_fn1.  We currently devirtualize to B::m_fn1, so check that. */
 #include <stdlib.h>

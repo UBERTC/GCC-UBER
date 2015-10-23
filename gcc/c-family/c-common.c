@@ -336,6 +336,7 @@ static tree handle_mode_attribute (tree *, tree, tree, int, bool *);
 static tree handle_section_attribute (tree *, tree, tree, int, bool *);
 static tree handle_aligned_attribute (tree *, tree, tree, int, bool *);
 static tree handle_weak_attribute (tree *, tree, tree, int, bool *) ;
+static tree handle_noplt_attribute (tree *, tree, tree, int, bool *) ;
 static tree handle_alias_ifunc_attribute (bool, tree *, tree, tree, bool *);
 static tree handle_ifunc_attribute (tree *, tree, tree, int, bool *);
 static tree handle_alias_attribute (tree *, tree, tree, int, bool *);
@@ -379,6 +380,13 @@ static tree handle_omp_declare_simd_attribute (tree *, tree, tree, int,
 					       bool *);
 static tree handle_omp_declare_target_attribute (tree *, tree, tree, int,
 						 bool *);
+
+static tree handle_always_patch_for_instrumentation_attribute (tree *, tree,
+                                                               tree, int,
+                                                               bool *);
+static tree handle_never_patch_for_instrumentation_attribute (tree *, tree,
+                                                              tree, int,
+                                                              bool *);
 
 static void check_function_nonnull (tree, int, tree *);
 static void check_nonnull_arg (void *, tree, unsigned HOST_WIDE_INT);
@@ -666,6 +674,8 @@ const struct attribute_spec c_common_attribute_table[] =
 			      handle_aligned_attribute, false },
   { "weak",                   0, 0, true,  false, false,
 			      handle_weak_attribute, false },
+  { "noplt",                   0, 0, true,  false, false,
+			      handle_noplt_attribute, false },
   { "ifunc",                  1, 1, true,  false, false,
 			      handle_ifunc_attribute, false },
   { "alias",                  1, 1, true,  false, false,
@@ -758,6 +768,13 @@ const struct attribute_spec c_common_attribute_table[] =
      The name contains space to prevent its usage in source code.  */
   { "fn spec",	 	      1, 1, false, true, true,
 			      handle_fnspec_attribute, false },
+  { "always_patch_for_instrumentation", 0, 0, true,  false, false,
+                              handle_always_patch_for_instrumentation_attribute,
+                              false },
+  { "never_patch_for_instrumentation", 0, 0, true,  false, false,
+                              handle_never_patch_for_instrumentation_attribute,
+                              false },
+
   { "warn_unused",            0, 0, false, false, false,
 			      handle_warn_unused_attribute, false },
   { "returns_nonnull",        0, 0, false, true, true,
@@ -6875,6 +6892,7 @@ handle_unused_attribute (tree *node, tree name, tree ARG_UNUSED (args),
 
       if (TREE_CODE (decl) == PARM_DECL
 	  || TREE_CODE (decl) == VAR_DECL
+	  || TREE_CODE (decl) == FIELD_DECL
 	  || TREE_CODE (decl) == FUNCTION_DECL
 	  || TREE_CODE (decl) == LABEL_DECL
 	  || TREE_CODE (decl) == TYPE_DECL)
@@ -7365,8 +7383,6 @@ handle_section_attribute (tree *node, tree ARG_UNUSED (name), tree args,
 
   if (targetm_common.have_named_sections)
     {
-      user_defined_section_attribute = true;
-
       if ((TREE_CODE (decl) == FUNCTION_DECL
 	   || TREE_CODE (decl) == VAR_DECL)
 	  && TREE_CODE (TREE_VALUE (args)) == STRING_CST)
@@ -7652,6 +7668,25 @@ handle_weak_attribute (tree *node, tree name,
   else
     warning (OPT_Wattributes, "%qE attribute ignored", name);
 
+  return NULL_TREE;
+}
+
+/* Handle a "noplt" attribute; arguments as in
+   struct attribute_spec.handler.  */
+
+static tree
+handle_noplt_attribute (tree *node, tree name,
+		       tree ARG_UNUSED (args),
+		       int ARG_UNUSED (flags),
+		       bool * ARG_UNUSED (no_add_attrs))
+{
+  if (TREE_CODE (*node) != FUNCTION_DECL)
+    {
+      warning (OPT_Wattributes,
+	       "%qE attribute is only applicable on functions", name);
+      *no_add_attrs = true;
+      return NULL_TREE;
+    }
   return NULL_TREE;
 }
 
@@ -8687,6 +8722,47 @@ handle_nonnull_attribute (tree *node, tree ARG_UNUSED (name),
 
   return NULL_TREE;
 }
+
+/* Handle a "always_patch_for_instrumentation" attribute; arguments as in
+   struct attribute_spec.handler.  */
+
+static tree
+handle_always_patch_for_instrumentation_attribute (tree *node, tree name,
+                                                   tree ARG_UNUSED (args),
+                                                   int ARG_UNUSED (flags),
+                                                   bool *no_add_attrs)
+{
+  if (TREE_CODE (*node) == FUNCTION_DECL)
+    {
+      /* Disable inlining if forced instrumentation.  */
+      DECL_UNINLINABLE (*node) = 1;
+    }
+  else
+    {
+      warning (OPT_Wattributes, "%qE attribute ignored", name);
+      *no_add_attrs = true;
+    }
+  return NULL_TREE;
+}
+
+
+/* Handle a "never_patch_for_instrumentation" attribute; arguments as in
+   struct attribute_spec.handler.  */
+
+static tree
+handle_never_patch_for_instrumentation_attribute (tree *node, tree name,
+                                                  tree ARG_UNUSED (args),
+                                                  int ARG_UNUSED (flags),
+                                                  bool *no_add_attrs)
+{
+  if (TREE_CODE (*node) != FUNCTION_DECL)
+    {
+      warning (OPT_Wattributes, "%qE attribute ignored", name);
+      *no_add_attrs = true;
+    }
+  return NULL_TREE;
+}
+
 
 /* Check the argument list of a function call for null in argument slots
    that are marked as requiring a non-null pointer argument.  The NARGS
@@ -10402,7 +10478,8 @@ get_atomic_generic_size (location_t loc, tree function,
 		    function);
 	  return 0;
 	}
-      size = tree_to_uhwi (TYPE_SIZE_UNIT (TREE_TYPE (type)));
+      tree type_size = TYPE_SIZE_UNIT (TREE_TYPE (type));
+      size = type_size ? tree_to_uhwi (type_size) : 0;
       if (size != size_0)
 	{
 	  error_at (loc, "size mismatch in argument %d of %qE", x + 1,
@@ -11733,6 +11810,31 @@ keyword_is_decl_specifier (enum rid keyword)
     default:
       return false;
     }
+}
+
+/* Check for and warn about self-assignment or self-initialization.
+   LHS and RHS are the tree nodes for the left-hand side and right-hand side
+   of the assignment or initialization we are checking.
+   LOCATION is the source location for RHS.  */
+
+void
+check_for_self_assign (location_t location, tree lhs, tree rhs)
+{
+  if (lhs == NULL_TREE || rhs == NULL_TREE)
+    return;
+
+  /* Deal with TREE_LIST initializers (may be generated by class
+     member initialization in C++).  */
+  if (TREE_CODE (rhs) == TREE_LIST)
+    rhs = TREE_VALUE (rhs);
+
+  /* Only emit a warning if RHS is not a folded expression so that we don't
+     warn on something like x = x / 1.  */
+  if (!EXPR_FOLDED (rhs)
+      && operand_equal_p (lhs, rhs,
+                          OEP_PURE_SAME | OEP_ALLOW_NULL | OEP_ALLOW_NO_TYPE))
+    warning_at (location, OPT_Wself_assign, G_("%qE is assigned to itself"),
+                lhs);
 }
 
 /* Initialize language-specific-bits of tree_contains_struct.  */

@@ -22,7 +22,7 @@ along with GCC; see the file COPYING3.  If not see
 
 #include "gcov-io.h"
 
-extern void coverage_init (const char *);
+extern void coverage_init (const char *, const char*);
 extern void coverage_finish (void);
 
 /* Start outputting coverage information for the current
@@ -54,7 +54,44 @@ extern gcov_type *get_coverage_counts (unsigned /*counter*/,
 				       unsigned /*cfg_checksum*/,
 				       unsigned /*lineno_checksum*/,
 				       const struct gcov_ctr_summary **);
+/* Get all the counters for the current function without warning.  */
+extern gcov_type *get_coverage_counts_no_warn (struct function *, 
+                                               unsigned /*counter*/, unsigned *);
+
+extern struct cgraph_node * find_func_by_global_id (unsigned HOST_WIDE_INT gid,
+						    bool);
+
+extern bool check_ic_target (gimple call_stmt, struct cgraph_node *target);
+
+/* All the coverage counters are supposed to be allocated by the time
+   coverage_end_function is called. However, direct-call counters are
+   allocated after coverage_end_function has been called. This function
+   fixes up the various internal structures to reflect these counter
+   allocations. This function is called after coverage_end_function and
+   before coverage_finish.  */
+extern void coverage_dc_end_function (void);
+
+/* True if a function entry corresponding to the given function identifier
+   is present in the coverage internal data structures.  */
+extern bool coverage_function_present (unsigned fn_ident);
+
+extern bool coverage_node_map_initialized_p (void);
+
+extern void emit_function_name (void);
 
 extern tree get_gcov_type (void);
+extern tree get_gcov_unsigned_t (void);
+extern tree get_const_string_type (void);
+
+/* Mark this module as containing asm statements.  */
+extern void coverage_has_asm_stmt (void);
+
+extern bool incompatible_cl_args (struct gcov_module_info *,
+				  struct gcov_module_info *);
+
+/* Defined in tree-profile.c.  */
+extern void tree_init_instrumentation_sampling (void);
+extern void tree_init_dyn_ipa_parameters (void);
+extern void tree_init_instrumentation (void);
 
 #endif

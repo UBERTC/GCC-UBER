@@ -18,7 +18,8 @@ if test $gcc_cv_have_tls = yes ; then
 	;;
 
     *-*-linux* | *-*-gnu*)
-	XCFLAGS="${XCFLAGS} -ftls-model=initial-exec"
+	# Google ref b/15780253; b/6368405
+	# XCFLAGS="${XCFLAGS} -ftls-model=initial-exec"
 	;;
   esac
 fi
@@ -82,7 +83,7 @@ if test $enable_linux_futex = yes; then
 	config_path="linux/x86 linux posix"
 	case " ${CC} ${CFLAGS} " in
 	  *" -m32 "*)
-	    XCFLAGS="${XCFLAGS} -march=i486 -mtune=i686"
+	    XCFLAGS="${XCFLAGS} -march=i486 -mtune=generic"
 	    ;;
 	esac
 	;;

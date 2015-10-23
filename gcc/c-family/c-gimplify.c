@@ -80,7 +80,7 @@ c_genericize (tree fndecl)
   struct cgraph_node *cgn;
 
   /* Dump the C-specific tree IR.  */
-  dump_orig = dump_begin (TDI_original, &local_dump_flags);
+  dump_orig = get_dump_info (TDI_original, &local_dump_flags);
   if (dump_orig)
     {
       fprintf (dump_orig, "\n;; Function %s",
@@ -97,8 +97,6 @@ c_genericize (tree fndecl)
       else
 	print_c_tree (dump_orig, DECL_SAVED_TREE (fndecl));
       fprintf (dump_orig, "\n");
-
-      dump_end (TDI_original, dump_orig);
     }
 
   /* Dump all nested functions now.  */

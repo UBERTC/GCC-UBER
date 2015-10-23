@@ -1,5 +1,8 @@
 # This harness is for tests that should be run at all optimisation levels.
 
+# Disable everywhere.  These tests are very flaky.
+return
+
 load_lib g++-dg.exp
 load_lib gcc-gdb-test.exp
 

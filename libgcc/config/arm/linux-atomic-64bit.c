@@ -56,7 +56,11 @@ static void __check_for_sync8_kernelhelper (void)
 	 for the user - I'm not sure I can rely on much else being
 	 available at this point, so do the same as generic-morestack.c
 	 write () and abort ().  */
+#if !defined(__ANDROID__)
       __write (2 /* stderr.  */, err, sizeof (err));
+#else
+      write (2 /* stderr.  */, err, sizeof (err));
+#endif
       abort ();
     }
 };

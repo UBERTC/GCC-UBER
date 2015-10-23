@@ -1,5 +1,5 @@
 /* { dg-do compile } */
-/* { dg-options "-O2 -fdump-ipa-whole-program"  } */
+/* { dg-options "-O2  -fdump-ipa-whole-program --param=early-inlining-insns-comdat=0 -fdevirtualize" } */
 double foo ();
 struct B
 {

@@ -1,7 +1,7 @@
 /* We shall devirtualize to unreachable.  No anonymous type method should surivve
    reachability.  */
 /* { dg-do compile } */
-/* { dg-options "-O2 -fdump-ipa-whole-program"  } */
+/* { dg-options "-O2 -fdump-ipa-whole-program -fdevirtualize"  } */
 namespace {
 class B {
 public:

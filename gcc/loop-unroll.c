@@ -33,6 +33,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "recog.h"
 #include "target.h"
 #include "dumpfile.h"
+#include "gcov-io.h"
 
 /* This pass performs loop unrolling and peeling.  We only perform these
    optimizations on innermost loops (with single exception) because
@@ -202,6 +203,99 @@ static void combine_var_copies_in_loop_exit (struct var_to_expand *,
 					     basic_block);
 static rtx get_expansion (struct var_to_expand *);
 
+/* Compute the maximum number of times LOOP can be unrolled without exceeding
+   a branch budget, which can increase branch mispredictions. The number of
+   branches is computed by weighting each branch with its expected execution
+   probability through the loop based on profile data. If no profile feedback
+   data exists, simply return the current NUNROLL factor.  */
+
+static unsigned
+max_unroll_with_branches(struct loop *loop, unsigned nunroll)
+{
+  struct loop *outer;
+  struct niter_desc *outer_desc = 0;
+  int outer_niters = 1;
+  int frequent_iteration_threshold;
+  unsigned branch_budget;
+  struct niter_desc *desc = get_simple_loop_desc (loop);
+
+  /* Ignore loops with FP computation as these tend to benefit much more
+     consistently from unrolling.  */
+  if (desc->has_fp)
+    return nunroll;
+
+  frequent_iteration_threshold = PARAM_VALUE (PARAM_MIN_ITER_UNROLL_WITH_BRANCHES);
+  if (expected_loop_iterations (loop) >= (unsigned) frequent_iteration_threshold)
+    return nunroll;
+
+  /* If there was no profile feedback data, av_num_branches will be 0
+     and we won't limit unrolling. If the av_num_branches is at most 1,
+     also don't limit unrolling as the back-edge branch will not be duplicated.  */
+  if (desc->av_num_branches <= 1)
+    return nunroll;
+
+  /* Walk up the loop tree until we find a hot outer loop in which the current
+     loop is nested. At that point we will compute the number of times the
+     current loop can be unrolled based on the number of branches in the hot
+     outer loop.  */
+  outer = loop_outer (loop);
+  /* The loop structure contains a fake outermost loop, so this should always
+     be non-NULL for our current loop.  */
+  gcc_assert (outer);
+
+  /* Walk up the loop tree until we either find a hot outer loop or hit the
+     fake outermost loop at the root.  */
+  while (true)
+    {
+      outer_desc = get_simple_loop_desc (outer);
+
+      /* Stop if we hit the fake outermost loop at the root of the tree,
+         which includes the whole procedure.  */
+      if (!loop_outer (outer))
+        break;
+
+      if (outer_desc->const_iter)
+        outer_niters *= outer_desc->niter;
+      else if (outer->header->count)
+        outer_niters *= expected_loop_iterations (outer);
+
+      /* If the outer loop has enough iterations to be considered hot, then
+         we can stop our upwards loop tree traversal and examine the current
+         outer loop.  */
+      if (outer_niters >= frequent_iteration_threshold)
+        break;
+
+      outer = loop_outer (outer);
+    }
+
+  gcc_assert(outer);
+
+  /* Assume that any call will cause the branch budget to be exceeded,
+     and that we can't unroll the current loop without increasing
+     mispredicts.  */
+  if (outer_desc->has_call)
+    return 0;
+
+  /* Otherwise, compute the maximum number of times current loop can be
+     unrolled without exceeding our branch budget. First we subtract
+     off the outer loop's average branch count from the budget. Note
+     that this includes the branches in the current loop. This yields
+     the number of branches left in the budget for the unrolled copies.
+     We divide this by the number of branches in the current loop that
+     must be duplicated when we unroll, which is the total average
+     number of branches minus the back-edge branch. This yields the
+     number of new loop body copies that can be created by unrolling
+     without exceeding the budget, to which we add 1 to get the unroll
+     factor. Note that the "outermost loop" may be the whole procedure
+     if we did not find a hot enough enclosing loop.  */
+  branch_budget = PARAM_VALUE (PARAM_UNROLL_OUTER_LOOP_BRANCH_BUDGET);
+  if (outer_desc->av_num_branches > branch_budget)
+    return 0;
+  /* We already returned early if desc->av_num_branches <= 1.  */
+  return (branch_budget - outer_desc->av_num_branches)
+      / (desc->av_num_branches - 1) + 1;
+}
+
 /* Emit a message summarizing the unroll or peel that will be
    performed for LOOP, along with the loop's location LOCUS, if
    appropriate given the dump or -fopt-info settings.  */
@@ -261,6 +355,85 @@ report_unroll_peel (struct loop *loop, location_t locus)
     dump_printf (report_flags, ")");
 
   dump_printf (report_flags, "\n");
+}
+
+/* Determine whether and how much LOOP unrolling/peeling should be constrained
+   based on code footprint estimates. Returns the codesize-based factor to be
+   divided into the max instructions in an unrolled or peeled loop:
+   1) For size <= threshold, do not limit (by returning 1).
+   2) For threshold < size < 2*threshold, reduce maximum allowed peeled or
+      unrolled instructions according to loop hotness.
+   3) For threshold >= 2*threshold, disable unrolling/peeling (by returning
+      INT_MAX).  */
+
+static int
+code_size_limit_factor(struct loop *loop)
+{
+  unsigned size_threshold, num_hot_counters;
+  struct niter_desc *desc = get_simple_loop_desc (loop);
+  gcov_type sum_to_header_ratio;
+  int hotness_ratio_threshold;
+  gcov_type limit;
+  int limit_factor;
+  gcov_working_set_t *ws;
+
+  ws = find_working_set(999);
+  if (! ws)
+    return 1;
+  num_hot_counters = ws->num_counters;
+
+  /* First check if the application has a large codesize footprint.
+     This is estimated from FDO profile summary information for the
+     program, where the num_hot_counters indicates the number of hottest
+     counters (blocks) that compose most of the execution time of
+     the program. A large value would indicate a large flat execution
+     profile where icache misses may be a concern.  */
+  size_threshold = PARAM_VALUE (PARAM_UNROLLPEEL_CODESIZE_THRESHOLD);
+  if (!profile_info
+      || num_hot_counters <= size_threshold
+      || !profile_info->sum_all)
+    return 1;
+
+  /* Next, exclude some loops where unrolling/peeling may be more
+     important to overall performance.  */
+
+  /* Ignore FP loops, which are more likely to benefit heavily from
+     unrolling. */
+  if (desc->has_fp)
+    return 1;
+
+  /* Next, set the value of the codesize-based unroll factor divisor which in
+     most loops will need to be set to a value that will reduce or eliminate
+     unrolling/peeling.  */
+  if (loop->header->count > 0)
+    {
+      /* Allow limited unrolling for very hot loops.  */
+      sum_to_header_ratio = profile_info->sum_all / loop->header->count;
+      hotness_ratio_threshold = PARAM_VALUE (PARAM_UNROLLPEEL_HOTNESS_THRESHOLD);
+      /* When the profile count sum to loop entry header ratio is smaller than
+         the threshold (i.e. the loop entry is hot enough), the divisor is set
+         to 1 so the unroll/peel factor is not reduced. When it is bigger
+         than the ratio, increase the divisor by the amount this ratio
+         is over the threshold, which will quickly reduce the unroll/peel
+         factor to zero as the loop's hotness reduces.  */
+      if (sum_to_header_ratio > hotness_ratio_threshold)
+        {
+          limit = sum_to_header_ratio / hotness_ratio_threshold;
+          gcc_assert (limit >= 1);
+          if (limit > INT_MAX)
+            limit_factor = INT_MAX;
+          else
+            limit_factor = (int) limit;
+        }
+      else
+        limit_factor = 1;
+    }
+  else
+    /* For appliations that are at least twice the codesize limit, set
+       the divisor to a large value that will force the unroll factor to 0.  */
+    limit_factor = INT_MAX;
+
+  return limit_factor;
 }
 
 /* Unroll and/or peel (depending on FLAGS) LOOPS.  */
@@ -640,6 +813,7 @@ static void
 decide_unroll_constant_iterations (struct loop *loop, int flags)
 {
   unsigned nunroll, nunroll_by_av, best_copies, best_unroll = 0, n_copies, i;
+  unsigned nunroll_branches;
   struct niter_desc *desc;
   double_int iterations;
 
@@ -685,6 +859,21 @@ decide_unroll_constant_iterations (struct loop *loop, int flags)
 	fprintf (dump_file,
 		 ";; Unable to prove that the loop iterates constant times\n");
       return;
+    }
+
+  /* Be careful when unrolling loops with branches inside -- it can increase
+     the number of mispredicts.  */
+  if (desc->num_branches > 1)
+    {
+      nunroll_branches = max_unroll_with_branches (loop, nunroll);
+      if (nunroll > nunroll_branches)
+        nunroll = nunroll_branches;
+      if (nunroll <= 1)
+        {
+          if (dump_file)
+	    fprintf (dump_file, ";; Not unrolling, contains branches\n");
+          return;
+        }
     }
 
   /* Check whether the loop rolls enough to consider.  
@@ -939,9 +1128,10 @@ unroll_loop_constant_iterations (struct loop *loop)
 static void
 decide_unroll_runtime_iterations (struct loop *loop, int flags)
 {
-  unsigned nunroll, nunroll_by_av, i;
+  unsigned nunroll, nunroll_by_av, nunroll_branches, i;
   struct niter_desc *desc;
   double_int iterations;
+  int limit_factor = 1;
 
   if (!(flags & UAP_UNROLL))
     {
@@ -954,10 +1144,26 @@ decide_unroll_runtime_iterations (struct loop *loop, int flags)
 	     "\n;; Considering unrolling loop with runtime "
 	     "computable number of iterations\n");
 
+  if (flag_unroll_codesize_limit)
+    {
+      /* Determine whether to limit code size growth from unrolling,
+         using FDO profile summary information that gives an
+         estimated number of executed blocks.  */
+      limit_factor = code_size_limit_factor (loop);
+      if (dump_file && limit_factor > 1)
+	{
+          fprintf (dump_file,
+                   ";; Due to large code size footprint estimate, limit "
+                   "max unrolled insns by divisor %d\n", limit_factor);
+	}
+    }
+
   /* nunroll = total number of copies of the original loop body in
      unrolled loop (i.e. if it is 2, we have to duplicate loop body once.  */
-  nunroll = PARAM_VALUE (PARAM_MAX_UNROLLED_INSNS) / loop->ninsns;
-  nunroll_by_av = PARAM_VALUE (PARAM_MAX_AVERAGE_UNROLLED_INSNS) / loop->av_ninsns;
+  nunroll = PARAM_VALUE (PARAM_MAX_UNROLLED_INSNS) / limit_factor
+            / loop->ninsns;
+  nunroll_by_av = PARAM_VALUE (PARAM_MAX_AVERAGE_UNROLLED_INSNS)
+                  / limit_factor / loop->av_ninsns;
   if (nunroll > nunroll_by_av)
     nunroll = nunroll_by_av;
   if (nunroll > (unsigned) PARAM_VALUE (PARAM_MAX_UNROLL_TIMES))
@@ -994,6 +1200,21 @@ decide_unroll_runtime_iterations (struct loop *loop, int flags)
       return;
     }
 
+  /* Be careful when unrolling loops with branches inside -- it can increase
+     the number of mispredicts.  */
+  if (desc->num_branches > 1)
+    {
+      nunroll_branches = max_unroll_with_branches (loop, nunroll);
+      if (nunroll > nunroll_branches)
+        nunroll = nunroll_branches;
+      if (nunroll <= 1)
+        {
+          if (dump_file)
+            fprintf (dump_file, ";; Not unrolling, contains branches\n");
+          return;
+        }
+    }
+
   /* Check whether the loop rolls.  */
   if ((get_estimated_loop_iterations (loop, &iterations)
        || get_max_loop_iterations (loop, &iterations))
@@ -1003,6 +1224,13 @@ decide_unroll_runtime_iterations (struct loop *loop, int flags)
 	fprintf (dump_file, ";; Not unrolling loop, doesn't roll\n");
       return;
     }
+
+  /* In AutoFDO, the profile is not accurate. If the calculated trip count
+     is larger than the header count, then the profile is not accurate
+     enough to make correct unroll decisions. */
+  if (flag_auto_profile
+      && expected_loop_iterations (loop) > loop->header->count)
+    return;
 
   /* Success; now force nunroll to be power of 2, as we are unable to
      cope with overflows in computation of number of iterations.  */
@@ -1338,6 +1566,7 @@ decide_peel_simple (struct loop *loop, int flags)
 {
   unsigned npeel;
   double_int iterations;
+  int limit_factor = 1;
 
   if (!(flags & UAP_PEEL))
     {
@@ -1348,8 +1577,23 @@ decide_peel_simple (struct loop *loop, int flags)
   if (dump_file)
     fprintf (dump_file, "\n;; Considering simply peeling loop\n");
 
+  if (flag_peel_codesize_limit)
+    {
+      /* Determine whether to limit code size growth from peeling,
+         using FDO profile summary information that gives an
+         estimated number of executed blocks.  */
+      limit_factor = code_size_limit_factor (loop);
+      if (dump_file && limit_factor > 1)
+	{
+          fprintf (dump_file,
+                   ";; Due to large code size footprint estimate, limit "
+                   "max peeled insns by divisor %d\n", limit_factor);
+	}
+    }
+
   /* npeel = number of iterations to peel.  */
-  npeel = PARAM_VALUE (PARAM_MAX_PEELED_INSNS) / loop->ninsns;
+  npeel = PARAM_VALUE (PARAM_MAX_PEELED_INSNS) / limit_factor
+          / loop->ninsns;
   if (npeel > (unsigned) PARAM_VALUE (PARAM_MAX_PEEL_TIMES))
     npeel = PARAM_VALUE (PARAM_MAX_PEEL_TIMES);
 
@@ -1361,16 +1605,26 @@ decide_peel_simple (struct loop *loop, int flags)
       return;
     }
 
+  struct niter_desc *desc = get_simple_loop_desc (loop);
+
+  /* Check number of iterations.  */
+  if (desc->simple_p && !desc->assumptions && desc->const_iter)
+    {
+      if (dump_file)
+        fprintf (dump_file, ";; Loop iterates constant times\n");
+      return;
+    }
+
   /* Do not simply peel loops with branches inside -- it increases number
      of mispredicts.  
      Exception is when we do have profile and we however have good chance
      to peel proper number of iterations loop will iterate in practice.
-     TODO: this heuristic needs tunning; while for complette unrolling
+     TODO: this heuristic needs tunning; while for complete unrolling
      the branch inside loop mostly eliminates any improvements, for
      peeling it is not the case.  Also a function call inside loop is
      also branch from branch prediction POV (and probably better reason
      to not unroll/peel).  */
-  if (num_loop_branches (loop) > 1
+  if (desc->num_branches > 1
       && profile_status_for_fn (cfun) != PROFILE_READ)
     {
       if (dump_file)
@@ -1493,6 +1747,7 @@ decide_unroll_stupid (struct loop *loop, int flags)
   unsigned nunroll, nunroll_by_av, i;
   struct niter_desc *desc;
   double_int iterations;
+  int limit_factor = 1;
 
   if (!(flags & UAP_UNROLL_ALL))
     {
@@ -1503,11 +1758,26 @@ decide_unroll_stupid (struct loop *loop, int flags)
   if (dump_file)
     fprintf (dump_file, "\n;; Considering unrolling loop stupidly\n");
 
+  if (flag_unroll_codesize_limit)
+    {
+      /* Determine whether to limit code size growth from unrolling,
+         using FDO profile summary information that gives an
+         estimated number of executed blocks.  */
+      limit_factor = code_size_limit_factor (loop);
+      if (dump_file && limit_factor > 1)
+	{
+          fprintf (dump_file,
+                   ";; Due to large code size footprint estimate, limit "
+                   "max unrolled insns by divisor %d\n", limit_factor);
+	}
+    }
+
   /* nunroll = total number of copies of the original loop body in
      unrolled loop (i.e. if it is 2, we have to duplicate loop body once.  */
-  nunroll = PARAM_VALUE (PARAM_MAX_UNROLLED_INSNS) / loop->ninsns;
-  nunroll_by_av
-    = PARAM_VALUE (PARAM_MAX_AVERAGE_UNROLLED_INSNS) / loop->av_ninsns;
+  nunroll = PARAM_VALUE (PARAM_MAX_UNROLLED_INSNS) / limit_factor
+            / loop->ninsns;
+  nunroll_by_av = PARAM_VALUE (PARAM_MAX_AVERAGE_UNROLLED_INSNS)
+                  / limit_factor / loop->av_ninsns;
   if (nunroll > nunroll_by_av)
     nunroll = nunroll_by_av;
   if (nunroll > (unsigned) PARAM_VALUE (PARAM_MAX_UNROLL_TIMES))
@@ -1539,7 +1809,7 @@ decide_unroll_stupid (struct loop *loop, int flags)
      of mispredicts. 
      TODO: this heuristic needs tunning; call inside the loop body
      is also relatively good reason to not unroll.  */
-  if (num_loop_branches (loop) > 1)
+  if (desc->num_branches > 1)
     {
       if (dump_file)
 	fprintf (dump_file, ";; Not unrolling, contains branches\n");

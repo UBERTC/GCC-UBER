@@ -350,6 +350,15 @@ typedef struct GTY(()) cp_parser {
      outermost class being defined is complete.  */
   vec<cp_unparsed_functions_entry, va_gc> *unparsed_queues;
 
+  /* A list of attributes whose arguments are not yet parsed. The
+     TREE_VALUE of each list node contains a delayed attribute.
+     The argument of the attribute (i.e. TREE_VALUE of the attribute)
+     is a special tree list node, where the TREE_PURPOSE is error_mark_node
+     and the TREE_VALUE points to the cached tokens of the arguments.
+     This list is processed once the outermost class being defined is
+     complete.  */
+  tree unparsed_attribute_args_queue;
+
   /* The number of classes whose definitions are currently in
      progress.  */
   unsigned num_classes_being_defined;

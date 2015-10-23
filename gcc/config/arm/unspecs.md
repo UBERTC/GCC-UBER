@@ -58,6 +58,7 @@
                         ; instruction stream.
   UNSPEC_PIC_OFFSET     ; A symbolic 12-bit OFFSET that has been treated
                         ; correctly for PIC usage.
+  UNSPEC_GOT_PREL_SYM   ; Specify an R_ARM_GOT_PREL relocation of a symbol.
   UNSPEC_GOTSYM_OFF     ; The offset of the start of the GOT from a
                         ; a given symbolic address.
   UNSPEC_THUMB1_CASESI  ; A Thumb1 compressed dispatch-table call.
@@ -70,6 +71,11 @@
 			; that.
   UNSPEC_UNALIGNED_STORE ; Same for str/strh.
   UNSPEC_PIC_UNIFIED    ; Create a common pic addressing form.
+  UNSPEC_PROLOGUE_USE   ; As USE insns are not meaningful after reload,
+                        ; this unspec is used to prevent the deletion of
+                        ; instructions setting registers for EH handling
+                        ; and stack frame generation.  Operand 0 is the
+                        ; register to "use".
   UNSPEC_LL		; Represent an unpaired load-register-exclusive.
   UNSPEC_VRINTZ         ; Represent a float to integral float rounding
                         ; towards zero.
@@ -87,6 +93,8 @@
 
 (define_c_enum "unspec" [
   UNSPEC_WADDC		; Used by the intrinsic form of the iWMMXt WADDC instruction.
+  UNSPEC_WMADDS         ; Used by the intrinsic form of the iWMMXt WMADDS instruction.
+  UNSPEC_WMADDU         ; Used by the intrinsic form of the iWMMXt WMADDU instruction.
   UNSPEC_WABS		; Used by the intrinsic form of the iWMMXt WABS instruction.
   UNSPEC_WQMULWMR	; Used by the intrinsic form of the iWMMXt WQMULWMR instruction.
   UNSPEC_WQMULMR	; Used by the intrinsic form of the iWMMXt WQMULMR instruction.

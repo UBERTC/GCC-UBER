@@ -1,8 +1,9 @@
-MULTILIB_OPTIONS     = march=armv7-a mthumb
-MULTILIB_DIRNAMES    = armv7-a thumb
-MULTILIB_EXCEPTIONS  =
+MULTILIB_OPTIONS     = march=armv7-a mthumb mfloat-abi=hard
+MULTILIB_DIRNAMES    = armv7-a thumb hard
+MULTILIB_EXCEPTIONS  = mfloat-abi=hard* mthumb/mfloat-abi=hard*
 MULTILIB_MATCHES     =
 MULTILIB_OSDIRNAMES  =
+MULTILIB_EXTRA_OPTS  = Wl,--no-warn-mismatch
 
 # The "special" multilib can be used to build native applications for Android,
 # as opposed to native shared libraries that are then called via JNI.

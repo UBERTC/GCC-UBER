@@ -135,6 +135,10 @@ struct copy_body_data
   /* Cilk keywords currently need to replace some variables that
      ordinary nested functions do not.  */ 
   bool remap_var_for_cilk;
+
+  /* A map from the inlined functions dependence info cliques to
+     equivalents in the function into which it is being inlined.  */
+  struct pointer_map_t *dependence_map;
 };
 
 /* Weights of constructions for estimate_num_insns.  */

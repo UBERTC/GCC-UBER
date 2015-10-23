@@ -1,0 +1,4 @@
+MULTILIB_OPTIONS = mabi=32 mips32/mips32r2/mips32r6/mips64r6
+MULTILIB_DIRNAMES = 32 mips-r1 mips-r2 mips-r6 mips64-r6
+MULTILIB_OSDIRNAMES = ../lib ../lib ../libr2 ../libr6 ../lib64
+MULTILIB_REQUIRED = mabi=32/mips32 mabi=32/mips32r2 mabi=32/mips32r6 mips64r6

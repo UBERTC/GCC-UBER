@@ -27,6 +27,9 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
    state data appropriately.  See unwind-dw2.c for the structs.  */
 
 #include <signal.h>
+#if defined (__ANDROID__)
+#include <asm/sigcontext.h>
+#endif
 #include <asm/unistd.h>
 
 /* The third parameter to the signal handler points to something with

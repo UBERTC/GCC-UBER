@@ -1227,6 +1227,7 @@ read_graph_file (void)
 	  *fns_end = fn;
 	  fns_end = &fn->next;
 	  current_tag = tag;
+
 	}
       else if (fn && tag == GCOV_TAG_BLOCKS)
 	{
@@ -1337,6 +1338,7 @@ read_graph_file (void)
 		      line_nos[ix++] = src_idx;
 		    }
 		  line_nos[ix++] = lineno;
+
 		}
 	      else
 		{
@@ -1430,6 +1432,21 @@ read_count_file (function_t *fns)
 	  object_runs += summary.ctrs[GCOV_COUNTER_ARCS].runs;
 	  program_count++;
 	}
+      else if (tag == GCOV_TAG_BUILD_INFO)
+        {
+          gcov_unsigned_t num_strings;
+          char **build_info_strings = gcov_read_build_info (length,
+                                                            &num_strings);
+          for (unsigned i = 0; i < num_strings; i++)
+            free (build_info_strings[i]);
+          free (build_info_strings);
+        }
+      else if (tag == GCOV_TAG_COMDAT_ZERO_FIXUP)
+        {
+          gcov_unsigned_t num_fn;
+          int *zero_fixup_flags = gcov_read_comdat_zero_fixup (length, &num_fn);
+          free (zero_fixup_flags);
+        }
       else if (tag == GCOV_TAG_FUNCTION && !length)
 	; /* placeholder  */
       else if (tag == GCOV_TAG_FUNCTION && length == GCOV_TAG_FUNCTION_LENGTH)

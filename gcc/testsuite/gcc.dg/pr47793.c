@@ -1,7 +1,6 @@
 /* Bug pr47793: Allow relative paths in profile-generate.  */
 /* { dg-do run } */
 /* { dg-options "-O -fprofile-generate=./" } */
-/* { dg-require-profiling "-fprofile-generate" } */
 /* { dg-final { scan-file pr47793.gcda "."} } */
 
 int

@@ -1185,8 +1185,21 @@
 		      (label_ref (match_operand 0 "" ""))
 		      (pc)))]
   "ISA_HAS_DSP"
-  "%*bposge%1\t%0%/"
-  [(set_attr "type"	"branch")])
+{
+  if (TARGET_DSPR3 && TARGET_CB_MAYBE)
+    return "%*bposge%1%:\t%0";
+  else
+    return "%*bposge%1\t%0%/";
+}
+  [(set_attr "type"	"branch")
+   (set (attr "compact_form") (if_then_else (match_test "TARGET_DSPR3
+							 && TARGET_CB_MAYBE")
+					      (const_string "maybe")
+					      (const_string "never")))
+   (set (attr "hazard") (if_then_else (match_test "TARGET_DSPR3
+						   && TARGET_CB_MAYBE")
+					      (const_string "forbidden_slot")
+					      (const_string "none")))])
 
 (define_expand "mips_madd<u>"
   [(set (match_operand:DI 0 "register_operand")

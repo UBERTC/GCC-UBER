@@ -1168,24 +1168,98 @@ get_loop_exit_edges (const struct loop *loop)
   return edges;
 }
 
-/* Counts the number of conditional branches inside LOOP.  */
+/* Determine if INSN is a floating point set.  */
 
-unsigned
-num_loop_branches (const struct loop *loop)
+static bool
+insn_has_fp_set(rtx insn)
 {
-  unsigned i, n;
-  basic_block * body;
+  int i;
+  rtx pat = PATTERN(insn);
+  if (GET_CODE (pat) == SET)
+    return (FLOAT_MODE_P (GET_MODE (SET_DEST (pat))));
+  else if (GET_CODE (pat) == PARALLEL)
+    {
+      for (i = 0; i < XVECLEN (pat, 0); i++)
+        {
+          rtx sub = XVECEXP (pat, 0, i);
+          if (GET_CODE (sub) == SET)
+            return (FLOAT_MODE_P (GET_MODE (SET_DEST (sub))));
+        }
+    }
+  return false;
+}
 
-  gcc_assert (loop->latch != EXIT_BLOCK_PTR_FOR_FN (cfun));
+/* Analyzes the instructions inside LOOP, updating the DESC. Currently counts
+   the number of conditional branch instructions, calls and fp instructions,
+   as well as the average number of branches executed per iteration.  */
+
+void
+analyze_loop_insns (const struct loop *loop, struct niter_desc *desc)
+{
+  unsigned i, nbranch;
+  gcov_type weighted_nbranch;
+  bool has_call, has_fp;
+  basic_block * body, bb;
+  rtx insn;
+  gcov_type header_count = loop->header->count;
+
+  nbranch = weighted_nbranch = 0;
+  has_call = has_fp = false;
 
   body = get_loop_body (loop);
-  n = 0;
   for (i = 0; i < loop->num_nodes; i++)
-    if (EDGE_COUNT (body[i]->succs) >= 2)
-      n++;
+    {
+      bb = body[i];
+
+      if (EDGE_COUNT (bb->succs) >= 2)
+        {
+          nbranch++;
+
+          /* If this block is executed less frequently than the header (loop
+             entry), then it is weighted based on its execution count, which
+             will be turned into a ratio compared to the loop header below. */
+          if (bb->count < header_count)
+            weighted_nbranch += bb->count;
+
+          /* When it is executed more frequently than the header (i.e. it is
+             in a nested inner loop), simply weight the branch the same as the
+             header execution count, so that it will contribute 1 branch to
+             the ratio computed below. */
+          else
+            weighted_nbranch += header_count;
+        }
+
+      /* No need to iterate through the instructions below if
+         both flags have already been set.  */
+      if (has_call && has_fp)
+        continue;
+
+      FOR_BB_INSNS (bb, insn)
+        {
+          if (!INSN_P (insn))
+            continue;
+
+          if (!has_call)
+            has_call = CALL_P (insn);
+
+          if (!has_fp)
+            has_fp = insn_has_fp_set (insn);
+        }
+    }
   free (body);
 
-  return n;
+  desc->num_branches = nbranch;
+  /* Now divide the weights computed above by the loop header execution count,
+     to compute the average number of branches through the loop. By adding
+     header_count/2 to the numerator we round to nearest with integer
+     division.  */
+  if (header_count  != 0)
+    desc->av_num_branches
+        = (weighted_nbranch + header_count/2) / header_count;
+  else
+    desc->av_num_branches = 0;
+  desc->has_call = has_call;
+  desc->has_fp = has_fp;
 }
 
 /* Adds basic block BB to LOOP.  */
@@ -1801,7 +1875,8 @@ record_niter_bound (struct loop *loop, double_int i_bound, bool realistic,
     }
   if (realistic
       && (!loop->any_estimate
-	  || i_bound.ult (loop->nb_iterations_estimate)))
+	  || (!flag_auto_profile &&
+	      i_bound.ult (loop->nb_iterations_estimate))))
     {
       loop->any_estimate = true;
       loop->nb_iterations_estimate = i_bound;

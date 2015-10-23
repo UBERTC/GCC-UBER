@@ -1,7 +1,7 @@
 /* Verify that simple virtual calls using this pointer are converted
    to direct calls by ipa-cp.  */
 /* { dg-do run } */
-/* { dg-options "-O3 -fno-early-inlining -fno-inline -fdump-ipa-cp"  } */
+/* { dg-options "-O3 -fno-early-inlining -fno-inline -fdump-ipa-cp -fdevirtualize"  } */
 
 extern "C" void abort (void);
 

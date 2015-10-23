@@ -77,7 +77,10 @@ AM_CXXFLAGS = \
 	-std=gnu++11 \
 	$(glibcxx_lt_pic_flag) $(glibcxx_compiler_shared_flag) \
 	$(XTEMPLATE_FLAGS) $(VTV_CXXFLAGS) \
-	$(WARN_CXXFLAGS) $(OPTIMIZE_CXXFLAGS) $(CONFIG_CXXFLAGS)
+	$(WARN_CXXFLAGS) \
+	$(OPTIMIZE_CXXFLAGS) \
+	$(CONFIG_CXXFLAGS) -std=gnu++11 \
+	$($(@)_no_omit_frame_pointer)
 
 AM_MAKEFLAGS = \
 	"gxx_include_dir=$(gxx_include_dir)"
@@ -128,3 +131,7 @@ CXXLINK = \
 	--mode=link $(CXX) \
 	$(VTV_CXXLINKFLAGS) \
 	$(OPT_LDFLAGS) $(SECTION_LDFLAGS) $(AM_CXXFLAGS) $(LTLDFLAGS) -o $@
+
+# Google-specific pessimization
+functexcept.lo_no_omit_frame_pointer = -fno-omit-frame-pointer
+debug.lo_no_omit_frame_pointer = -fno-omit-frame-pointer

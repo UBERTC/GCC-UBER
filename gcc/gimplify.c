@@ -4847,19 +4847,29 @@ gimplify_addr_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p)
 
       mark_addressable (TREE_OPERAND (expr, 0));
 
-      /* The FEs may end up building ADDR_EXPRs early on a decl with
-	 an incomplete type.  Re-build ADDR_EXPRs in canonical form
-	 here.  */
-      if (!types_compatible_p (TREE_TYPE (op0), TREE_TYPE (TREE_TYPE (expr))))
-	*expr_p = build_fold_addr_expr (op0);
+      /* Fix to PR/41163 (r151122) broke LIPO. Calls to builtin functions
+         were 'canonicized' in profile-use pass, but not in profile-gen. */
+      if (!flag_dyn_ipa)
+        {
+          /* The FEs may end up building ADDR_EXPRs early on a decl with
+             an incomplete type.  Re-build ADDR_EXPRs in canonical form
+             here.  */
+          if (!types_compatible_p (TREE_TYPE (op0), TREE_TYPE (TREE_TYPE (expr))))
+            *expr_p = build_fold_addr_expr (op0);
+        }
 
       /* Make sure TREE_CONSTANT and TREE_SIDE_EFFECTS are set properly.  */
       recompute_tree_invariant_for_addr_expr (*expr_p);
 
-      /* If we re-built the ADDR_EXPR add a conversion to the original type
-         if required.  */
-      if (!useless_type_conversion_p (TREE_TYPE (expr), TREE_TYPE (*expr_p)))
-	*expr_p = fold_convert (TREE_TYPE (expr), *expr_p);
+      /* Fix to PR/41163 (r151122) broke LIPO. Calls to builtin functions
+         were 'canonicized' in profile-use pass, but not in profile-gen. */
+      if (!flag_dyn_ipa)
+        {
+          /* If we re-built the ADDR_EXPR add a conversion to the original type
+             if required.  */
+          if (!useless_type_conversion_p (TREE_TYPE (expr), TREE_TYPE (*expr_p)))
+            *expr_p = fold_convert (TREE_TYPE (expr), *expr_p);
+        }
 
       break;
     }

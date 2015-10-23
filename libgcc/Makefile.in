@@ -46,9 +46,16 @@ fixed_point = @fixed_point@
 host_noncanonical = @host_noncanonical@
 target_noncanonical = @target_noncanonical@
 
+is_android = @is_android@
+
 # List of extra object files that should be compiled for this target machine.
 # The rules for compiling them should be in the t-* file for the machine.
+ifeq ($(enable_vtable_verify),yes)
 EXTRA_PARTS = @extra_parts@
+else
+EXTRA_PARTS = @extra_parts@ @vtv_extra_parts@
+endif 
+
 
 extra-parts = libgcc-extra-parts
 
@@ -231,6 +238,10 @@ LIBGCC2_CFLAGS = -O2 $(LIBGCC2_INCLUDES) $(GCC_CFLAGS) $(HOST_LIBGCC2_CFLAGS) \
 		 -fbuilding-libgcc -fno-stack-protector \
 		 $(INHIBIT_LIBC_CFLAGS)
 
+ifeq ($(is_android),yes)
+LIBGCC2_CFLAGS += -funwind-tables
+endif
+
 # Additional options to use when compiling libgcc2.a.
 # Some targets override this to -isystem include
 LIBGCC2_INCLUDES =
@@ -338,6 +349,24 @@ LIBUNWIND =
 SHLIBUNWIND_LINK =
 SHLIBUNWIND_INSTALL =
 
+ifeq ($(is_android),yes)
+ifneq ($(enable_shared),yes)
+# Some prebuilt libraries for Android link libc.so before libgcc.a, and they
+# rely on libgcc.a to provide those symbols with default visibility to resolve
+# them eventually. The linker order has been fixed in JB maintain releases but
+# may take a while to trickle down to partners to refresh their prebuilt
+# libraries. Therefore we need to maintain the same visibility as older GCC
+# for now.
+vis_hide =
+endif
+else
+# For -fvisibility=hidden.  We need both a -fvisibility=hidden on
+# the command line, and a #define to prevent libgcc2.h etc from
+# overriding that with #pragmas.  This is set before including $(tmake_file)
+# so it can be overridden on a host-specific basis.
+vis_hide = @vis_hide@
+endif
+
 tmake_file = @tmake_file@
 include $(srcdir)/empty.mk $(tmake_file)
 
@@ -367,11 +396,6 @@ ifeq ($(enable_shared),yes)
     install-libunwind = install-libunwind
   endif
 endif
-
-# For -fvisibility=hidden.  We need both a -fvisibility=hidden on
-# the command line, and a #define to prevent libgcc2.h etc from
-# overriding that with #pragmas.
-vis_hide = @vis_hide@
 
 ifneq (,$(vis_hide))
 
@@ -853,12 +877,14 @@ include $(iterator)
 # Build libgcov components.
 
 LIBGCOV_MERGE = _gcov_merge_add _gcov_merge_single _gcov_merge_delta _gcov_merge_ior \
-     _gcov_merge_time_profile
+     _gcov_merge_dc _gcov_merge_icall_topn _gcov_merge_time_profile
 LIBGCOV_PROFILER = _gcov_interval_profiler _gcov_pow2_profiler _gcov_one_value_profiler \
     _gcov_indirect_call_profiler _gcov_average_profiler _gcov_ior_profiler \
-    _gcov_indirect_call_profiler_v2 _gcov_time_profiler
+    _gcov_indirect_call_profiler_v2 _gcov_direct_call_profiler \
+    _gcov_indirect_call_topn_profiler _gcov_time_profiler
 LIBGCOV_INTERFACE = _gcov_flush _gcov_fork _gcov_execl _gcov_execlp _gcov_execle \
-    _gcov_execv _gcov_execvp _gcov_execve _gcov_reset _gcov_dump
+    _gcov_execv _gcov_execvp _gcov_execve _gcov_reset _gcov_dump _gcov_sampling \
+    _gcov_prefix
 LIBGCOV_DRIVER = _gcov 
 
 libgcov-merge-objects = $(patsubst %,%$(objext),$(LIBGCOV_MERGE))
@@ -868,6 +894,8 @@ libgcov-driver-objects = $(patsubst %,%$(objext),$(LIBGCOV_DRIVER))
 libgcov-objects = $(libgcov-merge-objects) $(libgcov-profiler-objects) \
                  $(libgcov-interface-objects) $(libgcov-driver-objects)
 
+dyn-ipa.o: %$(objext): $(srcdir)/dyn-ipa.c libgcc_tm.h
+	$(gcc_compile)  -c $(srcdir)/dyn-ipa.c
 $(libgcov-merge-objects): %$(objext): $(srcdir)/libgcov-merge.c $(srcdir)/libgcov.h
 	$(gcc_compile) -DL$* -c $(srcdir)/libgcov-merge.c
 $(libgcov-profiler-objects): %$(objext): $(srcdir)/libgcov-profiler.c $(srcdir)/libgcov.h
@@ -878,10 +906,9 @@ $(libgcov-driver-objects): %$(objext): $(srcdir)/libgcov-driver.c \
   $(srcdir)/libgcov-driver-system.c $(srcdir)/libgcov.h
 	$(gcc_compile) -DL$* -c $(srcdir)/libgcov-driver.c
 
-
 # Static libraries.
 libgcc.a: $(libgcc-objects)
-libgcov.a: $(libgcov-objects)
+libgcov.a: $(libgcov-objects) dyn-ipa$(objext)
 libunwind.a: $(libunwind-objects)
 libgcc_eh.a: $(libgcc-eh-objects)
 
@@ -1113,6 +1140,22 @@ install-leaf: $(install-shared) $(install-libunwind)
 	      $(RANLIB) $(gcc_objdir)$(MULTISUBDIR)/$$file ;;	\
 	  esac;							\
 	done
+
+	if [ "$(MULTIDIR)" == "." ]; then			\
+	  gcov_src_dest="$(DESTDIR)$(inst_libdir)/gcov-src";	\
+	  $(mkinstalldirs) $$gcov_src_dest;			\
+	  cp ../../gcc/gcov-iov.h $$gcov_src_dest;		\
+	  cp $(srcdir)/../gcc/gcov-io.h $$gcov_src_dest;	\
+	  cp $(srcdir)/../gcc/gcov-io.c $$gcov_src_dest;	\
+	  cp $(srcdir)/../gcc/gcov-counter.def $$gcov_src_dest;	\
+	  cp $(srcdir)/libgcov-driver.c $$gcov_src_dest;	\
+	  cp $(srcdir)/libgcov-driver-kernel.c $$gcov_src_dest;	\
+	  cp $(srcdir)/libgcov.h $$gcov_src_dest;		\
+	  cp $(srcdir)/libgcov-kernel.h $$gcov_src_dest;	\
+	  cp $(srcdir)/libgcov-profiler.c $$gcov_src_dest;	\
+	  cp $(srcdir)/libgcov-merge.c $$gcov_src_dest;		\
+	  chmod 644 $$gcov_src_dest/*.[ch];			\
+	fi
 
 install: install-leaf install-unwind_h
 	@: $(MAKE) ; $(MULTIDO) $(FLAGS_TO_PASS) multi-do DO=install

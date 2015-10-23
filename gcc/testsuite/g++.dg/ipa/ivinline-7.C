@@ -2,7 +2,7 @@
    inlining, even when a typecast to an ancestor is involved along the
    way and that ancestor is not the first one with virtual functions.  */
 /* { dg-do run { target nonpic } } */
-/* { dg-options "-O3 -fdump-ipa-inline -fno-early-inlining -fno-ipa-cp"  } */
+/* { dg-options "-O3 -fdump-ipa-inline -fno-early-inlining -fno-ipa-cp -fdevirtualize"  } */
 
 extern "C" void abort (void);
 

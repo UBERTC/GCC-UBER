@@ -363,6 +363,12 @@ GCC_HEADER_STDINT(include/gstdint.h)
 GLIBCXX_ENABLE_SYMVERS([yes])
 AC_SUBST(libtool_VERSION)
 
+case "$target" in
+  *android*) libtool_version_info_string="-avoid-version" ;;
+  *) libtool_version_info_string="-version-info $libtool_VERSION"
+esac
+AC_SUBST(libtool_version_info_string)
+
 GLIBCXX_ENABLE_LIBSTDCXX_VISIBILITY([yes])
 
 ac_ldbl_compat=no

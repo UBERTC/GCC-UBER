@@ -1,5 +1,5 @@
 /* { dg-do compile } */
-/* { dg-options "-O2 -march=k8" } */
+/* { dg-options "-O2 -fno-tree-loop-vectorize -march=k8" } */
 /* { dg-final { scan-assembler "sbb" } } */
 
 extern void abort (void);

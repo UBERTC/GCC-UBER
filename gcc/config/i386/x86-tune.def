@@ -58,8 +58,8 @@ DEF_TUNE (X86_TUNE_PARTIAL_REG_DEPENDENCY, "partial_reg_dependency",
    SPECfp regression, while enabling it on K8 brings roughly 2.4% regression
    that can be partly masked by careful scheduling of moves.  */
 DEF_TUNE (X86_TUNE_SSE_PARTIAL_REG_DEPENDENCY, "sse_partial_reg_dependency",
-          m_PPRO | m_P4_NOCONA | m_CORE_ALL | m_BONNELL | m_SILVERMONT
-	  | m_INTEL | m_AMDFAM10 | m_BDVER | m_GENERIC)
+          m_PPRO | m_P4_NOCONA | m_CORE_ALL | m_BONNELL | m_AMDFAM10
+	  | m_BDVER | m_GENERIC)
 
 /* X86_TUNE_SSE_SPLIT_REGS: Set for machines where the type and dependencies
    are resolved on SSE register parts instead of whole registers, so we may
@@ -97,25 +97,25 @@ DEF_TUNE (X86_TUNE_MEMORY_MISMATCH_STALL, "memory_mismatch_stall",
    conditional jump instruction for 32 bit TARGET.
    FIXME: revisit for generic.  */
 DEF_TUNE (X86_TUNE_FUSE_CMP_AND_BRANCH_32, "fuse_cmp_and_branch_32",
-          m_CORE_ALL | m_BDVER)
+          m_GENERIC | m_CORE_ALL | m_BDVER)
 
 /* X86_TUNE_FUSE_CMP_AND_BRANCH_64: Fuse compare with a subsequent
    conditional jump instruction for TARGET_64BIT.
    FIXME: revisit for generic.  */
 DEF_TUNE (X86_TUNE_FUSE_CMP_AND_BRANCH_64, "fuse_cmp_and_branch_64",
-          m_NEHALEM | m_SANDYBRIDGE | m_HASWELL | m_BDVER)
+          m_GENERIC | m_NEHALEM | m_SANDYBRIDGE | m_HASWELL | m_BDVER)
 
 /* X86_TUNE_FUSE_CMP_AND_BRANCH_SOFLAGS: Fuse compare with a
    subsequent conditional jump instruction when the condition jump
    check sign flag (SF) or overflow flag (OF).  */
 DEF_TUNE (X86_TUNE_FUSE_CMP_AND_BRANCH_SOFLAGS, "fuse_cmp_and_branch_soflags",
-          m_NEHALEM | m_SANDYBRIDGE | m_HASWELL | m_BDVER)
+          m_GENERIC | m_NEHALEM | m_SANDYBRIDGE | m_HASWELL | m_BDVER)
 
 /* X86_TUNE_FUSE_ALU_AND_BRANCH: Fuse alu with a subsequent conditional
    jump instruction when the alu instruction produces the CCFLAG consumed by
    the conditional jump instruction. */
 DEF_TUNE (X86_TUNE_FUSE_ALU_AND_BRANCH, "fuse_alu_and_branch",
-          m_SANDYBRIDGE | m_HASWELL)
+          m_GENERIC | m_SANDYBRIDGE | m_HASWELL)
 
 /* X86_TUNE_REASSOC_INT_TO_PARALLEL: Try to produce parallel computations
    during reassociation of integer computation.  */
@@ -385,6 +385,15 @@ DEF_TUNE (X86_TUNE_USE_VECTOR_FP_CONVERTS, "use_vector_fp_converts",
 /* X86_TUNE_USE_VECTOR_CONVERTS: Prefer vector packed SSE conversion
    from integer to FP. */
 DEF_TUNE (X86_TUNE_USE_VECTOR_CONVERTS, "use_vector_converts", m_AMDFAM10)
+
+/* X86_TUNE_SLOW_SHUFB: Indicates tunings with slow pshufb instruction.  */
+DEF_TUNE (X86_TUNE_SLOW_PSHUFB, "slow_pshufb",
+          m_BONNELL | m_SILVERMONT | m_INTEL)
+
+/* X86_TUNE_VECTOR_PARALLEL_EXECUTION: Indicates tunings with ability to
+   execute 2 or more vector instructions in parallel.  */
+DEF_TUNE (X86_TUNE_VECTOR_PARALLEL_EXECUTION, "vec_parallel",
+          m_NEHALEM | m_SANDYBRIDGE | m_HASWELL)
 
 /*****************************************************************************/
 /* AVX instruction selection tuning (some of SSE flags affects AVX, too)     */

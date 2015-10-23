@@ -1,3 +1,51 @@
+2015-01-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/64487
+	* semantics.c (finish_offsetof): Handle templates here.
+	* parser.c (cp_parser_builtin_offsetof): Not here.
+
+	PR c++/64352
+	* pt.c (tsubst_copy_and_build): Pass complain to mark_used.
+
+	PR c++/64251
+	* decl2.c (mark_used): Don't mark if in_template_function.
+
+	PR c++/64297
+	* typeck.c (apply_memfn_quals): Correct wrong TYPE_CANONICAL.
+
+	PR c++/64029
+	* decl.c (grok_reference_init): Complete array type.
+
+	PR c++/63657
+	PR c++/38958
+	* call.c (set_up_extended_ref_temp): Set TREE_USED on the reference
+	if the temporary has a non-trivial destructor.
+	* decl.c (poplevel): Don't look through references.
+
+	PR c++/63658
+	* pt.c (convert_nontype_argument): Call convert_from_reference.
+	(check_instantiated_arg): Don't be confused by reference refs.
+	(unify): Look through reference refs on the arg, too.
+	* mangle.c (write_template_arg): Look through reference refs.
+
+2014-12-19  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/60955
+	* pt.c (struct warning_sentinel): Move it...
+	* cp-tree.h: ... here.
+	* semantics.c (force_paren_expr): Use it.
+
+2014-11-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/63849
+	* mangle.c (decl_mangling_context): Use template_type_parameter_p.
+
+2014-11-11  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/63265
+	* pt.c (tsubst_copy_and_build, case COND_EXPR): Maybe fold to
+	constant the condition.
+
 2014-10-30  Release Manager
 
 	* GCC 4.9.2 released.

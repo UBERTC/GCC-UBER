@@ -101,6 +101,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "ipa-utils.h"
 #include "lto-streamer.h"
 #include "except.h"
+#include "l-ipo.h"
 
 /* Create clone of E in the node N represented by CALL_EXPR the callgraph.  */
 struct cgraph_edge *
@@ -128,7 +129,11 @@ cgraph_clone_edge (struct cgraph_edge *e, struct cgraph_node *n,
 	     via cgraph_resolve_speculation and not here.  */
 	  && !e->speculative)
 	{
-	  struct cgraph_node *callee = cgraph_get_node (decl);
+          struct cgraph_node *callee;
+          if (L_IPO_COMP_MODE && cgraph_pre_profiling_inlining_done)
+            callee = cgraph_lipo_get_resolved_node (decl);
+          else
+            callee = cgraph_get_node (decl);
 	  gcc_checking_assert (callee);
 	  new_edge = cgraph_create_edge (n, callee, call_stmt, count, freq);
 	}
@@ -449,6 +454,10 @@ cgraph_clone_node (struct cgraph_node *n, tree decl, gcov_type count, int freq,
   new_node->global.inlined_to = new_inlined_to;
   new_node->rtl = n->rtl;
   new_node->count = count;
+  new_node->max_bb_count = count;
+  if (n->count)
+    new_node->max_bb_count = ((n->max_bb_count + n->count / 2)
+                              / n->count) * count;
   new_node->frequency = n->frequency;
   new_node->tp_first_run = n->tp_first_run;
 
@@ -474,11 +483,19 @@ cgraph_clone_node (struct cgraph_node *n, tree decl, gcov_type count, int freq,
     }
   else
     count_scale = 0;
+  /* In AutoFDO, if edge count is larger than callee's entry block
+     count, we will not update the original callee because it may
+     mistakenly mark some hot function as cold.  */
+  if (flag_auto_profile && count >= n->count)
+    update_original = false;
   if (update_original)
     {
       n->count -= count;
       if (n->count < 0)
-	n->count = 0;
+        n->count = 0;
+      n->max_bb_count -= new_node->max_bb_count;
+      if (n->max_bb_count < 0)
+        n->max_bb_count = 0;
     }
 
   FOR_EACH_VEC_ELT (redirect_callers, i, e)
@@ -894,6 +911,7 @@ cgraph_copy_node_for_versioning (struct cgraph_node *old_version,
    new_version->global = old_version->global;
    new_version->rtl = old_version->rtl;
    new_version->count = old_version->count;
+   new_version->max_bb_count = old_version->max_bb_count;
 
    for (e = old_version->callees; e; e=e->next_callee)
      if (!bbs_to_copy

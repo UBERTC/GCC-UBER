@@ -123,6 +123,10 @@ mdspr2
 Target Report Var(TARGET_DSPR2)
 Use MIPS-DSP REV 2 instructions
 
+mdspr3
+Target Report Var(TARGET_DSPR3)
+Use MIPS-DSP Rev 3 instructions
+
 mdebug
 Target Var(TARGET_DEBUG_MODE) Undocumented
 
@@ -197,6 +201,10 @@ mfp32
 Target Report RejectNegative InverseMask(FLOAT64)
 Use 32-bit floating-point registers
 
+mfpxx
+Target Report RejectNegative Mask(FLOATXX)
+Conform to the o32 FPXX ABI
+
 mfp64
 Target Report RejectNegative Mask(FLOAT64)
 Use 64-bit floating-point registers
@@ -267,6 +275,10 @@ mips3d
 Target Report RejectNegative Var(TARGET_MIPS3D)
 Use MIPS-3D instructions
 
+mldc1-sdc1
+Target Report Var(TARGET_LDC1_SDC1) Init(1)
+Use ldc1/ldxc1 and sdc1/sdxc1 instruction
+
 mllsc
 Target Report Mask(LLSC)
 Use ll, sc and sync instructions
@@ -299,9 +311,17 @@ mmicromips
 Target Report Mask(MICROMIPS)
 Use microMIPS instructions
 
+mmsa
+Target Report Var(TARGET_MSA)
+Use MIPS MSA Extension instructions
+
 mmt
 Target Report Var(TARGET_MT)
 Allow the use of MT instructions
+
+mmxu
+Target Report Var(TARGET_MXU)
+Allow the use of MXU instructions
 
 mno-float
 Target Report RejectNegative Var(TARGET_NO_FLOAT) Condition(TARGET_SUPPORTS_NO_FLOAT)
@@ -380,6 +400,10 @@ msynci
 Target Report Mask(SYNCI)
 Use synci instruction to invalidate i-cache
 
+mlra
+Target Report Var(mips_lra_flag) Init(1) Save
+Use LRA instead of reload
+
 mtune=
 Target RejectNegative Joined Var(mips_tune_option) ToLower Enum(mips_arch_opt_value)
 -mtune=PROCESSOR	Optimize the output for PROCESSOR
@@ -392,6 +416,10 @@ mvirt
 Target Report Var(TARGET_VIRT)
 Use Virtualization Application Specific instructions
 
+mxpa
+Target Report Var(TARGET_XPA)
+Use eXtended Physical Address (XPA) instructions
+
 mvr4130-align
 Target Report Mask(VR4130_ALIGN)
 Perform VR4130-specific alignment optimizations
@@ -400,5 +428,36 @@ mxgot
 Target Report Var(TARGET_XGOT)
 Lift restrictions on GOT size
 
+modd-spreg
+Target Report Mask(ODD_SPREG)
+Enable use of odd-numbered single-precision registers
+
 noasmopt
 Driver
+
+mload-store-pairs
+Target Report Var(TARGET_LOAD_STORE_PAIRS) Undocumented
+Enable load/store bonding.
+
+msched-weight
+Target Report Var(TARGET_SCHED_WEIGHT) Undocumented
+
+mcompact-branches=
+Target RejectNegative JoinedOrMissing Var(mips_cb) Report Enum(mips_cb_setting) Init(MIPS_CB_OPTIMAL)
+Specify the compact branch usage policy
+never	    Only use delay slot branches
+optimal	    Use compact branches where beneficial
+always	    Only use compact branches
+
+Enum
+Name(mips_cb_setting) Type(enum mips_cb_setting)
+Policies available for use with -mcompact-branches=
+
+EnumValue
+Enum(mips_cb_setting) String(never) Value(MIPS_CB_NEVER)
+
+EnumValue
+Enum(mips_cb_setting) String(optimal) Value(MIPS_CB_OPTIMAL)
+
+EnumValue
+Enum(mips_cb_setting) String(always) Value(MIPS_CB_ALWAYS)

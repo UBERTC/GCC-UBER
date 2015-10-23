@@ -38,6 +38,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "flags.h"
 #include "diagnostic.h"
 #include "langhooks.h"
+#include "l-ipo.h"
 #include "lto-streamer.h"
 #include "ipa-inline.h"
 
@@ -330,6 +331,9 @@ ipa_reverse_postorder (struct cgraph_node **order)
 		      if (DECL_DISREGARD_INLINE_LIMITS (edge->caller->decl)
 			  && !DECL_DISREGARD_INLINE_LIMITS
 			    (cgraph_function_node (edge->callee, NULL)->decl))
+			node2 = NULL;
+                      if (L_IPO_COMP_MODE
+		          && cgraph_is_fake_indirect_call_edge (edge))
 			node2 = NULL;
 		    }
 		  for (;ipa_ref_list_referring_iterate (&stack[stack_size].node->ref_list,

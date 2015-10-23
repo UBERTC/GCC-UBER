@@ -1,0 +1,14 @@
+2012-05-16  Sriraman Tallam  <tmsriram@google.com>
+
+	Port from google/gcc-4_6 
+	r177289, r177308, r179104, r179289, r179303, r179404, r182447
+
+	* config.h.in: Generate.
+	* configure: Generate.
+	* Makefile.in: New file.
+	* configure.ac: New file.
+	* callgraph.h: New file.
+	* callgraph.c: New file.
+	* function_reordering_plugin.c: New file.
+	* Makefile.am: Generate.
+	* aclocal.m4: Generate.

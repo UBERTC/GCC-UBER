@@ -99,6 +99,14 @@ DEFCIFCODE(MISMATCHED_ARGUMENTS, CIF_FINAL_ERROR,
 DEFCIFCODE(ORIGINALLY_INDIRECT_CALL, CIF_FINAL_NORMAL,
 	   N_("originally indirect function call not considered for inlining"))
 
+/* Cross module inlining not allowed in first early inline phase.  */
+DEFCIFCODE(NO_INTERMODULE_INLINE, CIF_FINAL_ERROR,
+	   N_("inter-module inlining is disabled"))
+
+/* Artificial edge.  */
+DEFCIFCODE(ARTIFICIAL_EDGE, CIF_FINAL_ERROR,
+	   N_("artificial call graph edge"))
+
 /* Ths edge represents an indirect edge with a yet-undetermined callee .  */
 DEFCIFCODE(INDIRECT_UNKNOWN_CALL, CIF_FINAL_NORMAL,
 	   N_("indirect function call with a yet undetermined callee"))

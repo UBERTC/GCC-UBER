@@ -250,6 +250,9 @@ extern void init_ggc_heuristics (void);
   ggc_alloc_rtvec_def (sizeof (struct rtvec_def)		\
 		       + ((NELT) - 1) * sizeof (rtx))		\
 
+
+extern size_t ggc_total_allocated (void);
+
 /* Memory statistics passing versions of some allocators.  Too few of them to
    make gengtype produce them, so just define the needed ones here.  */
 static inline struct rtx_def *

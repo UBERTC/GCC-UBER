@@ -1,7 +1,7 @@
 /* Verify that ipa-co can convert virtual calls to direct ones even
    when a typecast to an ancestor is involved along the way.  */
 /* { dg-do run } */
-/* { dg-options "-O3 -fno-early-inlining -fno-inline -fdump-ipa-cp -fdump-tree-optimized"  } */
+/* { dg-options "-O3 -fno-early-inlining -fno-inline -fdump-ipa-cp -fdump-tree-optimized -fdevirtualize"  } */
 
 extern "C" void abort (void);
 

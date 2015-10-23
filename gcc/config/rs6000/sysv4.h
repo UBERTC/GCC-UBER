@@ -761,7 +761,10 @@ ENDIAN_SELECT(" -mbig", " -mlittle", DEFAULT_ASM_ENDIAN)
 
 #define LINK_START_LINUX_SPEC ""
 
-#define GLIBC_DYNAMIC_LINKER "/lib/ld.so.1"
+#ifndef RUNTIME_ROOT_PREFIX
+#define RUNTIME_ROOT_PREFIX ""
+#endif
+#define GLIBC_DYNAMIC_LINKER RUNTIME_ROOT_PREFIX "/lib/ld.so.1"
 #define UCLIBC_DYNAMIC_LINKER "/lib/ld-uClibc.so.0"
 #if DEFAULT_LIBC == LIBC_UCLIBC
 #define CHOOSE_DYNAMIC_LINKER(G, U) "%{mglibc:" G ";:" U "}"
@@ -778,7 +781,11 @@ ENDIAN_SELECT(" -mbig", " -mlittle", DEFAULT_ASM_ENDIAN)
   -dynamic-linker " GNU_USER_DYNAMIC_LINKER "}}"
 
 #if defined(HAVE_LD_EH_FRAME_HDR)
-# define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+# ifdef USE_EH_FRAME_HDR_FOR_STATIC
+#  define LINK_EH_SPEC "--eh-frame-hdr "
+# else
+#  define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+# endif
 #endif
 
 #define CPP_OS_LINUX_SPEC "-D__unix__ -D__gnu_linux__ -D__linux__ \

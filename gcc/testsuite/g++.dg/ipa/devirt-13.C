@@ -1,6 +1,6 @@
 /* { dg-do run } */
 /* Call to foo should be devirtualized because there are no derived types of A.  */
-/* { dg-options "-O2 -fdump-tree-ssa"  } */
+/* { dg-options "-O2 -fdump-tree-ssa -fdevirtualize"  } */
 namespace {
 class A {
 public:

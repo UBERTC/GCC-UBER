@@ -1,7 +1,7 @@
 /* Check that we speculatively devirutalize call to FOO to B::foo becuase
    A is noreturn.  */
 /* { dg-do compile } */
-/* { dg-options "-O2 -fdump-ipa-devirt -fdump-tree-optimized"  } */
+/* { dg-options "-O2 -fdump-ipa-devirt -fdump-tree-optimized -fdevirtualize"  } */
 class A {
 public:
   virtual int foo(void)

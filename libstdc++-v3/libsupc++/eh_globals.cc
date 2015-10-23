@@ -93,13 +93,21 @@ struct __eh_globals_init
   bool 			_M_init;
 
   __eh_globals_init() : _M_init(false)
-  { 
+  {
     if (__gthread_active_p())
-      _M_init = __gthread_key_create(&_M_key, eh_globals_dtor) == 0; 
+      _M_init = __gthread_key_create(&_M_key, eh_globals_dtor) == 0;
   }
 
   ~__eh_globals_init()
   {
+    /* Work-around for an Android-specific bug, where this destructor
+     * is called with a NULL object pointer. This is due to a bug in the
+     * __cxa_finalize() implementation that was only fixed in 2.2.
+     */
+#ifdef __ANDROID__
+    if (this == NULL)
+        return;
+#endif
     if (_M_init)
       __gthread_key_delete(_M_key);
     _M_init = false;

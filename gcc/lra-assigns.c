@@ -455,6 +455,39 @@ adjust_hard_regno_cost (int hard_regno, int incr)
   hard_regno_costs[hard_regno] += incr;
 }
 
+/* If any insn referencing the REGNO is used in a BB marked as
+   BB_FP_IS_FREE, LRA could allocate fp to this REGNO.
+
+   If REGNO is used in call insn, it is not allowed to assign
+   fp to the regno -- this is to avoid call (*fp). Or else after
+   framepointer shrinkwrapping transformation, the value of call
+   target register will be wrongly changed by fp setting of
+   frame address.  */
+
+static bool
+fp_is_allowed_p (int regno)
+{
+  unsigned int uid;
+  bitmap_iterator bi;
+  basic_block bb;
+  bool allowed = false;
+
+  EXECUTE_IF_SET_IN_BITMAP (&lra_reg_info[regno].insn_bitmap, 0, uid, bi)
+    {
+      rtx insn;
+      insn = lra_insn_recog_data[uid]->insn;
+      if (insn && !DEBUG_INSN_P (insn))
+	{
+	  if (CALL_P (insn))
+	    return false;
+          bb = BLOCK_FOR_INSN (insn);
+	  if (bb->flags & BB_FP_IS_FREE)
+	    allowed = true;
+	}
+    }
+  return allowed;
+}
+
 /* Try to find a free hard register for pseudo REGNO.  Return the
    hard register on success and set *COST to the cost of using
    that register.  (If several registers have equal cost, the one with
@@ -485,6 +518,9 @@ find_hard_regno_for (int regno, int *cost, int try_only_hard_regno,
   HARD_REG_SET impossible_start_hard_regs, available_regs;
 
   COPY_HARD_REG_SET (conflict_set, lra_no_alloc_regs);
+  /* Check whether fp is allowed for this regno.  */
+  if (frame_pointer_partially_needed && !fp_is_allowed_p (regno))
+    SET_HARD_REG_BIT (conflict_set, HARD_FRAME_POINTER_REGNUM);
   rclass = regno_allocno_class_array[regno];
   rclass_intersect_p = ira_reg_classes_intersect_p[rclass];
   curr_hard_regno_costs_check++;
@@ -626,7 +662,11 @@ find_hard_regno_for (int regno, int *cost, int try_only_hard_regno,
 	  for (j = 0;
 	       j < hard_regno_nregs[hard_regno][PSEUDO_REGNO_MODE (regno)];
 	       j++)
-	    if (! TEST_HARD_REG_BIT (call_used_reg_set, hard_regno + j)
+	    if ((! TEST_HARD_REG_BIT (call_used_reg_set, hard_regno + j)
+		    /* fp has no less cost than other callee saved reg if
+		       frame_pointer_partially_needed is true.  */
+		 || (frame_pointer_partially_needed
+		     && (hard_regno + j == HARD_FRAME_POINTER_REGNUM)))
 		&& ! df_regs_ever_live_p (hard_regno + j))
 	      /* It needs save restore.	 */
 	      hard_regno_costs[hard_regno]

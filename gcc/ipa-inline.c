@@ -116,10 +116,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimple.h"
 #include "gimple-ssa.h"
 #include "ipa-prop.h"
+#include "basic-block.h"
+#include "toplev.h"
+#include "dbgcnt.h"
 #include "except.h"
+#include "l-ipo.h"
 #include "target.h"
 #include "ipa-inline.h"
 #include "ipa-utils.h"
+#include "auto-profile.h"
 #include "sreal.h"
 #include "cilk.h"
 
@@ -127,6 +132,9 @@ along with GCC; see the file COPYING3.  If not see
 static int overall_size;
 static gcov_type max_count;
 static sreal max_count_real, max_relbenefit_real, half_int_min_real;
+
+/* Global variable to denote if it is in ipa-inline pass. */
+bool is_in_ipa_inline = false;
 
 /* Return false when inlining edge E would lead to violating
    limits on function unit growth or stack usage growth.  
@@ -201,8 +209,7 @@ caller_growth_limits (struct cgraph_edge *e)
   stack_size_limit += ((gcov_type)stack_size_limit
 		       * PARAM_VALUE (PARAM_STACK_FRAME_GROWTH) / 100);
 
-  inlined_stack = (outer_info->stack_frame_offset
-		   + outer_info->estimated_self_stack_size
+  inlined_stack = (outer_info->estimated_stack_size
 		   + what_info->estimated_stack_size);
   /* Check new stack consumption with stack consumption at the place
      stack is used.  */
@@ -407,6 +414,11 @@ can_early_inline_edge_p (struct cgraph_edge *e)
       e->inline_failed = CIF_BODY_NOT_AVAILABLE;
       return false;
     }
+
+  /* Skip fake edges  */
+  if (L_IPO_COMP_MODE && !e->call_stmt)
+    return false;
+
   /* In early inliner some of callees may not be in SSA form yet
      (i.e. the callgraph is cyclic and we did not process
      the callee by early inliner, yet).  We don't have CIF code for this
@@ -430,14 +442,15 @@ static int
 num_calls (struct cgraph_node *n)
 {
   struct cgraph_edge *e;
+  /* The following is buggy -- indirect call is not considered.  */
   int num = 0;
 
   for (e = n->callees; e; e = e->next_callee)
-    if (!is_inexpensive_builtin (e->callee->decl))
+    if (e->call_stmt /* Only exist in profile use pass in LIPO  */
+        && !is_inexpensive_builtin (e->callee->decl))
       num++;
   return num;
 }
-
 
 /* Return true if we are interested in inlining small function.  */
 
@@ -449,6 +462,8 @@ want_early_inline_function_p (struct cgraph_edge *e)
 
   if (DECL_DISREGARD_INLINE_LIMITS (callee->decl))
     ;
+  else if (flag_auto_profile && afdo_callsite_hot_enough_for_early_inline (e))
+    ;
   else if (!DECL_DECLARED_INLINE_P (callee->decl)
 	   && !flag_inline_small_functions)
     {
@@ -459,12 +474,12 @@ want_early_inline_function_p (struct cgraph_edge *e)
   else
     {
       int growth = estimate_edge_growth (e);
+      struct cgraph_node *callee = e->callee;
       int n;
 
-      if (growth <= 0)
+      if (growth <= PARAM_VALUE (PARAM_EARLY_INLINING_INSNS_ANY))
 	;
-      else if (!cgraph_maybe_hot_edge_p (e)
-	       && growth > 0)
+      else if (!cgraph_maybe_hot_edge_p (e))
 	{
 	  if (dump_file)
 	    fprintf (dump_file, "  will not early inline: %s/%i->%s/%i, "
@@ -486,6 +501,9 @@ want_early_inline_function_p (struct cgraph_edge *e)
 		     growth);
 	  want_inline = false;
 	}
+      else if (!flag_auto_profile && DECL_COMDAT (callee->decl)
+               && growth <= PARAM_VALUE (PARAM_EARLY_INLINING_INSNS_COMDAT))
+        ;
       else if ((n = num_calls (callee)) != 0
 	       && growth * (n + 1) > PARAM_VALUE (PARAM_EARLY_INLINING_INSNS))
 	{
@@ -556,6 +574,100 @@ big_speedup_p (struct cgraph_edge *e)
   return false;
 }
 
+/* Returns true if callee of edge E is considered useful to inline
+   even if it is cold. A callee is considered useful if there is at
+   least one argument of pointer type with IPA_JF_KNOWN_TYPE or
+   IPA_JF_UNKNOWN as the jump function.  The reasoniong here is that
+   it is often beneficial to inline bar into foo in the following
+   code even if the callsite is cold:
+   void foo () {
+     A a;
+     bar (&a);
+     ...
+    }
+
+    This exposes accesses to the 'a' object. The jump function of &a
+    is either IPA_JF_KNOWN_TYPE or IPA_JF_UNKNOWN (depending on
+    intervening code).  */
+
+static inline bool
+useful_cold_callee (struct cgraph_edge *e)
+{
+  gimple call = e->call_stmt;
+  int n, arg_num = gimple_call_num_args (call);
+  struct ipa_edge_args *args = IPA_EDGE_REF (e);
+
+  if (ipa_node_params_vector.exists ())
+    {
+      for (n = 0; n < arg_num; n++)
+        {
+          tree arg = gimple_call_arg (call, n);
+          if (POINTER_TYPE_P (TREE_TYPE (arg)))
+            {
+              struct ipa_jump_func *jfunc = ipa_get_ith_jump_func (args, n);
+              if (jfunc->type == IPA_JF_KNOWN_TYPE
+                  || jfunc->type == IPA_JF_UNKNOWN)
+                return true;
+            }
+        }
+    }
+  return false;
+}
+
+/* Returns true if hot caller heuristic should be used.  */
+
+static inline bool
+enable_hot_caller_heuristic (void)
+{
+
+  gcov_working_set_t *ws = NULL;
+  int size_threshold = PARAM_VALUE (PARAM_HOT_CALLER_CODESIZE_THRESHOLD);
+  int num_counters = 0;
+  int param_inline_hot_caller = PARAM_VALUE (PARAM_INLINE_HOT_CALLER);
+
+  if (param_inline_hot_caller == 0)
+    return false;
+  else if (param_inline_hot_caller == 1)
+    return true;
+
+  ws = find_working_set(PARAM_VALUE (HOT_BB_COUNT_WS_PERMILLE));
+  if (!ws)
+    return false;
+  num_counters = ws->num_counters;
+  return num_counters <= size_threshold;
+
+}
+/* Returns true if an edge or its caller are hot enough to
+   be considered for inlining.  */
+
+static bool
+edge_hot_enough_p (struct cgraph_edge *edge)
+{
+  static bool use_hot_caller_heuristic = enable_hot_caller_heuristic ();
+  if (cgraph_maybe_hot_edge_p (edge))
+    return true;
+
+  /* We disable hot-caller heuristic if the callee's entry count is
+     0 because in this case we do not have enough information to
+     calculate the scaling factor.  */
+  if (flag_auto_profile && edge->callee->count == 0
+      && edge->callee->max_bb_count > 0)
+    return false;
+  if (use_hot_caller_heuristic)
+    {
+      struct cgraph_node *where = edge->caller;
+      if (maybe_hot_count_p (NULL, where->max_bb_count))
+        {
+          if (PARAM_VALUE (PARAM_INLINE_USEFUL_COLD_CALLEE))
+            return useful_cold_callee (edge);
+          else
+            return true;
+        }
+    }
+
+  return false;
+}
+
 /* Return true if we are interested in inlining small function.
    When REPORT is true, report reason to dump file.  */
 
@@ -616,13 +728,25 @@ want_inline_small_function_p (struct cgraph_edge *e, bool report)
       else if (!DECL_DECLARED_INLINE_P (callee->decl)
 	       && !flag_inline_functions)
 	{
-	  /* growth_likely_positive is expensive, always test it last.  */
-          if (growth >= MAX_INLINE_INSNS_SINGLE
-	      || growth_likely_positive (callee, growth))
-	    {
+	  /* For functions not declared inline, if it has big_speedup
+	     or has good hints for performance and the size growth is
+	     small, they are profitable to inline.  */
+          if (big_speedup
+              || (hints & (INLINE_HINT_indirect_call
+                           | INLINE_HINT_loop_iterations
+                           | INLINE_HINT_array_index
+                           | INLINE_HINT_loop_stride)))
+            {
+              if (growth >= MAX_GROWTH_AUTO_INLINE_FUNC)
+                want_inline = false;
+            }
+          /* growth_likely_positive is expensive, always test it last.  */
+          else if (growth >= MAX_INLINE_INSNS_SINGLE
+              || growth_likely_positive (callee, growth))
+            {
               e->inline_failed = CIF_NOT_DECLARED_INLINED;
-	      want_inline = false;
- 	    }
+              want_inline = false;
+            }
 	}
       /* Apply MAX_INLINE_INSNS_AUTO limit for functions not declared inline
 	 Upgrade it to MAX_INLINE_INSNS_SINGLE when hints suggests that
@@ -646,7 +770,7 @@ want_inline_small_function_p (struct cgraph_edge *e, bool report)
  	    }
 	}
       /* If call is cold, do not inline when function body would grow. */
-      else if (!cgraph_maybe_hot_edge_p (e)
+      else if (!edge_hot_enough_p (e)
 	       && (growth >= MAX_INLINE_INSNS_SINGLE
 		   || growth_likely_positive (callee, growth)))
 	{
@@ -838,6 +962,49 @@ want_inline_function_to_all_callers_p (struct cgraph_node *node, bool cold)
 }
 
 #define RELATIVE_TIME_BENEFIT_RANGE (INT_MAX / 64)
+
+/* Return true if FUNCDECL is a function with fixed
+   argument list.  */
+
+static bool
+fixed_arg_function_p (tree fndecl)
+{
+  tree fntype = TREE_TYPE (fndecl);
+  return (TYPE_ARG_TYPES (fntype) == 0
+          || (TREE_VALUE (tree_last (TYPE_ARG_TYPES (fntype)))
+              == void_type_node));
+}
+
+/* For profile collection with flag_dyn_ipa (LIPO), we always
+   want to inline comdat functions for the following reasons:
+   1) Functions in comdat may be actually defined in a different
+   module (depending on how linker picks). This results in a edge
+   from one module to another module in the dynamic callgraph.
+   The edge is false and result in unnecessary module grouping.
+   2) The profile counters in comdat functions are not 'comdated'
+   -- which means each copy of the same comdat function has its
+   own set of counters. With inlining, we are actually splitting
+   the counters and make the profile information 'context sensitive',
+   which is a good thing.
+   3) During profile-use pass of LIPO (flag_dyn_ipa == 1),
+   the pre-tree_profile inline decisions have to be the same as the
+   profile-gen pass (otherwise coverage mismatch will occur). Due to
+   this reason, it is better for each module to 'use' the comdat copy
+   of its own. The only way to get profile data for the copy is to
+   inline the copy in profile-gen phase.
+   TODO: For indirectly called comdat functions, the above issues
+   still exist. */
+
+static bool
+better_inline_comdat_function_p (struct cgraph_node *node)
+{
+  return (profile_arc_flag && flag_dyn_ipa
+          && DECL_COMDAT (node->decl)
+          && inline_summary (node)->size
+	     <= PARAM_VALUE (PARAM_MAX_INLINE_INSNS_SINGLE)
+          && fixed_arg_function_p (node->decl));
+}
+
 
 /* Return relative time improvement for inlining EDGE in range
    1...RELATIVE_TIME_BENEFIT_RANGE  */
@@ -1050,7 +1217,12 @@ edge_badness (struct cgraph_edge *edge, bool dump)
   if (cgraph_edge_recursive_p (edge))
     return badness + 1;
   else
-    return badness;
+    {
+      if (better_inline_comdat_function_p (edge->callee))
+        return INT_MIN  + 1;
+      else
+        return badness;
+    }
 }
 
 /* Recompute badness of EDGE and update its key in HEAP if needed.  */
@@ -1190,7 +1362,8 @@ update_caller_keys (fibheap_t heap, struct cgraph_node *node,
 	    || check_inlinablity_for == edge)
 	  {
 	    if (can_inline_edge_p (edge, false)
-		&& want_inline_small_function_p (edge, false))
+		&& (want_inline_small_function_p (edge, false)
+                    || better_inline_comdat_function_p (node)))
 	      update_edge_key (heap, edge);
 	    else if (edge->aux)
 	      {
@@ -1296,6 +1469,7 @@ recursive_inlining (struct cgraph_edge *edge,
 		    vec<cgraph_edge_p> *new_edges)
 {
   int limit = PARAM_VALUE (PARAM_MAX_INLINE_INSNS_RECURSIVE_AUTO);
+  int probability = PARAM_VALUE (PARAM_MIN_INLINE_RECURSIVE_PROBABILITY);
   fibheap_t heap;
   struct cgraph_node *node;
   struct cgraph_edge *e;
@@ -1360,12 +1534,38 @@ recursive_inlining (struct cgraph_edge *edge,
 	    == cgraph_function_or_thunk_node (curr->callee, NULL)->decl)
           depth++;
 
+      if (max_count)
+	{
+          if (!cgraph_maybe_hot_edge_p (curr))
+	    {
+	      if (dump_file)
+		fprintf (dump_file, "   Not inlining cold call\n");
+
+              cgraph_redirect_edge_callee (curr, dest);
+              reset_edge_growth_cache (curr);
+	      continue;
+	    }
+          if (node->count == 0 || curr->count * 100 / node->count < probability)
+	    {
+	      if (dump_file)
+		fprintf (dump_file,
+			 "   Probability of edge is too small\n");
+
+              cgraph_redirect_edge_callee (curr, dest);
+              reset_edge_growth_cache (curr);
+	      continue;
+	    }
+	}
+
       if (!want_inline_self_recursive_call_p (curr, node, false, depth))
 	{
 	  cgraph_redirect_edge_callee (curr, dest);
 	  reset_edge_growth_cache (curr);
 	  continue;
 	}
+
+      if (!dbg_cnt (inl))
+        continue;
 
       if (dump_file)
 	{
@@ -1563,6 +1763,8 @@ inline_small_functions (void)
   struct cgraph_node **order = XCNEWVEC (struct cgraph_node *, cgraph_n_nodes);
   struct cgraph_edge_hook_list *edge_removal_hook_holder;
 
+  is_in_ipa_inline = true;
+
   if (flag_indirect_inlining)
     new_indirect_edges.create (8);
 
@@ -1606,6 +1808,9 @@ inline_small_functions (void)
 	for (edge = node->callers; edge; edge = edge->next_caller)
 	  if (max_count < edge->count)
 	    max_count = edge->count;
+        for (edge = node->indirect_calls; edge; edge = edge->next_callee)
+          if (max_count < edge->count)
+            max_count = edge->count;
       }
   sreal_init (&max_count_real, max_count, 0);
   sreal_init (&max_relbenefit_real, RELATIVE_TIME_BENEFIT_RANGE, 0);
@@ -1639,7 +1844,8 @@ inline_small_functions (void)
 	  if (edge->inline_failed
 	      && !edge->aux
 	      && can_inline_edge_p (edge, true)
-	      && want_inline_small_function_p (edge, true)
+	      && (want_inline_small_function_p (edge, true)
+                  || better_inline_comdat_function_p (node))
 	      && edge->inline_failed)
 	    {
 	      gcc_assert (!edge->aux);
@@ -1683,6 +1889,9 @@ inline_small_functions (void)
       if (!edge->inline_failed || !edge->callee->analyzed)
 	continue;
 
+      if (L_IPO_COMP_MODE && !edge->call_stmt)
+        continue;
+
       /* Be sure that caches are maintained consistent.  
          We can not make this ENABLE_CHECKING only because it cause different
          updates of the fibheap queue.  */
@@ -1707,7 +1916,7 @@ inline_small_functions (void)
 	  resolve_noninline_speculation (edge_heap, edge);
 	  continue;
 	}
-      
+ 
       callee = cgraph_function_or_thunk_node (edge->callee, NULL);
       growth = estimate_edge_growth (edge);
       if (dump_file)
@@ -1742,11 +1951,15 @@ inline_small_functions (void)
 	  continue;
 	}
 
-      if (!want_inline_small_function_p (edge, true))
+      if (!want_inline_small_function_p (edge, true)
+          && !better_inline_comdat_function_p (edge->callee))
 	{
 	  resolve_noninline_speculation (edge_heap, edge);
 	  continue;
 	}
+
+      if (!dbg_cnt (inl))
+         continue;
 
       /* Heuristics for inlining small functions work poorly for
 	 recursive calls where we do effects similar to loop unrolling.
@@ -1777,6 +1990,9 @@ inline_small_functions (void)
 	{
 	  struct cgraph_node *outer_node = NULL;
 	  int depth = 0;
+
+          if (!dbg_cnt (inl))
+            continue;
 
 	  /* Consider the case where self recursive function A is inlined
 	     into B.  This is desired optimization in some cases, since it
@@ -1830,8 +2046,9 @@ inline_small_functions (void)
       if (dump_file)
 	{
 	  fprintf (dump_file,
-		   " Inlined into %s which now has time %i and size %i,"
+		   "INFO: %s Inlined into %s which now has time %i and size %i,"
 		   "net change of %+i.\n",
+		   edge->callee->name (),
 		   edge->caller->name (),
 		   inline_summary (edge->caller)->time,
 		   inline_summary (edge->caller)->size,
@@ -2214,6 +2431,7 @@ early_inline_small_functions (struct cgraph_node *node)
 
       if (cgraph_edge_recursive_p (e))
 	{
+
 	  if (dump_file)
 	    fprintf (dump_file, "  Not inlining: recursive call.\n");
 	  continue;
@@ -2236,7 +2454,7 @@ early_inline_small_functions (struct cgraph_node *node)
 /* Do inlining of small functions.  Doing so early helps profiling and other
    passes to be somewhat more effective and avoids some code duplication in
    later real inlining pass for testcases with very many function calls.  */
-static unsigned int
+unsigned int
 early_inliner (void)
 {
   struct cgraph_node *node = cgraph_get_node (current_function_decl);
@@ -2307,6 +2525,9 @@ early_inliner (void)
 	  for (edge = node->callees; edge; edge = edge->next_callee)
 	    {
 	      struct inline_edge_summary *es = inline_edge_summary (edge);
+
+	      if (!edge->call_stmt)
+	        continue;
 	      es->call_stmt_size
 		= estimate_num_insns (edge->call_stmt, &eni_size_weights);
 	      es->call_stmt_time

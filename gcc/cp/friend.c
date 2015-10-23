@@ -24,6 +24,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree.h"
 #include "cp-tree.h"
 #include "flags.h"
+#include "cgraph.h"
 
 /* Friend data structures are described in cp-tree.h.  */
 
@@ -148,7 +149,8 @@ add_friend (tree type, tree decl, bool complain)
 	      if (decl == TREE_VALUE (friends))
 		{
 		  if (complain)
-		    warning (0, "%qD is already a friend of class %qT",
+		    warning (OPT_Wredundant_decls,
+			     "%qD is already a friend of class %qT",
 			     decl, type);
 		  return;
 		}
@@ -376,7 +378,8 @@ make_friend_class (tree type, tree friend_type, bool complain)
 	  if (friend_type == probe)
 	    {
 	      if (complain)
-		warning (0, "%qD is already a friend of %qT", probe, type);
+		warning (OPT_Wredundant_decls,
+			 "%qD is already a friend of %qT", probe, type);
 	      break;
 	    }
 	}
@@ -385,7 +388,8 @@ make_friend_class (tree type, tree friend_type, bool complain)
 	  if (same_type_p (probe, friend_type))
 	    {
 	      if (complain)
-		warning (0, "%qT is already a friend of %qT", probe, type);
+		warning (OPT_Wredundant_decls,
+			 "%qT is already a friend of %qT", probe, type);
 	      break;
 	    }
 	}

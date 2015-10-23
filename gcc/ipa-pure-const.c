@@ -1434,7 +1434,7 @@ propagate_nothrow (void)
 	      else if (e->can_throw_external && !TREE_NOTHROW (y->decl))
 	        can_throw = true;
 	    }
-          for (ie = node->indirect_calls; ie; ie = ie->next_callee)
+          for (ie = w->indirect_calls; ie; ie = ie->next_callee)
 	    if (ie->can_throw_external)
 	      {
 		can_throw = true;
@@ -1504,6 +1504,12 @@ static bool
 gate_pure_const (void)
 {
   return (flag_ipa_pure_const
+           /* Due to the traverse order difference between profile-use
+          and profile-gen, pure/const analysis result can be different
+          resulting in differnt CFG in the caller (e.g, different VOPS,
+          --> different MEMOP PHI --> different CFG cleanups) function,
+          thus causing profile mismatch problem.  */
+           && (!flag_dyn_ipa || cgraph_pre_profiling_inlining_done)
 	  /* Don't bother doing anything if the program has errors.  */
 	  && !seen_error ());
 }

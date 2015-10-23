@@ -27,6 +27,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "basic-block.h"
 #include "function.h"
 #include "ipa-ref.h"
+#include "l-ipo.h"
 
 /* Symbol table consists of functions and variables.
    TODO: add labels and CONST_DECLs.  */
@@ -222,6 +223,9 @@ struct GTY(()) cgraph_local_info {
    once compilation is finished.  Available only with -funit-at-a-time.  */
 
 struct GTY(()) cgraph_global_info {
+  /* Estimated stack frame consumption by the function.  */
+  HOST_WIDE_INT estimated_stack_size;
+
   /* For inline clones this points to the function they will be
      inlined into.  */
   struct cgraph_node *inlined_to;
@@ -398,6 +402,8 @@ public:
 
   /* Expected number of executions: calculated in profile.c.  */
   gcov_type count;
+  /* Maximum count of any basic block in the function.  */
+  gcov_type max_bb_count;
   /* How to scale counts at materialization time; used to merge
      LTO units with different number of profile runs.  */
   int count_materialization_scale;
@@ -416,6 +422,8 @@ public:
   /* Set once the function has been instantiated and its callee
      lists created.  */
   unsigned process : 1;
+  /* Is this function cloned during versioning ?  */
+  unsigned is_versioned_clone : 1;
   /* How commonly executed the node is.  Initialized during branch
      probabilities pass.  */
   ENUM_BITFIELD (node_frequency) frequency : 2;
@@ -637,6 +645,8 @@ typedef struct cgraph_edge *cgraph_edge_p;
 
 class GTY((tag ("SYMTAB_VARIABLE"))) varpool_node : public symtab_node {
 public:
+  /* The module in which it is first declared.  */
+  unsigned module_id;
   /* Set when variable is scheduled to be assembled.  */
   unsigned output : 1;
 
@@ -721,6 +731,8 @@ enum symbol_partitioning_class
 
 
 /* In symtab.c  */
+hashval_t decl_assembler_name_hash (const_tree);
+bool decl_assembler_name_equal (tree decl, const_tree);
 void symtab_register_node (symtab_node *);
 void symtab_unregister_node (symtab_node *);
 void symtab_remove_from_same_comdat_group (symtab_node *);
@@ -740,6 +752,8 @@ void verify_symtab_node (symtab_node *);
 bool verify_symtab_base (symtab_node *);
 bool symtab_used_from_object_file_p (symtab_node *);
 void symtab_make_decl_local (tree);
+void unlink_from_assembler_name_hash (symtab_node *, bool);
+void insert_to_assembler_name_hash (symtab_node *, bool);
 symtab_node *symtab_alias_ultimate_target (symtab_node *,
 					  enum availability *avail = NULL);
 bool symtab_resolve_alias (symtab_node *node, symtab_node *target);
@@ -760,6 +774,11 @@ void dump_cgraph_node (FILE *, struct cgraph_node *);
 void debug_cgraph_node (struct cgraph_node *);
 void cgraph_remove_edge (struct cgraph_edge *);
 void cgraph_remove_node (struct cgraph_node *);
+void cgraph_remove_fake_indirect_call_in_edges (struct cgraph_node *);
+extern bool cgraph_pre_profiling_inlining_done;
+extern bool cgraph_is_fake_indirect_call_edge (struct cgraph_edge *e);
+void cgraph_add_to_same_comdat_group (struct cgraph_node *, struct cgraph_node *);
+void cgraph_remove_node_and_inline_clones (struct cgraph_node *);
 void cgraph_release_function_body (struct cgraph_node *);
 void release_function_body (tree);
 void cgraph_node_remove_callees (struct cgraph_node *node);
@@ -824,6 +843,50 @@ void verify_cgraph (void);
 void verify_cgraph_node (struct cgraph_node *);
 void cgraph_mark_address_taken_node (struct cgraph_node *);
 
+/* Module info structure.  */
+struct GTY (()) cgraph_mod_info
+{
+  unsigned module_id;
+};
+
+/* LIPO linker symbol table entry for function symbols.  */
+struct GTY (()) cgraph_sym
+{
+  tree assembler_name;
+  struct cgraph_node *rep_node;
+  tree rep_decl;
+  htab_t GTY ((param_is (struct cgraph_mod_info))) def_module_hash;
+  bool is_promoted_static;
+};
+
+void cgraph_init_gid_map (void);
+void cgraph_add_fake_indirect_call_edges (void);
+void cgraph_remove_zero_count_fake_edges (void);
+void cgraph_do_link (void);
+struct cgraph_sym *cgraph_link_node (struct cgraph_node *);
+tree cgraph_find_decl (tree asm_name);
+void cgraph_remove_link_node (struct cgraph_node *node);
+struct cgraph_node *cgraph_lipo_get_resolved_node (tree decl);
+struct cgraph_node *cgraph_lipo_get_resolved_node_1 (tree decl, bool);
+unsigned  cgraph_get_module_id (tree fndecl);
+bool cgraph_is_auxiliary (tree fndecl);
+void cgraph_process_module_scope_statics (void);
+bool cgraph_is_promoted_static_func (tree fndecl);
+bool cgraph_is_inline_body_available_in_module (tree fndecl, unsigned module_id);
+bool cgraph_is_aux_decl_external (struct cgraph_node *);
+void cgraph_unify_type_alias_sets (void);
+void varpool_do_link (void);
+void varpool_link_node (struct varpool_node *);
+void varpool_remove_link_node (struct varpool_node *node);
+struct varpool_node *real_varpool_node (tree decl);
+bool varpool_is_auxiliary (struct varpool_node *node);
+void varpool_get_referenced_asm_ids (vec<tree, va_gc> **);
+void varpool_clear_asm_id_reference_bit (void);
+void varpool_reset_queue (void);
+void varpool_remove_duplicate_weak_decls (void);
+
+bool cgraph_decide_is_function_needed (struct cgraph_node *, tree);
+
 typedef void (*cgraph_edge_hook)(struct cgraph_edge *, void *);
 typedef void (*cgraph_node_hook)(struct cgraph_node *, void *);
 typedef void (*varpool_node_hook)(varpool_node *, void *);
@@ -883,6 +946,7 @@ void fixup_same_cpp_alias_visibility (symtab_node *, symtab_node *target, tree);
     IN_SSA is true if the gimple is in SSA.  */
 basic_block init_lowered_empty_function (tree, bool);
 void cgraph_reset_node (struct cgraph_node *);
+void cgraph_enqueue_node (struct cgraph_node *);
 bool expand_thunk (struct cgraph_node *, bool);
 
 /* In cgraphclones.c  */
@@ -1468,10 +1532,16 @@ static inline bool
 cgraph_edge_recursive_p (struct cgraph_edge *e)
 {
   struct cgraph_node *callee = cgraph_function_or_thunk_node (e->callee, NULL);
-  if (e->caller->global.inlined_to)
-    return e->caller->global.inlined_to->decl == callee->decl;
-  else
-    return e->caller->decl == callee->decl;
+  struct cgraph_node *caller = e->caller;
+  if (caller->global.inlined_to)
+   caller = caller->global.inlined_to;
+
+  if (L_IPO_COMP_MODE && cgraph_pre_profiling_inlining_done)
+    {
+      callee = cgraph_lipo_get_resolved_node (callee->decl);
+      caller = cgraph_lipo_get_resolved_node (caller->decl);
+    }
+  return caller->decl == callee->decl;
 }
 
 /* Return true if the TM_CLONE bit is set for a given FNDECL.  */

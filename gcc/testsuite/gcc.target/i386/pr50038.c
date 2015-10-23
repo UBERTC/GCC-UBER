@@ -1,5 +1,5 @@
 /* PR target/50038 */
-/* { dg-options "-O2" } */
+/* { dg-options "-O2 -fno-tree-loop-vectorize" } */
 
 void
 test (int len, unsigned char *in, unsigned char *out)

@@ -3,4 +3,4 @@
 
 #include "bmi2-pdep64-1.c"
 
-/* { dg-final { scan-assembler-times "bmi2_pdep_di3" 1 } } */
+/* { dg-final { scan-assembler "bmi2_pdep_di3" } } */

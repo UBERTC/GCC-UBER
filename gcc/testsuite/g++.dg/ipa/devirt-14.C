@@ -2,7 +2,7 @@
    because the constructor of A is unreachable and therefore the virtual
    method table referring to A::foo is optimized out.  */
 /* { dg-do run } */
-/* { dg-options "-O2 -fdump-tree-ssa"  } */
+/* { dg-options "-O2 -fdump-tree-ssa -fdevirtualize"  } */
 class B {
 public:
   virtual int foo(void)

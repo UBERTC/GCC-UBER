@@ -737,6 +737,74 @@ mark_hard_reg_early_clobbers (rtx insn, bool live_p)
   return set_p;
 }
 
+/* Record all the regs used in PX in DATA.  */
+static int
+record_reg_use (rtx *px, void *data)
+{
+  rtx x = *px;
+  sbitmap *pused = (sbitmap *)data;
+
+  if (REG_P (x) && REGNO (x) >= FIRST_PSEUDO_REGISTER)
+    bitmap_set_bit (*pused, REGNO (x));
+  return 0;
+}
+
+/* If frame_pointer_partially_needed is on, and a pseudo reg is
+   refered in call insn directly, like "call *pseudo_reg", the
+   pseudo_reg cannot be given frame pointer, or else after frame
+   pointer shrinkwrapping transformation, the value of call target
+   register will be wrongly changed by fp setting of frame address.
+   Mark such pseudos conflicting with frame pointer register.  */
+
+static void
+mark_ref_conflict_with_fp (rtx insn)
+{
+  sbitmap regno_set;
+  sbitmap_iterator bi;
+  df_ref *use_rec;
+
+  regno_set = sbitmap_alloc (max_reg_num ());
+  bitmap_clear (regno_set);
+  for (use_rec = DF_INSN_USES (insn); *use_rec; use_rec++)
+    {
+      int i, n;
+      unsigned regno;
+      rtx reg;
+      ira_allocno_t a;
+
+      reg = DF_REF_REG (*use_rec);
+      if (GET_CODE (reg) == SUBREG)
+	reg = SUBREG_REG (reg);
+      regno = REGNO (reg);
+      if (REGNO (reg) < FIRST_PSEUDO_REGISTER)
+        continue;
+
+      bitmap_set_bit (regno_set, regno);
+
+      /* If regno is equivalent with a memory access, we should
+	 mark all the regs used in the memory access to be conflicted
+	 with frame pointer register.  */
+      if (ira_reg_equiv[regno].memory != NULL)
+	for_each_rtx (&ira_reg_equiv[regno].memory, record_reg_use,
+		      &regno_set);
+
+      EXECUTE_IF_SET_IN_BITMAP (regno_set, 0, regno, bi)
+        {
+	  a = ira_curr_regno_allocno_map[regno];
+	  n = ALLOCNO_NUM_OBJECTS (a);
+	  for (i = 0; i < n; i++)
+	    {
+	      ira_object_t obj = ALLOCNO_OBJECT (a, i);
+	      SET_HARD_REG_BIT (OBJECT_CONFLICT_HARD_REGS (obj),
+				HARD_FRAME_POINTER_REGNUM);
+	      SET_HARD_REG_BIT (OBJECT_TOTAL_CONFLICT_HARD_REGS (obj),
+				HARD_FRAME_POINTER_REGNUM);
+	    }
+	}
+    }
+  sbitmap_free (regno_set);
+}
+
 /* Checks that CONSTRAINTS permits to use only one hard register.  If
    it is so, the function returns the class of the hard register.
    Otherwise it returns NO_REGS.  */
@@ -1258,6 +1326,9 @@ process_bb_node_lives (ira_loop_tree_node_t loop_tree_node)
 
 	  if (call_p)
 	    {
+	      if (frame_pointer_partially_needed)
+		mark_ref_conflict_with_fp (insn);
+
 	      /* Try to find a SET in the CALL_INSN_FUNCTION_USAGE, and from
 		 there, try to find a pseudo that is live across the call but
 		 can be cheaply reconstructed from the return value.  */

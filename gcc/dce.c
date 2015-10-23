@@ -755,6 +755,9 @@ rest_of_handle_ud_dce (void)
 {
   rtx insn;
 
+  if (df_check_ud_du_memory_usage ())
+    return 0;
+
   init_dce (false);
 
   prescan_insns_for_dce (false);

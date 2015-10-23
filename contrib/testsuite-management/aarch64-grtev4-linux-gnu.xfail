@@ -1,0 +1,154 @@
+# Marked test failures for v18-aarch64 toolchain.
+
+# *** gcc:
+
+# Also xfailed in x86; Google b/13175515 -- r208255 disabled self-assign in templates.
+FAIL: g++.dg/warn/Wself-assign-non-pod-3.C -std=gnu++98  (test for warnings, line 30)
+FAIL: g++.dg/warn/Wself-assign-non-pod-3.C -std=gnu++11  (test for warnings, line 30)
+FAIL: g++.dg/warn/Wself-assign-non-pod-3.C -std=gnu++1y  (test for warnings, line 30)
+FAIL: g++.dg/warn/Wself-assign-non-pod-5.C -std=gnu++98  (test for warnings, line 11)
+FAIL: g++.dg/warn/Wself-assign-non-pod-5.C -std=gnu++98  (test for warnings, line 26)
+FAIL: g++.dg/warn/Wself-assign-non-pod-5.C -std=gnu++11  (test for warnings, line 11)
+FAIL: g++.dg/warn/Wself-assign-non-pod-5.C -std=gnu++11  (test for warnings, line 26)
+FAIL: g++.dg/warn/Wself-assign-non-pod-5.C -std=gnu++1y  (test for warnings, line 11)
+FAIL: g++.dg/warn/Wself-assign-non-pod-5.C -std=gnu++1y  (test for warnings, line 26)
+FAIL: gcc.dg/wself-assign-1.c (test for warnings, line 15)
+FAIL: gcc.dg/wself-assign-1.c (test for warnings, line 19)
+FAIL: gcc.dg/wself-assign-1.c (test for warnings, line 20)
+FAIL: gcc.dg/wself-assign-1.c (test for warnings, line 21)
+FAIL: gcc.dg/wself-assign-1.c (test for warnings, line 22)
+
+# Also xfailed in x86; Google b/20184248
+FAIL: 17_intro/headers/c++1998/complex.cc (test for excess errors)
+FAIL: 26_numerics/complex/c99.cc (test for excess errors)
+
+# AArch64-specific; appear to be missing "loop turned into non-loop; it never loops" output.
+FAIL: gcc.dg/unroll_1.c (test for warnings, line 14)
+FAIL: gcc.dg/unroll_1.c (test for warnings, line 24)
+
+# AArch64-specific test optimization and execution failures (not yet analyzed)
+XPASS: gcc.dg/tree-ssa/20040204-1.c scan-tree-dump-times optimized "link_error" 0
+FAIL: gcc.dg/di-sync-multithread.c execution test
+FAIL: gcc.dg/unroll_2.c scan-rtl-dump-times loop2_unroll "loop turned into non-loop; it never loops" 1
+FAIL: gcc.dg/unroll_3.c scan-rtl-dump-times loop2_unroll "loop turned into non-loop; it never loops" 1
+FAIL: gcc.dg/unroll_4.c scan-rtl-dump-times loop2_unroll "loop turned into non-loop; it never loops" 1
+
+# Aarch64-specific failures: These have sporadic timeouts in real hardware,
+# and fail with aborts on QEMU.  (not yet analyzed)
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-5.c -O0  execution test
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-5.c -O1  execution test
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-5.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  execution test
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-5.c -O2  execution test
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-5.c -O3 -fomit-frame-pointer  execution test
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-5.c -O3 -fomit-frame-pointer -funroll-loops  execution test
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-5.c -O3 -fomit-frame-pointer -funroll-all-loops -finline-functions  execution test
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-5.c -O3 -g  execution test
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-5.c -Os  execution test
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-5.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  execution test
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-5.c -O0  execution test
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-5.c -O1  execution test
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-5.c -O2 -flto -fno-use-linker-plugin -flto-partition=none  execution test
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-5.c -O2  execution test
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-5.c -O3 -fomit-frame-pointer  execution test
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-5.c -O3 -fomit-frame-pointer -funroll-loops  execution test
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-5.c -O3 -fomit-frame-pointer -funroll-all-loops -finline-functions  execution test
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-5.c -O3 -g  execution test
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-5.c -Os  execution test
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-5.c -O2 -flto -fuse-linker-plugin -fno-fat-lto-objects  execution test
+
+# AArch64 target failures (not yet analyzed)
+FAIL: gcc.target/aarch64/extend.c scan-assembler sub\tw[0-9]+,.*sxth #?1
+FAIL: gcc.target/aarch64/extend.c scan-assembler add\tw[0-9]+,.*sxth #?1
+FAIL: gcc.target/aarch64/fcvt_double_long.c scan-assembler-times fcvtas\tx[0-9]+, *d[0-9] 2
+FAIL: gcc.target/aarch64/fcvt_float_long.c scan-assembler-times fcvtas\tx[0-9]+, *s[0-9] 2
+FAIL: gcc.target/aarch64/vect-abs-compile.c scan-assembler abs\\tv[0-9]+.16b
+FAIL: gcc.target/aarch64/vect-abs-compile.c scan-assembler abs\\tv[0-9]+.8h
+
+# AArch64 and PowerPC64LE failure (new 2014-07-31)
+FAIL: gcc.dg/tree-prof/crossmodule-indircall-1.c execution,    -fprofile-use -D_PROFILE_USE
+
+
+# *** g++:
+
+# AArch64-specific test optimization and execution failures (not yet analyzed)
+FAIL: g++.dg/tree-ssa/pr53844.C -std=gnu++98  scan-tree-dump-times optimized "VDEF" 1
+FAIL: g++.dg/tree-ssa/pr53844.C -std=gnu++11  scan-tree-dump-times optimized "VDEF" 1
+FAIL: g++.dg/tree-ssa/pr53844.C -std=gnu++1y  scan-tree-dump-times optimized "VDEF" 1
+
+
+# Fortran failures are not important to us so far.
+# *** gfortran:
+FAIL: gfortran.dg/bessel_7.f90 -O0  execution test
+FAIL: gfortran.dg/bessel_7.f90 -O1  execution test
+FAIL: gfortran.dg/bessel_7.f90 -O2  execution test
+FAIL: gfortran.dg/bessel_7.f90 -O3 -fomit-frame-pointer  execution test
+FAIL: gfortran.dg/bessel_7.f90 -O3 -fomit-frame-pointer -funroll-loops  execution test
+FAIL: gfortran.dg/bessel_7.f90 -O3 -fomit-frame-pointer -funroll-all-loops -finline-functions  execution test
+FAIL: gfortran.dg/bessel_7.f90 -O3 -g  execution test
+FAIL: gfortran.dg/bessel_7.f90 -Os  execution test
+FAIL: gfortran.dg/pr45636.f90 -O   scan-tree-dump-times forwprop2 "memset" 0
+
+
+# Targets that occasionally time out at compile time:
+flaky | FAIL: gcc.dg/atomic/c11-atomic-exec-3.c -O3 -g  (test for excess errors)
+flaky | UNRESOLVED: gcc.dg/atomic/c11-atomic-exec-3.c -O3 -g  compilation failed to produce executable
+flaky | FAIL: gfortran.dg/minlocval_3.f90 -O3 -fomit-frame-pointer -funroll-loops  (test for excess errors)
+flaky | FAIL: gfortran.dg/minlocval_3.f90 -O3 -fomit-frame-pointer -funroll-loops  execution test
+flaky | UNRESOLVED: gfortran.dg/minlocval_3.f90 -O3 -fomit-frame-pointer -funroll-loops  compilation failed to produce executable
+flaky | FAIL: gfortran.dg/minlocval_3.f90 -O3 -fomit-frame-pointer -funroll-all-loops -finline-functions  (test for excess errors)
+flaky | UNRESOLVED: gfortran.dg/minlocval_3.f90 -O3 -fomit-frame-pointer -funroll-all-loops -finline-functions  compilation failed to produce executable
+flaky | FAIL: gfortran.dg/minlocval_3.f90 -O3 -g  (test for excess errors)
+flaky | UNRESOLVED: gfortran.dg/minlocval_3.f90 -O3 -g  compilation failed to produce executable
+
+
+# QEMU-related failures that don't show up on real hardware, only in QEMU user-mode tests.
+# We mark these as "flaky" so they don't become "expected results not present".
+flaky | FAIL: g++.dg/abi/forced.C -std=gnu++98 execution test
+flaky | FAIL: g++.dg/abi/forced.C -std=gnu++11 execution test
+flaky | FAIL: g++.dg/abi/forced.C -std=gnu++1y execution test
+flaky | FAIL: g++.dg/ext/cleanup-10.C -std=gnu++98 execution test
+flaky | FAIL: g++.dg/ext/cleanup-10.C -std=gnu++11 execution test
+flaky | FAIL: g++.dg/ext/cleanup-10.C -std=gnu++1y execution test
+flaky | FAIL: g++.dg/ext/cleanup-11.C -std=gnu++98 execution test
+flaky | FAIL: g++.dg/ext/cleanup-11.C -std=gnu++11 execution test
+flaky | FAIL: g++.dg/ext/cleanup-11.C -std=gnu++1y execution test
+flaky | FAIL: g++.dg/ext/cleanup-8.C -std=gnu++98 execution test
+flaky | FAIL: g++.dg/ext/cleanup-8.C -std=gnu++11 execution test
+flaky | FAIL: g++.dg/ext/cleanup-8.C -std=gnu++1y execution test
+flaky | FAIL: g++.dg/ext/cleanup-9.C -std=gnu++98 execution test
+flaky | FAIL: g++.dg/ext/cleanup-9.C -std=gnu++11 execution test
+flaky | FAIL: g++.dg/ext/cleanup-9.C -std=gnu++1y execution test
+flaky | FAIL: g++.dg/ext/sync-4.C -std=gnu++98 execution test
+flaky | FAIL: g++.dg/ext/sync-4.C -std=gnu++11 execution test
+flaky | FAIL: g++.dg/ext/sync-4.C -std=gnu++1y execution test
+flaky | FAIL: g++.dg/tls/thread_local4.C -std=gnu++11 execution test
+flaky | FAIL: g++.dg/tls/thread_local4.C -std=gnu++1y execution test
+flaky | FAIL: g++.dg/tls/thread_local4g.C -std=gnu++11 execution test
+flaky | FAIL: g++.dg/tls/thread_local4g.C -std=gnu++1y execution test
+flaky | FAIL: g++.dg/tls/thread_local5.C -std=gnu++11 execution test
+flaky | FAIL: g++.dg/tls/thread_local5.C -std=gnu++1y execution test
+flaky | FAIL: g++.dg/tls/thread_local5g.C -std=gnu++11 execution test
+flaky | FAIL: g++.dg/tls/thread_local5g.C -std=gnu++1y execution test
+flaky | FAIL: g++.dg/tls/thread_local6.C -std=c++11 execution test
+flaky | FAIL: g++.dg/tls/thread_local6.C -std=c++1y execution test
+flaky | FAIL: g++.dg/tls/thread_local6g.C -std=c++11 execution test
+flaky | FAIL: g++.dg/tls/thread_local6g.C -std=c++1y execution test
+flaky | FAIL: gcc.dg/cleanup-10.c execution test
+flaky | FAIL: gcc.dg/cleanup-11.c execution test
+flaky | FAIL: gcc.dg/cleanup-8.c execution test
+flaky | FAIL: gcc.dg/cleanup-9.c execution test
+flaky | FAIL: gcc.dg/tree-prof/time-profiler-2.c scan-ipa-dump-times profile "Read tp_first_run: 0" 2
+flaky | FAIL: gcc.dg/tree-prof/time-profiler-2.c scan-ipa-dump-times profile "Read tp_first_run: 2" 1
+flaky | FAIL: gcc.dg/tree-prof/time-profiler-2.c scan-ipa-dump-times profile "Read tp_first_run: 3" 1
+
+
+# SSH-related failures because we don't yet transfer files back to the host.
+flaky | UNRESOLVED: gcc.dg/pr47793.c scan-file .
+flaky | UNRESOLVED: gfortran.dg/fmt_en.f90 -O0   scan-file All kinds rounded to nearest
+flaky | UNRESOLVED: gfortran.dg/fmt_en.f90 -O1   scan-file All kinds rounded to nearest
+flaky | UNRESOLVED: gfortran.dg/fmt_en.f90 -O2   scan-file All kinds rounded to nearest
+flaky | UNRESOLVED: gfortran.dg/fmt_en.f90 -O3 -fomit-frame-pointer   scan-file All kinds rounded to nearest
+flaky | UNRESOLVED: gfortran.dg/fmt_en.f90 -O3 -fomit-frame-pointer -funroll-loops   scan-file All kinds rounded to nearest
+flaky | UNRESOLVED: gfortran.dg/fmt_en.f90 -O3 -fomit-frame-pointer -funroll-all-loops -finline-functions   scan-file All kinds rounded to nearest
+flaky | UNRESOLVED: gfortran.dg/fmt_en.f90 -O3 -g   scan-file All kinds rounded to nearest
+flaky | UNRESOLVED: gfortran.dg/fmt_en.f90 -Os   scan-file All kinds rounded to nearest

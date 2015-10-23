@@ -274,7 +274,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     struct __is_floating_point_helper<long double>
     : public true_type { };
 
-#if !defined(__STRICT_ANSI__) && defined(_GLIBCXX_USE_FLOAT128)
+#if !defined(__STRICT_ANSI__) && defined(_GLIBCXX_USE_FLOAT128) && (!defined (__ANDROID__) || !defined(__clang__) || __clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 4))
   template<>
     struct __is_floating_point_helper<__float128>
     : public true_type { };
@@ -1988,7 +1988,11 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     struct __common_type_impl
     : private __do_common_type_impl
     {
+#if !defined (__ANDROID__)
       typedef decltype(_S_test<_Tp, _Up>(0)) type;
+#else
+      typedef typename decay<decltype(_S_test<_Tp, _Up>(0))>::type type;
+#endif
     };
 
   struct __do_member_type_wrapper

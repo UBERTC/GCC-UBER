@@ -169,6 +169,8 @@ proc profopt-final-code { which final_code name } {
 # SRC is the full pathname of the testcase.
 #
 proc profopt-get-options { src } {
+    global srcdir
+
     # dg-options sets a variable called dg-extra-tool-flags.
     set dg-extra-tool-flags ""
 
@@ -249,6 +251,27 @@ proc profopt-execute { src } {
     set executable $tmpdir/[file tail [file rootname $src].x]
     set basename [file tail $testcase]
     set base [file rootname $basename]
+    set dir [file dirname $src]
+    # multiple file test base
+    set mbase [file rootname $basename]
+    regsub "_0" $mbase "" mbase
+    regsub "/" $mbase "" mbase
+    set src_list $src
+    set i 1
+    set done 0
+    while { !$done } {
+	set names [glob -nocomplain -types f -- "${dir}/${mbase}_${i}.*"]
+	if { [llength ${names}] > 1 } {
+	    warning "profopt-execute: more than one file matched ${dir}/${mbase}_${i}.*"
+	}
+	if { [llength ${names}] == 1 } {
+	    lappend src_list [lindex ${names} 0]
+	    incr i
+	} else {
+	    set num_srcs ${i}
+	    set done 1
+	}
+    }
 
     set count 0
     foreach option $prof_option_list {
@@ -296,7 +319,7 @@ proc profopt-execute { src } {
 	set options "$extra_options"
 	lappend options "additional_flags=$option $extra_flags $profile_option"
 	set optstr "$option $profile_option"
-	set comp_output [${tool}_target_compile "$src" "$execname1" executable $options]
+	set comp_output [${tool}_target_compile "$src_list" "$execname1" executable $options]
 	if ![${tool}_check_compile "$testcase compilation" $optstr $execname1 $comp_output] {
  	    unresolved "$testcase execution,   $optstr"
  	    unresolved "$testcase compilation, $option $feedback_option"
@@ -311,15 +334,32 @@ proc profopt-execute { src } {
 	set missing_file 0
 	# Make sure the profile data was generated, and fail if not.
 	if { $status == "pass" } {
-	    foreach ext $prof_ext {
-		remote_upload target $tmpdir/$base.$ext
-		set files [glob -nocomplain $base.$ext]
-		if { $files == "" } {
-		    set status "fail"
-		    set missing_file 1
-		    fail "$testcase execution: file $base.$ext does not exist, $option $profile_option"
-		}
-	    }
+	   set i 0
+	   if { $num_srcs > 1 } {
+	       foreach s $src_list {
+ 	           foreach ext $prof_ext {
+	               remote_upload target $tmpdir/${mbase}_${i}.$ext
+	               set files [glob -nocomplain ${mbase}_${i}.$ext]
+                       if { $files == "" } {
+                           set status "fail"
+                           set missing_file 1
+                           fail "$testcase execution: file ${mbase}_${i}.$ext does not exist, $option $profile_option"
+	               }
+	           }
+	           incr i
+	       }
+	   } else {
+ 	       foreach ext $prof_ext {
+	           remote_upload target $tmpdir/$base.$ext
+	           set files [glob -nocomplain $base.$ext]
+                   if { $files == "" } {
+                       set status "fail"
+                       set missing_file 1
+                       fail "$testcase execution: file $base.$ext does not exist, $option $profile_option"
+	           }
+               }
+	   }
+
 	}
         if { $missing_file == 0 } {
 	    $status "$testcase execution,   $optstr"
@@ -345,7 +385,7 @@ proc profopt-execute { src } {
 	set options "$extra_options"
 	lappend options "additional_flags=$option $extra_flags $feedback_option"
 	set optstr "$option $feedback_option"
-	set comp_output [${tool}_target_compile "$src" "$execname2" "executable" $options]
+	set comp_output [${tool}_target_compile "$src_list" "$execname2" "executable" $options]
 
 	# Prune warnings we know are unwanted.
 	set comp_output [prune_warnings $comp_output]
@@ -367,8 +407,18 @@ proc profopt-execute { src } {
 	}
 
 	# Remove the profiling data files.
-	foreach ext $prof_ext {
-	    remote_file target delete $tmpdir/$base.$ext
+	if { $num_srcs > 1 } {
+	   set i 0
+	    foreach s $src_list {
+		foreach ext $prof_ext {
+		    remote_file target delete $tmpdir/${mbase}_${i}.$ext
+		}
+		incr i
+	    }
+	} else {
+	    foreach ext $prof_ext {
+		remote_file target delete $tmpdir/$base.$ext
+	    }
 	}
 
 	if { $status != "pass" } {
@@ -396,7 +446,7 @@ proc profopt-execute { src } {
 	set options "$extra_options"
 	lappend options "additional_flags=$option"
 	set optstr "$option"
-	set comp_output [${tool}_target_compile "$src" "$execname3" "executable" $options]
+	set comp_output [${tool}_target_compile "$src_list" "$execname3" "executable" $options]
 	if ![${tool}_check_compile "$testcase compilation" $optstr $execname3 $comp_output] {
  	    unresolved "$testcase execution,   $optstr"
 	    unresolved "$testcase perf check,  $optstr"

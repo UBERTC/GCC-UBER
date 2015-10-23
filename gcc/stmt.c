@@ -57,6 +57,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "regs.h"
 #include "alloc-pool.h"
 #include "pretty-print.h"
+#include "coverage.h"
+#include "bitmap.h"
+#include "pointer-set.h"
 #include "params.h"
 #include "dumpfile.h"
 
@@ -514,7 +517,6 @@ tree_overlaps_hard_reg_set (tree decl, HARD_REG_SET *regs)
 {
   return walk_tree (&decl, decl_overlaps_hard_reg_set_p, regs, NULL);
 }
-
 
 /* A subroutine of expand_asm_operands.  Check that all operand names
    are unique.  Return true if so.  We rely on the fact that these names

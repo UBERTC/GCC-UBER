@@ -75,6 +75,7 @@ out_host_hook_obj=host-default.o
 host_can_use_collect2=yes
 use_long_long_for_widest_fast_int=no
 host_lto_plugin_soname=liblto_plugin.so
+host_function_reordering_plugin_soname=libfunction_reordering_plugin.so
 
 # Unsupported hosts list.  Generally, only include hosts known to fail here,
 # since we allow hosts not listed to be supported generically.

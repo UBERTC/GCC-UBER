@@ -31,6 +31,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
+#include "dumpfile.h"
 #include "tm.h"
 #include "tree.h"
 #include "langhooks.h"
@@ -42,6 +43,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "ipa-inline.h"
 #include "tree-inline.h"
 #include "tree-pass.h"
+#include "l-ipo.h"
+#include "params.h"
+#include "tree-ssa-alias.h"
+#include "internal-fn.h"
+#include "gimple-expr.h"
+#include "gimple.h"
 
 int ncalls_inlined;
 int nfunctions_inlined;
@@ -87,7 +94,6 @@ can_remove_node_now_p_1 (struct cgraph_node *node)
      the callgraph so references can point to it.  */
   return (!node->address_taken
 	  && !ipa_ref_has_aliases_p (&node->ref_list)
-	  && !node->used_as_abstract_origin
 	  && cgraph_can_remove_if_no_direct_calls_p (node)
 	  /* Inlining might enable more devirtualizing, so we want to remove
 	     those only after all devirtualizable virtual calls are processed.
@@ -179,12 +185,28 @@ clone_inlined_nodes (struct cgraph_edge *e, bool duplicate,
       else
 	{
 	  struct cgraph_node *n;
-
+	  /* Disable updating of callee count if caller is not the resolved node
+             to avoid multiple updates of the callee's profile when inlining
+             into COMDAT copies.  Both AutoFDO and regular FDO will have the
+             same edge counts for all unresolved nodes.  In AutoFDO this is due
+             to profile correlation by function name and source position.  In
+             regular FDO this is due to COMDAT profile merging performed on the
+             dynamic callgraph at the end of LIPO profiling.  */
+	  if (L_IPO_COMP_MODE && cgraph_pre_profiling_inlining_done)
+	    {
+	      struct cgraph_node *caller = e->caller;
+	      if (caller->global.inlined_to)
+		caller = caller->global.inlined_to;
+	      if (cgraph_lipo_get_resolved_node (caller->decl) != caller)
+		update_original = false;
+	    }
 	  if (freq_scale == -1)
 	    freq_scale = e->frequency;
 	  n = cgraph_clone_node (e->callee, e->callee->decl,
-				 e->count, freq_scale, update_original,
-				 vNULL, true, inlining_into, NULL);
+				 MIN(e->count, e->callee->count), freq_scale,
+				 update_original, vNULL, true, inlining_into,
+				 NULL);
+	  n->used_as_abstract_origin = e->callee->used_as_abstract_origin;
 	  cgraph_redirect_edge_callee (e, n);
 	}
     }
@@ -207,6 +229,134 @@ clone_inlined_nodes (struct cgraph_edge *e, bool duplicate,
     }
 }
 
+#define MAX_INT_LENGTH 16
+
+/* Return NODE's name and aux info. The output is controled by OPT_INFO
+   level.  */
+
+static const char *
+cgraph_node_opt_info (struct cgraph_node *node, bool emit_mod_info)
+{
+  char *buf;
+  size_t buf_size;
+  const char *bfd_name = lang_hooks.dwarf_name (node->decl, 0);
+  const char *mod_name = 0;
+  unsigned int mod_id = 0;
+  int funcdef_no = -1;
+  const char *primary_tag = 0;
+
+  if (!bfd_name)
+    bfd_name = "unknown";
+
+  buf_size = strlen (bfd_name) + 1;
+  if (profile_info)
+    buf_size += (MAX_INT_LENGTH + 3);
+
+  if (L_IPO_COMP_MODE && emit_mod_info)
+    {
+      mod_id = cgraph_get_module_id (node->decl);
+      gcc_assert (mod_id);
+      mod_name = get_module_name (mod_id);
+      primary_tag = (mod_id == primary_module_id ? "*" :"");
+      buf_size += (4 + strlen (mod_name));
+      if (PARAM_VALUE (PARAM_INLINE_DUMP_MODULE_ID))
+        {
+          struct function *func = DECL_STRUCT_FUNCTION (node->decl);
+          if (func)
+            funcdef_no = func->funcdef_no; 
+          buf_size += (2 * MAX_INT_LENGTH + 1);
+	}
+    }
+
+  buf = (char *) xmalloc (buf_size);
+
+  strcpy (buf, bfd_name);
+
+  if (L_IPO_COMP_MODE && emit_mod_info)
+    {
+      if (PARAM_VALUE (PARAM_INLINE_DUMP_MODULE_ID))
+         sprintf (buf, "%s [%d:%d %s%s]", buf, mod_id, funcdef_no,
+	     primary_tag, mod_name);
+      else
+         sprintf (buf, "%s [%s%s]", buf, primary_tag, mod_name);
+    }
+
+  if (profile_info)
+    sprintf (buf, "%s ("HOST_WIDEST_INT_PRINT_DEC")", buf, node->count);
+  return buf;
+}
+
+/* Return CALLER's inlined call chain. Save the cgraph_node of the ultimate
+   function that the caller is inlined to in FINAL_CALLER.  */
+
+static const char *
+cgraph_node_call_chain (struct cgraph_node *caller,
+		        struct cgraph_node **final_caller)
+{
+  struct cgraph_node *node;
+  const char *via_str = " (via inline instance";
+  size_t current_string_len = strlen (via_str) + 1;
+  size_t buf_size = current_string_len;
+  char *buf = (char *) xmalloc (buf_size);
+
+  buf[0] = 0;
+  gcc_assert (caller->global.inlined_to != NULL);
+  strcat (buf, via_str);
+  for (node = caller; node->global.inlined_to != NULL;
+       node = node->callers->caller)
+    {
+      const char *name = cgraph_node_opt_info (node, false);
+      current_string_len += (strlen (name) + 1);
+      if (current_string_len >= buf_size)
+	{
+	  buf_size = current_string_len * 2;
+	  buf = (char *) xrealloc (buf, buf_size);
+	}
+      strcat (buf, " ");
+      strcat (buf, name);
+    }
+  strcat (buf, ")");
+  *final_caller = node;
+  return buf;
+}
+
+/* Dump the inline decision of EDGE to stderr.  */
+
+static void
+dump_inline_decision (struct cgraph_edge *edge)
+{
+  location_t locus;
+  const char *inline_chain_text;
+  const char *call_count_text;
+  struct cgraph_node *final_caller = edge->caller;
+
+  if (final_caller->global.inlined_to != NULL)
+    inline_chain_text = cgraph_node_call_chain (final_caller, &final_caller);
+  else
+    inline_chain_text = "";
+
+  if (edge->count > 0)
+    {
+      const char *call_count_str = " with call count ";
+      char *buf = (char *) xmalloc (strlen (call_count_str) + MAX_INT_LENGTH);
+      sprintf (buf, "%s"HOST_WIDEST_INT_PRINT_DEC, call_count_str,
+	       edge->count);
+      call_count_text = buf;
+    }
+  else
+    {
+      call_count_text = "";
+    }
+ 
+  locus = gimple_location (edge->call_stmt);
+  dump_printf_loc (is_in_ipa_inline ? MSG_OPTIMIZED_LOCATIONS : MSG_NOTE,
+                   locus,
+                   "%s inlined into %s%s%s\n",
+                   cgraph_node_opt_info (edge->callee, true),
+                   cgraph_node_opt_info (final_caller, true),
+                   call_count_text,
+                   inline_chain_text);
+}
 
 /* Mark edge E as inlined and update callgraph accordingly.  UPDATE_ORIGINAL
    specify whether profile of original function should be updated.  If any new
@@ -231,10 +381,17 @@ inline_call (struct cgraph_edge *e, bool update_original,
   struct cgraph_node *callee = cgraph_function_or_thunk_node (e->callee, NULL);
   bool new_edges_found = false;
 
+  /* Skip fake edge.  */
+  if (L_IPO_COMP_MODE && !e->call_stmt)
+    return false;
+
 #ifdef ENABLE_CHECKING
   int estimated_growth = estimate_edge_growth (e);
   bool predicated = inline_edge_summary (e)->predicate != NULL;
 #endif
+
+  if (dump_enabled_p ())
+    dump_inline_decision (e);
 
   speculation_removed = false;
   /* Don't inline inlined edges.  */
@@ -254,6 +411,7 @@ inline_call (struct cgraph_edge *e, bool update_original,
   if (e->callee != callee)
     {
       struct cgraph_node *alias = e->callee, *next_alias;
+
       cgraph_redirect_edge_callee (e, callee);
       while (alias && alias != callee)
 	{
@@ -282,6 +440,8 @@ inline_call (struct cgraph_edge *e, bool update_original,
   if (update_overall_summary)
    inline_update_overall_summary (to);
   new_size = inline_summary (to)->size;
+  if (to->max_bb_count < e->callee->max_bb_count)
+    to->max_bb_count = e->callee->max_bb_count;
 
   if (callee->calls_comdat_local)
     to->calls_comdat_local = true;
@@ -303,13 +463,20 @@ inline_call (struct cgraph_edge *e, bool update_original,
 	      || speculation_removed
 	      /* FIXME: a hack.  Edges with false predicate are accounted
 		 wrong, we should remove them from callgraph.  */
-	      || predicated);
+	      || predicated
+              /* FIXME_LIPO -- LIPO is not yet compatible
+                 with ipa devirt. */
+              || flag_dyn_ipa);
 #endif
 
   /* Account the change of overall unit size; external functions will be
      removed and are thus not accounted.  */
   if (overall_size
-      && !DECL_EXTERNAL (to->decl))
+      && !DECL_EXTERNAL (to->decl)
+      && ((L_IPO_COMP_MODE
+           && cgraph_get_module_id (to->decl)
+           == primary_module_id)
+          || !L_IPO_COMP_MODE))
     *overall_size += new_size - old_size;
   ncalls_inlined++;
 

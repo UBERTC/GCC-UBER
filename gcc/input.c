@@ -109,6 +109,11 @@ location_t input_location;
 
 struct line_maps *line_table;
 
+static vec<location_t> discriminator_location_locations;
+static vec<int> discriminator_location_discriminators;
+static location_t next_discriminator_location = UNKNOWN_LOCATION;
+static location_t min_discriminator_location = UNKNOWN_LOCATION;
+
 static fcache *fcache_tab;
 static const size_t fcache_tab_size = 16;
 static const size_t fcache_buffer_size = 4 * 1024;
@@ -142,6 +147,13 @@ expand_location_1 (source_location loc,
       block = LOCATION_BLOCK (loc);
       loc = LOCATION_LOCUS (loc);
     }
+
+  /* If LOC describes a location with a discriminator, extract the
+     discriminator and map it to the real location.  */
+  if (min_discriminator_location != UNKNOWN_LOCATION
+      && loc >= min_discriminator_location
+      && loc < next_discriminator_location)
+    loc = map_discriminator_location (loc);
 
   memset (&xloc, 0, sizeof (xloc));
 
@@ -851,4 +863,85 @@ dump_line_table_statistics (void)
            SCALE (total_used_map_size),
            STAT_LABEL (total_used_map_size));
   fprintf (stderr, "\n");
+}
+
+/* Associate the DISCRIMINATOR with LOCUS, and return a new locus.
+   We associate discriminators with a locus by allocating location_t
+   values beyond those assigned by libcpp.  Each new value is mapped
+   directly to a real location_t value, and separately to the
+   discriminator.  */
+
+location_t
+location_with_discriminator (location_t locus, int discriminator)
+{
+  tree block = LOCATION_BLOCK (locus);
+  location_t ret;
+  int i;
+  locus = map_discriminator_location (locus);
+
+  if (locus == UNKNOWN_LOCATION)
+    return block ? COMBINE_LOCATION_DATA (line_table, locus, block)
+		 : locus;
+
+  if (min_discriminator_location == UNKNOWN_LOCATION)
+    {
+      min_discriminator_location = line_table->highest_location + 1;
+      next_discriminator_location = min_discriminator_location;
+    }
+
+  /* Traverse the last few discriminator_locations to see if we can reuse
+     the entry.  */
+  for (i = next_discriminator_location - min_discriminator_location - 1;
+       (i >= 0 && LOCATION_LINE (discriminator_location_locations[i]) ==
+				 LOCATION_LINE (locus)
+        && discriminator_location_discriminators[i] == discriminator);
+       i--)
+    if (discriminator_location_locations[i] == locus)
+      return (block
+	  ? COMBINE_LOCATION_DATA (line_table, min_discriminator_location + i,
+				   block)
+	  : min_discriminator_location + i);
+
+  discriminator_location_locations.safe_push(locus);
+  discriminator_location_discriminators.safe_push(discriminator);
+
+  ret = (block
+      ? COMBINE_LOCATION_DATA (line_table, next_discriminator_location, block)
+      : next_discriminator_location);
+
+  next_discriminator_location++;
+  return ret;
+}
+
+/* Return TRUE if LOCUS represents a location with a discriminator.  */
+
+bool
+has_discriminator (location_t locus)
+{
+  locus = LOCATION_LOCUS (locus);
+  return (min_discriminator_location != UNKNOWN_LOCATION
+	  && locus >= min_discriminator_location
+	  && locus < next_discriminator_location);
+}
+
+/* Return the real location_t value for LOCUS.  */
+
+location_t
+map_discriminator_location (location_t locus)
+{
+  locus = LOCATION_LOCUS (locus);
+  if (! has_discriminator (locus))
+    return locus;
+  return (location_t) discriminator_location_locations[locus - min_discriminator_location];
+}
+
+/* Return the discriminator for LOCUS.  */
+
+int
+get_discriminator_from_locus (location_t locus)
+{
+  locus = LOCATION_LOCUS (locus);
+  if (! has_discriminator (locus))
+    return 0;
+  return discriminator_location_discriminators[locus - min_discriminator_location];
 }
