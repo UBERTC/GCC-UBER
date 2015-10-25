@@ -23,57 +23,41 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
 #include "df.h"
+#include "tm_p.h"
 #include "ssa.h"
+#include "expmed.h"
+#include "optabs.h"
+#include "regs.h"
+#include "emit-rtl.h"
+#include "recog.h"
+#include "diagnostic-core.h"
 #include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "calls.h"
 #include "varasm.h"
-#include "regs.h"
-#include "insn-config.h"
-#include "conditions.h"
 #include "output.h"
 #include "insn-attr.h"
-#include "flags.h"
-#include "recog.h"
-#include "expmed.h"
-#include "dojump.h"
 #include "explow.h"
-#include "emit-rtl.h"
-#include "stmt.h"
 #include "expr.h"
-#include "insn-codes.h"
-#include "optabs.h"
 #include "reload.h"
 #include "except.h"
-#include "diagnostic-core.h"
-#include "tm_p.h"
-#include "target.h"
 #include "common/common-target.h"
 #include "debug.h"
 #include "langhooks.h"
 #include "cfgrtl.h"
-#include "cfganal.h"
-#include "lcm.h"
-#include "cfgbuild.h"
-#include "cfgcleanup.h"
-#include "internal-fn.h"
-#include "gimple-fold.h"
-#include "tree-eh.h"
 #include "tree-pass.h"
 #include "context.h"
-#include "pass_manager.h"
 #include "gimple-iterator.h"
 #include "gimplify.h"
 #include "tree-stdarg.h"
 #include "tm-constrs.h"
 #include "libfuncs.h"
-#include "opts.h"
 #include "params.h"
 #include "builtins.h"
 #include "rtl-iter.h"
@@ -5629,7 +5613,7 @@ alpha_function_arg_advance (cumulative_args_t cum_v, machine_mode mode,
 {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
   bool onstack = targetm.calls.must_pass_in_stack (mode, type);
-  int increment = onstack ? 6 : ALPHA_ARG_SIZE (mode, type, named);
+  int increment = onstack ? 6 : ALPHA_ARG_SIZE (mode, type);
 
 #if TARGET_ABI_OSF
   *cum += increment;
@@ -5651,10 +5635,10 @@ alpha_arg_partial_bytes (cumulative_args_t cum_v,
 
 #if TARGET_ABI_OPEN_VMS
   if (cum->num_args < 6
-      && 6 < cum->num_args + ALPHA_ARG_SIZE (mode, type, named))
+      && 6 < cum->num_args + ALPHA_ARG_SIZE (mode, type))
     words = 6 - cum->num_args;
 #elif TARGET_ABI_OSF
-  if (*cum < 6 && 6 < *cum + ALPHA_ARG_SIZE (mode, type, named))
+  if (*cum < 6 && 6 < *cum + ALPHA_ARG_SIZE (mode, type))
     words = 6 - *cum;
 #else
 #error Unhandled ABI

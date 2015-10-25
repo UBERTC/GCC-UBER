@@ -159,6 +159,7 @@ along with GCC; see the file COPYING3.  If not see
       /* After CCP we rewrite no longer addressed locals into SSA
 	 form if possible.  */
       NEXT_PASS (pass_complete_unrolli);
+      NEXT_PASS (pass_backprop);
       NEXT_PASS (pass_phiprop);
       NEXT_PASS (pass_forwprop);
       NEXT_PASS (pass_object_sizes);
@@ -341,6 +342,7 @@ along with GCC; see the file COPYING3.  If not see
       NEXT_PASS (pass_tm_memopt);
       NEXT_PASS (pass_tm_edges);
   POP_INSERT_PASSES ()
+  NEXT_PASS (pass_simduid_cleanup);
   NEXT_PASS (pass_vtable_verify);
   NEXT_PASS (pass_lower_vaarg);
   NEXT_PASS (pass_lower_vector);

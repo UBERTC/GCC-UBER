@@ -6714,6 +6714,9 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
 	       to put statics on the list so we can deal with the label
 	       address extension.  FIXME.  */
 	    add_local_decl (cfun, decl);
+	  /* And make sure it's in the symbol table for
+	     c_parse_final_cleanups to find.  */
+	  varpool_node::get_create (decl);
 	}
 
       /* Convert the initializer to the type of DECL, if we have not
@@ -13630,6 +13633,16 @@ check_function_type (tree decl, tree current_function_parms)
     abstract_virtuals_error (decl, TREE_TYPE (fntype));
 }
 
+/* True iff FN is an implicitly-defined default constructor.  */
+
+static bool
+implicit_default_ctor_p (tree fn)
+{
+  return (DECL_CONSTRUCTOR_P (fn)
+	  && !user_provided_p (fn)
+	  && sufficient_parms_p (FUNCTION_FIRST_USER_PARMTYPE (fn)));
+}
+
 /* Create the FUNCTION_DECL for a function definition.
    DECLSPECS and DECLARATOR are the parts of the declaration;
    they describe the function's name and the type it returns,
@@ -14036,7 +14049,11 @@ start_preparsed_function (tree decl1, tree attrs, int flags)
   store_parm_decls (current_function_parms);
 
   if (!processing_template_decl
-      && flag_lifetime_dse && DECL_CONSTRUCTOR_P (decl1))
+      && flag_lifetime_dse && DECL_CONSTRUCTOR_P (decl1)
+      /* We can't clobber safely for an implicitly-defined default constructor
+	 because part of the initialization might happen before we enter the
+	 constructor, via AGGR_INIT_ZERO_FIRST (c++/68006).  */
+      && !implicit_default_ctor_p (decl1))
     {
       /* Insert a clobber to let the back end know that the object storage
 	 is dead when we enter the constructor.  */
@@ -14872,10 +14889,6 @@ complete_vars (tree type)
 	      complete_type (type);
 	      cp_apply_type_quals_to_decl (cp_type_quals (type), var);
 	    }
-
-	  if (DECL_INITIAL (var)
-	      && decl_constant_var_p (var))
-	    DECL_INITIAL (var) = cplus_expand_constant (DECL_INITIAL (var));
 
 	  /* Remove this entry from the list.  */
 	  incomplete_vars->unordered_remove (ix);

@@ -206,7 +206,7 @@ package body Exp_Util is
       end case;
 
       --  Nothing to do for the identifier in an object renaming declaration,
-      --  the renaming itself does not need atomic syncrhonization.
+      --  the renaming itself does not need atomic synchronization.
 
       if Nkind (Parent (N)) = N_Object_Renaming_Declaration then
          return;
@@ -604,12 +604,6 @@ package body Exp_Util is
          --  objects.
 
          elsif No_Pool_Assigned (Ptr_Typ) then
-            return;
-
-         --  Access-to-controlled types are not supported on .NET/JVM since
-         --  these targets cannot support pools and address arithmetic.
-
-         elsif VM_Target /= No_VM then
             return;
          end if;
 
@@ -1314,7 +1308,7 @@ package body Exp_Util is
          Expr := Make_Function_Call (Loc,
            Name => New_Occurrence_Of (Defining_Entity (Fun), Loc));
 
-         if not In_Init_Proc and then VM_Target = No_VM then
+         if not In_Init_Proc then
             Set_Uses_Sec_Stack (Defining_Entity (Fun));
          end if;
       end if;
@@ -4040,6 +4034,22 @@ package body Exp_Util is
                   end if;
 
                   return;
+
+               --  Iteration scheme located in a transient scope
+
+               elsif Nkind (P) = N_Iteration_Scheme
+                 and then Present (Wrapped_Node)
+               then
+                  --  If the enclosing iterator loop is marked as requiring the
+                  --  secondary stack then the actions must be inserted in the
+                  --  transient scope.
+
+                  if Uses_Sec_Stack
+                       (Find_Enclosing_Iterator_Loop (Current_Scope))
+                  then
+                     Store_Before_Actions_In_Scope (Ins_Actions);
+                     return;
+                  end if;
                end if;
 
             --  Statements, declarations, pragmas, representation clauses
@@ -4174,7 +4184,7 @@ package body Exp_Util is
             when
                N_Raise_xxx_Error =>
                   if Etype (P) = Standard_Void_Type then
-                     if  P = Wrapped_Node then
+                     if P = Wrapped_Node then
                         Store_Before_Actions_In_Scope (Ins_Actions);
                      else
                         Insert_List_Before_And_Analyze (P, Ins_Actions);
@@ -5309,12 +5319,6 @@ package body Exp_Util is
       T  : constant Entity_Id := Etype (N);
 
    begin
-      --  Objects are never unaligned on VMs
-
-      if VM_Target /= No_VM then
-         return False;
-      end if;
-
       --  If renamed object, apply test to underlying object
 
       if Is_Entity_Name (N)
@@ -5832,21 +5836,6 @@ package body Exp_Util is
          return False;
       end if;
    end Is_Volatile_Reference;
-
-   --------------------------
-   -- Is_VM_By_Copy_Actual --
-   --------------------------
-
-   function Is_VM_By_Copy_Actual (N : Node_Id) return Boolean is
-   begin
-      return VM_Target /= No_VM
-        and then (Nkind (N) = N_Slice
-                    or else
-                      (Nkind (N) = N_Identifier
-                        and then Present (Renamed_Object (Entity (N)))
-                        and then Nkind (Renamed_Object (Entity (N))) =
-                                                                 N_Slice));
-   end Is_VM_By_Copy_Actual;
 
    --------------------
    -- Kill_Dead_Code --
@@ -6424,34 +6413,17 @@ package body Exp_Util is
       Expr : Node_Id;
       Mem  : Boolean := False) return Node_Id
    is
-      GM : constant Ghost_Mode_Type := Ghost_Mode;
-
-      procedure Restore_Globals;
-      --  Restore the values of all saved global variables
-
-      ---------------------
-      -- Restore_Globals --
-      ---------------------
-
-      procedure Restore_Globals is
-      begin
-         Ghost_Mode := GM;
-      end Restore_Globals;
-
-      --  Local variables
-
       Loc  : constant Source_Ptr := Sloc (Expr);
       Call : Node_Id;
       PFM  : Entity_Id;
 
-   --  Start of processing for Make_Predicate_Call
+      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
 
    begin
       pragma Assert (Present (Predicate_Function (Typ)));
 
-      --  The related type may be subject to pragma Ghost with policy Ignore.
-      --  Set the mode now to ensure that the call is properly flagged as
-      --  ignored Ghost.
+      --  The related type may be subject to pragma Ghost. Set the mode now to
+      --  ensure that the call is properly marked as Ghost.
 
       Set_Ghost_Mode_From_Entity (Typ);
 
@@ -6466,7 +6438,7 @@ package body Exp_Util is
                 Name                   => New_Occurrence_Of (PFM, Loc),
                 Parameter_Associations => New_List (Relocate_Node (Expr)));
 
-            Restore_Globals;
+            Ghost_Mode := Save_Ghost_Mode;
             return Call;
          end if;
       end if;
@@ -6479,7 +6451,7 @@ package body Exp_Util is
             New_Occurrence_Of (Predicate_Function (Typ), Loc),
           Parameter_Associations => New_List (Relocate_Node (Expr)));
 
-      Restore_Globals;
+      Ghost_Mode := Save_Ghost_Mode;
       return Call;
    end Make_Predicate_Call;
 
@@ -6669,7 +6641,7 @@ package body Exp_Util is
             EQ_Typ     : Entity_Id := Empty;
 
          begin
-            --  A class-wide equivalent type is not needed when VM_Target
+            --  A class-wide equivalent type is not needed on VM targets
             --  because the VM back-ends handle the class-wide object
             --  initialization itself (and doesn't need or want the
             --  additional intermediate type to handle the assignment).
@@ -6870,13 +6842,10 @@ package body Exp_Util is
       if Restriction_Active (No_Finalization) then
          return False;
 
-      --  C++, CIL and Java types are not considered controlled. It is assumed
-      --  that the non-Ada side will handle their clean up.
+      --  C++ types are not considered controlled. It is assumed that the
+      --  non-Ada side will handle their clean up.
 
-      elsif Convention (T) = Convention_CIL
-        or else Convention (T) = Convention_CPP
-        or else Convention (T) = Convention_Java
-      then
+      elsif Convention (T) = Convention_CPP then
          return False;
 
       --  Never needs finalization if Disable_Controlled set
@@ -8053,6 +8022,16 @@ package body Exp_Util is
             elsif Is_Ignored_Ghost_Entity (Obj_Id) then
                null;
 
+            --  The expansion of iterator loops generates an object declaration
+            --  where the Ekind is explicitly set to loop parameter. This is to
+            --  ensure that the loop parameter behaves as a constant from user
+            --  code point of view. Such object are never controlled and do not
+            --  require cleanup actions. An iterator loop over a container of
+            --  controlled objects does not produce such object declarations.
+
+            elsif Ekind (Obj_Id) = E_Loop_Parameter then
+               return False;
+
             --  The object is of the form:
             --    Obj : Typ [:= Expr];
             --
@@ -8944,10 +8923,10 @@ package body Exp_Util is
       --  locate here if this node corresponds to a previous invocation of
       --  Remove_Side_Effects to avoid a never ending loop in the frontend.
 
-      elsif VM_Target /= No_VM
-         and then not Comes_From_Source (N)
-         and then Nkind (Parent (N)) = N_Object_Renaming_Declaration
-         and then Is_Class_Wide_Type (Typ)
+      elsif not Tagged_Type_Expansion
+        and then not Comes_From_Source (N)
+        and then Nkind (Parent (N)) = N_Object_Renaming_Declaration
+        and then Is_Class_Wide_Type (Typ)
       then
          return True;
       end if;

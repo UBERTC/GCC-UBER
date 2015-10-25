@@ -1045,16 +1045,20 @@ gimple_fold_builtin_memory_op (gimple_stmt_iterator *gsi,
     }
 
 done:
+  gimple_seq stmts = NULL;
   if (endp == 0 || endp == 3)
     len = NULL_TREE;
   else if (endp == 2)
-    len = fold_build2_loc (loc, MINUS_EXPR, TREE_TYPE (len), len,
-			   ssize_int (1));
+    len = gimple_build (&stmts, loc, MINUS_EXPR, TREE_TYPE (len), len,
+			ssize_int (1));
   if (endp == 2 || endp == 1)
-    dest = fold_build_pointer_plus_loc (loc, dest, len);
+    {
+      len = gimple_convert_to_ptrofftype (&stmts, loc, len);
+      dest = gimple_build (&stmts, loc, POINTER_PLUS_EXPR,
+			   TREE_TYPE (dest), dest, len);
+    }
 
-  dest = force_gimple_operand_gsi (gsi, dest, false, NULL_TREE, true,
-				   GSI_SAME_STMT);
+  gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
   gimple *repl = gimple_build_assign (lhs, dest);
   gsi_replace (gsi, repl, false);
   return true;
@@ -1708,10 +1712,10 @@ gimple_fold_builtin_memory_chk (gimple_stmt_iterator *gsi,
 	}
       else
 	{
-	  tree temp = fold_build_pointer_plus_loc (loc, dest, len);
-	  temp = force_gimple_operand_gsi (gsi, temp,
-					   false, NULL_TREE, true,
-					   GSI_SAME_STMT);
+	  gimple_seq stmts = NULL;
+	  len = gimple_convert_to_ptrofftype (&stmts, loc, len);
+	  tree temp = gimple_build (&stmts, loc, POINTER_PLUS_EXPR, dest, len);
+	  gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
 	  replace_call_with_value (gsi, temp);
 	  return true;
 	}
@@ -1844,11 +1848,11 @@ gimple_fold_builtin_stxcpy_chk (gimple_stmt_iterator *gsi,
 	      if (!fn)
 		return false;
 
-	      len = fold_convert_loc (loc, size_type_node, len);
-	      len = size_binop_loc (loc, PLUS_EXPR, len,
-				    build_int_cst (size_type_node, 1));
-	      len = force_gimple_operand_gsi (gsi, len, true, NULL_TREE,
-					      true, GSI_SAME_STMT);
+	      gimple_seq stmts = NULL;
+	      len = gimple_convert (&stmts, loc, size_type_node, len);
+	      len = gimple_build (&stmts, loc, PLUS_EXPR, size_type_node, len,
+				  build_int_cst (size_type_node, 1));
+	      gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
 	      gimple *repl = gimple_build_call (fn, 4, dest, src, len, size);
 	      replace_call_with_call_and_fold (gsi, repl);
 	      return true;
@@ -5940,12 +5944,9 @@ rewrite_to_defined_overflow (gimple *stmt)
   gimple_seq stmts = NULL;
   for (unsigned i = 1; i < gimple_num_ops (stmt); ++i)
     {
-      gimple_seq stmts2 = NULL;
-      gimple_set_op (stmt, i,
-		     force_gimple_operand (fold_convert (type,
-							 gimple_op (stmt, i)),
-					   &stmts2, true, NULL_TREE));
-      gimple_seq_add_seq (&stmts, stmts2);
+      tree op = gimple_op (stmt, i);
+      op = gimple_convert (&stmts, type, op);
+      gimple_set_op (stmt, i, op);
     }
   gimple_assign_set_lhs (stmt, make_ssa_name (type, stmt));
   if (gimple_assign_rhs_code (stmt) == POINTER_PLUS_EXPR)
@@ -6154,6 +6155,20 @@ gimple_convert (gimple_seq *seq, location_t loc, tree type, tree op)
   return gimple_build (seq, loc, NOP_EXPR, type, op);
 }
 
+/* Build the conversion (ptrofftype) OP with a result of a type
+   compatible with ptrofftype with location LOC if such conversion
+   is neccesary in GIMPLE, simplifying it first.
+   Returns the built expression value and appends
+   statements possibly defining it to SEQ.  */
+
+tree
+gimple_convert_to_ptrofftype (gimple_seq *seq, location_t loc, tree op)
+{
+  if (ptrofftype_p (TREE_TYPE (op)))
+    return op;
+  return gimple_convert (seq, loc, sizetype, op);
+}
+
 /* Return true if the result of assignment STMT is known to be non-negative.
    If the return value is based on the assumption that signed overflow is
    undefined, set *STRICT_OVERFLOW_P to true; otherwise, don't change
@@ -6209,6 +6224,24 @@ gimple_call_nonnegative_warnv_p (gimple *stmt, bool *strict_overflow_p,
 					strict_overflow_p, depth);
 }
 
+/* Return true if return value of call STMT is known to be non-negative.
+   If the return value is based on the assumption that signed overflow is
+   undefined, set *STRICT_OVERFLOW_P to true; otherwise, don't change
+   *STRICT_OVERFLOW_P.  DEPTH is the current nesting depth of the query.  */
+
+static bool
+gimple_phi_nonnegative_warnv_p (gimple *stmt, bool *strict_overflow_p,
+				int depth)
+{
+  for (unsigned i = 0; i < gimple_phi_num_args (stmt); ++i)
+    {
+      tree arg = gimple_phi_arg_def (stmt, i);
+      if (!tree_single_nonnegative_warnv_p (arg, strict_overflow_p, depth + 1))
+	return false;
+    }
+  return true;
+}
+
 /* Return true if STMT is known to compute a non-negative value.
    If the return value is based on the assumption that signed overflow is
    undefined, set *STRICT_OVERFLOW_P to true; otherwise, don't change
@@ -6226,6 +6259,97 @@ gimple_stmt_nonnegative_warnv_p (gimple *stmt, bool *strict_overflow_p,
     case GIMPLE_CALL:
       return gimple_call_nonnegative_warnv_p (stmt, strict_overflow_p,
 					      depth);
+    case GIMPLE_PHI:
+      return gimple_phi_nonnegative_warnv_p (stmt, strict_overflow_p,
+					     depth);
+    default:
+      return false;
+    }
+}
+
+/* Return true if the floating-point value computed by assignment STMT
+   is known to have an integer value.  We also allow +Inf, -Inf and NaN
+   to be considered integer values.
+
+   DEPTH is the current nesting depth of the query.  */
+
+static bool
+gimple_assign_integer_valued_real_p (gimple *stmt, int depth)
+{
+  enum tree_code code = gimple_assign_rhs_code (stmt);
+  switch (get_gimple_rhs_class (code))
+    {
+    case GIMPLE_UNARY_RHS:
+      return integer_valued_real_unary_p (gimple_assign_rhs_code (stmt),
+					  gimple_assign_rhs1 (stmt), depth);
+    case GIMPLE_BINARY_RHS:
+      return integer_valued_real_binary_p (gimple_assign_rhs_code (stmt),
+					   gimple_assign_rhs1 (stmt),
+					   gimple_assign_rhs2 (stmt), depth);
+    case GIMPLE_TERNARY_RHS:
+      return false;
+    case GIMPLE_SINGLE_RHS:
+      return integer_valued_real_single_p (gimple_assign_rhs1 (stmt), depth);
+    case GIMPLE_INVALID_RHS:
+      break;
+    }
+  gcc_unreachable ();
+}
+
+/* Return true if the floating-point value computed by call STMT is known
+   to have an integer value.  We also allow +Inf, -Inf and NaN to be
+   considered integer values.
+
+   DEPTH is the current nesting depth of the query.  */
+
+static bool
+gimple_call_integer_valued_real_p (gimple *stmt, int depth)
+{
+  tree arg0 = (gimple_call_num_args (stmt) > 0
+	       ? gimple_call_arg (stmt, 0)
+	       : NULL_TREE);
+  tree arg1 = (gimple_call_num_args (stmt) > 1
+	       ? gimple_call_arg (stmt, 1)
+	       : NULL_TREE);
+  return integer_valued_real_call_p (gimple_call_fndecl (stmt),
+				     arg0, arg1, depth);
+}
+
+/* Return true if the floating-point result of phi STMT is known to have
+   an integer value.  We also allow +Inf, -Inf and NaN to be considered
+   integer values.
+
+   DEPTH is the current nesting depth of the query.  */
+
+static bool
+gimple_phi_integer_valued_real_p (gimple *stmt, int depth)
+{
+  for (unsigned i = 0; i < gimple_phi_num_args (stmt); ++i)
+    {
+      tree arg = gimple_phi_arg_def (stmt, i);
+      if (!integer_valued_real_single_p (arg, depth + 1))
+	return false;
+    }
+  return true;
+}
+
+/* Return true if the floating-point value computed by STMT is known
+   to have an integer value.  We also allow +Inf, -Inf and NaN to be
+   considered integer values.
+
+   DEPTH is the current nesting depth of the query.  */
+
+bool
+gimple_stmt_integer_valued_real_p (gimple *stmt, int depth)
+{
+  switch (gimple_code (stmt))
+    {
+    case GIMPLE_ASSIGN:
+      return gimple_assign_integer_valued_real_p (stmt, depth);
+    case GIMPLE_CALL:
+      return gimple_call_integer_valued_real_p (stmt, depth);
+    case GIMPLE_PHI:
+      return gimple_phi_integer_valued_real_p (stmt, depth);
     default:
       return false;
     }

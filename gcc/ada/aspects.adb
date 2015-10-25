@@ -505,6 +505,7 @@ package body Aspects is
     Aspect_Attach_Handler               => Aspect_Attach_Handler,
     Aspect_Bit_Order                    => Aspect_Bit_Order,
     Aspect_Component_Size               => Aspect_Component_Size,
+    Aspect_Constant_After_Elaboration   => Aspect_Constant_After_Elaboration,
     Aspect_Constant_Indexing            => Aspect_Constant_Indexing,
     Aspect_Contract_Cases               => Aspect_Contract_Cases,
     Aspect_Convention                   => Aspect_Convention,
@@ -609,6 +610,7 @@ package body Aspects is
     Aspect_Volatile                     => Aspect_Volatile,
     Aspect_Volatile_Components          => Aspect_Volatile_Components,
     Aspect_Volatile_Full_Access         => Aspect_Volatile_Full_Access,
+    Aspect_Volatile_Function            => Aspect_Volatile_Function,
     Aspect_Warnings                     => Aspect_Warnings,
     Aspect_Write                        => Aspect_Write);
 

@@ -707,7 +707,10 @@ graphite_create_new_loop_guard (edge entry_edge,
       cond_expr = fold_build2 (LT_EXPR, boolean_type_node, *lb, ub_one);
     }
 
-  exit_edge = create_empty_if_region_on_edge (entry_edge, cond_expr);
+  if (integer_onep (cond_expr))
+    exit_edge = entry_edge;
+  else
+    exit_edge = create_empty_if_region_on_edge (entry_edge, cond_expr);
 
   return exit_edge;
 }
@@ -723,10 +726,14 @@ translate_isl_ast_node_for (loop_p context_loop, __isl_keep isl_ast_node *node,
   tree type, lb, ub;
   edge last_e = graphite_create_new_loop_guard (next_e, node, &type,
 						&lb, &ub, ip);
-  edge true_e = get_true_edge_from_guard_bb (next_e->dest);
 
-  translate_isl_ast_for_loop (context_loop, node, true_e,
-			      type, lb, ub, ip);
+  if (last_e == next_e)
+    /* There was no guard generated.  */
+    return translate_isl_ast_for_loop (context_loop, node, last_e,
+				       type, lb, ub, ip);
+
+  edge true_e = get_true_edge_from_guard_bb (next_e->dest);
+  translate_isl_ast_for_loop (context_loop, node, true_e, type, lb, ub, ip);
   return last_e;
 }
 
@@ -786,10 +793,10 @@ translate_isl_ast_node_user (__isl_keep isl_ast_node *node,
   iv_map.create (nb_loops);
   iv_map.safe_grow_cleared (nb_loops);
 
-  build_iv_mapping (iv_map, gbb, user_expr, ip, pbb->scop->region->region);
+  build_iv_mapping (iv_map, gbb, user_expr, ip, pbb->scop->scop_info->region);
   isl_ast_expr_free (user_expr);
   next_e = copy_bb_and_scalar_dependences (GBB_BB (gbb),
-					   pbb->scop->region, next_e,
+					   pbb->scop->scop_info, next_e,
 					   iv_map,
 					   &graphite_regenerate_error);
   iv_map.release ();
@@ -909,7 +916,7 @@ print_isl_ast_node (FILE *file, __isl_keep isl_ast_node *node,
 static void
 add_parameters_to_ivs_params (scop_p scop, ivs_params &ip)
 {
-  sese_info_p region = scop->region;
+  sese_info_p region = scop->scop_info;
   unsigned nb_parameters = isl_set_dim (scop->param_context, isl_dim_param);
   gcc_assert (nb_parameters == SESE_PARAMS (region).length ());
   unsigned i;
@@ -1144,7 +1151,7 @@ bool
 graphite_regenerate_ast_isl (scop_p scop)
 {
   loop_p context_loop;
-  sese_info_p region = scop->region;
+  sese_info_p region = scop->scop_info;
   ifsese if_region = NULL;
   isl_ast_node *root_node;
   ivs_params ip;

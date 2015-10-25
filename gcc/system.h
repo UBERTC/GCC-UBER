@@ -714,9 +714,10 @@ extern void fancy_abort (const char *, int, const char *) ATTRIBUTE_NORETURN;
 #define gcc_assert(EXPR) ((void)(0 && (EXPR)))
 #endif
 
-#ifdef ENABLE_CHECKING
+#if CHECKING_P
 #define gcc_checking_assert(EXPR) gcc_assert (EXPR)
 #else
+/* N.B.: in release build EXPR is not evaluated.  */
 #define gcc_checking_assert(EXPR) ((void)(0 && (EXPR)))
 #endif
 

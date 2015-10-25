@@ -1174,6 +1174,9 @@ package body Exp_Unst is
                      --  Now we can insert the AREC declarations into the body
 
                      --  type ARECnT is record .. end record;
+                     --  pragma Suppress_Initialization (ARECnT);
+                     --  Note that we need to set the Suppress_Initialization
+                     --  flag after Decl_ARECnT has been analyzed.
 
                      Decl_ARECnT :=
                        Make_Full_Type_Declaration (Loc,
@@ -1258,12 +1261,20 @@ package body Exp_Unst is
 
                      Push_Scope (STJ.Ent);
                      Analyze (Decl_ARECnT,  Suppress => All_Checks);
+
+                     --  Note that we need to call Set_Suppress_Initialization
+                     --  after Decl_ARECnT has been analyzed, but before
+                     --  analyzing Decl_ARECnP so that the flag is properly
+                     --  taking into account.
+
+                     Set_Suppress_Initialization (STJ.ARECnT);
+
                      Analyze (Decl_ARECnPT, Suppress => All_Checks);
                      Analyze (Decl_ARECn,   Suppress => All_Checks);
                      Analyze (Decl_ARECnP,  Suppress => All_Checks);
 
                      if Present (Decl_Assign) then
-                        Analyze (Decl_Assign,  Suppress => All_Checks);
+                        Analyze (Decl_Assign, Suppress => All_Checks);
                      end if;
 
                      Pop_Scope;

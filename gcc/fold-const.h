@@ -107,7 +107,6 @@ extern tree build_fold_addr_expr_loc (location_t, tree);
         build_fold_addr_expr_with_type_loc (UNKNOWN_LOCATION, (T), TYPE)
 extern tree build_fold_addr_expr_with_type_loc (location_t, tree, tree);
 extern tree fold_build_cleanup_point_expr (tree type, tree expr);
-extern tree fold_strip_sign_ops (tree);
 #define build_fold_indirect_ref(T)\
         build_fold_indirect_ref_loc (UNKNOWN_LOCATION, T)
 extern tree build_fold_indirect_ref_loc (location_t, tree);
@@ -139,6 +138,12 @@ extern bool tree_binary_nonnegative_warnv_p (enum tree_code, tree, tree, tree,
 extern bool tree_single_nonnegative_warnv_p (tree, bool *, int);
 extern bool tree_call_nonnegative_warnv_p (tree, tree, tree, tree, bool *,
 					   int);
+
+extern bool integer_valued_real_unary_p (tree_code, tree, int);
+extern bool integer_valued_real_binary_p (tree_code, tree, tree, int);
+extern bool integer_valued_real_call_p (tree, tree, tree, int);
+extern bool integer_valued_real_single_p (tree, int);
+extern bool integer_valued_real_p (tree, int = 0);
 
 extern bool fold_real_zero_addition_p (const_tree, const_tree, int);
 extern tree combine_comparisons (location_t, enum tree_code, enum tree_code,
@@ -173,6 +178,7 @@ extern tree sign_bit_p (tree, const_tree);
 extern tree exact_inverse (tree, tree);
 extern tree const_unop (enum tree_code, tree, tree);
 extern tree const_binop (enum tree_code, tree, tree, tree);
+extern bool negate_mathfn_p (enum built_in_function);
 
 /* Return OFF converted to a pointer offset type suitable as offset for
    POINTER_PLUS_EXPR.  Use location LOC for this conversion.  */

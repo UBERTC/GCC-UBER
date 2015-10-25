@@ -3465,10 +3465,10 @@ verify_gimple_comparison (tree type, tree op0, tree op1)
           return true;
         }
     }
-  /* Or an integer vector type with the same size and element count
+  /* Or a boolean vector type with the same element count
      as the comparison operand types.  */
   else if (TREE_CODE (type) == VECTOR_TYPE
-	   && TREE_CODE (TREE_TYPE (type)) == INTEGER_TYPE)
+	   && TREE_CODE (TREE_TYPE (type)) == BOOLEAN_TYPE)
     {
       if (TREE_CODE (op0_type) != VECTOR_TYPE
 	  || TREE_CODE (op1_type) != VECTOR_TYPE)
@@ -3479,12 +3479,7 @@ verify_gimple_comparison (tree type, tree op0, tree op1)
           return true;
         }
 
-      if (TYPE_VECTOR_SUBPARTS (type) != TYPE_VECTOR_SUBPARTS (op0_type)
-	  || (GET_MODE_SIZE (TYPE_MODE (TREE_TYPE (type)))
-	      != GET_MODE_SIZE (TYPE_MODE (TREE_TYPE (op0_type))))
-	  /* The result of a vector comparison is of signed
-	     integral type.  */
-	  || TYPE_UNSIGNED (TREE_TYPE (type)))
+      if (TYPE_VECTOR_SUBPARTS (type) != TYPE_VECTOR_SUBPARTS (op0_type))
         {
           error ("invalid vector comparison resulting type");
           debug_generic_expr (type);
@@ -3971,15 +3966,13 @@ verify_gimple_assign_ternary (gassign *stmt)
       break;
 
     case VEC_COND_EXPR:
-      if (!VECTOR_INTEGER_TYPE_P (rhs1_type)
-	  || TYPE_SIGN (rhs1_type) != SIGNED
-	  || TYPE_SIZE (rhs1_type) != TYPE_SIZE (lhs_type)
+      if (!VECTOR_BOOLEAN_TYPE_P (rhs1_type)
 	  || TYPE_VECTOR_SUBPARTS (rhs1_type)
 	     != TYPE_VECTOR_SUBPARTS (lhs_type))
 	{
-	  error ("the first argument of a VEC_COND_EXPR must be of a signed "
-		 "integral vector type of the same size and number of "
-		 "elements as the result");
+	  error ("the first argument of a VEC_COND_EXPR must be of a "
+		 "boolean vector type of the same number of elements "
+		 "as the result");
 	  debug_generic_expr (lhs_type);
 	  debug_generic_expr (rhs1_type);
 	  return true;
@@ -8531,6 +8524,75 @@ extract_true_false_edges_from_block (basic_block b,
       *true_edge = EDGE_SUCC (b, 1);
     }
 }
+
+
+/* From a controlling predicate in the immediate dominator DOM of
+   PHIBLOCK determine the edges into PHIBLOCK that are chosen if the
+   predicate evaluates to true and false and store them to
+   *TRUE_CONTROLLED_EDGE and *FALSE_CONTROLLED_EDGE if
+   they are non-NULL.  Returns true if the edges can be determined,
+   else return false.  */
+
+bool
+extract_true_false_controlled_edges (basic_block dom, basic_block phiblock,
+				     edge *true_controlled_edge,
+				     edge *false_controlled_edge)
+{
+  basic_block bb = phiblock;
+  edge true_edge, false_edge, tem;
+  edge e0 = NULL, e1 = NULL;
+
+  /* We have to verify that one edge into the PHI node is dominated
+     by the true edge of the predicate block and the other edge
+     dominated by the false edge.  This ensures that the PHI argument
+     we are going to take is completely determined by the path we
+     take from the predicate block.
+     We can only use BB dominance checks below if the destination of
+     the true/false edges are dominated by their edge, thus only
+     have a single predecessor.  */
+  extract_true_false_edges_from_block (dom, &true_edge, &false_edge);
+  tem = EDGE_PRED (bb, 0);
+  if (tem == true_edge
+      || (single_pred_p (true_edge->dest)
+	  && (tem->src == true_edge->dest
+	      || dominated_by_p (CDI_DOMINATORS,
+				 tem->src, true_edge->dest))))
+    e0 = tem;
+  else if (tem == false_edge
+	   || (single_pred_p (false_edge->dest)
+	       && (tem->src == false_edge->dest
+		   || dominated_by_p (CDI_DOMINATORS,
+				      tem->src, false_edge->dest))))
+    e1 = tem;
+  else
+    return false;
+  tem = EDGE_PRED (bb, 1);
+  if (tem == true_edge
+      || (single_pred_p (true_edge->dest)
+	  && (tem->src == true_edge->dest
+	      || dominated_by_p (CDI_DOMINATORS,
+				 tem->src, true_edge->dest))))
+    e0 = tem;
+  else if (tem == false_edge
+	   || (single_pred_p (false_edge->dest)
+	       && (tem->src == false_edge->dest
+		   || dominated_by_p (CDI_DOMINATORS,
+				      tem->src, false_edge->dest))))
+    e1 = tem;
+  else
+    return false;
+  if (!e0 || !e1)
+    return false;
+
+  if (true_controlled_edge)
+    *true_controlled_edge = e0;
+  if (false_controlled_edge)
+    *false_controlled_edge = e1;
+
+  return true;
+}
+
+
 
 /* Emit return warnings.  */
 

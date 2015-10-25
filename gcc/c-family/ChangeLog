@@ -1,3 +1,57 @@
+2015-10-21  Martin Sebor  <msebor@redhat.com>
+
+	PR driver/68043
+	* c.opt: End each sentence that describes an option with a period.
+
+2015-10-20  Marek Polacek  <polacek@redhat.com>
+
+	* array-notation-common.c (is_cilkplus_vector_p): Define.
+	* c-common.h (is_cilkplus_vector_p): Declare.
+
+2015-10-20  Marek Polacek  <polacek@redhat.com>
+
+	* c.opt (std=gnu++11): Do not describe as experimental.
+	(std=gnu++14): Likewise.
+
+2015-10-19  Jason Merrill  <jason@redhat.com>
+
+	* c-cppbuiltin.c (c_cpp_builtins): Define
+	__cpp_nontype_template_args.
+
+2015-10-19  Jason Merrill  <jason@redhat.com>
+
+	* c-cppbuiltin.c (c_cpp_builtins): Define
+	__cpp_enumerator_attributes, __cpp_fold_expressions,
+	__cpp_unicode_characters.
+
+2015-10-13  Jakub Jelinek  <jakub@redhat.com>
+	    Aldy Hernandez  <aldyh@redhat.com>
+
+	* c-common.c (enum c_builtin_type): Define DEF_FUNCTION_TYPE_9,
+	DEF_FUNCTION_TYPE_10 and DEF_FUNCTION_TYPE_11.
+	(c_define_builtins): Likewise.
+	* c-common.h (enum c_omp_clause_split): Add
+	C_OMP_CLAUSE_SPLIT_TASKLOOP.
+	(c_finish_omp_critical, c_finish_omp_ordered): Add CLAUSES argument.
+	(c_finish_omp_for): Add ORIG_DECLV argument.
+	* c-cppbuiltin.c (c_cpp_builtins): Predefine _OPENMP as
+	201511 instead of 201307.
+	* c-omp.c (c_finish_omp_critical): Add CLAUSES argument, set
+	OMP_CRITICAL_CLAUSES to it.
+	(c_finish_omp_ordered): Add CLAUSES argument, set
+	OMP_ORDERED_CLAUSES to it.
+	(c_finish_omp_for): Add ORIG_DECLV argument, set OMP_FOR_ORIG_DECLS
+	to it if OMP_FOR.  Clear DECL_INITIAL on the IVs.
+	(c_omp_split_clauses): Handle OpenMP 4.5 combined/composite
+	constructs and new OpenMP 4.5 clauses.  Clear
+	OMP_CLAUSE_SCHEDULE_SIMD if not combined with OMP_SIMD.  Add
+	verification code.
+	* c-pragma.c (omp_pragmas_simd): Add taskloop.
+	* c-pragma.h (enum pragma_kind): Add PRAGMA_OMP_TASKLOOP.
+	(enum pragma_omp_clause): Add
+	PRAGMA_OMP_CLAUSE_{DEFAULTMAP,GRAINSIZE,HINT,{IS,USE}_DEVICE_PTR}
+	and PRAGMA_OMP_CLAUSE_{LINK,NOGROUP,NUM_TASKS,PRIORITY,SIMD,THREADS}.
+
 2015-10-05  Richard Sandiford  <richard.sandiford@arm.com>
 
 	* c-lex.c (interpret_float): Use real_equal instead of
@@ -393,7 +447,7 @@
 	(c_alignof_expr): Likewise.
 	* c-pretty-print.c (c_pretty_printer::postfix_expression): Likewise.
 	* c-ubsan.c (ubsan_instrument_bounds): Likewise.
-	* cilk.c (create_parm_list): Likewise. 
+	* cilk.c (create_parm_list): Likewise.
 
 2015-06-26  Marek Polacek  <polacek@redhat.com>
 
@@ -583,7 +637,7 @@
 	STACK_GROWS_DOWNWARD rather than if it is defined.
 
 2015-05-21  Manuel López-Ibáñez  <manu@gcc.gnu.org>
-	
+
 	PR c/52952
 	* c-format.c (location_column_from_byte_offset): New.
 	(location_from_offset): New.
@@ -866,7 +920,7 @@
 2015-01-21  Jakub Jelinek  <jakub@redhat.com>
 
 	PR c/63307
-	* cilk.c (fill_decls_vec): Only put decls into vector v.                                                                                   
+	* cilk.c (fill_decls_vec): Only put decls into vector v.
 	(compare_decls): Fix up formatting.
 
 2015-01-21  Igor Zamyatin  <igor.zamyatin@intel.com>
@@ -1674,7 +1728,7 @@
 
 2014-07-03  Jakub Jelinek  <jakub@redhat.com>
 
-	* c-ada-spec.c (dump_ada_nodes): Don't call qsort if 
+	* c-ada-spec.c (dump_ada_nodes): Don't call qsort if
 	comments->count <= 1, as comments->entries might be NULL.
 
 2014-07-01  Marek Polacek  <polacek@redhat.com>
@@ -2200,7 +2254,7 @@
 	PRAGMA_CILK_CLAUSE_FIRSTPRIVATE, PRAGMA_CILK_CLAUSE_LASTPRIVATE,
 	PRAGMA_CILK_CLAUSE_UNIFORM.
 
-	
+
 2013-12-11  Balaji V. Iyer  <balaji.v.iyer@intel.com>
 
 	* cilk.c (cilk_outline): Made this function non-static.
@@ -2236,7 +2290,7 @@
 	* c-common.h (c_sizeof_or_alignof_type): Update prototype.
 	(c_sizeof, c_alignof): Update calls to c_sizeof_or_alignof_type.
 
-2013-12-04  Jakub Jelinek  <jakub@redhat.com>  
+2013-12-04  Jakub Jelinek  <jakub@redhat.com>
 	    Marek Polacek  <polacek@redhat.com>
 
 	* c-gimplify.c (c_gimplify_expr): If doing the integer-overflow
@@ -4910,7 +4964,7 @@
 	* c-common.h (objc_add_property_variable): Renamed to
 	objc_add_property_declaration.  Added location argument.
 	* stub-objc.c (objc_add_property_variable): Same change.
-	
+
 2010-10-23  Nicola Pero  <nicola.pero@meta-innovation.com>
 
 	* c-common.h (objc_maybe_printable_name): New.

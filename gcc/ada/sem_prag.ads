@@ -45,6 +45,7 @@ package Sem_Prag is
       Pragma_Atomic                       => True,
       Pragma_Atomic_Components            => True,
       Pragma_Attach_Handler               => True,
+      Pragma_Constant_After_Elaboration   => True,
       Pragma_Contract_Cases               => True,
       Pragma_Convention                   => True,
       Pragma_CPU                          => True,
@@ -171,7 +172,7 @@ package Sem_Prag is
    --  Analyze procedure for pragma reference node N
 
    procedure Analyze_Contract_Cases_In_Decl_Part (N : Node_Id);
-   --  Perform full analysis and expansion of delayed pragma Contract_Cases
+   --  Perform full analysis of delayed pragma Contract_Cases
 
    procedure Analyze_Depends_In_Decl_Part (N : Node_Id);
    --  Perform full analysis of delayed pragma Depends. This routine is also
@@ -208,11 +209,26 @@ package Sem_Prag is
    --  uses Analyze_Global_In_Decl_Part as a starting point, then performs
    --  various consistency checks between Global and Refined_Global.
 
-   procedure Analyze_Refined_State_In_Decl_Part (N : Node_Id);
-   --  Perform full analysis of delayed pragma Refined_State
+   procedure Analyze_Refined_State_In_Decl_Part
+     (N         : Node_Id;
+      Freeze_Id : Entity_Id := Empty);
+   --  Perform full analysis of delayed pragma Refined_State. Freeze_Id denotes
+   --  the entity of [generic] package body or [generic] subprogram body which
+   --  caused "freezing" of the related contract where the pragma resides.
 
    procedure Analyze_Test_Case_In_Decl_Part (N : Node_Id);
    --  Perform preanalysis of pragma Test_Case
+
+   procedure Build_Generic_Class_Condition
+     (Subp : Entity_Id;
+      Prag : Node_Id);
+   --  AI12-113 modifies the semantics of classwide pre- and postconditions,
+   --  as well as type invariants, so that the expression used in an inherited
+   --  operation uses the actual type and is statically bound, rather than
+   --  using T'Class and dispatching. This new semantics is implemented by
+   --  building a generic function for the corresponding condition and
+   --  instantiating it for each descendant type. Checking the condition is
+   --  implemented as a call to that instantiation.
 
    procedure Check_Applicable_Policy (N : Node_Id);
    --  N is either an N_Aspect or an N_Pragma node. There are two cases. If
@@ -362,6 +378,23 @@ package Sem_Prag is
    function Is_Elaboration_SPARK_Mode (N : Node_Id) return Boolean;
    --  Determine whether pragma SPARK_Mode appears in the statement part of a
    --  package body.
+
+   function Is_Enabled_Pragma (Prag : Node_Id) return Boolean;
+   --  Determine whether a Boolean-like SPARK pragma Prag is enabled. To be
+   --  considered enabled, the pragma must either:
+   --    * Appear without its Boolean expression
+   --    * The Boolean expression evaluates to "True"
+   --
+   --  Boolean-like SPARK pragmas differ from pure Boolean Ada pragmas in that
+   --  their optional Boolean expression must be static and cannot benefit from
+   --  forward references. The following are Boolean-like SPARK pragmas:
+   --    Async_Readers
+   --    Async_Writers
+   --    Constant_After_Elaboration
+   --    Effective_Reads
+   --    Effective_Writes
+   --    Extensions_Visible
+   --    Volatile_Function
 
    function Is_Non_Significant_Pragma_Reference (N : Node_Id) return Boolean;
    --  The node N is a node for an entity and the issue is whether the

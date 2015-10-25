@@ -2626,11 +2626,11 @@ address of the stack word that points to the previous frame.
 @end defmac
 
 @defmac SETUP_FRAME_ADDRESSES
-If defined, a C expression that produces the machine-specific code to
+A C expression that produces the machine-specific code to
 setup the stack so that arbitrary frames can be accessed.  For example,
 on the SPARC, we must flush all of the register windows to the stack
 before we can access arbitrary stack frames.  You will seldom need to
-define this macro.
+define this macro.  The default is to do nothing.
 @end defmac
 
 @hook TARGET_BUILTIN_SETJMP_FRAME_VALUE
@@ -4224,6 +4224,8 @@ address;  but often a machine-dependent strategy can generate better code.
 @hook TARGET_VECTORIZE_PREFERRED_SIMD_MODE
 
 @hook TARGET_VECTORIZE_AUTOVECTORIZE_VECTOR_SIZES
+
+@hook TARGET_VECTORIZE_GET_MASK_MODE
 
 @hook TARGET_VECTORIZE_INIT_COST
 
@@ -7273,6 +7275,8 @@ on this implementation detail.
 @hook TARGET_OPTION_FUNCTION_VERSIONS
 
 @hook TARGET_CAN_INLINE_P
+
+@hook TARGET_RELAYOUT_FUNCTION
 
 @node Emulated TLS
 @section Emulating TLS

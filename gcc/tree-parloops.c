@@ -58,6 +58,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "cgraph.h"
 #include "tree-ssa.h"
 #include "params.h"
+#include "params-enum.h"
 
 /* This pass tries to distribute iterations of loops into several threads.
    The implementation is straightforward -- for each loop we test whether its
@@ -237,9 +238,14 @@ reduction_phi (reduction_info_table_type *reduction_list, gimple *phi)
   if (reduction_list->elements () == 0 || phi == NULL)
     return NULL;
 
+  if (gimple_uid (phi) == (unsigned int)-1
+      || gimple_uid (phi) == 0)
+    return NULL;
+
   tmpred.reduc_phi = phi;
   tmpred.reduc_version = gimple_uid (phi);
   red = reduction_list->find (&tmpred);
+  gcc_assert (red == NULL || red->reduc_phi == phi);
 
   return red;
 }
@@ -534,7 +540,7 @@ take_address_of (tree obj, tree type, edge entry,
   if (gsi == NULL)
     return build_fold_addr_expr_with_type (obj, type);
 
-  name = force_gimple_operand (build_addr (obj, current_function_decl),
+  name = force_gimple_operand (build_addr (obj),
 			       &stmts, true, NULL_TREE);
   if (!gimple_seq_empty_p (stmts))
     gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
@@ -1088,7 +1094,7 @@ create_call_for_reduction_1 (reduction_info **slot, struct clsn_data *clsn_data)
   load_struct = build_simple_mem_ref (clsn_data->load);
   t = build3 (COMPONENT_REF, type, load_struct, reduc->field, NULL_TREE);
 
-  addr = build_addr (t, current_function_decl);
+  addr = build_addr (t);
 
   /* Create phi node.  */
   bb = clsn_data->load_bb;
@@ -2086,8 +2092,31 @@ create_parallel_loop (struct loop *loop, tree loop_fn, tree data,
   gimple_cond_set_lhs (cond_stmt, cvar_base);
   type = TREE_TYPE (cvar);
   t = build_omp_clause (loc, OMP_CLAUSE_SCHEDULE);
-  OMP_CLAUSE_SCHEDULE_KIND (t) = OMP_CLAUSE_SCHEDULE_STATIC;
   int chunk_size = PARAM_VALUE (PARAM_PARLOOPS_CHUNK_SIZE);
+  enum PARAM_PARLOOPS_SCHEDULE_KIND schedule_type \
+    = (enum PARAM_PARLOOPS_SCHEDULE_KIND) PARAM_VALUE (PARAM_PARLOOPS_SCHEDULE);
+  switch (schedule_type)
+    {
+    case PARAM_PARLOOPS_SCHEDULE_KIND_static:
+      OMP_CLAUSE_SCHEDULE_KIND (t) = OMP_CLAUSE_SCHEDULE_STATIC;
+      break;
+    case PARAM_PARLOOPS_SCHEDULE_KIND_dynamic:
+      OMP_CLAUSE_SCHEDULE_KIND (t) = OMP_CLAUSE_SCHEDULE_DYNAMIC;
+      break;
+    case PARAM_PARLOOPS_SCHEDULE_KIND_guided:
+      OMP_CLAUSE_SCHEDULE_KIND (t) = OMP_CLAUSE_SCHEDULE_GUIDED;
+      break;
+    case PARAM_PARLOOPS_SCHEDULE_KIND_auto:
+      OMP_CLAUSE_SCHEDULE_KIND (t) = OMP_CLAUSE_SCHEDULE_AUTO;
+      chunk_size = 0;
+      break;
+    case PARAM_PARLOOPS_SCHEDULE_KIND_runtime:
+      OMP_CLAUSE_SCHEDULE_KIND (t) = OMP_CLAUSE_SCHEDULE_RUNTIME;
+      chunk_size = 0;
+      break;
+    default:
+      gcc_unreachable ();
+    }
   if (chunk_size != 0)
     OMP_CLAUSE_SCHEDULE_CHUNK_EXPR (t)
       = build_int_cst (integer_type_node, chunk_size);
@@ -2392,6 +2421,9 @@ gather_scalar_reductions (loop_p loop, reduction_info_table_type *reduction_list
   loop_vec_info simple_inner_loop_info = NULL;
   bool allow_double_reduc = true;
 
+  if (!stmt_vec_info_vec.exists ())
+    init_stmt_vec_info_vec ();
+
   simple_loop_info = vect_analyze_loop_form (loop);
   if (simple_loop_info == NULL)
     return;
@@ -2453,9 +2485,16 @@ gather_scalar_reductions (loop_p loop, reduction_info_table_type *reduction_list
   destroy_loop_vec_info (simple_loop_info, true);
   destroy_loop_vec_info (simple_inner_loop_info, true);
 
+  /* Release the claim on gimple_uid.  */
+  free_stmt_vec_info_vec ();
+
   /* As gimple_uid is used by the vectorizer in between vect_analyze_loop_form
-     and destroy_loop_vec_info, we can set gimple_uid of reduc_phi stmts
-     only now.  */
+     and free_stmt_vec_info_vec, we can set gimple_uid of reduc_phi stmts only
+     now.  */
+  basic_block bb;
+  FOR_EACH_BB_FN (bb, cfun)
+    for (gsi = gsi_start_phis (bb); !gsi_end_p (gsi); gsi_next (&gsi))
+      gimple_set_uid (gsi_stmt (gsi), (unsigned int)-1);
   reduction_list->traverse <void *, set_reduc_phi_uids> (NULL);
 }
 
@@ -2603,7 +2642,6 @@ parallelize_loops (void)
 
   gcc_obstack_init (&parloop_obstack);
   reduction_info_table_type reduction_list (10);
-  init_stmt_vec_info_vec ();
 
   FOR_EACH_LOOP (loop, 0)
     {
@@ -2695,7 +2733,6 @@ parallelize_loops (void)
 			 n_threads, &niter_desc);
     }
 
-  free_stmt_vec_info_vec ();
   obstack_free (&parloop_obstack, NULL);
 
   /* Parallelization will cause new function calls to be inserted through

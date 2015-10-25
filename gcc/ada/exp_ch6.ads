@@ -41,12 +41,6 @@ package Exp_Ch6 is
    --  This procedure contains common processing for Expand_N_Function_Call,
    --  Expand_N_Procedure_Statement, and Expand_N_Entry_Call.
 
-   procedure Expand_Subprogram_Contract (N : Node_Id);
-   --  Expand the contracts of a subprogram body and its correspoding spec (if
-   --  any). This routine processes all [refined] pre- and postconditions as
-   --  well as Contract_Cases, invariants and predicates. N denotes the body of
-   --  the subprogram.
-
    procedure Freeze_Subprogram (N : Node_Id);
    --  generate the appropriate expansions related to Subprogram freeze
    --  nodes (e.g. the filling of the corresponding Dispatch Table for
@@ -178,7 +172,7 @@ package Exp_Ch6 is
    --  call.
 
    procedure Make_Build_In_Place_Call_In_Object_Declaration
-     (Object_Decl   : Node_Id;
+     (Obj_Decl      : Node_Id;
       Function_Call : Node_Id);
    --  Ada 2005 (AI-318-02): Handle a call to a build-in-place function that
    --  occurs as the expression initializing an object declaration by

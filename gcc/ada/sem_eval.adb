@@ -52,7 +52,6 @@ with Sinfo;    use Sinfo;
 with Snames;   use Snames;
 with Stand;    use Stand;
 with Stringt;  use Stringt;
-with Targparm; use Targparm;
 with Tbuild;   use Tbuild;
 
 package body Sem_Eval is
@@ -2221,7 +2220,7 @@ package body Sem_Eval is
          --  case of a concatenation of a series of string literals.
 
          if Nkind (Left_Str) = N_String_Literal then
-            Left_Len :=  String_Length (Strval (Left_Str));
+            Left_Len := String_Length (Strval (Left_Str));
 
             --  If the left operand is the empty string, and the right operand
             --  is a string literal (the case of "" & "..."), the result is the
@@ -5435,7 +5434,7 @@ package body Sem_Eval is
       --  Case where call to predicate function appears on its own (this means
       --  that the predicate at this level is just inherited from the parent).
 
-      elsif Nkind (Expr) =  N_Function_Call then
+      elsif Nkind (Expr) = N_Function_Call then
          declare
             Typ : constant Entity_Id :=
                     Etype (First_Formal (Entity (Name (Expr))));
@@ -6238,12 +6237,6 @@ package body Sem_Eval is
         and then Is_Known_Valid (Typ)
         and then Esize (Etype (N)) <= Esize (Typ)
         and then not Has_Biased_Representation (Etype (N))
-
-        --  This check cannot be disabled under VM targets because in some
-        --  unusual cases the backend of the native compiler raises a run-time
-        --  exception but the virtual machines do not raise any exception.
-
-        and then VM_Target = No_VM
       then
          return In_Range;
 

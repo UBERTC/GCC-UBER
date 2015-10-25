@@ -1,3 +1,20 @@
+2015-10-23  Joern Rennecke  <joern.rennecke@embecosm.com>
+
+	PR libgcc/66883
+	* config/epiphany/udivsi3-float.c: Fix CONCISE test, and comment typo.
+	
+2015-10-16  Kaushik Phatak  <kaushik.phatak@kpit.com>
+
+	* config/rl78/divmodqi.S: Return 0x00 by default for div by 0.
+	* config/rl78/divmodsi.S: Update return register to r8.
+	* config/rl78/divmodhi.S: Update return register to r8,r9.
+	Branch to main_loop_done_himode to pop registers before return.
+
+2015-10-09  Venkataramanan kumar <venkataramanan.kumar@amd.com>
+
+	* config/i386/cpuinfo.c (get_amd_cpu): Detect bdver4.
+	(__cpu_indicator_init): Fix model selection for AMD CPUs.
+
 2015-10-05  Kirill Yukhin  <kirill.yukhin@intel.com>
 
 	* config/i386/cpuinfo.c (get_intel_cpu): Detect "skylake-avx512".
