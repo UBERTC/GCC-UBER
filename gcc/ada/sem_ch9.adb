@@ -57,7 +57,6 @@ with Snames;   use Snames;
 with Stand;    use Stand;
 with Sinfo;    use Sinfo;
 with Style;
-with Targparm; use Targparm;
 with Tbuild;   use Tbuild;
 with Uintp;    use Uintp;
 
@@ -782,7 +781,7 @@ package body Sem_Ch9 is
       for J in reverse 0 .. Scope_Stack.Last loop
          Task_Nam := Scope_Stack.Table (J).Entity;
          exit when Ekind (Etype (Task_Nam)) = E_Task_Type;
-         Kind :=  Ekind (Task_Nam);
+         Kind := Ekind (Task_Nam);
 
          if Kind /= E_Block and then Kind /= E_Loop
            and then not Is_Entry (Task_Nam)
@@ -1194,7 +1193,7 @@ package body Sem_Ch9 is
       Tasking_Used := True;
 
       --  Entry_Name is initialized to Any_Id. It should get reset to the
-      --  matching entry entity. An error is signalled if it is not reset
+      --  matching entry entity. An error is signalled if it is not reset.
 
       Entry_Name := Any_Id;
 
@@ -1312,7 +1311,7 @@ package body Sem_Ch9 is
       --  The entity for the protected subprogram corresponding to the entry
       --  has been created. We retain the name of this entity in the entry
       --  body, for use when the corresponding subprogram body is created.
-      --  Note that entry bodies have no corresponding_spec, and there is no
+      --  Note that entry bodies have no Corresponding_Spec, and there is no
       --  easy link back in the tree between the entry body and the entity for
       --  the entry itself, which is why we must propagate some attributes
       --  explicitly from spec to body.
@@ -1739,7 +1738,7 @@ package body Sem_Ch9 is
       --  are no language-defined aspects that apply to a protected body, it is
       --  not worth changing the whole expansion to accomodate implementation-
       --  defined aspects. Plus we cannot possibly known the semantics of such
-      --  future implementation defined aspects in order to plan ahead.
+      --  future implementation-defined aspects in order to plan ahead.
 
       if Has_Aspects (N) then
          Error_Msg_N
@@ -2367,12 +2366,6 @@ package body Sem_Ch9 is
          Generate_Reference (Entry_Id, Entry_Name);
 
          if Present (First_Formal (Entry_Id)) then
-            if VM_Target = JVM_Target then
-               Error_Msg_N
-                 ("arguments unsupported in requeue statement",
-                  First_Formal (Entry_Id));
-               return;
-            end if;
 
             --  Ada 2012 (AI05-0030): Perform type conformance after skipping
             --  the first parameter of Entry_Id since it is the interface

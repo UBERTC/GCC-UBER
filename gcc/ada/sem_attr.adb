@@ -388,8 +388,8 @@ package body Sem_Attr is
       --  itself of the form of a library unit name. Note that this is
       --  quite different from Check_Program_Unit, since it only checks
       --  the syntactic form of the name, not the semantic identity. This
-      --  is because it is used with attributes (Elab_Body, Elab_Spec,
-      --  UET_Address and Elaborated) which can refer to non-visible unit.
+      --  is because it is used with attributes (Elab_Body, Elab_Spec and
+      --  Elaborated) which can refer to non-visible unit.
 
       procedure Error_Attr (Msg : String; Error_Node : Node_Id);
       pragma No_Return (Error_Attr);
@@ -1531,7 +1531,7 @@ package body Sem_Attr is
                  ("expression for dimension must be static!", E1);
                Error_Attr;
 
-            elsif  UI_To_Int (Expr_Value (E1)) > D
+            elsif UI_To_Int (Expr_Value (E1)) > D
               or else UI_To_Int (Expr_Value (E1)) < 1
             then
                Error_Attr ("invalid dimension number for array type", E1);
@@ -2675,7 +2675,6 @@ package body Sem_Attr is
       if Aname /= Name_Elab_Body       and then
          Aname /= Name_Elab_Spec       and then
          Aname /= Name_Elab_Subp_Body  and then
-         Aname /= Name_UET_Address     and then
          Aname /= Name_Enabled         and then
          Aname /= Name_Old
       then
@@ -3866,7 +3865,7 @@ package body Sem_Attr is
          Check_E0;
          Analyze (P);
 
-         if Etype (P) =  Standard_Exception_Type then
+         if Etype (P) = Standard_Exception_Type then
             Set_Etype (N, RTE (RE_Exception_Id));
 
          --  Ada 2005 (AI-345): Attribute 'Identity may be applied to task
@@ -4284,10 +4283,13 @@ package body Sem_Attr is
 
             --  Locate the enclosing loop (if any). Note that Ada 2012 array
             --  iteration may be expanded into several nested loops, we are
-            --  interested in the outermost one which has the loop identifier.
+            --  interested in the outermost one which has the loop identifier,
+            --  and comes from source.
 
             elsif Nkind (Stmt) = N_Loop_Statement
               and then Present (Identifier (Stmt))
+              and then Comes_From_Source (Original_Node (Stmt))
+              and then Nkind (Original_Node (Stmt)) = N_Loop_Statement
             then
                Enclosing_Loop := Stmt;
 
@@ -4310,10 +4312,10 @@ package body Sem_Attr is
             Stmt := Parent (Stmt);
          end loop;
 
-            --  Loop_Entry must appear within a Loop_Assertion pragma (Assert,
-            --  Assert_And_Cut, Assume count as loop assertion pragmas for this
-            --  purpose if they appear in an appropriate location in a loop,
-            --  which was already checked by the top level pragma circuit).
+         --  Loop_Entry must appear within a Loop_Assertion pragma (Assert,
+         --  Assert_And_Cut, Assume count as loop assertion pragmas for this
+         --  purpose if they appear in an appropriate location in a loop,
+         --  which was already checked by the top level pragma circuit).
 
          if No (Enclosing_Pragma) then
             Error_Attr ("attribute% must appear within appropriate pragma", N);
@@ -6023,15 +6025,6 @@ package body Sem_Attr is
 
          Analyze_And_Resolve (N, Standard_String);
 
-      -----------------
-      -- UET_Address --
-      -----------------
-
-      when Attribute_UET_Address =>
-         Check_E0;
-         Check_Unit_Name (P);
-         Set_Etype (N, RTE (RE_Address));
-
       -----------------------
       -- Unbiased_Rounding --
       -----------------------
@@ -7216,10 +7209,11 @@ package body Sem_Attr is
          --  We skip evaluation if the expander is not active. This is not just
          --  an optimization. It is of key importance that we not rewrite the
          --  attribute in a generic template, since we want to pick up the
-         --  setting of the check in the instance, and testing expander active
-         --  is as easy way of doing this as any.
+         --  setting of the check in the instance, Testing Expander_Active
+         --  might seem an easy way of doing this, but we need to account for
+         --  ASIS needs, so check explicitly for a generic context.
 
-         if Expander_Active then
+         if not Inside_A_Generic then
             declare
                C : constant Check_Id := Get_Check_Id (Chars (P));
                R : Boolean;
@@ -9707,7 +9701,6 @@ package body Sem_Attr is
            Attribute_Terminated                   |
            Attribute_To_Address                   |
            Attribute_Type_Key                     |
-           Attribute_UET_Address                  |
            Attribute_Unchecked_Access             |
            Attribute_Universal_Literal_String     |
            Attribute_Unrestricted_Access          |
@@ -11056,16 +11049,6 @@ package body Sem_Attr is
 
          when Attribute_Result =>
             null;
-
-         -----------------
-         -- UET_Address --
-         -----------------
-
-         --  Prefix must not be resolved in this case, since it is not a
-         --  real entity reference. No action of any kind is require.
-
-         when Attribute_UET_Address =>
-            return;
 
          ----------------------
          -- Unchecked_Access --

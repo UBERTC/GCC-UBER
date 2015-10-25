@@ -86,6 +86,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "asan.h"
 #include "wide-int-print.h"
 #include "rtl-iter.h"
+#include "print-rtl.h"
 
 #ifdef XCOFF_DEBUGGING_INFO
 #include "xcoffout.h"		/* Needed for external data
@@ -296,7 +297,6 @@ app_disable (void)
    delayed branch sequence (we don't count the insn needing the
    delay slot).   Zero if not in a delayed branch sequence.  */
 
-#ifdef DELAY_SLOTS
 int
 dbr_sequence_length (void)
 {
@@ -305,7 +305,6 @@ dbr_sequence_length (void)
   else
     return 0;
 }
-#endif
 
 /* The next two pages contain routines used to compute the length of an insn
    and to shorten branches.  */
@@ -1155,11 +1154,11 @@ shorten_branches (rtx_insn *first)
 	{
 	  int i;
 	  int const_delay_slots;
-#ifdef DELAY_SLOTS
-	  const_delay_slots = const_num_delay_slots (body_seq->insn (0));
-#else
-	  const_delay_slots = 0;
-#endif
+	  if (DELAY_SLOTS)
+	    const_delay_slots = const_num_delay_slots (body_seq->insn (0));
+	  else
+	    const_delay_slots = 0;
+
 	  int (*inner_length_fun) (rtx_insn *)
 	    = const_delay_slots ? length_fun : insn_default_length;
 	  /* Inside a delay slot sequence, we do not do any branch shortening

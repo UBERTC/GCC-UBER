@@ -280,16 +280,20 @@ unsigned const char omp_clause_num_ops[] =
   1, /* OMP_CLAUSE_SHARED  */
   1, /* OMP_CLAUSE_FIRSTPRIVATE  */
   2, /* OMP_CLAUSE_LASTPRIVATE  */
-  4, /* OMP_CLAUSE_REDUCTION  */
+  5, /* OMP_CLAUSE_REDUCTION  */
   1, /* OMP_CLAUSE_COPYIN  */
   1, /* OMP_CLAUSE_COPYPRIVATE  */
   3, /* OMP_CLAUSE_LINEAR  */
   2, /* OMP_CLAUSE_ALIGNED  */
   1, /* OMP_CLAUSE_DEPEND  */
   1, /* OMP_CLAUSE_UNIFORM  */
+  1, /* OMP_CLAUSE_TO_DECLARE  */
+  1, /* OMP_CLAUSE_LINK  */
   2, /* OMP_CLAUSE_FROM  */
   2, /* OMP_CLAUSE_TO  */
   2, /* OMP_CLAUSE_MAP  */
+  1, /* OMP_CLAUSE_USE_DEVICE_PTR  */
+  1, /* OMP_CLAUSE_IS_DEVICE_PTR  */
   2, /* OMP_CLAUSE__CACHE_  */
   1, /* OMP_CLAUSE_DEVICE_RESIDENT  */
   1, /* OMP_CLAUSE_USE_DEVICE  */
@@ -303,7 +307,7 @@ unsigned const char omp_clause_num_ops[] =
   1, /* OMP_CLAUSE_NUM_THREADS  */
   1, /* OMP_CLAUSE_SCHEDULE  */
   0, /* OMP_CLAUSE_NOWAIT  */
-  0, /* OMP_CLAUSE_ORDERED  */
+  1, /* OMP_CLAUSE_ORDERED  */
   0, /* OMP_CLAUSE_DEFAULT  */
   3, /* OMP_CLAUSE_COLLAPSE  */
   0, /* OMP_CLAUSE_UNTIED   */
@@ -322,6 +326,14 @@ unsigned const char omp_clause_num_ops[] =
   0, /* OMP_CLAUSE_PARALLEL  */
   0, /* OMP_CLAUSE_SECTIONS  */
   0, /* OMP_CLAUSE_TASKGROUP  */
+  1, /* OMP_CLAUSE_PRIORITY  */
+  1, /* OMP_CLAUSE_GRAINSIZE  */
+  1, /* OMP_CLAUSE_NUM_TASKS  */
+  0, /* OMP_CLAUSE_NOGROUP  */
+  0, /* OMP_CLAUSE_THREADS  */
+  0, /* OMP_CLAUSE_SIMD  */
+  1, /* OMP_CLAUSE_HINT  */
+  0, /* OMP_CLAUSE_DEFALTMAP  */
   1, /* OMP_CLAUSE__SIMDUID_  */
   1, /* OMP_CLAUSE__CILK_FOR_COUNT_  */
   0, /* OMP_CLAUSE_INDEPENDENT  */
@@ -346,9 +358,13 @@ const char * const omp_clause_code_name[] =
   "aligned",
   "depend",
   "uniform",
+  "to",
+  "link",
   "from",
   "to",
   "map",
+  "use_device_ptr",
+  "is_device_ptr",
   "_cache_",
   "device_resident",
   "use_device",
@@ -381,6 +397,14 @@ const char * const omp_clause_code_name[] =
   "parallel",
   "sections",
   "taskgroup",
+  "priority",
+  "grainsize",
+  "num_tasks",
+  "nogroup",
+  "threads",
+  "simd",
+  "hint",
+  "defaultmap",
   "_simduid_",
   "_Cilk_for_count_",
   "independent",
@@ -1340,7 +1364,7 @@ int_cst_hasher::hash (tree x)
   int i;
 
   for (i = 0; i < TREE_INT_CST_NUNITS (t); i++)
-    code ^= TREE_INT_CST_ELT (t, i);
+    code = iterative_hash_host_wide_int (TREE_INT_CST_ELT(t, i), code);
 
   return code;
 }
@@ -1960,6 +1984,21 @@ build_complex (tree type, tree real, tree imag)
   TREE_TYPE (t) = type ? type : build_complex_type (TREE_TYPE (real));
   TREE_OVERFLOW (t) = TREE_OVERFLOW (real) | TREE_OVERFLOW (imag);
   return t;
+}
+
+/* Build a complex (inf +- 0i), such as for the result of cproj.
+   TYPE is the complex tree type of the result.  If NEG is true, the
+   imaginary zero is negative.  */
+
+tree
+build_complex_inf (tree type, bool neg)
+{
+  REAL_VALUE_TYPE rinf, rzero = dconst0;
+
+  real_inf (&rinf);
+  rzero.sign = neg;
+  return build_complex (type, build_real (TREE_TYPE (type), rinf),
+			build_real (TREE_TYPE (type), rzero));
 }
 
 /* Return the constant 1 in type TYPE.  If TYPE has several elements, each
@@ -4223,6 +4262,8 @@ recompute_tree_invariant_for_addr_expr (tree t)
 {
   tree node;
   bool tc = true, se = false;
+
+  gcc_assert (TREE_CODE (t) == ADDR_EXPR);
 
   /* We started out assuming this address is both invariant and constant, but
      does not have side effects.  Now go down any handled components and see if
@@ -8015,6 +8056,34 @@ build_nonstandard_integer_type (unsigned HOST_WIDE_INT precision,
   return ret;
 }
 
+#define MAX_BOOL_CACHED_PREC \
+  (HOST_BITS_PER_WIDE_INT > 64 ? HOST_BITS_PER_WIDE_INT : 64)
+static GTY(()) tree nonstandard_boolean_type_cache[MAX_BOOL_CACHED_PREC + 1];
+
+/* Builds a boolean type of precision PRECISION.
+   Used for boolean vectors to choose proper vector element size.  */
+tree
+build_nonstandard_boolean_type (unsigned HOST_WIDE_INT precision)
+{
+  tree type;
+
+  if (precision <= MAX_BOOL_CACHED_PREC)
+    {
+      type = nonstandard_boolean_type_cache[precision];
+      if (type)
+	return type;
+    }
+
+  type = make_node (BOOLEAN_TYPE);
+  TYPE_PRECISION (type) = precision;
+  fixup_unsigned_type (type);
+
+  if (precision <= MAX_INT_CACHED_PREC)
+    nonstandard_boolean_type_cache[precision] = type;
+
+  return type;
+}
+
 /* Create a range of some discrete type TYPE (an INTEGER_TYPE, ENUMERAL_TYPE
    or BOOLEAN_TYPE) with low bound LOWVAL and high bound HIGHVAL.  If SHARED
    is true, reuse such a type that has already been constructed.  */
@@ -9765,8 +9834,9 @@ make_vector_type (tree innertype, int nunits, machine_mode mode)
 
   if (TYPE_STRUCTURAL_EQUALITY_P (innertype))
     SET_TYPE_STRUCTURAL_EQUALITY (t);
-  else if (TYPE_CANONICAL (innertype) != innertype
-	   || mode != VOIDmode)
+  else if ((TYPE_CANONICAL (innertype) != innertype
+	    || mode != VOIDmode)
+	   && !VECTOR_BOOLEAN_TYPE_P (t))
     TYPE_CANONICAL (t)
       = make_vector_type (TYPE_CANONICAL (innertype), nunits, VOIDmode);
 
@@ -10591,6 +10661,46 @@ build_vector_type (tree innertype, int nunits)
   return make_vector_type (innertype, nunits, VOIDmode);
 }
 
+/* Build truth vector with specified length and number of units.  */
+
+tree
+build_truth_vector_type (unsigned nunits, unsigned vector_size)
+{
+  machine_mode mask_mode = targetm.vectorize.get_mask_mode (nunits,
+							    vector_size);
+
+  gcc_assert (mask_mode != VOIDmode);
+
+  unsigned HOST_WIDE_INT vsize;
+  if (mask_mode == BLKmode)
+    vsize = vector_size * BITS_PER_UNIT;
+  else
+    vsize = GET_MODE_BITSIZE (mask_mode);
+
+  unsigned HOST_WIDE_INT esize = vsize / nunits;
+  gcc_assert (esize * nunits == vsize);
+
+  tree bool_type = build_nonstandard_boolean_type (esize);
+
+  return make_vector_type (bool_type, nunits, mask_mode);
+}
+
+/* Returns a vector type corresponding to a comparison of VECTYPE.  */
+
+tree
+build_same_sized_truth_vector_type (tree vectype)
+{
+  if (VECTOR_BOOLEAN_TYPE_P (vectype))
+    return vectype;
+
+  unsigned HOST_WIDE_INT size = GET_MODE_SIZE (TYPE_MODE (vectype));
+
+  if (!size)
+    size = tree_to_uhwi (TYPE_SIZE_UNIT (vectype));
+
+  return build_truth_vector_type (TYPE_VECTOR_SUBPARTS (vectype), size);
+}
+
 /* Similarly, but builds a variant type with TYPE_VECTOR_OPAQUE set.  */
 
 tree
@@ -11077,9 +11187,10 @@ truth_type_for (tree type)
 {
   if (TREE_CODE (type) == VECTOR_TYPE)
     {
-      tree elem = lang_hooks.types.type_for_size
-        (GET_MODE_BITSIZE (TYPE_MODE (TREE_TYPE (type))), 0);
-      return build_opaque_vector_type (elem, TYPE_VECTOR_SUBPARTS (type));
+      if (VECTOR_BOOLEAN_TYPE_P (type))
+	return type;
+      return build_truth_vector_type (TYPE_VECTOR_SUBPARTS (type),
+				      GET_MODE_SIZE (TYPE_MODE (type)));
     }
   else
     return boolean_type_node;
@@ -11458,6 +11569,15 @@ walk_tree_1 (tree *tp, walk_tree_fn func, void *data,
 	case OMP_CLAUSE_DIST_SCHEDULE:
 	case OMP_CLAUSE_SAFELEN:
 	case OMP_CLAUSE_SIMDLEN:
+	case OMP_CLAUSE_ORDERED:
+	case OMP_CLAUSE_PRIORITY:
+	case OMP_CLAUSE_GRAINSIZE:
+	case OMP_CLAUSE_NUM_TASKS:
+	case OMP_CLAUSE_HINT:
+	case OMP_CLAUSE_TO_DECLARE:
+	case OMP_CLAUSE_LINK:
+	case OMP_CLAUSE_USE_DEVICE_PTR:
+	case OMP_CLAUSE_IS_DEVICE_PTR:
 	case OMP_CLAUSE__LOOPTEMP_:
 	case OMP_CLAUSE__SIMDUID_:
 	case OMP_CLAUSE__CILK_FOR_COUNT_:
@@ -11466,7 +11586,6 @@ walk_tree_1 (tree *tp, walk_tree_fn func, void *data,
 
 	case OMP_CLAUSE_INDEPENDENT:
 	case OMP_CLAUSE_NOWAIT:
-	case OMP_CLAUSE_ORDERED:
 	case OMP_CLAUSE_DEFAULT:
 	case OMP_CLAUSE_UNTIED:
 	case OMP_CLAUSE_MERGEABLE:
@@ -11477,6 +11596,10 @@ walk_tree_1 (tree *tp, walk_tree_fn func, void *data,
 	case OMP_CLAUSE_PARALLEL:
 	case OMP_CLAUSE_SECTIONS:
 	case OMP_CLAUSE_TASKGROUP:
+	case OMP_CLAUSE_NOGROUP:
+	case OMP_CLAUSE_THREADS:
+	case OMP_CLAUSE_SIMD:
+	case OMP_CLAUSE_DEFAULTMAP:
 	case OMP_CLAUSE_AUTO:
 	case OMP_CLAUSE_SEQ:
 	  WALK_SUBTREE_TAIL (OMP_CLAUSE_CHAIN (*tp));
@@ -11512,7 +11635,7 @@ walk_tree_1 (tree *tp, walk_tree_fn func, void *data,
 	case OMP_CLAUSE_REDUCTION:
 	  {
 	    int i;
-	    for (i = 0; i < 4; i++)
+	    for (i = 0; i < 5; i++)
 	      WALK_SUBTREE (OMP_CLAUSE_OPERAND (*tp, i));
 	    WALK_SUBTREE_TAIL (OMP_CLAUSE_CHAIN (*tp));
 	  }
@@ -13012,6 +13135,23 @@ verify_type_variant (const_tree t, tree tv)
    back to pointer-comparison of TYPE_CANONICAL for aggregates
    for example.  */
 
+/* Return true if TYPE_UNSIGNED of TYPE should be ignored for canonical
+   type calculation because we need to allow inter-operability between signed
+   and unsigned variants.  */
+
+bool
+type_with_interoperable_signedness (const_tree type)
+{
+  /* Fortran standard require C_SIGNED_CHAR to be interoperable with both
+     signed char and unsigned char.  Similarly fortran FE builds
+     C_SIZE_T as signed type, while C defines it unsigned.  */
+
+  return tree_code_for_canonical_type_merging (TREE_CODE (type))
+	   == INTEGER_TYPE
+         && (TYPE_PRECISION (type) == TYPE_PRECISION (signed_char_type_node)
+	     || TYPE_PRECISION (type) == TYPE_PRECISION (size_type_node));
+}
+
 /* Return true iff T1 and T2 are structurally identical for what
    TBAA is concerned.  
    This function is used both by lto.c canonical type merging and by the
@@ -13062,8 +13202,8 @@ gimple_canonical_types_compatible_p (const_tree t1, const_tree t2,
     return TYPE_CANONICAL (t1) == TYPE_CANONICAL (t2);
 
   /* Can't be the same type if the types don't have the same code.  */
-  if (tree_code_for_canonical_type_merging (TREE_CODE (t1))
-      != tree_code_for_canonical_type_merging (TREE_CODE (t2)))
+  enum tree_code code = tree_code_for_canonical_type_merging (TREE_CODE (t1));
+  if (code != tree_code_for_canonical_type_merging (TREE_CODE (t2)))
     return false;
 
   /* Qualifiers do not matter for canonical type comparison purposes.  */
@@ -13086,9 +13226,14 @@ gimple_canonical_types_compatible_p (const_tree t1, const_tree t2,
       || TREE_CODE (t1) == OFFSET_TYPE
       || POINTER_TYPE_P (t1))
     {
-      /* Can't be the same type if they have different sign or precision.  */
-      if (TYPE_PRECISION (t1) != TYPE_PRECISION (t2)
-	  || TYPE_UNSIGNED (t1) != TYPE_UNSIGNED (t2))
+      /* Can't be the same type if they have different recision.  */
+      if (TYPE_PRECISION (t1) != TYPE_PRECISION (t2))
+	return false;
+
+      /* In some cases the signed and unsigned types are required to be
+	 inter-operable.  */
+      if (TYPE_UNSIGNED (t1) != TYPE_UNSIGNED (t2)
+	  && !type_with_interoperable_signedness (t1))
 	return false;
 
       /* Fortran's C_SIGNED_CHAR is !TYPE_STRING_FLAG but needs to be
@@ -13280,6 +13425,14 @@ verify_type (const_tree t)
 	   && !gimple_canonical_types_compatible_p (t, ct, false))
     {
       error ("TYPE_CANONICAL is not compatible");
+      debug_tree (ct);
+      error_found = true;
+    }
+
+  if (COMPLETE_TYPE_P (t) && TYPE_CANONICAL (t)
+      && TYPE_MODE (t) != TYPE_MODE (TYPE_CANONICAL (t)))
+    {
+      error ("TYPE_MODE of TYPE_CANONICAL is not compatible");
       debug_tree (ct);
       error_found = true;
     }

@@ -4769,6 +4769,7 @@ proc check_effective_target_vect64 { } {
         if { ([istarget arm*-*-*]
 	      && [check_effective_target_arm_neon_ok]
 	      && [check_effective_target_arm_little_endian])
+	     || [istarget aarch64*-*-*]
              || [istarget sparc*-*-*] } {
            set et_vect64_saved 1
         }
@@ -6483,4 +6484,13 @@ proc check_effective_target_builtin_eh_return { } {
 	    __builtin_eh_return (l, p);
 	}
     } "" ]
+}
+
+# Return 1 if the target supports max reduction for vectors.
+
+proc check_effective_target_vect_max_reduc { } {
+    if { [istarget aarch64*-*-*] || [istarget arm*-*-*] } {
+	return 1
+    }
+    return 0
 }

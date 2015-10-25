@@ -833,7 +833,8 @@ c_cpp_builtins (cpp_reader *pfile)
       if (cxx_dialect >= cxx11)
 	{
 	  /* Set feature test macros for C++11.  */
-	  cpp_define (pfile, "__cpp_unicode_characters=200704");
+	  if (cxx_dialect <= cxx14)
+	    cpp_define (pfile, "__cpp_unicode_characters=200704");
 	  cpp_define (pfile, "__cpp_raw_strings=200710");
 	  cpp_define (pfile, "__cpp_unicode_literals=200710");
 	  cpp_define (pfile, "__cpp_user_defined_literals=200809");
@@ -869,9 +870,13 @@ c_cpp_builtins (cpp_reader *pfile)
       if (cxx_dialect > cxx14)
 	{
 	  /* Set feature test macros for C++1z.  */
+	  cpp_define (pfile, "__cpp_unicode_characters=201411");
 	  cpp_define (pfile, "__cpp_static_assert=201411");
 	  cpp_define (pfile, "__cpp_namespace_attributes=201411");
+	  cpp_define (pfile, "__cpp_enumerator_attributes=201411");
 	  cpp_define (pfile, "__cpp_nested_namespace_definitions=201411");
+	  cpp_define (pfile, "__cpp_fold_expressions=201411");
+	  cpp_define (pfile, "__cpp_nontype_template_args=201411");
 	}
       if (flag_concepts)
 	/* Use a value smaller than the 201507 specified in
@@ -1223,7 +1228,7 @@ c_cpp_builtins (cpp_reader *pfile)
     cpp_define (pfile, "_OPENACC=201306");
 
   if (flag_openmp)
-    cpp_define (pfile, "_OPENMP=201307");
+    cpp_define (pfile, "_OPENMP=201511");
 
   for (i = 0; i < NUM_INT_N_ENTS; i ++)
     if (int_n_enabled_p[i])

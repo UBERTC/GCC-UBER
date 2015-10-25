@@ -21,61 +21,45 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
+#include "cfgloop.h"
 #include "df.h"
+#include "tm_p.h"
+#include "stringpool.h"
+#include "expmed.h"
+#include "optabs.h"
+#include "regs.h"
+#include "emit-rtl.h"
+#include "recog.h"
+#include "cgraph.h"
+#include "diagnostic.h"
+#include "cfgbuild.h"
 #include "alias.h"
 #include "fold-const.h"
-#include "stringpool.h"
 #include "attribs.h"
 #include "calls.h"
 #include "stor-layout.h"
 #include "varasm.h"
-#include "tm_p.h"
-#include "regs.h"
-#include "insn-config.h"
-#include "conditions.h"
 #include "output.h"
-#include "insn-codes.h"
 #include "insn-attr.h"
 #include "flags.h"
 #include "except.h"
-#include "recog.h"
-#include "expmed.h"
-#include "dojump.h"
 #include "explow.h"
-#include "emit-rtl.h"
-#include "stmt.h"
 #include "expr.h"
-#include "optabs.h"
-#include "diagnostic-core.h"
-#include "toplev.h"
 #include "cfgrtl.h"
-#include "cfganal.h"
-#include "lcm.h"
-#include "cfgbuild.h"
-#include "cfgcleanup.h"
-#include "target.h"
 #include "common/common-target.h"
 #include "langhooks.h"
 #include "reload.h"
-#include "cgraph.h"
-#include "internal-fn.h"
-#include "gimple-fold.h"
-#include "tree-eh.h"
 #include "gimplify.h"
-#include "cfgloop.h"
 #include "dwarf2.h"
 #include "tm-constrs.h"
 #include "params.h"
 #include "cselib.h"
-#include "debug.h"
 #include "sched-int.h"
 #include "opts.h"
-#include "diagnostic.h"
-#include "dumpfile.h"
 #include "tree-pass.h"
 #include "context.h"
 #include "pass_manager.h"
@@ -4311,6 +4295,7 @@ ix86_option_override_internal (bool main_args_p,
 #define PTA_PCOMMIT		(HOST_WIDE_INT_1 << 56)
 #define PTA_MWAITX		(HOST_WIDE_INT_1 << 57)
 #define PTA_CLZERO		(HOST_WIDE_INT_1 << 58)
+#define PTA_NO_80387		(HOST_WIDE_INT_1 << 59)
 
 #define PTA_CORE2 \
   (PTA_64BIT | PTA_MMX | PTA_SSE | PTA_SSE2 | PTA_SSE3 | PTA_SSSE3 \
@@ -4355,7 +4340,7 @@ ix86_option_override_internal (bool main_args_p,
       {"i486", PROCESSOR_I486, CPU_NONE, 0},
       {"i586", PROCESSOR_PENTIUM, CPU_PENTIUM, 0},
       {"pentium", PROCESSOR_PENTIUM, CPU_PENTIUM, 0},
-      {"lakemont", PROCESSOR_LAKEMONT, CPU_PENTIUM, 0},
+      {"lakemont", PROCESSOR_LAKEMONT, CPU_PENTIUM, PTA_NO_80387},
       {"pentium-mmx", PROCESSOR_PENTIUM, CPU_PENTIUM, PTA_MMX},
       {"winchip-c6", PROCESSOR_I486, CPU_NONE, PTA_MMX},
       {"winchip2", PROCESSOR_I486, CPU_NONE, PTA_MMX | PTA_3DNOW | PTA_PRFCHW},
@@ -4936,6 +4921,13 @@ ix86_option_override_internal (bool main_args_p,
 	    && !(opts->x_ix86_isa_flags_explicit & OPTION_MASK_ISA_MWAITX))
 	  opts->x_ix86_isa_flags |= OPTION_MASK_ISA_MWAITX;
 
+	if (!(opts_set->x_target_flags & MASK_80387))
+	  {
+	    if (processor_alias_table[i].flags & PTA_NO_80387)
+	      opts->x_target_flags &= ~MASK_80387;
+	    else
+	      opts->x_target_flags |= MASK_80387;
+	  }
 	break;
       }
 
@@ -4944,20 +4936,6 @@ ix86_option_override_internal (bool main_args_p,
 
   if (TARGET_X32 && (ix86_isa_flags & OPTION_MASK_ISA_MPX))
     error ("Intel MPX does not support x32");
-
-  if (TARGET_IAMCU_P (opts->x_target_flags))
-    {
-      /* Verify that x87/MMX/SSE/AVX is off for -miamcu.  */
-      if (TARGET_80387_P (opts->x_target_flags))
-	sorry ("X87 FPU isn%'t supported in Intel MCU psABI");
-      else if ((opts->x_ix86_isa_flags & (OPTION_MASK_ISA_MMX
-					  | OPTION_MASK_ISA_SSE
-					  | OPTION_MASK_ISA_AVX)))
-	sorry ("%s isn%'t supported in Intel MCU psABI",
-	       TARGET_MMX_P (opts->x_ix86_isa_flags)
-	       ? "MMX"
-	       : TARGET_SSE_P (opts->x_ix86_isa_flags) ? "SSE" : "AVX");
-    }
 
   if (!strcmp (opts->x_ix86_arch_string, "generic"))
     error ("generic CPU can be used only for %stune=%s %s",
@@ -5242,8 +5220,11 @@ ix86_option_override_internal (bool main_args_p,
 	{
 	  if (!TARGET_SSE_P (opts->x_ix86_isa_flags))
 	    {
-	      warning (0, "SSE instruction set disabled, using 387 arithmetics");
-	      opts->x_ix86_fpmath = FPMATH_387;
+	      if (TARGET_80387_P (opts->x_target_flags))
+		{
+		  warning (0, "SSE instruction set disabled, using 387 arithmetics");
+		  opts->x_ix86_fpmath = FPMATH_387;
+		}
 	    }
 	  else if ((opts->x_ix86_fpmath & FPMATH_387)
 		   && !TARGET_80387_P (opts->x_target_flags))
@@ -5268,10 +5249,6 @@ ix86_option_override_internal (bool main_args_p,
     opts->x_ix86_fpmath = FPMATH_SSE;
   else
     opts->x_ix86_fpmath = TARGET_FPMATH_DEFAULT_P (opts->x_ix86_isa_flags);
-
-  /* If the i387 is disabled, then do not return values in it. */
-  if (!TARGET_80387_P (opts->x_target_flags))
-    opts->x_target_flags &= ~MASK_FLOAT_RETURNS;
 
   /* Use external vectorized library in vectorizing intrinsics.  */
   if (opts_set->x_ix86_veclibabi_type)
@@ -6145,7 +6122,18 @@ ix86_valid_target_attribute_tree (tree args,
       /* If we are using the default tune= or arch=, undo the string assigned,
 	 and use the default.  */
       if (option_strings[IX86_FUNCTION_SPECIFIC_ARCH])
-	opts->x_ix86_arch_string = option_strings[IX86_FUNCTION_SPECIFIC_ARCH];
+	{
+	  opts->x_ix86_arch_string
+	    = option_strings[IX86_FUNCTION_SPECIFIC_ARCH];
+
+	  /* If arch= is set,  clear all bits in x_ix86_isa_flags,
+	     except for ISA_64BIT, ABI_64, ABI_X32, and CODE16.  */
+	  opts->x_ix86_isa_flags &= (OPTION_MASK_ISA_64BIT
+				     | OPTION_MASK_ABI_64
+				     | OPTION_MASK_ABI_X32
+				     | OPTION_MASK_CODE16);
+
+	}
       else if (!orig_arch_specified)
 	opts->x_ix86_arch_string = NULL;
 
@@ -6160,7 +6148,11 @@ ix86_valid_target_attribute_tree (tree args,
       else if (!TARGET_64BIT_P (opts->x_ix86_isa_flags)
 	       && TARGET_SSE_P (opts->x_ix86_isa_flags))
 	{
-	  opts->x_ix86_fpmath = (enum fpmath_unit) (FPMATH_SSE | FPMATH_387);
+	  if (TARGET_80387_P (opts->x_target_flags))
+	    opts->x_ix86_fpmath = (enum fpmath_unit) (FPMATH_SSE
+						      | FPMATH_387);
+	  else
+	    opts->x_ix86_fpmath = (enum fpmath_unit) FPMATH_SSE;
 	  opts_set->x_ix86_fpmath = (enum fpmath_unit) 1;
 	}
 
@@ -7925,8 +7917,7 @@ classify_argument (machine_mode mode, const_tree type,
 {
   HOST_WIDE_INT bytes =
     (mode == BLKmode) ? int_size_in_bytes (type) : (int) GET_MODE_SIZE (mode);
-  int words
-    = (bytes + (bit_offset % 64) / 8 + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+  int words = CEIL (bytes + (bit_offset % 64) / 8, UNITS_PER_WORD);
 
   /* Variable sized entities are always passed/returned in memory.  */
   if (bytes < 0)
@@ -8791,7 +8782,7 @@ ix86_function_arg_advance (cumulative_args_t cum_v, machine_mode mode,
     bytes = int_size_in_bytes (type);
   else
     bytes = GET_MODE_SIZE (mode);
-  words = (bytes + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+  words = CEIL (bytes, UNITS_PER_WORD);
 
   if (type)
     mode = type_natural_mode (type, NULL, false);
@@ -9124,7 +9115,7 @@ ix86_function_arg (cumulative_args_t cum_v, machine_mode omode,
     bytes = int_size_in_bytes (type);
   else
     bytes = GET_MODE_SIZE (mode);
-  words = (bytes + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+  words = CEIL (bytes, UNITS_PER_WORD);
 
   /* To simplify the code below, represent vector types with a vector mode
      even if MMX/SSE are not active.  */
@@ -10271,7 +10262,7 @@ ix86_gimplify_va_arg (tree valist, tree type, gimple_seq *pre_p,
   if (indirect_p)
     type = build_pointer_type (type);
   size = int_size_in_bytes (type);
-  rsize = (size + UNITS_PER_WORD - 1) / UNITS_PER_WORD;
+  rsize = CEIL (size, UNITS_PER_WORD);
 
   nat_mode = type_natural_mode (type, NULL, false);
   switch (nat_mode)
@@ -11280,11 +11271,14 @@ ix86_compute_frame_layout (struct ix86_frame *frame)
   frame->nregs = ix86_nsaved_regs ();
   frame->nsseregs = ix86_nsaved_sseregs ();
 
-  /* 64-bit MS ABI seem to require stack alignment to be always 16 except for
-     function prologues and leaf.  */
+  /* 64-bit MS ABI seem to require stack alignment to be always 16,
+     except for function prologues, leaf functions and when the defult
+     incoming stack boundary is overriden at command line or via
+     force_align_arg_pointer attribute.  */
   if ((TARGET_64BIT_MS_ABI && crtl->preferred_stack_boundary < 128)
       && (!crtl->is_leaf || cfun->calls_alloca != 0
-          || ix86_current_function_calls_tls_descriptor))
+	  || ix86_current_function_calls_tls_descriptor
+	  || ix86_incoming_stack_boundary < 128))
     {
       crtl->preferred_stack_boundary = 128;
       crtl->stack_alignment_needed = 128;
@@ -11613,6 +11607,7 @@ ix86_emit_save_reg_using_mov (machine_mode mode, unsigned int regno,
 {
   struct machine_function *m = cfun->machine;
   rtx reg = gen_rtx_REG (mode, regno);
+  rtx unspec = NULL_RTX;
   rtx mem, addr, base, insn;
   unsigned int align;
 
@@ -11627,13 +11622,9 @@ ix86_emit_save_reg_using_mov (machine_mode mode, unsigned int regno,
      In case INCOMING_STACK_BOUNDARY is misaligned, we have
      to emit unaligned store.  */
   if (mode == V4SFmode && align < 128)
-    {
-      rtx unspec = gen_rtx_UNSPEC (mode, gen_rtvec (1, reg), UNSPEC_STOREU);
-      insn = emit_insn (gen_rtx_SET (mem, unspec));
-    }
-  else
-    insn = emit_insn (gen_rtx_SET (mem, reg));
+    unspec = gen_rtx_UNSPEC (mode, gen_rtvec (1, reg), UNSPEC_STOREU);
 
+  insn = emit_insn (gen_rtx_SET (mem, unspec ? unspec : reg));
   RTX_FRAME_RELATED_P (insn) = 1;
 
   base = addr;
@@ -11680,7 +11671,7 @@ ix86_emit_save_reg_using_mov (machine_mode mode, unsigned int regno,
       mem = gen_rtx_MEM (mode, addr);
       add_reg_note (insn, REG_CFA_OFFSET, gen_rtx_SET (mem, reg));
     }
-  else
+  else if (unspec)
     add_reg_note (insn, REG_CFA_EXPRESSION, gen_rtx_SET (mem, reg));
 }
 
@@ -18654,7 +18645,11 @@ void
 ix86_expand_vector_move (machine_mode mode, rtx operands[])
 {
   rtx op0 = operands[0], op1 = operands[1];
-  unsigned int align = GET_MODE_ALIGNMENT (mode);
+  /* Use GET_MODE_BITSIZE instead of GET_MODE_ALIGNMENT for IA MCU
+     psABI since the biggest alignment is 4 byte for IA MCU psABI.  */
+  unsigned int align = (TARGET_IAMCU
+			? GET_MODE_BITSIZE (mode)
+			: GET_MODE_ALIGNMENT (mode));
 
   if (push_operand (op0, VOIDmode))
     op0 = emit_move_resolve_push (mode, op0);
@@ -42971,7 +42966,7 @@ ix86_class_max_nregs (reg_class_t rclass, machine_mode mode)
       else if (mode == XCmode)
 	return (TARGET_64BIT ? 4 : 6);
       else
-	return ((GET_MODE_SIZE (mode) + UNITS_PER_WORD - 1) / UNITS_PER_WORD);
+	return CEIL (GET_MODE_SIZE (mode), UNITS_PER_WORD);
     }
   else
     {
@@ -43130,8 +43125,7 @@ inline_memory_move_cost (machine_mode mode, enum reg_class regclass,
 	  cost = ix86_cost->int_load[2];
 	else
 	  cost = ix86_cost->int_store[2];
-	return (cost * (((int) GET_MODE_SIZE (mode)
-		        + UNITS_PER_WORD - 1) / UNITS_PER_WORD));
+	return cost * CEIL ((int) GET_MODE_SIZE (mode), UNITS_PER_WORD);
     }
 }
 
@@ -43417,7 +43411,7 @@ ix86_set_reg_reg_cost (machine_mode mode)
 
   /* Return the cost of moving between two registers of mode MODE,
      assuming that the move will be in pieces of at most UNITS bytes.  */
-  return COSTS_N_INSNS ((GET_MODE_SIZE (mode) + units - 1) / units);
+  return COSTS_N_INSNS (CEIL (GET_MODE_SIZE (mode), units));
 }
 
 /* Compute a (partial) cost for rtx X.  Return true if the complete

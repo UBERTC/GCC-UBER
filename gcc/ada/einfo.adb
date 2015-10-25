@@ -267,8 +267,10 @@ package body Einfo is
 
    --    Anonymous_Master                Node36
 
-   --    (unused)                        Node38
-   --    (unused)                        Node39
+   --    (Class_Wide_Preconds)           List38
+
+   --    (Class_Wide_Postconds)          List39
+
    --    (unused)                        Node40
    --    (unused)                        Node41
 
@@ -516,7 +518,7 @@ package body Einfo is
    --    Has_Pragma_Unreferenced_Objects Flag212
    --    Requires_Overriding             Flag213
    --    Has_RACW                        Flag214
-   --    Has_Uplevel_Reference           Flag215
+   --    Is_Param_Block_Component_Type   Flag215
    --    Universal_Aliasing              Flag216
    --    Suppress_Value_Tracking_On_Call Flag217
    --    Is_Primitive                    Flag218
@@ -595,8 +597,8 @@ package body Einfo is
    --    Is_Unimplemented                Flag284
    --    Is_Volatile_Full_Access         Flag285
    --    Needs_Typedef                   Flag286
+   --    Rewritten_For_C                 Flag287
 
-   --    (unused)                        Flag287
    --    (unused)                        Flag288
    --    (unused)                        Flag289
    --    (unused)                        Flag300
@@ -841,6 +843,18 @@ package body Einfo is
    begin
       return Flag31 (Id);
    end Checks_May_Be_Suppressed;
+
+   function Class_Wide_Postconds (Id : E) return S is
+   begin
+      pragma Assert (Is_Subprogram (Id));
+      return List39 (Id);
+   end Class_Wide_Postconds;
+
+   function Class_Wide_Preconds (Id : E) return S is
+   begin
+      pragma Assert (Is_Subprogram (Id));
+      return List38 (Id);
+   end Class_Wide_Preconds;
 
    function Class_Wide_Type (Id : E) return E is
    begin
@@ -1764,6 +1778,7 @@ package body Einfo is
 
    function Has_Small_Clause (Id : E) return B is
    begin
+      pragma Assert (Is_Ordinary_Fixed_Point_Type (Id));
       return Flag67 (Id);
    end Has_Small_Clause;
 
@@ -1846,11 +1861,6 @@ package body Einfo is
       pragma Assert (Is_Type (Id));
       return Flag72 (Id);
    end Has_Unknown_Discriminants;
-
-   function Has_Uplevel_Reference (Id : E) return B is
-   begin
-      return Flag215 (Id);
-   end Has_Uplevel_Reference;
 
    function Has_Visible_Refinement (Id : E) return B is
    begin
@@ -2321,6 +2331,12 @@ package body Einfo is
    begin
       return Flag138 (Id);
    end Is_Packed_Array_Impl_Type;
+
+   function Is_Param_Block_Component_Type (Id : E) return B is
+   begin
+      pragma Assert (Is_Access_Type (Id));
+      return Flag215 (Base_Type (Id));
+   end Is_Param_Block_Component_Type;
 
    function Is_Potentially_Use_Visible (Id : E) return B is
    begin
@@ -3026,6 +3042,12 @@ package body Einfo is
       return Flag93 (Base_Type (Id));
    end Reverse_Storage_Order;
 
+   function Rewritten_For_C (Id : E) return B is
+   begin
+      pragma Assert (Ekind (Id) = E_Function);
+      return Flag287 (Id);
+   end Rewritten_For_C;
+
    function RM_Size (Id : E) return U is
    begin
       pragma Assert (Is_Type (Id));
@@ -3383,8 +3405,7 @@ package body Einfo is
 
    function Is_Concurrent_Body                  (Id : E) return B is
    begin
-      return Ekind (Id) in
-        Concurrent_Body_Kind;
+      return Ekind (Id) in Concurrent_Body_Kind;
    end Is_Concurrent_Body;
 
    function Is_Concurrent_Record_Type           (Id : E) return B is
@@ -3399,8 +3420,7 @@ package body Einfo is
 
    function Is_Decimal_Fixed_Point_Type         (Id : E) return B is
    begin
-      return Ekind (Id) in
-        Decimal_Fixed_Point_Kind;
+      return Ekind (Id) in Decimal_Fixed_Point_Kind;
    end Is_Decimal_Fixed_Point_Type;
 
    function Is_Digits_Type                      (Id : E) return B is
@@ -3430,14 +3450,12 @@ package body Einfo is
 
    function Is_Enumeration_Type                 (Id : E) return B is
    begin
-      return Ekind (Id) in
-        Enumeration_Kind;
+      return Ekind (Id) in Enumeration_Kind;
    end Is_Enumeration_Type;
 
    function Is_Fixed_Point_Type                 (Id : E) return B is
    begin
-      return Ekind (Id) in
-        Fixed_Point_Kind;
+      return Ekind (Id) in Fixed_Point_Kind;
    end Is_Fixed_Point_Type;
 
    function Is_Floating_Point_Type              (Id : E) return B is
@@ -3465,16 +3483,19 @@ package body Einfo is
       return Ekind (Id) in Generic_Unit_Kind;
    end Is_Generic_Unit;
 
+   function Is_Ghost_Entity (Id : Entity_Id) return Boolean is
+   begin
+      return Is_Checked_Ghost_Entity (Id) or else Is_Ignored_Ghost_Entity (Id);
+   end Is_Ghost_Entity;
+
    function Is_Incomplete_Or_Private_Type       (Id : E) return B is
    begin
-      return Ekind (Id) in
-        Incomplete_Or_Private_Kind;
+      return Ekind (Id) in Incomplete_Or_Private_Kind;
    end Is_Incomplete_Or_Private_Type;
 
    function Is_Incomplete_Type                  (Id : E) return B is
    begin
-      return Ekind (Id) in
-        Incomplete_Kind;
+      return Ekind (Id) in Incomplete_Kind;
    end Is_Incomplete_Type;
 
    function Is_Integer_Type                     (Id : E) return B is
@@ -3484,8 +3505,7 @@ package body Einfo is
 
    function Is_Modular_Integer_Type             (Id : E) return B is
    begin
-      return Ekind (Id) in
-        Modular_Integer_Kind;
+      return Ekind (Id) in Modular_Integer_Kind;
    end Is_Modular_Integer_Type;
 
    function Is_Named_Number                     (Id : E) return B is
@@ -3505,8 +3525,7 @@ package body Einfo is
 
    function Is_Ordinary_Fixed_Point_Type        (Id : E) return B is
    begin
-      return Ekind (Id) in
-        Ordinary_Fixed_Point_Kind;
+      return Ekind (Id) in Ordinary_Fixed_Point_Kind;
    end Is_Ordinary_Fixed_Point_Type;
 
    function Is_Overloadable                     (Id : E) return B is
@@ -3729,6 +3748,18 @@ package body Einfo is
    begin
       Set_Flag31 (Id, V);
    end Set_Checks_May_Be_Suppressed;
+
+   procedure Set_Class_Wide_Preconds (Id : E; V : S) is
+   begin
+      pragma Assert (Is_Subprogram (Id));
+      Set_List38 (Id, V);
+   end Set_Class_Wide_Preconds;
+
+   procedure Set_Class_Wide_Postconds (Id : E; V : S) is
+   begin
+      pragma Assert (Is_Subprogram (Id));
+      Set_List39 (Id, V);
+   end Set_Class_Wide_Postconds;
 
    procedure Set_Class_Wide_Type (Id : E; V : E) is
    begin
@@ -4669,6 +4700,7 @@ package body Einfo is
 
    procedure Set_Has_Small_Clause (Id : E; V : B := True) is
    begin
+      pragma Assert (Is_Ordinary_Fixed_Point_Type (Id));
       Set_Flag67 (Id, V);
    end Set_Has_Small_Clause;
 
@@ -4755,11 +4787,6 @@ package body Einfo is
       pragma Assert (Is_Type (Id));
       Set_Flag72 (Id, V);
    end Set_Has_Unknown_Discriminants;
-
-   procedure Set_Has_Uplevel_Reference (Id : E; V : B := True) is
-   begin
-      Set_Flag215 (Id, V);
-   end Set_Has_Uplevel_Reference;
 
    procedure Set_Has_Visible_Refinement (Id : E; V : B := True) is
    begin
@@ -5289,6 +5316,12 @@ package body Einfo is
    begin
       Set_Flag138 (Id, V);
    end Set_Is_Packed_Array_Impl_Type;
+
+   procedure Set_Is_Param_Block_Component_Type (Id : E; V : B := True) is
+   begin
+      pragma Assert (Ekind_In (Id, E_Void, E_General_Access_Type));
+      Set_Flag215 (Id, V);
+   end Set_Is_Param_Block_Component_Type;
 
    procedure Set_Is_Potentially_Use_Visible (Id : E; V : B := True) is
    begin
@@ -6018,6 +6051,12 @@ package body Einfo is
            and then (Is_Record_Type (Id) or else Is_Array_Type (Id)));
       Set_Flag93 (Id, V);
    end Set_Reverse_Storage_Order;
+
+   procedure Set_Rewritten_For_C (Id : E; V : B := True) is
+   begin
+      pragma Assert (Ekind (Id) = E_Function);
+      Set_Flag287 (Id, V);
+   end Set_Rewritten_For_C;
 
    procedure Set_RM_Size (Id : E; V : U) is
    begin
@@ -6991,30 +7030,41 @@ package body Einfo is
    ----------------
 
    function Get_Pragma (E : Entity_Id; Id : Pragma_Id) return Node_Id is
-      Is_CDG  : constant Boolean :=
-                  Id = Pragma_Abstract_State     or else
-                  Id = Pragma_Async_Readers      or else
-                  Id = Pragma_Async_Writers      or else
-                  Id = Pragma_Depends            or else
-                  Id = Pragma_Effective_Reads    or else
-                  Id = Pragma_Effective_Writes   or else
-                  Id = Pragma_Extensions_Visible or else
-                  Id = Pragma_Global             or else
-                  Id = Pragma_Initial_Condition  or else
-                  Id = Pragma_Initializes        or else
-                  Id = Pragma_Part_Of            or else
-                  Id = Pragma_Refined_Depends    or else
-                  Id = Pragma_Refined_Global     or else
-                  Id = Pragma_Refined_State;
+
+      --  Classification pragmas
+
+      Is_CLS : constant Boolean :=
+                 Id = Pragma_Abstract_State             or else
+                 Id = Pragma_Async_Readers              or else
+                 Id = Pragma_Async_Writers              or else
+                 Id = Pragma_Constant_After_Elaboration or else
+                 Id = Pragma_Depends                    or else
+                 Id = Pragma_Effective_Reads            or else
+                 Id = Pragma_Effective_Writes           or else
+                 Id = Pragma_Extensions_Visible         or else
+                 Id = Pragma_Global                     or else
+                 Id = Pragma_Initial_Condition          or else
+                 Id = Pragma_Initializes                or else
+                 Id = Pragma_Part_Of                    or else
+                 Id = Pragma_Refined_Depends            or else
+                 Id = Pragma_Refined_Global             or else
+                 Id = Pragma_Refined_State              or else
+                 Id = Pragma_Volatile_Function;
+
+      --  Contract / test case pragmas
+
       Is_CTC : constant Boolean :=
-                  Id = Pragma_Contract_Cases     or else
+                  Id = Pragma_Contract_Cases            or else
                   Id = Pragma_Test_Case;
+
+      --  Pre / postcondition pragmas
+
       Is_PPC : constant Boolean :=
-                  Id = Pragma_Precondition       or else
-                  Id = Pragma_Postcondition      or else
+                  Id = Pragma_Precondition              or else
+                  Id = Pragma_Postcondition             or else
                   Id = Pragma_Refined_Post;
 
-      In_Contract : constant Boolean := Is_CDG or Is_CTC or Is_PPC;
+      In_Contract : constant Boolean := Is_CLS or Is_CTC or Is_PPC;
 
       Item  : Node_Id;
       Items : Node_Id;
@@ -7029,7 +7079,7 @@ package body Einfo is
          if No (Items) then
             return Empty;
 
-         elsif Is_CDG then
+         elsif Is_CLS then
             Item := Classifications (Items);
 
          elsif Is_CTC then
@@ -8770,7 +8820,6 @@ package body Einfo is
       W ("Has_Thunks",                      Flag228 (Id));
       W ("Has_Unchecked_Union",             Flag123 (Id));
       W ("Has_Unknown_Discriminants",       Flag72  (Id));
-      W ("Has_Uplevel_Reference",           Flag215 (Id));
       W ("Has_Visible_Refinement",          Flag263 (Id));
       W ("Has_Volatile_Components",         Flag87  (Id));
       W ("Has_Xref_Entry",                  Flag182 (Id));
@@ -8850,6 +8899,7 @@ package body Einfo is
       W ("Is_Package_Body_Entity",          Flag160 (Id));
       W ("Is_Packed",                       Flag51  (Id));
       W ("Is_Packed_Array_Impl_Type",       Flag138 (Id));
+      W ("Is_Param_Block_Component_Type",   Flag215 (Id));
       W ("Is_Potentially_Use_Visible",      Flag9   (Id));
       W ("Is_Predicate_Function",           Flag255 (Id));
       W ("Is_Predicate_Function_M",         Flag256 (Id));
@@ -8926,6 +8976,7 @@ package body Einfo is
       W ("Returns_Limited_View",            Flag134 (Id));
       W ("Reverse_Bit_Order",               Flag164 (Id));
       W ("Reverse_Storage_Order",           Flag93  (Id));
+      W ("Rewritten_For_C",                 Flag287 (Id));
       W ("Sec_Stack_Needed_For_Return",     Flag167 (Id));
       W ("Size_Depends_On_Discriminant",    Flag177 (Id));
       W ("Size_Known_At_Compile_Time",      Flag92  (Id));
@@ -10208,6 +10259,9 @@ package body Einfo is
    procedure Write_Field38_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
+         when E_Function | E_Procedure                     =>
+            Write_Str ("Class-wide preconditions");
+
          when others                                       =>
             Write_Str ("Field38??");
       end case;
@@ -10220,6 +10274,9 @@ package body Einfo is
    procedure Write_Field39_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
+         when E_Function | E_Procedure                     =>
+            Write_Str ("Class-wide postcondition");
+
          when others                                       =>
             Write_Str ("Field39??");
       end case;

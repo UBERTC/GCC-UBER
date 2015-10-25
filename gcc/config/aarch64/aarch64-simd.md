@@ -153,6 +153,34 @@
    (set_attr "length" "4,4,4,8,8,8,4")]
 )
 
+(define_insn "load_pair<mode>"
+  [(set (match_operand:VD 0 "register_operand" "=w")
+	(match_operand:VD 1 "aarch64_mem_pair_operand" "Ump"))
+   (set (match_operand:VD 2 "register_operand" "=w")
+	(match_operand:VD 3 "memory_operand" "m"))]
+  "TARGET_SIMD
+   && rtx_equal_p (XEXP (operands[3], 0),
+		   plus_constant (Pmode,
+				  XEXP (operands[1], 0),
+				  GET_MODE_SIZE (<MODE>mode)))"
+  "ldp\\t%d0, %d2, %1"
+  [(set_attr "type" "neon_ldp")]
+)
+
+(define_insn "store_pair<mode>"
+  [(set (match_operand:VD 0 "aarch64_mem_pair_operand" "=Ump")
+	(match_operand:VD 1 "register_operand" "w"))
+   (set (match_operand:VD 2 "memory_operand" "=m")
+	(match_operand:VD 3 "register_operand" "w"))]
+  "TARGET_SIMD
+   && rtx_equal_p (XEXP (operands[2], 0),
+		   plus_constant (Pmode,
+				  XEXP (operands[0], 0),
+				  GET_MODE_SIZE (<MODE>mode)))"
+  "stp\\t%d1, %d3, %0"
+  [(set_attr "type" "neon_stp")]
+)
+
 (define_split
   [(set (match_operand:VQ 0 "register_operand" "")
       (match_operand:VQ 1 "register_operand" ""))]
@@ -1651,6 +1679,26 @@
 			       FCVT)))]
   "TARGET_SIMD"
   "fcvt<frint_suffix><su>\\t%0.<Vtype>, %1.<Vtype>"
+  [(set_attr "type" "neon_fp_to_int_<Vetype><q>")]
+)
+
+(define_insn "*aarch64_fcvt<su_optab><VDQF:mode><fcvt_target>2_mult"
+  [(set (match_operand:<FCVT_TARGET> 0 "register_operand" "=w")
+	(FIXUORS:<FCVT_TARGET> (unspec:<FCVT_TARGET>
+			       [(mult:VDQF
+	 (match_operand:VDQF 1 "register_operand" "w")
+	 (match_operand:VDQF 2 "aarch64_fp_vec_pow2" ""))]
+			       UNSPEC_FRINTZ)))]
+  "TARGET_SIMD
+   && IN_RANGE (aarch64_vec_fpconst_pow_of_2 (operands[2]), 1,
+		GET_MODE_BITSIZE (GET_MODE_INNER (<VDQF:MODE>mode)))"
+  {
+    int fbits = aarch64_vec_fpconst_pow_of_2 (operands[2]);
+    char buf[64];
+    snprintf (buf, 64, "fcvtz<su>\\t%%0.<Vtype>, %%1.<Vtype>, #%d", fbits);
+    output_asm_insn (buf, operands);
+    return "";
+  }
   [(set_attr "type" "neon_fp_to_int_<Vetype><q>")]
 )
 
@@ -4727,6 +4775,27 @@
   "TARGET_SIMD"
   "tbl\\t%0.16b, {%S1.16b - %T1.16b}, %2.16b"
   [(set_attr "type" "neon_tbl2_q")]
+)
+
+(define_insn "aarch64_tbl3v8qi"
+  [(set (match_operand:V8QI 0 "register_operand" "=w")
+	(unspec:V8QI [(match_operand:OI 1 "register_operand" "w")
+		      (match_operand:V8QI 2 "register_operand" "w")]
+		      UNSPEC_TBL))]
+  "TARGET_SIMD"
+  "tbl\\t%S0.8b, {%S1.16b - %T1.16b}, %S2.8b"
+  [(set_attr "type" "neon_tbl3")]
+)
+
+(define_insn "aarch64_tbx4v8qi"
+  [(set (match_operand:V8QI 0 "register_operand" "=w")
+	(unspec:V8QI [(match_operand:V8QI 1 "register_operand" "0")
+		      (match_operand:OI 2 "register_operand" "w")
+		      (match_operand:V8QI 3 "register_operand" "w")]
+		      UNSPEC_TBX))]
+  "TARGET_SIMD"
+  "tbx\\t%S0.8b, {%S2.16b - %T2.16b}, %S3.8b"
+  [(set_attr "type" "neon_tbl4")]
 )
 
 (define_insn_and_split "aarch64_combinev16qi"

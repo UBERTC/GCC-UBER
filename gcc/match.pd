@@ -31,6 +31,7 @@ along with GCC; see the file COPYING3.  If not see
    zerop
    CONSTANT_CLASS_P
    tree_expr_nonnegative_p
+   integer_valued_real_p
    integer_pow2p
    HONOR_NANS)
 
@@ -59,8 +60,25 @@ along with GCC; see the file COPYING3.  If not see
 (define_operator_list SIN BUILT_IN_SINF BUILT_IN_SIN BUILT_IN_SINL)
 (define_operator_list COS BUILT_IN_COSF BUILT_IN_COS BUILT_IN_COSL)
 (define_operator_list TAN BUILT_IN_TANF BUILT_IN_TAN BUILT_IN_TANL)
+(define_operator_list ATAN BUILT_IN_ATANF BUILT_IN_ATAN BUILT_IN_ATANL)
 (define_operator_list COSH BUILT_IN_COSHF BUILT_IN_COSH BUILT_IN_COSHL)
 (define_operator_list CEXPI BUILT_IN_CEXPIF BUILT_IN_CEXPI BUILT_IN_CEXPIL)
+(define_operator_list CPROJ BUILT_IN_CPROJF BUILT_IN_CPROJ BUILT_IN_CPROJL)
+(define_operator_list CCOS BUILT_IN_CCOSF BUILT_IN_CCOS BUILT_IN_CCOSL)
+(define_operator_list CCOSH BUILT_IN_CCOSHF BUILT_IN_CCOSH BUILT_IN_CCOSHL)
+(define_operator_list HYPOT BUILT_IN_HYPOTF BUILT_IN_HYPOT BUILT_IN_HYPOTL)
+(define_operator_list COPYSIGN BUILT_IN_COPYSIGNF
+			       BUILT_IN_COPYSIGN
+			       BUILT_IN_COPYSIGNL)
+(define_operator_list CABS BUILT_IN_CABSF BUILT_IN_CABS BUILT_IN_CABSL)
+(define_operator_list TRUNC BUILT_IN_TRUNCF BUILT_IN_TRUNC BUILT_IN_TRUNCL)
+(define_operator_list FLOOR BUILT_IN_FLOORF BUILT_IN_FLOOR BUILT_IN_FLOORL)
+(define_operator_list CEIL BUILT_IN_CEILF BUILT_IN_CEIL BUILT_IN_CEILL)
+(define_operator_list ROUND BUILT_IN_ROUNDF BUILT_IN_ROUND BUILT_IN_ROUNDL)
+(define_operator_list NEARBYINT BUILT_IN_NEARBYINTF
+				BUILT_IN_NEARBYINT
+				BUILT_IN_NEARBYINTL)
+(define_operator_list RINT BUILT_IN_RINTF BUILT_IN_RINT BUILT_IN_RINTL)
 
 /* Simplifications of operations with one constant operand and
    simplifications to constants or single values.  */
@@ -267,7 +285,8 @@ along with GCC; see the file COPYING3.  If not see
 /* X - (X / Y) * Y is the same as X % Y.  */
 (simplify
  (minus (convert1? @0) (convert2? (mult (trunc_div @0 @1) @1)))
- (if (INTEGRAL_TYPE_P (type) || VECTOR_INTEGER_TYPE_P (type))
+ (if ((INTEGRAL_TYPE_P (type) || VECTOR_INTEGER_TYPE_P (type))
+      && TYPE_UNSIGNED (TREE_TYPE (@0)) == TYPE_UNSIGNED (type))
   (trunc_mod (convert @0) (convert @1))))
 
 /* Optimize TRUNC_MOD_EXPR by a power of two into a BIT_AND_EXPR,
@@ -309,12 +328,133 @@ along with GCC; see the file COPYING3.  If not see
        && TYPE_OVERFLOW_UNDEFINED (type))
    @0)))
 
-/* Simplify cos (-x) -> cos (x).  */
 (for op (negate abs)
+ /* Simplify cos(-x) and cos(|x|) -> cos(x).  Similarly for cosh.  */
+ (for coss (COS COSH)
+  (simplify
+   (coss (op @0))
+    (coss @0)))
+ /* Simplify pow(-x, y) and pow(|x|,y) -> pow(x,y) if y is an even integer.  */
+ (for pows (POW)
+  (simplify
+   (pows (op @0) REAL_CST@1)
+   (with { HOST_WIDE_INT n; }
+    (if (real_isinteger (&TREE_REAL_CST (@1), &n) && (n & 1) == 0)
+     (pows @0 @1)))))
+ /* Strip negate and abs from both operands of hypot.  */
+ (for hypots (HYPOT)
+  (simplify
+   (hypots (op @0) @1)
+   (hypots @0 @1))
+  (simplify
+   (hypots @0 (op @1))
+   (hypots @0 @1)))
+ /* copysign(-x, y) and copysign(abs(x), y) -> copysign(x, y).  */
+ (for copysigns (COPYSIGN)
+  (simplify
+   (copysigns (op @0) @1)
+   (copysigns @0 @1))))
+
+/* abs(x)*abs(x) -> x*x.  Should be valid for all types.  */
+(simplify
+ (mult (abs@1 @0) @1)
+ (mult @0 @0))
+
+/* cos(copysign(x, y)) -> cos(x).  Similarly for cosh.  */
 (for coss (COS COSH)
+     copysigns (COPYSIGN)
  (simplify
-  (coss (op @0))
-   (coss @0))))
+  (coss (copysigns @0 @1))
+   (coss @0)))
+
+/* pow(copysign(x, y), z) -> pow(x, z) if z is an even integer.  */
+(for pows (POW)
+     copysigns (COPYSIGN)
+ (simplify
+  (pows (copysigns @0 @1) REAL_CST@1)
+  (with { HOST_WIDE_INT n; }
+   (if (real_isinteger (&TREE_REAL_CST (@1), &n) && (n & 1) == 0)
+    (pows @0 @1)))))
+
+(for hypots (HYPOT)
+     copysigns (COPYSIGN)
+ /* hypot(copysign(x, y), z) -> hypot(x, z).  */
+ (simplify
+  (hypots (copysigns @0 @1) @2)
+  (hypots @0 @2))
+ /* hypot(x, copysign(y, z)) -> hypot(x, y).  */
+ (simplify
+  (hypots @0 (copysigns @1 @2))
+  (hypots @0 @1)))
+
+/* copysign(copysign(x, y), z) -> copysign(x, z).  */
+(for copysigns (COPYSIGN)
+ (simplify
+  (copysigns (copysigns @0 @1) @2)
+  (copysigns @0 @2)))
+
+/* copysign(x,y)*copysign(x,y) -> x*x.  */
+(for copysigns (COPYSIGN)
+ (simplify
+  (mult (copysigns@2 @0 @1) @2)
+  (mult @0 @0)))
+
+/* ccos(-x) -> ccos(x).  Similarly for ccosh.  */
+(for ccoss (CCOS CCOSH)
+ (simplify
+  (ccoss (negate @0))
+   (ccoss @0)))
+
+/* cabs(-x) and cos(conj(x)) -> cabs(x).  */
+(for ops (conj negate)
+ (for cabss (CABS)
+  (simplify
+   (cabss (ops @0))
+   (cabss @0))))
+
+/* Fold (a * (1 << b)) into (a << b)  */
+(simplify
+ (mult:c @0 (convert? (lshift integer_onep@1 @2)))
+  (if (! FLOAT_TYPE_P (type)
+       && tree_nop_conversion_p (type, TREE_TYPE (@1)))
+   (lshift @0 @2)))
+
+/* Fold (C1/X)*C2 into (C1*C2)/X.  */
+(simplify
+ (mult (rdiv:s REAL_CST@0 @1) REAL_CST@2)
+  (if (flag_associative_math)
+   (with
+    { tree tem = const_binop (MULT_EXPR, type, @0, @2); }
+    (if (tem)
+     (rdiv { tem; } @1)))))
+
+/* Simplify ~X & X as zero.  */
+(simplify
+ (bit_and:c (convert? @0) (convert? (bit_not @0)))
+  { build_zero_cst (type); })
+
+/* Fold (A & ~B) - (A & B) into (A ^ B) - B.  */
+(simplify
+ (minus (bit_and:cs @0 (bit_not @1)) (bit_and:s @0 @1))
+  (minus (bit_xor @0 @1) @1))
+(simplify
+ (minus (bit_and:s @0 INTEGER_CST@2) (bit_and:s @0 INTEGER_CST@1))
+ (if (wi::bit_not (@2) == @1)
+  (minus (bit_xor @0 @1) @1)))
+
+/* Fold (A & B) - (A & ~B) into B - (A ^ B).  */
+(simplify
+ (minus (bit_and:s @0 @1) (bit_and:cs @0 (bit_not @1)))
+  (minus @1 (bit_xor @0 @1)))
+
+/* Simplify (X & ~Y) | (~X & Y) -> X ^ Y.  */
+(simplify
+ (bit_ior:c (bit_and:c @0 (bit_not @1)) (bit_and:c (bit_not @0) @1))
+  (bit_xor @0 @1))
+(simplify
+ (bit_ior:c (bit_and @0 INTEGER_CST@2) (bit_and (bit_not @0) INTEGER_CST@1))
+ (if (wi::bit_not (@2) == @1)
+  (bit_xor @0 @1)))
 
 /* X % Y is smaller than Y.  */
 (for cmp (lt ge)
@@ -535,6 +675,13 @@ along with GCC; see the file COPYING3.  If not see
 (match negate_expr_p
  VECTOR_CST
  (if (FLOAT_TYPE_P (TREE_TYPE (type)) || TYPE_OVERFLOW_WRAPS (type))))
+
+/* (-A) * (-B) -> A * B  */
+(simplify
+ (mult:c (convert1? (negate @0)) (convert2? negate_expr_p@1))
+  (if (tree_nop_conversion_p (type, TREE_TYPE (@0))
+       && tree_nop_conversion_p (type, TREE_TYPE (@1)))
+   (mult (convert @0) (convert (negate @1)))))
  
 /* -(A + B) -> (-B) - A.  */
 (simplify
@@ -620,6 +767,8 @@ along with GCC; see the file COPYING3.  If not see
 (match truth_valued_p
   (truth_not @0))
 
+(match (logical_inverted_value @0)
+ (truth_not @0))
 (match (logical_inverted_value @0)
  (bit_not truth_valued_p@0))
 (match (logical_inverted_value @0)
@@ -939,7 +1088,57 @@ along with GCC; see the file COPYING3.  If not see
 	 || (POINTER_TYPE_P (TREE_TYPE (@0))
 	     && TREE_CODE (@1) == INTEGER_CST
 	     && tree_int_cst_sign_bit (@1) == 0))
-     (convert @1))))))
+     (convert @1))))
+
+  /* (T)P - (T)(P + A) -> -(T) A */
+  (for add (plus pointer_plus)
+   (simplify
+    (minus (convert @0)
+     (convert (add @0 @1)))
+    (if (element_precision (type) <= element_precision (TREE_TYPE (@1))
+	 /* For integer types, if A has a smaller type
+	    than T the result depends on the possible
+	    overflow in P + A.
+	    E.g. T=size_t, A=(unsigned)429497295, P>0.
+	    However, if an overflow in P + A would cause
+	    undefined behavior, we can assume that there
+	    is no overflow.  */
+	 || (INTEGRAL_TYPE_P (TREE_TYPE (@0))
+	     && TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (@0)))
+	 /* For pointer types, if the conversion of A to the
+	    final type requires a sign- or zero-extension,
+	    then we have to punt - it is not defined which
+	    one is correct.  */
+	 || (POINTER_TYPE_P (TREE_TYPE (@0))
+	     && TREE_CODE (@1) == INTEGER_CST
+	     && tree_int_cst_sign_bit (@1) == 0))
+     (negate (convert @1)))))
+
+  /* (T)(P + A) - (T)(P + B) -> (T)A - (T)B */
+  (for add (plus pointer_plus)
+   (simplify
+    (minus (convert (add @0 @1))
+     (convert (add @0 @2)))
+    (if (element_precision (type) <= element_precision (TREE_TYPE (@1))
+	 /* For integer types, if A has a smaller type
+	    than T the result depends on the possible
+	    overflow in P + A.
+	    E.g. T=size_t, A=(unsigned)429497295, P>0.
+	    However, if an overflow in P + A would cause
+	    undefined behavior, we can assume that there
+	    is no overflow.  */
+	 || (INTEGRAL_TYPE_P (TREE_TYPE (@0))
+	     && TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (@0)))
+	 /* For pointer types, if the conversion of A to the
+	    final type requires a sign- or zero-extension,
+	    then we have to punt - it is not defined which
+	    one is correct.  */
+	 || (POINTER_TYPE_P (TREE_TYPE (@0))
+	     && TREE_CODE (@1) == INTEGER_CST
+	     && tree_int_cst_sign_bit (@1) == 0
+	     && TREE_CODE (@2) == INTEGER_CST
+	     && tree_int_cst_sign_bit (@2) == 0))
+     (minus (convert @1) (convert @2)))))))
 
 
 /* Simplifications of MIN_EXPR and MAX_EXPR.  */
@@ -1991,8 +2190,12 @@ along with GCC; see the file COPYING3.  If not see
 	   && decl_in_symtab_p (base1))
          equal = symtab_node::get_create (base0)
 	           ->equal_address_to (symtab_node::get_create (base1));
-       else if ((DECL_P (base0) || TREE_CODE (base0) == SSA_NAME)
-		&& (DECL_P (base1) || TREE_CODE (base1) == SSA_NAME))
+       else if ((DECL_P (base0)
+		 || TREE_CODE (base0) == SSA_NAME
+		 || TREE_CODE (base0) == STRING_CST)
+		&& (DECL_P (base1)
+		    || TREE_CODE (base1) == SSA_NAME
+		    || TREE_CODE (base1) == STRING_CST))
          equal = (base0 == base1);
      }
      (if (equal == 1
@@ -2000,9 +2203,9 @@ along with GCC; see the file COPYING3.  If not see
 	      /* If the offsets are equal we can ignore overflow.  */
 	      || off0 == off1
 	      || POINTER_TYPE_OVERFLOW_UNDEFINED
-	      /* Or if we compare using pointers to decls.  */
+	      /* Or if we compare using pointers to decls or strings.  */
 	      || (POINTER_TYPE_P (TREE_TYPE (@2))
-		  && DECL_P (base0))))
+		  && (DECL_P (base0) || TREE_CODE (base0) == STRING_CST))))
       (switch
        (if (cmp == EQ_EXPR)
 	{ constant_boolean_node (off0 == off1, type); })
@@ -2123,11 +2326,25 @@ along with GCC; see the file COPYING3.  If not see
    clearly less optimal and which we'll transform again in forwprop.  */
 
 
-/* Simplification of math builtins.  */
+/* Simplification of math builtins.  These rules must all be optimizations
+   as well as IL simplifications.  If there is a possibility that the new
+   form could be a pessimization, the rule should go in the canonicalization
+   section that follows this one.
 
-/* fold_builtin_logarithm */
+   Rules can generally go in this section if they satisfy one of
+   the following:
+
+   - the rule describes an identity
+
+   - the rule replaces calls with something as simple as addition or
+     multiplication
+
+   - the rule contains unary calls only and simplifies the surrounding
+     arithmetic.  (The idea here is to exclude non-unary calls in which
+     one operand is constant and in which the call is known to be cheap
+     when the operand has that value.)  */
+
 (if (flag_unsafe_math_optimizations)
-
  /* Simplify sqrt(x) * sqrt(x) -> x.  */
  (simplify
   (mult (SQRT@1 @0) @1)
@@ -2140,22 +2357,146 @@ along with GCC; see the file COPYING3.  If not see
    (mult (root:s @0) (root:s @1))
     (root (mult @0 @1))))
 
- /* Simplify pow(x,y) * pow(x,z) -> pow(x,y+z). */
- (simplify
-  (mult (POW:s @0 @1) (POW:s @0 @2))
-   (POW @0 (plus @1 @2)))
-
- /* Simplify pow(x,y) * pow(z,y) -> pow(x*z,y). */
- (simplify
-  (mult (POW:s @0 @1) (POW:s @2 @1))
-   (POW (mult @0 @2) @1))
-
  /* Simplify expN(x) * expN(y) -> expN(x+y). */
  (for exps (EXP EXP2 EXP10 POW10)
   (simplify
    (mult (exps:s @0) (exps:s @1))
     (exps (plus @0 @1))))
 
+ /* Simplify a/root(b/c) into a*root(c/b).  */
+ (for root (SQRT CBRT)
+  (simplify
+   (rdiv @0 (root:s (rdiv:s @1 @2)))
+    (mult @0 (root (rdiv @2 @1)))))
+
+ /* Simplify x/expN(y) into x*expN(-y).  */
+ (for exps (EXP EXP2 EXP10 POW10)
+  (simplify
+   (rdiv @0 (exps:s @1))
+    (mult @0 (exps (negate @1)))))
+
+ /* Special case, optimize logN(expN(x)) = x.  */
+ (for logs (LOG LOG2 LOG10 LOG10)
+      exps (EXP EXP2 EXP10 POW10)
+  (simplify
+   (logs (exps @0))
+    @0))
+
+ /* Optimize logN(func()) for various exponential functions.  We
+    want to determine the value "x" and the power "exponent" in
+    order to transform logN(x**exponent) into exponent*logN(x).  */
+ (for logs (LOG  LOG   LOG   LOG2 LOG2  LOG2  LOG10 LOG10)
+      exps (EXP2 EXP10 POW10 EXP  EXP10 POW10 EXP   EXP2)
+  (simplify
+   (logs (exps @0))
+   (with {
+     tree x;
+     switch (exps)
+       {
+       CASE_FLT_FN (BUILT_IN_EXP):
+         /* Prepare to do logN(exp(exponent)) -> exponent*logN(e).  */
+	 x = build_real_truncate (type, dconst_e ());
+         break;
+       CASE_FLT_FN (BUILT_IN_EXP2):
+         /* Prepare to do logN(exp2(exponent)) -> exponent*logN(2).  */
+         x = build_real (type, dconst2);
+         break;
+       CASE_FLT_FN (BUILT_IN_EXP10):
+       CASE_FLT_FN (BUILT_IN_POW10):
+	 /* Prepare to do logN(exp10(exponent)) -> exponent*logN(10).  */
+	 {
+	   REAL_VALUE_TYPE dconst10;
+	   real_from_integer (&dconst10, VOIDmode, 10, SIGNED);
+	   x = build_real (type, dconst10);
+	 }
+         break;
+       default:
+	 gcc_unreachable ();
+       }
+     }
+    (mult (logs { x; }) @0))))
+
+ (for logs (LOG LOG
+            LOG2 LOG2
+	    LOG10 LOG10)
+      exps (SQRT CBRT)
+  (simplify
+   (logs (exps @0))
+   (with {
+     tree x;
+     switch (exps)
+       {
+       CASE_FLT_FN (BUILT_IN_SQRT):
+	 /* Prepare to do logN(sqrt(x)) -> 0.5*logN(x).  */
+	 x = build_real (type, dconsthalf);
+         break;
+       CASE_FLT_FN (BUILT_IN_CBRT):
+	 /* Prepare to do logN(cbrt(x)) -> (1/3)*logN(x).  */
+         x = build_real_truncate (type, dconst_third ());
+         break;
+       default:
+	 gcc_unreachable ();
+       }
+     }
+    (mult { x; } (logs @0)))))
+
+ /* logN(pow(x,exponent)) -> exponent*logN(x).  */
+ (for logs (LOG LOG2 LOG10)
+      pows (POW)
+  (simplify
+   (logs (pows @0 @1))
+   (mult @1 (logs @0))))
+
+ (for sqrts (SQRT)
+      cbrts (CBRT)
+      exps (EXP EXP2 EXP10 POW10)
+  /* sqrt(expN(x)) -> expN(x*0.5).  */
+  (simplify
+   (sqrts (exps @0))
+   (exps (mult @0 { build_real (type, dconsthalf); })))
+  /* cbrt(expN(x)) -> expN(x/3).  */
+  (simplify
+   (cbrts (exps @0))
+   (exps (mult @0 { build_real_truncate (type, dconst_third ()); }))))
+
+ /* tan(atan(x)) -> x.  */
+ (for tans (TAN)
+      atans (ATAN)
+  (simplify
+   (tans (atans @0))
+   @0)))
+
+/* cabs(x+0i) or cabs(0+xi) -> abs(x).  */
+(simplify
+ (CABS (complex:c @0 real_zerop@1))
+ (abs @0))
+
+/* trunc(trunc(x)) -> trunc(x), etc.  */
+(for fns (TRUNC FLOOR CEIL ROUND NEARBYINT RINT)
+ (simplify
+  (fns (fns @0))
+  (fns @0)))
+/* f(x) -> x if x is integer valued and f does nothing for such values.  */
+(for fns (TRUNC FLOOR CEIL ROUND NEARBYINT)
+ (simplify
+  (fns integer_valued_real_p@0)
+  @0))
+/* Same for rint.  We have to check flag_errno_math because
+   integer_valued_real_p accepts +Inf, -Inf and NaNs as integers.  */
+(if (!flag_errno_math)
+ (simplify
+  (RINT integer_valued_real_p@0)
+  @0))
+
+/* Canonicalization of sequences of math builtins.  These rules represent
+   IL simplifications but are not necessarily optimizations.
+
+   The sincos pass is responsible for picking "optimal" implementations
+   of math builtins, which may be more complicated and can sometimes go
+   the other way, e.g. converting pow into a sequence of sqrts.
+   We only want to do these canonicalizations before the pass has run.  */
+
+(if (flag_unsafe_math_optimizations && canonicalize_math_p ())
  /* Simplify tan(x) * cos(x) -> sin(x). */
  (simplify
   (mult:c (TAN:s @0) (COS:s @0))
@@ -2191,97 +2532,130 @@ along with GCC; see the file COPYING3.  If not see
        && ! HONOR_INFINITIES (@0))
    (rdiv { build_one_cst (type); } (COS @0))))
 
+ /* Simplify pow(x,y) * pow(x,z) -> pow(x,y+z). */
+ (simplify
+  (mult (POW:s @0 @1) (POW:s @0 @2))
+   (POW @0 (plus @1 @2)))
+
+ /* Simplify pow(x,y) * pow(z,y) -> pow(x*z,y). */
+ (simplify
+  (mult (POW:s @0 @1) (POW:s @2 @1))
+   (POW (mult @0 @2) @1))
+
  /* Simplify pow(x,c) / x -> pow(x,c-1). */
  (simplify
   (rdiv (POW:s @0 REAL_CST@1) @0)
   (if (!TREE_OVERFLOW (@1))
    (POW @0 (minus @1 { build_one_cst (type); }))))
 
- /* Simplify a/root(b/c) into a*root(c/b).  */
- (for root (SQRT CBRT)
-  (simplify
-   (rdiv @0 (root:s (rdiv:s @1 @2)))
-    (mult @0 (root (rdiv @2 @1)))))
-
- /* Simplify x/expN(y) into x*expN(-y).  */
- (for exps (EXP EXP2 EXP10 POW10)
-  (simplify
-   (rdiv @0 (exps:s @1))
-    (mult @0 (exps (negate @1)))))
-
  /* Simplify x / pow (y,z) -> x * pow(y,-z). */
  (simplify
   (rdiv @0 (POW:s @1 @2))
    (mult @0 (POW @1 (negate @2))))
 
- /* Special case, optimize logN(expN(x)) = x.  */
- (for logs (LOG LOG2 LOG10 LOG10)
-      exps (EXP EXP2 EXP10 POW10)
-  (simplify
-   (logs (exps @0))
-    @0))
- /* Optimize logN(func()) for various exponential functions.  We
-    want to determine the value "x" and the power "exponent" in
-    order to transform logN(x**exponent) into exponent*logN(x).  */
- (for logs (LOG  LOG   LOG   LOG2 LOG2  LOG2  LOG10 LOG10)
-      exps (EXP2 EXP10 POW10 EXP  EXP10 POW10 EXP   EXP2)
-  (simplify
-   (logs (exps @0))
-   (with {
-     tree x;
-     switch (exps)
-       {
-       CASE_FLT_FN (BUILT_IN_EXP):
-         /* Prepare to do logN(exp(exponent) -> exponent*logN(e).  */
-	 x = build_real_truncate (type, dconst_e ());
-         break;
-       CASE_FLT_FN (BUILT_IN_EXP2):
-         /* Prepare to do logN(exp2(exponent) -> exponent*logN(2).  */
-         x = build_real (type, dconst2);
-         break;
-       CASE_FLT_FN (BUILT_IN_EXP10):
-       CASE_FLT_FN (BUILT_IN_POW10):
-	 /* Prepare to do logN(exp10(exponent) -> exponent*logN(10).  */
-	 {
-	   REAL_VALUE_TYPE dconst10;
-	   real_from_integer (&dconst10, VOIDmode, 10, SIGNED);
-	   x = build_real (type, dconst10);
-	 }
-         break;
-       default:
-	 gcc_unreachable ();
-       }
-     }
-    (mult (logs { x; }) @0))))
- (for logs (LOG LOG
-            LOG2 LOG2
-	    LOG10 LOG10)
-      exps (SQRT CBRT)
-  (simplify
-   (logs (exps @0))
-   (with {
-     tree x;
-     switch (exps)
-       {
-       CASE_FLT_FN (BUILT_IN_SQRT):
-	 /* Prepare to do logN(sqrt(x) -> 0.5*logN(x).  */
-	 x = build_real (type, dconsthalf);
-         break;
-       CASE_FLT_FN (BUILT_IN_CBRT):
-	 /* Prepare to do logN(cbrt(x) -> (1/3)*logN(x).  */
-         x = build_real_truncate (type, dconst_third ());
-         break;
-       default:
-	 gcc_unreachable ();
-       }
-     }
-    (mult { x; } (logs @0)))))
- /* logN(pow(x,exponent) -> exponent*logN(x).  */
- (for logs (LOG LOG2 LOG10)
+ (for sqrts (SQRT)
+      cbrts (CBRT)
       pows (POW)
+  /* sqrt(sqrt(x)) -> pow(x,1/4).  */
   (simplify
-   (logs (pows @0 @1))
-   (mult @1 (logs @0)))))
+   (sqrts (sqrts @0))
+   (pows @0 { build_real (type, dconst_quarter ()); }))
+  /* sqrt(cbrt(x)) -> pow(x,1/6).  */
+  (simplify
+   (sqrts (cbrts @0))
+   (pows @0 { build_real_truncate (type, dconst_sixth ()); }))
+  /* cbrt(sqrt(x)) -> pow(x,1/6).  */
+  (simplify
+   (cbrts (sqrts @0))
+   (pows @0 { build_real_truncate (type, dconst_sixth ()); }))
+  /* cbrt(cbrt(x)) -> pow(x,1/9), iff x is nonnegative.  */
+  (simplify
+   (cbrts (cbrts tree_expr_nonnegative_p@0))
+   (pows @0 { build_real_truncate (type, dconst_ninth ()); }))
+  /* sqrt(pow(x,y)) -> pow(|x|,y*0.5).  */
+  (simplify
+   (sqrts (pows @0 @1))
+   (pows (abs @0) (mult @1 { build_real (type, dconsthalf); })))
+  /* cbrt(pow(x,y)) -> pow(x,y/3), iff x is nonnegative.  */
+  (simplify
+   (cbrts (pows tree_expr_nonnegative_p@0 @1))
+   (pows @0 (mult @1 { build_real_truncate (type, dconst_third ()); }))))
+
+ /* cabs(x+xi) -> fabs(x)*sqrt(2).  */
+ (simplify
+  (CABS (complex @0 @0))
+  (mult (abs @0) { build_real_truncate (type, dconst_sqrt2 ()); })))
+
+(if (canonicalize_math_p ())
+ /* floor(x) -> trunc(x) if x is nonnegative.  */
+ (for floors (FLOOR)
+      truncs (TRUNC)
+  (simplify
+   (floors tree_expr_nonnegative_p@0)
+   (truncs @0))))
+
+(match double_value_p
+ @0
+ (if (TYPE_MAIN_VARIANT (TREE_TYPE (@0)) == double_type_node)))
+(for froms (BUILT_IN_TRUNCL
+	    BUILT_IN_FLOORL
+	    BUILT_IN_CEILL
+	    BUILT_IN_ROUNDL
+	    BUILT_IN_NEARBYINTL
+	    BUILT_IN_RINTL)
+     tos (BUILT_IN_TRUNC
+	  BUILT_IN_FLOOR
+	  BUILT_IN_CEIL
+	  BUILT_IN_ROUND
+	  BUILT_IN_NEARBYINT
+	  BUILT_IN_RINT)
+ /* truncl(extend(x)) -> extend(trunc(x)), etc., if x is a double.  */
+ (if (optimize && canonicalize_math_p ())
+  (simplify
+   (froms (convert double_value_p@0))
+   (convert (tos @0)))))
+
+(match float_value_p
+ @0
+ (if (TYPE_MAIN_VARIANT (TREE_TYPE (@0)) == float_type_node)))
+(for froms (BUILT_IN_TRUNCL BUILT_IN_TRUNC
+	    BUILT_IN_FLOORL BUILT_IN_FLOOR
+	    BUILT_IN_CEILL BUILT_IN_CEIL
+	    BUILT_IN_ROUNDL BUILT_IN_ROUND
+	    BUILT_IN_NEARBYINTL BUILT_IN_NEARBYINT
+	    BUILT_IN_RINTL BUILT_IN_RINT)
+     tos (BUILT_IN_TRUNCF BUILT_IN_TRUNCF
+	  BUILT_IN_FLOORF BUILT_IN_FLOORF
+	  BUILT_IN_CEILF BUILT_IN_CEILF
+	  BUILT_IN_ROUNDF BUILT_IN_ROUNDF
+	  BUILT_IN_NEARBYINTF BUILT_IN_NEARBYINTF
+	  BUILT_IN_RINTF BUILT_IN_RINTF)
+ /* truncl(extend(x)) and trunc(extend(x)) -> extend(truncf(x)), etc.,
+    if x is a float.  */
+ (if (optimize && canonicalize_math_p ())
+  (simplify
+   (froms (convert float_value_p@0))
+   (convert (tos @0)))))
+
+/* cproj(x) -> x if we're ignoring infinities.  */
+(simplify
+ (CPROJ @0)
+ (if (!HONOR_INFINITIES (type))
+   @0))
+
+/* If the real part is inf and the imag part is known to be
+   nonnegative, return (inf + 0i).  */
+(simplify
+ (CPROJ (complex REAL_CST@0 tree_expr_nonnegative_p@1))
+ (if (real_isinf (TREE_REAL_CST_PTR (@0)))
+  { build_complex_inf (type, false); }))
+
+/* If the imag part is inf, return (inf+I*copysign(0,imag)).  */
+(simplify
+ (CPROJ (complex @0 REAL_CST@1))
+ (if (real_isinf (TREE_REAL_CST_PTR (@1)))
+  { build_complex_inf (type, TREE_REAL_CST_PTR (@1)->sign); }))
+
 
 /* Narrowing of arithmetic and logical operations. 
 
@@ -2345,8 +2719,8 @@ along with GCC; see the file COPYING3.  If not see
        && types_match (@0, @1)
        && (tree_int_cst_min_precision (@4, TYPE_SIGN (TREE_TYPE (@0)))
 	   <= TYPE_PRECISION (TREE_TYPE (@0)))
-       && (TYPE_OVERFLOW_WRAPS (TREE_TYPE (@0))
-	   || tree_int_cst_sgn (@4) >= 0))
+       && (wi::bit_and (@4, wi::mask (TYPE_PRECISION (TREE_TYPE (@0)),
+			true, TYPE_PRECISION (type))) == 0))
    (if (TYPE_OVERFLOW_WRAPS (TREE_TYPE (@0)))
     (with { tree ntype = TREE_TYPE (@0); }
      (convert (bit_and (op @0 @1) (convert:ntype @4))))
@@ -2354,43 +2728,12 @@ along with GCC; see the file COPYING3.  If not see
      (convert (bit_and (op (convert:utype @0) (convert:utype @1))
 	       (convert:utype @4))))))))
 
-(if (flag_unsafe_math_optimizations)
- (for sqrts (SQRT)
-      cbrts (CBRT)
-      exps (EXP EXP2 EXP10 POW10)
-  /* sqrt(expN(x)) -> expN(x*0.5).  */
-  (simplify
-   (sqrts (exps @0))
-   (exps (mult @0 { build_real (type, dconsthalf); })))
-  /* cbrt(expN(x)) -> expN(x/3).  */
-  (simplify
-   (cbrts (exps @0))
-   (exps (mult @0 { build_real_truncate (type, dconst_third ()); }))))
+/* Transform (@0 < @1 and @0 < @2) to use min, 
+   (@0 > @1 and @0 > @2) to use max */
+(for op (lt le gt ge)
+     ext (min min max max)
+ (simplify
+  (bit_and (op:s @0 @1) (op:s @0 @2))
+  (if (INTEGRAL_TYPE_P (TREE_TYPE (@0)))
+   (op @0 (ext @1 @2)))))
 
- (for sqrts (SQRT)
-      cbrts (CBRT)
-      pows (POW)
-  /* sqrt(sqrt(x)) -> pow(x,1/4).  */
-  (simplify
-   (sqrts (sqrts @0))
-   (pows @0 { build_real (type, dconst_quarter ()); }))
-  /* sqrt(cbrt(x)) -> pow(x,1/6).  */
-  (simplify
-   (sqrts (cbrts @0))
-   (pows @0 { build_real_truncate (type, dconst_sixth ()); }))
-  /* cbrt(sqrt(x)) -> pow(x,1/6).  */
-  (simplify
-   (cbrts (sqrts @0))
-   (pows @0 { build_real_truncate (type, dconst_sixth ()); }))
-  /* cbrt(cbrt(x)) -> pow(x,1/9), iff x is nonnegative.  */
-  (simplify
-   (cbrts (cbrts tree_expr_nonnegative_p@0))
-   (pows @0 { build_real_truncate (type, dconst_ninth ()); }))
-  /* sqrt(pow(x,y)) -> pow(|x|,y*0.5).  */
-  (simplify
-   (sqrts (pows @0 @1))
-   (pows (abs @0) (mult @1 { build_real (type, dconsthalf); })))
-  /* cbrt(pow(x,y)) -> pow(x,y/3), iff x is nonnegative.  */
-  (simplify
-   (cbrts (pows tree_expr_nonnegative_p@0 @1))
-   (pows @0 (mult @1 { build_real_truncate (type, dconst_third ()); })))))

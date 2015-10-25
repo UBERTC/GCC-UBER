@@ -1277,6 +1277,26 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define CONSTANT_ALIGNMENT(EXP, ALIGN) ALIGN
 #endif
 
+#ifndef INITIAL_FRAME_ADDRESS_RTX
+#define INITIAL_FRAME_ADDRESS_RTX NULL
+#endif
+
+#ifndef SETUP_FRAME_ADDRESSES
+#define SETUP_FRAME_ADDRESSES() do { } while (0)
+#endif
+
+#ifndef DYNAMIC_CHAIN_ADDRESS
+#define DYNAMIC_CHAIN_ADDRESS(x) (x)
+#endif
+
+#ifndef FRAME_ADDR_RTX
+#define FRAME_ADDR_RTX(x) (x)
+#endif
+
+#ifndef REVERSE_CONDITION
+#define REVERSE_CONDITION(code, mode) reverse_condition (code)
+#endif
+
 #ifdef GCC_INSN_FLAGS_H
 /* Dependent default target macro definitions
 

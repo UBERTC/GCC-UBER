@@ -49,30 +49,6 @@ package Sem_Util is
    --  it the identifier of the block. Id denotes the generated entity. If the
    --  block already has an identifier, Id returns the entity of its label.
 
-   procedure Add_Contract_Item (Prag : Node_Id; Id : Entity_Id);
-   --  Add pragma Prag to the contract of a constant, entry, package [body],
-   --  subprogram [body] or variable denoted by Id. The following are valid
-   --  pragmas:
-   --    Abstract_State
-   --    Async_Readers
-   --    Async_Writers
-   --    Contract_Cases
-   --    Depends
-   --    Effective_Reads
-   --    Effective_Writes
-   --    Extensions_Visible
-   --    Global
-   --    Initial_Condition
-   --    Initializes
-   --    Part_Of
-   --    Postcondition
-   --    Precondition
-   --    Refined_Depends
-   --    Refined_Global
-   --    Refined_Post
-   --    Refined_States
-   --    Test_Case
-
    procedure Add_Global_Declaration (N : Node_Id);
    --  These procedures adds a declaration N at the library level, to be
    --  elaborated before any other code in the unit. It is used for example
@@ -274,6 +250,14 @@ package Sem_Util is
    --  error message on node N. Used in object declarations, type conversions
    --  and qualified expressions.
 
+   procedure Check_Function_With_Address_Parameter (Subp_Id : Entity_Id);
+   --  A subprogram that has an Address parameter and is declared in a Pure
+   --  package is not considered Pure, because the parameter may be used as a
+   --  pointer and the referenced data may change even if the address value
+   --  itself does not.
+   --  If the programmer gave an explicit Pure_Function pragma, then we respect
+   --  the pragma and leave the subprogram Pure.
+
    procedure Check_Function_Writable_Actuals (N : Node_Id);
    --  (Ada 2012): If the construct N has two or more direct constituents that
    --  are names or expressions whose evaluation may occur in an arbitrary
@@ -308,14 +292,13 @@ package Sem_Util is
    --  remains in the Examiner (JB01-005). Note that the Examiner does not
    --  count package declarations in later declarative items.
 
-   procedure Check_Nested_Access (Ent : Entity_Id);
-   --  Check whether Ent denotes an entity declared in an uplevel scope, which
-   --  is accessed inside a nested procedure, and set Has_Uplevel_Reference
-   --  flag accordingly. This is currently only enabled for if on a VM target.
-
    procedure Check_No_Hidden_State (Id : Entity_Id);
    --  Determine whether object or state Id introduces a hidden state. If this
    --  is the case, emit an error.
+
+   procedure Check_Nonvolatile_Function_Profile (Func_Id : Entity_Id);
+   --  Verify that the profile of nonvolatile function Func_Id does not contain
+   --  effectively volatile parameters or return type.
 
    procedure Check_Potentially_Blocking_Operation (N : Node_Id);
    --  N is one of the statement forms that is a potentially blocking
@@ -325,6 +308,15 @@ package Sem_Util is
    --  Determine whether the contract of subprogram Subp_Id mentions attribute
    --  'Result and it contains an expression that evaluates differently in pre-
    --  and post-state.
+
+   procedure Check_Unused_Body_States (Body_Id : Entity_Id);
+   --  Verify that all abstract states and object declared in the state space
+   --  of a package body denoted by entity Body_Id are used as constituents.
+   --  Emit an error if this is not the case.
+
+   function Collect_Body_States (Body_Id : Entity_Id) return Elist_Id;
+   --  Gather the entities of all abstract states and objects declared in the
+   --  body state space of package body Body_Id.
 
    procedure Check_Unprotected_Access
      (Context : Node_Id;
@@ -424,11 +416,6 @@ package Sem_Util is
    function Corresponding_Spec_Of (Decl : Node_Id) return Entity_Id;
    --  Return the corresponding spec of Decl when it denotes a package or a
    --  subprogram [stub], or the defining entity of Decl.
-
-   procedure Create_Generic_Contract (Unit : Node_Id);
-   --  Create a contract node for a generic package, generic subprogram or a
-   --  generic body denoted by Unit by collecting all source contract-related
-   --  pragmas in the contract of the unit.
 
    function Current_Entity (N : Node_Id) return Entity_Id;
    pragma Inline (Current_Entity);
@@ -536,7 +523,8 @@ package Sem_Util is
    --  Returns the closest ancestor of Typ that is a CPP type.
 
    function Enclosing_Declaration (N : Node_Id) return Node_Id;
-   --  Returns the declaration node enclosing N, if any, or Empty otherwise
+   --  Returns the declaration node enclosing N (including possibly N itself),
+   --  if any, or Empty otherwise.
 
    function Enclosing_Generic_Body
      (N : Node_Id) return Node_Id;
@@ -823,7 +811,7 @@ package Sem_Util is
    --  returned. Otherwise the Etype of the node is returned.
 
    function Get_Body_From_Stub (N : Node_Id) return Node_Id;
-   --  Return the body node for a stub.
+   --  Return the body node for a stub
 
    function Get_Cursor_Type
      (Aspect : Node_Id;
@@ -914,6 +902,10 @@ package Sem_Util is
    --  literal or concatenation of string literals. An error is given for
    --  any other form.
 
+   function Get_Reference_Discriminant (Typ : Entity_Id) return Entity_Id;
+   --  If Typ has Implicit_Dereference, return discriminant specified in the
+   --  corresponding aspect.
+
    function Get_Referenced_Object (N : Node_Id) return Node_Id;
    --  Given a node, return the renamed object if the node represents a renamed
    --  object, otherwise return the node unchanged. The node may represent an
@@ -991,6 +983,11 @@ package Sem_Util is
      (Comp : Entity_Id) return Boolean;
    --  Returns True if and only if Comp has a constrained subtype that depends
    --  on a discriminant.
+
+   function Has_Effectively_Volatile_Profile
+     (Subp_Id : Entity_Id) return Boolean;
+   --  Determine whether subprogram Subp_Id has an effectively volatile formal
+   --  parameter or returns an effectively volatile value.
 
    function Has_Infinities (E : Entity_Id) return Boolean;
    --  Determines if the range of the floating-point type E includes
@@ -1140,14 +1137,6 @@ package Sem_Util is
    --  Inherit the rep item chain of type From_Typ without clobbering any
    --  existing rep items on Typ's chain. Typ is the destination type.
 
-   procedure Inherit_Subprogram_Contract
-     (Subp      : Entity_Id;
-      From_Subp : Entity_Id);
-   --  Inherit relevant contract items from source subprogram From_Subp. Subp
-   --  denotes the destination subprogram. The inherited items are:
-   --    Extensions_Visible
-   --  ??? it would be nice if this routine handles Pre'Class and Post'Class
-
    procedure Insert_Explicit_Dereference (N : Node_Id);
    --  In a context that requires a composite or subprogram type and where a
    --  prefix is an access type, rewrite the access type node N (which is the
@@ -1256,10 +1245,8 @@ package Sem_Util is
    function Is_Declaration (N : Node_Id) return Boolean;
    --  Determine whether arbitrary node N denotes a declaration
 
-   function Is_Delegate (T : Entity_Id) return Boolean;
-   --  Returns true if type T represents a delegate. A Delegate is the CIL
-   --  object used to represent access-to-subprogram types. This is only
-   --  relevant to CIL, will always return false for other targets.
+   function Is_Declared_Within_Variant (Comp : Entity_Id) return Boolean;
+   --  Returns True iff component Comp is declared within a variant part
 
    function Is_Dependent_Component_Of_Mutable_Object
      (Object : Node_Id) return Boolean;
@@ -1289,13 +1276,17 @@ package Sem_Util is
    --  . machine_emin = 3 - machine_emax
 
    function Is_Effectively_Volatile (Id : Entity_Id) return Boolean;
-   --  The SPARK property "effectively volatile" applies to both types and
-   --  objects. To qualify as such, an entity must be either volatile or be
-   --  (of) an array type subject to aspect Volatile_Components.
+   --  Determine whether a type or object denoted by entity Id is effectively
+   --  volatile (SPARK RM 7.1.2). To qualify as such, the entity must be either
+   --    * Volatile
+   --    * An array type subject to aspect Volatile_Components
+   --    * An array type whose component type is effectively volatile
+   --    * A protected type
+   --    * Descendant of type Ada.Synchronous_Task_Control.Suspension_Object
 
    function Is_Effectively_Volatile_Object (N : Node_Id) return Boolean;
    --  Determine whether an arbitrary node denotes an effectively volatile
-   --  object.
+   --  object (SPARK RM 7.1.2).
 
    function Is_Expression_Function (Subp : Entity_Id) return Boolean;
    --  Predicate to determine whether a scope entity comes from a rewritten
@@ -1305,8 +1296,8 @@ package Sem_Util is
    function Is_EVF_Expression (N : Node_Id) return Boolean;
    --  Determine whether node N denotes a reference to a formal parameter of
    --  a specific tagged type whose related subprogram is subject to pragma
-   --  Extensions_Visible with value "False". Several other constructs fall
-   --  under this category:
+   --  Extensions_Visible with value "False" (SPARK RM 6.1.7). Several other
+   --  constructs fall under this category:
    --    1) A qualified expression whose operand is EVF
    --    2) A type conversion whose operand is EVF
    --    3) An if expression with at least one EVF dependent_expression
@@ -1325,7 +1316,7 @@ package Sem_Util is
    function Is_Fully_Initialized_Type (Typ : Entity_Id) return Boolean;
    --  Typ is a type entity. This function returns true if this type is fully
    --  initialized, meaning that an object of the type is fully initialized.
-   --  Note that initialization resulting from use of pragma Normalized_Scalars
+   --  Note that initialization resulting from use of pragma Normalize_Scalars
    --  does not count. Note that this is only used for the purpose of issuing
    --  warnings for objects that are potentially referenced uninitialized. This
    --  means that the result returned is not crucial, but should err on the
@@ -1348,6 +1339,11 @@ package Sem_Util is
    function Is_Iterator (Typ : Entity_Id) return Boolean;
    --  AI05-0139-2: Check whether Typ is one of the predefined interfaces in
    --  Ada.Iterator_Interfaces, or it is derived from one.
+
+   function Is_Iterator_Over_Array (N : Node_Id) return Boolean;
+   --  N is an iterator specification. Returns True iff N is an iterator over
+   --  an array, either inside a loop of the form 'for X of A' or a quantified
+   --  expression of the form 'for all/some X of A' where A is of array type.
 
    type Is_LHS_Result is (Yes, No, Unknown);
    function Is_LHS (N : Node_Id) return Is_LHS_Result;
@@ -1400,7 +1396,7 @@ package Sem_Util is
    --  initialized, meaning that an object of the type is at least partly
    --  initialized (in particular in the record case, that at least one
    --  component has an initialization expression). Note that initialization
-   --  resulting from the use of pragma Normalized_Scalars does not count.
+   --  resulting from the use of pragma Normalize_Scalars does not count.
    --  Include_Implicit controls whether implicit initialization of access
    --  values to null, and of discriminant values, is counted as making the
    --  type be partially initialized. For the default setting of True, these
@@ -1528,12 +1524,6 @@ package Sem_Util is
    pragma Inline (Is_Universal_Numeric_Type);
    --  True if T is Universal_Integer or Universal_Real
 
-   function Is_Value_Type (T : Entity_Id) return Boolean;
-   --  Returns true if type T represents a value type. This is only relevant to
-   --  CIL, will always return false for other targets. A value type is a CIL
-   --  object that is accessed directly, as opposed to the other CIL objects
-   --  that are accessed through managed pointers.
-
    function Is_Variable_Size_Array (E : Entity_Id) return Boolean;
    --  Returns true if E has variable size components
 
@@ -1559,6 +1549,11 @@ package Sem_Util is
    --  instead from a private type whose full view is controlled, an explicit
    --  Initialize/Adjust/Finalize subprogram does not override the inherited
    --  one.
+
+   function Is_Volatile_Function (Func_Id : Entity_Id) return Boolean;
+   --  Determine whether [generic] function Func_Id is subject to enabled
+   --  pragma Volatile_Function. Protected functions are treated as volatile
+   --  (SPARK RM 7.1.2).
 
    function Is_Volatile_Object (N : Node_Id) return Boolean;
    --  Determines if the given node denotes an volatile object in the sense of
@@ -1769,12 +1764,6 @@ package Sem_Util is
    --  convenience, qualified expressions applied to object names are also
    --  allowed as actuals for this function.
 
-   function Original_Corresponding_Operation (S : Entity_Id) return Entity_Id;
-   --  [Ada 2012: AI05-0125-1]: If S is an inherited dispatching primitive S2,
-   --  or overrides an inherited dispatching primitive S2, the original
-   --  corresponding operation of S is the original corresponding operation of
-   --  S2. Otherwise, it is S itself.
-
    function Original_Aspect_Pragma_Name (N : Node_Id) return Name_Id;
    --  Retrieve the name of aspect or pragma N taking into account a possible
    --  rewrite and whether the pragma is generated from an aspect as the names
@@ -1786,6 +1775,12 @@ package Sem_Util is
    --    Pre'Class            -> Name_uPre
    --    Type_Invariant       -> Name_uType_Invariant
    --    Type_Invariant'Class -> Name_uType_Invariant
+
+   function Original_Corresponding_Operation (S : Entity_Id) return Entity_Id;
+   --  [Ada 2012: AI05-0125-1]: If S is an inherited dispatching primitive S2,
+   --  or overrides an inherited dispatching primitive S2, the original
+   --  corresponding operation of S is the original corresponding operation of
+   --  S2. Otherwise, it is S itself.
 
    function Policy_In_Effect (Policy : Name_Id) return Name_Id;
    --  Given a policy, return the policy identifier associated with it. If no
@@ -1833,6 +1828,12 @@ package Sem_Util is
    procedure Remove_Homonym (E : Entity_Id);
    --  Removes E from the homonym chain
 
+   procedure Remove_Overloaded_Entity (Id : Entity_Id);
+   --  Remove arbitrary entity Id from the homonym chain, the scope chain and
+   --  the primitive operations list of the associated controlling type. NOTE:
+   --  the removal performed by this routine does not affect the visibility of
+   --  existing homonyms.
+
    function Rep_To_Pos_Flag (E : Entity_Id; Loc : Source_Ptr) return Node_Id;
    --  This is used to construct the second argument in a call to Rep_To_Pos
    --  which is Standard_True if range checks are enabled (E is an entity to
@@ -1845,6 +1846,13 @@ package Sem_Util is
    --  believe a request to suppress exceptions if possible, and further
    --  more there is at least one case in the generated code (the code for
    --  array assignment in a loop) that depends on this suppression.
+
+   procedure Report_Unused_Body_States
+     (Body_Id : Entity_Id;
+      States  : Elist_Id);
+   --  Emit errors for each abstract state or object found in list States that
+   --  is declared in package body Body_Id, but is not used as constituent in a
+   --  state refinement.
 
    procedure Require_Entity (N : Node_Id);
    --  N is a node which should have an entity value if it is an entity name.
@@ -2087,6 +2095,8 @@ package Sem_Util is
    --  views of the same entity have the same unique defining entity:
    --  * package spec and body;
    --  * subprogram declaration, subprogram stub and subprogram body;
+   --  * entry declaration and entry body;
+   --  * task declaration, task body stub and task body;
    --  * private view and full view of a type;
    --  * private view and full view of a deferred constant.
    --  In other cases, return the defining entity for N.
@@ -2123,7 +2133,7 @@ package Sem_Util is
    --  Determines if Current_Scope is within an init proc
 
    function Within_Scope (E : Entity_Id; S : Entity_Id) return Boolean;
-   --  Returns True if entity Id is declared within scope S
+   --  Returns True if entity E is declared within scope S
 
    procedure Wrong_Type (Expr : Node_Id; Expected_Type : Entity_Id);
    --  Output error message for incorrectly typed expression. Expr is the node

@@ -1676,39 +1676,39 @@ package body Sem_Res is
       --  Use CASE statement or array???
 
       if Is_Binary then
-         if    Op_Name =  Name_Op_And      then
+         if    Op_Name = Name_Op_And      then
             Kind := N_Op_And;
-         elsif Op_Name =  Name_Op_Or       then
+         elsif Op_Name = Name_Op_Or       then
             Kind := N_Op_Or;
-         elsif Op_Name =  Name_Op_Xor      then
+         elsif Op_Name = Name_Op_Xor      then
             Kind := N_Op_Xor;
-         elsif Op_Name =  Name_Op_Eq       then
+         elsif Op_Name = Name_Op_Eq       then
             Kind := N_Op_Eq;
-         elsif Op_Name =  Name_Op_Ne       then
+         elsif Op_Name = Name_Op_Ne       then
             Kind := N_Op_Ne;
-         elsif Op_Name =  Name_Op_Lt       then
+         elsif Op_Name = Name_Op_Lt       then
             Kind := N_Op_Lt;
-         elsif Op_Name =  Name_Op_Le       then
+         elsif Op_Name = Name_Op_Le       then
             Kind := N_Op_Le;
-         elsif Op_Name =  Name_Op_Gt       then
+         elsif Op_Name = Name_Op_Gt       then
             Kind := N_Op_Gt;
-         elsif Op_Name =  Name_Op_Ge       then
+         elsif Op_Name = Name_Op_Ge       then
             Kind := N_Op_Ge;
-         elsif Op_Name =  Name_Op_Add      then
+         elsif Op_Name = Name_Op_Add      then
             Kind := N_Op_Add;
-         elsif Op_Name =  Name_Op_Subtract then
+         elsif Op_Name = Name_Op_Subtract then
             Kind := N_Op_Subtract;
-         elsif Op_Name =  Name_Op_Concat   then
+         elsif Op_Name = Name_Op_Concat   then
             Kind := N_Op_Concat;
-         elsif Op_Name =  Name_Op_Multiply then
+         elsif Op_Name = Name_Op_Multiply then
             Kind := N_Op_Multiply;
-         elsif Op_Name =  Name_Op_Divide   then
+         elsif Op_Name = Name_Op_Divide   then
             Kind := N_Op_Divide;
-         elsif Op_Name =  Name_Op_Mod      then
+         elsif Op_Name = Name_Op_Mod      then
             Kind := N_Op_Mod;
-         elsif Op_Name =  Name_Op_Rem      then
+         elsif Op_Name = Name_Op_Rem      then
             Kind := N_Op_Rem;
-         elsif Op_Name =  Name_Op_Expon    then
+         elsif Op_Name = Name_Op_Expon    then
             Kind := N_Op_Expon;
          else
             raise Program_Error;
@@ -1717,13 +1717,13 @@ package body Sem_Res is
       --  Unary operators
 
       else
-         if    Op_Name =  Name_Op_Add      then
+         if    Op_Name = Name_Op_Add      then
             Kind := N_Op_Plus;
-         elsif Op_Name =  Name_Op_Subtract then
+         elsif Op_Name = Name_Op_Subtract then
             Kind := N_Op_Minus;
-         elsif Op_Name =  Name_Op_Abs      then
+         elsif Op_Name = Name_Op_Abs      then
             Kind := N_Op_Abs;
-         elsif Op_Name =  Name_Op_Not      then
+         elsif Op_Name = Name_Op_Not      then
             Kind := N_Op_Not;
          else
             raise Program_Error;
@@ -1990,11 +1990,23 @@ package body Sem_Res is
          return;
       end Resolution_Failed;
 
+      --  Local variables
+
+      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
+
    --  Start of processing for Resolve
 
    begin
       if N = Error then
          return;
+      end if;
+
+      --  A declaration may be subject to pragma Ghost. Set the mode now to
+      --  ensure that any nodes generated during analysis and expansion are
+      --  marked as Ghost.
+
+      if Is_Declaration (N) then
+         Set_Ghost_Mode (N);
       end if;
 
       --  Access attribute on remote subprogram cannot be used for a non-remote
@@ -2112,6 +2124,7 @@ package body Sem_Res is
       if Analyzed (N) then
          Debug_A_Exit ("resolving  ", N, "  (done, already analyzed)");
          Analyze_Dimension (N);
+         Ghost_Mode := Save_Ghost_Mode;
          return;
 
       --  Any case of Any_Type as the Etype value means that we had a
@@ -2119,6 +2132,7 @@ package body Sem_Res is
 
       elsif Etype (N) = Any_Type then
          Debug_A_Exit ("resolving  ", N, "  (done, Etype = Any_Type)");
+         Ghost_Mode := Save_Ghost_Mode;
          return;
       end if;
 
@@ -2371,7 +2385,7 @@ package body Sem_Res is
                         --  operators, which are not declared with the type
                         --  of the operand, but appear forever in Standard.
 
-                        if  It.Typ = Universal_Fixed
+                        if It.Typ = Universal_Fixed
                           and then Scope (It.Nam) = Standard_Standard
                         then
                            Error_Msg_N
@@ -2550,6 +2564,7 @@ package body Sem_Res is
             then
                Resolve (N, Full_View (Typ));
                Set_Etype (N, Typ);
+               Ghost_Mode := Save_Ghost_Mode;
                return;
 
             --  Check for an aggregate. Sometimes we can get bogus aggregates
@@ -2658,6 +2673,7 @@ package body Sem_Res is
             if Address_Integer_Convert_OK (Typ, Etype (N)) then
                Rewrite (N, Unchecked_Convert_To (Typ, Relocate_Node (N)));
                Analyze_And_Resolve (N, Typ);
+               Ghost_Mode := Save_Ghost_Mode;
                return;
             end if;
 
@@ -2720,12 +2736,14 @@ package body Sem_Res is
          end if;
 
          Resolution_Failed;
+         Ghost_Mode := Save_Ghost_Mode;
          return;
 
       --  Test if we have more than one interpretation for the context
 
       elsif Ambiguous then
          Resolution_Failed;
+         Ghost_Mode := Save_Ghost_Mode;
          return;
 
       --  Only one intepretation
@@ -2813,6 +2831,7 @@ package body Sem_Res is
                --  Rewrite_Renamed_Operator.
 
                if Analyzed (N) then
+                  Ghost_Mode := Save_Ghost_Mode;
                   return;
                end if;
             end if;
@@ -2962,6 +2981,7 @@ package body Sem_Res is
          if Nkind (N) not in N_Subexpr then
             Debug_A_Exit ("resolving  ", N, "  (done)");
             Expand (N);
+            Ghost_Mode := Save_Ghost_Mode;
             return;
          end if;
 
@@ -2996,6 +3016,8 @@ package body Sem_Res is
 
          Expand (N);
       end if;
+
+      Ghost_Mode := Save_Ghost_Mode;
    end Resolve;
 
    -------------
@@ -4083,22 +4105,11 @@ package body Sem_Res is
                --  actual to a nested call, since this constitutes a reading of
                --  the parameter, which is not allowed.
 
-               if Is_Entity_Name (A)
+               if Ada_Version = Ada_83
+                 and then Is_Entity_Name (A)
                  and then Ekind (Entity (A)) = E_Out_Parameter
                then
-                  if Ada_Version = Ada_83 then
-                     Error_Msg_N
-                       ("(Ada 83) illegal reading of out parameter", A);
-
-                  --  An effectively volatile OUT parameter cannot act as IN or
-                  --  IN OUT actual in a call (SPARK RM 7.1.3(11)).
-
-                  elsif SPARK_Mode = On
-                    and then Is_Effectively_Volatile (Entity (A))
-                  then
-                     Error_Msg_N
-                       ("illegal reading of volatile OUT parameter", A);
-                  end if;
+                  Error_Msg_N ("(Ada 83) illegal reading of out parameter", A);
                end if;
             end if;
 
@@ -4450,8 +4461,8 @@ package body Sem_Res is
             --  temporaries are ignored.
 
             if SPARK_Mode = On
-              and then Is_Effectively_Volatile_Object (A)
               and then Comes_From_Source (A)
+              and then Is_Effectively_Volatile_Object (A)
             then
                --  An effectively volatile object may act as an actual
                --  parameter when the corresponding formal is of a non-scalar
@@ -4517,7 +4528,8 @@ package body Sem_Res is
             --  The actual parameter of a Ghost subprogram whose formal is of
             --  mode IN OUT or OUT must be a Ghost variable (SPARK RM 6.9(13)).
 
-            if Is_Ghost_Entity (Nam)
+            if Comes_From_Source (Nam)
+              and then Is_Ghost_Entity (Nam)
               and then Ekind_In (F, E_In_Out_Parameter, E_Out_Parameter)
               and then Is_Entity_Name (A)
               and then Present (Entity (A))
@@ -6770,7 +6782,7 @@ package body Sem_Res is
         (Context : Node_Id;
          Obj_Ref : Node_Id) return Boolean;
       --  Determine whether node Context denotes a "non-interfering context"
-      --  (as defined in SPARK RM 7.1.3(13)) where volatile reference Obj_Ref
+      --  (as defined in SPARK RM 7.1.3(12)) where volatile reference Obj_Ref
       --  can safely reside.
 
       ----------------------------------------
@@ -6823,11 +6835,50 @@ package body Sem_Res is
         (Context : Node_Id;
          Obj_Ref : Node_Id) return Boolean
       is
+         function Is_Protected_Operation_Call (Nod : Node_Id) return Boolean;
+         --  Determine whether an arbitrary node denotes a call to a protected
+         --  entry, function or procedure in prefixed form where the prefix is
+         --  Obj_Ref.
+
          function Within_Check (Nod : Node_Id) return Boolean;
          --  Determine whether an arbitrary node appears in a check node
 
          function Within_Procedure_Call (Nod : Node_Id) return Boolean;
          --  Determine whether an arbitrary node appears in a procedure call
+
+         function Within_Volatile_Function (Id : Entity_Id) return Boolean;
+         --  Determine whether an arbitrary entity appears in a volatile
+         --  function.
+
+         ---------------------------------
+         -- Is_Protected_Operation_Call --
+         ---------------------------------
+
+         function Is_Protected_Operation_Call (Nod : Node_Id) return Boolean is
+            Pref : Node_Id;
+            Subp : Node_Id;
+
+         begin
+            --  A call to a protected operations retains its selected component
+            --  form as opposed to other prefixed calls that are transformed in
+            --  expanded names.
+
+            if Nkind (Nod) = N_Selected_Component then
+               Pref := Prefix (Nod);
+               Subp := Selector_Name (Nod);
+
+               return
+                 Pref = Obj_Ref
+                   and then Is_Protected_Type (Etype (Pref))
+                   and then Is_Entity_Name (Subp)
+                   and then Ekind_In (Entity (Subp), E_Entry,
+                                                     E_Entry_Family,
+                                                     E_Function,
+                                                     E_Procedure);
+            else
+               return False;
+            end if;
+         end Is_Protected_Operation_Call;
 
          ------------------
          -- Within_Check --
@@ -6883,6 +6934,32 @@ package body Sem_Res is
             return False;
          end Within_Procedure_Call;
 
+         ------------------------------
+         -- Within_Volatile_Function --
+         ------------------------------
+
+         function Within_Volatile_Function (Id : Entity_Id) return Boolean is
+            Func_Id : Entity_Id;
+
+         begin
+            --  Traverse the scope stack looking for a [generic] function
+
+            Func_Id := Id;
+            while Present (Func_Id) and then Func_Id /= Standard_Standard loop
+               if Ekind_In (Func_Id, E_Function, E_Generic_Function) then
+                  return Is_Volatile_Function (Func_Id);
+               end if;
+
+               Func_Id := Scope (Func_Id);
+            end loop;
+
+            return False;
+         end Within_Volatile_Function;
+
+         --  Local variables
+
+         Obj_Id : Entity_Id;
+
       --  Start of processing for Is_OK_Volatile_Context
 
       begin
@@ -6892,23 +6969,51 @@ package body Sem_Res is
             return True;
 
          --  The volatile object is part of the initialization expression of
-         --  another object. Ensure that the climb of the parent chain came
-         --  from the expression side and not from the name side.
+         --  another object.
 
          elsif Nkind (Context) = N_Object_Declaration
            and then Present (Expression (Context))
            and then Expression (Context) = Obj_Ref
          then
-            return True;
+            Obj_Id := Defining_Entity (Context);
+
+            --  The volatile object acts as the initialization expression of an
+            --  extended return statement. This is valid context as long as the
+            --  function is volatile.
+
+            if Is_Return_Object (Obj_Id) then
+               return Within_Volatile_Function (Obj_Id);
+
+            --  Otherwise this is a normal object initialization
+
+            else
+               return True;
+            end if;
 
          --  The volatile object appears as an actual parameter in a call to an
          --  instance of Unchecked_Conversion whose result is renamed.
 
          elsif Nkind (Context) = N_Function_Call
+           and then Is_Entity_Name (Name (Context))
            and then Is_Unchecked_Conversion_Instance (Entity (Name (Context)))
            and then Nkind (Parent (Context)) = N_Object_Renaming_Declaration
          then
             return True;
+
+         --  The volatile object is actually the prefix in a protected entry,
+         --  function, or procedure call.
+
+         elsif Is_Protected_Operation_Call (Context) then
+            return True;
+
+         --  The volatile object appears as the expression of a simple return
+         --  statement that applies to a volatile function.
+
+         elsif Nkind (Context) = N_Simple_Return_Statement
+           and then Expression (Context) = Obj_Ref
+         then
+            return
+              Within_Volatile_Function (Return_Statement_Entity (Context));
 
          --  The volatile object appears as the prefix of a name occurring
          --  in a non-interfering context.
@@ -7035,14 +7140,6 @@ package body Sem_Res is
       then
          if Ada_Version = Ada_83 then
             Error_Msg_N ("(Ada 83) illegal reading of out parameter", N);
-
-         --  An effectively volatile OUT parameter cannot be read
-         --  (SPARK RM 7.1.3(11)).
-
-         elsif SPARK_Mode = On
-           and then Is_Effectively_Volatile (E)
-         then
-            Error_Msg_N ("illegal reading of volatile OUT parameter", N);
          end if;
 
       --  In all other cases, just do the possible static evaluation
@@ -7082,44 +7179,40 @@ package body Sem_Res is
          Par := Parent (Par);
       end if;
 
-      --  The following checks are only relevant when SPARK_Mode is on as they
-      --  are not standard Ada legality rules. An effectively volatile object
-      --  subject to enabled properties Async_Writers or Effective_Reads must
-      --  appear in a specific context.
+      if Comes_From_Source (N) then
 
-      if SPARK_Mode = On
-        and then Is_Object (E)
-        and then Is_Effectively_Volatile (E)
-        and then (Async_Writers_Enabled (E)
-                   or else Effective_Reads_Enabled (E))
-        and then Comes_From_Source (N)
-      then
-         --  The effectively volatile objects appears in a "non-interfering
-         --  context" as defined in SPARK RM 7.1.3(13).
+         --  The following checks are only relevant when SPARK_Mode is on as
+         --  they are not standard Ada legality rules.
 
-         if Is_OK_Volatile_Context (Par, N) then
-            null;
+         if SPARK_Mode = On then
 
-         --  Otherwise the context causes a side effect with respect to the
-         --  effectively volatile object.
+            --  An effectively volatile object subject to enabled properties
+            --  Async_Writers or Effective_Reads must appear in non-interfering
+            --  context (SPARK RM 7.1.3(12)).
 
-         else
-            SPARK_Msg_N
-              ("volatile object cannot appear in this context "
-               & "(SPARK RM 7.1.3(13))", N);
+            if Is_Object (E)
+              and then Is_Effectively_Volatile (E)
+              and then (Async_Writers_Enabled (E)
+                         or else Effective_Reads_Enabled (E))
+              and then not Is_OK_Volatile_Context (Par, N)
+            then
+               SPARK_Msg_N
+                 ("volatile object cannot appear in this context "
+                  & "(SPARK RM 7.1.3(12))", N);
+            end if;
+
+            --  Check possible elaboration issues with respect to variables
+
+            if Ekind (E) = E_Variable then
+               Check_Elab_Call (N);
+            end if;
          end if;
-      end if;
 
-      --  A Ghost entity must appear in a specific context
+         --  A Ghost entity must appear in a specific context
 
-      if Is_Ghost_Entity (E) and then Comes_From_Source (N) then
-         Check_Ghost_Context (E, N);
-      end if;
-
-      --  In SPARK mode, need to check possible elaboration issues
-
-      if SPARK_Mode = On and then Ekind (E) = E_Variable then
-         Check_Elab_Call (N);
+         if Is_Ghost_Entity (E) then
+            Check_Ghost_Context (E, N);
+         end if;
       end if;
    end Resolve_Entity_Name;
 
@@ -7223,7 +7316,7 @@ package body Sem_Res is
          end if;
       end Actual_Index_Type;
 
-   --  Start of processing of Resolve_Entry
+   --  Start of processing for Resolve_Entry
 
    begin
       --  Find name of entry being called, and resolve prefix of name with its
@@ -7299,7 +7392,7 @@ package body Sem_Res is
 
          declare
             Pref : constant Node_Id := Prefix (Entry_Name);
-            Ent  : constant Entity_Id :=  Entity (Selector_Name (Entry_Name));
+            Ent  : constant Entity_Id := Entity (Selector_Name (Entry_Name));
             I    : Interp_Index;
             It   : Interp;
 
@@ -7322,7 +7415,7 @@ package body Sem_Res is
       else pragma Assert (Nkind (Entry_Name) = N_Indexed_Component);
          Nam := Entity (Selector_Name (Prefix (Entry_Name)));
          Resolve (Prefix (Prefix (Entry_Name)));
-         Index :=  First (Expressions (Entry_Name));
+         Index := First (Expressions (Entry_Name));
          Resolve (Index, Entry_Index_Type (Nam));
 
          --  Up to this point the expression could have been the actual in a
@@ -7468,7 +7561,7 @@ package body Sem_Res is
          begin
             New_Actuals := New_List (Obj);
 
-            if  Nkind (Entry_Name) = N_Indexed_Component then
+            if Nkind (Entry_Name) = N_Indexed_Component then
                Append_To (New_Actuals,
                  New_Copy_Tree (First (Expressions (Entry_Name))));
             end if;
@@ -8013,6 +8106,7 @@ package body Sem_Res is
          Set_Etype (N, Get_Actual_Subtype (N));
       end if;
 
+      Analyze_Dimension (N);
       --  Note: No Eval processing is required for an explicit dereference,
       --  because such a name can never be static.
 
@@ -9780,12 +9874,15 @@ package body Sem_Res is
          T := Etype (P);
       end if;
 
-      --  Set flag for expander if discriminant check required
+      --  Set flag for expander if discriminant check required on a component
+      --  appearing within a variant.
 
       if Has_Discriminants (T)
-        and then Ekind_In (Entity (S), E_Component, E_Discriminant)
+        and then Ekind (Entity (S)) = E_Component
         and then Present (Original_Record_Component (Entity (S)))
         and then Ekind (Original_Record_Component (Entity (S))) = E_Component
+        and then
+          Is_Declared_Within_Variant (Original_Record_Component (Entity (S)))
         and then not Discriminant_Checks_Suppressed (T)
         and then not Init_Component
       then
@@ -11949,7 +12046,7 @@ package body Sem_Res is
             if Present (It.Typ) then
                N1  := It1.Nam;
                T1  := It1.Typ;
-               It1 :=  Disambiguate (Operand, I1, I, Any_Type);
+               It1 := Disambiguate (Operand, I1, I, Any_Type);
 
                if It1 = No_Interp then
                   Conversion_Error_N

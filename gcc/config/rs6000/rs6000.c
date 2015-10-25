@@ -22,63 +22,44 @@
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
+#include "cfgloop.h"
 #include "df.h"
+#include "tm_p.h"
+#include "stringpool.h"
+#include "expmed.h"
+#include "optabs.h"
 #include "regs.h"
-#include "insn-config.h"
-#include "conditions.h"
+#include "ira.h"
+#include "recog.h"
+#include "cgraph.h"
+#include "diagnostic-core.h"
 #include "insn-attr.h"
 #include "flags.h"
-#include "recog.h"
 #include "alias.h"
 #include "fold-const.h"
-#include "stringpool.h"
 #include "stor-layout.h"
 #include "calls.h"
 #include "print-tree.h"
 #include "varasm.h"
-#include "expmed.h"
-#include "dojump.h"
 #include "explow.h"
-#include "emit-rtl.h"
-#include "stmt.h"
 #include "expr.h"
-#include "insn-codes.h"
-#include "optabs.h"
-#include "except.h"
 #include "output.h"
 #include "dbxout.h"
-#include "cfgrtl.h"
-#include "cfganal.h"
-#include "lcm.h"
-#include "cfgbuild.h"
-#include "cfgcleanup.h"
-#include "diagnostic-core.h"
-#include "toplev.h"
-#include "tm_p.h"
-#include "target.h"
 #include "common/common-target.h"
 #include "langhooks.h"
 #include "reload.h"
-#include "cfgloop.h"
 #include "sched-int.h"
-#include "internal-fn.h"
-#include "gimple-fold.h"
-#include "tree-eh.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "gimple-walk.h"
 #include "intl.h"
 #include "params.h"
 #include "tm-constrs.h"
-#include "ira.h"
-#include "opts.h"
 #include "tree-vectorizer.h"
-#include "dumpfile.h"
-#include "cgraph.h"
 #include "target-globals.h"
 #include "builtins.h"
 #include "context.h"
@@ -9790,12 +9771,12 @@ rs6000_darwin64_record_arg_advance_flush (CUMULATIVE_ARGS *cum,
 	     e.g., in packed structs when there are 3 bytes to load.
 	     Back intoffset back to the beginning of the word in this
 	     case.  */
-	  intoffset = intoffset & -BITS_PER_WORD;
+	  intoffset = ROUND_DOWN (intoffset, BITS_PER_WORD);
 	}
     }
 
-  startbit = intoffset & -BITS_PER_WORD;
-  endbit = (bitpos + BITS_PER_WORD - 1) & -BITS_PER_WORD;
+  startbit = ROUND_DOWN (intoffset, BITS_PER_WORD);
+  endbit = ROUND_UP (bitpos, BITS_PER_WORD);
   intregs = (endbit - startbit) / BITS_PER_WORD;
   cum->words += intregs;
   /* words should be unsigned. */
@@ -10255,15 +10236,15 @@ rs6000_darwin64_record_arg_flush (CUMULATIVE_ARGS *cum,
 	     e.g., in packed structs when there are 3 bytes to load.
 	     Back intoffset back to the beginning of the word in this
 	     case.  */
-	 intoffset = intoffset & -BITS_PER_WORD;
-	 mode = word_mode;
+	  intoffset = ROUND_DOWN (intoffset, BITS_PER_WORD);
+	  mode = word_mode;
 	}
     }
   else
     mode = word_mode;
 
-  startbit = intoffset & -BITS_PER_WORD;
-  endbit = (bitpos + BITS_PER_WORD - 1) & -BITS_PER_WORD;
+  startbit = ROUND_DOWN (intoffset, BITS_PER_WORD);
+  endbit = ROUND_UP (bitpos, BITS_PER_WORD);
   intregs = (endbit - startbit) / BITS_PER_WORD;
   this_regno = cum->words + intoffset / BITS_PER_WORD;
 
@@ -10622,7 +10603,7 @@ rs6000_function_arg (cumulative_args_t cum_v, machine_mode mode,
 	 save area?  */
       if (TARGET_64BIT && ! cum->prototype)
 	{
-	  int align_words = (cum->words + 1) & ~1;
+	  int align_words = ROUND_UP (cum->words, 2);
 	  k = rs6000_psave_function_arg (mode, type, align_words, rvec);
 	}
 
@@ -23336,7 +23317,7 @@ rs6000_emit_probe_stack_range (HOST_WIDE_INT first, HOST_WIDE_INT size)
 
       /* Step 1: round SIZE to the previous multiple of the interval.  */
 
-      rounded_size = size & -PROBE_INTERVAL;
+      rounded_size = ROUND_DOWN (size, PROBE_INTERVAL);
 
 
       /* Step 2: compute initial and final value of the loop counter.  */

@@ -25,56 +25,40 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
 #include "df.h"
+#include "tm_p.h"
+#include "stringpool.h"
+#include "optabs.h"
 #include "regs.h"
-#include "insn-config.h"
-#include "conditions.h"
-#include "insn-attr.h"
+#include "emit-rtl.h"
 #include "recog.h"
+#include "cgraph.h"
+#include "diagnostic.h"
+#include "insn-attr.h"
 #include "output.h"
 #include "alias.h"
 #include "fold-const.h"
 #include "varasm.h"
-#include "stringpool.h"
 #include "stor-layout.h"
 #include "calls.h"
-#include "flags.h"
-#include "expmed.h"
-#include "dojump.h"
 #include "explow.h"
-#include "emit-rtl.h"
-#include "stmt.h"
 #include "expr.h"
-#include "insn-codes.h"
-#include "optabs.h"
 #include "libfuncs.h"
 #include "reload.h"
-#include "tm_p.h"
-#include "gstab.h"
-#include "debug.h"
-#include "target.h"
 #include "common/common-target.h"
 #include "langhooks.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
-#include "lcm.h"
-#include "cfgbuild.h"
-#include "cfgcleanup.h"
 #include "sched-int.h"
-#include "internal-fn.h"
-#include "gimple-fold.h"
-#include "tree-eh.h"
 #include "gimplify.h"
-#include "diagnostic.h"
 #include "target-globals.h"
-#include "opts.h"
 #include "tree-pass.h"
 #include "context.h"
-#include "cgraph.h"
 #include "builtins.h"
 #include "rtl-iter.h"
 
@@ -6080,7 +6064,7 @@ mips_setup_incoming_varargs (cumulative_args_t cum, machine_mode mode,
 	  /* Set OFF to the offset from virtual_incoming_args_rtx of
 	     the first float register.  The FP save area lies below
 	     the integer one, and is aligned to UNITS_PER_FPVALUE bytes.  */
-	  off = (-gp_saved * UNITS_PER_WORD) & -UNITS_PER_FPVALUE;
+	  off = ROUND_DOWN (-gp_saved * UNITS_PER_WORD, UNITS_PER_FPVALUE);
 	  off -= fp_saved * UNITS_PER_FPREG;
 
 	  mode = TARGET_SINGLE_FLOAT ? SFmode : DFmode;
@@ -6444,7 +6428,7 @@ mips_gimplify_va_arg_expr (tree valist, tree type, gimple_seq *pre_p,
 			unshare_expr (valist), f_gtop, NULL_TREE);
 	  off = build3 (COMPONENT_REF, TREE_TYPE (f_goff),
 			unshare_expr (valist), f_goff, NULL_TREE);
-	  rsize = (size + UNITS_PER_WORD - 1) & -UNITS_PER_WORD;
+	  rsize = ROUND_UP (size, UNITS_PER_WORD);
 	  if (rsize > UNITS_PER_WORD)
 	    {
 	      /* [1] Emit code for: off &= -rsize.	*/
@@ -11320,7 +11304,7 @@ mips_emit_probe_stack_range (HOST_WIDE_INT first, HOST_WIDE_INT size)
 
       /* Step 1: round SIZE to the previous multiple of the interval.  */
 
-      rounded_size = size & -PROBE_INTERVAL;
+      rounded_size = ROUND_DOWN (size, PROBE_INTERVAL);
 
 
       /* Step 2: compute initial and final value of the loop counter.  */

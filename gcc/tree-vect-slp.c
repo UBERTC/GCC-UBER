@@ -135,6 +135,23 @@ vect_create_new_slp_node (vec<gimple *> scalar_stmts)
 }
 
 
+/* This structure is used in creation of an SLP tree.  Each instance
+   corresponds to the same operand in a group of scalar stmts in an SLP
+   node.  */
+typedef struct _slp_oprnd_info
+{
+  /* Def-stmts for the operands.  */
+  vec<gimple *> def_stmts;
+  /* Information about the first statement, its vector def-type, type, the
+     operand itself in case it's constant, and an indication if it's a pattern
+     stmt.  */
+  enum vect_def_type first_dt;
+  tree first_op_type;
+  bool first_pattern;
+  bool second_pattern;
+} *slp_oprnd_info;
+
+
 /* Allocate operands info for NOPS operands, and GROUP_SIZE def-stmts for each
    operand.  */
 static vec<slp_oprnd_info> 
@@ -217,7 +234,6 @@ vect_get_and_check_slp_defs (vec_info *vinfo,
 {
   tree oprnd;
   unsigned int i, number_of_oprnds;
-  tree def;
   gimple *def_stmt;
   enum vect_def_type dt = vect_uninitialized_def;
   struct loop *loop = NULL;
@@ -270,8 +286,7 @@ again:
 
       oprnd_info = (*oprnds_info)[i];
 
-      if (!vect_is_simple_use (oprnd, NULL, vinfo, &def_stmt,
-			       &def, &dt))
+      if (!vect_is_simple_use (oprnd, vinfo, &def_stmt, &dt))
 	{
 	  if (dump_enabled_p ())
 	    {
@@ -338,19 +353,15 @@ again:
 
           switch (gimple_code (def_stmt))
             {
-              case GIMPLE_PHI:
-                def = gimple_phi_result (def_stmt);
-                break;
+            case GIMPLE_PHI:
+            case GIMPLE_ASSIGN:
+	      break;
 
-              case GIMPLE_ASSIGN:
-                def = gimple_assign_lhs (def_stmt);
-                break;
-
-              default:
-                if (dump_enabled_p ())
-                  dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
-				   "unsupported defining stmt:\n");
-                return -1;
+	    default:
+	      if (dump_enabled_p ())
+		dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+				 "unsupported defining stmt:\n");
+	      return -1;
             }
         }
 
@@ -415,7 +426,7 @@ again:
 	    {
 	      dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
 			       "Build SLP failed: illegal type of def ");
-	      dump_generic_expr (MSG_MISSED_OPTIMIZATION, TDF_SLIM, def);
+	      dump_generic_expr (MSG_MISSED_OPTIMIZATION, TDF_SLIM, oprnd);
               dump_printf (MSG_MISSED_OPTIMIZATION, "\n");
 	    }
 
@@ -1538,12 +1549,12 @@ vect_analyze_slp_cost_1 (slp_instance instance, slp_tree node,
   lhs = gimple_get_lhs (stmt);
   for (i = 0; i < gimple_num_ops (stmt); ++i)
     {
-      tree def, op = gimple_op (stmt, i);
+      tree op = gimple_op (stmt, i);
       gimple *def_stmt;
       enum vect_def_type dt;
       if (!op || op == lhs)
 	continue;
-      if (vect_is_simple_use (op, NULL, stmt_info->vinfo, &def_stmt, &def, &dt))
+      if (vect_is_simple_use (op, stmt_info->vinfo, &def_stmt, &dt))
 	{
 	  /* Without looking at the actual initializer a vector of
 	     constants can be implemented as load from the constant pool.
@@ -1568,6 +1579,10 @@ vect_analyze_slp_cost (slp_instance instance, void *data)
   unsigned ncopies_for_cost;
   stmt_info_for_cost *si;
   unsigned i;
+
+  if (dump_enabled_p ())
+    dump_printf_loc (MSG_NOTE, vect_location,
+		     "=== vect_analyze_slp_cost ===\n");
 
   /* Calculate the number of vector stmts to create based on the unrolling
      factor (number of vectors is 1 if NUNITS >= GROUP_SIZE, and is

@@ -1,3 +1,61 @@
+2015-10-24  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/functional (__invoke_impl): New overloads.
+	(__invoke): Replace with a single function calling __invoke_impl.
+	(invoke): Add C++17 std::invoke.
+	(reference_wrapper::operator()): Qualify call to __invoke.
+	(_Mem_fn_traits_base, _Mem_fn_traits): Remove unused typedefs.
+	(_Mem_fn_base): Remove unused typedefs and implement call operator in
+	terms of __invoke.
+	* include/std/future (__future_base::_Async_state_commonV2): Do not
+	pass reference_wrapper as object argument to call_once.
+	* include/std/type_traits (result_of): Define nested __invoke_type.
+	Handle reference_wrapper as per LWG 2219.
+	* testsuite/20_util/bind/ref_neg.cc: Adjust dg-error directives.
+	* testsuite/20_util/function_objects/mem_fn/55463.cc: Remove tests
+	using member functions of reference_wrapper.
+
+2015-10-24  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/future (async): Use deferred function on exception.
+	* testsuite/30_threads/async/except.cc: New.
+
+2015-10-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/type_traits (__cpp_lib_bool_constant): Define.
+
+2015-10-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/configure.xml: Document
+	--enable-libstdcxx-filesystem-ts option.
+	* doc/xml/manual/status_cxx2014.xml: Document libstdc++fs.a.
+	* doc/xml/manual/using.xml: Likewise.
+	* doc/html/*: Regenerate.
+
+2015-10-16  Aurelio Remonda  <aurelio.remonda@tallertechnologies.com>
+
+	* testsuite/25_algorithms/random_shuffle/moveable.cc: Change variable
+	N from const int N = 200000 to const unsigned int N = 10000.
+	Delete useless fill_ascending function call.
+
+2015-10-15  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	* testsuite/lib/libstdc++.exp (libstdc++-dg-test): Check for
+	unsupported compiler output.
+
+2015-10-13  Nathan Froyd  <froydnj@gcc.gnu.org>
+
+	* config/cpu/i486/opt/bits/opt_random.h: Include pmmintrin.h instead
+	of x86intrin.h, and only do so when __SSE3__
+	* include/ext/random: Include emmintrin.h instead of x86intrin.h
+
+2015-10-11  Joseph Myers  <joseph@codesourcery.com>
+
+	* crossconfig.m4 (GLIBCXX_CROSSCONFIG) <*-linux* | *-uclinux* |
+	*-gnu* | *-kfreebsd*-gnu | *-knetbsd*-gnu | *-cygwin*>: Check for
+	__cxa_thread_atexit_impl.
+	* configure: Regenerate.
+
 2015-10-09  Jonathan Wakely  <jwakely@redhat.com>
 
 	* include/experimental/erase_if.h: Move to ...

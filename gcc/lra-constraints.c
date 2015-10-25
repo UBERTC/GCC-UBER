@@ -141,6 +141,7 @@
 #include "lra.h"
 #include "insn-attr.h"
 #include "lra-int.h"
+#include "print-rtl.h"
 
 /* Value of LRA_CURR_RELOAD_NUM at the beginning of BB of the current
    insn.  Remember that LRA_CURR_RELOAD_NUM is the number of emitted
@@ -4545,7 +4546,7 @@ setup_next_usage_insn (int regno, rtx insn, int reloads_num, bool after_p)
    optional debug insns finished by a non-debug insn using REGNO.
    RELOADS_NUM is current number of reload insns processed so far.  */
 static void
-add_next_usage_insn (int regno, rtx insn, int reloads_num)
+add_next_usage_insn (int regno, rtx_insn *insn, int reloads_num)
 {
   rtx next_usage_insns;
 

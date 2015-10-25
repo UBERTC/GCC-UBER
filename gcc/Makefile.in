@@ -890,7 +890,7 @@ RTL_BASE_H = coretypes.h rtl.h rtl.def $(MACHMODE_H) reg-notes.def \
 FIXED_VALUE_H = fixed-value.h $(MACHMODE_H) double-int.h
 RTL_H = $(RTL_BASE_H) $(FLAGS_H) genrtl.h
 READ_MD_H = $(OBSTACK_H) $(HASHTAB_H) read-md.h
-PARAMS_H = params.h params.def
+PARAMS_H = params.h params-enum.h params.def
 BUILTINS_DEF = builtins.def sync-builtins.def omp-builtins.def \
 	gtm-builtins.def sanitizer.def cilkplus.def cilk-builtins.def
 INTERNAL_FN_DEF = internal-fn.def
@@ -1266,6 +1266,7 @@ OBJS = \
 	gimple-laddress.o \
 	gimple-low.o \
 	gimple-pretty-print.o \
+	gimple-ssa-backprop.o \
 	gimple-ssa-isolate-paths.o \
 	gimple-ssa-strength-reduction.o \
 	gimple-streamer-in.o \
@@ -1385,7 +1386,6 @@ OBJS = \
 	sched-deps.o \
 	sched-ebb.o \
 	sched-rgn.o \
-	sched-vis.o \
 	sdbout.o \
 	sel-sched-ir.o \
 	sel-sched-dump.o \
@@ -1478,6 +1478,7 @@ OBJS = \
 	tree-ssa-structalias.o \
 	tree-ssa-tail-merge.o \
 	tree-ssa-ter.o \
+	tree-ssa-threadbackward.o \
 	tree-ssa-threadedge.o \
 	tree-ssa-threadupdate.o \
 	tree-ssa-uncprop.o \
@@ -2565,7 +2566,8 @@ build/genhooks.o : genhooks.c $(TARGET_DEF) $(C_TARGET_DEF)		\
 build/genmddump.o : genmddump.c $(RTL_BASE_H) $(BCONFIG_H) $(SYSTEM_H)	\
   coretypes.h $(GTM_H) errors.h $(READ_MD_H) gensupport.h
 build/genmatch.o : genmatch.c $(BCONFIG_H) $(SYSTEM_H) \
-  coretypes.h errors.h $(HASH_TABLE_H) hash-map.h $(GGC_H)
+  coretypes.h errors.h $(HASH_TABLE_H) hash-map.h $(GGC_H) is-a.h \
+  tree.def builtins.def
 
 # Compile the programs that generate insn-* from the machine description.
 # They are compiled with $(COMPILER_FOR_BUILD), and associated libraries,
@@ -3259,8 +3261,8 @@ PLUGIN_HEADERS = $(TREE_H) $(CONFIG_H) $(SYSTEM_H) coretypes.h $(TM_H) \
   tree-iterator.h $(PLUGIN_H) $(TREE_SSA_H) langhooks.h incpath.h debug.h \
   $(EXCEPT_H) tree-ssa-sccvn.h real.h output.h $(IPA_UTILS_H) \
   $(C_PRAGMA_H)  $(CPPLIB_H)  $(FUNCTION_H) \
-  cppdefault.h flags.h $(MD5_H) params.def params.h prefix.h tree-inline.h \
-  $(GIMPLE_PRETTY_PRINT_H) realmpfr.h \
+  cppdefault.h flags.h $(MD5_H) params.def params.h params-enum.h \
+  prefix.h tree-inline.h $(GIMPLE_PRETTY_PRINT_H) realmpfr.h \
   $(IPA_PROP_H) $(TARGET_H) $(RTL_H) $(TM_P_H) $(CFGLOOP_H) $(EMIT_RTL_H) \
   version.h stringpool.h gimplify.h gimple-iterator.h gimple-ssa.h \
   fold-const.h tree-cfg.h tree-into-ssa.h tree-ssanames.h print-tree.h \

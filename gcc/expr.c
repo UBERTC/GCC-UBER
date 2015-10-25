@@ -5425,14 +5425,6 @@ store_expr_with_bounds (tree exp, rtx target, int call_param_p,
     temp = convert_modes (GET_MODE (target), TYPE_MODE (TREE_TYPE (exp)),
 			  temp, TYPE_UNSIGNED (TREE_TYPE (exp)));
 
-  /* We allow move between structures of same size but different mode.
-     If source is in memory and the mode differs, simply change the memory.  */
-  if (GET_MODE (temp) == BLKmode && GET_MODE (target) != BLKmode)
-    {
-      gcc_assert (MEM_P (temp));
-      temp = adjust_address_nv (temp, GET_MODE (target), 0);
-    }
-
   /* If value was not generated in the target, store it there.
      Convert the value to TARGET's type first if necessary and emit the
      pending incrementations that have been queued when expanding EXP.
@@ -6616,7 +6608,11 @@ store_field (rtx target, HOST_WIDE_INT bitsize, HOST_WIDE_INT bitpos,
 	 operations.  */
       || (bitsize >= 0
 	  && TREE_CODE (TYPE_SIZE (TREE_TYPE (exp))) == INTEGER_CST
-	  && compare_tree_int (TYPE_SIZE (TREE_TYPE (exp)), bitsize) != 0)
+	  && compare_tree_int (TYPE_SIZE (TREE_TYPE (exp)), bitsize) != 0
+	  /* Except for initialization of full bytes from a CONSTRUCTOR, which
+	     we will handle specially below.  */
+	  && !(TREE_CODE (exp) == CONSTRUCTOR
+	       && bitsize % BITS_PER_UNIT == 0))
       /* If we are expanding a MEM_REF of a non-BLKmode non-addressable
          decl we must use bitfield operations.  */
       || (bitsize >= 0
@@ -6628,6 +6624,9 @@ store_field (rtx target, HOST_WIDE_INT bitsize, HOST_WIDE_INT bitpos,
     {
       rtx temp;
       gimple *nop_def;
+
+      /* Using bitwise copy is not safe for TREE_ADDRESSABLE types.  */
+      gcc_assert (!TREE_ADDRESSABLE (TREE_TYPE (exp)));
 
       /* If EXP is a NOP_EXPR of precision less than its mode, then that
 	 implies a mask operation.  If the precision is the same size as
@@ -6742,6 +6741,15 @@ store_field (rtx target, HOST_WIDE_INT bitsize, HOST_WIDE_INT bitpos,
 
       if (!MEM_KEEP_ALIAS_SET_P (to_rtx) && MEM_ALIAS_SET (to_rtx) != 0)
 	set_mem_alias_set (to_rtx, alias_set);
+
+      /* Above we avoided using bitfield operations for storing a CONSTRUCTOR
+	 into a target smaller than its type; handle that case now.  */
+      if (TREE_CODE (exp) == CONSTRUCTOR && bitsize >= 0)
+	{
+	  gcc_assert (bitsize % BITS_PER_UNIT == 0);
+	  store_constructor (exp, to_rtx, 0, bitsize/BITS_PER_UNIT);
+	  return to_rtx;
+	}
 
       return store_expr (exp, to_rtx, 0, nontemporal);
     }
@@ -8163,34 +8171,40 @@ expand_expr_real_2 (sepops ops, rtx target, machine_mode tmode,
     case ADDR_SPACE_CONVERT_EXPR:
       {
 	tree treeop0_type = TREE_TYPE (treeop0);
-	addr_space_t as_to;
-	addr_space_t as_from;
 
 	gcc_assert (POINTER_TYPE_P (type));
 	gcc_assert (POINTER_TYPE_P (treeop0_type));
 
-	as_to = TYPE_ADDR_SPACE (TREE_TYPE (type));
-	as_from = TYPE_ADDR_SPACE (TREE_TYPE (treeop0_type));
+	addr_space_t as_to = TYPE_ADDR_SPACE (TREE_TYPE (type));
+	addr_space_t as_from = TYPE_ADDR_SPACE (TREE_TYPE (treeop0_type));
 
         /* Conversions between pointers to the same address space should
 	   have been implemented via CONVERT_EXPR / NOP_EXPR.  */
 	gcc_assert (as_to != as_from);
+
+	op0 = expand_expr (treeop0, NULL_RTX, VOIDmode, modifier);
 
         /* Ask target code to handle conversion between pointers
 	   to overlapping address spaces.  */
 	if (targetm.addr_space.subset_p (as_to, as_from)
 	    || targetm.addr_space.subset_p (as_from, as_to))
 	  {
-	    op0 = expand_expr (treeop0, NULL_RTX, VOIDmode, modifier);
 	    op0 = targetm.addr_space.convert (op0, treeop0_type, type);
-	    gcc_assert (op0);
-	    return op0;
 	  }
-
-	/* For disjoint address spaces, converting anything but
-	   a null pointer invokes undefined behaviour.  We simply
-	   always return a null pointer here.  */
-	return CONST0_RTX (mode);
+        else
+          {
+	    /* For disjoint address spaces, converting anything but a null
+	       pointer invokes undefined behaviour.  We truncate or extend the
+	       value as if we'd converted via integers, which handles 0 as
+	       required, and all others as the programmer likely expects.  */
+#ifndef POINTERS_EXTEND_UNSIGNED
+	    const int POINTERS_EXTEND_UNSIGNED = 1;
+#endif
+	    op0 = convert_modes (mode, TYPE_MODE (treeop0_type),
+				 op0, POINTERS_EXTEND_UNSIGNED);
+	  }
+	gcc_assert (op0);
+	return op0;
       }
 
     case POINTER_PLUS_EXPR:

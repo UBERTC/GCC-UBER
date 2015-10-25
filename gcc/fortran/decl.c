@@ -697,8 +697,7 @@ char_len_param_value (gfc_expr **expr, bool *deferred)
 
   if (gfc_match_char (':') == MATCH_YES)
     {
-      if (!gfc_notify_std (GFC_STD_F2003, "deferred type "
-			   "parameter at %C"))
+      if (!gfc_notify_std (GFC_STD_F2003, "deferred type parameter at %C"))
 	return MATCH_ERROR;
 
       *deferred = true;
@@ -708,33 +707,67 @@ char_len_param_value (gfc_expr **expr, bool *deferred)
 
   m = gfc_match_expr (expr);
 
-  if (m == MATCH_YES
-      && !gfc_expr_check_typed (*expr, gfc_current_ns, false))
+  if (m == MATCH_NO || m == MATCH_ERROR)
+    return m;
+
+  if (!gfc_expr_check_typed (*expr, gfc_current_ns, false))
     return MATCH_ERROR;
 
-  if (m == MATCH_YES && (*expr)->expr_type == EXPR_FUNCTION)
+  if ((*expr)->expr_type == EXPR_FUNCTION)
     {
-      if ((*expr)->value.function.actual
-	  && (*expr)->value.function.actual->expr->symtree)
-	{
-	  gfc_expr *e;
-	  e = (*expr)->value.function.actual->expr;
-	  if (e->symtree->n.sym->attr.flavor == FL_PROCEDURE
-	      && e->expr_type == EXPR_VARIABLE)
-	    {
-	      if (e->symtree->n.sym->ts.type == BT_UNKNOWN)
-		goto syntax;
-	      if (e->symtree->n.sym->ts.type == BT_CHARACTER
-		  && e->symtree->n.sym->ts.u.cl
-		  && e->symtree->n.sym->ts.u.cl->length->ts.type == BT_UNKNOWN)
-	        goto syntax;
-	    }
-	}
+      if ((*expr)->ts.type == BT_INTEGER
+	  || ((*expr)->ts.type == BT_UNKNOWN
+	      && strcmp((*expr)->symtree->name, "null") != 0))
+	return MATCH_YES;
+
+      goto syntax;
     }
+  else if ((*expr)->expr_type == EXPR_CONSTANT)
+    {
+      /* F2008, 4.4.3.1:  The length is a type parameter; its kind is
+	 processor dependent and its value is greater than or equal to zero.
+	 F2008, 4.4.3.2:  If the character length parameter value evaluates
+	 to a negative value, the length of character entities declared
+	 is zero.  */
+
+      if ((*expr)->ts.type == BT_INTEGER)
+	{
+	  if (mpz_cmp_si ((*expr)->value.integer, 0) < 0)
+	    mpz_set_si ((*expr)->value.integer, 0);
+	}
+      else
+	goto syntax;
+    }
+  else if ((*expr)->expr_type == EXPR_ARRAY)
+    goto syntax;
+  else if ((*expr)->expr_type == EXPR_VARIABLE)
+    {
+      gfc_expr *e;
+
+      e = gfc_copy_expr (*expr);
+
+      /* This catches the invalid code "[character(m(2:3)) :: 'x', 'y']",
+	 which causes an ICE if gfc_reduce_init_expr() is called.  */
+      if (e->ref && e->ref->u.ar.type == AR_UNKNOWN
+	  && e->ref->u.ar.dimen_type[0] == DIMEN_RANGE)
+	goto syntax;
+
+      gfc_reduce_init_expr (e);
+
+      if ((e->ref && e->ref->u.ar.type != AR_ELEMENT) 
+	  || (!e->ref && e->expr_type == EXPR_ARRAY))
+	{
+	  gfc_free_expr (e);
+	  goto syntax;
+	}
+
+      gfc_free_expr (e);
+    }
+
   return m;
 
 syntax:
-  gfc_error ("Conflict in attributes of function argument at %C");
+  gfc_error ("Scalar INTEGER expression expected at %L", &(*expr)->where);
   return MATCH_ERROR;
 }
 
@@ -1476,7 +1509,6 @@ add_init_expr_to_sym (const char *name, gfc_expr **initp, locus *var_locus)
 			 " with scalar", &sym->declared_at);
 	      return false;
 	    }
-	  gcc_assert (sym->as->rank == init->rank);
 
 	  /* Shape should be present, we get an initialization expression.  */
 	  gcc_assert (init->shape);
@@ -2989,7 +3021,11 @@ get_kind:
 
   m = gfc_match_kind_spec (ts, false);
   if (m == MATCH_NO && ts->type != BT_CHARACTER)
-    m = gfc_match_old_kind_spec (ts);
+    {
+      m = gfc_match_old_kind_spec (ts);
+      if (gfc_validate_kind (ts->type, ts->kind, true) == -1)
+         return MATCH_ERROR;
+    }
 
   if (matched_type && gfc_match_char (')') != MATCH_YES)
     return MATCH_ERROR;

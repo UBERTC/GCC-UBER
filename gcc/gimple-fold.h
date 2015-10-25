@@ -112,7 +112,15 @@ gimple_convert (gimple_seq *seq, tree type, tree op)
   return gimple_convert (seq, UNKNOWN_LOCATION, type, op);
 }
 
+extern tree gimple_convert_to_ptrofftype (gimple_seq *, location_t, tree);
+inline tree
+gimple_convert_to_ptrofftype (gimple_seq *seq, tree op)
+{
+  return gimple_convert_to_ptrofftype (seq, UNKNOWN_LOCATION, op);
+}
+
 extern bool gimple_stmt_nonnegative_warnv_p (gimple *, bool *, int = 0);
+extern bool gimple_stmt_integer_valued_real_p (gimple *, int = 0);
 
 /* In gimple-match.c.  */
 extern tree gimple_simplify (enum tree_code, tree, tree,
