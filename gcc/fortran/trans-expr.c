@@ -5739,6 +5739,20 @@ gfc_conv_procedure_call (gfc_se * se, gfc_symbol * sym,
   fntype = TREE_TYPE (TREE_TYPE (se->expr));
   se->expr = build_call_vec (TREE_TYPE (fntype), se->expr, arglist);
 
+  /* Allocatable scalar function results must be freed and nullified
+     after use. This necessitates the creation of a temporary to
+     hold the result to prevent duplicate calls.  */
+  if (!byref && sym->ts.type != BT_CHARACTER
+      && sym->attr.allocatable && !sym->attr.dimension)
+    {
+      tmp = gfc_create_var (TREE_TYPE (se->expr), NULL);
+      gfc_add_modify (&se->pre, tmp, se->expr);
+      se->expr = tmp;
+      tmp = gfc_call_free (tmp);
+      gfc_add_expr_to_block (&post, tmp);
+      gfc_add_modify (&post, se->expr, build_int_cst (TREE_TYPE (se->expr), 0));
+    }
+
   /* If we have a pointer function, but we don't want a pointer, e.g.
      something like
         x = f()
@@ -6563,13 +6577,13 @@ gfc_trans_alloc_subarray_assign (tree dest, gfc_component * cm,
 	{
 	  tmp = TREE_TYPE (dest);
 	  tmp = gfc_duplicate_allocatable (dest, se.expr,
-					   tmp, expr->rank);
+					   tmp, expr->rank, NULL_TREE);
 	}
     }
   else
     tmp = gfc_duplicate_allocatable (dest, se.expr,
 				     TREE_TYPE(cm->backend_decl),
-				     cm->as->rank);
+				     cm->as->rank, NULL_TREE);
 
   gfc_add_expr_to_block (&block, tmp);
   gfc_add_block_to_block (&block, &se.post);

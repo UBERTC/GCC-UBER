@@ -1,3 +1,99 @@
+2015-10-22  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/58754
+	* gfortran.dg/pr58754.f90: New test
+
+2015-10-22  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-10-22  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR target/68015
+	* gcc.target/s390/pr68015.c: New test.
+
+2015-10-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-10-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/68018
+	* gcc.target/i386/pr68018.c: New test.
+
+2015-10-20  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	Backport from mainline r229024
+	2015-10-20  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	PR target/66912
+	* gcc.target/aarch64/pr66912.c: New.
+	* gcc.target/arm/pr66912.c: New.
+
+2015-10-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67900
+	* gfortran.dg/pr67900.f90: New tests.
+
+2015-10-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68019
+	* gfortran.dg/pr68019.f90: new test.
+
+2015-10-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67987
+	* gfortran.df/pr67987.f90: New test.
+	* gfortran.dg/char_length_2.f90: Update testcase.
+
+2015-10-18  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/66079
+	Backport from mainline r224383:
+
+	* gfortran.dg/allocatable_scalar_13.f90: New test
+
+2015-10-18  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/67721
+	PR fortran/67818
+	Backport from mainline r222477:
+
+	2015-04-27  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/59678
+	PR fortran/65841
+	* gfortran.dg/alloc_comp_deep_copy_1.f03: New test.
+	* gfortran.dg/alloc_comp_deep_copy_2.f03: New test.
+
+2015-10-16  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR middle-end/66311
+	* gfortran.dg/pr66311.f90: New file.
+
+2015-10-12  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-10-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66697
+	* gcc.target/i386/20060512-1.c: Remove ia32 requirement.
+	(PUSH, POP): New defines.
+	(sse2_test): Use PUSH and POP to misalign runtime stack.
+	* gcc.target/i386/20060512-2.c: Remove ia32 requirement.
+
+2015-10-12  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	Backport from mainline
+	2015-06-15  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/51048
+	* g++.dg/cpp0x/local-type1.C: New.
+
+2015-10-12  Alexander Fomin  <alexander.fomin@intel.com>
+	    Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/67849
+	* gcc.target/i386/pr67480.c: New test.
+
 2015-10-06  Richard Biener  <rguenther@suse.de>
 
 	Backport from mainline
@@ -135,8 +231,8 @@
 
 2015-04-28  Kirill Yukhin  <kirill.yukhin@intel.com>
 
-        * gcc.target/i386/avx512vbmi-check.h (main): Fix register
-        name while checking for AVX-512VBMI presence.
+	* gcc.target/i386/avx512vbmi-check.h (main): Fix register
+	name while checking for AVX-512VBMI presence.
 
 2015-09-25  Steven G. Kargl  <kargl@gcc.gnu.org>
 
@@ -348,7 +444,7 @@
 	Backport from mainline
 	2015-08-21  Dominik Vogt  <vogt@linux.vnet.ibm.com>
 
-    	* gcc.target/s390/zvector/vec-load_bndry-1.c: New test.
+	* gcc.target/s390/zvector/vec-load_bndry-1.c: New test.
 
 2015-08-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
 
@@ -485,9 +581,9 @@
 	backport from trunk:
 	2015-07-21  Alex Velenko  <Alex.Velenko@arm.com>
 
-        * gcc.target/arm/split-live-ranges-for-shrink-wrap.c (dg-skip-if):
+	* gcc.target/arm/split-live-ranges-for-shrink-wrap.c (dg-skip-if):
 	Skip -march=armv4t.
-        (dg-additional-options): Set armv5t flag.
+	(dg-additional-options): Set armv5t flag.
 
 2015-07-25  Tom de Vries  <tom@codesourcery.com>
 

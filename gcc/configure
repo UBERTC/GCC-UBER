@@ -28383,7 +28383,7 @@ isl_options_set_schedule_serialize_sccs (NULL, 0);
   return 0;
 }
 _ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
   ac_has_isl_options_set_schedule_serialize_sccs=yes
 else
   ac_has_isl_options_set_schedule_serialize_sccs=no
