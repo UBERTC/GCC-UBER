@@ -1182,9 +1182,10 @@ noce_try_store_flag_constants (struct noce_if_info *if_info)
 {
   rtx target;
   rtx_insn *seq;
-  int reversep;
+  bool reversep;
   HOST_WIDE_INT itrue, ifalse, diff, tmp;
-  int normalize, can_reverse;
+  int normalize;
+  bool can_reverse;
   machine_mode mode;
 
   if (CONST_INT_P (if_info->a)
@@ -1193,6 +1194,7 @@ noce_try_store_flag_constants (struct noce_if_info *if_info)
       mode = GET_MODE (if_info->x);
       ifalse = INTVAL (if_info->a);
       itrue = INTVAL (if_info->b);
+      bool subtract_flag_p = false;
 
       diff = (unsigned HOST_WIDE_INT) itrue - ifalse;
       /* Make sure we can represent the difference between the two values.  */
@@ -1205,26 +1207,61 @@ noce_try_store_flag_constants (struct noce_if_info *if_info)
       can_reverse = (reversed_comparison_code (if_info->cond, if_info->jump)
 		     != UNKNOWN);
 
-      reversep = 0;
+      reversep = false;
       if (diff == STORE_FLAG_VALUE || diff == -STORE_FLAG_VALUE)
-	normalize = 0;
+	{
+	  normalize = 0;
+	  /* We could collapse these cases but it is easier to follow the
+	     diff/STORE_FLAG_VALUE combinations when they are listed
+	     explicitly.  */
+
+	  /* test ? 3 : 4
+	     => 4 + (test != 0).  */
+	  if (diff < 0 && STORE_FLAG_VALUE < 0)
+	      reversep = false;
+	  /* test ? 4 : 3
+	     => can_reverse  | 4 + (test == 0)
+		!can_reverse | 3 - (test != 0).  */
+	  else if (diff > 0 && STORE_FLAG_VALUE < 0)
+	    {
+	      reversep = can_reverse;
+	      subtract_flag_p = !can_reverse;
+	    }
+	  /* test ? 3 : 4
+	     => can_reverse  | 3 + (test == 0)
+		!can_reverse | 4 - (test != 0).  */
+	  else if (diff < 0 && STORE_FLAG_VALUE > 0)
+	    {
+	      reversep = can_reverse;
+	      subtract_flag_p = !can_reverse;
+	    }
+	  /* test ? 4 : 3
+	     => 4 + (test != 0).  */
+	  else if (diff > 0 && STORE_FLAG_VALUE > 0)
+	    reversep = false;
+	  else
+	    gcc_unreachable ();
+	}
       else if (ifalse == 0 && exact_log2 (itrue) >= 0
 	       && (STORE_FLAG_VALUE == 1
 		   || if_info->branch_cost >= 2))
 	normalize = 1;
       else if (itrue == 0 && exact_log2 (ifalse) >= 0 && can_reverse
 	       && (STORE_FLAG_VALUE == 1 || if_info->branch_cost >= 2))
-	normalize = 1, reversep = 1;
+	{
+	  normalize = 1;
+	  reversep = true;
+	}
       else if (itrue == -1
 	       && (STORE_FLAG_VALUE == -1
 		   || if_info->branch_cost >= 2))
 	normalize = -1;
       else if (ifalse == -1 && can_reverse
 	       && (STORE_FLAG_VALUE == -1 || if_info->branch_cost >= 2))
-	normalize = -1, reversep = 1;
-      else if ((if_info->branch_cost >= 2 && STORE_FLAG_VALUE == -1)
-	       || if_info->branch_cost >= 3)
-	normalize = -1;
+	{
+	  normalize = -1;
+	  reversep = true;
+	}
       else
 	return FALSE;
 
@@ -1246,9 +1283,9 @@ noce_try_store_flag_constants (struct noce_if_info *if_info)
 	 =>   x = 3 + (test == 0);  */
       if (diff == STORE_FLAG_VALUE || diff == -STORE_FLAG_VALUE)
 	{
-	  target = expand_simple_binop (mode,
-					(diff == STORE_FLAG_VALUE
-					 ? PLUS : MINUS),
+	  /* Always use ifalse here.  It should have been swapped with itrue
+	     when appropriate when reversep is true.  */
+	  target = expand_simple_binop (mode, subtract_flag_p ? MINUS : PLUS,
 					gen_int_mode (ifalse, mode), target,
 					if_info->x, 0, OPTAB_WIDEN);
 	}
@@ -1270,18 +1307,10 @@ noce_try_store_flag_constants (struct noce_if_info *if_info)
 					target, gen_int_mode (ifalse, mode),
 					if_info->x, 0, OPTAB_WIDEN);
 	}
-
-      /* if (test) x = a; else x = b;
-	 =>   x = (-(test != 0) & (b - a)) + a;  */
       else
 	{
-	  target = expand_simple_binop (mode, AND,
-					target, gen_int_mode (diff, mode),
-					if_info->x, 0, OPTAB_WIDEN);
-	  if (target)
-	    target = expand_simple_binop (mode, PLUS,
-					  target, gen_int_mode (ifalse, mode),
-					  if_info->x, 0, OPTAB_WIDEN);
+	  end_sequence ();
+	  return FALSE;
 	}
 
       if (! target)
@@ -1606,11 +1635,67 @@ noce_try_cmove (struct noce_if_info *if_info)
 				   INSN_LOCATION (if_info->insn_a));
 	  return TRUE;
 	}
-      else
+      /* If both a and b are constants try a last-ditch transformation:
+	 if (test) x = a; else x = b;
+	 =>   x = (-(test != 0) & (b - a)) + a;
+	 Try this only if the target-specific expansion above has failed.
+	 The target-specific expander may want to generate sequences that
+	 we don't know about, so give them a chance before trying this
+	 approach.  */
+      else if (!targetm.have_conditional_execution ()
+		&& CONST_INT_P (if_info->a) && CONST_INT_P (if_info->b)
+		&& ((if_info->branch_cost >= 2 && STORE_FLAG_VALUE == -1)
+		    || if_info->branch_cost >= 3))
 	{
-	  end_sequence ();
-	  return FALSE;
+	  machine_mode mode = GET_MODE (if_info->x);
+	  HOST_WIDE_INT ifalse = INTVAL (if_info->a);
+	  HOST_WIDE_INT itrue = INTVAL (if_info->b);
+	  rtx target = noce_emit_store_flag (if_info, if_info->x, false, -1);
+	  if (!target)
+	    {
+	      end_sequence ();
+	      return FALSE;
+	    }
+
+	  HOST_WIDE_INT diff = (unsigned HOST_WIDE_INT) itrue - ifalse;
+	  /* Make sure we can represent the difference
+	     between the two values.  */
+	  if ((diff > 0)
+	      != ((ifalse < 0) != (itrue < 0) ? ifalse < 0 : ifalse < itrue))
+	    {
+	      end_sequence ();
+	      return FALSE;
+	    }
+
+	  diff = trunc_int_for_mode (diff, mode);
+	  target = expand_simple_binop (mode, AND,
+					target, gen_int_mode (diff, mode),
+					if_info->x, 0, OPTAB_WIDEN);
+	  if (target)
+	    target = expand_simple_binop (mode, PLUS,
+					  target, gen_int_mode (ifalse, mode),
+					  if_info->x, 0, OPTAB_WIDEN);
+	  if (target)
+	    {
+	      if (target != if_info->x)
+		noce_emit_move_insn (if_info->x, target);
+
+	      seq = end_ifcvt_sequence (if_info);
+	      if (!seq)
+		return FALSE;
+
+	      emit_insn_before_setloc (seq, if_info->jump,
+				   INSN_LOCATION (if_info->insn_a));
+	      return TRUE;
+	    }
+	  else
+	    {
+	      end_sequence ();
+	      return FALSE;
+	    }
 	}
+      else
+	end_sequence ();
     }
 
   return FALSE;
@@ -2766,13 +2851,14 @@ noce_process_if_block (struct noce_if_info *if_info)
     goto success;
   if (noce_try_abs (if_info))
     goto success;
+  if (!targetm.have_conditional_execution ()
+      && noce_try_store_flag_constants (if_info))
+    goto success;
   if (HAVE_conditional_move
       && noce_try_cmove (if_info))
     goto success;
   if (! targetm.have_conditional_execution ())
     {
-      if (noce_try_store_flag_constants (if_info))
-	goto success;
       if (noce_try_addcc (if_info))
 	goto success;
       if (noce_try_store_flag_mask (if_info))
