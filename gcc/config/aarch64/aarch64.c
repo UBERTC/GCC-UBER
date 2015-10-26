@@ -1154,6 +1154,9 @@ aarch64_split_simd_combine (rtx dst, rtx src1, rtx src2)
 	case V2SImode:
 	  gen = gen_aarch64_simd_combinev2si;
 	  break;
+	case V4HFmode:
+	  gen = gen_aarch64_simd_combinev4hf;
+	  break;
 	case V2SFmode:
 	  gen = gen_aarch64_simd_combinev2sf;
 	  break;
@@ -1201,6 +1204,9 @@ aarch64_split_simd_move (rtx dst, rtx src)
 	  break;
 	case V2DImode:
 	  gen = gen_aarch64_split_simd_movv2di;
+	  break;
+	case V8HFmode:
+	  gen = gen_aarch64_split_simd_movv8hf;
 	  break;
 	case V4SFmode:
 	  gen = gen_aarch64_split_simd_movv4sf;
@@ -8545,6 +8551,7 @@ aarch64_vector_mode_supported_p (machine_mode mode)
 	  || mode == V2SImode  || mode == V4HImode
 	  || mode == V8QImode || mode == V2SFmode
 	  || mode == V4SFmode || mode == V2DFmode
+	  || mode == V4HFmode || mode == V8HFmode
 	  || mode == V1DFmode))
     return true;
 
@@ -8619,6 +8626,10 @@ aarch64_mangle_type (const_tree type)
      managled as if it is in the "std" namespace.  */
   if (lang_hooks.types_compatible_p (CONST_CAST_TREE (type), va_list_type))
     return "St9__va_list";
+
+  /* Half-precision float.  */
+  if (TREE_CODE (type) == REAL_TYPE && TYPE_PRECISION (type) == 16)
+    return "Dh";
 
   /* Mangle AArch64-specific internal types.  TYPE_NAME is non-NULL_TREE for
      builtin types.  */
@@ -10188,6 +10199,33 @@ aarch64_start_file (void)
   default_file_start();
 }
 
+static void
+aarch64_init_libfuncs (void)
+{
+   /* Half-precision float operations.  The compiler handles all operations
+     with NULL libfuncs by converting to SFmode.  */
+
+  /* Conversions.  */
+  set_conv_libfunc (trunc_optab, HFmode, SFmode, "__gnu_f2h_ieee");
+  set_conv_libfunc (sext_optab, SFmode, HFmode, "__gnu_h2f_ieee");
+
+  /* Arithmetic.  */
+  set_optab_libfunc (add_optab, HFmode, NULL);
+  set_optab_libfunc (sdiv_optab, HFmode, NULL);
+  set_optab_libfunc (smul_optab, HFmode, NULL);
+  set_optab_libfunc (neg_optab, HFmode, NULL);
+  set_optab_libfunc (sub_optab, HFmode, NULL);
+
+  /* Comparisons.  */
+  set_optab_libfunc (eq_optab, HFmode, NULL);
+  set_optab_libfunc (ne_optab, HFmode, NULL);
+  set_optab_libfunc (lt_optab, HFmode, NULL);
+  set_optab_libfunc (le_optab, HFmode, NULL);
+  set_optab_libfunc (ge_optab, HFmode, NULL);
+  set_optab_libfunc (gt_optab, HFmode, NULL);
+  set_optab_libfunc (unord_optab, HFmode, NULL);
+}
+
 /* Target hook for c_mode_for_suffix.  */
 static machine_mode
 aarch64_c_mode_for_suffix (char suffix)
@@ -10226,7 +10264,8 @@ aarch64_float_const_representable_p (rtx x)
   if (!CONST_DOUBLE_P (x))
     return false;
 
-  if (GET_MODE (x) == VOIDmode)
+  /* We don't support HFmode constants yet.  */
+  if (GET_MODE (x) == VOIDmode || GET_MODE (x) == HFmode)
     return false;
 
   REAL_VALUE_FROM_CONST_DOUBLE (r, x);
@@ -10929,6 +10968,8 @@ aarch64_evpc_dup (struct expand_vec_perm_d *d)
     case V4SImode: gen = gen_aarch64_dup_lanev4si; break;
     case V2SImode: gen = gen_aarch64_dup_lanev2si; break;
     case V2DImode: gen = gen_aarch64_dup_lanev2di; break;
+    case V8HFmode: gen = gen_aarch64_dup_lanev8hf; break;
+    case V4HFmode: gen = gen_aarch64_dup_lanev4hf; break;
     case V4SFmode: gen = gen_aarch64_dup_lanev4sf; break;
     case V2SFmode: gen = gen_aarch64_dup_lanev2sf; break;
     case V2DFmode: gen = gen_aarch64_dup_lanev2df; break;
@@ -12162,6 +12203,14 @@ aarch64_gen_adjusted_ldpstp (rtx *operands, bool load,
   return true;
 }
 
+/* Implement TARGET_PROMOTED_TYPE to promote __fp16 to float.  */
+static tree
+aarch64_promoted_type (const_tree t)
+{
+  if (SCALAR_FLOAT_TYPE_P (t) && TYPE_PRECISION (t) == 16)
+    return float_type_node;
+  return NULL_TREE;
+}
 #undef TARGET_ADDRESS_COST
 #define TARGET_ADDRESS_COST aarch64_address_cost
 
@@ -12316,6 +12365,9 @@ aarch64_gen_adjusted_ldpstp (rtx *operands, bool load,
 #undef TARGET_SCHED_REASSOCIATION_WIDTH
 #define TARGET_SCHED_REASSOCIATION_WIDTH aarch64_reassociation_width
 
+#undef TARGET_PROMOTED_TYPE
+#define TARGET_PROMOTED_TYPE aarch64_promoted_type
+
 #undef TARGET_SECONDARY_RELOAD
 #define TARGET_SECONDARY_RELOAD aarch64_secondary_reload
 
@@ -12408,6 +12460,8 @@ aarch64_gen_adjusted_ldpstp (rtx *operands, bool load,
 #define TARGET_VECTORIZE_VEC_PERM_CONST_OK \
   aarch64_vectorize_vec_perm_const_ok
 
+#undef TARGET_INIT_LIBFUNCS
+#define TARGET_INIT_LIBFUNCS aarch64_init_libfuncs
 
 #undef TARGET_FIXED_CONDITION_CODE_REGS
 #define TARGET_FIXED_CONDITION_CODE_REGS aarch64_fixed_condition_code_regs

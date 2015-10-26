@@ -204,6 +204,7 @@ arm_storestruct_lane_qualifiers[SIMD_MAX_BUILTIN_ARGS]
 #define di_UP    DImode
 #define v16qi_UP V16QImode
 #define v8hi_UP  V8HImode
+#define v8hf_UP  V8HFmode
 #define v4si_UP  V4SImode
 #define v4sf_UP  V4SFmode
 #define v2di_UP  V2DImode
@@ -252,6 +253,12 @@ typedef struct {
 #define VAR10(T, N, A, B, C, D, E, F, G, H, I, J) \
   VAR9 (T, N, A, B, C, D, E, F, G, H, I) \
   VAR1 (T, N, J)
+#define VAR11(T, N, A, B, C, D, E, F, G, H, I, J, K) \
+  VAR10 (T, N, A, B, C, D, E, F, G, H, I, J) \
+  VAR1 (T, N, K)
+#define VAR12(T, N, A, B, C, D, E, F, G, H, I, J, K, L) \
+  VAR11 (T, N, A, B, C, D, E, F, G, H, I, J, K) \
+  VAR1 (T, N, L)
 
 /* The NEON builtin data can be found in arm_neon_builtins.def.
    The mode entries in the following table correspond to the "key" type of the
@@ -783,13 +790,6 @@ arm_init_simd_builtin_types (void)
   int nelts = sizeof (arm_simd_types) / sizeof (arm_simd_types[0]);
   tree tdecl;
 
-  /* Initialize the HFmode scalar type.  */
-  arm_simd_floatHF_type_node = make_node (REAL_TYPE);
-  TYPE_PRECISION (arm_simd_floatHF_type_node) = GET_MODE_PRECISION (HFmode);
-  layout_type (arm_simd_floatHF_type_node);
-  (*lang_hooks.types.register_builtin_type) (arm_simd_floatHF_type_node,
-					     "__builtin_neon_hf");
-
   /* Poly types are a world of their own.  In order to maintain legacy
      ABI, they get initialized using the old interface, and don't get
      an entry in our mangling table, consequently, they get default
@@ -837,7 +837,10 @@ arm_init_simd_builtin_types (void)
      mangling.  */
 
   /* Continue with standard types.  */
+  /* The __builtin_simd{64,128}_float16 types are kept private unless
+     we have a scalar __fp16 type.  */
   arm_simd_types[Float16x4_t].eltype = arm_simd_floatHF_type_node;
+  arm_simd_types[Float16x8_t].eltype = arm_simd_floatHF_type_node;
   arm_simd_types[Float32x2_t].eltype = float_type_node;
   arm_simd_types[Float32x4_t].eltype = float_type_node;
 
@@ -1723,10 +1726,12 @@ arm_init_iwmmxt_builtins (void)
 static void
 arm_init_fp16_builtins (void)
 {
-  tree fp16_type = make_node (REAL_TYPE);
-  TYPE_PRECISION (fp16_type) = 16;
-  layout_type (fp16_type);
-  (*lang_hooks.types.register_builtin_type) (fp16_type, "__fp16");
+  arm_simd_floatHF_type_node = make_node (REAL_TYPE);
+  TYPE_PRECISION (arm_simd_floatHF_type_node) = GET_MODE_PRECISION (HFmode);
+  layout_type (arm_simd_floatHF_type_node);
+  if (arm_fp16_format)
+    (*lang_hooks.types.register_builtin_type) (arm_simd_floatHF_type_node,
+					       "__fp16");
 }
 
 static void
@@ -1771,11 +1776,12 @@ arm_init_builtins (void)
   if (TARGET_REALLY_IWMMXT)
     arm_init_iwmmxt_builtins ();
 
+  /* This creates the arm_simd_floatHF_type_node so must come before
+     arm_init_neon_builtins which uses it.  */
+  arm_init_fp16_builtins ();
+
   if (TARGET_NEON)
     arm_init_neon_builtins ();
-
-  if (arm_fp16_format)
-    arm_init_fp16_builtins ();
 
   if (TARGET_CRC32)
     arm_init_crc32_builtins ();

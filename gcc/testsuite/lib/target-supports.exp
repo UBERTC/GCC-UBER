@@ -2687,7 +2687,11 @@ proc check_effective_target_arm_neon_fp16_ok_nocache { } {
     set et_arm_neon_fp16_flags ""
     if { [check_effective_target_arm32] } {
 	foreach flags {"" "-mfloat-abi=softfp" "-mfpu=neon-fp16"
-	               "-mfpu=neon-fp16 -mfloat-abi=softfp"} {
+		       "-mfpu=neon-fp16 -mfloat-abi=softfp"
+		       "-mfp16-format=ieee"
+		       "-mfloat-abi=softfp -mfp16-format=ieee"
+		       "-mfpu=neon-fp16 -mfp16-format=ieee"
+		       "-mfpu=neon-fp16 -mfloat-abi=softfp -mfp16-format=ieee"} {
 	    if { [check_no_compiler_messages_nocache arm_neon_fp_16_ok object {
 		#include "arm_neon.h"
 		float16x4_t
@@ -2708,6 +2712,21 @@ proc check_effective_target_arm_neon_fp16_ok_nocache { } {
 proc check_effective_target_arm_neon_fp16_ok { } {
     return [check_cached_effective_target arm_neon_fp16_ok \
 		check_effective_target_arm_neon_fp16_ok_nocache]
+}
+
+proc check_effective_target_arm_neon_fp16_hw { } {
+    if {! [check_effective_target_arm_neon_fp16_ok] } {
+	return 0
+    }
+    global et_arm_neon_fp16_flags
+    check_runtime_nocache arm_neon_fp16_hw {
+	int
+	main (int argc, char **argv)
+	{
+	  asm ("vcvt.f32.f16 q1, d0");
+	  return 0;
+	}
+    } $et_arm_neon_fp16_flags
 }
 
 proc add_options_for_arm_neon_fp16 { flags } {
