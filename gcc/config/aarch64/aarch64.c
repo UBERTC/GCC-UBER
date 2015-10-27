@@ -674,7 +674,8 @@ aarch64_array_mode_supported_p (machine_mode mode,
 				unsigned HOST_WIDE_INT nelems)
 {
   if (TARGET_SIMD
-      && AARCH64_VALID_SIMD_QREG_MODE (mode)
+      && (AARCH64_VALID_SIMD_QREG_MODE (mode)
+	  || AARCH64_VALID_SIMD_DREG_MODE (mode))
       && (nelems >= 2 && nelems <= 4))
     return true;
 
@@ -10224,7 +10225,7 @@ aarch64_simd_attr_length_move (rtx_insn *insn)
 }
 
 /* Compute and return the length of aarch64_simd_reglist<mode>, where <mode> is
-   one of VSTRUCT modes: OI, CI, EI, or XI.  */
+   one of VSTRUCT modes: OI, CI, or XI.  */
 int
 aarch64_simd_attr_length_rglist (enum machine_mode mode)
 {
