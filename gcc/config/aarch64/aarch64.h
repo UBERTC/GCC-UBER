@@ -23,85 +23,12 @@
 #define GCC_AARCH64_H
 
 /* Target CPU builtins.  */
-#define TARGET_CPU_CPP_BUILTINS()			\
-  do							\
-    {							\
-      builtin_define ("__aarch64__");                   \
-      builtin_define ("__ARM_64BIT_STATE");             \
-      builtin_define_with_int_value                     \
-        ("__ARM_ALIGN_MAX_PWR", 28);                    \
-      builtin_define_with_int_value                     \
-        ("__ARM_ALIGN_MAX_STACK_PWR", 16);              \
-      builtin_define_with_int_value                     \
-        ("__ARM_ARCH", aarch64_architecture_version);   \
-      cpp_define_formatted                                              \
-        (parse_in, "__ARM_ARCH_%dA", aarch64_architecture_version);     \
-      builtin_define ("__ARM_ARCH_ISA_A64");            \
-      builtin_define_with_int_value                     \
-        ("__ARM_ARCH_PROFILE", 'A');                    \
-      builtin_define ("__ARM_FEATURE_CLZ");             \
-      builtin_define ("__ARM_FEATURE_IDIV");            \
-      builtin_define ("__ARM_FEATURE_UNALIGNED");       \
-      if (flag_unsafe_math_optimizations)               \
-        builtin_define ("__ARM_FP_FAST");               \
-      builtin_define ("__ARM_PCS_AAPCS64");             \
-      builtin_define_with_int_value                     \
-        ("__ARM_SIZEOF_WCHAR_T", WCHAR_TYPE_SIZE / 8);  \
-      builtin_define_with_int_value                     \
-        ("__ARM_SIZEOF_MINIMAL_ENUM",                   \
-         flag_short_enums? 1 : 4);                      \
-      if (TARGET_BIG_END)				\
-        {                                               \
-          builtin_define ("__AARCH64EB__");             \
-          builtin_define ("__ARM_BIG_ENDIAN");          \
-        }                                               \
-      else						\
-	builtin_define ("__AARCH64EL__");		\
-							\
-      if (TARGET_FLOAT)                                         \
-        {                                                       \
-          builtin_define ("__ARM_FEATURE_FMA");                 \
-	  builtin_define_with_int_value ("__ARM_FP", 0x0E);     \
-	  builtin_define ("__ARM_FP16_FORMAT_IEEE");		\
-	  builtin_define ("__ARM_FP16_ARGS");			\
-        }                                                       \
-      if (TARGET_SIMD)                                          \
-        {                                                       \
-          builtin_define ("__ARM_FEATURE_NUMERIC_MAXMIN");      \
-          builtin_define ("__ARM_NEON");			\
-          builtin_define_with_int_value ("__ARM_NEON_FP", 0x0C);\
-        }                                                       \
-							        \
-      if (TARGET_CRC32)				        \
-	builtin_define ("__ARM_FEATURE_CRC32");		\
-							\
-      switch (aarch64_cmodel)				\
-	{						\
-	  case AARCH64_CMODEL_TINY:			\
-	  case AARCH64_CMODEL_TINY_PIC:			\
-	    builtin_define ("__AARCH64_CMODEL_TINY__");	\
-	    break;					\
-	  case AARCH64_CMODEL_SMALL:			\
-	  case AARCH64_CMODEL_SMALL_PIC:		\
-	    builtin_define ("__AARCH64_CMODEL_SMALL__");\
-	    break;					\
-	  case AARCH64_CMODEL_LARGE:			\
-	    builtin_define ("__AARCH64_CMODEL_LARGE__");	\
-	    break;					\
-	  default:					\
-	    break;					\
-	}						\
-							\
-      if (TARGET_ILP32)					\
-	{						\
-	  cpp_define (parse_in, "_ILP32");		\
-	  cpp_define (parse_in, "__ILP32__");		\
-	}						\
-      if (TARGET_CRYPTO)				\
-	builtin_define ("__ARM_FEATURE_CRYPTO");	\
-    } while (0)
+#define TARGET_CPU_CPP_BUILTINS()	\
+  aarch64_cpu_cpp_builtins (pfile)
 
 
+
+#define REGISTER_TARGET_PRAGMAS() aarch64_register_pragmas ()
 
 /* Target machine storage layout.  */
 
@@ -224,7 +151,7 @@ extern unsigned aarch64_architecture_version;
    | AARCH64_FL_LOR | AARCH64_FL_RDMA)
 
 /* Macros to test ISA flags.  */
-extern unsigned long aarch64_isa_flags;
+
 #define AARCH64_ISA_CRC            (aarch64_isa_flags & AARCH64_FL_CRC)
 #define AARCH64_ISA_CRYPTO         (aarch64_isa_flags & AARCH64_FL_CRYPTO)
 #define AARCH64_ISA_FP             (aarch64_isa_flags & AARCH64_FL_FP)
@@ -239,6 +166,20 @@ extern unsigned long aarch64_isa_flags;
 
 /* Atomic instructions that can be enabled through the +lse extension.  */
 #define TARGET_LSE (AARCH64_ISA_LSE)
+
+/* Make sure this is always defined so we don't have to check for ifdefs
+   but rather use normal ifs.  */
+#ifndef TARGET_FIX_ERR_A53_835769_DEFAULT
+#define TARGET_FIX_ERR_A53_835769_DEFAULT 0
+#else
+#undef TARGET_FIX_ERR_A53_835769_DEFAULT
+#define TARGET_FIX_ERR_A53_835769_DEFAULT 1
+#endif
+
+/* Apply the workaround for Cortex-A53 erratum 835769.  */
+#define TARGET_FIX_ERR_A53_835769	\
+  ((aarch64_fix_a53_err835769 == 2)	\
+  ? TARGET_FIX_ERR_A53_835769_DEFAULT : aarch64_fix_a53_err835769)
 
 /* Standard register usage.  */
 
@@ -428,6 +369,10 @@ extern unsigned long aarch64_isa_flags;
 /* Select a format to encode pointers in exception handling data.  */
 #define ASM_PREFERRED_EH_DATA_FORMAT(CODE, GLOBAL) \
   aarch64_asm_preferred_eh_data_format ((CODE), (GLOBAL))
+
+/* Output the assembly strings we want to add to a function definition.  */
+#define ASM_DECLARE_FUNCTION_NAME(STR, NAME, DECL)	\
+  aarch64_declare_function_name (STR, NAME, DECL)
 
 /* The register that holds the return address in exception handlers.  */
 #define AARCH64_EH_STACKADJ_REGNUM	(R0_REGNUM + 4)
@@ -905,6 +850,9 @@ do {									     \
    bottom 64-bits.  */
 #define HARD_REGNO_CALL_PART_CLOBBERED(REGNO, MODE) \
 		(FP_REGNUM_P (REGNO) && GET_MODE_SIZE (MODE) > 8)
+
+#undef SWITCHABLE_TARGET
+#define SWITCHABLE_TARGET 1
 
 /* Check TLS Descriptors mechanism is selected.  */
 #define TARGET_TLS_DESC (aarch64_tls_dialect == TLS_DESCRIPTORS)
