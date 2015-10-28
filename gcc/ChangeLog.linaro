@@ -1,3 +1,30 @@
+2015-10-28 Yvan Roux  <yvan.roux@linaro.org>
+	   Sebastian Pop  <s.pop@samsung.com>
+
+	Backport from trunk r221007, r221675, r222011.
+	2015-04-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65735
+	* tree-ssa-threadedge.c (fsm_find_control_statement_thread_paths):
+	Remove visited_phis argument, add visited_bbs, avoid recursing into the
+	same bb rather than just into the same phi node.
+	(thread_through_normal_block): Adjust caller.
+
+	2015-03-25  Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/65177
+	* tree-ssa-threadupdate.c (verify_seme): Renamed verify_jump_thread.
+	(bb_in_bbs): New.
+	(duplicate_seme_region): Renamed duplicate_thread_path.  Redirect all
+	edges not adjacent on the path to the original code.
+
+	2015-02-26  Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/65048
+	* tree-ssa-threadupdate.c (valid_jump_thread_path): New.
+	(thread_through_all_blocks): Call valid_jump_thread_path.
+	Remove invalid FSM jump-thread paths.
+
 2015-08-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	* LINARO-VERSION: Bump version.

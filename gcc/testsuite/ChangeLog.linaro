@@ -1,3 +1,22 @@
+2015-10-28 Yvan Roux  <yvan.roux@linaro.org>
+	   Sebastian Pop  <s.pop@samsung.com>
+
+	Backport from trunk r221007, r221675, r222011.
+	2015-04-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65735
+	* gcc.c-torture/compile/pr65735.c: New test.
+
+	2015-03-25  Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/65177
+	* gcc.dg/tree-ssa/ssa-dom-thread-10.c: New.
+
+	2015-02-26  Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/65048
+	* gcc.dg/tree-ssa/ssa-dom-thread-9.c: New.
+
 2015-08-05  Christophe Lyon  <christophe.lyon@linaro.org>
 
 	GCC Linaro 4.9-2015.06-1 snapshot.
