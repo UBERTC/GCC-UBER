@@ -9402,7 +9402,6 @@ arm_unspec_cost (rtx x, enum rtx_code /* outer_code */, bool speed_p, int *cost)
     case UNSPEC_VRINTR:
     case UNSPEC_VRINTX:
     case UNSPEC_VRINTA:
-      *cost = COSTS_N_INSNS (1);
       if (speed_p)
         *cost += extra_cost->fp[GET_MODE (x) == DFmode].roundint;
 
@@ -9461,6 +9460,8 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 		   int *cost, bool speed_p)
 {
   machine_mode mode = GET_MODE (x);
+
+  *cost = COSTS_N_INSNS (1);
 
   if (TARGET_THUMB1)
     {
@@ -9562,8 +9563,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
       bool is_ldm = load_multiple_operation (x, SImode);
       bool is_stm = store_multiple_operation (x, SImode);
 
-      *cost = COSTS_N_INSNS (1);
-
       if (is_ldm || is_stm)
         {
 	  if (speed_p)
@@ -9590,10 +9589,10 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
     case UDIV:
       if (TARGET_HARD_FLOAT && GET_MODE_CLASS (mode) == MODE_FLOAT
 	  && (mode == SFmode || !TARGET_VFP_SINGLE))
-	*cost = COSTS_N_INSNS (speed_p
-			       ? extra_cost->fp[mode != SFmode].div : 1);
+	*cost += COSTS_N_INSNS (speed_p
+			       ? extra_cost->fp[mode != SFmode].div : 0);
       else if (mode == SImode && TARGET_IDIV)
-	*cost = COSTS_N_INSNS (speed_p ? extra_cost->mult[0].idiv : 1);
+	*cost += COSTS_N_INSNS (speed_p ? extra_cost->mult[0].idiv : 0);
       else
 	*cost = LIBCALL_COST (2);
       return false;	/* All arguments must be in registers.  */
@@ -9606,7 +9605,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
     case ROTATE:
       if (mode == SImode && REG_P (XEXP (x, 1)))
 	{
-	  *cost = (COSTS_N_INSNS (2)
+	  *cost += (COSTS_N_INSNS (1)
 		   + rtx_cost (XEXP (x, 0), code, 0, speed_p));
 	  if (speed_p)
 	    *cost += extra_cost->alu.shift_reg;
@@ -9619,7 +9618,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
     case ASHIFTRT:
       if (mode == DImode && CONST_INT_P (XEXP (x, 1)))
 	{
-	  *cost = (COSTS_N_INSNS (3)
+	  *cost += (COSTS_N_INSNS (2)
 		   + rtx_cost (XEXP (x, 0), code, 0, speed_p));
 	  if (speed_p)
 	    *cost += 2 * extra_cost->alu.shift;
@@ -9627,8 +9626,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	}
       else if (mode == SImode)
 	{
-	  *cost = (COSTS_N_INSNS (1)
-		   + rtx_cost (XEXP (x, 0), code, 0, speed_p));
+	  *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
 	  /* Slightly disparage register shifts at -Os, but not by much.  */
 	  if (!CONST_INT_P (XEXP (x, 1)))
 	    *cost += (speed_p ? extra_cost->alu.shift_reg : 1
@@ -9640,8 +9638,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	{
 	  if (code == ASHIFT)
 	    {
-	      *cost = (COSTS_N_INSNS (1)
-		       + rtx_cost (XEXP (x, 0), code, 0, speed_p));
+	      *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
 	      /* Slightly disparage register shifts at -Os, but not by
 	         much.  */
 	      if (!CONST_INT_P (XEXP (x, 1)))
@@ -9653,14 +9650,13 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	      if (arm_arch_thumb2 && CONST_INT_P (XEXP (x, 1)))
 		{
 		  /* Can use SBFX/UBFX.  */
-		  *cost = COSTS_N_INSNS (1);
 		  if (speed_p)
 		    *cost += extra_cost->alu.bfx;
 		  *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
 		}
 	      else
 		{
-		  *cost = COSTS_N_INSNS (2);
+		  *cost += COSTS_N_INSNS (1);
 		  *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
 		  if (speed_p)
 		    {
@@ -9677,7 +9673,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	    }
 	  else /* Rotates.  */
 	    {
-	      *cost = COSTS_N_INSNS (3 + !CONST_INT_P (XEXP (x, 1)));
+	      *cost = COSTS_N_INSNS (2 + !CONST_INT_P (XEXP (x, 1)));
 	      *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
 	      if (speed_p)
 		{
@@ -9701,7 +9697,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
         {
           if (mode == SImode)
             {
-              *cost = COSTS_N_INSNS (1);
               if (speed_p)
                 *cost += extra_cost->alu.rev;
 
@@ -9714,7 +9709,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
            and thumb_legacy_rev for the form of RTL used then.  */
           if (TARGET_THUMB)
             {
-              *cost = COSTS_N_INSNS (10);
+              *cost += COSTS_N_INSNS (9);
 
               if (speed_p)
                 {
@@ -9724,7 +9719,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
             }
           else
             {
-              *cost = COSTS_N_INSNS (5);
+              *cost += COSTS_N_INSNS (4);
 
               if (speed_p)
                 {
@@ -9741,7 +9736,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
       if (TARGET_HARD_FLOAT && GET_MODE_CLASS (mode) == MODE_FLOAT
 	  && (mode == SFmode || !TARGET_VFP_SINGLE))
 	{
-	  *cost = COSTS_N_INSNS (1);
 	  if (GET_CODE (XEXP (x, 0)) == MULT
 	      || GET_CODE (XEXP (x, 1)) == MULT)
 	    {
@@ -9785,8 +9779,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  rtx shift_by_reg = NULL;
 	  rtx shift_op;
 	  rtx non_shift_op;
-
-	  *cost = COSTS_N_INSNS (1);
 
 	  shift_op = shifter_op_p (XEXP (x, 0), &shift_by_reg);
 	  if (shift_op == NULL)
@@ -9855,7 +9847,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  HANDLE_NARROW_SHIFT_ARITH (MINUS, 1)
 
 	  /* Slightly disparage, as we might need to widen the result.  */
-	  *cost = 1 + COSTS_N_INSNS (1);
+	  *cost += 1;
 	  if (speed_p)
 	    *cost += extra_cost->alu.arith;
 
@@ -9870,7 +9862,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 
       if (mode == DImode)
 	{
-	  *cost = COSTS_N_INSNS (2);
+	  *cost += COSTS_N_INSNS (1);
 
 	  if (GET_CODE (XEXP (x, 0)) == ZERO_EXTEND)
 	    {
@@ -9924,7 +9916,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
       if (TARGET_HARD_FLOAT && GET_MODE_CLASS (mode) == MODE_FLOAT
 	  && (mode == SFmode || !TARGET_VFP_SINGLE))
 	{
-	  *cost = COSTS_N_INSNS (1);
 	  if (GET_CODE (XEXP (x, 0)) == MULT)
 	    {
 	      rtx mul_op0, mul_op1, add_op;
@@ -9981,7 +9972,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 
 	  /* Slightly penalize a narrow operation as the result may
 	     need widening.  */
-	  *cost = 1 + COSTS_N_INSNS (1);
+	  *cost += 1;
 	  if (speed_p)
 	    *cost += extra_cost->alu.arith;
 
@@ -9992,7 +9983,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	{
 	  rtx shift_op, shift_reg;
 
-	  *cost = COSTS_N_INSNS (1);
 	  if (TARGET_INT_SIMD
 	      && (GET_CODE (XEXP (x, 0)) == ZERO_EXTEND
 		  || GET_CODE (XEXP (x, 0)) == SIGN_EXTEND))
@@ -10026,8 +10016,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  if (GET_CODE (XEXP (x, 0)) == MULT)
 	    {
 	      rtx mul_op = XEXP (x, 0);
-
-	      *cost = COSTS_N_INSNS (1);
 
 	      if (TARGET_DSP_MULTIPLY
 		  && ((GET_CODE (XEXP (mul_op, 0)) == SIGN_EXTEND
@@ -10088,7 +10076,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 		  || (GET_CODE (XEXP (XEXP (x, 0), 0)) == SIGN_EXTEND
 		      && GET_CODE (XEXP (XEXP (x, 0), 1)) == SIGN_EXTEND)))
 	    {
-	      *cost = COSTS_N_INSNS (1);
 	      if (speed_p)
 		*cost += extra_cost->mult[1].extend_add;
 	      *cost += (rtx_cost (XEXP (XEXP (XEXP (x, 0), 0), 0),
@@ -10099,7 +10086,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	      return true;
 	    }
 
-	  *cost = COSTS_N_INSNS (2);
+	  *cost += COSTS_N_INSNS (1);
 
 	  if (GET_CODE (XEXP (x, 0)) == ZERO_EXTEND
 	      || GET_CODE (XEXP (x, 0)) == SIGN_EXTEND)
@@ -10127,7 +10114,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
     case IOR:
       if (mode == SImode && arm_arch6 && aarch_rev16_p (x))
         {
-          *cost = COSTS_N_INSNS (1);
           if (speed_p)
             *cost += extra_cost->alu.rev;
 
@@ -10140,8 +10126,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  enum rtx_code subcode = GET_CODE (XEXP (x, 0));
 	  rtx op0 = XEXP (x, 0);
 	  rtx shift_op, shift_reg;
-
-	  *cost = COSTS_N_INSNS (1);
 
 	  if (subcode == NOT
 	      && (code == AND
@@ -10191,7 +10175,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  rtx op0 = XEXP (x, 0);
 	  enum rtx_code subcode = GET_CODE (op0);
 
-	  *cost = COSTS_N_INSNS (2);
+	  *cost += COSTS_N_INSNS (1);
 
 	  if (subcode == NOT
 	      && (code == AND
@@ -10233,8 +10217,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	{
 	  rtx op0 = XEXP (x, 0);
 
-	  *cost = COSTS_N_INSNS (1);
-
 	  if (GET_CODE (op0) == NEG && !flag_rounding_math)
 	    op0 = XEXP (op0, 0);
 
@@ -10253,7 +10235,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 
       if (mode == SImode)
 	{
-	  *cost = COSTS_N_INSNS (1);
 	  if (TARGET_DSP_MULTIPLY
 	      && ((GET_CODE (XEXP (x, 0)) == SIGN_EXTEND
 		   && (GET_CODE (XEXP (x, 1)) == SIGN_EXTEND
@@ -10289,7 +10270,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 		  || (GET_CODE (XEXP (x, 0)) == SIGN_EXTEND
 		      && GET_CODE (XEXP (x, 1)) == SIGN_EXTEND)))
 	    {
-	      *cost = COSTS_N_INSNS (1);
 	      if (speed_p)
 		*cost += extra_cost->mult[1].extend;
 	      *cost += (rtx_cost (XEXP (XEXP (x, 0), 0),
@@ -10318,7 +10298,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	      return true;
 	    }
 
-	  *cost = COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += extra_cost->fp[mode != SFmode].neg;
 
@@ -10334,7 +10313,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	{
 	  if (GET_CODE (XEXP (x, 0)) == ABS)
 	    {
-	      *cost = COSTS_N_INSNS (2);
+	      *cost += COSTS_N_INSNS (1);
 	      /* Assume the non-flag-changing variant.  */
 	      if (speed_p)
 		*cost += (extra_cost->alu.log_shift
@@ -10346,7 +10325,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  if (GET_RTX_CLASS (GET_CODE (XEXP (x, 0))) == RTX_COMPARE
 	      || GET_RTX_CLASS (GET_CODE (XEXP (x, 0))) == RTX_COMM_COMPARE)
 	    {
-	      *cost = COSTS_N_INSNS (2);
+	      *cost += COSTS_N_INSNS (1);
 	      /* No extra cost for MOV imm and MVN imm.  */
 	      /* If the comparison op is using the flags, there's no further
 		 cost, otherwise we need to add the cost of the comparison.  */
@@ -10364,7 +10343,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 		}
 	      return true;
 	    }
-	  *cost = COSTS_N_INSNS (1);
+
 	  if (speed_p)
 	    *cost += extra_cost->alu.arith;
 	  return false;
@@ -10374,7 +10353,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  && GET_MODE_SIZE (mode) < 4)
 	{
 	  /* Slightly disparage, as we might need an extend operation.  */
-	  *cost = 1 + COSTS_N_INSNS (1);
+	  *cost += 1;
 	  if (speed_p)
 	    *cost += extra_cost->alu.arith;
 	  return false;
@@ -10382,7 +10361,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 
       if (mode == DImode)
 	{
-	  *cost = COSTS_N_INSNS (2);
+	  *cost += COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += 2 * extra_cost->alu.arith;
 	  return false;
@@ -10398,7 +10377,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  rtx shift_op;
 	  rtx shift_reg = NULL;
 
-	  *cost = COSTS_N_INSNS (1);
 	  shift_op = shifter_op_p (XEXP (x, 0), &shift_reg);
 
 	  if (shift_op)
@@ -10421,7 +10399,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	}
       if (mode == DImode)
 	{
-	  *cost = COSTS_N_INSNS (2);
+	  *cost += COSTS_N_INSNS (1);
 	  return false;
 	}
 
@@ -10434,7 +10412,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
       {
         if (GET_CODE (XEXP (x, 1)) == PC || GET_CODE (XEXP (x, 2)) == PC)
 	  {
-	    *cost = COSTS_N_INSNS (4);
+	    *cost += COSTS_N_INSNS (3);
 	    return true;
 	  }
 	int op1cost = rtx_cost (XEXP (x, 1), SET, 1, speed_p);
@@ -10477,7 +10455,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  if (TARGET_HARD_FLOAT && GET_MODE_CLASS (op0mode) == MODE_FLOAT
 	      && (op0mode == SFmode || !TARGET_VFP_SINGLE))
 	    {
-	      *cost = COSTS_N_INSNS (1);
 	      if (speed_p)
 		*cost += extra_cost->fp[op0mode != SFmode].compare;
 
@@ -10498,7 +10475,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  /* DImode compares normally take two insns.  */
 	  if (op0mode == DImode)
 	    {
-	      *cost = COSTS_N_INSNS (2);
+	      *cost += COSTS_N_INSNS (1);
 	      if (speed_p)
 		*cost += 2 * extra_cost->alu.arith;
 	      return false;
@@ -10536,7 +10513,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	      shift_op = shifter_op_p (XEXP (x, 0), &shift_reg);
 	      if (shift_op != NULL)
 		{
-		  *cost = COSTS_N_INSNS (1);
 		  if (shift_reg != NULL)
 		    {
 		      *cost += rtx_cost (shift_reg, ASHIFT, 1, speed_p);
@@ -10550,7 +10526,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 		  return true;
 		}
 
-	      *cost = COSTS_N_INSNS (1);
 	      if (speed_p)
 		*cost += extra_cost->alu.arith;
 	      if (CONST_INT_P (XEXP (x, 1))
@@ -10594,7 +10569,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	      && XEXP (x, 1) == const0_rtx)
 	    {
 	      /* Thumb also needs an IT insn.  */
-	      *cost = COSTS_N_INSNS (TARGET_THUMB ? 3 : 2);
+	      *cost += COSTS_N_INSNS (TARGET_THUMB ? 2 : 1);
 	      return true;
 	    }
 	  if (XEXP (x, 1) == const0_rtx)
@@ -10603,7 +10578,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 		{
 		case LT:
 		  /* LSR Rd, Rn, #31.  */
-		  *cost = COSTS_N_INSNS (1);
 		  if (speed_p)
 		    *cost += extra_cost->alu.shift;
 		  break;
@@ -10615,13 +10589,13 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 		case NE:
 		  /* SUBS T1, Rn, #1
 		     SBC  Rd, Rn, T1.  */
-		  *cost = COSTS_N_INSNS (2);
+		  *cost += COSTS_N_INSNS (1);
 		  break;
 
 		case LE:
 		  /* RSBS T1, Rn, Rn, LSR #31
 		     ADC  Rd, Rn, T1. */
-		  *cost = COSTS_N_INSNS (2);
+		  *cost += COSTS_N_INSNS (1);
 		  if (speed_p)
 		    *cost += extra_cost->alu.arith_shift;
 		  break;
@@ -10629,7 +10603,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 		case GT:
 		  /* RSB  Rd, Rn, Rn, ASR #1
 		     LSR  Rd, Rd, #31.  */
-		  *cost = COSTS_N_INSNS (2);
+		  *cost += COSTS_N_INSNS (1);
 		  if (speed_p)
 		    *cost += (extra_cost->alu.arith_shift
 			      + extra_cost->alu.shift);
@@ -10638,7 +10612,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 		case GE:
 		  /* ASR  Rd, Rn, #31
 		     ADD  Rd, Rn, #1.  */
-		  *cost = COSTS_N_INSNS (2);
+		  *cost += COSTS_N_INSNS (1);
 		  if (speed_p)
 		    *cost += extra_cost->alu.shift;
 		  break;
@@ -10654,7 +10628,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	    }
 	  else
 	    {
-	      *cost = COSTS_N_INSNS (TARGET_THUMB ? 4 : 3);
+	      *cost += COSTS_N_INSNS (TARGET_THUMB ? 3 : 2);
 	      if (CONST_INT_P (XEXP (x, 1))
 		  && const_ok_for_op (INTVAL (XEXP (x, 1)), COMPARE))
 		{
@@ -10682,7 +10656,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
       if (TARGET_HARD_FLOAT && GET_MODE_CLASS (mode) == MODE_FLOAT
 	  && (mode == SFmode || !TARGET_VFP_SINGLE))
 	{
-	  *cost = COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += extra_cost->fp[mode != SFmode].neg;
 
@@ -10696,7 +10669,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 
       if (mode == SImode)
 	{
-	  *cost = COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += extra_cost->alu.log_shift + extra_cost->alu.arith_shift;
 	  return false;
@@ -10732,7 +10704,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
       if (GET_MODE (XEXP (x, 0)) != SImode && arm_arch6)
 	{
 	  /* We have SXTB/SXTH.  */
-	  *cost = COSTS_N_INSNS (1);
 	  *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
 	  if (speed_p)
 	    *cost += extra_cost->alu.extend;
@@ -10740,7 +10711,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
       else if (GET_MODE (XEXP (x, 0)) != SImode)
 	{
 	  /* Needs two shifts.  */
-	  *cost = COSTS_N_INSNS (2);
+	  *cost += COSTS_N_INSNS (1);
 	  *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
 	  if (speed_p)
 	    *cost += 2 * extra_cost->alu.shift;
@@ -10778,14 +10749,12 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	     optimizing for speed it should never be slower to use
 	     AND, and we don't really model 16-bit vs 32-bit insns
 	     here.  */
-	  *cost = COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += extra_cost->alu.logical;
 	}
       else if (GET_MODE (XEXP (x, 0)) != SImode && arm_arch6)
 	{
 	  /* We have UXTB/UXTH.  */
-	  *cost = COSTS_N_INSNS (1);
 	  *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
 	  if (speed_p)
 	    *cost += extra_cost->alu.extend;
@@ -10801,8 +10770,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  if (speed_p)
 	    *cost += 2 * extra_cost->alu.shift;
 	}
-      else  /* GET_MODE (XEXP (x, 0)) == SImode.  */
-        *cost = COSTS_N_INSNS (1);
 
       /* Widening beyond 32-bits requires one more insn.  */
       if (mode == DImode)
@@ -10860,12 +10827,12 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
       if (speed_p)
 	{
 	  if (arm_arch_thumb2 && !flag_pic)
-	    *cost = COSTS_N_INSNS (2);
+	    *cost += COSTS_N_INSNS (1);
 	  else
-	    *cost = COSTS_N_INSNS (1) + extra_cost->ldst.load;
+	    *cost += extra_cost->ldst.load;
 	}
       else
-	*cost = COSTS_N_INSNS (2);
+	*cost += COSTS_N_INSNS (1);
 
       if (flag_pic)
 	{
@@ -10887,7 +10854,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	{
 	  if (vfp3_const_double_rtx (x))
 	    {
-	      *cost = COSTS_N_INSNS (1);
 	      if (speed_p)
 		*cost += extra_cost->fp[mode == DFmode].fpconst;
 	      return true;
@@ -10895,14 +10861,13 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 
 	  if (speed_p)
 	    {
-	      *cost = COSTS_N_INSNS (1);
 	      if (mode == DFmode)
 		*cost += extra_cost->ldst.loadd;
 	      else
 		*cost += extra_cost->ldst.loadf;
 	    }
 	  else
-	    *cost = COSTS_N_INSNS (2 + (mode == DFmode));
+	    *cost += COSTS_N_INSNS (1 + (mode == DFmode));
 
 	  return true;
 	}
@@ -10922,7 +10887,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 
     case HIGH:
     case LO_SUM:
-      *cost = COSTS_N_INSNS (1);
       /* When optimizing for size, we prefer constant pool entries to
 	 MOVW/MOVT pairs, so bump the cost of these slightly.  */
       if (!speed_p)
@@ -10930,7 +10894,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
       return true;
 
     case CLZ:
-      *cost = COSTS_N_INSNS (1);
       if (speed_p)
 	*cost += extra_cost->alu.clz;
       return false;
@@ -10938,7 +10901,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
     case SMIN:
       if (XEXP (x, 1) == const0_rtx)
 	{
-	  *cost = COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += extra_cost->alu.log_shift;
 	  *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
@@ -10948,7 +10910,7 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
     case SMAX:
     case UMIN:
     case UMAX:
-      *cost = COSTS_N_INSNS (2);
+      *cost += COSTS_N_INSNS (1);
       return false;
 
     case TRUNCATE:
@@ -10962,7 +10924,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 		  && (GET_CODE (XEXP (XEXP (XEXP (x, 0), 0), 1))
 		      == ZERO_EXTEND))))
 	{
-	  *cost = COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += extra_cost->mult[1].extend;
 	  *cost += (rtx_cost (XEXP (XEXP (XEXP (x, 0), 0), 0), ZERO_EXTEND, 0,
@@ -10993,14 +10954,13 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  && CONST_INT_P (XEXP (x, 1))
 	  && CONST_INT_P (XEXP (x, 2)))
 	{
-	  *cost = COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += extra_cost->alu.bfx;
 	  *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
 	  return true;
 	}
       /* Without UBFX/SBFX, need to resort to shift operations.  */
-      *cost = COSTS_N_INSNS (2);
+      *cost += COSTS_N_INSNS (1);
       if (speed_p)
 	*cost += 2 * extra_cost->alu.shift;
       *cost += rtx_cost (XEXP (x, 0), ASHIFT, 0, speed_p);
@@ -11009,7 +10969,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
     case FLOAT_EXTEND:
       if (TARGET_HARD_FLOAT)
 	{
-	  *cost = COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += extra_cost->fp[mode == DFmode].widen;
 	  if (!TARGET_FPU_ARMV8
@@ -11031,7 +10990,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
     case FLOAT_TRUNCATE:
       if (TARGET_HARD_FLOAT)
 	{
-	  *cost = COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += extra_cost->fp[mode == DFmode].narrow;
 	  *cost += rtx_cost (XEXP (x, 0), code, 0, speed_p);
@@ -11048,7 +11006,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
           rtx op1 = XEXP (x, 1);
           rtx op2 = XEXP (x, 2);
 
-          *cost = COSTS_N_INSNS (1);
 
           /* vfms or vfnma.  */
           if (GET_CODE (op0) == NEG)
@@ -11077,7 +11034,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	{
 	  if (GET_MODE_CLASS (mode) == MODE_INT)
 	    {
-	      *cost = COSTS_N_INSNS (1);
 	      if (speed_p)
 		*cost += extra_cost->fp[GET_MODE (XEXP (x, 0)) == DFmode].toint;
 	      /* Strip of the 'cost' of rounding towards zero.  */
@@ -11092,7 +11048,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	  else if (GET_MODE_CLASS (mode) == MODE_FLOAT
 		   && TARGET_FPU_ARMV8)
 	    {
-	      *cost = COSTS_N_INSNS (1);
 	      if (speed_p)
 		*cost += extra_cost->fp[mode == DFmode].roundint;
 	      return false;
@@ -11108,7 +11063,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	{
 	  /* ??? Increase the cost to deal with transferring from CORE
 	     -> FP registers?  */
-	  *cost = COSTS_N_INSNS (1);
 	  if (speed_p)
 	    *cost += extra_cost->fp[mode == DFmode].fromint;
 	  return false;
@@ -11117,7 +11071,6 @@ arm_new_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer_code,
       return false;
 
     case CALL:
-      *cost = COSTS_N_INSNS (1);
       return true;
 
     case ASM_OPERANDS:
