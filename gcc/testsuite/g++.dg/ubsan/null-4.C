@@ -17,4 +17,3 @@ main (void)
 
 // { dg-output "reference binding to null pointer of type 'int'(\n|\r\n|\r)" }
 // { dg-final { scan-tree-dump-times "Optimizing" 4 "sanopt"} }
-// { dg-final { cleanup-tree-dump "sanopt" } }

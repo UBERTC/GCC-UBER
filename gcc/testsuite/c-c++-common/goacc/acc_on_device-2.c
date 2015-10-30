@@ -34,4 +34,3 @@ f (void)
 
    { dg-final { scan-rtl-dump-times "\\\(call \[^\\n\]* acc_on_device" 0 "expand" { xfail { c || c++ } } } } */
 
-/* { dg-final { cleanup-rtl-dump "expand" } } */

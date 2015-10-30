@@ -20,4 +20,3 @@ int foo (int *p)
 }
 
 /* { dg-final { scan-tree-dump "vectorization is not profitable" "slp2" { xfail  { vect_no_align && { ! vect_hw_misalign } } } } } */
-/* { dg-final { cleanup-tree-dump "slp2" } } */

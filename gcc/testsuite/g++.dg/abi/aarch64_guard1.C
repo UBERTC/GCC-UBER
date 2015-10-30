@@ -13,4 +13,3 @@ int *foo ()
 }
 
 // { dg-final { scan-assembler _ZGVZ3foovE1x,8,8 } }
-// { dg-final { cleanup-tree-dump "original" } }

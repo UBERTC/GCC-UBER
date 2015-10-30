@@ -11,4 +11,3 @@ int *f(int *b)
 }
 
 /* { dg-final { scan-tree-dump-not "if" "optimized" } } */
-/* { dg-final { cleanup-tree-dump "optimized" } } */

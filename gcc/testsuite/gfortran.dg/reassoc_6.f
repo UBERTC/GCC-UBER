@@ -19,4 +19,3 @@
 ! While we understand to combine x + ~x IVOPTs now messes things
 ! up by hiding that operation in casts to unsigned.
 ! { dg-final { scan-tree-dump-not "~" "optimized" { xfail *-*-* } } }
-! { dg-final { cleanup-tree-dump "optimized" } }

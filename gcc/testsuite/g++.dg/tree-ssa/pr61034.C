@@ -44,4 +44,3 @@ bool f(I a, I b, I c, I d) {
 // { dg-final { scan-tree-dump-times ";; Function" 1 "fre2" } }
 // { dg-final { scan-tree-dump-times "free" 19 "fre2" } }
 // { dg-final { scan-tree-dump-times "unreachable" 11 "fre2" } }
-// { dg-final { cleanup-tree-dump "fre2" } }
