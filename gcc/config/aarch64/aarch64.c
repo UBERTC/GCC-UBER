@@ -583,12 +583,6 @@ static const struct aarch64_option_extension all_extensions[] =
    increment address.  */
 static machine_mode aarch64_memory_reference_mode;
 
-/* A table of valid AArch64 "bitmask immediate" values for
-   logical instructions.  */
-
-#define AARCH64_NUM_BITMASKS  5334
-static unsigned HOST_WIDE_INT aarch64_bitmasks[AARCH64_NUM_BITMASKS];
-
 typedef enum aarch64_cond_code
 {
   AARCH64_EQ = 0, AARCH64_NE, AARCH64_CS, AARCH64_CC, AARCH64_MI, AARCH64_PL,
@@ -1263,268 +1257,95 @@ static int
 aarch64_internal_mov_immediate (rtx dest, rtx imm, bool generate,
 				machine_mode mode)
 {
-  unsigned HOST_WIDE_INT mask;
   int i;
-  bool first;
-  unsigned HOST_WIDE_INT val;
-  bool subtargets;
-  rtx subtarget;
-  int one_match, zero_match, first_not_ffff_match;
-  int num_insns = 0;
+  unsigned HOST_WIDE_INT val, val2, mask;
+  int one_match, zero_match;
+  int num_insns;
 
-  if (CONST_INT_P (imm) && aarch64_move_imm (INTVAL (imm), mode))
+  val = INTVAL (imm);
+
+  if (aarch64_move_imm (val, mode))
     {
       if (generate)
 	emit_insn (gen_rtx_SET (VOIDmode, dest, imm));
-      num_insns++;
-      return num_insns;
+      return 1;
     }
 
-  if (mode == SImode)
+  if ((val >> 32) == 0 || mode == SImode)
     {
-      /* We know we can't do this in 1 insn, and we must be able to do it
-	 in two; so don't mess around looking for sequences that don't buy
-	 us anything.  */
       if (generate)
 	{
-	  emit_insn (gen_rtx_SET (VOIDmode, dest,
-				  GEN_INT (INTVAL (imm) & 0xffff)));
-	  emit_insn (gen_insv_immsi (dest, GEN_INT (16),
-				     GEN_INT ((INTVAL (imm) >> 16) & 0xffff)));
+	  emit_insn (gen_rtx_SET (VOIDmode, dest, GEN_INT (val & 0xffff)));
+	  if (mode == SImode)
+	    emit_insn (gen_insv_immsi (dest, GEN_INT (16),
+				       GEN_INT ((val >> 16) & 0xffff)));
+	  else
+	    emit_insn (gen_insv_immdi (dest, GEN_INT (16),
+				       GEN_INT ((val >> 16) & 0xffff)));
 	}
-      num_insns += 2;
-      return num_insns;
+      return 2;
     }
 
   /* Remaining cases are all for DImode.  */
 
-  val = INTVAL (imm);
-  subtargets = optimize && can_create_pseudo_p ();
-
-  one_match = 0;
-  zero_match = 0;
   mask = 0xffff;
-  first_not_ffff_match = -1;
+  zero_match = ((val & mask) == 0) + ((val & (mask << 16)) == 0) +
+    ((val & (mask << 32)) == 0) + ((val & (mask << 48)) == 0);
+  one_match = ((~val & mask) == 0) + ((~val & (mask << 16)) == 0) +
+    ((~val & (mask << 32)) == 0) + ((~val & (mask << 48)) == 0);
 
-  for (i = 0; i < 64; i += 16, mask <<= 16)
+  if (zero_match != 2 && one_match != 2)
     {
-      if ((val & mask) == mask)
-	one_match++;
-      else
+      /* Try emitting a bitmask immediate with a movk replacing 16 bits.
+	 For a 64-bit bitmask try whether changing 16 bits to all ones or
+	 zeroes creates a valid bitmask.  To check any repeated bitmask,
+	 try using 16 bits from the other 32-bit half of val.  */
+
+      for (i = 0; i < 64; i += 16, mask <<= 16)
 	{
-	  if (first_not_ffff_match < 0)
-	    first_not_ffff_match = i;
-	  if ((val & mask) == 0)
-	    zero_match++;
+	  val2 = val & ~mask;
+	  if (val2 != val && aarch64_bitmask_imm (val2, mode))
+	    break;
+	  val2 = val | mask;
+	  if (val2 != val && aarch64_bitmask_imm (val2, mode))
+	    break;
+	  val2 = val2 & ~mask;
+	  val2 = val2 | (((val2 >> 32) | (val2 << 32)) & mask);
+	  if (val2 != val && aarch64_bitmask_imm (val2, mode))
+	    break;
+	}
+      if (i != 64)
+	{
+	  if (generate)
+	    {
+	      emit_insn (gen_rtx_SET (VOIDmode, dest, GEN_INT (val2)));
+	      emit_insn (gen_insv_immdi (dest, GEN_INT (i),
+					 GEN_INT ((val >> i) & 0xffff)));
+	    }
 	}
     }
 
-  if (one_match == 2)
+  /* Generate 2-4 instructions, skipping 16 bits of all zeroes or ones which
+     are emitted by the initial mov.  If one_match > zero_match, skip set bits,
+     otherwise skip zero bits.  */
+
+  num_insns = 1;
+  mask = 0xffff;
+  val2 = one_match > zero_match ? ~val : val;
+  i = (val2 & mask) != 0 ? 0 : (val2 & (mask << 16)) != 0 ? 16 : 32;
+
+  if (generate)
+    emit_insn (gen_rtx_SET (VOIDmode, dest, GEN_INT (one_match > zero_match
+						    ? (val | ~(mask << i))
+						    : (val & (mask << i)))));
+  for (i += 16; i < 64; i += 16)
     {
-      /* Set one of the quarters and then insert back into result.  */
-      mask = 0xffffll << first_not_ffff_match;
+      if ((val2 & (mask << i)) == 0)
+	continue;
       if (generate)
-	{
-	  emit_insn (gen_rtx_SET (VOIDmode, dest, GEN_INT (val | mask)));
-	  emit_insn (gen_insv_immdi (dest, GEN_INT (first_not_ffff_match),
-				     GEN_INT ((val >> first_not_ffff_match)
-					      & 0xffff)));
-	}
-      num_insns += 2;
-      return num_insns;
-    }
-
-  if (zero_match == 2)
-    goto simple_sequence;
-
-  mask = 0x0ffff0000UL;
-  for (i = 16; i < 64; i += 16, mask <<= 16)
-    {
-      HOST_WIDE_INT comp = mask & ~(mask - 1);
-
-      if (aarch64_uimm12_shift (val - (val & mask)))
-	{
-	  if (generate)
-	    {
-	      subtarget = subtargets ? gen_reg_rtx (DImode) : dest;
-	      emit_insn (gen_rtx_SET (VOIDmode, subtarget,
-				      GEN_INT (val & mask)));
-	      emit_insn (gen_adddi3 (dest, subtarget,
-				     GEN_INT (val - (val & mask))));
-	    }
-	  num_insns += 2;
-	  return num_insns;
-	}
-      else if (aarch64_uimm12_shift (-(val - ((val + comp) & mask))))
-	{
-	  if (generate)
-	    {
-	      subtarget = subtargets ? gen_reg_rtx (DImode) : dest;
-	      emit_insn (gen_rtx_SET (VOIDmode, subtarget,
-				      GEN_INT ((val + comp) & mask)));
-	      emit_insn (gen_adddi3 (dest, subtarget,
-				     GEN_INT (val - ((val + comp) & mask))));
-	    }
-	  num_insns += 2;
-	  return num_insns;
-	}
-      else if (aarch64_uimm12_shift (val - ((val - comp) | ~mask)))
-	{
-	  if (generate)
-	    {
-	      subtarget = subtargets ? gen_reg_rtx (DImode) : dest;
-	      emit_insn (gen_rtx_SET (VOIDmode, subtarget,
-				      GEN_INT ((val - comp) | ~mask)));
-	      emit_insn (gen_adddi3 (dest, subtarget,
-				     GEN_INT (val - ((val - comp) | ~mask))));
-	    }
-	  num_insns += 2;
-	  return num_insns;
-	}
-      else if (aarch64_uimm12_shift (-(val - (val | ~mask))))
-	{
-	  if (generate)
-	    {
-	      subtarget = subtargets ? gen_reg_rtx (DImode) : dest;
-	      emit_insn (gen_rtx_SET (VOIDmode, subtarget,
-				      GEN_INT (val | ~mask)));
-	      emit_insn (gen_adddi3 (dest, subtarget,
-				     GEN_INT (val - (val | ~mask))));
-	    }
-	  num_insns += 2;
-	  return num_insns;
-	}
-    }
-
-  /* See if we can do it by arithmetically combining two
-     immediates.  */
-  for (i = 0; i < AARCH64_NUM_BITMASKS; i++)
-    {
-      int j;
-      mask = 0xffff;
-
-      if (aarch64_uimm12_shift (val - aarch64_bitmasks[i])
-	  || aarch64_uimm12_shift (-val + aarch64_bitmasks[i]))
-	{
-	  if (generate)
-	    {
-	      subtarget = subtargets ? gen_reg_rtx (DImode) : dest;
-	      emit_insn (gen_rtx_SET (VOIDmode, subtarget,
-				      GEN_INT (aarch64_bitmasks[i])));
-	      emit_insn (gen_adddi3 (dest, subtarget,
-				     GEN_INT (val - aarch64_bitmasks[i])));
-	    }
-	  num_insns += 2;
-	  return num_insns;
-	}
-
-      for (j = 0; j < 64; j += 16, mask <<= 16)
-	{
-	  if ((aarch64_bitmasks[i] & ~mask) == (val & ~mask))
-	    {
-	      if (generate)
-		{
-		  emit_insn (gen_rtx_SET (VOIDmode, dest,
-					  GEN_INT (aarch64_bitmasks[i])));
-		  emit_insn (gen_insv_immdi (dest, GEN_INT (j),
-					     GEN_INT ((val >> j) & 0xffff)));
-		}
-	      num_insns += 2;
-	      return num_insns;
-	    }
-	}
-    }
-
-  /* See if we can do it by logically combining two immediates.  */
-  for (i = 0; i < AARCH64_NUM_BITMASKS; i++)
-    {
-      if ((aarch64_bitmasks[i] & val) == aarch64_bitmasks[i])
-	{
-	  int j;
-
-	  for (j = i + 1; j < AARCH64_NUM_BITMASKS; j++)
-	    if (val == (aarch64_bitmasks[i] | aarch64_bitmasks[j]))
-	      {
-		if (generate)
-		  {
-		    subtarget = subtargets ? gen_reg_rtx (mode) : dest;
-		    emit_insn (gen_rtx_SET (VOIDmode, subtarget,
-					    GEN_INT (aarch64_bitmasks[i])));
-		    emit_insn (gen_iordi3 (dest, subtarget,
-					   GEN_INT (aarch64_bitmasks[j])));
-		  }
-		num_insns += 2;
-		return num_insns;
-	      }
-	}
-      else if ((val & aarch64_bitmasks[i]) == val)
-	{
-	  int j;
-
-	  for (j = i + 1; j < AARCH64_NUM_BITMASKS; j++)
-	    if (val == (aarch64_bitmasks[j] & aarch64_bitmasks[i]))
-	      {
-		if (generate)
-		  {
-		    subtarget = subtargets ? gen_reg_rtx (mode) : dest;
-		    emit_insn (gen_rtx_SET (VOIDmode, subtarget,
-					    GEN_INT (aarch64_bitmasks[j])));
-		    emit_insn (gen_anddi3 (dest, subtarget,
-					   GEN_INT (aarch64_bitmasks[i])));
-		  }
-		num_insns += 2;
-		return num_insns;
-	      }
-	}
-    }
-
-  if (one_match > zero_match)
-    {
-      /* Set either first three quarters or all but the third.	 */
-      mask = 0xffffll << (16 - first_not_ffff_match);
-      if (generate)
-	emit_insn (gen_rtx_SET (VOIDmode, dest,
-				GEN_INT (val | mask | 0xffffffff00000000ull)));
+	emit_insn (gen_insv_immdi (dest, GEN_INT (i),
+				   GEN_INT ((val >> i) & 0xffff)));
       num_insns ++;
-
-      /* Now insert other two quarters.	 */
-      for (i = first_not_ffff_match + 16, mask <<= (first_not_ffff_match << 1);
-	   i < 64; i += 16, mask <<= 16)
-	{
-	  if ((val & mask) != mask)
-	    {
-	      if (generate)
-		emit_insn (gen_insv_immdi (dest, GEN_INT (i),
-					   GEN_INT ((val >> i) & 0xffff)));
-	      num_insns ++;
-	    }
-	}
-      return num_insns;
-    }
-
- simple_sequence:
-  first = true;
-  mask = 0xffff;
-  for (i = 0; i < 64; i += 16, mask <<= 16)
-    {
-      if ((val & mask) != 0)
-	{
-	  if (first)
-	    {
-	      if (generate)
-		emit_insn (gen_rtx_SET (VOIDmode, dest,
-					GEN_INT (val & mask)));
-	      num_insns ++;
-	      first = false;
-	    }
-	  else
-	    {
-	      if (generate)
-		emit_insn (gen_insv_immdi (dest, GEN_INT (i),
-					   GEN_INT ((val >> i) & 0xffff)));
-	      num_insns ++;
-	    }
-	}
     }
 
   return num_insns;
@@ -3120,67 +2941,6 @@ aarch64_tls_referenced_p (rtx x)
 }
 
 
-static int
-aarch64_bitmasks_cmp (const void *i1, const void *i2)
-{
-  const unsigned HOST_WIDE_INT *imm1 = (const unsigned HOST_WIDE_INT *) i1;
-  const unsigned HOST_WIDE_INT *imm2 = (const unsigned HOST_WIDE_INT *) i2;
-
-  if (*imm1 < *imm2)
-    return -1;
-  if (*imm1 > *imm2)
-    return +1;
-  return 0;
-}
-
-
-static void
-aarch64_build_bitmask_table (void)
-{
-  unsigned HOST_WIDE_INT mask, imm;
-  unsigned int log_e, e, s, r;
-  unsigned int nimms = 0;
-
-  for (log_e = 1; log_e <= 6; log_e++)
-    {
-      e = 1 << log_e;
-      if (e == 64)
-	mask = ~(HOST_WIDE_INT) 0;
-      else
-	mask = ((HOST_WIDE_INT) 1 << e) - 1;
-      for (s = 1; s < e; s++)
-	{
-	  for (r = 0; r < e; r++)
-	    {
-	      /* set s consecutive bits to 1 (s < 64) */
-	      imm = ((unsigned HOST_WIDE_INT)1 << s) - 1;
-	      /* rotate right by r */
-	      if (r != 0)
-		imm = ((imm >> r) | (imm << (e - r))) & mask;
-	      /* replicate the constant depending on SIMD size */
-	      switch (log_e) {
-	      case 1: imm |= (imm <<  2);
-	      case 2: imm |= (imm <<  4);
-	      case 3: imm |= (imm <<  8);
-	      case 4: imm |= (imm << 16);
-	      case 5: imm |= (imm << 32);
-	      case 6:
-		break;
-	      default:
-		gcc_unreachable ();
-	      }
-	      gcc_assert (nimms < AARCH64_NUM_BITMASKS);
-	      aarch64_bitmasks[nimms++] = imm;
-	    }
-	}
-    }
-
-  gcc_assert (nimms == AARCH64_NUM_BITMASKS);
-  qsort (aarch64_bitmasks, nimms, sizeof (aarch64_bitmasks[0]),
-	 aarch64_bitmasks_cmp);
-}
-
-
 /* Return true if val can be encoded as a 12-bit unsigned immediate with
    a left shift of 0 or 12 bits.  */
 bool
@@ -3212,19 +2972,63 @@ aarch64_movw_imm (HOST_WIDE_INT val, machine_mode mode)
 	  || (val & (((HOST_WIDE_INT) 0xffff) << 16)) == val);
 }
 
+/* Multipliers for repeating bitmasks of width 32, 16, 8, 4, and 2.  */
+
+static const unsigned HOST_WIDE_INT bitmask_imm_mul[] =
+  {
+    0x0000000100000001ull,
+    0x0001000100010001ull,
+    0x0101010101010101ull,
+    0x1111111111111111ull,
+    0x5555555555555555ull,
+  };
+
 
 /* Return true if val is a valid bitmask immediate.  */
+
 bool
-aarch64_bitmask_imm (HOST_WIDE_INT val, machine_mode mode)
+aarch64_bitmask_imm (HOST_WIDE_INT val_in, machine_mode mode)
 {
-  if (GET_MODE_SIZE (mode) < 8)
-    {
-      /* Replicate bit pattern.  */
-      val &= (HOST_WIDE_INT) 0xffffffff;
-      val |= val << 32;
-    }
-  return bsearch (&val, aarch64_bitmasks, AARCH64_NUM_BITMASKS,
-		  sizeof (aarch64_bitmasks[0]), aarch64_bitmasks_cmp) != NULL;
+  unsigned HOST_WIDE_INT val, tmp, mask, first_one, next_one;
+  int bits;
+
+  /* Check for a single sequence of one bits and return quickly if so.
+     The special cases of all ones and all zeroes returns false.  */
+  val = (unsigned HOST_WIDE_INT) val_in;
+  tmp = val + (val & -val);
+
+  if (tmp == (tmp & -tmp))
+    return (val + 1) > 1;
+
+  /* Replicate 32-bit immediates so we can treat them as 64-bit.  */
+  if (mode == SImode)
+    val = (val << 32) | (val & 0xffffffff);
+
+  /* Invert if the immediate doesn't start with a zero bit - this means we
+     only need to search for sequences of one bits.  */
+  if (val & 1)
+    val = ~val;
+
+  /* Find the first set bit and set tmp to val with the first sequence of one
+     bits removed.  Return success if there is a single sequence of ones.  */
+  first_one = val & -val;
+  tmp = val & (val + first_one);
+
+  if (tmp == 0)
+    return true;
+
+  /* Find the next set bit and compute the difference in bit position.  */
+  next_one = tmp & -tmp;
+  bits = clz_hwi (first_one) - clz_hwi (next_one);
+  mask = val ^ tmp;
+
+  /* Check the bit position difference is a power of 2, and that the first
+     sequence of one bits fits within 'bits' bits.  */
+  if ((mask >> bits) != 0 || bits != (bits & -bits))
+    return false;
+
+  /* Check the sequence of one bits is repeated 64/bits times.  */
+  return val == mask * bitmask_imm_mul[__builtin_clz (bits) - 26];
 }
 
 
@@ -7731,8 +7535,6 @@ aarch64_override_options (void)
   if ((aarch64_cpu_string && valid_cpu)
        || (aarch64_arch_string && valid_arch))
     gcc_assert (explicit_arch != aarch64_no_arch);
-
-  aarch64_build_bitmask_table ();
 
   aarch64_override_options_internal (&global_options);
 
