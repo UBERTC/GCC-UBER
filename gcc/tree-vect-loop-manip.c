@@ -22,18 +22,14 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "dumpfile.h"
 #include "backend.h"
-#include "cfghooks.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "alias.h"
 #include "fold-const.h"
 #include "cfganal.h"
-#include "gimple-pretty-print.h"
-#include "internal-fn.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
@@ -41,12 +37,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-loop-manip.h"
 #include "tree-into-ssa.h"
 #include "tree-ssa.h"
-#include "tree-pass.h"
 #include "cfgloop.h"
-#include "diagnostic-core.h"
 #include "tree-scalar-evolution.h"
 #include "tree-vectorizer.h"
-#include "langhooks.h"
 
 /*************************************************************************
   Simple Loop Peeling Utilities
@@ -919,9 +912,7 @@ slpeel_tree_duplicate_loop_to_edge_cfg (struct loop *loop,
   free (new_bbs);
   free (bbs);
 
-#ifdef ENABLE_CHECKING
-  verify_dominators (CDI_DOMINATORS);
-#endif
+  checking_verify_dominators (CDI_DOMINATORS);
 
   return new_loop;
 }
@@ -1003,11 +994,13 @@ slpeel_can_duplicate_loop_p (const struct loop *loop, const_edge e)
   return true;
 }
 
-#ifdef ENABLE_CHECKING
 static void
-slpeel_verify_cfg_after_peeling (struct loop *first_loop,
-                                 struct loop *second_loop)
+slpeel_checking_verify_cfg_after_peeling (struct loop *first_loop,
+					  struct loop *second_loop)
 {
+  if (!flag_checking)
+    return;
+
   basic_block loop1_exit_bb = single_exit (first_loop)->dest;
   basic_block loop2_entry_bb = loop_preheader_edge (second_loop)->src;
   basic_block loop1_entry_bb = loop_preheader_edge (first_loop)->src;
@@ -1035,7 +1028,6 @@ slpeel_verify_cfg_after_peeling (struct loop *first_loop,
      second_loop.  */
   /* TODO */
 }
-#endif
 
 /* If the run time cost model check determines that vectorization is
    not profitable and hence scalar loop should be generated then set
@@ -1773,9 +1765,7 @@ vect_do_peeling_for_loop_bound (loop_vec_info loop_vinfo,
 				     0, LOOP_VINFO_VECT_FACTOR (loop_vinfo));
   gcc_assert (new_loop);
   gcc_assert (loop_num == loop->num);
-#ifdef ENABLE_CHECKING
-  slpeel_verify_cfg_after_peeling (loop, new_loop);
-#endif
+  slpeel_checking_verify_cfg_after_peeling (loop, new_loop);
 
   /* A guard that controls whether the new_loop is to be executed or skipped
      is placed in LOOP->exit.  LOOP->exit therefore has two successors - one
@@ -2032,9 +2022,7 @@ vect_do_peeling_for_alignment (loop_vec_info loop_vinfo, tree ni_name,
 				   bound, 0);
 
   gcc_assert (new_loop);
-#ifdef ENABLE_CHECKING
-  slpeel_verify_cfg_after_peeling (new_loop, loop);
-#endif
+  slpeel_checking_verify_cfg_after_peeling (new_loop, loop);
   /* For vectorization factor N, we need to copy at most N-1 values 
      for alignment and this means N-2 loopback edge executions.  */
   max_iter = LOOP_VINFO_VECT_FACTOR (loop_vinfo) - 2;

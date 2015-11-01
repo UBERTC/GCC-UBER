@@ -24,32 +24,13 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "predict.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
-#include "alias.h"
-#include "fold-const.h"
+#include "predict.h"
 #include "stringpool.h"
-#include "internal-fn.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
-#include "params.h"
-#include "langhooks.h"
-#include "diagnostic-core.h"
-#include "except.h"
-#include "timevar.h"
-#include "cgraph.h"
 #include "tree-streamer.h"
-#include "gcov-io.h"
+#include "cgraph.h"
 #include "tree-pass.h"
 #include "profile.h"
 #include "context.h"
@@ -1560,10 +1541,11 @@ input_cgraph_1 (struct lto_file_decl_data *file_data,
   lto_input_toplevel_asms (file_data, order_base);
 
   /* AUX pointers should be all non-zero for function nodes read from the stream.  */
-#ifdef ENABLE_CHECKING
-  FOR_EACH_VEC_ELT (nodes, i, node)
-    gcc_assert (node->aux || !is_a <cgraph_node *> (node));
-#endif
+  if (flag_checking)
+    {
+      FOR_EACH_VEC_ELT (nodes, i, node)
+	gcc_assert (node->aux || !is_a <cgraph_node *> (node));
+    }
   FOR_EACH_VEC_ELT (nodes, i, node)
     {
       int ref;

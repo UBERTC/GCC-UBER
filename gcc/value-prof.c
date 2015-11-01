@@ -21,43 +21,26 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
 #include "ssa.h"
-#include "alias.h"
+#include "cgraph.h"
+#include "coverage.h"
+#include "data-streamer.h"
+#include "diagnostic.h"
 #include "fold-const.h"
 #include "tree-nested.h"
 #include "calls.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
 #include "expr.h"
 #include "value-prof.h"
-#include "recog.h"
-#include "insn-codes.h"
-#include "optabs.h"
-#include "regs.h"
-#include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "tree-cfg.h"
-#include "diagnostic.h"
 #include "gimple-pretty-print.h"
-#include "coverage.h"
-#include "gcov-io.h"
-#include "timevar.h"
 #include "dumpfile.h"
-#include "profile.h"
-#include "cgraph.h"
-#include "data-streamer.h"
 #include "builtins.h"
 #include "params.h"
 #include "tree-chkp.h"
@@ -230,9 +213,8 @@ gimple_remove_histogram_value (struct function *fun, gimple *stmt,
       hist2->hvalue.next = hist->hvalue.next;
     }
   free (hist->hvalue.counters);
-#ifdef ENABLE_CHECKING
-  memset (hist, 0xab, sizeof (*hist));
-#endif
+  if (flag_checking)
+    memset (hist, 0xab, sizeof (*hist));
   free (hist);
 }
 
@@ -595,21 +577,20 @@ free_hist (void **slot, void *data ATTRIBUTE_UNUSED)
 {
   histogram_value hist = *(histogram_value *) slot;
   free (hist->hvalue.counters);
-#ifdef ENABLE_CHECKING
-  memset (hist, 0xab, sizeof (*hist));
-#endif
+  if (flag_checking)
+    memset (hist, 0xab, sizeof (*hist));
   free (hist);
   return 1;
 }
 
 void
-free_histograms (void)
+free_histograms (struct function *fn)
 {
-  if (VALUE_HISTOGRAMS (cfun))
+  if (VALUE_HISTOGRAMS (fn))
     {
-      htab_traverse (VALUE_HISTOGRAMS (cfun), free_hist, NULL);
-      htab_delete (VALUE_HISTOGRAMS (cfun));
-      VALUE_HISTOGRAMS (cfun) = NULL;
+      htab_traverse (VALUE_HISTOGRAMS (fn), free_hist, NULL);
+      htab_delete (VALUE_HISTOGRAMS (fn));
+      VALUE_HISTOGRAMS (fn) = NULL;
     }
 }
 

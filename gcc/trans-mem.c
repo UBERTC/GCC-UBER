@@ -22,36 +22,32 @@
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "alias.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "options.h"
+#include "cgraph.h"
+#include "gimple-pretty-print.h"
+#include "diagnostic-core.h"
 #include "fold-const.h"
-#include "internal-fn.h"
 #include "tree-eh.h"
 #include "calls.h"
-#include "emit-rtl.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
 #include "gimple-walk.h"
-#include "cgraph.h"
 #include "tree-cfg.h"
 #include "tree-into-ssa.h"
-#include "tree-pass.h"
 #include "tree-inline.h"
-#include "diagnostic-core.h"
 #include "demangle.h"
 #include "output.h"
 #include "trans-mem.h"
 #include "params.h"
-#include "target.h"
 #include "langhooks.h"
-#include "gimple-pretty-print.h"
 #include "cfgloop.h"
 #include "tree-ssa-address.h"
 
@@ -5341,9 +5337,7 @@ ipa_tm_execute (void)
   enum availability a;
   unsigned int i;
 
-#ifdef ENABLE_CHECKING
-  cgraph_node::verify_cgraph_nodes ();
-#endif
+  cgraph_node::checking_verify_cgraph_nodes ();
 
   bitmap_obstack_initialize (&tm_obstack);
   initialize_original_copy_tables ();
@@ -5589,9 +5583,7 @@ ipa_tm_execute (void)
   FOR_EACH_FUNCTION (node)
     node->aux = NULL;
 
-#ifdef ENABLE_CHECKING
-  cgraph_node::verify_cgraph_nodes ();
-#endif
+  cgraph_node::checking_verify_cgraph_nodes ();
 
   return 0;
 }

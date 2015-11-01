@@ -21,20 +21,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "alias.h"
+#include "gimple-pretty-print.h"
+#include "diagnostic-core.h"
 #include "fold-const.h"
 #include "stor-layout.h"
-#include "flags.h"
-#include "tm_p.h"
-#include "target.h"
-#include "langhooks.h"
-#include "gimple-pretty-print.h"
-#include "internal-fn.h"
 #include "gimple-fold.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
@@ -42,9 +37,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-loop-manip.h"
 #include "tree-into-ssa.h"
 #include "tree-ssa.h"
-#include "tree-inline.h"
-#include "tree-pass.h"
-#include "diagnostic-core.h"
 #include "cfgloop.h"
 #include "cfgexpand.h"
 
@@ -1118,25 +1110,22 @@ make_pass_init_datastructures (gcc::context *ctxt)
 /* Deallocate memory associated with SSA data structures for FNDECL.  */
 
 void
-delete_tree_ssa (void)
+delete_tree_ssa (struct function *fn)
 {
-  fini_ssanames ();
+  fini_ssanames (fn);
 
   /* We no longer maintain the SSA operand cache at this point.  */
-  if (ssa_operands_active (cfun))
-    fini_ssa_operands (cfun);
+  if (ssa_operands_active (fn))
+    fini_ssa_operands (fn);
 
-  cfun->gimple_df->default_defs->empty ();
-  cfun->gimple_df->default_defs = NULL;
-  pt_solution_reset (&cfun->gimple_df->escaped);
-  if (cfun->gimple_df->decls_to_pointers != NULL)
-    delete cfun->gimple_df->decls_to_pointers;
-  cfun->gimple_df->decls_to_pointers = NULL;
-  cfun->gimple_df->modified_noreturn_calls = NULL;
-  cfun->gimple_df = NULL;
-
-  /* We no longer need the edge variable maps.  */
-  redirect_edge_var_map_destroy ();
+  fn->gimple_df->default_defs->empty ();
+  fn->gimple_df->default_defs = NULL;
+  pt_solution_reset (&fn->gimple_df->escaped);
+  if (fn->gimple_df->decls_to_pointers != NULL)
+    delete fn->gimple_df->decls_to_pointers;
+  fn->gimple_df->decls_to_pointers = NULL;
+  fn->gimple_df->modified_noreturn_calls = NULL;
+  fn->gimple_df = NULL;
 }
 
 /* Return true if EXPR is a useless type conversion, otherwise return

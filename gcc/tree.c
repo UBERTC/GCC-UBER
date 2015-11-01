@@ -31,22 +31,21 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
+#include "target.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "tree-pass.h"
 #include "ssa.h"
+#include "cgraph.h"
+#include "diagnostic.h"
 #include "flags.h"
 #include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "calls.h"
 #include "attribs.h"
-#include "varasm.h"
-#include "tm_p.h"
 #include "toplev.h" /* get_random_seed */
-#include "filenames.h"
 #include "output.h"
-#include "target.h"
 #include "common/common-target.h"
 #include "langhooks.h"
 #include "tree-inline.h"
@@ -54,24 +53,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "internal-fn.h"
 #include "gimple-iterator.h"
 #include "gimplify.h"
-#include "cgraph.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "emit-rtl.h"
-#include "stmt.h"
-#include "expr.h"
 #include "tree-dfa.h"
 #include "params.h"
-#include "tree-pass.h"
 #include "langhooks-def.h"
-#include "diagnostic.h"
 #include "tree-diagnostic.h"
-#include "tree-pretty-print.h"
 #include "except.h"
-#include "debug.h"
-#include "intl.h"
 #include "builtins.h"
 #include "print-tree.h"
 #include "ipa-utils.h"
@@ -1730,13 +1716,19 @@ tree
 build_vector_from_ctor (tree type, vec<constructor_elt, va_gc> *v)
 {
   tree *vec = XALLOCAVEC (tree, TYPE_VECTOR_SUBPARTS (type));
-  unsigned HOST_WIDE_INT idx;
+  unsigned HOST_WIDE_INT idx, pos = 0;
   tree value;
 
   FOR_EACH_CONSTRUCTOR_VALUE (v, idx, value)
-    vec[idx] = value;
+    {
+      if (TREE_CODE (value) == VECTOR_CST)
+	for (unsigned i = 0; i < VECTOR_CST_NELTS (value); ++i)
+	  vec[pos++] = VECTOR_CST_ELT (value, i);
+      else
+	vec[pos++] = value;
+    }
   for (; idx < TYPE_VECTOR_SUBPARTS (type); ++idx)
-    vec[idx] = build_zero_cst (TREE_TYPE (type));
+    vec[pos++] = build_zero_cst (TREE_TYPE (type));
 
   return build_vector (type, vec);
 }
@@ -5952,10 +5944,11 @@ free_lang_data_in_cgraph (void)
   /* Traverse every type found freeing its language data.  */
   FOR_EACH_VEC_ELT (fld.types, i, t)
     free_lang_data_in_type (t);
-#ifdef ENABLE_CHECKING
-  FOR_EACH_VEC_ELT (fld.types, i, t)
-    verify_type (t);
-#endif
+  if (flag_checking)
+    {
+      FOR_EACH_VEC_ELT (fld.types, i, t)
+	verify_type (t);
+    }
 
   delete fld.pset;
   fld.worklist.release ();

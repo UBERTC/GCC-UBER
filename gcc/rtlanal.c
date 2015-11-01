@@ -22,19 +22,16 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "predict.h"
-#include "tree.h"
-#include "rtl.h"
-#include "df.h"
-#include "diagnostic-core.h"
-#include "insn-config.h"
-#include "recog.h"
 #include "target.h"
-#include "output.h"
+#include "rtl.h"
+#include "tree.h"
+#include "predict.h"
+#include "df.h"
 #include "tm_p.h"
-#include "flags.h"
+#include "insn-config.h"
 #include "regs.h"
 #include "emit-rtl.h"  /* FIXME: Can go away once crtl is moved to rtl.h.  */
+#include "recog.h"
 #include "addresses.h"
 #include "rtl-iter.h"
 
@@ -1207,7 +1204,8 @@ reg_set_between_p (const_rtx reg, const rtx_insn *from_insn,
   return 0;
 }
 
-/* Internals of reg_set_between_p.  */
+/* Return true if REG is set or clobbered inside INSN.  */
+
 int
 reg_set_p (const_rtx reg, const_rtx insn)
 {
@@ -6230,6 +6228,19 @@ get_index_code (const struct address_info *info)
     return GET_CODE (*info->disp);
 
   return SCRATCH;
+}
+
+/* Return true if RTL X contains a SYMBOL_REF.  */
+
+bool
+contains_symbol_ref_p (const_rtx x)
+{
+  subrtx_iterator::array_type array;
+  FOR_EACH_SUBRTX (iter, array, x, ALL)
+    if (SYMBOL_REF_P (*iter))
+      return true;
+
+  return false;
 }
 
 /* Return true if X contains a thread-local symbol.  */

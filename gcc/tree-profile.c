@@ -28,31 +28,26 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "target.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "flags.h"
-#include "diagnostic-core.h"
+#include "cgraph.h"
 #include "coverage.h"
-#include "alias.h"
+#include "diagnostic-core.h"
 #include "fold-const.h"
-#include "internal-fn.h"
 #include "varasm.h"
 #include "tree-nested.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
-#include "cgraph.h"
 #include "tree-cfg.h"
 #include "tree-into-ssa.h"
-#include "tree-pass.h"
 #include "value-prof.h"
 #include "profile.h"
-#include "target.h"
 #include "tree-cfgcleanup.h"
-#include "tree-nested.h"
 #include "params.h"
 
 static GTY(()) tree gcov_type_node;
@@ -461,9 +456,8 @@ gimple_gen_const_delta_profiler (histogram_value value ATTRIBUTE_UNUSED,
 			       unsigned base ATTRIBUTE_UNUSED)
 {
   /* FIXME implement this.  */
-#ifdef ENABLE_CHECKING
-  internal_error ("unimplemented functionality");
-#endif
+  if (flag_checking)
+    internal_error ("unimplemented functionality");
   gcc_unreachable ();
 }
 

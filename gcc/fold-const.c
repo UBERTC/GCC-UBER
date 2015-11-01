@@ -44,42 +44,32 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "predict.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "predict.h"
+#include "tm_p.h"
+#include "tree-ssa-operands.h"
+#include "optabs-query.h"
+#include "cgraph.h"
+#include "diagnostic-core.h"
 #include "flags.h"
 #include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "calls.h"
 #include "tree-iterator.h"
-#include "realmpfr.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
 #include "expr.h"
-#include "tm_p.h"
-#include "target.h"
-#include "diagnostic-core.h"
 #include "intl.h"
 #include "langhooks.h"
-#include "md5.h"
-#include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimplify.h"
 #include "tree-dfa.h"
 #include "builtins.h"
-#include "cgraph.h"
 #include "generic-match.h"
-#include "optabs-query.h"
 #include "gimple-fold.h"
 #include "params.h"
-#include "tree-ssa-operands.h"
 #include "tree-into-ssa.h"
 
 #ifndef LOAD_EXTEND_OP
@@ -443,7 +433,9 @@ negate_expr_p (tree t)
 
     case PLUS_EXPR:
       if (HONOR_SIGN_DEPENDENT_ROUNDING (element_mode (type))
-	  || HONOR_SIGNED_ZEROS (element_mode (type)))
+	  || HONOR_SIGNED_ZEROS (element_mode (type))
+	  || (INTEGRAL_TYPE_P (type)
+	      && ! TYPE_OVERFLOW_WRAPS (type)))
 	return false;
       /* -(A + B) -> (-B) - A.  */
       if (negate_expr_p (TREE_OPERAND (t, 1))
@@ -457,12 +449,23 @@ negate_expr_p (tree t)
       /* We can't turn -(A-B) into B-A when we honor signed zeros.  */
       return !HONOR_SIGN_DEPENDENT_ROUNDING (element_mode (type))
 	     && !HONOR_SIGNED_ZEROS (element_mode (type))
+	     && (! INTEGRAL_TYPE_P (type)
+		 || TYPE_OVERFLOW_WRAPS (type))
 	     && reorder_operands_p (TREE_OPERAND (t, 0),
 				    TREE_OPERAND (t, 1));
 
     case MULT_EXPR:
-      if (TYPE_UNSIGNED (TREE_TYPE (t)))
-        break;
+      if (TYPE_UNSIGNED (type))
+	break;
+      /* INT_MIN/n * n doesn't overflow while negating one operand it does
+         if n is a power of two.  */
+      if (INTEGRAL_TYPE_P (TREE_TYPE (t))
+	  && ! TYPE_OVERFLOW_WRAPS (TREE_TYPE (t))
+	  && ! ((TREE_CODE (TREE_OPERAND (t, 0)) == INTEGER_CST
+		 && ! integer_pow2p (TREE_OPERAND (t, 0)))
+		|| (TREE_CODE (TREE_OPERAND (t, 1)) == INTEGER_CST
+		    && ! integer_pow2p (TREE_OPERAND (t, 1)))))
+	break;
 
       /* Fall through.  */
 
@@ -475,29 +478,19 @@ negate_expr_p (tree t)
     case TRUNC_DIV_EXPR:
     case ROUND_DIV_EXPR:
     case EXACT_DIV_EXPR:
-      /* In general we can't negate A / B, because if A is INT_MIN and
-	 B is 1, we may turn this into INT_MIN / -1 which is undefined
-	 and actually traps on some architectures.  But if overflow is
-	 undefined, we can negate, because - (INT_MIN / 1) is an
-	 overflow.  */
-      if (INTEGRAL_TYPE_P (TREE_TYPE (t)))
-	{
-	  if (!TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (t)))
-	    break;
-	  /* If overflow is undefined then we have to be careful because
-	     we ask whether it's ok to associate the negate with the
-	     division which is not ok for example for
-	     -((a - b) / c) where (-(a - b)) / c may invoke undefined
-	     overflow because of negating INT_MIN.  So do not use
-	     negate_expr_p here but open-code the two important cases.  */
-	  if (TREE_CODE (TREE_OPERAND (t, 0)) == NEGATE_EXPR
-	      || (TREE_CODE (TREE_OPERAND (t, 0)) == INTEGER_CST
-		  && may_negate_without_overflow_p (TREE_OPERAND (t, 0))))
-	    return true;
-	}
-      else if (negate_expr_p (TREE_OPERAND (t, 0)))
+      if (TYPE_UNSIGNED (type))
+	break;
+      if (negate_expr_p (TREE_OPERAND (t, 0)))
 	return true;
-      return negate_expr_p (TREE_OPERAND (t, 1));
+      /* In general we can't negate B in A / B, because if A is INT_MIN and
+	 B is 1, we may turn this into INT_MIN / -1 which is undefined
+	 and actually traps on some architectures.  */
+      if (! INTEGRAL_TYPE_P (TREE_TYPE (t))
+	  || TYPE_OVERFLOW_WRAPS (TREE_TYPE (t))
+	  || (TREE_CODE (TREE_OPERAND (t, 1)) == INTEGER_CST
+	      && ! integer_onep (TREE_OPERAND (t, 1))))
+	return negate_expr_p (TREE_OPERAND (t, 1));
+      break;
 
     case NOP_EXPR:
       /* Negate -((double)float) as (double)(-float).  */
@@ -667,40 +660,23 @@ fold_negate_expr (location_t loc, tree t)
     case TRUNC_DIV_EXPR:
     case ROUND_DIV_EXPR:
     case EXACT_DIV_EXPR:
-      /* In general we can't negate A / B, because if A is INT_MIN and
+      if (TYPE_UNSIGNED (type))
+	break;
+      if (negate_expr_p (TREE_OPERAND (t, 0)))
+	return fold_build2_loc (loc, TREE_CODE (t), type,
+				negate_expr (TREE_OPERAND (t, 0)),
+				TREE_OPERAND (t, 1));
+      /* In general we can't negate B in A / B, because if A is INT_MIN and
 	 B is 1, we may turn this into INT_MIN / -1 which is undefined
-	 and actually traps on some architectures.  But if overflow is
-	 undefined, we can negate, because - (INT_MIN / 1) is an
-	 overflow.  */
-      if (!INTEGRAL_TYPE_P (type) || TYPE_OVERFLOW_UNDEFINED (type))
-        {
-	  const char * const warnmsg = G_("assuming signed overflow does not "
-					  "occur when negating a division");
-          tem = TREE_OPERAND (t, 1);
-          if (negate_expr_p (tem))
-	    {
-	      if (INTEGRAL_TYPE_P (type)
-		  && (TREE_CODE (tem) != INTEGER_CST
-		      || integer_onep (tem)))
-		fold_overflow_warning (warnmsg, WARN_STRICT_OVERFLOW_MISC);
-	      return fold_build2_loc (loc, TREE_CODE (t), type,
-				  TREE_OPERAND (t, 0), negate_expr (tem));
-	    }
-	  /* If overflow is undefined then we have to be careful because
-	     we ask whether it's ok to associate the negate with the
-	     division which is not ok for example for
-	     -((a - b) / c) where (-(a - b)) / c may invoke undefined
-	     overflow because of negating INT_MIN.  So do not use
-	     negate_expr_p here but open-code the two important cases.  */
-          tem = TREE_OPERAND (t, 0);
-	  if ((INTEGRAL_TYPE_P (type)
-	       && (TREE_CODE (tem) == NEGATE_EXPR
-		   || (TREE_CODE (tem) == INTEGER_CST
-		       && may_negate_without_overflow_p (tem))))
-	      || !INTEGRAL_TYPE_P (type))
-	    return fold_build2_loc (loc, TREE_CODE (t), type,
-				    negate_expr (tem), TREE_OPERAND (t, 1));
-        }
+	 and actually traps on some architectures.  */
+      if ((! INTEGRAL_TYPE_P (TREE_TYPE (t))
+	   || TYPE_OVERFLOW_WRAPS (TREE_TYPE (t))
+	   || (TREE_CODE (TREE_OPERAND (t, 1)) == INTEGER_CST
+	       && ! integer_onep (TREE_OPERAND (t, 1))))
+	  && negate_expr_p (TREE_OPERAND (t, 1)))
+	return fold_build2_loc (loc, TREE_CODE (t), type,
+				TREE_OPERAND (t, 0),
+				negate_expr (TREE_OPERAND (t, 1)));
       break;
 
     case NOP_EXPR:
@@ -2982,9 +2958,6 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 					   TYPE_SIZE (TREE_TYPE (arg1)),
 					   flags)))
 		return 0;
-	      /* Verify that access happens in similar types.  */
-	      if (!types_compatible_p (TREE_TYPE (arg0), TREE_TYPE (arg1)))
-		return 0;
 	      /* Verify that accesses are TBAA compatible.  */
 	      if (flag_strict_aliasing
 		  && (!alias_ptr_types_compatible_p
@@ -4980,8 +4953,7 @@ fold_cond_expr_with_comparison (location_t loc, tree type,
       case GE_EXPR:
       case GT_EXPR:
 	if (TYPE_UNSIGNED (TREE_TYPE (arg1)))
-	  arg1 = fold_convert_loc (loc, signed_type_for
-			       (TREE_TYPE (arg1)), arg1);
+	  break;
 	tem = fold_build1_loc (loc, ABS_EXPR, TREE_TYPE (arg1), arg1);
 	return pedantic_non_lvalue_loc (loc, fold_convert_loc (loc, type, tem));
       case UNLE_EXPR:
@@ -4991,8 +4963,7 @@ fold_cond_expr_with_comparison (location_t loc, tree type,
       case LE_EXPR:
       case LT_EXPR:
 	if (TYPE_UNSIGNED (TREE_TYPE (arg1)))
-	  arg1 = fold_convert_loc (loc, signed_type_for
-			       (TREE_TYPE (arg1)), arg1);
+	  break;
 	tem = fold_build1_loc (loc, ABS_EXPR, TREE_TYPE (arg1), arg1);
 	return negate_expr (fold_convert_loc (loc, type, tem));
       default:
@@ -6027,8 +5998,17 @@ extract_muldiv_1 (tree t, tree c, enum tree_code code, tree wide_type,
 	 or (for divide and modulus) if it is a multiple of our constant.  */
       if (code == MULT_EXPR
 	  || wi::multiple_of_p (t, c, TYPE_SIGN (type)))
-	return const_binop (code, fold_convert (ctype, t),
-			    fold_convert (ctype, c));
+	{
+	  tree tem = const_binop (code, fold_convert (ctype, t),
+				  fold_convert (ctype, c));
+	  /* If the multiplication overflowed to INT_MIN then we lost sign
+	     information on it and a subsequent multiplication might
+	     spuriously overflow.  See PR68142.  */
+	  if (TREE_OVERFLOW (tem)
+	      && wi::eq_p (tem, wi::min_value (TYPE_PRECISION (ctype), SIGNED)))
+	    return NULL_TREE;
+	  return tem;
+	}
       break;
 
     CASE_CONVERT: case NON_LVALUE_EXPR:
@@ -7775,15 +7755,12 @@ fold_unary_loc (location_t loc, enum tree_code code, tree type, tree op0)
 	    }
 	}
 
-      /* Convert (T1)(X p+ Y) into ((T1)X p+ Y), for pointer type,
-         when one of the new casts will fold away. Conservatively we assume
-	 that this happens when X or Y is NOP_EXPR or Y is INTEGER_CST. */
+      /* Convert (T1)(X p+ Y) into ((T1)X p+ Y), for pointer type, when the new
+	 cast (T1)X will fold away.  We assume that this happens when X itself
+	 is a cast.  */
       if (POINTER_TYPE_P (type)
 	  && TREE_CODE (arg0) == POINTER_PLUS_EXPR
-	  && (!TYPE_RESTRICT (type) || TYPE_RESTRICT (TREE_TYPE (arg0)))
-	  && (TREE_CODE (TREE_OPERAND (arg0, 1)) == INTEGER_CST
-	      || TREE_CODE (TREE_OPERAND (arg0, 0)) == NOP_EXPR
-	      || TREE_CODE (TREE_OPERAND (arg0, 1)) == NOP_EXPR))
+	  && CONVERT_EXPR_P (TREE_OPERAND (arg0, 0)))
 	{
 	  tree arg00 = TREE_OPERAND (arg0, 0);
 	  tree arg01 = TREE_OPERAND (arg0, 1);
@@ -8069,49 +8046,6 @@ fold_truth_andor (location_t loc, enum tree_code code, tree type,
                && simple_operand_p_2 (arg1))
 	return fold_build2_loc (loc, ncode, type, arg0, arg1);
     }
-
-  return NULL_TREE;
-}
-
-/* Fold a binary expression of code CODE and type TYPE with operands
-   OP0 and OP1, containing either a MIN-MAX or a MAX-MIN combination.
-   Return the folded expression if folding is successful.  Otherwise,
-   return NULL_TREE.  */
-
-static tree
-fold_minmax (location_t loc, enum tree_code code, tree type, tree op0, tree op1)
-{
-  enum tree_code compl_code;
-
-  if (code == MIN_EXPR)
-    compl_code = MAX_EXPR;
-  else if (code == MAX_EXPR)
-    compl_code = MIN_EXPR;
-  else
-    gcc_unreachable ();
-
-  /* MIN (MAX (a, b), b) == b.  */
-  if (TREE_CODE (op0) == compl_code
-      && operand_equal_p (TREE_OPERAND (op0, 1), op1, 0))
-    return omit_one_operand_loc (loc, type, op1, TREE_OPERAND (op0, 0));
-
-  /* MIN (MAX (b, a), b) == b.  */
-  if (TREE_CODE (op0) == compl_code
-      && operand_equal_p (TREE_OPERAND (op0, 0), op1, 0)
-      && reorder_operands_p (TREE_OPERAND (op0, 1), op1))
-    return omit_one_operand_loc (loc, type, op1, TREE_OPERAND (op0, 1));
-
-  /* MIN (a, MAX (a, b)) == a.  */
-  if (TREE_CODE (op1) == compl_code
-      && operand_equal_p (op0, TREE_OPERAND (op1, 0), 0)
-      && reorder_operands_p (op0, TREE_OPERAND (op1, 1)))
-    return omit_one_operand_loc (loc, type, op0, TREE_OPERAND (op1, 1));
-
-  /* MIN (a, MAX (b, a)) == a.  */
-  if (TREE_CODE (op1) == compl_code
-      && operand_equal_p (op0, TREE_OPERAND (op1, 1), 0)
-      && reorder_operands_p (op0, TREE_OPERAND (op1, 0)))
-    return omit_one_operand_loc (loc, type, op0, TREE_OPERAND (op1, 0));
 
   return NULL_TREE;
 }
@@ -10426,15 +10360,7 @@ fold_binary_loc (location_t loc,
       return NULL_TREE;
 
     case MIN_EXPR:
-      tem = fold_minmax (loc, MIN_EXPR, type, arg0, arg1);
-      if (tem)
-	return tem;
-      goto associate;
-
     case MAX_EXPR:
-      tem = fold_minmax (loc, MAX_EXPR, type, arg0, arg1);
-      if (tem)
-	return tem;
       goto associate;
 
     case TRUTH_ANDIF_EXPR:
@@ -11917,6 +11843,73 @@ fold_ternary_loc (location_t loc, enum tree_code code, tree type,
     } /* switch (code) */
 }
 
+/* Gets the element ACCESS_INDEX from CTOR, which must be a CONSTRUCTOR
+   of an array (or vector).  */
+
+tree
+get_array_ctor_element_at_index (tree ctor, offset_int access_index)
+{
+  tree index_type = NULL_TREE;
+  offset_int low_bound = 0;
+
+  if (TREE_CODE (TREE_TYPE (ctor)) == ARRAY_TYPE)
+  {
+    tree domain_type = TYPE_DOMAIN (TREE_TYPE (ctor));
+    if (domain_type && TYPE_MIN_VALUE (domain_type))
+    {
+      /* Static constructors for variably sized objects makes no sense.  */
+      gcc_assert (TREE_CODE (TYPE_MIN_VALUE (domain_type)) == INTEGER_CST);
+      index_type = TREE_TYPE (TYPE_MIN_VALUE (domain_type));
+      low_bound = wi::to_offset (TYPE_MIN_VALUE (domain_type));
+    }
+  }
+
+  if (index_type)
+    access_index = wi::ext (access_index, TYPE_PRECISION (index_type),
+			    TYPE_SIGN (index_type));
+
+  offset_int index = low_bound - 1;
+  if (index_type)
+    index = wi::ext (index, TYPE_PRECISION (index_type),
+		     TYPE_SIGN (index_type));
+
+  offset_int max_index;
+  unsigned HOST_WIDE_INT cnt;
+  tree cfield, cval;
+
+  FOR_EACH_CONSTRUCTOR_ELT (CONSTRUCTOR_ELTS (ctor), cnt, cfield, cval)
+  {
+    /* Array constructor might explicitely set index, or specify range
+     * or leave index NULL meaning that it is next index after previous
+     * one.  */
+    if (cfield)
+    {
+      if (TREE_CODE (cfield) == INTEGER_CST)
+	max_index = index = wi::to_offset (cfield);
+      else
+      {
+	gcc_assert (TREE_CODE (cfield) == RANGE_EXPR);
+	index = wi::to_offset (TREE_OPERAND (cfield, 0));
+	max_index = wi::to_offset (TREE_OPERAND (cfield, 1));
+      }
+    }
+    else
+    {
+      index += 1;
+      if (index_type)
+	index = wi::ext (index, TYPE_PRECISION (index_type),
+			 TYPE_SIGN (index_type));
+	max_index = index;
+    }
+
+    /* Do we have match?  */
+    if (wi::cmpu (access_index, index) >= 0
+	&& wi::cmpu (access_index, max_index) <= 0)
+      return cval;
+  }
+  return NULL_TREE;
+}
+
 /* Perform constant folding and related simplification of EXPR.
    The related simplifications include x*1 => x, x*0 => 0, etc.,
    and application of the associative law.
@@ -11993,31 +11986,10 @@ fold (tree expr)
 	    && TREE_CODE (op0) == CONSTRUCTOR
 	    && ! type_contains_placeholder_p (TREE_TYPE (op0)))
 	  {
-	    vec<constructor_elt, va_gc> *elts = CONSTRUCTOR_ELTS (op0);
-	    unsigned HOST_WIDE_INT end = vec_safe_length (elts);
-	    unsigned HOST_WIDE_INT begin = 0;
-
-	    /* Find a matching index by means of a binary search.  */
-	    while (begin != end)
-	      {
-		unsigned HOST_WIDE_INT middle = (begin + end) / 2;
-		tree index = (*elts)[middle].index;
-
-		if (TREE_CODE (index) == INTEGER_CST
-		    && tree_int_cst_lt (index, op1))
-		  begin = middle + 1;
-		else if (TREE_CODE (index) == INTEGER_CST
-			 && tree_int_cst_lt (op1, index))
-		  end = middle;
-		else if (TREE_CODE (index) == RANGE_EXPR
-			 && tree_int_cst_lt (TREE_OPERAND (index, 1), op1))
-		  begin = middle + 1;
-		else if (TREE_CODE (index) == RANGE_EXPR
-			 && tree_int_cst_lt (op1, TREE_OPERAND (index, 0)))
-		  end = middle;
-		else
-		  return (*elts)[middle].value;
-	      }
+	    tree val = get_array_ctor_element_at_index (op0,
+							wi::to_offset (op1));
+	    if (val)
+	      return val;
 	  }
 
 	return t;
@@ -12030,26 +12002,13 @@ fold (tree expr)
 	if (TREE_CODE (type) != VECTOR_TYPE)
 	  return t;
 
-	tree *vec = XALLOCAVEC (tree, TYPE_VECTOR_SUBPARTS (type));
-	unsigned HOST_WIDE_INT idx, pos = 0;
-	tree value;
+	unsigned i;
+	tree val;
+	FOR_EACH_CONSTRUCTOR_VALUE (CONSTRUCTOR_ELTS (t), i, val)
+	  if (! CONSTANT_CLASS_P (val))
+	    return t;
 
-	FOR_EACH_CONSTRUCTOR_VALUE (CONSTRUCTOR_ELTS (t), idx, value)
-	  {
-	    if (!CONSTANT_CLASS_P (value))
-	      return t;
-	    if (TREE_CODE (value) == VECTOR_CST)
-	      {
-		for (unsigned i = 0; i < VECTOR_CST_NELTS (value); ++i)
-		  vec[pos++] = VECTOR_CST_ELT (value, i);
-	      }
-	    else
-	      vec[pos++] = value;
-	  }
-	for (; pos < TYPE_VECTOR_SUBPARTS (type); ++pos)
-	  vec[pos] = build_zero_cst (TREE_TYPE (type));
-
-	return build_vector (type, vec);
+	return build_vector_from_ctor (type, CONSTRUCTOR_ELTS (t));
       }
 
     case CONST_DECL:

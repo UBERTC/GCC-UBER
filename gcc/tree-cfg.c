@@ -22,55 +22,40 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "alias.h"
+#include "cgraph.h"
+#include "gimple-pretty-print.h"
+#include "diagnostic-core.h"
 #include "fold-const.h"
 #include "trans-mem.h"
 #include "stor-layout.h"
 #include "print-tree.h"
-#include "tm_p.h"
 #include "cfganal.h"
-#include "flags.h"
-#include "gimple-pretty-print.h"
-#include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
 #include "gimple-walk.h"
-#include "cgraph.h"
 #include "tree-cfg.h"
 #include "tree-ssa-loop-manip.h"
 #include "tree-ssa-loop-niter.h"
 #include "tree-into-ssa.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
 #include "tree-dfa.h"
 #include "tree-ssa.h"
-#include "tree-dump.h"
-#include "tree-pass.h"
-#include "diagnostic-core.h"
 #include "except.h"
 #include "cfgloop.h"
 #include "tree-ssa-propagate.h"
 #include "value-prof.h"
 #include "tree-inline.h"
-#include "target.h"
 #include "tree-ssa-live.h"
 #include "omp-low.h"
 #include "tree-cfgcleanup.h"
-#include "wide-int-print.h"
 #include "gimplify.h"
 #include "attribs.h"
 
@@ -487,7 +472,11 @@ gimple_call_initialize_ctrl_altering (gimple *stmt)
       || ((flags & ECF_TM_BUILTIN)
 	  && is_tm_ending_fndecl (gimple_call_fndecl (stmt)))
       /* BUILT_IN_RETURN call is same as return statement.  */
-      || gimple_call_builtin_p (stmt, BUILT_IN_RETURN))
+      || gimple_call_builtin_p (stmt, BUILT_IN_RETURN)
+      /* IFN_UNIQUE should be the last insn, to make checking for it
+	 as cheap as possible.  */
+      || (gimple_call_internal_p (stmt)
+	  && gimple_call_internal_unique_p (stmt)))
     gimple_call_set_ctrl_altering (stmt, true);
   else
     gimple_call_set_ctrl_altering (stmt, false);
@@ -2570,9 +2559,9 @@ stmt_ends_bb_p (gimple *t)
 /* Remove block annotations and other data structures.  */
 
 void
-delete_tree_cfg_annotations (void)
+delete_tree_cfg_annotations (struct function *fn)
 {
-  vec_free (label_to_block_map_for_fn (cfun));
+  vec_free (label_to_block_map_for_fn (fn));
 }
 
 /* Return the virtual phi in BB.  */
@@ -6465,14 +6454,12 @@ move_stmt_op (tree *tp, int *walk_subtrees, void *data)
 	  || (p->orig_block == NULL_TREE
 	      && block != NULL_TREE))
 	TREE_SET_BLOCK (t, p->new_block);
-#ifdef ENABLE_CHECKING
-      else if (block != NULL_TREE)
+      else if (flag_checking && block != NULL_TREE)
 	{
 	  while (block && TREE_CODE (block) == BLOCK && block != p->orig_block)
 	    block = BLOCK_SUPERCONTEXT (block);
 	  gcc_assert (block == p->orig_block);
 	}
-#endif
     }
   else if (DECL_P (t) || TREE_CODE (t) == SSA_NAME)
     {
@@ -7057,9 +7044,9 @@ move_sese_region_to_fn (struct function *dest_cfun, basic_block entry_bb,
   bbs.create (0);
   bbs.safe_push (entry_bb);
   gather_blocks_in_sese_region (entry_bb, exit_bb, &bbs);
-#ifdef ENABLE_CHECKING
-  verify_sese (entry_bb, exit_bb, &bbs);
-#endif
+
+  if (flag_checking)
+    verify_sese (entry_bb, exit_bb, &bbs);
 
   /* The blocks that used to be dominated by something in BBS will now be
      dominated by the new block.  */
@@ -7901,13 +7888,11 @@ gimple_flow_call_edges_add (sbitmap blocks)
 		     no edge to the exit block in CFG already.
 		     Calling make_edge in such case would cause us to
 		     mark that edge as fake and remove it later.  */
-#ifdef ENABLE_CHECKING
-		  if (stmt == last_stmt)
+		  if (flag_checking && stmt == last_stmt)
 		    {
 		      e = find_edge (bb, EXIT_BLOCK_PTR_FOR_FN (cfun));
 		      gcc_assert (e == NULL);
 		    }
-#endif
 
 		  /* Note that the following may create a new basic block
 		     and renumber the existing basic blocks.  */

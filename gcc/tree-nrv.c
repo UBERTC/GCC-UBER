@@ -23,19 +23,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "backend.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "alias.h"
-#include "fold-const.h"
 #include "tree-pretty-print.h"
-#include "internal-fn.h"
 #include "gimple-iterator.h"
 #include "gimple-walk.h"
-#include "tree-pass.h"
-#include "langhooks.h"
-#include "flags.h"	/* For "optimize" in gate_pass_return_slot.
-			   FIXME: That should be up to the pass manager,
-			   but pass_nrv is not in pass_all_optimizations.  */
 
 /* This file implements return value optimizations for functions which
    return aggregate types.

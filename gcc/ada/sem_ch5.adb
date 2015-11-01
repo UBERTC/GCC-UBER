@@ -316,7 +316,19 @@ package body Sem_Ch5 is
             Get_First_Interp (Lhs, I, It);
 
             while Present (It.Typ) loop
-               if Has_Compatible_Type (Rhs, It.Typ) then
+
+               --  An indexed component with generalized indexing is always
+               --  overloaded with the corresponding dereference. Discard the
+               --  interpretation that yields a reference type, which is not
+               --  assignable.
+
+               if Nkind (Lhs) = N_Indexed_Component
+                 and then Present (Generalized_Indexing (Lhs))
+                 and then Has_Implicit_Dereference (It.Typ)
+               then
+                  null;
+
+               elsif Has_Compatible_Type (Rhs, It.Typ) then
                   if T1 /= Any_Type then
 
                      --  An explicit dereference is overloaded if the prefix
@@ -394,7 +406,13 @@ package body Sem_Ch5 is
 
       --  Cases where Lhs is not a variable
 
-      if not Is_Variable (Lhs) then
+      --  Cases where Lhs is not a variable. In an instance or an inlined body
+      --  no need for further check because assignment was legal in template.
+
+      if In_Inlined_Body then
+         null;
+
+      elsif not Is_Variable (Lhs) then
 
          --  Ada 2005 (AI-327): Check assignment to the attribute Priority of a
          --  protected object.

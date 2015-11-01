@@ -21,32 +21,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
 #include "ssa.h"
-#include "alias.h"
-#include "options.h"
+#include "cgraph.h"
 #include "fold-const.h"
 #include "stor-layout.h"
-#include "flags.h"
-#include "internal-fn.h"
 #include "gimple-fold.h"
-#include "gimple-iterator.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
 #include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
 #include "tree-dfa.h"
 #include "builtins.h"
-#include "dumpfile.h"
-#include "target.h"
-#include "cgraph.h"
 #include "gimple-match.h"
 #include "tree-pass.h"
 
@@ -331,7 +317,12 @@ maybe_push_res_to_seq (code_helper rcode, tree type, tree *ops,
 	      && SSA_NAME_OCCURS_IN_ABNORMAL_PHI (ops[2])))
 	return NULL_TREE;
       if (!res)
-	res = make_ssa_name (type);
+	{
+	  if (gimple_in_ssa_p (cfun))
+	    res = make_ssa_name (type);
+	  else
+	    res = create_tmp_reg (type);
+	}
       maybe_build_generic_op (rcode, type, &ops[0], ops[1], ops[2]);
       gimple *new_stmt = gimple_build_assign (res, rcode,
 					     ops[0], ops[1], ops[2]);
@@ -361,7 +352,12 @@ maybe_push_res_to_seq (code_helper rcode, tree type, tree *ops,
 	}
       gcc_assert (nargs != 0);
       if (!res)
-	res = make_ssa_name (type);
+	{
+	  if (gimple_in_ssa_p (cfun))
+	    res = make_ssa_name (type);
+	  else
+	    res = create_tmp_reg (type);
+	}
       gimple *new_stmt = gimple_build_call (decl, nargs, ops[0], ops[1], ops[2]);
       gimple_call_set_lhs (new_stmt, res);
       gimple_seq_add_stmt_without_update (seq, new_stmt);
@@ -698,7 +694,8 @@ gimple_simplify (gimple *stmt,
 			    rhs1 = build2 (rcode2, TREE_TYPE (rhs1),
 					   ops2[0], ops2[1]);
 			  else if (rcode2 == SSA_NAME
-				   || rcode2 == INTEGER_CST)
+				   || rcode2 == INTEGER_CST
+				   || rcode2 == VECTOR_CST)
 			    rhs1 = ops2[0];
 			  else
 			    valueized = false;
@@ -741,7 +738,6 @@ gimple_simplify (gimple *stmt,
 
 	  tree decl = TREE_OPERAND (fn, 0);
 	  if (DECL_BUILT_IN_CLASS (decl) != BUILT_IN_NORMAL
-	      || !builtin_decl_implicit (DECL_FUNCTION_CODE (decl))
 	      || !gimple_builtin_call_types_compatible_p (stmt, decl))
 	    return false;
 

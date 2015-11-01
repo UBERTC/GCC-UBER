@@ -1123,6 +1123,7 @@ typedef struct gfc_omp_namelist
     } u;
   struct gfc_omp_namelist_udr *udr;
   struct gfc_omp_namelist *next;
+  locus where;
 }
 gfc_omp_namelist;
 
@@ -1291,6 +1292,8 @@ typedef struct gfc_st_label
   tree backend_decl;
 
   locus where;
+
+  gfc_namespace *ns;
 }
 gfc_st_label;
 

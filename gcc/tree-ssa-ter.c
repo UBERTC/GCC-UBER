@@ -25,18 +25,13 @@ along with GCC; see the file COPYING3.  If not see
 #include "backend.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
 #include "ssa.h"
-#include "alias.h"
-#include "fold-const.h"
 #include "gimple-pretty-print.h"
-#include "internal-fn.h"
 #include "gimple-iterator.h"
 #include "dumpfile.h"
 #include "tree-ssa-live.h"
 #include "tree-ssa-ter.h"
 #include "tree-outof-ssa.h"
-#include "flags.h"
 #include "gimple-walk.h"
 
 
@@ -182,9 +177,7 @@ struct temp_expr_table
 /* A place for the many, many bitmaps we create.  */
 static bitmap_obstack ter_bitmap_obstack;
 
-#ifdef ENABLE_CHECKING
 extern void debug_ter (FILE *, temp_expr_table *);
-#endif
 
 
 /* Create a new TER table for MAP.  */
@@ -232,16 +225,16 @@ free_temp_expr_table (temp_expr_table *t)
 {
   bitmap ret = NULL;
 
-#ifdef ENABLE_CHECKING
-  unsigned x;
-  for (x = 0; x <= num_var_partitions (t->map); x++)
-    gcc_assert (!t->kill_list[x]);
-  for (x = 0; x < num_ssa_names; x++)
+  if (flag_checking)
     {
-      gcc_assert (t->expr_decl_uids[x] == NULL);
-      gcc_assert (t->partition_dependencies[x] == NULL);
+      for (unsigned x = 0; x <= num_var_partitions (t->map); x++)
+	gcc_assert (!t->kill_list[x]);
+      for (unsigned x = 0; x < num_ssa_names; x++)
+	{
+	  gcc_assert (t->expr_decl_uids[x] == NULL);
+	  gcc_assert (t->partition_dependencies[x] == NULL);
+	}
     }
-#endif
 
   BITMAP_FREE (t->partition_in_use);
   BITMAP_FREE (t->new_replaceable_dependencies);
@@ -748,7 +741,6 @@ dump_replaceable_exprs (FILE *f, bitmap expr)
 }
 
 
-#ifdef ENABLE_CHECKING
 /* Dump the status of the various tables in the expression table.  This is used
    exclusively to debug TER.  F is the place to send debug info and T is the
    table being debugged.  */
@@ -796,4 +788,3 @@ debug_ter (FILE *f, temp_expr_table *t)
 
   fprintf (f, "\n----------\n");
 }
-#endif

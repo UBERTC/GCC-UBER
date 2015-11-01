@@ -22,36 +22,29 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "dumpfile.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "alias.h"
+#include "optabs-tree.h"
+#include "diagnostic-core.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "cfganal.h"
-#include "gimple-pretty-print.h"
-#include "internal-fn.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
 #include "tree-ssa-loop-ivopts.h"
 #include "tree-ssa-loop-manip.h"
 #include "tree-ssa-loop-niter.h"
-#include "tree-pass.h"
 #include "cfgloop.h"
-#include "flags.h"
-#include "insn-codes.h"
-#include "optabs-tree.h"
 #include "params.h"
-#include "diagnostic-core.h"
-#include "tree-chrec.h"
 #include "tree-scalar-evolution.h"
 #include "tree-vectorizer.h"
-#include "target.h"
 #include "gimple-fold.h"
 
 /* Loop Vectorization Pass.
@@ -4290,8 +4283,9 @@ vect_create_epilog_for_reduction (vec<tree> vect_defs, gimple *stmt,
       /* Get various versions of the type of the vector of indexes.  */
       tree index_vec_type = TREE_TYPE (induction_index);
       gcc_checking_assert (TYPE_UNSIGNED (index_vec_type));
-      tree index_vec_type_signed = signed_type_for (index_vec_type);
       tree index_scalar_type = TREE_TYPE (index_vec_type);
+      tree index_vec_cmp_type = build_same_sized_truth_vector_type
+	(index_vec_type);
 
       /* Get an unsigned integer version of the type of the data vector.  */
       int scalar_precision = GET_MODE_PRECISION (TYPE_MODE (scalar_type));
@@ -4336,7 +4330,7 @@ vect_create_epilog_for_reduction (vec<tree> vect_defs, gimple *stmt,
 
       /* Compare the max index vector to the vector of found indexes to find
 	 the position of the max value.  */
-      tree vec_compare = make_ssa_name (index_vec_type_signed);
+      tree vec_compare = make_ssa_name (index_vec_cmp_type);
       gimple *vec_compare_stmt = gimple_build_assign (vec_compare, EQ_EXPR,
 						      induction_index,
 						      max_index_vec);
@@ -5900,13 +5894,9 @@ vectorizable_live_operation (gimple *stmt,
   stmt_vec_info stmt_info = vinfo_for_stmt (stmt);
   loop_vec_info loop_vinfo = STMT_VINFO_LOOP_VINFO (stmt_info);
   struct loop *loop = LOOP_VINFO_LOOP (loop_vinfo);
-  int i;
-  int op_type;
   tree op;
   gimple *def_stmt;
-  enum vect_def_type dt;
-  enum tree_code code;
-  enum gimple_rhs_class rhs_class;
+  ssa_op_iter iter;
 
   gcc_assert (STMT_VINFO_LIVE_P (stmt_info));
 
@@ -5957,24 +5947,14 @@ vectorizable_live_operation (gimple *stmt,
   if (nested_in_vect_loop_p (loop, stmt))
     return false;
 
-  code = gimple_assign_rhs_code (stmt);
-  op_type = TREE_CODE_LENGTH (code);
-  rhs_class = get_gimple_rhs_class (code);
-  gcc_assert (rhs_class != GIMPLE_UNARY_RHS || op_type == unary_op);
-  gcc_assert (rhs_class != GIMPLE_BINARY_RHS || op_type == binary_op);
-
   /* FORNOW: support only if all uses are invariant.  This means
      that the scalar operations can remain in place, unvectorized.
      The original last scalar value that they compute will be used.  */
-
-  for (i = 0; i < op_type; i++)
+  FOR_EACH_SSA_TREE_OPERAND (op, stmt, iter, SSA_OP_USE)
     {
-      if (rhs_class == GIMPLE_SINGLE_RHS)
-	op = TREE_OPERAND (gimple_op (stmt, 1), i);
-      else
-	op = gimple_op (stmt, i + 1);
-      if (op
-          && !vect_is_simple_use (op, loop_vinfo, &def_stmt, &dt))
+      enum vect_def_type dt = vect_uninitialized_def;
+
+      if (!vect_is_simple_use (op, loop_vinfo, &def_stmt, &dt))
         {
           if (dump_enabled_p ())
 	    dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,

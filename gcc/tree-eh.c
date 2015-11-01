@@ -21,38 +21,26 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "alias.h"
+#include "cgraph.h"
+#include "diagnostic-core.h"
 #include "fold-const.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
 #include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
 #include "except.h"
 #include "cfganal.h"
 #include "cfgcleanup.h"
-#include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimple-iterator.h"
-#include "cgraph.h"
 #include "tree-cfg.h"
 #include "tree-into-ssa.h"
 #include "tree-ssa.h"
 #include "tree-inline.h"
-#include "tree-pass.h"
 #include "langhooks.h"
-#include "diagnostic-core.h"
-#include "target.h"
 #include "cfgloop.h"
 #include "gimple-low.h"
 
@@ -703,7 +691,7 @@ maybe_record_in_goto_queue (struct leh_state *state, gimple *stmt)
 }
 
 
-#ifdef ENABLE_CHECKING
+#if CHECKING_P
 /* We do not process GIMPLE_SWITCHes for now.  As long as the original source
    was in fact structured, and we've not yet done jump threading, then none
    of the labels will leave outer GIMPLE_TRY_FINALLY nodes. Verify this.  */
@@ -3857,7 +3845,7 @@ mark_reachable_handlers (sbitmap *r_reachablep, sbitmap *lp_reachablep)
 		    tree rt = gimple_call_arg (stmt, i);
 		    HOST_WIDE_INT ri = tree_to_shwi (rt);
 
-		    gcc_assert (ri = (int)ri);
+		    gcc_assert (ri == (int)ri);
 		    bitmap_set_bit (r_reachable, ri);
 		  }
 	      break;
@@ -3921,9 +3909,8 @@ remove_unreachable_handlers (void)
   sbitmap_free (r_reachable);
   sbitmap_free (lp_reachable);
 
-#ifdef ENABLE_CHECKING
-  verify_eh_tree (cfun);
-#endif
+  if (flag_checking)
+    verify_eh_tree (cfun);
 }
 
 /* Remove unreachable handlers if any landing pads have been removed after

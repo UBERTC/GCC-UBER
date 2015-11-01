@@ -84,17 +84,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
+#include "expmed.h"
+#include "optabs-query.h"
+#include "gimple-pretty-print.h"
 #include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
-#include "flags.h"
-#include "gimple-pretty-print.h"
-#include "internal-fn.h"
 #include "gimple-fold.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
@@ -103,24 +104,11 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-into-ssa.h"
 #include "tree-ssa.h"
 #include "cfgloop.h"
-#include "tree-chrec.h"
 #include "tree-data-ref.h"
 #include "tree-scalar-evolution.h"
 #include "tree-ssa-loop-ivopts.h"
 #include "tree-ssa-address.h"
-#include "tree-pass.h"
 #include "dbgcnt.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
-#include "insn-codes.h"
-#include "optabs-query.h"
 #include "tree-hash-traits.h"
 
 /* List of basic blocks in if-conversion-suitable order.  */
@@ -2787,13 +2775,12 @@ pass_if_conversion::execute (function *fun)
 	    && !loop->dont_vectorize))
       todo |= tree_if_conversion (loop);
 
-#ifdef ENABLE_CHECKING
-  {
-    basic_block bb;
-    FOR_EACH_BB_FN (bb, fun)
-      gcc_assert (!bb->aux);
-  }
-#endif
+  if (flag_checking)
+    {
+      basic_block bb;
+      FOR_EACH_BB_FN (bb, fun)
+	gcc_assert (!bb->aux);
+    }
 
   return todo;
 }

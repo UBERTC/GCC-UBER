@@ -22,30 +22,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "predict.h"
-#include "alias.h"
-#include "tree.h"
-#include "stor-layout.h"
 #include "rtl.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
-#include "tree-pretty-print.h"
-#include "gimple-expr.h"
+#include "tree.h"
+#include "predict.h"
 #include "cgraph.h"
+#include "tree-pretty-print.h"
+#include "stor-layout.h"
 #include "langhooks.h"
 #include "tree-iterator.h"
-#include "tree-chrec.h"
 #include "dumpfile.h"
-#include "value-prof.h"
-#include "wide-int-print.h"
 #include "internal-fn.h"
 #include "gomp-constants.h"
 
@@ -2676,13 +2661,11 @@ dump_generic_node (pretty_printer *pp, tree node, int spc, int flags,
 
     case OACC_PARALLEL:
       pp_string (pp, "#pragma acc parallel");
-      dump_omp_clauses (pp, OACC_PARALLEL_CLAUSES (node), spc, flags);
-      goto dump_omp_body;
+      goto dump_omp_clauses_body;
 
     case OACC_KERNELS:
       pp_string (pp, "#pragma acc kernels");
-      dump_omp_clauses (pp, OACC_KERNELS_CLAUSES (node), spc, flags);
-      goto dump_omp_body;
+      goto dump_omp_clauses_body;
 
     case OACC_DATA:
       pp_string (pp, "#pragma acc data");
@@ -2722,6 +2705,11 @@ dump_generic_node (pretty_printer *pp, tree node, int spc, int flags,
     case OMP_PARALLEL:
       pp_string (pp, "#pragma omp parallel");
       dump_omp_clauses (pp, OMP_PARALLEL_CLAUSES (node), spc, flags);
+      goto dump_omp_body;
+
+    dump_omp_clauses_body:
+      dump_omp_clauses (pp, OMP_CLAUSES (node), spc, flags);
+      goto dump_omp_body;
 
     dump_omp_body:
       if (!(flags & TDF_SLIM) && OMP_BODY (node))

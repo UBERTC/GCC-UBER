@@ -21,11 +21,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tree-pass.h"
-#include "tree-dump.h"
-#include "tm.h"
-#include "hard-reg-set.h"
 #include "function.h"
+#include "tree-pass.h"
 #include "context.h"
 #include "pass_manager.h"
 

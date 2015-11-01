@@ -35,32 +35,25 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "tree.h"
+#include "target.h"
 #include "rtl.h"
+#include "tree.h"
 #include "df.h"
+#include "tm_p.h"
+#include "stringpool.h"
+#include "insn-config.h"
+#include "regs.h"
+#include "emit-rtl.h"
+#include "recog.h"
 #include "diagnostic-core.h"
 #include "alias.h"
 #include "fold-const.h"
 #include "varasm.h"
 #include "cfgrtl.h"
 #include "tree-eh.h"
-#include "tm_p.h"
-#include "flags.h"
-#include "stringpool.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
 #include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "stmt.h"
 #include "expr.h"
-#include "regs.h"
-#include "recog.h"
-#include "debug.h"
-#include "langhooks.h"
 #include "params.h"
-#include "target.h"
 #include "builtins.h"
 #include "rtl-iter.h"
 #include "stor-layout.h"
@@ -2733,8 +2726,7 @@ verify_rtx_sharing (rtx orig, rtx insn)
 
   /* This rtx may not be shared.  If it has already been seen,
      replace it with a copy of itself.  */
-#ifdef ENABLE_CHECKING
-  if (RTX_FLAG (x, used))
+  if (flag_checking && RTX_FLAG (x, used))
     {
       error ("invalid rtl sharing found in the insn");
       debug_rtx (insn);
@@ -2742,7 +2734,6 @@ verify_rtx_sharing (rtx orig, rtx insn)
       debug_rtx (x);
       internal_error ("internal consistency failure");
     }
-#endif
   gcc_assert (!RTX_FLAG (x, used));
 
   RTX_FLAG (x, used) = 1;
@@ -4259,12 +4250,12 @@ delete_insns_since (rtx_insn *from)
 void
 reorder_insns_nobb (rtx_insn *from, rtx_insn *to, rtx_insn *after)
 {
-#ifdef ENABLE_CHECKING
-  rtx_insn *x;
-  for (x = from; x != to; x = NEXT_INSN (x))
-    gcc_assert (after != x);
-  gcc_assert (after != to);
-#endif
+  if (flag_checking)
+    {
+      for (rtx_insn *x = from; x != to; x = NEXT_INSN (x))
+	gcc_assert (after != x);
+      gcc_assert (after != to);
+    }
 
   /* Splice this bunch out of where it is now.  */
   if (PREV_INSN (from))

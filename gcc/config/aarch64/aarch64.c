@@ -49,6 +49,7 @@
 #include "reload.h"
 #include "langhooks.h"
 #include "opts.h"
+#include "params.h"
 #include "gimplify.h"
 #include "dwarf2.h"
 #include "tree-vectorizer.h"
@@ -193,7 +194,8 @@ static const struct cpu_addrcost_table generic_addrcost_table =
   0, /* pre_modify  */
   0, /* post_modify  */
   0, /* register_offset  */
-  0, /* register_extend  */
+  0, /* register_sextend  */
+  0, /* register_zextend  */
   0 /* imm_offset  */
 };
 
@@ -208,7 +210,8 @@ static const struct cpu_addrcost_table cortexa57_addrcost_table =
   0, /* pre_modify  */
   0, /* post_modify  */
   0, /* register_offset  */
-  0, /* register_extend  */
+  0, /* register_sextend  */
+  0, /* register_zextend  */
   0, /* imm_offset  */
 };
 
@@ -223,7 +226,8 @@ static const struct cpu_addrcost_table xgene1_addrcost_table =
   1, /* pre_modify  */
   0, /* post_modify  */
   0, /* register_offset  */
-  1, /* register_extend  */
+  1, /* register_sextend  */
+  1, /* register_zextend  */
   0, /* imm_offset  */
 };
 
@@ -351,6 +355,7 @@ static const struct tune_params generic_tunings =
   1,	/* vec_reassoc_width.  */
   2,	/* min_div_recip_mul_sf.  */
   2,	/* min_div_recip_mul_df.  */
+  tune_params::AUTOPREFETCHER_OFF,	/* autoprefetcher_model.  */
   (AARCH64_EXTRA_TUNE_NONE)	/* tune_flags.  */
 };
 
@@ -373,6 +378,7 @@ static const struct tune_params cortexa53_tunings =
   1,	/* vec_reassoc_width.  */
   2,	/* min_div_recip_mul_sf.  */
   2,	/* min_div_recip_mul_df.  */
+  tune_params::AUTOPREFETCHER_WEAK,	/* autoprefetcher_model.  */
   (AARCH64_EXTRA_TUNE_NONE)	/* tune_flags.  */
 };
 
@@ -395,6 +401,7 @@ static const struct tune_params cortexa57_tunings =
   1,	/* vec_reassoc_width.  */
   2,	/* min_div_recip_mul_sf.  */
   2,	/* min_div_recip_mul_df.  */
+  tune_params::AUTOPREFETCHER_WEAK,	/* autoprefetcher_model.  */
   (AARCH64_EXTRA_TUNE_RENAME_FMA_REGS)	/* tune_flags.  */
 };
 
@@ -417,6 +424,7 @@ static const struct tune_params cortexa72_tunings =
   1,	/* vec_reassoc_width.  */
   2,	/* min_div_recip_mul_sf.  */
   2,	/* min_div_recip_mul_df.  */
+  tune_params::AUTOPREFETCHER_OFF,	/* autoprefetcher_model.  */
   (AARCH64_EXTRA_TUNE_NONE)	/* tune_flags.  */
 };
 
@@ -438,6 +446,7 @@ static const struct tune_params thunderx_tunings =
   1,	/* vec_reassoc_width.  */
   2,	/* min_div_recip_mul_sf.  */
   2,	/* min_div_recip_mul_df.  */
+  tune_params::AUTOPREFETCHER_OFF,	/* autoprefetcher_model.  */
   (AARCH64_EXTRA_TUNE_NONE)	/* tune_flags.  */
 };
 
@@ -459,6 +468,7 @@ static const struct tune_params xgene1_tunings =
   1,	/* vec_reassoc_width.  */
   2,	/* min_div_recip_mul_sf.  */
   2,	/* min_div_recip_mul_df.  */
+  tune_params::AUTOPREFETCHER_OFF,	/* autoprefetcher_model.  */
   (AARCH64_EXTRA_TUNE_NONE)	/* tune_flags.  */
 };
 
@@ -5523,9 +5533,12 @@ aarch64_address_cost (rtx x,
 	cost += addr_cost->register_offset;
 	break;
 
-      case ADDRESS_REG_UXTW:
       case ADDRESS_REG_SXTW:
-	cost += addr_cost->register_extend;
+	cost += addr_cost->register_sextend;
+	break;
+
+      case ADDRESS_REG_UXTW:
+	cost += addr_cost->register_zextend;
 	break;
 
       default:
@@ -7032,6 +7045,19 @@ aarch64_sched_first_cycle_multipass_dfa_lookahead (void)
   return issue_rate > 1 && !sched_fusion ? issue_rate : 0;
 }
 
+
+/* Implement TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD_GUARD as
+   autopref_multipass_dfa_lookahead_guard from haifa-sched.c.  It only
+   has an effect if PARAM_SCHED_AUTOPREF_QUEUE_DEPTH > 0.  */
+
+static int
+aarch64_first_cycle_multipass_dfa_lookahead_guard (rtx_insn *insn,
+						    int ready_index)
+{
+  return autopref_multipass_dfa_lookahead_guard (insn, ready_index);
+}
+
+
 /* Vectorizer cost model target hooks.  */
 
 /* Implement targetm.vectorize.builtin_vectorization_cost.  */
@@ -7622,6 +7648,29 @@ aarch64_override_options_internal (struct gcc_options *opts)
 
   initialize_aarch64_code_model (opts);
   initialize_aarch64_tls_size (opts);
+
+  int queue_depth = 0;
+  switch (aarch64_tune_params.autoprefetcher_model)
+    {
+      case tune_params::AUTOPREFETCHER_OFF:
+	queue_depth = -1;
+	break;
+      case tune_params::AUTOPREFETCHER_WEAK:
+	queue_depth = 0;
+	break;
+      case tune_params::AUTOPREFETCHER_STRONG:
+	queue_depth = max_insn_queue_index + 1;
+	break;
+      default:
+	gcc_unreachable ();
+    }
+
+  /* We don't mind passing in global_options_set here as we don't use
+     the *options_set structs anyway.  */
+  maybe_set_param_value (PARAM_SCHED_AUTOPREF_QUEUE_DEPTH,
+			 queue_depth,
+			 opts->x_param_values,
+			 global_options_set.x_param_values);
 
   aarch64_override_options_after_change_1 (opts);
 }
@@ -11401,9 +11450,11 @@ aarch64_output_simd_mov_immediate (rtx const_vector,
   lane_count = width / info.element_width;
 
   mode = GET_MODE_INNER (mode);
-  if (mode == SFmode || mode == DFmode)
+  if (GET_MODE_CLASS (mode) == MODE_FLOAT)
     {
       gcc_assert (info.shift == 0 && ! info.mvn);
+      /* For FP zero change it to a CONST_INT 0 and use the integer SIMD
+	 move immediate path.  */
       if (aarch64_float_const_zero_rtx_p (info.value))
         info.value = GEN_INT (0);
       else
@@ -11427,6 +11478,7 @@ aarch64_output_simd_mov_immediate (rtx const_vector,
   mnemonic = info.mvn ? "mvni" : "movi";
   shift_op = info.msl ? "msl" : "lsl";
 
+  gcc_assert (CONST_INT_P (info.value));
   if (lane_count == 1)
     snprintf (templ, sizeof (templ), "%s\t%%d0, " HOST_WIDE_INT_PRINT_HEX,
 	      mnemonic, UINTVAL (info.value));
@@ -13535,6 +13587,10 @@ aarch64_promoted_type (const_tree t)
 #undef TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD
 #define TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD \
   aarch64_sched_first_cycle_multipass_dfa_lookahead
+
+#undef TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD_GUARD
+#define TARGET_SCHED_FIRST_CYCLE_MULTIPASS_DFA_LOOKAHEAD_GUARD \
+  aarch64_first_cycle_multipass_dfa_lookahead_guard
 
 #undef TARGET_TRAMPOLINE_INIT
 #define TARGET_TRAMPOLINE_INIT aarch64_trampoline_init

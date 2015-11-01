@@ -1,3 +1,381 @@
+2015-10-31  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Remove the implementation of N3994, terse range-for loops.
+	* g++.dg/cpp1z/range-for1.C: Remove.
+
+2015-10-31  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/discr45.adb: New test.
+
+2015-10-31  Tom de Vries  <tom@codesourcery.com>
+
+	* gfortran.dg/assumed_type_2.f90: Update test.
+	* gfortran.dg/no_arg_check_2.f90: Same.
+
+2015-10-30  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* gfortran.dg/gomp/intentin1.f90: Adjust copyprivate warning.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/46588
+	* gfortran.dg/pr46588.f90: New test.
+
+2015-10-30  Evgeny Stupachenko  <evstupac@gmail.com>
+
+	* gcc.dg/mvc1.c: New test for multiple targets cloning.
+	* gcc.dg/mvc2.c: Ditto.
+	* gcc.dg/mvc3.c: Ditto.
+	* gcc.dg/mvc4.c: Ditto.
+	* gcc.dg/mvc5.c: Ditto.
+	* gcc.dg/mvc6.c: Ditto.
+	* gcc.dg/mvc7.c: Ditto.
+	* g++.dg/ext/mvc1.C: Ditto.
+	* g++.dg/ext/mvc2.C: Ditto.
+	* g++.dg/ext/mvc3.C: Ditto.
+	* g++.dg/ext/mvc4.C: Ditto.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/51993
+	* gfortran.dg/pr51993.f90: New test.
+
+2015-10-30  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/68106
+	* gcc.target/aarch64/pr68106.c: New.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/36192
+	* gfortran.dg/pr36192_1.f90: New test.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68154
+	*gfortran.dg/pr68154.f90
+
+2015-10-29  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* c-c++-common/goacc/acc_on_device-2-off.c: Delete.
+	* c-c++-common/goacc/acc_on_device-2.c: Delete.
+
+2015-10-29  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gcc.dg/torture/builtin-convert-1.c: Require c99_runtime.
+
+2015-10-29  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/float128-call.c: New test for -mfloat128 on
+	PowerPC.
+	* gcc.target/powerpc/float128-mix.c: Likewise.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68054
+	* gfortran.dg/pr68054.f90: New test.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67885
+	* gfortran.dg/pr67885.f90: New test.
+
+2015-10-29  Jeff Law  <law@redhat.com>
+
+        PR tree-optimization/67892
+	* gcc.dg/tree-ssa/pr21417: Update expected output.
+	* gcc.dg/tree-ssa/ssa-dom-thread-2b.c: Likewise.
+
+2015-10-29  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68142
+	* c-c++-common/ubsan/pr68142.c: New testcase.
+
+2015-10-29  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67845
+	* g++.dg/other/cv_func4.C: New.
+
+2015-10-29  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/56956
+	* c-c++-common/ubsan/pr56956.c: New testcase.
+
+2015-10-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/discr44.adb: New test.
+
+2015-10-28  Jim Wilson  <jim.wilson@linaro.org>
+
+	PR debug/66068
+	* gcc.dg/debug/pr66068.c: New test.
+
+2015-01-28  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/67933
+	* gfortran.dg/allocate_with_source_15.f03: Correct trivial
+	array bounds error at line 25.
+
+2015-10-28  Catherine Moore  <clm@codesourcery.com>
+
+	* gcc.target/mips/oddspreg-3.c: Disable for MIPS16.
+	* gcc.target/mips/oddspreg-6.c: Likewise.
+	* gcc.target/mips/oddspreg-1.c: Likewise.
+	* gcc.target/mips/oddspreg-2.c: Likewise.
+
+2015-10-28  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	PR target/67839
+	* gcc.target/avr/pr67839.c: New test.
+
+2015-10-28  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/tree-ssa/operand-equal-2.c: Adjust.
+
+2015-10-28  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/tree-ssa/pta-callused.c: Update to scan for CALLUSED(id).
+
+2015-10-28  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/67600
+	* g++.dg/torture/pr67600.C: Remove preprocessed headers in favor
+	of #includes.
+
+2015-10-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/65962
+	* gcc.dg/vect/vect-62.c: Adjust.
+
+2015-10-28  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68067
+	* gcc.dg/torture/pr68067-1.c: New testcase.
+	* gcc.dg/torture/pr68067-2.c: Likewise.
+
+2015-10-28  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* gcc.target/powerpc/p8vector-builtin-8.c: Add "target int128".
+
+2015-10-28  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* gcc.target/powerpc/vsx-builtin-2.c: Allow vmadd and vnmsub as well
+	as xvmadd and xvnmsub.
+	* gcc.target/powerpc/vsx-vector-2.c: Allow vmadd as well as xvmadd.
+
+2015-10-27  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* c-c++-common/goacc/loop-shape.c: New test.
+
+2015-10-27  Nathan Sidwell <nathan@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+
+	* g++.dg/g++.dg/gomp/pr33372-1.C: Adjust diagnostic.
+	* gcc/testsuite/g++.dg/gomp/pr33372-3.C: Likewise.
+
+2015-10-27  Richard Henderson  <rth@redhat.com>
+
+	PR rtl-opt/67609
+	* gcc.target/i386/pr67609-2.c: New test.
+
+2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68102
+	* gcc.target/aarch64/pr68102_1.c: New test.
+
+2015-01-27  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/67933
+	* gfortran.dg/allocate_with_source_15.f03: New test
+
+2015-10-27  Thomas Schwinge  <thomas@codesourcery.com>
+	    James Norris  <jnorris@codesourcery.com>
+
+	PR fortran/63865
+	* gfortran.dg/goacc/coarray.f95: Expect the OpenACC cache
+	directive to work.
+	* gfortran.dg/goacc/loop-1.f95: Likewise.
+	* gfortran.dg/goacc/cache-1.f95: Likewise, and extend testing.
+	* gfortran.dg/goacc/cray.f95: Likewise.
+	* gfortran.dg/goacc/parameter.f95: Likewise.
+
+2015-10-27  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68108
+	* gfortran.dg/pr67805_2.f90: New test.
+
+2015-10-27  Abderrazek Zaafrani  <a.zaafrani@samsung.com>
+	    Aditya Kumar  <aditya.k7@samsung.com>
+
+	* gcc.dg/graphite/block-0.c: Changed to match pattern.
+	* gcc.dg/graphite/interchange-1.c: Same.
+	* gcc.dg/graphite/interchange-10.c: Same.
+	* gcc.dg/graphite/interchange-11.c: Same.
+	* gcc.dg/graphite/interchange-13.c: Same.
+	* gcc.dg/graphite/interchange-3.c: Same.
+	* gcc.dg/graphite/interchange-4.c: Same.
+	* gcc.dg/graphite/interchange-7.c: Same.
+	* gcc.dg/graphite/interchange-9.c: Same.
+	* gcc.dg/graphite/uns-interchange-9.c: Same.
+	* gfortran.dg/graphite/interchange-3.f90: Same.
+
+2015-10-27  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/67215
+	* gcc.target/i386/pr67215-1.c: New test.
+	* gcc.target/i386/pr67215-2.c: Likewise.
+	* gcc.target/i386/pr67215-3.c: Likewise.
+
+2015-10-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68104
+	* gcc.dg/torture/pr68104.c: New testcase.
+
+2015-10-27  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.dg/vect/vect-strided-shift-1.c: New.
+
+2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67929
+	* gcc.target/arm/pr67929_1.c: New test.
+
+2015-10-27  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gcc.dg/torture/builtin-ldexp-1.c: Skip at -O9,
+
+2015-10-27  Richard Sandiford  <richard.sandiford@arm.com>
+
+	PR tree-optimization/68097
+	* gcc.dg/torture/builtin-nonneg-1.c: Skip at -O0.  Add
+	--param max-ssa-name-query-depth=3 to dg-options.
+
+2015-10-27  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gcc.dg/torture/builtin-sqrt-cmp-1.c: New test.
+
+2015-10-27  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gcc.dg/builtins-52.c: Add -O to dg-options.
+
+2015-10-27  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gcc.dg/torture/builtin-math-1.c: Skip at -O0.
+
+2015-10-27  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR c/64765
+	PR c/64880
+	* c-c++-common/goacc/loop-1.c: Don't skip for C++.  Don't prune
+	sorry message.
+	(PR64765): New function.
+	* gfortran.dg/goacc/coarray_2.f90: XFAIL.
+	* gfortran.dg/goacc/combined_loop.f90: Extend.  Don't prune
+	sorry message.
+	* gfortran.dg/goacc/cray.f95: Refine prune directive.
+	* gfortran.dg/goacc/parameter.f95: Likewise.
+
+2015-10-26  Louis Krupp  <louis.krupp@zoho.com>
+
+	PR fortran/66056
+	* gfortran.dg/empty_label_typedecl.f90: New test.
+
+2015-10-26  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/36192
+	* gfortran.dg/pr36192.f90: New test.
+
+2015-10-26  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/atomic-noinline.c: Change test on __atomic_is_lock_free.
+	* gcc.dg/atomic-noinline-aux.c: Adjust accordingly.
+	* gnat.dg/opt51.adb: New test.
+	* gnat.dg/opt51_pkg.ads: New helper.
+
+2015-10-26  Simon Dardis  <simon.dardis@imgtec.com>
+
+	* gcc.target/mips/ds-schedule-1.c: New.
+	* gcc.target/mips/ds-schedule-2.c: New.
+
+2015-10-26  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/68013
+	* gcc.c-torture/compile/pr68013.c: New test.
+
+2015-10-26  Richard Biener  <rguenther@suse.de>
+	Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR middle-end/67443
+	* gcc.target/s390/pr67443.c: New testcase.
+
+2015-10-26  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gfortran.dg/chmod_1.f90: Add suffix to the temporary filename to
+	make it unique per testcase.
+	* gfortran.dg/chmod_2.f90: Likewise.
+	* gfortran.dg/chmod_3.f90: Likewise.
+	* gfortran.dg/direct_io_8.f90: Likewise.
+	* gfortran.dg/f2003_inquire_1.f03: Likewise.
+	* gfortran.dg/f2003_io_1.f03: Likewise.
+	* gfortran.dg/f2003_io_2.f03: Likewise.
+	* gfortran.dg/f2003_io_8.f03: Likewise.
+	* gfortran.dg/inquire_size.f90: Likewise.
+	* gfortran.dg/namelist_66.f90: Likewise.
+	* gfortran.dg/namelist_82.f90: Likewise.
+	* gfortran.dg/namelist_87.f90: Likewise.
+	* gfortran.dg/open_negative_unit_1.f90: Likewise.
+	* gfortran.dg/open_new.f90: Likewise.
+	* gfortran.dg/stat_1.f90: Likewise.
+	* gfortran.dg/stat_2.f90: Likewise.
+	* gfortran.dg/streamio_15.f90: Likewise.
+	* gfortran.dg/unf_read_corrupted_1.f90: Likewise.
+
+2015-10-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR middle-end/67989
+	* g++.dg/pr67989.C: New test.
+
+2015-10-26  Maxim Kuvyrkov  <maxim.kuvyrkov@linaro.org>
+
+	* gfortran.dg/streamio_4.f90, gfortran.dg/streamio_5.f90,
+	* gfortran.dg/streamio_6.f90, gfortran.dg/streamio_7.f90,
+	* gfortran.dg/streamio_10.f90, gfortran.dg/streamio_12.f90: Add
+	suffix to the temporary filename to make it unique per testcase.
+
+2015-10-26  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* gcc.dg/torture/builtin-minmax-1.c: Don't run at -O0.
+
+2015-01-25  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/67171
+	* gfortran.dg/allocate_with_source_12.f03: New test
+
+	PR fortran/61819
+	* gfortran.dg/allocate_with_source_13.f03: New test
+
+	PR fortran/61830
+	* gfortran.dg/allocate_with_source_14.f03: New test
+
+2015-10-25  John David Anglin  <danglin@gcc.gnu.org>
+
+	* g++.dg/Wno-frame-address.C: Skip on hppa*-*-*.
+
+2015-10-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/68084
+	* gcc.target/i386/pr68084.c: New test.
+
+2015-10-25  Andre Vehreschild  <vehre@gmx.de>
+
+        PR fortran/66927
+        PR fortran/67044
+	* gfortran.dg/allocate_with_source_10.f08: New test.
+	* gfortran.dg/allocate_with_source_11.f08: New test.
+	* gfortran.dg/class_array_15.f03: Changed count of expected
+	_builtin_frees to 11. One step of temporaries is spared, therefore
+	the allocatable component of that temporary is not to be freeed.
+
 2015-10-24  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/68055

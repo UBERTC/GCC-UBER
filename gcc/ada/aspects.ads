@@ -125,6 +125,7 @@ package Aspects is
       Aspect_Pre,
       Aspect_Precondition,
       Aspect_Predicate,                     -- GNAT
+      Aspect_Predicate_Failure,
       Aspect_Priority,
       Aspect_Read,
       Aspect_Refined_Depends,               -- GNAT
@@ -361,6 +362,7 @@ package Aspects is
       Aspect_Pre                        => Expression,
       Aspect_Precondition               => Expression,
       Aspect_Predicate                  => Expression,
+      Aspect_Predicate_Failure          => Expression,
       Aspect_Priority                   => Expression,
       Aspect_Read                       => Name,
       Aspect_Refined_Depends            => Expression,
@@ -472,6 +474,7 @@ package Aspects is
       Aspect_Pre                          => Name_Pre,
       Aspect_Precondition                 => Name_Precondition,
       Aspect_Predicate                    => Name_Predicate,
+      Aspect_Predicate_Failure            => Name_Predicate_Failure,
       Aspect_Preelaborable_Initialization => Name_Preelaborable_Initialization,
       Aspect_Preelaborate                 => Name_Preelaborate,
       Aspect_Priority                     => Name_Priority,
@@ -587,7 +590,7 @@ package Aspects is
    --  constructs. To handle forward references in such aspects, the compiler
    --  delays the analysis of their respective pragmas by collecting them in
    --  N_Contract nodes. The pragmas are then analyzed at the end of the
-   --  declarative region which contains the related construct. For details,
+   --  declarative region containing the related construct. For details,
    --  see routines Analyze_xxx_In_Decl_Part.
 
    --  The following shows which aspects are delayed. There are three cases:
@@ -676,6 +679,7 @@ package Aspects is
       Aspect_Pre                          => Always_Delay,
       Aspect_Precondition                 => Always_Delay,
       Aspect_Predicate                    => Always_Delay,
+      Aspect_Predicate_Failure            => Always_Delay,
       Aspect_Preelaborable_Initialization => Always_Delay,
       Aspect_Preelaborate                 => Always_Delay,
       Aspect_Priority                     => Always_Delay,
@@ -794,7 +798,7 @@ package Aspects is
    --    package body P with SPARK_Mode is ...;
 
    --  The table should be synchronized with Pragma_On_Body_Or_Stub_OK in unit
-   --  Sem_Prag if the aspects below are implemented by a pragma.
+   --  Sem_Prag.
 
    Aspect_On_Body_Or_Stub_OK : constant array (Aspect_Id) of Boolean :=
      (Aspect_Refined_Depends              => True,
@@ -802,6 +806,26 @@ package Aspects is
       Aspect_Refined_Post                 => True,
       Aspect_SPARK_Mode                   => True,
       Aspect_Warnings                     => True,
+      others                              => False);
+
+   -------------------------------------------------------------------
+   -- Handling of Aspects Specifications on Single Concurrent Types --
+   -------------------------------------------------------------------
+
+   --  Certain aspects that appear on the following nodes
+
+   --    N_Single_Protected_Declaration
+   --    N_Single_Task_Declaration
+
+   --  are treated as if they apply to the anonymous object produced by the
+   --  analysis of a single concurrent type. The following table lists all
+   --  aspects that should apply to the anonymous object. The table should
+   --  be synchronized with Pragma_On_Anonymous_Object_OK in unit Sem_Prag.
+
+   Aspect_On_Anonymous_Object_OK : constant array (Aspect_Id) of Boolean :=
+     (Aspect_Depends                      => True,
+      Aspect_Global                       => True,
+      Aspect_Part_Of                      => True,
       others                              => False);
 
    ---------------------------------------------------
@@ -861,10 +885,14 @@ package Aspects is
 
    procedure Move_Or_Merge_Aspects (From : Node_Id; To : Node_Id);
    --  Relocate the aspect specifications of node From to node To. If To has
-   --  aspects, the aspects of From are added to the aspects of To. If From has
-   --  no aspects, the routine has no effect. When From denotes a subprogram
-   --  body stub that also acts as a spec, the only aspects relocated to node
-   --  To are those from table Aspect_On_Body_Or_Stub_OK and preconditions.
+   --  aspects, the aspects of From are appended to the aspects of To. If From
+   --  has no aspects, the routine has no effect. Special behavior:
+   --    * When node From denotes a subprogram body stub without a previous
+   --      declaration, the only aspects relocated to node To are those found
+   --      in table Aspect_On_Body_Or_Stub_OK.
+   --    * When node From denotes a single synchronized type declaration, the
+   --      only aspects relocated to node To are those found in table
+   --      Aspect_On_Anonymous_Object_OK.
 
    function Permits_Aspect_Specifications (N : Node_Id) return Boolean;
    --  Returns True if the node N is a declaration node that permits aspect

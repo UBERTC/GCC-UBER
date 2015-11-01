@@ -88,15 +88,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "predict.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "predict.h"
+#include "alloc-pool.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "flags.h"
+#include "optabs-tree.h"
+#include "gimple-pretty-print.h"
 #include "alias.h"
 #include "fold-const.h"
-#include "internal-fn.h"
 #include "gimple-fold.h"
 #include "gimple-iterator.h"
 #include "gimplify.h"
@@ -105,14 +108,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-cfg.h"
 #include "tree-dfa.h"
 #include "tree-ssa.h"
-#include "tree-pass.h"
-#include "alloc-pool.h"
-#include "target.h"
-#include "gimple-pretty-print.h"
 #include "builtins.h"
 #include "params.h"
-#include "insn-codes.h"
-#include "optabs-tree.h"
 
 /* This structure represents one basic block that either computes a
    division, or is a common dominator for basic block that compute a
@@ -541,10 +538,9 @@ pass_cse_reciprocals::execute (function *fun)
   calculate_dominance_info (CDI_DOMINATORS);
   calculate_dominance_info (CDI_POST_DOMINATORS);
 
-#ifdef ENABLE_CHECKING
-  FOR_EACH_BB_FN (bb, fun)
-    gcc_assert (!bb->aux);
-#endif
+  if (flag_checking)
+    FOR_EACH_BB_FN (bb, fun)
+      gcc_assert (!bb->aux);
 
   for (arg = DECL_ARGUMENTS (fun->decl); arg; arg = DECL_CHAIN (arg))
     if (FLOAT_TYPE_P (TREE_TYPE (arg))
@@ -1859,7 +1855,6 @@ pass_cse_sincos::execute (function *fun)
   statistics_counter_event (fun, "sincos statements inserted",
 			    sincos_stats.inserted);
 
-  free_dominance_info (CDI_DOMINATORS);
   return cfg_changed ? TODO_cleanup_cfg : 0;
 }
 

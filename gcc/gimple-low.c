@@ -24,21 +24,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "backend.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
-#include "alias.h"
+#include "tree-pass.h"
 #include "fold-const.h"
 #include "tree-nested.h"
 #include "calls.h"
-#include "internal-fn.h"
 #include "gimple-iterator.h"
-#include "tree-iterator.h"
-#include "tree-inline.h"
-#include "flags.h"
-#include "diagnostic-core.h"
-#include "tree-pass.h"
-#include "langhooks.h"
 #include "gimple-low.h"
-#include "tree-nested.h"
 
 /* The differences between High GIMPLE and Low GIMPLE are the
    following:

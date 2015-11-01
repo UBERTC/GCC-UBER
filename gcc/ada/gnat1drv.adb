@@ -150,17 +150,6 @@ procedure Gnat1drv is
          Unnest_Subprogram_Mode := True;
          Back_Annotate_Rep_Info := True;
 
-         --  Enable some restrictions systematically to simplify the generated
-         --  code. Note that restriction checks are also disabled in C mode,
-         --  see Restrict.Check_Restriction.
-
-         Restrict.Restrictions.Set   (No_Exception_Registration)       := True;
-         Restrict.Restrictions.Set   (No_Initialize_Scalars)           := True;
-         Restrict.Restrictions.Set   (No_Task_Hierarchy)               := True;
-         Restrict.Restrictions.Set   (No_Abort_Statements)             := True;
-         Restrict.Restrictions.Set   (Max_Asynchronous_Select_Nesting) := True;
-         Restrict.Restrictions.Value (Max_Asynchronous_Select_Nesting) := 0;
-
          --  Set operating mode to Generate_Code to benefit from full front-end
          --  expansion (e.g. generics).
 
@@ -1036,7 +1025,7 @@ begin
       Original_Operating_Mode := Operating_Mode;
       Frontend;
 
-      --  Exit with errors if the main source could not be parsed.
+      --  Exit with errors if the main source could not be parsed
 
       if Sinput.Main_Source_File = No_Source_File then
          Errout.Finalize (Last_Call => True);
@@ -1180,8 +1169,9 @@ begin
 
       --  It is not an error to analyze in CodePeer mode a spec which requires
       --  a body, in order to generate SCIL for this spec.
+      --  Ditto for Generate_C_Code mode and generate a C header for a spec.
 
-      elsif CodePeer_Mode then
+      elsif CodePeer_Mode or Generate_C_Code then
          Back_End_Mode := Generate_Object;
 
       --  It is not an error to analyze in GNATprove mode a spec which requires

@@ -22,39 +22,24 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
-#include "ssa.h"
-#include "alias.h"
-#include "fold-const.h"
-#include "gimple-pretty-print.h"
-#include "internal-fn.h"
-#include "gimple-iterator.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
-#include "tree-dfa.h"
 #include "timevar.h"
+#include "ssa.h"
+#include "cgraph.h"
+#include "gimple-pretty-print.h"
+#include "diagnostic-core.h"
+#include "gimple-iterator.h"
+#include "tree-dfa.h"
 #include "dumpfile.h"
 #include "tree-ssa-live.h"
-#include "diagnostic-core.h"
 #include "debug.h"
 #include "tree-ssa.h"
-#include "cgraph.h"
 #include "ipa-utils.h"
 #include "cfgloop.h"
 
-#ifdef ENABLE_CHECKING
-static void  verify_live_on_entry (tree_live_info_p);
-#endif
+static void verify_live_on_entry (tree_live_info_p);
 
 
 /* VARMAP maintains a mapping from SSA version number to real variables.
@@ -1153,9 +1138,8 @@ calculate_live_ranges (var_map map, bool want_livein)
 
   live_worklist (live);
 
-#ifdef ENABLE_CHECKING
-  verify_live_on_entry (live);
-#endif
+  if (flag_checking)
+    verify_live_on_entry (live);
 
   calculate_live_on_exit (live);
 
@@ -1292,7 +1276,6 @@ debug (tree_live_info_d *ptr)
 }
 
 
-#ifdef ENABLE_CHECKING
 /* Verify that SSA_VAR is a non-virtual SSA_NAME.  */
 
 void
@@ -1422,4 +1405,3 @@ verify_live_on_entry (tree_live_info_p live)
     }
   gcc_assert (num <= 0);
 }
-#endif

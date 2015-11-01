@@ -113,23 +113,21 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "target.h"
 #include "rtl.h"
-#include "alias.h"
 #include "tree.h"
-#include "fold-const.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
+#include "tm_p.h"
 #include "stringpool.h"
-#include "stor-layout.h"
-#include "flags.h"
-#include "insn-codes.h"
-#include "optabs.h"
-#include "insn-config.h"
 #include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
+#include "optabs.h"
 #include "emit-rtl.h"
-#include "varasm.h"
+#include "cgraph.h"
+#include "diagnostic.h"
+#include "fold-const.h"
+#include "stor-layout.h"
+#include "explow.h"
 #include "stmt.h"
 #include "expr.h"
 #include "libfuncs.h"
@@ -137,18 +135,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "output.h"
 #include "dwarf2asm.h"
 #include "dwarf2out.h"
-#include "dwarf2.h"
-#include "toplev.h"
-#include "intl.h"
-#include "tm_p.h"
-#include "target.h"
 #include "common/common-target.h"
 #include "langhooks.h"
 #include "cfgrtl.h"
-#include "cgraph.h"
-#include "diagnostic.h"
 #include "tree-pretty-print.h"
-#include "tree-pass.h"
 #include "cfgloop.h"
 #include "builtins.h"
 #include "tree-hash-traits.h"
@@ -612,9 +602,8 @@ duplicate_eh_regions (struct function *ifun,
   struct duplicate_eh_regions_data data;
   eh_region outer_region;
 
-#ifdef ENABLE_CHECKING
-  verify_eh_tree (ifun);
-#endif
+  if (flag_checking)
+    verify_eh_tree (ifun);
 
   data.label_map = map;
   data.label_map_data = map_data;
@@ -632,9 +621,8 @@ duplicate_eh_regions (struct function *ifun,
 	duplicate_eh_regions_1 (&data, r, outer_region);
     }
 
-#ifdef ENABLE_CHECKING
-  verify_eh_tree (cfun);
-#endif
+  if (flag_checking)
+    verify_eh_tree (cfun);
 
   return data.eh_map;
 }
