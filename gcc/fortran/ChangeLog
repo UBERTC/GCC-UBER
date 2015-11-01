@@ -1,3 +1,70 @@
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/51993
+	* decl.c (gfc_set_constant_character_len): Convert gcc_assert into an
+	if-statement causing an early return leads to valid error message.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68154
+	* decl.c (add_init_expr_to_sym): if the char length in the typespec
+	is NULL, check for and use a constructor. 
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/36192
+	* interface.c (get_expr_storage_size):  Check for INTEGER type before
+	calling gmp routines.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68055
+	* decl.c (gfc_match_decl_type_spec): Check for valid kind in old-style
+	declarations.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68054
+	* decl.c (match_attr_spec): PROTECTED can only be a module.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67939
+	* data.c (create_character_initializer): Deal with zero length string.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67885
+	* trans-decl.c (generate_local_decl): Mark PARAMETER entities in
+	BLOCK construct.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67805
+	PR fortran/68108
+	* array.c (gfc_match_array_constructor): Check for error from type
+	spec matching.
+	* decl.c (char_len_param_value): Check for valid of charlen parameter.
+	Check for REF_ARRAY.  Reap dead code dating to 2008.
+	match.c (gfc_match_type_spec): Special case the keyword use in REAL.
+
+2015-10-26  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/67177
+	PR fortran/67977
+	Backport from mainline r228940:
+	* primary.c (match_substring): Add an argument 'deferred' to
+	flag that a substring reference with null start and end should
+	not be optimized away for deferred length strings.
+	(match_string_constant, gfc_match_rvalue): Set the argument.
+	* trans-expr.c (alloc_scalar_allocatable_for_assignment): If
+	there is a substring reference return.
+	* trans-intrinsic.c (conv_intrinsic_move_alloc): For deferred
+	characters, assign the 'from' string length to the 'to' string
+	length. If the 'from' expression is deferred, set its string
+	length to zero. If the 'to' expression has allocatable
+	components, deallocate them.
+
 2015-10-22  Paul Thomas  <pault@gcc.gnu.org>
 
 	PR fortran/58754

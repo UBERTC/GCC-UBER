@@ -1,3 +1,89 @@
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/51993
+	* gfortran.dg/pr51993.f90: New test.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68154
+	*gfortran.dg/pr68154.f90
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/36192
+	* gfortran.dg/pr36192_1.f90: New test.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68055
+	* gfortran.dg/pr68055.f90: New case.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68054
+	* gfortran.dg/pr68054.f90: New test.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67939
+	* gfortran.dg/pr67939.f90: New test.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67885
+	* gfortran.dg/pr67885.f90: New test.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67805
+	PR fortran/68108
+	* gfortran.dg/pr67805.f90: New testcase.
+	* gfortran.dg/pr67805_2.f90: New test.
+	* gfortran.dg/array_constructor_26.f03: Update testcase.
+	* gfortran.dg/array_constructor_27.f03: Ditto.
+	* gfortran.dg/char_type_len_2.f90: Ditto.
+	* gfortran.dg/pr67802.f90: Ditto.
+	* gfortran.dg/used_before_typed_3.f90: Ditto.
+
+2015-10-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68102
+	* gcc.target/aarch64/pr68102_1.c: New test.
+
+2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-10-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR middle-end/67989
+	* g++.dg/pr67989.C: New test.
+
+2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67929
+	* gcc.target/arm/pr67929_1.c: New test.
+
+2015-10-26  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from mainline r228940:
+	PR fortran/67177
+	* gfortran.dg/move_alloc_15.f90: New test
+	* gfortran.dg/move_alloc_16.f90: New test
+
+	PR fortran/67977
+	* gfortran.dg/deferred_character_assignment_1.f90: New test
+
+2015-10-26  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	2015-10-09  Martin Jambor  <mjambor@suse.cz>
+
+        * gcc.dg/ipa/ipa-sra-10.c: New test.
+        * gcc.dg/torture/pr67794.c: Likewise.
+
 2015-10-22  Paul Thomas  <pault@gcc.gnu.org>
 
 	PR fortran/58754
