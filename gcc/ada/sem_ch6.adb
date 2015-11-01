@@ -661,17 +661,20 @@ package body Sem_Ch6 is
                         Obj := Prefix (Obj);
                      end loop;
 
+                     --  No check needed for an aliased formal.
+                     --  A run-time check may still be needed ???
+
                      if Is_Entity_Name (Obj)
                        and then Is_Formal (Entity (Obj))
+                       and then Is_Aliased (Entity (Obj))
                      then
-                        --  A run-time check may be needed ???
                         null;
 
                      elsif Object_Access_Level (Obj) >
                              Scope_Depth (Scope (Scope_Id))
                      then
                         Error_Msg_N
-                          ("access discriminant in return aggregate will be "
+                          ("access discriminant in return aggregate would be "
                            & "a dangling reference", Obj);
                      end if;
                   end if;
@@ -1375,6 +1378,15 @@ package body Sem_Ch6 is
             Analyze_Aspect_Specifications_On_Body_Or_Stub (N);
          end if;
 
+         --  A generic subprogram body "freezes" the contract of its initial
+         --  declaration. This analysis depends on attribute Corresponding_Spec
+         --  being set. Only bodies coming from source should cause this type
+         --  of "freezing".
+
+         if Comes_From_Source (N) then
+            Analyze_Initial_Declaration_Contract (N);
+         end if;
+
          Analyze_Declarations (Declarations (N));
          Check_Completion;
 
@@ -1382,7 +1394,7 @@ package body Sem_Ch6 is
          --  have been analyzed. This ensures that any contract-related pragmas
          --  are available through the N_Contract node of the body.
 
-         Analyze_Subprogram_Body_Contract (Body_Id);
+         Analyze_Entry_Or_Subprogram_Body_Contract (Body_Id);
 
          Analyze (Handled_Statement_Sequence (N));
          Save_Global_References (Original_Node (N));
@@ -2352,9 +2364,56 @@ package body Sem_Ch6 is
       ----------------------------------
 
       procedure Build_Subprogram_Declaration is
-         Asp       : Node_Id;
+         procedure Move_Pragmas (From : Node_Id; To : Node_Id);
+         --  Relocate certain categorization pragmas from the declarative list
+         --  of subprogram body From and insert them after node To. The pragmas
+         --  in question are:
+         --    Ghost
+         --    SPARK_Mode
+         --    Volatile_Function
+
+         ------------------
+         -- Move_Pragmas --
+         ------------------
+
+         procedure Move_Pragmas (From : Node_Id; To : Node_Id) is
+            Decl      : Node_Id;
+            Next_Decl : Node_Id;
+
+         begin
+            pragma Assert (Nkind (From) = N_Subprogram_Body);
+
+            --  The destination node must be part of a list, as the pragmas are
+            --  inserted after it.
+
+            pragma Assert (Is_List_Member (To));
+
+            --  Inspect the declarations of the subprogram body looking for
+            --  specific pragmas.
+
+            Decl := First (Declarations (N));
+            while Present (Decl) loop
+               Next_Decl := Next (Decl);
+
+               if Nkind (Decl) = N_Pragma
+                 and then Nam_In (Pragma_Name (Decl), Name_Ghost,
+                                                      Name_SPARK_Mode,
+                                                      Name_Volatile_Function)
+               then
+                  Remove (Decl);
+                  Insert_After (To, Decl);
+               end if;
+
+               Decl := Next_Decl;
+            end loop;
+         end Move_Pragmas;
+
+         --  Local variables
+
          Decl      : Node_Id;
          Subp_Decl : Node_Id;
+
+      --  Start of processing for Build_Subprogram_Declaration
 
       begin
          --  Create a matching subprogram spec using the profile of the body.
@@ -2364,16 +2423,19 @@ package body Sem_Ch6 is
          Subp_Decl :=
            Make_Subprogram_Declaration (Loc,
              Specification => Copy_Subprogram_Spec (Body_Spec));
+         Set_Comes_From_Source (Subp_Decl, True);
 
-         --  Relocate the aspects of the subprogram body to the new subprogram
-         --  spec because it acts as the initial declaration.
-         --  ??? what about pragmas
+         --  Relocate the aspects and relevant pragmas from the subprogram body
+         --  to the generated spec because it acts as the initial declaration.
 
+         Insert_Before (N, Subp_Decl);
          Move_Aspects (N, To => Subp_Decl);
-         Insert_Before_And_Analyze (N, Subp_Decl);
+         Move_Pragmas (N, To => Subp_Decl);
 
-         --  The analysis of the subprogram spec aspects may introduce pragmas
-         --  that need to be analyzed.
+         Analyze (Subp_Decl);
+
+         --  Analyze any relocated source pragmas or pragmas created for aspect
+         --  specifications.
 
          Decl := Next (Subp_Decl);
          while Present (Decl) loop
@@ -2399,17 +2461,6 @@ package body Sem_Ch6 is
 
          Set_Comes_From_Source (Spec_Id, True);
 
-         --  If aspect SPARK_Mode was specified on the body, it needs to be
-         --  repeated both on the generated spec and the body.
-
-         Asp := Find_Aspect (Spec_Id, Aspect_SPARK_Mode);
-
-         if Present (Asp) then
-            Asp := New_Copy_Tree (Asp);
-            Set_Analyzed (Asp, False);
-            Set_Aspect_Specifications (N, New_List (Asp));
-         end if;
-
          --  Ensure that the specs of the subprogram declaration and its body
          --  are identical, otherwise they will appear non-conformant due to
          --  rewritings in the default values of formal parameters.
@@ -2417,6 +2468,18 @@ package body Sem_Ch6 is
          Body_Spec := Copy_Subprogram_Spec (Body_Spec);
          Set_Specification (N, Body_Spec);
          Body_Id := Analyze_Subprogram_Specification (Body_Spec);
+
+         --  Ensure that the generated corresponding spec and original body
+         --  share the same Ghost and SPARK_Mode attributes.
+
+         Set_Is_Checked_Ghost_Entity
+           (Body_Id, Is_Checked_Ghost_Entity (Spec_Id));
+         Set_Is_Ignored_Ghost_Entity
+           (Body_Id, Is_Ignored_Ghost_Entity (Spec_Id));
+
+         Set_SPARK_Pragma (Body_Id, SPARK_Pragma (Spec_Id));
+         Set_SPARK_Pragma_Inherited
+           (Body_Id, SPARK_Pragma_Inherited (Spec_Id));
       end Build_Subprogram_Declaration;
 
       ----------------------------
@@ -2990,7 +3053,8 @@ package body Sem_Ch6 is
 
       --  Local variables
 
-      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
+      Save_Ghost_Mode   : constant Ghost_Mode_Type := Ghost_Mode;
+      Cloned_Body_For_C : Node_Id := Empty;
 
    --  Start of processing for Analyze_Subprogram_Body_Helper
 
@@ -3011,7 +3075,14 @@ package body Sem_Ch6 is
       --  decoupled from the usual Freeze_xxx mechanism because it must also
       --  work in the context of generics where normal freezing is disabled.
 
-      Analyze_Enclosing_Package_Body_Contract (N);
+      --  Only bodies coming from source should cause this type of "freezing".
+      --  Expression functions that act as bodies and complete an initial
+      --  declaration must be included in this category, hence the use of
+      --  Original_Node.
+
+      if Comes_From_Source (Original_Node (N)) then
+         Analyze_Enclosing_Package_Body_Contract (N);
+      end if;
 
       --  Generic subprograms are handled separately. They always have a
       --  generic specification. Determine whether current scope has a
@@ -3135,6 +3206,18 @@ package body Sem_Ch6 is
 
                  and then not Body_Has_Contract
                  and then not Inside_A_Generic
+               then
+                  Build_Subprogram_Declaration;
+
+               --  If this is a function that returns a constrained array, and
+               --  we are generating SPARK_For_C, create subprogram declaration
+               --  to simplify subsequent C generation.
+
+               elsif No (Spec_Id)
+                 and then Modify_Tree_For_C
+                 and then Nkind (Body_Spec) = N_Function_Specification
+                 and then Is_Array_Type (Etype (Body_Id))
+                 and then Is_Constrained (Etype (Body_Id))
                then
                   Build_Subprogram_Declaration;
                end if;
@@ -3460,10 +3543,47 @@ package body Sem_Ch6 is
          Generate_Reference_To_Formals (Body_Id);
       end if;
 
-      --  Set SPARK_Mode from context
+      --  Entry barrier functions are generated outside the protected type and
+      --  should not carry the SPARK_Mode of the enclosing context.
 
-      Set_SPARK_Pragma (Body_Id, SPARK_Mode_Pragma);
-      Set_SPARK_Pragma_Inherited (Body_Id);
+      if Nkind (N) = N_Subprogram_Body
+        and then Is_Entry_Barrier_Function (N)
+      then
+         null;
+
+      --  The body is generated as part of expression function expansion. When
+      --  the expression function appears in the visible declarations of a
+      --  package, the body is added to the private declarations. Since both
+      --  declarative lists may be subject to a different SPARK_Mode, inherit
+      --  the mode of the spec.
+
+      --    package P with SPARK_Mode is
+      --       function Expr_Func ... is (...);         --  original
+      --       [function Expr_Func ...;]                --  generated spec
+      --                                                --    mode is ON
+      --    private
+      --       pragma SPARK_Mode (Off);
+      --       [function Expr_Func ... is return ...;]  --  generated body
+      --    end P;                                      --    mode is ON
+
+      elsif not Comes_From_Source (N)
+        and then Present (Prev_Id)
+        and then Is_Expression_Function (Prev_Id)
+      then
+         Set_SPARK_Pragma (Body_Id, SPARK_Pragma (Prev_Id));
+         Set_SPARK_Pragma_Inherited
+           (Body_Id, SPARK_Pragma_Inherited (Prev_Id));
+
+      --  Set the SPARK_Mode from the current context (may be overwritten later
+      --  with explicit pragma). Exclude the case where the SPARK_Mode appears
+      --  initially on a stand-alone subprogram body, but is then relocated to
+      --  a generated corresponding spec. In this scenario the mode is shared
+      --  between the spec and body.
+
+      elsif No (SPARK_Pragma (Body_Id)) then
+         Set_SPARK_Pragma (Body_Id, SPARK_Mode_Pragma);
+         Set_SPARK_Pragma_Inherited (Body_Id);
+      end if;
 
       --  If the return type is an anonymous access type whose designated type
       --  is the limited view of a class-wide type and the non-limited view is
@@ -3541,6 +3661,21 @@ package body Sem_Ch6 is
 
          Ghost_Mode := Save_Ghost_Mode;
          return;
+      end if;
+
+      --  If we are generating C and this is a function returning a constrained
+      --  array type for which we must create a procedure with an extra out
+      --  parameter then clone the body before it is analyzed. Needed to ensure
+      --  that the body of the built procedure does not have any reference to
+      --  the body of the function.
+
+      if Expander_Active
+        and then Modify_Tree_For_C
+        and then Present (Spec_Id)
+        and then Ekind (Spec_Id) = E_Function
+        and then Rewritten_For_C (Spec_Id)
+      then
+         Cloned_Body_For_C := Copy_Separate_Tree (N);
       end if;
 
       --  Handle frontend inlining
@@ -3724,6 +3859,14 @@ package body Sem_Ch6 is
          Analyze_Aspect_Specifications_On_Body_Or_Stub (N);
       end if;
 
+      --  A subprogram body "freezes" the contract of its initial declaration.
+      --  This analysis depends on attribute Corresponding_Spec being set. Only
+      --  bodies coming from source should cause this type of "freezing".
+
+      if Comes_From_Source (N) then
+         Analyze_Initial_Declaration_Contract (N);
+      end if;
+
       Analyze_Declarations (Declarations (N));
 
       --  Verify that the SPARK_Mode of the body agrees with that of its spec
@@ -3757,7 +3900,7 @@ package body Sem_Ch6 is
       --  after the declarations of the body have been processed as pragmas
       --  are now chained on the contract of the subprogram body.
 
-      Analyze_Subprogram_Body_Contract (Body_Id);
+      Analyze_Entry_Or_Subprogram_Body_Contract (Body_Id);
 
       --  If SPARK_Mode for body is not On, disable frontend inlining for this
       --  subprogram in GNATprove mode, as its body should not be analyzed.
@@ -3992,6 +4135,16 @@ package body Sem_Ch6 is
          end if;
       end;
 
+      --  When generating C code, transform a function that returns a
+      --  constrained array type into a procedure with an out parameter
+      --  that carries the return value.
+
+      if Present (Cloned_Body_For_C) then
+         Rewrite (N,
+           Build_Procedure_Body_Form (Spec_Id, Cloned_Body_For_C));
+         Analyze (N);
+      end if;
+
       Ghost_Mode := Save_Ghost_Mode;
    end Analyze_Subprogram_Body_Helper;
 
@@ -4040,11 +4193,19 @@ package body Sem_Ch6 is
 
       Generate_Definition (Designator);
 
-      --  Set SPARK mode from current context (may be overwritten later with
-      --  explicit pragma).
+      --  Set the SPARK mode from the current context (may be overwritten later
+      --  with explicit pragma). This is not done for entry barrier functions
+      --  because they are generated outside the protected type and should not
+      --  carry the mode of the enclosing context.
 
-      Set_SPARK_Pragma (Designator, SPARK_Mode_Pragma);
-      Set_SPARK_Pragma_Inherited (Designator);
+      if Nkind (N) = N_Subprogram_Declaration
+        and then Is_Entry_Barrier_Function (N)
+      then
+         null;
+      else
+         Set_SPARK_Pragma (Designator, SPARK_Mode_Pragma);
+         Set_SPARK_Pragma_Inherited (Designator);
+      end if;
 
       --  A subprogram declared within a Ghost region is automatically Ghost
       --  (SPARK RM 6.9(2)).
@@ -4793,7 +4954,7 @@ package body Sem_Ch6 is
 
                else
                   declare
-                     T : constant  Entity_Id := Find_Dispatching_Type (New_Id);
+                     T : constant Entity_Id := Find_Dispatching_Type (New_Id);
                   begin
                      if Is_Protected_Type (Corresponding_Concurrent_Type (T))
                      then
@@ -7302,6 +7463,19 @@ package body Sem_Ch6 is
                  and then Null_Present (Spec)
                then
                   return E;
+
+               --  Expression functions can be completions, but cannot be
+               --  completed by an explicit body.
+
+               elsif Comes_From_Source (E)
+                 and then Comes_From_Source (N)
+                 and then Nkind (N) = N_Subprogram_Body
+                 and then Nkind (Original_Node (Unit_Declaration_Node (E))) =
+                            N_Expression_Function
+               then
+                  Error_Msg_Sloc := Sloc (E);
+                  Error_Msg_N ("body conflicts with expression function#", N);
+                  return Empty;
 
                elsif not Has_Completion (E) then
                   if Nkind (N) /= N_Subprogram_Body_Stub then

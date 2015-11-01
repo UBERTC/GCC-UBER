@@ -22,37 +22,21 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "timevar.h"	/* for TV_ALIAS_STMT_WALK */
 #include "ssa.h"
+#include "cgraph.h"
+#include "tree-pretty-print.h"
 #include "alias.h"
 #include "fold-const.h"
-#include "tm_p.h"
-#include "target.h"
 
-#include "dominance.h"
-#include "timevar.h"	/* for TV_ALIAS_STMT_WALK */
 #include "langhooks.h"
-#include "flags.h"
-#include "tree-pretty-print.h"
 #include "dumpfile.h"
-#include "internal-fn.h"
 #include "tree-eh.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
 #include "tree-dfa.h"
-#include "tree-inline.h"
-#include "params.h"
-#include "alloc-pool.h"
-#include "cgraph.h"
 #include "ipa-reference.h"
 
 /* Broad overview of how alias analysis on gimple works:
@@ -1442,12 +1426,7 @@ refs_may_alias_p_1 (ao_ref *ref1, ao_ref *ref2, bool tbaa_p)
 				      ao_ref_alias_set (ref2), -1,
 				      tbaa_p);
 
-  /* We really do not want to end up here, but returning true is safe.  */
-#ifdef ENABLE_CHECKING
   gcc_unreachable ();
-#else
-  return true;
-#endif
 }
 
 static bool

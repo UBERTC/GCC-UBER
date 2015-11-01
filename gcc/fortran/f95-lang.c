@@ -24,28 +24,24 @@ along with GCC; see the file COPYING3.  If not see
 
 #include "config.h"
 #include "system.h"
-#include "ansidecl.h"
-#include "system.h"
 #include "coretypes.h"
-#include "gfortran.h"
-#include "alias.h"
+#include "target.h"
+#include "function.h"
 #include "tree.h"
-#include "options.h"
+#include "gfortran.h"
+#include "trans.h"
+#include "timevar.h"
+#include "cgraph.h"
+#include "diagnostic.h" /* For errorcount/warningcount */
+#include "ansidecl.h"
+#include "alias.h"
 #include "flags.h"
 #include "langhooks.h"
 #include "langhooks-def.h"
-#include "timevar.h"
-#include "tm.h"
-#include "hard-reg-set.h"
-#include "function.h"
 #include "toplev.h"
-#include "target.h"
 #include "debug.h"
-#include "diagnostic.h" /* For errorcount/warningcount */
 #include "dumpfile.h"
-#include "cgraph.h"
 #include "cpp.h"
-#include "trans.h"
 #include "trans-types.h"
 #include "trans-const.h"
 
@@ -988,8 +984,7 @@ gfc_init_builtin_functions (void)
 
   /* Type-generic floating-point classification built-ins.  */
 
-  ftype = build_function_type_list (integer_type_node,
-                                    void_type_node, NULL_TREE);
+  ftype = build_function_type (integer_type_node, NULL_TREE);
   gfc_define_builtin ("__builtin_isfinite", ftype, BUILT_IN_ISFINITE,
 		      "__builtin_isfinite", ATTR_CONST_NOTHROW_LEAF_LIST);
   gfc_define_builtin ("__builtin_isinf", ftype, BUILT_IN_ISINF,
@@ -1003,8 +998,7 @@ gfc_init_builtin_functions (void)
   gfc_define_builtin ("__builtin_signbit", ftype, BUILT_IN_SIGNBIT,
 		      "__builtin_signbit", ATTR_CONST_NOTHROW_LEAF_LIST);
 
-  ftype = build_function_type_list (integer_type_node, void_type_node,
-				    void_type_node, NULL_TREE);
+  ftype = build_function_type (integer_type_node, NULL_TREE);
   gfc_define_builtin ("__builtin_isless", ftype, BUILT_IN_ISLESS,
 		      "__builtin_isless", ATTR_CONST_NOTHROW_LEAF_LIST);
   gfc_define_builtin ("__builtin_islessequal", ftype, BUILT_IN_ISLESSEQUAL,

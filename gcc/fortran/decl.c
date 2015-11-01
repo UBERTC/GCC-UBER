@@ -21,14 +21,14 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
+#include "options.h"
+#include "tree.h"
 #include "gfortran.h"
+#include "stringpool.h"
 #include "match.h"
 #include "parse.h"
-#include "options.h"
 #include "constructor.h"
 #include "alias.h"
-#include "tree.h"
-#include "stringpool.h"
 
 /* Macros to access allocate memory for gfc_data_variable,
    gfc_data_value and gfc_data.  */
@@ -748,13 +748,15 @@ char_len_param_value (gfc_expr **expr, bool *deferred)
 
       /* This catches the invalid code "[character(m(2:3)) :: 'x', 'y']",
 	 which causes an ICE if gfc_reduce_init_expr() is called.  */
-      if (e->ref && e->ref->u.ar.type == AR_UNKNOWN
+      if (e->ref && e->ref->type == REF_ARRAY
+	  && e->ref->u.ar.type == AR_UNKNOWN
 	  && e->ref->u.ar.dimen_type[0] == DIMEN_RANGE)
 	goto syntax;
 
       gfc_reduce_init_expr (e);
 
-      if ((e->ref && e->ref->u.ar.type != AR_ELEMENT) 
+      if ((e->ref && e->ref->type == REF_ARRAY
+	   && e->ref->u.ar.type != AR_ELEMENT) 
 	  || (!e->ref && e->expr_type == EXPR_ARRAY))
 	{
 	  gfc_free_expr (e);
@@ -1291,7 +1293,9 @@ gfc_set_constant_character_len (int len, gfc_expr *expr, int check_len)
   int slen;
 
   gcc_assert (expr->expr_type == EXPR_CONSTANT);
-  gcc_assert (expr->ts.type == BT_CHARACTER);
+
+  if (expr->ts.type != BT_CHARACTER)
+    return;
 
   slen = expr->value.character.length;
   if (len != slen)
@@ -1459,7 +1463,16 @@ add_init_expr_to_sym (const char *name, gfc_expr **initp, locus *var_locus)
 		    }
 		  else if (init->expr_type == EXPR_ARRAY)
 		    {
-		      clen = mpz_get_si (init->ts.u.cl->length->value.integer);
+		      if (init->ts.u.cl)
+			clen = mpz_get_si (init->ts.u.cl->length->value.integer);
+		      else if (init->value.constructor)
+			{
+			  gfc_constructor *c;
+	                  c = gfc_constructor_first (init->value.constructor); 	 
+	                  clen = c->expr->value.character.length;
+			}
+		      else
+			  gcc_unreachable ();
 		      sym->ts.u.cl->length
 				= gfc_get_int_expr (gfc_default_integer_kind,
 						    NULL, clen);
@@ -3957,7 +3970,9 @@ match_attr_spec (void)
 	  break;
 
 	case DECL_PROTECTED:
-	  if (gfc_current_ns->proc_name->attr.flavor != FL_MODULE)
+	  if (gfc_current_state () != COMP_MODULE
+	      || (gfc_current_ns->proc_name
+		  && gfc_current_ns->proc_name->attr.flavor != FL_MODULE))
 	    {
 	       gfc_error ("PROTECTED at %C only allowed in specification "
 			  "part of a module");

@@ -23,50 +23,32 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "predict.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "predict.h"
+#include "alloc-pool.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "alias.h"
+#include "cgraph.h"
+#include "gimple-pretty-print.h"
 #include "fold-const.h"
 #include "cfganal.h"
-#include "gimple-pretty-print.h"
-#include "tree-inline.h"
-#include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
-#include "gimplify-me.h"
 #include "tree-cfg.h"
 #include "tree-ssa-loop.h"
 #include "tree-into-ssa.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
 #include "tree-dfa.h"
 #include "tree-ssa.h"
-#include "tree-iterator.h"
-#include "alloc-pool.h"
-#include "tree-pass.h"
-#include "langhooks.h"
 #include "cfgloop.h"
 #include "tree-ssa-sccvn.h"
 #include "tree-scalar-evolution.h"
 #include "params.h"
 #include "dbgcnt.h"
 #include "domwalk.h"
-#include "cgraph.h"
-#include "symbol-summary.h"
-#include "ipa-prop.h"
 #include "tree-ssa-propagate.h"
 #include "ipa-utils.h"
 #include "tree-cfgcleanup.h"
@@ -4082,8 +4064,9 @@ eliminate_dom_walker::before_dom_children (basic_block b)
 	      gimple *def_stmt = SSA_NAME_DEF_STMT (sprime);
 	      basic_block def_bb = gimple_bb (def_stmt);
 	      if (gimple_code (def_stmt) == GIMPLE_PHI
-		  && b->loop_father->header == def_bb)
+		  && def_bb->loop_father->header == def_bb)
 		{
+		  loop_p loop = def_bb->loop_father;
 		  ssa_op_iter iter;
 		  tree op;
 		  bool found = false;
@@ -4092,9 +4075,8 @@ eliminate_dom_walker::before_dom_children (basic_block b)
 		      affine_iv iv;
 		      def_bb = gimple_bb (SSA_NAME_DEF_STMT (op));
 		      if (def_bb
-			  && flow_bb_inside_loop_p (b->loop_father, def_bb)
-			  && simple_iv (b->loop_father,
-					b->loop_father, op, &iv, true))
+			  && flow_bb_inside_loop_p (loop, def_bb)
+			  && simple_iv (loop, loop, op, &iv, true))
 			{
 			  found = true;
 			  break;
@@ -4110,7 +4092,7 @@ eliminate_dom_walker::before_dom_children (basic_block b)
 			  print_generic_expr (dump_file, sprime, 0);
 			  fprintf (dump_file, " which would add a loop"
 				   " carried dependence to loop %d\n",
-				   b->loop_father->num);
+				   loop->num);
 			}
 		      /* Don't keep sprime available.  */
 		      sprime = NULL_TREE;

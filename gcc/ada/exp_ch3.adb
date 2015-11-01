@@ -3612,6 +3612,14 @@ package body Exp_Ch3 is
             Set_Debug_Info_Off (Proc_Id);
          end if;
 
+         --  Do not build an aggregate if Modify_Tree_For_C, this isn't
+         --  needed and may generate early references to non frozen types
+         --  since we expand aggregate much more systematically.
+
+         if Modify_Tree_For_C then
+            return;
+         end if;
+
          declare
             Agg : constant Node_Id :=
                     Build_Equivalent_Record_Aggregate (Rec_Type);

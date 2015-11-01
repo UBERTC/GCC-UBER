@@ -1,3 +1,52 @@
+2015-10-29  Andrew MacLeod  <amacleod@redhat.com>
+
+	* c-array-notation.c: Reorder #include's and remove duplicates.
+	* c-aux-info.c: Likewise.
+	* c-convert.c: Likewise.
+	* c-decl.c: Likewise.
+	* c-errors.c: Likewise.
+	* c-lang.c: Likewise.
+	* c-objc-common.c: Likewise.
+	* c-parser.c: Likewise.
+	* c-typeck.c: Likewise.
+
+2015-10-26  Jim Wilson  <jim.wilson@linaro.org>
+
+	PR debug/66068
+	* c-typeck.c (c_build_qualified_type): Clear C_TYPE_INCOMPLETE_VARS
+	after calling build_qualified_type.
+
+2015-10-27  Cesar Philippidis  <cesar@codesourcery.com>
+	    Thomas Schwinge  <thomas@codesourcery.com>
+	    James Norris  <jnorris@codesourcery.com>
+	    Joseph Myers  <joseph@codesourcery.com>
+	    Julian Brown  <julian@codesourcery.com>
+	    Bernd Schmidt  <bschmidt@redhat.com>
+
+	* c-parser.c (c_parser_oacc_shape_clause): New.
+	(c_parser_oacc_simple_clause): New.
+	(c_parser_oacc_all_clauses): Add auto, gang, seq, vector, worker.
+	(OACC_LOOP_CLAUSE_MASK): Add gang, worker, vector, auto, seq.
+
+2015-10-27  Thomas Schwinge  <thomas@codesourcery.com>
+	    James Norris  <jnorris@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+
+	PR c/64765
+	PR c/64880
+	* c-parser.c (c_parser_oacc_loop): Add mask, cclauses formal
+	parameters, and handle these.  Adjust all users.
+	(c_parser_oacc_kernels, c_parser_oacc_parallel): Merge functions
+	into...
+	(c_parser_oacc_kernels_parallel): ... this new function.  Adjust
+	all users.
+	* c-tree.h (c_finish_oacc_parallel, c_finish_oacc_kernels): Don't
+	declare functions.
+	(c_finish_omp_construct): Declare function.
+	* c-typeck.c (c_finish_oacc_parallel, c_finish_oacc_kernels):
+	Merge functions into...
+	(c_finish_omp_construct): ... this new function.
+
 2015-10-22  Richard Biener  <rguenther@suse.de>
 
 	* c-typeck.c (c_finish_omp_clauses): Properly convert operands

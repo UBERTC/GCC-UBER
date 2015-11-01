@@ -1197,9 +1197,14 @@ package body Freeze is
                      Attribute_Scalar_Storage_Order);
       Comp_ADC_Present := Present (Comp_ADC);
 
-      --  Case of record or array component: check storage order compatibility
+      --  Case of record or array component: check storage order compatibility.
+      --  But, if the record has Complex_Representation, then it is treated as
+      --  a scalar in the back end so the storage order is irrelevant.
 
-      if Is_Record_Type (Comp_Type) or else Is_Array_Type (Comp_Type) then
+      if (Is_Record_Type (Comp_Type)
+            and then not Has_Complex_Representation (Comp_Type))
+        or else Is_Array_Type (Comp_Type)
+      then
          Comp_SSO_Differs :=
            Reverse_Storage_Order (Encl_Type)
              /=
@@ -2801,6 +2806,15 @@ package body Freeze is
          then
             Set_Alignment (Arr, Alignment (Component_Type (Arr)));
          end if;
+
+         --  A Ghost type cannot have a component of protected or task type
+         --  (SPARK RM 6.9(19)).
+
+         if Is_Ghost_Entity (Arr) and then Is_Concurrent_Type (Ctyp) then
+            Error_Msg_N
+              ("ghost array type & cannot have concurrent component type",
+               Arr);
+         end if;
       end Freeze_Array_Type;
 
       -------------------------------
@@ -3940,61 +3954,74 @@ package body Freeze is
             Next_Entity (Comp);
          end loop;
 
-         --  Deal with default setting of reverse storage order
+         SSO_ADC :=
+           Get_Attribute_Definition_Clause
+             (Rec, Attribute_Scalar_Storage_Order);
 
-         Set_SSO_From_Default (Rec);
+         --  If the record type has Complex_Representation, then it is treated
+         --  as a scalar in the back end so the storage order is irrelevant.
 
-         --  Check consistent attribute setting on component types
-
-         SSO_ADC := Get_Attribute_Definition_Clause
-                      (Rec, Attribute_Scalar_Storage_Order);
-
-         declare
-            Comp_ADC_Present : Boolean;
-         begin
-            Comp := First_Component (Rec);
-            while Present (Comp) loop
-               Check_Component_Storage_Order
-                 (Encl_Type        => Rec,
-                  Comp             => Comp,
-                  ADC              => SSO_ADC,
-                  Comp_ADC_Present => Comp_ADC_Present);
-               SSO_ADC_Component := SSO_ADC_Component or Comp_ADC_Present;
-               Next_Component (Comp);
-            end loop;
-         end;
-
-         --  Now deal with reverse storage order/bit order issues
-
-         if Present (SSO_ADC) then
-
-            --  Check compatibility of Scalar_Storage_Order with Bit_Order, if
-            --  the former is specified.
-
-            if Reverse_Bit_Order (Rec) /= Reverse_Storage_Order (Rec) then
-
-               --  Note: report error on Rec, not on SSO_ADC, as ADC may apply
-               --  to some ancestor type.
-
-               Error_Msg_Sloc := Sloc (SSO_ADC);
+         if Has_Complex_Representation (Rec) then
+            if Present (SSO_ADC) then
                Error_Msg_N
-                 ("scalar storage order for& specified# inconsistent with "
-                  & "bit order", Rec);
+                 ("??storage order has no effect with Complex_Representation",
+                  SSO_ADC);
             end if;
 
-            --  Warn if there is an Scalar_Storage_Order attribute definition
-            --  clause but no component clause, no component that itself has
-            --  such an attribute definition, and no pragma Pack.
+         else
+            --  Deal with default setting of reverse storage order
 
-            if not (Placed_Component
-                      or else
-                    SSO_ADC_Component
-                      or else
-                    Is_Packed (Rec))
-            then
-               Error_Msg_N
-                 ("??scalar storage order specified but no component clause",
-                  SSO_ADC);
+            Set_SSO_From_Default (Rec);
+
+            --  Check consistent attribute setting on component types
+
+            declare
+               Comp_ADC_Present : Boolean;
+            begin
+               Comp := First_Component (Rec);
+               while Present (Comp) loop
+                  Check_Component_Storage_Order
+                    (Encl_Type        => Rec,
+                     Comp             => Comp,
+                     ADC              => SSO_ADC,
+                     Comp_ADC_Present => Comp_ADC_Present);
+                  SSO_ADC_Component := SSO_ADC_Component or Comp_ADC_Present;
+                  Next_Component (Comp);
+               end loop;
+            end;
+
+            --  Now deal with reverse storage order/bit order issues
+
+            if Present (SSO_ADC) then
+
+               --  Check compatibility of Scalar_Storage_Order with Bit_Order,
+               --  if the former is specified.
+
+               if Reverse_Bit_Order (Rec) /= Reverse_Storage_Order (Rec) then
+
+                  --  Note: report error on Rec, not on SSO_ADC, as ADC may
+                  --  apply to some ancestor type.
+
+                  Error_Msg_Sloc := Sloc (SSO_ADC);
+                  Error_Msg_N
+                    ("scalar storage order for& specified# inconsistent with "
+                     & "bit order", Rec);
+               end if;
+
+               --  Warn if there is a Scalar_Storage_Order attribute definition
+               --  clause but no component clause, no component that itself has
+               --  such an attribute definition, and no pragma Pack.
+
+               if not (Placed_Component
+                         or else
+                       SSO_ADC_Component
+                         or else
+                       Is_Packed (Rec))
+               then
+                  Error_Msg_N
+                    ("??scalar storage order specified but no component "
+                     & "clause", SSO_ADC);
+               end if;
             end if;
          end if;
 
@@ -4299,6 +4326,44 @@ package body Freeze is
                      Error_Msg_N
                        ("component & of non-volatile type % cannot be "
                         & "volatile", Comp);
+                  end if;
+
+                  Next_Component (Comp);
+               end loop;
+            end if;
+
+            --  A type which does not yield a synchronized object cannot have
+            --  a component that yields a synchronized object (SPARK RM 9.5).
+
+            if not Yields_Synchronized_Object (Rec) then
+               Comp := First_Component (Rec);
+               while Present (Comp) loop
+                  if Comes_From_Source (Comp)
+                    and then Yields_Synchronized_Object (Etype (Comp))
+                  then
+                     Error_Msg_Name_1 := Chars (Rec);
+                     Error_Msg_N
+                       ("component & of non-synchronized type % cannot be "
+                        & "synchronized", Comp);
+                  end if;
+
+                  Next_Component (Comp);
+               end loop;
+            end if;
+
+            --  A Ghost type cannot have a component of protected or task type
+            --  (SPARK RM 6.9(19)).
+
+            if Is_Ghost_Entity (Rec) then
+               Comp := First_Component (Rec);
+               while Present (Comp) loop
+                  if Comes_From_Source (Comp)
+                    and then Is_Concurrent_Type (Etype (Comp))
+                  then
+                     Error_Msg_Name_1 := Chars (Rec);
+                     Error_Msg_N
+                       ("component & of ghost type % cannot be concurrent",
+                        Comp);
                   end if;
 
                   Next_Component (Comp);
@@ -5054,12 +5119,19 @@ package body Freeze is
             end if;
          end;
 
-         --  A Ghost type cannot be effectively volatile (SPARK RM 6.9(8))
+         if Is_Ghost_Entity (E) then
 
-         if Is_Ghost_Entity (E)
-           and then Is_Effectively_Volatile (E)
-         then
-            Error_Msg_N ("ghost type & cannot be volatile", E);
+            --  A Ghost type cannot be concurrent (SPARK RM 6.9(19)). Verify
+            --  this legality rule first to five a finer-grained diagnostic.
+
+            if Is_Concurrent_Type (E) then
+               Error_Msg_N ("ghost type & cannot be concurrent", E);
+
+            --  A Ghost type cannot be effectively volatile (SPARK RM 6.9(8))
+
+            elsif Is_Effectively_Volatile (E) then
+               Error_Msg_N ("ghost type & cannot be volatile", E);
+            end if;
          end if;
 
          --  Deal with special cases of freezing for subtype

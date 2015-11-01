@@ -21,35 +21,24 @@
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
-#include "tree.h"
+#include "target.h"
 #include "rtl.h"
+#include "tree.h"
+#include "cfghooks.h"
 #include "df.h"
-
+#include "tm_p.h"
+#include "expmed.h"
+#include "optabs.h"
 #include "regs.h"
-#include "flags.h"
-#include "insn-config.h"
+#include "emit-rtl.h"
 #include "recog.h"
-#include "except.h"
+
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "cfgcleanup.h"
-#include "alias.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
 #include "expr.h"
 #include "output.h"
-#include "insn-codes.h"
-#include "optabs.h"
-#include "diagnostic-core.h"
-#include "tm_p.h"
 #include "cfgloop.h"
-#include "target.h"
 #include "tree-pass.h"
 #include "dbgcnt.h"
 #include "shrink-wrap.h"
@@ -5093,9 +5082,7 @@ if_convert (bool after_combine)
   if (optimize == 1)
     df_remove_problem (df_live);
 
-#ifdef ENABLE_CHECKING
-  verify_flow_info ();
-#endif
+  checking_verify_flow_info ();
 }
 
 /* If-conversion and CFG cleanup.  */

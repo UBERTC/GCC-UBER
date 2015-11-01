@@ -26,31 +26,27 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
+#include "target.h"
+#include "function.h"
+#include "bitmap.h"
 #include "tree.h"
-#include "alias.h"
-#include "fold-const.h"
+#include "c-family/c-common.h"
+#include "c-tree.h"
+#include "gimple-expr.h"
+#include "predict.h"
 #include "stor-layout.h"
 #include "trans-mem.h"
 #include "varasm.h"
 #include "stmt.h"
 #include "langhooks.h"
-#include "c-tree.h"
 #include "c-lang.h"
 #include "flags.h"
 #include "intl.h"
-#include "target.h"
 #include "tree-iterator.h"
-#include "bitmap.h"
-#include "predict.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "gimple-expr.h"
 #include "gimplify.h"
 #include "tree-inline.h"
 #include "omp-low.h"
 #include "c-family/c-objc.h"
-#include "c-family/c-common.h"
 #include "c-family/c-ubsan.h"
 #include "cilk.h"
 #include "gomp-constants.h"
@@ -11481,39 +11477,19 @@ c_expr_to_decl (tree expr, bool *tc ATTRIBUTE_UNUSED, bool *se)
     return expr;
 }
 
-/* Generate OACC_PARALLEL, with CLAUSES and BLOCK as its compound
-   statement.  LOC is the location of the OACC_PARALLEL.  */
+/* Generate OMP construct CODE, with BODY and CLAUSES as its compound
+   statement.  LOC is the location of the construct.  */
 
 tree
-c_finish_oacc_parallel (location_t loc, tree clauses, tree block)
+c_finish_omp_construct (location_t loc, enum tree_code code, tree body,
+			tree clauses)
 {
-  tree stmt;
+  body = c_end_compound_stmt (loc, body, true);
 
-  block = c_end_compound_stmt (loc, block, true);
-
-  stmt = make_node (OACC_PARALLEL);
+  tree stmt = make_node (code);
   TREE_TYPE (stmt) = void_type_node;
-  OACC_PARALLEL_CLAUSES (stmt) = clauses;
-  OACC_PARALLEL_BODY (stmt) = block;
-  SET_EXPR_LOCATION (stmt, loc);
-
-  return add_stmt (stmt);
-}
-
-/* Generate OACC_KERNELS, with CLAUSES and BLOCK as its compound
-   statement.  LOC is the location of the OACC_KERNELS.  */
-
-tree
-c_finish_oacc_kernels (location_t loc, tree clauses, tree block)
-{
-  tree stmt;
-
-  block = c_end_compound_stmt (loc, block, true);
-
-  stmt = make_node (OACC_KERNELS);
-  TREE_TYPE (stmt) = void_type_node;
-  OACC_KERNELS_CLAUSES (stmt) = clauses;
-  OACC_KERNELS_BODY (stmt) = block;
+  OMP_BODY (stmt) = body;
+  OMP_CLAUSES (stmt) = clauses;
   SET_EXPR_LOCATION (stmt, loc);
 
   return add_stmt (stmt);
@@ -13146,7 +13122,13 @@ c_build_qualified_type (tree type, int type_quals)
       type_quals &= ~TYPE_QUAL_RESTRICT;
     }
 
-  return build_qualified_type (type, type_quals);
+  tree var_type = build_qualified_type (type, type_quals);
+  /* A variant type does not inherit the list of incomplete vars from the
+     type main variant.  */
+  if (TREE_CODE (var_type) == RECORD_TYPE
+      || TREE_CODE (var_type) == UNION_TYPE)
+    C_TYPE_INCOMPLETE_VARS (var_type) = 0;
+  return var_type;
 }
 
 /* Build a VA_ARG_EXPR for the C parser.  */

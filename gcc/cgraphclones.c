@@ -68,37 +68,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
-#include "alias.h"
-#include "fold-const.h"
 #include "stringpool.h"
-#include "emit-rtl.h"
-#include "internal-fn.h"
+#include "cgraph.h"
+#include "lto-streamer.h"
 #include "tree-eh.h"
 #include "tree-cfg.h"
 #include "tree-inline.h"
-#include "langhooks.h"
-#include "toplev.h"
-#include "flags.h"
-#include "debug.h"
-#include "target.h"
-#include "diagnostic.h"
-#include "params.h"
-#include "intl.h"
-#include "cgraph.h"
-#include "alloc-pool.h"
-#include "symbol-summary.h"
-#include "ipa-prop.h"
-#include "tree-iterator.h"
 #include "tree-dump.h"
 #include "gimple-pretty-print.h"
-#include "coverage.h"
-#include "ipa-inline.h"
-#include "ipa-utils.h"
-#include "lto-streamer.h"
-#include "except.h"
 
 /* Create clone of edge in the node N represented by CALL_EXPR
    the callgraph.  */
@@ -1074,9 +1055,8 @@ symbol_table::materialize_all_clones (void)
 
   if (symtab->dump_file)
     fprintf (symtab->dump_file, "Materializing clones\n");
-#ifdef ENABLE_CHECKING
-  cgraph_node::verify_cgraph_nodes ();
-#endif
+
+  cgraph_node::checking_verify_cgraph_nodes ();
 
   /* We can also do topological order, but number of iterations should be
      bounded by number of IPA passes since single IPA pass is probably not
@@ -1145,9 +1125,9 @@ symbol_table::materialize_all_clones (void)
       node->clear_stmts_in_references ();
   if (symtab->dump_file)
     fprintf (symtab->dump_file, "Materialization Call site updates done.\n");
-#ifdef ENABLE_CHECKING
-  cgraph_node::verify_cgraph_nodes ();
-#endif
+
+  cgraph_node::checking_verify_cgraph_nodes ();
+
   symtab->remove_unreachable_nodes (symtab->dump_file);
 }
 

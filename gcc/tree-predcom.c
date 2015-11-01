@@ -188,16 +188,16 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "predict.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "predict.h"
+#include "tree-pass.h"
 #include "ssa.h"
+#include "gimple-pretty-print.h"
 #include "alias.h"
 #include "fold-const.h"
-#include "tm_p.h"
 #include "cfgloop.h"
-#include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
@@ -207,27 +207,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-loop-niter.h"
 #include "tree-ssa-loop.h"
 #include "tree-into-ssa.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
 #include "tree-dfa.h"
 #include "tree-ssa.h"
 #include "tree-data-ref.h"
 #include "tree-scalar-evolution.h"
-#include "tree-chrec.h"
 #include "params.h"
-#include "gimple-pretty-print.h"
-#include "tree-pass.h"
 #include "tree-affine.h"
-#include "tree-inline.h"
-#include "wide-int-print.h"
 
 /* The maximum number of iterations between the considered memory
    references.  */
@@ -896,13 +881,9 @@ suitable_component_p (struct loop *loop, struct component *comp)
       if (!determine_offset (first->ref, a->ref, &a->offset))
 	return false;
 
-#ifdef ENABLE_CHECKING
-      {
-	enum ref_step_type a_step;
-	ok = suitable_reference_p (a->ref, &a_step);
-	gcc_assert (ok && a_step == comp->comp_step);
-      }
-#endif
+      enum ref_step_type a_step;
+      gcc_checking_assert (suitable_reference_p (a->ref, &a_step)
+			   && a_step == comp->comp_step);
     }
 
   /* If there is a write inside the component, we must know whether the

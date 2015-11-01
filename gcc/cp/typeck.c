@@ -27,19 +27,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
+#include "target.h"
 #include "tree.h"
-#include "fold-const.h"
+#include "cp-tree.h"
+#include "c-family/c-common.h"
 #include "stor-layout.h"
 #include "varasm.h"
-#include "cp-tree.h"
 #include "flags.h"
-#include "diagnostic.h"
 #include "intl.h"
-#include "target.h"
 #include "convert.h"
-#include "c-family/c-common.h"
 #include "c-family/c-objc.h"
 #include "c-family/c-ubsan.h"
 #include "params.h"
@@ -1336,6 +1332,10 @@ structural_comptypes (tree t1, tree t2, int strict)
       /* If T1 and T2 don't have the same relative position in their
 	 template parameters set, they can't be equal.  */
       if (!comp_template_parms_position (t1, t2))
+	return false;
+      /* Constrained 'auto's are distinct from parms that don't have the same
+	 constraints.  */
+      if (!equivalent_placeholder_constraints (t1, t2))
 	return false;
       break;
 

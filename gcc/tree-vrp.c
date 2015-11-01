@@ -22,18 +22,21 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "insn-codes.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
+#include "optabs-tree.h"
+#include "gimple-pretty-print.h"
+#include "diagnostic-core.h"
 #include "flags.h"
-#include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
 #include "calls.h"
 #include "cfganal.h"
-#include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
 #include "gimple-iterator.h"
@@ -44,18 +47,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-loop.h"
 #include "tree-into-ssa.h"
 #include "tree-ssa.h"
-#include "tree-pass.h"
-#include "tree-dump.h"
-#include "gimple-pretty-print.h"
-#include "diagnostic-core.h"
 #include "intl.h"
 #include "cfgloop.h"
 #include "tree-scalar-evolution.h"
 #include "tree-ssa-propagate.h"
 #include "tree-chrec.h"
 #include "tree-ssa-threadupdate.h"
-#include "insn-codes.h"
-#include "optabs-tree.h"
 #include "tree-ssa-scopedtables.h"
 #include "tree-ssa-threadedge.h"
 
@@ -242,9 +239,7 @@ static inline bool
 supports_overflow_infinity (const_tree type)
 {
   tree min = vrp_val_min (type), max = vrp_val_max (type);
-#ifdef ENABLE_CHECKING
-  gcc_assert (needs_overflow_infinity (type));
-#endif
+  gcc_checking_assert (needs_overflow_infinity (type));
   return (min != NULL_TREE
 	  && CONSTANT_CLASS_P (min)
 	  && max != NULL_TREE
@@ -373,9 +368,9 @@ static void
 set_value_range (value_range *vr, enum value_range_type t, tree min,
 		 tree max, bitmap equiv)
 {
-#if defined ENABLE_CHECKING
   /* Check the validity of the range.  */
-  if (t == VR_RANGE || t == VR_ANTI_RANGE)
+  if (flag_checking
+      && (t == VR_RANGE || t == VR_ANTI_RANGE))
     {
       int cmp;
 
@@ -395,12 +390,12 @@ set_value_range (value_range *vr, enum value_range_type t, tree min,
 		    || !is_overflow_infinity (max));
     }
 
-  if (t == VR_UNDEFINED || t == VR_VARYING)
-    gcc_assert (min == NULL_TREE && max == NULL_TREE);
-
-  if (t == VR_UNDEFINED || t == VR_VARYING)
-    gcc_assert (equiv == NULL || bitmap_empty_p (equiv));
-#endif
+  if (flag_checking
+      && (t == VR_UNDEFINED || t == VR_VARYING))
+    {
+      gcc_assert (min == NULL_TREE && max == NULL_TREE);
+      gcc_assert (equiv == NULL || bitmap_empty_p (equiv));
+    }
 
   vr->type = t;
   vr->min = min;
@@ -10281,7 +10276,7 @@ execute_vrp (void)
   ssa_propagate (vrp_visit_stmt, vrp_visit_phi_node);
   vrp_finalize ();
 
-  free_numbers_of_iterations_estimates ();
+  free_numbers_of_iterations_estimates (cfun);
 
   /* ASSERT_EXPRs must be removed before finalizing jump threads
      as finalizing jump threads calls the CFG cleanup code which

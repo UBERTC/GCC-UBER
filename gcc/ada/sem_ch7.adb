@@ -564,7 +564,11 @@ package body Sem_Ch7 is
       --  Freeze_xxx mechanism because it must also work in the context of
       --  generics where normal freezing is disabled.
 
-      Analyze_Enclosing_Package_Body_Contract (N);
+      --  Only bodies coming from source should cause this type of "freezing"
+
+      if Comes_From_Source (N) then
+         Analyze_Enclosing_Package_Body_Contract (N);
+      end if;
 
       --  Find corresponding package specification, and establish the current
       --  scope. The visible defining entity for the package is the defining
@@ -714,15 +718,9 @@ package body Sem_Ch7 is
       --  Set SPARK_Mode only for non-generic package
 
       if Ekind (Spec_Id) = E_Package then
-
-         --  Set SPARK_Mode from context
-
-         Set_SPARK_Pragma (Body_Id, SPARK_Mode_Pragma);
-         Set_SPARK_Pragma_Inherited (Body_Id);
-
-         --  Set elaboration code SPARK mode the same for now
-
-         Set_SPARK_Aux_Pragma (Body_Id, SPARK_Pragma (Body_Id));
+         Set_SPARK_Pragma               (Body_Id, SPARK_Mode_Pragma);
+         Set_SPARK_Aux_Pragma           (Body_Id, SPARK_Mode_Pragma);
+         Set_SPARK_Pragma_Inherited     (Body_Id);
          Set_SPARK_Aux_Pragma_Inherited (Body_Id);
       end if;
 
@@ -763,6 +761,14 @@ package body Sem_Ch7 is
         and then Scope (Spec_Id) /= Standard_Standard
       then
          Declare_Inherited_Private_Subprograms (Spec_Id);
+      end if;
+
+      --  A package body "freezes" the contract of its initial declaration.
+      --  This analysis depends on attribute Corresponding_Spec being set. Only
+      --  bodies coming from source shuld cause this type of "freezing".
+
+      if Comes_From_Source (N) then
+         Analyze_Initial_Declaration_Contract (N);
       end if;
 
       if Present (Declarations (N)) then

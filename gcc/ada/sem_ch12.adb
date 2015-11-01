@@ -149,7 +149,7 @@ package body Sem_Ch12 is
    --  However, for private types, this by itself does not insure that the
    --  proper VIEW of the entity is used (the full type may be visible at the
    --  point of generic definition, but not at instantiation, or vice-versa).
-   --  In  order to reference the proper view, we special-case any reference
+   --  In order to reference the proper view, we special-case any reference
    --  to private types in the generic object, by saving both views, one in
    --  the generic and one in the semantic copy. At time of instantiation, we
    --  check whether the two views are consistent, and exchange declarations if
@@ -708,7 +708,7 @@ package body Sem_Ch12 is
    --  If the instantiation happens textually before the body of the generic,
    --  the instantiation of the body must be analyzed after the generic body,
    --  and not at the point of instantiation. Such early instantiations can
-   --  happen if the generic and the instance appear in  a package declaration
+   --  happen if the generic and the instance appear in a package declaration
    --  because the generic body can only appear in the corresponding package
    --  body. Early instantiations can also appear if generic, instance and
    --  body are all in the declarative part of a subprogram or entry. Entities
@@ -807,7 +807,7 @@ package body Sem_Ch12 is
    --  Within the generic part, entities in the formal package are
    --  visible. To validate subsequent type declarations, indicate
    --  the correspondence between the entities in the analyzed formal,
-   --  and the entities in  the actual package. There are three packages
+   --  and the entities in the actual package. There are three packages
    --  involved in the instantiation of a formal package: the parent
    --  generic P1 which appears in the generic declaration, the fake
    --  instantiation P2 which appears in the analyzed generic, and whose
@@ -1101,8 +1101,8 @@ package body Sem_Ch12 is
       --  include an Others clause.
 
       procedure Process_Default (F : Entity_Id);
-      --  Add a copy of the declaration of generic formal  F to the list of
-      --  associations, and add an explicit box association for F  if there
+      --  Add a copy of the declaration of generic formal F to the list of
+      --  associations, and add an explicit box association for F if there
       --  is none yet, and the default comes from an Others_Choice.
 
       function Renames_Standard_Subprogram (Subp : Entity_Id) return Boolean;
@@ -1268,7 +1268,7 @@ package body Sem_Ch12 is
             --  insert actuals for those defaults, and cannot rely on their
             --  names to disambiguate them.
 
-            if Actual = First_Named  then
+            if Actual = First_Named then
                Next (First_Named);
 
             elsif Present (Actual) then
@@ -2379,22 +2379,17 @@ package body Sem_Ch12 is
    ----------------------------------------
 
    procedure Analyze_Formal_Package_Declaration (N : Node_Id) is
-      Loc              : constant Source_Ptr := Sloc (N);
-      Pack_Id          : constant Entity_Id  := Defining_Identifier (N);
-      Formal           : Entity_Id;
-      Gen_Id           : constant Node_Id    := Name (N);
-      Gen_Decl         : Node_Id;
-      Gen_Unit         : Entity_Id;
-      New_N            : Node_Id;
-      Parent_Installed : Boolean := False;
-      Renaming         : Node_Id;
-      Parent_Instance  : Entity_Id;
-      Renaming_In_Par  : Entity_Id;
-      Associations     : Boolean := True;
+      Gen_Id   : constant Node_Id    := Name (N);
+      Loc      : constant Source_Ptr := Sloc (N);
+      Pack_Id  : constant Entity_Id  := Defining_Identifier (N);
+      Formal   : Entity_Id;
+      Gen_Decl : Node_Id;
+      Gen_Unit : Entity_Id;
+      Renaming : Node_Id;
 
       Vis_Prims_List : Elist_Id := No_Elist;
       --  List of primitives made temporarily visible in the instantiation
-      --  to match the visibility of the formal type
+      --  to match the visibility of the formal type.
 
       function Build_Local_Package return Node_Id;
       --  The formal package is rewritten so that its parameters are replaced
@@ -2506,6 +2501,17 @@ package body Sem_Ch12 is
          return Pack_Decl;
       end Build_Local_Package;
 
+      --  Local variables
+
+      Save_IPSM : constant Boolean := Ignore_Pragma_SPARK_Mode;
+      --  Save flag Ignore_Pragma_SPARK_Mode for restore on exit
+
+      Associations     : Boolean := True;
+      New_N            : Node_Id;
+      Parent_Installed : Boolean := False;
+      Parent_Instance  : Entity_Id;
+      Renaming_In_Par  : Entity_Id;
+
    --  Start of processing for Analyze_Formal_Package_Declaration
 
    begin
@@ -2587,7 +2593,6 @@ package body Sem_Ch12 is
         or else Nkind (First (Generic_Associations (N))) = N_Others_Choice
       then
          Associations := False;
-         Set_Box_Present (N);
       end if;
 
       --  If there are no generic associations, the generic parameters appear
@@ -2606,19 +2611,18 @@ package body Sem_Ch12 is
       Formal := New_Copy (Pack_Id);
       Create_Instantiation_Source (N, Gen_Unit, False, S_Adjustment);
 
-      begin
-         --  Make local generic without formals. The formals will be replaced
-         --  with internal declarations.
+      --  Make local generic without formals. The formals will be replaced with
+      --  internal declarations.
 
+      begin
          New_N := Build_Local_Package;
 
-         --  If there are errors in the parameter list, Analyze_Associations
-         --  raises Instantiation_Error. Patch the declaration to prevent
-         --  further exception propagation.
+      --  If there are errors in the parameter list, Analyze_Associations
+      --  raises Instantiation_Error. Patch the declaration to prevent further
+      --  exception propagation.
 
       exception
          when Instantiation_Error =>
-
             Enter_Name (Formal);
             Set_Ekind  (Formal, E_Variable);
             Set_Etype  (Formal, Any_Type);
@@ -2670,6 +2674,15 @@ package body Sem_Ch12 is
          Append_Entity (Renaming_In_Par, Parent_Instance);
       end if;
 
+      --  A formal package declaration behaves as a package instantiation with
+      --  respect to SPARK_Mode "off". If the annotation is "off" or altogether
+      --  missing, set the global flag which signals Analyze_Pragma to ingnore
+      --  all SPARK_Mode pragmas within the generic_package_name.
+
+      if SPARK_Mode /= On then
+         Ignore_Pragma_SPARK_Mode := True;
+      end if;
+
       Analyze (Specification (N));
 
       --  The formals for which associations are provided are not visible
@@ -2715,8 +2728,8 @@ package body Sem_Ch12 is
 
       Set_Has_Completion (Formal, True);
 
-      --  Add semantic information to the original defining identifier.
-      --  for ASIS use.
+      --  Add semantic information to the original defining identifier for ASIS
+      --  use.
 
       Set_Ekind (Pack_Id, E_Package);
       Set_Etype (Pack_Id, Standard_Void_Type);
@@ -2727,6 +2740,8 @@ package body Sem_Ch12 is
       if Has_Aspects (N) then
          Analyze_Aspect_Specifications (N, Pack_Id);
       end if;
+
+      Ignore_Pragma_SPARK_Mode := Save_IPSM;
    end Analyze_Formal_Package_Declaration;
 
    ---------------------------------
@@ -2884,7 +2899,7 @@ package body Sem_Ch12 is
          end if;
 
          --  Default name may be overloaded, in which case the interpretation
-         --  with the correct profile must be  selected, as for a renaming.
+         --  with the correct profile must be selected, as for a renaming.
          --  If the definition is an indexed component, it must denote a
          --  member of an entry family. If it is a selected component, it
          --  can be a protected operation.
@@ -3570,7 +3585,7 @@ package body Sem_Ch12 is
    begin
       Check_SPARK_05_Restriction ("generic is not allowed", N);
 
-      --  Very first thing: check for Text_IO sp[ecial unit in case we are
+      --  Very first thing: check for Text_IO special unit in case we are
       --  instantiating one of the children of [[Wide_]Wide_]Text_IO.
 
       Check_Text_IO_Special_Unit (Name (N));
@@ -4601,14 +4616,14 @@ package body Sem_Ch12 is
                Scope_Stack.Table (Scope_Stack.Last - J + 1).First_Use_Clause :=
                  Use_Clauses (J);
                Install_Use_Clauses (Use_Clauses (J));
-            end  loop;
+            end loop;
 
          else
             for J in reverse 1 .. Num_Scopes loop
                Scope_Stack.Table (Scope_Stack.Last - J + 1).First_Use_Clause :=
                  Use_Clauses (J);
                Install_Use_Clauses (Use_Clauses (J));
-            end  loop;
+            end loop;
          end if;
 
          --  Restore status of instances. If one of them is a body, make its
@@ -5898,7 +5913,7 @@ package body Sem_Ch12 is
            and then not Comes_From_Source (E1)
            and then Chars (E1) /= Chars (E2)
          then
-            while Present (E1) and then  Chars (E1) /= Chars (E2) loop
+            while Present (E1) and then Chars (E1) /= Chars (E2) loop
                Next_Entity (E1);
             end loop;
          end if;
@@ -7696,14 +7711,14 @@ package body Sem_Ch12 is
 
       begin
          E1 := First_Entity (P);
-         while Present (E1) and then  E1 /= Instance loop
+         while Present (E1) and then E1 /= Instance loop
             if Ekind (E1) = E_Package
               and then Nkind (Parent (E1)) = N_Package_Renaming_Declaration
             then
                if Renamed_Object (E1) = Pack then
                   return True;
 
-               elsif E1 = P or else  Renamed_Object (E1) = P then
+               elsif E1 = P or else Renamed_Object (E1) = P then
                   return False;
 
                elsif Is_Actual_Of_Previous_Formal (E1) then
@@ -8725,7 +8740,7 @@ package body Sem_Ch12 is
                   if Scop = Par_I then
                      null;
 
-                  --  If the next node is a source  body we must freeze in
+                  --  If the next node is a source body we must freeze in
                   --  the current scope as well.
 
                   elsif Present (Next (N))
@@ -9473,7 +9488,7 @@ package body Sem_Ch12 is
       --  same order.
 
       function Get_Formal_Entity (N : Node_Id) return Entity_Id;
-      --  Retrieve entity of defining entity of  generic formal parameter.
+      --  Retrieve entity of defining entity of generic formal parameter.
       --  Only the declarations of formals need to be considered when
       --  linking them to actuals, but the declarative list may include
       --  internal entities generated during analysis, and those are ignored.
@@ -9572,7 +9587,7 @@ package body Sem_Ch12 is
 
                Actual := Entity (Name (Original_Node (Formal_Node)));
 
-               --  The actual in the formal package declaration  may be a
+               --  The actual in the formal package declaration may be a
                --  renamed generic package, in which case we want to retrieve
                --  the original generic in order to traverse its formal part.
 
@@ -9711,7 +9726,7 @@ package body Sem_Ch12 is
       Analyze (Actual);
 
       if not Is_Entity_Name (Actual)
-        or else  Ekind (Entity (Actual)) /= E_Package
+        or else Ekind (Entity (Actual)) /= E_Package
       then
          Error_Msg_N
            ("expect package instance to instantiate formal", Actual);
@@ -12260,7 +12275,7 @@ package body Sem_Ch12 is
          end if;
 
          --  Verify that limitedness matches. If parent is a limited
-         --  interface then  the generic formal is not unless declared
+         --  interface then the generic formal is not unless declared
          --  explicitly so. If not declared limited, the actual cannot be
          --  limited (see AI05-0087).
 
@@ -14797,10 +14812,9 @@ package body Sem_Ch12 is
             elsif Is_Generic_Contract_Pragma (Prag) and then Prag /= Templ then
                if Is_Package_Contract_Annotation (Prag) then
                   Context := Find_Related_Package_Or_Body (Prag);
-
                else
                   pragma Assert (Is_Subprogram_Contract_Annotation (Prag));
-                  Context := Find_Related_Subprogram_Or_Body (Prag);
+                  Context := Find_Related_Declaration_Or_Body (Prag);
                end if;
 
                --  The use of Original_Node accounts for the case when the

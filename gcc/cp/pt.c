@@ -28,22 +28,21 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
-#include "alias.h"
 #include "tree.h"
+#include "cp-tree.h"
+#include "c-family/c-common.h"
+#include "timevar.h"
 #include "stringpool.h"
 #include "varasm.h"
 #include "attribs.h"
 #include "stor-layout.h"
 #include "intl.h"
 #include "flags.h"
-#include "cp-tree.h"
-#include "c-family/c-common.h"
 #include "c-family/c-objc.h"
 #include "cp-objcp-common.h"
 #include "tree-inline.h"
 #include "decl.h"
 #include "toplev.h"
-#include "timevar.h"
 #include "tree-iterator.h"
 #include "type-utils.h"
 #include "gimplify.h"
@@ -167,8 +166,8 @@ static tree convert_nontype_argument_function (tree, tree, tsubst_flags_t);
 static tree convert_nontype_argument (tree, tree, tsubst_flags_t);
 static tree convert_template_argument (tree, tree, tree,
 				       tsubst_flags_t, int, tree);
-static int for_each_template_parm (tree, tree_fn_t, void*,
-				   hash_set<tree> *, bool);
+static tree for_each_template_parm (tree, tree_fn_t, void*,
+				    hash_set<tree> *, bool);
 static tree expand_template_argument_pack (tree);
 static tree build_template_parm_index (int, int, int, tree, tree);
 static bool inline_needs_template_parms (tree, bool);
@@ -1683,7 +1682,7 @@ spec_hasher::equal (spec_entry *e1, spec_entry *e2)
 static hashval_t
 hash_tmpl_and_args (tree tmpl, tree args)
 {
-  hashval_t val = DECL_UID (tmpl);
+  hashval_t val = iterative_hash_object (DECL_UID (tmpl), 0);
   return iterative_hash_template_arg (args, val);
 }
 
@@ -4690,14 +4689,18 @@ process_partial_specialization (tree decl)
 	  : DECL_TEMPLATE_INSTANTIATION (instance))
 	{
 	  tree spec = most_specialized_partial_spec (instance, tf_none);
-	  if (spec && TREE_VALUE (spec) == tmpl)
-	    {
-	      tree inst_decl = (DECL_P (instance)
-				? instance : TYPE_NAME (instance));
-	      permerror (input_location,
-			 "partial specialization of %qD after instantiation "
-			 "of %qD", decl, inst_decl);
-	    }
+	  tree inst_decl = (DECL_P (instance)
+			    ? instance : TYPE_NAME (instance));
+	  if (!spec)
+	    /* OK */;
+	  else if (spec == error_mark_node)
+	    permerror (input_location,
+		       "declaration of %qD ambiguates earlier template "
+		       "instantiation for %qD", decl, inst_decl);
+	  else if (TREE_VALUE (spec) == tmpl)
+	    permerror (input_location,
+		       "partial specialization of %qD after instantiation "
+		       "of %qD", decl, inst_decl);
 	}
     }
 
@@ -8689,12 +8692,20 @@ for_each_template_parm_r (tree *tp, int *walk_subtrees, void *d)
   struct pair_fn_data *pfd = (struct pair_fn_data *) d;
   tree_fn_t fn = pfd->fn;
   void *data = pfd->data;
+  tree result = NULL_TREE;
+
+#define WALK_SUBTREE(NODE)						\
+  do									\
+    {									\
+      result = for_each_template_parm (NODE, fn, data, pfd->visited,	\
+				       pfd->include_nondeduced_p);	\
+      if (result) goto out;						\
+    }									\
+  while (0)
 
   if (TYPE_P (t)
-      && (pfd->include_nondeduced_p || TREE_CODE (t) != TYPENAME_TYPE)
-      && for_each_template_parm (TYPE_CONTEXT (t), fn, data, pfd->visited,
-				 pfd->include_nondeduced_p))
-    return error_mark_node;
+      && (pfd->include_nondeduced_p || TREE_CODE (t) != TYPENAME_TYPE))
+    WALK_SUBTREE (TYPE_CONTEXT (t));
 
   switch (TREE_CODE (t))
     {
@@ -8707,35 +8718,24 @@ for_each_template_parm_r (tree *tp, int *walk_subtrees, void *d)
     case ENUMERAL_TYPE:
       if (!TYPE_TEMPLATE_INFO (t))
 	*walk_subtrees = 0;
-      else if (for_each_template_parm (TYPE_TI_ARGS (t),
-				       fn, data, pfd->visited, 
-				       pfd->include_nondeduced_p))
-	return error_mark_node;
+      else
+	WALK_SUBTREE (TYPE_TI_ARGS (t));
       break;
 
     case INTEGER_TYPE:
-      if (for_each_template_parm (TYPE_MIN_VALUE (t),
-				  fn, data, pfd->visited, 
-				  pfd->include_nondeduced_p)
-	  || for_each_template_parm (TYPE_MAX_VALUE (t),
-				     fn, data, pfd->visited,
-				     pfd->include_nondeduced_p))
-	return error_mark_node;
+      WALK_SUBTREE (TYPE_MIN_VALUE (t));
+      WALK_SUBTREE (TYPE_MAX_VALUE (t));
       break;
 
     case METHOD_TYPE:
       /* Since we're not going to walk subtrees, we have to do this
 	 explicitly here.  */
-      if (for_each_template_parm (TYPE_METHOD_BASETYPE (t), fn, data,
-				  pfd->visited, pfd->include_nondeduced_p))
-	return error_mark_node;
+      WALK_SUBTREE (TYPE_METHOD_BASETYPE (t));
       /* Fall through.  */
 
     case FUNCTION_TYPE:
       /* Check the return type.  */
-      if (for_each_template_parm (TREE_TYPE (t), fn, data, pfd->visited,
-				  pfd->include_nondeduced_p))
-	return error_mark_node;
+      WALK_SUBTREE (TREE_TYPE (t));
 
       /* Check the parameter types.  Since default arguments are not
 	 instantiated until they are needed, the TYPE_ARG_TYPES may
@@ -8747,9 +8747,7 @@ for_each_template_parm_r (tree *tp, int *walk_subtrees, void *d)
 	tree parm;
 
 	for (parm = TYPE_ARG_TYPES (t); parm; parm = TREE_CHAIN (parm))
-	  if (for_each_template_parm (TREE_VALUE (parm), fn, data,
-				      pfd->visited, pfd->include_nondeduced_p))
-	    return error_mark_node;
+	  WALK_SUBTREE (TREE_VALUE (parm));
 
 	/* Since we've already handled the TYPE_ARG_TYPES, we don't
 	   want walk_tree walking into them itself.  */
@@ -8768,67 +8766,51 @@ for_each_template_parm_r (tree *tp, int *walk_subtrees, void *d)
 
     case FUNCTION_DECL:
     case VAR_DECL:
-      if (DECL_LANG_SPECIFIC (t) && DECL_TEMPLATE_INFO (t)
-	  && for_each_template_parm (DECL_TI_ARGS (t), fn, data,
-				     pfd->visited, pfd->include_nondeduced_p))
-	return error_mark_node;
+      if (DECL_LANG_SPECIFIC (t) && DECL_TEMPLATE_INFO (t))
+	WALK_SUBTREE (DECL_TI_ARGS (t));
       /* Fall through.  */
 
     case PARM_DECL:
     case CONST_DECL:
-      if (TREE_CODE (t) == CONST_DECL && DECL_TEMPLATE_PARM_P (t)
-	  && for_each_template_parm (DECL_INITIAL (t), fn, data,
-				     pfd->visited, pfd->include_nondeduced_p))
-	return error_mark_node;
+      if (TREE_CODE (t) == CONST_DECL && DECL_TEMPLATE_PARM_P (t))
+	WALK_SUBTREE (DECL_INITIAL (t));
       if (DECL_CONTEXT (t)
-	  && pfd->include_nondeduced_p
-	  && for_each_template_parm (DECL_CONTEXT (t), fn, data,
-				     pfd->visited, pfd->include_nondeduced_p))
-	return error_mark_node;
+	  && pfd->include_nondeduced_p)
+	WALK_SUBTREE (DECL_CONTEXT (t));
       break;
 
     case BOUND_TEMPLATE_TEMPLATE_PARM:
       /* Record template parameters such as `T' inside `TT<T>'.  */
-      if (for_each_template_parm (TYPE_TI_ARGS (t), fn, data, pfd->visited,
-				  pfd->include_nondeduced_p))
-	return error_mark_node;
+      WALK_SUBTREE (TYPE_TI_ARGS (t));
       /* Fall through.  */
 
     case TEMPLATE_TEMPLATE_PARM:
     case TEMPLATE_TYPE_PARM:
     case TEMPLATE_PARM_INDEX:
       if (fn && (*fn)(t, data))
-	return error_mark_node;
+	return t;
       else if (!fn)
-	return error_mark_node;
+	return t;
       break;
 
     case TEMPLATE_DECL:
       /* A template template parameter is encountered.  */
-      if (DECL_TEMPLATE_TEMPLATE_PARM_P (t)
-	  && for_each_template_parm (TREE_TYPE (t), fn, data, pfd->visited,
-				     pfd->include_nondeduced_p))
-	return error_mark_node;
+      if (DECL_TEMPLATE_TEMPLATE_PARM_P (t))
+	WALK_SUBTREE (TREE_TYPE (t));
 
       /* Already substituted template template parameter */
       *walk_subtrees = 0;
       break;
 
     case TYPENAME_TYPE:
-      if (!fn
-	  || for_each_template_parm (TYPENAME_TYPE_FULLNAME (t), fn,
-				     data, pfd->visited, 
-				     pfd->include_nondeduced_p))
-	return error_mark_node;
+      if (!fn)
+	WALK_SUBTREE (TYPENAME_TYPE_FULLNAME (t));
       break;
 
     case CONSTRUCTOR:
       if (TREE_TYPE (t) && TYPE_PTRMEMFUNC_P (TREE_TYPE (t))
-	  && pfd->include_nondeduced_p
-	  && for_each_template_parm (TYPE_PTRMEMFUNC_FN_TYPE
-				     (TREE_TYPE (t)), fn, data,
-				     pfd->visited, pfd->include_nondeduced_p))
-	return error_mark_node;
+	  && pfd->include_nondeduced_p)
+	WALK_SUBTREE (TYPE_PTRMEMFUNC_FN_TYPE (TREE_TYPE (t)));
       break;
 
     case INDIRECT_REF:
@@ -8858,8 +8840,11 @@ for_each_template_parm_r (tree *tp, int *walk_subtrees, void *d)
       break;
     }
 
+  #undef WALK_SUBTREE
+
   /* We didn't find any template parameters we liked.  */
-  return NULL_TREE;
+ out:
+  return result;
 }
 
 /* For each TEMPLATE_TYPE_PARM, TEMPLATE_TEMPLATE_PARM,
@@ -8875,13 +8860,13 @@ for_each_template_parm_r (tree *tp, int *walk_subtrees, void *d)
    parameters that occur in non-deduced contexts.  When false, only
    visits those template parameters that can be deduced.  */
 
-static int
+static tree
 for_each_template_parm (tree t, tree_fn_t fn, void* data,
 			hash_set<tree> *visited,
 			bool include_nondeduced_p)
 {
   struct pair_fn_data pfd;
-  int result;
+  tree result;
 
   /* Set up.  */
   pfd.fn = fn;
@@ -8900,7 +8885,7 @@ for_each_template_parm (tree t, tree_fn_t fn, void* data,
   result = cp_walk_tree (&t,
 		         for_each_template_parm_r,
 		         &pfd,
-		         pfd.visited) != NULL_TREE;
+		         pfd.visited);
 
   /* Clean up.  */
   if (!visited)
@@ -8976,7 +8961,7 @@ in_template_function (void)
 
 /* Returns true if T depends on any template parameter with level LEVEL.  */
 
-int
+bool
 uses_template_parms_level (tree t, int level)
 {
   return for_each_template_parm (t, template_parm_this_level_p, &level, NULL,
@@ -19630,7 +19615,16 @@ unify (tree tparms, tree targs, tree parm, tree arg, int strict,
 					 explain_p, &t);
 
 		  if (!t)
-		    return unify_no_common_base (explain_p, r, parm, arg);
+		    {
+		      /* Don't give the derived diagnostic if we're
+			 already dealing with the same template.  */
+		      bool same_template
+			= (CLASSTYPE_TEMPLATE_INFO (arg)
+			   && (CLASSTYPE_TI_TEMPLATE (parm)
+			       == CLASSTYPE_TI_TEMPLATE (arg)));
+		      return unify_no_common_base (explain_p && !same_template,
+						   r, parm, arg);
+		    }
 		}
 	    }
 	  else if (CLASSTYPE_TEMPLATE_INFO (arg)
@@ -23400,6 +23394,100 @@ listify_autos (tree type, tree auto_node)
   return tsubst (type, argvec, tf_warning_or_error, NULL_TREE);
 }
 
+/* Hash traits for hashing possibly constrained 'auto'
+   TEMPLATE_TYPE_PARMs for use by do_auto_deduction.  */
+
+struct auto_hash : default_hash_traits<tree>
+{
+  static inline hashval_t hash (tree);
+  static inline bool equal (tree, tree);
+};
+
+/* Hash the 'auto' T.  */
+
+inline hashval_t
+auto_hash::hash (tree t)
+{
+  if (tree c = PLACEHOLDER_TYPE_CONSTRAINTS (t))
+    /* Matching constrained-type-specifiers denote the same template
+       parameter, so hash the constraint.  */
+    return hash_placeholder_constraint (c);
+  else
+    /* But unconstrained autos are all separate, so just hash the pointer.  */
+    return iterative_hash_object (t, 0);
+}
+
+/* Compare two 'auto's.  */
+
+inline bool
+auto_hash::equal (tree t1, tree t2)
+{
+  if (t1 == t2)
+    return true;
+
+  tree c1 = PLACEHOLDER_TYPE_CONSTRAINTS (t1);
+  tree c2 = PLACEHOLDER_TYPE_CONSTRAINTS (t2);
+
+  /* Two unconstrained autos are distinct.  */
+  if (!c1 || !c2)
+    return false;
+
+  return equivalent_placeholder_constraints (c1, c2);
+}
+
+/* for_each_template_parm callback for extract_autos: if t is a (possibly
+   constrained) auto, add it to the vector.  */
+
+static int
+extract_autos_r (tree t, void *data)
+{
+  hash_table<auto_hash> &hash = *(hash_table<auto_hash>*)data;
+  if (is_auto_or_concept (t))
+    {
+      /* All the autos were built with index 0; fix that up now.  */
+      tree *p = hash.find_slot (t, INSERT);
+      unsigned idx;
+      if (*p)
+	/* If this is a repeated constrained-type-specifier, use the index we
+	   chose before.  */
+	idx = TEMPLATE_PARM_IDX (TEMPLATE_TYPE_PARM_INDEX (*p));
+      else
+	{
+	  /* Otherwise this is new, so use the current count.  */
+	  *p = t;
+	  idx = hash.elements () - 1;
+	}
+      TEMPLATE_PARM_IDX (TEMPLATE_TYPE_PARM_INDEX (t)) = idx;
+    }
+
+  /* Always keep walking.  */
+  return 0;
+}
+
+/* Return a TREE_VEC of the 'auto's used in type under the Concepts TS, which
+   says they can appear anywhere in the type.  */
+
+static tree
+extract_autos (tree type)
+{
+  hash_set<tree> visited;
+  hash_table<auto_hash> hash (2);
+
+  for_each_template_parm (type, extract_autos_r, &hash, &visited, true);
+
+  tree tree_vec = make_tree_vec (hash.elements());
+  for (hash_table<auto_hash>::iterator iter = hash.begin();
+       iter != hash.end(); ++iter)
+    {
+      tree elt = *iter;
+      unsigned i = TEMPLATE_PARM_IDX (TEMPLATE_TYPE_PARM_INDEX (elt));
+      TREE_VEC_ELT (tree_vec, i)
+	= build_tree_list (NULL_TREE, TYPE_NAME (elt));
+    }
+
+  return tree_vec;
+}
+
 /* Replace occurrences of 'auto' in TYPE with the appropriate type deduced
    from INIT.  AUTO_NODE is the TEMPLATE_TYPE_PARM used for 'auto' in TYPE.  */
 
@@ -23456,11 +23544,11 @@ do_auto_deduction (tree type, tree init, tree auto_node,
 
   init = resolve_nondeduced_context (init);
 
-  targs = make_tree_vec (1);
   if (AUTO_IS_DECLTYPE (auto_node))
     {
       bool id = (DECL_P (init) || (TREE_CODE (init) == COMPONENT_REF
 				   && !REF_PARENTHESIZED_P (init)));
+      targs = make_tree_vec (1);
       TREE_VEC_ELT (targs, 0)
 	= finish_decltype_type (init, id, tf_warning_or_error);
       if (type != auto_node)
@@ -23473,14 +23561,21 @@ do_auto_deduction (tree type, tree init, tree auto_node,
   else
     {
       tree parms = build_tree_list (NULL_TREE, type);
-      tree tparms = make_tree_vec (1);
-      int val;
+      tree tparms;
 
-      TREE_VEC_ELT (tparms, 0)
-	= build_tree_list (NULL_TREE, TYPE_NAME (auto_node));
-      val = type_unification_real (tparms, targs, parms, &init, 1, 0,
-				   DEDUCE_CALL, LOOKUP_NORMAL,
-				   NULL, /*explain_p=*/false);
+      if (flag_concepts)
+	tparms = extract_autos (type);
+      else
+	{
+	  tparms = make_tree_vec (1);
+	  TREE_VEC_ELT (tparms, 0)
+	    = build_tree_list (NULL_TREE, TYPE_NAME (auto_node));
+	}
+
+      targs = make_tree_vec (TREE_VEC_LENGTH (tparms));
+      int val = type_unification_real (tparms, targs, parms, &init, 1, 0,
+				       DEDUCE_CALL, LOOKUP_NORMAL,
+				       NULL, /*explain_p=*/false);
       if (val > 0)
 	{
 	  if (processing_template_decl)
@@ -23497,6 +23592,9 @@ do_auto_deduction (tree type, tree init, tree auto_node,
 		error ("unable to deduce lambda return type from %qE", init);
 	      else
 		error ("unable to deduce %qT from %qE", type, init);
+	      type_unification_real (tparms, targs, parms, &init, 1, 0,
+				     DEDUCE_CALL, LOOKUP_NORMAL,
+				     NULL, /*explain_p=*/true);
 	    }
 	  return error_mark_node;
 	}
@@ -23506,7 +23604,7 @@ do_auto_deduction (tree type, tree init, tree auto_node,
      of each declared variable is determined as described above. If the
      type deduced for the template parameter U is not the same in each
      deduction, the program is ill-formed.  */
-  if (TREE_TYPE (auto_node)
+  if (!flag_concepts && TREE_TYPE (auto_node)
       && !same_type_p (TREE_TYPE (auto_node), TREE_VEC_ELT (targs, 0)))
     {
       if (cfun && auto_node == current_function_auto_return_pattern
@@ -23519,7 +23617,7 @@ do_auto_deduction (tree type, tree init, tree auto_node,
 	       auto_node, TREE_TYPE (auto_node), TREE_VEC_ELT (targs, 0));
       return error_mark_node;
     }
-  if (context != adc_requirement)
+  if (!flag_concepts)
     TREE_TYPE (auto_node) = TREE_VEC_ELT (targs, 0);
 
   /* Check any placeholder constraints against the deduced type. */
@@ -23595,13 +23693,33 @@ is_auto (const_tree type)
     return false;
 }
 
+/* for_each_template_parm callback for type_uses_auto.  */
+
+int
+is_auto_r (tree tp, void */*data*/)
+{
+  return is_auto_or_concept (tp);
+}
+
 /* Returns the TEMPLATE_TYPE_PARM in TYPE representing `auto' iff TYPE contains
    a use of `auto'.  Returns NULL_TREE otherwise.  */
 
 tree
 type_uses_auto (tree type)
 {
-  return find_type_usage (type, is_auto);
+  if (flag_concepts)
+    {
+      /* The Concepts TS allows multiple autos in one type-specifier; just
+	 return the first one we find, do_auto_deduction will collect all of
+	 them.  */
+      if (uses_template_parms (type))
+	return for_each_template_parm (type, is_auto_r, /*data*/NULL,
+				       /*visited*/NULL, /*nondeduced*/true);
+      else
+	return NULL_TREE;
+    }
+  else
+    return find_type_usage (type, is_auto);
 }
 
 /* Returns true iff TYPE is a TEMPLATE_TYPE_PARM representing 'auto',

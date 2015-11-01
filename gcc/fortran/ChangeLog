@@ -1,3 +1,161 @@
+2015-10-31  Cesar Philippidis  <cesar@codesourcery.com>
+
+	PR Bootstrap/68168
+
+	* openmp.c (resolve_omp_clauses): Pass &n->where when calling
+	gfc_error.
+
+2015-10-30  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* gfortran.h (gfc_omp_namespace): Add locus where member.
+	* openmp.c (gfc_match_omp_variable_list): Set where for each list
+	item found.
+	(resolve_omp_clauses): Remove where argument and use the where
+	gfc_omp_namespace member when reporting errors.
+	(resolve_omp_do):  Update call to resolve_omp_clauses.
+	(resolve_oacc_loop): Likewise.
+	(gfc_resolve_oacc_directive): Likewise.
+	(gfc_resolve_omp_directive): Likewise.
+	(gfc_resolve_omp_declare_simd): Likewise.
+
+2015-10-15  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/51993
+	* decl.c (gfc_set_constant_character_len): Convert gcc_assert into an
+	if-statement causing an early return leads to valid error message.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/36192
+	* interface.c (get_expr_storage_size):  Check for INTEGER type before
+	calling gmp routines.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68154
+	* decl.c (add_init_expr_to_sym): if the char length in the typespec
+	is NULL, check for and use a constructor. 
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68054
+	* decl.c (match_attr_spec): PROTECTED can only be a module.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67885
+	* trans-decl.c (generate_local_decl): Mark PARAMETER entities in
+	BLOCK construct.
+
+2015-10-29  Andrew MacLeod  <amacleod@redhat.com>
+
+	* array.c: Reorder #include's and remove duplicates.
+	* convert.c: Likewise.
+	* cpp.c: Likewise.
+	* decl.c: Likewise.
+	* f95-lang.c: Likewise.
+	* frontend-passes.c: Likewise.
+	* iresolve.c: Likewise.
+	* match.c: Likewise.
+	* module.c: Likewise.
+	* options.c: Likewise.
+	* parse.c: Likewise.
+	* resolve.c: Likewise.
+	* simplify.c: Likewise.
+	* target-memory.c: Likewise.
+	* trans-array.c: Likewise.
+	* trans-common.c: Likewise.
+	* trans-const.c: Likewise.
+	* trans-decl.c: Likewise.
+	* trans-expr.c: Likewise.
+	* trans-intrinsic.c: Likewise.
+	* trans-io.c: Likewise.
+	* trans-openmp.c: Likewise.
+	* trans-stmt.c: Likewise.
+	* trans-types.c: Likewise.
+	* trans.c: Likewise.
+
+2015-10-29  Richard Biener  <rguenther@suse.de>
+
+	* f95-lang.c: Properly build variadic types for classification
+	and comparison builtins.
+
+2015-10-27  Thomas Schwinge  <thomas@codesourcery.com>
+	    James Norris  <jnorris@codesourcery.com>
+
+	PR fortran/63865
+	* openmp.c (resolve_oacc_cache): Remove function.
+	(gfc_match_oacc_cache): Enable array sections.
+	(resolve_omp_clauses, gfc_resolve_oacc_directive): Change
+	accordingly.
+	* trans-openmp.c (gfc_trans_omp_clauses): Likewise.
+
+2015-10-27  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68108
+	* decl.c (char_len_param_value): Check for REF_ARRAY.
+
+2015-10-26  Louis Krupp  <louis.krupp@zoho.com>
+
+	PR fortran/66056
+	* fortran.h: Include namespace pointer in statement label
+	structure.
+	* symbol.c (gfc_get_st_label): Store pointer to namespace
+	that owns the statement label tree in each label.
+	(gfc_free_st_label): Use namespace owning statement label
+	tree when deleting statement label.
+	* io.c: Initialize format_asterisk with NULL namespace pointer.
+
+2015-10-26  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/36192
+	* array.c (gfc_ref_dimen_size): Check for BT_INTEGER before calling
+	mpz_set.
+
+2015-10-26  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/66927
+	* trans-array.c (evaluate_bound): For deferred length arrays get the
+	bounds directly from the descriptor, i.e., prevent using constant
+	zero lower bound from the gfc_conv_array_lbound () routine.
+	(gfc_conv_section_startstride): Hand deferred array status to
+	evaluate_bound ().
+	(gfc_conv_expr_descriptor): Same.
+
+2015-01-25  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/67171
+	* trans-array.c (structure_alloc_comps): On deallocation of
+	class components, reset the vptr to the declared type vtable
+	and reset the _len field of unlimited polymorphic components.
+	*trans-expr.c (gfc_find_and_cut_at_last_class_ref): Bail out on
+	allocatable component references to the right of part reference
+	with non-zero rank and return NULL.
+	(gfc_reset_vptr): Simplify this function by using the function
+	gfc_get_vptr_from_expr. Return if the vptr is NULL_TREE.
+	(gfc_reset_len): If gfc_find_and_cut_at_last_class_ref returns
+	NULL return.
+	* trans-stmt.c (gfc_trans_allocate): Rely on the use of
+	gfc_trans_assignment if expr3 is a variable expression since
+	this deals correctly with array sections.
+
+2015-10-25  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/66927
+	PR fortran/67044
+	* trans-array.c (build_array_ref): Modified call to
+	gfc_get_class_array_ref to adhere to new interface.
+	(gfc_conv_expr_descriptor): For one-based arrays that
+	are filled by a loop starting at one the start index of the
+	source array has to be mangled into the offset.
+	* trans-expr.c (gfc_get_class_array_ref): When the tree to get
+	the _data component is present already, add a way to supply it.
+	(gfc_copy_class_to_class): Allow to copy to a derived type also.
+	* trans-stmt.c (gfc_trans_allocate): Do not conv_expr_descriptor
+	for functions returning	a class or derived object. Get the
+	reference instead.
+	* trans.h: Interface change of gfc_get_class_array_ref.
+
 2015-10-24  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/68055

@@ -2707,6 +2707,50 @@ package body Exp_Util is
       end if;
    end Find_Optional_Prim_Op;
 
+   -------------------------------
+   -- Find_Primitive_Operations --
+   -------------------------------
+
+   function Find_Primitive_Operations
+     (T    : Entity_Id;
+      Name : Name_Id) return Node_Id
+   is
+      Prim_Elmt : Elmt_Id;
+      Prim_Id   : Entity_Id;
+      Ref       : Node_Id;
+      Typ       : Entity_Id := T;
+
+   begin
+      if Is_Class_Wide_Type (Typ) then
+         Typ := Root_Type (Typ);
+      end if;
+
+      Typ := Underlying_Type (Typ);
+
+      Ref := Empty;
+      Prim_Elmt := First_Elmt (Primitive_Operations (Typ));
+      while Present (Prim_Elmt) loop
+         Prim_Id := Node (Prim_Elmt);
+            if Chars (Prim_Id) = Name then
+
+               --  If this is the first primitive operation found,
+               --  create a reference to it.
+
+               if No (Ref) then
+                  Ref := New_Occurrence_Of (Prim_Id, Sloc (T));
+
+               --  Otherwise, add interpretation to existing reference
+
+               else
+                  Add_One_Interp (Ref, Prim_Id, Etype (Prim_Id));
+               end if;
+            end if;
+         Next_Elmt (Prim_Elmt);
+      end loop;
+
+      return Ref;
+   end Find_Primitive_Operations;
+
    ------------------
    -- Find_Prim_Op --
    ------------------
@@ -3816,10 +3860,10 @@ package body Exp_Util is
       --  caller. Note that in the subexpression case, N is always the child we
       --  came from.
 
-      --  N_Raise_xxx_Error is an annoying special case, it is a statement if
-      --  it has type Standard_Void_Type, and a subexpression otherwise.
-      --  otherwise. Procedure calls, and similarly procedure attribute
-      --  references, are also statements.
+      --  N_Raise_xxx_Error is an annoying special case, it is a statement
+      --  if it has type Standard_Void_Type, and a subexpression otherwise.
+      --  Procedure calls, and similarly procedure attribute references, are
+      --  also statements.
 
       if Nkind (Assoc_Node) in N_Subexpr
         and then (Nkind (Assoc_Node) not in N_Raise_xxx_Error
@@ -6463,13 +6507,14 @@ package body Exp_Util is
      (Typ  : Entity_Id;
       Expr : Node_Id) return Node_Id
    is
-      Loc : constant Source_Ptr := Sloc (Expr);
-      Nam : Name_Id;
+      Loc      : constant Source_Ptr := Sloc (Expr);
+      Arg_List : List_Id;
+      Nam      : Name_Id;
 
    begin
-      --  If predicate checks are suppressed, then return a null statement.
-      --  For this call, we check only the scope setting. If the caller wants
-      --  to check a specific entity's setting, they must do it manually.
+      --  If predicate checks are suppressed, then return a null statement. For
+      --  this call, we check only the scope setting. If the caller wants to
+      --  check a specific entity's setting, they must do it manually.
 
       if Predicate_Checks_Suppressed (Empty) then
          return Make_Null_Statement (Loc);
@@ -6493,14 +6538,24 @@ package body Exp_Util is
          Nam := Name_Predicate;
       end if;
 
+      Arg_List := New_List (
+        Make_Pragma_Argument_Association (Loc,
+          Expression => Make_Identifier (Loc, Nam)),
+        Make_Pragma_Argument_Association (Loc,
+          Expression => Make_Predicate_Call (Typ, Expr)));
+
+      if Has_Aspect (Typ, Aspect_Predicate_Failure) then
+         Append_To (Arg_List,
+           Make_Pragma_Argument_Association (Loc,
+             Expression =>
+               New_Copy_Tree
+                 (Expression (Find_Aspect (Typ, Aspect_Predicate_Failure)))));
+      end if;
+
       return
         Make_Pragma (Loc,
           Pragma_Identifier            => Make_Identifier (Loc, Name_Check),
-          Pragma_Argument_Associations => New_List (
-            Make_Pragma_Argument_Association (Loc,
-              Expression => Make_Identifier (Loc, Nam)),
-            Make_Pragma_Argument_Association (Loc,
-              Expression => Make_Predicate_Call (Typ, Expr))));
+          Pragma_Argument_Associations => Arg_List);
    end Make_Predicate_Check;
 
    ----------------------------
@@ -9383,7 +9438,8 @@ package body Exp_Util is
 
       return Present (S)
         and then Get_TSS_Name (S) /= TSS_Null
-        and then not Is_Predicate_Function (S);
+        and then not Is_Predicate_Function (S)
+        and then not Is_Predicate_Function_M (S);
    end Within_Internal_Subprogram;
 
    ----------------------------

@@ -22,21 +22,17 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "alias.h"
+#include "gimple-pretty-print.h"
 #include "fold-const.h"
 #include "stor-layout.h"
-#include "gimple-pretty-print.h"
-#include "internal-fn.h"
 #include "gimple-iterator.h"
 #include "tree-cfg.h"
 #include "tree-into-ssa.h"
-#include "tree-pass.h"
-#include "flags.h"
 
 
 /* Conditional dead call elimination
@@ -717,15 +713,13 @@ static bool
 shrink_wrap_one_built_in_call (gcall *bi_call)
 {
   gimple_stmt_iterator bi_call_bsi;
-  basic_block bi_call_bb, join_tgt_bb, guard_bb, guard_bb0;
+  basic_block bi_call_bb, join_tgt_bb, guard_bb;
   edge join_tgt_in_edge_from_call, join_tgt_in_edge_fall_thru;
   edge bi_call_in_edge0, guard_bb_in_edge;
   unsigned tn_cond_stmts, nconds;
   unsigned ci;
   gimple *cond_expr = NULL;
   gimple *cond_expr_start;
-  tree bi_call_label_decl;
-  gimple *bi_call_label;
 
   auto_vec<gimple *, 12> conds;
   gen_shrink_wrap_conditions (bi_call, conds, &nconds);
@@ -774,30 +768,24 @@ shrink_wrap_one_built_in_call (gcall *bi_call)
   ci++;
   gcc_assert (cond_expr && gimple_code (cond_expr) == GIMPLE_COND);
 
-  /* Now the label.  */
-  bi_call_label_decl = create_artificial_label (gimple_location (bi_call));
-  bi_call_label = gimple_build_label (bi_call_label_decl);
-  gsi_insert_before (&bi_call_bsi, bi_call_label, GSI_SAME_STMT);
-
   bi_call_in_edge0 = split_block (bi_call_bb, cond_expr);
   bi_call_in_edge0->flags &= ~EDGE_FALLTHRU;
   bi_call_in_edge0->flags |= EDGE_TRUE_VALUE;
-  guard_bb0 = bi_call_bb;
+  guard_bb = bi_call_bb;
   bi_call_bb = bi_call_in_edge0->dest;
-  join_tgt_in_edge_fall_thru = make_edge (guard_bb0, join_tgt_bb,
+  join_tgt_in_edge_fall_thru = make_edge (guard_bb, join_tgt_bb,
                                           EDGE_FALSE_VALUE);
 
   bi_call_in_edge0->probability = REG_BR_PROB_BASE * ERR_PROB;
   bi_call_in_edge0->count =
-      apply_probability (guard_bb0->count,
+      apply_probability (guard_bb->count,
 			 bi_call_in_edge0->probability);
   join_tgt_in_edge_fall_thru->probability =
       inverse_probability (bi_call_in_edge0->probability);
   join_tgt_in_edge_fall_thru->count =
-      guard_bb0->count - bi_call_in_edge0->count;
+      guard_bb->count - bi_call_in_edge0->count;
 
   /* Code generation for the rest of the conditions  */
-  guard_bb = guard_bb0;
   while (nconds > 0)
     {
       unsigned ci0;

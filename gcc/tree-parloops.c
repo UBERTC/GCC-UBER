@@ -22,16 +22,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "alias.h"
 #include "backend.h"
-#include "cfghooks.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "options.h"
+#include "cgraph.h"
+#include "gimple-pretty-print.h"
 #include "fold-const.h"
-#include "internal-fn.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
@@ -45,17 +44,12 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-loop.h"
 #include "tree-into-ssa.h"
 #include "cfgloop.h"
-#include "tree-data-ref.h"
 #include "tree-scalar-evolution.h"
-#include "gimple-pretty-print.h"
-#include "tree-pass.h"
 #include "langhooks.h"
 #include "tree-vectorizer.h"
 #include "tree-hasher.h"
 #include "tree-parloops.h"
 #include "omp-low.h"
-#include "tree-nested.h"
-#include "cgraph.h"
 #include "tree-ssa.h"
 #include "params.h"
 #include "params-enum.h"
@@ -2784,9 +2778,7 @@ pass_parallelize_loops::execute (function *fun)
     {
       fun->curr_properties &= ~(PROP_gimple_eomp);
 
-#ifdef ENABLE_CHECKING
-      verify_loop_structure ();
-#endif
+      checking_verify_loop_structure ();
 
       return TODO_update_ssa;
     }

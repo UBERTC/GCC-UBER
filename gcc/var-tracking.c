@@ -89,36 +89,29 @@
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "target.h"
 #include "rtl.h"
-#include "alias.h"
 #include "tree.h"
+#include "cfghooks.h"
+#include "alloc-pool.h"
+#include "tree-pass.h"
+#include "tm_p.h"
+#include "insn-config.h"
+#include "regs.h"
+#include "emit-rtl.h"
+#include "recog.h"
+#include "diagnostic.h"
 #include "varasm.h"
 #include "stor-layout.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
-#include "tm_p.h"
-#include "flags.h"
-#include "insn-config.h"
 #include "reload.h"
-#include "alloc-pool.h"
-#include "regs.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
 #include "calls.h"
-#include "emit-rtl.h"
-#include "stmt.h"
-#include "expr.h"
-#include "tree-pass.h"
 #include "tree-dfa.h"
 #include "tree-ssa.h"
 #include "cselib.h"
-#include "target.h"
 #include "params.h"
-#include "diagnostic.h"
 #include "tree-pretty-print.h"
-#include "recog.h"
 #include "rtl-iter.h"
 #include "fibonacci_heap.h"
 
@@ -399,7 +392,7 @@ struct variable
 /* Macro to access MEM_OFFSET as an HOST_WIDE_INT.  Evaluates MEM twice.  */
 #define INT_MEM_OFFSET(mem) (MEM_OFFSET_KNOWN_P (mem) ? MEM_OFFSET (mem) : 0)
 
-#if ENABLE_CHECKING && (GCC_VERSION >= 2007)
+#if CHECKING_P && (GCC_VERSION >= 2007)
 
 /* Access VAR's Ith part's offset, checking that it's not a one-part
    variable.  */
@@ -671,7 +664,6 @@ static bool variable_different_p (variable *, variable *);
 static bool dataflow_set_different (dataflow_set *, dataflow_set *);
 static void dataflow_set_destroy (dataflow_set *);
 
-static bool contains_symbol_ref (rtx);
 static bool track_expr_p (tree, bool);
 static bool same_variable_part_p (rtx, tree, HOST_WIDE_INT);
 static void add_uses_1 (rtx *, void *);
@@ -3571,7 +3563,6 @@ loc_cmp (rtx x, rtx y)
   return 0;
 }
 
-#if ENABLE_CHECKING
 /* Check the order of entries in one-part variables.   */
 
 int
@@ -3603,7 +3594,6 @@ canonicalize_loc_order_check (variable **slot,
 
   return 1;
 }
-#endif
 
 /* Mark with VALUE_RECURSED_INTO values that have neighbors that are
    more likely to be chosen as canonical for an equivalence set.
@@ -3832,17 +3822,16 @@ canonicalize_values_star (variable **slot, dataflow_set *set)
 	    else
 	      gcc_unreachable ();
 
-#if ENABLE_CHECKING
-	    while (list)
-	      {
-		if (list->offset == 0
-		    && (dv_as_opaque (list->dv) == dv_as_opaque (dv)
-			|| dv_as_opaque (list->dv) == dv_as_opaque (cdv)))
-		  gcc_unreachable ();
+	    if (flag_checking)
+	      while (list)
+		{
+		  if (list->offset == 0
+		      && (dv_as_opaque (list->dv) == dv_as_opaque (dv)
+			  || dv_as_opaque (list->dv) == dv_as_opaque (cdv)))
+		    gcc_unreachable ();
 
-		list = list->next;
-	      }
-#endif
+		  list = list->next;
+		}
 	  }
       }
 
@@ -5031,42 +5020,6 @@ dataflow_set_destroy (dataflow_set *set)
   set->vars = NULL;
 }
 
-/* Return true if RTL X contains a SYMBOL_REF.  */
-
-static bool
-contains_symbol_ref (rtx x)
-{
-  const char *fmt;
-  RTX_CODE code;
-  int i;
-
-  if (!x)
-    return false;
-
-  code = GET_CODE (x);
-  if (code == SYMBOL_REF)
-    return true;
-
-  fmt = GET_RTX_FORMAT (code);
-  for (i = GET_RTX_LENGTH (code) - 1; i >= 0; i--)
-    {
-      if (fmt[i] == 'e')
-	{
-	  if (contains_symbol_ref (XEXP (x, i)))
-	    return true;
-	}
-      else if (fmt[i] == 'E')
-	{
-	  int j;
-	  for (j = 0; j < XVECLEN (x, i); j++)
-	    if (contains_symbol_ref (XVECEXP (x, i, j)))
-	      return true;
-	}
-    }
-
-  return false;
-}
-
 /* Shall EXPR be tracked?  */
 
 static bool
@@ -5147,7 +5100,7 @@ track_expr_p (tree expr, bool need_rtl)
      char **_dl_argv;
   */
   if (decl_rtl && MEM_P (decl_rtl)
-      && contains_symbol_ref (XEXP (decl_rtl, 0)))
+      && contains_symbol_ref_p (XEXP (decl_rtl, 0)))
     return 0;
 
   /* If RTX is a memory it should not be very large (because it would be
@@ -6930,10 +6883,9 @@ compute_bb_dataflow (basic_block bb)
 	->traverse <dataflow_set *, canonicalize_values_mark> (out);
       shared_hash_htab (out->vars)
 	->traverse <dataflow_set *, canonicalize_values_star> (out);
-#if ENABLE_CHECKING
-      shared_hash_htab (out->vars)
-	->traverse <dataflow_set *, canonicalize_loc_order_check> (out);
-#endif
+      if (flag_checking)
+	shared_hash_htab (out->vars)
+	  ->traverse <dataflow_set *, canonicalize_loc_order_check> (out);
     }
   changed = dataflow_set_different (&old_out, out);
   dataflow_set_destroy (&old_out);
@@ -7038,13 +6990,14 @@ vt_find_locations (void)
 		  if (adjust)
 		    {
 		      dataflow_post_merge_adjust (in, &VTI (bb)->permp);
-#if ENABLE_CHECKING
-		      /* Merge and merge_adjust should keep entries in
-			 canonical order.  */
-		      shared_hash_htab (in->vars)
-			->traverse <dataflow_set *,
-				    canonicalize_loc_order_check> (in);
-#endif
+
+		      if (flag_checking)
+			/* Merge and merge_adjust should keep entries in
+			   canonical order.  */
+			shared_hash_htab (in->vars)
+			  ->traverse <dataflow_set *,
+				      canonicalize_loc_order_check> (in);
+
 		      if (dst_can_be_shared)
 			{
 			  shared_hash_destroy (in->vars);
@@ -9465,11 +9418,12 @@ vt_emit_notes (void)
 	 again.  */
       dataflow_set_clear (&VTI (bb)->in);
     }
-#ifdef ENABLE_CHECKING
-  shared_hash_htab (cur.vars)
-    ->traverse <variable_table_type *, emit_notes_for_differences_1>
-      (shared_hash_htab (empty_shared_hash));
-#endif
+
+  if (flag_checking)
+    shared_hash_htab (cur.vars)
+      ->traverse <variable_table_type *, emit_notes_for_differences_1>
+	(shared_hash_htab (empty_shared_hash));
+
   dataflow_set_destroy (&cur);
 
   if (MAY_HAVE_DEBUG_INSNS)

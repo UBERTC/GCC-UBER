@@ -25,26 +25,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "backend.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
 #include "ssa.h"
-#include "target.h"
+#include "cgraph.h"
+#include "diagnostic.h"
 #include "alias.h"
 #include "fold-const.h"
 #include "calls.h"
-#include "stmt.h"
 #include "stor-layout.h"
 #include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimple-iterator.h"
 #include "gimple-walk.h"
 #include "gimplify.h"
-#include "diagnostic.h"
-#include "value-prof.h"
-#include "flags.h"
-#include "alias.h"
-#include "demangle.h"
-#include "langhooks.h"
-#include "cgraph.h"
 
 
 /* All the tuples have their operand vector (if present) at the very bottom
@@ -1346,7 +1338,8 @@ gimple_call_same_target_p (const gimple *c1, const gimple *c2)
 {
   if (gimple_call_internal_p (c1))
     return (gimple_call_internal_p (c2)
-	    && gimple_call_internal_fn (c1) == gimple_call_internal_fn (c2));
+	    && gimple_call_internal_fn (c1) == gimple_call_internal_fn (c2)
+	    && !gimple_call_internal_unique_p (as_a <const gcall *> (c1)));
   else
     return (gimple_call_fn (c1) == gimple_call_fn (c2)
 	    || (gimple_call_fndecl (c1)

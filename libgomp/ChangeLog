@@ -1,3 +1,68 @@
+2015-10-29  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* openacc.h (enum acc_device_t): Reformat. Ensure layout
+	compatibility.
+	(enum acc_async_t): Reformat.
+	(acc_on_device): Declare compatible with builtin and provide C++
+	wrapper.
+	* testsuite/libgomp.oacc-c-c++-common/acc-on-device.c: New.
+
+2015-10-29  Thomas Schwinge  <thomas@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+
+	* testsuite/libgomp.oacc-c-c++-common/combdir-1.c: Rename to...
+	* testsuite/libgomp.oacc-c-c++-common/combined-directives-1.c:
+	... this.  Add a description of the test at the top of the file.
+	* testsuite/libgomp.oacc-fortran/combdir-1.f90: Rename file to...
+	* testsuite/libgomp.oacc-fortran/combined-directives-1.f90:
+	... this.  Add a description of the test at the top of the file.
+
+2015-10-28  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* testsuite/libgomp.oacc-c-c++-common/loop-g-1.c: New.
+	* testsuite/libgomp.oacc-c-c++-common/loop-g-2.c: New.
+	* testsuite/libgomp.oacc-c-c++-common/loop-gwv-1.c: New.
+	* testsuite/libgomp.oacc-c-c++-common/loop-v-1.c: New.
+	* testsuite/libgomp.oacc-c-c++-common/loop-w-1.c: New.
+	* testsuite/libgomp.oacc-c-c++-common/loop-wv-1.c: New.
+
+2015-10-27  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* plugin/plugin-nvptx.c (nvptx_exec): Remove check on compute
+	dimensions.
+
+2015-10-27  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR testsuite/68063
+	* testsuite/libgomp.c++/member-1.C (A::m1): Add missing private clause.
+
+2015-10-27  James Norris  <jnorris@codesourcery.com>
+
+	* testsuite/libgomp.oacc-c-c++-common/combdir-1.c: New file.
+	* testsuite/libgomp.oacc-fortran/combdir-1.f90: Likewise.
+
+2015-10-26  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* testsuite/libgomp.oacc-c-c++-common/abort-1.c: Print to stderr.
+	* testsuite/libgomp.oacc-c-c++-common/abort-3.c: Likewise.
+
+	* testsuite/libgomp.oacc-c-c++-common/lib-1.c: Remove explicit
+	acc_device_nvidia usage.
+	* testsuite/libgomp.oacc-c-c++-common/lib-10.c: Likewise.
+	* testsuite/libgomp.oacc-c-c++-common/lib-2.c: Likewise.
+	* testsuite/libgomp.oacc-c-c++-common/lib-9.c: Likewise.
+
+	* oacc-init.c (acc_shutdown): Call gomp_init_targets_once.
+	* testsuite/libgomp.oacc-c-c++-common/lib-8.c: New file.
+
+	PR libgomp/66518
+	* testsuite/libgomp.oacc-c-c++-common/lib-3.c: Resolve XFAIL.
+
+	PR libgomp/65437
+	PR libgomp/66518
+	* oacc-mem.c (update_dev_host): Call goacc_lazy_initialize.
+	* testsuite/libgomp.oacc-c-c++-common/lib-42.c: Remove XFAIL.
+
 2015-10-23  Tom de Vries  <tom@codesourcery.com>
 
 	PR testsuite/68063

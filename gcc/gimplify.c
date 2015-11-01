@@ -23,26 +23,23 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "alias.h"
 #include "backend.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
 #include "gimple-predict.h"
-#include "rtl.h"
+#include "tree-pass.h"		/* FIXME: only for PROP_gimple_any */
 #include "ssa.h"
-#include "options.h"
+#include "cgraph.h"
+#include "tree-pretty-print.h"
+#include "diagnostic-core.h"
+#include "alias.h"
 #include "fold-const.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
 #include "calls.h"
-#include "emit-rtl.h"
 #include "varasm.h"
 #include "stmt.h"
 #include "expr.h"
-#include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
 #include "gimplify.h"
@@ -51,14 +48,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "print-tree.h"
 #include "tree-iterator.h"
 #include "tree-inline.h"
-#include "tree-pretty-print.h"
 #include "langhooks.h"
-#include "cgraph.h"
 #include "tree-cfg.h"
 #include "tree-ssa.h"
-#include "diagnostic-core.h"
-#include "target.h"
-#include "splay-tree.h"
 #include "omp-low.h"
 #include "gimple-low.h"
 #include "cilk.h"
@@ -66,7 +58,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-dump.h"
 
 #include "langhooks-def.h"	/* FIXME: for lhd_set_decl_assembler_name */
-#include "tree-pass.h"		/* FIXME: only for PROP_gimple_any */
 #include "builtins.h"
 
 enum gimplify_omp_var_data
@@ -9600,23 +9591,9 @@ gimplify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
 	  ret = GS_ALL_DONE;
 	  break;
 
-	case OACC_KERNELS:
-	  if (OACC_KERNELS_COMBINED (*expr_p))
-	    sorry ("directive not yet implemented");
-	  else
-	    gimplify_omp_workshare (expr_p, pre_p);
-	  ret = GS_ALL_DONE;
-	  break;
-
-	case OACC_PARALLEL:
-	  if (OACC_PARALLEL_COMBINED (*expr_p))
-	    sorry ("directive not yet implemented");
-	  else
-	    gimplify_omp_workshare (expr_p, pre_p);
-	  ret = GS_ALL_DONE;
-	  break;
-
 	case OACC_DATA:
+	case OACC_KERNELS:
+	case OACC_PARALLEL:
 	case OMP_SECTIONS:
 	case OMP_SINGLE:
 	case OMP_TARGET:
@@ -10333,10 +10310,8 @@ gimplify_body (tree fndecl, bool do_parms)
   pop_gimplify_context (outer_bind);
   gcc_assert (gimplify_ctxp == NULL);
 
-#ifdef ENABLE_CHECKING
-  if (!seen_error ())
+  if (flag_checking && !seen_error ())
     verify_gimple_in_seq (gimple_bind_body (outer_bind));
-#endif
 
   timevar_pop (TV_TREE_GIMPLIFY);
   input_location = saved_location;
@@ -10628,11 +10603,9 @@ gimplify_hasher::equal (const elt_t *p1, const elt_t *p2)
   if (!operand_equal_p (t1, t2, 0))
     return false;
 
-#ifdef ENABLE_CHECKING
   /* Only allow them to compare equal if they also hash equal; otherwise
      results are nondeterminate, and we fail bootstrap comparison.  */
-  gcc_assert (hash (p1) == hash (p2));
-#endif
+  gcc_checking_assert (hash (p1) == hash (p2));
 
   return true;
 }

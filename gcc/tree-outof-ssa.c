@@ -22,23 +22,21 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
 #include "ssa.h"
-#include "alias.h"
-#include "fold-const.h"
+#include "emit-rtl.h"
+#include "gimple-pretty-print.h"
+#include "diagnostic-core.h"
 #include "stor-layout.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
-#include "gimple-pretty-print.h"
-#include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimple-iterator.h"
 #include "tree-cfg.h"
 #include "dumpfile.h"
-#include "diagnostic-core.h"
 #include "tree-ssa-live.h"
 #include "tree-ssa-ter.h"
 #include "tree-ssa-coalesce.h"
@@ -46,15 +44,7 @@ along with GCC; see the file COPYING3.  If not see
 
 /* FIXME: A lot of code here deals with expanding to RTL.  All that code
    should be in cfgexpand.c.  */
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
 #include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
 #include "expr.h"
 
 /* Return TRUE if expression STMT is suitable for replacement.  */
@@ -841,24 +831,23 @@ eliminate_useless_phis (void)
 	  result = gimple_phi_result (phi);
 	  if (virtual_operand_p (result))
 	    {
-#ifdef ENABLE_CHECKING
-	      size_t i;
 	      /* There should be no arguments which are not virtual, or the
 	         results will be incorrect.  */
-	      for (i = 0; i < gimple_phi_num_args (phi); i++)
-	        {
-		  tree arg = PHI_ARG_DEF (phi, i);
-		  if (TREE_CODE (arg) == SSA_NAME
-		      && !virtual_operand_p (arg))
-		    {
-		      fprintf (stderr, "Argument of PHI is not virtual (");
-		      print_generic_expr (stderr, arg, TDF_SLIM);
-		      fprintf (stderr, "), but the result is :");
-		      print_gimple_stmt (stderr, phi, 0, TDF_SLIM);
-		      internal_error ("SSA corruption");
-		    }
-		}
-#endif
+	      if (flag_checking)
+		for (size_t i = 0; i < gimple_phi_num_args (phi); i++)
+		  {
+		    tree arg = PHI_ARG_DEF (phi, i);
+		    if (TREE_CODE (arg) == SSA_NAME
+			&& !virtual_operand_p (arg))
+		      {
+			fprintf (stderr, "Argument of PHI is not virtual (");
+			print_generic_expr (stderr, arg, TDF_SLIM);
+			fprintf (stderr, "), but the result is :");
+			print_gimple_stmt (stderr, phi, 0, TDF_SLIM);
+			internal_error ("SSA corruption");
+		      }
+		  }
+
 	      remove_phi_node (&gsi, true);
 	    }
           else
@@ -884,9 +873,11 @@ eliminate_useless_phis (void)
    variable.  */
 
 static void
-rewrite_trees (var_map map ATTRIBUTE_UNUSED)
+rewrite_trees (var_map map)
 {
-#ifdef ENABLE_CHECKING
+  if (!flag_checking)
+    return;
+
   basic_block bb;
   /* Search for PHIs where the destination has no partition, but one
      or more arguments has a partition.  This should not happen and can
@@ -918,7 +909,6 @@ rewrite_trees (var_map map ATTRIBUTE_UNUSED)
 	    }
 	}
     }
-#endif
 }
 
 /* Given the out-of-ssa info object SA (with prepared partitions)

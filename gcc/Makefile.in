@@ -258,11 +258,14 @@ LINKER = $(CC)
 LINKER_FLAGS = $(CFLAGS)
 endif
 
+NO_PIE_CFLAGS = @NO_PIE_CFLAGS@
+NO_PIE_FLAG = @NO_PIE_FLAG@
+
 # We don't want to compile the compilers with -fPIE, it make PCH fail.
-COMPILER += @NO_PIE_CFLAGS@
+COMPILER += $(NO_PIE_CFLAGS)
 
 # Link with -no-pie since we compile the compiler with -fno-PIE.
-LINKER += @NO_PIE_FLAG@
+LINKER += $(NO_PIE_FLAG)
 
 # Like LINKER, but use a mutex for serializing front end links.
 ifeq (@DO_LINK_MUTEX@,true)
@@ -755,10 +758,13 @@ DIR = ../gcc
 # Native compiler for the build machine and its switches.
 CC_FOR_BUILD = @CC_FOR_BUILD@
 CXX_FOR_BUILD = @CXX_FOR_BUILD@
+NO_PIE_CFLAGS_FOR_BUILD = @NO_PIE_CFLAGS_FOR_BUILD@
+NO_PIE_FLAG_FOR_BUILD = @NO_PIE_FLAG_FOR_BUILD@
 BUILD_CFLAGS= @BUILD_CFLAGS@ -DGENERATOR_FILE
 BUILD_CXXFLAGS = @BUILD_CXXFLAGS@ -DGENERATOR_FILE
-BUILD_CFLAGS += @NO_PIE_CFLAGS@
-BUILD_CXXFLAGS += @NO_PIE_CFLAGS@
+BUILD_NO_PIE_CFLAGS = @BUILD_NO_PIE_CFLAGS@
+BUILD_CFLAGS += $(BUILD_NO_PIE_CFLAGS)
+BUILD_CXXFLAGS += $(BUILD_NO_PIE_CFLAGS)
 
 # Native compiler that we use.  This may be C++ some day.
 COMPILER_FOR_BUILD = $(CXX_FOR_BUILD)
@@ -770,7 +776,8 @@ BUILD_LINKERFLAGS = $(BUILD_CXXFLAGS)
 
 # Native linker and preprocessor flags.  For x-fragment overrides.
 BUILD_LDFLAGS=@BUILD_LDFLAGS@
-BUILD_LDFLAGS += @NO_PIE_FLAG@
+BUILD_NO_PIE_FLAG = @BUILD_NO_PIE_FLAG@
+BUILD_LDFLAGS += $(BUILD_NO_PIE_FLAG)
 BUILD_CPPFLAGS= -I. -I$(@D) -I$(srcdir) -I$(srcdir)/$(@D) \
 		-I$(srcdir)/../include @INCINTL@ $(CPPINC) $(CPPFLAGS)
 
@@ -1349,6 +1356,7 @@ OBJS = \
 	mcf.o \
 	mode-switching.o \
 	modulo-sched.o \
+	multiple_target.o \
 	omp-low.o \
 	optabs.o \
 	optabs-libfuncs.o \
@@ -3907,7 +3915,8 @@ TAGS: lang.tags
 	  fi;						\
 	done;						\
 	etags -o TAGS.sub c-family/*.h c-family/*.c *.h *.c *.cc \
-	      ../include/*.h \
+	      ../include/*.h ../libiberty/*.c \
+	      ../libcpp/*.c ../libcpp/include/*.h \
 	      --language=none --regex="/\(char\|unsigned int\|int\|bool\|void\|HOST_WIDE_INT\|enum [A-Za-z_0-9]+\) [*]?\([A-Za-z_0-9]+\)/\2/" common.opt	\
 	      --language=none --regex="/\(DEF_RTL_EXPR\|DEFTREECODE\|DEFGSCODE\).*(\([A-Za-z_0-9]+\)/\2/" rtl.def tree.def gimple.def \
 	      --language=none --regex="/DEFTIMEVAR (\([A-Za-z_0-9]+\)/\1/" timevar.def \

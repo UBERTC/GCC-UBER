@@ -24,16 +24,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "alias.h"
-#include "tree.h"
-#include "options.h"
-#include "stringpool.h"
 #include "tm.h"
-#include "hard-reg-set.h"
 #include "function.h"
-#include "cgraph.h"
-#include "tree-iterator.h"
+#include "hard-reg-set.h"
+#include "tree.h"
 #include "cp-tree.h"
+#include "stringpool.h"
+#include "cgraph.h"
+#include "alias.h"
+#include "tree-iterator.h"
 #include "toplev.h"
 
 /* Constructor for a lambda expression.  */
@@ -1006,11 +1005,7 @@ maybe_add_lambda_conv_op (tree type)
   tree convfn = build_lang_decl (FUNCTION_DECL, name, fntype);
   tree fn = convfn;
   DECL_SOURCE_LOCATION (fn) = DECL_SOURCE_LOCATION (callop);
-
-  if (TARGET_PTRMEMFUNC_VBIT_LOCATION == ptrmemfunc_vbit_in_pfn
-      && DECL_ALIGN (fn) < 2 * BITS_PER_UNIT)
-    DECL_ALIGN (fn) = 2 * BITS_PER_UNIT;
-
+  DECL_ALIGN (fn) = MINIMUM_METHOD_BOUNDARY;
   SET_OVERLOADED_OPERATOR_CODE (fn, TYPE_EXPR);
   grokclassfn (type, fn, NO_SPECIAL);
   set_linkage_according_to_type (type, fn);
@@ -1042,9 +1037,6 @@ maybe_add_lambda_conv_op (tree type)
   tree statfn = build_lang_decl (FUNCTION_DECL, name, stattype);
   fn = statfn;
   DECL_SOURCE_LOCATION (fn) = DECL_SOURCE_LOCATION (callop);
-  if (TARGET_PTRMEMFUNC_VBIT_LOCATION == ptrmemfunc_vbit_in_pfn
-      && DECL_ALIGN (fn) < 2 * BITS_PER_UNIT)
-    DECL_ALIGN (fn) = 2 * BITS_PER_UNIT;
   grokclassfn (type, fn, NO_SPECIAL);
   set_linkage_according_to_type (type, fn);
   rest_of_decl_compilation (fn, toplevel_bindings_p (), at_eof);

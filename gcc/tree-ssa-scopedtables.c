@@ -20,22 +20,18 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
+#include "function.h"
+#include "basic-block.h"
 #include "tree.h"
-#include "tree-pretty-print.h"
+#include "gimple.h"
 #include "tree-pass.h"
+#include "tree-pretty-print.h"
 #include "tree-ssa-scopedtables.h"
 #include "tree-ssa-threadedge.h"
-#include "tree-ssa-dom.h"
-#include "function.h"
 #include "stor-layout.h"
 #include "fold-const.h"
-#include "basic-block.h"
 #include "tree-eh.h"
 #include "internal-fn.h"
-#include "gimple.h"
-#include "dumpfile.h"
 
 static bool hashable_expr_equal_p (const struct hashable_expr *,
 				   const struct hashable_expr *);
@@ -668,45 +664,6 @@ const_and_copies::record_const_or_copy (tree x, tree y, tree prev_x)
   m_stack.reserve (2);
   m_stack.quick_push (prev_x);
   m_stack.quick_push (x);
-}
-
-/* A new value has been assigned to LHS.  If necessary, invalidate any
-   equivalences that are no longer valid.   This includes invaliding
-   LHS and any objects that are currently equivalent to LHS.
-
-   Finding the objects that are currently marked as equivalent to LHS
-   is a bit tricky.  We could walk the ssa names and see if any have
-   SSA_NAME_VALUE that is the same as LHS.  That's expensive.
-
-   However, it's far more efficient to look at the unwinding stack as
-   that will have all context sensitive equivalences which are the only
-   ones that we really have to worry about here.   */
-void
-const_and_copies::invalidate (tree lhs)
-{
-
-  /* The stack is an unwinding stack.  If the current element is NULL
-     then it's a "stop unwinding" marker.  Else the current marker is
-     the SSA_NAME with an equivalence and the prior entry in the stack
-     is what the current element is equivalent to.  */
-  for (int i = m_stack.length() - 1; i >= 0; i--)
-    {
-      /* Ignore the stop unwinding markers.  */
-      if ((m_stack)[i] == NULL)
-	continue;
-
-      /* We want to check the current value of stack[i] to see if
-	 it matches LHS.  If so, then invalidate.  */
-      if (SSA_NAME_VALUE ((m_stack)[i]) == lhs)
-	record_const_or_copy ((m_stack)[i], NULL_TREE);
-
-      /* Remember, we're dealing with two elements in this case.  */
-      i--;
-    }
-
-  /* And invalidate any known value for LHS itself.  */
-  if (SSA_NAME_VALUE (lhs))
-    record_const_or_copy (lhs, NULL_TREE);
 }
 
 bool

@@ -29,38 +29,31 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "tm.h"
-#include "alias.h"
+#include "target.h"
+#include "c-family/c-target.h"
 #include "tree.h"
-#include "tree-hasher.h"
+#include "cp-tree.h"
+#include "c-family/c-common.h"
+#include "timevar.h"
+#include "tm_p.h"
 #include "stringpool.h"
+#include "cgraph.h"
+#include "tree-hasher.h"
 #include "stor-layout.h"
 #include "varasm.h"
 #include "attribs.h"
 #include "calls.h"
 #include "flags.h"
-#include "cp-tree.h"
 #include "tree-iterator.h"
 #include "tree-inline.h"
 #include "decl.h"
 #include "intl.h"
 #include "toplev.h"
-#include "tm_p.h"
-#include "target.h"
-#include "c-family/c-common.h"
 #include "c-family/c-objc.h"
 #include "c-family/c-pragma.h"
-#include "c-family/c-target.h"
 #include "c-family/c-ubsan.h"
-#include "diagnostic.h"
-#include "intl.h"
 #include "debug.h"
-#include "timevar.h"
-#include "splay-tree.h"
 #include "plugin.h"
-#include "hard-reg-set.h"
-#include "function.h"
-#include "cgraph.h"
 #include "cilk.h"
 #include "builtins.h"
 
@@ -7829,6 +7822,9 @@ grokfndecl (tree ctype,
       parm = build_this_parm (type, quals);
       DECL_CHAIN (parm) = parms;
       parms = parm;
+
+      /* Allocate space to hold the vptr bit if needed.  */
+      DECL_ALIGN (decl) = MINIMUM_METHOD_BOUNDARY;
     }
   DECL_ARGUMENTS (decl) = parms;
   for (t = parms; t; t = DECL_CHAIN (t))
@@ -7851,14 +7847,6 @@ grokfndecl (tree ctype,
     default:
       break;
     }
-
-  /* If pointers to member functions use the least significant bit to
-     indicate whether a function is virtual, ensure a pointer
-     to this function will have that bit clear.  */
-  if (TARGET_PTRMEMFUNC_VBIT_LOCATION == ptrmemfunc_vbit_in_pfn
-      && TREE_CODE (type) == METHOD_TYPE
-      && DECL_ALIGN (decl) < 2 * BITS_PER_UNIT)
-    DECL_ALIGN (decl) = 2 * BITS_PER_UNIT;
 
   if (friendp
       && TREE_CODE (orig_declarator) == TEMPLATE_ID_EXPR)
@@ -8003,6 +7991,11 @@ grokfndecl (tree ctype,
   DECL_EXTERNAL (decl) = 1;
   if (TREE_CODE (type) == FUNCTION_TYPE)
     {
+      if (quals || rqual)
+	TREE_TYPE (decl) = apply_memfn_quals (TREE_TYPE (decl),
+					      TYPE_UNQUALIFIED,
+					      REF_QUAL_NONE);
+
       if (quals)
 	{
 	  error (ctype

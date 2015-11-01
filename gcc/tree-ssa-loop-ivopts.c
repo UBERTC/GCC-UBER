@@ -65,48 +65,39 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
+#include "tm_p.h"
 #include "ssa.h"
+#include "expmed.h"
+#include "insn-config.h"
+#include "emit-rtl.h"
+#include "recog.h"
+#include "cgraph.h"
+#include "gimple-pretty-print.h"
 #include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
-#include "tm_p.h"
-#include "gimple-pretty-print.h"
-#include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
-#include "cgraph.h"
 #include "tree-cfg.h"
 #include "tree-ssa-loop-ivopts.h"
 #include "tree-ssa-loop-manip.h"
 #include "tree-ssa-loop-niter.h"
 #include "tree-ssa-loop.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
 #include "explow.h"
-#include "calls.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
 #include "expr.h"
 #include "tree-dfa.h"
 #include "tree-ssa.h"
 #include "cfgloop.h"
-#include "tree-pass.h"
-#include "tree-chrec.h"
 #include "tree-scalar-evolution.h"
 #include "params.h"
-#include "langhooks.h"
 #include "tree-affine.h"
-#include "target.h"
-#include "tree-inline.h"
 #include "tree-ssa-propagate.h"
 #include "tree-ssa-address.h"
 #include "builtins.h"
@@ -115,7 +106,6 @@ along with GCC; see the file COPYING3.  If not see
 /* FIXME: Expressions are expanded to RTL in this pass to determine the
    cost of different addressing modes.  This should be moved to a TBD
    interface between the GIMPLE and RTL worlds.  */
-#include "recog.h"
 
 /* The infinite cost.  */
 #define INFTY 10000000
@@ -4328,7 +4318,9 @@ split_address_cost (struct ivopts_data *data,
       *symbol_present = false;
       *var_present = true;
       fd_ivopts_data = data;
-      walk_tree (&addr, find_depends, depends_on, NULL);
+      if (depends_on)
+	walk_tree (&addr, find_depends, depends_on, NULL);
+
       return new_cost (target_spill_cost[data->speed], 0);
     }
 
@@ -4616,7 +4608,8 @@ get_computation_cost_at (struct ivopts_data *data,
 				? TYPE_MODE (TREE_TYPE (*use->op_p))
 				: VOIDmode);
 
-  *depends_on = NULL;
+  if (depends_on)
+    *depends_on = NULL;
 
   /* Only consider real candidates.  */
   if (!cand->iv)
@@ -4908,9 +4901,9 @@ determine_use_iv_cost_address (struct ivopts_data *data,
        sub_use && !infinite_cost_p (cost);
        sub_use = sub_use->next)
     {
-       sub_cost = get_computation_cost (data, sub_use, cand, true, &depends_on,
-					&can_autoinc, &inv_expr_id);
-       cost = add_costs (cost, sub_cost);
+      sub_cost = get_computation_cost (data, sub_use, cand, true, NULL,
+				       &can_autoinc, NULL);
+      cost = add_costs (cost, sub_cost);
     }
 
   set_use_iv_cost (data, use, cand, cost, depends_on, NULL_TREE, ERROR_MARK,

@@ -24,15 +24,9 @@
 #include "backend.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
 #include "ssa.h"
-#include "alias.h"
-#include "fold-const.h"
-#include "flags.h"
-#include "tm_p.h"
 #include "gimple-pretty-print.h"
 #include "dumpfile.h"
-#include "internal-fn.h"
 #include "gimple-fold.h"
 #include "tree-eh.h"
 #include "gimplify.h"
@@ -40,8 +34,6 @@
 #include "tree-cfg.h"
 #include "tree-ssa.h"
 #include "tree-ssa-propagate.h"
-#include "langhooks.h"
-#include "value-prof.h"
 #include "domwalk.h"
 #include "cfgloop.h"
 #include "tree-cfgcleanup.h"
@@ -1501,14 +1493,14 @@ static void
 replace_exp_1 (use_operand_p op_p, tree val,
     	       bool for_propagation ATTRIBUTE_UNUSED)
 {
-#if defined ENABLE_CHECKING
-  tree op = USE_FROM_PTR (op_p);
-
-  gcc_assert (!(for_propagation
-		&& TREE_CODE (op) == SSA_NAME
-		&& TREE_CODE (val) == SSA_NAME
-		&& !may_propagate_copy (op, val)));
-#endif
+  if (flag_checking)
+    {
+      tree op = USE_FROM_PTR (op_p);
+      gcc_assert (!(for_propagation
+		  && TREE_CODE (op) == SSA_NAME
+		  && TREE_CODE (val) == SSA_NAME
+		  && !may_propagate_copy (op, val)));
+    }
 
   if (TREE_CODE (val) == SSA_NAME)
     SET_USE (op_p, val);

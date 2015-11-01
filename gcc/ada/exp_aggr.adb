@@ -2477,7 +2477,7 @@ package body Exp_Aggr is
             then
                Ancestor_Is_Expression := True;
 
-               --  Set up  finalization data for enclosing record, because
+               --  Set up finalization data for enclosing record, because
                --  controlled subcomponents of the ancestor part will be
                --  attached to it.
 
@@ -2924,13 +2924,33 @@ package body Exp_Aggr is
                   end if;
                end if;
 
-               Instr :=
-                 Make_OK_Assignment_Statement (Loc,
-                   Name       => Comp_Expr,
-                   Expression => Expr_Q);
+               if Generate_C_Code
+                 and then Nkind (Expr_Q) = N_Aggregate
+                 and then Is_Array_Type (Etype (Expr_Q))
+                 and then Present (First_Index (Etype (Expr_Q)))
+               then
+                  declare
+                     Expr_Q_Type : constant Node_Id := Etype (Expr_Q);
+                  begin
+                     Append_List_To (L,
+                       Build_Array_Aggr_Code
+                         (N           => Expr_Q,
+                          Ctype       => Component_Type (Expr_Q_Type),
+                          Index       => First_Index (Expr_Q_Type),
+                          Into        => Comp_Expr,
+                          Scalar_Comp => Is_Scalar_Type
+                                           (Component_Type (Expr_Q_Type))));
+                  end;
 
-               Set_No_Ctrl_Actions (Instr);
-               Append_To (L, Instr);
+               else
+                  Instr :=
+                    Make_OK_Assignment_Statement (Loc,
+                      Name       => Comp_Expr,
+                      Expression => Expr_Q);
+
+                  Set_No_Ctrl_Actions (Instr);
+                  Append_To (L, Instr);
+               end if;
 
                --  Adjust the tag if tagged (because of possible view
                --  conversions), unless compiling for a VM where tags are
@@ -3559,7 +3579,7 @@ package body Exp_Aggr is
          end if;
 
          if Nkind (N) = N_Aggregate
-           and then  Present (Component_Associations (N))
+           and then Present (Component_Associations (N))
          then
             Expr := First (Component_Associations (N));
             while Present (Expr) loop
@@ -3936,7 +3956,7 @@ package body Exp_Aggr is
       --  If the size is known, or all the components are static, try to
       --  build a fully positional aggregate.
 
-      --  The size of the type  may not be known for an aggregate with
+      --  The size of the type may not be known for an aggregate with
       --  discriminated array components, but if the components are static
       --  it is still possible to verify statically that the length is
       --  compatible with the upper bound of the type, and therefore it is
@@ -3980,7 +4000,7 @@ package body Exp_Aggr is
 
                   else
                      Error_Msg_N
-                       ("non-static object  requires elaboration code??", N);
+                       ("non-static object requires elaboration code??", N);
                      exit;
                   end if;
 
@@ -5470,7 +5490,8 @@ package body Exp_Aggr is
 
          if (In_Place_Assign_OK_For_Declaration or else Maybe_In_Place_OK)
            and then not AAMP_On_Target
-           and then not Generate_SCIL
+           and then not CodePeer_Mode
+           and then not Generate_C_Code
            and then not Possible_Bit_Aligned_Component (Target)
            and then not Is_Possibly_Unaligned_Slice (Target)
            and then Aggr_Assignment_OK_For_Backend (N)

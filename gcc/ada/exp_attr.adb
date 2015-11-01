@@ -2995,13 +2995,14 @@ package body Exp_Attr is
               Make_Integer_Literal (Loc, Enumeration_Rep (Entity (Pref))));
 
          --  If this is a renaming of a literal, recover the representation
-         --  of the original.
+         --  of the original. If it renames an expression there is nothing
+         --  to fold.
 
          elsif Ekind (Entity (Pref)) = E_Constant
            and then Present (Renamed_Object (Entity (Pref)))
-           and then
-             Ekind (Entity (Renamed_Object (Entity (Pref))))
-               = E_Enumeration_Literal
+           and then Is_Entity_Name (Renamed_Object (Entity (Pref)))
+           and then Ekind (Entity (Renamed_Object (Entity (Pref)))) =
+                      E_Enumeration_Literal
          then
             Rewrite (N,
               Make_Integer_Literal (Loc,
@@ -4987,8 +4988,8 @@ package body Exp_Attr is
             --  both cases the type of the first formal of their expanded
             --  subprogram is Address)
 
-            if Etype (First_Entity (Protected_Body_Subprogram (Subprg)))
-              = RTE (RE_Address)
+            if Etype (First_Entity (Protected_Body_Subprogram (Subprg))) =
+                 RTE (RE_Address)
             then
                declare
                   New_Itype : Entity_Id;

@@ -1357,10 +1357,6 @@ package body Inline is
       --  Returns True if subprogram Id is defined in the visible part of a
       --  package specification.
 
-      function Is_Expression_Function (Id : Entity_Id) return Boolean;
-      --  Returns True if subprogram Id was defined originally as an expression
-      --  function.
-
       ---------------------------------------------------
       -- Has_Formal_With_Discriminant_Dependent_Fields --
       ---------------------------------------------------
@@ -1471,20 +1467,6 @@ package body Inline is
          return Nkind (P) = N_Package_Specification
            and then List_Containing (Decl) = Visible_Declarations (P);
       end In_Package_Visible_Spec;
-
-      ----------------------------
-      -- Is_Expression_Function --
-      ----------------------------
-
-      function Is_Expression_Function (Id : Entity_Id) return Boolean is
-         Decl : Node_Id := Parent (Parent (Id));
-      begin
-         if Nkind (Parent (Id)) = N_Defining_Program_Unit_Name then
-            Decl := Parent (Decl);
-         end if;
-
-         return Nkind (Original_Node (Decl)) = N_Expression_Function;
-      end Is_Expression_Function;
 
       ------------------------
       -- Is_Unit_Subprogram --
@@ -3462,14 +3444,12 @@ package body Inline is
 
          if Nkind (D) = N_Package_Declaration then
             Cannot_Inline
-              ("cannot inline & (nested package declaration)?",
-               D, Subp);
+              ("cannot inline & (nested package declaration)?", D, Subp);
             return True;
 
          elsif Nkind (D) = N_Package_Instantiation then
             Cannot_Inline
-              ("cannot inline & (nested package instantiation)?",
-               D, Subp);
+              ("cannot inline & (nested package instantiation)?", D, Subp);
             return True;
          end if;
 
@@ -3482,8 +3462,7 @@ package body Inline is
            or else Nkind (D) = N_Single_Task_Declaration
          then
             Cannot_Inline
-              ("cannot inline & (nested task type declaration)?",
-               D, Subp);
+              ("cannot inline & (nested task type declaration)?", D, Subp);
             return True;
 
          elsif Nkind (D) = N_Protected_Type_Declaration
@@ -3496,23 +3475,50 @@ package body Inline is
 
          elsif Nkind (D) = N_Subprogram_Body then
             Cannot_Inline
-              ("cannot inline & (nested subprogram)?",
-               D, Subp);
+              ("cannot inline & (nested subprogram)?", D, Subp);
             return True;
 
          elsif Nkind (D) = N_Function_Instantiation
            and then not Is_Unchecked_Conversion (D)
          then
             Cannot_Inline
-              ("cannot inline & (nested function instantiation)?",
-               D, Subp);
+              ("cannot inline & (nested function instantiation)?", D, Subp);
             return True;
 
          elsif Nkind (D) = N_Procedure_Instantiation then
             Cannot_Inline
-              ("cannot inline & (nested procedure instantiation)?",
-               D, Subp);
+              ("cannot inline & (nested procedure instantiation)?", D, Subp);
             return True;
+
+         --  Subtype declarations with predicates will generate predicate
+         --  functions, i.e. nested subprogram bodies, so inlining is not
+         --  possible.
+
+         elsif Nkind (D) = N_Subtype_Declaration
+           and then Present (Aspect_Specifications (D))
+         then
+            declare
+               A    : Node_Id;
+               A_Id : Aspect_Id;
+
+            begin
+               A := First (Aspect_Specifications (D));
+               while Present (A) loop
+                  A_Id := Get_Aspect_Id (Chars (Identifier (A)));
+
+                  if A_Id = Aspect_Predicate
+                    or else A_Id = Aspect_Static_Predicate
+                    or else A_Id = Aspect_Dynamic_Predicate
+                  then
+                     Cannot_Inline
+                       ("cannot inline & (subtype declaration with "
+                        & "predicate)?", D, Subp);
+                     return True;
+                  end if;
+
+                  Next (A);
+               end loop;
+            end;
          end if;
 
          Next (D);

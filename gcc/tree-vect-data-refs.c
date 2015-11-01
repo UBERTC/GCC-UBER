@@ -22,20 +22,20 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "dumpfile.h"
 #include "backend.h"
-#include "predict.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "predict.h"
+#include "tm_p.h"
 #include "ssa.h"
+#include "optabs-tree.h"
+#include "cgraph.h"
+#include "dumpfile.h"
 #include "alias.h"
 #include "fold-const.h"
 #include "stor-layout.h"
-#include "tm_p.h"
-#include "target.h"
-#include "gimple-pretty-print.h"
-#include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
@@ -44,14 +44,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-loop-manip.h"
 #include "tree-ssa-loop.h"
 #include "cfgloop.h"
-#include "tree-chrec.h"
 #include "tree-scalar-evolution.h"
 #include "tree-vectorizer.h"
-#include "diagnostic-core.h"
-#include "cgraph.h"
 #include "expr.h"
-#include "insn-codes.h"
-#include "optabs-tree.h"
 #include "builtins.h"
 #include "params.h"
 
@@ -629,12 +624,6 @@ vect_compute_data_ref_alignment (struct data_reference *dr)
   /* Initialize misalignment to unknown.  */
   SET_DR_MISALIGNMENT (dr, -1);
 
-  /* Strided accesses perform only component accesses, misalignment information
-     is irrelevant for them.  */
-  if (STMT_VINFO_STRIDED_P (stmt_info)
-      && !STMT_VINFO_GROUPED_ACCESS (stmt_info))
-    return true;
-
   if (tree_fits_shwi_p (DR_STEP (dr)))
     misalign = DR_INIT (dr);
   aligned_to = DR_ALIGNED_TO (dr);
@@ -794,18 +783,27 @@ vect_compute_data_refs_alignment (vec_info *vinfo)
   unsigned int i;
 
   FOR_EACH_VEC_ELT (datarefs, i, dr)
-    if (STMT_VINFO_VECTORIZABLE (vinfo_for_stmt (DR_STMT (dr)))
-        && !vect_compute_data_ref_alignment (dr))
-      {
-        if (is_a <bb_vec_info> (vinfo))
-          {
-            /* Mark unsupported statement as unvectorizable.  */
-            STMT_VINFO_VECTORIZABLE (vinfo_for_stmt (DR_STMT (dr))) = false;
-            continue;
-          }
-        else
-          return false;
-      }
+    {
+      stmt_vec_info stmt_info = vinfo_for_stmt (DR_STMT (dr));
+      if (STMT_VINFO_VECTORIZABLE (stmt_info)
+	  && !vect_compute_data_ref_alignment (dr))
+	{
+	  /* Strided accesses perform only component accesses, misalignment
+	     information is irrelevant for them.  */
+	  if (STMT_VINFO_STRIDED_P (stmt_info)
+	      && !STMT_VINFO_GROUPED_ACCESS (stmt_info))
+	    continue;
+
+	  if (is_a <bb_vec_info> (vinfo))
+	    {
+	      /* Mark unsupported statement as unvectorizable.  */
+	      STMT_VINFO_VECTORIZABLE (vinfo_for_stmt (DR_STMT (dr))) = false;
+	      continue;
+	    }
+	  else
+	    return false;
+	}
+    }
 
   return true;
 }

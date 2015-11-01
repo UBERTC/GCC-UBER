@@ -44,17 +44,15 @@ along with GCC; see the file COPYING3.  If not see
 #include "config.h"
 #include "system.h"
 #include "coretypes.h"
-#include "alias.h"
 #include "backend.h"
-#include "cfghooks.h"
 #include "tree.h"
 #include "gimple.h"
-#include "hard-reg-set.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "options.h"
+#include "gimple-pretty-print.h"
 #include "fold-const.h"
 #include "cfganal.h"
-#include "internal-fn.h"
 #include "gimple-iterator.h"
 #include "gimplify-me.h"
 #include "stor-layout.h"
@@ -64,11 +62,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-into-ssa.h"
 #include "tree-ssa.h"
 #include "cfgloop.h"
-#include "tree-chrec.h"
-#include "tree-data-ref.h"
 #include "tree-scalar-evolution.h"
-#include "tree-pass.h"
-#include "gimple-pretty-print.h"
 #include "tree-vectorizer.h"
 
 
@@ -1821,9 +1815,7 @@ out:
       rewrite_into_loop_closed_ssa (NULL, TODO_update_ssa);
     }
 
-#ifdef ENABLE_CHECKING
-  verify_loop_structure ();
-#endif
+  checking_verify_loop_structure ();
 
   return 0;
 }

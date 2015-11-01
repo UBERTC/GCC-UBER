@@ -11610,9 +11610,7 @@ cortex_a9_sched_adjust_cost (rtx_insn *insn, rtx link, rtx_insn *dep, int * cost
 		       case. However this gets modeled as an true
 		       dependency and hence all these checks.  */
 		    if (REG_P (SET_DEST (PATTERN (insn)))
-			&& REG_P (SET_DEST (PATTERN (dep)))
-			&& reg_overlap_mentioned_p (SET_DEST (PATTERN (insn)),
-						    SET_DEST (PATTERN (dep))))
+			&& reg_set_p (SET_DEST (PATTERN (insn)), dep))
 		      {
 			/* FMACS is a special case where the dependent
 			   instruction can be issued 3 cycles before
@@ -26861,20 +26859,21 @@ arm_unwind_emit_sequence (FILE * asm_out_file, rtx p)
       else
 	asm_fprintf (asm_out_file, "%r", reg);
 
-#ifdef ENABLE_CHECKING
-      /* Check that the addresses are consecutive.  */
-      e = XEXP (SET_DEST (e), 0);
-      if (GET_CODE (e) == PLUS)
-	gcc_assert (REG_P (XEXP (e, 0))
-		    && REGNO (XEXP (e, 0)) == SP_REGNUM
-		    && CONST_INT_P (XEXP (e, 1))
-		    && offset == INTVAL (XEXP (e, 1)));
-      else
-	gcc_assert (i == 1
-		    && REG_P (e)
-		    && REGNO (e) == SP_REGNUM);
-      offset += reg_size;
-#endif
+      if (flag_checking)
+	{
+	  /* Check that the addresses are consecutive.  */
+	  e = XEXP (SET_DEST (e), 0);
+	  if (GET_CODE (e) == PLUS)
+	    gcc_assert (REG_P (XEXP (e, 0))
+			&& REGNO (XEXP (e, 0)) == SP_REGNUM
+			&& CONST_INT_P (XEXP (e, 1))
+			&& offset == INTVAL (XEXP (e, 1)));
+	  else
+	    gcc_assert (i == 1
+			&& REG_P (e)
+			&& REGNO (e) == SP_REGNUM);
+	  offset += reg_size;
+	}
     }
   fprintf (asm_out_file, "}\n");
   if (padfirst)
@@ -27751,25 +27750,37 @@ vfp3_const_double_for_fract_bits (rtx operand)
   return 0;
 }
 
+/* If X is a CONST_DOUBLE with a value that is a power of 2 whose
+   log2 is in [1, 32], return that log2.  Otherwise return -1.
+   This is used in the patterns for vcvt.s32.f32 floating-point to
+   fixed-point conversions.  */
+
 int
-vfp3_const_double_for_bits (rtx operand)
+vfp3_const_double_for_bits (rtx x)
 {
-  const REAL_VALUE_TYPE *r0;
+  const REAL_VALUE_TYPE *r;
 
-  if (!CONST_DOUBLE_P (operand))
-    return 0;
+  if (!CONST_DOUBLE_P (x))
+    return -1;
 
-  r0 = CONST_DOUBLE_REAL_VALUE (operand);
-  if (exact_real_truncate (DFmode, r0))
-    {
-      HOST_WIDE_INT value = real_to_integer (r0);
-      value = value & 0xffffffff;
-      if ((value != 0) && ( (value & (value - 1)) == 0))
-	return int_log2 (value);
-    }
+  r = CONST_DOUBLE_REAL_VALUE (x);
 
-  return 0;
+  if (REAL_VALUE_NEGATIVE (*r)
+      || REAL_VALUE_ISNAN (*r)
+      || REAL_VALUE_ISINF (*r)
+      || !real_isinteger (r, SFmode))
+    return -1;
+
+  HOST_WIDE_INT hwint = exact_log2 (real_to_integer (r));
+
+/* The exact_log2 above will have returned -1 if this is
+   not an exact log2.  */
+  if (!IN_RANGE (hwint, 1, 32))
+    return -1;
+
+  return hwint;
 }
+
 
 /* Emit a memory barrier around an atomic sequence according to MODEL.  */
 

@@ -21,43 +21,27 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "tree-pass.h"
 #include "ssa.h"
-#include "alias.h"
+#include "gimple-pretty-print.h"
+#include "diagnostic-core.h"
 #include "stor-layout.h"
 #include "fold-const.h"
 #include "calls.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
-#include "dojump.h"
-#include "explow.h"
-#include "emit-rtl.h"
-#include "varasm.h"
-#include "stmt.h"
-#include "expr.h"
-#include "tm_p.h"
-#include "gimple-pretty-print.h"
 #include "intl.h"
-#include "internal-fn.h"
 #include "gimplify.h"
 #include "gimple-iterator.h"
 #include "tree-cfg.h"
 #include "tree-ssa-loop-ivopts.h"
 #include "tree-ssa-loop-niter.h"
 #include "tree-ssa-loop.h"
-#include "dumpfile.h"
 #include "cfgloop.h"
 #include "tree-chrec.h"
 #include "tree-scalar-evolution.h"
-#include "tree-data-ref.h"
 #include "params.h"
-#include "diagnostic-core.h"
-#include "tree-inline.h"
-#include "tree-pass.h"
-#include "wide-int-print.h"
 
 
 /* The maximum number of dominator BBs we search for conditions
@@ -4267,11 +4251,11 @@ free_numbers_of_iterations_estimates_loop (struct loop *loop)
 /* Frees the information on upper bounds on numbers of iterations of loops.  */
 
 void
-free_numbers_of_iterations_estimates (void)
+free_numbers_of_iterations_estimates (function *fn)
 {
   struct loop *loop;
 
-  FOR_EACH_LOOP (loop, 0)
+  FOR_EACH_LOOP_FN (fn, loop, 0)
     {
       free_numbers_of_iterations_estimates_loop (loop);
     }

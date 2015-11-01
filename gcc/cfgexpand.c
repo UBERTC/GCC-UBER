@@ -21,59 +21,53 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
-#include "cfghooks.h"
+#include "target.h"
+#include "rtl.h"
 #include "tree.h"
 #include "gimple.h"
-#include "rtl.h"
+#include "cfghooks.h"
+#include "tree-pass.h"
+#include "tm_p.h"
 #include "ssa.h"
-#include "alias.h"
+#include "optabs.h"
+#include "regs.h" /* For reg_renumber.  */
+#include "emit-rtl.h"
+#include "recog.h"
+#include "cgraph.h"
+#include "diagnostic.h"
 #include "fold-const.h"
 #include "varasm.h"
 #include "stor-layout.h"
 #include "stmt.h"
 #include "print-tree.h"
-#include "tm_p.h"
 #include "cfgrtl.h"
 #include "cfganal.h"
 #include "cfgbuild.h"
 #include "cfgcleanup.h"
-#include "insn-codes.h"
-#include "optabs.h"
-#include "flags.h"
-#include "insn-config.h"
-#include "expmed.h"
 #include "dojump.h"
 #include "explow.h"
 #include "calls.h"
-#include "emit-rtl.h"
 #include "expr.h"
-#include "langhooks.h"
 #include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimple-iterator.h"
 #include "gimple-walk.h"
-#include "cgraph.h"
 #include "tree-cfg.h"
 #include "tree-dfa.h"
 #include "tree-ssa.h"
-#include "tree-pass.h"
 #include "except.h"
-#include "diagnostic.h"
 #include "gimple-pretty-print.h"
 #include "toplev.h"
 #include "debug.h"
 #include "params.h"
 #include "tree-inline.h"
 #include "value-prof.h"
-#include "target.h"
 #include "tree-ssa-live.h"
 #include "tree-outof-ssa.h"
 #include "cfgloop.h"
-#include "regs.h" /* For reg_renumber.  */
 #include "insn-attr.h" /* For INSN_SCHEDULING.  */
 #include "asan.h"
 #include "tree-ssa-address.h"
-#include "recog.h"
 #include "output.h"
 #include "builtins.h"
 #include "tree-chkp.h"
@@ -3269,12 +3263,13 @@ expand_computed_goto (tree exp)
 static void
 expand_goto (tree label)
 {
-#ifdef ENABLE_CHECKING
-  /* Check for a nonlocal goto to a containing function.  Should have
-     gotten translated to __builtin_nonlocal_goto.  */
-  tree context = decl_function_context (label);
-  gcc_assert (!context || context == current_function_decl);
-#endif
+  if (flag_checking)
+    {
+      /* Check for a nonlocal goto to a containing function.  Should have
+	 gotten translated to __builtin_nonlocal_goto.  */
+      tree context = decl_function_context (label);
+      gcc_assert (!context || context == current_function_decl);
+    }
 
   emit_jump (jump_target_rtx (label));
 }
@@ -5056,12 +5051,12 @@ expand_debug_expr (tree exp)
 
     default:
     flag_unsupported:
-#ifdef ENABLE_CHECKING
-      debug_tree (exp);
-      gcc_unreachable ();
-#else
+      if (flag_checking)
+	{
+	  debug_tree (exp);
+	  gcc_unreachable ();
+	}
       return NULL;
-#endif
     }
 }
 
@@ -6304,7 +6299,7 @@ pass_expand::execute (function *fun)
   /* Free stuff we no longer need after GIMPLE optimizations.  */
   free_dominance_info (CDI_DOMINATORS);
   free_dominance_info (CDI_POST_DOMINATORS);
-  delete_tree_cfg_annotations ();
+  delete_tree_cfg_annotations (fun);
 
   timevar_push (TV_OUT_OF_SSA);
   finish_out_of_ssa (&SA);
@@ -6318,7 +6313,7 @@ pass_expand::execute (function *fun)
   /* Expansion is used by optimization passes too, set maybe_hot_insn_p
      conservatively to true until they are all profile aware.  */
   delete lab_rtx_for_bb;
-  free_histograms ();
+  free_histograms (fun);
 
   construct_exit_block ();
   insn_locations_finalize ();
@@ -6422,9 +6417,7 @@ pass_expand::execute (function *fun)
      gcc.c-torture/execute/ipa-sra-2.c execution, -Os -m32 fails otherwise.  */
   cleanup_cfg (CLEANUP_NO_INSN_DEL);
 
-#ifdef ENABLE_CHECKING
-  verify_flow_info ();
-#endif
+  checking_verify_flow_info ();
 
   /* Initialize pseudos allocated for hard registers.  */
   emit_initial_value_sets ();

@@ -2495,26 +2495,50 @@ package body Sem_Ch3 is
             Analyze_Package_Body_Contract (Defining_Entity (Context));
          end if;
 
-         --  Analyze the contracts of all subprogram declarations, subprogram
-         --  bodies and variables due to the delayed visibility needs of their
-         --  aspects and pragmas.
+         --  Analyze the contracts of eligible constructs (see below) due to
+         --  the delayed visibility needs of their aspects and pragmas.
 
          Decl := First (L);
          while Present (Decl) loop
-            if Nkind (Decl) = N_Object_Declaration then
+
+            --  Entry or subprogram declarations
+
+            if Nkind_In (Decl, N_Abstract_Subprogram_Declaration,
+                               N_Entry_Declaration,
+                               N_Generic_Subprogram_Declaration,
+                               N_Subprogram_Declaration)
+            then
+               Analyze_Entry_Or_Subprogram_Contract (Defining_Entity (Decl));
+
+            --  Entry or subprogram bodies
+
+            elsif Nkind_In (Decl, N_Entry_Body, N_Subprogram_Body) then
+               Analyze_Entry_Or_Subprogram_Body_Contract
+                 (Defining_Entity (Decl));
+
+            --  Objects
+
+            elsif Nkind (Decl) = N_Object_Declaration then
                Analyze_Object_Contract (Defining_Entity (Decl));
 
-            elsif Nkind_In (Decl, N_Abstract_Subprogram_Declaration,
-                                  N_Generic_Subprogram_Declaration,
-                                  N_Subprogram_Declaration)
-            then
-               Analyze_Subprogram_Contract (Defining_Entity (Decl));
+            --  Protected untis
 
-            elsif Nkind (Decl) = N_Subprogram_Body then
-               Analyze_Subprogram_Body_Contract (Defining_Entity (Decl));
+            elsif Nkind_In (Decl, N_Protected_Type_Declaration,
+                                  N_Single_Protected_Declaration)
+            then
+               Analyze_Protected_Contract (Defining_Entity (Decl));
+
+            --  Subprogram body stubs
 
             elsif Nkind (Decl) = N_Subprogram_Body_Stub then
                Analyze_Subprogram_Body_Stub_Contract (Defining_Entity (Decl));
+
+            --  Task units
+
+            elsif Nkind_In (Decl, N_Single_Task_Declaration,
+                                  N_Task_Type_Declaration)
+            then
+               Analyze_Task_Contract (Defining_Entity (Decl));
             end if;
 
             Next (Decl);
@@ -3269,9 +3293,9 @@ package body Sem_Ch3 is
       function Count_Tasks (T : Entity_Id) return Uint;
       --  This function is called when a non-generic library level object of a
       --  task type is declared. Its function is to count the static number of
-      --  tasks declared within the type (it is only called if Has_Tasks is set
+      --  tasks declared within the type (it is only called if Has_Task is set
       --  for T). As a side effect, if an array of tasks with non-static bounds
-      --  or a variant record type is encountered, Check_Restrictions is called
+      --  or a variant record type is encountered, Check_Restriction is called
       --  indicating the count is unknown.
 
       function Delayed_Aspect_Present return Boolean;
@@ -5220,6 +5244,30 @@ package body Sem_Ch3 is
       end if;
 
       Analyze_Dimension (N);
+
+      --  Check No_Dynamic_Sized_Objects restriction, which disallows subtype
+      --  indications on composite types where the constraints are dynamic.
+      --  Note that object declarations and aggregates generate implicit
+      --  subtype declarations, which this covers. One special case is that the
+      --  implicitly generated "=" for discriminated types includes an
+      --  offending subtype declaration, which is harmless, so we ignore it
+      --  here.
+
+      if Nkind (Subtype_Indication (N)) = N_Subtype_Indication then
+         declare
+            Cstr : constant Node_Id := Constraint (Subtype_Indication (N));
+         begin
+            if Nkind (Cstr) = N_Index_Or_Discriminant_Constraint
+              and then not (Is_Internal (Id)
+                             and then Is_TSS (Scope (Id),
+                                              TSS_Composite_Equality))
+              and then not Within_Init_Proc
+              and then not All_Composite_Constraints_Static (Cstr)
+            then
+               Check_Restriction (No_Dynamic_Sized_Objects, Cstr);
+            end if;
+         end;
+      end if;
    end Analyze_Subtype_Declaration;
 
    --------------------------------
@@ -15012,10 +15060,26 @@ package body Sem_Ch3 is
          --  Given that this new interface entity corresponds with a primitive
          --  of the parent that was not overridden we must leave it associated
          --  with its parent primitive to ensure that it will share the same
-         --  dispatch table slot when overridden.
+         --  dispatch table slot when overridden. We must set the Alias to Subp
+         --  (instead of Iface_Subp), and we must fix Is_Abstract_Subprogram
+         --  (in case we inherited Subp from Iface_Type via a nonabstract
+         --  generic formal type).
 
          if No (Actual_Subp) then
             Set_Alias (New_Subp, Subp);
+
+            declare
+               T : Entity_Id := Find_Dispatching_Type (Subp);
+            begin
+               while Etype (T) /= T loop
+                  if Is_Generic_Type (T) and then not Is_Abstract_Type (T) then
+                     Set_Is_Abstract_Subprogram (New_Subp, False);
+                     exit;
+                  end if;
+
+                  T := Etype (T);
+               end loop;
+            end;
 
          --  For instantiations this is not needed since the previous call to
          --  Derive_Subprogram leaves the entity well decorated.
