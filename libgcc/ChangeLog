@@ -1,3 +1,50 @@
+2015-10-19  Venkataramanan Kumar  <Venkataramanan.kumar@amd.com>
+
+	Backport from mainline
+	2015-10-09  Venkataramanan kumar  <venkataramanan.kumar@amd.com>
+
+	 * config/i386/cpuinfo.c (get_amd_cpu): Detect bdver4.
+	(__cpu_indicator_init): Fix model selection for AMD CPUs.
+
+2015-09-23  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/linux-atomic.c (__kernel_cmpxchg2): Reorder error checks.
+	(__sync_fetch_and_##OP##_##WIDTH): Change result to match type of
+	__kernel_cmpxchg2.
+	(__sync_##OP##_and_fetch_##WIDTH): Likewise.
+	(__sync_val_compare_and_swap_##WIDTH): Likewise.
+	(__sync_bool_compare_and_swap_##WIDTH): Likewise.
+	(__sync_lock_test_and_set_##WIDTH): Likewise.
+	(__sync_lock_release_##WIDTH): Likewise.
+	(__sync_fetch_and_##OP##_4): Change result to match type of
+	__kernel_cmpxchg.
+	(__sync_##OP##_and_fetch_4): Likewise.
+	(__sync_val_compare_and_swap_4): Likewise.
+	(__sync_bool_compare_and_swap_4): likewise.
+	(__sync_lock_test_and_set_4): Likewise.
+	(__sync_lock_release_4): Likewise.
+	(FETCH_AND_OP_2): Add long long variants.
+	(OP_AND_FETCH_2): Likewise.
+	(COMPARE_AND_SWAP_2 ): Likewise.
+	(SYNC_LOCK_TEST_AND_SET_2): Likewise.
+	(SYNC_LOCK_RELEASE_2): Likewise.
+	(__sync_bool_compare_and_swap_##WIDTH): Correct return.
+
+2015-07-23  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Backport from mainline:
+	2015-07-22  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* config/nios2/linux-atomic.c (<asm/unistd.h>): Remove #include.
+	(EFAULT,EBUSY,ENOSYS): Delete unused #defines.
+
+2015-07-01  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/linux-atomic.c (__kernel_cmpxchg): Reorder arguments to
+	better match light-weight syscall argument order.
+	(__kernel_cmpxchg2): Likewise.
+	Adjust callers.
+
 2015-06-26  Release Manager
 
 	* GCC 4.9.3 released.

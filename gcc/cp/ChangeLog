@@ -1,3 +1,20 @@
+2015-08-17  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66957
+	* search.c (protected_accessible_p): Revert fix for 38579.
+
+	PR c++/58063
+	* tree.c (bot_manip): Remap SAVE_EXPR.
+
+2015-07-16  Marek Polacek  <polacek@redhat.com>
+
+	2015-07-08  Marek Polacek  <polacek@redhat.com>
+	Backported from mainline
+
+	PR c++/66748
+	* tree.c (handle_abi_tag_attribute): Check for CLASS_TYPE_P before
+	accessing TYPE_LANG_SPECIFIC node.
+
 2015-06-26  Release Manager
 
 	* GCC 4.9.3 released.

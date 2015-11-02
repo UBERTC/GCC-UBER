@@ -2435,6 +2435,7 @@ pa_output_move_double (rtx *operands)
   enum { REGOP, OFFSOP, MEMOP, CNSTOP, RNDOP } optype0, optype1;
   rtx latehalf[2];
   rtx addreg0 = 0, addreg1 = 0;
+  int highonly = 0;
 
   /* First classify both operands.  */
 
@@ -2645,7 +2646,14 @@ pa_output_move_double (rtx *operands)
   else if (optype1 == OFFSOP)
     latehalf[1] = adjust_address_nv (operands[1], SImode, 4);
   else if (optype1 == CNSTOP)
-    split_double (operands[1], &operands[1], &latehalf[1]);
+    {
+      if (GET_CODE (operands[1]) == HIGH)
+	{
+	  operands[1] = XEXP (operands[1], 0);
+	  highonly = 1;
+	}
+      split_double (operands[1], &operands[1], &latehalf[1]);
+    }
   else
     latehalf[1] = operands[1];
 
@@ -2699,8 +2707,11 @@ pa_output_move_double (rtx *operands)
   if (addreg1)
     output_asm_insn ("ldo 4(%0),%0", &addreg1);
 
-  /* Do that word.  */
-  output_asm_insn (pa_singlemove_string (latehalf), latehalf);
+  /* Do high-numbered word.  */
+  if (highonly)
+    output_asm_insn ("ldil L'%1,%0", latehalf);
+  else
+    output_asm_insn (pa_singlemove_string (latehalf), latehalf);
 
   /* Undo the adds we just did.  */
   if (addreg0)
@@ -8538,14 +8549,6 @@ pa_function_ok_for_sibcall (tree decl, tree exp ATTRIBUTE_UNUSED)
 {
   if (TARGET_PORTABLE_RUNTIME)
     return false;
-
-  /* Sibcalls are ok for TARGET_ELF32 as along as the linker is used in
-     single subspace mode and the call is not indirect.  As far as I know,
-     there is no operating system support for the multiple subspace mode.
-     It might be possible to support indirect calls if we didn't use
-     $$dyncall (see the indirect sequence generated in pa_output_call).  */
-  if (TARGET_ELF32)
-    return (decl != NULL_TREE);
 
   /* Sibcalls are not ok because the arg pointer register is not a fixed
      register.  This prevents the sibcall optimization from occurring.  In

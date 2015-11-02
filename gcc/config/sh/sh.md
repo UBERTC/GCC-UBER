@@ -7448,6 +7448,24 @@ label:
   ""
 {
   prepare_move_operands (operands, DImode);
+  if (TARGET_SH1)
+    {
+      /* When the dest operand is (R0, R1) register pair, split it to
+	 two movsi of which dest is R1 and R0 so as to lower R0-register
+	 pressure on the first movsi.  Apply only for simple source not
+	 to make complex rtl here.  */
+      if (REG_P (operands[0])
+	  && REGNO (operands[0]) == R0_REG
+	  && REG_P (operands[1])
+	  && REGNO (operands[1]) >= FIRST_PSEUDO_REGISTER)
+	{
+	  emit_insn (gen_movsi (gen_rtx_REG (SImode, R1_REG),
+			        gen_rtx_SUBREG (SImode, operands[1], 4)));
+	  emit_insn (gen_movsi (gen_rtx_REG (SImode, R0_REG),
+			        gen_rtx_SUBREG (SImode, operands[1], 0)));
+	  DONE;
+	}
+    }
 })
 
 (define_insn "movdf_media"
@@ -10158,11 +10176,6 @@ label:
 		 "__stack_chk_guard") == 0)
     stack_chk_guard_p = true;
 
-  /* Use R0 to avoid long R0 liveness which stack-protector tends to
-     produce.  */
-  if (stack_chk_guard_p && ! reload_in_progress && ! reload_completed)
-    operands[2] = gen_rtx_REG (Pmode, R0_REG);
-
   if (TARGET_SHMEDIA)
     {
       rtx reg = operands[2];
@@ -10750,6 +10763,8 @@ label:
     LABEL_NUSES (operands[2])++;
 })
 
+;; This may be replaced with casesi_worker_2 in sh_reorg for PIC.
+;; The insn length is set to 8 for that case.
 (define_insn "casesi_worker_1"
   [(set (match_operand:SI 0 "register_operand" "=r,r")
 	(unspec:SI [(reg:SI R0_REG)
@@ -10781,7 +10796,9 @@ label:
       gcc_unreachable ();
     }
 }
-  [(set_attr "length" "4")])
+  [(set_attr_alternative "length"
+     [(if_then_else (match_test "flag_pic") (const_int 8) (const_int 4))
+      (if_then_else (match_test "flag_pic") (const_int 8) (const_int 4))])])
 
 (define_insn "casesi_worker_2"
   [(set (match_operand:SI 0 "register_operand" "=r,r")

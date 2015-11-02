@@ -41,7 +41,7 @@
   if (!REG_P (op))
     return 0;
 
-  if (REGNO (op) > LAST_VIRTUAL_REGISTER)
+  if (REGNO (op) >= FIRST_PSEUDO_REGISTER)
     return 1;
 
   return ALTIVEC_REGNO_P (REGNO (op));
@@ -57,7 +57,7 @@
   if (!REG_P (op))
     return 0;
 
-  if (REGNO (op) > LAST_VIRTUAL_REGISTER)
+  if (REGNO (op) >= FIRST_PSEUDO_REGISTER)
     return 1;
 
   return VSX_REGNO_P (REGNO (op));
@@ -74,7 +74,7 @@
   if (!REG_P (op))
     return 0;
 
-  if (REGNO (op) > LAST_VIRTUAL_REGISTER)
+  if (REGNO (op) >= FIRST_PSEUDO_REGISTER)
     return 1;
 
   return VFLOAT_REGNO_P (REGNO (op));
@@ -91,7 +91,7 @@
   if (!REG_P (op))
     return 0;
 
-  if (REGNO (op) > LAST_VIRTUAL_REGISTER)
+  if (REGNO (op) >= FIRST_PSEUDO_REGISTER)
     return 1;
 
   return VINT_REGNO_P (REGNO (op));
@@ -108,7 +108,7 @@
   if (!REG_P (op))
     return 0;
 
-  if (REGNO (op) > LAST_VIRTUAL_REGISTER)
+  if (REGNO (op) >= FIRST_PSEUDO_REGISTER)
     return 1;
 
   return VLOGICAL_REGNO_P (REGNO (op));
@@ -1063,12 +1063,12 @@
 (define_predicate "current_file_function_operand"
   (and (match_code "symbol_ref")
        (match_test "(DEFAULT_ABI != ABI_AIX || SYMBOL_REF_FUNCTION_P (op))
-		    && ((SYMBOL_REF_LOCAL_P (op)
-			 && ((DEFAULT_ABI != ABI_AIX
-			      && DEFAULT_ABI != ABI_ELFv2)
-			     || !SYMBOL_REF_EXTERNAL_P (op)))
-		        || (op == XEXP (DECL_RTL (current_function_decl),
-						  0)))")))
+		    && (SYMBOL_REF_LOCAL_P (op)
+			|| op == XEXP (DECL_RTL (current_function_decl), 0))
+		    && !((DEFAULT_ABI == ABI_AIX
+			  || DEFAULT_ABI == ABI_ELFv2)
+			 && (SYMBOL_REF_EXTERNAL_P (op)
+			     || SYMBOL_REF_WEAK (op)))")))
 
 ;; Return 1 if this operand is a valid input for a move insn.
 (define_predicate "input_operand"
