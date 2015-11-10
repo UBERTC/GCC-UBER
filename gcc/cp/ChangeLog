@@ -1,3 +1,23 @@
+2015-10-20  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66583
+	* init.c (innermost_aggr_scope): New.
+	(sort_mem_initializers): Use it.
+
+	PR c++/67557
+	* call.c (is_base_field_ref): New.
+	(unsafe_copy_elision_p): New.
+	(build_over_call): Use it.
+
+2015-09-12  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	Backport from mainline
+	2015-06-15  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/51048
+	* decl2.c (no_linkage_error): Do not issue a permerror if the DECL
+	using a local type is pure virtual.
+
 2015-09-10  Jakub Jelinek  <jakub@redhat.com>
 
 	PR c++/67522

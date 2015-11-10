@@ -1,3 +1,172 @@
+2015-11-08  Steven g. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68053
+	* decl.c (add_init_expr_to_sym):  Try to reduce initialization expression
+	before testing for a constant value.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68224
+	* array.c (match_array_element_spec): Check of invalid NULL().
+	While here, fix nearby comments.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68153
+	* check.c (gfc_check_reshape): Improve check for valid SHAPE argument.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68151
+	* match.c (match_case_selector):  Check for invalid type.
+
+2015-01-25  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from trunk.
+	PR fortran/67171
+	* trans-array.c (structure_alloc_comps): On deallocation of
+	class components, reset the vptr to the declared type vtable
+	and reset the _len field of unlimited polymorphic components.
+	*trans-expr.c (gfc_find_and_cut_at_last_class_ref): Bail out on
+	allocatable component references to the right of part reference
+	with non-zero rank and return NULL.
+	(gfc_reset_vptr): Simplify this function by using the function
+	gfc_get_vptr_from_expr. Return if the vptr is NULL_TREE.
+	(gfc_reset_len): If gfc_find_and_cut_at_last_class_ref returns
+	NULL return.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/51993
+	* decl.c (gfc_set_constant_character_len): Convert gcc_assert into an
+	if-statement causing an early return leads to valid error message.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68154
+	* decl.c (add_init_expr_to_sym): if the char length in the typespec
+	is NULL, check for and use a constructor.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/36192
+	* interface.c (get_expr_storage_size):  Check for INTEGER type before
+	calling gmp routines.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68055
+	* decl.c (gfc_match_decl_type_spec): Check for valid kind in old-style
+	declarations.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68054
+	* decl.c (match_attr_spec): PROTECTED can only be a module.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67939
+	* data.c (create_character_initializer): Deal with zero length string.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67885
+	* trans-decl.c (generate_local_decl): Mark PARAMETER entities in
+	BLOCK construct.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67805
+	PR fortran/68108
+	* array.c (gfc_match_array_constructor): Check for error from type
+	spec matching.
+	* decl.c (char_len_param_value): Check for valid of charlen parameter.
+	Check for REF_ARRAY.  Reap dead code dating to 2008.
+	match.c (gfc_match_type_spec): Special case the keyword use in REAL.
+
+2015-10-26  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/67177
+	PR fortran/67977
+	Backport from mainline r228940:
+	* primary.c (match_substring): Add an argument 'deferred' to
+	flag that a substring reference with null start and end should
+	not be optimized away for deferred length strings.
+	(match_string_constant, gfc_match_rvalue): Set the argument.
+	* trans-expr.c (alloc_scalar_allocatable_for_assignment): If
+	there is a substring reference return.
+	* trans-intrinsic.c (conv_intrinsic_move_alloc): For deferred
+	characters, assign the 'from' string length to the 'to' string
+	length. If the 'from' expression is deferred, set its string
+	length to zero. If the 'to' expression has allocatable
+	components, deallocate them.
+
+2015-10-22  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/58754
+	* trans-stmt.c (gfc_trans_allocate): Do not use the scalar
+	character assignment if the allocate expression is an array
+	descriptor.
+
+2015-10-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67900
+	* resolve.c (gfc_verify_binding_labels): Check for NULL pointer.
+
+2015-10-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68019
+	* decl.c (add_init_expr_to_sym): Remove an assert() to allow an error
+	message to be issued.
+
+2015-10-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67987
+	* decl.c (char_len_param_value): Unwrap unlong line.  If LEN < 0,
+	force it to zero per the Fortran 90, 95, 2003, and 2008 Standards.
+	* resolve.c (gfc_resolve_substring_charlen): Unwrap unlong line.
+	If 'start' is larger than 'end', length of substring is negative,
+	so explicitly set it to zero.
+	(resolve_charlen): Remove -Wsurprising warning.  Update comment to
+	reflect that the text is from the F2008 standard.
+
+2015-10-18  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/66079
+	Backport from mainline r224383:
+
+	* trans-expr.c (gfc_conv_procedure_call): Allocatable scalar
+	function results must be freed and nullified after use. Create
+	a temporary to hold the result to prevent duplicate calls.
+	* trans-stmt.c (gfc_trans_allocate): Rename temporary variable
+	as 'source'. Deallocate allocatable components of non-variable
+	'source's.
+
+2015-10-18  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/67721
+	PR fortran/67818
+	Backport from mainline r222477:
+
+	2015-04-27  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/59678
+	PR fortran/65841
+	* trans-array.c (duplicate_allocatable): Fixed deep copy of
+	allocatable components, which are liable for copy only, when
+	they are allocated.
+	(gfc_duplicate_allocatable): Add deep-copy code into if
+	component allocated block. Needed interface change for that.
+	(gfc_copy_allocatable_data): Supplying NULL_TREE for code to
+	add into if-block for checking whether a component was
+	allocated.
+	(gfc_duplicate_allocatable_nocopy): Likewise.
+	(structure_alloc_comps): Likewise.
+	* trans-array.h: Likewise.
+	* trans-expr.c (gfc_trans_alloc_subarray_assign): Likewise.
+	* trans-openmp.c (gfc_walk_alloc_comps): Likewise.
+
 2015-10-02  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/67802
@@ -36,7 +205,7 @@
 2015-09-21  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/67615
-	* resolve.c (gfc_resolve_code): Check for scalar expression in 
+	* resolve.c (gfc_resolve_code): Check for scalar expression in
 	arithmetic-if.
 
 2015-09-10  Steven G. Kargl  <kargl@gcc.gnu.org>

@@ -1,3 +1,293 @@
+2015-11-09  Mike Stump  <mikestump@comcast.net>
+
+	PR debug/66728
+	* dwarf2out.c (get_full_len): Return a value based upon the actual
+	precision needed for the value.
+	(add_const_value_attribute): Use a maximal wide-int for
+	CONST_WIDE_INTs, not VOIDmode.
+	(output_die): Don't ever output NULL with printf.
+
+	* rtl.h (get_precision of rtx_mode_t): Ensure we never process
+	BLKmode nor VOIDmode values.
+
+2015-11-06  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/68106
+	* lra-remat.c (input_regno_present_p): Process hard regs
+	explicitly present in machine description insns.
+	(call_used_input_regno_present_p): Ditto.
+	(calculate_gen_cands): Ditto.
+	(do_remat): Ditto.
+
+2015-11-02  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/rs6000/freebsd64.h (ASM_SPEC32): Adapt spec to handle PIE
+	executables.
+
+2015-11-02  Steve Ellcey  <sellcey@imgtec.com>
+
+	Backport from mainline
+	2015-10-23  Steve Ellcey  <sellcey@imgtec.com>
+	            Andrew Pinski  <apinski@cavium.com>
+
+	PR rtl-optimization/67736
+	* combine.c (simplify_comparison): Use gen_lowpart_or_truncate instead
+	of gen_lowpart.
+
+2015-10-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68102
+	* config/aarch64/aarch64.md (*movsi_aarch64): Check that
+	operands[0] is a reg before taking its REGNO in split condition.
+	(*movdi_aarch64): Likewise.
+
+2015-10-27  Caroline Tice  <cmtice@google.com.
+
+	(from Richard Biener)
+	* tree.c (int_cst_hasher::hash):  Replace XOR with more efficient
+	call to interative_hash_host_wide_int.
+
+2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-10-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR middle-end/67989
+	* optabs.c (expand_atomic_compare_and_swap): Handle case when
+	ptarget_oval or ptarget_bool are const0_rtx.
+
+2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67929
+	* config/arm/arm.c (vfp3_const_double_for_bits): Rewrite.
+	* config/arm/constraints.md (Dp): Update callsite.
+	* config/arm/predicates.md (const_double_vcvt_power_of_two): Likewise.
+
+2015-10-27  Martin Jambor  <mjambor@suse.cz>
+
+	* tree-sra.c (replace_removed_params_ssa_names): Change type of
+	parameter stmt to gimple.
+
+2015-10-26  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	2015-10-09  Martin Jambor  <mjambor@suse.cz>
+
+	PR tree-optimization/67794
+	* tree-sra.c (replace_removed_params_ssa_names): Do not distinguish
+	between types of statements but accept original definitions as a
+	parameter.
+	(ipa_sra_modify_function_body): Use FOR_EACH_SSA_DEF_OPERAND to
+	iterate over definitions.
+
+2015-10-25  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR middle-end/68079
+	* dojump.c (do_compare_and_jump): Canonicalize both function and
+	method types.
+
+2015-10-22  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-10-22  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR target/68015
+	* config/s390/s390.md (mov<mode>cc): Emit compare only if we don't
+	already have a comparison result.
+
+2015-10-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-10-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/68018
+	* config/i386/i386.c (ix86_compute_frame_layout): Realign the stack
+	for 64-bit MS_ABI targets also when default incoming stack boundary
+	is overriden.
+
+2015-10-20  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	Backport from mainline r229024
+	2015-10-20  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	PR target/66912
+	* varasm.c (default_binds_local_p_2): Turn on extern_protected_data.
+
+2015-10-19  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2015-07-20  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	* wide-int.h (struct binary_traits): Fix partial specialization syntax.
+	(struct int_traits): Likewise.
+
+2015-10-16  Richard Sandiford  <richard.sandiford@arm.com>
+
+	PR middle-end/66311
+	* wide-int.cc (wi::from_mpz): Make sure that absolute mpz value
+	is zero- rather than sign-extended.
+
+2015-10-15  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2015-10-14  Peter Bergner  <bergner@vnet.ibm.com>
+		    Torvald Riegel  <triegel@redhat.com>
+
+	PR target/67281
+	* config/rs6000/htm.md (UNSPEC_HTM_FENCE): New.
+	(tabort, tabort<wd>c, tabort<wd>ci, tbegin, tcheck, tend,
+	trechkpt, treclaim, tsr, ttest): Rename define_insns from this...
+	(*tabort, *tabort<wd>c, *tabort<wd>ci, *tbegin, *tcheck, *tend,
+	*trechkpt, *treclaim, *tsr, *ttest): ...to this.  Add memory barrier.
+	(tabort, tabort<wd>c, tabort<wd>ci, tbegin, tcheck, tend,
+	trechkpt, treclaim, tsr, ttest): New define_expands.
+	* config/rs6000/rs6000-c.c (rs6000_target_modify_macros): Define
+	__TM_FENCE__ for htm.
+	* doc/extend.texi: Update documentation for htm builtins.
+
+2015-10-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/67967
+	* config/i386/i386.c (ix86_emit_save_reg_using_mov): Do not add
+	REG_CFA_EXPRESSION to aligned SSE stores.
+
+2015-10-12  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/67940
+	* config/i386/i386.c (ix86_compute_frame_layout): Correct
+	stack alignment adjustment.
+	(ix86_expand_prologue): Likewise.
+
+2015-10-12  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-10-08  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/i386/i386.c (ix86_compute_frame_layout): Round up the
+	SSE register save area to 16 bytes only if the incoming stack
+	boundary is no less than 16 bytes.
+
+	Backport from mainline
+	2015-10-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66697
+	* config/i386/i386.c (ix86_option_override_internal): Always use
+	8-byte minimum stack boundary in 64-bit mode.
+	(ix86_compute_frame_layout): Remove assert on INCOMING_STACK_BOUNDARY.
+	(ix86_emit_save_reg_using_mov): Support unaligned SSE store.
+	Add a REG_CFA_EXPRESSION note if needed.
+	(ix86_emit_restore_sse_regs_using_mov): Support unaligned SSE load.
+	(ix86_handle_force_align_arg_pointer_attribute): New.
+	(ix86_minimum_incoming_stack_boundary): Remove TARGET_64BIT check.
+	(ix86_attribute_table): Set ix86_force_align_arg_pointer_string
+	with ix86_handle_force_align_arg_pointer_attribute.
+	* config/i386/i386.h (MIN_STACK_BOUNDARY): Set to BITS_PER_WORD.
+
+2015-10-12  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2015-10-07  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/67850
+	* config/i386/i386.c (ix86_maybe_switch_abi): Merged with ...
+	(ix86_set_current_function): This.
+	(TARGET_EXPAND_TO_RTL_HOOK): Removed.
+
+2015-10-12  Alexander Fomin  <alexander.fomin@intel.com>
+	    Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/67849
+	* config/i386/sse.md (define_split vec_select/V8FI): Restrict
+	split for upper-bank registers when target does not support
+	AVX512VL.
+	(define_insn "vec_extract_lo_<mode><mask_name>"): Restrict
+	split when target does not support AVX512VL.
+
+2015-10-12  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-07-21  Mike Frysinger  <vapier@gentoo.org>
+		    Bernhard Reutner-Fischer  <aldot@gcc.gnu.org>
+
+	* configure.ac: Add check for new options in isl-0.15.
+	* config.in, configure: Rebuilt.
+	* graphite-blocking.c: Include <isl/constraint.h>
+	* graphite-interchange.c,  graphite-poly.c: Likewise.
+	* graphhite-scop-detection.c, graphite-sese-to-poly.c: Likewise.
+	* graphite.c: Likewise.
+	* graphite-isl-ast-to-gimple.c: Include <isl/constraint.h> and
+	<isl/union_set.h>.
+	* graphite-dependences.c: Include <isl/constraint.h>.
+	(max_number_of_out_dimensions): Returns isl_stat.
+	(extend_schedule_1): Likewise
+	(extend_schedule): Corresponding changes.
+	* graphite-optimize-isl.c: Include <isl/constraint.h> and
+	<isl/union_set.h>.
+	(getSingleMap): Change return type of isl_stat.
+	(optimize_isl): Conditionally use
+	isl_options_set_schedule_serialize_sccs.
+	* graphite-poly.h (isl_stat, isl_stat_ok): Define fallbacks
+	if not HAVE_ISL_OPTIONS_SET_SCHEDULE_SERIALIZE_SCCS.
+
+2015-10-10  Alexandre Oliva <aoliva@redhat.com>
+
+	PR debug/58315
+	* tree-inline.c (reset_debug_binding): New.
+	(reset_debug_bindings): Likewise.
+	(expand_call_inline): Call it.
+
+2015-10-08  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2015-09-17  Richard Henderson  <rth@redhat.com>
+
+	PR libstdc++/65913
+	* builtins.c (fold_builtin_atomic_always_lock_free): Handle fake
+	pointers that encode the alignment of the object.
+
+2015-10-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-09-15  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67563
+	* gimple-fold.c (gimplify_and_update_call_from_tree): Do not
+	transfer EH info from old to new stmt.
+	(replace_call_with_value): Likewise.
+	(replace_call_with_call_and_fold): Likewise.
+	(gimple_fold_builtin_memory_op): Likewise.
+	(gimple_fold_builtin_memset): Likewise.
+	(gimple_fold_builtin_stpcpy): Likewise.
+	(gimple_fold_call): Likewise.
+
+	2015-09-24  Richard Biener  <rguenther@suse.de>
+
+	PR lto/67699
+	* lto-cgraph.c (compute_ltrans_boundary): Do not stream
+	abstract origins.
+
+2015-10-06  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* config/i386/i386.c (expand_vec_perm_even_odd_trunc): New.
+	(expand_vec_perm_even_odd_1): Handle V64QImode.
+	(ix86_expand_vec_perm_const_1): Try expansion with
+	expand_vec_perm_even_odd_trunc as well.
+	* config/i386/sse.md (VI124_AVX512F): Rename to ...
+	(define_mode_iterator VI124_AVX2_24_AVX512F_1_AVX512BW): This. Extend
+	to V54QI.
+	(define_mode_iterator VI248_AVX2_8_AVX512F): Rename to ...
+	(define_mode_iterator VI248_AVX2_8_AVX512F_24_AVX512BW): This. Extend
+	to V32HI and V16SI.
+	(define_insn "avx512bw_<code>v32hiv32qi2"): Unhide pattern name.
+	(define_expand "vec_pack_trunc_<mode>"): Update iterator name.
+	(define_expand "vec_unpacks_lo_<mode>"): Ditto.
+	(define_expand "vec_unpacks_hi_<mode>"): Ditto.
+	(define_expand "vec_unpacku_lo_<mode>"): Ditto.
+	(define_expand "vec_unpacku_hi_<mode>"): Ditto.
+
 2015-10-05  Marek Polacek  <polacek@redhat.com>
 
 	Backport from mainline
@@ -562,7 +852,7 @@
 	Backport from mainline
 	2015-08-21  Dominik Vogt  <vogt@linux.vnet.ibm.com>
 
-    	* config/s390/s390-builtins.def: Fix value range of vec_load_bndry.
+	* config/s390/s390-builtins.def: Fix value range of vec_load_bndry.
 
 2015-08-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
 

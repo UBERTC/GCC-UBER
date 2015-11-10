@@ -1,3 +1,267 @@
+2015-11-08  Steven g. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68053
+	* gfortran.dg/pr68053.f90: New test.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68224
+	* gfortran.dg/pr68224.f90: New test.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68153
+	* gfortran.dg/pr68153.f90: New test.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68151
+	* gfortran.dg/pr68151.f90: New test.
+
+2015-11-06  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/68106
+	* testsuite/gcc.target/aarch64/pr68106.c: New.
+
+2015-01-25  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from trunk.
+	PR fortran/67171
+	* gfortran.dg/allocate_with_source_12.f03: New test
+
+	Backported from trunk.
+	PR fortran/61819
+	* gfortran.dg/allocate_with_source_13.f03: New test
+
+	Backported from trunk.
+	PR fortran/61830
+	* gfortran.dg/allocate_with_source_14.f03: New test
+
+	Backported from trunk.
+	PR fortran/67933
+	* gfortran.dg/allocate_with_source_15.f03: New test
+
+2015-11-02  Steve Ellcey  <sellcey@imgtec.com>
+
+	2015-10-23  Steve Ellcey  <sellcey@imgtec.com>
+		    Andrew Pinski  <apinski@cavium.com>
+
+	PR rtl-optimization/67736
+	* gcc.dg/torture/pr67736.c: New test.
+	* gcc.dg/combine-subregs.c: New test.
+
+2015-11-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67929
+	* gcc.target/arm/pr67929_1.c: Move to...
+	* gcc.c-torture/execute/pr67929_1.c: ... Here.
+	Remove arm-specific directives.  Add noclone, noinline
+	attributes.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/51993
+	* gfortran.dg/pr51993.f90: New test.
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68154
+	*gfortran.dg/pr68154.f90
+
+2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/36192
+	* gfortran.dg/pr36192_1.f90: New test.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68055
+	* gfortran.dg/pr68055.f90: New case.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68054
+	* gfortran.dg/pr68054.f90: New test.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67939
+	* gfortran.dg/pr67939.f90: New test.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67885
+	* gfortran.dg/pr67885.f90: New test.
+
+2015-10-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67805
+	PR fortran/68108
+	* gfortran.dg/pr67805.f90: New testcase.
+	* gfortran.dg/pr67805_2.f90: New test.
+	* gfortran.dg/array_constructor_26.f03: Update testcase.
+	* gfortran.dg/array_constructor_27.f03: Ditto.
+	* gfortran.dg/char_type_len_2.f90: Ditto.
+	* gfortran.dg/pr67802.f90: Ditto.
+	* gfortran.dg/used_before_typed_3.f90: Ditto.
+
+2015-10-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68102
+	* gcc.target/aarch64/pr68102_1.c: New test.
+
+2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-10-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR middle-end/67989
+	* g++.dg/pr67989.C: New test.
+
+2015-10-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67929
+	* gcc.target/arm/pr67929_1.c: New test.
+
+2015-10-26  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from mainline r228940:
+	PR fortran/67177
+	* gfortran.dg/move_alloc_15.f90: New test
+	* gfortran.dg/move_alloc_16.f90: New test
+
+	PR fortran/67977
+	* gfortran.dg/deferred_character_assignment_1.f90: New test
+
+2015-10-26  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	2015-10-09  Martin Jambor  <mjambor@suse.cz>
+
+        * gcc.dg/ipa/ipa-sra-10.c: New test.
+        * gcc.dg/torture/pr67794.c: Likewise.
+
+2015-10-22  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/58754
+	* gfortran.dg/pr58754.f90: New test
+
+2015-10-22  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-10-22  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR target/68015
+	* gcc.target/s390/pr68015.c: New test.
+
+2015-10-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-10-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/68018
+	* gcc.target/i386/pr68018.c: New test.
+
+2015-10-20  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	Backport from mainline r229024
+	2015-10-20  Szabolcs Nagy  <szabolcs.nagy@arm.com>
+
+	PR target/66912
+	* gcc.target/aarch64/pr66912.c: New.
+	* gcc.target/arm/pr66912.c: New.
+
+2015-10-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67900
+	* gfortran.dg/pr67900.f90: New tests.
+
+2015-10-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68019
+	* gfortran.dg/pr68019.f90: new test.
+
+2015-10-19  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67987
+	* gfortran.df/pr67987.f90: New test.
+	* gfortran.dg/char_length_2.f90: Update testcase.
+
+2015-10-18  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/66079
+	Backport from mainline r224383:
+
+	* gfortran.dg/allocatable_scalar_13.f90: New test
+
+2015-10-18  Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/67721
+	PR fortran/67818
+	Backport from mainline r222477:
+
+	2015-04-27  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/59678
+	PR fortran/65841
+	* gfortran.dg/alloc_comp_deep_copy_1.f03: New test.
+	* gfortran.dg/alloc_comp_deep_copy_2.f03: New test.
+
+2015-10-16  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR middle-end/66311
+	* gfortran.dg/pr66311.f90: New file.
+
+2015-10-12  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-10-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/66697
+	* gcc.target/i386/20060512-1.c: Remove ia32 requirement.
+	(PUSH, POP): New defines.
+	(sse2_test): Use PUSH and POP to misalign runtime stack.
+	* gcc.target/i386/20060512-2.c: Remove ia32 requirement.
+
+2015-10-12  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	Backport from mainline
+	2015-06-15  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/51048
+	* g++.dg/cpp0x/local-type1.C: New.
+
+2015-10-12  Alexander Fomin  <alexander.fomin@intel.com>
+	    Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/67849
+	* gcc.target/i386/pr67480.c: New test.
+
+2015-10-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-09-15  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67563
+	* gcc.dg/pr67563.c: New testcase.
+
+	2015-09-24  Richard Biener  <rguenther@suse.de>
+
+	PR lto/67699
+	* g++.dg/pr67699.C: New testcase.
+
+2015-10-06  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* gcc.target/i386/vect-pack-trunc-1.c: New test.
+	* gcc.target/i386/vect-pack-trunc-2.c: Ditto.
+	* gcc.target/i386/vect-perm-even-1.c: Ditto.
+	* gcc.target/i386/vect-perm-odd-1.c: Ditto.
+	* gcc.target/i386/vect-unpack-1.c: Ditto.
+	* gcc.target/i386/vect-unpack-2.c: Ditto.
+
 2015-10-05  Marek Polacek  <polacek@redhat.com>
 
 	Backport from mainline
@@ -113,8 +377,8 @@
 
 2015-04-28  Kirill Yukhin  <kirill.yukhin@intel.com>
 
-        * gcc.target/i386/avx512vbmi-check.h (main): Fix register
-        name while checking for AVX-512VBMI presence.
+	* gcc.target/i386/avx512vbmi-check.h (main): Fix register
+	name while checking for AVX-512VBMI presence.
 
 2015-09-25  Steven G. Kargl  <kargl@gcc.gnu.org>
 
@@ -326,7 +590,7 @@
 	Backport from mainline
 	2015-08-21  Dominik Vogt  <vogt@linux.vnet.ibm.com>
 
-    	* gcc.target/s390/zvector/vec-load_bndry-1.c: New test.
+	* gcc.target/s390/zvector/vec-load_bndry-1.c: New test.
 
 2015-08-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
 
@@ -463,9 +727,9 @@
 	backport from trunk:
 	2015-07-21  Alex Velenko  <Alex.Velenko@arm.com>
 
-        * gcc.target/arm/split-live-ranges-for-shrink-wrap.c (dg-skip-if):
+	* gcc.target/arm/split-live-ranges-for-shrink-wrap.c (dg-skip-if):
 	Skip -march=armv4t.
-        (dg-additional-options): Set armv5t flag.
+	(dg-additional-options): Set armv5t flag.
 
 2015-07-25  Tom de Vries  <tom@codesourcery.com>
 
