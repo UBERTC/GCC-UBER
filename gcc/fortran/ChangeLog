@@ -1,3 +1,40 @@
+2015-11-08  Steven g. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68053
+	* decl.c (add_init_expr_to_sym):  Try to reduce initialization expression
+	before testing for a constant value.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68224
+	* array.c (match_array_element_spec): Check of invalid NULL().
+	While here, fix nearby comments.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68153
+	* check.c (gfc_check_reshape): Improve check for valid SHAPE argument.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68151
+	* match.c (match_case_selector):  Check for invalid type.
+
+2015-01-25  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from trunk.
+	PR fortran/67171
+	* trans-array.c (structure_alloc_comps): On deallocation of
+	class components, reset the vptr to the declared type vtable
+	and reset the _len field of unlimited polymorphic components.
+	*trans-expr.c (gfc_find_and_cut_at_last_class_ref): Bail out on
+	allocatable component references to the right of part reference
+	with non-zero rank and return NULL.
+	(gfc_reset_vptr): Simplify this function by using the function
+	gfc_get_vptr_from_expr. Return if the vptr is NULL_TREE.
+	(gfc_reset_len): If gfc_find_and_cut_at_last_class_ref returns
+	NULL return.
+
 2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/51993
@@ -8,7 +45,7 @@
 
 	PR fortran/68154
 	* decl.c (add_init_expr_to_sym): if the char length in the typespec
-	is NULL, check for and use a constructor. 
+	is NULL, check for and use a constructor.
 
 2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
 

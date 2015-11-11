@@ -1,3 +1,78 @@
+2015-11-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/i386/pr67265.c: New test.
+
+2015-11-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68129
+	* gcc.target/aarch64/pr68129_1.c: New test.
+
+2015-11-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/sparc/sparc-ret.c: Rename to...
+	* gcc.target/sparc/sparc-ret-1.c: ...this.
+	* gcc.target/sparc/sparc-ret-2.c: New test.
+
+2015-11-08  Steven g. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68053
+	* gfortran.dg/pr68053.f90: New test.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68224
+	* gfortran.dg/pr68224.f90: New test.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68153
+	* gfortran.dg/pr68153.f90: New test.
+
+2015-11-08  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68151
+	* gfortran.dg/pr68151.f90: New test.
+
+2015-11-06  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/68106
+	* testsuite/gcc.target/aarch64/pr68106.c: New.
+
+2015-01-25  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backported from trunk.
+	PR fortran/67171
+	* gfortran.dg/allocate_with_source_12.f03: New test
+
+	Backported from trunk.
+	PR fortran/61819
+	* gfortran.dg/allocate_with_source_13.f03: New test
+
+	Backported from trunk.
+	PR fortran/61830
+	* gfortran.dg/allocate_with_source_14.f03: New test
+
+	Backported from trunk.
+	PR fortran/67933
+	* gfortran.dg/allocate_with_source_15.f03: New test
+
+2015-11-02  Steve Ellcey  <sellcey@imgtec.com>
+
+	2015-10-23  Steve Ellcey  <sellcey@imgtec.com>
+		    Andrew Pinski  <apinski@cavium.com>
+
+	PR rtl-optimization/67736
+	* gcc.dg/torture/pr67736.c: New test.
+	* gcc.dg/combine-subregs.c: New test.
+
+2015-11-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67929
+	* gcc.target/arm/pr67929_1.c: Move to...
+	* gcc.c-torture/execute/pr67929_1.c: ... Here.
+	Remove arm-specific directives.  Add noclone, noinline
+	attributes.
+
 2015-10-30  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/51993

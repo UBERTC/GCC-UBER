@@ -1,3 +1,70 @@
+2015-11-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/67265
+	* ira.c (ira_setup_eliminable_regset): Do not necessarily create the
+	frame pointer for stack checking if non-call exceptions aren't used.
+	* config/i386/i386.c (ix86_finalize_stack_realign_flags): Likewise.
+
+2015-11-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68129
+	* config/aarch64/aarch64.h (TARGET_SUPPORTS_WIDE_INT): Define to 1.
+	* config/aarch64/aarch64.c (aarch64_print_operand, CONST_DOUBLE):
+	Delete VOIDmode case.  Assert that mode is not VOIDmode.
+	* config/aarch64/predicates.md (const0_operand): Remove const_double
+	match.
+
+2015-11-10  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Partial backport from trunk r228751.
+	PR tree-optimization/68238
+	2015-10-13  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-loop.c (vect_estimate_min_profitable_iters): Use
+	LOOP_VINFO_COMP_ALIAS_DDRS to estimate alias versioning cost.
+
+2015-11-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/57845
+	* config/sparc/sparc.c (sparc_function_value_1): In 32-bit mode, do
+	not promote the mode for aggregate types.
+
+2015-11-09  Mike Stump  <mikestump@comcast.net>
+
+	PR debug/66728
+	* dwarf2out.c (get_full_len): Return a value based upon the actual
+	precision needed for the value.
+	(add_const_value_attribute): Use a maximal wide-int for
+	CONST_WIDE_INTs, not VOIDmode.
+	(output_die): Don't ever output NULL with printf.
+
+	* rtl.h (get_precision of rtx_mode_t): Ensure we never process
+	BLKmode nor VOIDmode values.
+
+2015-11-06  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/68106
+	* lra-remat.c (input_regno_present_p): Process hard regs
+	explicitly present in machine description insns.
+	(call_used_input_regno_present_p): Ditto.
+	(calculate_gen_cands): Ditto.
+	(do_remat): Ditto.
+
+2015-11-02  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/rs6000/freebsd64.h (ASM_SPEC32): Adapt spec to handle PIE
+	executables.
+
+2015-11-02  Steve Ellcey  <sellcey@imgtec.com>
+
+	Backport from mainline
+	2015-10-23  Steve Ellcey  <sellcey@imgtec.com>
+	            Andrew Pinski  <apinski@cavium.com>
+
+	PR rtl-optimization/67736
+	* combine.c (simplify_comparison): Use gen_lowpart_or_truncate instead
+	of gen_lowpart.
+
 2015-10-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	Backport from mainline
