@@ -613,6 +613,15 @@
    (V16SF "HI") (V8SF  "QI") (V4SF  "QI")
    (V8DF  "QI") (V4DF  "QI") (V2DF  "QI")])
 
+;; Mapping of vector modes to corresponding mask size
+(define_mode_attr avx512fmaskmodelower
+  [(V64QI "di") (V32QI "si") (V16QI "hi")
+   (V32HI "si") (V16HI "hi") (V8HI  "qi") (V4HI "qi")
+   (V16SI "hi") (V8SI  "qi") (V4SI  "qi")
+   (V8DI  "qi") (V4DI  "qi") (V2DI  "qi")
+   (V16SF "hi") (V8SF  "qi") (V4SF  "qi")
+   (V8DF  "qi") (V4DF  "qi") (V2DF  "qi")])
+
 ;; Mapping of vector float modes to an integer mode of the same size
 (define_mode_attr sseintvecmode
   [(V16SF "V16SI") (V8DF  "V8DI")
@@ -789,6 +798,14 @@
 (define_mode_attr concat_tg_mode
   [(V32QI "t") (V16HI "t") (V8SI "t") (V4DI "t") (V8SF "t") (V4DF "t")
    (V64QI "g") (V32HI "g") (V16SI "g") (V8DI "g") (V16SF "g") (V8DF "g")])
+
+;; Half mask mode for unpacks
+(define_mode_attr HALFMASKMODE
+  [(DI "SI") (SI "HI")])
+
+;; Double mask mode for packs
+(define_mode_attr DOUBLEMASKMODE
+  [(HI "SI") (SI "DI")])
 
 
 ;; Include define_subst patterns for instructions with mask
@@ -2811,6 +2828,150 @@
 		      (const_string "0")))
    (set_attr "mode" "<MODE>")])
 
+(define_expand "vec_cmp<mode><avx512fmaskmodelower>"
+  [(set (match_operand:<avx512fmaskmode> 0 "register_operand")
+	(match_operator:<avx512fmaskmode> 1 ""
+	  [(match_operand:V48_AVX512VL 2 "register_operand")
+	   (match_operand:V48_AVX512VL 3 "nonimmediate_operand")]))]
+  "TARGET_AVX512F"
+{
+  bool ok = ix86_expand_mask_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmp<mode><avx512fmaskmodelower>"
+  [(set (match_operand:<avx512fmaskmode> 0 "register_operand")
+	(match_operator:<avx512fmaskmode> 1 ""
+	  [(match_operand:VI12_AVX512VL 2 "register_operand")
+	   (match_operand:VI12_AVX512VL 3 "nonimmediate_operand")]))]
+  "TARGET_AVX512BW"
+{
+  bool ok = ix86_expand_mask_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmp<mode><sseintvecmodelower>"
+  [(set (match_operand:<sseintvecmode> 0 "register_operand")
+	(match_operator:<sseintvecmode> 1 ""
+	  [(match_operand:VI_256 2 "register_operand")
+	   (match_operand:VI_256 3 "nonimmediate_operand")]))]
+  "TARGET_AVX2"
+{
+  bool ok = ix86_expand_int_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmp<mode><sseintvecmodelower>"
+  [(set (match_operand:<sseintvecmode> 0 "register_operand")
+	(match_operator:<sseintvecmode> 1 ""
+	  [(match_operand:VI124_128 2 "register_operand")
+	   (match_operand:VI124_128 3 "nonimmediate_operand")]))]
+  "TARGET_SSE2"
+{
+  bool ok = ix86_expand_int_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmpv2div2di"
+  [(set (match_operand:V2DI 0 "register_operand")
+	(match_operator:V2DI 1 ""
+	  [(match_operand:V2DI 2 "register_operand")
+	   (match_operand:V2DI 3 "nonimmediate_operand")]))]
+  "TARGET_SSE4_2"
+{
+  bool ok = ix86_expand_int_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmp<mode><sseintvecmodelower>"
+  [(set (match_operand:<sseintvecmode> 0 "register_operand")
+	(match_operator:<sseintvecmode> 1 ""
+	  [(match_operand:VF_256 2 "register_operand")
+	   (match_operand:VF_256 3 "nonimmediate_operand")]))]
+  "TARGET_AVX"
+{
+  bool ok = ix86_expand_fp_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmp<mode><sseintvecmodelower>"
+  [(set (match_operand:<sseintvecmode> 0 "register_operand")
+	(match_operator:<sseintvecmode> 1 ""
+	  [(match_operand:VF_128 2 "register_operand")
+	   (match_operand:VF_128 3 "nonimmediate_operand")]))]
+  "TARGET_SSE"
+{
+  bool ok = ix86_expand_fp_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmpu<mode><avx512fmaskmodelower>"
+  [(set (match_operand:<avx512fmaskmode> 0 "register_operand")
+	(match_operator:<avx512fmaskmode> 1 ""
+	  [(match_operand:VI48_AVX512VL 2 "register_operand")
+	   (match_operand:VI48_AVX512VL 3 "nonimmediate_operand")]))]
+  "TARGET_AVX512F"
+{
+  bool ok = ix86_expand_mask_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmpu<mode><avx512fmaskmodelower>"
+  [(set (match_operand:<avx512fmaskmode> 0 "register_operand")
+	(match_operator:<avx512fmaskmode> 1 ""
+	  [(match_operand:VI12_AVX512VL 2 "register_operand")
+	   (match_operand:VI12_AVX512VL 3 "nonimmediate_operand")]))]
+  "TARGET_AVX512BW"
+{
+  bool ok = ix86_expand_mask_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmpu<mode><sseintvecmodelower>"
+  [(set (match_operand:<sseintvecmode> 0 "register_operand")
+	(match_operator:<sseintvecmode> 1 ""
+	  [(match_operand:VI_256 2 "register_operand")
+	   (match_operand:VI_256 3 "nonimmediate_operand")]))]
+  "TARGET_AVX2"
+{
+  bool ok = ix86_expand_int_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmpu<mode><sseintvecmodelower>"
+  [(set (match_operand:<sseintvecmode> 0 "register_operand")
+	(match_operator:<sseintvecmode> 1 ""
+	  [(match_operand:VI124_128 2 "register_operand")
+	   (match_operand:VI124_128 3 "nonimmediate_operand")]))]
+  "TARGET_SSE2"
+{
+  bool ok = ix86_expand_int_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vec_cmpuv2div2di"
+  [(set (match_operand:V2DI 0 "register_operand")
+	(match_operator:V2DI 1 ""
+	  [(match_operand:V2DI 2 "register_operand")
+	   (match_operand:V2DI 3 "nonimmediate_operand")]))]
+  "TARGET_SSE4_2"
+{
+  bool ok = ix86_expand_int_vec_cmp (operands);
+  gcc_assert (ok);
+  DONE;
+})
+
 (define_expand "vcond<V_512:mode><VF_512:mode>"
   [(set (match_operand:V_512 0 "register_operand")
 	(if_then_else:V_512
@@ -2859,6 +3020,87 @@
 {
   bool ok = ix86_expand_fp_vcond (operands);
   gcc_assert (ok);
+  DONE;
+})
+
+(define_expand "vcond_mask_<mode><avx512fmaskmodelower>"
+  [(set (match_operand:V48_AVX512VL 0 "register_operand")
+	(vec_merge:V48_AVX512VL
+	  (match_operand:V48_AVX512VL 1 "nonimmediate_operand")
+	  (match_operand:V48_AVX512VL 2 "vector_move_operand")
+	  (match_operand:<avx512fmaskmode> 3 "register_operand")))]
+  "TARGET_AVX512F")
+
+(define_expand "vcond_mask_<mode><avx512fmaskmodelower>"
+  [(set (match_operand:VI12_AVX512VL 0 "register_operand")
+	(vec_merge:VI12_AVX512VL
+	  (match_operand:VI12_AVX512VL 1 "nonimmediate_operand")
+	  (match_operand:VI12_AVX512VL 2 "vector_move_operand")
+	  (match_operand:<avx512fmaskmode> 3 "register_operand")))]
+  "TARGET_AVX512BW")
+
+(define_expand "vcond_mask_<mode><sseintvecmodelower>"
+  [(set (match_operand:VI_256 0 "register_operand")
+	(vec_merge:VI_256
+	  (match_operand:VI_256 1 "nonimmediate_operand")
+	  (match_operand:VI_256 2 "vector_move_operand")
+	  (match_operand:<sseintvecmode> 3 "register_operand")))]
+  "TARGET_AVX2"
+{
+  ix86_expand_sse_movcc (operands[0], operands[3],
+			 operands[1], operands[2]);
+  DONE;
+})
+
+(define_expand "vcond_mask_<mode><sseintvecmodelower>"
+  [(set (match_operand:VI124_128 0 "register_operand")
+	(vec_merge:VI124_128
+	  (match_operand:VI124_128 1 "nonimmediate_operand")
+	  (match_operand:VI124_128 2 "vector_move_operand")
+	  (match_operand:<sseintvecmode> 3 "register_operand")))]
+  "TARGET_SSE2"
+{
+  ix86_expand_sse_movcc (operands[0], operands[3],
+			 operands[1], operands[2]);
+  DONE;
+})
+
+(define_expand "vcond_mask_v2div2di"
+  [(set (match_operand:V2DI 0 "register_operand")
+	(vec_merge:V2DI
+	  (match_operand:V2DI 1 "nonimmediate_operand")
+	  (match_operand:V2DI 2 "vector_move_operand")
+	  (match_operand:V2DI 3 "register_operand")))]
+  "TARGET_SSE4_2"
+{
+  ix86_expand_sse_movcc (operands[0], operands[3],
+			 operands[1], operands[2]);
+  DONE;
+})
+
+(define_expand "vcond_mask_<mode><sseintvecmodelower>"
+  [(set (match_operand:VF_256 0 "register_operand")
+	(vec_merge:VF_256
+	  (match_operand:VF_256 1 "nonimmediate_operand")
+	  (match_operand:VF_256 2 "vector_move_operand")
+	  (match_operand:<sseintvecmode> 3 "register_operand")))]
+  "TARGET_AVX"
+{
+  ix86_expand_sse_movcc (operands[0], operands[3],
+			 operands[1], operands[2]);
+  DONE;
+})
+
+(define_expand "vcond_mask_<mode><sseintvecmodelower>"
+  [(set (match_operand:VF_128 0 "register_operand")
+	(vec_merge:VF_128
+	  (match_operand:VF_128 1 "nonimmediate_operand")
+	  (match_operand:VF_128 2 "vector_move_operand")
+	  (match_operand:<sseintvecmode> 3 "register_operand")))]
+  "TARGET_SSE"
+{
+  ix86_expand_sse_movcc (operands[0], operands[3],
+			 operands[1], operands[2]);
   DONE;
 })
 
@@ -11344,6 +11586,23 @@
   DONE;
 })
 
+(define_expand "vec_pack_trunc_qi"
+  [(set (match_operand:HI 0 ("register_operand"))
+        (ior:HI (ashift:HI (zero_extend:HI (match_operand:QI 1 ("register_operand")))
+                           (const_int 8))
+                (zero_extend:HI (match_operand:QI 2 ("register_operand")))))]
+  "TARGET_AVX512F")
+
+(define_expand "vec_pack_trunc_<mode>"
+  [(set (match_operand:<DOUBLEMASKMODE> 0 ("register_operand"))
+        (ior:<DOUBLEMASKMODE> (ashift:<DOUBLEMASKMODE> (zero_extend:<DOUBLEMASKMODE> (match_operand:SWI24 1 ("register_operand")))
+                           (match_dup 3))
+                (zero_extend:<DOUBLEMASKMODE> (match_operand:SWI24 2 ("register_operand")))))]
+  "TARGET_AVX512BW"
+{
+  operands[3] = GEN_INT (GET_MODE_BITSIZE (<MODE>mode));
+})
+
 (define_insn "<sse2_avx2>_packsswb<mask_name>"
   [(set (match_operand:VI1_AVX512 0 "register_operand" "=x,x")
 	(vec_concat:VI1_AVX512
@@ -13240,11 +13499,41 @@
   "TARGET_SSE2"
   "ix86_expand_sse_unpack (operands[0], operands[1], true, false); DONE;")
 
+(define_expand "vec_unpacks_lo_hi"
+  [(set (match_operand:QI 0 "register_operand")
+        (subreg:QI (match_operand:HI 1 "register_operand") 0))]
+  "TARGET_AVX512DQ")
+
+(define_expand "vec_unpacks_lo_si"
+  [(set (match_operand:HI 0 "register_operand")
+        (subreg:HI (match_operand:SI 1 "register_operand") 0))]
+  "TARGET_AVX512F")
+
+(define_expand "vec_unpacks_lo_di"
+  [(set (match_operand:SI 0 "register_operand")
+        (subreg:SI (match_operand:DI 1 "register_operand") 0))]
+  "TARGET_AVX512BW")
+
 (define_expand "vec_unpacku_hi_<mode>"
   [(match_operand:<sseunpackmode> 0 "register_operand")
    (match_operand:VI124_AVX2_24_AVX512F_1_AVX512BW 1 "register_operand")]
   "TARGET_SSE2"
   "ix86_expand_sse_unpack (operands[0], operands[1], true, true); DONE;")
+
+(define_expand "vec_unpacks_hi_hi"
+  [(set (subreg:HI (match_operand:QI 0 "register_operand") 0)
+        (lshiftrt:HI (match_operand:HI 1 "register_operand")
+                     (const_int 8)))]
+  "TARGET_AVX512F")
+
+(define_expand "vec_unpacks_hi_<mode>"
+  [(set (subreg:SWI48x (match_operand:<HALFMASKMODE> 0 "register_operand") 0)
+        (lshiftrt:SWI48x (match_operand:SWI48x 1 "register_operand")
+                         (match_dup 2)))]
+  "TARGET_AVX512BW"
+{
+  operands[2] = GEN_INT (GET_MODE_BITSIZE (<HALFMASKMODE>mode));
+})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -17982,7 +18271,7 @@
    (set_attr "btver2_decode" "vector") 
    (set_attr "mode" "<sseinsnmode>")])
 
-(define_expand "maskload<mode>"
+(define_expand "maskload<mode><sseintvecmodelower>"
   [(set (match_operand:V48_AVX2 0 "register_operand")
 	(unspec:V48_AVX2
 	  [(match_operand:<sseintvecmode> 2 "register_operand")
@@ -17990,7 +18279,23 @@
 	  UNSPEC_MASKMOV))]
   "TARGET_AVX")
 
-(define_expand "maskstore<mode>"
+(define_expand "maskload<mode><avx512fmaskmodelower>"
+  [(set (match_operand:V48_AVX512VL 0 "register_operand")
+	(vec_merge:V48_AVX512VL
+	  (match_operand:V48_AVX512VL 1 "memory_operand")
+	  (match_dup 0)
+	  (match_operand:<avx512fmaskmode> 2 "register_operand")))]
+  "TARGET_AVX512F")
+
+(define_expand "maskload<mode><avx512fmaskmodelower>"
+  [(set (match_operand:VI12_AVX512VL 0 "register_operand")
+	(vec_merge:VI12_AVX512VL
+	  (match_operand:VI12_AVX512VL 1 "memory_operand")
+	  (match_dup 0)
+	  (match_operand:<avx512fmaskmode> 2 "register_operand")))]
+  "TARGET_AVX512BW")
+
+(define_expand "maskstore<mode><sseintvecmodelower>"
   [(set (match_operand:V48_AVX2 0 "memory_operand")
 	(unspec:V48_AVX2
 	  [(match_operand:<sseintvecmode> 2 "register_operand")
@@ -17998,6 +18303,22 @@
 	   (match_dup 0)]
 	  UNSPEC_MASKMOV))]
   "TARGET_AVX")
+
+(define_expand "maskstore<mode><avx512fmaskmodelower>"
+  [(set (match_operand:V48_AVX512VL 0 "memory_operand")
+	(vec_merge:V48_AVX512VL
+	  (match_operand:V48_AVX512VL 1 "register_operand")
+	  (match_dup 0)
+	  (match_operand:<avx512fmaskmode> 2 "register_operand")))]
+  "TARGET_AVX512F")
+
+(define_expand "maskstore<mode><avx512fmaskmodelower>"
+  [(set (match_operand:VI12_AVX512VL 0 "memory_operand")
+	(vec_merge:VI12_AVX512VL
+	  (match_operand:VI12_AVX512VL 1 "register_operand")
+	  (match_dup 0)
+	  (match_operand:<avx512fmaskmode> 2 "register_operand")))]
+  "TARGET_AVX512BW")
 
 (define_insn_and_split "avx_<castmode><avxsizesuffix>_<castmode>"
   [(set (match_operand:AVX256MODE2P 0 "nonimmediate_operand" "=x,m")

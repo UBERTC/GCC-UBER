@@ -905,8 +905,29 @@ extern void omp_clause_range_check_failed (const_tree, const char *, int,
 #define IDENTIFIER_TRANSPARENT_ALIAS(NODE) \
   (IDENTIFIER_NODE_CHECK (NODE)->base.deprecated_flag)
 
-/* In fixed-point types, means a saturating type.  */
-#define TYPE_SATURATING(NODE) (TYPE_CHECK (NODE)->base.u.bits.saturating_flag)
+/* In an aggregate type, indicates that the scalar fields of the type are
+   stored in reverse order from the target order.  This effectively
+   toggles BYTES_BIG_ENDIAN and WORDS_BIG_ENDIAN within the type.  */
+#define TYPE_REVERSE_STORAGE_ORDER(NODE) \
+  (TREE_CHECK4 (NODE, RECORD_TYPE, UNION_TYPE, QUAL_UNION_TYPE, ARRAY_TYPE)->base.u.bits.saturating_flag)
+
+/* In a non-aggregate type, indicates a saturating type.  */
+#define TYPE_SATURATING(NODE) \
+  (TREE_NOT_CHECK4 (NODE, RECORD_TYPE, UNION_TYPE, QUAL_UNION_TYPE, ARRAY_TYPE)->base.u.bits.saturating_flag)
+
+/* In a BIT_FIELD_REF and MEM_REF, indicates that the reference is to a group
+   of bits stored in reverse order from the target order.  This effectively
+   toggles both BYTES_BIG_ENDIAN and WORDS_BIG_ENDIAN for the reference.
+
+   The overall strategy is to preserve the invariant that every scalar in
+   memory is associated with a single storage order, i.e. all accesses to
+   this scalar are done with the same storage order.  This invariant makes
+   it possible to factor out the storage order in most transformations, as
+   only the address and/or the value (in target order) matter for them.
+   But, of course, the storage order must be preserved when the accesses
+   themselves are rewritten or transformed.  */
+#define REF_REVERSE_STORAGE_ORDER(NODE) \
+  (TREE_CHECK2 (NODE, BIT_FIELD_REF, MEM_REF)->base.default_def_flag)
 
 /* These flags are available for each language front end to use internally.  */
 #define TREE_LANG_FLAG_0(NODE) \
@@ -1259,8 +1280,7 @@ extern void protected_set_expr_location (tree, location_t);
 #define OMP_FOR_COND(NODE)	   TREE_OPERAND (OMP_LOOP_CHECK (NODE), 3)
 #define OMP_FOR_INCR(NODE)	   TREE_OPERAND (OMP_LOOP_CHECK (NODE), 4)
 #define OMP_FOR_PRE_BODY(NODE)	   TREE_OPERAND (OMP_LOOP_CHECK (NODE), 5)
-/* Note that this is only available for OMP_FOR, hence OMP_FOR_CHECK.  */
-#define OMP_FOR_ORIG_DECLS(NODE)   TREE_OPERAND (OMP_FOR_CHECK (NODE), 6)
+#define OMP_FOR_ORIG_DECLS(NODE)   TREE_OPERAND (OMP_LOOP_CHECK (NODE), 6)
 
 #define OMP_SECTIONS_BODY(NODE)    TREE_OPERAND (OMP_SECTIONS_CHECK (NODE), 0)
 #define OMP_SECTIONS_CLAUSES(NODE) TREE_OPERAND (OMP_SECTIONS_CHECK (NODE), 1)
@@ -1452,10 +1472,6 @@ extern void protected_set_expr_location (tree, location_t);
    OMP_CLAUSE_MAP with GOMP_MAP_POINTER are marked with this flag.  */
 #define OMP_CLAUSE_MAP_ZERO_BIAS_ARRAY_SECTION(NODE) \
   (OMP_CLAUSE_SUBCODE_CHECK (NODE, OMP_CLAUSE_MAP)->base.public_flag)
-/* Nonzero if the same decl appears both in OMP_CLAUSE_MAP and either
-   OMP_CLAUSE_PRIVATE or OMP_CLAUSE_FIRSTPRIVATE.  */
-#define OMP_CLAUSE_MAP_PRIVATE(NODE) \
-  TREE_PRIVATE (OMP_CLAUSE_SUBCODE_CHECK (NODE, OMP_CLAUSE_MAP))
 /* Nonzero if this is a mapped array section, that might need special
    treatment if OMP_CLAUSE_SIZE is zero.  */
 #define OMP_CLAUSE_MAP_MAYBE_ZERO_LENGTH_ARRAY_SECTION(NODE) \
@@ -1560,6 +1576,9 @@ extern void protected_set_expr_location (tree, location_t);
 
 #define OMP_CLAUSE_DEFAULT_KIND(NODE) \
   (OMP_CLAUSE_SUBCODE_CHECK (NODE, OMP_CLAUSE_DEFAULT)->omp_clause.subcode.default_kind)
+
+#define OMP_CLAUSE_TILE_LIST(NODE) \
+  OMP_CLAUSE_OPERAND (OMP_CLAUSE_SUBCODE_CHECK (NODE, OMP_CLAUSE_TILE), 0)
 
 /* SSA_NAME accessors.  */
 
@@ -4352,6 +4371,65 @@ handled_component_p (const_tree t)
     }
 }
 
+/* Return true T is a component with reverse storage order.  */
+
+static inline bool
+reverse_storage_order_for_component_p (tree t)
+{
+  /* The storage order only applies to scalar components.  */
+  if (AGGREGATE_TYPE_P (TREE_TYPE (t)) || VECTOR_TYPE_P (TREE_TYPE (t)))
+    return false;
+
+  if (TREE_CODE (t) == REALPART_EXPR || TREE_CODE (t) == IMAGPART_EXPR)
+    t = TREE_OPERAND (t, 0);
+
+  switch (TREE_CODE (t))
+    {
+    case ARRAY_REF:
+    case COMPONENT_REF:
+      /* ??? Fortran can take COMPONENT_REF of a VOID_TYPE.  */
+      /* ??? UBSan can take COMPONENT_REF of a REFERENCE_TYPE.  */
+      return AGGREGATE_TYPE_P (TREE_TYPE (TREE_OPERAND (t, 0)))
+	     && TYPE_REVERSE_STORAGE_ORDER (TREE_TYPE (TREE_OPERAND (t, 0)));
+
+    case BIT_FIELD_REF:
+    case MEM_REF:
+      return REF_REVERSE_STORAGE_ORDER (t);
+
+    case ARRAY_RANGE_REF:
+    case VIEW_CONVERT_EXPR:
+    default:
+      return false;
+    }
+
+  gcc_unreachable ();
+}
+
+/* Return true if T is a storage order barrier, i.e. a VIEW_CONVERT_EXPR
+   that can modify the storage order of objects.  Note that, even if the
+   TYPE_REVERSE_STORAGE_ORDER flag is set on both the inner type and the
+   outer type, a VIEW_CONVERT_EXPR can modify the storage order because
+   it can change the partition of the aggregate object into scalars.  */
+
+static inline bool
+storage_order_barrier_p (const_tree t)
+{
+  if (TREE_CODE (t) != VIEW_CONVERT_EXPR)
+    return false;
+
+  if (AGGREGATE_TYPE_P (TREE_TYPE (t))
+      && TYPE_REVERSE_STORAGE_ORDER (TREE_TYPE (t)))
+    return true;
+
+  tree op = TREE_OPERAND (t, 0);
+
+  if (AGGREGATE_TYPE_P (TREE_TYPE (op))
+      && TYPE_REVERSE_STORAGE_ORDER (TREE_TYPE (op)))
+    return true;
+
+  return false;
+}
+
 /* Given a DECL or TYPE, return the scope in which it was declared, or
    NUL_TREE if there is no containing scope.  */
 
@@ -5154,7 +5232,7 @@ extern bool complete_ctor_at_level_p (const_tree, HOST_WIDE_INT, const_tree);
    the access position and size.  */
 extern tree get_inner_reference (tree, HOST_WIDE_INT *, HOST_WIDE_INT *,
 				 tree *, machine_mode *, int *, int *,
-				 bool);
+				 int *, bool);
 
 extern tree build_personality_function (const char *);
 

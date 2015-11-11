@@ -4262,7 +4262,11 @@ address;  but often a machine-dependent strategy can generate better code.
 
 @hook TARGET_GOACC_VALIDATE_DIMS
 
+@hook TARGET_GOACC_DIM_LIMIT
+
 @hook TARGET_GOACC_FORK_JOIN
+
+@hook TARGET_GOACC_REDUCTION
 
 @node Anchored Addresses
 @section Anchored Addresses
@@ -7451,7 +7455,11 @@ c_register_addr_space ("__ea", ADDR_SPACE_EA);
 
 @hook TARGET_ADDR_SPACE_SUBSET_P
 
+@hook TARGET_ADDR_SPACE_ZERO_ADDRESS_VALID
+
 @hook TARGET_ADDR_SPACE_CONVERT
+
+@hook TARGET_ADDR_SPACE_DEBUG
 
 @node Misc
 @section Miscellaneous Parameters

@@ -3010,7 +3010,7 @@ extern void decl_shadowed_for_var_insert (tree, tree);
    property.  */
 #define SET_NON_DEFAULT_TEMPLATE_ARGS_COUNT(NODE, INT_VALUE) \
   NON_DEFAULT_TEMPLATE_ARGS_COUNT(NODE) = build_int_cst (NULL_TREE, INT_VALUE)
-#ifdef ENABLE_CHECKING
+#if CHECKING_P
 #define GET_NON_DEFAULT_TEMPLATE_ARGS_COUNT(NODE) \
     int_cst_value (NON_DEFAULT_TEMPLATE_ARGS_COUNT (NODE))
 #else
@@ -5517,9 +5517,7 @@ extern tree build_cxx_call			(tree, int, tree *,
 						 tsubst_flags_t);
 extern bool is_std_init_list			(tree);
 extern bool is_list_ctor			(tree);
-#ifdef ENABLE_CHECKING
 extern void validate_conversion_obstack		(void);
-#endif /* ENABLE_CHECKING */
 extern void mark_versions_used			(tree);
 extern tree get_function_version_dispatcher	(tree);
 
@@ -6326,7 +6324,7 @@ extern tree begin_omp_task			(void);
 extern tree finish_omp_task			(tree, tree);
 extern tree finish_omp_for			(location_t, enum tree_code,
 						 tree, tree, tree, tree, tree,
-						 tree, tree, tree);
+						 tree, tree, vec<tree> *, tree);
 extern void finish_omp_atomic			(enum tree_code, enum tree_code,
 						 tree, tree, tree, tree, tree,
 						 bool);
@@ -6336,7 +6334,7 @@ extern void finish_omp_taskwait			(void);
 extern void finish_omp_taskyield		(void);
 extern void finish_omp_cancel			(tree);
 extern void finish_omp_cancellation_point	(tree);
-extern tree omp_privatize_field			(tree);
+extern tree omp_privatize_field			(tree, bool);
 extern tree begin_transaction_stmt		(location_t, tree *, int);
 extern void finish_transaction_stmt		(tree, tree, int, tree);
 extern tree build_transaction_expr		(location_t, tree, int, tree);

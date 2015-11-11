@@ -55,8 +55,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-threadupdate.h"
 #include "tree-ssa-scopedtables.h"
 #include "tree-ssa-threadedge.h"
-
-
+#include "omp-low.h"
+#include "target.h"
 
 /* Range of values that can be associated with an SSA_NAME after VRP
    has executed.  */
@@ -3973,7 +3973,9 @@ extract_range_basic (value_range *vr, gimple *stmt)
   else if (is_gimple_call (stmt) && gimple_call_internal_p (stmt))
     {
       enum tree_code subcode = ERROR_MARK;
-      switch (gimple_call_internal_fn (stmt))
+      unsigned ifn_code = gimple_call_internal_fn (stmt);
+
+      switch (ifn_code)
 	{
 	case IFN_UBSAN_CHECK_ADD:
 	  subcode = PLUS_EXPR;
@@ -3984,6 +3986,28 @@ extract_range_basic (value_range *vr, gimple *stmt)
 	case IFN_UBSAN_CHECK_MUL:
 	  subcode = MULT_EXPR;
 	  break;
+	case IFN_GOACC_DIM_SIZE:
+	case IFN_GOACC_DIM_POS:
+	  /* Optimizing these two internal functions helps the loop
+	     optimizer eliminate outer comparisons.  Size is [1,N]
+	     and pos is [0,N-1].  */
+	  {
+	    bool is_pos = ifn_code == IFN_GOACC_DIM_POS;
+	    int axis = get_oacc_ifn_dim_arg (stmt);
+	    int size = get_oacc_fn_dim_size (current_function_decl, axis);
+
+	    if (!size)
+	      /* If it's dynamic, the backend might know a hardware
+		 limitation.  */
+	      size = targetm.goacc.dim_limit (axis);
+
+	    tree type = TREE_TYPE (gimple_call_lhs (stmt));
+	    set_value_range (vr, VR_RANGE,
+			     build_int_cst (type, is_pos ? 0 : 1),
+			     size ? build_int_cst (type, size - is_pos)
+			          : vrp_val_max (type), NULL);
+	  }
+	  return;
 	default:
 	  break;
 	}
@@ -8786,20 +8810,11 @@ vrp_visit_phi_node (gphi *phi)
 
       /* If we dropped either bound to +-INF then if this is a loop
 	 PHI node SCEV may known more about its value-range.  */
-      if ((cmp_min > 0 || cmp_min < 0
+      if (cmp_min > 0 || cmp_min < 0
 	   || cmp_max < 0 || cmp_max > 0)
-	  && (l = loop_containing_stmt (phi))
-	  && l->header == gimple_bb (phi))
-	adjust_range_with_scev (&vr_result, l, phi, lhs);
+	goto scev_check;
 
-      /* If we will end up with a (-INF, +INF) range, set it to
-	 VARYING.  Same if the previous max value was invalid for
-	 the type and we end up with vr_result.min > vr_result.max.  */
-      if ((vrp_val_is_max (vr_result.max)
-	   && vrp_val_is_min (vr_result.min))
-	  || compare_values (vr_result.min,
-			     vr_result.max) > 0)
-	goto varying;
+      goto infinite_check;
     }
 
   /* If the new range is different than the previous value, keep
@@ -8825,8 +8840,28 @@ update_range:
   /* Nothing changed, don't add outgoing edges.  */
   return SSA_PROP_NOT_INTERESTING;
 
-  /* No match found.  Set the LHS to VARYING.  */
 varying:
+  set_value_range_to_varying (&vr_result);
+
+scev_check:
+  /* If this is a loop PHI node SCEV may known more about its value-range.
+     scev_check can be reached from two paths, one is a fall through from above
+     "varying" label, the other is direct goto from code block which tries to
+     avoid infinite simulation.  */
+  if ((l = loop_containing_stmt (phi))
+      && l->header == gimple_bb (phi))
+    adjust_range_with_scev (&vr_result, l, phi, lhs);
+
+infinite_check:
+  /* If we will end up with a (-INF, +INF) range, set it to
+     VARYING.  Same if the previous max value was invalid for
+     the type and we end up with vr_result.min > vr_result.max.  */
+  if ((vr_result.type == VR_RANGE || vr_result.type == VR_ANTI_RANGE)
+      && !((vrp_val_is_max (vr_result.max) && vrp_val_is_min (vr_result.min))
+	   || compare_values (vr_result.min, vr_result.max) > 0))
+    goto update_range;
+
+  /* No match found.  Set the LHS to VARYING.  */
   set_value_range_to_varying (lhs_vr);
   return SSA_PROP_VARYING;
 }
@@ -10052,9 +10087,9 @@ identify_jump_threads (void)
   mark_dfs_back_edges ();
 
   /* Do not thread across edges we are about to remove.  Just marking
-     them as EDGE_DFS_BACK will do.  */
+     them as EDGE_IGNORE will do.  */
   FOR_EACH_VEC_ELT (to_remove_edges, i, e)
-    e->flags |= EDGE_DFS_BACK;
+    e->flags |= EDGE_IGNORE;
 
   /* Allocate our unwinder stack to unwind any temporary equivalences
      that might be recorded.  */
@@ -10111,9 +10146,9 @@ identify_jump_threads (void)
 	     it to a specific successor.  */
 	  FOR_EACH_EDGE (e, ei, bb->preds)
 	    {
-	      /* Do not thread across back edges or abnormal edges
-		 in the CFG.  */
-	      if (e->flags & (EDGE_DFS_BACK | EDGE_COMPLEX))
+	      /* Do not thread across edges marked to ignoreor abnormal
+		 edges in the CFG.  */
+	      if (e->flags & (EDGE_IGNORE | EDGE_COMPLEX))
 		continue;
 
 	      thread_across_edge (dummy, e, true, equiv_stack, NULL,
@@ -10121,6 +10156,10 @@ identify_jump_threads (void)
 	    }
 	}
     }
+
+  /* Clear EDGE_IGNORE.  */
+  FOR_EACH_VEC_ELT (to_remove_edges, i, e)
+    e->flags &= ~EDGE_IGNORE;
 
   /* We do not actually update the CFG or SSA graphs at this point as
      ASSERT_EXPRs are still in the IL and cfg cleanup code does not yet

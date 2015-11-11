@@ -88,6 +88,200 @@ public:
       if (dump_file && (dump_flags & TDF_DETAILS)) { args; }	\
     } while (0);
 
+/* Pretty print to FILE all the SCoPs in DOT format and mark them with
+   different colors.  If there are not enough colors, paint the
+   remaining SCoPs in gray.
+
+   Special nodes:
+   - "*" after the node number denotes the entry of a SCoP,
+   - "#" after the node number denotes the exit of a SCoP,
+   - "()" around the node number denotes the entry or the
+     exit nodes of the SCOP.  These are not part of SCoP.  */
+
+static void
+dot_all_scops_1 (FILE *file, vec<scop_p> scops)
+{
+  basic_block bb;
+  edge e;
+  edge_iterator ei;
+  scop_p scop;
+  const char *color;
+  int i;
+
+  /* Disable debugging while printing graph.  */
+  int tmp_dump_flags = dump_flags;
+  dump_flags = 0;
+
+  fprintf (file, "digraph all {\n");
+
+  FOR_ALL_BB_FN (bb, cfun)
+    {
+      int part_of_scop = false;
+
+      /* Use HTML for every bb label.  So we are able to print bbs
+	 which are part of two different SCoPs, with two different
+	 background colors.  */
+      fprintf (file, "%d [label=<\n  <TABLE BORDER=\"0\" CELLBORDER=\"1\" ",
+	       bb->index);
+      fprintf (file, "CELLSPACING=\"0\">\n");
+
+      /* Select color for SCoP.  */
+      FOR_EACH_VEC_ELT (scops, i, scop)
+	{
+	  sese_l region = scop->scop_info->region;
+	  if (bb_in_sese_p (bb, region) || (region.exit->dest == bb)
+	      || (region.entry->dest == bb))
+	    {
+	      switch (i % 17)
+		{
+		case 0: /* red */
+		  color = "#e41a1c";
+		  break;
+		case 1: /* blue */
+		  color = "#377eb8";
+		  break;
+		case 2: /* green */
+		  color = "#4daf4a";
+		  break;
+		case 3: /* purple */
+		  color = "#984ea3";
+		  break;
+		case 4: /* orange */
+		  color = "#ff7f00";
+		  break;
+		case 5: /* yellow */
+		  color = "#ffff33";
+		  break;
+		case 6: /* brown */
+		  color = "#a65628";
+		  break;
+		case 7: /* rose */
+		  color = "#f781bf";
+		  break;
+		case 8:
+		  color = "#8dd3c7";
+		  break;
+		case 9:
+		  color = "#ffffb3";
+		  break;
+		case 10:
+		  color = "#bebada";
+		  break;
+		case 11:
+		  color = "#fb8072";
+		  break;
+		case 12:
+		  color = "#80b1d3";
+		  break;
+		case 13:
+		  color = "#fdb462";
+		  break;
+		case 14:
+		  color = "#b3de69";
+		  break;
+		case 15:
+		  color = "#fccde5";
+		  break;
+		case 16:
+		  color = "#bc80bd";
+		  break;
+		default: /* gray */
+		  color = "#999999";
+		}
+
+	      fprintf (file, "    <TR><TD WIDTH=\"50\" BGCOLOR=\"%s\">",
+		       color);
+
+	      if (!bb_in_sese_p (bb, region))
+		fprintf (file, " (");
+
+	      if (bb == region.entry->dest && bb == region.exit->dest)
+		fprintf (file, " %d*# ", bb->index);
+	      else if (bb == region.entry->dest)
+		fprintf (file, " %d* ", bb->index);
+	      else if (bb == region.exit->dest)
+		fprintf (file, " %d# ", bb->index);
+	      else
+		fprintf (file, " %d ", bb->index);
+
+	      fprintf (file, "{lp_%d}", bb->loop_father->num);
+
+	      if (!bb_in_sese_p (bb, region))
+		fprintf (file, ")");
+
+	      fprintf (file, "</TD></TR>\n");
+	      part_of_scop = true;
+	    }
+	}
+
+	if (!part_of_scop)
+	  {
+	    fprintf (file, "    <TR><TD WIDTH=\"50\" BGCOLOR=\"#ffffff\">");
+	    fprintf (file, " %d {lp_%d} </TD></TR>\n", bb->index,
+		     bb->loop_father->num);
+	  }
+	fprintf (file, "  </TABLE>>, shape=box, style=\"setlinewidth(0)\"]\n");
+    }
+
+    FOR_ALL_BB_FN (bb, cfun)
+      {
+	FOR_EACH_EDGE (e, ei, bb->succs)
+	  fprintf (file, "%d -> %d;\n", bb->index, e->dest->index);
+      }
+
+  fputs ("}\n\n", file);
+
+  /* Enable debugging again.  */
+  dump_flags = tmp_dump_flags;
+}
+
+/* Display all SCoPs using dotty.  */
+
+DEBUG_FUNCTION void
+dot_all_scops (vec<scop_p> scops)
+{
+  /* When debugging, enable the following code.  This cannot be used
+     in production compilers because it calls "system".  */
+#if 0
+  int x;
+  FILE *stream = fopen ("/tmp/allscops.dot", "w");
+  gcc_assert (stream);
+
+  dot_all_scops_1 (stream, scops);
+  fclose (stream);
+
+  x = system ("dotty /tmp/allscops.dot &");
+#else
+  dot_all_scops_1 (stderr, scops);
+#endif
+}
+
+/* Display all SCoPs using dotty.  */
+
+DEBUG_FUNCTION void
+dot_scop (scop_p scop)
+{
+  auto_vec<scop_p, 1> scops;
+
+  if (scop)
+    scops.safe_push (scop);
+
+  /* When debugging, enable the following code.  This cannot be used
+     in production compilers because it calls "system".  */
+#if 0
+  {
+    int x;
+    FILE *stream = fopen ("/tmp/allscops.dot", "w");
+    gcc_assert (stream);
+
+    dot_all_scops_1 (stream, scops);
+    fclose (stream);
+    x = system ("dotty /tmp/allscops.dot &");
+  }
+#else
+  dot_all_scops_1 (stderr, scops);
+#endif
+}
 
 /* Return true if BB is empty, contains only DEBUG_INSNs.  */
 
@@ -600,7 +794,8 @@ scop_detection::merge_sese (sese_l first, sese_l second) const
 					      get_entry_bb (second));
 
   edge entry = get_nearest_dom_with_single_entry (dom);
-  if (!entry)
+
+  if (!entry || (entry->flags & EDGE_IRREDUCIBLE_LOOP))
     return invalid_sese;
 
   basic_block pdom = nearest_common_dominator (CDI_POST_DOMINATORS,
@@ -609,7 +804,8 @@ scop_detection::merge_sese (sese_l first, sese_l second) const
   pdom = nearest_common_dominator (CDI_POST_DOMINATORS, dom, pdom);
 
   edge exit = get_nearest_pdom_with_single_exit (pdom);
-  if (!exit)
+
+  if (!exit || (exit->flags & EDGE_IRREDUCIBLE_LOOP))
     return invalid_sese;
 
   sese_l combined (entry, exit);
@@ -729,6 +925,7 @@ scop_detection::can_represent_loop_1 (loop_p loop, sese_l scop)
   struct tree_niter_desc niter_desc;
 
   return single_exit (loop)
+    && !(loop_preheader_edge (loop)->flags & EDGE_IRREDUCIBLE_LOOP)
     && number_of_iterations_exit (loop, single_exit (loop), &niter_desc, false)
     && niter_desc.control.no_overflow
     && (niter = number_of_latch_executions (loop))
@@ -761,6 +958,13 @@ scop_detection::loop_is_valid_scop (loop_p loop, sese_l scop) const
 {
   if (!scop)
     return false;
+
+  if (!optimize_loop_nest_for_speed_p (loop))
+    {
+      DEBUG_PRINT (dp << "[scop-detection-fail] loop_"
+		      << loop->num << " is not on a hot path.\n");
+      return false;
+    }
 
   if (!can_represent_loop (loop, scop))
     {
@@ -858,6 +1062,10 @@ scop_detection::harmful_stmt_in_region (sese_l scop) const
       /* We don't want to analyze any bb outside sese.  */
       if (!dominated_by_p (CDI_POST_DOMINATORS, bb, exit_bb))
 	continue;
+
+      /* The basic block should not be part of an irreducible loop.  */
+      if (bb->flags & BB_IRREDUCIBLE_LOOP)
+        return true;
 
       if (harmful_stmt_in_bb (scop, bb))
 	return true;
@@ -1226,201 +1434,6 @@ scop_detection::harmful_stmt_in_bb (sese_l scop, basic_block bb) const
       return true;
 
   return false;
-}
-
-/* Pretty print to FILE all the SCoPs in DOT format and mark them with
-   different colors.  If there are not enough colors, paint the
-   remaining SCoPs in gray.
-
-   Special nodes:
-   - "*" after the node number denotes the entry of a SCoP,
-   - "#" after the node number denotes the exit of a SCoP,
-   - "()" around the node number denotes the entry or the
-     exit nodes of the SCOP.  These are not part of SCoP.  */
-
-static void
-dot_all_scops_1 (FILE *file, vec<scop_p> scops)
-{
-  basic_block bb;
-  edge e;
-  edge_iterator ei;
-  scop_p scop;
-  const char *color;
-  int i;
-
-  /* Disable debugging while printing graph.  */
-  int tmp_dump_flags = dump_flags;
-  dump_flags = 0;
-
-  fprintf (file, "digraph all {\n");
-
-  FOR_ALL_BB_FN (bb, cfun)
-    {
-      int part_of_scop = false;
-
-      /* Use HTML for every bb label.  So we are able to print bbs
-	 which are part of two different SCoPs, with two different
-	 background colors.  */
-      fprintf (file, "%d [label=<\n  <TABLE BORDER=\"0\" CELLBORDER=\"1\" ",
-	       bb->index);
-      fprintf (file, "CELLSPACING=\"0\">\n");
-
-      /* Select color for SCoP.  */
-      FOR_EACH_VEC_ELT (scops, i, scop)
-	{
-	  sese_l region = scop->scop_info->region;
-	  if (bb_in_sese_p (bb, region) || (region.exit->dest == bb)
-	      || (region.entry->dest == bb))
-	    {
-	      switch (i % 17)
-		{
-		case 0: /* red */
-		  color = "#e41a1c";
-		  break;
-		case 1: /* blue */
-		  color = "#377eb8";
-		  break;
-		case 2: /* green */
-		  color = "#4daf4a";
-		  break;
-		case 3: /* purple */
-		  color = "#984ea3";
-		  break;
-		case 4: /* orange */
-		  color = "#ff7f00";
-		  break;
-		case 5: /* yellow */
-		  color = "#ffff33";
-		  break;
-		case 6: /* brown */
-		  color = "#a65628";
-		  break;
-		case 7: /* rose */
-		  color = "#f781bf";
-		  break;
-		case 8:
-		  color = "#8dd3c7";
-		  break;
-		case 9:
-		  color = "#ffffb3";
-		  break;
-		case 10:
-		  color = "#bebada";
-		  break;
-		case 11:
-		  color = "#fb8072";
-		  break;
-		case 12:
-		  color = "#80b1d3";
-		  break;
-		case 13:
-		  color = "#fdb462";
-		  break;
-		case 14:
-		  color = "#b3de69";
-		  break;
-		case 15:
-		  color = "#fccde5";
-		  break;
-		case 16:
-		  color = "#bc80bd";
-		  break;
-		default: /* gray */
-		  color = "#999999";
-		}
-
-	      fprintf (file, "    <TR><TD WIDTH=\"50\" BGCOLOR=\"%s\">",
-		       color);
-
-	      if (!bb_in_sese_p (bb, region))
-		fprintf (file, " (");
-
-	      if (bb == region.entry->dest && bb == region.exit->dest)
-		fprintf (file, " %d*# ", bb->index);
-	      else if (bb == region.entry->dest)
-		fprintf (file, " %d* ", bb->index);
-	      else if (bb == region.exit->dest)
-		fprintf (file, " %d# ", bb->index);
-	      else
-		fprintf (file, " %d ", bb->index);
-
-	      fprintf (file, "{lp_%d}", bb->loop_father->num);
-
-	      if (!bb_in_sese_p (bb, region))
-		fprintf (file, ")");
-
-	      fprintf (file, "</TD></TR>\n");
-	      part_of_scop = true;
-	    }
-	}
-
-	if (!part_of_scop)
-	  {
-	    fprintf (file, "    <TR><TD WIDTH=\"50\" BGCOLOR=\"#ffffff\">");
-	    fprintf (file, " %d {lp_%d} </TD></TR>\n", bb->index,
-		     bb->loop_father->num);
-	  }
-	fprintf (file, "  </TABLE>>, shape=box, style=\"setlinewidth(0)\"]\n");
-    }
-
-    FOR_ALL_BB_FN (bb, cfun)
-      {
-	FOR_EACH_EDGE (e, ei, bb->succs)
-	  fprintf (file, "%d -> %d;\n", bb->index, e->dest->index);
-      }
-
-  fputs ("}\n\n", file);
-
-  /* Enable debugging again.  */
-  dump_flags = tmp_dump_flags;
-}
-
-/* Display all SCoPs using dotty.  */
-
-DEBUG_FUNCTION void
-dot_all_scops (vec<scop_p> scops)
-{
-  /* When debugging, enable the following code.  This cannot be used
-     in production compilers because it calls "system".  */
-#if 0
-  int x;
-  FILE *stream = fopen ("/tmp/allscops.dot", "w");
-  gcc_assert (stream);
-
-  dot_all_scops_1 (stream, scops);
-  fclose (stream);
-
-  x = system ("dotty /tmp/allscops.dot &");
-#else
-  dot_all_scops_1 (stderr, scops);
-#endif
-}
-
-/* Display all SCoPs using dotty.  */
-
-DEBUG_FUNCTION void
-dot_scop (scop_p scop)
-{
-  auto_vec<scop_p, 1> scops;
-
-  if (scop)
-    scops.safe_push (scop);
-
-  /* When debugging, enable the following code.  This cannot be used
-     in production compilers because it calls "system".  */
-#if 0
-  {
-    int x;
-    FILE *stream = fopen ("/tmp/allscops.dot", "w");
-    gcc_assert (stream);
-
-    dot_all_scops_1 (stream, scops);
-    fclose (stream);
-    x = system ("dotty /tmp/allscops.dot &");
-  }
-#else
-  dot_all_scops_1 (stderr, scops);
-#endif
 }
 
 /* Return true when the body of LOOP has statements that can be represented as a

@@ -893,7 +893,7 @@ DEFHOOK_UNDOC
 DEFHOOK_UNDOC
 (print_operand_address,
  "",
- void, (FILE *file, rtx addr),
+ void, (FILE *file, machine_mode mode, rtx addr),
  default_print_operand_address)
 
 /* Determine whether CODE is a valid punctuation character for the
@@ -1659,6 +1659,13 @@ bool, (tree decl, int *dims, int fn_level),
 default_goacc_validate_dims)
 
 DEFHOOK
+(dim_limit,
+"This hook should return the maximum size of a particular dimension,\n\
+or zero if unbounded.",
+int, (int axis),
+default_goacc_dim_limit)
+
+DEFHOOK
 (fork_join,
 "This hook can be used to convert IFN_GOACC_FORK and IFN_GOACC_JOIN\n\
 function calls to target-specific gimple, or indicate whether they\n\
@@ -1669,6 +1676,17 @@ gimple has been inserted before it, or there is no need for it).\n\
 The default hook returns false, if there are no RTL expanders for them.",
 bool, (gcall *call, const int *dims, bool is_fork),
 default_goacc_fork_join)
+
+DEFHOOK
+(reduction,
+"This hook is used by the oacc_transform pass to expand calls to the\n\
+@var{GOACC_REDUCTION} internal function, into a sequence of gimple\n\
+instructions.  @var{call} is gimple statement containing the call to\n\
+the function.  This hook removes statement @var{call} after the\n\
+expanded sequence has been inserted.  This hook is also responsible\n\
+for allocating any storage for reductions when necessary.",
+void, (gcall *call),
+default_goacc_reduction)
 
 HOOK_VECTOR_END (goacc)
 
@@ -3205,6 +3223,15 @@ converted to pointers to a subset address space via explicit casts.",
  bool, (addr_space_t subset, addr_space_t superset),
  default_addr_space_subset_p)
 
+/* True if 0 is a valid address in the address space, or false if
+   0 is a NULL in the address space.  */
+DEFHOOK
+(zero_address_valid,
+ "Define this to modify the default handling of address 0 for the\n\
+address space.  Return true if 0 should be considered a valid address.",
+ bool, (addr_space_t as),
+ default_addr_space_zero_address_valid)
+
 /* Function to convert an rtl expression from one address space to another.  */
 DEFHOOK
 (convert,
@@ -3216,6 +3243,14 @@ guaranteed that one of the two address spaces is a subset of the other,\n\
 as determined by the @code{TARGET_ADDR_SPACE_SUBSET_P} target hook.",
  rtx, (rtx op, tree from_type, tree to_type),
  default_addr_space_convert)
+
+/* Function to encode an address space into dwarf.  */
+DEFHOOK
+(debug,
+ "Define this to define how the address space is encoded in dwarf.\n\
+The result is the value to be used with @code{DW_AT_address_class}.",
+ int, (addr_space_t as),
+ default_addr_space_debug)
 
 HOOK_VECTOR_END (addr_space)
 

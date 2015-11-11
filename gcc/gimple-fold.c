@@ -52,6 +52,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimple-match.h"
 #include "gomp-constants.h"
 #include "optabs-query.h"
+#include "omp-low.h"
 
 
 /* Return true when DECL can be referenced from current unit.
@@ -781,13 +782,14 @@ gimple_fold_builtin_memory_op (gimple_stmt_iterator *gsi,
 	      HOST_WIDE_INT src_offset = 0, dest_offset = 0;
 	      HOST_WIDE_INT size = -1;
 	      HOST_WIDE_INT maxsize = -1;
+	      bool reverse;
 
 	      srcvar = TREE_OPERAND (src, 0);
 	      src_base = get_ref_base_and_extent (srcvar, &src_offset,
-						  &size, &maxsize);
+						  &size, &maxsize, &reverse);
 	      destvar = TREE_OPERAND (dest, 0);
 	      dest_base = get_ref_base_and_extent (destvar, &dest_offset,
-						   &size, &maxsize);
+						   &size, &maxsize, &reverse);
 	      if (tree_fits_uhwi_p (len))
 		maxsize = tree_to_uhwi (len);
 	      else
@@ -2906,6 +2908,28 @@ gimple_fold_builtin (gimple_stmt_iterator *gsi)
   return false;
 }
 
+/* Transform IFN_GOACC_DIM_SIZE and IFN_GOACC_DIM_POS internal
+   function calls to constants, where possible.  */
+
+static tree
+fold_internal_goacc_dim (const gimple *call)
+{
+  int axis = get_oacc_ifn_dim_arg (call);
+  int size = get_oacc_fn_dim_size (current_function_decl, axis);
+  bool is_pos = gimple_call_internal_fn (call) == IFN_GOACC_DIM_POS;
+  tree result = NULL_TREE;
+
+  /* If the size is 1, or we only want the size and it is not dynamic,
+     we know the answer.  */
+  if (size == 1 || (!is_pos && size))
+    {
+      tree type = TREE_TYPE (gimple_call_lhs (call));
+      result = build_int_cst (type, size - is_pos);
+    }
+
+  return result;
+}
+
 /* Return true if ARG0 CODE ARG1 in infinite signed precision operation
    doesn't fit into TYPE.  The test for overflow should be regardless of
    -fwrapv, and even for unsigned types.  */
@@ -3105,6 +3129,10 @@ gimple_fold_call (gimple_stmt_iterator *gsi, bool inplace)
 	      release_defs (stmt);
 	      return true;
 	    }
+	  break;
+	case IFN_GOACC_DIM_SIZE:
+	case IFN_GOACC_DIM_POS:
+	  result = fold_internal_goacc_dim (stmt);
 	  break;
 	case IFN_UBSAN_CHECK_ADD:
 	  subcode = PLUS_EXPR;
@@ -5237,6 +5265,8 @@ get_base_constructor (tree base, HOST_WIDE_INT *bit_offset,
 		      tree (*valueize)(tree))
 {
   HOST_WIDE_INT bit_offset2, size, max_size;
+  bool reverse;
+
   if (TREE_CODE (base) == MEM_REF)
     {
       if (!integer_zerop (TREE_OPERAND (base, 1)))
@@ -5277,7 +5307,8 @@ get_base_constructor (tree base, HOST_WIDE_INT *bit_offset,
 
     case ARRAY_REF:
     case COMPONENT_REF:
-      base = get_ref_base_and_extent (base, &bit_offset2, &size, &max_size);
+      base = get_ref_base_and_extent (base, &bit_offset2, &size, &max_size,
+				      &reverse);
       if (max_size == -1 || size != max_size)
 	return NULL_TREE;
       *bit_offset +=  bit_offset2;
@@ -5480,6 +5511,7 @@ fold_const_aggregate_ref_1 (tree t, tree (*valueize) (tree))
   tree ctor, idx, base;
   HOST_WIDE_INT offset, size, max_size;
   tree tem;
+  bool reverse;
 
   if (TREE_THIS_VOLATILE (t))
     return NULL_TREE;
@@ -5550,7 +5582,7 @@ fold_const_aggregate_ref_1 (tree t, tree (*valueize) (tree))
     case BIT_FIELD_REF:
     case TARGET_MEM_REF:
     case MEM_REF:
-      base = get_ref_base_and_extent (t, &offset, &size, &max_size);
+      base = get_ref_base_and_extent (t, &offset, &size, &max_size, &reverse);
       ctor = get_base_constructor (base, &offset, valueize);
 
       /* Empty constructor.  Always fold to 0.  */

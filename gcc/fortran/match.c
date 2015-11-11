@@ -22,13 +22,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "options.h"
-#include "tree.h"
 #include "gfortran.h"
-#include "stringpool.h"
-#include "flags.h"
 #include "match.h"
 #include "parse.h"
-#include "alias.h"
 
 int gfc_matching_ptr_assignment = 0;
 int gfc_matching_procptr_assignment = 0;
@@ -5018,7 +5014,9 @@ gfc_free_case_list (gfc_case *p)
 }
 
 
-/* Match a single case selector.  */
+/* Match a single case selector.  Combining the requirements of F08:C830
+   and F08:C832 (R838) means that the case-value must have either CHARACTER,
+   INTEGER, or LOGICAL type.  */
 
 static match
 match_case_selector (gfc_case **cp)
@@ -5036,6 +5034,14 @@ match_case_selector (gfc_case **cp)
 	goto need_expr;
       if (m == MATCH_ERROR)
 	goto cleanup;
+
+      if (c->high->ts.type != BT_LOGICAL && c->high->ts.type != BT_INTEGER
+	  && c->high->ts.type != BT_CHARACTER)
+	{
+	  gfc_error ("Expression in CASE selector at %L cannot be %s",
+		     &c->high->where, gfc_typename (&c->high->ts));
+	  goto cleanup;
+	}
     }
   else
     {
@@ -5044,6 +5050,14 @@ match_case_selector (gfc_case **cp)
 	goto cleanup;
       if (m == MATCH_NO)
 	goto need_expr;
+
+      if (c->low->ts.type != BT_LOGICAL && c->low->ts.type != BT_INTEGER
+	  && c->low->ts.type != BT_CHARACTER)
+	{
+	  gfc_error ("Expression in CASE selector at %L cannot be %s",
+		     &c->low->where, gfc_typename (&c->low->ts));
+	  goto cleanup;
+	}
 
       /* If we're not looking at a ':' now, make a range out of a single
 	 target.  Else get the upper bound for the case range.  */

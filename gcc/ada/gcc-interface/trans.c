@@ -39,7 +39,6 @@
 #include "stor-layout.h"
 #include "stmt.h"
 #include "varasm.h"
-#include "flags.h"
 #include "output.h"
 #include "libfuncs.h"	/* For set_stack_check_libfunc.  */
 #include "tree-iterator.h"
@@ -51,7 +50,6 @@
 #include "adadecode.h"
 #include "types.h"
 #include "atree.h"
-#include "elists.h"
 #include "namet.h"
 #include "nlists.h"
 #include "snames.h"
@@ -2172,7 +2170,7 @@ Attribute_to_gnu (Node_Id gnat_node, tree *gnu_result_type_p, int attribute)
 	tree gnu_field_offset;
 	tree gnu_inner;
 	machine_mode mode;
-	int unsignedp, volatilep;
+	int unsignedp, reversep, volatilep;
 
 	gnu_result_type = get_unpadded_type (Etype (gnat_node));
 	gnu_prefix = remove_conversions (gnu_prefix, true);
@@ -2194,7 +2192,7 @@ Attribute_to_gnu (Node_Id gnat_node, tree *gnu_result_type_p, int attribute)
 			  && TREE_CODE (gnu_prefix) == FIELD_DECL));
 
 	get_inner_reference (gnu_prefix, &bitsize, &bitpos, &gnu_offset,
-			     &mode, &unsignedp, &volatilep, false);
+			     &mode, &unsignedp, &reversep, &volatilep, false);
 
 	if (TREE_CODE (gnu_prefix) == COMPONENT_REF)
 	  {
