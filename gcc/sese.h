@@ -22,8 +22,6 @@ along with GCC; see the file COPYING3.  If not see
 #ifndef GCC_SESE_H
 #define GCC_SESE_H
 
-typedef hash_map<tree, tree> parameter_rename_map_t;
-
 /* A Single Entry, Single Exit region is a part of the CFG delimited
    by two edges.  */
 struct sese_l
@@ -60,9 +58,6 @@ typedef struct sese_info_t
 
   /* Parameters used within the SCOP.  */
   vec<tree> params;
-
-  /* Parameters to be renamed.  */
-  parameter_rename_map_t *parameter_rename_map;
 
   /* Loops completely contained in this SESE.  */
   bitmap loops;
@@ -108,16 +103,18 @@ sese_nb_params (sese_info_p region)
 static inline bool
 bb_in_region (basic_block bb, basic_block entry, basic_block exit)
 {
-#ifdef ENABLE_CHECKING
-  {
-    edge e;
-    edge_iterator ei;
+  /* FIXME: PR67842.  */
+#if 0
+  if (flag_checking)
+    {
+      edge e;
+      edge_iterator ei;
 
-    /* Check that there are no edges coming in the region: all the
-       predecessors of EXIT are dominated by ENTRY.  */
-    FOR_EACH_EDGE (e, ei, exit->preds)
-      dominated_by_p (CDI_DOMINATORS, e->src, entry);
-  }
+      /* Check that there are no edges coming in the region: all the
+	 predecessors of EXIT are dominated by ENTRY.  */
+      FOR_EACH_EDGE (e, ei, exit->preds)
+	gcc_assert (dominated_by_p (CDI_DOMINATORS, e->src, entry));
+    }
 #endif
 
   return dominated_by_p (CDI_DOMINATORS, bb, entry)

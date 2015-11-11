@@ -43,7 +43,6 @@ along with GCC; see the file COPYING3.  If not see
 const char *const internal_fn_name_array[] = {
 #define DEF_INTERNAL_FN(CODE, FLAGS, FNSPEC) #CODE,
 #include "internal-fn.def"
-#undef DEF_INTERNAL_FN
   "<invalid-fn>"
 };
 
@@ -51,7 +50,6 @@ const char *const internal_fn_name_array[] = {
 const int internal_fn_flags_array[] = {
 #define DEF_INTERNAL_FN(CODE, FLAGS, FNSPEC) FLAGS,
 #include "internal-fn.def"
-#undef DEF_INTERNAL_FN
   0
 };
 
@@ -65,7 +63,6 @@ init_internal_fns ()
   if (FNSPEC) internal_fn_fnspec_array[IFN_##CODE] = \
     build_string ((int) sizeof (FNSPEC), FNSPEC ? FNSPEC : "");
 #include "internal-fn.def"
-#undef DEF_INTERNAL_FN
   internal_fn_fnspec_array[IFN_LAST] = 0;
 }
 
@@ -1892,7 +1889,9 @@ expand_MASK_LOAD (gcall *stmt)
   create_output_operand (&ops[0], target, TYPE_MODE (type));
   create_fixed_operand (&ops[1], mem);
   create_input_operand (&ops[2], mask, TYPE_MODE (TREE_TYPE (maskt)));
-  expand_insn (optab_handler (maskload_optab, TYPE_MODE (type)), 3, ops);
+  expand_insn (convert_optab_handler (maskload_optab, TYPE_MODE (type),
+				      TYPE_MODE (TREE_TYPE (maskt))),
+	       3, ops);
 }
 
 static void
@@ -1915,7 +1914,9 @@ expand_MASK_STORE (gcall *stmt)
   create_fixed_operand (&ops[0], mem);
   create_input_operand (&ops[1], reg, TYPE_MODE (type));
   create_input_operand (&ops[2], mask, TYPE_MODE (TREE_TYPE (maskt)));
-  expand_insn (optab_handler (maskstore_optab, TYPE_MODE (type)), 3, ops);
+  expand_insn (convert_optab_handler (maskstore_optab, TYPE_MODE (type),
+				      TYPE_MODE (TREE_TYPE (maskt))),
+	       3, ops);
 }
 
 static void
@@ -2045,6 +2046,14 @@ expand_GOACC_LOOP (gcall *stmt ATTRIBUTE_UNUSED)
   gcc_unreachable ();
 }
 
+/* This is expanded by oacc_device_lower pass.  */
+
+static void
+expand_GOACC_REDUCTION (gcall *stmt ATTRIBUTE_UNUSED)
+{
+  gcc_unreachable ();
+}
+
 /* Routines to expand each internal function, indexed by function number.
    Each routine has the prototype:
 
@@ -2054,7 +2063,6 @@ expand_GOACC_LOOP (gcall *stmt ATTRIBUTE_UNUSED)
 static void (*const internal_fn_expanders[]) (gcall *) = {
 #define DEF_INTERNAL_FN(CODE, FLAGS, FNSPEC) expand_##CODE,
 #include "internal-fn.def"
-#undef DEF_INTERNAL_FN
   0
 };
 

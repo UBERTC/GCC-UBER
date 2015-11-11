@@ -67,9 +67,6 @@ extern "C" {
 #include "tree-ssa-propagate.h"
 #include "graphite-sese-to-poly.h"
 
-
-static const unsigned ssa_name_version_typesize =  sizeof(unsigned);
-
 /* Assigns to RES the value of the INTEGER_CST T.  */
 
 static inline void
@@ -201,7 +198,7 @@ reduction_phi_p (sese_l &region, gphi_iterator *psi)
 static isl_id *
 isl_id_for_pbb (scop_p s, poly_bb_p pbb)
 {
-  char name[ssa_name_version_typesize];
+  char name[10];
   snprintf (name, sizeof (name), "S_%d", pbb_index (pbb));
   return isl_id_alloc (s->isl_context, name, pbb);
 }
@@ -234,51 +231,78 @@ isl_id_for_pbb (scop_p s, poly_bb_p pbb)
    | 0   0   1   0   0   0   0   0  -5  = 0  */
 
 static void
-build_pbb_scattering_polyhedrons (isl_aff *static_sched,
-				  poly_bb_p pbb)
+build_pbb_minimal_scattering_polyhedrons (isl_aff *static_sched, poly_bb_p pbb,
+					  int *sequence_dims,
+					  int nb_sequence_dim)
 {
-  isl_val *val;
+  int local_dim = isl_set_dim (pbb->domain, isl_dim_set);
 
-  int scattering_dimensions = isl_set_dim (pbb->domain, isl_dim_set) * 2 + 1;
+  /* Remove a sequence dimension if irrelevant to domain of current pbb.  */
+  int actual_nb_dim = 0;
+  for (int i = 0; i < nb_sequence_dim; i++)
+    if (sequence_dims[i] <= local_dim)
+      actual_nb_dim++;
 
-  isl_space *dc = isl_set_get_space (pbb->domain);
-  isl_space *dm = isl_space_add_dims (isl_space_from_domain (dc),
-				      isl_dim_out, scattering_dimensions);
-  pbb->schedule = isl_map_universe (dm);
-
-  for (int i = 0; i < scattering_dimensions; i++)
+  /* Build an array that combines sequence dimensions and loops dimensions info.
+     This is used later to compute the static scattering polyhedrons.  */
+  bool *sequence_and_loop_dims = NULL;
+  if (local_dim + actual_nb_dim > 0)
     {
-      /* Textual order inside this loop.  */
-      if ((i % 2) == 0)
+      sequence_and_loop_dims = XNEWVEC (bool, local_dim + actual_nb_dim);
+
+      int i = 0, j = 0;
+      for (; i < local_dim; i++)
 	{
-	  isl_constraint *c = isl_equality_alloc
-	      (isl_local_space_from_space (isl_map_get_space (pbb->schedule)));
-
-	  val = isl_aff_get_coefficient_val (static_sched, isl_dim_in, i / 2);
-	  gcc_assert (val && isl_val_is_int (val));
-
-	  val = isl_val_neg (val);
-	  c = isl_constraint_set_constant_val (c, val);
-	  c = isl_constraint_set_coefficient_si (c, isl_dim_out, i, 1);
-	  pbb->schedule = isl_map_add_constraint (pbb->schedule, c);
+	  if (sequence_dims && sequence_dims[j] == i)
+	    {
+	      /* True for sequence dimension.  */
+	      sequence_and_loop_dims[i + j] = true;
+	      j++;
+	    }
+	  /* False for loop dimension.  */
+	  sequence_and_loop_dims[i + j] = false;
 	}
-
-      /* Iterations of this loop.  */
-      else /* if ((i % 2) == 1) */
-	{
-	  int loop = (i - 1) / 2;
-	  pbb->schedule = isl_map_equate (pbb->schedule, isl_dim_in, loop,
-					  isl_dim_out, i);
-	}
+      /* Fake loops make things shifted by one.  */
+      if (sequence_dims && sequence_dims[j] == i)
+	sequence_and_loop_dims[i + j] = true;
     }
 
+  int scattering_dimensions = local_dim + actual_nb_dim;
+  isl_space *dc = isl_set_get_space (pbb->domain);
+  isl_space *dm = isl_space_add_dims (isl_space_from_domain (dc), isl_dim_out,
+				      scattering_dimensions);
+  pbb->schedule = isl_map_universe (dm);
+
+  int k = 0;
+  for (int i = 0; i < scattering_dimensions; i++)
+    {
+      if (!sequence_and_loop_dims[i])
+	{
+	  /* Iterations of this loop - loop dimension.  */
+	  pbb->schedule = isl_map_equate (pbb->schedule, isl_dim_in, k,
+					  isl_dim_out, i);
+	  k++;
+	  continue;
+	}
+
+      /* Textual order inside this loop - sequence dimension.  */
+      isl_space *s = isl_map_get_space (pbb->schedule);
+      isl_local_space *ls = isl_local_space_from_space (s);
+      isl_constraint *c = isl_equality_alloc (ls);
+      isl_val *val = isl_aff_get_coefficient_val (static_sched, isl_dim_in, k);
+      gcc_assert (val && isl_val_is_int (val));
+      val = isl_val_neg (val);
+      c = isl_constraint_set_constant_val (c, val);
+      c = isl_constraint_set_coefficient_si (c, isl_dim_out, i, 1);
+      pbb->schedule = isl_map_add_constraint (pbb->schedule, c);
+    }
+
+  XDELETEVEC (sequence_and_loop_dims);
   pbb->transformed = isl_map_copy (pbb->schedule);
 }
 
-/* Build for BB the static schedule.
-
-   The static schedule is a Dewey numbering of the abstract syntax
-   tree: http://en.wikipedia.org/wiki/Dewey_Decimal_Classification
+/* Build the static schedule for BB.  This function minimizes the number of
+   dimensions used for pbb sequences.
 
    The following example informally defines the static schedule:
 
@@ -286,40 +310,94 @@ build_pbb_scattering_polyhedrons (isl_aff *static_sched,
    for (i: ...)
      {
        for (j: ...)
-         {
-           B
-           C
-         }
-
+	{
+	  B
+	  C
+	}
+     }
+   for (i: ...)
+     {
        for (k: ...)
-         {
-           D
-           E
-         }
+	{
+	  D
+	  E
+	}
      }
    F
 
    Static schedules for A to F:
 
-     DEPTH
-     0 1 2
-   A 0
-   B 1 0 0
-   C 1 0 1
-   D 1 1 0
-   E 1 1 1
-   F 2
+   A (0)
+   B (1 i0 i1 0)
+   C (1 i0 i1 1)
+   D (2 i0 i1 2)
+   E (2 i0 i1 3)
+   F (3)
 */
 
 static void
-build_scop_scattering (scop_p scop)
+build_scop_minimal_scattering (scop_p scop)
 {
   gimple_poly_bb_p previous_gbb = NULL;
-  isl_space *dc = isl_set_get_space (scop->param_context);
-  isl_aff *static_sched;
+  int *temp_for_sequence_dims = NULL;
+  int i;
+  poly_bb_p pbb;
 
+  /* Go through the pbbs to determine the minimum number of dimensions needed to
+     build the static schedule.  */
+  int nb_dims = 0;
+  FOR_EACH_VEC_ELT (scop->pbbs, i, pbb)
+    {
+      int dim = isl_set_dim (pbb->domain, isl_dim_set);
+      if (dim > nb_dims)
+	nb_dims = dim;
+    }
+
+  /* One extra dimension for the outer fake loop.  */
+  nb_dims++;
+  temp_for_sequence_dims = XCNEWVEC (int, nb_dims);
+
+  /* Record the number of common loops for each dimension.  */
+  FOR_EACH_VEC_ELT (scop->pbbs, i, pbb)
+    {
+      gimple_poly_bb_p gbb = PBB_BLACK_BOX (pbb);
+      int prefix = 0;
+
+      if (previous_gbb)
+	{
+	  prefix = nb_common_loops (scop->scop_info->region, previous_gbb, gbb);
+	  temp_for_sequence_dims[prefix] += 1;
+	}
+      previous_gbb = gbb;
+    }
+
+  /* Analyze the info in temp_for_sequence_dim and determine the minimal number
+     of sequence dimensions.  A dimension that did not appear as common
+     dimension should not be considered as a sequence dimension.  */
+  int nb_sequence_params = 0;
+  for (i = 0; i < nb_dims; i++)
+    if (temp_for_sequence_dims[i] > 0)
+      nb_sequence_params++;
+
+  int *sequence_dims = NULL;
+  if (nb_sequence_params > 0)
+    {
+      int j = 0;
+      sequence_dims = XNEWVEC (int, nb_sequence_params);
+      for (i = 0; i < nb_dims; i++)
+	if (temp_for_sequence_dims[i] > 0)
+	  {
+	    sequence_dims[j] = i;
+	    j++;
+	  }
+    }
+
+  XDELETEVEC (temp_for_sequence_dims);
+
+  isl_space *dc = isl_set_get_space (scop->param_context);
   dc = isl_space_add_dims (dc, isl_dim_set, number_of_loops (cfun));
-  static_sched = isl_aff_zero_on_domain (isl_local_space_from_space (dc));
+  isl_local_space *local_space = isl_local_space_from_space (dc);
+  isl_aff *static_sched = isl_aff_zero_on_domain (local_space);
 
   /* We have to start schedules at 0 on the first component and
      because we cannot compare_prefix_loops against a previous loop,
@@ -327,8 +405,7 @@ build_scop_scattering (scop_p scop)
      incremented before copying.  */
   static_sched = isl_aff_add_coefficient_si (static_sched, isl_dim_in, 0, -1);
 
-  int i;
-  poly_bb_p pbb;
+  previous_gbb = NULL;
   FOR_EACH_VEC_ELT (scop->pbbs, i, pbb)
     {
       gimple_poly_bb_p gbb = PBB_BLACK_BOX (pbb);
@@ -341,11 +418,57 @@ build_scop_scattering (scop_p scop)
 
       static_sched = isl_aff_add_coefficient_si (static_sched, isl_dim_in,
 						 prefix, 1);
-      build_pbb_scattering_polyhedrons (static_sched, pbb);
+      build_pbb_minimal_scattering_polyhedrons (static_sched, pbb,
+						sequence_dims, nb_sequence_params);
     }
 
+  XDELETEVEC (sequence_dims);
   isl_aff_free (static_sched);
 }
+
+/* Build the original schedule showing the orginal order of execution
+   of statement instances.
+
+   The following example shows the original schedule:
+
+   for (i: ...)
+     {
+       for (j: ...)
+         {
+           A
+         }
+       B
+     }
+   C
+   for (i: ...)
+     {
+       D
+     }
+
+   Static schedules for A to D expressed in a union map:
+   {
+     S_A[i0, i1] -> [0, i0, 0, i1];
+     S_B[i0]     -> [0, i0, 1];
+     S_C[]       -> [1];
+     S_D[i0]     -> [2, i0, 0]
+   }
+*/
+
+static void
+build_scop_original_schedule (scop_p scop)
+{
+  int i;
+  poly_bb_p pbb;
+
+  isl_space *space = isl_set_get_space (scop->param_context);
+  isl_union_map *res = isl_union_map_empty (space);
+
+  FOR_EACH_VEC_ELT (scop->pbbs, i, pbb)
+    res = isl_union_map_add_map (res, isl_map_copy (pbb->schedule));
+
+  scop->original_schedule = res;
+}
+
 
 static isl_pw_aff *extract_affine (scop_p, tree, __isl_take isl_space *space);
 
@@ -401,7 +524,7 @@ isl_id_for_ssa_name (scop_p s, tree e)
     id = isl_id_alloc (s->isl_context, name, e);
   else
     {
-      char name1[ssa_name_version_typesize];
+      char name1[10];
       snprintf (name1, sizeof (name1), "P_%d", SSA_NAME_VERSION (e));
       id = isl_id_alloc (s->isl_context, name1, e);
     }
@@ -1719,7 +1842,8 @@ build_poly_scop (scop_p scop)
   rewrite_cross_bb_scalar_deps_out_of_ssa (scop);
 
   build_scop_drs (scop);
-  build_scop_scattering (scop);
+  build_scop_minimal_scattering (scop);
+  build_scop_original_schedule (scop);
 
   /* This SCoP has been translated to the polyhedral
      representation.  */

@@ -27,11 +27,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimple-expr.h"	/* For create_tmp_var_raw.  */
 #include "trans.h"
 #include "stringpool.h"
-#include "diagnostic-core.h"  /* For internal_error.  */
-#include "alias.h"
 #include "fold-const.h"
 #include "tree-iterator.h"
-#include "flags.h"
 #include "trans-stmt.h"
 #include "trans-array.h"
 #include "trans-types.h"
@@ -1903,6 +1900,7 @@ trans_code (gfc_code * code, tree cond)
 	case EXEC_OACC_PARALLEL_LOOP:
 	case EXEC_OACC_ENTER_DATA:
 	case EXEC_OACC_EXIT_DATA:
+	case EXEC_OACC_ATOMIC:
 	  res = gfc_trans_oacc_directive (code);
 	  break;
 

@@ -1,3 +1,315 @@
+2015-11-11  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68107
+	PR c++/68266
+	* decl.c (grokdeclarator): Call valid_array_size_p.  Remove code
+	checking the size of an array.
+
+2015-11-11  Dominique d'Humieres <dominiq@lps.ens.fr>
+
+	PR bootstrap/68271
+	* parser.h (cp_token): Update pragma_kind to 8.
+
+2015-11-11  Andrew MacLeod  <amacleod@redhat.com>
+
+	* call.c: Remove unused header files.
+	* class.c: Likewise.
+	* constexpr.c: Likewise.
+	* cp-array-notation.c: Likewise.
+	* cp-cilkplus.c: Likewise.
+	* cp-gimplify.c: Likewise.
+	* cp-lang.c: Likewise.
+	* cp-objcp-common.c: Likewise.
+	* cp-ubsan.c: Likewise.
+	* cvt.c: Likewise.
+	* cxx-pretty-print.c: Likewise.
+	* decl.c: Likewise.
+	* decl2.c: Likewise.
+	* dump.c: Likewise.
+	* error.c: Likewise.
+	* except.c: Likewise.
+	* expr.c: Likewise.
+	* friend.c: Likewise.
+	* g++spec.c: Likewise.
+	* init.c: Likewise.
+	* lambda.c: Likewise.
+	* lex.c: Likewise.
+	* mangle.c: Likewise.
+	* method.c: Likewise.
+	* name-lookup.c: Likewise.
+	* optimize.c: Likewise.
+	* parser.c: Likewise.
+	* pt.c: Likewise.
+	* ptree.c: Likewise.
+	* repo.c: Likewise.
+	* rtti.c: Likewise.
+	* search.c: Likewise.
+	* semantics.c: Likewise.
+	* tree.c: Likewise.
+	* typeck.c: Likewise.
+	* typeck2.c: Likewise.
+	* vtable-class-hierarchy.c: Likewise.
+
+2015-11-09  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* parser.c (cp_finalize_oacc_routine): New boolean first argument.
+	(cp_ensure_no_oacc_routine): Update call to cp_finalize_oacc_routine.
+	(cp_parser_simple_declaration): Maintain a boolean first to keep track
+	of each new declarator.  Propagate it to cp_parser_init_declarator.
+	(cp_parser_init_declarator): New boolean first argument.  Propagate it
+	to cp_parser_save_member_function_body and cp_finalize_oacc_routine.
+	(cp_parser_member_declaration): Likewise.
+	(cp_parser_single_declaration): Update call to
+	cp_parser_init_declarator.
+	(cp_parser_save_member_function_body): New boolean first_decl argument.
+	Propagate it to cp_finalize_oacc_routine.
+	(cp_parser_finish_oacc_routine): New boolean first argument.  Use it to
+	determine if multiple declarators follow a routine construct.
+	(cp_parser_oacc_routine): Update call to cp_parser_finish_oacc_routine.
+
+2015-10-19  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/67913
+	PR c++/67927
+	* call.c (build_operator_new_call): Do not assume size_check
+	is non-null, analogously to the top half of the function.
+	* init.c (build_new_1): Detect and diagnose array sizes in
+	excess of the maximum of roughly SIZE_MAX / 2.
+	Insert a runtime check only for arrays with a non-constant size.
+	(build_new): Detect and diagnose negative array sizes.
+
+2015-11-09  Thomas Schwinge  <thomas@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+	    James Norris  <jnorris@codesourcery.com>
+	    Julian Brown  <julian@codesourcery.com>
+	    Nathan Sidwell  <nathan@codesourcery.com>
+
+	* parser.h (struct cp_parser): Add oacc_routine field.
+	* parser.c (cp_ensure_no_oacc_routine): New.
+	(cp_parser_new): Initialize oacc_routine field.
+	(cp_parser_linkage_specification): Call cp_ensure_no_oacc_routine.
+	(cp_parser_namespace_definition,
+	cp_parser_class_specifier_1): Likewise.
+	(cp_parser_init_declarator): Call cp_finalize_oacc_routine.
+	(cp_parser_function_definition,
+	cp_parser_save_member_function_body): Likewise.
+	(OACC_ROUTINE_CLAUSE_MASK): New.
+	(cp_parser_finish_oacc_routine, cp_parser_oacc_routine,
+	cp_finalize_oacc_routine): New.
+	(cp_parser_pragma): Adjust omp_declare_simd checking.  Call
+	cp_ensure_no_oacc_routine.
+	(cp_parser_pragma): Add OpenACC routine handling.
+	
+2015-11-08  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/67942 
+	* cp/init.c (warn_placement_new_too_small): Convert integer
+	operand of POINTER_PLUS_EXPR to ssize_t to determine its signed
+	value.
+
+2015-11-06  David Malcolm  <dmalcolm@redhat.com>
+
+	* error.c (cp_printer): Update for new "caret_p" param for
+	textinfo::set_location.
+	(pedwarn_cxx98): Update for change in signature of
+	diagnostic_set_info.
+
+2015-11-06  Jason Merrill  <jason@redhat.com>
+
+	Support non-type constrained-type-specifiers.
+	* parser.c (check_type_concept): Remove.
+	(cp_parser_maybe_constrained_type_specifier): Don't call it.
+	(synthesize_implicit_template_parm): Handle non-type and template
+	template parameters.  Also compare extra args.  Return the decl.
+	(cp_parser_template_argument): Handle constrained-type-specifiers for
+	non-type template parameters.
+	(finish_constrained_template_template_parm): Split out from
+	cp_parser_constrained_template_template_parm.
+	(cp_parser_nonclass_name): Move some logic into
+	cp_parser_maybe_concept_name.
+	(cp_parser_init_declarator): Fix error recovery.
+	(get_concept_from_constraint): Remove.
+	(cp_parser_simple_type_specifier): Adjust for
+	synthesize_implicit_template_parm returning the decl.
+	* constraint.cc (placeholder_extract_concept_and_args)
+	(equivalent_placeholder_constraints): Also handle TYPE_DECL
+	constrained parms.
+
+	* pt.c (push_inline_template_parms_recursive): Don't recreate the
+	CONST_DECL.
+
+2015-11-06  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* init.c (warn_placement_new_too_small): Use %wu format
+	rather than %lu when printing bytes_avail.
+
+2015-11-05  Cesar Philippidis  <cesar@codesourcery.com>
+	    Thomas Schwinge  <thomas@codesourcery.com>
+	    James Norris  <jnorris@codesourcery.com>
+
+	* parser.c (cp_parser_omp_clause_name): Add support for
+	PRAGMA_OACC_CLAUSE_INDEPENDENT and PRAGMA_OACC_CLAUSE_TILE.
+	(cp_parser_oacc_shape_clause): Allow pointer variables as gang static
+	arguments.
+	(cp_parser_oacc_clause_tile): New function.
+	(cp_parser_omp_clause_default): Add is_oacc argument. Handle
+	default(none) in OpenACC.
+	(cp_parser_oacc_all_clauses): Add support for
+	(cp_parser_omp_all_clauses): Update call to
+	cp_parser_omp_clause_default.
+	PRAGMA_OACC_CLAUSE_{DEFAULT,INDEPENDENT,TILE,PRIVATE,FIRSTPRIVATE}.
+	(OACC_LOOP_CLAUSE_MASK): Add PRAGMA_OACC_CLAUSE_{PRIVATE,INDEPENDENT,
+	TILE}.
+	(OACC_KERNELS_MASK): Add PRAGMA_OACC_CLAUSE_DEFAULT.
+	(OACC_PARALLEL_MASK): Add PRAGMA_OACC_CLAUSE_{DEFAULT,PRIVATE,
+	FIRSTPRIVATE}.
+	(cp_parser_oacc_update): Update the error message for missing clauses.
+	* semantics.c (finish_omp_clauses): Add support for
+	OMP_CLAUSE_INDEPENDENT and OMP_CLAUSE_TILE.
+
+2015-11-05  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/67942
+	* cp/init.c (warn_placement_new_too_small): Avoid assuming
+	the size of the first operand of placement new or its type
+	is known.
+
+2015-11-05  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/67942
+	* cp/init.c (warn_placement_new_too_small): New function.
+	(build_new_1): Call it.
+
+2015-11-05  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67846
+	* parser.c (cp_parser_lambda_body): Check lambda_return_type
+	return value.
+	* typeck2.c (cxx_incomplete_type_diagnostic): Print member or
+	member function used invalidly.
+
+2015-11-05  Jakub Jelinek  <jakub@redhat.com>
+	    Ilya Verbin  <ilya.verbin@intel.com>
+
+	* cp-tree.h (finish_omp_for): Add ORIG_INITS argument.
+	(omp_privatize_field): Add SHARED argument.
+	* parser.c: Include context.h.
+	(cp_parser_omp_clause_schedule): Parse schedule
+	modifiers, diagnose monotonic together with nonmonotonic.
+	(cp_parser_omp_clause_linear): Add DECLARE_SIMD argument.  Parse
+	parameter name as linear step as id-expression rather than expression.
+	(cp_parser_omp_all_clauses): Adjust caller.
+	(cp_parser_omp_for_loop_init): Add ORIG_INIT argument,
+	initialize it.  Adjust omp_privatize_field caller.
+	(cp_parser_omp_for_loop): Compute orig_inits, pass it's address
+	to finish_omp_for.
+	(OMP_DISTRIBUTE_CLAUSE_MASK): Add lastprivate clause.
+	(cp_parser_omp_target_data,
+	cp_parser_omp_target_enter_data,
+	cp_parser_omp_target_exit_data): Allow GOMP_MAP_ALWAYS_POINTER
+	and GOMP_MAP_FIRSTPRIVATE_REFERENCE.
+	(cp_parser_omp_target): Likewise.  Evaluate num_teams and
+	thread_limit expressions on combined target teams before the target.
+	(cp_parser_omp_declare_target): If decl has "omp declare target" or
+	"omp declare target link" attribute, and cgraph or varpool node already
+	exists, then set corresponding flags.  Call finish_omp_clauses
+	in the parenthesized extended-list syntax case.  Call
+	cp_parser_require_pragma_eol instead of cp_parser_skip_to_pragma_eol.
+	(cp_parser_omp_end_declare_target): Call cp_parser_require_pragma_eol
+	instead of cp_parser_skip_to_pragma_eol.
+	* decl2.c (cplus_decl_attributes): Don't diagnose block scope vars
+	inside declare target.
+	* pt.c (tsubst_omp_clauses): If OMP_CLAUSE_LINEAR_VARIABLE_STRIDE,
+	use tsubst_omp_clause_decl instead of tsubst_expr on
+	OMP_CLAUSE_LINEAR_STEP.  Handle non-static data members in shared
+	clauses.
+	(tsubst_omp_for_iterator): Adjust omp_privatize_field caller.
+	(tsubst_find_omp_teams): New function.
+	(tsubst_expr): Evaluate num_teams and thread_limit expressions on
+	combined target teams before the target.  Use OMP_FOR_ORIG_DECLS for
+	all OpenMP/OpenACC/Cilk+ looping constructs.  Adjust finish_omp_for
+	caller.
+	* semantics.c (omp_privatize_field): Add SHARED argument, if true,
+	always create artificial var and never put it into the hash table
+	or vector.
+	(handle_omp_array_sections_1): Adjust omp_privatize_field caller.
+	Allow non-zero low-bound on OMP_CLAUSE_REDUCTION array sections.
+	(handle_omp_array_sections): For structure element
+	based array sections use GOMP_MAP_ALWAYS_POINTER instead of
+	GOMP_MAP_FIRSTPRIVATE_POINTER.  Encode low-bound into the MEM_REF,
+	either into the constant offset, or for variable low-bound using
+	POINTER_PLUS_EXPR.
+	(finish_omp_clauses): Adjust omp_privatize_field caller.  Drop
+	generic_field_head, structure elements are now always mapped even
+	as array section bases, diagnose same var in data sharing and
+	mapping clauses.  For references map what they refer to using
+	GOMP_MAP_ALWAYS_POINTER for structure elements and
+	GOMP_MAP_FIRSTPRIVATE_REFERENCE otherwise.  Diagnose if linear step
+	on declare simd is neither a constant nor a uniform parameter.
+	Allow non-static data members on shared clauses.  Look through
+	POINTER_PLUS_EXPR for array section reductions.  Diagnose nonmonotonic
+	modifier on kinds other than dynamic or guided or nonmonotonic
+	modifier together with ordered clause.  Diagnose the same var or
+	function appearing multiple times on the same directive.  Fix up
+	wording for the to clause if t is neither a FUNCTION_DECL nor a
+	VAR_DECL, use special wording for OVERLOADs and TEMPLATE_ID_EXPR.
+	(handle_omp_for_class_iterator): Add ORIG_DECLS argument.  Call
+	c_omp_check_loop_iv_exprs on cond.
+	(finish_omp_for): Add ORIG_INITS argument.  Call
+	c_omp_check_loop_iv_exprs on ORIG_INITS elements.  Adjust
+	handle_omp_for_class_iterator caller.  Call c_omp_check_loop_iv.
+	Call add_stmt.
+	(finish_omp_atomic): Adjust c_finish_omp_atomic caller.
+
+2015-11-04  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* (cp_parser_oacc_single_int_clause): New function.
+	(cp_parser_oacc_clause_vector_length): Delete.
+	(cp_parser_omp_clause_num_gangs): Delete.
+	(cp_parser_omp_clause_num_workers): Delete.
+	(cp_parser_oacc_all_clauses): Use cp_parser_oacc_single_int_clause
+	for num_gangs, num_workers and vector_length.
+
+2015-11-04  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	* call.c (validate_conversion_obstack): Define unconditionally.
+	* constexpr.c (maybe_constant_value, fold_non_dependent_expr): Use
+	gcc_checking_assert.
+	* cp-tree.h: Use CHECKING_P instead of ENABLE_CHECKING.
+	* decl2.c (cxx_post_compilation_parsing_cleanups): Use flag_checking.
+	* mangle.c (add_substitution): Likewise.
+	* method.c (maybe_explain_implicit_delete): Likewise.
+	* parser.c (cp_parser_template_argument_list): Remove conditional
+	compilation.
+	* pt.c (check_unstripped_args): Rename to...
+	(verify_unstripped_args): ... this and remove conditional compilation.
+	(retrieve_specialization): Guard call of verify_unstripped_args with
+	flag_checking.
+	(template_parm_to_arg): Remove conditional compilation.
+	(template_parms_to_args, coerce_template_parameter_pack,
+	coerce_template_parms): Likewise.
+	(tsubst_copy): Use flag_checking.
+	(type_unification_real): Remove conditional compilation.
+	(build_non_dependent_expr): Use flag_checking.
+	* tree.c (build_target_expr): Remove conditional compilation, use
+	gcc_checking_assert.
+	* typeck.c (comptypes): Likewise.
+	* typeck2.c (digest_init_r): Likewise.
+
+2015-11-03  Jason Merrill  <jason@redhat.com>
+
+	* pt.c (struct find_parameter_pack_data): Add
+	type_pack_expansion_p field.
+	(find_parameter_packs_r): Use it to turn 'auto' into a parameter pack.
+	(uses_parameter_packs, make_pack_expansion)
+	(check_for_bare_parameter_packs, fixed_parameter_pack_p): Set it.
+
+2015-11-03  Thomas Schwinge  <thomas@codesourcery.com>
+	    Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* parser.c (cp_parser_omp_construct, cp_parser_pragma): Handle
+	PRAGMA_OACC_ATOMIC.
+
 2015-10-31  Ville Voutilainen  <ville.voutilainen@gmail.com>
 
 	Remove the implementation of N3994, terse range-for loops.

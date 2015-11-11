@@ -154,10 +154,16 @@ static tree
 do_compare (gimple_stmt_iterator *gsi, tree inner_type, tree a, tree b,
 	    tree bitpos, tree bitsize, enum tree_code code, tree type)
 {
+  tree stype = TREE_TYPE (type);
+  tree cst_false = build_zero_cst (stype);
+  tree cst_true = build_all_ones_cst (stype);
+  tree cmp;
+
   a = tree_vec_extract (gsi, inner_type, a, bitsize, bitpos);
   b = tree_vec_extract (gsi, inner_type, b, bitsize, bitpos);
 
-  return gimplify_build2 (gsi, code, TREE_TYPE (type), a, b);
+  cmp = build2 (code, boolean_type_node, a, b);
+  return gimplify_build3 (gsi, COND_EXPR, stype, cmp, cst_true, cst_false);
 }
 
 /* Expand vector addition to scalars.  This does bit twiddling
@@ -340,7 +346,8 @@ expand_vector_comparison (gimple_stmt_iterator *gsi, tree type, tree op0,
                           tree op1, enum tree_code code)
 {
   tree t;
-  if (! expand_vec_cond_expr_p (type, TREE_TYPE (op0)))
+  if (!expand_vec_cmp_expr_p (TREE_TYPE (op0), type)
+      && !expand_vec_cond_expr_p (type, TREE_TYPE (op0)))
     t = expand_vector_piecewise (gsi, do_compare, type,
 				 TREE_TYPE (TREE_TYPE (op0)), op0, op1, code);
   else
@@ -1521,6 +1528,8 @@ expand_vector_operations_1 (gimple_stmt_iterator *gsi)
   tree srhs1, srhs2 = NULL_TREE;
   if ((srhs1 = ssa_uniform_vector_p (rhs1)) != NULL_TREE
       && (rhs2 == NULL_TREE
+	  || (! VECTOR_TYPE_P (TREE_TYPE (rhs2))
+	      && (srhs2 = rhs2))
 	  || (srhs2 = ssa_uniform_vector_p (rhs2)) != NULL_TREE)
       /* As we query direct optabs restrict to non-convert operations.  */
       && TYPE_MODE (TREE_TYPE (type)) == TYPE_MODE (TREE_TYPE (srhs1)))

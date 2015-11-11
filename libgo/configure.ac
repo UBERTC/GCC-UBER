@@ -11,7 +11,7 @@ AC_INIT(package-unused, version-unused,, libgo)
 AC_CONFIG_SRCDIR(Makefile.am)
 AC_CONFIG_HEADER(config.h)
 
-libtool_VERSION=7:0:0
+libtool_VERSION=8:0:0
 AC_SUBST(libtool_VERSION)
 
 AM_ENABLE_MULTILIB(, ..)
@@ -473,6 +473,9 @@ AC_CACHE_CHECK([for socket libraries], libgo_cv_lib_sockets,
 		 [AC_CHECK_LIB(nsl, main,
 		 	[libgo_cv_lib_sockets="$libgo_cv_lib_sockets -lnsl"])])
    unset ac_cv_func_gethostbyname
+   AC_CHECK_FUNC(sendfile, ,
+		 [AC_CHECK_LIB(sendfile, main,
+		 	[libgo_cv_lib_sockets="$libgo_cv_lib_sockets -lsendfile"])])
    LIBS=$libgo_old_libs
 ])
 NET_LIBS="$libgo_cv_lib_sockets"

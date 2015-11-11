@@ -51,6 +51,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "internal-fn.h"
 #include "tree-eh.h"
 #include "gimple-iterator.h"
+#include "gimple-expr.h"
 #include "gimple-walk.h"
 #include "tree-cfg.h"
 #include "tree-dfa.h"
@@ -4373,9 +4374,10 @@ expand_debug_expr (tree exp)
 	machine_mode mode1;
 	HOST_WIDE_INT bitsize, bitpos;
 	tree offset;
-	int volatilep = 0;
-	tree tem = get_inner_reference (exp, &bitsize, &bitpos, &offset,
-					&mode1, &unsignedp, &volatilep, false);
+	int reversep, volatilep = 0;
+	tree tem
+	  = get_inner_reference (exp, &bitsize, &bitpos, &offset, &mode1,
+				 &unsignedp, &reversep, &volatilep, false);
 	rtx orig_op0;
 
 	if (bitsize == 0)
@@ -4798,9 +4800,10 @@ expand_debug_expr (tree exp)
 	  if (handled_component_p (TREE_OPERAND (exp, 0)))
 	    {
 	      HOST_WIDE_INT bitoffset, bitsize, maxsize;
+	      bool reverse;
 	      tree decl
-		= get_ref_base_and_extent (TREE_OPERAND (exp, 0),
-					   &bitoffset, &bitsize, &maxsize);
+		= get_ref_base_and_extent (TREE_OPERAND (exp, 0), &bitoffset,
+					   &bitsize, &maxsize, &reverse);
 	      if ((TREE_CODE (decl) == VAR_DECL
 		   || TREE_CODE (decl) == PARM_DECL
 		   || TREE_CODE (decl) == RESULT_DECL)
@@ -6367,6 +6370,8 @@ pass_expand::execute (function *fun)
 
   /* We're done expanding trees to RTL.  */
   currently_expanding_to_rtl = 0;
+
+  flush_mark_addressable_queue ();
 
   FOR_BB_BETWEEN (bb, ENTRY_BLOCK_PTR_FOR_FN (fun)->next_bb,
 		  EXIT_BLOCK_PTR_FOR_FN (fun), next_bb)

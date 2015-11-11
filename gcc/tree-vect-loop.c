@@ -46,6 +46,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-scalar-evolution.h"
 #include "tree-vectorizer.h"
 #include "gimple-fold.h"
+#include "cgraph.h"
 
 /* Loop Vectorization Pass.
 
@@ -177,19 +178,21 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
 {
   struct loop *loop = LOOP_VINFO_LOOP (loop_vinfo);
   basic_block *bbs = LOOP_VINFO_BBS (loop_vinfo);
-  int nbbs = loop->num_nodes;
+  unsigned nbbs = loop->num_nodes;
   unsigned int vectorization_factor = 0;
   tree scalar_type;
   gphi *phi;
   tree vectype;
   unsigned int nunits;
   stmt_vec_info stmt_info;
-  int i;
+  unsigned i;
   HOST_WIDE_INT dummy;
   gimple *stmt, *pattern_stmt = NULL;
   gimple_seq pattern_def_seq = NULL;
   gimple_stmt_iterator pattern_def_si = gsi_none ();
   bool analyze_pattern_stmt = false;
+  bool bool_result;
+  auto_vec<stmt_vec_info> mask_producers;
 
   if (dump_enabled_p ())
     dump_printf_loc (MSG_NOTE, vect_location,
@@ -408,6 +411,8 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
 	      return false;
 	    }
 
+	  bool_result = false;
+
 	  if (STMT_VINFO_VECTYPE (stmt_info))
 	    {
 	      /* The only case when a vectype had been already set is for stmts
@@ -428,6 +433,32 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
 		scalar_type = TREE_TYPE (gimple_call_arg (stmt, 3));
 	      else
 		scalar_type = TREE_TYPE (gimple_get_lhs (stmt));
+
+	      /* Bool ops don't participate in vectorization factor
+		 computation.  For comparison use compared types to
+		 compute a factor.  */
+	      if (TREE_CODE (scalar_type) == BOOLEAN_TYPE)
+		{
+		  mask_producers.safe_push (stmt_info);
+		  bool_result = true;
+
+		  if (gimple_code (stmt) == GIMPLE_ASSIGN
+		      && TREE_CODE_CLASS (gimple_assign_rhs_code (stmt))
+			 == tcc_comparison
+		      && TREE_CODE (TREE_TYPE (gimple_assign_rhs1 (stmt)))
+			 != BOOLEAN_TYPE)
+		    scalar_type = TREE_TYPE (gimple_assign_rhs1 (stmt));
+		  else
+		    {
+		      if (!analyze_pattern_stmt && gsi_end_p (pattern_def_si))
+			{
+			  pattern_def_seq = NULL;
+			  gsi_next (&si);
+			}
+		      continue;
+		    }
+		}
+
 	      if (dump_enabled_p ())
 		{
 		  dump_printf_loc (MSG_NOTE, vect_location,
@@ -450,7 +481,8 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
 		  return false;
 		}
 
-	      STMT_VINFO_VECTYPE (stmt_info) = vectype;
+	      if (!bool_result)
+		STMT_VINFO_VECTYPE (stmt_info) = vectype;
 
 	      if (dump_enabled_p ())
 		{
@@ -460,19 +492,27 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
 		}
             }
 
-	  /* The vectorization factor is according to the smallest
-	     scalar type (or the largest vector size, but we only
-	     support one vector size per loop).  */
-	  scalar_type = vect_get_smallest_scalar_type (stmt, &dummy,
-						       &dummy);
-	  if (dump_enabled_p ())
+	  /* Don't try to compute VF out scalar types if we stmt
+	     produces boolean vector.  Use result vectype instead.  */
+	  if (VECTOR_BOOLEAN_TYPE_P (vectype))
+	    vf_vectype = vectype;
+	  else
 	    {
-	      dump_printf_loc (MSG_NOTE, vect_location,
-                               "get vectype for scalar type:  ");
-	      dump_generic_expr (MSG_NOTE, TDF_SLIM, scalar_type);
-              dump_printf (MSG_NOTE, "\n");
+	      /* The vectorization factor is according to the smallest
+		 scalar type (or the largest vector size, but we only
+		 support one vector size per loop).  */
+	      if (!bool_result)
+		scalar_type = vect_get_smallest_scalar_type (stmt, &dummy,
+							     &dummy);
+	      if (dump_enabled_p ())
+		{
+		  dump_printf_loc (MSG_NOTE, vect_location,
+				   "get vectype for scalar type:  ");
+		  dump_generic_expr (MSG_NOTE, TDF_SLIM, scalar_type);
+		  dump_printf (MSG_NOTE, "\n");
+		}
+	      vf_vectype = get_vectype_for_scalar_type (scalar_type);
 	    }
-	  vf_vectype = get_vectype_for_scalar_type (scalar_type);
 	  if (!vf_vectype)
 	    {
 	      if (dump_enabled_p ())
@@ -538,6 +578,99 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
       return false;
     }
   LOOP_VINFO_VECT_FACTOR (loop_vinfo) = vectorization_factor;
+
+  for (i = 0; i < mask_producers.length (); i++)
+    {
+      tree mask_type = NULL;
+
+      stmt = STMT_VINFO_STMT (mask_producers[i]);
+
+      if (gimple_code (stmt) == GIMPLE_ASSIGN
+	  && TREE_CODE_CLASS (gimple_assign_rhs_code (stmt)) == tcc_comparison
+	  && TREE_CODE (TREE_TYPE (gimple_assign_rhs1 (stmt))) != BOOLEAN_TYPE)
+	{
+	  scalar_type = TREE_TYPE (gimple_assign_rhs1 (stmt));
+	  mask_type = get_mask_type_for_scalar_type (scalar_type);
+
+	  if (!mask_type)
+	    {
+	      if (dump_enabled_p ())
+		dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+				 "not vectorized: unsupported mask\n");
+	      return false;
+	    }
+	}
+      else
+	{
+	  tree rhs;
+	  ssa_op_iter iter;
+	  gimple *def_stmt;
+	  enum vect_def_type dt;
+
+	  FOR_EACH_SSA_TREE_OPERAND (rhs, stmt, iter, SSA_OP_USE)
+	    {
+	      if (!vect_is_simple_use (rhs, mask_producers[i]->vinfo,
+				       &def_stmt, &dt, &vectype))
+		{
+		  if (dump_enabled_p ())
+		    {
+		      dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+				       "not vectorized: can't compute mask type "
+				       "for statement, ");
+		      dump_gimple_stmt (MSG_MISSED_OPTIMIZATION,  TDF_SLIM, stmt,
+					0);
+		      dump_printf (MSG_MISSED_OPTIMIZATION, "\n");
+		    }
+		  return false;
+		}
+
+	      /* No vectype probably means external definition.
+		 Allow it in case there is another operand which
+		 allows to determine mask type.  */
+	      if (!vectype)
+		continue;
+
+	      if (!mask_type)
+		mask_type = vectype;
+	      else if (TYPE_VECTOR_SUBPARTS (mask_type)
+		       != TYPE_VECTOR_SUBPARTS (vectype))
+		{
+		  if (dump_enabled_p ())
+		    {
+		      dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+				       "not vectorized: different sized masks "
+				       "types in statement, ");
+		      dump_generic_expr (MSG_MISSED_OPTIMIZATION, TDF_SLIM,
+					 mask_type);
+		      dump_printf (MSG_MISSED_OPTIMIZATION, " and ");
+		      dump_generic_expr (MSG_MISSED_OPTIMIZATION, TDF_SLIM,
+					 vectype);
+		      dump_printf (MSG_MISSED_OPTIMIZATION, "\n");
+		    }
+		  return false;
+		}
+	    }
+	}
+
+      /* No mask_type should mean loop invariant predicate.
+	 This is probably a subject for optimization in
+	 if-conversion.  */
+      if (!mask_type)
+	{
+	  if (dump_enabled_p ())
+	    {
+	      dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+			       "not vectorized: can't compute mask type "
+			       "for statement, ");
+	      dump_gimple_stmt (MSG_MISSED_OPTIMIZATION,  TDF_SLIM, stmt,
+				0);
+	      dump_printf (MSG_MISSED_OPTIMIZATION, "\n");
+	    }
+	  return false;
+	}
+
+      STMT_VINFO_VECTYPE (mask_producers[i]) = mask_type;
+    }
 
   return true;
 }
@@ -1584,13 +1717,74 @@ vect_analyze_loop_2 (loop_vec_info loop_vinfo)
   unsigned int n_stmts = 0;
 
   /* Find all data references in the loop (which correspond to vdefs/vuses)
-     and analyze their evolution in the loop.  Also adjust the minimal
-     vectorization factor according to the loads and stores.
+     and analyze their evolution in the loop.  */
 
-     FORNOW: Handle only simple, array references, which
-     alignment can be forced, and aligned pointer-references.  */
+  basic_block *bbs = LOOP_VINFO_BBS (loop_vinfo);
 
-  ok = vect_analyze_data_refs (loop_vinfo, &min_vf, &n_stmts);
+  loop_p loop = LOOP_VINFO_LOOP (loop_vinfo);
+  if (!find_loop_nest (loop, &LOOP_VINFO_LOOP_NEST (loop_vinfo)))
+    {
+      if (dump_enabled_p ())
+	dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+			 "not vectorized: loop contains function calls"
+			 " or data references that cannot be analyzed\n");
+      return false;
+    }
+
+  for (unsigned i = 0; i < loop->num_nodes; i++)
+    for (gimple_stmt_iterator gsi = gsi_start_bb (bbs[i]);
+	 !gsi_end_p (gsi); gsi_next (&gsi))
+      {
+	gimple *stmt = gsi_stmt (gsi);
+	if (is_gimple_debug (stmt))
+	  continue;
+	++n_stmts;
+	if (!find_data_references_in_stmt (loop, stmt,
+					   &LOOP_VINFO_DATAREFS (loop_vinfo)))
+	  {
+	    if (is_gimple_call (stmt) && loop->safelen)
+	      {
+		tree fndecl = gimple_call_fndecl (stmt), op;
+		if (fndecl != NULL_TREE)
+		  {
+		    cgraph_node *node = cgraph_node::get (fndecl);
+		    if (node != NULL && node->simd_clones != NULL)
+		      {
+			unsigned int j, n = gimple_call_num_args (stmt);
+			for (j = 0; j < n; j++)
+			  {
+			    op = gimple_call_arg (stmt, j);
+			    if (DECL_P (op)
+				|| (REFERENCE_CLASS_P (op)
+				    && get_base_address (op)))
+			      break;
+			  }
+			op = gimple_call_lhs (stmt);
+			/* Ignore #pragma omp declare simd functions
+			   if they don't have data references in the
+			   call stmt itself.  */
+			if (j == n
+			    && !(op
+				 && (DECL_P (op)
+				     || (REFERENCE_CLASS_P (op)
+					 && get_base_address (op)))))
+			  continue;
+		      }
+		  }
+	      }
+	    if (dump_enabled_p ())
+	      dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+			       "not vectorized: loop contains function "
+			       "calls or data references that cannot "
+			       "be analyzed\n");
+	    return false;
+	  }
+      }
+
+  /* Analyze the data references and also adjust the minimal
+     vectorization factor according to the loads and stores.  */
+
+  ok = vect_analyze_data_refs (loop_vinfo, &min_vf);
   if (!ok)
     {
       if (dump_enabled_p ())

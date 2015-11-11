@@ -26,12 +26,10 @@ along with GCC; see the file COPYING3.  If not see
 #include "system.h"
 #include "coretypes.h"
 #include "target.h"
-#include "tree.h"
 #include "cp-tree.h"
 #include "timevar.h"
 #include "stringpool.h"
 #include "cgraph.h"
-#include "alias.h"
 #include "stor-layout.h"
 #include "trans-mem.h"
 #include "flags.h"
@@ -724,8 +722,6 @@ alloc_conversion (conversion_kind kind)
   return c;
 }
 
-#ifdef ENABLE_CHECKING
-
 /* Make sure that all memory on the conversion obstack has been
    freed.  */
 
@@ -736,8 +732,6 @@ validate_conversion_obstack (void)
     gcc_assert ((obstack_next_free (&conversion_obstack)
 		 == obstack_base (&conversion_obstack)));
 }
-
-#endif /* ENABLE_CHECKING */
 
 /* Dynamically allocate an array of N conversions.  */
 
@@ -4240,10 +4234,13 @@ build_operator_new_call (tree fnname, vec<tree, va_gc> **args,
 	 {
 	   /* Update the total size.  */
 	   *size = size_binop (PLUS_EXPR, original_size, *cookie_size);
-	   /* Set to (size_t)-1 if the size check fails.  */
-	   gcc_assert (size_check != NULL_TREE);
-	   *size = fold_build3 (COND_EXPR, sizetype, size_check,
-				*size, TYPE_MAX_VALUE (sizetype));
+	   if (size_check)
+	     {
+	       /* Set to (size_t)-1 if the size check fails.  */
+	       gcc_assert (size_check != NULL_TREE);
+	       *size = fold_build3 (COND_EXPR, sizetype, size_check,
+				    *size, TYPE_MAX_VALUE (sizetype));
+	    }
 	   /* Update the argument list to reflect the adjusted size.  */
 	   (**args)[0] = *size;
 	 }

@@ -1,3 +1,660 @@
+2015-11-11  Sebastian Pop  <s.pop@samsung.com>
+
+	* gcc.dg/graphite/fuse-1.c: Adjust pattern.  Remove dg-do.
+	* gcc.dg/graphite/fuse-2.c: Same.
+	* gcc.dg/graphite/graphite.exp (opt_files): Add fuse-*.c and
+	isl-ast-gen-*.c files.
+	* gcc.dg/graphite/isl-ast-gen-blocks-1.c: Remove dg-do and dg-options.
+	* gcc.dg/graphite/isl-ast-gen-blocks-2.c: Same.
+	* gcc.dg/graphite/isl-ast-gen-blocks-3.c: Same.
+	* gcc.dg/graphite/isl-ast-gen-blocks-4.c: Same.
+	* gcc.dg/graphite/isl-ast-gen-if-1.c: Same.
+	* gcc.dg/graphite/isl-ast-gen-if-2.c: Same.
+	* gcc.dg/graphite/isl-ast-gen-single-loop-1.c: Same.
+	* gcc.dg/graphite/isl-ast-gen-single-loop-2.c: Same.
+	* gcc.dg/graphite/isl-ast-gen-single-loop-3.c: Same.
+	* gcc.dg/graphite/isl-ast-gen-user-1.c: Same.
+	* gcc.dg/graphite/isl-codegen-loop-dumping.c: Remove.
+
+2015-11-11  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68107
+	PR c++/68266
+	* c-c++-common/pr68107.c: New test.
+	* g++.dg/init/new38.C (large_array_char): Adjust dg-error.
+	(large_array_char_template): Likewise.
+	* g++.dg/init/new44.C: Adjust dg-error.
+
+2015-11-11  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* gfortran.dg/goacc/private-3.f95: Remove xfail.
+	* gfortran.dg/goacc/combined_loop.f90: Remove xfail.
+
+2015-11-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/i386/pr67265.c: New test.
+
+2015-11-11  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* gcc.target/powerpc/20050603-3.c: Don't restrict to ilp32.  Do more
+	tests for the expected generated code.
+
+2015-11-11  Simon Dardis  <simon.dardis@imgtec.com>
+
+	* gcc.target/mips/split-ds-sequence.c: New test.
+
+2015-11-11  Julia Koval  <julia.koval@intel.com>
+
+	* g++.dg/ext/mv16.C: New functions.
+
+2015-11-11  Richard Biener  <rguenth@gcc.gnu.org>
+	    Jiong Wang	    <jiong.wang@arm.com>
+
+	* gcc.dg/tree-ssa/pr68234.c: New testcase. 
+
+2015-11-10  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* gcc.dg/goacc/nvptx-opt-1.c: New test.
+
+2015-11-10  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* gcc.target/i386/mask-pack.c: New test.
+	* gcc.target/i386/mask-unpack.c: New test.
+
+2015-11-10  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* gcc.target/i386/avx2-vec-mask-bit-not.c: New test.
+
+2015-11-10  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* gcc.dg/vect/slp-cond-5.c: New test.
+
+2015-11-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68240
+	* gcc.dg/torture/pr68240.c: New testcase.
+
+2015-11-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/56118
+	* gcc.target/i386/pr56118.c: New testcase.
+
+2015-11-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/cond_op_imm_1.c: New test.
+
+2015-11-10  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gfortran.dg/pr68251.f90: New test.
+
+2015-11-09  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* c-c++-common/goacc/routine-5.c: Enable c++ tests.
+
+2015-11-09  Martin Sebor  <msebor@redhat.com>
+
+	* init/new45.C: New test to verify that operator new is invoked
+	with or without overhead for a cookie.
+
+	PR c++/67927
+	* init/new44.C: New test for placement new expressions for arrays
+	with excessive number of elements.
+
+	PR c++/67913
+	* init/new43.C: New test for placement new expressions for arrays
+	with negative number of elements.
+
+	* other/new-size-type.C: Expect array new expression with
+	an excessive number of elements to be rejected.
+
+2015-11-09  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* c-c++-common/goacc/routine-1.c: New.
+	* c-c++-common/goacc/routine-2.c: New.
+	* c-c++-common/goacc/routine-3.c: New.
+	* c-c++-common/goacc/routine-4.c: New.
+	* c-c++-common/goacc/routine-5.c: New.
+
+2015-11-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/sparc/sparc-ret.c: Rename to...
+	* gcc.target/sparc/sparc-ret-1.c: ...this.
+	* gcc.target/sparc/sparc-ret-2.c: New test.
+
+2015-11-09  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* lib/target-supports.exp (check_p8vector_hw_available): Split
+	long line.
+	(check_vsx_hw_available): Likewise.
+	(check_p9vector_hw_available): Add new checks for ISA 3.0 hardware
+	support and for PowerPC float128 support.
+	(check_p9modulo_hw_available): Likewise.
+	(check_ppc_float128_sw_available): Likewise.
+	(check_ppc_float128_hw_available): Likewise.
+	(check_effective_target_powerpc_p9vector_ok): Likewise.
+	(check_effective_target_powerpc_p9modulo_ok): Likewise.
+	(check_effective_target_powerpc_float128_sw_ok): Likewise.
+	(check_effective_target_powerpc_float128_hw_ok): Likewise.
+	(is-effective-target): Add new PowerPc targets.
+	(is-effective-target-keyword): Likewise.
+	(check_vect_support_and_set_flags): If we have ISA 3.0 vector
+	instructions, use it.
+
+	* gcc.target/powerpc/mod-1.c: New test for ISA 3.0 instructions.
+	* gcc.target/powerpc/mod-2.c: Likewise.
+	* gcc.target/powerpc/ctz-1.c: Likewise.
+	* gcc.target/powerpc/ctz-2.c: Likewise.
+	* gcc.target/powerpc/extswsli-1.c: Likewise.
+	* gcc.target/powerpc/extswsli-2.c: Likewise.
+	* gcc.target/powerpc/extswsli-3.c: Likewise.
+
+	* gcc.target/powerpc/fusion.c (fusion_vector): Move to fusion2.c
+	and allow the test on PowerPC LE.
+	* gcc.target/powerpc/fusion2.c (fusion_vector): Likewise.
+	* gcc.target/powerpc/fusion3.c: New file, test power9 fusion.
+
+	* gcc.target/powerpc/float128-call.c: Use powerpc_float128_sw_ok
+	check instead of powerpc_vsx_ok.
+	* gcc.target/powerpc/float128-mix.c: Likewise.
+
+2015-11-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/sso/*.c: Robustify dg-output directives.
+
+2015-11-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* g++.dg/ubsan/pr68259.C: New test.
+
+2015-11-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	* g++.dg/cilk-plus/CK/pr66326.cc: Do not include cilk.h.
+	(main): Use _Cilk_spawn instead of cilk_spawn.
+
+2015-11-09  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* gcc.target/i386/addr-space-3.c: Fix quoting in dg-final
+	scan-assembler directive.
+
+2015-11-09  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68129
+	* gcc.dg/pr68129_1.c: New test.
+
+2015-11-09  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	PR debug/67192
+	* gcc.dg/guality/pr67192.c (f3, f4): New functions.
+	(main): Invoke them.
+
+2015-11-09  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	PR debug/67192
+	* gcc.dg/guality/pr67192.c: New test.
+
+2015-11-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68248
+	* gcc.dg/torture/pr68248.c: New testcase.
+
+2015-11-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/56118
+	* gcc.dg/vect/no-tree-sra-bb-slp-pr50730.c: Adjust.
+
+2015-11-09  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/thumb2-slow-flash-data.c: Add missing typespec for
+	labelref and check use of constant pool by looking for .word and
+	similar directives.
+
+2015-11-09  Igor Zamyatin  <igor.zamyatin@intel.com>
+
+	PR target/66326
+	* g++.dg/cilk-plus/CK/pr66326.cc: New test.
+
+2015-11-09  Richard Henderson  <rth@redhat.com>
+
+	* gcc.target/i386/addr-space-1.c: New test.
+	* gcc.target/i386/addr-space-2.c: New test.
+	* gcc.target/i386/addr-space-3.c: New test.
+
+2015-11-08  Steven g. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68053
+	* gfortran.dg/pr68053.f90: New test.
+
+2015-11-06  Jan Hubicka  <hubicka@ucw.cz>
+
+	* g++.dg/lto/pr68057_0.C: Fix testcase.
+
+2015-11-08  Joost VandeVondele <vondele@gcc.gnu.org>
+
+	* gfortran.dg/PR67518.f90: move from here...
+	* gfortran.dg/graphite/PR67518.f90: to here.
+	* gfortran.dg/PR53852.f90: move from here...
+	* gfortran.dg/graphite/PR53852.f90: to here.
+
+2015-11-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/sso-1.c: New test.
+	* gcc.dg/sso-2.c: Likewise.
+	* gcc.dg/sso-3.c: Likewise.
+	* gcc.dg/sso-4.c: Likewise.
+	* gcc.dg/sso-5.c: Likewise.
+	* gcc.dg/sso-6.c: Likewise.
+	* gcc.dg/sso-7.c: Likewise.
+	* gcc.dg/sso-8.c: Likewise.
+	* gcc.dg/sso: New directory.
+	* gcc.target/i386/movbe-3.c: New test.
+	* gnat.dg/sso1.adb: Likewise.
+	* gnat.dg/sso2.ad[sb]: Likewise.
+	* gnat.dg/sso3.adb: Likewise.
+	* gnat.dg/sso4.adb: Likewise.
+	* gnat.dg/sso5.adb: Likewise.
+	* gnat.dg/sso6.adb: Likewise.
+	* gnat.dg/sso7.adb: Likewise.
+	* gnat.dg/specs/sso1.ads: Likewise.
+	* gnat.dg/specs/sso2.ads: Likewise.
+	* gnat.dg/sso: New directory.
+
+2015-11-08  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/68218
+	* gfortran.dg/allocate_with_arrayspec_1.f90: New test.
+
+2015-11-08  Steven G. Kargl  <kargl@gc.gnu.org>
+
+	PR fortran/68224
+	* gfortran.dg/pr68224.f90: New test.
+
+2015-11-08  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/68196
+	* gfortran.dg/proc_ptr_47.f90: New test.
+
+	PR fortran/66465
+	* gfortran.dg/pr66465.f90: New test.
+
+2015-11-07  John David Anglin  <danglin@gcc.gnu.org>
+
+	* gcc.dg/Wno-frame-address.c: Skip on hppa*-*-*.
+
+2015-11-07  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68153
+	* gfortran.dg/pr68153.f90: New test.
+
+2015-11-07  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68151
+	* gfortran.dg/pr68151.f90: New test.
+
+2015-11-07  Richard Sandiford  <richard.sandiford@arm.com>
+
+	PR tree-optimization/68235
+	* gcc.dg/lto/20110201-1_0.c: Add -fno-math-errno.
+
+2015-11-06  Jeff Law  <law@redhat.com>
+
+	* gcc.dg/tree-ssa/ssa-dom-thread-7.c: Adjust to look for
+	realized jump threads.
+	* gcc.dg/tree-ssa-pr66752-3.c: Look in vrp1 dump for jump
+	threads rather than dom1 dump.
+
+2015-11-06  Michael Collison  <michael.collison@linaro.org
+	    Ramana Radhakrishnan  <ramana.radhakrishnan@linaro.org>
+
+	Revert:
+	2015-08-01  Michael Collison  <michael.collison@linaro.org
+		    Ramana Radhakrishnan  <ramana.radhakrishnan@linaro.org>
+
+	* gcc.target/arm/mincmp.c: New test.
+
+2015-11-06  Dominique d'Humieres <dominiq@lps.ens.fr>
+
+	PR fortran/54224
+	* gfortran.dg/warn_unused_function_2.f90: Add two new
+	"defined but not used" subroutines.
+
+2015-11-06  Jakub Jelinek  <jakub@redhat.com>
+
+	* gcc.dg/gomp/ordered-2.c (f1): Expect an extra error.
+	* g++.dg/gomp/ordered-2.C (f1): Likewise.
+	* gfortran.dg/goacc/parallel-kernels-regions.f95: Adjust
+	expected diagnostics for the addition of quotes.
+	* gfortran.dg/gomp/target3.f90: Likewise.
+	* c-c++-common/goacc/nesting-fail-1.c: Likewise.
+	* c-c++-common/goacc-gomp/nesting-fail-1.c: Likewise.
+	* c-c++-common/gomp/doacross-1.c: Likewise.
+	* c-c++-common/gomp/nesting-warn-1.c: Likewise.
+	* c-c++-common/gomp/cancel-1.c (f2): Add some new tests.
+	Adjust expected diagnostics wording.
+	* c-c++-common/gomp/clauses-4.c (foo): Likewise.
+	Don't expect error on ordered threads simd when in for simd.
+	* c-c++-common/gomp/nesting-2.c: New test.
+	* c-c++-common/gomp/ordered-3.c (foo): Add some new tests.
+	* c-c++-common/gomp/ordered-4.c: New test.
+
+2015-11-06  Mike Stump  <mikestump@comcast.net>
+
+	* gcc.dg/pragma-diag-5.c: Make test cases unique.
+
+2015-11-06  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	* gcc.dg/graphite/fuse-1.c: New.
+	* gcc.dg/graphite/fuse-2.c: New.
+	* gcc.dg/graphite/interchange-13.c: Remove bogus check.
+
+2015-11-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqtbX.c: New test.
+
+2015-11-06  David Malcolm  <dmalcolm@redhat.com>
+
+	* gcc.dg/plugin/diagnostic-test-show-locus-bw.c: New file.
+	* gcc.dg/plugin/diagnostic-test-show-locus-color.c: New file.
+	* gcc.dg/plugin/diagnostic_plugin_test_show_locus.c: New file.
+	* gcc.dg/plugin/plugin.exp (plugin_test_list): Add the above.
+	* lib/gcc-dg.exp: Load multiline.exp.
+
+2015-11-06  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+
+	* gcc.target/arm/combine-movs.c: Adjust for unified asm.
+	* gcc.target/arm/interrupt-1.c: Likewise.
+	* gcc.target/arm/interrupt-2.c: Likewise.
+	* gcc.target/arm/unaligned-memcpy-4.c: Likewise.
+
+2015-11-06  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* gfortran.dg/goacc/combined_loop.f90: XFAIL.
+
+2015-11-06  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/68057
+	PR ipa/68220
+	* g++.dg/lto/pr68057_0.C: New testcase.
+	* g++.dg/lto/pr68057_1.C: New testcase.
+	* g++.dg/torture/pr68220.C: New testcase.
+
+2015-11-06  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vtbX.c: Fix typos in
+	comment.
+
+2015-11-06  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR tree-optimization/68145
+	* g++.dg/vect/pr68145.cc: New test.
+
+2015-11-06  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68088
+	* gcc.dg/pr68088_1.c: New test.
+
+2015-11-06  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/vect/bb-slp-38.c: New testcase.
+
+2015-11-06  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* gfortran.dg/goacc/private-3.f95: XFAIL.
+
+2015-11-06  Joost VandeVondele  <vondele@gnu.gcc.org>
+
+	PR middle-end/53852
+	PR middle-end/67518
+	* gfortran.dg/PR67518.f90: New test.
+	* gfortran.dg/PR53852.f90: New test.
+
+2015-11-05  Cesar Philippidis  <cesar@codesourcery.com>
+	    Tom de Vries  <tom@codesourcery.com>
+	    Nathan Sidwell  <nathan@codesourcery.com>
+	    Thomas Schwinge  <thomas@codesourcery.com>
+
+	* c-c++-common/goacc/combined-directives.c: New test.
+	* c-c++-common/goacc/loop-clauses.c: New test.
+	* c-c++-common/goacc/tile.c: New test.
+	* c-c++-common/goacc/loop-shape.c: Add test for pointer variable
+	as gang static arguments.
+	* c-c++-common/goacc/update-1.c: Adjust expected error message.
+	* g++.dg/goacc/template.C: New test.
+	* gfortran.dg/goacc/combined-directives.f90: New test.
+	* gfortran.dg/goacc/default.f95: New test.
+	* gfortran.dg/goacc/default_none.f95: New test.
+	* gfortran.dg/goacc/firstprivate-1.f95: New test.
+	* gfortran.dg/goacc/gang-static.f95: New test.
+	* gfortran.dg/goacc/kernels-loop-inner.f95: New test.
+	* gfortran.dg/goacc/kernels-loops-adjacent.f95: New test.
+	* gfortran.dg/goacc/list.f95: Update test.
+	* gfortran.dg/goacc/loop-2.f95: Likewise.
+	* gfortran.dg/goacc/loop-4.f95: New test.
+	* gfortran.dg/goacc/loop-5.f95: New test.
+	* gfortran.dg/goacc/loop-6.f95: New test.
+	* gfortran.dg/goacc/loop-tree-1.f90: Update test.
+	* gfortran.dg/goacc/multi-clause.f90: New test.
+	* gfortran.dg/goacc/parallel-tree.f95: Update test.
+	* gfortran.dg/goacc/update.f95: New test.
+
+2015-11-05  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/67942
+	* g++.dg/warn/Wplacement-new-size.C: Exercise placement new
+	invocations where the size of the destination buffer object
+	or its type (or both) is unknown.
+
+2015-11-05  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/67942
+	* g++.dg/warn/Wplacement-new-size.C: New test.
+
+2015-11-05  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.dg/pr68112.c: New.
+	* gcc.dg/vect/vect-strided-shift-1.c: New.
+
+2015-11-05  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68090
+	* gcc.dg/pr68090.c: New test.
+
+2015-11-05  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* gcc.dg/ifcvt-4.c: New.
+
+2015-11-05  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67846
+	* g++.dg/cpp0x/lambda/lambda-ice15.C: New.
+
+2015-11-05  Jakub Jelinek  <jakub@redhat.com>
+
+	* c-c++-common/gomp/clauses-2.c (foo): Adjust for diagnostics
+	of variables in both data sharing and mapping clauses and for
+	structure element based array sections being mapped rather than
+	privatized.
+	* c-c++-common/gomp/declare-target-2.c: Add various new tests.  Adjust
+	expected diagnostics wording in one case.
+	* c-c++-common/gomp/distribute-1.c: New test.
+	* c-c++-common/gomp/element-1.c: New test.
+	* c-c++-common/gomp/pr61486-2.c: Add #pragma omp declare target
+	and #pragma omp end declare target pair around the function.
+	Change s from a parameter to a file scope variable.
+	* c-c++-common/gomp/pr67521.c: Add dg-error directives.
+	* c-c++-common/gomp/reduction-1.c (foo): Don't expect diagnostics
+	on non-zero low-bound in reduction array sections.  Add further
+	tests.
+	* c-c++-common/gomp/schedule-modifiers-1.c: New test.
+	* c-c++-common/gomp/target-teams-1.c: New test.
+	* gcc.dg/gomp/declare-simd-1.c: Add scan-assembler-times directives
+	for expected mangling on x86_64/i?86.
+	* gcc.dg/gomp/declare-simd-3.c: New test.
+	* gcc.dg/gomp/declare-simd-4.c: New test.
+	* gcc.dg/gomp/for-20.c: New test.
+	* gcc.dg/gomp/for-21.c: New test.
+	* gcc.dg/gomp/for-22.c: New test.
+	* gcc.dg/gomp/for-23.c: New test.
+	* gcc.dg/gomp/for-24.c: New test.
+	* gcc.dg/gomp/linear-1.c: New test.
+	* gcc.dg/gomp/loop-1.c: New test.
+	* g++.dg/gomp/atomic-17.C: New test.
+	* g++.dg/gomp/clause-1.C (T::test): Don't expect error on
+	non-static data member in shared clause.  Add single construct.
+	* g++.dg/gomp/declare-simd-1.C: Add dg-options.  Add
+	scan-assembler-times directives for expected mangling on x86_64/i?86.
+	* g++.dg/gomp/declare-simd-3.C: Likewise.
+	* g++.dg/gomp/declare-simd-4.C: New test.
+	* g++.dg/gomp/declare-simd-5.C: New test.
+	* g++.dg/gomp/declare-target-1.C: New test.
+	* g++.dg/gomp/linear-2.C: New test.
+	* g++.dg/gomp/loop-1.C: New test.
+	* g++.dg/gomp/loop-2.C: New test.
+	* g++.dg/gomp/loop-3.C: New test.
+	* g++.dg/gomp/member-2.C (B::m2, B::m4): Don't expect error on
+	non-static data member in shared clause.
+	* g++.dg/gomp/member-3.C: New test.
+	* g++.dg/gomp/member-4.C: New test.
+	* g++.dg/gomp/pr38639.C (foo): Adjust dg-error.
+	(bar): Remove dg-message.
+	* g++.dg/gomp/target-teams-1.C: New test.
+
+2015-11-05  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/tree-ssa/loadpre2.c: Avoid undefined behavior due to
+	uninitialized variables.
+	* gcc.dg/tree-ssa/loadpre21.c: Likewise.
+	* gcc.dg/tree-ssa/loadpre22.c: Likewise.
+	* gcc.dg/tree-ssa/loadpre23.c: Likewise.
+	* gcc.dg/tree-ssa/loadpre24.c: Likewise.
+	* gcc.dg/tree-ssa/loadpre25.c: Likewise.
+	* gcc.dg/tree-ssa/loadpre4.c: Likewise.
+	* gcc.dg/ipa/inlinehint-2.c: Likewise.
+	* gcc.dg/ipa/pure-const-2.c: Likewise.
+	* gcc.dg/tree-ssa/loop-1.c: Likewise.
+	* gcc.dg/tree-ssa/loop-23.c: Likewise.
+	* gcc.dg/tree-ssa/pr22051-2.c: Likewise.
+	* gcc.dg/tree-ssa/ssa-pre-3.c: Likewise.
+	* gcc.dg/tree-ssa/ssa-sccvn-3.c: Likewise.
+	* gcc.dg/vect/pr30858.c: Likewise.
+	* gcc.dg/vect/pr33866.c: Likewise.
+	* gcc.dg/vect/pr37027.c: Likewise.
+	* c-c++-common/ubsan/null-10.c: Likewise.
+	* gcc.target/i386/incoming-8.c: Likewise.
+
+2015-11-04  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/slice9.adb: New test.
+
+2015-11-04  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* gfortran.dg/goacc/reduction-2.f95: Delete.
+
+2015-11-04  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/67742
+	* gcc.dg/tree-ssa/restrict-7.c: New test.
+	* gcc.dg/tree-ssa/restrict-8.c: New test.
+
+2015-11-03  Martin Sebor  <msebor@redhat.com>
+
+	PR c++-common/67882
+	* c-c++-common/builtin-offsetof-2.c: New test.
+
+2015-11-03  Dominique d'Humieres <dominiq@lps.ens.fr>
+
+	PR fortran/67982
+	* gfortran.dg/warn_unused_function_3.f90: New test.
+
+2015-11-03  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/discr45.adb: Only compile the test.
+
+2015-11-03  Evgeny Stupachenko  <evstupac@gmail.com>
+
+	* g++.dg/ext/mvc4.C: Add dg-require-ifunc condition.
+	* gcc.target/i386/mvc5.c: Ditto.
+	* gcc.target/i386/mvc7.c: Add dg-require-ifunc condition and checks on
+	resolver.
+
+2015-11-03  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* c-c++-common/goacc-gomp/nesting-fail-1.c: Move "atomic" tests
+	from here to...
+	* c-c++-common/goacc-gomp/nesting-1.c: ... here, and expect them
+	to succeed.
+
+2015-11-03  Bilyan Borisov  <bilyan.borisov@arm.com>
+
+	* gcc/testsuite/gcc.target/aarch64/simd/vmulx_f32_1.c: New.
+	* gcc/testsuite/gcc.target/aarch64/simd/vmulx_f64_1.c: New.
+	* gcc/testsuite/gcc.target/aarch64/simd/vmulxq_f32_1.c: New.
+	* gcc/testsuite/gcc.target/aarch64/simd/vmulxq_f64_1.c: New.
+	* gcc/testsuite/gcc.target/aarch64/simd/vmulxs_f32_1.c: New.
+	* gcc/testsuite/gcc.target/aarch64/simd/vmulxd_f64_1.c: New.
+
+2015-11-03  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/aarch64/fp16/set_zero_1.c: New.
+
+2015-11-03  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.dg/mvc1.c: Move to ...
+	* gcc.target/i386/mvc1.c: ... here.  Require ifunc.
+	* gcc.dg/mvc2.c: Move to ...
+	* gcc.target/i386/mvc2.c: ... here.
+	* gcc.dg/mvc3.c: Move to ...
+	* gcc.target/i386/mvc3.c: ... here.
+	* gcc.dg/mvc4.c: Move to ...
+	* gcc.target/i386/mvc4.c: ... here.  Require ifunc.
+	* gcc.dg/mvc5.c: Move to ...
+	* gcc.target/i386/mvc5.c: ... here.
+	* gcc.dg/mvc6.c: Move to ...
+	* gcc.target/i386/mvc6.c: ... here.
+	* gcc.dg/mvc7.c: Move to ...
+	* gcc.target/i386/mvc7.c: ... here.
+
+	* g++.dg/ext/mvc1.C: Require ifunc.
+
+2015-11-02  Alexandre Oliva <aoliva@redhat.com>
+
+	PR tree-optimization/68083
+	* gcc.dg/torture/pr68083.c: New.  From Zhendong Su.
+
+2015-11-02  Jeff Law  <law@redhat.com>
+
+	* gcc.dg/tree-ssa/ssa-thread-11.c: Verify that we do not have
+	irreducible loops in the CFG.
+
+2015-11-02  Alan Lawrence  <alan.lawrence@arm.com>
+
+	Revert:
+	2015-10-27  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.dg/vect/vect-strided-shift-1.c: New.
+
+2015-11-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/67929
+	* gcc.target/arm/pr67929_1.c: Move to...
+	* gcc.c-torture/execute/pr67929_1.c: ... Here.
+	Remove arm-specific directives.  Add noclone, noinline
+	attributes.
+
+2015-11-01  Jeff Law  <law@redhat.com>
+
+	* gcc.dg/tree-ssa/ssa-thread-11.c: Update target selector.
+
+2015-11-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/pr67609-2.c: Include sse2-check.h.
+	(sse2_test): Rename from main.  Do not return 0.
+
+2015-11-01  David Edelsohn  <dje.gcc@gmail.com>
+
+	* gfortran.dg/debug/pr46756.f: Remove XFAIL for AIX.
+	* gfortran.dg/proc_ptr_39.f90: Require visibility.
+	* gfortran.dg/read_dir.f90: XFAIL AIX.
+
 2015-10-31  Ville Voutilainen  <ville.voutilainen@gmail.com>
 
 	Remove the implementation of N3994, terse range-for loops.
@@ -82,7 +739,7 @@
 
 2015-10-29  Jeff Law  <law@redhat.com>
 
-        PR tree-optimization/67892
+	PR tree-optimization/67892
 	* gcc.dg/tree-ssa/pr21417: Update expected output.
 	* gcc.dg/tree-ssa/ssa-dom-thread-2b.c: Likewise.
 
@@ -170,8 +827,8 @@
 2015-10-27  Nathan Sidwell <nathan@codesourcery.com>
 	    Cesar Philippidis  <cesar@codesourcery.com>
 
-	* g++.dg/g++.dg/gomp/pr33372-1.C: Adjust diagnostic.
-	* gcc/testsuite/g++.dg/gomp/pr33372-3.C: Likewise.
+	* g++.dg/gomp/pr33372-1.C: Adjust diagnostic.
+	* g++.dg/gomp/pr33372-3.C: Likewise.
 
 2015-10-27  Richard Henderson  <rth@redhat.com>
 
@@ -368,8 +1025,8 @@
 
 2015-10-25  Andre Vehreschild  <vehre@gmx.de>
 
-        PR fortran/66927
-        PR fortran/67044
+	PR fortran/66927
+	PR fortran/67044
 	* gfortran.dg/allocate_with_source_10.f08: New test.
 	* gfortran.dg/allocate_with_source_11.f08: New test.
 	* gfortran.dg/class_array_15.f03: Changed count of expected
@@ -905,7 +1562,7 @@
 
 2015-10-13  Christophe Lyon  <christophe.lyon@linaro.org>
 
-	* gcc/testsuite/gcc.target/aarch64/table-intrinsics.c: Fix regexp
+	* gcc.target/aarch64/table-intrinsics.c: Fix regexp
 	after r228716 (Fix vtbl[34] and vtbx4).
 
 2015-10-13  Yuri Rumyantsev  <ysrumyan@gmail.com>
@@ -9735,7 +10392,7 @@
 
 2015-03-05  Martin Sebor  <msebor@redhat.com>
 
-	* PR testsuite/63175
+	PR testsuite/63175
 	* gcc.dg/vect/costmodel/ppc/costmodel-bb-slp-9a.c (main1): Move
 	checking of results into main to prevent it from getting optimized
 	away.

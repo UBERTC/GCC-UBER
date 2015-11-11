@@ -5777,6 +5777,11 @@ true, if changes have been made.  You must override this hook to
 provide dimensions larger than 1.
 @end deftypefn
 
+@deftypefn {Target Hook} int TARGET_GOACC_DIM_LIMIT (int @var{axis})
+This hook should return the maximum size of a particular dimension,
+or zero if unbounded.
+@end deftypefn
+
 @deftypefn {Target Hook} bool TARGET_GOACC_FORK_JOIN (gcall *@var{call}, const int *@var{dims}, bool @var{is_fork})
 This hook can be used to convert IFN_GOACC_FORK and IFN_GOACC_JOIN
 function calls to target-specific gimple, or indicate whether they
@@ -5785,6 +5790,15 @@ It should return true, if the call should be retained.  It should
 return false, if it is to be deleted (either because target-specific
 gimple has been inserted before it, or there is no need for it).
 The default hook returns false, if there are no RTL expanders for them.
+@end deftypefn
+
+@deftypefn {Target Hook} void TARGET_GOACC_REDUCTION (gcall *@var{call})
+This hook is used by the oacc_transform pass to expand calls to the
+@var{GOACC_REDUCTION} internal function, into a sequence of gimple
+instructions.  @var{call} is gimple statement containing the call to
+the function.  This hook removes statement @var{call} after the
+expanded sequence has been inserted.  This hook is also responsible
+for allocating any storage for reductions when necessary.
 @end deftypefn
 
 @node Anchored Addresses
@@ -10351,6 +10365,11 @@ arithmetic operations.  Pointers to a superset address space can be
 converted to pointers to a subset address space via explicit casts.
 @end deftypefn
 
+@deftypefn {Target Hook} bool TARGET_ADDR_SPACE_ZERO_ADDRESS_VALID (addr_space_t @var{as})
+Define this to modify the default handling of address 0 for the
+address space.  Return true if 0 should be considered a valid address.
+@end deftypefn
+
 @deftypefn {Target Hook} rtx TARGET_ADDR_SPACE_CONVERT (rtx @var{op}, tree @var{from_type}, tree @var{to_type})
 Define this to convert the pointer expression represented by the RTL
 @var{op} with type @var{from_type} that points to a named address
@@ -10358,6 +10377,11 @@ space to a new pointer expression with type @var{to_type} that points
 to a different named address space.  When this hook it called, it is
 guaranteed that one of the two address spaces is a subset of the other,
 as determined by the @code{TARGET_ADDR_SPACE_SUBSET_P} target hook.
+@end deftypefn
+
+@deftypefn {Target Hook} int TARGET_ADDR_SPACE_DEBUG (addr_space_t @var{as})
+Define this to define how the address space is encoded in dwarf.
+The result is the value to be used with @code{DW_AT_address_class}.
 @end deftypefn
 
 @node Misc
