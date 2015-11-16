@@ -1619,7 +1619,7 @@ simplify_const_unary_operation (enum rtx_code code, machine_mode mode,
       if (CONST_SCALAR_INT_P (op) || CONST_DOUBLE_AS_FLOAT_P (op)
 	  || GET_CODE (op) == CONST_VECTOR)
 	{
-          int elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode));
+	  int elt_size = GET_MODE_UNIT_SIZE (mode);
           unsigned n_elts = (GET_MODE_SIZE (mode) / elt_size);
 	  rtvec v = rtvec_alloc (n_elts);
 	  unsigned int i;
@@ -1630,7 +1630,7 @@ simplify_const_unary_operation (enum rtx_code code, machine_mode mode,
 	  else
 	    {
 	      machine_mode inmode = GET_MODE (op);
-              int in_elt_size = GET_MODE_SIZE (GET_MODE_INNER (inmode));
+	      int in_elt_size = GET_MODE_UNIT_SIZE (inmode);
               unsigned in_n_elts = (GET_MODE_SIZE (inmode) / in_elt_size);
 
 	      gcc_assert (in_n_elts < n_elts);
@@ -1644,10 +1644,10 @@ simplify_const_unary_operation (enum rtx_code code, machine_mode mode,
 
   if (VECTOR_MODE_P (mode) && GET_CODE (op) == CONST_VECTOR)
     {
-      int elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode));
+      int elt_size = GET_MODE_UNIT_SIZE (mode);
       unsigned n_elts = (GET_MODE_SIZE (mode) / elt_size);
       machine_mode opmode = GET_MODE (op);
-      int op_elt_size = GET_MODE_SIZE (GET_MODE_INNER (opmode));
+      int op_elt_size = GET_MODE_UNIT_SIZE (opmode);
       unsigned op_n_elts = (GET_MODE_SIZE (opmode) / op_elt_size);
       rtvec v = rtvec_alloc (n_elts);
       unsigned int i;
@@ -3373,7 +3373,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 	      rtx op1 = XEXP (trueop0, 1);
 
 	      machine_mode opmode = GET_MODE (op0);
-	      int elt_size = GET_MODE_SIZE (GET_MODE_INNER (opmode));
+	      int elt_size = GET_MODE_UNIT_SIZE (opmode);
 	      int n_elts = GET_MODE_SIZE (opmode) / elt_size;
 
 	      int i = INTVAL (XVECEXP (trueop1, 0, 0));
@@ -3403,7 +3403,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 		  /* Find out number of elements of each operand.  */
 		  if (VECTOR_MODE_P (mode00))
 		    {
-		      elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode00));
+		      elt_size = GET_MODE_UNIT_SIZE (mode00);
 		      n_elts00 = GET_MODE_SIZE (mode00) / elt_size;
 		    }
 		  else
@@ -3411,7 +3411,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 
 		  if (VECTOR_MODE_P (mode01))
 		    {
-		      elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode01));
+		      elt_size = GET_MODE_UNIT_SIZE (mode01);
 		      n_elts01 = GET_MODE_SIZE (mode01) / elt_size;
 		    }
 		  else
@@ -3452,7 +3452,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 
 	  if (GET_CODE (trueop0) == CONST_VECTOR)
 	    {
-	      int elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode));
+	      int elt_size = GET_MODE_UNIT_SIZE (mode);
 	      unsigned n_elts = (GET_MODE_SIZE (mode) / elt_size);
 	      rtvec v = rtvec_alloc (n_elts);
 	      unsigned int i;
@@ -3533,7 +3533,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 	      rtx subop1 = XEXP (trueop0, 1);
 	      machine_mode mode0 = GET_MODE (subop0);
 	      machine_mode mode1 = GET_MODE (subop1);
-	      int li = GET_MODE_SIZE (GET_MODE_INNER (mode0));
+	      int li = GET_MODE_UNIT_SIZE (mode0);
 	      int l0 = GET_MODE_SIZE (mode0) / li;
 	      int l1 = GET_MODE_SIZE (mode1) / li;
 	      int i0 = INTVAL (XVECEXP (trueop1, 0, 0));
@@ -3693,7 +3693,7 @@ simplify_binary_operation_1 (enum rtx_code code, machine_mode mode,
 		|| CONST_SCALAR_INT_P (trueop1) 
 		|| CONST_DOUBLE_AS_FLOAT_P (trueop1)))
 	  {
-	    int elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode));
+	    int elt_size = GET_MODE_UNIT_SIZE (mode);
 	    unsigned n_elts = (GET_MODE_SIZE (mode) / elt_size);
 	    rtvec v = rtvec_alloc (n_elts);
 	    unsigned int i;
@@ -5330,7 +5330,7 @@ simplify_ternary_operation (enum rtx_code code, machine_mode mode,
       trueop2 = avoid_constant_pool_reference (op2);
       if (CONST_INT_P (trueop2))
 	{
-	  int elt_size = GET_MODE_SIZE (GET_MODE_INNER (mode));
+	  int elt_size = GET_MODE_UNIT_SIZE (mode);
 	  unsigned n_elts = (GET_MODE_SIZE (mode) / elt_size);
 	  unsigned HOST_WIDE_INT sel = UINTVAL (trueop2);
 	  unsigned HOST_WIDE_INT mask;
@@ -5468,7 +5468,7 @@ simplify_immed_subreg (machine_mode outermode, rtx op,
     {
       num_elem = CONST_VECTOR_NUNITS (op);
       elems = &CONST_VECTOR_ELT (op, 0);
-      elem_bitsize = GET_MODE_BITSIZE (GET_MODE_INNER (innermode));
+      elem_bitsize = GET_MODE_UNIT_BITSIZE (innermode);
     }
   else
     {
@@ -5625,21 +5625,17 @@ simplify_immed_subreg (machine_mode outermode, rtx op,
   value_start = byte * (BITS_PER_UNIT / value_bit);
 
   /* Re-pack the value.  */
+  num_elem = GET_MODE_NUNITS (outermode);
 
   if (VECTOR_MODE_P (outermode))
     {
-      num_elem = GET_MODE_NUNITS (outermode);
       result_v = rtvec_alloc (num_elem);
       elems = &RTVEC_ELT (result_v, 0);
-      outer_submode = GET_MODE_INNER (outermode);
     }
   else
-    {
-      num_elem = 1;
-      elems = &result_s;
-      outer_submode = outermode;
-    }
+    elems = &result_s;
 
+  outer_submode = GET_MODE_INNER (outermode);
   outer_class = GET_MODE_CLASS (outer_submode);
   elem_bitsize = GET_MODE_BITSIZE (outer_submode);
 

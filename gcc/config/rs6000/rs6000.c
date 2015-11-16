@@ -31740,8 +31740,7 @@ rs6000_do_expand_vec_perm (rtx target, rtx op0, rtx op1,
   imode = vmode;
   if (GET_MODE_CLASS (vmode) != MODE_VECTOR_INT)
     {
-      imode = GET_MODE_INNER (vmode);
-      imode = mode_for_size (GET_MODE_BITSIZE (imode), MODE_INT, 0);
+      imode = mode_for_size (GET_MODE_UNIT_BITSIZE (vmode), MODE_INT, 0);
       imode = mode_for_vector (imode, nelt);
     }
 
@@ -31810,7 +31809,7 @@ rs6000_complex_function_value (machine_mode mode)
   unsigned int regno;
   rtx r1, r2;
   machine_mode inner = GET_MODE_INNER (mode);
-  unsigned int inner_bytes = GET_MODE_SIZE (inner);
+  unsigned int inner_bytes = GET_MODE_UNIT_SIZE (mode);
 
   if (FLOAT_MODE_P (mode) && TARGET_HARD_FLOAT && TARGET_FPRS)
     regno = FP_ARG_RETURN;

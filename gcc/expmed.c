@@ -691,8 +691,8 @@ store_bit_field_1 (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
       && !MEM_P (op0)
       && optab_handler (vec_set_optab, GET_MODE (op0)) != CODE_FOR_nothing
       && fieldmode == GET_MODE_INNER (GET_MODE (op0))
-      && bitsize == GET_MODE_BITSIZE (GET_MODE_INNER (GET_MODE (op0)))
-      && !(bitnum % GET_MODE_BITSIZE (GET_MODE_INNER (GET_MODE (op0)))))
+      && bitsize == GET_MODE_UNIT_BITSIZE (GET_MODE (op0))
+      && !(bitnum % GET_MODE_UNIT_BITSIZE (GET_MODE (op0))))
     {
       struct expand_operand ops[3];
       machine_mode outermode = GET_MODE (op0);
@@ -1502,8 +1502,8 @@ extract_bit_field_1 (rtx str_rtx, unsigned HOST_WIDE_INT bitsize,
   if (VECTOR_MODE_P (GET_MODE (op0))
       && !MEM_P (op0)
       && optab_handler (vec_extract_optab, GET_MODE (op0)) != CODE_FOR_nothing
-      && ((bitnum + bitsize - 1) / GET_MODE_BITSIZE (GET_MODE_INNER (GET_MODE (op0)))
-	  == bitnum / GET_MODE_BITSIZE (GET_MODE_INNER (GET_MODE (op0)))))
+      && ((bitnum + bitsize - 1) / GET_MODE_UNIT_BITSIZE (GET_MODE (op0))
+	  == bitnum / GET_MODE_UNIT_BITSIZE (GET_MODE (op0))))
     {
       struct expand_operand ops[3];
       machine_mode outermode = GET_MODE (op0);
@@ -2433,8 +2433,6 @@ synth_mult (struct algorithm *alg_out, unsigned HOST_WIDE_INT t,
 
   /* Be prepared for vector modes.  */
   imode = GET_MODE_INNER (mode);
-  if (imode == VOIDmode)
-    imode = mode;
 
   maxm = MIN (BITS_PER_WORD, GET_MODE_BITSIZE (imode));
 
@@ -3094,8 +3092,6 @@ expand_mult_const (machine_mode mode, rtx op0, HOST_WIDE_INT val,
   /* Compare only the bits of val and val_so_far that are significant
      in the result mode, to avoid sign-/zero-extension confusion.  */
   nmode = GET_MODE_INNER (mode);
-  if (nmode == VOIDmode)
-    nmode = mode;
   val &= GET_MODE_MASK (nmode);
   val_so_far &= GET_MODE_MASK (nmode);
   gcc_assert (val == val_so_far);

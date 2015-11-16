@@ -10273,7 +10273,7 @@ fold_binary_loc (location_t loc,
 	    /* Only create rotates in complete modes.  Other cases are not
 	       expanded properly.  */
 	    && (element_precision (rtype)
-		== element_precision (TYPE_MODE (rtype))))
+		== GET_MODE_UNIT_PRECISION (TYPE_MODE (rtype))))
 	  {
 	    tree tree01, tree11;
 	    enum tree_code code01, code11;
