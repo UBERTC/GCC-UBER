@@ -5552,6 +5552,11 @@ aarch64_rtx_arith_op_extract_p (rtx x, machine_mode mode)
 	  return true;
 	}
     }
+  /* The simple case <ARITH>, XD, XN, XM, [us]xt.
+     No shift.  */
+  else if (GET_CODE (x) == SIGN_EXTEND
+	   || GET_CODE (x) == ZERO_EXTEND)
+    return REG_P (XEXP (x, 0));
 
   return false;
 }
@@ -6067,9 +6072,8 @@ cost_minus:
 	    if (speed)
 	      *cost += extra_cost->alu.extend_arith;
 
-	    *cost += rtx_cost (XEXP (XEXP (op1, 0), 0),
-			       (enum rtx_code) GET_CODE (op1),
-			       0, speed);
+	    op1 = aarch64_strip_extend (op1);
+	    *cost += rtx_cost (op1, (enum rtx_code) GET_CODE (op1), 0, speed);
 	    return true;
 	  }
 
@@ -6146,9 +6150,8 @@ cost_plus:
 	    if (speed)
 	      *cost += extra_cost->alu.extend_arith;
 
-	    *cost += rtx_cost (XEXP (XEXP (op0, 0), 0),
-			       (enum rtx_code) GET_CODE (op0),
-			       0, speed);
+	    op0 = aarch64_strip_extend (op0);
+	    *cost += rtx_cost (op0, (enum rtx_code) GET_CODE (op0), 0, speed);
 	    return true;
 	  }
 
