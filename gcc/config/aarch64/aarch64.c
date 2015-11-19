@@ -226,7 +226,8 @@ static const struct cpu_addrcost_table generic_addrcost_table =
   0, /* pre_modify  */
   0, /* post_modify  */
   0, /* register_offset  */
-  0, /* register_extend  */
+  0, /* register_sextend  */
+  0, /* register_zextend  */
   0 /* imm_offset  */
 };
 
@@ -241,7 +242,8 @@ static const struct cpu_addrcost_table cortexa57_addrcost_table =
   0, /* pre_modify  */
   0, /* post_modify  */
   0, /* register_offset  */
-  0, /* register_extend  */
+  0, /* register_sextend  */
+  0, /* register_zextend  */
   0, /* imm_offset  */
 };
 
@@ -256,7 +258,8 @@ static const struct cpu_addrcost_table xgene1_addrcost_table =
   1, /* pre_modify  */
   0, /* post_modify  */
   0, /* register_offset  */
-  1, /* register_extend  */
+  1, /* register_sextend  */
+  1, /* register_zextend  */
   0, /* imm_offset  */
 };
 
@@ -5297,9 +5300,12 @@ aarch64_address_cost (rtx x,
 	cost += addr_cost->register_offset;
 	break;
 
-      case ADDRESS_REG_UXTW:
       case ADDRESS_REG_SXTW:
-	cost += addr_cost->register_extend;
+	cost += addr_cost->register_sextend;
+	break;
+
+      case ADDRESS_REG_UXTW:
+	cost += addr_cost->register_zextend;
 	break;
 
       default:
