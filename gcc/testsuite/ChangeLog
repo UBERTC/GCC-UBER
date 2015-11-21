@@ -1,3 +1,117 @@
+2015-11-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67409
+	* g++.dg/eh/goto3.C: New test.
+
+	PR rtl-optimization/68376
+	* gcc.c-torture/execute/pr68376-1.c: New test.
+	* gcc.c-torture/execute/pr68376-2.c: New test.
+
+	PR target/67770
+	* gcc.target/i386/pr67770.c: New test.
+
+2015-11-18  Dominique d'Humieres <dominiq@lps.ens.fr>
+
+	PR fortran/65751
+	* gfortran.dg/unlimited_polymorphic_2.f03: Update test.
+
+2015-11-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-11-07  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/68057
+	PR ipa/68220
+	* g++.dg/torture/pr68220.C: New testcase.
+	* g++.dg/lto/pr68057_0.C: Likewise.
+	* g++.dg/lto/pr68057_1.C: Likewise.
+
+	2015-10-23  Jan Hubicka  <hubicka@ucw.cz>
+ 
+	PR ipa/pr67600
+	* g++.dg/torture/pr67600.C: New testcase.
+
+	2015-10-11  Jan Hubicka  <hubicka@ucw.cz>
+ 
+	PR ipa/67056
+	* g++.dg/ipa/pr67056.C: New testcase.
+
+	2015-08-11  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR c/66098
+	PR c/66711
+	* gcc.dg/pragma-diag-3.c: New test.
+	* gcc.dg/pragma-diag-4.c: New test.
+
+2015-11-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-11-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68143
+	* gcc.c-torture/execute/pr68143_1.c: New test.
+
+2015-11-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-10-28  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68067
+	* gcc.dg/torture/pr68067-1.c: New testcase.
+	* gcc.dg/torture/pr68067-2.c: Likewise.
+
+	2015-10-26  Richard Biener  <rguenther@suse.de>
+		Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR middle-end/67443
+	* gcc.target/s390/pr67443.c: New testcase.
+
+	2015-10-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68017
+	* gcc.dg/torture/pr68017.c: New testcase.
+
+	2015-09-23   Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67662
+	* gcc.dg/ubsan/pr67662.c: New testcase.
+
+2015-11-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68157
+	* g++.dg/opt/pr68157.C: New test.
+
+2015-11-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/58027
+	PR fortran/60993
+	* gfortran.dg/pr58027.f90: New test.
+
+2015-11-14  Steven G. Kargl  <kargl@gcc.gnu.org>
+ 
+	PR fortran/67803
+	* gfortran.dg/pr67803.f90: New test.
+
+2015-11-13  Steven G. Kargl  <kargl@gccc.gnu.org>
+
+	PR fortran/68319
+	* gfortran.dg/pr68319.f90: New test.
+
+2015-11-13  Dominique d'Humieres <dominiq@lps.ens.fr>
+
+	PR fortran/47266
+	* gfortran.dg/module_private_2.f90: New test.
+
+2015-11-12  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68318
+	* gfortran.dg/pr68318_1.f90: New test.
+	* gfortran.dg/pr68318_2.f90: Ditto.
+
+2015-11-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/i386/pr67265-2.c: New test.
+
 2015-11-11  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gcc.target/i386/pr67265.c: New test.

@@ -1,3 +1,151 @@
+2015-11-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR lto/61313
+	* configure.ac (PLUGIN_LD_SUFFIX): Do not touch the value specified
+	by the user.
+	* configure: Regenerate.
+
+2015-11-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/68408
+	* config/sparc/sp-elf.h (CTORS_SECTION_ASM_OP): Undefine.
+	(DTORS_SECTION_ASM_OP): Likewise.
+
+2015-11-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/68376
+	* ifcvt.c (noce_try_abs): Disable one_cmpl optimization if
+	encountering x <= 0 ? ~x : x or x > 0 ? ~x : x.
+
+	PR target/67770
+	* config/i386/i386.md (simple_return): Disable if
+	ix86_static_chain_on_stack is true.
+
+2015-11-18  Richard Henderson  <rth@redhat.com>
+
+	Backport from mainline
+	PR rtl-opt/67609
+	* config/i386/i386.c (ix86_cannot_change_mode_class): Tighten
+	sse check to the exact conditions of PR 67609.
+
+	* config/i386/i386.c (ix86_cannot_change_mode_class): Disallow
+	narrowing subregs on SSE and MMX registers.
+	* doc/tm.texi.in (CANNOT_CHANGE_MODE_CLASS): Clarify when subregs that
+	appear to be sub-words of multi-register pseudos must be rejected.
+	* doc/tm.texi: Regenerate.
+
+2015-11-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-11-07  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/68057
+	PR ipa/68220
+	* ipa-polymorphic-call.c
+	(ipa_polymorphic_call_context::restrict_to_inner_type): Fix ordering
+	issue when offset is out of range.
+	(contains_type_p): Fix out of range check, clear dynamic flag.
+
+	2015-10-23  Jan Hubicka  <hubicka@ucw.cz>
+ 
+	PR ipa/pr67600
+	* ipa-polymorphic-call.c
+	(ipa_polymorphic_call_context::get_dynamic_type): Do not confuse
+	instance offset with offset of outer type.
+ 
+	2015-10-12  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/67783
+	* ipa-inline-analysis.c (estimate_function_body_sizes): Re-add
+	code that analyzes IVs on each stmt but in a cheaper way avoiding
+	quadratic behavior.
+
+	2015-10-11  Jan Hubicka  <hubicka@ucw.cz>
+ 
+	PR ipa/67056
+	* ipa-polymorphic-call.c (possible_placement_new): If cur_offset
+	is negative we don't know the type.
+	(check_stmt_for_type_change): Skip constructors of non-polymorphic
+	types as those won't help devirutalization.
+
+	2015-08-11  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR c/66098
+	PR c/66711
+	* diagnostic.c (diagnostic_classify_diagnostic): Take -Werror into
+	account when deciding what was the command-line status.
+
+2015-11-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-11-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68143
+	* config/arm/arm.c (arm_block_set_unaligned_vect): Keep track of
+	offset from dstbase and use it appropriately in
+	adjust_automodify_address.
+	(arm_block_set_aligned_vect): Likewise.
+
+2015-11-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-10-28  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68067
+	* fold-const.c (negate_expr_p): We cannot negate plus or minus
+	if overflow is not wrapping.  Likewise multiplication unless
+	one operand is constant and not power of two.
+	(fold_negate_expr): Adjust accordingly.
+
+	2015-10-26  Richard Biener  <rguenther@suse.de>
+		Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR middle-end/67443
+	* alias.c (ao_ref_from_mem): Remove promoted subreg handling.
+	Properly prune ref->ref for accesses outside of ref.
+
+	2015-10-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68017
+	* tree-tailcall.c (eliminate_tail_call): Remove stmts backwards.
+
+	2015-09-23   Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67662
+	* fold-const.c (fold_binary_loc): Do not reassociate two vars with
+	undefined overflow unless they will cancel out.
+
+2015-11-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68157
+	* tree-ssa-reassoc.c (attempt_builtin_powi): Set uid of
+	pow_stmt or mul_stmt from stmt's uid.
+	(reassociate_bb): Set uid of mul_stmt from stmt's uid.
+
+2015-11-16  Charles Baylis  <charles.baylis@linaro.org>
+
+	Backport from mainline r227407
+	PR ipa/67280
+	* cgraphunit.c (cgraph_node::create_wrapper): Set can_throw_external
+	in new callgraph edge.
+
+2015-11-16  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-11-16  Oleg Endo  <olegendo@gcc.gnu.org>
+	            Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/68277
+	* config/sh/sh.md (addsi3_scr): Handle reg overlap of operands[0] and
+	operands[2].
+	(*addsi3): Add another insn_and_split variant for reload.
+
+2015-11-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/67265
+	* config/i386/i386.c (ix86_adjust_stack_and_probe): Remove obsolete
+	assertion on the CFA register.
+
 2015-11-11  Eric Botcazou  <ebotcazou@adacore.com>
 
 	PR target/67265
