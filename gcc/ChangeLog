@@ -1,3 +1,40 @@
+2015-11-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/66432
+	* tree-inline.c (copy_debug_stmt): If
+	gimple_debug_source_bind_get_value is DECL_ORIGIN of a PARM_DECL
+	in decl_debug_args, don't call remap_gimple_op_r on it.
+
+2015-11-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/68339
+	* omp-low.c (expand_simd_clones): Call node->get_body () before
+	allocating stuff in GC.
+
+2015-11-20  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/md.texi (Standard Names): Move entry for addptr3 around,
+	add entries for addv4, subv4, mulv4, umulv4 and negv3, fixes
+	glitch in entries for cbranch4 and jump.
+
+2015-11-20  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	* config/s390/s390.md ("bswaphi2"): New pattern.
+
+2015-11-20  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	* config/s390/s390.md (GPR1_REGNUM): New constant.
+	("*trunc<BFP:mode><DFP_ALL:mode>2")
+	("*trunc<DFP_ALL:mode><BFP:mode>2")
+	("trunc<BFP:mode><DFP_ALL:mode>2")
+	("trunc<DFP_ALL:mode><BFP:mode>2")
+	("*extend<BFP:mode><DFP_ALL:mode>2")
+	("*extend<DFP_ALL:mode><BFP:mode>2")
+	("extend<BFP:mode><DFP_ALL:mode>2")
+	("extend<DFP_ALL:mode><BFP:mode>2"): Clobber r1.
+
 2015-11-19  Eric Botcazou  <ebotcazou@adacore.com>
 
 	PR lto/61313

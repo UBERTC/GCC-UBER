@@ -1,3 +1,23 @@
+2015-11-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/66432
+	* gcc.dg/debug/pr66432.c: New test.
+
+2015-11-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/68339
+	* gcc.dg/vect/pr68339.c: New test.
+
+2015-11-20  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	* gcc.target/s390/bswap-1.c: New test.
+
+2015-11-20  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	* gcc.target/s390/pfpo.c: New test.
+
 2015-11-19  Jakub Jelinek  <jakub@redhat.com>
 
 	PR c++/67409
