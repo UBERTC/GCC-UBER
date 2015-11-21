@@ -22,6 +22,58 @@ along with GCC; see the file COPYING3.  If not see
 
 #include "tree-core.h"
 
+/* Convert a target-independent built-in function code to a combined_fn.  */
+
+inline combined_fn
+as_combined_fn (built_in_function fn)
+{
+  return combined_fn (int (fn));
+}
+
+/* Convert an internal function code to a combined_fn.  */
+
+inline combined_fn
+as_combined_fn (internal_fn fn)
+{
+  return combined_fn (int (fn) + int (END_BUILTINS));
+}
+
+/* Return true if CODE is a target-independent built-in function.  */
+
+inline bool
+builtin_fn_p (combined_fn code)
+{
+  return int (code) < int (END_BUILTINS);
+}
+
+/* Return the target-independent built-in function represented by CODE.
+   Only valid if builtin_fn_p (CODE).  */
+
+inline built_in_function
+as_builtin_fn (combined_fn code)
+{
+  gcc_checking_assert (builtin_fn_p (code));
+  return built_in_function (int (code));
+}
+
+/* Return true if CODE is an internal function.  */
+
+inline bool
+internal_fn_p (combined_fn code)
+{
+  return int (code) >= int (END_BUILTINS);
+}
+
+/* Return the internal function represented by CODE.  Only valid if
+   internal_fn_p (CODE).  */
+
+inline internal_fn
+as_internal_fn (combined_fn code)
+{
+  gcc_checking_assert (internal_fn_p (code));
+  return internal_fn (int (code) - int (END_BUILTINS));
+}
+
 /* Macros for initializing `tree_contains_struct'.  */
 #define MARK_TS_BASE(C)					\
   do {							\
@@ -180,22 +232,6 @@ along with GCC; see the file COPYING3.  If not see
 
 
 /* Helper macros for math builtins.  */
-
-#define BUILTIN_EXP10_P(FN) \
- ((FN) == BUILT_IN_EXP10 || (FN) == BUILT_IN_EXP10F || (FN) == BUILT_IN_EXP10L \
-  || (FN) == BUILT_IN_POW10 || (FN) == BUILT_IN_POW10F || (FN) == BUILT_IN_POW10L)
-
-#define BUILTIN_EXPONENT_P(FN) (BUILTIN_EXP10_P (FN) \
-  || (FN) == BUILT_IN_EXP || (FN) == BUILT_IN_EXPF || (FN) == BUILT_IN_EXPL \
-  || (FN) == BUILT_IN_EXP2 || (FN) == BUILT_IN_EXP2F || (FN) == BUILT_IN_EXP2L)
-
-#define BUILTIN_SQRT_P(FN) \
- ((FN) == BUILT_IN_SQRT || (FN) == BUILT_IN_SQRTF || (FN) == BUILT_IN_SQRTL)
-
-#define BUILTIN_CBRT_P(FN) \
- ((FN) == BUILT_IN_CBRT || (FN) == BUILT_IN_CBRTF || (FN) == BUILT_IN_CBRTL)
-
-#define BUILTIN_ROOT_P(FN) (BUILTIN_SQRT_P (FN) || BUILTIN_CBRT_P (FN))
 
 #define CASE_FLT_FN(FN) case FN: case FN##F: case FN##L
 #define CASE_FLT_FN_REENT(FN) case FN##_R: case FN##F_R: case FN##L_R
@@ -1096,9 +1132,24 @@ extern void omp_clause_range_check_failed (const_tree, const char *, int,
 #define EXPR_FILENAME(NODE) LOCATION_FILE (EXPR_CHECK ((NODE))->exp.locus)
 #define EXPR_LINENO(NODE) LOCATION_LINE (EXPR_CHECK (NODE)->exp.locus)
 
+#define CAN_HAVE_RANGE_P(NODE) (CAN_HAVE_LOCATION_P (NODE))
+#define EXPR_LOCATION_RANGE(NODE) (get_expr_source_range (EXPR_CHECK ((NODE))))
+
+#define EXPR_HAS_RANGE(NODE) \
+    (CAN_HAVE_RANGE_P (NODE) \
+     ? EXPR_LOCATION_RANGE (NODE).m_start != UNKNOWN_LOCATION \
+     : false)
+
 /* True if a tree is an expression or statement that can have a
    location.  */
 #define CAN_HAVE_LOCATION_P(NODE) ((NODE) && EXPR_P (NODE))
+
+static inline source_range
+get_expr_source_range (tree expr)
+{
+  location_t loc = EXPR_LOCATION (expr);
+  return get_range_from_loc (line_table, loc);
+}
 
 extern void protected_set_expr_location (tree, location_t);
 
@@ -2171,6 +2222,9 @@ extern machine_mode element_mode (const_tree t);
    builtin-ness is indicated by source location.  */
 #define DECL_IS_BUILTIN(DECL) \
   (LOCATION_LOCUS (DECL_SOURCE_LOCATION (DECL)) <= BUILTINS_LOCATION)
+
+#define DECL_LOCATION_RANGE(NODE) \
+  (get_decl_source_range (DECL_MINIMAL_CHECK (NODE)))
 
 /*  For FIELD_DECLs, this is the RECORD_TYPE, UNION_TYPE, or
     QUAL_UNION_TYPE node that the field is a member of.  For VAR_DECL,
@@ -3887,6 +3941,10 @@ extern tree build_call_expr_loc (location_t, tree, int, ...);
 extern tree build_call_expr (tree, int, ...);
 extern tree build_call_expr_internal_loc (location_t, enum internal_fn,
 					  tree, int, ...);
+extern tree build_call_expr_internal_loc (location_t, enum internal_fn,
+					  tree, int, tree *);
+extern tree maybe_build_call_expr_loc (location_t, combined_fn, tree,
+				       int, ...);
 extern tree build_string_literal (int, const char *);
 
 /* Construct various nodes representing data types.  */
@@ -4511,6 +4569,7 @@ extern unsigned crc32_unsigned (unsigned, unsigned);
 extern void clean_symbol_name (char *);
 extern tree get_file_function_name (const char *);
 extern tree get_callee_fndecl (const_tree);
+extern combined_fn get_call_combined_fn (const_tree);
 extern int type_num_arguments (const_tree);
 extern bool associative_tree_code (enum tree_code);
 extern bool commutative_tree_code (enum tree_code);
@@ -4536,6 +4595,7 @@ extern tree lhd_gcc_personality (void);
 extern void assign_assembler_name_if_neeeded (tree);
 extern void warn_deprecated_use (tree, tree);
 extern void cache_integer_cst (tree);
+extern const char *combined_fn_name (combined_fn);
 
 /* Return the memory model from a host integer.  */
 static inline enum memmodel
@@ -5277,10 +5337,39 @@ type_with_alias_set_p (const_tree t)
   return false;
 }
 
+extern location_t set_block (location_t loc, tree block);
+
 extern void gt_ggc_mx (tree &);
 extern void gt_pch_nx (tree &);
 extern void gt_pch_nx (tree &, gt_pointer_operator, void *);
 
 extern bool nonnull_arg_p (const_tree);
+
+extern void
+set_source_range (tree expr, location_t start, location_t finish);
+
+extern void
+set_source_range (tree expr, source_range src_range);
+
+static inline source_range
+get_decl_source_range (tree decl)
+{
+  location_t loc = DECL_SOURCE_LOCATION (decl);
+  return get_range_from_loc (line_table, loc);
+}
+
+/* Return true if it makes sense to promote/demote from_type to to_type. */
+inline bool
+desired_pro_or_demotion_p (const_tree to_type, const_tree from_type)
+{
+  unsigned int to_type_precision = TYPE_PRECISION (to_type);
+
+  /* OK to promote if to_type is no bigger than word_mode. */
+  if (to_type_precision <= GET_MODE_PRECISION (word_mode))
+    return true;
+
+  /* Otherwise, allow only if narrowing or same precision conversions. */
+  return to_type_precision <= TYPE_PRECISION (from_type);
+}
 
 #endif  /* GCC_TREE_H  */

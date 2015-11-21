@@ -39,6 +39,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-vectorizer.h"
 #include "dumpfile.h"
 #include "builtins.h"
+#include "internal-fn.h"
+#include "case-cfn-macros.h"
 
 /* Pattern recognition functions  */
 static gimple *vect_recog_widen_sum_pattern (vec<gimple *> *, tree *,
@@ -1009,23 +1011,17 @@ vect_recog_pow_pattern (vec<gimple *> *stmts, tree *type_in,
 			tree *type_out)
 {
   gimple *last_stmt = (*stmts)[0];
-  tree fn, base, exp = NULL;
+  tree base, exp = NULL;
   gimple *stmt;
   tree var;
 
   if (!is_gimple_call (last_stmt) || gimple_call_lhs (last_stmt) == NULL)
     return NULL;
 
-  fn = gimple_call_fndecl (last_stmt);
-  if (fn == NULL_TREE || DECL_BUILT_IN_CLASS (fn) != BUILT_IN_NORMAL)
-   return NULL;
-
-  switch (DECL_FUNCTION_CODE (fn))
+  switch (gimple_call_combined_fn (last_stmt))
     {
-    case BUILT_IN_POWIF:
-    case BUILT_IN_POWI:
-    case BUILT_IN_POWF:
-    case BUILT_IN_POW:
+    CASE_CFN_POW:
+    CASE_CFN_POWI:
       base = gimple_call_arg (last_stmt, 0);
       exp = gimple_call_arg (last_stmt, 1);
       if (TREE_CODE (exp) != REAL_CST
@@ -1059,18 +1055,13 @@ vect_recog_pow_pattern (vec<gimple *> *stmts, tree *type_in,
   if (TREE_CODE (exp) == REAL_CST
       && real_equal (&TREE_REAL_CST (exp), &dconsthalf))
     {
-      tree newfn = mathfn_built_in (TREE_TYPE (base), BUILT_IN_SQRT);
       *type_in = get_vectype_for_scalar_type (TREE_TYPE (base));
-      if (*type_in)
+      if (*type_in && direct_internal_fn_supported_p (IFN_SQRT, *type_in))
 	{
-	  gcall *stmt = gimple_build_call (newfn, 1, base);
-	  if (vectorizable_function (stmt, *type_in, *type_in)
-	      != NULL_TREE)
-	    {
-	      var = vect_recog_temp_ssa_var (TREE_TYPE (base), stmt);
-	      gimple_call_set_lhs (stmt, var);
-	      return stmt;
-	    }
+	  gcall *stmt = gimple_build_call_internal (IFN_SQRT, 1, base);
+	  var = vect_recog_temp_ssa_var (TREE_TYPE (base), stmt);
+	  gimple_call_set_lhs (stmt, var);
+	  return stmt;
 	}
     }
 

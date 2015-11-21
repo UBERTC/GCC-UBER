@@ -177,6 +177,21 @@ adjust_simduid_builtins (hash_table<simduid_to_vf> *htab)
 	      break;
 	    case IFN_GOMP_SIMD_ORDERED_START:
 	    case IFN_GOMP_SIMD_ORDERED_END:
+	      if (integer_onep (gimple_call_arg (stmt, 0)))
+		{
+		  enum built_in_function bcode
+		    = (ifn == IFN_GOMP_SIMD_ORDERED_START
+		       ? BUILT_IN_GOMP_ORDERED_START
+		       : BUILT_IN_GOMP_ORDERED_END);
+		  gimple *g
+		    = gimple_build_call (builtin_decl_explicit (bcode), 0);
+		  tree vdef = gimple_vdef (stmt);
+		  gimple_set_vdef (g, vdef);
+		  SSA_NAME_DEF_STMT (vdef) = g;
+		  gimple_set_vuse (g, gimple_vuse (stmt));
+		  gsi_replace (&i, g, true);
+		  continue;
+		}
 	      gsi_remove (&i, true);
 	      unlink_stmt_vdef (stmt);
 	      continue;
@@ -719,12 +734,16 @@ pass_slp_vectorize::execute (function *fun)
       scev_initialize ();
     }
 
-  /* Mark all stmts as not belonging to the current region.  */
+  /* Mark all stmts as not belonging to the current region and unvisited.  */
   FOR_EACH_BB_FN (bb, fun)
     {
       for (gimple_stmt_iterator gsi = gsi_start_bb (bb); !gsi_end_p (gsi);
 	   gsi_next (&gsi))
-	gimple_set_uid (gsi_stmt (gsi), -1);
+	{
+	  gimple *stmt = gsi_stmt (gsi);
+	  gimple_set_uid (stmt, -1);
+	  gimple_set_visited (stmt, false);
+	}
     }
 
   init_stmt_vec_info_vec ();

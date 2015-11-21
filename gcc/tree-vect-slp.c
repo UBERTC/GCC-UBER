@@ -458,7 +458,6 @@ vect_build_slp_tree_1 (vec_info *vinfo,
 	{
 	  dump_printf_loc (MSG_NOTE, vect_location, "Build SLP for ");
 	  dump_gimple_stmt (MSG_NOTE, TDF_SLIM, stmt, 0);
-          dump_printf (MSG_NOTE, "\n");
 	}
 
       /* Fail to vectorize statements marked as unvectorizable.  */
@@ -1114,7 +1113,7 @@ vect_build_slp_tree (vec_info *vinfo,
 /* Dump a slp tree NODE using flags specified in DUMP_KIND.  */
 
 static void
-vect_print_slp_tree (int dump_kind, slp_tree node)
+vect_print_slp_tree (int dump_kind, location_t loc, slp_tree node)
 {
   int i;
   gimple *stmt;
@@ -1123,16 +1122,14 @@ vect_print_slp_tree (int dump_kind, slp_tree node)
   if (!node)
     return;
 
-  dump_printf (dump_kind, "node ");
+  dump_printf_loc (dump_kind, loc, "node\n");
   FOR_EACH_VEC_ELT (SLP_TREE_SCALAR_STMTS (node), i, stmt)
     {
-      dump_printf (dump_kind, "\n\tstmt %d ", i);
+      dump_printf_loc (dump_kind, loc, "\tstmt %d ", i);
       dump_gimple_stmt (dump_kind, TDF_SLIM, stmt, 0);
     }
-  dump_printf (dump_kind, "\n");
-
   FOR_EACH_VEC_ELT (SLP_TREE_CHILDREN (node), i, child)
-    vect_print_slp_tree (dump_kind, child);
+    vect_print_slp_tree (dump_kind, loc, child);
 }
 
 
@@ -1432,6 +1429,13 @@ vect_analyze_slp_cost_1 (slp_instance instance, slp_tree node,
 	{
 	  int i;
 	  gcc_checking_assert (DR_IS_READ (STMT_VINFO_DATA_REF (stmt_info)));
+	  /* If the load is permuted then the alignment is determined by
+	     the first group element not by the first scalar stmt DR.  */
+	  if (SLP_TREE_LOAD_PERMUTATION (node).exists ())
+	    {
+	      stmt = GROUP_FIRST_ELEMENT (stmt_info);
+	      stmt_info = vinfo_for_stmt (stmt);
+	    }
 	  vect_model_load_cost (stmt_info, ncopies_for_cost, false,
 				node, prologue_cost_vec, body_cost_vec);
 	  /* If the load is permuted record the cost for the permutation.
@@ -1561,6 +1565,54 @@ vect_analyze_slp_cost (slp_instance instance, void *data)
   body_cost_vec.release ();
 }
 
+/* Splits a group of stores, currently beginning at FIRST_STMT, into two groups:
+   one (still beginning at FIRST_STMT) of size GROUP1_SIZE (also containing
+   the first GROUP1_SIZE stmts, since stores are consecutive), the second
+   containing the remainder.
+   Return the first stmt in the second group.  */
+
+static gimple *
+vect_split_slp_store_group (gimple *first_stmt, unsigned group1_size)
+{
+  stmt_vec_info first_vinfo = vinfo_for_stmt (first_stmt);
+  gcc_assert (GROUP_FIRST_ELEMENT (first_vinfo) == first_stmt);
+  gcc_assert (group1_size > 0);
+  int group2_size = GROUP_SIZE (first_vinfo) - group1_size;
+  gcc_assert (group2_size > 0);
+  GROUP_SIZE (first_vinfo) = group1_size;
+
+  gimple *stmt = first_stmt;
+  for (unsigned i = group1_size; i > 1; i--)
+    {
+      stmt = GROUP_NEXT_ELEMENT (vinfo_for_stmt (stmt));
+      gcc_assert (GROUP_GAP (vinfo_for_stmt (stmt)) == 1);
+    }
+  /* STMT is now the last element of the first group.  */
+  gimple *group2 = GROUP_NEXT_ELEMENT (vinfo_for_stmt (stmt));
+  GROUP_NEXT_ELEMENT (vinfo_for_stmt (stmt)) = 0;
+
+  GROUP_SIZE (vinfo_for_stmt (group2)) = group2_size;
+  for (stmt = group2; stmt; stmt = GROUP_NEXT_ELEMENT (vinfo_for_stmt (stmt)))
+    {
+      GROUP_FIRST_ELEMENT (vinfo_for_stmt (stmt)) = group2;
+      gcc_assert (GROUP_GAP (vinfo_for_stmt (stmt)) == 1);
+    }
+
+  /* For the second group, the GROUP_GAP is that before the original group,
+     plus skipping over the first vector.  */
+  GROUP_GAP (vinfo_for_stmt (group2)) =
+    GROUP_GAP (first_vinfo) + group1_size;
+
+  /* GROUP_GAP of the first group now has to skip over the second group too.  */
+  GROUP_GAP (first_vinfo) += group2_size;
+
+  if (dump_enabled_p ())
+    dump_printf_loc (MSG_NOTE, vect_location, "Split group into %d and %d\n",
+		     group1_size, group2_size);
+
+  return group2;
+}
+
 /* Analyze an SLP instance starting from a group of grouped stores.  Call
    vect_build_slp_tree to build a tree of packed stmts if possible.
    Return FALSE if it's impossible to SLP any stmt in the loop.  */
@@ -1576,7 +1628,7 @@ vect_analyze_slp_instance (vec_info *vinfo,
   tree vectype, scalar_type = NULL_TREE;
   gimple *next;
   unsigned int vectorization_factor = 0;
-  int i;
+  unsigned int i;
   unsigned int max_nunits = 0;
   vec<slp_tree> loads;
   struct data_reference *dr = STMT_VINFO_DATA_REF (vinfo_for_stmt (stmt));
@@ -1756,7 +1808,11 @@ vect_analyze_slp_instance (vec_info *vinfo,
       vinfo->slp_instances.safe_push (new_instance);
 
       if (dump_enabled_p ())
-	vect_print_slp_tree (MSG_NOTE, node);
+	{
+	  dump_printf_loc (MSG_NOTE, vect_location,
+			   "Final SLP tree for instance:\n");
+	  vect_print_slp_tree (MSG_NOTE, vect_location, node);
+	}
 
       return true;
     }
@@ -1765,6 +1821,41 @@ vect_analyze_slp_instance (vec_info *vinfo,
   /* Free the allocated memory.  */
   vect_free_slp_tree (node);
   loads.release ();
+
+  /* For basic block SLP, try to break the group up into multiples of the
+     vectorization factor.  */
+  if (is_a <bb_vec_info> (vinfo)
+      && GROUP_FIRST_ELEMENT (vinfo_for_stmt (stmt))
+      && STMT_VINFO_GROUPED_ACCESS (vinfo_for_stmt (stmt)))
+    {
+      /* We consider breaking the group only on VF boundaries from the existing
+	 start.  */
+      for (i = 0; i < group_size; i++)
+	if (!matches[i]) break;
+
+      if (i >= vectorization_factor && i < group_size)
+	{
+	  /* Split into two groups at the first vector boundary before i.  */
+	  gcc_assert ((vectorization_factor & (vectorization_factor - 1)) == 0);
+	  unsigned group1_size = i & ~(vectorization_factor - 1);
+
+	  gimple *rest = vect_split_slp_store_group (stmt, group1_size);
+	  bool res = vect_analyze_slp_instance (vinfo, stmt, max_tree_size);
+	  /* If the first non-match was in the middle of a vector,
+	     skip the rest of that vector.  */
+	  if (group1_size < i)
+	    {
+	      i = group1_size + vectorization_factor;
+	      if (i < group_size)
+		rest = vect_split_slp_store_group (rest, vectorization_factor);
+	    }
+	  if (i < group_size)
+	    res |= vect_analyze_slp_instance (vinfo, rest, max_tree_size);
+	  return res;
+	}
+      /* Even though the first vector did not all match, we might be able to SLP
+	 (some) of the remainder.  FORNOW ignore this possibility.  */
+    }
 
   return false;
 }
@@ -2294,7 +2385,6 @@ vect_slp_analyze_bb_1 (gimple_stmt_iterator region_begin,
 		       bool &fatal)
 {
   bb_vec_info bb_vinfo;
-  vec<slp_instance> slp_instances;
   slp_instance instance;
   int i;
   int min_vf = 2;
@@ -2389,11 +2479,12 @@ vect_slp_analyze_bb_1 (gimple_stmt_iterator region_begin,
       return NULL;
     }
 
-  /* Analyze and verify the alignment of data references in the SLP
-     instances.  */
+  /* Analyze and verify the alignment of data references and the
+     dependence in the SLP instances.  */
   for (i = 0; BB_VINFO_SLP_INSTANCES (bb_vinfo).iterate (i, &instance); )
     {
-      if (! vect_slp_analyze_and_verify_instance_alignment (instance))
+      if (! vect_slp_analyze_and_verify_instance_alignment (instance)
+	  || ! vect_slp_analyze_instance_dependence (instance))
 	{
 	  dump_printf_loc (MSG_NOTE, vect_location,
 			   "removing SLP instance operations starting from: ");
@@ -2404,23 +2495,18 @@ vect_slp_analyze_bb_1 (gimple_stmt_iterator region_begin,
 	  BB_VINFO_SLP_INSTANCES (bb_vinfo).ordered_remove (i);
 	  continue;
 	}
+
+      /* Mark all the statements that we want to vectorize as pure SLP and
+	 relevant.  */
+      vect_mark_slp_stmts (SLP_INSTANCE_TREE (instance), pure_slp, -1);
+      vect_mark_slp_stmts_relevant (SLP_INSTANCE_TREE (instance));
+
       i++;
     }
-
   if (! BB_VINFO_SLP_INSTANCES (bb_vinfo).length ())
     {
       destroy_bb_vec_info (bb_vinfo);
       return NULL;
-    }
-
-  slp_instances = BB_VINFO_SLP_INSTANCES (bb_vinfo);
-
-  /* Mark all the statements that we want to vectorize as pure SLP and
-     relevant.  */
-  FOR_EACH_VEC_ELT (slp_instances, i, instance)
-    {
-      vect_mark_slp_stmts (SLP_INSTANCE_TREE (instance), pure_slp, -1);
-      vect_mark_slp_stmts_relevant (SLP_INSTANCE_TREE (instance));
     }
 
   /* Mark all the statements that we do not want to vectorize.  */
@@ -2430,20 +2516,6 @@ vect_slp_analyze_bb_1 (gimple_stmt_iterator region_begin,
       stmt_vec_info vinfo = vinfo_for_stmt (gsi_stmt (gsi));
       if (STMT_SLP_TYPE (vinfo) != pure_slp)
 	STMT_VINFO_VECTORIZABLE (vinfo) = false;
-    }
-
-  /* Analyze dependences.  At this point all stmts not participating in
-     vectorization have to be marked.  Dependence analysis assumes
-     that we either vectorize all SLP instances or none at all.  */
-  if (! vect_slp_analyze_data_ref_dependences (bb_vinfo))
-    {
-      if (dump_enabled_p ())
-	dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
-			 "not vectorized: unhandled data dependence "
-			 "in basic block.\n");
-
-      destroy_bb_vec_info (bb_vinfo);
-      return NULL;
     }
 
   if (!vect_slp_analyze_operations (BB_VINFO_SLP_INSTANCES (bb_vinfo),
@@ -2591,6 +2663,57 @@ vect_slp_bb (basic_block bb)
 }
 
 
+/* Return 1 if vector type of boolean constant which is OPNUM
+   operand in statement STMT is a boolean vector.  */
+
+static bool
+vect_mask_constant_operand_p (gimple *stmt, int opnum)
+{
+  stmt_vec_info stmt_vinfo = vinfo_for_stmt (stmt);
+  enum tree_code code = gimple_expr_code (stmt);
+  tree op, vectype;
+  gimple *def_stmt;
+  enum vect_def_type dt;
+
+  /* For comparison and COND_EXPR type is chosen depending
+     on the other comparison operand.  */
+  if (TREE_CODE_CLASS (code) == tcc_comparison)
+    {
+      if (opnum)
+	op = gimple_assign_rhs1 (stmt);
+      else
+	op = gimple_assign_rhs2 (stmt);
+
+      if (!vect_is_simple_use (op, stmt_vinfo->vinfo, &def_stmt,
+			       &dt, &vectype))
+	gcc_unreachable ();
+
+      return !vectype || VECTOR_BOOLEAN_TYPE_P (vectype);
+    }
+
+  if (code == COND_EXPR)
+    {
+      tree cond = gimple_assign_rhs1 (stmt);
+
+      if (TREE_CODE (cond) == SSA_NAME)
+	return false;
+
+      if (opnum)
+	op = TREE_OPERAND (cond, 1);
+      else
+	op = TREE_OPERAND (cond, 0);
+
+      if (!vect_is_simple_use (op, stmt_vinfo->vinfo, &def_stmt,
+			       &dt, &vectype))
+	gcc_unreachable ();
+
+      return !vectype || VECTOR_BOOLEAN_TYPE_P (vectype);
+    }
+
+  return VECTOR_BOOLEAN_TYPE_P (STMT_VINFO_VECTYPE (stmt_vinfo));
+}
+
+
 /* For constant and loop invariant defs of SLP_NODE this function returns
    (vector) defs (VEC_OPRNDS) that will be used in the vectorized stmts.
    OP_NUM determines if we gather defs for operand 0 or operand 1 of the RHS of
@@ -2627,8 +2750,7 @@ vect_get_constant_vectors (tree op, slp_tree slp_node,
 
   /* Check if vector type is a boolean vector.  */
   if (TREE_CODE (TREE_TYPE (op)) == BOOLEAN_TYPE
-      && (VECTOR_BOOLEAN_TYPE_P (STMT_VINFO_VECTYPE (stmt_vinfo))
-	  || (code == COND_EXPR && op_num < 2)))
+      && vect_mask_constant_operand_p (stmt, op_num))
     vector_type
       = build_same_sized_truth_vector_type (STMT_VINFO_VECTYPE (stmt_vinfo));
   else
@@ -2740,18 +2862,20 @@ vect_get_constant_vectors (tree op, slp_tree slp_node,
 	      switch (code)
 		{
 		  case COND_EXPR:
-		    if (op_num == 0 || op_num == 1)
-		      {
-			tree cond = gimple_assign_rhs1 (stmt);
+		    {
+		      tree cond = gimple_assign_rhs1 (stmt);
+		      if (TREE_CODE (cond) == SSA_NAME)
+			op = gimple_op (stmt, op_num + 1);
+		      else if (op_num == 0 || op_num == 1)
 			op = TREE_OPERAND (cond, op_num);
-		      }
-		    else
-		      {
-			if (op_num == 2)
-			  op = gimple_assign_rhs2 (stmt);
-			else
-			  op = gimple_assign_rhs3 (stmt);
-		      }
+		      else
+			{
+			  if (op_num == 2)
+			    op = gimple_assign_rhs2 (stmt);
+			  else
+			    op = gimple_assign_rhs3 (stmt);
+			}
+		    }
 		    break;
 
 		  case CALL_EXPR:

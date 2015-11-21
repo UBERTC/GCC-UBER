@@ -537,32 +537,17 @@ vect_slp_analyze_data_ref_dependence (struct data_dependence_relation *ddr)
       dump_printf (MSG_NOTE,  "\n");
     }
 
-  /* We do not vectorize basic blocks with write-write dependencies.  */
-  if (DR_IS_WRITE (dra) && DR_IS_WRITE (drb))
-    return true;
-
-  /* If we have a read-write dependence check that the load is before the store.
-     When we vectorize basic blocks, vector load can be only before
-     corresponding scalar load, and vector store can be only after its
-     corresponding scalar store.  So the order of the acceses is preserved in
-     case the load is before the store.  */
-  gimple *earlier_stmt = get_earlier_stmt (DR_STMT (dra), DR_STMT (drb));
-  if (DR_IS_READ (STMT_VINFO_DATA_REF (vinfo_for_stmt (earlier_stmt))))
-    {
-      /* That only holds for load-store pairs taking part in vectorization.  */
-      if (STMT_VINFO_VECTORIZABLE (vinfo_for_stmt (DR_STMT (dra)))
-	  && STMT_VINFO_VECTORIZABLE (vinfo_for_stmt (DR_STMT (drb))))
-	return false;
-    }
-
   return true;
 }
 
 
-/* Analyze dependences involved in the transform of SLP NODE.  */
+/* Analyze dependences involved in the transform of SLP NODE.  STORES
+   contain the vector of scalar stores of this instance if we are
+   disambiguating the loads.  */
 
 static bool
-vect_slp_analyze_node_dependences (slp_instance instance, slp_tree node)
+vect_slp_analyze_node_dependences (slp_instance instance, slp_tree node,
+				   vec<gimple *> stores, gimple *last_store)
 {
   /* This walks over all stmts involved in the SLP load/store done
      in NODE verifying we can sink them up to the last stmt in the
@@ -584,15 +569,40 @@ vect_slp_analyze_node_dependences (slp_instance instance, slp_tree node)
 
 	  /* If we couldn't record a (single) data reference for this
 	     stmt we have to give up.  */
+	  /* ???  Here and below if dependence analysis fails we can resort
+	     to the alias oracle which can handle more kinds of stmts.  */
 	  data_reference *dr_b = STMT_VINFO_DATA_REF (vinfo_for_stmt (stmt));
 	  if (!dr_b)
 	    return false;
 
+	  /* If we run into a store of this same instance (we've just
+	     marked those) then delay dependence checking until we run
+	     into the last store because this is where it will have
+	     been sunk to (and we verify if we can do that as well).  */
+	  if (gimple_visited_p (stmt))
+	    {
+	      if (stmt != last_store)
+		continue;
+	      unsigned i;
+	      gimple *store;
+	      FOR_EACH_VEC_ELT (stores, i, store)
+		{
+		  data_reference *store_dr
+		    = STMT_VINFO_DATA_REF (vinfo_for_stmt (store));
+		  ddr_p ddr = initialize_data_dependence_relation
+				(dr_a, store_dr, vNULL);
+		  if (vect_slp_analyze_data_ref_dependence (ddr))
+		    {
+		      free_dependence_relation (ddr);
+		      return false;
+		    }
+		  free_dependence_relation (ddr);
+		}
+	    }
+
 	  ddr_p ddr = initialize_data_dependence_relation (dr_a, dr_b, vNULL);
 	  if (vect_slp_analyze_data_ref_dependence (ddr))
 	    {
-	      /* ???  If the dependence analysis failed we can resort to the
-		 alias oracle which can handle more kinds of stmts.  */
 	      free_dependence_relation (ddr);
 	      return false;
 	    }
@@ -610,52 +620,53 @@ vect_slp_analyze_node_dependences (slp_instance instance, slp_tree node)
    the maximum vectorization factor the data dependences allow.  */
 
 bool
-vect_slp_analyze_data_ref_dependences (bb_vec_info bb_vinfo)
+vect_slp_analyze_instance_dependence (slp_instance instance)
 {
   if (dump_enabled_p ())
     dump_printf_loc (MSG_NOTE, vect_location,
-                     "=== vect_slp_analyze_data_ref_dependences ===\n");
+                     "=== vect_slp_analyze_instance_dependence ===\n");
 
-  slp_instance instance;
-  slp_tree load;
-  unsigned int i, j;
-  for (i = 0; BB_VINFO_SLP_INSTANCES (bb_vinfo).iterate (i, &instance); )
+  /* The stores of this instance are at the root of the SLP tree.  */
+  slp_tree store = SLP_INSTANCE_TREE (instance);
+  if (! STMT_VINFO_DATA_REF (vinfo_for_stmt (SLP_TREE_SCALAR_STMTS (store)[0])))
+    store = NULL;
+
+  /* Verify we can sink stores to the vectorized stmt insert location.  */
+  gimple *last_store = NULL;
+  if (store)
     {
-      bool remove = false;
-      /* Verify we can sink loads to the vectorized stmt insert location.  */
-      FOR_EACH_VEC_ELT (SLP_INSTANCE_LOADS (instance), j, load)
-	if (! vect_slp_analyze_node_dependences (instance, load))
-	  {
-	    remove = true;
-	    break;
-	  }
-      /* Verify we can sink stores to the vectorized stmt insert location.  */
-      slp_tree store = SLP_INSTANCE_TREE (instance);
-      if (!remove
-	  && STMT_VINFO_DATA_REF
-		(vinfo_for_stmt (SLP_TREE_SCALAR_STMTS (store)[0]))
-	  && ! vect_slp_analyze_node_dependences (instance, store))
-	remove = true;
-      if (remove)
-	{
-	  dump_printf_loc (MSG_NOTE, vect_location,
-			   "removing SLP instance operations starting from: ");
-	  dump_gimple_stmt (MSG_NOTE, TDF_SLIM,
-			    SLP_TREE_SCALAR_STMTS
-			      (SLP_INSTANCE_TREE (instance))[0], 0);
-	  vect_free_slp_instance (instance);
-	  BB_VINFO_SLP_INSTANCES (bb_vinfo).ordered_remove (i);
-	  continue;
-	}
-      i++;
+      if (! vect_slp_analyze_node_dependences (instance, store, vNULL, NULL))
+	return false;
+
+      /* Mark stores in this instance and remember the last one.  */
+      last_store = vect_find_last_scalar_stmt_in_slp (store);
+      for (unsigned k = 0; k < SLP_INSTANCE_GROUP_SIZE (instance); ++k)
+	gimple_set_visited (SLP_TREE_SCALAR_STMTS (store)[k], true);
     }
 
-  if (!BB_VINFO_SLP_INSTANCES (bb_vinfo).length ())
-    return false;
+  bool res = true;
 
-  return true;
+  /* Verify we can sink loads to the vectorized stmt insert location,
+     special-casing stores of this instance.  */
+  slp_tree load;
+  unsigned int i;
+  FOR_EACH_VEC_ELT (SLP_INSTANCE_LOADS (instance), i, load)
+    if (! vect_slp_analyze_node_dependences (instance, load,
+					     store
+					     ? SLP_TREE_SCALAR_STMTS (store)
+					     : vNULL, last_store))
+      {
+	res = false;
+	break;
+      }
+
+  /* Unset the visited flag.  */
+  if (store)
+    for (unsigned k = 0; k < SLP_INSTANCE_GROUP_SIZE (instance); ++k)
+      gimple_set_visited (SLP_TREE_SCALAR_STMTS (store)[k], false);
+
+  return res;
 }
-
 
 /* Function vect_compute_data_ref_alignment
 
@@ -905,27 +916,8 @@ vect_update_misalignment_for_peel (struct data_reference *dr,
 static bool
 verify_data_ref_alignment (data_reference_p dr)
 {
-  enum dr_alignment_support supportable_dr_alignment;
-  gimple *stmt = DR_STMT (dr);
-  stmt_vec_info stmt_info = vinfo_for_stmt (stmt);
-
-  if (!STMT_VINFO_RELEVANT_P (stmt_info))
-    return true;
-
-  /* For interleaving, only the alignment of the first access matters. 
-     Skip statements marked as not vectorizable.  */
-  if ((STMT_VINFO_GROUPED_ACCESS (stmt_info)
-       && GROUP_FIRST_ELEMENT (stmt_info) != stmt)
-      || !STMT_VINFO_VECTORIZABLE (stmt_info))
-    return true;
-
-  /* Strided accesses perform only component accesses, alignment is
-     irrelevant for them.  */
-  if (STMT_VINFO_STRIDED_P (stmt_info)
-      && !STMT_VINFO_GROUPED_ACCESS (stmt_info))
-    return true;
-
-  supportable_dr_alignment = vect_supportable_dr_alignment (dr, false);
+  enum dr_alignment_support supportable_dr_alignment
+    = vect_supportable_dr_alignment (dr, false);
   if (!supportable_dr_alignment)
     {
       if (dump_enabled_p ())
@@ -965,8 +957,27 @@ vect_verify_datarefs_alignment (loop_vec_info vinfo)
   unsigned int i;
 
   FOR_EACH_VEC_ELT (datarefs, i, dr)
-    if (! verify_data_ref_alignment (dr))
-      return false;
+    {
+      gimple *stmt = DR_STMT (dr);
+      stmt_vec_info stmt_info = vinfo_for_stmt (stmt);
+
+      if (!STMT_VINFO_RELEVANT_P (stmt_info))
+	continue;
+
+      /* For interleaving, only the alignment of the first access matters.   */
+      if (STMT_VINFO_GROUPED_ACCESS (stmt_info)
+	  && GROUP_FIRST_ELEMENT (stmt_info) != stmt)
+	continue;
+
+      /* Strided accesses perform only component accesses, alignment is
+	 irrelevant for them.  */
+      if (STMT_VINFO_STRIDED_P (stmt_info)
+	  && !STMT_VINFO_GROUPED_ACCESS (stmt_info))
+	continue;
+
+      if (! verify_data_ref_alignment (dr))
+	return false;
+    }
 
   return true;
 }
@@ -2087,28 +2098,22 @@ vect_analyze_data_refs_alignment (loop_vec_info vinfo)
 static bool
 vect_slp_analyze_and_verify_node_alignment (slp_tree node)
 {
-  unsigned i;
-  gimple *stmt;
-  FOR_EACH_VEC_ELT (SLP_TREE_SCALAR_STMTS (node), i, stmt)
+  /* We vectorize from the first scalar stmt in the node unless
+     the node is permuted in which case we start from the first
+     element in the group.  */
+  gimple *first_stmt = SLP_TREE_SCALAR_STMTS (node)[0];
+  if (SLP_TREE_LOAD_PERMUTATION (node).exists ())
+    first_stmt = GROUP_FIRST_ELEMENT (vinfo_for_stmt (first_stmt));
+
+  data_reference_p dr = STMT_VINFO_DATA_REF (vinfo_for_stmt (first_stmt));
+  if (! vect_compute_data_ref_alignment (dr)
+      || ! verify_data_ref_alignment (dr))
     {
-      stmt_vec_info stmt_info = vinfo_for_stmt (stmt);
-
-      /* Strided accesses perform only component accesses, misalignment
-	 information is irrelevant for them.  */
-      if (STMT_VINFO_STRIDED_P (stmt_info)
-	  && !STMT_VINFO_GROUPED_ACCESS (stmt_info))
-	continue;
-
-      data_reference_p dr = STMT_VINFO_DATA_REF (stmt_info);
-      if (! vect_compute_data_ref_alignment (dr)
-	  || ! verify_data_ref_alignment (dr))
-	{
-	  if (dump_enabled_p ())
-	    dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
-			     "not vectorized: bad data alignment in basic "
-			     "block.\n");
-	  return false;
-	}
+      if (dump_enabled_p ())
+	dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+			 "not vectorized: bad data alignment in basic "
+			 "block.\n");
+      return false;
     }
 
   return true;
@@ -2540,6 +2545,8 @@ compare_tree (tree t1, tree t2)
   if (t2 == NULL)
     return 1;
 
+  STRIP_NOPS (t1);
+  STRIP_NOPS (t2);
 
   if (TREE_CODE (t1) != TREE_CODE (t2))
     return TREE_CODE (t1) < TREE_CODE (t2) ? -1 : 1;

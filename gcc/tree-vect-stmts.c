@@ -47,6 +47,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-scalar-evolution.h"
 #include "tree-vectorizer.h"
 #include "builtins.h"
+#include "internal-fn.h"
 
 /* For lang_hooks.types.type_for_mode.  */
 #include "langhooks.h"
@@ -1641,27 +1642,32 @@ vect_finish_stmt_generation (gimple *stmt, gimple *vec_stmt,
     add_stmt_to_eh_lp (vec_stmt, lp_nr);
 }
 
-/* Checks if CALL can be vectorized in type VECTYPE.  Returns
-   a function declaration if the target has a vectorized version
-   of the function, or NULL_TREE if the function cannot be vectorized.  */
+/* We want to vectorize a call to combined function CFN with function
+   decl FNDECL, using VECTYPE_OUT as the type of the output and VECTYPE_IN
+   as the types of all inputs.  Check whether this is possible using
+   an internal function, returning its code if so or IFN_LAST if not.  */
 
-tree
-vectorizable_function (gcall *call, tree vectype_out, tree vectype_in)
+static internal_fn
+vectorizable_internal_function (combined_fn cfn, tree fndecl,
+				tree vectype_out, tree vectype_in)
 {
-  tree fndecl = gimple_call_fndecl (call);
-
-  /* We only handle functions that do not read or clobber memory -- i.e.
-     const or novops ones.  */
-  if (!(gimple_call_flags (call) & (ECF_CONST | ECF_NOVOPS)))
-    return NULL_TREE;
-
-  if (!fndecl
-      || TREE_CODE (fndecl) != FUNCTION_DECL
-      || !DECL_BUILT_IN (fndecl))
-    return NULL_TREE;
-
-  return targetm.vectorize.builtin_vectorized_function (fndecl, vectype_out,
-						        vectype_in);
+  internal_fn ifn;
+  if (internal_fn_p (cfn))
+    ifn = as_internal_fn (cfn);
+  else
+    ifn = associated_internal_fn (fndecl);
+  if (ifn != IFN_LAST && direct_internal_fn_p (ifn))
+    {
+      const direct_internal_fn_info &info = direct_internal_fn (ifn);
+      if (info.vectorizable)
+	{
+	  tree type0 = (info.type0 < 0 ? vectype_out : vectype_in);
+	  tree type1 = (info.type1 < 0 ? vectype_out : vectype_in);
+	  if (direct_internal_fn_supported_p (ifn, tree_pair (type0, type1)))
+	    return ifn;
+	}
+    }
+  return IFN_LAST;
 }
 
 
@@ -1688,6 +1694,7 @@ vectorizable_mask_load_store (gimple *stmt, gimple_stmt_iterator *gsi,
   bool nested_in_vect_loop = nested_in_vect_loop_p (loop, stmt);
   struct data_reference *dr = STMT_VINFO_DATA_REF (stmt_info);
   tree vectype = STMT_VINFO_VECTYPE (stmt_info);
+  tree rhs_vectype = NULL_TREE;
   tree mask_vectype;
   tree elem_type;
   gimple *new_stmt;
@@ -1757,6 +1764,13 @@ vectorizable_mask_load_store (gimple *stmt, gimple_stmt_iterator *gsi,
   if (!mask_vectype)
     return false;
 
+  if (is_store)
+    {
+      tree rhs = gimple_call_arg (stmt, 3);
+      if (!vect_is_simple_use (rhs, loop_vinfo, &def_stmt, &dt, &rhs_vectype))
+	return false;
+    }
+
   if (STMT_VINFO_GATHER_SCATTER_P (stmt_info))
     {
       gimple *def_stmt;
@@ -1790,15 +1804,10 @@ vectorizable_mask_load_store (gimple *stmt, gimple_stmt_iterator *gsi,
   else if (!VECTOR_MODE_P (TYPE_MODE (vectype))
 	   || !can_vec_mask_load_store_p (TYPE_MODE (vectype),
 					  TYPE_MODE (mask_vectype),
-					  !is_store))
+					  !is_store)
+	   || (rhs_vectype
+	       && !useless_type_conversion_p (vectype, rhs_vectype)))
     return false;
-
-  if (is_store)
-    {
-      tree rhs = gimple_call_arg (stmt, 3);
-      if (!vect_is_simple_use (rhs, loop_vinfo, &def_stmt, &dt))
-	return false;
-    }
 
   if (!vec_stmt) /* transformation not required.  */
     {
@@ -2260,15 +2269,43 @@ vectorizable_call (gimple *gs, gimple_stmt_iterator *gsi, gimple **vec_stmt,
   else
     return false;
 
+  /* We only handle functions that do not read or clobber memory.  */
+  if (gimple_vuse (stmt))
+    {
+      if (dump_enabled_p ())
+	dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+			 "function reads from or writes to memory.\n");
+      return false;
+    }
+
   /* For now, we only vectorize functions if a target specific builtin
      is available.  TODO -- in some cases, it might be profitable to
      insert the calls for pieces of the vector, in order to be able
      to vectorize other operations in the loop.  */
-  fndecl = vectorizable_function (stmt, vectype_out, vectype_in);
-  if (fndecl == NULL_TREE)
+  fndecl = NULL_TREE;
+  internal_fn ifn = IFN_LAST;
+  combined_fn cfn = gimple_call_combined_fn (stmt);
+  tree callee = gimple_call_fndecl (stmt);
+
+  /* First try using an internal function.  */
+  if (cfn != CFN_LAST)
+    ifn = vectorizable_internal_function (cfn, callee, vectype_out,
+					  vectype_in);
+
+  /* If that fails, try asking for a target-specific built-in function.  */
+  if (ifn == IFN_LAST)
     {
-      if (gimple_call_internal_p (stmt)
-	  && gimple_call_internal_fn (stmt) == IFN_GOMP_SIMD_LANE
+      if (cfn != CFN_LAST)
+	fndecl = targetm.vectorize.builtin_vectorized_function
+	  (cfn, vectype_out, vectype_in);
+      else
+	fndecl = targetm.vectorize.builtin_md_vectorized_function
+	  (callee, vectype_out, vectype_in);
+    }
+
+  if (ifn == IFN_LAST && !fndecl)
+    {
+      if (cfn == CFN_GOMP_SIMD_LANE
 	  && !slp_node
 	  && loop_vinfo
 	  && LOOP_VINFO_LOOP (loop_vinfo)->simduid
@@ -2288,8 +2325,6 @@ vectorizable_call (gimple *gs, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 	  return false;
 	}
     }
-
-  gcc_assert (!gimple_vuse (stmt));
 
   if (slp_node || PURE_SLP_STMT (stmt_info))
     ncopies = 1;
@@ -2352,7 +2387,10 @@ vectorizable_call (gimple *gs, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 		      vec<tree> vec_oprndsk = vec_defs[k];
 		      vargs[k] = vec_oprndsk[i];
 		    }
-		  new_stmt = gimple_build_call_vec (fndecl, vargs);
+		  if (ifn != IFN_LAST)
+		    new_stmt = gimple_build_call_internal_vec (ifn, vargs);
+		  else
+		    new_stmt = gimple_build_call_vec (fndecl, vargs);
 		  new_temp = make_ssa_name (vec_dest, new_stmt);
 		  gimple_call_set_lhs (new_stmt, new_temp);
 		  vect_finish_stmt_generation (stmt, new_stmt, gsi);
@@ -2400,7 +2438,10 @@ vectorizable_call (gimple *gs, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 	    }
 	  else
 	    {
-	      new_stmt = gimple_build_call_vec (fndecl, vargs);
+	      if (ifn != IFN_LAST)
+		new_stmt = gimple_build_call_internal_vec (ifn, vargs);
+	      else
+		new_stmt = gimple_build_call_vec (fndecl, vargs);
 	      new_temp = make_ssa_name (vec_dest, new_stmt);
 	      gimple_call_set_lhs (new_stmt, new_temp);
 	    }
@@ -2446,7 +2487,10 @@ vectorizable_call (gimple *gs, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 		      vargs.quick_push (vec_oprndsk[i]);
 		      vargs.quick_push (vec_oprndsk[i + 1]);
 		    }
-		  new_stmt = gimple_build_call_vec (fndecl, vargs);
+		  if (ifn != IFN_LAST)
+		    new_stmt = gimple_build_call_internal_vec (ifn, vargs);
+		  else
+		    new_stmt = gimple_build_call_vec (fndecl, vargs);
 		  new_temp = make_ssa_name (vec_dest, new_stmt);
 		  gimple_call_set_lhs (new_stmt, new_temp);
 		  vect_finish_stmt_generation (stmt, new_stmt, gsi);
@@ -2484,7 +2528,10 @@ vectorizable_call (gimple *gs, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 	      vargs.quick_push (vec_oprnd1);
 	    }
 
-	  new_stmt = gimple_build_call_vec (fndecl, vargs);
+	  if (ifn != IFN_LAST)
+	    new_stmt = gimple_build_call_internal_vec (ifn, vargs);
+	  else
+	    new_stmt = gimple_build_call_vec (fndecl, vargs);
 	  new_temp = make_ssa_name (vec_dest, new_stmt);
 	  gimple_call_set_lhs (new_stmt, new_temp);
 	  vect_finish_stmt_generation (stmt, new_stmt, gsi);
@@ -5461,6 +5508,7 @@ vectorizable_store (gimple *stmt, gimple_stmt_iterator *gsi, gimple **vec_stmt,
              group.  */
           vec_num = SLP_TREE_NUMBER_OF_VEC_STMTS (slp_node);
           first_stmt = SLP_TREE_SCALAR_STMTS (slp_node)[0]; 
+	  gcc_assert (GROUP_FIRST_ELEMENT (vinfo_for_stmt (first_stmt)) == first_stmt);
           first_dr = STMT_VINFO_DATA_REF (vinfo_for_stmt (first_stmt));
 	  op = gimple_assign_rhs1 (first_stmt);
         } 
@@ -6655,9 +6703,9 @@ vectorizable_load (gimple *stmt, gimple_stmt_iterator *gsi, gimple **vec_stmt,
   if (grouped_load)
     {
       first_stmt = GROUP_FIRST_ELEMENT (stmt_info);
-      if (slp
-          && !SLP_TREE_LOAD_PERMUTATION (slp_node).exists ()
-	  && first_stmt != SLP_TREE_SCALAR_STMTS (slp_node)[0])
+      /* For BB vectorization we directly vectorize a subchain
+         without permutation.  */
+      if (slp && ! SLP_TREE_LOAD_PERMUTATION (slp_node).exists ())
         first_stmt = SLP_TREE_SCALAR_STMTS (slp_node)[0];
 
       /* Check if the chain of loads is already vectorized.  */
@@ -7642,8 +7690,8 @@ vectorizable_comparison (gimple *stmt, gimple_stmt_iterator *gsi,
 	    }
 	  else
 	    {
-	      vec_rhs1 = vect_get_vec_def_for_operand (rhs1, stmt, NULL);
-	      vec_rhs2 = vect_get_vec_def_for_operand (rhs2, stmt, NULL);
+	      vec_rhs1 = vect_get_vec_def_for_operand (rhs1, stmt, vectype);
+	      vec_rhs2 = vect_get_vec_def_for_operand (rhs2, stmt, vectype);
 	    }
 	}
       else

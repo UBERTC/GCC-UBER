@@ -64,7 +64,8 @@ enum vect_def_type {
 /* Define type of reduction.  */
 enum vect_reduction_type {
   TREE_CODE_REDUCTION,
-  COND_REDUCTION
+  COND_REDUCTION,
+  INTEGER_INDUC_COND_REDUCTION
 };
 
 #define VECTORIZABLE_CYCLE_DEF(D) (((D) == vect_reduction_def)           \
@@ -517,11 +518,13 @@ typedef struct _stmt_vec_info {
   tree dr_step;
   tree dr_aligned_to;
 
-  /* For loop PHI nodes, the evolution part of it.  This makes sure
+  /* For loop PHI nodes, the base and evolution part of it.  This makes sure
      this information is still available in vect_update_ivs_after_vectorizer
      where we may not be able to re-analyze the PHI nodes evolution as
      peeling for the prologue loop can make it unanalyzable.  The evolution
-     part is still correct though.  */
+     part is still correct after peeling, but the base may have changed from
+     the version here.  */
+  tree loop_phi_evolution_base_unchanged;
   tree loop_phi_evolution_part;
 
   /* Used for various bookkeeping purposes, generally holding a pointer to
@@ -644,6 +647,7 @@ STMT_VINFO_BB_VINFO (stmt_vec_info stmt_vinfo)
 #define STMT_VINFO_GROUP_GAP(S)            (S)->gap
 #define STMT_VINFO_GROUP_SAME_DR_STMT(S)   (S)->same_dr_stmt
 #define STMT_VINFO_GROUPED_ACCESS(S)      ((S)->first_element != NULL && (S)->data_ref_info)
+#define STMT_VINFO_LOOP_PHI_EVOLUTION_BASE_UNCHANGED(S) (S)->loop_phi_evolution_base_unchanged
 #define STMT_VINFO_LOOP_PHI_EVOLUTION_PART(S) (S)->loop_phi_evolution_part
 #define STMT_VINFO_MIN_NEG_DIST(S)	(S)->min_neg_dist
 
@@ -961,7 +965,6 @@ extern bool supportable_narrowing_operation (enum tree_code, tree, tree,
 					     int *, vec<tree> *);
 extern stmt_vec_info new_stmt_vec_info (gimple *stmt, vec_info *);
 extern void free_stmt_vec_info (gimple *stmt);
-extern tree vectorizable_function (gcall *, tree, tree);
 extern void vect_model_simple_cost (stmt_vec_info, int, enum vect_def_type *,
                                     stmt_vector_for_cost *,
 				    stmt_vector_for_cost *);
@@ -1009,7 +1012,7 @@ extern enum dr_alignment_support vect_supportable_dr_alignment
 extern tree vect_get_smallest_scalar_type (gimple *, HOST_WIDE_INT *,
                                            HOST_WIDE_INT *);
 extern bool vect_analyze_data_ref_dependences (loop_vec_info, int *);
-extern bool vect_slp_analyze_data_ref_dependences (bb_vec_info);
+extern bool vect_slp_analyze_instance_dependence (slp_instance);
 extern bool vect_enhance_data_refs_alignment (loop_vec_info);
 extern bool vect_analyze_data_refs_alignment (loop_vec_info);
 extern bool vect_verify_datarefs_alignment (loop_vec_info);

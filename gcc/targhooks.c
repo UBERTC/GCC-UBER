@@ -534,9 +534,15 @@ default_invalid_within_doloop (const rtx_insn *insn)
 /* Mapping of builtin functions to vectorized variants.  */
 
 tree
-default_builtin_vectorized_function (tree fndecl ATTRIBUTE_UNUSED,
-				     tree type_out ATTRIBUTE_UNUSED,
-				     tree type_in ATTRIBUTE_UNUSED)
+default_builtin_vectorized_function (unsigned int, tree, tree)
+{
+  return NULL_TREE;
+}
+
+/* Mapping of target builtin functions to vectorized variants.  */
+
+tree
+default_builtin_md_vectorized_function (tree, tree, tree)
 {
   return NULL_TREE;
 }
@@ -1093,8 +1099,8 @@ default_get_mask_mode (unsigned nunits, unsigned vector_size)
   gcc_assert (elem_size * nunits == vector_size);
 
   vector_mode = mode_for_vector (elem_mode, nunits);
-  if (VECTOR_MODE_P (vector_mode)
-      && !targetm.vector_mode_supported_p (vector_mode))
+  if (!VECTOR_MODE_P (vector_mode)
+      || !targetm.vector_mode_supported_p (vector_mode))
     vector_mode = BLKmode;
 
   return vector_mode;

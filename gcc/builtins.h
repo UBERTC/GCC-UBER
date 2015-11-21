@@ -50,6 +50,7 @@ extern struct target_builtins *this_target_builtins;
 extern bool force_folding_builtin_constant_p;
 
 extern bool is_builtin_fn (tree);
+extern bool called_as_built_in (tree);
 extern bool get_object_alignment_1 (tree, unsigned int *,
 				    unsigned HOST_WIDE_INT *);
 extern unsigned int get_object_alignment (tree);
@@ -61,6 +62,7 @@ extern void expand_builtin_setjmp_setup (rtx, rtx);
 extern void expand_builtin_setjmp_receiver (rtx);
 extern void expand_builtin_update_setjmp_buf (rtx);
 extern tree mathfn_built_in (tree, enum built_in_function fn);
+extern tree mathfn_built_in (tree, combined_fn);
 extern rtx builtin_strncpy_read_str (void *, HOST_WIDE_INT, machine_mode);
 extern rtx builtin_memset_read_str (void *, HOST_WIDE_INT, machine_mode);
 extern rtx expand_builtin_saveregs (void);
@@ -93,5 +95,8 @@ extern unsigned HOST_WIDE_INT target_percent;
 extern char target_percent_s[3];
 extern char target_percent_c[3];
 extern char target_percent_s_newline[4];
+
+extern internal_fn associated_internal_fn (tree);
+extern internal_fn replacement_internal_fn (gcall *);
 
 #endif

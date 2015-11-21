@@ -237,7 +237,8 @@ struct GTY(()) cpp_identifier {
 /* A preprocessing token.  This has been carefully packed and should
    occupy 16 bytes on 32-bit hosts and 24 bytes on 64-bit hosts.  */
 struct GTY(()) cpp_token {
-  source_location src_loc;	/* Location of first char of token.  */
+  source_location src_loc;	/* Location of first char of token,
+				   together with range of full token.  */
   ENUM_BITFIELD(cpp_ttype) type : CHAR_BIT;  /* token type */
   unsigned short flags;		/* flags - see above */
 
@@ -985,6 +986,9 @@ extern bool cpp_warning_syshdr (cpp_reader *, int, const char *msgid, ...)
 /* Output a diagnostic with "MSGID: " preceding the
    error string of errno.  No location is printed.  */
 extern bool cpp_errno (cpp_reader *, int, const char *msgid);
+/* Similarly, but with "FILENAME: " instead of "MSGID: ", where
+   the filename is not localized.  */
+extern bool cpp_errno_filename (cpp_reader *, int, const char *filename);
 
 /* Same as cpp_error, except additionally specifies a position as a
    (translation unit) physical line and physical column.  If the line is

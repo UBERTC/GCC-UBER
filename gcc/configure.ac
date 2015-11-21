@@ -951,6 +951,9 @@ AC_DEFINE_UNQUOTED(OFFLOAD_TARGETS, "$offload_targets",
 if test x"$offload_targets" != x; then
   AC_DEFINE(ENABLE_OFFLOADING, 1,
     [Define this to enable support for offloading.])
+else
+  AC_DEFINE(ENABLE_OFFLOADING, 0,
+    [Define this to enable support for offloading.])
 fi
 
 AC_ARG_WITH(multilib-list,
@@ -2243,7 +2246,7 @@ AC_ARG_WITH(plugin-ld,
 [AS_HELP_STRING([[--with-plugin-ld=[ARG]]], [specify the plugin linker])],
 [if test x"$withval" != x; then
    ORIGINAL_PLUGIN_LD_FOR_TARGET="$withval"
-   PLUGIN_LD_SUFFIX=`echo $withval | sed -e "s,$target_alias-,,"`
+   PLUGIN_LD_SUFFIX="$withval"
  fi])
 AC_SUBST(ORIGINAL_PLUGIN_LD_FOR_TARGET)
 AC_DEFINE_UNQUOTED(PLUGIN_LD_SUFFIX, "$PLUGIN_LD_SUFFIX", [Specify plugin linker])
@@ -5283,7 +5286,7 @@ _start:
 x:	.quad .TOC.
 EOF
       if $gcc_cv_as -a64 -o conftest.o conftest.s > /dev/null 2>&1 \
-         && $gcc_cv_ld $emul_name -o conftest conftest.o > /dev/null 2>&1; then
+         && $gcc_cv_ld $emul_name -z norelro -o conftest conftest.o > /dev/null 2>&1; then
         gcc_cv_ld_toc_align=`$gcc_cv_nm conftest | ${AWK} '/\.TOC\./ { match ($0, "0[[[:xdigit:]]]*", a); print strtonum ("0x" substr(a[[0]], length(a[[0]])-3)) }'`
       fi
       rm -f conftest conftest.o conftest.s

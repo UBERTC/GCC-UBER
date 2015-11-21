@@ -1,3 +1,122 @@
+2015-11-21  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* simplify.c (gfc_simplify_cshift): Implement simplification of
+	CSHIFT for rank=1 arrays.
+	(gfc_simplify_spread): Remove a FIXME and add error condition.
+	* intrinsic.h: Prototype for gfc_simplify_cshift
+	* intrinsic.c (add_functions): Use gfc_simplify_cshift.
+ 
+2015-11-20  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68237
+	* decl.c (gfc_match_submod_proc): Test the interface symbol
+	before accessing its attributes.
+
+2015-11-20  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/66762
+	(gfc_get_symbol_decl): Test for attr.used_in_submodule as well
+	as attr.use_assoc (twice).
+	(gfc_create_module_variable): Ditto.
+
+2015-11-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/59910
+	* primary.c (gfc_match_structure_constructor): Reduce a structure
+	constructor in a DATA statement.
+
+2015-11-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/43996
+	* simplify.c (gfc_simplify_spread): Issue error for too large array
+	constructor in a PARAMETER statement.
+
+2015-11-17  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	* primary.c (gfc_match_structure_constructor): Fix whitespace.
+
+2015-11-17  Dominique d'Humieres <dominiq@lps.ens.fr>
+
+	PR fortran/65751
+	* expr.c (gfc_check_pointer_assign): Fix error message.
+
+2015-11-16  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/58027
+	PR fortran/60993
+	* expr.c (gfc_check_init_expr): Prevent a redundant check when a
+	__convert_* function was inserted into an array constructor.
+	(gfc_check_assign_symbol): Check for an initialization expression
+	when a __convert_* was inserted.
+
+2015-11-15  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/50221
+	PR fortran/68216
+	PR fortran/63932
+	PR fortran/66408
+	* trans_array.c (gfc_conv_scalarized_array_ref): Pass the
+	symbol decl for deferred character length array references.
+	* trans-stmt.c (gfc_trans_allocate): Keep the string lengths
+	to update deferred length character string lengths.
+	* trans-types.c (gfc_get_dtype_rank_type); Use the string
+	length of deferred character types for the dtype size.
+	* trans.c (gfc_build_array_ref): For references to deferred
+	character arrays, use the domain max value, if it is a variable
+	to set the 'span' and use pointer arithmetic for acces to the
+	element.
+	(trans_code): Set gfc_current_locus for diagnostic purposes.
+
+	PR fortran/67674
+	* trans-expr.c (gfc_conv_procedure_call): Do not fix deferred
+	string lengths of components.
+
+	PR fortran/49954
+	* resolve.c (deferred_op_assign): New function.
+	(gfc_resolve_code): Call it.
+	* trans-array.c (concat_str_length): New function.
+	(gfc_alloc_allocatable_for_assignment): Jump directly to alloc/
+	realloc blocks for deferred character length arrays because the
+	string length might change, even if the shape is the same. Call
+	concat_str_length to obtain the string length for concatenation
+	since it is needed to compute the lhs string length.
+	Set the descriptor dtype appropriately for the new string
+	length.
+	* trans-expr.c (gfc_trans_assignment_1): Use the rse string
+	length for all characters, other than deferred types. For
+	concatenation operators, push the rse.pre block to the inner
+	most loop so that the temporary pointer and the assignments
+	are properly placed.
+
+2015-11-14  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/67803
+	* array.c (gfc_match_array_constructor): If array constructor included
+	a CHARACTER typespec, check array elements for compatible type.
+
+2015-11-13  Steven G. Kargl  <kargl@gccc.gnu.org>
+
+	PR fortran/68319
+	* decl.c (gfc_match_data, gfc_match_entry): Enforce F2008:C1206.
+	* io.c (gfc_match_format): Ditto.
+	* match.c (gfc_match_st_function): Ditto.
+
+2015-11-13  David Malcolm  <dmalcolm@redhat.com>
+
+	* error.c (gfc_warning): Pass line_table to rich_location ctor.
+	(gfc_warning_now_at): Likewise.
+	(gfc_warning_now): Likewise.
+	(gfc_error_now): Likewise.
+	(gfc_fatal_error): Likewise.
+	(gfc_error): Likewise.
+	(gfc_internal_error): Likewise.
+
+2015-11-12  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68318
+	* decl.c (get_proc_name): Increment reference count for ENTRY.
+	While here, fix comment and use postfix ++ for consistency.
+
 2015-11-11  Andrew MacLeod  <amacleod@redhat.com>
 
 	* array.c: Remove unused header files.

@@ -1,3 +1,238 @@
+2015-11-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67354
+	* cp-tree.h (defer_mangling_aliases): Declare.
+	(generate_mangling_aliases): New prototype.
+	* decl2.c (defer_mangling_aliases): New variable.
+	(note_mangling_alias): Use !defer_mangling_aliases
+	instead of at_eof.
+	(generate_mangling_aliases): No longer static. Clear
+	defer_mangling_aliases.
+	* optimize.c (maybe_thunk_body): Defer emitting mangling aliases
+	if !defer_mangling_aliases until the fns are put into the same
+	comdat group.
+
+2015-11-19  David Malcolm  <dmalcolm@redhat.com>
+
+	* cp-tree.h (lookup_member_fuzzy): New decl.
+	* search.c: Include spellcheck.h.
+	(class lookup_field_fuzzy_info): New class.
+	(lookup_field_fuzzy_info::fuzzy_lookup_fnfields): New.
+	(lookup_field_fuzzy_info::fuzzy_lookup_field): New.
+	(lookup_field_fuzzy_r): New.
+	(lookup_member_fuzzy): New.
+	* typeck.c (finish_class_member_access_expr): When issuing
+	a "has no member named" error, call lookup_member_fuzzy, and
+	offer any result as a suggestion.
+
+2015-11-19  Torvald Riegel  <triegel@redhat.com>
+
+	* except.c (do_free_exception): Use transactional wrapper.
+
+2015-11-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/68422
+	* cp-tree.h (PACK_EXPANSION_SIZEOF_P): New.
+	* parser.c (cp_parser_sizeof_pack): Set it.
+	* pt.c 	(tsubst_copy) [SIZEOF_EXPR]: Likewise.
+	(tsubst_pack_expansion): Improve T... shortcut for expression packs.
+
+2015-11-19  Ryan Burn  <contact@rnburn.com>
+
+	PR c++/68396
+	* pt.c (find_parameter_packs_r) [DECLTYPE_TYPE]: When traversing
+	the DECLTYPE_TYPE_EXPR, set type_pack_expansion_p to false.
+
+2015-11-19  Jakub Jelinek  <jakub@redhat.com>
+	    Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR c++/67409
+	* decl.c (identify_goto): Add LOC and DIAG_KIND arguments, call
+	emit_diagnostic instead of permerror.
+	(check_previous_goto_1): Adjust identify_goto callers, treat all
+	cases but crossing initialization and entering scope of decl with
+	non-trivial dtor as unconditional hard errors.
+	(check_goto): Use identify_goto.  Treat all cases but crossing
+	initialization and entering scope of decl with non-trivial dtor
+	as unconditional hard errors.
+
+2015-11-19  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* parser.h (struct cp_omp_declare_simd_data): Add clauses member.
+	(struct cp_parser): Change type the of oacc_routine to
+	cp_omp_declare_simd_data.
+	* parser.c (cp_ensure_no_oacc_routine): Rework to use
+	cp_omp_declare_simd_data.
+	(cp_parser_simple_declaration): Remove boolean first.  Update call to
+	cp_parser_init_declarator. Don't NULL out oacc_routine.
+	(cp_parser_init_declarator): Remove boolean first parameter.  Update
+	calls to cp_finalize_oacc_routine.
+	(cp_parser_late_return_type_opt): Handle acc routines.
+	(cp_parser_member_declaration): Remove first variable.  Handle
+	acc routines like omp declare simd.
+	(cp_parser_function_definition_from_specifiers_and_declarator): Update
+	call to cp_finalize_oacc_routine.
+	(cp_parser_single_declaration): Update call to
+	cp_parser_init_declarator.
+	(cp_parser_save_member_function_body): Remove first_decl parameter.
+	Update call to cp_finalize_oacc_routine.
+	(cp_parser_finish_oacc_routine): Delete.
+	(cp_parser_oacc_routine): Rework to use cp_omp_declare_simd_data.
+	(cp_parser_late_parsing_oacc_routine): New function.
+	(cp_finalize_oacc_routine): Remove first argument.  Add more error
+	handling and set the acc routine and 'omp declare target' attributes.
+	(cp_parser_pragma): Remove unnecessary call to
+	cp_ensure_no_oacc_routine.
+
+2015-11-17  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* cp-gimplify.c (cp_fold_r): Add support for OACC_LOOP.
+
+2015-11-17  Jason Merrill  <jason@redhat.com>
+
+	PR bootstrap/68346
+	* typeck.c (build_static_cast_1): Force a NOP when converting to
+	the same type.
+
+	* cp-tree.h (LITERAL_ZERO_P): Remove.
+	* parser.c (cp_parser_postfix_expression, literal_zeros)
+	(cp_parser_parenthesized_expression_list): Don't mess with it.
+
+	* parser.c (cp_parser_unary_expression): Fold -constant here.
+	* typeck.c (cp_build_unary_op): Not here.
+
+	PR bootstrap/68361
+	* cvt.c (cp_convert_and_check): Use warning_sentinel to suppress
+	-Wparentheses.
+
+2015-11-16  Jason Merrill  <jason@redhat.com>
+
+	* constexpr.c (cxx_eval_builtin_function_call): Use cp_fully_fold
+	to fold arguments to __builtin_constant_p.
+
+2015-11-16  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* parser.c (cp_parser_late_parsing_cilk_simd_fn_info): Look for
+	"simd" attribute as well. Update error message.
+
+2015-11-14  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* parser.c (cp_parser_omp_declare_target): Adjust.
+
+2015-11-14  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* vtable-class-hierarchy.c (vtv_generate_init_routine): Adjust.
+
+2015-11-14  Jason Merrill  <jason@redhat.com>
+
+	PR bootstrap/68346
+	* call.c (build_new_op_1): Don't fold arguments to
+	warn_tautological_cmp.
+
+2015-11-14  Jakub Jelinek  <jakub@redhat.com>
+
+	* semantics.c (finish_omp_clauses): Don't mark
+	GOMP_MAP_FIRSTPRIVATE_POINTER decls addressable.
+
+2015-11-13  Kai Tietz  <ktietz70@googlemail.com>
+	    Marek Polacek  <polacek@redhat.com>
+	    Jason Merrill  <jason@redhat.com>
+
+	* call.c (build_conditional_expr_1, convert_like_real)
+	(convert_arg_to_ellipsis, convert_for_arg_passing): Don't fold.
+	(build_new_op_1, build_over_call, build_cxx_call): Fold for warnings.
+	* class.c (build_base_path, determine_primary_bases)
+	(update_vtable_entry_for_fn, check_bitfield_decl)
+	(layout_nonempty_base_or_field, layout_empty_base)
+	(propagate_binfo_offsets, include_empty_classes)
+	(layout_class_type, build_vbase_offset_vtbl_entries): Use
+	fold_convert.
+	* constexpr.c (cxx_eval_builtin_function_call): Fold away the NOP_EXPR.
+	(cxx_eval_call_expression): Handle MEM_REF.
+	(cxx_eval_pointer_plus_expression): Fold the second operand.
+	(cxx_eval_constant_expression): Handle MEM_REF, UNARY_PLUS_EXPR.
+	(fold_simple_1, fold_simple): New.
+	(maybe_constant_value_1): Factor out from maybe_constant_value.
+	(cv_cache, maybe_constant_value): Cache results.
+	(maybe_constant_init): Handle null input.
+	(potential_constant_expression_1): Handle RESULT_DECL, EMPTY_CLASS_EXPR.
+	* cp-array-notation.c (build_array_notation_ref): Fold operands.
+	* cp-gimplify.c (cp_fold_r, cp_fold): New.
+	(cp_genericize_r): Use fold_convert.  Don't fold SIZEOF_EXPR.
+	(cp_genericize): Fold everything.
+	(contains_label_1, contains_label_p): New.
+	(cp_fold, cp_fully_fold): New.
+	* cp-tree.h (class cache_map): New.
+	* cvt.c (cp_convert_to_pointer, ocp_convert): Use convert_to_*_nofold.
+	(cp_convert_and_check): Use cp_fully_fold.
+	(convert, convert_force): Don't fold.
+	* decl.c (fold_sizeof_expr): Change from fold_sizeof_expr_r.
+	(compute_array_index_type): Use cp_fully_fold.
+	(build_enumerator): Use fold_convert.
+	* decl2.c (get_guard_cond, set_guard): Use fold_convert.
+	* init.c (build_zero_init_1): Fold zero-initializers.
+	(build_new_1): Fold nelts calculations.
+	(build_vec_delete_1): Fold conversions.
+	(build_vec_init): Fold maxindex.
+	* parser.c (cp_parser_binary_expression): Fold LHS of || and &&.
+	(cp_parser_question_colon_clause): Fold LHS.
+	* pt.c (convert_nontype_argument): Fold nullptr conversion.
+	* semantics.c (finish_unary_op_expr): Fold for warnings.
+	(handle_omp_array_sections_1): Fold length and low bound.
+	(handle_omp_for_class_iterator): Fold various things.
+	* tree.c (builtin_valid_in_constant_expr_p): Add
+	BUILT_IN_ATOMIC_ALWAYS_LOCK_FREE.
+	(convert_bitfield_to_declared_type): Don't fold.
+	(handle_init_priority_attribute): Fold.
+	(fold_if_not_in_template): Remove.
+	* typeck.c (decay_conversion, build_class_member_access_expr)
+	(build_simple_component_ref, cp_build_array_ref, build_vec_cmp)
+	(cp_pointer_int_sum, pointer_diff): Don't fold.
+	(cp_build_binary_op): Fold for warnings and PMF ops.
+	(cp_build_unary_op): Fold negation of a constant, nothing else.
+	(expand_ptrmemfunc_cst): Fold operations.
+	* typeck2.c (split_nonconstant_init): Fold initializer.
+	(store_init_value): Likewise.
+	(check_narrowing): Try folding.
+	* config-lang.in (gtfiles): Add cp-gimplify.c.
+
+2015-11-13  David Malcolm  <dmalcolm@redhat.com>
+
+	* error.c (pedwarn_cxx98): Pass line_table to rich_location ctor.
+
+2015-11-12  James Norris  <jnorris@codesourcery.com>
+
+	* parser.c (cp_parser_oacc_declare): Remove unused.
+
+2015-11-12  James Norris  <jnorris@codesourcery.com>
+	    Joseph Myers  <joseph@codesourcery.com>
+
+	* parser.c (cp_parser_omp_clause_name): Handle 'device_resident'
+	clause.
+	(cp_parser_oacc_data_clause): Handle PRAGMA_OACC_CLAUSE_DEVICE_RESIDENT
+	and PRAGMA_OMP_CLAUSE_LINK.
+	(cp_paser_oacc_all_clauses): Handle PRAGMA_OACC_CLAUSE_DEVICE_RESIDENT
+	and PRAGMA_OMP_CLAUSE_LINK.
+	(OACC_DECLARE_CLAUSE_MASK): New definition.
+	(cp_parser_oacc_declare): New function.
+	(cp_parser_pragma): Handle PRAGMA_OACC_DECLARE.
+	* pt.c (tsubst_expr): Handle OACC_DECLARE.
+
+2015-11-12  Jason Merrill  <jason@redhat.com>
+
+	* pt.c (check_explicit_specialization): Check the namespace after
+	we choose a template.
+
+2015-11-11  Jason Merrill  <jason@redhat.com>
+
+	* decl.c (duplicate_decls): When combining typedefs, remove the
+	new type from the variants list.
+
+2015-11-11  Jason Merrill  <jason@redhat.com>
+
+	* pt.c (instantiate_class_template_1): Set function_depth around
+	instantiation of lambda op().
+
 2015-11-11  Marek Polacek  <polacek@redhat.com>
 
 	PR c/68107

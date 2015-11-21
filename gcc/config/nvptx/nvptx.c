@@ -114,6 +114,9 @@ static unsigned worker_red_align;
 #define worker_red_name "__worker_red"
 static GTY(()) rtx worker_red_sym;
 
+/* Global lock variable, needed for 128bit worker & gang reductions.  */
+static GTY(()) tree global_lock_var;
+
 /* Allocate a new, cleared machine_function structure.  */
 
 static struct machine_function *
@@ -376,7 +379,7 @@ nvptx_write_function_decl (std::stringstream &s, const char *name, const_tree de
   if (DECL_EXTERNAL (decl))
     s << ".extern ";
   else if (TREE_PUBLIC (decl))
-    s << ".visible ";
+    s << (DECL_WEAK (decl) ? ".weak " : ".visible ");
 
   if (kernel)
     s << ".entry ";
@@ -512,7 +515,7 @@ walk_args_for_param (FILE *file, tree argtypes, tree args, bool write_copy,
 static void
 write_function_decl_and_comment (std::stringstream &s, const char *name, const_tree decl)
 {
-  s << "// BEGIN";
+  s << "\n// BEGIN";
   if (TREE_PUBLIC (decl))
     s << " GLOBAL";
   s << " FUNCTION DECL: ";
@@ -762,7 +765,7 @@ write_func_decl_from_insn (std::stringstream &s, rtx result, rtx pat,
     {
       name = XSTR (callee, 0);
       name = nvptx_name_replacement (name);
-      s << "// BEGIN GLOBAL FUNCTION DECL: " << name << "\n";
+      s << "\n// BEGIN GLOBAL FUNCTION DECL: " << name << "\n";
     }
   s << (callprototype ? "\t.callprototype\t" : "\t.extern .func ");
 
@@ -817,7 +820,7 @@ write_func_decl_from_insn (std::stringstream &s, rtx result, rtx pat,
 void
 nvptx_function_end (FILE *file)
 {
-  fprintf (file, "\t}\n");
+  fprintf (file, "}\n");
 }
 
 /* Decide whether we can make a sibling call to a function.  For ptx, we
@@ -962,7 +965,7 @@ nvptx_expand_call (rtx retval, rtx address)
     }
 
   if (varargs)
-      XVECEXP (pat, 0, vec_pos++) = gen_rtx_USE (VOIDmode, varargs);
+    XVECEXP (pat, 0, vec_pos++) = gen_rtx_USE (VOIDmode, varargs);
 
   gcc_assert (vec_pos = XVECLEN (pat, 0));
 
@@ -1723,7 +1726,7 @@ static void
 init_output_initializer (FILE *file, const char *name, const_tree type,
 			 bool is_public)
 {
-  fprintf (file, "// BEGIN%s VAR DEF: ", is_public ? " GLOBAL" : "");
+  fprintf (file, "\n// BEGIN%s VAR DEF: ", is_public ? " GLOBAL" : "");
   assemble_name_raw (file, name);
   fputc ('\n', file);
 
@@ -1777,8 +1780,9 @@ nvptx_declare_object_name (FILE *file, const char *name, const_tree decl)
       size = tree_to_uhwi (DECL_SIZE_UNIT (decl));
       const char *section = nvptx_section_for_decl (decl);
       fprintf (file, "\t%s%s .align %d .u%d ",
-	       TREE_PUBLIC (decl) ? " .visible" : "", section,
-	       DECL_ALIGN (decl) / BITS_PER_UNIT,
+	       !TREE_PUBLIC (decl) ? ""
+	       : DECL_WEAK (decl) ? ".weak" : ".visible",
+	       section, DECL_ALIGN (decl) / BITS_PER_UNIT,
 	       decl_chunk_size * BITS_PER_UNIT);
       assemble_name (file, name);
       if (size > 0)
@@ -1805,7 +1809,8 @@ nvptx_assemble_undefined_decl (FILE *file, const char *name, const_tree decl)
   if (TREE_CODE (decl) != VAR_DECL)
     return;
   const char *section = nvptx_section_for_decl (decl);
-  fprintf (file, "// BEGIN%s VAR DECL: ", TREE_PUBLIC (decl) ? " GLOBAL" : "");
+  fprintf (file, "\n// BEGIN%s VAR DECL: ",
+	   TREE_PUBLIC (decl) ? " GLOBAL" : "");
   assemble_name_raw (file, name);
   fputs ("\n", file);
   HOST_WIDE_INT size = int_size_in_bytes (TREE_TYPE (decl));
@@ -1930,7 +1935,7 @@ nvptx_output_call_insn (rtx_insn *insn, rtx result, rtx callee)
     }
   fprintf (asm_out_file, ";\n");
   if (result != NULL_RTX)
-    return "ld.param%t0\t%0, [%%retval_in];\n\t}";
+    return "\tld.param%t0\t%0, [%%retval_in];\n\t}";
 
   return "}";
 }
@@ -2602,6 +2607,631 @@ nvptx_discover_pars (bb_insn_map_t *map)
   return par;
 }
 
+/* Analyse a group of BBs within a partitioned region and create N
+   Single-Entry-Single-Exit regions.  Some of those regions will be
+   trivial ones consisting of a single BB.  The blocks of a
+   partitioned region might form a set of disjoint graphs -- because
+   the region encloses a differently partitoned sub region.
+
+   We use the linear time algorithm described in 'Finding Regions Fast:
+   Single Entry Single Exit and control Regions in Linear Time'
+   Johnson, Pearson & Pingali.  That algorithm deals with complete
+   CFGs, where a back edge is inserted from END to START, and thus the
+   problem becomes one of finding equivalent loops.
+
+   In this case we have a partial CFG.  We complete it by redirecting
+   any incoming edge to the graph to be from an arbitrary external BB,
+   and similarly redirecting any outgoing edge to be to  that BB.
+   Thus we end up with a closed graph.
+
+   The algorithm works by building a spanning tree of an undirected
+   graph and keeping track of back edges from nodes further from the
+   root in the tree to nodes nearer to the root in the tree.  In the
+   description below, the root is up and the tree grows downwards.
+
+   We avoid having to deal with degenerate back-edges to the same
+   block, by splitting each BB into 3 -- one for input edges, one for
+   the node itself and one for the output edges.  Such back edges are
+   referred to as 'Brackets'.  Cycle equivalent nodes will have the
+   same set of brackets.
+   
+   Determining bracket equivalency is done by maintaining a list of
+   brackets in such a manner that the list length and final bracket
+   uniquely identify the set.
+
+   We use coloring to mark all BBs with cycle equivalency with the
+   same color.  This is the output of the 'Finding Regions Fast'
+   algorithm.  Notice it doesn't actually find the set of nodes within
+   a particular region, just unorderd sets of nodes that are the
+   entries and exits of SESE regions.
+   
+   After determining cycle equivalency, we need to find the minimal
+   set of SESE regions.  Do this with a DFS coloring walk of the
+   complete graph.  We're either 'looking' or 'coloring'.  When
+   looking, and we're in the subgraph, we start coloring the color of
+   the current node, and remember that node as the start of the
+   current color's SESE region.  Every time we go to a new node, we
+   decrement the count of nodes with thet color.  If it reaches zero,
+   we remember that node as the end of the current color's SESE region
+   and return to 'looking'.  Otherwise we color the node the current
+   color.
+
+   This way we end up with coloring the inside of non-trivial SESE
+   regions with the color of that region.  */
+
+/* A pair of BBs.  We use this to represent SESE regions.  */
+typedef std::pair<basic_block, basic_block> bb_pair_t;
+typedef auto_vec<bb_pair_t> bb_pair_vec_t;
+
+/* A node in the undirected CFG.  The discriminator SECOND indicates just
+   above or just below the BB idicated by FIRST.  */
+typedef std::pair<basic_block, int> pseudo_node_t;
+
+/* A bracket indicates an edge towards the root of the spanning tree of the
+   undirected graph.  Each bracket has a color, determined
+   from the currrent set of brackets.  */
+struct bracket
+{
+  pseudo_node_t back; /* Back target */
+
+  /* Current color and size of set.  */
+  unsigned color;
+  unsigned size;
+
+  bracket (pseudo_node_t back_)
+  : back (back_), color (~0u), size (~0u)
+  {
+  }
+
+  unsigned get_color (auto_vec<unsigned> &color_counts, unsigned length)
+  {
+    if (length != size)
+      {
+	size = length;
+	color = color_counts.length ();
+	color_counts.quick_push (0);
+      }
+    color_counts[color]++;
+    return color;
+  }
+};
+
+typedef auto_vec<bracket> bracket_vec_t;
+
+/* Basic block info for finding SESE regions.    */
+
+struct bb_sese
+{
+  int node;  /* Node number in spanning tree.  */
+  int parent; /* Parent node number.  */
+
+  /* The algorithm splits each node A into Ai, A', Ao. The incoming
+     edges arrive at pseudo-node Ai and the outgoing edges leave at
+     pseudo-node Ao.  We have to remember which way we arrived at a
+     particular node when generating the spanning tree.  dir > 0 means
+     we arrived at Ai, dir < 0 means we arrived at Ao.  */
+  int dir;
+
+  /* Lowest numbered pseudo-node reached via a backedge from thsis
+     node, or any descendant.  */
+  pseudo_node_t high;
+
+  int color;  /* Cycle-equivalence color  */
+
+  /* Stack of brackets for this node.  */
+  bracket_vec_t brackets;
+
+  bb_sese (unsigned node_, unsigned p, int dir_)
+  :node (node_), parent (p), dir (dir_)
+  {
+  }
+  ~bb_sese ();
+
+  /* Push a bracket ending at BACK.  */
+  void push (const pseudo_node_t &back)
+  {
+    if (dump_file)
+      fprintf (dump_file, "Pushing backedge %d:%+d\n",
+	       back.first ? back.first->index : 0, back.second);
+    brackets.safe_push (bracket (back));
+  }
+  
+  void append (bb_sese *child);
+  void remove (const pseudo_node_t &);
+
+  /* Set node's color.  */
+  void set_color (auto_vec<unsigned> &color_counts)
+  {
+    color = brackets.last ().get_color (color_counts, brackets.length ());
+  }
+};
+
+bb_sese::~bb_sese ()
+{
+}
+
+/* Destructively append CHILD's brackets.  */
+
+void
+bb_sese::append (bb_sese *child)
+{
+  if (int len = child->brackets.length ())
+    {
+      int ix;
+
+      if (dump_file)
+	{
+	  for (ix = 0; ix < len; ix++)
+	    {
+	      const pseudo_node_t &pseudo = child->brackets[ix].back;
+	      fprintf (dump_file, "Appending (%d)'s backedge %d:%+d\n",
+		       child->node, pseudo.first ? pseudo.first->index : 0,
+		       pseudo.second);
+	    }
+	}
+      if (!brackets.length ())
+	std::swap (brackets, child->brackets);
+      else
+	{
+	  brackets.reserve (len);
+	  for (ix = 0; ix < len; ix++)
+	    brackets.quick_push (child->brackets[ix]);
+	}
+    }
+}
+
+/* Remove brackets that terminate at PSEUDO.  */
+
+void
+bb_sese::remove (const pseudo_node_t &pseudo)
+{
+  unsigned removed = 0;
+  int len = brackets.length ();
+
+  for (int ix = 0; ix < len; ix++)
+    {
+      if (brackets[ix].back == pseudo)
+	{
+	  if (dump_file)
+	    fprintf (dump_file, "Removing backedge %d:%+d\n",
+		     pseudo.first ? pseudo.first->index : 0, pseudo.second);
+	  removed++;
+	}
+      else if (removed)
+	brackets[ix-removed] = brackets[ix];
+    }
+  while (removed--)
+    brackets.pop ();
+}
+
+/* Accessors for BB's aux pointer.  */
+#define BB_SET_SESE(B, S) ((B)->aux = (S))
+#define BB_GET_SESE(B) ((bb_sese *)(B)->aux)
+
+/* DFS walk creating SESE data structures.  Only cover nodes with
+   BB_VISITED set.  Append discovered blocks to LIST.  We number in
+   increments of 3 so that the above and below pseudo nodes can be
+   implicitly numbered too.  */
+
+static int
+nvptx_sese_number (int n, int p, int dir, basic_block b,
+		   auto_vec<basic_block> *list)
+{
+  if (BB_GET_SESE (b))
+    return n;
+
+  if (dump_file)
+    fprintf (dump_file, "Block %d(%d), parent (%d), orientation %+d\n",
+	     b->index, n, p, dir);
+  
+  BB_SET_SESE (b, new bb_sese (n, p, dir));
+  p = n;
+      
+  n += 3;
+  list->quick_push (b);
+
+  /* First walk the nodes on the 'other side' of this node, then walk
+     the nodes on the same side.  */
+  for (unsigned ix = 2; ix; ix--)
+    {
+      vec<edge, va_gc> *edges = dir > 0 ? b->succs : b->preds;
+      size_t offset = (dir > 0 ? offsetof (edge_def, dest)
+		       : offsetof (edge_def, src));
+      edge e;
+      edge_iterator (ei);
+
+      FOR_EACH_EDGE (e, ei, edges)
+	{
+	  basic_block target = *(basic_block *)((char *)e + offset);
+	  
+	  if (target->flags & BB_VISITED)
+	    n = nvptx_sese_number (n, p, dir, target, list);
+	}
+      dir = -dir;
+    }
+  return n;
+}
+
+/* Process pseudo node above (DIR < 0) or below (DIR > 0) ME.
+   EDGES are the outgoing edges and OFFSET is the offset to the src
+   or dst block on the edges.   */
+
+static void
+nvptx_sese_pseudo (basic_block me, bb_sese *sese, int depth, int dir,
+		   vec<edge, va_gc> *edges, size_t offset)
+{
+  edge e;
+  edge_iterator (ei);
+  int hi_back = depth;
+  pseudo_node_t node_back (0, depth);
+  int hi_child = depth;
+  pseudo_node_t node_child (0, depth);
+  basic_block child = NULL;
+  unsigned num_children = 0;
+  int usd = -dir * sese->dir;
+
+  if (dump_file)
+    fprintf (dump_file, "\nProcessing %d(%d) %+d\n",
+	     me->index, sese->node, dir);
+
+  if (dir < 0)
+    {
+      /* This is the above pseudo-child.  It has the BB itself as an
+	 additional child node.  */
+      node_child = sese->high;
+      hi_child = node_child.second;
+      if (node_child.first)
+	hi_child += BB_GET_SESE (node_child.first)->node;
+      num_children++;
+    }
+
+  /* Examine each edge.
+     - if it is a child (a) append its bracket list and (b) record
+          whether it is the child with the highest reaching bracket.
+     - if it is an edge to ancestor, record whether it's the highest
+          reaching backlink.  */
+  FOR_EACH_EDGE (e, ei, edges)
+    {
+      basic_block target = *(basic_block *)((char *)e + offset);
+
+      if (bb_sese *t_sese = BB_GET_SESE (target))
+	{
+	  if (t_sese->parent == sese->node && !(t_sese->dir + usd))
+	    {
+	      /* Child node.  Append its bracket list. */
+	      num_children++;
+	      sese->append (t_sese);
+
+	      /* Compare it's hi value.  */
+	      int t_hi = t_sese->high.second;
+
+	      if (basic_block child_hi_block = t_sese->high.first)
+		t_hi += BB_GET_SESE (child_hi_block)->node;
+
+	      if (hi_child > t_hi)
+		{
+		  hi_child = t_hi;
+		  node_child = t_sese->high;
+		  child = target;
+		}
+	    }
+	  else if (t_sese->node < sese->node + dir
+		   && !(dir < 0 && sese->parent == t_sese->node))
+	    {
+	      /* Non-parental ancestor node -- a backlink.  */
+	      int d = usd * t_sese->dir;
+	      int back = t_sese->node + d;
+	
+	      if (hi_back > back)
+		{
+		  hi_back = back;
+		  node_back = pseudo_node_t (target, d);
+		}
+	    }
+	}
+      else
+	{ /* Fallen off graph, backlink to entry node.  */
+	  hi_back = 0;
+	  node_back = pseudo_node_t (0, 0);
+	}
+    }
+
+  /* Remove any brackets that terminate at this pseudo node.  */
+  sese->remove (pseudo_node_t (me, dir));
+
+  /* Now push any backlinks from this pseudo node.  */
+  FOR_EACH_EDGE (e, ei, edges)
+    {
+      basic_block target = *(basic_block *)((char *)e + offset);
+      if (bb_sese *t_sese = BB_GET_SESE (target))
+	{
+	  if (t_sese->node < sese->node + dir
+	      && !(dir < 0 && sese->parent == t_sese->node))
+	    /* Non-parental ancestor node - backedge from me.  */
+	    sese->push (pseudo_node_t (target, usd * t_sese->dir));
+	}
+      else
+	{
+	  /* back edge to entry node */
+	  sese->push (pseudo_node_t (0, 0));
+	}
+    }
+  
+ /* If this node leads directly or indirectly to a no-return region of
+     the graph, then fake a backedge to entry node.  */
+  if (!sese->brackets.length () || !edges || !edges->length ())
+    {
+      hi_back = 0;
+      node_back = pseudo_node_t (0, 0);
+      sese->push (node_back);
+    }
+
+  /* Record the highest reaching backedge from us or a descendant.  */
+  sese->high = hi_back < hi_child ? node_back : node_child;
+
+  if (num_children > 1)
+    {
+      /* There is more than one child -- this is a Y shaped piece of
+	 spanning tree.  We have to insert a fake backedge from this
+	 node to the highest ancestor reached by not-the-highest
+	 reaching child.  Note that there may be multiple children
+	 with backedges to the same highest node.  That's ok and we
+	 insert the edge to that highest node.  */
+      hi_child = depth;
+      if (dir < 0 && child)
+	{
+	  node_child = sese->high;
+	  hi_child = node_child.second;
+	  if (node_child.first)
+	    hi_child += BB_GET_SESE (node_child.first)->node;
+	}
+
+      FOR_EACH_EDGE (e, ei, edges)
+	{
+	  basic_block target = *(basic_block *)((char *)e + offset);
+
+	  if (target == child)
+	    /* Ignore the highest child. */
+	    continue;
+
+	  bb_sese *t_sese = BB_GET_SESE (target);
+	  if (!t_sese)
+	    continue;
+	  if (t_sese->parent != sese->node)
+	    /* Not a child. */
+	    continue;
+
+	  /* Compare its hi value.  */
+	  int t_hi = t_sese->high.second;
+
+	  if (basic_block child_hi_block = t_sese->high.first)
+	    t_hi += BB_GET_SESE (child_hi_block)->node;
+
+	  if (hi_child > t_hi)
+	    {
+	      hi_child = t_hi;
+	      node_child = t_sese->high;
+	    }
+	}
+      
+      sese->push (node_child);
+    }
+}
+
+
+/* DFS walk of BB graph.  Color node BLOCK according to COLORING then
+   proceed to successors.  Set SESE entry and exit nodes of
+   REGIONS.  */
+
+static void
+nvptx_sese_color (auto_vec<unsigned> &color_counts, bb_pair_vec_t &regions,
+		  basic_block block, int coloring)
+{
+  bb_sese *sese = BB_GET_SESE (block);
+
+  if (block->flags & BB_VISITED)
+    {
+      /* If we've already encountered this block, either we must not
+	 be coloring, or it must have been colored the current color.  */
+      gcc_assert (coloring < 0 || (sese && coloring == sese->color));
+      return;
+    }
+  
+  block->flags |= BB_VISITED;
+
+  if (sese)
+    {
+      if (coloring < 0)
+	{
+	  /* Start coloring a region.  */
+	  regions[sese->color].first = block;
+	  coloring = sese->color;
+	}
+
+      if (!--color_counts[sese->color] && sese->color == coloring)
+	{
+	  /* Found final block of SESE region.  */
+	  regions[sese->color].second = block;
+	  coloring = -1;
+	}
+      else
+	/* Color the node, so we can assert on revisiting the node
+	   that the graph is indeed SESE.  */
+	sese->color = coloring;
+    }
+  else
+    /* Fallen off the subgraph, we cannot be coloring.  */
+    gcc_assert (coloring < 0);
+
+  /* Walk each successor block.  */
+  if (block->succs && block->succs->length ())
+    {
+      edge e;
+      edge_iterator ei;
+      
+      FOR_EACH_EDGE (e, ei, block->succs)
+	nvptx_sese_color (color_counts, regions, e->dest, coloring);
+    }
+  else
+    gcc_assert (coloring < 0);
+}
+
+/* Find minimal set of SESE regions covering BLOCKS.  REGIONS might
+   end up with NULL entries in it.  */
+
+static void
+nvptx_find_sese (auto_vec<basic_block> &blocks, bb_pair_vec_t &regions)
+{
+  basic_block block;
+  int ix;
+
+  /* First clear each BB of the whole function.  */ 
+  FOR_EACH_BB_FN (block, cfun)
+    {
+      block->flags &= ~BB_VISITED;
+      BB_SET_SESE (block, 0);
+    }
+  block = EXIT_BLOCK_PTR_FOR_FN (cfun);
+  block->flags &= ~BB_VISITED;
+  BB_SET_SESE (block, 0);
+  block = ENTRY_BLOCK_PTR_FOR_FN (cfun);
+  block->flags &= ~BB_VISITED;
+  BB_SET_SESE (block, 0);
+
+  /* Mark blocks in the function that are in this graph.  */
+  for (ix = 0; blocks.iterate (ix, &block); ix++)
+    block->flags |= BB_VISITED;
+
+  /* Counts of nodes assigned to each color.  There cannot be more
+     colors than blocks (and hopefully there will be fewer).  */
+  auto_vec<unsigned> color_counts;
+  color_counts.reserve (blocks.length ());
+
+  /* Worklist of nodes in the spanning tree.  Again, there cannot be
+     more nodes in the tree than blocks (there will be fewer if the
+     CFG of blocks is disjoint).  */
+  auto_vec<basic_block> spanlist;
+  spanlist.reserve (blocks.length ());
+
+  /* Make sure every block has its cycle class determined.  */
+  for (ix = 0; blocks.iterate (ix, &block); ix++)
+    {
+      if (BB_GET_SESE (block))
+	/* We already met this block in an earlier graph solve.  */
+	continue;
+
+      if (dump_file)
+	fprintf (dump_file, "Searching graph starting at %d\n", block->index);
+      
+      /* Number the nodes reachable from block initial DFS order.  */
+      int depth = nvptx_sese_number (2, 0, +1, block, &spanlist);
+
+      /* Now walk in reverse DFS order to find cycle equivalents.  */
+      while (spanlist.length ())
+	{
+	  block = spanlist.pop ();
+	  bb_sese *sese = BB_GET_SESE (block);
+
+	  /* Do the pseudo node below.  */
+	  nvptx_sese_pseudo (block, sese, depth, +1,
+			     sese->dir > 0 ? block->succs : block->preds,
+			     (sese->dir > 0 ? offsetof (edge_def, dest)
+			      : offsetof (edge_def, src)));
+	  sese->set_color (color_counts);
+	  /* Do the pseudo node above.  */
+	  nvptx_sese_pseudo (block, sese, depth, -1,
+			     sese->dir < 0 ? block->succs : block->preds,
+			     (sese->dir < 0 ? offsetof (edge_def, dest)
+			      : offsetof (edge_def, src)));
+	}
+      if (dump_file)
+	fprintf (dump_file, "\n");
+    }
+
+  if (dump_file)
+    {
+      unsigned count;
+      const char *comma = "";
+      
+      fprintf (dump_file, "Found %d cycle equivalents\n",
+	       color_counts.length ());
+      for (ix = 0; color_counts.iterate (ix, &count); ix++)
+	{
+	  fprintf (dump_file, "%s%d[%d]={", comma, ix, count);
+
+	  comma = "";
+	  for (unsigned jx = 0; blocks.iterate (jx, &block); jx++)
+	    if (BB_GET_SESE (block)->color == ix)
+	      {
+		block->flags |= BB_VISITED;
+		fprintf (dump_file, "%s%d", comma, block->index);
+		comma=",";
+	      }
+	  fprintf (dump_file, "}");
+	  comma = ", ";
+	}
+      fprintf (dump_file, "\n");
+   }
+  
+  /* Now we've colored every block in the subgraph.  We now need to
+     determine the minimal set of SESE regions that cover that
+     subgraph.  Do this with a DFS walk of the complete function.
+     During the walk we're either 'looking' or 'coloring'.  When we
+     reach the last node of a particular color, we stop coloring and
+     return to looking.  */
+
+  /* There cannot be more SESE regions than colors.  */
+  regions.reserve (color_counts.length ());
+  for (ix = color_counts.length (); ix--;)
+    regions.quick_push (bb_pair_t (0, 0));
+
+  for (ix = 0; blocks.iterate (ix, &block); ix++)
+    block->flags &= ~BB_VISITED;
+
+  nvptx_sese_color (color_counts, regions, ENTRY_BLOCK_PTR_FOR_FN (cfun), -1);
+
+  if (dump_file)
+    {
+      const char *comma = "";
+      int len = regions.length ();
+      
+      fprintf (dump_file, "SESE regions:");
+      for (ix = 0; ix != len; ix++)
+	{
+	  basic_block from = regions[ix].first;
+	  basic_block to = regions[ix].second;
+
+	  if (from)
+	    {
+	      fprintf (dump_file, "%s %d{%d", comma, ix, from->index);
+	      if (to != from)
+		fprintf (dump_file, "->%d", to->index);
+
+	      int color = BB_GET_SESE (from)->color;
+
+	      /* Print the blocks within the region (excluding ends).  */
+	      FOR_EACH_BB_FN (block, cfun)
+		{
+		  bb_sese *sese = BB_GET_SESE (block);
+
+		  if (sese && sese->color == color
+		      && block != from && block != to)
+		    fprintf (dump_file, ".%d", block->index);
+		}
+	      fprintf (dump_file, "}");
+	    }
+	  comma = ",";
+	}
+      fprintf (dump_file, "\n\n");
+    }
+  
+  for (ix = 0; blocks.iterate (ix, &block); ix++)
+    delete BB_GET_SESE (block);
+}
+
+#undef BB_SET_SESE
+#undef BB_GET_SESE
+
 /* Propagate live state at the start of a partitioned region.  BLOCK
    provides the live register information, and might not contain
    INSN. Propagation is inserted just after INSN. RW indicates whether
@@ -3029,7 +3659,7 @@ nvptx_process_pars (parallel *par)
 
   if (par->mask & GOMP_DIM_MASK (GOMP_DIM_MAX))
     /* No propagation needed for a call.  */;
- else if (par->mask & GOMP_DIM_MASK (GOMP_DIM_WORKER))
+  else if (par->mask & GOMP_DIM_MASK (GOMP_DIM_WORKER))
     {
       nvptx_wpropagate (false, par->forked_block, par->forked_insn);
       nvptx_wpropagate (true, par->forked_block, par->fork_insn);
@@ -3066,7 +3696,7 @@ nvptx_neuter_pars (parallel *par, unsigned modes, unsigned outer)
       if ((outer | me) & GOMP_DIM_MASK (mode))
 	{} /* Mode is partitioned: no neutering.  */
       else if (!(modes & GOMP_DIM_MASK (mode)))
-	{} /* Mode is not used: nothing to do.  */  
+	{} /* Mode is not used: nothing to do.  */
       else if (par->inner_mask & GOMP_DIM_MASK (mode)
 	       || !par->forked_insn)
 	/* Partitioned in inner parallels, or we're not a partitioned
@@ -3083,14 +3713,36 @@ nvptx_neuter_pars (parallel *par, unsigned modes, unsigned outer)
 
   if (neuter_mask)
     {
-      int ix;
-      int len = par->blocks.length ();
+      int ix, len;
 
-      for (ix = 0; ix != len; ix++)
+      if (nvptx_optimize)
 	{
-	  basic_block block = par->blocks[ix];
+	  /* Neuter whole SESE regions.  */
+	  bb_pair_vec_t regions;
 
-	  nvptx_single (neuter_mask, block, block);
+	  nvptx_find_sese (par->blocks, regions);
+	  len = regions.length ();
+	  for (ix = 0; ix != len; ix++)
+	    {
+	      basic_block from = regions[ix].first;
+	      basic_block to = regions[ix].second;
+
+	      if (from)
+		nvptx_single (neuter_mask, from, to);
+	      else
+		gcc_assert (!to);
+	    }
+	}
+      else
+	{
+	  /* Neuter each BB individually.  */
+	  len = par->blocks.length ();
+	  for (ix = 0; ix != len; ix++)
+	    {
+	      basic_block block = par->blocks[ix];
+
+	      nvptx_single (neuter_mask, block, block);
+	    }
 	}
     }
 
@@ -3244,6 +3896,19 @@ nvptx_cannot_copy_insn_p (rtx_insn *insn)
       return false;
     }
 }
+
+/* Section anchors do not work.  Initialization for flag_section_anchor
+   probes the existence of the anchoring target hooks and prevents
+   anchoring if they don't exist.  However, we may be being used with
+   a host-side compiler that does support anchoring, and hence see
+   the anchor flag set (as it's not recalculated).  So provide an
+   implementation denying anchoring.  */
+
+static bool
+nvptx_use_anchors_for_symbol_p (const_rtx ARG_UNUSED (a))
+{
+  return false;
+}
 
 /* Record a symbol for mkoffload to enter into the mapping table.  */
 
@@ -3260,31 +3925,17 @@ nvptx_record_offload_symbol (tree decl)
     case FUNCTION_DECL:
       {
 	tree attr = get_oacc_fn_attrib (decl);
-	tree dims = NULL_TREE;
+	tree dims = TREE_VALUE (attr);
 	unsigned ix;
 
-	if (attr)
-	  dims = TREE_VALUE (attr);
 	fprintf (asm_out_file, "//:FUNC_MAP \"%s\"",
 		 IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (decl)));
 
-	for (ix = 0; ix != GOMP_DIM_MAX; ix++)
+	for (ix = 0; ix != GOMP_DIM_MAX; ix++, dims = TREE_CHAIN (dims))
 	  {
-	    int size = 1;
+	    int size = TREE_INT_CST_LOW (TREE_VALUE (dims));
 
-	    /* TODO: This check can go away once the dimension default
-	       machinery is merged to trunk.  */
-	    if (dims)
-	      {
-		tree dim = TREE_VALUE (dims);
-
-		if (dim)
-		  size = TREE_INT_CST_LOW (dim);
-
-		gcc_assert (!TREE_PURPOSE (dims));
-		dims = TREE_CHAIN (dims);
-	      }
-	    
+	    gcc_assert (!TREE_PURPOSE (dims));
 	    fprintf (asm_out_file, ", %#x", size);
 	  }
 
@@ -3329,7 +3980,7 @@ nvptx_file_end (void)
       worker_bcast_size = (worker_bcast_size + worker_bcast_align - 1)
 	& ~(worker_bcast_align - 1);
       
-      fprintf (asm_out_file, "// BEGIN VAR DEF: %s\n", worker_bcast_name);
+      fprintf (asm_out_file, "\n// BEGIN VAR DEF: %s\n", worker_bcast_name);
       fprintf (asm_out_file, ".shared .align %d .u8 %s[%d];\n",
 	       worker_bcast_align,
 	       worker_bcast_name, worker_bcast_size);
@@ -3342,7 +3993,7 @@ nvptx_file_end (void)
       worker_red_size = ((worker_red_size + worker_red_align - 1)
 			 & ~(worker_red_align - 1));
       
-      fprintf (asm_out_file, "// BEGIN VAR DEF: %s\n", worker_red_name);
+      fprintf (asm_out_file, "\n// BEGIN VAR DEF: %s\n", worker_red_name);
       fprintf (asm_out_file, ".shared .align %d .u8 %s[%d];\n",
 	       worker_red_align,
 	       worker_red_name, worker_red_size);
@@ -3536,8 +4187,7 @@ nvptx_expand_builtin (tree exp, rtx target, rtx ARG_UNUSED (subtarget),
    routine might spawn a loop.  It is negative for non-routines.  */
 
 static bool
-nvptx_goacc_validate_dims (tree ARG_UNUSED (decl), int *ARG_UNUSED (dims),
-			   int ARG_UNUSED (fn_level))
+nvptx_goacc_validate_dims (tree decl, int dims[], int fn_level)
 {
   bool changed = false;
 
@@ -3634,30 +4284,92 @@ nvptx_generate_vector_shuffle (location_t loc,
 {
   unsigned fn = NVPTX_BUILTIN_SHUFFLE;
   tree_code code = NOP_EXPR;
-  tree type = unsigned_type_node;
-  enum machine_mode mode = TYPE_MODE (TREE_TYPE (var));
+  tree arg_type = unsigned_type_node;
+  tree var_type = TREE_TYPE (var);
+  tree dest_type = var_type;
 
-  if (!INTEGRAL_MODE_P (mode))
+  if (TREE_CODE (var_type) == COMPLEX_TYPE)
+    var_type = TREE_TYPE (var_type);
+
+  if (TREE_CODE (var_type) == REAL_TYPE)
     code = VIEW_CONVERT_EXPR;
-  if (GET_MODE_SIZE (mode) == GET_MODE_SIZE (DImode))
+
+  if (TYPE_SIZE (var_type)
+      == TYPE_SIZE (long_long_unsigned_type_node))
     {
       fn = NVPTX_BUILTIN_SHUFFLELL;
-      type = long_long_unsigned_type_node;
+      arg_type = long_long_unsigned_type_node;
+    }
+  
+  tree call = nvptx_builtin_decl (fn, true);
+  tree bits = build_int_cst (unsigned_type_node, shift);
+  tree kind = build_int_cst (unsigned_type_node, SHUFFLE_DOWN);
+  tree expr;
+
+  if (var_type != dest_type)
+    {
+      /* Do real and imaginary parts separately.  */
+      tree real = fold_build1 (REALPART_EXPR, var_type, var);
+      real = fold_build1 (code, arg_type, real);
+      real = build_call_expr_loc (loc, call, 3, real, bits, kind);
+      real = fold_build1 (code, var_type, real);
+
+      tree imag = fold_build1 (IMAGPART_EXPR, var_type, var);
+      imag = fold_build1 (code, arg_type, imag);
+      imag = build_call_expr_loc (loc, call, 3, imag, bits, kind);
+      imag = fold_build1 (code, var_type, imag);
+
+      expr = fold_build2 (COMPLEX_EXPR, dest_type, real, imag);
+    }
+  else
+    {
+      expr = fold_build1 (code, arg_type, var);
+      expr = build_call_expr_loc (loc, call, 3, expr, bits, kind);
+      expr = fold_build1 (code, dest_type, expr);
     }
 
-  tree call = nvptx_builtin_decl (fn, true);
-  call = build_call_expr_loc
-    (loc, call, 3, fold_build1 (code, type, var),
-     build_int_cst (unsigned_type_node, shift),
-     build_int_cst (unsigned_type_node, SHUFFLE_DOWN));
-
-  call = fold_build1 (code, TREE_TYPE (dest_var), call);
-
-  gimplify_assign (dest_var, call, seq);
+  gimplify_assign (dest_var, expr, seq);
 }
 
-/* Insert code to locklessly update  *PTR with *PTR OP VAR just before
-   GSI.  */
+/* Lazily generate the global lock var decl and return its address.  */
+
+static tree
+nvptx_global_lock_addr ()
+{
+  tree v = global_lock_var;
+  
+  if (!v)
+    {
+      tree name = get_identifier ("__reduction_lock");
+      tree type = build_qualified_type (unsigned_type_node,
+					TYPE_QUAL_VOLATILE);
+      v = build_decl (BUILTINS_LOCATION, VAR_DECL, name, type);
+      global_lock_var = v;
+      DECL_ARTIFICIAL (v) = 1;
+      DECL_EXTERNAL (v) = 1;
+      TREE_STATIC (v) = 1;
+      TREE_PUBLIC (v) = 1;
+      TREE_USED (v) = 1;
+      mark_addressable (v);
+      mark_decl_referenced (v);
+    }
+
+  return build_fold_addr_expr (v);
+}
+
+/* Insert code to locklessly update *PTR with *PTR OP VAR just before
+   GSI.  We use a lockless scheme for nearly all case, which looks
+   like:
+     actual = initval(OP);
+     do {
+       guess = actual;
+       write = guess OP myval;
+       actual = cmp&swap (ptr, guess, write)
+     } while (actual bit-different-to guess);
+   return write;
+
+   This relies on a cmp&swap instruction, which is available for 32-
+   and 64-bit types.  Larger types must use a locking scheme.  */
 
 static tree
 nvptx_lockless_update (location_t loc, gimple_stmt_iterator *gsi,
@@ -3665,46 +4377,30 @@ nvptx_lockless_update (location_t loc, gimple_stmt_iterator *gsi,
 {
   unsigned fn = NVPTX_BUILTIN_CMP_SWAP;
   tree_code code = NOP_EXPR;
-  tree type = unsigned_type_node;
+  tree arg_type = unsigned_type_node;
+  tree var_type = TREE_TYPE (var);
 
-  enum machine_mode mode = TYPE_MODE (TREE_TYPE (var));
-
-  if (!INTEGRAL_MODE_P (mode))
+  if (TREE_CODE (var_type) == COMPLEX_TYPE
+      || TREE_CODE (var_type) == REAL_TYPE)
     code = VIEW_CONVERT_EXPR;
-  if (GET_MODE_SIZE (mode) == GET_MODE_SIZE (DImode))
+
+  if (TYPE_SIZE (var_type) == TYPE_SIZE (long_long_unsigned_type_node))
     {
+      arg_type = long_long_unsigned_type_node;
       fn = NVPTX_BUILTIN_CMP_SWAPLL;
-      type = long_long_unsigned_type_node;
     }
 
+  tree swap_fn = nvptx_builtin_decl (fn, true);
+
   gimple_seq init_seq = NULL;
-  tree init_var = make_ssa_name (type);
-  tree init_expr = omp_reduction_init_op (loc, op, TREE_TYPE (var));
-  init_expr = fold_build1 (code, type, init_expr);
+  tree init_var = make_ssa_name (arg_type);
+  tree init_expr = omp_reduction_init_op (loc, op, var_type);
+  init_expr = fold_build1 (code, arg_type, init_expr);
   gimplify_assign (init_var, init_expr, &init_seq);
   gimple *init_end = gimple_seq_last (init_seq);
 
   gsi_insert_seq_before (gsi, init_seq, GSI_SAME_STMT);
   
-  gimple_seq loop_seq = NULL;
-  tree expect_var = make_ssa_name (type);
-  tree actual_var = make_ssa_name (type);
-  tree write_var = make_ssa_name (type);
-  
-  tree write_expr = fold_build1 (code, TREE_TYPE (var), expect_var);
-  write_expr = fold_build2 (op, TREE_TYPE (var), write_expr, var);
-  write_expr = fold_build1 (code, type, write_expr);
-  gimplify_assign (write_var, write_expr, &loop_seq);
-
-  tree swap_expr = nvptx_builtin_decl (fn, true);
-  swap_expr = build_call_expr_loc (loc, swap_expr, 3,
-				   ptr, expect_var, write_var);
-  gimplify_assign (actual_var, swap_expr, &loop_seq);
-
-  gcond *cond = gimple_build_cond (EQ_EXPR, actual_var, expect_var,
-				   NULL_TREE, NULL_TREE);
-  gimple_seq_add_stmt (&loop_seq, cond);
-
   /* Split the block just after the init stmts.  */
   basic_block pre_bb = gsi_bb (*gsi);
   edge pre_edge = split_block (pre_bb, init_end);
@@ -3713,12 +4409,34 @@ nvptx_lockless_update (location_t loc, gimple_stmt_iterator *gsi,
   /* Reset the iterator.  */
   *gsi = gsi_for_stmt (gsi_stmt (*gsi));
 
-  /* Insert the loop statements.  */
-  gimple *loop_end = gimple_seq_last (loop_seq);
-  gsi_insert_seq_before (gsi, loop_seq, GSI_SAME_STMT);
+  tree expect_var = make_ssa_name (arg_type);
+  tree actual_var = make_ssa_name (arg_type);
+  tree write_var = make_ssa_name (arg_type);
+  
+  /* Build and insert the reduction calculation.  */
+  gimple_seq red_seq = NULL;
+  tree write_expr = fold_build1 (code, var_type, expect_var);
+  write_expr = fold_build2 (op, var_type, write_expr, var);
+  write_expr = fold_build1 (code, arg_type, write_expr);
+  gimplify_assign (write_var, write_expr, &red_seq);
 
-  /* Split the block just after the loop stmts.  */
-  edge post_edge = split_block (loop_bb, loop_end);
+  gsi_insert_seq_before (gsi, red_seq, GSI_SAME_STMT);
+
+  /* Build & insert the cmp&swap sequence.  */
+  gimple_seq latch_seq = NULL;
+  tree swap_expr = build_call_expr_loc (loc, swap_fn, 3,
+					ptr, expect_var, write_var);
+  gimplify_assign (actual_var, swap_expr, &latch_seq);
+
+  gcond *cond = gimple_build_cond (EQ_EXPR, actual_var, expect_var,
+				   NULL_TREE, NULL_TREE);
+  gimple_seq_add_stmt (&latch_seq, cond);
+
+  gimple *latch_end = gimple_seq_last (latch_seq);
+  gsi_insert_seq_before (gsi, latch_seq, GSI_SAME_STMT);
+
+  /* Split the block just after the latch stmts.  */
+  edge post_edge = split_block (loop_bb, latch_end);
   basic_block post_bb = post_edge->dest;
   loop_bb = post_edge->src;
   *gsi = gsi_for_stmt (gsi_stmt (*gsi));
@@ -3737,7 +4455,123 @@ nvptx_lockless_update (location_t loc, gimple_stmt_iterator *gsi,
   loop->latch = loop_bb;
   add_loop (loop, loop_bb->loop_father);
 
-  return fold_build1 (code, TREE_TYPE (var), write_var);
+  return fold_build1 (code, var_type, write_var);
+}
+
+/* Insert code to lockfully update *PTR with *PTR OP VAR just before
+   GSI.  This is necessary for types larger than 64 bits, where there
+   is no cmp&swap instruction to implement a lockless scheme.  We use
+   a lock variable in global memory.
+
+   while (cmp&swap (&lock_var, 0, 1))
+     continue;
+   T accum = *ptr;
+   accum = accum OP var;
+   *ptr = accum;
+   cmp&swap (&lock_var, 1, 0);
+   return accum;
+
+   A lock in global memory is necessary to force execution engine
+   descheduling and avoid resource starvation that can occur if the
+   lock is in .shared memory.  */
+
+static tree
+nvptx_lockfull_update (location_t loc, gimple_stmt_iterator *gsi,
+		       tree ptr, tree var, tree_code op)
+{
+  tree var_type = TREE_TYPE (var);
+  tree swap_fn = nvptx_builtin_decl (NVPTX_BUILTIN_CMP_SWAP, true);
+  tree uns_unlocked = build_int_cst (unsigned_type_node, 0);
+  tree uns_locked = build_int_cst (unsigned_type_node, 1);
+
+  /* Split the block just before the gsi.  Insert a gimple nop to make
+     this easier.  */
+  gimple *nop = gimple_build_nop ();
+  gsi_insert_before (gsi, nop, GSI_SAME_STMT);
+  basic_block entry_bb = gsi_bb (*gsi);
+  edge entry_edge = split_block (entry_bb, nop);
+  basic_block lock_bb = entry_edge->dest;
+  /* Reset the iterator.  */
+  *gsi = gsi_for_stmt (gsi_stmt (*gsi));
+
+  /* Build and insert the locking sequence.  */
+  gimple_seq lock_seq = NULL;
+  tree lock_var = make_ssa_name (unsigned_type_node);
+  tree lock_expr = nvptx_global_lock_addr ();
+  lock_expr = build_call_expr_loc (loc, swap_fn, 3, lock_expr,
+				   uns_unlocked, uns_locked);
+  gimplify_assign (lock_var, lock_expr, &lock_seq);
+  gcond *cond = gimple_build_cond (EQ_EXPR, lock_var, uns_unlocked,
+				   NULL_TREE, NULL_TREE);
+  gimple_seq_add_stmt (&lock_seq, cond);
+  gimple *lock_end = gimple_seq_last (lock_seq);
+  gsi_insert_seq_before (gsi, lock_seq, GSI_SAME_STMT);
+
+  /* Split the block just after the lock sequence.  */
+  edge locked_edge = split_block (lock_bb, lock_end);
+  basic_block update_bb = locked_edge->dest;
+  lock_bb = locked_edge->src;
+  *gsi = gsi_for_stmt (gsi_stmt (*gsi));
+  
+  /* Create the lock loop ... */
+  locked_edge->flags ^= EDGE_TRUE_VALUE | EDGE_FALLTHRU;
+  make_edge (lock_bb, lock_bb, EDGE_FALSE_VALUE);
+  set_immediate_dominator (CDI_DOMINATORS, lock_bb, entry_bb);
+  set_immediate_dominator (CDI_DOMINATORS, update_bb, lock_bb);
+
+  /* ... and the loop structure.  */
+  loop *lock_loop = alloc_loop ();
+  lock_loop->header = lock_bb;
+  lock_loop->latch = lock_bb;
+  lock_loop->nb_iterations_estimate = 1;
+  lock_loop->any_estimate = true;
+  add_loop (lock_loop, entry_bb->loop_father);
+
+  /* Build and insert the reduction calculation.  */
+  gimple_seq red_seq = NULL;
+  tree acc_in = make_ssa_name (var_type);
+  tree ref_in = build_simple_mem_ref (ptr);
+  TREE_THIS_VOLATILE (ref_in) = 1;
+  gimplify_assign (acc_in, ref_in, &red_seq);
+  
+  tree acc_out = make_ssa_name (var_type);
+  tree update_expr = fold_build2 (op, var_type, ref_in, var);
+  gimplify_assign (acc_out, update_expr, &red_seq);
+  
+  tree ref_out = build_simple_mem_ref (ptr);
+  TREE_THIS_VOLATILE (ref_out) = 1;
+  gimplify_assign (ref_out, acc_out, &red_seq);
+
+  gsi_insert_seq_before (gsi, red_seq, GSI_SAME_STMT);
+
+  /* Build & insert the unlock sequence.  */
+  gimple_seq unlock_seq = NULL;
+  tree unlock_expr = nvptx_global_lock_addr ();
+  unlock_expr = build_call_expr_loc (loc, swap_fn, 3, unlock_expr,
+				     uns_locked, uns_unlocked);
+  gimplify_and_add (unlock_expr, &unlock_seq);
+  gsi_insert_seq_before (gsi, unlock_seq, GSI_SAME_STMT);
+
+  return acc_out;
+}
+
+/* Emit a sequence to update a reduction accumlator at *PTR with the
+   value held in VAR using operator OP.  Return the updated value.
+
+   TODO: optimize for atomic ops and indepedent complex ops.  */
+
+static tree
+nvptx_reduction_update (location_t loc, gimple_stmt_iterator *gsi,
+			tree ptr, tree var, tree_code op)
+{
+  tree type = TREE_TYPE (var);
+  tree size = TYPE_SIZE (type);
+
+  if (size == TYPE_SIZE (unsigned_type_node)
+      || size == TYPE_SIZE (long_long_unsigned_type_node))
+    return nvptx_lockless_update (loc, gsi, ptr, var, op);
+  else
+    return nvptx_lockfull_update (loc, gsi, ptr, var, op);
 }
 
 /* NVPTX implementation of GOACC_REDUCTION_SETUP.  */
@@ -3919,11 +4753,11 @@ nvptx_goacc_reduction_fini (gcall *call)
 
       if (accum)
 	{
-	  /* Locklessly update the accumulator.  */
+	  /* UPDATE the accumulator.  */
 	  gsi_insert_seq_before (&gsi, seq, GSI_SAME_STMT);
 	  seq = NULL;
-	  r = nvptx_lockless_update (gimple_location (call), &gsi,
-				     accum, var, op);
+	  r = nvptx_reduction_update (gimple_location (call), &gsi,
+				      accum, var, op);
 	}
     }
 
@@ -4093,6 +4927,9 @@ nvptx_goacc_reduction (gcall *call)
 
 #undef TARGET_CANNOT_COPY_INSN_P
 #define TARGET_CANNOT_COPY_INSN_P nvptx_cannot_copy_insn_p
+
+#undef TARGET_USE_ANCHORS_FOR_SYMBOL_P
+#define TARGET_USE_ANCHORS_FOR_SYMBOL_P nvptx_use_anchors_for_symbol_p
 
 #undef TARGET_INIT_BUILTINS
 #define TARGET_INIT_BUILTINS nvptx_init_builtins

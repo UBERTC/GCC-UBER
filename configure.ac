@@ -660,7 +660,7 @@ fi
 
 # Enable libmpx on supported systems by request.
 if test -d ${srcdir}/libmpx; then
-    if test x$enable_libmpx = xyes; then
+    if test x$enable_libmpx = x; then
        AC_MSG_CHECKING([for libmpx support])
        if (srcdir=${srcdir}/libmpx; \
                . ${srcdir}/configure.tgt; \
@@ -671,8 +671,6 @@ if test -d ${srcdir}/libmpx; then
        else
            AC_MSG_RESULT([yes])
        fi
-    else
-       noconfigdirs="$noconfigdirs target-libmpx"
     fi
 fi
 
@@ -1024,6 +1022,14 @@ esac
 
 case "${target}" in
   *-*-chorusos)
+    ;;
+  aarch64-*-darwin*)
+    noconfigdirs="$noconfigdirs ld gas gdb gprof"
+    noconfigdirs="$noconfigdirs sim target-rda"
+    ;;
+  arm-*-darwin*)
+    noconfigdirs="$noconfigdirs ld gas gdb gprof"
+    noconfigdirs="$noconfigdirs sim target-rda"
     ;;
   powerpc-*-darwin*)
     noconfigdirs="$noconfigdirs ld gas gdb gprof"
