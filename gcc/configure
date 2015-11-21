@@ -7719,6 +7719,10 @@ if test x"$offload_targets" != x; then
 
 $as_echo "#define ENABLE_OFFLOADING 1" >>confdefs.h
 
+else
+
+$as_echo "#define ENABLE_OFFLOADING 0" >>confdefs.h
+
 fi
 
 
@@ -18406,7 +18410,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 18405 "configure"
+#line 18409 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18512,7 +18516,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 18511 "configure"
+#line 18515 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -22012,7 +22016,7 @@ fi
 if test "${with_plugin_ld+set}" = set; then :
   withval=$with_plugin_ld; if test x"$withval" != x; then
    ORIGINAL_PLUGIN_LD_FOR_TARGET="$withval"
-   PLUGIN_LD_SUFFIX=`echo $withval | sed -e "s,$target_alias-,,"`
+   PLUGIN_LD_SUFFIX="$withval"
  fi
 fi
 
@@ -28090,7 +28094,7 @@ _start:
 x:	.quad .TOC.
 EOF
       if $gcc_cv_as -a64 -o conftest.o conftest.s > /dev/null 2>&1 \
-         && $gcc_cv_ld $emul_name -o conftest conftest.o > /dev/null 2>&1; then
+         && $gcc_cv_ld $emul_name -z norelro -o conftest conftest.o > /dev/null 2>&1; then
         gcc_cv_ld_toc_align=`$gcc_cv_nm conftest | ${AWK} '/\.TOC\./ { match ($0, "0[[:xdigit:]]*", a); print strtonum ("0x" substr(a[0], length(a[0])-3)) }'`
       fi
       rm -f conftest conftest.o conftest.s

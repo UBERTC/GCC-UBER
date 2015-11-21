@@ -105,6 +105,9 @@
 (define_attr "fpu" "none,vfp"
   (const (symbol_ref "arm_fpu_attr")))
 
+; Predicated means that the insn form is conditionally executed based on a
+; predicate.  We default to 'no' because no Thumb patterns match this rule
+; and not all ARM insns do.
 (define_attr "predicated" "yes,no" (const_string "no"))
 
 ; LENGTH of an instruction (in bytes)
@@ -747,8 +750,8 @@
   "TARGET_32BIT"
   "@
    adds%?\\t%0, %1, %2
-   adds%?\\t%0, %1, %2
-   subs%?\\t%0, %1, #%n2"
+   subs%?\\t%0, %1, #%n2
+   adds%?\\t%0, %1, %2"
   [(set_attr "conds" "set")
    (set_attr "type" "alus_imm,alus_imm,alus_sreg")]
 )
@@ -4219,7 +4222,7 @@
   [(set (match_operand:SI 0 "s_register_operand" "=l,r")
 	(unspec:SI [(match_operand:SI 1 "memory_operand" "Uw,m")]
 		   UNSPEC_UNALIGNED_LOAD))]
-  "unaligned_access && TARGET_32BIT"
+  "unaligned_access"
   "ldr%?\t%0, %1\t@ unaligned"
   [(set_attr "arch" "t2,any")
    (set_attr "length" "2,4")
@@ -4232,7 +4235,7 @@
 	(sign_extend:SI
 	  (unspec:HI [(match_operand:HI 1 "memory_operand" "Uw,Uh")]
 		     UNSPEC_UNALIGNED_LOAD)))]
-  "unaligned_access && TARGET_32BIT"
+  "unaligned_access"
   "ldrsh%?\t%0, %1\t@ unaligned"
   [(set_attr "arch" "t2,any")
    (set_attr "length" "2,4")
@@ -4245,7 +4248,7 @@
 	(zero_extend:SI
 	  (unspec:HI [(match_operand:HI 1 "memory_operand" "Uw,m")]
 		     UNSPEC_UNALIGNED_LOAD)))]
-  "unaligned_access && TARGET_32BIT"
+  "unaligned_access"
   "ldrh%?\t%0, %1\t@ unaligned"
   [(set_attr "arch" "t2,any")
    (set_attr "length" "2,4")
@@ -4257,7 +4260,7 @@
   [(set (match_operand:SI 0 "memory_operand" "=Uw,m")
 	(unspec:SI [(match_operand:SI 1 "s_register_operand" "l,r")]
 		   UNSPEC_UNALIGNED_STORE))]
-  "unaligned_access && TARGET_32BIT"
+  "unaligned_access"
   "str%?\t%1, %0\t@ unaligned"
   [(set_attr "arch" "t2,any")
    (set_attr "length" "2,4")
@@ -4269,66 +4272,13 @@
   [(set (match_operand:HI 0 "memory_operand" "=Uw,m")
 	(unspec:HI [(match_operand:HI 1 "s_register_operand" "l,r")]
 		   UNSPEC_UNALIGNED_STORE))]
-  "unaligned_access && TARGET_32BIT"
+  "unaligned_access"
   "strh%?\t%1, %0\t@ unaligned"
   [(set_attr "arch" "t2,any")
    (set_attr "length" "2,4")
    (set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "yes,no")
    (set_attr "type" "store1")])
-
-;; Unaligned double-word load and store.
-;; Split after reload into two unaligned single-word accesses.
-;; It prevents lower_subreg from splitting some other aligned
-;; double-word accesses too early. Used for internal memcpy.
-
-(define_insn_and_split "unaligned_loaddi"
-  [(set (match_operand:DI 0 "s_register_operand" "=l,r")
-	(unspec:DI [(match_operand:DI 1 "memory_operand" "o,o")]
-		   UNSPEC_UNALIGNED_LOAD))]
-  "unaligned_access && TARGET_32BIT"
-  "#"
-  "&& reload_completed"
-  [(set (match_dup 0) (unspec:SI [(match_dup 1)] UNSPEC_UNALIGNED_LOAD))
-   (set (match_dup 2) (unspec:SI [(match_dup 3)] UNSPEC_UNALIGNED_LOAD))]
-  {
-    operands[2] = gen_highpart (SImode, operands[0]);
-    operands[0] = gen_lowpart (SImode, operands[0]);
-    operands[3] = gen_highpart (SImode, operands[1]);
-    operands[1] = gen_lowpart (SImode, operands[1]);
-
-    /* If the first destination register overlaps with the base address,
-       swap the order in which the loads are emitted.  */
-    if (reg_overlap_mentioned_p (operands[0], operands[1]))
-      {
-        std::swap (operands[1], operands[3]);
-        std::swap (operands[0], operands[2]);
-      }
-  }
-  [(set_attr "arch" "t2,any")
-   (set_attr "length" "4,8")
-   (set_attr "predicable" "yes")
-   (set_attr "type" "load2")])
-
-(define_insn_and_split "unaligned_storedi"
-  [(set (match_operand:DI 0 "memory_operand" "=o,o")
-	(unspec:DI [(match_operand:DI 1 "s_register_operand" "l,r")]
-		   UNSPEC_UNALIGNED_STORE))]
-  "unaligned_access && TARGET_32BIT"
-  "#"
-  "&& reload_completed"
-  [(set (match_dup 0) (unspec:SI [(match_dup 1)] UNSPEC_UNALIGNED_STORE))
-   (set (match_dup 2) (unspec:SI [(match_dup 3)] UNSPEC_UNALIGNED_STORE))]
-  {
-    operands[2] = gen_highpart (SImode, operands[0]);
-    operands[0] = gen_lowpart (SImode, operands[0]);
-    operands[3] = gen_highpart (SImode, operands[1]);
-    operands[1] = gen_lowpart (SImode, operands[1]);
-  }
-  [(set_attr "arch" "t2,any")
-   (set_attr "length" "4,8")
-   (set_attr "predicable" "yes")
-   (set_attr "type" "store2")])
 
 
 (define_insn "*extv_reg"

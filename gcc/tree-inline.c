@@ -2348,10 +2348,7 @@ copy_phis_for_bb (basic_block bb, copy_body_data *id)
 		  tree *n;
 		  n = id->decl_map->get (LOCATION_BLOCK (locus));
 		  gcc_assert (n);
-		  if (*n)
-		    locus = COMBINE_LOCATION_DATA (line_table, locus, *n);
-		  else
-		    locus = LOCATION_LOCUS (locus);
+		  locus = set_block (locus, *n);
 		}
 	      else
 		locus = LOCATION_LOCUS (locus);
@@ -2867,8 +2864,6 @@ copy_debug_stmt (gdebug *stmt, copy_body_data *id)
   else if (gimple_debug_source_bind_p (stmt))
     {
       gimple_debug_source_bind_set_var (stmt, t);
-      walk_tree (gimple_debug_source_bind_get_value_ptr (stmt),
-		 remap_gimple_op_r, &wi, NULL);
       /* When inlining and source bind refers to one of the optimized
 	 away parameters, change the source bind into normal debug bind
 	 referring to the corresponding DEBUG_EXPR_DECL that should have
@@ -2892,7 +2887,10 @@ copy_debug_stmt (gdebug *stmt, copy_body_data *id)
 		    break;
 		  }
 	    }
-	}      
+	}
+      if (gimple_debug_source_bind_p (stmt))
+	walk_tree (gimple_debug_source_bind_get_value_ptr (stmt),
+		   remap_gimple_op_r, &wi, NULL);
     }
 
   processing_debug_stmt = 0;

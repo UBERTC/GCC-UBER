@@ -2383,7 +2383,7 @@ build_new_reduction (reduction_info_table_type *reduction_list,
   if (dump_file && (dump_flags & TDF_DETAILS))
     {
       fprintf (dump_file,
-	       "Detected reduction. reduction stmt is: \n");
+	       "Detected reduction. reduction stmt is:\n");
       print_gimple_stmt (dump_file, reduc_stmt, 0, 0);
       fprintf (dump_file, "\n");
     }
@@ -2539,6 +2539,9 @@ try_create_reduction_list (loop_p loop,
 
   gcc_assert (exit);
 
+  /* Try to get rid of exit phis.  */
+  final_value_replacement_loop (loop);
+
   gather_scalar_reductions (loop, reduction_list);
 
 
@@ -2561,7 +2564,7 @@ try_create_reduction_list (loop_p loop,
 	      print_generic_expr (dump_file, val, 0);
 	      fprintf (dump_file, " used outside loop\n");
 	      fprintf (dump_file,
-		       "  checking if it a part of reduction pattern:  \n");
+		       "  checking if it is part of reduction pattern:\n");
 	    }
 	  if (reduction_list->elements () == 0)
 	    {

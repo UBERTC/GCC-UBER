@@ -1,3 +1,22 @@
+2015-11-20  Tristan Gingold  <gingold@adacore.com>
+
+	Sync with binutils-gdb:
+	2015-11-20  Tristan Gingold  <gingold@adacore.com>
+
+	* configure.ac: Add aarch64-*-darwin* and arm-*-darwin*.
+	* configure: Regenerate.
+
+2015-11-19  Martin Liska  <mliska@suse.cz>
+
+	* .gitignore: Add .clang-format to ignored files.
+	* Makefile.in: Add clang-format.
+	* Makefile.tpl: Likewise.
+
+2015-11-13  Tsvetkova Alexandra  <aleksandra.tsvetkova@intel.com>
+
+	* configure.ac: Enable libmpx by default.
+	* configure: Regenerated.
+
 2015-10-23  Steve Ellcey  <sellcey@imgtec.com>
 
 	* MAINTAINERS: Update email address.

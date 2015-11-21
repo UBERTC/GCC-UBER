@@ -195,6 +195,10 @@ struct tune_params
   int vec_reassoc_width;
   int min_div_recip_mul_sf;
   int min_div_recip_mul_df;
+  /* Value for aarch64_case_values_threshold; or 0 for the default.  */
+  unsigned int max_case_values;
+  /* Value for PARAM_L1_CACHE_LINE_SIZE; or 0 to use the default.  */
+  unsigned int cache_line_size;
 
 /* An enum specifying how to take into account CPU autoprefetch capabilities
    during instruction scheduling:
@@ -405,10 +409,7 @@ tree aarch64_builtin_decl (unsigned, bool ATTRIBUTE_UNUSED);
 
 tree aarch64_builtin_rsqrt (unsigned int, bool);
 
-tree
-aarch64_builtin_vectorized_function (tree fndecl,
-				     tree type_out,
-				     tree type_in);
+tree aarch64_builtin_vectorized_function (unsigned int, tree, tree);
 
 extern void aarch64_split_combinev16qi (rtx operands[3]);
 extern void aarch64_expand_vec_perm (rtx target, rtx op0, rtx op1, rtx sel);

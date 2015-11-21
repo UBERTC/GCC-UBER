@@ -1,3 +1,125 @@
+2015-11-20  David Malcolm  <dmalcolm@redhat.com>
+
+	PR 62314
+	* c-typeck.c (should_suggest_deref_p): New function.
+	(build_component_ref): Special-case POINTER_TYPE when
+	generating a "not a structure of union"  error message, and
+	suggest a "->" rather than a ".", providing a fix-it hint.
+
+2015-11-19  David Malcolm  <dmalcolm@redhat.com>
+
+	* c-typeck.c (lookup_field_fuzzy): Move determination of closest
+	candidate into a new function, find_closest_identifier.
+
+2015-11-19  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68412
+	* c-typeck.c (parser_build_binary_op): Properly handle
+	C_MAYBE_CONST_EXPR before calling warn_tautological_cmp.
+
+2015-11-17  David Malcolm  <dmalcolm@redhat.com>
+
+	* c-parser.c (set_c_expr_source_range): Bulletproof both
+	overloaded implementations against NULL expr->value.
+	(c_parser_braced_init): Set src_range for "ret" to a sane pair of
+	values.
+	(c_parser_unary_expression): Likewise when handling addresses of
+	labels.
+	(c_parser_postfix_expression): Likewise for statement expressions,
+	for __FUNCTION__, __PRETTY_FUNCTION_ and __func__ keywords, for
+	__builtin_va_arg, and for __builtin_offset_of.
+	(c_parser_postfix_expression_after_paren_type): Initialize expr's
+	src_range using the range of the braced initializer.
+	(c_parser_transaction_expression): Set src_range for "ret" to a
+	sane pair of values.
+
+2015-11-16  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* c-parser.c (c_finish_omp_declare_simd): Look for
+	"simd" attribute as well. Update error message.
+
+2015-11-14  Trevor Saunders  <tbsaunde+gcc@tbsaunde.org>
+
+	* c-parser.c (c_parser_omp_declare_target): Adjust.
+
+2015-11-14  Jakub Jelinek  <jakub@redhat.com>
+
+	* c-typeck.c (c_finish_omp_clauses): Don't mark
+	GOMP_MAP_FIRSTPRIVATE_POINTER decls addressable.
+
+2015-11-14  Marek Polacek  <polacek@redhat.com>
+
+	* c-decl.c: Use RECORD_OR_UNION_TYPE_P throughout.
+	* c-typeck.c: Likewise.
+
+2015-11-13  David Malcolm  <dmalcolm@redhat.com>
+
+	* c-decl.c (warn_defaults_to): Pass line_table to
+	rich_location ctor.
+	* c-errors.c (pedwarn_c99): Likewise.
+	(pedwarn_c90): Likewise.
+	* c-parser.c (set_c_expr_source_range): New functions.
+	(c_token::get_range): New method.
+	(c_token::get_finish): New method.
+	(c_parser_expr_no_commas): Call set_c_expr_source_range on the ret
+	based on the range from the start of the LHS to the end of the
+	RHS.
+	(c_parser_conditional_expression): Likewise, based on the range
+	from the start of the cond.value to the end of exp2.value.
+	(c_parser_binary_expression): Call set_c_expr_source_range on
+	the stack values for TRUTH_ANDIF_EXPR and TRUTH_ORIF_EXPR.
+	(c_parser_cast_expression): Call set_c_expr_source_range on ret
+	based on the cast_loc through to the end of the expr.
+	(c_parser_unary_expression): Likewise, based on the
+	op_loc through to the end of op.
+	(c_parser_sizeof_expression) Likewise, based on the start of the
+	sizeof token through to either the closing paren or the end of
+	expr.
+	(c_parser_postfix_expression): Likewise, using the token range,
+	or from the open paren through to the close paren for
+	parenthesized expressions.
+	(c_parser_postfix_expression_after_primary): Likewise, for
+	various kinds of expression.
+	* c-tree.h (struct c_expr): Add field "src_range".
+	(c_expr::get_start): New method.
+	(c_expr::get_finish): New method.
+	(set_c_expr_source_range): New decls.
+	* c-typeck.c (parser_build_unary_op): Call set_c_expr_source_range
+	on ret for prefix unary ops.
+	(parser_build_binary_op): Likewise, running from the start of
+	arg1.value through to the end of arg2.value.
+
+2015-11-13  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68320
+	* c-parser.c (c_parser_for_statement): Treat unknown tokens as IDs.
+
+2015-11-13  David Malcolm  <dmalcolm@redhat.com>
+
+	* c-typeck.c: Include spellcheck.h.
+	(lookup_field_fuzzy_find_candidates): New function.
+	(lookup_field_fuzzy): New function.
+	(build_component_ref): If the field was not found, try using
+	lookup_field_fuzzy and potentially offer a suggestion.
+
+2015-11-12  James Norris  <jnorris@codesourcery.com>
+	    Joseph Myers  <joseph@codesourcery.com>
+
+	* c-parser.c (c_parser_pragma): Handle PRAGMA_OACC_DECLARE.
+	(c_parser_omp_clause_name): Handle 'device_resident' clause.
+	(c_parser_oacc_data_clause): Handle PRAGMA_OACC_CLAUSE_DEVICE_RESIDENT
+	and PRAGMA_OMP_CLAUSE_LINK.
+	(c_parser_oacc_all_clauses): Handle PRAGMA_OACC_CLAUSE_DEVICE_RESIDENT
+	and PRAGMA_OACC_CLAUSE_LINK.
+	(OACC_DECLARE_CLAUSE_MASK): New definition.
+	(c_parser_oacc_declare): New function.
+
+2015-11-12  Marek Polacek  <polacek@redhat.com>
+
+	PR c/67784
+	* c-parser.c (c_parser_for_statement): Reclassify the token in
+	a correct scope.
+
 2015-11-11  Marek Polacek  <polacek@redhat.com>
 
 	PR c/68107

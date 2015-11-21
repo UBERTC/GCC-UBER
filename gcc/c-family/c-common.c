@@ -387,6 +387,7 @@ static tree handle_warn_unused_attribute (tree *, tree, tree, int, bool *);
 static tree handle_returns_nonnull_attribute (tree *, tree, tree, int, bool *);
 static tree handle_omp_declare_simd_attribute (tree *, tree, tree, int,
 					       bool *);
+static tree handle_simd_attribute (tree *, tree, tree, int, bool *);
 static tree handle_omp_declare_target_attribute (tree *, tree, tree, int,
 						 bool *);
 static tree handle_designated_init_attribute (tree *, tree, tree, int, bool *);
@@ -817,6 +818,8 @@ const struct attribute_spec c_common_attribute_table[] =
 			      handle_omp_declare_simd_attribute, false },
   { "cilk simd function",     0, -1, true,  false, false,
 			      handle_omp_declare_simd_attribute, false },
+  { "simd",		      0, 0, true,  false, false,
+			      handle_simd_attribute, false },
   { "omp declare target",     0, 0, true, false, false,
 			      handle_omp_declare_target_attribute, false },
   { "alloc_align",	      1, 1, false, true, true,
@@ -1187,6 +1190,7 @@ c_fully_fold_internal (tree expr, bool in_init, bool *maybe_const_operands,
   bool op0_const_self = true, op1_const_self = true, op2_const_self = true;
   bool nowarning = TREE_NO_WARNING (expr);
   bool unused_p;
+  source_range old_range;
 
   /* This function is not relevant to C++ because C++ folds while
      parsing, and may need changes to be correct for C++ when C++
@@ -1201,6 +1205,9 @@ c_fully_fold_internal (tree expr, bool in_init, bool *maybe_const_operands,
       || kind == tcc_statement
       || code == SAVE_EXPR)
     return expr;
+
+  if (IS_EXPR_CODE_CLASS (kind))
+    old_range = EXPR_LOCATION_RANGE (expr);
 
   /* Operands of variable-length expressions (function calls) have
      already been folded, as have __builtin_* function calls, and such
@@ -1626,7 +1633,11 @@ c_fully_fold_internal (tree expr, bool in_init, bool *maybe_const_operands,
       TREE_NO_WARNING (ret) = 1;
     }
   if (ret != expr)
-    protected_set_expr_location (ret, loc);
+    {
+      protected_set_expr_location (ret, loc);
+      if (IS_EXPR_CODE_CLASS (kind))
+	set_source_range (ret, old_range.m_start, old_range.m_finish);
+    }
   return ret;
 }
 
@@ -1913,7 +1924,7 @@ warn_tautological_cmp (location_t loc, enum tree_code code, tree lhs, tree rhs)
 
   /* We do not warn for constants because they are typical of macro
      expansions that test for features, sizeof, and similar.  */
-  if (CONSTANT_CLASS_P (lhs) || CONSTANT_CLASS_P (rhs))
+  if (CONSTANT_CLASS_P (fold (lhs)) || CONSTANT_CLASS_P (fold (rhs)))
     return;
 
   /* Don't warn for e.g.
@@ -3758,6 +3769,10 @@ check_case_bounds (location_t loc, tree type, tree orig_type,
   min_value = TYPE_MIN_VALUE (orig_type);
   max_value = TYPE_MAX_VALUE (orig_type);
 
+  /* We'll really need integer constants here.  */
+  case_low = fold (case_low);
+  case_high = fold (case_high);
+
   /* Case label is less than minimum for type.  */
   if (tree_int_cst_compare (case_low, min_value) < 0
       && tree_int_cst_compare (case_high, min_value) < 0)
@@ -4635,7 +4650,11 @@ shorten_compare (location_t loc, tree *op0_ptr, tree *op1_ptr,
 	  type = c_common_unsigned_type (type);
 	}
 
-      if (TREE_CODE (primop0) != INTEGER_CST)
+      if (TREE_CODE (primop0) != INTEGER_CST
+	  /* Don't warn if it's from a (non-system) macro.  */
+	  && !(from_macro_expansion_at
+	       (expansion_point_location_if_in_system_header
+		(EXPR_LOCATION (primop0)))))
 	{
 	  if (val == truthvalue_false_node)
 	    warning_at (loc, OPT_Wtype_limits,
@@ -5333,19 +5352,15 @@ c_common_get_alias_set (tree t)
 	   TREE_CODE (t2) == POINTER_TYPE;
 	   t2 = TREE_TYPE (t2))
 	;
-      if (TREE_CODE (t2) != RECORD_TYPE
-	  && TREE_CODE (t2) != ENUMERAL_TYPE
-	  && TREE_CODE (t2) != QUAL_UNION_TYPE
-	  && TREE_CODE (t2) != UNION_TYPE)
+      if (!RECORD_OR_UNION_TYPE_P (t2)
+	  && TREE_CODE (t2) != ENUMERAL_TYPE)
 	return -1;
       if (TYPE_SIZE (t2) == 0)
 	return -1;
     }
   /* These are the only cases that need special handling.  */
-  if (TREE_CODE (t) != RECORD_TYPE
+  if (!RECORD_OR_UNION_TYPE_P (t)
       && TREE_CODE (t) != ENUMERAL_TYPE
-      && TREE_CODE (t) != QUAL_UNION_TYPE
-      && TREE_CODE (t) != UNION_TYPE
       && TREE_CODE (t) != POINTER_TYPE)
     return -1;
   /* Undefined? */
@@ -8633,7 +8648,7 @@ handle_visibility_attribute (tree *node, tree name, tree args,
     {
       if (TREE_CODE (*node) == ENUMERAL_TYPE)
 	/* OK */;
-      else if (TREE_CODE (*node) != RECORD_TYPE && TREE_CODE (*node) != UNION_TYPE)
+      else if (!RECORD_OR_UNION_TYPE_P (*node))
 	{
 	  warning (OPT_Wattributes, "%qE attribute ignored on non-class types",
 		   name);
@@ -9010,6 +9025,35 @@ handle_warn_unused_attribute (tree *node, tree name,
 static tree
 handle_omp_declare_simd_attribute (tree *, tree, tree, int, bool *)
 {
+  return NULL_TREE;
+}
+
+/* Handle a "simd" attribute.  */
+
+static tree
+handle_simd_attribute (tree *node, tree name, tree, int, bool *no_add_attrs)
+{
+  if (TREE_CODE (*node) == FUNCTION_DECL)
+    {
+      if (lookup_attribute ("cilk simd function",
+			    DECL_ATTRIBUTES (*node)) != NULL)
+	{
+	  error_at (DECL_SOURCE_LOCATION (*node),
+		    "%<__simd__%> attribute cannot be used in the same "
+		    "function marked as a Cilk Plus SIMD-enabled function");
+	  *no_add_attrs = true;
+	}
+      else
+	DECL_ATTRIBUTES (*node)
+	  = tree_cons (get_identifier ("omp declare simd"),
+		       NULL_TREE, DECL_ATTRIBUTES (*node));
+    }
+  else
+    {
+      warning (OPT_Wattributes, "%qE attribute ignored", name);
+      *no_add_attrs = true;
+    }
+
   return NULL_TREE;
 }
 

@@ -73,6 +73,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-chkp.h"
 #include "rtl-chkp.h"
 #include "dbgcnt.h"
+#include "case-cfn-macros.h"
+#include "regrename.h"
 
 /* This file should be included last.  */
 #include "target-def.h"
@@ -2612,10 +2614,10 @@ static int ix86_tune_defaulted;
 static int ix86_arch_specified;
 
 /* Vectorization library interface and handlers.  */
-static tree (*ix86_veclib_handler) (enum built_in_function, tree, tree);
+static tree (*ix86_veclib_handler) (combined_fn, tree, tree);
 
-static tree ix86_veclibabi_svml (enum built_in_function, tree, tree);
-static tree ix86_veclibabi_acml (enum built_in_function, tree, tree);
+static tree ix86_veclibabi_svml (combined_fn, tree, tree);
+static tree ix86_veclibabi_acml (combined_fn, tree, tree);
 
 /* Processor target table, indexed by processor number */
 struct ptt
@@ -3971,6 +3973,15 @@ ix86_debug_options (void)
     fputs ("<no options>\n\n", stderr);
 
   return;
+}
+
+/* Return true if T is one of the bytes we should avoid with
+   -fmitigate-rop.  */
+
+static bool
+ix86_rop_should_change_byte_p (int t)
+{
+  return t == 0xc2 || t == 0xc3 || t == 0xca || t == 0xcb;
 }
 
 static const char *stringop_alg_names[] = {
@@ -6237,6 +6248,8 @@ ix86_valid_target_attribute_p (tree fndecl,
 	DECL_FUNCTION_SPECIFIC_OPTIMIZATION (fndecl) = new_optimize;
     }
 
+  finalize_options_struct (&func_options);
+
   return ret;
 }
 
@@ -7236,11 +7249,12 @@ ix86_legitimate_combined_insn (rtx_insn *insn)
 	  /* For pre-AVX disallow unaligned loads/stores where the
 	     instructions don't support it.  */
 	  if (!TARGET_AVX
-	      && VECTOR_MODE_P (GET_MODE (op))
-	      && misaligned_operand (op, GET_MODE (op)))
+	      && VECTOR_MODE_P (mode)
+	      && misaligned_operand (op, mode))
 	    {
-	      int min_align = get_attr_ssememalign (insn);
-	      if (min_align == 0)
+	      unsigned int min_align = get_attr_ssememalign (insn);
+	      if (min_align == 0
+		  || MEM_ALIGN (op) < min_align)
 		return false;
 	    }
 
@@ -12136,10 +12150,10 @@ ix86_adjust_stack_and_probe (const HOST_WIDE_INT size)
   rtx size_rtx = GEN_INT (size), last;
 
   /* See if we have a constant small number of probes to generate.  If so,
-     that's the easy case.  The run-time loop is made up of 11 insns in the
+     that's the easy case.  The run-time loop is made up of 9 insns in the
      generic case while the compile-time loop is made up of 3+2*(n-1) insns
      for n # of intervals.  */
-  if (size <= 5 * PROBE_INTERVAL)
+  if (size <= 4 * PROBE_INTERVAL)
     {
       HOST_WIDE_INT i, adjust;
       bool first_probe = true;
@@ -12206,19 +12220,27 @@ ix86_adjust_stack_and_probe (const HOST_WIDE_INT size)
 					     - (PROBE_INTERVAL + dope))));
 
       /* LAST_ADDR = SP_0 + PROBE_INTERVAL + ROUNDED_SIZE.  */
-      emit_move_insn (sr.reg, GEN_INT (-rounded_size));
-      emit_insn (gen_rtx_SET (sr.reg,
-			      gen_rtx_PLUS (Pmode, sr.reg,
-					    stack_pointer_rtx)));
+      if (rounded_size <= (HOST_WIDE_INT_1 << 31))
+	emit_insn (gen_rtx_SET (sr.reg,
+				plus_constant (Pmode, stack_pointer_rtx,
+					       -rounded_size)));
+      else
+	{
+	  emit_move_insn (sr.reg, GEN_INT (-rounded_size));
+	  emit_insn (gen_rtx_SET (sr.reg,
+				  gen_rtx_PLUS (Pmode, sr.reg,
+						stack_pointer_rtx)));
+	}
 
 
       /* Step 3: the loop
 
-	 while (SP != LAST_ADDR)
+	 do
 	   {
 	     SP = SP + PROBE_INTERVAL
 	     probe at SP
 	   }
+	 while (SP != LAST_ADDR)
 
 	 adjusts SP and probes to PROBE_INTERVAL + N * PROBE_INTERVAL for
 	 values of N from 1 until it is equal to ROUNDED_SIZE.  */
@@ -12244,8 +12266,6 @@ ix86_adjust_stack_and_probe (const HOST_WIDE_INT size)
 
       release_scratch_register_on_entry (&sr);
     }
-
-  gcc_assert (cfun->machine->fs.cfa_reg != stack_pointer_rtx);
 
   /* Even if the stack pointer isn't the CFA register, we need to correctly
      describe the adjustments made to it, in particular differentiate the
@@ -12276,23 +12296,16 @@ const char *
 output_adjust_stack_and_probe (rtx reg)
 {
   static int labelno = 0;
-  char loop_lab[32], end_lab[32];
+  char loop_lab[32];
   rtx xops[2];
 
-  ASM_GENERATE_INTERNAL_LABEL (loop_lab, "LPSRL", labelno);
-  ASM_GENERATE_INTERNAL_LABEL (end_lab, "LPSRE", labelno++);
+  ASM_GENERATE_INTERNAL_LABEL (loop_lab, "LPSRL", labelno++);
 
+  /* Loop.  */
   ASM_OUTPUT_INTERNAL_LABEL (asm_out_file, loop_lab);
 
-  /* Jump to END_LAB if SP == LAST_ADDR.  */
-  xops[0] = stack_pointer_rtx;
-  xops[1] = reg;
-  output_asm_insn ("cmp%z0\t{%1, %0|%0, %1}", xops);
-  fputs ("\tje\t", asm_out_file);
-  assemble_name_raw (asm_out_file, end_lab);
-  fputc ('\n', asm_out_file);
-
   /* SP = SP + PROBE_INTERVAL.  */
+  xops[0] = stack_pointer_rtx;
   xops[1] = GEN_INT (PROBE_INTERVAL);
   output_asm_insn ("sub%z0\t{%1, %0|%0, %1}", xops);
 
@@ -12300,11 +12313,15 @@ output_adjust_stack_and_probe (rtx reg)
   xops[1] = const0_rtx;
   output_asm_insn ("or%z0\t{%1, (%0)|DWORD PTR [%0], %1}", xops);
 
-  fprintf (asm_out_file, "\tjmp\t");
+  /* Test if SP == LAST_ADDR.  */
+  xops[0] = stack_pointer_rtx;
+  xops[1] = reg;
+  output_asm_insn ("cmp%z0\t{%1, %0|%0, %1}", xops);
+
+  /* Branch.  */
+  fputs ("\tjne\t", asm_out_file);
   assemble_name_raw (asm_out_file, loop_lab);
   fputc ('\n', asm_out_file);
-
-  ASM_OUTPUT_INTERNAL_LABEL (asm_out_file, end_lab);
 
   return "";
 }
@@ -12316,10 +12333,10 @@ static void
 ix86_emit_probe_stack_range (HOST_WIDE_INT first, HOST_WIDE_INT size)
 {
   /* See if we have a constant small number of probes to generate.  If so,
-     that's the easy case.  The run-time loop is made up of 7 insns in the
+     that's the easy case.  The run-time loop is made up of 6 insns in the
      generic case while the compile-time loop is made up of n insns for n #
      of intervals.  */
-  if (size <= 7 * PROBE_INTERVAL)
+  if (size <= 6 * PROBE_INTERVAL)
     {
       HOST_WIDE_INT i;
 
@@ -12363,11 +12380,12 @@ ix86_emit_probe_stack_range (HOST_WIDE_INT first, HOST_WIDE_INT size)
 
       /* Step 3: the loop
 
-	 while (TEST_ADDR != LAST_ADDR)
+	 do
 	   {
 	     TEST_ADDR = TEST_ADDR + PROBE_INTERVAL
 	     probe at TEST_ADDR
 	   }
+	 while (TEST_ADDR != LAST_ADDR)
 
          probes at FIRST + N * PROBE_INTERVAL for values of N from 1
          until it is equal to ROUNDED_SIZE.  */
@@ -12399,23 +12417,16 @@ const char *
 output_probe_stack_range (rtx reg, rtx end)
 {
   static int labelno = 0;
-  char loop_lab[32], end_lab[32];
+  char loop_lab[32];
   rtx xops[3];
 
-  ASM_GENERATE_INTERNAL_LABEL (loop_lab, "LPSRL", labelno);
-  ASM_GENERATE_INTERNAL_LABEL (end_lab, "LPSRE", labelno++);
+  ASM_GENERATE_INTERNAL_LABEL (loop_lab, "LPSRL", labelno++);
 
+  /* Loop.  */
   ASM_OUTPUT_INTERNAL_LABEL (asm_out_file, loop_lab);
 
-  /* Jump to END_LAB if TEST_ADDR == LAST_ADDR.  */
-  xops[0] = reg;
-  xops[1] = end;
-  output_asm_insn ("cmp%z0\t{%1, %0|%0, %1}", xops);
-  fputs ("\tje\t", asm_out_file);
-  assemble_name_raw (asm_out_file, end_lab);
-  fputc ('\n', asm_out_file);
-
   /* TEST_ADDR = TEST_ADDR + PROBE_INTERVAL.  */
+  xops[0] = reg;
   xops[1] = GEN_INT (PROBE_INTERVAL);
   output_asm_insn ("sub%z0\t{%1, %0|%0, %1}", xops);
 
@@ -12425,11 +12436,15 @@ output_probe_stack_range (rtx reg, rtx end)
   xops[2] = const0_rtx;
   output_asm_insn ("or%z0\t{%2, (%0,%1)|DWORD PTR [%0+%1], %2}", xops);
 
-  fprintf (asm_out_file, "\tjmp\t");
+  /* Test if TEST_ADDR == LAST_ADDR.  */
+  xops[0] = reg;
+  xops[1] = end;
+  output_asm_insn ("cmp%z0\t{%1, %0|%0, %1}", xops);
+
+  /* Branch.  */
+  fputs ("\tjne\t", asm_out_file);
   assemble_name_raw (asm_out_file, loop_lab);
   fputc ('\n', asm_out_file);
-
-  ASM_OUTPUT_INTERNAL_LABEL (asm_out_file, end_lab);
 
   return "";
 }
@@ -22944,6 +22959,8 @@ ix86_expand_mask_vec_cmp (rtx operands[])
     case GEU:
     case LTU:
       unspec_code = UNSPEC_UNSIGNED_PCMP;
+      break;
+
     default:
       unspec_code = UNSPEC_PCMP;
     }
@@ -27296,6 +27313,100 @@ ix86_instantiate_decls (void)
       instantiate_decl_rtl (s->rtl);
 }
 
+/* Return the number used for encoding REG, in the range 0..7.  */
+
+static int
+reg_encoded_number (rtx reg)
+{
+  unsigned regno = REGNO (reg);
+  switch (regno)
+    {
+    case AX_REG:
+      return 0;
+    case CX_REG:
+      return 1;
+    case DX_REG:
+      return 2;
+    case BX_REG:
+      return 3;
+    case SP_REG:
+      return 4;
+    case BP_REG:
+      return 5;
+    case SI_REG:
+      return 6;
+    case DI_REG:
+      return 7;
+    default:
+      break;
+    }
+  if (IN_RANGE (regno, FIRST_STACK_REG, LAST_STACK_REG))
+    return regno - FIRST_STACK_REG;
+  if (IN_RANGE (regno, FIRST_SSE_REG, LAST_SSE_REG))
+    return regno - FIRST_SSE_REG;
+  if (IN_RANGE (regno, FIRST_MMX_REG, LAST_MMX_REG))
+    return regno - FIRST_MMX_REG;
+  if (IN_RANGE (regno, FIRST_REX_SSE_REG, LAST_REX_SSE_REG))
+    return regno - FIRST_REX_SSE_REG;
+  if (IN_RANGE (regno, FIRST_REX_INT_REG, LAST_REX_INT_REG))
+    return regno - FIRST_REX_INT_REG;
+  if (IN_RANGE (regno, FIRST_MASK_REG, LAST_MASK_REG))
+    return regno - FIRST_MASK_REG;
+  if (IN_RANGE (regno, FIRST_BND_REG, LAST_BND_REG))
+    return regno - FIRST_BND_REG;
+  return -1;
+}
+
+/* Given an insn INSN with NOPERANDS OPERANDS, return the modr/m byte used
+   in its encoding if it could be relevant for ROP mitigation, otherwise
+   return -1.  If POPNO0 and POPNO1 are nonnull, store the operand numbers
+   used for calculating it into them.  */
+
+static int
+ix86_get_modrm_for_rop (rtx_insn *insn, rtx *operands, int noperands,
+			int *popno0 = 0, int *popno1 = 0)
+{
+  if (asm_noperands (PATTERN (insn)) >= 0)
+    return -1;
+  int has_modrm = get_attr_modrm (insn);
+  if (!has_modrm)
+    return -1;
+  enum attr_modrm_class cls = get_attr_modrm_class (insn);
+  rtx op0, op1;
+  switch (cls)
+    {
+    case MODRM_CLASS_OP02:
+      gcc_assert (noperands >= 3);
+      if (popno0)
+	{
+	  *popno0 = 0;
+	  *popno1 = 2;
+	}
+      op0 = operands[0];
+      op1 = operands[2];
+      break;
+    case MODRM_CLASS_OP01:
+      gcc_assert (noperands >= 2);
+      if (popno0)
+	{
+	  *popno0 = 0;
+	  *popno1 = 1;
+	}
+      op0 = operands[0];
+      op1 = operands[1];
+      break;
+    default:
+      return -1;
+    }
+  if (REG_P (op0) && REG_P (op1))
+    {
+      int enc0 = reg_encoded_number (op0);
+      int enc1 = reg_encoded_number (op1);
+      return 0xc0 + (enc1 << 3) + enc0;
+    }
+  return -1;
+}
+
 /* Check whether x86 address PARTS is a pc-relative address.  */
 
 static bool
@@ -41985,21 +42096,19 @@ ix86_store_returned_bounds (rtx slot, rtx bounds)
   emit_move_insn (slot, bounds);
 }
 
-/* Returns a function decl for a vectorized version of the builtin function
-   with builtin function code FN and the result vector type TYPE, or NULL_TREE
+/* Returns a function decl for a vectorized version of the combined function
+   with combined_fn code FN and the result vector type TYPE, or NULL_TREE
    if it is not available.  */
 
 static tree
-ix86_builtin_vectorized_function (tree fndecl, tree type_out,
+ix86_builtin_vectorized_function (unsigned int fn, tree type_out,
 				  tree type_in)
 {
   machine_mode in_mode, out_mode;
   int in_n, out_n;
-  enum built_in_function fn = DECL_FUNCTION_CODE (fndecl);
 
   if (TREE_CODE (type_out) != VECTOR_TYPE
-      || TREE_CODE (type_in) != VECTOR_TYPE
-      || DECL_BUILT_IN_CLASS (fndecl) != BUILT_IN_NORMAL)
+      || TREE_CODE (type_in) != VECTOR_TYPE)
     return NULL_TREE;
 
   out_mode = TYPE_MODE (TREE_TYPE (type_out));
@@ -42009,19 +42118,7 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 
   switch (fn)
     {
-    case BUILT_IN_SQRT:
-      if (out_mode == DFmode && in_mode == DFmode)
-	{
-	  if (out_n == 2 && in_n == 2)
-	    return ix86_get_builtin (IX86_BUILTIN_SQRTPD);
-	  else if (out_n == 4 && in_n == 4)
-	    return ix86_get_builtin (IX86_BUILTIN_SQRTPD256);
-	  else if (out_n == 8 && in_n == 8)
-	    return ix86_get_builtin (IX86_BUILTIN_SQRTPD512);
-	}
-      break;
-
-    case BUILT_IN_EXP2F:
+    CASE_CFN_EXP2:
       if (out_mode == SFmode && in_mode == SFmode)
 	{
 	  if (out_n == 16 && in_n == 16)
@@ -42029,21 +42126,9 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	}
       break;
 
-    case BUILT_IN_SQRTF:
-      if (out_mode == SFmode && in_mode == SFmode)
-	{
-	  if (out_n == 4 && in_n == 4)
-	    return ix86_get_builtin (IX86_BUILTIN_SQRTPS_NR);
-	  else if (out_n == 8 && in_n == 8)
-	    return ix86_get_builtin (IX86_BUILTIN_SQRTPS_NR256);
-	  else if (out_n == 16 && in_n == 16)
-	    return ix86_get_builtin (IX86_BUILTIN_SQRTPS_NR512);
-	}
-      break;
-
-    case BUILT_IN_IFLOOR:
-    case BUILT_IN_LFLOOR:
-    case BUILT_IN_LLFLOOR:
+    CASE_CFN_IFLOOR:
+    CASE_CFN_LFLOOR:
+    CASE_CFN_LLFLOOR:
       /* The round insn does not trap on denormals.  */
       if (flag_trapping_math || !TARGET_ROUND)
 	break;
@@ -42057,15 +42142,6 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	  else if (out_n == 16 && in_n == 8)
 	    return ix86_get_builtin (IX86_BUILTIN_FLOORPD_VEC_PACK_SFIX512);
 	}
-      break;
-
-    case BUILT_IN_IFLOORF:
-    case BUILT_IN_LFLOORF:
-    case BUILT_IN_LLFLOORF:
-      /* The round insn does not trap on denormals.  */
-      if (flag_trapping_math || !TARGET_ROUND)
-	break;
-
       if (out_mode == SImode && in_mode == SFmode)
 	{
 	  if (out_n == 4 && in_n == 4)
@@ -42075,9 +42151,9 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	}
       break;
 
-    case BUILT_IN_ICEIL:
-    case BUILT_IN_LCEIL:
-    case BUILT_IN_LLCEIL:
+    CASE_CFN_ICEIL:
+    CASE_CFN_LCEIL:
+    CASE_CFN_LLCEIL:
       /* The round insn does not trap on denormals.  */
       if (flag_trapping_math || !TARGET_ROUND)
 	break;
@@ -42091,15 +42167,6 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	  else if (out_n == 16 && in_n == 8)
 	    return ix86_get_builtin (IX86_BUILTIN_CEILPD_VEC_PACK_SFIX512);
 	}
-      break;
-
-    case BUILT_IN_ICEILF:
-    case BUILT_IN_LCEILF:
-    case BUILT_IN_LLCEILF:
-      /* The round insn does not trap on denormals.  */
-      if (flag_trapping_math || !TARGET_ROUND)
-	break;
-
       if (out_mode == SImode && in_mode == SFmode)
 	{
 	  if (out_n == 4 && in_n == 4)
@@ -42109,9 +42176,9 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	}
       break;
 
-    case BUILT_IN_IRINT:
-    case BUILT_IN_LRINT:
-    case BUILT_IN_LLRINT:
+    CASE_CFN_IRINT:
+    CASE_CFN_LRINT:
+    CASE_CFN_LLRINT:
       if (out_mode == SImode && in_mode == DFmode)
 	{
 	  if (out_n == 4 && in_n == 2)
@@ -42119,11 +42186,6 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	  else if (out_n == 8 && in_n == 4)
 	    return ix86_get_builtin (IX86_BUILTIN_VEC_PACK_SFIX256);
 	}
-      break;
-
-    case BUILT_IN_IRINTF:
-    case BUILT_IN_LRINTF:
-    case BUILT_IN_LLRINTF:
       if (out_mode == SImode && in_mode == SFmode)
 	{
 	  if (out_n == 4 && in_n == 4)
@@ -42133,9 +42195,9 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	}
       break;
 
-    case BUILT_IN_IROUND:
-    case BUILT_IN_LROUND:
-    case BUILT_IN_LLROUND:
+    CASE_CFN_IROUND:
+    CASE_CFN_LROUND:
+    CASE_CFN_LLROUND:
       /* The round insn does not trap on denormals.  */
       if (flag_trapping_math || !TARGET_ROUND)
 	break;
@@ -42149,15 +42211,6 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	  else if (out_n == 16 && in_n == 8)
 	    return ix86_get_builtin (IX86_BUILTIN_ROUNDPD_AZ_VEC_PACK_SFIX512);
 	}
-      break;
-
-    case BUILT_IN_IROUNDF:
-    case BUILT_IN_LROUNDF:
-    case BUILT_IN_LLROUNDF:
-      /* The round insn does not trap on denormals.  */
-      if (flag_trapping_math || !TARGET_ROUND)
-	break;
-
       if (out_mode == SImode && in_mode == SFmode)
 	{
 	  if (out_n == 4 && in_n == 4)
@@ -42167,31 +42220,7 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	}
       break;
 
-    case BUILT_IN_COPYSIGN:
-      if (out_mode == DFmode && in_mode == DFmode)
-	{
-	  if (out_n == 2 && in_n == 2)
-	    return ix86_get_builtin (IX86_BUILTIN_CPYSGNPD);
-	  else if (out_n == 4 && in_n == 4)
-	    return ix86_get_builtin (IX86_BUILTIN_CPYSGNPD256);
-	  else if (out_n == 8 && in_n == 8)
-	    return ix86_get_builtin (IX86_BUILTIN_CPYSGNPD512);
-	}
-      break;
-
-    case BUILT_IN_COPYSIGNF:
-      if (out_mode == SFmode && in_mode == SFmode)
-	{
-	  if (out_n == 4 && in_n == 4)
-	    return ix86_get_builtin (IX86_BUILTIN_CPYSGNPS);
-	  else if (out_n == 8 && in_n == 8)
-	    return ix86_get_builtin (IX86_BUILTIN_CPYSGNPS256);
-	  else if (out_n == 16 && in_n == 16)
-	    return ix86_get_builtin (IX86_BUILTIN_CPYSGNPS512);
-	}
-      break;
-
-    case BUILT_IN_FLOOR:
+    CASE_CFN_FLOOR:
       /* The round insn does not trap on denormals.  */
       if (flag_trapping_math || !TARGET_ROUND)
 	break;
@@ -42203,13 +42232,6 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	  else if (out_n == 4 && in_n == 4)
 	    return ix86_get_builtin (IX86_BUILTIN_FLOORPD256);
 	}
-      break;
-
-    case BUILT_IN_FLOORF:
-      /* The round insn does not trap on denormals.  */
-      if (flag_trapping_math || !TARGET_ROUND)
-	break;
-
       if (out_mode == SFmode && in_mode == SFmode)
 	{
 	  if (out_n == 4 && in_n == 4)
@@ -42219,7 +42241,7 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	}
       break;
 
-    case BUILT_IN_CEIL:
+    CASE_CFN_CEIL:
       /* The round insn does not trap on denormals.  */
       if (flag_trapping_math || !TARGET_ROUND)
 	break;
@@ -42231,13 +42253,6 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	  else if (out_n == 4 && in_n == 4)
 	    return ix86_get_builtin (IX86_BUILTIN_CEILPD256);
 	}
-      break;
-
-    case BUILT_IN_CEILF:
-      /* The round insn does not trap on denormals.  */
-      if (flag_trapping_math || !TARGET_ROUND)
-	break;
-
       if (out_mode == SFmode && in_mode == SFmode)
 	{
 	  if (out_n == 4 && in_n == 4)
@@ -42247,7 +42262,7 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	}
       break;
 
-    case BUILT_IN_TRUNC:
+    CASE_CFN_TRUNC:
       /* The round insn does not trap on denormals.  */
       if (flag_trapping_math || !TARGET_ROUND)
 	break;
@@ -42259,13 +42274,6 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	  else if (out_n == 4 && in_n == 4)
 	    return ix86_get_builtin (IX86_BUILTIN_TRUNCPD256);
 	}
-      break;
-
-    case BUILT_IN_TRUNCF:
-      /* The round insn does not trap on denormals.  */
-      if (flag_trapping_math || !TARGET_ROUND)
-	break;
-
       if (out_mode == SFmode && in_mode == SFmode)
 	{
 	  if (out_n == 4 && in_n == 4)
@@ -42275,7 +42283,7 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	}
       break;
 
-    case BUILT_IN_RINT:
+    CASE_CFN_RINT:
       /* The round insn does not trap on denormals.  */
       if (flag_trapping_math || !TARGET_ROUND)
 	break;
@@ -42287,13 +42295,6 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	  else if (out_n == 4 && in_n == 4)
 	    return ix86_get_builtin (IX86_BUILTIN_RINTPD256);
 	}
-      break;
-
-    case BUILT_IN_RINTF:
-      /* The round insn does not trap on denormals.  */
-      if (flag_trapping_math || !TARGET_ROUND)
-	break;
-
       if (out_mode == SFmode && in_mode == SFmode)
 	{
 	  if (out_n == 4 && in_n == 4)
@@ -42303,35 +42304,7 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	}
       break;
 
-    case BUILT_IN_ROUND:
-      /* The round insn does not trap on denormals.  */
-      if (flag_trapping_math || !TARGET_ROUND)
-	break;
-
-      if (out_mode == DFmode && in_mode == DFmode)
-	{
-	  if (out_n == 2 && in_n == 2)
-	    return ix86_get_builtin (IX86_BUILTIN_ROUNDPD_AZ);
-	  else if (out_n == 4 && in_n == 4)
-	    return ix86_get_builtin (IX86_BUILTIN_ROUNDPD_AZ256);
-	}
-      break;
-
-    case BUILT_IN_ROUNDF:
-      /* The round insn does not trap on denormals.  */
-      if (flag_trapping_math || !TARGET_ROUND)
-	break;
-
-      if (out_mode == SFmode && in_mode == SFmode)
-	{
-	  if (out_n == 4 && in_n == 4)
-	    return ix86_get_builtin (IX86_BUILTIN_ROUNDPS_AZ);
-	  else if (out_n == 8 && in_n == 8)
-	    return ix86_get_builtin (IX86_BUILTIN_ROUNDPS_AZ256);
-	}
-      break;
-
-    case BUILT_IN_FMA:
+    CASE_CFN_FMA:
       if (out_mode == DFmode && in_mode == DFmode)
 	{
 	  if (out_n == 2 && in_n == 2)
@@ -42339,9 +42312,6 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 	  if (out_n == 4 && in_n == 4)
 	    return ix86_get_builtin (IX86_BUILTIN_VFMADDPD256);
 	}
-      break;
-
-    case BUILT_IN_FMAF:
       if (out_mode == SFmode && in_mode == SFmode)
 	{
 	  if (out_n == 4 && in_n == 4)
@@ -42357,8 +42327,7 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
 
   /* Dispatch to a handler for a vectorization library.  */
   if (ix86_veclib_handler)
-    return ix86_veclib_handler ((enum built_in_function) fn, type_out,
-				type_in);
+    return ix86_veclib_handler (combined_fn (fn), type_out, type_in);
 
   return NULL_TREE;
 }
@@ -42367,7 +42336,7 @@ ix86_builtin_vectorized_function (tree fndecl, tree type_out,
    a library with vectorized intrinsics.  */
 
 static tree
-ix86_veclibabi_svml (enum built_in_function fn, tree type_out, tree type_in)
+ix86_veclibabi_svml (combined_fn fn, tree type_out, tree type_in)
 {
   char name[20];
   tree fntype, new_fndecl, args;
@@ -42390,47 +42359,26 @@ ix86_veclibabi_svml (enum built_in_function fn, tree type_out, tree type_in)
 
   switch (fn)
     {
-    case BUILT_IN_EXP:
-    case BUILT_IN_LOG:
-    case BUILT_IN_LOG10:
-    case BUILT_IN_POW:
-    case BUILT_IN_TANH:
-    case BUILT_IN_TAN:
-    case BUILT_IN_ATAN:
-    case BUILT_IN_ATAN2:
-    case BUILT_IN_ATANH:
-    case BUILT_IN_CBRT:
-    case BUILT_IN_SINH:
-    case BUILT_IN_SIN:
-    case BUILT_IN_ASINH:
-    case BUILT_IN_ASIN:
-    case BUILT_IN_COSH:
-    case BUILT_IN_COS:
-    case BUILT_IN_ACOSH:
-    case BUILT_IN_ACOS:
-      if (el_mode != DFmode || n != 2)
-	return NULL_TREE;
-      break;
-
-    case BUILT_IN_EXPF:
-    case BUILT_IN_LOGF:
-    case BUILT_IN_LOG10F:
-    case BUILT_IN_POWF:
-    case BUILT_IN_TANHF:
-    case BUILT_IN_TANF:
-    case BUILT_IN_ATANF:
-    case BUILT_IN_ATAN2F:
-    case BUILT_IN_ATANHF:
-    case BUILT_IN_CBRTF:
-    case BUILT_IN_SINHF:
-    case BUILT_IN_SINF:
-    case BUILT_IN_ASINHF:
-    case BUILT_IN_ASINF:
-    case BUILT_IN_COSHF:
-    case BUILT_IN_COSF:
-    case BUILT_IN_ACOSHF:
-    case BUILT_IN_ACOSF:
-      if (el_mode != SFmode || n != 4)
+    CASE_CFN_EXP:
+    CASE_CFN_LOG:
+    CASE_CFN_LOG10:
+    CASE_CFN_POW:
+    CASE_CFN_TANH:
+    CASE_CFN_TAN:
+    CASE_CFN_ATAN:
+    CASE_CFN_ATAN2:
+    CASE_CFN_ATANH:
+    CASE_CFN_CBRT:
+    CASE_CFN_SINH:
+    CASE_CFN_SIN:
+    CASE_CFN_ASINH:
+    CASE_CFN_ASIN:
+    CASE_CFN_COSH:
+    CASE_CFN_COS:
+    CASE_CFN_ACOSH:
+    CASE_CFN_ACOS:
+      if ((el_mode != DFmode || n != 2)
+	  && (el_mode != SFmode || n != 4))
 	return NULL_TREE;
       break;
 
@@ -42438,11 +42386,12 @@ ix86_veclibabi_svml (enum built_in_function fn, tree type_out, tree type_in)
       return NULL_TREE;
     }
 
-  bname = IDENTIFIER_POINTER (DECL_NAME (builtin_decl_implicit (fn)));
+  tree fndecl = mathfn_built_in (TREE_TYPE (type_in), fn);
+  bname = IDENTIFIER_POINTER (DECL_NAME (fndecl));
 
-  if (fn == BUILT_IN_LOGF)
+  if (DECL_FUNCTION_CODE (fndecl) == BUILT_IN_LOGF)
     strcpy (name, "vmlsLn4");
-  else if (fn == BUILT_IN_LOG)
+  else if (DECL_FUNCTION_CODE (fndecl) == BUILT_IN_LOG)
     strcpy (name, "vmldLn2");
   else if (n == 4)
     {
@@ -42456,9 +42405,7 @@ ix86_veclibabi_svml (enum built_in_function fn, tree type_out, tree type_in)
   name[4] &= ~0x20;
 
   arity = 0;
-  for (args = DECL_ARGUMENTS (builtin_decl_implicit (fn));
-       args;
-       args = TREE_CHAIN (args))
+  for (args = DECL_ARGUMENTS (fndecl); args; args = TREE_CHAIN (args))
     arity++;
 
   if (arity == 1)
@@ -42481,7 +42428,7 @@ ix86_veclibabi_svml (enum built_in_function fn, tree type_out, tree type_in)
    a library with vectorized intrinsics.  */
 
 static tree
-ix86_veclibabi_acml (enum built_in_function fn, tree type_out, tree type_in)
+ix86_veclibabi_acml (combined_fn fn, tree type_out, tree type_in)
 {
   char name[20] = "__vr.._";
   tree fntype, new_fndecl, args;
@@ -42507,30 +42454,23 @@ ix86_veclibabi_acml (enum built_in_function fn, tree type_out, tree type_in)
 
   switch (fn)
     {
-    case BUILT_IN_SIN:
-    case BUILT_IN_COS:
-    case BUILT_IN_EXP:
-    case BUILT_IN_LOG:
-    case BUILT_IN_LOG2:
-    case BUILT_IN_LOG10:
-      name[4] = 'd';
-      name[5] = '2';
-      if (el_mode != DFmode
-	  || n != 2)
-	return NULL_TREE;
-      break;
-
-    case BUILT_IN_SINF:
-    case BUILT_IN_COSF:
-    case BUILT_IN_EXPF:
-    case BUILT_IN_POWF:
-    case BUILT_IN_LOGF:
-    case BUILT_IN_LOG2F:
-    case BUILT_IN_LOG10F:
-      name[4] = 's';
-      name[5] = '4';
-      if (el_mode != SFmode
-	  || n != 4)
+    CASE_CFN_SIN:
+    CASE_CFN_COS:
+    CASE_CFN_EXP:
+    CASE_CFN_LOG:
+    CASE_CFN_LOG2:
+    CASE_CFN_LOG10:
+      if (el_mode == DFmode && n == 2)
+	{
+	  name[4] = 'd';
+	  name[5] = '2';
+	}
+      else if (el_mode == SFmode && n == 4)
+	{
+	  name[4] = 's';
+	  name[5] = '4';
+	}
+      else
 	return NULL_TREE;
       break;
 
@@ -42538,13 +42478,12 @@ ix86_veclibabi_acml (enum built_in_function fn, tree type_out, tree type_in)
       return NULL_TREE;
     }
 
-  bname = IDENTIFIER_POINTER (DECL_NAME (builtin_decl_implicit (fn)));
+  tree fndecl = mathfn_built_in (TREE_TYPE (type_in), fn);
+  bname = IDENTIFIER_POINTER (DECL_NAME (fndecl));
   sprintf (name + 7, "%s", bname+10);
 
   arity = 0;
-  for (args = DECL_ARGUMENTS (builtin_decl_implicit (fn));
-       args;
-       args = TREE_CHAIN (args))
+  for (args = DECL_ARGUMENTS (fndecl); args; args = TREE_CHAIN (args))
     arity++;
 
   if (arity == 1)
@@ -45263,6 +45202,215 @@ ix86_seh_fixup_eh_fallthru (void)
     }
 }
 
+/* Given a register number BASE, the lowest of a group of registers, update
+   regsets IN and OUT with the registers that should be avoided in input
+   and output operands respectively when trying to avoid generating a modr/m
+   byte for -fmitigate-rop.  */
+
+static void
+set_rop_modrm_reg_bits (int base, HARD_REG_SET &in, HARD_REG_SET &out)
+{
+  SET_HARD_REG_BIT (out, base);
+  SET_HARD_REG_BIT (out, base + 1);
+  SET_HARD_REG_BIT (in, base + 2);
+  SET_HARD_REG_BIT (in, base + 3);
+}
+
+/* Called if -fmitigate_rop is in effect.  Try to rewrite instructions so
+   that certain encodings of modr/m bytes do not occur.  */
+static void
+ix86_mitigate_rop (void)
+{
+  HARD_REG_SET input_risky;
+  HARD_REG_SET output_risky;
+  HARD_REG_SET inout_risky;
+
+  CLEAR_HARD_REG_SET (output_risky);
+  CLEAR_HARD_REG_SET (input_risky);
+  SET_HARD_REG_BIT (output_risky, AX_REG);
+  SET_HARD_REG_BIT (output_risky, CX_REG);
+  SET_HARD_REG_BIT (input_risky, BX_REG);
+  SET_HARD_REG_BIT (input_risky, DX_REG);
+  set_rop_modrm_reg_bits (FIRST_SSE_REG, input_risky, output_risky);
+  set_rop_modrm_reg_bits (FIRST_REX_INT_REG, input_risky, output_risky);
+  set_rop_modrm_reg_bits (FIRST_REX_SSE_REG, input_risky, output_risky);
+  set_rop_modrm_reg_bits (FIRST_EXT_REX_SSE_REG, input_risky, output_risky);
+  set_rop_modrm_reg_bits (FIRST_MASK_REG, input_risky, output_risky);
+  set_rop_modrm_reg_bits (FIRST_BND_REG, input_risky, output_risky);
+  COPY_HARD_REG_SET (inout_risky, input_risky);
+  IOR_HARD_REG_SET (inout_risky, output_risky);
+
+  compute_bb_for_insn ();
+  df_note_add_problem ();
+  df_analyze ();
+
+  regrename_init (true);
+  regrename_analyze (NULL);
+
+  auto_vec<du_head_p> cands;
+  
+  for (rtx_insn *insn = get_insns (); insn; insn = NEXT_INSN (insn))
+    {
+      if (!NONDEBUG_INSN_P (insn))
+	continue;
+
+      if (GET_CODE (PATTERN (insn)) == USE
+	  || GET_CODE (PATTERN (insn)) == CLOBBER)
+	continue;
+
+      extract_insn (insn);
+
+      int opno0, opno1;
+      int modrm = ix86_get_modrm_for_rop (insn, recog_data.operand,
+					  recog_data.n_operands, &opno0,
+					  &opno1);
+
+      if (!ix86_rop_should_change_byte_p (modrm))
+	continue;
+
+      insn_rr_info *info = &insn_rr[INSN_UID (insn)];
+
+      /* This happens when regrename has to fail a block.  */
+      if (!info->op_info)
+	continue;
+
+      if (info->op_info[opno0].n_chains != 0)
+	{
+	  gcc_assert (info->op_info[opno0].n_chains == 1);
+	  du_head_p op0c;
+	  op0c = regrename_chain_from_id (info->op_info[opno0].heads[0]->id);
+	  if (op0c->target_data_1 + op0c->target_data_2 == 0
+	      && !op0c->cannot_rename)
+	    cands.safe_push (op0c);
+
+	  op0c->target_data_1++;
+	}
+      if (info->op_info[opno1].n_chains != 0)
+	{
+	  gcc_assert (info->op_info[opno1].n_chains == 1);
+	  du_head_p op1c;
+	  op1c = regrename_chain_from_id (info->op_info[opno1].heads[0]->id);
+	  if (op1c->target_data_1 + op1c->target_data_2 == 0
+	      && !op1c->cannot_rename)
+	    cands.safe_push (op1c);
+
+	  op1c->target_data_2++;
+	}
+    }
+
+  int i;
+  du_head_p head;
+  FOR_EACH_VEC_ELT (cands, i, head)
+    {
+      int old_reg, best_reg;
+      HARD_REG_SET unavailable;
+
+      CLEAR_HARD_REG_SET (unavailable);
+      if (head->target_data_1)
+	IOR_HARD_REG_SET (unavailable, output_risky);
+      if (head->target_data_2)
+	IOR_HARD_REG_SET (unavailable, input_risky);
+
+      int n_uses;
+      reg_class superclass = regrename_find_superclass (head, &n_uses,
+							&unavailable);
+      old_reg = head->regno;
+      best_reg = find_rename_reg (head, superclass, &unavailable,
+				  old_reg, false);
+      bool ok = regrename_do_replace (head, best_reg);
+      gcc_assert (ok);
+      if (dump_file)
+	fprintf (dump_file, "Chain %d renamed as %s in %s\n", head->id,
+		 reg_names[best_reg], reg_class_names[superclass]);
+
+    }
+  
+  regrename_finish ();
+
+  df_analyze ();
+
+  basic_block bb;
+  regset_head live;
+
+  INIT_REG_SET (&live);
+
+  FOR_EACH_BB_FN (bb, cfun)
+    {
+      rtx_insn *insn;
+
+      COPY_REG_SET (&live, DF_LR_OUT (bb));
+      df_simulate_initialize_backwards (bb, &live);
+
+      FOR_BB_INSNS_REVERSE (bb, insn)
+	{
+	  if (!NONDEBUG_INSN_P (insn))
+	    continue;
+
+	  df_simulate_one_insn_backwards (bb, insn, &live);
+
+	  if (GET_CODE (PATTERN (insn)) == USE
+	      || GET_CODE (PATTERN (insn)) == CLOBBER)
+	    continue;
+
+	  extract_insn (insn);
+	  constrain_operands_cached (insn, reload_completed);
+	  int opno0, opno1;
+	  int modrm = ix86_get_modrm_for_rop (insn, recog_data.operand,
+					      recog_data.n_operands, &opno0,
+					      &opno1);
+	  if (modrm < 0
+	      || !ix86_rop_should_change_byte_p (modrm)
+	      || opno0 == opno1)
+	    continue;
+
+	  rtx oldreg = recog_data.operand[opno1];
+	  preprocess_constraints (insn);
+	  const operand_alternative *alt = which_op_alt ();
+
+	  int i;
+	  for (i = 0; i < recog_data.n_operands; i++)
+	    if (i != opno1
+		&& alt[i].earlyclobber
+		&& reg_overlap_mentioned_p (recog_data.operand[i],
+					    oldreg))
+	      break;
+
+	  if (i < recog_data.n_operands)
+	    continue;
+
+	  if (dump_file)
+	    fprintf (dump_file,
+		     "attempting to fix modrm byte in insn %d:"
+		     " reg %d class %s", INSN_UID (insn), REGNO (oldreg),
+		     reg_class_names[alt[opno1].cl]);
+
+	  HARD_REG_SET unavailable;
+	  REG_SET_TO_HARD_REG_SET (unavailable, &live);
+	  SET_HARD_REG_BIT (unavailable, REGNO (oldreg));
+	  IOR_COMPL_HARD_REG_SET (unavailable, call_used_reg_set);
+	  IOR_HARD_REG_SET (unavailable, fixed_reg_set);
+	  IOR_HARD_REG_SET (unavailable, output_risky);
+	  IOR_COMPL_HARD_REG_SET (unavailable,
+				  reg_class_contents[alt[opno1].cl]);
+
+	  for (i = 0; i < FIRST_PSEUDO_REGISTER; i++)
+	      if (!TEST_HARD_REG_BIT (unavailable, i))
+		break;
+	  if (i == FIRST_PSEUDO_REGISTER)
+	    {
+	      if (dump_file)
+		fprintf (dump_file, ", none available\n");
+	      continue;
+	    }
+	  if (dump_file)
+	    fprintf (dump_file, " -> %d\n", i);
+	  rtx newreg = gen_rtx_REG (recog_data.operand_mode[opno1], i);
+	  validate_change (insn, recog_data.operand_loc[opno1], newreg, false);
+	  insn = emit_insn_before (gen_move_insn (newreg, oldreg), insn);
+	}
+    }
+}
+
 /* Implement machine specific optimizations.  We implement padding of returns
    for K8 CPUs and pass to avoid 4 jumps in the single 16 byte window.  */
 static void
@@ -45272,6 +45420,9 @@ ix86_reorg (void)
      with old MDEP_REORGS that are not CFG based.  Recompute it now.  */
   compute_bb_for_insn ();
 
+  if (flag_mitigate_rop)
+    ix86_mitigate_rop ();
+  
   if (TARGET_SEH && current_function_has_exception_handlers ())
     ix86_seh_fixup_eh_fallthru ();
 

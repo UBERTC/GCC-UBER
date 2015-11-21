@@ -506,7 +506,6 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
       /* Ignore constant definitions already marked with the error node.  See
 	 the N_Object_Declaration case of gnat_to_gnu for the rationale.  */
       if (definition
-	  && gnu_expr
 	  && present_gnu_tree (gnat_entity)
 	  && get_gnu_tree (gnat_entity) == error_mark_node)
 	{
@@ -964,8 +963,8 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	       function call is a constant object.  Therefore, it can be the
 	       inner object of a constant renaming and the renaming must be
 	       fully instantiated, i.e. it cannot be a reference to (part of)
-	       an existing object.  And treat null expressions, constructors
-	       and literals the same way.  */
+	       an existing object.  And treat other rvalues (addresses, null
+	       expressions, constructors and literals) the same way.  */
 	    tree inner = gnu_expr;
 	    while (handled_component_p (inner) || CONVERT_EXPR_P (inner))
 	      inner = TREE_OPERAND (inner, 0);
@@ -975,6 +974,7 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	      inner = TREE_OPERAND (inner, 1);
 	    if ((TREE_CODE (inner) == CALL_EXPR
 		 && !call_is_atomic_load (inner))
+		|| TREE_CODE (inner) == ADDR_EXPR
 		|| TREE_CODE (inner) == NULL_EXPR
 		|| TREE_CODE (inner) == CONSTRUCTOR
 		|| CONSTANT_CLASS_P (inner))
@@ -1069,14 +1069,12 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	  }
 
 	/* Make a volatile version of this object's type if we are to make
-	   the object volatile.  We also interpret 13.3(19) conservatively
-	   and disallow any optimizations for such a non-constant object.  */
+	   the object volatile.  We also implement RM 13.3(19) for exported
+	   and imported (non-constant) objects by making them volatile.  */
 	if ((Treat_As_Volatile (gnat_entity)
 	     || (!const_flag
 		 && gnu_type != except_type_node
-		 && (Is_Exported (gnat_entity)
-		     || imported_p
-		     || Present (Address_Clause (gnat_entity)))))
+		 && (Is_Exported (gnat_entity) || imported_p)))
 	    && !TYPE_VOLATILE (gnu_type))
 	  {
 	    const int quals
@@ -1119,7 +1117,8 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	  gnu_expr = convert (gnu_type, gnu_expr);
 
 	/* If this is a pointer that doesn't have an initializing expression,
-	   initialize it to NULL, unless the object is imported.  */
+	   initialize it to NULL, unless the object is declared imported as
+	   per RM B.1(24).  */
 	if (definition
 	    && (POINTER_TYPE_P (gnu_type) || TYPE_IS_FAT_POINTER_P (gnu_type))
 	    && !gnu_expr
@@ -1142,7 +1141,7 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	    save_gnu_tree (gnat_entity, NULL_TREE, false);
 
 	    /* Convert the type of the object to a reference type that can
-	       alias everything as per 13.3(19).  */
+	       alias everything as per RM 13.3(19).  */
 	    gnu_type
 	      = build_reference_type_for_mode (gnu_type, ptr_mode, true);
 	    gnu_address = convert (gnu_type, gnu_address);
@@ -1186,13 +1185,6 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 		  }
 	      }
 
-	    /* If this is a deferred constant, the initializer is attached to
-	       the full view.  */
-	    if (kind == E_Constant && Present (Full_View (gnat_entity)))
-	      gnu_expr
-		= gnat_to_gnu
-		    (Expression (Declaration_Node (Full_View (gnat_entity))));
-
 	    /* If we don't have an initializing expression for the underlying
 	       variable, the initializing expression for the pointer is the
 	       specified address.  Otherwise, we have to make a COMPOUND_EXPR
@@ -1214,11 +1206,10 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	   as an indirect object.  Likewise for Stdcall objects that are
 	   imported.  */
 	if ((!definition && Present (Address_Clause (gnat_entity)))
-	    || (Is_Imported (gnat_entity)
-		&& Has_Stdcall_Convention (gnat_entity)))
+	    || (imported_p && Has_Stdcall_Convention (gnat_entity)))
 	  {
 	    /* Convert the type of the object to a reference type that can
-	       alias everything as per 13.3(19).  */
+	       alias everything as per RM 13.3(19).  */
 	    gnu_type
 	      = build_reference_type_for_mode (gnu_type, ptr_mode, true);
 	    used_by_ref = true;
@@ -1300,7 +1291,7 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 		    else
 		      gnu_expr
 			= build_component_ref
-			    (gnu_expr, NULL_TREE,
+			    (gnu_expr,
 			     DECL_CHAIN (TYPE_FIELDS (TREE_TYPE (gnu_expr))),
 			     false);
 		  }
@@ -1344,8 +1335,8 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	      add_stmt_with_node
 		(build_binary_op (INIT_EXPR, NULL_TREE,
 				  build_component_ref
-				  (gnu_new_var, NULL_TREE,
-				   TYPE_FIELDS (gnu_new_type), false),
+				  (gnu_new_var, TYPE_FIELDS (gnu_new_type),
+				   false),
 				  gnu_expr),
 		 gnat_entity);
 
@@ -1354,8 +1345,8 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	    gnu_expr
 	      = build_unary_op
 		(ADDR_EXPR, NULL_TREE,
-		 build_component_ref (gnu_new_var, NULL_TREE,
-				      TYPE_FIELDS (gnu_new_type), false));
+		 build_component_ref (gnu_new_var, TYPE_FIELDS (gnu_new_type),
+				      false));
 	    TREE_CONSTANT (gnu_expr) = 1;
 
 	    used_by_ref = true;
@@ -1410,10 +1401,9 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 
 	/* If this name is external or a name was specified, use it, but don't
 	   use the Interface_Name with an address clause (see cd30005).  */
-	if ((Present (Interface_Name (gnat_entity))
-	     && No (Address_Clause (gnat_entity)))
-	    || (Is_Public (gnat_entity)
-		&& (!Is_Imported (gnat_entity) || Is_Exported (gnat_entity))))
+	if ((Is_Public (gnat_entity) && !Is_Imported (gnat_entity))
+	    || (Present (Interface_Name (gnat_entity))
+		&& No (Address_Clause (gnat_entity))))
 	  gnu_ext_name = create_concat_name (gnat_entity, NULL);
 
 	/* If this is an aggregate constant initialized to a constant, force it
@@ -4131,6 +4121,8 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	   of its type, so we must elaborate that type now.  */
 	if (Present (Alias (gnat_entity)))
 	  {
+	    const Entity_Id gnat_renamed = Renamed_Object (gnat_entity);
+
 	    if (Ekind (Alias (gnat_entity)) == E_Enumeration_Literal)
 	      gnat_to_gnu_entity (Etype (Alias (gnat_entity)), NULL_TREE, 0);
 
@@ -4142,6 +4134,33 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 		 gnat_temp = Next_Formal_With_Extras (gnat_temp))
 	      if (Is_Itype (Etype (gnat_temp)))
 		gnat_to_gnu_entity (Etype (gnat_temp), NULL_TREE, 0);
+
+	    /* Materialize renamed subprograms in the debugging information
+	       when the renamed object is compile time known.  We can consider
+	       such renamings as imported declarations.
+
+	       Because the parameters in generics instantiation are generally
+	       materialized as renamings, we ofter end up having both the
+	       renamed subprogram and the renaming in the same context and with
+	       the same name: in this case, renaming is both useless debug-wise
+	       and potentially harmful as name resolution in the debugger could
+	       return twice the same entity!  So avoid this case.  */
+	    if (debug_info_p && !artificial_p
+		&& !(get_debug_scope (gnat_entity, NULL)
+		       == get_debug_scope (gnat_renamed, NULL)
+		     && Name_Equals (Chars (gnat_entity),
+				     Chars (gnat_renamed)))
+		&& Present (gnat_renamed)
+		&& (Ekind (gnat_renamed) == E_Function
+		    || Ekind (gnat_renamed) == E_Procedure)
+		&& gnu_decl != NULL_TREE
+		&& TREE_CODE (gnu_decl) == FUNCTION_DECL)
+	      {
+		tree decl = build_decl (input_location, IMPORTED_DECL,
+					gnu_entity_name, void_type_node);
+		IMPORTED_DECL_ASSOCIATED_DECL (decl) = gnu_decl;
+		gnat_pushdecl (decl, gnat_entity);
+	      }
 
 	    break;
 	  }
@@ -4597,7 +4616,7 @@ gnat_to_gnu_entity (Entity_Id gnat_entity, tree gnu_expr, int definition)
 	    save_gnu_tree (gnat_entity, NULL_TREE, false);
 
 	    /* Convert the type of the object to a reference type that can
-	       alias everything as per 13.3(19).  */
+	       alias everything as per RM 13.3(19).  */
 	    gnu_type
 	      = build_reference_type_for_mode (gnu_type, ptr_mode, true);
 	    if (gnu_address)
@@ -6759,8 +6778,12 @@ gnat_to_gnu_field (Entity_Id gnat_field, tree gnu_record_type, int packed,
   TREE_THIS_VOLATILE (gnu_field) = TREE_SIDE_EFFECTS (gnu_field) = is_volatile;
 
   if (Ekind (gnat_field) == E_Discriminant)
-    DECL_DISCRIMINANT_NUMBER (gnu_field)
-      = UI_To_gnu (Discriminant_Number (gnat_field), sizetype);
+    {
+      DECL_INVARIANT_P (gnu_field)
+	= No (Discriminant_Default_Value (gnat_field));
+      DECL_DISCRIMINANT_NUMBER (gnu_field)
+	= UI_To_gnu (Discriminant_Number (gnat_field), sizetype);
+    }
 
   return gnu_field;
 }
