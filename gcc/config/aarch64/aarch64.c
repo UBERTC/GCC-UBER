@@ -908,7 +908,80 @@ aarch64_load_symref_appropriately (rtx dest, rtx imm,
       emit_insn (gen_rtx_SET (Pmode, dest, imm));
       return;
 
-    case SYMBOL_SMALL_GOT:
+    case SYMBOL_SMALL_GOT_28K:
+      {
+	machine_mode mode = GET_MODE (dest);
+	rtx gp_rtx = pic_offset_table_rtx;
+	rtx insn;
+	rtx mem;
+
+	/* NOTE: pic_offset_table_rtx can be NULL_RTX, because we can reach
+	   here before rtl expand.  Tree IVOPT will generate rtl pattern to
+	   decide rtx costs, in which case pic_offset_table_rtx is not
+	   initialized.  For that case no need to generate the first adrp
+	   instruction as the the final cost for global variable access is
+	   one instruction.  */
+	if (gp_rtx != NULL)
+	  {
+	    /* -fpic for -mcmodel=small allow 32K GOT table size (but we are
+	       using the page base as GOT base, the first page may be wasted,
+	       in the worst scenario, there is only 28K space for GOT).
+
+	       The generate instruction sequence for accessing global variable
+	       is:
+
+	         ldr reg, [pic_offset_table_rtx, #:gotpage_lo15:sym]
+
+	       Only one instruction needed. But we must initialize
+	       pic_offset_table_rtx properly.  We generate initialize insn for
+	       every global access, and allow CSE to remove all redundant.
+
+	       The final instruction sequences will look like the following
+	       for multiply global variables access.
+
+	         adrp pic_offset_table_rtx, _GLOBAL_OFFSET_TABLE_
+
+	         ldr reg, [pic_offset_table_rtx, #:gotpage_lo15:sym1]
+	         ldr reg, [pic_offset_table_rtx, #:gotpage_lo15:sym2]
+	         ldr reg, [pic_offset_table_rtx, #:gotpage_lo15:sym3]
+	         ...  */
+
+	    rtx s = gen_rtx_SYMBOL_REF (Pmode, "_GLOBAL_OFFSET_TABLE_");
+	    crtl->uses_pic_offset_table = 1;
+	    emit_move_insn (gp_rtx, gen_rtx_HIGH (Pmode, s));
+
+	    if (mode != GET_MODE (gp_rtx))
+	      gp_rtx = simplify_gen_subreg (mode, gp_rtx, GET_MODE (gp_rtx), 0);
+	  }
+
+	if (mode == ptr_mode)
+	  {
+	    if (mode == DImode)
+	      insn = gen_ldr_got_small_28k_di (dest, gp_rtx, imm);
+	    else
+	      insn = gen_ldr_got_small_28k_si (dest, gp_rtx, imm);
+
+	    mem = XVECEXP (SET_SRC (insn), 0, 0);
+	  }
+	else
+	  {
+	    gcc_assert (mode == Pmode);
+
+	    insn = gen_ldr_got_small_28k_sidi (dest, gp_rtx, imm);
+	    mem = XVECEXP (XEXP (SET_SRC (insn), 0), 0, 0);
+	  }
+
+	/* The operand is expected to be MEM.  Whenever the related insn
+	   pattern changed, above code which calculate mem should be
+	   updated.  */
+	gcc_assert (GET_CODE (mem) == MEM);
+	MEM_READONLY_P (mem) = 1;
+	MEM_NOTRAP_P (mem) = 1;
+	emit_insn (insn);
+	return;
+      }
+
+    case SYMBOL_SMALL_GOT_4G:
       {
 	/* In ILP32, the mode of dest can be either SImode or DImode,
 	   while the got entry is always of SImode size.  The mode of
@@ -917,6 +990,9 @@ aarch64_load_symref_appropriately (rtx dest, rtx imm,
 	   DImode if dest is dereferenced to access the memeory.
 	   This is why we have to handle three different ldr_got_small
 	   patterns here (two patterns for ILP32).  */
+
+	rtx insn;
+	rtx mem;
 	rtx tmp_reg = dest;
 	machine_mode mode = GET_MODE (dest);
 
@@ -927,16 +1003,24 @@ aarch64_load_symref_appropriately (rtx dest, rtx imm,
 	if (mode == ptr_mode)
 	  {
 	    if (mode == DImode)
-	      emit_insn (gen_ldr_got_small_di (dest, tmp_reg, imm));
+	      insn = gen_ldr_got_small_di (dest, tmp_reg, imm);
 	    else
-	      emit_insn (gen_ldr_got_small_si (dest, tmp_reg, imm));
+	      insn = gen_ldr_got_small_si (dest, tmp_reg, imm);
+
+	    mem = XVECEXP (SET_SRC (insn), 0, 0);
 	  }
 	else
 	  {
 	    gcc_assert (mode == Pmode);
-	    emit_insn (gen_ldr_got_small_sidi (dest, tmp_reg, imm));
+
+	    insn = gen_ldr_got_small_sidi (dest, tmp_reg, imm);
+	    mem = XVECEXP (XEXP (SET_SRC (insn), 0), 0, 0);
 	  }
 
+	gcc_assert (GET_CODE (mem) == MEM);
+	MEM_READONLY_P (mem) = 1;
+	MEM_NOTRAP_P (mem) = 1;
+	emit_insn (insn);
 	return;
       }
 
@@ -1397,7 +1481,8 @@ aarch64_expand_mov_immediate (rtx dest, rtx imm)
         case SYMBOL_SMALL_TLSGD:
         case SYMBOL_SMALL_TLSDESC:
         case SYMBOL_SMALL_GOTTPREL:
-	case SYMBOL_SMALL_GOT:
+	case SYMBOL_SMALL_GOT_28K:
+	case SYMBOL_SMALL_GOT_4G:
 	case SYMBOL_TINY_GOT:
 	  if (offset != const0_rtx)
 	    {
@@ -4261,7 +4346,7 @@ aarch64_print_operand (FILE *f, rtx x, char code)
 
       switch (aarch64_classify_symbolic_expression (x, SYMBOL_CONTEXT_ADR))
 	{
-	case SYMBOL_SMALL_GOT:
+	case SYMBOL_SMALL_GOT_4G:
 	  asm_fprintf (asm_out_file, ":got:");
 	  break;
 
@@ -4294,7 +4379,7 @@ aarch64_print_operand (FILE *f, rtx x, char code)
     case 'L':
       switch (aarch64_classify_symbolic_expression (x, SYMBOL_CONTEXT_ADR))
 	{
-	case SYMBOL_SMALL_GOT:
+	case SYMBOL_SMALL_GOT_4G:
 	  asm_fprintf (asm_out_file, ":lo12:");
 	  break;
 
@@ -6338,7 +6423,8 @@ cost_plus:
 
     case SYMBOL_REF:
 
-      if (aarch64_cmodel == AARCH64_CMODEL_LARGE)
+      if (aarch64_cmodel == AARCH64_CMODEL_LARGE
+	  || aarch64_cmodel == AARCH64_CMODEL_SMALL_SPIC)
 	{
 	  /* LDR.  */
 	  if (speed)
@@ -7599,7 +7685,13 @@ initialize_aarch64_code_model (struct gcc_options *opts)
 	   aarch64_cmodel = AARCH64_CMODEL_TINY_PIC;
 	   break;
 	 case AARCH64_CMODEL_SMALL:
+#ifdef HAVE_AS_SMALL_PIC_RELOCS
+	   aarch64_cmodel = (flag_pic == 2
+			     ? AARCH64_CMODEL_SMALL_PIC
+			     : AARCH64_CMODEL_SMALL_SPIC);
+#else
 	   aarch64_cmodel = AARCH64_CMODEL_SMALL_PIC;
+#endif
 	   break;
 	 case AARCH64_CMODEL_LARGE:
 	   sorry ("code model %qs with -f%s", "large",
@@ -8428,6 +8520,7 @@ aarch64_classify_symbol (rtx x, rtx offset,
 	case AARCH64_CMODEL_TINY:
 	  return SYMBOL_TINY_ABSOLUTE;
 
+	case AARCH64_CMODEL_SMALL_SPIC:
 	case AARCH64_CMODEL_SMALL_PIC:
 	case AARCH64_CMODEL_SMALL:
 	  return SYMBOL_SMALL_ABSOLUTE;
@@ -8475,9 +8568,11 @@ aarch64_classify_symbol (rtx x, rtx offset,
 	    return SYMBOL_TINY_GOT;
 	  return SYMBOL_TINY_ABSOLUTE;
 
+	case AARCH64_CMODEL_SMALL_SPIC:
 	case AARCH64_CMODEL_SMALL_PIC:
 	  if (!aarch64_symbol_binds_local_p (x))
-	    return SYMBOL_SMALL_GOT;
+	    return (aarch64_cmodel == AARCH64_CMODEL_SMALL_SPIC
+		    ?  SYMBOL_SMALL_GOT_28K : SYMBOL_SMALL_GOT_4G);
 	  return SYMBOL_SMALL_ABSOLUTE;
 
 	default:
@@ -10282,6 +10377,7 @@ aarch64_asm_preferred_eh_data_format (int code ATTRIBUTE_UNUSED, int global)
      case AARCH64_CMODEL_TINY_PIC:
      case AARCH64_CMODEL_SMALL:
      case AARCH64_CMODEL_SMALL_PIC:
+     case AARCH64_CMODEL_SMALL_SPIC:
        /* text+got+data < 4Gb.  4-byte signed relocs are sufficient
 	  for everything.  */
        type = DW_EH_PE_sdata4;
@@ -12958,6 +13054,34 @@ aarch64_promoted_type (const_tree t)
     return float_type_node;
   return NULL_TREE;
 }
+
+/* Return 1 if pseudo register should be created and used to hold
+   GOT address for PIC code.  */
+
+bool
+aarch64_use_pseudo_pic_reg (void)
+{
+  return aarch64_cmodel == AARCH64_CMODEL_SMALL_SPIC;
+}
+
+/* Implement TARGET_UNSPEC_MAY_TRAP_P.  */
+
+static int
+aarch64_unspec_may_trap_p (const_rtx x, unsigned flags)
+{
+  switch (XINT (x, 1))
+    {
+    case UNSPEC_GOTSMALLPIC:
+    case UNSPEC_GOTSMALLPIC28K:
+    case UNSPEC_GOTTINYPIC:
+      return 0;
+    default:
+      break;
+    }
+
+  return default_unspec_may_trap_p (x, flags);
+}
+
 #undef TARGET_ADDRESS_COST
 #define TARGET_ADDRESS_COST aarch64_address_cost
 
@@ -13258,6 +13382,12 @@ aarch64_promoted_type (const_tree t)
 
 #undef TARGET_RELAXED_ORDERING
 #define TARGET_RELAXED_ORDERING true
+
+#undef TARGET_UNSPEC_MAY_TRAP_P
+#define TARGET_UNSPEC_MAY_TRAP_P aarch64_unspec_may_trap_p
+
+#undef TARGET_USE_PSEUDO_PIC_REG
+#define TARGET_USE_PSEUDO_PIC_REG aarch64_use_pseudo_pic_reg
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 
