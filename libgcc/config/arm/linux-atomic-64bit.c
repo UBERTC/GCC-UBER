@@ -33,7 +33,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
    kernels; we check for that in an init section and bail out rather
    unceremoneously.  */
 
-extern unsigned int __write (int fd, const void *buf, unsigned int count);
+extern int write (int fd, const void *buf, unsigned int count);
 extern void abort (void);
 
 /* Kernel helper for compare-and-exchange.  */

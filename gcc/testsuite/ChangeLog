@@ -1,3 +1,157 @@
+2015-11-27  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/68218
+	* gfortran.dg/allocate_with_arrayspec_1.f90: New test.
+
+2015-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/68250
+	* gcc.c-torture/execute/pr68250.c: New test.
+
+2015-11-27  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-11-27  Marek Polacek  <polacek@redhat.com>
+
+	* gcc.dg/pr63568.c: Convert to GIMPLE.
+
+2015-11-26  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	Backport from mainline
+	2015-09-30  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR rtl-optimization/67037
+	* gcc.c-torture/execute/pr67037.c: New test.
+
+2015-11-26  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r230938.
+	2015-11-26  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/68416
+	* gcc.target/i386/mpx/pr68416.c: New test.
+
+2015-11-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/68249
+	PR rtl-optimization/68321
+	* gcc.c-torture/execute/pr68249.c: New test.
+	* gcc.c-torture/execute/pr68321.c: New test.
+
+2015-11-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-11-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/67226
+	* gcc.c-torture/execute/pr67226.c: New test.
+
+2015-11-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/68508
+	* g++.dg/ubsan/pr68508.C: New test.
+
+2015-11-26  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* lib/target-supports.exp
+	(check_effective_target_arm_neon_ok_nocache): Add check
+	for M profile.
+
+2015-11-25  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-11-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67354
+	* g++.dg/abi/mangle67.C: New test.
+
+2015-11-25  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* g++.dg/cpp0x/constexpr-array13.C: Fix.
+
+2015-11-25  Markus Trippelsdorf  <markus@trippelsdorf.de>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/68087
+	* g++.dg/cpp0x/constexpr-array13.C: New.
+
+2015-11-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/68196
+	* gfortran.dg/proc_ptr_47.f90: New test.
+
+	Backport from trunk.
+	PR fortran/66465
+	* gfortran.dg/pr66465.f90: New test.
+
+2015-11-24  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r230796.
+	2015-11-24  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR c/68337
+	* gcc.target/i386/mpx/pr68337-1.c: New test.
+	* gcc.target/i386/mpx/pr68337-2.c: New test.
+
+2015-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/68194
+	PR rtl-optimization/68328
+	PR rtl-optimization/68185
+	* gcc.c-torture/execute/pr68185.c: New test.
+	* gcc.c-torture/execute/pr68328.c: Likewise.
+
+2015-11-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/68483
+	* gcc.target/i386/pr68483-1.c: New test.
+	* gcc.target/i386/pr68483-2.c: New test.
+
+2015-11-23  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	2015-10-05  Michael Meissner  <meissner@linux.vnet.ibm.com>
+	    Peter Bergner <bergner@vnet.ibm.com>
+
+	PR target/67808
+	* gcc.target/powerpc/pr67808.c: New test.
+
+2015-11-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-11-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68363
+	* gcc.target/aarch64/pr68363_1.c: New test.
+
+2015-11-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2015-06-22  Jan Hubicka  <hubicka@ucw.cz>
+		    Martin Liska  <mliska@suse.cz>
+
+	PR ipa/65908
+	* g++.dg/ipa/pr65908.C: New testcase.
+
+2015-11-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-10-29  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/56956
+	* c-c++-common/ubsan/pr56956.c: New testcase.
+
+2015-11-22  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	Backport from mainline
+	2015-09-14  Manuel López-Ibáñe<manu@gcc.gnu.org>
+
+	PR fortran/67460
+	* gfortran.dg/pr67460.f90: New test.
+
 2015-11-21  Jakub Jelinek  <jakub@redhat.com>
 
 	PR debug/66432
@@ -47,12 +201,12 @@
 	* g++.dg/lto/pr68057_1.C: Likewise.
 
 	2015-10-23  Jan Hubicka  <hubicka@ucw.cz>
- 
+
 	PR ipa/pr67600
 	* g++.dg/torture/pr67600.C: New testcase.
 
 	2015-10-11  Jan Hubicka  <hubicka@ucw.cz>
- 
+
 	PR ipa/67056
 	* g++.dg/ipa/pr67056.C: New testcase.
 
@@ -108,7 +262,7 @@
 	* gfortran.dg/pr58027.f90: New test.
 
 2015-11-14  Steven G. Kargl  <kargl@gcc.gnu.org>
- 
+
 	PR fortran/67803
 	* gfortran.dg/pr67803.f90: New test.
 
