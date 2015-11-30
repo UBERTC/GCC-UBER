@@ -622,9 +622,9 @@
 	(plus:SI (match_dup 1) (match_dup 2)))]
   "TARGET_ARM"
   "@
-   add%.\\t%0, %1, %2
-   sub%.\\t%0, %1, #%n2
-   add%.\\t%0, %1, %2"
+   adds%?\\t%0, %1, %2
+   subs%?\\t%0, %1, #%n2
+   adds%?\\t%0, %1, %2"
   [(set_attr "conds" "set")
    (set_attr "type" "alus_imm,alus_imm,alus_sreg")]
 )
@@ -672,8 +672,8 @@
 		 (match_operand:SI 3 "arm_addimm_operand" "I,L")))]
   "TARGET_32BIT && INTVAL (operands[2]) == -INTVAL (operands[3])"
   "@
-   add%.\\t%0, %1, %3
-   sub%.\\t%0, %1, #%n3"
+   adds%?\\t%0, %1, %3
+   subs%?\\t%0, %1, #%n3"
   [(set_attr "conds" "set")
    (set_attr "type" "alus_sreg")]
 )
@@ -729,9 +729,9 @@
 	(plus:SI (match_dup 1) (match_dup 2)))]
   "TARGET_32BIT"
   "@
-   add%.\\t%0, %1, %2
-   sub%.\\t%0, %1, #%n2
-   add%.\\t%0, %1, %2"
+   adds%?\\t%0, %1, %2
+   subs%?\\t%0, %1, #%n2
+   adds%?\\t%0, %1, %2"
   [(set_attr "conds" "set")
    (set_attr "type"  "alus_imm,alus_imm,alus_sreg")]
 )
@@ -746,9 +746,9 @@
 	(plus:SI (match_dup 1) (match_dup 2)))]
   "TARGET_32BIT"
   "@
-   add%.\\t%0, %1, %2
-   add%.\\t%0, %1, %2
-   sub%.\\t%0, %1, #%n2"
+   adds%?\\t%0, %1, %2
+   adds%?\\t%0, %1, %2
+   subs%?\\t%0, %1, #%n2"
   [(set_attr "conds" "set")
    (set_attr "type" "alus_imm,alus_imm,alus_sreg")]
 )
@@ -856,7 +856,7 @@
 		 (LTUGEU:SI (reg:<cnb> CC_REGNUM) (const_int 0))))
    (clobber (reg:CC CC_REGNUM))]
    "TARGET_32BIT"
-   "adc%.\\t%0, %1, %2"
+   "adcs%?\\t%0, %1, %2"
    [(set_attr "conds" "set")
     (set_attr "type" "adcs_reg")]
 )
@@ -1239,9 +1239,9 @@
 	(minus:SI (match_dup 1) (match_dup 2)))]
   "TARGET_32BIT"
   "@
-   sub%.\\t%0, %1, %2
-   sub%.\\t%0, %1, %2
-   rsb%.\\t%0, %2, %1"
+   subs%?\\t%0, %1, %2
+   subs%?\\t%0, %1, %2
+   rsbs%?\\t%0, %2, %1"
   [(set_attr "conds" "set")
    (set_attr "type"  "alus_imm,alus_sreg,alus_sreg")]
 )
@@ -1254,9 +1254,9 @@
 	(minus:SI (match_dup 1) (match_dup 2)))]
   "TARGET_32BIT"
   "@
-   sub%.\\t%0, %1, %2
-   sub%.\\t%0, %1, %2
-   rsb%.\\t%0, %2, %1"
+   subs%?\\t%0, %1, %2
+   subs%?\\t%0, %1, %2
+   rsbs%?\\t%0, %2, %1"
   [(set_attr "conds" "set")
    (set_attr "type" "alus_imm,alus_sreg,alus_sreg")]
 )
@@ -1335,7 +1335,7 @@
    (set (match_operand:SI 0 "s_register_operand" "=&r,&r")
 	(mult:SI (match_dup 2) (match_dup 1)))]
   "TARGET_ARM && !arm_arch6"
-  "mul%.\\t%0, %2, %1"
+  "muls%?\\t%0, %2, %1"
   [(set_attr "conds" "set")
    (set_attr "type" "muls")]
 )
@@ -1349,7 +1349,7 @@
    (set (match_operand:SI 0 "s_register_operand" "=r")
 	(mult:SI (match_dup 2) (match_dup 1)))]
   "TARGET_ARM && arm_arch6 && optimize_size"
-  "mul%.\\t%0, %2, %1"
+  "muls%?\\t%0, %2, %1"
   [(set_attr "conds" "set")
    (set_attr "type" "muls")]
 )
@@ -1362,7 +1362,7 @@
 			 (const_int 0)))
    (clobber (match_scratch:SI 0 "=&r,&r"))]
   "TARGET_ARM && !arm_arch6"
-  "mul%.\\t%0, %2, %1"
+  "muls%?\\t%0, %2, %1"
   [(set_attr "conds" "set")
    (set_attr "type" "muls")]
 )
@@ -1375,7 +1375,7 @@
 			 (const_int 0)))
    (clobber (match_scratch:SI 0 "=r"))]
   "TARGET_ARM && arm_arch6 && optimize_size"
-  "mul%.\\t%0, %2, %1"
+  "muls%?\\t%0, %2, %1"
   [(set_attr "conds" "set")
    (set_attr "type" "muls")]
 )
@@ -1419,7 +1419,7 @@
 	(plus:SI (mult:SI (match_dup 2) (match_dup 1))
 		 (match_dup 3)))]
   "TARGET_ARM && arm_arch6"
-  "mla%.\\t%0, %2, %1, %3"
+  "mlas%?\\t%0, %2, %1, %3"
   [(set_attr "conds" "set")
    (set_attr "type" "mlas")]
 )
@@ -1436,7 +1436,7 @@
 	(plus:SI (mult:SI (match_dup 2) (match_dup 1))
 		 (match_dup 3)))]
   "TARGET_ARM && arm_arch6 && optimize_size"
-  "mla%.\\t%0, %2, %1, %3"
+  "mlas%?\\t%0, %2, %1, %3"
   [(set_attr "conds" "set")
    (set_attr "type" "mlas")]
 )
@@ -1451,7 +1451,7 @@
 	 (const_int 0)))
    (clobber (match_scratch:SI 0 "=&r,&r,&r,&r"))]
   "TARGET_ARM && !arm_arch6"
-  "mla%.\\t%0, %2, %1, %3"
+  "mlas%?\\t%0, %2, %1, %3"
   [(set_attr "conds" "set")
    (set_attr "type" "mlas")]
 )
@@ -1466,7 +1466,7 @@
 	 (const_int 0)))
    (clobber (match_scratch:SI 0 "=r"))]
   "TARGET_ARM && arm_arch6 && optimize_size"
-  "mla%.\\t%0, %2, %1, %3"
+  "mlas%?\\t%0, %2, %1, %3"
   [(set_attr "conds" "set")
    (set_attr "type" "mlas")]
 )
@@ -2195,9 +2195,9 @@
 	(and:SI (match_dup 1) (match_dup 2)))]
   "TARGET_32BIT"
   "@
-   and%.\\t%0, %1, %2
-   bic%.\\t%0, %1, #%B2
-   and%.\\t%0, %1, %2"
+   ands%?\\t%0, %1, %2
+   bics%?\\t%0, %1, #%B2
+   ands%?\\t%0, %1, %2"
   [(set_attr "conds" "set")
    (set_attr "type" "logics_imm,logics_imm,logics_reg")]
 )
@@ -2212,7 +2212,7 @@
   "TARGET_32BIT"
   "@
    tst%?\\t%0, %1
-   bic%.\\t%2, %0, #%B1
+   bics%?\\t%2, %0, #%B1
    tst%?\\t%0, %1"
   [(set_attr "conds" "set")
    (set_attr "type"  "logics_imm,logics_imm,logics_reg")]
@@ -2796,7 +2796,7 @@
 		(const_int 0)))
    (clobber (match_scratch:SI 4 "=r"))]
   "TARGET_ARM || (TARGET_THUMB2 && CONST_INT_P (operands[2]))"
-  "bic%.%?\\t%4, %3, %1%S0"
+  "bics%?\\t%4, %3, %1%S0"
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")
    (set_attr "conds" "set")
@@ -2822,7 +2822,7 @@
 		      (match_dup 2)]))
 		     (match_dup 3)))])]
   "TARGET_ARM || (TARGET_THUMB2 && CONST_INT_P (operands[2]))"
-  "bic%.%?\\t%4, %3, %1%S0"
+  "bics%?\\t%4, %3, %1%S0"
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")
    (set_attr "conds" "set")
@@ -2841,7 +2841,7 @@
    (set (match_operand:SI 0 "s_register_operand" "=r")
 	(and:SI (not:SI (match_dup 2)) (match_dup 1)))]
   "TARGET_32BIT"
-  "bic%.\\t%0, %1, %2"
+  "bics\\t%0, %1, %2"
   [(set_attr "conds" "set")
    (set_attr "type" "logics_shift_reg")]
 )
@@ -2854,7 +2854,7 @@
 	 (const_int 0)))
    (clobber (match_scratch:SI 0 "=r"))]
   "TARGET_32BIT"
-  "bic%.\\t%0, %1, %2"
+  "bics\\t%0, %1, %2"
   [(set_attr "conds" "set")
    (set_attr "type" "logics_shift_reg")]
 )
@@ -3023,7 +3023,7 @@
    (set (match_operand:SI 0 "s_register_operand" "=r,r")
 	(ior:SI (match_dup 1) (match_dup 2)))]
   "TARGET_32BIT"
-  "orr%.\\t%0, %1, %2"
+  "orrs%?\\t%0, %1, %2"
   [(set_attr "conds" "set")
    (set_attr "type" "logics_imm,logics_reg")]
 )
@@ -3035,7 +3035,7 @@
 			 (const_int 0)))
    (clobber (match_scratch:SI 0 "=r,r"))]
   "TARGET_32BIT"
-  "orr%.\\t%0, %1, %2"
+  "orrs%?\\t%0, %1, %2"
   [(set_attr "conds" "set")
    (set_attr "type" "logics_imm,logics_reg")]
 )
@@ -3182,7 +3182,7 @@
    (set (match_operand:SI 0 "s_register_operand" "=r,r")
 	(xor:SI (match_dup 1) (match_dup 2)))]
   "TARGET_32BIT"
-  "eor%.\\t%0, %1, %2"
+  "eors%?\\t%0, %1, %2"
   [(set_attr "conds" "set")
    (set_attr "type" "logics_imm,logics_reg")]
 )
@@ -4028,7 +4028,7 @@
    (set (match_operand:SI 0 "s_register_operand" "=r,r")
 	(not:SI (match_op_dup 3 [(match_dup 1) (match_dup 2)])))]
   "TARGET_32BIT"
-  "mvn%.\\t%0, %1%S3"
+  "mvns%?\\t%0, %1%S3"
   [(set_attr "conds" "set")
    (set_attr "shift" "1")
    (set_attr "arch" "32,a")
@@ -4043,7 +4043,7 @@
 	 (const_int 0)))
    (clobber (match_scratch:SI 0 "=r,r"))]
   "TARGET_32BIT"
-  "mvn%.\\t%0, %1%S3"
+  "mvns%?\\t%0, %1%S3"
   [(set_attr "conds" "set")
    (set_attr "shift" "1")
    (set_attr "arch" "32,a")
@@ -4233,7 +4233,7 @@
 	  (unspec:HI [(match_operand:HI 1 "memory_operand" "Uw,Uh")]
 		     UNSPEC_UNALIGNED_LOAD)))]
   "unaligned_access && TARGET_32BIT"
-  "ldr%(sh%)\t%0, %1\t@ unaligned"
+  "ldrsh%?\t%0, %1\t@ unaligned"
   [(set_attr "arch" "t2,any")
    (set_attr "length" "2,4")
    (set_attr "predicable" "yes")
@@ -4246,7 +4246,7 @@
 	  (unspec:HI [(match_operand:HI 1 "memory_operand" "Uw,m")]
 		     UNSPEC_UNALIGNED_LOAD)))]
   "unaligned_access && TARGET_32BIT"
-  "ldr%(h%)\t%0, %1\t@ unaligned"
+  "ldrh%?\t%0, %1\t@ unaligned"
   [(set_attr "arch" "t2,any")
    (set_attr "length" "2,4")
    (set_attr "predicable" "yes")
@@ -4270,7 +4270,7 @@
 	(unspec:HI [(match_operand:HI 1 "s_register_operand" "l,r")]
 		   UNSPEC_UNALIGNED_STORE))]
   "unaligned_access && TARGET_32BIT"
-  "str%(h%)\t%1, %0\t@ unaligned"
+  "strh%?\t%1, %0\t@ unaligned"
   [(set_attr "arch" "t2,any")
    (set_attr "length" "2,4")
    (set_attr "predicable" "yes")
@@ -4789,7 +4789,7 @@
    (set (match_operand:SI 0 "s_register_operand" "=r")
 	(not:SI (match_dup 1)))]
   "TARGET_32BIT"
-  "mvn%.\\t%0, %1"
+  "mvns%?\\t%0, %1"
   [(set_attr "conds" "set")
    (set_attr "type" "mvn_reg")]
 )
@@ -4800,7 +4800,7 @@
 			 (const_int 0)))
    (clobber (match_scratch:SI 0 "=r"))]
   "TARGET_32BIT"
-  "mvn%.\\t%0, %1"
+  "mvns%?\\t%0, %1"
   [(set_attr "conds" "set")
    (set_attr "type" "mvn_reg")]
 )
@@ -5031,7 +5031,7 @@
   "TARGET_ARM && arm_arch4 && !arm_arch6"
   "@
    #
-   ldr%(h%)\\t%0, %1"
+   ldrh%?\\t%0, %1"
   [(set_attr "type" "alu_shift_reg,load_byte")
    (set_attr "predicable" "yes")]
 )
@@ -5042,7 +5042,7 @@
   "TARGET_ARM && arm_arch6"
   "@
    uxth%?\\t%0, %1
-   ldr%(h%)\\t%0, %1"
+   ldrh%?\\t%0, %1"
   [(set_attr "predicable" "yes")
    (set_attr "type" "extend,load_byte")]
 )
@@ -5101,7 +5101,7 @@
   "TARGET_ARM && !arm_arch6"
   "@
    #
-   ldr%(b%)\\t%0, %1\\t%@ zero_extendqisi2"
+   ldrb%?\\t%0, %1\\t%@ zero_extendqisi2"
   [(set_attr "length" "8,4")
    (set_attr "type" "alu_shift_reg,load_byte")
    (set_attr "predicable" "yes")]
@@ -5112,8 +5112,8 @@
 	(zero_extend:SI (match_operand:QI 1 "nonimmediate_operand" "r,Uh")))]
   "TARGET_ARM && arm_arch6"
   "@
-   uxtb%(%)\\t%0, %1
-   ldr%(b%)\\t%0, %1\\t%@ zero_extendqisi2"
+   uxtb%?\\t%0, %1
+   ldrb%?\\t%0, %1\\t%@ zero_extendqisi2"
   [(set_attr "type" "extend,load_byte")
    (set_attr "predicable" "yes")]
 )
@@ -5273,7 +5273,7 @@
   "TARGET_ARM && arm_arch4 && !arm_arch6"
   "@
    #
-   ldr%(sh%)\\t%0, %1"
+   ldrsh%?\\t%0, %1"
   [(set_attr "length" "8,4")
    (set_attr "type" "alu_shift_reg,load_byte")
    (set_attr "predicable" "yes")]
@@ -5286,7 +5286,7 @@
   "TARGET_32BIT && arm_arch6"
   "@
    sxth%?\\t%0, %1
-   ldr%(sh%)\\t%0, %1"
+   ldrsh%?\\t%0, %1"
   [(set_attr "type" "extend,load_byte")
    (set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")]
@@ -5330,7 +5330,7 @@
   [(set (match_operand:HI 0 "s_register_operand" "=r")
 	(sign_extend:HI (match_operand:QI 1 "arm_extendqisi_mem_op" "Uq")))]
   "TARGET_ARM && arm_arch4"
-  "ldr%(sb%)\\t%0, %1"
+  "ldrsb%?\\t%0, %1"
   [(set_attr "type" "load_byte")
    (set_attr "predicable" "yes")]
 )
@@ -5369,7 +5369,7 @@
   "TARGET_ARM && arm_arch4 && !arm_arch6"
   "@
    #
-   ldr%(sb%)\\t%0, %1"
+   ldrsb%?\\t%0, %1"
   [(set_attr "length" "8,4")
    (set_attr "type" "alu_shift_reg,load_byte")
    (set_attr "predicable" "yes")]
@@ -5382,7 +5382,7 @@
   "TARGET_ARM && arm_arch6"
   "@
    sxtb%?\\t%0, %1
-   ldr%(sb%)\\t%0, %1"
+   ldrsb%?\\t%0, %1"
   [(set_attr "type" "extend,load_byte")
    (set_attr "predicable" "yes")]
 )
@@ -6037,7 +6037,7 @@
   "TARGET_32BIT"
   "@
    cmp%?\\t%0, #0
-   sub%.\\t%0, %1, #0"
+   subs%?\\t%0, %1, #0"
   [(set_attr "conds" "set")
    (set_attr "type" "alus_imm,alus_imm")]
 )
@@ -6413,8 +6413,8 @@
    mov%?\\t%0, %1\\t%@ movhi
    mvn%?\\t%0, #%B1\\t%@ movhi
    movw%?\\t%0, %L1\\t%@ movhi
-   str%(h%)\\t%1, %0\\t%@ movhi
-   ldr%(h%)\\t%0, %1\\t%@ movhi"
+   strh%?\\t%1, %0\\t%@ movhi
+   ldrh%?\\t%0, %1\\t%@ movhi"
   [(set_attr "predicable" "yes")
    (set_attr "pool_range" "*,*,*,*,256")
    (set_attr "neg_pool_range" "*,*,*,*,244")
@@ -6556,10 +6556,10 @@
    mov%?\\t%0, %1
    mov%?\\t%0, %1
    mvn%?\\t%0, #%B1
-   ldr%(b%)\\t%0, %1
-   str%(b%)\\t%1, %0
-   ldr%(b%)\\t%0, %1
-   str%(b%)\\t%1, %0"
+   ldrb%?\\t%0, %1
+   strb%?\\t%1, %0
+   ldrb%?\\t%0, %1
+   strb%?\\t%1, %0"
   [(set_attr "type" "mov_reg,mov_reg,mov_imm,mov_imm,mvn_imm,load1,store1,load1,store1")
    (set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "yes,yes,yes,no,no,no,no,no,no")
@@ -6599,9 +6599,9 @@
   switch (which_alternative)
     {
     case 0:	/* ARM register from memory */
-      return \"ldr%(h%)\\t%0, %1\\t%@ __fp16\";
+      return \"ldrh%?\\t%0, %1\\t%@ __fp16\";
     case 1:	/* memory from ARM register */
-      return \"str%(h%)\\t%1, %0\\t%@ __fp16\";
+      return \"strh%?\\t%1, %0\\t%@ __fp16\";
     case 2:	/* ARM register from ARM register */
       return \"mov%?\\t%0, %1\\t%@ __fp16\";
     case 3:	/* ARM register from constant */
@@ -7115,7 +7115,7 @@
 		      (const_int 0)))
    (clobber (match_scratch:SI 1 "=r"))]
   "TARGET_32BIT"
-  "orr%.\\t%1, %Q0, %R0"
+  "orrs%?\\t%1, %Q0, %R0"
   [(set_attr "conds" "set")
    (set_attr "type" "logics_reg")]
 )
@@ -8342,13 +8342,7 @@
 (define_insn "nop"
   [(const_int 0)]
   "TARGET_EITHER"
-  "*
-  if (TARGET_UNIFIED_ASM)
-    return \"nop\";
-  if (TARGET_ARM)
-    return \"mov%?\\t%|r0, %|r0\\t%@ nop\";
-  return  \"mov\\tr8, r8\";
-  "
+  "nop"
   [(set (attr "length")
 	(if_then_else (eq_attr "is_thumb" "yes")
 		      (const_int 2)
@@ -8436,7 +8430,7 @@
 	(match_op_dup 1 [(match_op_dup 3 [(match_dup 4) (match_dup 5)])
 			 (match_dup 2)]))]
   "TARGET_32BIT"
-  "%i1%.\\t%0, %2, %4%S3"
+  "%i1s%?\\t%0, %2, %4%S3"
   [(set_attr "conds" "set")
    (set_attr "shift" "4")
    (set_attr "arch" "32,a")
@@ -8453,7 +8447,7 @@
 	 (const_int 0)))
    (clobber (match_scratch:SI 0 "=r,r"))]
   "TARGET_32BIT"
-  "%i1%.\\t%0, %2, %4%S3"
+  "%i1s%?\\t%0, %2, %4%S3"
   [(set_attr "conds" "set")
    (set_attr "shift" "4")
    (set_attr "arch" "32,a")
@@ -8484,7 +8478,7 @@
 	(minus:SI (match_dup 1)
 		  (match_op_dup 2 [(match_dup 3) (match_dup 4)])))]
   "TARGET_32BIT"
-  "sub%.\\t%0, %1, %3%S2"
+  "subs%?\\t%0, %1, %3%S2"
   [(set_attr "conds" "set")
    (set_attr "shift" "3")
    (set_attr "arch" "32,a,a")
@@ -8500,7 +8494,7 @@
 	 (const_int 0)))
    (clobber (match_scratch:SI 0 "=r,r,r"))]
   "TARGET_32BIT"
-  "sub%.\\t%0, %1, %3%S2"
+  "subs%?\\t%0, %1, %3%S2"
   [(set_attr "conds" "set")
    (set_attr "shift" "3")
    (set_attr "arch" "32,a,a")
@@ -10208,7 +10202,7 @@
 	if (val1 == 4 || val2 == 4)
 	  /* Other val must be 8, since we know they are adjacent and neither
 	     is zero.  */
-	  output_asm_insn (\"ldm%(ib%)\\t%0, {%1, %2}\", ldm);
+	  output_asm_insn (\"ldmib%?\\t%0, {%1, %2}\", ldm);
 	else if (const_ok_for_arm (val1) || const_ok_for_arm (-val1))
 	  {
 	    ldm[0] = ops[0] = operands[4];
@@ -10216,9 +10210,9 @@
 	    ops[2] = GEN_INT (val1);
 	    output_add_immediate (ops);
 	    if (val1 < val2)
-	      output_asm_insn (\"ldm%(ia%)\\t%0, {%1, %2}\", ldm);
+	      output_asm_insn (\"ldmia%?\\t%0, {%1, %2}\", ldm);
 	    else
-	      output_asm_insn (\"ldm%(da%)\\t%0, {%1, %2}\", ldm);
+	      output_asm_insn (\"ldmda%?\\t%0, {%1, %2}\", ldm);
 	  }
 	else
 	  {
@@ -10235,16 +10229,16 @@
     else if (val1 != 0)
       {
 	if (val1 < val2)
-	  output_asm_insn (\"ldm%(da%)\\t%0, {%1, %2}\", ldm);
+	  output_asm_insn (\"ldmda%?\\t%0, {%1, %2}\", ldm);
 	else
-	  output_asm_insn (\"ldm%(ia%)\\t%0, {%1, %2}\", ldm);
+	  output_asm_insn (\"ldmia%?\\t%0, {%1, %2}\", ldm);
       }
     else
       {
 	if (val1 < val2)
-	  output_asm_insn (\"ldm%(ia%)\\t%0, {%1, %2}\", ldm);
+	  output_asm_insn (\"ldmia%?\\t%0, {%1, %2}\", ldm);
 	else
-	  output_asm_insn (\"ldm%(da%)\\t%0, {%1, %2}\", ldm);
+	  output_asm_insn (\"ldmda%?\\t%0, {%1, %2}\", ldm);
       }
     output_asm_insn (\"%I3%?\\t%0, %1, %2\", arith);
     return \"\";
@@ -10580,9 +10574,7 @@
 	int i;
 	char pattern[100];
 
-	if (TARGET_ARM)
-	    strcpy (pattern, \"stm%(fd%)\\t%m0!, {%1\");
-	else if (TARGET_THUMB2)
+	if (TARGET_32BIT)
 	    strcpy (pattern, \"push%?\\t{%1\");
 	else
 	    strcpy (pattern, \"push\\t{%1\");
