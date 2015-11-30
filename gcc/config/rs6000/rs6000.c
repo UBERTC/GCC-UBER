@@ -409,6 +409,13 @@ mode_supports_pre_modify_p (machine_mode mode)
 	  != 0);
 }
 
+/* Return true if we have D-form addressing in altivec registers.  */
+static inline bool
+mode_supports_vmx_dform (machine_mode mode)
+{
+  return ((reg_addr[mode].addr_mask[RELOAD_REG_VMX] & RELOAD_REG_OFFSET) != 0);
+}
+
 
 /* Target cpu costs.  */
 
@@ -2263,7 +2270,9 @@ rs6000_debug_reg_global (void)
 	   "f  reg_class = %s\n"
 	   "v  reg_class = %s\n"
 	   "wa reg_class = %s\n"
+	   "wb reg_class = %s\n"
 	   "wd reg_class = %s\n"
+	   "we reg_class = %s\n"
 	   "wf reg_class = %s\n"
 	   "wg reg_class = %s\n"
 	   "wh reg_class = %s\n"
@@ -2288,7 +2297,9 @@ rs6000_debug_reg_global (void)
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_f]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_v]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wa]],
+	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wb]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wd]],
+	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_we]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wf]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wg]],
 	   reg_class_names[rs6000_constraints[RS6000_CONSTRAINT_wh]],
@@ -2669,9 +2680,15 @@ rs6000_setup_reg_addr_masks (void)
 	    }
 
 	  /* GPR and FPR registers can do REG+OFFSET addressing, except
-	     possibly for SDmode.  */
+	     possibly for SDmode.  ISA 3.0 (i.e. power9) adds D-form
+	     addressing for scalars to altivec registers.  */
 	  if ((addr_mask != 0) && !indexed_only_p
-	      && (rc == RELOAD_REG_GPR || rc == RELOAD_REG_FPR))
+	      && msize <= 8
+	      && (rc == RELOAD_REG_GPR
+		  || rc == RELOAD_REG_FPR
+		  || (rc == RELOAD_REG_VMX
+		      && TARGET_P9_DFORM
+		      && (m2 == DFmode || m2 == SFmode))))
 	    addr_mask |= RELOAD_REG_OFFSET;
 
 	  /* VMX registers can do (REG & -16) and ((REG+REG) & -16)
@@ -2994,6 +3011,10 @@ rs6000_init_hard_regno_mode_ok (bool global_init_p)
       if (FLOAT128_IEEE_P (TFmode))
 	rs6000_constraints[RS6000_CONSTRAINT_wp] = VSX_REGS;	/* TFmode  */
     }
+
+  /* Support for new D-form instructions.  */
+  if (TARGET_P9_DFORM)
+    rs6000_constraints[RS6000_CONSTRAINT_wb] = ALTIVEC_REGS;
 
   /* Support for new direct moves.  */
   if (TARGET_DIRECT_MOVE_128)
@@ -18260,8 +18281,10 @@ rs6000_secondary_reload (bool in_p,
 
   /* If this is a scalar floating point value and we want to load it into the
      traditional Altivec registers, do it via a move via a traditional floating
-     point register.  Also make sure that non-zero constants use a FPR.  */
+     point register, unless we have D-form addressing.  Also make sure that
+     non-zero constants use a FPR.  */
   if (!done_p && reg_addr[mode].scalar_in_vmx_p
+      && !mode_supports_vmx_dform (mode)
       && (rclass == VSX_REGS || rclass == ALTIVEC_REGS)
       && (memory_p || (GET_CODE (x) == CONST_DOUBLE)))
     {
@@ -18825,10 +18848,14 @@ rs6000_preferred_reload_class (rtx x, enum reg_class rclass)
 	  return NO_REGS;
 	}
 
-      /* If this is a scalar floating point value, prefer the traditional
-	 floating point registers so that we can use D-form (register+offset)
-	 addressing.  */
-      if (GET_MODE_SIZE (mode) < 16)
+      /* D-form addressing can easily reload the value.  */
+      if (mode_supports_vmx_dform (mode))
+	return rclass;
+
+      /* If this is a scalar floating point value and we don't have D-form
+	 addressing, prefer the traditional floating point registers so that we
+	 can use D-form (register+offset) addressing.  */
+      if (GET_MODE_SIZE (mode) < 16 && rclass == VSX_REGS)
 	return FLOAT_REGS;
 
       /* Prefer the Altivec registers if Altivec is handling the vector
@@ -18977,6 +19004,7 @@ rs6000_secondary_reload_class (enum reg_class rclass, machine_mode mode,
      instead of reloading the secondary memory address for Altivec moves.  */
   if (TARGET_VSX
       && GET_MODE_SIZE (mode) < 16
+      && !mode_supports_vmx_dform (mode)
       && (((rclass == GENERAL_REGS || rclass == BASE_REGS)
            && (regno >= 0 && ALTIVEC_REGNO_P (regno)))
           || ((rclass == VSX_REGS || rclass == ALTIVEC_REGS)
@@ -28516,8 +28544,8 @@ rs6000_adjust_cost (rtx_insn *insn, rtx link, rtx_insn *dep_insn, int cost)
 {
   enum attr_type attr_type;
 
-  if (! recog_memoized (insn))
-    return 0;
+  if (recog_memoized (insn) < 0 || recog_memoized (dep_insn) < 0)
+    return cost;
 
   switch (REG_NOTE_KIND (link))
     {
@@ -31888,13 +31916,15 @@ rs6000_declare_alias (struct symtab_node *n, void *d)
           if (dollar_inside) {
 	      if (data->function_descriptor)
                 fprintf(data->file, "\t.rename .%s,\".%s\"\n", buffer, name);
-	      else
-                fprintf(data->file, "\t.rename %s,\"%s\"\n", buffer, name);
+	      fprintf(data->file, "\t.rename %s,\"%s\"\n", buffer, name);
 	    }
 	  if (data->function_descriptor)
-	    fputs ("\t.globl .", data->file);
-	  else
-	    fputs ("\t.globl ", data->file);
+	    {
+	      fputs ("\t.globl .", data->file);
+	      RS6000_OUTPUT_BASENAME (data->file, buffer);
+	      putc ('\n', data->file);
+	    }
+	  fputs ("\t.globl ", data->file);
 	  RS6000_OUTPUT_BASENAME (data->file, buffer);
 	  putc ('\n', data->file);
 	}
@@ -31908,14 +31938,16 @@ rs6000_declare_alias (struct symtab_node *n, void *d)
       if (dollar_inside)
 	{
 	  if (data->function_descriptor)
-            fprintf(data->file, "\t.rename %s,\"%s\"\n", buffer, name);
-	  else
             fprintf(data->file, "\t.rename .%s,\".%s\"\n", buffer, name);
+	  fprintf(data->file, "\t.rename %s,\"%s\"\n", buffer, name);
 	}
       if (data->function_descriptor)
-	fputs ("\t.lglobl .", data->file);
-      else
-	fputs ("\t.lglobl ", data->file);
+	{
+	  fputs ("\t.lglobl .", data->file);
+	  RS6000_OUTPUT_BASENAME (data->file, buffer);
+	  putc ('\n', data->file);
+	}
+      fputs ("\t.lglobl ", data->file);
       RS6000_OUTPUT_BASENAME (data->file, buffer);
       putc ('\n', data->file);
     }
@@ -32611,14 +32643,42 @@ rs6000_memory_move_cost (machine_mode mode, reg_class_t rclass,
    reciprocal of the function, or NULL_TREE if not available.  */
 
 static tree
-rs6000_builtin_reciprocal (unsigned int fn, bool md_fn,
-			   bool sqrt ATTRIBUTE_UNUSED)
+rs6000_builtin_reciprocal (gcall *call)
 {
   if (optimize_insn_for_size_p ())
     return NULL_TREE;
 
-  if (md_fn)
-    switch (fn)
+  if (gimple_call_internal_p (call))
+    switch (gimple_call_internal_fn (call))
+      {
+	tree type;
+      case IFN_SQRT:
+	type = TREE_TYPE (gimple_call_lhs (call));
+	switch (TYPE_MODE (type))
+	  {
+	  case V2DFmode:
+	    if (!RS6000_RECIP_AUTO_RSQRTE_P (V2DFmode))
+	      return NULL_TREE;
+
+	    return rs6000_builtin_decls[VSX_BUILTIN_RSQRT_2DF];
+
+	  case V4SFmode:
+	    if (!RS6000_RECIP_AUTO_RSQRTE_P (V4SFmode))
+	      return NULL_TREE;
+
+	    return rs6000_builtin_decls[VSX_BUILTIN_RSQRT_4SF];
+
+	  default:
+	    return NULL_TREE;
+	  }
+
+      default:
+	return NULL_TREE;
+      }
+
+  tree fndecl = gimple_call_fndecl (call);
+  if (DECL_BUILT_IN_CLASS (fndecl) == BUILT_IN_MD)
+    switch (DECL_FUNCTION_CODE (fndecl))
       {
       case VSX_BUILTIN_XVSQRTDP:
 	if (!RS6000_RECIP_AUTO_RSQRTE_P (V2DFmode))
@@ -32637,7 +32697,7 @@ rs6000_builtin_reciprocal (unsigned int fn, bool md_fn,
       }
 
   else
-    switch (fn)
+    switch (DECL_FUNCTION_CODE (fndecl))
       {
       case BUILT_IN_SQRT:
 	if (!RS6000_RECIP_AUTO_RSQRTE_P (DFmode))

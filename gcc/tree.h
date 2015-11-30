@@ -1453,6 +1453,11 @@ extern void protected_set_expr_location (tree, location_t);
 #define OMP_CLAUSE_SHARED_FIRSTPRIVATE(NODE) \
   (OMP_CLAUSE_SUBCODE_CHECK (NODE, OMP_CLAUSE_SHARED)->base.public_flag)
 
+/* True on a SHARED clause if a scalar is not modified in the body and
+   thus could be optimized as firstprivate.  */
+#define OMP_CLAUSE_SHARED_READONLY(NODE) \
+  TREE_PRIVATE (OMP_CLAUSE_SUBCODE_CHECK (NODE, OMP_CLAUSE_SHARED))
+
 #define OMP_CLAUSE_IF_MODIFIER(NODE)	\
   (OMP_CLAUSE_SUBCODE_CHECK (NODE, OMP_CLAUSE_IF)->omp_clause.subcode.if_modifier)
 
@@ -3763,6 +3768,10 @@ extern int allocate_decl_uid (void);
 extern tree make_node_stat (enum tree_code MEM_STAT_DECL);
 #define make_node(t) make_node_stat (t MEM_STAT_INFO)
 
+/* Free tree node.  */
+
+extern void free_node (tree);
+
 /* Make a copy of a node, with all the same contents.  */
 
 extern tree copy_node_stat (tree MEM_STAT_DECL);
@@ -4807,7 +4816,9 @@ extern void DEBUG_FUNCTION verify_type (const_tree t);
 extern bool gimple_canonical_types_compatible_p (const_tree, const_tree,
 						 bool trust_type_canonical = true);
 extern bool type_with_interoperable_signedness (const_tree);
-/* Return simplified tree code of type that is used for canonical type merging.  */
+
+/* Return simplified tree code of type that is used for canonical type
+   merging.  */
 inline enum tree_code
 tree_code_for_canonical_type_merging (enum tree_code code)
 {
@@ -4827,6 +4838,23 @@ tree_code_for_canonical_type_merging (enum tree_code code)
   if (code == REFERENCE_TYPE)
     return POINTER_TYPE;
   return code;
+}
+
+/* Return ture if get_alias_set care about TYPE_CANONICAL of given type.
+   We don't define the types for pointers, arrays and vectors.  The reason is
+   that pointers are handled specially: ptr_type_node accesses conflict with
+   accesses to all other pointers.  This is done by alias.c.
+   Because alias sets of arrays and vectors are the same as types of their
+   elements, we can't compute canonical type either.  Otherwise we could go
+   form void *[10] to int *[10] (because they are equivalent for canonical type
+   machinery) and get wrong TBAA.  */
+
+inline bool
+canonical_type_used_p (const_tree t)
+{
+  return !(POINTER_TYPE_P (t)
+	   || TREE_CODE (t) == ARRAY_TYPE
+	   || TREE_CODE (t) == VECTOR_TYPE);
 }
 
 #define tree_map_eq tree_map_base_eq

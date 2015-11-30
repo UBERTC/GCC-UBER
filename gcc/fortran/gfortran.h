@@ -841,6 +841,16 @@ typedef struct
   /* Mentioned in OMP DECLARE TARGET.  */
   unsigned omp_declare_target:1;
 
+  /* Mentioned in OACC DECLARE.  */
+  unsigned oacc_declare_create:1;
+  unsigned oacc_declare_copyin:1;
+  unsigned oacc_declare_deviceptr:1;
+  unsigned oacc_declare_device_resident:1;
+  unsigned oacc_declare_link:1;
+
+  /* This is an OpenACC acclerator function at level N - 1  */
+  unsigned oacc_function:3;
+
   /* Attributes set by compiler extensions (!GCC$ ATTRIBUTES).  */
   unsigned ext_attr:EXT_ATTR_NUM;
 
@@ -1106,7 +1116,9 @@ enum gfc_omp_map_op
   OMP_MAP_FORCE_FROM,
   OMP_MAP_FORCE_TOFROM,
   OMP_MAP_FORCE_PRESENT,
-  OMP_MAP_FORCE_DEVICEPTR
+  OMP_MAP_FORCE_DEVICEPTR,
+  OMP_MAP_DEVICE_RESIDENT,
+  OMP_MAP_LINK
 };
 
 /* For use in OpenMP clauses in case we need extra information
@@ -1148,6 +1160,7 @@ enum
   OMP_LIST_FROM,
   OMP_LIST_REDUCTION,
   OMP_LIST_DEVICE_RESIDENT,
+  OMP_LIST_LINK,
   OMP_LIST_USE_DEVICE,
   OMP_LIST_CACHE,
   OMP_LIST_NUM
@@ -1232,6 +1245,20 @@ typedef struct gfc_omp_clauses
 gfc_omp_clauses;
 
 #define gfc_get_omp_clauses() XCNEW (gfc_omp_clauses)
+
+
+/* Node in the linked list used for storing !$oacc declare constructs.  */
+
+typedef struct gfc_oacc_declare
+{
+  struct gfc_oacc_declare *next;
+  bool module_var;
+  gfc_omp_clauses *clauses;
+  locus loc;
+}
+gfc_oacc_declare;
+
+#define gfc_get_oacc_declare() XCNEW (gfc_oacc_declare)
 
 
 /* Node in the linked list used for storing !$omp declare simd constructs.  */
@@ -1582,6 +1609,16 @@ gfc_dt_list;
   /* A list of all derived types.  */
   extern gfc_dt_list *gfc_derived_types;
 
+typedef struct gfc_oacc_routine_name
+{
+  struct gfc_symbol *sym;
+  struct gfc_omp_clauses *clauses;
+  struct gfc_oacc_routine_name *next;
+}
+gfc_oacc_routine_name;
+
+#define gfc_get_oacc_routine_name() XCNEW (gfc_oacc_routine_name)
+
 /* A namespace describes the contents of procedure, module, interface block
    or BLOCK construct.  */
 /* ??? Anything else use these?  */
@@ -1645,8 +1682,14 @@ typedef struct gfc_namespace
      this namespace.  */
   struct gfc_data *data, *old_data;
 
-  /* !$ACC DECLARE clauses.  */
-  gfc_omp_clauses *oacc_declare_clauses;
+  /* !$ACC DECLARE.  */
+  gfc_oacc_declare *oacc_declare;
+
+  /* !$ACC ROUTINE clauses.  */
+  gfc_omp_clauses *oacc_routine_clauses;
+
+  /* !$ACC ROUTINE names.  */
+  gfc_oacc_routine_name *oacc_routine_names;
 
   gfc_charlen *cl_list, *old_cl_list;
 
@@ -1693,6 +1736,9 @@ typedef struct gfc_namespace
 
   /* Set to 1 for !$OMP DECLARE REDUCTION namespaces.  */
   unsigned omp_udr_ns:1;
+
+  /* Set to 1 for !$ACC ROUTINE namespaces.  */
+  unsigned oacc_routine:1;
 }
 gfc_namespace;
 
@@ -2320,10 +2366,11 @@ enum gfc_exec_op
   EXEC_READ, EXEC_WRITE, EXEC_IOLENGTH, EXEC_TRANSFER, EXEC_DT_END,
   EXEC_BACKSPACE, EXEC_ENDFILE, EXEC_INQUIRE, EXEC_REWIND, EXEC_FLUSH,
   EXEC_LOCK, EXEC_UNLOCK,
-  EXEC_OACC_KERNELS_LOOP, EXEC_OACC_PARALLEL_LOOP,
+  EXEC_OACC_KERNELS_LOOP, EXEC_OACC_PARALLEL_LOOP, EXEC_OACC_ROUTINE,
   EXEC_OACC_PARALLEL, EXEC_OACC_KERNELS, EXEC_OACC_DATA, EXEC_OACC_HOST_DATA,
   EXEC_OACC_LOOP, EXEC_OACC_UPDATE, EXEC_OACC_WAIT, EXEC_OACC_CACHE,
   EXEC_OACC_ENTER_DATA, EXEC_OACC_EXIT_DATA, EXEC_OACC_ATOMIC,
+  EXEC_OACC_DECLARE,
   EXEC_OMP_CRITICAL, EXEC_OMP_DO, EXEC_OMP_FLUSH, EXEC_OMP_MASTER,
   EXEC_OMP_ORDERED, EXEC_OMP_PARALLEL, EXEC_OMP_PARALLEL_DO,
   EXEC_OMP_PARALLEL_SECTIONS, EXEC_OMP_PARALLEL_WORKSHARE,
@@ -2405,6 +2452,7 @@ typedef struct gfc_code
     struct gfc_code *which_construct;
     int stop_code;
     gfc_entry_list *entry;
+    gfc_oacc_declare *oacc_declare;
     gfc_omp_clauses *omp_clauses;
     const char *omp_name;
     gfc_omp_namelist *omp_namelist;
@@ -2907,6 +2955,7 @@ gfc_expr *gfc_get_parentheses (gfc_expr *);
 /* openmp.c */
 struct gfc_omp_saved_state { void *ptrs[2]; int ints[1]; };
 void gfc_free_omp_clauses (gfc_omp_clauses *);
+void gfc_free_oacc_declare_clauses (struct gfc_oacc_declare *);
 void gfc_free_omp_declare_simd (gfc_omp_declare_simd *);
 void gfc_free_omp_declare_simd_list (gfc_omp_declare_simd *);
 void gfc_free_omp_udr (gfc_omp_udr *);
@@ -3223,5 +3272,9 @@ gfc_expr *gfc_simplify_ieee_functions (gfc_expr *);
 /* trans-array.c  */
 
 bool gfc_is_reallocatable_lhs (gfc_expr *);
+
+/* trans-decl.c */
+
+void finish_oacc_declare (gfc_namespace *, gfc_symbol *, bool);
 
 #endif /* GCC_GFORTRAN_H  */

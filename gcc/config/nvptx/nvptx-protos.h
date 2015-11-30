@@ -24,7 +24,6 @@
 extern void nvptx_declare_function_name (FILE *, const char *, const_tree decl);
 extern void nvptx_declare_object_name (FILE *file, const char *name,
 				       const_tree decl);
-extern void nvptx_record_needed_fndecl (tree decl);
 extern void nvptx_function_end (FILE *);
 extern void nvptx_output_skip (FILE *, unsigned HOST_WIDE_INT);
 extern void nvptx_output_ascii (FILE *, const char *, unsigned HOST_WIDE_INT);
@@ -42,7 +41,6 @@ extern const char *nvptx_output_return (void);
 extern machine_mode nvptx_underlying_object_mode (rtx);
 extern const char *nvptx_section_from_addr_space (addr_space_t);
 extern bool nvptx_hard_regno_mode_ok (int, machine_mode);
-extern addr_space_t nvptx_addr_space_from_address (rtx);
 extern rtx nvptx_maybe_convert_symbolic_operand (rtx);
 #endif
 #endif

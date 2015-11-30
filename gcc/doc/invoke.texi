@@ -242,39 +242,37 @@ Objective-C and Objective-C++ Dialects}.
 @gccoptlist{-fsyntax-only  -fmax-errors=@var{n}  -Wpedantic @gol
 -pedantic-errors @gol
 -w  -Wextra  -Wall  -Waddress  -Waggregate-return  @gol
--Waggressive-loop-optimizations -Warray-bounds -Warray-bounds=@var{n} @gol
--Wbool-compare -Wduplicated-cond -Wframe-address @gol
--Wno-attributes -Wno-builtin-macro-redefined @gol
+-Wno-aggressive-loop-optimizations -Warray-bounds -Warray-bounds=@var{n} @gol
+-Wno-attributes -Wbool-compare -Wno-builtin-macro-redefined @gol
 -Wc90-c99-compat -Wc99-c11-compat @gol
 -Wc++-compat -Wc++11-compat -Wc++14-compat -Wcast-align  -Wcast-qual  @gol
 -Wchar-subscripts -Wclobbered  -Wcomment -Wconditionally-supported  @gol
--Wconversion -Wcoverage-mismatch -Wdate-time -Wdelete-incomplete -Wno-cpp  @gol
+-Wconversion -Wcoverage-mismatch -Wno-cpp -Wdate-time -Wdelete-incomplete @gol
 -Wno-deprecated -Wno-deprecated-declarations -Wno-designated-init @gol
 -Wdisabled-optimization @gol
 -Wno-discarded-qualifiers -Wno-discarded-array-qualifiers @gol
--Wno-div-by-zero -Wdouble-promotion -Wempty-body  -Wenum-compare @gol
--Wno-endif-labels -Werror  -Werror=* @gol
--Wfatal-errors  -Wfloat-equal  -Wformat  -Wformat=2 @gol
+-Wno-div-by-zero -Wdouble-promotion -Wduplicated-cond @gol
+-Wempty-body  -Wenum-compare -Wno-endif-labels @gol
+-Werror  -Werror=* -Wfatal-errors -Wfloat-equal  -Wformat  -Wformat=2 @gol
 -Wno-format-contains-nul -Wno-format-extra-args -Wformat-nonliteral @gol
--Wformat-security  -Wformat-signedness  -Wformat-y2k @gol
+-Wformat-security  -Wformat-signedness  -Wformat-y2k -Wframe-address @gol
 -Wframe-larger-than=@var{len} -Wno-free-nonheap-object -Wjump-misses-init @gol
 -Wignored-qualifiers  -Wincompatible-pointer-types @gol
 -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int @gol
 -Winit-self  -Winline  -Wno-int-conversion @gol
 -Wno-int-to-pointer-cast -Wno-invalid-offsetof @gol
--Wnull-dereference @gol
--Winvalid-pch -Wlarger-than=@var{len}  -Wunsafe-loop-optimizations @gol
+-Winvalid-pch -Wlarger-than=@var{len} @gol
 -Wlogical-op -Wlogical-not-parentheses -Wlong-long @gol
 -Wmain -Wmaybe-uninitialized -Wmemset-transposed-args @gol
 -Wmisleading-indentation -Wmissing-braces @gol
 -Wmissing-field-initializers -Wmissing-include-dirs @gol
 -Wno-multichar  -Wnonnull  -Wnormalized=@r{[}none@r{|}id@r{|}nfc@r{|}nfkc@r{]} @gol
--Wodr  -Wno-overflow  -Wopenmp-simd @gol
--Woverride-init-side-effects @gol
--Woverlength-strings  -Wpacked  -Wpacked-bitfield-compat  -Wpadded @gol
--Wparentheses  -Wpedantic-ms-format -Wno-pedantic-ms-format @gol
+-Wnull-dereference -Wodr  -Wno-overflow  -Wopenmp-simd  @gol
+-Woverride-init-side-effects -Woverlength-strings @gol
+-Wpacked  -Wpacked-bitfield-compat  -Wpadded @gol
+-Wparentheses -Wno-pedantic-ms-format @gol
 -Wplacement-new -Wpointer-arith  -Wno-pointer-to-int-cast @gol
--Wredundant-decls  -Wno-return-local-addr @gol
+-Wno-pragmas -Wredundant-decls  -Wno-return-local-addr @gol
 -Wreturn-type  -Wsequence-point  -Wshadow  -Wno-shadow-ivar @gol
 -Wshift-overflow -Wshift-overflow=@var{n} @gol
 -Wshift-count-negative -Wshift-count-overflow -Wshift-negative-value @gol
@@ -282,14 +280,14 @@ Objective-C and Objective-C++ Dialects}.
 -Wno-scalar-storage-order @gol
 -Wsizeof-pointer-memaccess  -Wsizeof-array-argument @gol
 -Wstack-protector -Wstack-usage=@var{len} -Wstrict-aliasing @gol
--Wstrict-aliasing=n @gol -Wstrict-overflow -Wstrict-overflow=@var{n} @gol
+-Wstrict-aliasing=n -Wstrict-overflow -Wstrict-overflow=@var{n} @gol
 -Wsuggest-attribute=@r{[}pure@r{|}const@r{|}noreturn@r{|}format@r{]} @gol
 -Wsuggest-final-types @gol -Wsuggest-final-methods -Wsuggest-override @gol
 -Wmissing-format-attribute -Wsubobject-linkage @gol
 -Wswitch  -Wswitch-default  -Wswitch-enum -Wswitch-bool -Wsync-nand @gol
 -Wsystem-headers  -Wtautological-compare  -Wtrampolines  -Wtrigraphs @gol
 -Wtype-limits  -Wundef @gol
--Wuninitialized  -Wunknown-pragmas  -Wno-pragmas @gol
+-Wuninitialized  -Wunknown-pragmas  -Wunsafe-loop-optimizations @gol
 -Wunsuffixed-float-constants  -Wunused  -Wunused-function @gol
 -Wunused-label  -Wunused-local-typedefs -Wunused-parameter @gol
 -Wno-unused-result -Wunused-value @gol -Wunused-variable @gol
@@ -793,7 +791,6 @@ Objective-C and Objective-C++ Dialects}.
 -mgp32  -mgp64  -mfp32  -mfpxx  -mfp64  -mhard-float  -msoft-float @gol
 -mno-float  -msingle-float  -mdouble-float @gol
 -modd-spreg -mno-odd-spreg @gol
--mcompact-branches=@var{policy} @gol
 -mabs=@var{mode}  -mnan=@var{encoding} @gol
 -mdsp  -mno-dsp  -mdspr2  -mno-dspr2 @gol
 -mmcu -mmno-mcu @gol
@@ -824,6 +821,7 @@ Objective-C and Objective-C++ Dialects}.
 -mfix-vr4130  -mno-fix-vr4130  -mfix-sb1  -mno-fix-sb1 @gol
 -mflush-func=@var{func}  -mno-flush-func @gol
 -mbranch-cost=@var{num}  -mbranch-likely  -mno-branch-likely @gol
+-mcompact-branches=@var{policy} @gol
 -mfp-exceptions -mno-fp-exceptions @gol
 -mvr4130-align -mno-vr4130-align -msynci -mno-synci @gol
 -mrelax-pic-calls -mno-relax-pic-calls -mmcount-ra-address @gol
@@ -6111,8 +6109,10 @@ and program then exits with a non-zero exit code.
 
 Currently this feature only works for @option{-fsanitize=undefined} (and its suboptions
 except for @option{-fsanitize=unreachable} and @option{-fsanitize=return}),
-@option{-fsanitize=float-cast-overflow}, @option{-fsanitize=float-divide-by-zero} and
-@option{-fsanitize=kernel-address}.  For these sanitizers error recovery is turned on by default.
+@option{-fsanitize=float-cast-overflow}, @option{-fsanitize=float-divide-by-zero},
+@option{-fsanitize=kernel-address} and @option{-fsanitize=address}.
+For these sanitizers error recovery is turned on by default, except @option{-fsanitize=address},
+for which this feature is experimental.
 @option{-fsanitize-recover=all} and @option{-fno-sanitize-recover=all} is also
 accepted, the former enables recovery for all sanitizers that support it,
 the latter disables recovery for all sanitizers that support it.
@@ -17606,30 +17606,6 @@ for the o32 ABI.  This is the default for processors that are known to
 support these registers.  When using the o32 FPXX ABI, @option{-mno-odd-spreg}
 is set by default.
 
-@item -mcompact-branches=never
-@itemx -mcompact-branches=optimal
-@itemx -mcompact-branches=always
-@opindex mcompact-branches=never
-@opindex mcompact-branches=optimal
-@opindex mcompact-branches=always
-These options control which form of branches will be generated.  The
-default is @option{-mcompact-branches=optimal}.
-
-The @option{-mcompact-branches=never} option ensures that compact branch
-instructions will never be generated.
-
-The @option{-mcompact-branches=always} option ensures that a compact
-branch instruction will be generated if available.  If a compact branch
-instruction is not available, a delay slot form of the branch will be
-used instead.
-
-This option is supported from MIPS Release 6 onwards.
-
-The @option{-mcompact-branches=optimal} option will cause a delay slot
-branch to be used if one is available in the current ISA and the delay
-slot is successfully filled.  If the delay slot is not filled, a compact
-branch will be chosen if one is available.
-
 @item -mabs=2008
 @itemx -mabs=legacy
 @opindex mabs=2008
@@ -18192,6 +18168,30 @@ architecture.  An exception is for the MIPS32 and MIPS64 architectures
 and processors that implement those architectures; for those, Branch
 Likely instructions are not be generated by default because the MIPS32
 and MIPS64 architectures specifically deprecate their use.
+
+@item -mcompact-branches=never
+@itemx -mcompact-branches=optimal
+@itemx -mcompact-branches=always
+@opindex mcompact-branches=never
+@opindex mcompact-branches=optimal
+@opindex mcompact-branches=always
+These options control which form of branches will be generated.  The
+default is @option{-mcompact-branches=optimal}.
+
+The @option{-mcompact-branches=never} option ensures that compact branch
+instructions will never be generated.
+
+The @option{-mcompact-branches=always} option ensures that a compact
+branch instruction will be generated if available.  If a compact branch
+instruction is not available, a delay slot form of the branch will be
+used instead.
+
+This option is supported from MIPS Release 6 onwards.
+
+The @option{-mcompact-branches=optimal} option will cause a delay slot
+branch to be used if one is available in the current ISA and the delay
+slot is successfully filled.  If the delay slot is not filled, a compact
+branch will be chosen if one is available.
 
 @item -mfp-exceptions
 @itemx -mno-fp-exceptions
@@ -24334,7 +24334,7 @@ loader is not part of GCC; it is part of the operating system).  If
 the GOT size for the linked executable exceeds a machine-specific
 maximum size, you get an error message from the linker indicating that
 @option{-fpic} does not work; in that case, recompile with @option{-fPIC}
-instead.  (These maximums are 8k on the SPARC and 32k
+instead.  (These maximums are 8k on the SPARC, 28k on AArch64 and 32k
 on the m68k and RS/6000.  The x86 has no such limit.)
 
 Position-independent code requires special support, and therefore works
@@ -24349,7 +24349,7 @@ are defined to 1.
 @opindex fPIC
 If supported for the target machine, emit position-independent code,
 suitable for dynamic linking and avoiding any limit on the size of the
-global offset table.  This option makes a difference on the m68k,
+global offset table.  This option makes a difference on AArch64, m68k,
 PowerPC and SPARC@.
 
 Position-independent code requires special support, and therefore works

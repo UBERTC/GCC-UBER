@@ -1249,7 +1249,10 @@ build_receiver_ref (tree var, bool by_ref, omp_context *ctx)
   TREE_THIS_NOTRAP (x) = 1;
   x = omp_build_component_ref (x, field);
   if (by_ref)
-    x = build_simple_mem_ref (x);
+    {
+      x = build_simple_mem_ref (x);
+      TREE_THIS_NOTRAP (x) = 1;
+    }
 
   return x;
 }
@@ -1849,14 +1852,18 @@ scan_sharing_clauses (tree clauses, omp_context *ctx)
 	     the receiver side will use them directly.  */
 	  if (is_global_var (maybe_lookup_decl_in_outer_ctx (decl, ctx)))
 	    break;
-	  by_ref = use_pointer_for_field (decl, ctx);
 	  if (OMP_CLAUSE_SHARED_FIRSTPRIVATE (c))
-	    break;
-	  if (! TREE_READONLY (decl)
+	    {
+	      use_pointer_for_field (decl, ctx);
+	      break;
+	    }
+	  by_ref = use_pointer_for_field (decl, NULL);
+	  if ((! TREE_READONLY (decl) && !OMP_CLAUSE_SHARED_READONLY (c))
 	      || TREE_ADDRESSABLE (decl)
 	      || by_ref
 	      || is_reference (decl))
 	    {
+	      by_ref = use_pointer_for_field (decl, ctx);
 	      install_var_field (decl, by_ref, 3, ctx);
 	      install_var_local (decl, ctx);
 	      break;
@@ -13359,6 +13366,7 @@ public:
       return !(fun->curr_properties & PROP_gimple_eomp);
     }
   virtual unsigned int execute (function *) { return execute_expand_omp (); }
+  opt_pass * clone () { return new pass_expand_omp_ssa (m_ctxt); }
 
 }; // class pass_expand_omp_ssa
 

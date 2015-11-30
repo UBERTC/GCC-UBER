@@ -3412,6 +3412,21 @@ arm_option_override (void)
   arm_option_check_internal (&global_options);
   arm_option_params_internal ();
 
+  /* Disable array_bound warning. */
+  global_options.x_warn_array_bounds = 0;
+  /* Disable clobbered warning. */
+  global_options.x_warn_clobbered = 0;
+  /* Disable unused warning. */
+  global_options.x_warn_unused = 0;
+  /* Disable unused but set parameter warning. */
+  global_options.x_warn_unused_but_set_parameter = 0;
+  /* Disable unused but set variable warning. */
+  global_options.x_warn_unused_but_set_variable = 0;
+  /* Disable maybe uninitialized warning. */
+  global_options.x_warn_maybe_uninitialized = 0;
+  /* Disable strict overflow warning. */
+  global_options.x_warn_strict_overflow = 0;
+
   /* Register global variables with the garbage collector.  */
   arm_add_gc_roots ();
 
@@ -6686,8 +6701,13 @@ arm_function_ok_for_sibcall (tree decl, tree exp)
 	 a VFP register but then need to transfer it to a core
 	 register.  */
       rtx a, b;
+      tree decl_or_type = decl;
 
-      a = arm_function_value (TREE_TYPE (exp), decl, false);
+      /* If it is an indirect function pointer, get the function type.  */
+      if (!decl)
+	decl_or_type = TREE_TYPE (TREE_TYPE (CALL_EXPR_FN (exp)));
+
+      a = arm_function_value (TREE_TYPE (exp), decl_or_type, false);
       b = arm_function_value (TREE_TYPE (DECL_RESULT (cfun->decl)),
 			      cfun->decl, false);
       if (!rtx_equal_p (a, b))

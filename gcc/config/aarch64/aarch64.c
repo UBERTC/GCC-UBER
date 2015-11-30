@@ -7103,19 +7103,21 @@ aarch64_memory_move_cost (machine_mode mode ATTRIBUTE_UNUSED,
    reciprocal square root builtins.  */
 
 static tree
-aarch64_builtin_reciprocal (unsigned int fn,
-			    bool md_fn,
-			    bool)
+aarch64_builtin_reciprocal (gcall *call)
 {
   if (flag_trapping_math
       || !flag_unsafe_math_optimizations
       || optimize_size
       || ! (aarch64_tune_params.extra_tuning_flags
 	   & AARCH64_EXTRA_TUNE_RECIP_SQRT))
-  {
     return NULL_TREE;
-  }
 
+  if (gimple_call_internal_p (call)
+    return NULL_TREE;
+
+  tree fndecl = gimple_call_fndecl (call);
+  enum built_in_function fn = DECL_FUNCTION_CODE (fndecl);
+  bool md_fn = DECL_BUILT_IN_CLASS (fndecl) == BUILT_IN_MD;
   return aarch64_builtin_rsqrt (fn, md_fn);
 }
 
@@ -8093,6 +8095,21 @@ aarch64_override_options (void)
       = build_target_option_node (&global_options);
 
   aarch64_register_fma_steering ();
+
+   /* Disable array_bound warning. */
+   global_options.x_warn_array_bounds = 0;
+   /* Disable clobbered warning. */
+   global_options.x_warn_clobbered = 0;
+   /* Disable unused warning. */
+   global_options.x_warn_unused = 0;
+   /* Disable unused but set parameter warning. */
+   global_options.x_warn_unused_but_set_parameter = 0;
+   /* Disable unused but set variable warning. */
+   global_options.x_warn_unused_but_set_variable = 0;
+   /* Disable maybe uninitialized warning. */
+   global_options.x_warn_maybe_uninitialized = 0;
+   /* Disable strict overflow warning. */
+   global_options.x_warn_strict_overflow = 0;
 
 }
 
@@ -10108,7 +10125,7 @@ aarch64_madd_needs_nop (rtx_insn* insn)
   if (!TARGET_FIX_ERR_A53_835769)
     return false;
 
-  if (recog_memoized (insn) < 0)
+  if (!INSN_P (insn) || recog_memoized (insn) < 0)
     return false;
 
   attr_type = get_attr_type (insn);

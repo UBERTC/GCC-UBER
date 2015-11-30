@@ -2556,8 +2556,8 @@ process_alt_operands (int only_alternative)
 	     another operand as an operand matching the earlyclobber
 	     operand can be also the same.  */
 	  if (first_conflict_j == last_conflict_j
-	      && operand_reg[last_conflict_j]
-	      != NULL_RTX && ! curr_alt_match_win[last_conflict_j]
+	      && operand_reg[last_conflict_j] != NULL_RTX
+	      && ! curr_alt_match_win[last_conflict_j]
 	      && REGNO (operand_reg[i]) == REGNO (operand_reg[last_conflict_j]))
 	    {
 	      curr_alt_win[last_conflict_j] = false;
@@ -3383,10 +3383,13 @@ curr_insn_transform (bool check_only_p)
        depend on memory mode.  */
     for (i = 0; i < n_operands; i++)
       {
-	rtx op = *curr_id->operand_loc[i];
-	rtx subst, old = op;
+	rtx op, subst, old;
 	bool op_change_p = false;
+
+	if (curr_static_id->operand[i].is_operator)
+	  continue;
 	
+	old = op = *curr_id->operand_loc[i];
 	if (GET_CODE (old) == SUBREG)
 	  old = SUBREG_REG (old);
 	subst = get_equiv_with_elimination (old, curr_insn);
@@ -3725,7 +3728,8 @@ curr_insn_transform (bool check_only_p)
 		 assigment pass and the scratch pseudo will be
 		 spilled.  Spilled scratch pseudos are transformed
 		 back to scratches at the LRA end.  */
-	      && lra_former_scratch_operand_p (curr_insn, i))
+	      && lra_former_scratch_operand_p (curr_insn, i)
+	      && lra_former_scratch_p (REGNO (op)))
 	    {
 	      int regno = REGNO (op);
 	      lra_change_class (regno, NO_REGS, "      Change to", true);
@@ -3734,6 +3738,8 @@ curr_insn_transform (bool check_only_p)
 		   spilled pseudo as there is only one such insn, the
 		   current one.  */
 		reg_renumber[regno] = -1;
+	      lra_assert (bitmap_single_bit_set_p
+			  (&lra_reg_info[REGNO (op)].insn_bitmap));
 	    }
 	  /* We can do an optional reload.  If the pseudo got a hard
 	     reg, we might improve the code through inheritance.  If

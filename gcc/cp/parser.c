@@ -10003,6 +10003,7 @@ cp_parser_statement (cp_parser* parser, tree in_statement_expr,
 	     Parse the label, and then use tail recursion to parse
 	     the statement.  */
 	  cp_parser_label_for_labeled_statement (parser, std_attrs);
+	  in_compound = false;
 	  goto restart;
 
 	case RID_IF:
@@ -10100,6 +10101,7 @@ cp_parser_statement (cp_parser* parser, tree in_statement_expr,
 	     the statement.  */
 
 	  cp_parser_label_for_labeled_statement (parser, std_attrs);
+	  in_compound = false;
 	  goto restart;
 	}
     }
@@ -34633,14 +34635,15 @@ cp_parser_oacc_declare (cp_parser *parser, cp_token *pragma_tok)
 	      if (node != NULL)
 		{
 		  node->offloadable = 1;
-#ifdef ENABLE_OFFLOADING
-		  g->have_offload = true;
-		  if (is_a <varpool_node *> (node))
+		  if (ENABLE_OFFLOADING)
 		    {
-		      vec_safe_push (offload_vars, decl);
-		      node->force_output = 1;
+		      g->have_offload = true;
+		      if (is_a <varpool_node *> (node))
+			{
+			  vec_safe_push (offload_vars, decl);
+			  node->force_output = 1;
+			}
 		    }
-#endif
 		}
 	    }
 	}
@@ -35014,6 +35017,7 @@ cp_parser_late_parsing_cilk_simd_fn_info (cp_parser *parser, tree attrs)
       error ("%<#pragma omp declare simd%> of %<simd%> attribute cannot be "
 	     "used in the same function marked as a Cilk Plus SIMD-enabled "
 	     " function");
+      parser->cilk_simd_fn_info->tokens.release ();
       XDELETE (parser->cilk_simd_fn_info);
       parser->cilk_simd_fn_info = NULL;
       return attrs;
@@ -35051,6 +35055,7 @@ cp_parser_late_parsing_cilk_simd_fn_info (cp_parser *parser, tree attrs)
       attrs = c;
     }
   info->fndecl_seen = true;
+  parser->cilk_simd_fn_info->tokens.release ();
   XDELETE (parser->cilk_simd_fn_info);
   parser->cilk_simd_fn_info = NULL;
   return attrs;

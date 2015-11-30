@@ -19113,9 +19113,23 @@ gen_subprogram_die (tree decl, dw_die_ref context_die)
       compute_frame_pointer_to_fb_displacement (cfa_fb_offset);
 
       if (fun->static_chain_decl)
-	add_AT_location_description
-	  (subr_die, DW_AT_static_link,
-	   loc_list_from_tree (fun->static_chain_decl, 2, NULL));
+	{
+	  /* DWARF requires here a location expression that computes the
+	     address of the enclosing subprogram's frame base.  The machinery
+	     in tree-nested.c is supposed to store this specific address in the
+	     last field of the FRAME record.  */
+	  const tree frame_type
+	    = TREE_TYPE (TREE_TYPE (fun->static_chain_decl));
+	  const tree fb_decl = tree_last (TYPE_FIELDS (frame_type));
+
+	  tree fb_expr
+	    = build1 (INDIRECT_REF, frame_type, fun->static_chain_decl);
+	  fb_expr = build3 (COMPONENT_REF, TREE_TYPE (fb_decl),
+			    fb_expr, fb_decl, NULL_TREE);
+
+	  add_AT_location_description (subr_die, DW_AT_static_link,
+				       loc_list_from_tree (fb_expr, 0, NULL));
+	}
     }
 
   /* Generate child dies for template paramaters.  */
@@ -20784,9 +20798,10 @@ gen_type_die_with_usage (tree type, dw_die_ref context_die,
   /* We are going to output a DIE to represent the unqualified version
      of this type (i.e. without any const or volatile qualifiers) so
      get the main variant (i.e. the unqualified version) of this type
-     now.  (Vectors are special because the debugging info is in the
+     now.  (Vectors and arrays are special because the debugging info is in the
      cloned type itself).  */
-  if (TREE_CODE (type) != VECTOR_TYPE)
+  if (TREE_CODE (type) != VECTOR_TYPE
+      && TREE_CODE (type) != ARRAY_TYPE)
     type = type_main_variant (type);
 
   /* If this is an array type with hidden descriptor, handle it first.  */
@@ -21585,9 +21600,13 @@ gen_decl_die (tree decl, tree origin, dw_die_ref context_die)
 				       context_die);
 
     case NAMESPACE_DECL:
-    case IMPORTED_DECL:
       if (dwarf_version >= 3 || !dwarf_strict)
 	gen_namespace_die (decl, context_die);
+      break;
+
+    case IMPORTED_DECL:
+      dwarf2out_imported_module_or_decl_1 (decl, DECL_NAME (decl),
+					   DECL_CONTEXT (decl), context_die);
       break;
 
     case NAMELIST_DECL:

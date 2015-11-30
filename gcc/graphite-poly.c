@@ -19,11 +19,25 @@ You should have received a copy of the GNU General Public License
 along with GCC; see the file COPYING3.  If not see
 <http://www.gnu.org/licenses/>.  */
 
+#define USES_ISL
+
 #include "config.h"
 
 #ifdef HAVE_isl
-/* Workaround for GMP 5.1.3 bug, see PR56019.  */
-#include <stddef.h>
+
+#include "system.h"
+#include "coretypes.h"
+#include "backend.h"
+#include "tree.h"
+#include "gimple.h"
+#include "cfghooks.h"
+#include "gimple-pretty-print.h"
+#include "diagnostic-core.h"
+#include "fold-const.h"
+#include "gimple-iterator.h"
+#include "tree-ssa-loop.h"
+#include "cfgloop.h"
+#include "tree-data-ref.h"
 
 #include <isl/constraint.h>
 #include <isl/set.h>
@@ -43,20 +57,7 @@ extern "C" {
 }
 #endif
 
-#include "system.h"
-#include "coretypes.h"
-#include "backend.h"
-#include "tree.h"
-#include "gimple.h"
-#include "cfghooks.h"
-#include "gimple-pretty-print.h"
-#include "diagnostic-core.h"
-#include "fold-const.h"
-#include "gimple-iterator.h"
-#include "tree-ssa-loop.h"
-#include "cfgloop.h"
-#include "tree-data-ref.h"
-#include "graphite-poly.h"
+#include "graphite.h"
 
 #define OPENSCOP_MAX_STRING 256
 
@@ -305,9 +306,7 @@ new_scop (edge entry, edge exit)
   scop->must_waw_no_source = NULL;
   scop->may_waw_no_source = NULL;
   scop_set_region (scop, region);
-  scop->original_schedule = NULL;
   scop->pbbs.create (3);
-  scop->poly_scop_p = false;
   scop->drs.create (3);
 
   return scop;
@@ -343,7 +342,6 @@ free_scop (scop_p scop)
   isl_union_map_free (scop->may_waw);
   isl_union_map_free (scop->must_waw_no_source);
   isl_union_map_free (scop->may_waw_no_source);
-  isl_union_map_free (scop->original_schedule);
   XDELETE (scop);
 }
 
