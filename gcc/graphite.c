@@ -27,19 +27,9 @@ along with GCC; see the file COPYING3.  If not see
    The wiki page http://gcc.gnu.org/wiki/Graphite contains pointers to
    the related work.  */
 
+#define USES_ISL
+
 #include "config.h"
-
-#ifdef HAVE_isl
-/* Workaround for GMP 5.1.3 bug, see PR56019.  */
-#include <stddef.h>
-
-#include <isl/constraint.h>
-#include <isl/set.h>
-#include <isl/map.h>
-#include <isl/options.h>
-#include <isl/union_map.h>
-#endif
-
 #include "system.h"
 #include "coretypes.h"
 #include "backend.h"
@@ -59,13 +49,17 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-loop.h"
 #include "tree-data-ref.h"
 #include "tree-scalar-evolution.h"
-#include "graphite-poly.h"
 #include "dbgcnt.h"
 #include "tree-parloops.h"
 #include "tree-cfgcleanup.h"
-#include "graphite-scop-detection.h"
-#include "graphite-isl-ast-to-gimple.h"
-#include "graphite-sese-to-poly.h"
+
+#include <isl/constraint.h>
+#include <isl/set.h>
+#include <isl/map.h>
+#include <isl/options.h>
+#include <isl/union_map.h>
+
+#include "graphite.h"
 
 /* Print global statistics to FILE.  */
 
@@ -329,20 +323,18 @@ graphite_transform_loops (void)
     if (dbg_cnt (graphite_scop))
       {
 	scop->isl_context = ctx;
-	build_poly_scop (scop);
+	if (!build_poly_scop (scop))
+	  continue;
 
-	if (dump_file && dump_flags)
-	  print_scop (dump_file, scop);
-	if (scop->poly_scop_p
-	    && apply_poly_transforms (scop))
-	  {
-	    need_cfg_cleanup_p = true;
-	    /* When code generation is not successful, do not continue
-	       generating code for the next scops: the IR has to be cleaned up
-	       and could be in an inconsistent state.  */
-	    if (!graphite_regenerate_ast_isl (scop))
-	      break;
-	  }
+	if (!apply_poly_transforms (scop))
+	  continue;
+
+	need_cfg_cleanup_p = true;
+	/* When code generation is not successful, do not continue
+	   generating code for the next scops: the IR has to be cleaned up
+	   and could be in an inconsistent state.  */
+	if (!graphite_regenerate_ast_isl (scop))
+	  break;
       }
 
   free_scops (scops);

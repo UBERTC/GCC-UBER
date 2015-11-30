@@ -153,26 +153,6 @@
   return nonimmediate_operand (op, mode);
 })
 
-(define_predicate "const_0_operand"
-  (and (match_code "const_int,const_double,const_vector")
-       (match_test "op == CONST0_RTX (GET_MODE (op))")))
-
-(define_predicate "global_mem_operand"
-  (and (match_code "mem")
-       (match_test "MEM_ADDR_SPACE (op) == ADDR_SPACE_GLOBAL")))
-
-(define_predicate "const_mem_operand"
-  (and (match_code "mem")
-       (match_test "MEM_ADDR_SPACE (op) == ADDR_SPACE_CONST")))
-
-(define_predicate "param_mem_operand"
-  (and (match_code "mem")
-       (match_test "MEM_ADDR_SPACE (op) == ADDR_SPACE_PARAM")))
-
-(define_predicate "shared_mem_operand"
-  (and (match_code "mem")
-       (match_test "MEM_ADDR_SPACE (op) == ADDR_SPACE_SHARED")))
-
 (define_predicate "const0_operand"
   (and (match_code "const_int")
        (match_test "op == const0_rtx")))
@@ -351,14 +331,14 @@
 
 (define_insn "load_arg_reg<mode>"
   [(set (match_operand:QHIM 0 "nvptx_register_operand" "=R")
-	(unspec:QHIM [(match_operand 1 "const_int_operand" "i")]
+	(unspec:QHIM [(match_operand 1 "const_int_operand" "n")]
 		     UNSPEC_ARG_REG))]
   ""
   "%.\\tcvt%t0.u32\\t%0, %%ar%1;")
 
 (define_insn "load_arg_reg<mode>"
   [(set (match_operand:SDISDFM 0 "nvptx_register_operand" "=R")
-	(unspec:SDISDFM [(match_operand 1 "const_int_operand" "i")]
+	(unspec:SDISDFM [(match_operand 1 "const_int_operand" "n")]
 			UNSPEC_ARG_REG))]
   ""
   "%.\\tmov%t0\\t%0, %%ar%1;")
@@ -391,8 +371,6 @@
       emit_move_insn (operands[0], tmp);
       DONE;
     }
-  if (GET_CODE (operands[1]) == SYMBOL_REF)
-    nvptx_record_needed_fndecl (SYMBOL_REF_DECL (operands[1]));
 })
 
 (define_insn "highpartscsf2"
@@ -1332,7 +1310,7 @@
   [(trap_if (match_operator 0 "nvptx_comparison_operator"
 			    [(match_operand:SDIM 1 "nvptx_register_operand")
 			     (match_operand:SDIM 2 "nvptx_nonmemory_operand")])
-	    (match_operand 3 "const_0_operand"))]
+	    (match_operand 3 "const0_operand"))]
   ""
 {
   rtx t = nvptx_expand_compare (operands[0]);

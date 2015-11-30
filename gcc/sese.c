@@ -301,8 +301,6 @@ sese_insert_phis_for_liveouts (sese_info_p region, basic_block bb,
   bitmap_iterator bi;
   bitmap liveouts = BITMAP_ALLOC (NULL);
 
-  update_ssa (TODO_update_ssa);
-
   sese_build_liveouts (region, liveouts);
 
   EXECUTE_IF_SET_IN_BITMAP (liveouts, 0, i, bi)
@@ -310,8 +308,6 @@ sese_insert_phis_for_liveouts (sese_info_p region, basic_block bb,
       sese_add_exit_phis_edge (bb, ssa_name (i), false_e, true_e);
 
   BITMAP_FREE (liveouts);
-
-  update_ssa (TODO_update_ssa);
 }
 
 /* Returns the outermost loop in SCOP that contains BB.  */
@@ -613,6 +609,8 @@ scalar_evolution_in_region (sese_l &region, loop_p loop, tree t)
 
   if (TREE_CODE (t) != SSA_NAME
       || loop_in_sese_p (loop, region))
+    /* FIXME: we would need instantiate SCEV to work on a region, and be more
+       flexible wrt. memory loads that may be invariant in the region.  */
     return instantiate_scev (before, loop,
 			     analyze_scalar_evolution (loop, t));
 

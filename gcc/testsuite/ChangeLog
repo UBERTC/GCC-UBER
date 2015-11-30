@@ -1,3 +1,767 @@
+2015-11-30  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/68565
+	* gfortran.dg/graphite/pr68565.f90: New.
+
+2015-11-30  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	* gcc.dg/graphite/pr35356-1.c: Adjust pattern.
+
+2015-11-30  Cesar Philippidis  <cesar@codesourcery.com>
+	    Nathan Sidwell  <nathan@codesourcery.com>
+
+	* gfortran.dg/goacc/routine-3.f90: New test.
+	* gfortran.dg/goacc/routine-4.f90: New test.
+	* gfortran.dg/goacc/routine-5.f90: New test.
+	* gfortran.dg/goacc/routine-6.f90: New test.
+	* gfortran.dg/goacc/subroutines: New test.
+
+2015-11-30  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/pr46032-2.c: New test.
+	* gcc.dg/pr46032-3.c: New test.
+
+2015-11-30  Charles Baylis  <charles.baylis@linaro.org>
+
+	PR target/63870
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_f16_indices_1.c (f_vld2_lane_f16): Remove xfails for arm targets.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_f32_indices_1.c (f_vld2_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_f64_indices_1.c (f_vld2_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_p8_indices_1.c (f_vld2_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_s16_indices_1.c (f_vld2_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_s32_indices_1.c (f_vld2_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_s64_indices_1.c (f_vld2_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_s8_indices_1.c (f_vld2_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_u16_indices_1.c (f_vld2_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_u32_indices_1.c (f_vld2_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_u64_indices_1.c (f_vld2_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2_lane_u8_indices_1.c (f_vld2_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_f16_indices_1.c (f_vld2q_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_f32_indices_1.c (f_vld2q_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_f64_indices_1.c (f_vld2q_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_p8_indices_1.c (f_vld2q_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_s16_indices_1.c (f_vld2q_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_s32_indices_1.c (f_vld2q_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_s64_indices_1.c (f_vld2q_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_s8_indices_1.c (f_vld2q_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_u16_indices_1.c (f_vld2q_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_u32_indices_1.c (f_vld2q_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_u64_indices_1.c (f_vld2q_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld2q_lane_u8_indices_1.c (f_vld2q_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_f16_indices_1.c (f_vld3_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_f32_indices_1.c (f_vld3_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_f64_indices_1.c (f_vld3_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_p8_indices_1.c (f_vld3_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_s16_indices_1.c (f_vld3_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_s32_indices_1.c (f_vld3_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_s64_indices_1.c (f_vld3_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_s8_indices_1.c (f_vld3_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_u16_indices_1.c (f_vld3_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_u32_indices_1.c (f_vld3_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_u64_indices_1.c (f_vld3_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3_lane_u8_indices_1.c (f_vld3_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_f16_indices_1.c (f_vld3q_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_f32_indices_1.c (f_vld3q_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_f64_indices_1.c (f_vld3q_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_p8_indices_1.c (f_vld3q_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_s16_indices_1.c (f_vld3q_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_s32_indices_1.c (f_vld3q_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_s64_indices_1.c (f_vld3q_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_s8_indices_1.c (f_vld3q_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_u16_indices_1.c (f_vld3q_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_u32_indices_1.c (f_vld3q_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_u64_indices_1.c (f_vld3q_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld3q_lane_u8_indices_1.c (f_vld3q_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_f16_indices_1.c (f_vld4_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_f32_indices_1.c (f_vld4_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_f64_indices_1.c (f_vld4_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_p8_indices_1.c (f_vld4_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_s16_indices_1.c (f_vld4_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_s32_indices_1.c (f_vld4_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_s64_indices_1.c (f_vld4_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_s8_indices_1.c (f_vld4_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_u16_indices_1.c (f_vld4_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_u32_indices_1.c (f_vld4_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_u64_indices_1.c (f_vld4_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4_lane_u8_indices_1.c (f_vld4_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_f16_indices_1.c (f_vld4q_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_f32_indices_1.c (f_vld4q_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_f64_indices_1.c (f_vld4q_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_p8_indices_1.c (f_vld4q_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_s16_indices_1.c (f_vld4q_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_s32_indices_1.c (f_vld4q_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_s64_indices_1.c (f_vld4q_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_s8_indices_1.c (f_vld4q_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_u16_indices_1.c (f_vld4q_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_u32_indices_1.c (f_vld4q_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_u64_indices_1.c (f_vld4q_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vld4q_lane_u8_indices_1.c (f_vld4q_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_f16_indices_1.c (f_vst2_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_f32_indices_1.c (f_vst2_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_f64_indices_1.c (f_vst2_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_p8_indices_1.c (f_vst2_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_s16_indices_1.c (f_vst2_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_s32_indices_1.c (f_vst2_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_s64_indices_1.c (f_vst2_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_s8_indices_1.c (f_vst2_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_u16_indices_1.c (f_vst2_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_u32_indices_1.c (f_vst2_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_u64_indices_1.c (f_vst2_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2_lane_u8_indices_1.c (f_vst2_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_f16_indices_1.c (f_vst2q_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_f32_indices_1.c (f_vst2q_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_f64_indices_1.c (f_vst2q_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_p8_indices_1.c (f_vst2q_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_s16_indices_1.c (f_vst2q_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_s32_indices_1.c (f_vst2q_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_s64_indices_1.c (f_vst2q_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_s8_indices_1.c (f_vst2q_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_u16_indices_1.c (f_vst2q_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_u32_indices_1.c (f_vst2q_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_u64_indices_1.c (f_vst2q_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst2q_lane_u8_indices_1.c (f_vst2q_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_f16_indices_1.c (f_vst3_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_f32_indices_1.c (f_vst3_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_f64_indices_1.c (f_vst3_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_p8_indices_1.c (f_vst3_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_s16_indices_1.c (f_vst3_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_s32_indices_1.c (f_vst3_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_s64_indices_1.c (f_vst3_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_s8_indices_1.c (f_vst3_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_u16_indices_1.c (f_vst3_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_u32_indices_1.c (f_vst3_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_u64_indices_1.c (f_vst3_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3_lane_u8_indices_1.c (f_vst3_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_f16_indices_1.c (f_vst3q_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_f32_indices_1.c (f_vst3q_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_f64_indices_1.c (f_vst3q_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_p8_indices_1.c (f_vst3q_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_s16_indices_1.c (f_vst3q_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_s32_indices_1.c (f_vst3q_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_s64_indices_1.c (f_vst3q_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_s8_indices_1.c (f_vst3q_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_u16_indices_1.c (f_vst3q_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_u32_indices_1.c (f_vst3q_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_u64_indices_1.c (f_vst3q_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst3q_lane_u8_indices_1.c (f_vst3q_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_f16_indices_1.c (f_vst4_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_f32_indices_1.c (f_vst4_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_f64_indices_1.c (f_vst4_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_p8_indices_1.c (f_vst4_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_s16_indices_1.c (f_vst4_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_s32_indices_1.c (f_vst4_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_s64_indices_1.c (f_vst4_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_s8_indices_1.c (f_vst4_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_u16_indices_1.c (f_vst4_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_u32_indices_1.c (f_vst4_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_u64_indices_1.c (f_vst4_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4_lane_u8_indices_1.c (f_vst4_lane_u8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_f16_indices_1.c (f_vst4q_lane_f16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_f32_indices_1.c (f_vst4q_lane_f32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_f64_indices_1.c (f_vst4q_lane_f64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_p8_indices_1.c (f_vst4q_lane_p8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_s16_indices_1.c (f_vst4q_lane_s16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_s32_indices_1.c (f_vst4q_lane_s32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_s64_indices_1.c (f_vst4q_lane_s64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_s8_indices_1.c (f_vst4q_lane_s8): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_u16_indices_1.c (f_vst4q_lane_u16): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_u32_indices_1.c (f_vst4q_lane_u32): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_u64_indices_1.c (f_vst4q_lane_u64): Ditto.
+	* gcc.target/aarch64/advsimd-intrinsics/vst4q_lane_u8_indices_1.c (f_vst4q_lane_u8): Ditto.
+
+2015-11-30  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/46032
+	* gcc.dg/pr46032.c: New test.
+
+2015-11-30  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68592
+	* gfortran.dg/pr68592.f: New testcase.
+
+2015-11-30  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/68534
+	* gfortran.dg/submodule_13.f08: New test.
+
+2015-11-30  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/load-relative-check.c: Add scan patterns for
+	-m31.
+
+2015-11-30  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+        * gcc.target/s390/load-relative-check.c: Add -mzarch.
+
+2015-11-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/dump-ada-spec-1.c: Move to...
+	* c-c++-common/dump-ada-spec-1.c: ...here.
+	* c-c++-common/dump-ada-spec-2.c: New test.
+
+2015-11-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/loop_optimization22.ad[sb]: New test.
+
+2015-11-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/specs/rep_clause5.ads: New test.
+
+2015-11-29  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR c/67106
+	* gcc.c-torture/compile/pr67106.c: New testcase.
+
+2015-11-29  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR c/67581
+	* g++.dg/torture/pr67581.C: New testcase.
+
+2015-11-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68559
+	* gcc.dg/vect/slp-perm-4.c: Adjust again.
+	* gcc.dg/vect/pr45752.c: Likewise.
+
+2015-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/68250
+	* gcc.c-torture/execute/pr68250.c: New test.
+
+2015-11-27  Marek Polacek  <polacek@redhat.com>
+
+	* gcc.dg/pr63568.c: Convert to GIMPLE.
+
+2015-11-27  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/68506
+	* gcc.c-torture/execute/pr68506.c: New test.
+
+2015-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/63326
+	* gcc.dg/gomp/barrier-2.c (f2): Expect another error after label.
+	* c-c++-common/gomp/pr63326.c: New test.
+
+2015-11-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68553
+	* gcc.dg/vect/pr45752.c: Adjust.
+	* gcc.dg/vect/slp-perm-4.c: Likewise.
+
+2015-11-26  Martin Sebor  <msebor@redhat.com>
+
+	* g++.dg/init/new45.C (cookie_size): New constant set to a value
+	appropriate for the target.
+	(operator new[]): Use it.
+
+2015-11-26  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67238
+	* g++.dg/cpp0x/pr67238.C: New.
+
+2015-11-26  Martin Sebor  <msebor@redhat.com>
+
+	* g++.dg/pr67876.C: Remove duplicate content.
+
+2015-11-26  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* g++.dg/guality/pr67192.C: New test.
+
+2015-11-26  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqrdmlXh_lane.inc: New file,
+	support code for vqrdml{as}h_lane tests.
+	* gcc.target/aarch64/advsimd-intrinsics/vqrdmlah_lane.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vqrdmlsh_lane.c: New.
+
+2015-11-26  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vqrdmlXh.inc: New file,
+	support code for vqrdml{as}h tests.
+	* gcc.target/aarch64/advsimd-intrinsics/vqrdmlah.c: New.
+	* gcc.target/aarch64/advsimd-intrinsics/vqrdmlsh.c: New.
+
+2015-11-26  Matthew Wahab  <matthew.wahab@arm.com>
+
+	* lib/target-supports.exp (add_options_for_arm_v8_1a_neon): New.
+	(check_effective_target_arm_arch_FUNC_ok)
+	(add_options_for_arm_arch_FUNC)
+	(check_effective_target_arm_arch_FUNC_multilib): Add "armv8.1-a"
+	to the list to be generated.
+	(check_effective_target_arm_v8_1a_neon_ok_nocache): New.
+	(check_effective_target_arm_v8_1a_neon_ok): New.
+	(check_effective_target_arm_v8_1a_neon_hw): New.
+
+2015-11-26  Nathan Sidwell  <nathan@acm.org>
+
+	* gcc.target/nvptx/proto-1.c: Adjust expected asm.
+
+2015-11-26  Richard Biener  <rguenther@suse.de>
+
+	PR testsuite/68555
+	* gcc.dg/vect/bb-slp-10.c: Adjust pattern, use target selector
+	and not XFAIL.
+
+2015-11-26  Richard Biener  <rguenther@suse.de>
+
+	PR testsuite/68554
+	* gcc.dg/vect/bb-slp-subgroups-2.c: Require vect_perm.
+
+2015-11-26  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67249
+	* g++.dg/concepts/pr67249.C: New.
+
+2015-11-26  Richard Biener  <rguenther@suse.de>
+
+	PR testsuite/66799
+	* gcc.dg/vect/pr20122.c (main): Do not align Kernel, do not
+	vectorize init loop and adjust expected outcome.
+
+2015-11-26  Richard Biener  <rguenther@suse.de>
+
+	PR testsuite/67203
+	* g++.dg/tree-ssa/pr61034.C: Make expected optimization result
+	dependent on PUSH_ARGS_REVERSED.  Drop optimization level and
+	also monitor final optimization result.
+
+2015-11-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/68249
+	PR rtl-optimization/68321
+	* gcc.c-torture/execute/pr68249.c: New test.
+	* gcc.c-torture/execute/pr68321.c: New test.
+
+2015-11-26  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/68416
+	* gcc.target/i386/mpx/pr68416.c: New test.
+
+2015-11-26  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/67313
+	* g++.dg/cpp0x/no-weak1.C: New.
+
+2015-11-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68128
+	* gcc.dg/gomp/pr68128-1.c: New test.
+	* gcc.dg/gomp/pr68128-2.c: New test.
+
+2015-11-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/67226
+	* gcc.c-torture/execute/pr67226.c: New test.
+
+2015-11-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/68508
+	* g++.dg/ubsan/pr68508.C: New test.
+
+2015-11-25  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/67876
+	* g++.dg/pr67876.C: New test.
+
+2015-11-25  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/68453
+	* gfortran.dg/graphite/pr68453.f90: New.
+
+2015-11-25  Martin Sebor  <msebor@redhat.com>
+
+	PR c/66516
+	* g++.dg/addr_builtin-1.C: New test (left out of initial commit).
+	* gcc.dg/addr_builtin-1.c: Same.
+
+2015-11-25  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/dform-1.c: New test.
+	* gcc.target/powerpc/dform-2.c: Likewise.
+
+2015-11-23  Jan Hubicka  <hubicka@ucw.cz>
+
+	* gfortran.dg/lto/bind_c-6_0.f90: New testcase.
+	* gfortran.dg/lto/bind_c-6_1.c: New testcase.
+	* g++.dg/lto/20100603-1_0.C: Add -Wno-lto-type-mismatch.
+
+2015-11-25  Tom de Vries  <tom@codesourcery.com>
+
+	* g++.dg/tree-ssa/copyprop-1.C: Update after adding new dce1.
+	* gcc.dg/pr23911.c: Same.
+	* gcc.dg/tree-ssa/20030709-2.c: Same.
+	* gcc.dg/tree-ssa/20030731-2.c: Same.
+	* gcc.dg/tree-ssa/20040729-1.c: Same.
+	* gcc.dg/tree-ssa/cfgcleanup-1.c: Same.
+	* gcc.dg/tree-ssa/loop-36.c: Same.
+	* gcc.dg/tree-ssa/pr21086.c: Same.
+	* gcc.dg/tree-ssa/ssa-dce-1.c: Same.
+	* gcc.dg/tree-ssa/ssa-dce-2.c: Same.
+	* gcc.dg/vect/pr26359.c: Same.
+	* c-c++-common/restrict-2.c: Update after adding new lim1.
+	* c-c++-common/restrict-4.c: Same.
+	* g++.dg/tree-ssa/pr33615.C: Same.
+	* g++.dg/tree-ssa/restrict1.C: Same.
+	* gcc.dg/tm/pub-safety-1.c: Same.
+	* gcc.dg/tm/reg-promotion.c: Same.
+	* gcc.dg/tree-ssa/20050314-1.c: Same.
+	* gcc.dg/tree-ssa/loop-32.c: Same.
+	* gcc.dg/tree-ssa/loop-33.c: Same.
+	* gcc.dg/tree-ssa/loop-34.c: Same.
+	* gcc.dg/tree-ssa/loop-35.c: Same.
+	* gcc.dg/tree-ssa/loop-7.c: Same.
+	* gcc.dg/tree-ssa/pr23109.c: Same.
+	* gcc.dg/tree-ssa/restrict-3.c: Same.
+	* gcc.dg/tree-ssa/restrict-5.c: Same.
+	* gcc.dg/tree-ssa/ssa-lim-1.c: Same.
+	* gcc.dg/tree-ssa/ssa-lim-10.c: Same.
+	* gcc.dg/tree-ssa/ssa-lim-11.c: Same.
+	* gcc.dg/tree-ssa/ssa-lim-12.c: Same.
+	* gcc.dg/tree-ssa/ssa-lim-2.c: Same.
+	* gcc.dg/tree-ssa/ssa-lim-3.c: Same.
+	* gcc.dg/tree-ssa/ssa-lim-6.c: Same.
+	* gcc.dg/tree-ssa/ssa-lim-7.c: Same.
+	* gcc.dg/tree-ssa/ssa-lim-8.c: Same.
+	* gcc.dg/tree-ssa/ssa-lim-9.c: Same.
+	* gcc.dg/tree-ssa/structopt-1.c: Same.
+	* gfortran.dg/pr32921.f: Same.
+	* g++.dg/tree-ssa/pr19637.C: Update after adding new dom1.
+	* g++.dg/tree-ssa/pr61009.C: Same.
+	* g++.dg/tree-ssa/ssa-dom.C: Same.
+	* gcc.dg/pr20115-1.c: Same.
+	* gcc.dg/tree-prof/20050826-2.c: Same.
+	* gcc.dg/tree-prof/cmpsf-1.c: Same.
+	* gcc.dg/tree-ssa/20030821-1.c: Same.
+	* gcc.dg/tree-ssa/20030922-2.c: Same.
+	* gcc.dg/tree-ssa/20031022-1.c: Same.
+	* gcc.dg/tree-ssa/20040615-1.c: Same.
+	* gcc.dg/tree-ssa/20040624-1.c: Same.
+	* gcc.dg/tree-ssa/pr21417.c: Same.
+	* gcc.dg/tree-ssa/pr61607.c: Same.
+	* gcc.dg/tree-ssa/slsr-27.c: Same.
+	* gcc.dg/tree-ssa/slsr-28.c: Same.
+	* gcc.dg/tree-ssa/slsr-29.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-branch-1.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-cse-3.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-1.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-2a.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-2b.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-2c.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-2d.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-2e.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-2f.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-4.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-5.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-6.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-7.c: Same.
+	* gcc.dg/tree-ssa/ssa-thread-12.c: Same.
+	* gcc.dg/tree-ssa/vrp47.c: Same.
+	* gcc.dg/tree-ssa/copy-headers.c: Update after adding ch1.
+	* gcc.dg/tree-ssa/foldconst-2.c: Same.
+	* gcc.dg/tree-ssa/loop-40.c: Same.
+	* gcc.dg/gomp/notify-new-function-3.c: Update after adding ompexpssa1.
+
+2015-11-25  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* g++.dg/cpp0x/constexpr-array13.C: Fix.
+
+2015-11-25  David Edelsohn  <dje.gcc@gmail.com>
+
+	* gfortran.dg/nint_p7.f90: New testcase.
+
+2015-11-25  Markus Trippelsdorf  <markus@trippelsdorf.de>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/68087
+	* g++.dg/cpp0x/constexpr-array13.C: New.
+
+2015-11-25  Ilmir Usmanov <me@ilmir.us>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+
+	PR fortran/63858
+	* goacc/omp-fixed.f: New test.
+	* goacc/omp.f95: Add check for mis-matched omp and acc continuations.
+
+2015-11-25  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68528
+	* gcc.dg/torture/pr68528.c: New testcase.
+
+2015-11-25  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/58910
+	* g++.dg/cpp0x/constexpr-tuple2.C: New.
+
+2015-11-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/68435
+	* gcc.dg/pr68435.c: New test.
+
+2015-11-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68517
+	* gcc.dg/torture/pr68517.c: New testcase.
+
+2015-11-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/67089
+	* gcc.dg/pr67089-1.c: New test.
+	* gcc.dg/pr67089-2.c: New test.
+	* gcc.dg/pr67089-3.c: New test.
+	* gcc.dg/pr67089-4.c: New test.
+	* gcc.dg/pr67089-5.c: New test.
+	* gcc.dg/pr67089-6.c: New test.
+	* gcc.dg/pr67089-7.c: New test.
+
+2015-11-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68502
+	* gcc.dg/vect/pr68502-1.c: New testcase.
+	* gcc.dg/vect/pr68502-2.c: Likewise.
+
+2015-11-24  Michael Collison  <michael.collison@linaro.org>
+
+	* gcc.target/aarch64/saddw-1.c: New test.
+	* gcc.target/aarch64/saddw-2.c: New test.
+	* gcc.target/aarch64/uaddw-1.c: New test.
+	* gcc.target/aarch64/uaddw-2.c: New test.
+	* gcc.target/aarch64/uaddw-3.c: New test.
+	* lib/target-support.exp
+	(check_effective_target_vect_widen_sum_hi_to_si_pattern):
+	Add aarch64 to list of support targets.
+
+2015-11-24  Steve Ellcey  <sellcey@imgtec.com>
+
+	* gcc.target/mips/frame-header-4.c: New test.
+
+2015-11-24  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68486
+	* gfortran.dg/simplify_cshift_3.f90
+
+2015-11-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/68278
+	* g++.dg/cpp1y/pr68278.C: New.
+
+2015-11-24  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/68388
+	* g++.dg/cpp1y/pr68388.C: New.
+
+2015-11-24  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/67984
+	* gcc.dg/graphite/pr67984.c: New.
+
+2015-11-24  Michael Matz  <matz@suse.de>
+
+	PR rtl-optimization/68392
+	* g++.dg/pr68392.C: New test.
+
+2015-11-24  Nathan Sidwell  <nathan@acm.org>
+
+	* gcc.dg/sso/dump.h: Force IO to be putchar function call on nvptx.
+
+2015-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/68381
+	* gcc.c-torture/execute/pr68381.c: New test.
+
+2015-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/cmpimm_branch_1.c: New test.
+	* gcc.target/aarch64/cmpimm_cset_1.c: Likewise.
+
+2015-11-24  Mikhail Maltsev  <maltsevm@gmail.com>
+
+	PR target/68497
+	* gcc.target/i386/pr68497.c: New test.
+
+2015-11-24  Bilyan Borisov  <bilyan.borisov@arm.com>
+
+	* gcc.target/aarch64/advsimd-intrinsics/vmulx_lane_f32_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulx_lane_f64_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulx_laneq_f32_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulx_laneq_f64_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulxd_lane_f64_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulxd_laneq_f64_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulxq_lane_f32_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulxq_lane_f64_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulxq_laneq_f32_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulxq_laneq_f64_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulxs_lane_f32_indices_1.c:
+	New.
+	* gcc.target/aarch64/advsimd-intrinsics/vmulxs_laneq_f32_indices_1.c:
+	New.
+
+2015-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR middle-end/68375
+	* gcc.dg/pr68375.c: New test.
+
+2015-11-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/68483
+	* gcc.target/i386/pr68483-1.c: New test.
+	* gcc.target/i386/pr68483-2.c: New test.
+
+2015-11-24  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR c/68337
+	* gcc.target/i386/mpx/pr68337-1.c: New test.
+	* gcc.target/i386/mpx/pr68337-2.c: New test.
+
+2015-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/68194
+	PR rtl-optimization/68328
+	PR rtl-optimization/68185
+	* gcc.c-torture/execute/pr68185.c: New test.
+	* gcc.c-torture/execute/pr68328.c: Likewise.
+
+2015-11-23  Jan Hubicka  <hubicka@ucw.cz>
+
+	* gcc.c-torture/execute/lto-tbaa-1.c: New testcase.
+
+2015-11-23  David Malcolm  <dmalcolm@redhat.com>
+
+	PR objc/68438
+	* objc.dg/plugin: New subdirectory.
+	* objc.dg/plugin/diagnostic-test-expressions-1.m: New test file.
+	* objc.dg/plugin/plugin.exp: New file, based on
+	gcc.dg/plugin/plugin.exp.
+
+2015-11-23  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/68493
+	* gcc.dg/graphite/pr68493.c: New.
+
+2015-11-23  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/68279
+	* gfortran.dg/graphite/pr68279.f90: New.
+
+2015-11-23  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/68455
+	* gcc.dg/tree-ssa/pr68455.c: New test.
+
+2015-11-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68465
+	* gcc.dg/tree-ssa/ssa-fre-52.c: New testcase.
+
+2015-11-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68363
+	* gcc.target/aarch64/pr68363_1.c: New test.
+
+2015-11-23  Bilyan Borisov  <bilyan.borisov@arm.com>
+
+	* gcc.target/aarch64/simd/vmulx.x: New.
+	* gcc.target/aarch64/simd/vmulx_f64_2.c: Likewise.
+	* gcc.target/aarch64/simd/vmulxd_f64_2.c: Likewise.
+	* gcc.target/aarch64/simd/vmulxs_f32_2.c: Likewise.
+
+2015-11-23  Igor Zamyatin  <igor.zamyatin@intel.com>
+
+	PR c++/68001
+	* g++.dg/cilk-plus/CK/pr68001.cc: New test.
+
+2015-11-23  Richard Biener  <rguenther@suse.de>
+	    Jiong Wang  <jiong.wang@arm.com>
+
+	PR tree-optimization/68317
+	PR tree-optimization/68326
+	* gcc.dg/pr68317.c: New testcase.
+
+2015-11-23  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR tree-optimization/68327
+	* gcc.dg/pr68327.c: New test.
+
+2015-11-23  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/68460
+	* gcc.dg/autopar/pr68460.c: New test.
+
+2015-11-23  Maxim Ostapenko  <m.ostapenko@partner.samsung.com>
+
+	* c-c++-common/asan/halt_on_error-1.c: New test.
+	* c-c++-common/asan/halt_on_error-2.c: Likewise.
+
+2015-11-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68482
+	* gcc.dg/vect/pr68482.c: New testcase.
+
+2015-11-23  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68445
+	* gcc.dg/vect/pr68445.c: New testcase.
+
+2015-11-23  Robin Dapp  <rdapp@linux.vnet.ibm.com>
+
+        * gcc.target/s390/load-relative-check.c: New test to check
+        generation of load relative instructions.
+
+2015-11-22  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	* gfortran.dg/fmt_t_8.f90: New test.
+
+2015-11-23  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	PR target/68390
+	* gcc/testsuite/gcc.c-torture/execute/pr68390.c: New test.
+
+2015-11-22  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	* gfortran.dg/fmt_g0_1.f08: Update test. Leading zero.
+
+2015-11-22  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/68486
+	* gfortran.dg/simplify_cshift_2.f90: New test.
+
+2015-11-22  James Norris  <jnorris@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+
+	* gfortran.dg/goacc/declare-1.f95: Update test.
+	* gfortran.dg/goacc/declare-2.f95: New test.
+
+2015-11-22  Bilyan Borisov  <bilyan.borisov@arm.com>
+
+	* gcc.target/aarch64/simd/vmulx_lane_f32_1.c: New.
+	* gcc.target/aarch64/simd/vmulx_lane_f64_1.c: New.
+	* gcc.target/aarch64/simd/vmulx_laneq_f32_1.c: New.
+	* gcc.target/aarch64/simd/vmulx_laneq_f64_1.c: New.
+	* gcc.target/aarch64/simd/vmulxq_lane_f32_1.c: New.
+	* gcc.target/aarch64/simd/vmulxq_lane_f64_1.c: New.
+	* gcc.target/aarch64/simd/vmulxq_laneq_f32_1.c: New.
+	* gcc.target/aarch64/simd/vmulxq_laneq_f64_1.c: New.
+	* gcc.target/aarch64/simd/vmulxs_lane_f32_1.c: New.
+	* gcc.target/aarch64/simd/vmulxs_laneq_f32_1.c: New.
+	* gcc.target/aarch64/simd/vmulxd_lane_f64_1.c: New.
+	* gcc.target/aarch64/simd/vmulxd_laneq_f64_1.c: New.
+
 2015-11-21  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	* gfortran.dg/simplify_cshift_1.f90: New test.
@@ -7558,12 +8322,6 @@
 	* gcc.target/aarch64/arm_align_max_pwr.c: Make it a compile test case,
 	check the assembly.
 	* gcc.target/aarch64/arm_align_max_stack_pwr.c: Likewise.
-
-2015-09-03  Martin Sebor  <msebor@redhat.com>
-
-	PR c/66516
-	* g++.dg/addr_builtin-1.C: New test.
-	* gcc.dg/addr_builtin-1.c: New test.
 
 2015-09-03  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
 

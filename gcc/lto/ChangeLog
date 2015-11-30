@@ -1,3 +1,42 @@
+2015-11-25  Jan Hubicka  <jh@suse.cz>
+
+	* lto-lang.c (lto_post_options): Process flag_lto_linker_output.
+	* lang.opt (lto_linker_output): New enum.
+	(flinker_output): New flag.
+
+2015-11-24  Jan Hubicka  <hubicka@ucw.cz>
+
+	* lto-symtab.c: Include alias.h
+	(warn_type_compatibility_p): Replace types_compatible_p checks by
+	TBAA and size checks; set bit 2 if locations are TBAA incompatible.
+	(lto_symtab_merge): Compare DECL sizes.
+	(lto_symtab_merge_decls_2): Warn about TBAA in compatibility.
+
+2015-11-24  Jan Hubicka  <hubicka@ucw.cz>
+
+	* lto.c (iterative_hash_canonical_type): Recruse for all types
+	which pass !canonical_type_used_p.
+	(gimple_register_canonical_type_1): Sanity check we do not compute
+	canonical type of anything with !canonical_type_used_p.
+	(gimple_register_canonical_type): Skip all types that are
+	!canonical_type_used_p
+
+2015-11-24  Jan Hubicka  <hubicka@ucw.cz>
+
+	* lto.c (unify_scc): Use free_node.
+
+2015-11-21  Jan Hubicka  <hubicka@ucw.cz>
+
+	* lto.c (iterative_hash_canonical_type): Always recurse for pointers.
+	(gimple_register_canonical_type_1): Check that pointers do not get
+	canonical types.
+	(gimple_register_canonical_type): Do not register pointers.
+
+2015-11-21  Jan Hubicka  <hubicka@ucw.cz>
+
+	* lto-symtab.c (warn_type_compatibility_p): Do not set ODR mismatch
+	flag for types that are not ODR; fix loop walking parameters.
+
 2015-11-11  Andrew MacLeod  <amacleod@redhat.com>
 
 	* lto-lang.c: Remove unused header files.

@@ -304,6 +304,8 @@
     UNSPEC_PMULL2       ; Used in aarch64-simd.md.
     UNSPEC_REV_REGLIST  ; Used in aarch64-simd.md.
     UNSPEC_VEC_SHR      ; Used in aarch64-simd.md.
+    UNSPEC_SQRDMLAH     ; Used in aarch64-simd.md.
+    UNSPEC_SQRDMLSH     ; Used in aarch64-simd.md.
 ])
 
 ;; ------------------------------------------------------------------
@@ -479,6 +481,13 @@
 			 (V4SF "V2SF")  (V4HF "V2HF")
 			 (V8HF "V4HF")  (V2DF  "DF")])
 
+;; Half modes of all vector modes, in lower-case.
+(define_mode_attr Vhalf [(V8QI "v4qi")  (V16QI "v8qi")
+			 (V4HI "v2hi")  (V8HI  "v4hi")
+			 (V2SI "si")    (V4SI  "v2si")
+			 (V2DI "di")    (V2SF  "sf")
+			 (V4SF "v2sf")  (V2DF  "df")])
+
 ;; Double modes of vector modes.
 (define_mode_attr VDBL [(V8QI "V16QI") (V4HI "V8HI")
 			(V4HF "V8HF")
@@ -495,6 +504,11 @@
 			(V2SI "v4si")  (V2SF "v4sf")
 			(SI   "v2si")  (DI   "v2di")
 			(DF   "v2df")])
+
+;; Modes with double-width elements.
+(define_mode_attr VDBLW [(V8QI "V4HI") (V16QI "V8HI")
+                  (V4HI "V2SI") (V8HI "V4SI")
+                  (V2SI "DI")   (V4SI "V2DI")])
 
 ;; Narrowed modes for VDN.
 (define_mode_attr VNARROWD [(V4HI "V8QI") (V2SI "V4HI")
@@ -824,7 +838,8 @@
 			   (ltu "1") (leu "1") (geu "2") (gtu "2")])
 
 (define_code_attr CMP [(lt "LT") (le "LE") (eq "EQ") (ge "GE") (gt "GT")
-			   (ltu "LTU") (leu "LEU") (geu "GEU") (gtu "GTU")])
+			(ltu "LTU") (leu "LEU") (ne "NE") (geu "GEU")
+			(gtu "GTU")])
 
 (define_code_attr fix_trunc_optab [(fix "fix_trunc")
 				   (unsigned_fix "fixuns_trunc")])
@@ -961,6 +976,8 @@
 (define_int_iterator VQSHRN_N [UNSPEC_SQSHRUN UNSPEC_SQRSHRUN
                                UNSPEC_SQSHRN UNSPEC_UQSHRN
                                UNSPEC_SQRSHRN UNSPEC_UQRSHRN])
+
+(define_int_iterator SQRDMLH_AS [UNSPEC_SQRDMLAH UNSPEC_SQRDMLSH])
 
 (define_int_iterator PERMUTE [UNSPEC_ZIP1 UNSPEC_ZIP2
 			      UNSPEC_TRN1 UNSPEC_TRN2
@@ -1136,3 +1153,5 @@
 			  (UNSPEC_SHA1M "m")])
 
 (define_int_attr sha256_op [(UNSPEC_SHA256H "") (UNSPEC_SHA256H2 "2")])
+
+(define_int_attr rdma_as [(UNSPEC_SQRDMLAH "a") (UNSPEC_SQRDMLSH "s")])

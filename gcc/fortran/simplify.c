@@ -1805,22 +1805,13 @@ gfc_simplify_cshift (gfc_expr *array, gfc_expr *shift, gfc_expr *dim)
   else
     dm = 1;
 
-  /* Copy array into 'a', simplify it, and then test for a constant array.
-     An unexpected expr_type causes an ICE.   */
-  switch (array->expr_type)
+  /* Copy array into 'a', simplify it, and then test for a constant array.  */
+  a = gfc_copy_expr (array);
+  gfc_simplify_expr (a, 0);
+  if (!is_constant_array_expr (a))
     {
-      case EXPR_VARIABLE:
-      case EXPR_ARRAY:
-	a = gfc_copy_expr (array);
-	gfc_simplify_expr (a, 0);
-	if (!is_constant_array_expr (a))
-	  {
-	    gfc_free_expr (a);
-	    return NULL;
-	  }
-	break;
-      default:
-	gcc_unreachable ();
+      gfc_free_expr (a);
+      return NULL;
     }
 
   if (a->rank == 1)
@@ -1869,6 +1860,15 @@ gfc_simplify_cshift (gfc_expr *array, gfc_expr *shift, gfc_expr *dim)
   else
     {
       /* FIXME: Deal with rank > 1 arrays.  For now, don't leak memory.  */
+
+      /* GCC bootstrap is too stupid to realize that the above code for dm
+	 is correct.  First, dim can be specified for a rank 1 array.  It is
+	 not needed in this nor used here.  Second, the code is simply waiting
+	 for someone to implement rank > 1 simplification.   For now, add a
+	 pessimization to the code that has a zero valid reason to be here.  */
+      if (dm > array->rank)
+	gcc_unreachable ();
+
       gfc_free_expr (a);
     }
 

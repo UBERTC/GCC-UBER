@@ -3015,7 +3015,7 @@ extract_range_from_binary_expr_1 (value_range *vr,
 	      return;
 	    }
 	}
-      else
+      else if (!symbolic_range_p (&vr0) && !symbolic_range_p (&vr1))
 	{
 	  extract_range_from_multiplicative_op_1 (vr, code, &vr0, &vr1);
 	  return;
@@ -4322,6 +4322,17 @@ adjust_range_with_scev (value_range *vr, struct loop *loop,
       || (is_negative_overflow_infinity (min)
 	  && is_positive_overflow_infinity (max)))
     return;
+
+  /* Even for valid range info, sometimes overflow flag will leak in.
+     As GIMPLE IL should have no constants with TREE_OVERFLOW set, we
+     drop them except for +-overflow_infinity which still need special
+     handling in vrp pass.  */
+  if (TREE_OVERFLOW_P (min)
+      && ! is_negative_overflow_infinity (min))
+    min = drop_tree_overflow (min);
+  if (TREE_OVERFLOW_P (max)
+      && ! is_positive_overflow_infinity (max))
+    max = drop_tree_overflow (max);
 
   set_value_range (vr, VR_RANGE, min, max, vr->equiv);
 }

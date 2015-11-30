@@ -263,7 +263,12 @@ genericize_cp_loop (tree *stmt_p, location_t start_locus, tree cond, tree body,
 	loop = stmt_list;
     }
   else
-    loop = build1_loc (start_locus, LOOP_EXPR, void_type_node, stmt_list);
+    {
+      location_t loc = EXPR_LOCATION (expr_first (body));
+      if (loc == UNKNOWN_LOCATION)
+	loc = start_locus;
+      loop = build1_loc (loc, LOOP_EXPR, void_type_node, stmt_list);
+    }
 
   stmt_list = NULL;
   append_to_statement_list (loop, &stmt_list);
@@ -611,12 +616,14 @@ cp_gimplify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p)
 	 25979.  */
     case INIT_EXPR:
       if (fn_contains_cilk_spawn_p (cfun)
-	  && cilk_detect_spawn_and_unwrap (expr_p)
-	  && !seen_error ())
+	  && cilk_detect_spawn_and_unwrap (expr_p))
 	{
 	  cilk_cp_gimplify_call_params_in_spawned_fn (expr_p, pre_p, post_p);
 	  return (enum gimplify_status) gimplify_cilk_spawn (expr_p);
 	}
+      if (seen_error ())
+	return GS_ERROR;
+
       cp_gimplify_init_expr (expr_p);
       if (TREE_CODE (*expr_p) != INIT_EXPR)
 	return GS_OK;
@@ -725,16 +732,16 @@ cp_gimplify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p)
       break;
 
     case CILK_SPAWN_STMT:
-      gcc_assert 
-	(fn_contains_cilk_spawn_p (cfun) 
-	 && cilk_detect_spawn_and_unwrap (expr_p));
+      gcc_assert(fn_contains_cilk_spawn_p (cfun)
+		 && cilk_detect_spawn_and_unwrap (expr_p));
 
-      /* If errors are seen, then just process it as a CALL_EXPR.  */
       if (!seen_error ())
 	{
 	  cilk_cp_gimplify_call_params_in_spawned_fn (expr_p, pre_p, post_p);
 	  return (enum gimplify_status) gimplify_cilk_spawn (expr_p);
 	}
+      return GS_ERROR;
+
     case CALL_EXPR:
       if (fn_contains_cilk_spawn_p (cfun)
 	  && cilk_detect_spawn_and_unwrap (expr_p)

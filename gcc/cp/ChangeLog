@@ -1,3 +1,79 @@
+2015-11-27  Martin Liska  <mliska@suse.cz>
+
+	PR c++/68312
+	* cp-array-notation.c (expand_sec_reduce_builtin):
+	Likewise.
+	(create_array_refs): Replace argument with const reference.
+	(expand_an_in_modify_expr): Likewise.
+	(cp_expand_cond_array_notations): Likewise.
+	(expand_unary_array_notation_exprs): Likewise.
+
+2015-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/63326
+	* parser.c (cp_parser_statement): Clear in_compound after labels.
+
+2015-11-27  Martin Liska  <mliska@suse.cz>
+
+	* parser.c (cp_parser_late_parsing_cilk_simd_fn_info):
+	Release tokens.
+
+2015-11-26  Andreas Arnez  <arnez@linux.vnet.ibm.com>
+
+	* cp-gimplify.c (genericize_cp_loop): Change LOOP_EXPR's location
+	to start of loop body instead of start of loop.
+
+2015-11-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/68508
+	* cp-tree.h (cp_ubsan_maybe_instrument_downcast): Add INTYPE argument.
+	* cp-ubsan.c (cp_ubsan_maybe_instrument_downcast): Likewise.  Use
+	it instead of or in addition to TREE_TYPE (op).  Use
+	is_properly_derived_from, return NULL_TREE if TREE_TYPE (intype) and
+	TREE_TYPE (type) are the same type minus qualifiers.
+	* typeck.c (build_static_cast_1): Adjust callers.
+
+2015-11-25  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/67876
+	* pt.c (convert_template_argument): Make sure number of tree
+	operands is greater than zero before attempting to extract one.
+
+2015-11-25  Ryan Burn  <contact@rnburn.com>
+
+	PR c++/68434
+	* pt.c (tsubst): Set PLACEHOLDER_TYPE_CONSTRAINTS before
+	calling canonical_type_parameter.
+
+2015-11-25  Jason Merrill  <jason@redhat.com>
+
+	* lambda.c (maybe_add_lambda_conv_op): Only set
+	no_sanitize_undefined if SANITIZE_NULL.
+
+	PR c++/67941
+	* lambda.c (maybe_add_lambda_conv_op): Mark _FUN as
+	no_sanitize_undefined.
+
+	* cp-ubsan.c (cp_ubsan_instrument_vptr_p): Use
+	do_ubsan_in_current_function.
+
+2015-11-25  Markus Trippelsdorf  <markus@trippelsdorf.de>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/68087
+	* constexpr.c (cxx_eval_array_reference): Use tree_fits_shwi_p before
+	tree_to_shwi to avoid ICEs.
+
+2015-11-24  Ilya Verbin  <ilya.verbin@intel.com>
+
+	* parser.c (cp_parser_oacc_declare): Replace "ifdef ENABLE_OFFLOADING"
+	with "if (ENABLE_OFFLOADING)".
+
+2015-11-23  Igor Zamyatin  <igor.zamyatin@intel.com>
+
+	PR c++/68001
+	* cp-gimplify.c (cp_gimplify_expr): Stop the process if see an error.
+
 2015-11-20  Jakub Jelinek  <jakub@redhat.com>
 
 	PR c++/67354
@@ -334,10 +410,10 @@
 	(cp_parser_pragma): Adjust omp_declare_simd checking.  Call
 	cp_ensure_no_oacc_routine.
 	(cp_parser_pragma): Add OpenACC routine handling.
-	
+
 2015-11-08  Martin Sebor  <msebor@redhat.com>
 
-	PR c++/67942 
+	PR c++/67942
 	* cp/init.c (warn_placement_new_too_small): Convert integer
 	operand of POINTER_PLUS_EXPR to ssize_t to determine its signed
 	value.

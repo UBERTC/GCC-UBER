@@ -1,3 +1,41 @@
+2015-11-29  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR c/67106
+	* c-decl.c: Set TYPE_PACKED in variants.
+
+2015-11-27  Martin Liska  <mliska@suse.cz>
+
+	PR c++/68312
+	* c-array-notation.c (fix_builtin_array_notation_fn):
+	Use release_vec_vec instead of vec::release.
+	(build_array_notation_expr): Likewise.
+	(fix_conditional_array_notations_1): Likewise.
+	(fix_array_notation_expr): Likewise.
+	(fix_array_notation_call_expr): Likewise.
+
+2015-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/63326
+	* c-parser.c (c_parser_compound_statement_nostart): If
+	last_label is true, use pragma_stmt instead of pragma_compound
+	as second c_parser_pragma argument.
+	(c_parser_omp_ordered, c_parser_omp_target_update,
+	c_parser_omp_target_enter_data, c_parser_omp_target_exit_data): Pass
+	false as second argument to c_parser_skip_to_pragma_eol after
+	diagnosing standalone directives used in pragma_stmt context.
+
+2015-11-24  Ilya Verbin  <ilya.verbin@intel.com>
+
+	* c-parser.c (c_parser_oacc_declare): Replace "ifdef ENABLE_OFFLOADING"
+	with "if (ENABLE_OFFLOADING)".
+
+2015-11-23  David Malcolm  <dmalcolm@redhat.com>
+
+	PR objc/68438
+	* c-parser.c (c_parser_postfix_expression): Set up source ranges
+	for various Objective-C constructs: Class.name syntax,
+	@selector(), @protocol(), @encode(), and [] message syntax.
+
 2015-11-20  David Malcolm  <dmalcolm@redhat.com>
 
 	PR 62314

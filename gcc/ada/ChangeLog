@@ -1,3 +1,314 @@
+2015-11-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/trans.c (gigi): Fix initialization order.
+
+2015-11-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* osint.adb: Add use type clause for CRTL.size_t.
+	(C_String_Length): Return CRTL.size_t instead of Integer.
+	(To_Path_String_Access): Take CRTL.size_t instead of Integer.
+	(Get_Libraries_From_Registry): Use CRTL throughout.
+	(To_Canonical_Dir_Spec): Use CRTL.size_t instead of Integer.
+	(To_Canonical_File_List): Likewise.
+	(To_Canonical_File_Spec): Likewise.
+	(To_Canonical_Path_Spec): Likewise.
+	(To_Host_Dir_Spec): Likewise.
+	(To_Host_File_Spec): Likewise.
+	(Update_Path): Use CRTL throughout.
+	* s-shasto.adb: Add with clause for System.CRTL.
+	(Initialize): Rename CRTL.strncpy instead of importing it manually.
+
+2015-11-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/gigi.h (create_var_decl): Adjust prototype.
+	(create_subprog_decl): Likewise.
+	* gcc-interface/decl.c (gnat_to_gnu_entity) <E_Variable>: Rename
+	static_p into static_flag and add volatile_flag local variable.
+	Do not locally change the type of a volatile object, except for the
+	pointed-to type if the object is handled by reference.  Adjust calls
+	to create_var_decl.
+	<E_Subprogram_Type>: Likewise for const and noreturn subprograms.
+	(get_minimal_subprog_decl): Adjust call to create_subprog_decl.
+	(elaborate_expression_1): Adjust call to create_var_decl.
+	(gnat_to_gnu_field): Minor tweak.
+	* gcc-interface/trans.c (gigi): Adjust calls to create_var_decl and
+	create_subprog_decl.
+	(build_raise_check): Likewise.
+	(Subprogram_Body_to_gnu): Likewise.
+	(create_temporary): Likewise.
+	(Handled_Sequence_Of_Statements_to_gnu): Likewise.
+	(Exception_Handler_to_gnu_gcc): Likewise.
+	(Compilation_Unit_to_gnu): Likewise.
+	(gnat_to_gnu): Likewise.
+	* gcc-interface/utils.c (maybe_pad_type): Likewise.
+	(create_var_decl): Add VOLATILE_FLAG parameter and handle it.
+	(create_subprog_decl): Add CONST_FLAG and VOLATILE_FLAG parameters and
+	handle them.
+
+2015-11-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/gigi.h (is_simple_additive_expression): Declare.
+	* gcc-interface/trans.c (struct range_check_info_d): Add DISP and
+	NEG_P fields.
+	(find_loop_for): Add DISP and NEG_P parameters with default value.
+	Call is_simple_additive_expression to handle additive expressions.
+	(Loop_Statement_to_gnu): Deal with displacement in range checks.
+	(Raise_Error_to_gnu): Likewise.
+	(gnat_to_gnu): Add call to find_loop_for.
+	(is_simple_additive_expression): New function extracted from...
+	(gnat_invariant_expr): ...here.  Call it on the expression.
+
+2015-11-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/utils2.c (gnat_invariant_expr): Add type conversions.
+
+2015-11-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/ada-tree.h (TYPE_MAX_ALIGN): New macro.
+	* gcc-interface/decl.c (gnat_to_gnu_entity): Do not set PACKED to -2.
+	Remove obsolete code setting the alignment on some atomic types.
+	When the type has no alignment but needs strict alignment and has a
+	size clause, compute a maximum alignment and set it on the type.
+	(adjust_packed): Remove handling of -2 argument.  Deal with TYPE_ALIGN
+	and TYPE_MAX_ALIGN directly.
+	(gnat_to_gnu_field): Do not document -2 as argument.
+	(components_to_record): Likewise.
+	* gcc-interface/utils.c (finish_record_type): Do not bump alignment of
+	the record type beyond TYPE_MAX_ALIGN.  Reset the latter on exit.
+
+	* gcc-interface/Makefile.in (PICFLAG_FOR_TARGET): Move around.
+	(GNATLIBCFLAGS_FOR_C): Reformat.
+	(GCC_CFLAGS): Delete.
+
+2015-11-29  Matthias Klose  <doko@ubuntu.com>
+
+	PR ada/68564
+	* gcc-interface/Makefile.in: Fix powerpc/powerpc64* and
+	mipsel/mips64el bitness detection.
+	Merge the mipsel/mips64el definitions into one.
+
+2015-11-28  Matthias Klose  <doko@ubuntu.com>
+
+	PR ada/68564
+	* gcc-interface/Makefile.in: Fix sparc/sparc64 bitness detection.
+
+2015-11-25  Arnaud Charlet  <charlet@adacore.com>
+
+	* lib-xref-spark_specific.adb
+	(Add_SPARK_Scope): Take entry families into account.
+	* a-exetim.ads, a-exetim-default.ads, a-exetim-mingw.ads (Clock,
+	Clock_For_Interrupts): preconditions added.
+	* a-extiin.ads (Clock): preconditions added.
+	* par-ch3.adb (P_Declarative_Items): In case of misplaced
+	aspect specifications, ensure that flag Done is properly set to
+	continue parsing.
+
+2015-11-25  Arnaud Charlet  <charlet@adacore.com>
+
+	* exp_util.adb (Remove_Side_Effects): Minimize extra temporaries
+	and use of 'Reference when needed.
+
+2015-11-25  Doug Rupp  <rupp@adacore.com>
+
+	* sigtramp-vxworks-target.inc (__x86_64__): Restore context for the
+	sake of uniformity.
+	* init.c (__gnat_inum_to_ivec): Add some casting to avoid
+	warnings when sizeof(long) != sizeof(int)
+
+2015-11-25  Yannick Moy  <moy@adacore.com>
+
+	* lib-xref-spark_specific.adb (SPARK_Entities): Add entries for
+	consideration.
+	(Add_SPARK_Scope): Take tasks into account.
+	(Detect_And_Add_SPARK_Scope): Take tasks into account.
+	(Enclosing_Subprogram_Or_Library_Package): Take tasks into account.
+
+2015-11-25  Bob Duff  <duff@adacore.com>
+
+	* sem_elab.adb (Check_Internal_Call_Continue): Code clean ups.
+
+2015-11-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* sem_util.ads (Has_Compatible_Alignment): Add Layout_Done
+	parameter.
+	* sem_util.adb (Has_Compatible_Alignment): Likewise.
+	(Has_Compatible_Alignment_Internal): Likewise.	Do not set the
+	result to Unknown for packed types if Layout_Done is true.
+	* checks.adb (Apply_Address_Clause_Check): Adjust call and
+	pass False to Has_Compatible_Alignment.
+	* sem_ch13.adb (Validate_Address_Clauses): Likewise but pass True.
+
+2015-11-25  Vincent Celier  <celier@adacore.com>
+
+	* gnatcmd.adb: When <target>-gnat is called with switch -P
+	and a GPR tool is invoked, invoke the GPR tool with switch
+	--target=<target>.
+
+2015-11-25  Hristian Kirtchev  <kirtchev@adacore.com>
+
+	* opt.adb, bcheck.adb: Minor reformatting.
+
+2015-11-25  Jerome Lambourg  <lambourg@adacore.com>
+
+	* init.c: Enable the signal trampoline on x86_64-vx7
+	* sigtramp-vxworks-target.inc: Implement the signal trampoline
+	for x86_64
+	* tracebak.c: Remove the hook to use the generic
+	unwinder on x86_64-vx7.
+
+2015-11-25  Vincent Celier  <celier@adacore.com>
+
+	* gnatcmd.adb: When "gnat name -P" is called, invoke gprname
+	directly if available.
+
+2015-11-25  Tristan Gingold  <gingold@adacore.com>
+
+	* init.c (__gnat_is_stack_guard): Do not use mach calls for
+	IOS simulator.
+
+2015-11-24  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gcc-interface/utils.c (gnat_write_global_declarations): Output
+	debugging information for top-level imported declarations.
+
+2015-11-24  Gary Dismukes  <dismukes@adacore.com>
+
+	* sem_ch3.adb, sem_type.adb, sem_ch7.adb, sem_ch9.adb, checks.adb,
+	sem_prag.adb, contracts.adb, g-strhas.ads, sem_ch6.adb: Minor
+	reformatting, rewording, and typo corrections.
+
+2015-11-24  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (gnat_to_gnu_entity) <Concurrent types>: In
+	ASIS mode, do a minimal translation for root types with discriminants.
+	* gcc-interface/trans.c (gnat_to_gnu) <N_Subunit>: Move around.
+	<N_Entry_Body, N_Protected_Body, N_Task_Body>: Likewise.  In ASIS mode,
+	process the declarations attached to the body.
+
+2015-11-24  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/trans.c (gnat_to_gnu): In type_annotate_only mode, do
+	not build a NULL_EXPR for an N_Expanded_Name.
+
+2015-11-24  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (is_cplusplus_method): Check that the type of
+	the first parameter (indirectly) has C++ convention too.
+
+2015-11-23  Olivier Hainque  <hainque@adacore.com>
+
+	* system-aix.ads: Add Frontend_Exceptions flag.
+	* system-aix64.ads: Likewise.
+	* system-darwin-ppc.ads: Likewise.
+	* system-darwin-ppc64.ads: Likewise.
+	* system-darwin-x86.ads: Likewise.
+	* system-darwin-x86_64.ads: Likewise.
+	* system-dragonfly-x86_64.ads: Likewise.
+	* system-freebsd-x86.ads: Likewise.
+	* system-freebsd-x86_64.ads: Likewise.
+	* system-hpux-ia64.ads: Likewise.
+	* system-hpux.ads: Likewise.
+	* system-linux-alpha.ads: Likewise.
+	* system-linux-armeb.ads: Likewise.
+	* system-linux-armel.ads: Likewise.
+	* system-linux-hppa.ads: Likewise.
+	* system-linux-ia64.ads: Likewise.
+	* system-linux-mips.ads: Likewise.
+	* system-linux-mips64el.ads: Likewise.
+	* system-linux-mipsel.ads: Likewise.
+	* system-linux-ppc.ads: Likewise.
+	* system-linux-ppc64.ads: Likewise.
+	* system-linux-s390.ads: Likewise.
+	* system-linux-s390x.ads: Likewise.
+	* system-linux-sh4.ads: Likewise.
+	* system-linux-sparc.ads: Likewise.
+	* system-linux-sparcv9.ads: Likewise.
+	* system-linux-x86.ads: Likewise.
+	* system-linux-x86_64.ads: Likewise.
+	* system-mingw-x86_64.ads: Likewise.
+	* system-mingw.ads: Likewise.
+	* system-rtems.ads: Likewise.
+	* system-solaris-sparc.ads: Likewise.
+	* system-solaris-sparcv9.ads: Likewise.
+	* system-solaris-x86.ads: Likewise.
+	* system-solaris-x86_64.ads: Likewise.
+	* system-vxworks-arm.ads: Likewise.
+	* system-vxworks-m68k.ads: Likewise.
+	* system-vxworks-mips.ads: Likewise.
+	* system-vxworks-ppc.ads: Likewise.
+	* system-vxworks-sparcv9.ads: Likewise.
+	* system-vxworks-x86.ads: Likewise.
+	* system.ads: Likewise.
+
+2015-11-23  Olivier Hainque  <hainque@adacore.com>
+	    Eric Botcazou  <botcazou@adacore.com>
+
+	* opt.ads (Exception_Mechanism): Now three values: Front_End_SJLJ,
+	Back_End_SJLJ and Back_End_ZCX.
+	(Back_End_Exceptions, Front_End_Exceptions, ZCX_Exceptions,
+	SJLJ_Exceptions): New functions, reflecting properties of the current
+	Exception_Mechanism.
+	* opt.adb: Implement the new functions.
+	* fe.h: Bind the new Exception_Mechanism and helper functions for gigi.
+
+	* exp_ch11.adb (Expand_At_End_Handler): Replace test on mechanism by
+	use of property helper and update comments.
+	(Expand_Exception_Handlers): Replace tests on mechanism by use of
+	helper. Restrict Abort_Defer to ZCX specifically.
+	* exp_ch9.adb (Expand_N_Asynchronous_Select): Replace tests on
+	mechanism by calls to helper functions. Abort_Undefer for ZCX only,
+	paired with Expand_Exception_Handlers.
+	* exp_sel.adb (Build_Abort_Block_Handler): Replace tests on mechanism
+	by calls to helper functions. Abort_Undefer for ZCX only, paired with
+	Expand_Exception_Handlers.
+
+	* lib-writ.ads (P line documentation): Add entry for "FX",
+	representative of unit compiled with Frontend_Exceptions True.
+	* lib-writ.adb (Output_Main_Program_Line): Add "FX" on P line if
+	compiled with Frontend_Exceptions True.
+
+	* ali.ads (ALIs_Record): Ada a Frontend_Exceptions component, to reflect
+	whether the ALI file contained an "FX" indication on the P line.
+	(Frontend_Exceptions_Specified): New boolean, to keep track of whether
+	at least an FX ALI file is in the closure.
+	* ali.adb (Scan_ALI): Handle "FX" on the P line.
+	(Initialize_ALI): Initialize Frontend_Exceptions_Specified to False.
+
+	* targparm.ads: Update desription of exception schemes.
+	(Frontend_Exceptions_On_Target): New flag, reflect Frontend_Exceptions
+	set to True in system.ads, or not set at all.
+	* targparm.adb (Targparm_Tags): Add FEX to convey Frontend_Exceptions.
+	Rename ZCD to ZCX for consistency.
+	(FEX_Str, Targparm_Str, Get_Target_Parameters): Adjust accordingly.
+
+	* gnat1drv.adb (Adjust_Global_Switches): Adjust Exception_Mechanism
+	setting, now from combination of Frontend_Exceptions and ZCX_By_Default.
+
+	* bcheck.adb (Check_Consistent_Zero_Cost_Exception_Handling): Rename
+	as ...
+	(Check_Consistent_Exception_Handling): Check consistency of both
+	ZCX_By_Default and Frontend_Exceptions.
+	(Check_Configuration_Consistency): Check_Consistent_Exception_Handling
+	if either flag was set at least once.
+
+	* make.adb (Check): Remove processing of a possible -fsjlj coming from
+	lang-specs.h.
+	* gnatlink.adb (Gnatlin): Likewise.
+
+	* gcc-interface/Makefile.in (gnatlib-sjlj/zcx): Now set
+	both ZCX_By_Default and Frontend_Exceptions.
+	* gcc-interface/decl.c (gnat_to_gnu_entity, case E_Variable):
+	Use eh property helper to test for back-end exceptions. Adjust
+	mechanism name when testing for front-end sjlj.
+	(case E_Procedure): Likewise.
+	* gcc-interface/trans.c (Handled_Sequence_Of_Statements_to_gnu):
+	Likewise, and rename local variables.
+	(Exception_Handler_to_gnu_sjlj): Rename as
+	Exception_Handler_to_gnu_fe_sjlj.
+	(Exception_Handler_to_gnu_zcx): Rename as
+	Exception_Handler_to_gnu_gcc and adjust tests on eh mechanisms
+	to use property helpers or correct mechanism name.
+
 2015-11-19  Bob Duff  <duff@adacore.com>
 
 	* sem_elab.adb (Check_Internal_Call_Continue): Correction to previous
@@ -1097,8 +1408,6 @@
 	Consider N_Defining_Operator_Symbol as valid entities.
 	(gnat_write_global_declarations): Output debugging information
 	for top-level imported declarations.
-
-2015-11-12  Emmanuel Briot  <briot@adacore.com>
 
 2015-11-12  Emmanuel Briot  <briot@adacore.com>
 
