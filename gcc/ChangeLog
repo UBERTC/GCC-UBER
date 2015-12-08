@@ -1,3 +1,31 @@
+2015-12-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backport from mainline
+	2015-12-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68680
+	* calls.c (special_function_p): Return ECF_MAY_BE_ALLOCA for
+	BUILT_IN_ALLOCA{,_WITH_ALIGN}.  Don't check for __builtin_alloca
+	by name.
+
+	PR tree-optimization/68671
+	* tree-ssa-reassoc.c (maybe_optimize_range_tests): For basic
+	blocks starting with the successor of first bb we've modified
+	and ending with last_bb call reset_flow_sensitive_info_in_bb.
+
+2015-12-04  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2015-12-01  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/rs6000/freebsd64.h (ELFv2_ABI_CHECK): Add new macro.
+	(SUBSUBTARGET_OVERRIDE_OPTIONS): Use it to decide whether to set
+	rs6000_current_abi to ABI_AIX or ABI_ELFv2.
+
+2015-12-04  Richard Biener  <rguenther@suse.de>
+
+	* BASE-VER: Set to 5.3.1.
+
 2015-12-04  Release Manager
 
 	* GCC 5.3.0 released.
