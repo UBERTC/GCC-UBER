@@ -6885,18 +6885,25 @@ aarch64_override_options (void)
 
    /* Disable array_bound warning. */
    global_options.x_warn_array_bounds = 0;
+   global_options_set.x_warn_array_bounds = false;
    /* Disable clobbered warning. */
    global_options.x_warn_clobbered = 0;
+   global_options_set.x_warn_clobbered = false;
    /* Disable unused warning. */
    global_options.x_warn_unused = 0;
+   global_options_set.x_warn_unused = false;
    /* Disable unused but set parameter warning. */
    global_options.x_warn_unused_but_set_parameter = 0;
+   global_options_set.x_warn_unused_but_set_parameter = false;
    /* Disable unused but set variable warning. */
    global_options.x_warn_unused_but_set_variable = 0;
+   global_options_set.x_warn_unused_but_set_variable = false;
    /* Disable maybe uninitialized warning. */
    global_options.x_warn_maybe_uninitialized = 0;
+   global_options_set.x_warn_maybe_uninitialized = false;
    /* Disable strict overflow warning. */
    global_options.x_warn_strict_overflow = 0;
+   global_options_set.x_warn_strict_overflow = false;
 
   aarch64_override_options_after_change ();
 }
