@@ -184,10 +184,15 @@ set_rtl (tree t, rtx x)
 				      || SUBREG_P (XEXP (x, 0)))
 				  && (REG_P (XEXP (x, 1))
 				      || SUBREG_P (XEXP (x, 1))))
+			      /* We need to accept PARALLELs for RESUT_DECLs
+				 because of vector types with BLKmode returned
+				 in multiple registers, but they are supposed
+				 to be uncoalesced.  */
 			      || (GET_CODE (x) == PARALLEL
 				  && SSAVAR (t)
 				  && TREE_CODE (SSAVAR (t)) == RESULT_DECL
-				  && !flag_tree_coalesce_vars))
+				  && (GET_MODE (x) == BLKmode
+				      || !flag_tree_coalesce_vars)))
 			   : (MEM_P (x) || x == pc_rtx
 			      || (GET_CODE (x) == CONCAT
 				  && MEM_P (XEXP (x, 0))
@@ -3534,6 +3539,12 @@ expand_gimple_stmt_1 (gimple *stmt)
 	  {
 	    tree result = DECL_RESULT (current_function_decl);
 
+	    /* Mark we have return statement with missing bounds.  */
+	    if (!bnd
+		&& chkp_function_instrumented_p (cfun->decl)
+		&& !DECL_P (op0))
+	      bnd = error_mark_node;
+
 	    /* If we are not returning the current function's RESULT_DECL,
 	       build an assignment to it.  */
 	    if (op0 != result)
@@ -3550,9 +3561,6 @@ expand_gimple_stmt_1 (gimple *stmt)
 		op0 = build2 (MODIFY_EXPR, TREE_TYPE (result),
 			      result, op0);
 	      }
-	    /* Mark we have return statement with missing bounds.  */
-	    if (!bnd && chkp_function_instrumented_p (cfun->decl))
-	      bnd = error_mark_node;
 	  }
 
 	if (!op0)
@@ -6291,7 +6299,7 @@ pass_expand::execute (function *fun)
   expand_phi_nodes (&SA);
 
   /* Release any stale SSA redirection data.  */
-  redirect_edge_var_map_destroy ();
+  redirect_edge_var_map_empty ();
 
   /* Register rtl specific functions for cfg.  */
   rtl_register_cfg_hooks ();

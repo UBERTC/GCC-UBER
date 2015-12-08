@@ -24,11 +24,13 @@
 extern void nvptx_declare_function_name (FILE *, const char *, const_tree decl);
 extern void nvptx_declare_object_name (FILE *file, const char *name,
 				       const_tree decl);
+extern void nvptx_output_aligned_decl (FILE *file, const char *name,
+				       const_tree decl,
+				       HOST_WIDE_INT size, unsigned align);
 extern void nvptx_function_end (FILE *);
 extern void nvptx_output_skip (FILE *, unsigned HOST_WIDE_INT);
 extern void nvptx_output_ascii (FILE *, const char *, unsigned HOST_WIDE_INT);
 extern void nvptx_register_pragmas (void);
-extern const char *nvptx_section_for_decl (const_tree);
 
 #ifdef RTX_CODE
 extern void nvptx_expand_oacc_fork (unsigned);
@@ -36,10 +38,9 @@ extern void nvptx_expand_oacc_join (unsigned);
 extern void nvptx_expand_call (rtx, rtx);
 extern rtx nvptx_expand_compare (rtx);
 extern const char *nvptx_ptx_type_from_mode (machine_mode, bool);
+extern const char *nvptx_output_mov_insn (rtx, rtx);
 extern const char *nvptx_output_call_insn (rtx_insn *, rtx, rtx);
 extern const char *nvptx_output_return (void);
-extern machine_mode nvptx_underlying_object_mode (rtx);
-extern const char *nvptx_section_from_addr_space (addr_space_t);
 extern bool nvptx_hard_regno_mode_ok (int, machine_mode);
 extern rtx nvptx_maybe_convert_symbolic_operand (rtx);
 #endif

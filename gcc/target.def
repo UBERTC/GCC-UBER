@@ -2459,13 +2459,13 @@ identical versions.",
  tree, (void *decl), NULL)
 
 /* Returns a code for a target-specific builtin that implements
-   reciprocal of the function, or NULL_TREE if not available.  */
+   reciprocal of a target-specific function, or NULL_TREE if not available.  */
 DEFHOOK
 (builtin_reciprocal,
- "This hook should return the DECL of a function that implements reciprocal of\n\
-the builtin or internal function call @var{call}, or\n\
+ "This hook should return the DECL of a function that implements the\n\
+reciprocal of the machine-specific builtin function @var{fndecl}, or\n\
 @code{NULL_TREE} if such a function is not available.",
- tree, (gcall *call),
+ tree, (tree fndecl),
  default_builtin_reciprocal)
 
 /* For a vendor-specific TYPE, return a pointer to a statically-allocated
@@ -3433,6 +3433,23 @@ move would be greater than that of a library call.",
  bool, (unsigned HOST_WIDE_INT size, unsigned int alignment,
         enum by_pieces_operation op, bool speed_p),
  default_use_by_pieces_infrastructure_p)
+
+DEFHOOK
+(optab_supported_p,
+ "Return true if the optimizers should use optab @var{op} with\n\
+modes @var{mode1} and @var{mode2} for optimization type @var{opt_type}.\n\
+The optab is known to have an associated @file{.md} instruction\n\
+whose C condition is true.  @var{mode2} is only meaningful for conversion\n\
+optabs; for direct optabs it is a copy of @var{mode1}.\n\
+\n\
+For example, when called with @var{op} equal to @code{rint_optab} and\n\
+@var{mode1} equal to @code{DFmode}, the hook should say whether the\n\
+optimizers should use optab @code{rintdf2}.\n\
+\n\
+The default hook returns true for all inputs.",
+ bool, (int op, machine_mode mode1, machine_mode mode2,
+	optimization_type opt_type),
+ default_optab_supported_p)
 
 /* True for MODE if the target expects that registers in this mode will
    be allocated to registers in a small register class.  The compiler is

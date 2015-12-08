@@ -90,6 +90,9 @@ enum gimplify_omp_var_data
   /* Flag for shared vars that are or might be stored to in the region.  */
   GOVD_WRITTEN = 131072,
 
+  /* Flag for GOVD_MAP, if it is a forced mapping.  */
+  GOVD_MAP_FORCE = 262144,
+
   GOVD_DATA_SHARE_CLASS = (GOVD_SHARED | GOVD_PRIVATE | GOVD_FIRSTPRIVATE
 			   | GOVD_LASTPRIVATE | GOVD_REDUCTION | GOVD_LINEAR
 			   | GOVD_LOCAL)
@@ -122,6 +125,7 @@ enum omp_region_type
   ORT_ACC_DATA	= ORT_ACC | ORT_TARGET_DATA, /* Data construct.  */
   ORT_ACC_PARALLEL = ORT_ACC | ORT_TARGET,  /* Parallel construct */
   ORT_ACC_KERNELS  = ORT_ACC | ORT_TARGET | 0x80,  /* Kernels construct.  */
+  ORT_ACC_HOST_DATA = ORT_ACC | ORT_TARGET_DATA | 0x80,  /* Host data.  */
 
   /* Dummy OpenMP region, used to disable expansion of
      DECL_VALUE_EXPRs in taskloop pre body.  */
@@ -151,10 +155,11 @@ struct gimplify_ctx
   hash_table<gimplify_hasher> *temp_htab;
 
   int conditions;
-  bool save_stack;
-  bool into_ssa;
-  bool allow_rhs_cond_expr;
-  bool in_cleanup_point_expr;
+  unsigned into_ssa : 1;
+  unsigned allow_rhs_cond_expr : 1;
+  unsigned in_cleanup_point_expr : 1;
+  unsigned keep_stack : 1;
+  unsigned save_stack : 1;
 };
 
 struct gimplify_omp_ctx
@@ -1076,6 +1081,7 @@ static enum gimplify_status
 gimplify_bind_expr (tree *expr_p, gimple_seq *pre_p)
 {
   tree bind_expr = *expr_p;
+  bool old_keep_stack = gimplify_ctxp->keep_stack;
   bool old_save_stack = gimplify_ctxp->save_stack;
   tree t;
   gbind *bind_stmt;
@@ -1125,9 +1131,10 @@ gimplify_bind_expr (tree *expr_p, gimple_seq *pre_p)
     }
 
   bind_stmt = gimple_build_bind (BIND_EXPR_VARS (bind_expr), NULL,
-                                   BIND_EXPR_BLOCK (bind_expr));
+				 BIND_EXPR_BLOCK (bind_expr));
   gimple_push_bind_expr (bind_stmt);
 
+  gimplify_ctxp->keep_stack = false;
   gimplify_ctxp->save_stack = false;
 
   /* Gimplify the body into the GIMPLE_BIND tuple's body.  */
@@ -1150,7 +1157,10 @@ gimplify_bind_expr (tree *expr_p, gimple_seq *pre_p)
 
   cleanup = NULL;
   stack_save = NULL;
-  if (gimplify_ctxp->save_stack)
+
+  /* If the code both contains VLAs and calls alloca, then we cannot reclaim
+     the stack space allocated to the VLAs.  */
+  if (gimplify_ctxp->save_stack && !gimplify_ctxp->keep_stack)
     {
       gcall *stack_restore;
 
@@ -1232,7 +1242,11 @@ gimplify_bind_expr (tree *expr_p, gimple_seq *pre_p)
       gimple_bind_set_body (bind_stmt, new_body);
     }
 
+  /* keep_stack propagates all the way up to the outermost BIND_EXPR.  */
+  if (!gimplify_ctxp->keep_stack)
+    gimplify_ctxp->keep_stack = old_keep_stack;
   gimplify_ctxp->save_stack = old_save_stack;
+
   gimple_pop_bind_expr ();
 
   gimplify_seq_add_stmt (pre_p, bind_stmt);
@@ -1389,10 +1403,6 @@ gimplify_vla_decl (tree decl, gimple_seq *seq_p)
   t = build2 (MODIFY_EXPR, TREE_TYPE (addr), addr, t);
 
   gimplify_and_add (t, seq_p);
-
-  /* Indicate that we need to restore the stack level when the
-     enclosing BIND_EXPR is exited.  */
-  gimplify_ctxp->save_stack = true;
 }
 
 /* A helper function to be called via walk_tree.  Mark all labels under *TP
@@ -2373,6 +2383,18 @@ gimplify_call_expr (tree *expr_p, gimple_seq *pre_p, bool want_value)
       && DECL_BUILT_IN_CLASS (fndecl) == BUILT_IN_NORMAL)
     switch (DECL_FUNCTION_CODE (fndecl))
       {
+      case BUILT_IN_ALLOCA:
+      case BUILT_IN_ALLOCA_WITH_ALIGN:
+	/* If the call has been built for a variable-sized object, then we
+	   want to restore the stack level when the enclosing BIND_EXPR is
+	   exited to reclaim the allocated space; otherwise, we precisely
+	   need to do the opposite and preserve the latest stack level.  */
+	if (CALL_ALLOCA_FOR_VAR_P (*expr_p))
+	  gimplify_ctxp->save_stack = true;
+	else
+	  gimplify_ctxp->keep_stack = true;
+	break;
+
       case BUILT_IN_VA_START:
         {
 	  builtin_va_start_p = TRUE;
@@ -5979,8 +6001,12 @@ oacc_default_clause (struct gimplify_omp_ctx *ctx, tree decl, unsigned flags)
       gcc_unreachable ();
 
     case ORT_ACC_KERNELS:
-      /* Everything under kernels are default 'present_or_copy'.  */
+      /* Scalars are default 'copy' under kernels, non-scalars are default
+	 'present_or_copy'.  */
       flags |= GOVD_MAP;
+      if (!AGGREGATE_TYPE_P (TREE_TYPE (decl)))
+	flags |= GOVD_MAP_FORCE;
+
       rkind = "kernels";
       break;
 
@@ -6120,6 +6146,9 @@ omp_notice_variable (struct gimplify_omp_ctx *ctx, tree decl, bool in_code)
 					 (splay_tree_key) decl);
 		  if (n2)
 		    {
+		      if (octx->region_type == ORT_ACC_HOST_DATA)
+		        error ("variable %qE declared in enclosing "
+			       "%<host_data%> region", DECL_NAME (decl));
 		      nflags |= GOVD_MAP;
 		      goto found_outer;
 		    }
@@ -6418,6 +6447,7 @@ gimplify_scan_omp_clauses (tree *list_p, gimple_seq *pre_p,
       case OMP_TARGET_DATA:
       case OMP_TARGET_ENTER_DATA:
       case OMP_TARGET_EXIT_DATA:
+      case OACC_HOST_DATA:
 	ctx->target_firstprivatize_array_bases = true;
       default:
 	break;
@@ -6683,6 +6713,7 @@ gimplify_scan_omp_clauses (tree *list_p, gimple_seq *pre_p,
 	    case OMP_TARGET_DATA:
 	    case OMP_TARGET_ENTER_DATA:
 	    case OMP_TARGET_EXIT_DATA:
+	    case OACC_HOST_DATA:
 	      if (OMP_CLAUSE_MAP_KIND (c) == GOMP_MAP_FIRSTPRIVATE_POINTER
 		  || (OMP_CLAUSE_MAP_KIND (c)
 		      == GOMP_MAP_FIRSTPRIVATE_REFERENCE))
@@ -6695,6 +6726,22 @@ gimplify_scan_omp_clauses (tree *list_p, gimple_seq *pre_p,
 	    }
 	  if (remove)
 	    break;
+	  if (DECL_P (decl) && outer_ctx && (region_type & ORT_ACC))
+	    {
+	      struct gimplify_omp_ctx *octx;
+	      for (octx = outer_ctx; octx; octx = octx->outer_context)
+	        {
+		  if (octx->region_type != ORT_ACC_HOST_DATA)
+		    break;
+		  splay_tree_node n2
+		    = splay_tree_lookup (octx->variables,
+					 (splay_tree_key) decl);
+		  if (n2)
+		    error_at (OMP_CLAUSE_LOCATION (c), "variable %qE "
+			      "declared in enclosing %<host_data%> region",
+			      DECL_NAME (decl));
+		}
+	    }
 	  if (OMP_CLAUSE_SIZE (c) == NULL_TREE)
 	    OMP_CLAUSE_SIZE (c) = DECL_P (decl) ? DECL_SIZE_UNIT (decl)
 				  : TYPE_SIZE_UNIT (TREE_TYPE (decl));
@@ -7092,6 +7139,7 @@ gimplify_scan_omp_clauses (tree *list_p, gimple_seq *pre_p,
 	    }
 	  goto do_notice;
 
+	case OMP_CLAUSE_USE_DEVICE:
 	case OMP_CLAUSE_USE_DEVICE_PTR:
 	  flags = GOVD_FIRSTPRIVATE | GOVD_EXPLICIT;
 	  goto do_add;
@@ -7327,7 +7375,6 @@ gimplify_scan_omp_clauses (tree *list_p, gimple_seq *pre_p,
 	  break;
 
 	case OMP_CLAUSE_DEVICE_RESIDENT:
-	case OMP_CLAUSE_USE_DEVICE:
 	  remove = true;
 	  break;
 
@@ -7618,10 +7665,12 @@ gimplify_adjust_omp_clauses_1 (splay_tree_node n, void *data)
     }
   else if (code == OMP_CLAUSE_MAP)
     {
-      OMP_CLAUSE_SET_MAP_KIND (clause,
-			       flags & GOVD_MAP_TO_ONLY
-			       ? GOMP_MAP_TO
-			       : GOMP_MAP_TOFROM);
+      int kind = (flags & GOVD_MAP_TO_ONLY
+		  ? GOMP_MAP_TO
+		  : GOMP_MAP_TOFROM);
+      if (flags & GOVD_MAP_FORCE)
+	kind |= GOMP_MAP_FLAG_FORCE;
+      OMP_CLAUSE_SET_MAP_KIND (clause, kind);
       if (DECL_SIZE (decl)
 	  && TREE_CODE (DECL_SIZE (decl)) != INTEGER_CST)
 	{
@@ -9365,6 +9414,9 @@ gimplify_omp_workshare (tree *expr_p, gimple_seq *pre_p)
     case OMP_TEAMS:
       ort = OMP_TEAMS_COMBINED (expr) ? ORT_COMBINED_TEAMS : ORT_TEAMS;
       break;
+    case OACC_HOST_DATA:
+      ort = ORT_ACC_HOST_DATA;
+      break;
     default:
       gcc_unreachable ();
     }
@@ -9386,6 +9438,7 @@ gimplify_omp_workshare (tree *expr_p, gimple_seq *pre_p)
 	  switch (TREE_CODE (expr))
 	    {
 	    case OACC_DATA:
+	    case OACC_HOST_DATA:
 	      end_ix = BUILT_IN_GOACC_DATA_END;
 	      break;
 	    case OMP_TARGET_DATA:
@@ -9416,6 +9469,10 @@ gimplify_omp_workshare (tree *expr_p, gimple_seq *pre_p)
       break;
     case OACC_KERNELS:
       stmt = gimple_build_omp_target (body, GF_OMP_TARGET_KIND_OACC_KERNELS,
+				      OMP_CLAUSES (expr));
+      break;
+    case OACC_HOST_DATA:
+      stmt = gimple_build_omp_target (body, GF_OMP_TARGET_KIND_OACC_HOST_DATA,
 				      OMP_CLAUSES (expr));
       break;
     case OACC_PARALLEL:
@@ -10527,16 +10584,12 @@ gimplify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
 	  ret = GS_ALL_DONE;
 	  break;
 
-	case OACC_HOST_DATA:
-	  sorry ("directive not yet implemented");
-	  ret = GS_ALL_DONE;
-	  break;
-
 	case OACC_DECLARE:
 	  gimplify_oacc_declare (expr_p, pre_p);
 	  ret = GS_ALL_DONE;
 	  break;
 
+	case OACC_HOST_DATA:
 	case OACC_DATA:
 	case OACC_KERNELS:
 	case OACC_PARALLEL:

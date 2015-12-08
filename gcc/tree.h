@@ -4320,6 +4320,10 @@ extern tree staticp (tree);
 
 extern tree save_expr (tree);
 
+/* Return true if T is function-invariant.  */
+
+extern bool tree_invariant_p (tree);
+
 /* Look inside EXPR into any simple arithmetic operations.  Return the
    outermost non-arithmetic or non-invariant node.  */
 
@@ -5365,6 +5369,16 @@ type_with_alias_set_p (const_tree t)
   return false;
 }
 
+extern location_t get_pure_location (location_t loc);
+
+/* Get the endpoint of any range encoded within location LOC.  */
+
+static inline location_t
+get_finish (location_t loc)
+{
+  return get_range_from_loc (line_table, loc).m_finish;
+}
+
 extern location_t set_block (location_t loc, tree block);
 
 extern void gt_ggc_mx (tree &);
@@ -5373,10 +5387,10 @@ extern void gt_pch_nx (tree &, gt_pointer_operator, void *);
 
 extern bool nonnull_arg_p (const_tree);
 
-extern void
+extern location_t
 set_source_range (tree expr, location_t start, location_t finish);
 
-extern void
+extern location_t
 set_source_range (tree expr, source_range src_range);
 
 static inline source_range
@@ -5385,6 +5399,9 @@ get_decl_source_range (tree decl)
   location_t loc = DECL_SOURCE_LOCATION (decl);
   return get_range_from_loc (line_table, loc);
 }
+
+extern location_t
+make_location (location_t caret, location_t start, location_t finish);
 
 /* Return true if it makes sense to promote/demote from_type to to_type. */
 inline bool

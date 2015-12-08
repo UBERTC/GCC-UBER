@@ -1366,10 +1366,12 @@ build_sender_ref (tree var, omp_context *ctx)
   return build_sender_ref ((splay_tree_key) var, ctx);
 }
 
-/* Add a new field for VAR inside the structure CTX->SENDER_DECL.  */
+/* Add a new field for VAR inside the structure CTX->SENDER_DECL.  If
+   BASE_POINTERS_RESTRICT, declare the field with restrict.  */
 
 static void
-install_var_field (tree var, bool by_ref, int mask, omp_context *ctx)
+install_var_field (tree var, bool by_ref, int mask, omp_context *ctx,
+		   bool base_pointers_restrict = false)
 {
   tree field, type, sfield = NULL_TREE;
   splay_tree_key key = (splay_tree_key) var;
@@ -1387,13 +1389,24 @@ install_var_field (tree var, bool by_ref, int mask, omp_context *ctx)
 	      || !is_gimple_omp_oacc (ctx->stmt));
 
   type = TREE_TYPE (var);
+  /* Prevent redeclaring the var in the split-off function with a restrict
+     pointer type.  Note that we only clear type itself, restrict qualifiers in
+     the pointed-to type will be ignored by points-to analysis.  */
+  if (POINTER_TYPE_P (type)
+      && TYPE_RESTRICT (type))
+    type = build_qualified_type (type, TYPE_QUALS (type) & ~TYPE_QUAL_RESTRICT);
+
   if (mask & 4)
     {
       gcc_assert (TREE_CODE (type) == ARRAY_TYPE);
       type = build_pointer_type (build_pointer_type (type));
     }
   else if (by_ref)
-    type = build_pointer_type (type);
+    {
+      type = build_pointer_type (type);
+      if (base_pointers_restrict)
+	type = build_qualified_type (type, TYPE_QUAL_RESTRICT);
+    }
   else if ((mask & 3) == 1 && is_reference (var))
     type = TREE_TYPE (type);
 
@@ -1810,10 +1823,12 @@ fixup_child_record_type (omp_context *ctx)
 }
 
 /* Instantiate decls as necessary in CTX to satisfy the data sharing
-   specified by CLAUSES.  */
+   specified by CLAUSES.  If BASE_POINTERS_RESTRICT, install var field with
+   restrict.  */
 
 static void
-scan_sharing_clauses (tree clauses, omp_context *ctx)
+scan_sharing_clauses (tree clauses, omp_context *ctx,
+		      bool base_pointers_restrict = false)
 {
   tree c, decl;
   bool scan_array_reductions = false;
@@ -1942,6 +1957,7 @@ scan_sharing_clauses (tree clauses, omp_context *ctx)
 	  install_var_local (decl, ctx);
 	  break;
 
+	case OMP_CLAUSE_USE_DEVICE:
 	case OMP_CLAUSE_USE_DEVICE_PTR:
 	  decl = OMP_CLAUSE_DECL (c);
 	  if (TREE_CODE (TREE_TYPE (decl)) == ARRAY_TYPE)
@@ -2074,7 +2090,8 @@ scan_sharing_clauses (tree clauses, omp_context *ctx)
 		      && TREE_CODE (TREE_TYPE (decl)) == ARRAY_TYPE)
 		    install_var_field (decl, true, 7, ctx);
 		  else
-		    install_var_field (decl, true, 3, ctx);
+		    install_var_field (decl, true, 3, ctx,
+				       base_pointers_restrict);
 		  if (is_gimple_omp_offloaded (ctx->stmt))
 		    install_var_local (decl, ctx);
 		}
@@ -2144,7 +2161,6 @@ scan_sharing_clauses (tree clauses, omp_context *ctx)
 	  break;
 
 	case OMP_CLAUSE_DEVICE_RESIDENT:
-	case OMP_CLAUSE_USE_DEVICE:
 	case OMP_CLAUSE__CACHE_:
 	  sorry ("Clause not supported yet");
 	  break;
@@ -2295,6 +2311,7 @@ scan_sharing_clauses (tree clauses, omp_context *ctx)
 	case OMP_CLAUSE_SIMD:
 	case OMP_CLAUSE_NOGROUP:
 	case OMP_CLAUSE_DEFAULTMAP:
+	case OMP_CLAUSE_USE_DEVICE:
 	case OMP_CLAUSE_USE_DEVICE_PTR:
 	case OMP_CLAUSE__CILK_FOR_COUNT_:
 	case OMP_CLAUSE_ASYNC:
@@ -2312,7 +2329,6 @@ scan_sharing_clauses (tree clauses, omp_context *ctx)
 	  break;
 
 	case OMP_CLAUSE_DEVICE_RESIDENT:
-	case OMP_CLAUSE_USE_DEVICE:
 	case OMP_CLAUSE__CACHE_:
 	  sorry ("Clause not supported yet");
 	  break;
@@ -3036,6 +3052,68 @@ scan_omp_single (gomp_single *stmt, omp_context *outer_ctx)
     layout_type (ctx->record_type);
 }
 
+/* Return true if the CLAUSES of an omp target guarantee that the base pointers
+   used in the corresponding offloaded function are restrict.  */
+
+static bool
+omp_target_base_pointers_restrict_p (tree clauses)
+{
+  /* The analysis relies on the GOMP_MAP_FORCE_* mapping kinds, which are only
+     used by OpenACC.  */
+  if (flag_openacc == 0)
+    return false;
+
+  /* I.  Basic example:
+
+       void foo (void)
+       {
+	 unsigned int a[2], b[2];
+
+	 #pragma acc kernels \
+	   copyout (a) \
+	   copyout (b)
+	 {
+	   a[0] = 0;
+	   b[0] = 1;
+	 }
+       }
+
+     After gimplification, we have:
+
+       #pragma omp target oacc_kernels \
+	 map(force_from:a [len: 8]) \
+	 map(force_from:b [len: 8])
+       {
+	 a[0] = 0;
+	 b[0] = 1;
+       }
+
+     Because both mappings have the force prefix, we know that they will be
+     allocated when calling the corresponding offloaded function, which means we
+     can mark the base pointers for a and b in the offloaded function as
+     restrict.  */
+
+  tree c;
+  for (c = clauses; c; c = OMP_CLAUSE_CHAIN (c))
+    {
+      if (OMP_CLAUSE_CODE (c) != OMP_CLAUSE_MAP)
+	return false;
+
+      switch (OMP_CLAUSE_MAP_KIND (c))
+	{
+	case GOMP_MAP_FORCE_ALLOC:
+	case GOMP_MAP_FORCE_TO:
+	case GOMP_MAP_FORCE_FROM:
+	case GOMP_MAP_FORCE_TOFROM:
+	  break;
+	default:
+	  return false;
+	}
+    }
+
+  return true;
+}
+
 /* Scan a GIMPLE_OMP_TARGET.  */
 
 static void
@@ -3057,13 +3135,21 @@ scan_omp_target (gomp_target *stmt, omp_context *outer_ctx)
   DECL_NAMELESS (name) = 1;
   TYPE_NAME (ctx->record_type) = name;
   TYPE_ARTIFICIAL (ctx->record_type) = 1;
+
+  bool base_pointers_restrict = false;
   if (offloaded)
     {
       create_omp_child_function (ctx, false);
       gimple_omp_target_set_child_fn (stmt, ctx->cb.dst_fn);
+
+      base_pointers_restrict = omp_target_base_pointers_restrict_p (clauses);
+      if (base_pointers_restrict
+	  && dump_file && (dump_flags & TDF_DETAILS))
+	fprintf (dump_file,
+		 "Base pointers in offloaded function are restrict\n");
     }
 
-  scan_sharing_clauses (clauses, ctx);
+  scan_sharing_clauses (clauses, ctx, base_pointers_restrict);
   scan_omp (gimple_omp_body_ptr (stmt), ctx);
 
   if (TYPE_FIELDS (ctx->record_type) == NULL)
@@ -3615,6 +3701,8 @@ check_omp_nesting_restrictions (gimple *stmt, omp_context *ctx)
 	    case GF_OMP_TARGET_KIND_OACC_UPDATE: stmt_name = "update"; break;
 	    case GF_OMP_TARGET_KIND_OACC_ENTER_EXIT_DATA:
 	      stmt_name = "enter/exit data"; break;
+	    case GF_OMP_TARGET_KIND_OACC_HOST_DATA: stmt_name = "host_data";
+	      break;
 	    default: gcc_unreachable ();
 	    }
 	  switch (gimple_omp_target_kind (ctx->stmt))
@@ -3626,6 +3714,8 @@ check_omp_nesting_restrictions (gimple *stmt, omp_context *ctx)
 	    case GF_OMP_TARGET_KIND_OACC_KERNELS:
 	      ctx_stmt_name = "kernels"; break;
 	    case GF_OMP_TARGET_KIND_OACC_DATA: ctx_stmt_name = "data"; break;
+	    case GF_OMP_TARGET_KIND_OACC_HOST_DATA:
+	      ctx_stmt_name = "host_data"; break;
 	    default: gcc_unreachable ();
 	    }
 
@@ -12508,6 +12598,7 @@ expand_omp_target (struct omp_region *region)
       break;
     case GF_OMP_TARGET_KIND_DATA:
     case GF_OMP_TARGET_KIND_OACC_DATA:
+    case GF_OMP_TARGET_KIND_OACC_HOST_DATA:
       data_region = true;
       break;
     default:
@@ -12751,6 +12842,9 @@ expand_omp_target (struct omp_region *region)
     case GF_OMP_TARGET_KIND_OACC_DECLARE:
       start_ix = BUILT_IN_GOACC_DECLARE;
       break;
+    case GF_OMP_TARGET_KIND_OACC_HOST_DATA:
+      start_ix = BUILT_IN_GOACC_HOST_DATA;
+      break;
     default:
       gcc_unreachable ();
     }
@@ -12875,6 +12969,7 @@ expand_omp_target (struct omp_region *region)
     case BUILT_IN_GOACC_DATA_START:
     case BUILT_IN_GOACC_DECLARE:
     case BUILT_IN_GOMP_TARGET_DATA:
+    case BUILT_IN_GOACC_HOST_DATA:
       break;
     case BUILT_IN_GOMP_TARGET:
     case BUILT_IN_GOMP_TARGET_UPDATE:
@@ -13182,6 +13277,7 @@ build_omp_regions_1 (basic_block bb, struct omp_region *parent,
 		case GF_OMP_TARGET_KIND_OACC_PARALLEL:
 		case GF_OMP_TARGET_KIND_OACC_KERNELS:
 		case GF_OMP_TARGET_KIND_OACC_DATA:
+		case GF_OMP_TARGET_KIND_OACC_HOST_DATA:
 		  break;
 		case GF_OMP_TARGET_KIND_UPDATE:
 		case GF_OMP_TARGET_KIND_ENTER_DATA:
@@ -14982,6 +15078,7 @@ lower_omp_target (gimple_stmt_iterator *gsi_p, omp_context *ctx)
       break;
     case GF_OMP_TARGET_KIND_DATA:
     case GF_OMP_TARGET_KIND_OACC_DATA:
+    case GF_OMP_TARGET_KIND_OACC_HOST_DATA:
       data_region = true;
       break;
     default:
@@ -15188,6 +15285,7 @@ lower_omp_target (gimple_stmt_iterator *gsi_p, omp_context *ctx)
 	  }
 	break;
 
+      case OMP_CLAUSE_USE_DEVICE:
       case OMP_CLAUSE_USE_DEVICE_PTR:
       case OMP_CLAUSE_IS_DEVICE_PTR:
 	var = OMP_CLAUSE_DECL (c);
@@ -15573,12 +15671,14 @@ lower_omp_target (gimple_stmt_iterator *gsi_p, omp_context *ctx)
 				    build_int_cstu (tkind_type, tkind));
 	    break;
 
+	  case OMP_CLAUSE_USE_DEVICE:
 	  case OMP_CLAUSE_USE_DEVICE_PTR:
 	  case OMP_CLAUSE_IS_DEVICE_PTR:
 	    ovar = OMP_CLAUSE_DECL (c);
 	    var = lookup_decl_in_outer_ctx (ovar, ctx);
 	    x = build_sender_ref (ovar, ctx);
-	    if (OMP_CLAUSE_CODE (c) == OMP_CLAUSE_USE_DEVICE_PTR)
+	    if (OMP_CLAUSE_CODE (c) == OMP_CLAUSE_USE_DEVICE_PTR
+		|| OMP_CLAUSE_CODE (c) == OMP_CLAUSE_USE_DEVICE)
 	      tkind = GOMP_MAP_USE_DEVICE_PTR;
 	    else
 	      tkind = GOMP_MAP_FIRSTPRIVATE_INT;
@@ -15781,10 +15881,12 @@ lower_omp_target (gimple_stmt_iterator *gsi_p, omp_context *ctx)
 				     gimple_build_assign (new_var, x));
 	      }
 	    break;
+	  case OMP_CLAUSE_USE_DEVICE:
 	  case OMP_CLAUSE_USE_DEVICE_PTR:
 	  case OMP_CLAUSE_IS_DEVICE_PTR:
 	    var = OMP_CLAUSE_DECL (c);
-	    if (OMP_CLAUSE_CODE (c) == OMP_CLAUSE_USE_DEVICE_PTR)
+	    if (OMP_CLAUSE_CODE (c) == OMP_CLAUSE_USE_DEVICE_PTR
+		|| OMP_CLAUSE_CODE (c) == OMP_CLAUSE_USE_DEVICE)
 	      x = build_sender_ref (var, ctx);
 	    else
 	      x = build_receiver_ref (var, false, ctx);
@@ -16771,6 +16873,7 @@ make_gimple_omp_edges (basic_block bb, struct omp_region **region,
 	case GF_OMP_TARGET_KIND_OACC_PARALLEL:
 	case GF_OMP_TARGET_KIND_OACC_KERNELS:
 	case GF_OMP_TARGET_KIND_OACC_DATA:
+	case GF_OMP_TARGET_KIND_OACC_HOST_DATA:
 	  break;
 	case GF_OMP_TARGET_KIND_UPDATE:
 	case GF_OMP_TARGET_KIND_ENTER_DATA:

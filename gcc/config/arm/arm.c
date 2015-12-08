@@ -2006,6 +2006,29 @@ const struct tune_params arm_cortex_a57_tune =
   tune_params::SCHED_AUTOPREF_FULL
 };
 
+const struct tune_params arm_exynosm1_tune =
+{
+  arm_9e_rtx_costs,
+  &exynosm1_extra_costs,
+  NULL,						/* Sched adj cost.  */
+  arm_default_branch_cost,
+  &arm_default_vec_cost,
+  1,						/* Constant limit.  */
+  2,						/* Max cond insns.  */
+  8,						/* Memset max inline.  */
+  3,						/* Issue rate.  */
+  ARM_PREFETCH_NOT_BENEFICIAL,
+  tune_params::PREF_CONST_POOL_FALSE,
+  tune_params::PREF_LDRD_TRUE,
+  tune_params::LOG_OP_NON_SHORT_CIRCUIT_FALSE,	/* Thumb.  */
+  tune_params::LOG_OP_NON_SHORT_CIRCUIT_FALSE,	/* ARM.  */
+  tune_params::DISPARAGE_FLAGS_ALL,
+  tune_params::PREF_NEON_64_FALSE,
+  tune_params::PREF_NEON_STRINGOPS_TRUE,
+  tune_params::FUSE_NOTHING,
+  tune_params::SCHED_AUTOPREF_OFF
+};
+
 const struct tune_params arm_xgene1_tune =
 {
   arm_9e_rtx_costs,
@@ -2876,6 +2899,28 @@ arm_option_override_internal (struct gcc_options *opts,
   if (!TARGET_THUMB2_P (opts->x_target_flags))
     opts->x_arm_restrict_it = 0;
 
+  /* Enable -munaligned-access by default for
+     - all ARMv6 architecture-based processors when compiling for a 32-bit ISA
+     i.e. Thumb2 and ARM state only.
+     - ARMv7-A, ARMv7-R, and ARMv7-M architecture-based processors.
+     - ARMv8 architecture-base processors.
+
+     Disable -munaligned-access by default for
+     - all pre-ARMv6 architecture-based processors
+     - ARMv6-M architecture-based processors.  */
+
+  if (! opts_set->x_unaligned_access)
+    {
+      opts->x_unaligned_access = (TARGET_32BIT_P (opts->x_target_flags)
+			  && arm_arch6 && (arm_arch_notm || arm_arch7));
+    }
+  else if (opts->x_unaligned_access == 1
+	   && !(arm_arch6 && (arm_arch_notm || arm_arch7)))
+    {
+      warning (0, "target CPU does not support unaligned accesses");
+     opts->x_unaligned_access = 0;
+    }
+
   /* Don't warn since it's on by default in -O2.  */
   if (TARGET_THUMB1_P (opts->x_target_flags))
     opts->x_flag_schedule_insns = 0;
@@ -3279,30 +3324,6 @@ arm_option_override (void)
 	fix_cm3_ldrd = 1;
       else
 	fix_cm3_ldrd = 0;
-    }
-
-  /* Enable -munaligned-access by default for
-     - all ARMv6 architecture-based processors when compiling for a 32-bit ISA
-     i.e. Thumb2 and ARM state only.
-     - ARMv7-A, ARMv7-R, and ARMv7-M architecture-based processors.
-     - ARMv8 architecture-base processors.
-
-     Disable -munaligned-access by default for
-     - all pre-ARMv6 architecture-based processors
-     - ARMv6-M architecture-based processors.  */
-
-  if (unaligned_access == 2)
-    {
-      if (TARGET_32BIT && arm_arch6 && (arm_arch_notm || arm_arch7))
-	unaligned_access = 1;
-      else
-	unaligned_access = 0;
-    }
-  else if (unaligned_access == 1
-	   && !(arm_arch6 && (arm_arch_notm || arm_arch7)))
-    {
-      warning (0, "target CPU does not support unaligned accesses");
-      unaligned_access = 0;
     }
 
   /* Hot/Cold partitioning is not currently supported, since we can't
@@ -17906,41 +17927,6 @@ output_call (rtx *operands)
 
   return "";
 }
-
-/* Output a 'call' insn that is a reference in memory. This is
-   disabled for ARMv5 and we prefer a blx instead because otherwise
-   there's a significant performance overhead.  */
-const char *
-output_call_mem (rtx *operands)
-{
-  gcc_assert (!arm_arch5);
-  if (TARGET_INTERWORK)
-    {
-      output_asm_insn ("ldr%?\t%|ip, %0", operands);
-      output_asm_insn ("mov%?\t%|lr, %|pc", operands);
-      output_asm_insn ("bx%?\t%|ip", operands);
-    }
-  else if (regno_use_in (LR_REGNUM, operands[0]))
-    {
-      /* LR is used in the memory address.  We load the address in the
-	 first instruction.  It's safe to use IP as the target of the
-	 load since the call will kill it anyway.  */
-      output_asm_insn ("ldr%?\t%|ip, %0", operands);
-      output_asm_insn ("mov%?\t%|lr, %|pc", operands);
-      if (arm_arch4t)
-	output_asm_insn ("bx%?\t%|ip", operands);
-      else
-	output_asm_insn ("mov%?\t%|pc, %|ip", operands);
-    }
-  else
-    {
-      output_asm_insn ("mov%?\t%|lr, %|pc", operands);
-      output_asm_insn ("ldr%?\t%|pc, %0", operands);
-    }
-
-  return "";
-}
-
 
 /* Output a move from arm registers to arm registers of a long double
    OPERANDS[0] is the destination.

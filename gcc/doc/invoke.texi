@@ -845,6 +845,7 @@ Objective-C and Objective-C++ Dialects}.
 
 @emph{MSP430 Options}
 @gccoptlist{-msim -masm-hex -mmcu= -mcpu= -mlarge -msmall -mrelax @gol
+-mwarn-mcu @gol
 -mcode-region= -mdata-region= @gol
 -msilicon-errata= -msilicon-errata-warn= @gol
 -mhwmult= -minrt}
@@ -1021,6 +1022,7 @@ See RS/6000 and PowerPC Options.
 -mfpu  -mno-fpu  -mhard-float  -msoft-float @gol
 -mhard-quad-float  -msoft-quad-float @gol
 -mstack-bias  -mno-stack-bias @gol
+-mstd-struct-return  -mno-std-struct-return @gol
 -munaligned-doubles  -mno-unaligned-doubles @gol
 -muser-mode  -mno-user-mode @gol
 -mv8plus  -mno-v8plus  -mvis  -mno-vis @gol
@@ -1100,7 +1102,7 @@ See RS/6000 and PowerPC Options.
 -mpclmul -mfsgsbase -mrdrnd -mf16c -mfma @gol
 -mprefetchwt1 -mclflushopt -mxsavec -mxsaves @gol
 -msse4a -m3dnow -mpopcnt -mabm -mbmi -mtbm -mfma4 -mxop -mlzcnt @gol
--mbmi2 -mfxsr -mxsave -mxsaveopt -mrtm -mlwp -mmpx -mmwaitx -mthreads @gol
+-mbmi2 -mfxsr -mxsave -mxsaveopt -mrtm -mlwp -mmpx -mmwaitx -mclzero -mthreads @gol
 -mms-bitfields -mno-align-stringops  -minline-all-stringops @gol
 -minline-stringops-dynamically -mstringop-strategy=@var{alg} @gol
 -mmemcpy-strategy=@var{strategy} -mmemset-strategy=@var{strategy} @gol
@@ -6134,6 +6136,11 @@ report undefined behavior using @code{__builtin_trap} rather than
 a @code{libubsan} library routine.  The advantage of this is that the
 @code{libubsan} library is not needed and is not linked in, so this
 is usable even in freestanding environments.
+
+@item -fsanitize-coverage=trace-pc
+@opindex fsanitize-coverage=trace-pc
+Enable coverage-guided fuzzing code instrumentation.
+Inserts call to __sanitizer_cov_trace_pc into every basic block.
 
 @item -fcheck-pointer-bounds
 @opindex fcheck-pointer-bounds
@@ -12484,10 +12491,9 @@ Generate big-endian code.  This is the default when GCC is configured for an
 
 @item -mgeneral-regs-only
 @opindex mgeneral-regs-only
-Generate code which uses only the general-purpose registers.  This is equivalent
-to feature modifier @option{nofp} of @option{-march} or @option{-mcpu}, except
-that @option{-mgeneral-regs-only} takes precedence over any conflicting feature
-modifier regardless of sequence.
+Generate code which uses only the general-purpose registers.  This will prevent
+the compiler from using floating-point and Advanced SIMD registers but will not
+impose any restrictions on the assembler.
 
 @item -mlittle-endian
 @opindex mlittle-endian
@@ -12568,22 +12574,26 @@ Which in turn depends on the target processor.
 
 @item -march=@var{name}
 @opindex march
-Specify the name of the target architecture, optionally suffixed by one or
+Specify the name of the target architecture and, optionally, one or
 more feature modifiers.  This option has the form
 @option{-march=@var{arch}@r{@{}+@r{[}no@r{]}@var{feature}@r{@}*}}.
 
-The permissible values for @var{arch} are @samp{armv8-a} or
-@samp{armv8.1-a}.
+The permissible values for @var{arch} are @samp{armv8-a},
+@samp{armv8.1-a} or @var{native}.
 
-For the permissible values for @var{feature}, see the sub-section on
-@ref{aarch64-feature-modifiers,,@option{-march} and @option{-mcpu}
+The value @samp{armv8.1-a} implies @samp{armv8-a} and enables compiler
+support for the ARMv8.1 architecture extension.  In particular, it
+enables the @samp{+crc} and @samp{+lse} features.
+
+The value @samp{native} is available on native AArch64 GNU/Linux and
+causes the compiler to pick the architecture of the host system.  This
+option has no effect if the compiler is unable to recognize the
+architecture of the host system,
+
+The permissible values for @var{feature} are listed in the sub-section
+on @ref{aarch64-feature-modifiers,,@option{-march} and @option{-mcpu}
 Feature Modifiers}.  Where conflicting feature modifiers are
 specified, the right-most feature is used.
-
-Additionally on native AArch64 GNU/Linux systems the value
-@samp{native} is available.  This option causes the compiler to pick the
-architecture of the host system.  If the compiler is unable to recognize the
-architecture of the host system this option has no effect.
 
 GCC uses @var{name} to determine what kind of instructions it can emit
 when generating assembly code.  If @option{-march} is specified
@@ -12606,8 +12616,8 @@ option are: @samp{cortex-a57.cortex-a53}, @samp{cortex-a72.cortex-a53}.
 Additionally on native AArch64 GNU/Linux systems the value
 @samp{native} is available.  This option causes the compiler to pick
 the architecture of and tune the performance of the code for the
-processor of the host system.  If the compiler is unable to recognize
-the processor of the host system this option has no effect.
+processor of the host system.  This option has no effect if the
+compiler is unable to recognize the architecture of the host system.
 
 Where none of @option{-mtune=}, @option{-mcpu=} or @option{-march=}
 are specified, the code is tuned to perform well across a range
@@ -12629,9 +12639,9 @@ specified, the right-most feature is used.
 
 Additionally on native AArch64 GNU/Linux systems the value
 @samp{native} is available.  This option causes the compiler to tune
-the performance of the code for the processor of the host system.  If
-the compiler is unable to recognize the processor of the host system
-this option has no effect.
+the performance of the code for the processor of the host system.
+This option has no effect if the compiler is unable to recognize the
+architecture of the host system.
 
 GCC uses @var{name} to determine what kind of instructions it can emit when
 generating assembly code (as if by @option{-march}) and to determine
@@ -12667,7 +12677,8 @@ the following and their inverses @option{no@var{feature}}:
 
 @table @samp
 @item crc
-Enable CRC extension.
+Enable CRC extension.  This is on by default for
+@option{-march=armv8.1-a}.
 @item crypto
 Enable Crypto extension.  This also enables Advanced SIMD and floating-point
 instructions.
@@ -12679,14 +12690,8 @@ Enable Advanced SIMD instructions.  This also enables floating-point
 instructions.  This is on by default for all possible values for options
 @option{-march} and @option{-mcpu}.
 @item lse
-Enable Large System Extension instructions.
-@item pan
-Enable Privileged Access Never support.
-@item lor
-Enable Limited Ordering Regions support.
-@item rdma
-Enable ARMv8.1 Advanced SIMD instructions.  This implies Advanced SIMD
-is enabled.
+Enable Large System Extension instructions.  This is on by default for
+@option{-march=armv8.1-a}.
 
 @end table
 
@@ -18515,6 +18520,16 @@ cause the linker to search for a script called @file{xxx.ld}.
 
 This option is also passed on to the assembler.
 
+@item -mwarn-mcu
+@itemx -mno-warn-mcu
+@opindex mwarn-mcu
+@opindex mno-warn-mcu
+This option enables or disables warnings about conflicts between the
+MCU name specified by the @option{-mmcu} option and the ISA set by the
+@option{-mcpu} option and/or the hardware multiply support set by the
+@option{-mhwmult} option.  It also toggles warnings about unrecognised
+MCU names.  This option is on by default.
+
 @item -mcpu=
 @opindex mcpu=
 Specifies the ISA to use.  Accepted values are @samp{msp430},
@@ -18549,10 +18564,9 @@ for the original 16-bit-only multiply supported by early MCUs.
 @samp{f5series} for the 16/32-bit multiply supported by F5-series MCUs.
 A value of @samp{auto} can also be given.  This tells GCC to deduce
 the hardware multiply support based upon the MCU name provided by the
-@option{-mmcu} option.  If no @option{-mmcu} option is specified then
-@samp{32bit} hardware multiply support is assumed.  If the MCU name is
-not recognised then no hardware multiply support is assumed.
-@code{auto} is the default setting.
+@option{-mmcu} option.  If no @option{-mmcu} option is specified or if
+the MCU name is not recognised then no hardware multiply support is
+assumed.  @code{auto} is the default setting.
 
 Hardware multiplies are normally performed by calling a library
 routine.  This saves space in the generated code.  When compiling at
@@ -21576,10 +21590,10 @@ Do not generate code that can only run in supervisor mode.  This is relevant
 only for the @code{casa} instruction emitted for the LEON3 processor.  This
 is the default.
 
-@item -mno-faster-structs
-@itemx -mfaster-structs
-@opindex mno-faster-structs
+@item -mfaster-structs
+@itemx -mno-faster-structs
 @opindex mfaster-structs
+@opindex mno-faster-structs
 With @option{-mfaster-structs}, the compiler assumes that structures
 should have 8-byte alignment.  This enables the use of pairs of
 @code{ldd} and @code{std} instructions for copies in structure
@@ -21588,6 +21602,17 @@ However, the use of this changed alignment directly violates the SPARC
 ABI@.  Thus, it's intended only for use on targets where the developer
 acknowledges that their resulting code is not directly in line with
 the rules of the ABI@.
+
+@item -mstd-struct-return
+@itemx -mno-std-struct-return
+@opindex mstd-struct-return
+@opindex mno-std-struct-return
+With @option{-mstd-struct-return}, the compiler generates checking code
+in functions returning structures or unions to detect size mismatches
+between the two sides of function calls, as per the 32-bit ABI@.
+
+The default is @option{-mno-std-struct-return}.  This option has no effect
+in 64-bit mode.
 
 @item -mcpu=@var{cpu_type}
 @opindex mcpu
@@ -23206,6 +23231,9 @@ preferred alignment to @option{-mpreferred-stack-boundary=2}.
 @need 200
 @itemx -mmwaitx
 @opindex mmwaitx
+@need 200
+@itemx -mclzero
+@opindex mclzero
 These switches enable the use of instructions in the MMX, SSE,
 SSE2, SSE3, SSSE3, SSE4.1, AVX, AVX2, AVX512F, AVX512PF, AVX512ER, AVX512CD,
 SHA, AES, PCLMUL, FSGSBASE, RDRND, F16C, FMA, SSE4A, FMA4, XOP, LWP, ABM,

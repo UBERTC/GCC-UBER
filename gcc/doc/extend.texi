@@ -1658,9 +1658,7 @@ variable-length arrays are more elegant.
 There are other differences between these two methods.  Space allocated
 with @code{alloca} exists until the containing @emph{function} returns.
 The space for a variable-length array is deallocated as soon as the array
-name's scope ends.  (If you use both variable-length arrays and
-@code{alloca} in the same function, deallocation of a variable-length array
-also deallocates anything more recently allocated with @code{alloca}.)
+name's scope ends, unless you also use @code{alloca} in this scope.
 
 You can also use variable-length arrays as arguments to functions:
 
@@ -3144,6 +3142,7 @@ At the function call it will create resolver @code{ifunc}, that will
 dynamically call a clone suitable for current architecture.
 
 @item simd
+@itemx simd("@var{mask}")
 @cindex @code{simd} function attribute.
 This attribute enables creation of one or more function versions that
 can process multiple arguments using SIMD instructions from a
@@ -3158,6 +3157,9 @@ attribute on the same function.
 If the attribute is specified and @code{#pragma omp declare simd}
 present on a declaration and @code{-fopenmp} or @code{-fopenmp-simd}
 switch is specified, then the attribute is ignored.
+The optional argument @var{mask} may have "notinbranch" or "inbranch"
+value and instructs the compiler to generate non-masked or masked
+clones correspondingly. By default, all clones are generated.
 
 @item target (@var{options})
 @cindex @code{target} function attribute
@@ -4942,6 +4944,50 @@ number of halfwords to be added after the function label.  For
 both arguments the maximum allowed value is 1000000.
 
 If both arguments are zero, hotpatching is disabled.
+
+@item target (@var{options})
+@cindex @code{target} function attribute
+As discussed in @ref{Common Function Attributes}, this attribute
+allows specification of target-specific compilation options.
+
+On S/390, the following options are supported:
+
+@table @samp
+@item arch=
+@item tune=
+@item stack-guard=
+@item stack-size=
+@item branch-cost=
+@item warn-framesize=
+@item backchain
+@itemx no-backchain
+@item hard-dfp
+@itemx no-hard-dfp
+@item hard-float
+@itemx soft-float
+@item htm
+@itemx no-htm
+@item vx
+@itemx no-vx
+@item packed-stack
+@itemx no-packed-stack
+@item small-exec
+@itemx no-small-exec
+@item mvcle
+@itemx no-mvcle
+@item warn-dynamicstack
+@itemx no-warn-dynamicstack
+@end table
+
+The options work exactly like the S/390 specific command line
+options (without the prefix @option{-m}) except that they do not
+change any feature macros.  For example,
+
+@smallexample
+@code{target("no-vx")}
+@end smallexample
+
+does not undefine the @code{__VEC__} macro.
 @end table
 
 @node SH Function Attributes
@@ -18291,6 +18337,12 @@ void __builtin_ia32_monitorx (void *, unsigned int, unsigned int)
 void __builtin_ia32_mwaitx (unsigned int, unsigned int, unsigned int)
 @end smallexample
 
+The following built-in functions are available when @option{-mclzero} is used.
+All of them generate the machine instruction that is part of the name.
+@smallexample
+void __builtin_i32_clzero (void *)
+@end smallexample
+
 @node x86 transactional memory intrinsics
 @subsection x86 Transactional Memory Intrinsics
 
@@ -18435,6 +18487,7 @@ for further explanation.
 * M32C Pragmas::
 * MeP Pragmas::
 * RS/6000 and PowerPC Pragmas::
+* S/390 Pragmas::
 * Darwin Pragmas::
 * Solaris Pragmas::
 * Symbol-Renaming Pragmas::
@@ -18608,6 +18661,26 @@ declarations.
 @c Describe h8300 pragmas here.
 @c Describe sh pragmas here.
 @c Describe v850 pragmas here.
+
+@node S/390 Pragmas
+@subsection S/390 Pragmas
+
+The pragmas defined by the S/390 target correspond to the S/390
+target function attributes and some the additional options:
+
+@table @samp
+@item zvector
+@itemx no-zvector
+@end table
+
+Note that options of the pragma, unlike options of the target
+attribute, do change the value of preprocessor macros like
+@code{__VEC__}.  They can be specified as below:
+
+@smallexample
+#pragma GCC target("string[,string]...")
+#pragma GCC target("string"[,"string"]...)
+@end smallexample
 
 @node Darwin Pragmas
 @subsection Darwin Pragmas

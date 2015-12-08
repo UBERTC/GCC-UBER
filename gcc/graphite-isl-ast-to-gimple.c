@@ -588,6 +588,9 @@ binary_op_to_tree (tree type, __isl_take isl_ast_expr *expr, ivs_params &ip)
 	}
       return fold_build2 (TRUNC_DIV_EXPR, type, tree_lhs_expr, tree_rhs_expr);
 
+#if HAVE_ISL_OPTIONS_SET_SCHEDULE_SERIALIZE_SCCS
+    case isl_ast_op_zdiv_r:
+#endif
     case isl_ast_op_pdiv_r:
       /* As ISL operates on arbitrary precision numbers, we may end up with
 	 division by 2^64 that is folded to 0.  */
@@ -758,6 +761,9 @@ gcc_expression_from_isl_expr_op (tree type, __isl_take isl_ast_expr *expr,
     case isl_ast_op_pdiv_q:
     case isl_ast_op_pdiv_r:
     case isl_ast_op_fdiv_q:
+#if HAVE_ISL_OPTIONS_SET_SCHEDULE_SERIALIZE_SCCS
+    case isl_ast_op_zdiv_r:
+#endif
     case isl_ast_op_and:
     case isl_ast_op_or:
     case isl_ast_op_eq:
@@ -1110,16 +1116,17 @@ translate_isl_ast_node_user (__isl_keep isl_ast_node *node,
   build_iv_mapping (iv_map, gbb, user_expr, ip, pbb->scop->scop_info->region);
   isl_ast_expr_free (user_expr);
 
+  basic_block old_bb = GBB_BB (gbb);
   if (dump_file)
     {
-      fprintf (dump_file, "[codegen] copying from basic block\n");
+      fprintf (dump_file,
+	       "[codegen] copying from bb_%d on edge (bb_%d, bb_%d)\n",
+	       old_bb->index, next_e->src->index, next_e->dest->index);
       print_loops_bb (dump_file, GBB_BB (gbb), 0, 3);
-      fprintf (dump_file, "[codegen] to new basic block\n");
-      print_loops_bb (dump_file, next_e->src, 0, 3);
+
     }
 
-  next_e = copy_bb_and_scalar_dependences (GBB_BB (gbb), next_e,
-					   iv_map);
+  next_e = copy_bb_and_scalar_dependences (old_bb, next_e, iv_map);
 
   iv_map.release ();
 
@@ -1592,8 +1599,8 @@ translate_isl_ast_to_gimple::collect_all_ssa_names (tree new_expr,
     }
 }
 
-/* This is abridged version of the function:
-   tree.c:substitute_in_expr (tree exp, tree f, tree r). */
+/* This is abridged version of the function copied from:
+   tree.c:substitute_in_expr (tree exp, tree f, tree r).  */
 
 static tree
 substitute_ssa_name (tree exp, tree f, tree r)
@@ -1798,15 +1805,23 @@ get_rename_from_scev (tree old_name, gimple_seq *stmts, loop_p loop,
     }
 
   new_expr = rename_all_uses (new_expr, new_bb, old_bb);
-  /* We should check all the operands and all of them should dominate the use at
+
+  /* We check all the operands and all of them should dominate the use at
      new_expr.  */
-  if (TREE_CODE (new_expr) == SSA_NAME)
+  auto_vec <tree, 2> new_ssa_names;
+  collect_all_ssa_names (new_expr, &new_ssa_names);
+  int i;
+  tree new_ssa_name;
+  FOR_EACH_VEC_ELT (new_ssa_names, i, new_ssa_name)
     {
-      basic_block bb = gimple_bb (SSA_NAME_DEF_STMT (new_expr));
-      if (bb && !dominated_by_p (CDI_DOMINATORS, new_bb, bb))
+      if (TREE_CODE (new_ssa_name) == SSA_NAME)
 	{
-	  codegen_error = true;
-	  return build_zero_cst (TREE_TYPE (old_name));
+	  basic_block bb = gimple_bb (SSA_NAME_DEF_STMT (new_ssa_name));
+	  if (bb && !dominated_by_p (CDI_DOMINATORS, new_bb, bb))
+	    {
+	      codegen_error = true;
+	      return build_zero_cst (TREE_TYPE (old_name));
+	    }
 	}
     }
 
@@ -2096,6 +2111,12 @@ translate_isl_ast_to_gimple::copy_loop_phi_nodes (basic_block bb,
       codegen_error = !copy_loop_phi_args (phi, ibp_old_bb, new_phi,
 					  ibp_new_bb, true);
       update_stmt (new_phi);
+
+      if (dump_file)
+	{
+	  fprintf (dump_file, "[codegen] creating loop-phi node: ");
+	  print_gimple_stmt (dump_file, new_phi, 0, 0);
+	}
     }
 
   return true;
@@ -2894,6 +2915,26 @@ translate_isl_ast_to_gimple::copy_bb_and_scalar_dependences (basic_block bb,
 	      return NULL;
 	    }
 
+	  /* In case ISL did some loop peeling, like this:
+
+	       S_8(0);
+	       for (int c1 = 1; c1 <= 5; c1 += 1) {
+	         S_8(c1);
+	       }
+	       S_8(6);
+
+	     there should be no loop-phi nodes in S_8(0).
+
+	     FIXME: We need to reason about dynamic instances of S_8, i.e., the
+	     values of all scalar variables: for the moment we instantiate only
+	     SCEV analyzable expressions on the iteration domain, and we need to
+	     extend that to reductions that cannot be analyzed by SCEV.  */
+	  if (!bb_in_sese_p (phi_bb, region->if_region->true_region->region))
+	    {
+	      codegen_error = true;
+	      return NULL;
+	    }
+
 	  if (dump_file)
 	    fprintf (dump_file, "[codegen] bb_%d contains loop phi nodes.\n",
 		     bb->index);
@@ -2918,6 +2959,7 @@ translate_isl_ast_to_gimple::copy_bb_and_scalar_dependences (basic_block bb,
 
 	  /* If a corresponding merge-point was not found, then abort codegen.  */
 	  if (phi_bb->loop_father != loop_father
+	      || !bb_in_sese_p (phi_bb, region->if_region->true_region->region)
 	      || !copy_cond_phi_nodes (bb, phi_bb, iv_map))
 	    {
 	      codegen_error = true;

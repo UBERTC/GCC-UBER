@@ -225,6 +225,11 @@ unsigned int flag_sanitize
 Variable
 unsigned int flag_sanitize_recover = SANITIZE_UNDEFINED | SANITIZE_NONDEFAULT | SANITIZE_KERNEL_ADDRESS
 
+fsanitize-coverage=trace-pc
+Common Report Var(flag_sanitize_coverage)
+Enable coverage-guided fuzzing code instrumentation.
+Inserts call to __sanitizer_cov_trace_pc into every basic block.
+
 ; Flag whether a prefix has been added to dump_base_name
 Variable
 bool dump_base_name_prefixed = false
@@ -576,7 +581,7 @@ Common Var(flag_fatal_errors)
 Exit on the first error occurred.
 
 Wframe-larger-than=
-Common RejectNegative Joined UInteger
+Common RejectNegative Joined UInteger Warning
 -Wframe-larger-than=<number>	Warn if a function's stack frame requires more than <number> bytes.
 
 Wfree-nonheap-object
@@ -1379,7 +1384,7 @@ Common Ignore
 Does nothing. Preserved for backward compatibility.
 
 floop-nest-optimize
-Common Report Var(flag_loop_optimize_isl) Optimization
+Common Report Var(flag_loop_nest_optimize) Optimization
 Enable the ISL based loop nest optimizer.
 
 fstrict-volatile-bitfields

@@ -814,7 +814,11 @@ handle_pragma_diagnostic(cpp_reader *ARG_UNUSED(dummy))
 
   struct cl_option_handlers handlers;
   set_default_handlers (&handlers);
-  control_warning_option (option_index, (int) kind, kind != DK_IGNORED,
+  const char *arg = NULL;
+  if (cl_options[option_index].flags & CL_JOINED)
+    arg = option_string + 1 + cl_options[option_index].opt_len;
+  control_warning_option (option_index, (int) kind,
+			  arg, kind != DK_IGNORED,
 			  loc, lang_mask, &handlers,
 			  &global_options, &global_options_set,
 			  global_dc);
@@ -1251,6 +1255,7 @@ static const struct omp_pragma_def oacc_pragmas[] = {
   { "declare", PRAGMA_OACC_DECLARE },
   { "enter", PRAGMA_OACC_ENTER_DATA },
   { "exit", PRAGMA_OACC_EXIT_DATA },
+  { "host_data", PRAGMA_OACC_HOST_DATA },
   { "kernels", PRAGMA_OACC_KERNELS },
   { "loop", PRAGMA_OACC_LOOP },
   { "parallel", PRAGMA_OACC_PARALLEL },

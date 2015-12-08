@@ -458,6 +458,10 @@ get_pointer_alignment_1 (tree exp, unsigned int *alignp,
 	{
 	  *bitposp = ptr_misalign * BITS_PER_UNIT;
 	  *alignp = ptr_align * BITS_PER_UNIT;
+	  /* Make sure to return a sensible alignment when the multiplication
+	     by BITS_PER_UNIT overflowed.  */
+	  if (*alignp == 0)
+	    *alignp = 1u << (HOST_BITS_PER_INT - 1);
 	  /* We cannot really tell whether this result is an approximation.  */
 	  return true;
 	}
@@ -1962,7 +1966,8 @@ replacement_internal_fn (gcall *call)
       if (ifn != IFN_LAST)
 	{
 	  tree_pair types = direct_internal_fn_types (ifn, call);
-	  if (direct_internal_fn_supported_p (ifn, types))
+	  optimization_type opt_type = bb_optimization_type (gimple_bb (call));
+	  if (direct_internal_fn_supported_p (ifn, types, opt_type))
 	    return ifn;
 	}
     }

@@ -1146,10 +1146,24 @@ show_omp_clauses (gfc_omp_clauses *omp_clauses)
   if (omp_clauses->gang)
     {
       fputs (" GANG", dumpfile);
-      if (omp_clauses->gang_expr)
+      if (omp_clauses->gang_num_expr || omp_clauses->gang_static_expr)
 	{
 	  fputc ('(', dumpfile);
-	  show_expr (omp_clauses->gang_expr);
+	  if (omp_clauses->gang_num_expr)
+	    {
+	      fprintf (dumpfile, "num:");
+	      show_expr (omp_clauses->gang_num_expr);
+	    }
+	  if (omp_clauses->gang_num_expr && omp_clauses->gang_static)
+	    fputc (',', dumpfile);
+	  if (omp_clauses->gang_static)
+	    {
+	      fprintf (dumpfile, "static:");
+	      if (omp_clauses->gang_static_expr)
+		show_expr (omp_clauses->gang_static_expr);
+	      else
+		fputc ('*', dumpfile);
+	    }
 	  fputc (')', dumpfile);
 	}
     }
@@ -1647,6 +1661,33 @@ show_code_node (int level, gfc_code *c)
 	show_expr (c->expr1);
       else
 	fputs ("* ", dumpfile);
+      if (c->expr2 != NULL)
+	{
+	  fputs (" stat=", dumpfile);
+	  show_expr (c->expr2);
+	}
+      if (c->expr3 != NULL)
+	{
+	  fputs (" errmsg=", dumpfile);
+	  show_expr (c->expr3);
+	}
+      break;
+
+    case EXEC_EVENT_POST:
+    case EXEC_EVENT_WAIT:
+      if (c->op == EXEC_EVENT_POST)
+	fputs ("EVENT POST ", dumpfile);
+      else
+	fputs ("EVENT WAIT ", dumpfile);
+
+      fputs ("event-variable=", dumpfile);
+      if (c->expr1 != NULL)
+	show_expr (c->expr1);
+      if (c->expr4 != NULL)
+	{
+	  fputs (" until_count=", dumpfile);
+	  show_expr (c->expr4);
+	}
       if (c->expr2 != NULL)
 	{
 	  fputs (" stat=", dumpfile);

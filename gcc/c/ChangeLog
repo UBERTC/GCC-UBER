@@ -1,3 +1,59 @@
+2015-12-07  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68668
+	* c-decl.c (grokdeclarator): If ORIG_QUAL_INDIRECT is indirect, use
+	TREE_TYPE of ORIG_QUAL_TYPE, otherwise decrement ORIG_QUAL_INDIRECT.
+
+2015-12-04  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* c-tree.h (c_build_va_arg): Adjust prototype.
+	* c-parser.c (c_parser_postfix_expression): Adjust call to above.
+	* c-typeck.c (c_build_va_arg): Rename LOC parameter to LOC2, add LOC1
+	parameter, adjust throughout and issue an error if EXPR is a component
+	with reverse storage order.
+
+2015-12-02  Jason Merrill  <jason@redhat.com>
+
+	* c-fold.c (c_disable_warnings, c_enable_warnings, c_fully_fold)
+	(c_fully_fold_internal, decl_constant_value_for_optimization):
+	Move from c-common.c.
+	* c-tree.h: Declare decl_constant_value_for_optimization.
+	* Make-lang.in (C_AND_OBJC_OBJS): Add c-fold.o.
+
+2015-12-02  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/68162
+	* c-decl.c (grokdeclarator): Set first_non_attr_kind before
+	following link from declarator to next declarator.  Track original
+	qualified type and pass it to c_build_qualified_type.
+	* c-typeck.c (c_build_qualified_type): Add arguments
+	orig_qual_type and orig_qual_indirect.
+
+2015-12-02  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* c-parser.c (c_parser_omp_clause_name)
+	(c_parser_oacc_all_clauses): Alphabetical sorting.
+
+2015-12-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/68533
+	* c-decl.c (get_parm_info): Use b->locus instead of input_location
+	for diagnostics.
+
+2015-12-01  Julian Brown  <julian@codesourcery.com>
+	    Cesar Philippidis  <cesar@codesourcery.com>
+	    James Norris  <James_Norris@mentor.com>
+
+	* c-parser.c (c_parser_omp_clause_name): Add use_device support.
+	(c_parser_oacc_clause_use_device): New function.
+	(c_parser_oacc_all_clauses): Add use_device support.
+	(OACC_HOST_DATA_CLAUSE_MASK): New macro.
+	(c_parser_oacc_host_data): New function.
+	(c_parser_omp_construct): Add host_data support.
+	* c-tree.h (c_finish_oacc_host_data): Add prototype.
+	* c-typeck.c (c_finish_oacc_host_data): New function.
+	(c_finish_omp_clauses): Add use_device support.
+
 2015-11-29  Jan Hubicka  <hubicka@ucw.cz>
 
 	PR c/67106

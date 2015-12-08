@@ -137,6 +137,8 @@
     UNSPECV_SET_FPCR		; Represent assign of FPCR content.
     UNSPECV_GET_FPSR		; Represent fetch of FPSR content.
     UNSPECV_SET_FPSR		; Represent assign of FPSR content.
+    UNSPECV_BLOCKAGE		; Represent a blockage
+    UNSPECV_PROBE_STACK_RANGE	; Represent stack range probing.
   ]
 )
 
@@ -209,6 +211,7 @@
 ;; Scheduling
 (include "../arm/cortex-a53.md")
 (include "../arm/cortex-a57.md")
+(include "../arm/exynos-m1.md")
 (include "thunderx.md")
 (include "../arm/xgene1.md")
 
@@ -1613,9 +1616,9 @@
 
 (define_insn_and_split "*add<mode>3_pluslong"
   [(set
-    (match_operand:GPI 0 "register_operand" "")
-    (plus:GPI (match_operand:GPI 1 "register_operand" "")
-	      (match_operand:GPI 2 "aarch64_pluslong_operand" "")))]
+    (match_operand:GPI 0 "register_operand" "=r")
+    (plus:GPI (match_operand:GPI 1 "register_operand" "r")
+	      (match_operand:GPI 2 "aarch64_pluslong_immediate" "i")))]
   "!aarch64_plus_operand (operands[2], VOIDmode)
    && !aarch64_move_imm (INTVAL (operands[2]), <MODE>mode)"
   "#"
@@ -4569,6 +4572,17 @@
   [(set_attr "type" "f_minmax<s>")]
 )
 
+;; Scalar forms for the IEEE-754 fmax()/fmin() functions
+(define_insn "<fmaxmin><mode>3"
+  [(set (match_operand:GPF 0 "register_operand" "=w")
+	(unspec:GPF [(match_operand:GPF 1 "register_operand" "w")
+		     (match_operand:GPF 2 "register_operand" "w")]
+		     FMAXMIN))]
+  "TARGET_FLOAT"
+  "<fmaxmin_op>\\t%<s>0, %<s>1, %<s>2"
+  [(set_attr "type" "f_minmax<s>")]
+)
+
 ;; For copysign (x, y), we want to generate:
 ;;
 ;;   LDR d2, #(1 << 63)
@@ -4938,6 +4952,29 @@
   ""
   ""
   [(set_attr "length" "0")]
+)
+
+;; UNSPEC_VOLATILE is considered to use and clobber all hard registers and
+;; all of memory.  This blocks insns from being moved across this point.
+
+(define_insn "blockage"
+  [(unspec_volatile [(const_int 0)] UNSPECV_BLOCKAGE)]
+  ""
+  ""
+  [(set_attr "length" "0")
+   (set_attr "type" "block")]
+)
+
+(define_insn "probe_stack_range_<PTR:mode>"
+  [(set (match_operand:PTR 0 "register_operand" "=r")
+	(unspec_volatile:PTR [(match_operand:PTR 1 "register_operand" "0")
+			      (match_operand:PTR 2 "register_operand" "r")]
+			       UNSPECV_PROBE_STACK_RANGE))]
+  ""
+{
+  return aarch64_output_probe_stack_range (operands[0], operands[2]);
+}
+  [(set_attr "length" "32")]
 )
 
 ;; Named pattern for expanding thread pointer reference.

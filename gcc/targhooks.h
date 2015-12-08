@@ -90,7 +90,7 @@ extern tree default_builtin_vectorized_conversion (unsigned int, tree, tree);
 
 extern int default_builtin_vectorization_cost (enum vect_cost_for_stmt, tree, int);
 
-extern tree default_builtin_reciprocal (gcall *);
+extern tree default_builtin_reciprocal (tree);
 
 extern HOST_WIDE_INT default_vector_alignment (const_tree);
 
@@ -250,4 +250,7 @@ extern void default_setup_incoming_vararg_bounds (cumulative_args_t ca ATTRIBUTE
 						  tree type ATTRIBUTE_UNUSED,
 						  int *pretend_arg_size ATTRIBUTE_UNUSED,
 						  int second_time ATTRIBUTE_UNUSED);
+extern bool default_optab_supported_p (int, machine_mode, machine_mode,
+				       optimization_type);
+
 #endif /* GCC_TARGHOOKS_H */

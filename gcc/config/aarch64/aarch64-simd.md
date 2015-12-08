@@ -399,7 +399,7 @@
   "frsqrts\\t%<v>0<Vmtype>, %<v>1<Vmtype>, %<v>2<Vmtype>"
   [(set_attr "type" "neon_fp_rsqrts_<Vetype><q>")])
 
-(define_expand "aarch64_rsqrt_<mode>2"
+(define_expand "rsqrt<mode>2"
   [(set (match_operand:VALLF 0 "register_operand" "=w")
 	(unspec:VALLF [(match_operand:VALLF 1 "register_operand" "w")]
 		     UNSPEC_RSQRT))]
@@ -1959,6 +1959,17 @@
 		    FMAXMIN_UNS))]
   "TARGET_SIMD"
   "<maxmin_uns_op>\\t%0.<Vtype>, %1.<Vtype>, %2.<Vtype>"
+  [(set_attr "type" "neon_fp_minmax_<Vetype><q>")]
+)
+
+;; Auto-vectorized forms for the IEEE-754 fmax()/fmin() functions
+(define_insn "<fmaxmin><mode>3"
+  [(set (match_operand:VDQF 0 "register_operand" "=w")
+	(unspec:VDQF [(match_operand:VDQF 1 "register_operand" "w")
+		      (match_operand:VDQF 2 "register_operand" "w")]
+		      FMAXMIN))]
+  "TARGET_SIMD"
+  "<fmaxmin_op>\\t%0.<Vtype>, %1.<Vtype>, %2.<Vtype>"
   [(set_attr "type" "neon_fp_minmax_<Vetype><q>")]
 )
 
