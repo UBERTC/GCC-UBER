@@ -303,6 +303,8 @@
     UNSPEC_PMULL2       ; Used in aarch64-simd.md.
     UNSPEC_REV_REGLIST  ; Used in aarch64-simd.md.
     UNSPEC_VEC_SHR      ; Used in aarch64-simd.md.
+    UNSPEC_SQRDMLAH     ; Used in aarch64-simd.md.
+    UNSPEC_SQRDMLSH     ; Used in aarch64-simd.md.
 ])
 
 ;; ------------------------------------------------------------------
@@ -955,6 +957,8 @@
                                UNSPEC_SQSHRN UNSPEC_UQSHRN
                                UNSPEC_SQRSHRN UNSPEC_UQRSHRN])
 
+(define_int_iterator SQRDMLH_AS [UNSPEC_SQRDMLAH UNSPEC_SQRDMLSH])
+
 (define_int_iterator PERMUTE [UNSPEC_ZIP1 UNSPEC_ZIP2
 			      UNSPEC_TRN1 UNSPEC_TRN2
 			      UNSPEC_UZP1 UNSPEC_UZP2])
@@ -1129,3 +1133,5 @@
 			  (UNSPEC_SHA1M "m")])
 
 (define_int_attr sha256_op [(UNSPEC_SHA256H "") (UNSPEC_SHA256H2 "2")])
+
+(define_int_attr rdma_as [(UNSPEC_SQRDMLAH "a") (UNSPEC_SQRDMLSH "s")])
