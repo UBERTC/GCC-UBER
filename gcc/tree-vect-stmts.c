@@ -1780,7 +1780,7 @@ vectorizable_mask_load_store (gimple *stmt, gimple_stmt_iterator *gsi,
   if (!mask_vectype)
     mask_vectype = get_mask_type_for_scalar_type (TREE_TYPE (vectype));
 
-  if (!mask_vectype)
+  if (!mask_vectype || !VECTOR_BOOLEAN_TYPE_P (mask_vectype))
     return false;
 
   if (is_store)
@@ -2058,10 +2058,11 @@ vectorizable_mask_load_store (gimple *stmt, gimple_stmt_iterator *gsi,
 	    misalign = DR_MISALIGNMENT (dr);
 	  set_ptr_info_alignment (get_ptr_info (dataref_ptr), align,
 				  misalign);
+	  tree ptr = build_int_cst (TREE_TYPE (gimple_call_arg (stmt, 1)),
+				    misalign ? misalign & -misalign : align);
 	  new_stmt
 	    = gimple_build_call_internal (IFN_MASK_STORE, 4, dataref_ptr,
-					  gimple_call_arg (stmt, 1),
-					  vec_mask, vec_rhs);
+					  ptr, vec_mask, vec_rhs);
 	  vect_finish_stmt_generation (stmt, new_stmt, gsi);
 	  if (i == 0)
 	    STMT_VINFO_VEC_STMT (stmt_info) = *vec_stmt = new_stmt;
@@ -2107,10 +2108,11 @@ vectorizable_mask_load_store (gimple *stmt, gimple_stmt_iterator *gsi,
 	    misalign = DR_MISALIGNMENT (dr);
 	  set_ptr_info_alignment (get_ptr_info (dataref_ptr), align,
 				  misalign);
+	  tree ptr = build_int_cst (TREE_TYPE (gimple_call_arg (stmt, 1)),
+				    misalign ? misalign & -misalign : align);
 	  new_stmt
 	    = gimple_build_call_internal (IFN_MASK_LOAD, 3, dataref_ptr,
-					  gimple_call_arg (stmt, 1),
-					  vec_mask);
+					  ptr, vec_mask);
 	  gimple_call_set_lhs (new_stmt, make_ssa_name (vec_dest));
 	  vect_finish_stmt_generation (stmt, new_stmt, gsi);
 	  if (i == 0)
@@ -4308,7 +4310,12 @@ vectorizable_assignment (gimple *stmt, gimple_stmt_iterator *gsi,
       /* But a conversion that does not change the bit-pattern is ok.  */
       && !((TYPE_PRECISION (TREE_TYPE (scalar_dest))
 	    > TYPE_PRECISION (TREE_TYPE (op)))
-	   && TYPE_UNSIGNED (TREE_TYPE (op))))
+	   && TYPE_UNSIGNED (TREE_TYPE (op)))
+      /* Conversion between boolean types of different sizes is
+	 a simple assignment in case their vectypes are same
+	 boolean vectors.  */
+      && (!VECTOR_BOOLEAN_TYPE_P (vectype)
+	  || !VECTOR_BOOLEAN_TYPE_P (vectype_in)))
     {
       if (dump_enabled_p ())
         dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
@@ -7276,6 +7283,9 @@ vectorizable_load (gimple *stmt, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 					      unshare_expr
 					        (gimple_assign_rhs1 (stmt))));
 		      new_temp = vect_init_vector (stmt, tem, vectype, NULL);
+		      new_stmt = SSA_NAME_DEF_STMT (new_temp);
+		      set_vinfo_for_stmt (new_stmt,
+					  new_stmt_vec_info (new_stmt, vinfo));
 		    }
 		  else
 		    {
@@ -7283,10 +7293,8 @@ vectorizable_load (gimple *stmt, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 		      gsi_next (&gsi2);
 		      new_temp = vect_init_vector (stmt, scalar_dest,
 						   vectype, &gsi2);
+		      new_stmt = SSA_NAME_DEF_STMT (new_temp);
 		    }
-		  new_stmt = SSA_NAME_DEF_STMT (new_temp);
-		  set_vinfo_for_stmt (new_stmt,
-				      new_stmt_vec_info (new_stmt, vinfo));
 		}
 
 	      if (negative)

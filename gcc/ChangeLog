@@ -1,3 +1,668 @@
+2015-12-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR middle-end/68215
+	* tree-vect-generic.c (tree_vec_extract): Remove GSI parameter.
+	Do not gimplify the result.
+	(do_unop): Adjust call to tree_vec_extract.
+	(do_binop): Likewise.
+	(do_compare): Likewise.
+	(do_plus_minus): Likewise.
+	(do_negate): Likewise.
+	(expand_vector_condition): Likewise.
+	(do_cond): Likewise.
+
+2015-12-11  Nathan Sidwell  <nathan@acm.org>
+
+	* config/nvptx/nvptx.h (RETURN_ADDR_REGNO): Delete.
+	(OUTGOING_ARG_POINTER_REGNUM): Delete.
+	(ASM_OUTPUT_COMMON, ASM_OUTPUT_LOCAL): Delete.
+	(REGISTER_NAMES): Name static chain regs.
+	* config/nvptx/nvptx.c (nvptx_function_arg): Add ARG_UNUSED, merge
+	ifs.
+	(nvptx_incoming_arg): Merge ifs.
+	(nvptx_function_arg_boundary): Reimplement to avoid mixing units.
+	(nvptx_function_value): Tail call nvptx_libcall_value.
+	(nvptx_pass_by_reference): Add ARG_UNUSED.
+	(nvptx_static_chain): Use conditional op.
+	(nvptx_handle_kernel_attribute): Use VOID_TYPE_P.
+
+2015-12-11  Jan-Benedict Glaw  <jbglaw@lug-owl.de>
+	    Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR target/26427
+	PR target/33120
+	PR testsuite/35710
+	* config/darwin.c (darwin_use_anchors_for_symbol_p): Fix indention and
+	trailing whitespace.
+
+2015-12-11  Jan Beulich  <jbeulich@suse.com>
+
+	* cfgexpand.c (expand_one_var): Exit early for static and
+	external variables when adjusting stack alignment related.
+
+2015-12-11  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_rtx_costs)
+	(s390_cannot_force_const_mem, legitimate_pic_operand_p)
+	(s390_preferred_reload_class, s390_reload_symref_address)
+	(legitimate_reload_constant_p, print_operand): Wide int support.
+	* config/s390/predicates.md ("const0_operand", "constm1_operand")
+	("consttable_operand"): Likewise.
+	("larl_operand"): Add a comment.
+	* config/s390/s390.h (TARGET_SUPPORTS_WIDE_INT): Enable wide int
+	support.
+
+2015-12-11  Nathan Sidwell  <nathan@acm.org>
+
+	* config/nvptx/nvptx.h (TARGET_SUPPORTS_WIDE_INT): Define.
+	* config/nvptx/nvptx.c (nvptxx_assemble_integer): Return false for
+	unrecognizable RTX.
+
+2015-12-11  Tom de Vries  <tom@codesourcery.com>
+
+	* passes.def: Remove unpaired TERMINATE_PASS_LIST.
+
+2015-12-11  Michael Matz  <matz@suse.de>
+
+	* hash-map.h (hash_map::hash_map): Gather statistics only
+	when GATHER_STATISTICS is true.
+	* hash-set.h (hash_set::hash_set): Ditto.
+	* hash-table.h (hash_table::hash_table): Ditto.
+	(hash_table::create_ggc): Ditto.
+
+2015-12-11  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/68064
+	* ipa-prop.c (ipa_compute_jump_functions_for_edge): Add checking
+	assert that align is nonzero.
+
+2015-12-11  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_expand_setmem): Use new expanders.
+	* config/s390/s390.md ("*setmem_long")
+	("*setmem_long_and", "*setmem_long_31z"): Fix warnings.
+	("*setmem_long_and_31z"): New define_insn.
+	("setmem_long_<P:mode>"): New expanders.
+	* (<modesize>): New mode attribute
+
+2015-12-11  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* config/s390/s390.md ("movstr", "*movstr"): Fix warning.
+	("movstr<P:mode>"): New indirect expanders used by "movstr".
+
+2015-12-11  Martin Liska  <mliska@suse.cz>
+	    Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/67484
+	* config/i386/i386.c (ix86_valid_target_attribute_tree):
+	Use ggc_strdup to copy option_strings to opts->x_ix86_arch_string and
+	opts->x_ix86_tune_string.
+
+2015-12-11  Richard Biener  <rguenther@suse.de>
+
+	* lto-streamer.h (lto_simple_header_with_strings): Remove
+	main_size field already in lto_simple_header.
+
+2015-12-11  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* tree-vect-stmts.c (vectorizable_mask_load_store): Check
+	mask vectype.
+
+2015-12-11  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* config/i386/i386.c (ix86_get_mask_mode): Use scalar
+	modes for 32 and 16 byte boolean vectors when possible.
+
+2015-12-11  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/67778
+	PR rtl-optimization/68634
+	* shrink-wrap.c (try_shrink_wrapping): Add a comment about why we want
+	to put the prologue earlier.  When determining if an earlier block is
+	suitable, make sure it dominates every block reachable from it.
+
+2015-12-11  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/68814
+	* rtlanal.c (set_noop_p): Use BITS_BIG_ENDIAN instead of
+	BYTES_BIG_ENDIAN.
+
+2015-12-10  Nathan Sidwell  <nathan@acm.org>
+
+	* config/nvptx/nvptx.c (nvptx_function_arg,
+	nvptx_function_incoming_arg, nvptx_function_arg_advance,
+	nvptx_strict_argument_naming, nvptx_function_arg_boundary,
+	nvptx_libcall_value, nvptx_function_value,
+	nvptx_function_value_regno_p, nvptx_pass_by_reference,
+	nvptx_return_in_memory, nvptx_promote_function_mode,
+	nvptx_static_chain): Move earlier.
+	(write_one_arg): Break out as helper fn for ...
+	(write_arg): ... this new function.  Adjust all callers.
+
+2015-12-10  Jan Hubicka  <hubicka@ucw.cz>
+
+	* lto-streamer-out.c (wrap_refs): Only wrap public decls.
+
+2015-12-10  Jan Hubicka  <hubicka@ucw.cz>
+
+	* ipa-cp.c (ipcp_cloning_candidate_p): Use node->optimize_for_size_p.
+	(good_cloning_opportunity_p): Likewise.
+	(gather_context_independent_values): Do not return true when
+	polymorphic call context is known or when we have known aggregate
+	value of unused parameter.
+	(estimate_local_effects): Try to create clone for all context
+	when either some params are substituted or devirtualization is possible
+	or some params can be removed; use local flag instead of
+	node->will_be_removed_from_program_if_no_direct_calls_p.
+	(identify_dead_nodes): Likewise.
+
+2015-12-10  David Malcolm  <dmalcolm@redhat.com>
+
+	* doc/invoke.texi (-Wall): Add -Wmisleading-indentation to the
+	list.
+	(-Wmisleading-indentation): Update documentation to reflect
+	being enabled by -Wall in C/C++.
+
+2015-12-10  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/68691
+	* lra-spills.c (lra_final_code_change): Check pseudo occurrence
+	number in non-debug insns and remove debug insns if necessary.
+
+2015-12-10  Martin Sebor  <msebor@redhat.com>
+
+	* invoke.texi (Warning Options): Update -Wall options.  Clarify
+	when some -Wextra options are enabled.  Add -Wplacement-new example.
+
+2015-12-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	* graphite-scop-detection.c (gather_bbs::before_dom_children):
+	Change return type to an edge.  Always return NULL.
+
+2015-12-10  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/68619
+	* tree-ssa-dom.c (dom_opt_dom_walker::before_dom_children): Propgate
+	return value from optimize_stmt.
+	(dom_opt_dom_walker): Add new argument to dom_walker constructor.
+	(pass_dominator:execute): If a block has an unreachable edge,
+	remove all jump threads through any successor of the affected block.
+	(record_equivalences_from_phis): Ignore alternative if the edge
+	does not have EDGE_EXECUTABLE set.
+	(single_incoming_edge_ignoring_loop_edges): Similarly.
+	(optimize_stmt): If a gimple_code has a compile-time constant
+	condition, return the edge taken for that constant value.  Also
+	change the condition to true/false as necessary.
+	* domwalk.h (dom_walker::dom_walker): Add new argument
+	skip_unreachable_blocks.  Don't provide empty constructor body.
+	(dom_walker::before_dom_children): Change return type.
+	(dom_walker::bb_reachable): Declare new private method.
+	(dom_walker::propagate_unreachable_to_edges): Likewise.
+	(dom_walker::m_unreachable_dom): Declare new private data member.
+	(dom_walker::m_skip_unreachable_blocks): Likewise.
+	* domwalk.c: Include dumpfile.h.
+	(dom_walker::dom_walker): New constructor.  Initialize private data
+	members.  If needed, set EDGE_EXECUTABLE for all edges in the CFG,
+	extracted from tree-ssa-sccvn.c.
+	(dom_walker::bb_reachable): New method extracted from tree-ssa-sccvn.c
+	(dom_walker::propagate_unreachable_to_edges): Likewise.
+	(dom_walker::walk): Only call before_dom_children on reachable
+	blocks.  If before_dom_children returns an edge, then clear
+	EDGE_EXECUTABLE for all other outgoing edges from the same block.
+	For unreachable blocks, call propagate_unreachable_to_edges.
+	Similarly, only call after_dom_children on reachable blocks.  For
+	unreachable blocks, conditionally clear m_unreachable_dom.
+	* tree-ssa-sccvn.c (sccvn_dom_walker::unreachable_dom): Remove
+	private data member.
+	(sccvn_dom_walker::after_dom_children): Use methods from dom_walker
+	class.
+	(run_scc_vn): Likewise.
+	(sccvn_dom_walker::before_dom_children): Likewise.  Return the taken
+	outgoing edge if a COND, SWITCH, or GOTO are optimized.
+	* compare-elim.c (find_comparison_dom_walker::before_dom_children):
+	Change return type to an edge.  Always return NULL.
+	* fwprop.c (single_def_use_dom_walker::before_dom_children): Likewise.
+	* gimple-ssa-strength-reduction.c
+	(find_candidates_dom_walker::before_dom_children): Likewise.
+	* ipa-prop.c (analysis_dom_walker::before_dom_children): Likewise.
+	(ipcp_modif_dom_walker::before_dom_children): Likewise.
+	* tree-into-ssa.c (rewrite_dom_walker::before_dom_children): Likewise.
+	(rewrite_update_dom_walker::before_dom_children): Likewise.
+	(mark_def_dom_children::before_dom_children): Likewise.
+	* tree-ssa-dse.c (dse_dom_walker::before_dom_children): Likewise.
+	* tree-ssa-loop-im.c
+	(invariantness_dom_walker::before_dom_children): Likewise.
+	(move_computations_dom_walker::before_dom_walker): Likewise.
+	* tree-ssa-phiopt.c
+	(nontrapping_dom_walker::before_dom_children): Likewise.
+	* tree-ssa-pre.c
+	(eliminate_dom_walker::before_dom_children): Likewise.
+	* tree-ssa-propagate.c
+	(substitute_and_fold_dom_walker::before_dom_children): Likewise.
+	* tree-ssa-strlen.c
+	(strlen_dom_walker::before_dom_children): Likewise.
+	* tree-ssa-uncprop.c
+	(uncprop_dom_walker::before_dom_children): Likewise.
+
+2015-12-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/68376
+	PR rtl-optimization/68670
+	* ifcvt.c (noce_try_abs): For one_cmpl allow < 0, >= 0
+	or > -1 conditions regardless of negate, and disallow
+	all other conditions.
+
+2015-12-10  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* tree-chkp.c (chkp_call_returns_bounds_p): Return true
+	for VA_ARG call.
+	(chkp_fixup_inlined_call): New.
+	* tree-chkp.h (chkp_fixup_inlined_call): New.
+	* tree-stdarg.c: Include tree-chkp.h.
+	(expand_ifn_va_arg_1): Fixup bndret calls for removed
+	VA_ARG calls.
+
+2015-12-10  Martin Jambor  <mjambor@suse.cz>
+
+	* tree-inline.c (duplicate_remap_omp_clause_seq): New function.
+	(replace_locals_op): Duplicate gimple sequences in OMP clauses.
+
+2015-12-10  David Malcolm  <dmalcolm@redhat.com>
+
+	* graphite-optimize-isl.c (scop_get_domains): Fix indentation.
+
+2015-12-10  David Malcolm  <dmalcolm@redhat.com>
+
+	* ifcvt.c (noce_try_inverse_constants): Fix indentation.
+
+2015-12-10  David Malcolm  <dmalcolm@redhat.com>
+
+	* regrename.c (scan_rtx_address): Fix indentation.
+
+2015-12-10  David Malcolm  <dmalcolm@redhat.com>
+
+	* function.c (locate_and_pad_parm): Fix indentation.
+
+2015-12-10  Richard Biener  <rguenther@suse.de>
+
+	* tree-ssa-structalias.c (struct variable_info): Add
+	is_ipa_escape_point flag.
+	(new_var_info): Initialize to false.
+	(find_func_aliases): Generate escape constraints for stores
+	properly in IPA mode.
+	(ipa_pta_execute): Compute is_ipa_escape_point for globals.
+
+2015-12-10  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* config/arc/atomic.md: Add new file.
+
+2015-12-10  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* config/arc/arc-protos.h (arc_expand_atomic_op): Prototype.
+	(arc_split_compare_and_swap): Likewise.
+	(arc_expand_compare_and_swap): Likewise.
+	* config/arc/arc.c (arc_init): Check usage atomic option.
+	(arc_pre_atomic_barrier): New function.
+	(arc_post_atomic_barrier): Likewise.
+	(emit_unlikely_jump): Likewise.
+	(arc_expand_compare_and_swap_qh): Likewise.
+	(arc_expand_compare_and_swap): Likewise.
+	(arc_split_compare_and_swap): Likewise.
+	(arc_expand_atomic_op): Likewise.
+	* config/arc/arc.h (TARGET_CPU_CPP_BUILTINS): New C macro.
+	(ASM_SPEC): Enable mlock option when matomic is used.
+	* config/arc/arc.md (UNSPEC_ARC_MEMBAR): Define.
+	(VUNSPEC_ARC_CAS): Likewise.
+	(VUNSPEC_ARC_LL): Likewise.
+	(VUNSPEC_ARC_SC): Likewise.
+	(VUNSPEC_ARC_EX): Likewise.
+	* config/arc/arc.opt (matomic): New option.
+	* config/arc/constraints.md (ATO): New constraint.
+	* config/arc/predicates.md (mem_noofs_operand): New predicate.
+	* doc/invoke.texi: Document -matomic.
+	* config/arc/atomic.md: New file.
+
+2015-12-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68817
+	* tree-vect-slp.c (vect_attempt_slp_rearrange_stmts): Detect
+	gaps early.
+
+2015-12-10  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* tree-vect-stmts.c (vectorizable_assignment): Support
+	useless boolean conversion.
+
+2015-12-10  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* doc/install.texi: Add note against GNAT 4.8 on ARM targets.
+
+2015-12-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68785
+	* gimple-fold.c (fold_ctor_reference): Pass return value from
+	native_encode_expr to native_interpret_expr.
+	* tree-ssa-sccvn.c (fully_constant_vn_reference_p): Likewise.
+
+2015-12-10  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/68331
+	* tree-ssa-structalias.c (set_uids_in_ptset): Add fndecl
+	parameter and make vars_contains_nonlocal properly have
+	function-scope semantics in IPA mode.
+	(find_what_var_points_to): Add fndecl parameter.
+	(find_what_p_points_to): Likewise.
+	(pt_solution_includes_global): Remove IPA PTA early out.
+	(compute_points_to_sets): Adjust.
+	(ipa_pta_execute): Likewise.  Clear final_solutions after
+	each function.
+
+2015-12-10  Tom de Vries  <tom@codesourcery.com>
+
+	PR ada/65102
+	* doc/include/fdl.texi: Add nodefaultgnufreedocumentationlicensenode
+	ifdef to allow disabling default @node GNU Free Documentation License.
+
+2015-12-10  Richard Biener  <rguenther@suse.de>
+
+	* tree-ssa-structalias.c (create_function_info_for): Add missing
+	constraint from nonlocal for DECL_RESULT.
+
+2015-12-10  Richard Biener  <rguenther@suse.de>
+
+	* tree-if-conv.c: Include params.h.
+	(ifcvt_memrefs_wont_trap): Use PARAM_ALLOW_STORE_DATA_RACES
+	instead of flag_tree_loop_if_convert_stores to guard cases
+	we'd introduce store-data-races.
+
+2015-12-10  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/68721
+	* ipa-split.c (split_function): Record return value properly
+	when the split part doesn't set it.
+
+2015-12-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68806
+	* tree-vect-loop.c (vect_analyze_loop_2): Properly detect
+	reduction chains and ignore SLP reductions.
+
+2015-12-10  Richard Biener  <rguenther@suse.de>
+
+	* tree-if-conv.c (if_convertible_loop_p_1): Do not compute
+	dependences.
+	(if_convertible_loop_p): Adjust.
+
+2015-12-10  Tom de Vries  <tom@codesourcery.com>
+
+	* tree-ssa-structalias.c (find_func_aliases_for_builtin_call): Remove
+	invalid assert.
+
+2015-12-10  Martin Liska  <mliska@suse.cz>
+
+	* tree-vect-data-refs.c: Free an overwritten dataref.
+
+2015-12-09  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/68729
+	* config/pa/pa.c (pa_emit_move_sequence): Don't check that mode is
+	consistent with modes of the input and output operands when doing
+	reloads to and from floating point registers.  Do reload for all
+	address forms.
+
+2015-12-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/61886
+	PR middle-end/25140
+	* tree-ssa-alias.c (ptr_deref_may_alias_decl_p): Use compare_base_decls
+	(nonoverlapping_component_refs_of_decl_p): Update sanity check.
+	(decl_refs_may_alias_p): Use compare_base_decls.
+	* alias.c: Include cgraph.h
+	(get_alias_set): Add cut-off for recursion.
+	(rtx_equal_for_memref_p): Use rtx_equal_for_memref_p.
+	(compare_base_decls): New function.
+	(base_alias_check): Likewise.
+	(memrefs_conflict_p): Likewise.
+	(nonoverlapping_memrefs_p): Likewise.
+	* alias.h (compare_base_decls): Declare.
+
+2015-12-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/61886
+	* ipa-visibility.c (function_and_variable_visibility): Fix vtable
+	rewritting guard.
+
+2015-12-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/61886
+	PR middle-end/25140
+	* ipa-reference.c (ipa_reference_get_not_read_global,
+	ipa_reference_get_not_read_global): Fix WRT aliases.
+	(is_improper): Break out from ...
+	(is_proper_for_analysis): ... here; fix WRT aliases.
+	(analyze_function, generate_summary,
+	ipa_reference_write_optimization_summary,
+	ipa_reference_read_optimization_summary): Use ipa_reference_var_uid.
+	* ipa-refrence.h (ipa_reference_var_uid): New inline.
+	* tree-ssa-alias.c: Revert my accidental previous commit.
+	(ref_maybe_used_by_call_p_1,
+	call_may_clobber_ref_p_1): Use ipa_reference_var_uid.
+
+2015-12-09  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/rs6000/freebsd64.h: Remove the redefinition of WCHAR_TYPE.
+
+2015-12-09  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	* graphite-optimize-isl.c: Include isl/ast_build.h
+	(optimize_isl): Set several isl_options_set_* options.
+
+2015-12-09  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	* graphite-sese-to-poly.c (pdr_add_memory_accesses): Iterate in
+	the same order as adding data reference access functions.
+
+2015-12-09  Aditya Kumar  <aditya.k7@samsung.com>
+	    Sebastian Pop  <s.pop@samsung.com>
+
+	* graphite-optimize-isl.c (optimize_isl): Improve dump message.
+
+2015-12-09  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/66949
+	* tree-ssa-phiopt.c (tree_ssa_phiopt_worker): Don't call
+	single_non_singleton_phi_for_edges to get the PHI from
+	factor_out_conditional_conversion.  Use NULL_TREE instead of NULL.
+	(factor_out_conditional_conversion): Adjust declaration.  Make it
+	return the newly-created PHI.
+
+2015-12-09  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* config/aarch64/aarch64-protos.h
+	(aarch64_cannot_change_mode_class): Bring back.
+	* config/aarch64/aarch64.c
+	(aarch64_cannot_change_mode_class): Likewise.
+	* config/aarch64/aarch64.h (CANNOT_CHANGE_MODE_CLASS): Likewise.
+	* config/aarch64/aarch64.md (aarch64_movdi_<mode>low): Use
+	zero_extract rather than truncate.
+	(aarch64_movdi_<mode>high): Likewise.
+
+2015-12-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68786
+	* tree-if-conv.c: Include builtins.h.
+	(predicate_mem_writes): Put result of get_object_alignment (ref)
+	into second argument's value.
+	* tree-vect-stmts.c (vectorizable_mask_load_store): Put minimum
+	pointer alignment into second argument's value.
+	* tree-data-ref.c (get_references_in_stmt): Use value of second
+	argument for build_aligned_type, and only the type to build
+	a zero second argument for MEM_REF.
+	* internal-fn.c (expand_mask_load_optab_fn,
+	expand_mask_store_optab_fn): Likewise.
+
+2015-12-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68583
+	* tree-if-conv.c (if_convertible_phi_p): Drop
+	flag_tree_loop_if_convert_stores check in favor of the
+	existing any_mask_load_store check.
+	(insert_gimplified_predicates): Likewise.
+	(combine_blocks): Likewise.
+	(tree_if_conversion): Likewise.
+	(ifcvt_memrefs_wont_trap): Properly check
+	flag_tree_loop_if_convert_stores in all places that can end
+	up introducing store-data-races.
+	(if_convertible_gimple_assign_stmt_p): Remove restriction
+	on flag_tree_loop_if_convert_stores for stores we can if-convert
+	without introducing store-data-races.  Force versioning for
+	all if-converted stores.
+
+2015-12-09  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/68716
+	* tree-ssa-structalias.c (find_func_clobbers): Fix handling of
+	BUILT_IN_GOMP_PARALLEL and BUILT_IN_GOACC_PARALLEL.
+
+2015-12-09  Martin Liska  <mliska@suse.cz>
+
+	* hash-traits.h (struct typed_delete_remove): New function.
+	(typed_delete_remove ::remove): Likewise.
+	* tree-ssa-loop-ivopts.c (struct iv_common_cand): Replace
+	auto_vec with vec.
+	(record_common_cand): Replace XNEW with operator new.
+
+2015-12-09  Martin Liska  <mliska@suse.cz>
+
+	* tree-if-conv.c (ifcvt_local_dce): Replace vec with auto_vec.
+
+2015-12-09  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/68790
+	* ipa-icf.c (sem_function::param_used_p): Return true
+	if ipa_node_params_sum equals to NULL.
+
+2015-12-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68583
+	* tree-if-conv.c (ifc_dr): Make flags bool, add w_unconditionally
+	flag and rename predicates to w_predicate, rw_predicate and
+	base_w_predicate.
+	(DR_WRITTEN_AT_LEAST_ONCE): Rename to ...
+	(DR_BASE_W_UNCONDITIONALLY): ... this.
+	(DR_W_UNCONDITIONALLY): Add.
+	(hash_memrefs_baserefs_and_store_DRs_read): Adjust.  Compute
+	unconditionally written separately from read or written.
+	(ifcvt_memrefs_wont_trap): Properly treat reads.
+	(ifcvt_could_trap_p): Inline ...
+	(if_convertible_gimple_assign_stmt_p): ... here.  Refactor
+	to avoid code duplication.
+	(if_convertible_loop_p_1): Adjust and properly initialize
+	predicates.
+
+2015-12-09  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-stmts.c (vectorizable_load): Set new vinfo only
+	if it was not yet set.
+	* tree-vectorizer.h (set_vinfo_for_stmt): Assert we don't
+	overwrite an existing entry.
+
+2015-12-09  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	* c-family/c-omp.c (c_finish_oacc_wait): Remove add_stmt() call.
+	* c/c-parser.c (c_parser_oacc_wait): Add add_stmt() call.
+	* cp/parser.c (cp_parser_oacc_wait): Add finish_expr_stmt() call.
+
+2015-12-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/61886
+	* symtab.c (symtab_node::equal_address_to): New parameter
+	MEMORY_ACCESSED.
+	* cgraph.h (symtab_node::equal_address_to): Update prototype.
+
+2015-12-08  DJ Delorie  <dj@redhat.com>
+
+	* config/rx/rx.opt (-mjsr): Add.
+	* config/rx/predicates.md (rx_call_operand): Avoid overflowing
+	calls when -mjsr.
+	* config/rx/rx.c (rx_function_ok_for_sibcall): Likewise for
+	overflowing jumps.
+	* doc/invoke.texi (-mjsr): Document it.
+
+2015-12-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/61886
+	* lto-streamer.h (lto_symtab_merge_decls, lto_symtab_merge_symbols,
+	lto_symtab_prevailing_decl): MOve to lto-symtab.h.
+	* lto-streamer-out.c (DFS::DFS_write_tree_body): Check that
+	DECL_ABSTRACT_ORIGIN is not error_mark_node.
+
+2015-12-08  David Malcolm  <dmalcolm@redhat.com>
+
+	* tree-nested.c (convert_tramp_reference_stmt): Fix indentation.
+
+2015-12-08  David Malcolm  <dmalcolm@redhat.com>
+
+	* tree-ssa-loop-unswitch.c (tree_unswitch_outer_loop): Fix
+	indentation.
+
+2015-12-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/61886
+	* lto-cgraph.c (compute_ltrans_boundary): Add transparent alias targets
+	into the boundary.
+
+2015-12-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/61886
+	* varpool.c (varpool_node::get_availability): Recurse only on
+	weakrefs with definition in the target.
+	(symbol_table::remove_unreferenced_decls): Keep aliases in the boundary.
+
+2015-12-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/61886
+	* ipa-visibility.c (can_replace_by_local_alias): Look through
+	transparent aliases; refuse weakrefs.
+	(update_visibility_by_resolution_info): Skip transparent aliases in the
+	analysis part
+
+2015-12-08  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/61886
+	* symtab.c (symtab_node::verify_base): Fix thinko in a conditional.
+	(symtab_node::noninterposable_alias): Do not accept transparent
+	aliases.
+
+2015-12-08  Nathan Sidwell  <nathan@acm.org>
+
+	* config/nvptx/nvptx.c (decl_chunk_size, decl_chunk_mode,
+	decl_offset, init_part, object_size, object_finished): Replace
+	with ...
+	(struct init_frag): ... this new struct variable.
+	(begin_decl_field, output_decl_chunk): Replace with ...
+	(output_init_frag): ... this new function.
+	(nvptx_assemble_value): Reimplement.
+	(nvptx_assemble_integer, nvptx_output_skip): Adjust.
+	(nvptx_assemble_decl_begin, nvptx_assemble_decl_end): Adjust.
+	(nvptx_output_aligned_decl): Call nvptx_assemble_decl_end.
+
+2015-12-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR middle-end/68291
+	PR middle-end/68292
+	* cfgexpand.c (set_rtl): Always accept mode mismatch for SSA names
+	with BLKmode promoted mode based on RESULT_DECLs.
+
+2015-12-08  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/68701
+	* config/i386/i386.c (ix86_option_override_internal): Enable
+	-maccumulate-outgoing-args when %ebp is fixed due to stack
+	realignment requirements.
+
 2015-12-08  Tom de Vries  <tom@codesourcery.com>
 
 	PR tree-optimization/68640
@@ -2648,6 +3313,7 @@
 
 2015-11-19  Michael Matz  <matz@suse.de>
 
+	PR rtl-optimization/68392
 	* fwprop.c (update_uses): Use flag_checking instead of
 	gcc_checking_assert.
 

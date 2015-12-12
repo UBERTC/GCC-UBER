@@ -1230,14 +1230,14 @@ noce_try_inverse_constants (struct noce_if_info *if_info)
       if (target != if_info->x)
 	noce_emit_move_insn (if_info->x, target);
 
-	seq = end_ifcvt_sequence (if_info);
+      seq = end_ifcvt_sequence (if_info);
 
-	if (!seq)
-	  return false;
+      if (!seq)
+	return false;
 
-	emit_insn_before_setloc (seq, if_info->jump,
-				 INSN_LOCATION (if_info->insn_a));
-	return true;
+      emit_insn_before_setloc (seq, if_info->jump,
+			       INSN_LOCATION (if_info->insn_a));
+      return true;
     }
 
   end_sequence ();
@@ -2601,45 +2601,22 @@ noce_try_abs (struct noce_if_info *if_info)
      Note that these rtx constants are known to be CONST_INT, and
      therefore imply integer comparisons.
      The one_cmpl case is more complicated, as we want to handle
-     only x < 0 ? ~x : x or x >= 0 ? ~x : x but not
-     x <= 0 ? ~x : x or x > 0 ? ~x : x, as the latter two
-     have different result for x == 0.  */
+     only x < 0 ? ~x : x or x >= 0 ? x : ~x to one_cmpl_abs (x)
+     and x < 0 ? x : ~x or x >= 0 ? ~x : x to ~one_cmpl_abs (x),
+     but not other cases (x > -1 is equivalent of x >= 0).  */
   if (c == constm1_rtx && GET_CODE (cond) == GT)
-    {
-      if (one_cmpl && negate)
-	return FALSE;
-    }
+    ;
   else if (c == const1_rtx && GET_CODE (cond) == LT)
     {
-      if (one_cmpl && !negate)
+      if (one_cmpl)
 	return FALSE;
     }
   else if (c == CONST0_RTX (GET_MODE (b)))
     {
-      if (one_cmpl)
-	switch (GET_CODE (cond))
-	  {
-	  case GT:
-	    if (!negate)
-	      return FALSE;
-	    break;
-	  case GE:
-	    /* >= 0 is the same case as above > -1.  */
-	    if (negate)
-	      return FALSE;
-	    break;
-	  case LT:
-	    if (negate)
-	      return FALSE;
-	    break;
-	  case LE:
-	    /* <= 0 is the same case as above < 1.  */
-	    if (!negate)
-	      return FALSE;
-	    break;
-	  default:
-	    return FALSE;
-	  }
+      if (one_cmpl
+	  && GET_CODE (cond) != GE
+	  && GET_CODE (cond) != LT)
+	return FALSE;
     }
   else
     return FALSE;

@@ -1,3 +1,91 @@
+2015-12-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/59768
+	* include/std/functional (_Unwrap, __invfwd): Define.
+	(__invoke_impl): Remove reference_wrapper overloads and use __invfwd.
+	* include/std/type_traits (__result_of_memobj, __result_of_memfun):
+	Add partial specializations for const reference_wrappers and simplify.
+	* testsuite/20_util/bind/ref_neg.cc: Use dg-excess-errors.
+	* testsuite/20_util/function_objects/invoke/59768.cc: New.
+
+2015-12-11  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR libstdc++/68139
+
+	* libsupc++/nested_exception.h (_S_rethrow): Use std::__addressof.
+	* testsuite/18_support/nested_exception/68139.cc: New.
+
+2015-12-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/experimental/memory/shared_ptr/assign/assign.cc: Replace
+	-std=gnu++1y with -std=gnu++14.
+	* testsuite/experimental/memory/shared_ptr/cast/cast.cc: Likewise.
+	* testsuite/experimental/memory/shared_ptr/comparison/comparison.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/cons/alias_ctor.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/cons/alloc_ctor.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/cons/copy_ctor.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/cons/copy_ctor_neg.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/cons/default_ctor.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/cons/move_ctor.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/cons/pointer_ctor.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/cons/unique_ptr_ctor.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/cons/weak_ptr_ctor.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/dest/dest.cc: Likewise.
+	* testsuite/experimental/memory/shared_ptr/modifiers/reset.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/modifiers/swap.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/observers/bool_conv.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/observers/operators.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/observers/owner_before.cc:
+	Likewise.
+	* testsuite/experimental/memory/shared_ptr/observers/use_count.cc:
+	Likewise.
+
+	PR libstdc++/68825
+	* include/experimental/bits/shared_ptr.h (__shared_ptr, __weak_ptr,
+	experimental::shared_ptr, experimental::weak_ptr): Constrain
+	assignment operators.
+	* testsuite/experimental/memory/shared_ptr/cons/copy_ctor_neg.cc:
+	Change to a compile-only test and change dg-excess-errors to dg-error.
+
+	* doc/doxygen/user.cfg.in: Use EXTENSION_MAPPING tag. Add new headers
+	to INPUT. Remove obsolete XML_SCHEMA and XML_DTD tags. Update
+	PREDEFINED macros. Set BRIEF_MEMBER_DESC for man-pages.
+	* include/backward/strstream: Correct @file comment.
+	* include/bits/forward_list.h: Improve Doxygen comments.
+	* include/bits/locale_facets_nonio.h: Likewise.
+	* include/bits/mutex.h: Likewise.
+	* include/bits/shared_ptr.h: Likewise.
+	* include/bits/stl_deque.h: Likewise.
+	* include/debug/vector (_Safe_vector): Add @brief section to comment.
+	* include/experimental/bits/fs_dir.h: Correct @file comment.
+	* include/experimental/bits/fs_fwd.h: Likewise.
+	* include/experimental/bits/fs_ops.h: Likewise.
+	* include/experimental/bits/fs_path.h: Likewise.
+	* include/experimental/bits/string_view.tcc: Likewise.
+	* include/experimental/optional: Document experimental status.
+	* include/experimental/string_view: Correct @file comment.
+	* include/ext/pb_ds/detail/bin_search_tree_/traits.hpp: Reduce
+	whitespace to avoid Doxygen bug.
+	* include/std/bitset: Remove redundant @class Doxygen command. Add
+	parentheses to avoid Doxygen bug.
+	* include/std/mutex: Improve Doxygen comments.
+	* include/tr2/dynamic_bitset: Add missing @param documentation.
+	* scripts/run_doxygen: Rename man pages for std::experimental types.
+
 2015-12-04  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR libstdc++/57060

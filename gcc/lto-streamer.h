@@ -407,9 +407,6 @@ struct lto_simple_header : lto_header
 
 struct lto_simple_header_with_strings : lto_simple_header
 {
-  /* Size of main gimple body of function.  */
-  int32_t main_size;
-
   /* Size of the string table.  */
   int32_t string_size;
 };
@@ -926,11 +923,6 @@ void cl_optimization_stream_out (struct bitpack_d *, struct cl_optimization *);
 
 void cl_optimization_stream_in (struct bitpack_d *, struct cl_optimization *);
 
-
-/* In lto-symtab.c.  */
-extern void lto_symtab_merge_decls (void);
-extern void lto_symtab_merge_symbols (void);
-extern tree lto_symtab_prevailing_decl (tree decl);
 
 
 /* In lto-opts.c.  */

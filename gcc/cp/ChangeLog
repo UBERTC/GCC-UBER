@@ -1,3 +1,16 @@
+2015-12-09  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/60218
+	* semantics.c (calculate_bases_helper): Don't call dfs_walk_all
+	when TYPE_BINFO (type) is null.
+	(calculate_bases): Handle gracefully a null vector->length ().
+
+2015-12-08  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/68711
+	* typeck.c (build_class_member_access_expr): Strip NOPs before
+        testing a potentially null operand for equality to zero.
+
 2015-12-07  Jakub Jelinek  <jakub@redhat.com>
 
 	PR c++/68760

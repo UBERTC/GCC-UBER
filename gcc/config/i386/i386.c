@@ -5296,6 +5296,17 @@ ix86_option_override_internal (bool main_args_p,
       opts->x_target_flags |= MASK_ACCUMULATE_OUTGOING_ARGS;
     }
 
+  /* Stack realignment without -maccumulate-outgoing-args requires %ebp,
+     so enable -maccumulate-outgoing-args when %ebp is fixed.  */
+  if (fixed_regs[BP_REG]
+      && !(opts->x_target_flags & MASK_ACCUMULATE_OUTGOING_ARGS))
+    {
+      if (opts_set->x_target_flags & MASK_ACCUMULATE_OUTGOING_ARGS)
+	warning (0, "fixed ebp register requires %saccumulate-outgoing-args%s",
+		 prefix, suffix);
+      opts->x_target_flags |= MASK_ACCUMULATE_OUTGOING_ARGS;
+    }
+
   /* Figure out what ASM_GENERATE_INTERNAL_LABEL builds as a prefix.  */
   {
     char *p;
@@ -6141,7 +6152,7 @@ ix86_valid_target_attribute_tree (tree args,
       if (option_strings[IX86_FUNCTION_SPECIFIC_ARCH])
 	{
 	  opts->x_ix86_arch_string
-	    = option_strings[IX86_FUNCTION_SPECIFIC_ARCH];
+	    = ggc_strdup (option_strings[IX86_FUNCTION_SPECIFIC_ARCH]);
 
 	  /* If arch= is set,  clear all bits in x_ix86_isa_flags,
 	     except for ISA_64BIT, ABI_64, ABI_X32, and CODE16.  */
@@ -6155,7 +6166,8 @@ ix86_valid_target_attribute_tree (tree args,
 	opts->x_ix86_arch_string = NULL;
 
       if (option_strings[IX86_FUNCTION_SPECIFIC_TUNE])
-	opts->x_ix86_tune_string = option_strings[IX86_FUNCTION_SPECIFIC_TUNE];
+	opts->x_ix86_tune_string
+	  = ggc_strdup (option_strings[IX86_FUNCTION_SPECIFIC_TUNE]);
       else if (orig_tune_defaulted)
 	opts->x_ix86_tune_string = NULL;
 
@@ -53522,7 +53534,8 @@ ix86_get_mask_mode (unsigned nunits, unsigned vector_size)
   unsigned elem_size = vector_size / nunits;
 
   /* Scalar mask case.  */
-  if (TARGET_AVX512F && vector_size == 64)
+  if ((TARGET_AVX512F && vector_size == 64)
+      || (TARGET_AVX512VL && (vector_size == 32 || vector_size == 16)))
     {
       if (elem_size == 4 || elem_size == 8 || TARGET_AVX512BW)
 	return smallest_mode_for_size (nunits, MODE_INT);
