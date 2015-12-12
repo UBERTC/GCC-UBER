@@ -1,3 +1,48 @@
+2015-12-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/68376
+	PR rtl-optimization/68670
+	* gcc.c-torture/execute/pr68376-2.c (f5, f6, f7, f8): New
+	tests.
+	(main): Call them.
+	* gcc.dg/pr68670-1.c: New test.
+	* gcc.dg/pr68670-2.c: New test.
+
+2015-12-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-12-08  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/68701
+	* gcc.target/i386/pr68701-1.c: New test.
+	* gcc.target/i386/pr68701-2.c: Ditto.
+
+2015-12-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/sse4_1-roundps-1.c: Remove ASM_SUFFIX define.
+	* gcc.target/i386/sse4_1-roundps-2.c: Ditto.
+	* gcc.target/i386/sse4_1-roundps-3.c: Ditto.
+	* gcc.target/i386/sse4_1-roundsd-1.c: Ditto.
+	* gcc.target/i386/sse4_1-roundsd-2.c: Ditto.
+	* gcc.target/i386/sse4_1-roundsd-3.c: Ditto.
+	* gcc.target/i386/sse4_1-roundss-1.c: Ditto.
+	* gcc.target/i386/sse4_1-roundss-2.c: Ditto.
+	* gcc.target/i386/sse4_1-roundss-3.c: Ditto.
+
+2015-12-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/sse4_1-round.h (do_round): Fix inline asm statements.
+	* gcc.target/i386/sse4_1-roundsd-4.c (do_round): Ditto.
+	* gcc.target/i386/sse4_1-roundss-4.c (do_round): Ditto.
+
+2015-12-09  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2015-12-09  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/68790
+	* gcc.dg/ipa/pr68790.c: New test.
+
 2015-12-07  Martin Liska  <mliska@suse.cz>
 
 	* g++.dg/ipa/pr66896.C: New test.
