@@ -4433,11 +4433,10 @@ aarch64_print_operand (FILE *f, rtx x, char code)
 	  break;
 
 	case CONST_DOUBLE:
-	  /* CONST_DOUBLE can represent a double-width integer.
-	     In this case, the mode of x is VOIDmode.  */
-	  if (GET_MODE (x) == VOIDmode)
-	    ; /* Do Nothing.  */
-	  else if (aarch64_float_const_zero_rtx_p (x))
+	  /* Since we define TARGET_SUPPORTS_WIDE_INT we shouldn't ever
+	     be getting CONST_DOUBLEs holding integers.  */
+	  gcc_assert (GET_MODE (x) != VOIDmode);
+	  if (aarch64_float_const_zero_rtx_p (x))
 	    {
 	      fputc ('0', f);
 	      break;
@@ -9913,7 +9912,7 @@ aarch64_madd_needs_nop (rtx_insn* insn)
   if (!TARGET_FIX_ERR_A53_835769)
     return false;
 
-  if (recog_memoized (insn) < 0)
+  if (!INSN_P (insn) || recog_memoized (insn) < 0)
     return false;
 
   attr_type = get_attr_type (insn);
@@ -12245,6 +12244,24 @@ aarch64_vectorize_vec_perm_const_ok (machine_mode vmode,
   end_sequence ();
 
   return ret;
+}
+
+/* Implement target hook CANNOT_CHANGE_MODE_CLASS.  */
+bool
+aarch64_cannot_change_mode_class (machine_mode from,
+				  machine_mode to,
+				  enum reg_class rclass)
+{
+  /* We cannot allow word_mode subregs of full vector modes.
+     Otherwise the middle-end will assume it's ok to store to
+     (subreg:DI (reg:TI 100) 0) in order to modify only the low 64 bits
+     of the 128-bit register.  However, after reload the subreg will
+     be dropped leaving a plain DImode store.  See PR67609 for a more
+     detailed dicussion.  In all other cases, we want to be permissive
+     and return false.  */
+  return (reg_classes_intersect_p (FP_REGS, rclass)
+	  && GET_MODE_SIZE (to) == UNITS_PER_WORD
+	  && GET_MODE_SIZE (from) > UNITS_PER_WORD);
 }
 
 rtx

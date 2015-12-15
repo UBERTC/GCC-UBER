@@ -1,3 +1,89 @@
+2015-12-04  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	PR c++/67337
+	* mangle.c (write_template_prefix): Guard against context==NULL.
+
+2015-12-04  Release Manager
+
+	* GCC 5.3.0 released.
+
+2015-11-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/68508
+	* cp-tree.h (cp_ubsan_maybe_instrument_downcast): Add INTYPE argument.
+	* cp-ubsan.c (cp_ubsan_maybe_instrument_downcast): Likewise.  Use
+	it instead of or in addition to TREE_TYPE (op).  Use
+	is_properly_derived_from, return NULL_TREE if TREE_TYPE (intype) and
+	TREE_TYPE (type) are the same type minus qualifiers.
+	* typeck.c (build_static_cast_1): Adjust callers.
+
+2015-11-25  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-11-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67354
+	* cp-tree.h (defer_mangling_aliases): Declare.
+	(generate_mangling_aliases): New prototype.
+	* decl2.c (defer_mangling_aliases): New variable.
+	(note_mangling_alias): Use !defer_mangling_aliases
+	instead of at_eof.
+	(generate_mangling_aliases): No longer static. Clear
+	defer_mangling_aliases.
+	* optimize.c (maybe_thunk_body): Defer emitting mangling aliases
+	if !defer_mangling_aliases until the fns are put into the same
+	comdat group.
+
+	2015-05-09  Aldy Hernandez  <aldyh@redhat.com>
+
+	PR bootstrap/66085
+	* decl2.c (note_mangling_alias): Declare arguments as unused.
+
+	2015-05-08  Jason Merrill  <jason@redhat.com>
+
+	* decl2.c (mangling_aliases): New variable.
+	(note_mangling_alias, generate_mangling_aliases): New.
+	(cp_write_global_declarations): Call generate_mangling_aliases.
+	(generate_mangling_alias): Split out from...
+	* mangle.c (mangle_decl): ...here.
+	* cp-tree.h: Declare note_mangling_alias.
+
+2015-11-25  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67941
+	* lambda.c (maybe_add_lambda_conv_op): Mark _FUN as
+	no_sanitize_undefined.
+
+	PR c++/68422
+	* cp-tree.h (PACK_EXPANSION_SIZEOF_P): New.
+	* parser.c (cp_parser_sizeof_pack): Set it.
+	* pt.c 	(tsubst_copy) [SIZEOF_EXPR]: Likewise.
+	(tsubst_pack_expansion): Improve T... shortcut when set.
+
+	PR c++/67813
+	* constexpr.c (cxx_eval_store_expression): Always use *valp if
+	set.
+
+2015-11-25  Markus Trippelsdorf  <markus@trippelsdorf.de>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/68087
+	* constexpr.c (cxx_eval_array_reference): Use tree_fits_shwi_p before
+	tree_to_shwi to avoid ICEs.
+
+2015-11-19  Jakub Jelinek  <jakub@redhat.com>
+	    Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR c++/67409
+	* decl.c (identify_goto): Add LOC and DIAG_KIND arguments, call
+	emit_diagnostic instead of permerror.
+	(check_previous_goto_1): Adjust identify_goto callers, treat all
+	cases but crossing initialization and entering scope of decl with
+	non-trivial dtor as unconditional hard errors.
+	(check_goto): Use identify_goto.  Treat all cases but crossing
+	initialization and entering scope of decl with non-trivial dtor
+	as unconditional hard errors.
+
 2015-10-20  Jason Merrill  <jason@redhat.com>
 
 	PR c++/66583

@@ -3286,7 +3286,7 @@ maybe_optimize_range_tests (gimple stmt)
     any_changes = optimize_range_tests (ERROR_MARK, &ops);
   if (any_changes)
     {
-      unsigned int idx;
+      unsigned int idx, max_idx = 0;
       /* update_ops relies on has_single_use predicates returning the
 	 same values as it did during get_ops earlier.  Additionally it
 	 never removes statements, only adds new ones and it should walk
@@ -3302,6 +3302,7 @@ maybe_optimize_range_tests (gimple stmt)
 	    {
 	      tree new_op;
 
+	      max_idx = idx;
 	      stmt = last_stmt (bb);
 	      new_op = update_ops (bbinfo[idx].op,
 				   (enum tree_code)
@@ -3371,6 +3372,10 @@ maybe_optimize_range_tests (gimple stmt)
 	      && ops[bbinfo[idx].first_idx]->op != NULL_TREE)
 	    {
 	      gcond *cond_stmt = as_a <gcond *> (last_stmt (bb));
+
+	      if (idx > max_idx)
+		max_idx = idx;
+
 	      if (integer_zerop (ops[bbinfo[idx].first_idx]->op))
 		gimple_cond_make_false (cond_stmt);
 	      else if (integer_onep (ops[bbinfo[idx].first_idx]->op))
@@ -3387,6 +3392,17 @@ maybe_optimize_range_tests (gimple stmt)
 	  if (bb == first_bb)
 	    break;
 	}
+
+      /* The above changes could result in basic blocks after the first
+	 modified one, up to and including last_bb, to be executed even if
+	 they would not be in the original program.  If the value ranges of
+	 assignment lhs' in those bbs were dependent on the conditions
+	 guarding those basic blocks which now can change, the VRs might
+	 be incorrect.  As no_side_effect_bb should ensure those SSA_NAMEs
+	 are only used within the same bb, it should be not a big deal if
+	 we just reset all the VRs in those bbs.  See PR68671.  */
+      for (bb = last_bb, idx = 0; idx < max_idx; bb = single_pred (bb), idx++)
+	reset_flow_sensitive_info_in_bb (bb);
     }
 }
 
@@ -4535,6 +4551,7 @@ attempt_builtin_powi (gimple stmt, vec<operand_entry_t> *ops)
 							   power));
 	      gimple_call_set_lhs (pow_stmt, iter_result);
 	      gimple_set_location (pow_stmt, gimple_location (stmt));
+	      gimple_set_uid (pow_stmt, gimple_uid (stmt));
 	      gsi_insert_before (&gsi, pow_stmt, GSI_SAME_STMT);
 
 	      if (dump_file && (dump_flags & TDF_DETAILS))
@@ -4618,6 +4635,7 @@ attempt_builtin_powi (gimple stmt, vec<operand_entry_t> *ops)
 		  mul_stmt = gimple_build_assign (target_ssa, MULT_EXPR,
 						  op1, op2);
 		  gimple_set_location (mul_stmt, gimple_location (stmt));
+		  gimple_set_uid (mul_stmt, gimple_uid (stmt));
 		  gsi_insert_before (&gsi, mul_stmt, GSI_SAME_STMT);
 		  rf1->repr = target_ssa;
 
@@ -4635,6 +4653,7 @@ attempt_builtin_powi (gimple stmt, vec<operand_entry_t> *ops)
 						       power));
 	  gimple_call_set_lhs (pow_stmt, iter_result);
 	  gimple_set_location (pow_stmt, gimple_location (stmt));
+	  gimple_set_uid (pow_stmt, gimple_uid (stmt));
 	  gsi_insert_before (&gsi, pow_stmt, GSI_SAME_STMT);
 	}
 
@@ -4646,6 +4665,7 @@ attempt_builtin_powi (gimple stmt, vec<operand_entry_t> *ops)
 	  mul_stmt = gimple_build_assign (new_result, MULT_EXPR,
 					  result, iter_result);
 	  gimple_set_location (mul_stmt, gimple_location (stmt));
+	  gimple_set_uid (mul_stmt, gimple_uid (stmt));
 	  gsi_insert_before (&gsi, mul_stmt, GSI_SAME_STMT);
 	  gimple_set_visited (mul_stmt, true);
 	  result = new_result;
@@ -4904,6 +4924,7 @@ reassociate_bb (basic_block bb)
 		      mul_stmt = gimple_build_assign (lhs, MULT_EXPR,
 						      powi_result, target_ssa);
 		      gimple_set_location (mul_stmt, gimple_location (stmt));
+		      gimple_set_uid (mul_stmt, gimple_uid (stmt));
 		      gsi_insert_after (&gsi, mul_stmt, GSI_NEW_STMT);
 		    }
 		}

@@ -588,12 +588,9 @@ special_function_p (const_tree fndecl, int flags)
       /* We assume that alloca will always be called by name.  It
 	 makes no sense to pass it as a pointer-to-function to
 	 anything that does not understand its behavior.  */
-      if (((IDENTIFIER_LENGTH (name_decl) == 6
-	    && name[0] == 'a'
-	    && ! strcmp (name, "alloca"))
-	   || (IDENTIFIER_LENGTH (name_decl) == 16
-	       && name[0] == '_'
-	       && ! strcmp (name, "__builtin_alloca"))))
+      if (IDENTIFIER_LENGTH (name_decl) == 6
+	  && name[0] == 'a'
+	  && ! strcmp (name, "alloca"))
 	flags |= ECF_MAY_BE_ALLOCA;
 
       /* Disregard prefix _, __, __x or __builtin_.  */
@@ -638,6 +635,17 @@ special_function_p (const_tree fndecl, int flags)
 	       && ! strcmp (tname, "longjmp"))
 	flags |= ECF_NORETURN;
     }
+
+  if (DECL_BUILT_IN_CLASS (fndecl) == BUILT_IN_NORMAL)
+    switch (DECL_FUNCTION_CODE (fndecl))
+      {
+      case BUILT_IN_ALLOCA:
+      case BUILT_IN_ALLOCA_WITH_ALIGN:
+	flags |= ECF_MAY_BE_ALLOCA;
+	break;
+      default:
+	break;
+      }
 
   return flags;
 }
@@ -4971,6 +4979,13 @@ store_one_arg (struct arg_data *arg, rtx argblock, int flags,
 	      if (XEXP (x, 0) != crtl->args.internal_arg_pointer)
 		i = INTVAL (XEXP (XEXP (x, 0), 1));
 
+	      /* arg.locate doesn't contain the pretend_args_size offset,
+		 it's part of argblock.  Ensure we don't count it in I.  */
+#ifdef STACK_GROWS_DOWNWARD
+		i -= crtl->args.pretend_args_size;
+#else
+		i += crtl->args.pretend_args_size;
+#endif
 	      /* expand_call should ensure this.  */
 	      gcc_assert (!arg->locate.offset.var
 			  && arg->locate.size.var == 0

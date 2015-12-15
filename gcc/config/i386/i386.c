@@ -4150,6 +4150,17 @@ ix86_option_override_internal (bool main_args_p,
       opts->x_target_flags |= MASK_ACCUMULATE_OUTGOING_ARGS;
     }
 
+  /* Stack realignment without -maccumulate-outgoing-args requires %ebp,
+     so enable -maccumulate-outgoing-args when %ebp is fixed.  */
+  if (fixed_regs[BP_REG]
+      && !(opts->x_target_flags & MASK_ACCUMULATE_OUTGOING_ARGS))
+    {
+      if (opts_set->x_target_flags & MASK_ACCUMULATE_OUTGOING_ARGS)
+	warning (0, "fixed ebp register requires %saccumulate-outgoing-args%s",
+		 prefix, suffix);
+      opts->x_target_flags |= MASK_ACCUMULATE_OUTGOING_ARGS;
+    }
+
   /* Figure out what ASM_GENERATE_INTERNAL_LABEL builds as a prefix.  */
   {
     char *p;
@@ -4982,12 +4993,14 @@ ix86_valid_target_attribute_tree (tree args,
       /* If we are using the default tune= or arch=, undo the string assigned,
 	 and use the default.  */
       if (option_strings[IX86_FUNCTION_SPECIFIC_ARCH])
-	opts->x_ix86_arch_string = option_strings[IX86_FUNCTION_SPECIFIC_ARCH];
+	opts->x_ix86_arch_string
+	  = ggc_strdup (option_strings[IX86_FUNCTION_SPECIFIC_ARCH]);
       else if (!orig_arch_specified)
 	opts->x_ix86_arch_string = NULL;
 
       if (option_strings[IX86_FUNCTION_SPECIFIC_TUNE])
-	opts->x_ix86_tune_string = option_strings[IX86_FUNCTION_SPECIFIC_TUNE];
+	opts->x_ix86_tune_string
+	  = ggc_strdup (option_strings[IX86_FUNCTION_SPECIFIC_TUNE]);
       else if (orig_tune_defaulted)
 	opts->x_ix86_tune_string = NULL;
 
@@ -11061,8 +11074,6 @@ ix86_adjust_stack_and_probe (const HOST_WIDE_INT size)
       release_scratch_register_on_entry (&sr);
     }
 
-  gcc_assert (cfun->machine->fs.cfa_reg != stack_pointer_rtx);
-
   /* Even if the stack pointer isn't the CFA register, we need to correctly
      describe the adjustments made to it, in particular differentiate the
      frame-related ones from the frame-unrelated ones.  */
@@ -11286,7 +11297,11 @@ ix86_finalize_stack_realign_flags (void)
       && !crtl->accesses_prior_frames
       && !cfun->calls_alloca
       && !crtl->calls_eh_return
-      && !(flag_stack_check && STACK_CHECK_MOVING_SP)
+      /* See ira_setup_eliminable_regset for the rationale.  */
+      && !(STACK_CHECK_MOVING_SP
+	   && flag_stack_check
+	   && flag_exceptions
+	   && cfun->can_throw_non_call_exceptions)
       && !ix86_frame_pointer_required ()
       && get_frame_size () == 0
       && ix86_nsaved_sseregs () == 0
@@ -41795,11 +41810,24 @@ ix86_cannot_change_mode_class (machine_mode from, machine_mode to,
 
   if (MAYBE_SSE_CLASS_P (regclass) || MAYBE_MMX_CLASS_P (regclass))
     {
+      int from_size = GET_MODE_SIZE (from);
+      int to_size = GET_MODE_SIZE (to);
+
       /* Vector registers do not support QI or HImode loads.  If we don't
 	 disallow a change to these modes, reload will assume it's ok to
 	 drop the subreg from (subreg:SI (reg:HI 100) 0).  This affects
 	 the vec_dupv4hi pattern.  */
-      if (GET_MODE_SIZE (from) < 4)
+      if (from_size < 4)
+	return true;
+
+      /* Further, we cannot allow word_mode subregs of full vector modes.
+         Otherwise the middle-end will assume it's ok to store to
+         (subreg:DI (reg:TI 100) 0) in order to modify only the low 64 bits
+         of the 128-bit register.  However, after reload the subreg will
+         be dropped leaving a plain DImode store.  This is indistinguishable
+         from a "normal" DImode move, and so we're justified to use movsd,
+         which modifies the entire 128-bit register.  */
+      if (to_size == UNITS_PER_WORD && from_size > UNITS_PER_WORD)
 	return true;
     }
 

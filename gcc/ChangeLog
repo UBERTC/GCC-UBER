@@ -1,3 +1,555 @@
+2015-12-14  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/66616
+	* ipa-cp.c (propagate_constants_accross_call): Move thuk check...
+	(call_passes_through_thunk_p): ...here.
+	(find_more_scalar_values_for_callers_subset): Perform thunk checks
+	like propagate_constants_accross_call does.
+
+2015-12-14  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline.
+	2015-12-09  James Greenhalgh  <james.greenhalgh@arm.com> 
+
+	PR rtl-optimization/67609
+	* config/aarch64/aarch64-protos.h
+	(aarch64_cannot_change_mode_class): Bring back.
+	* config/aarch64/aarch64.c
+	(aarch64_cannot_change_mode_class): Likewise.
+	* config/aarch64/aarch64.h (CANNOT_CHANGE_MODE_CLASS): Likewise.
+	* config/aarch64/aarch64.md (aarch64_movdi_<mode>low): Use
+	zero_extract rather than truncate.
+	(aarch64_movdi_<mode>high): Likewise.
+
+2015-12-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-12-11  Martin Liska  <mliska@suse.cz>
+		    Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/67484
+	* config/i386/i386.c (ix86_valid_target_attribute_tree):
+	Use ggc_strdup to copy option_strings to opts->x_ix86_arch_string and
+	opts->x_ix86_tune_string.
+
+2015-12-13  Alexandre Oliva <aoliva@redhat.com>
+
+	PR debug/67355
+	* var-tracking.c (reverse_op): Don't add dummy zero to reverse
+	ops that simplify back to the original value.
+	* alias.c (refs_newer_value_p): Cut off recursion for
+	expressions containing the original value.
+
+2015-12-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/68376
+	PR rtl-optimization/68670
+	* ifcvt.c (noce_try_abs): For one_cmpl allow < 0, >= 0
+	or > -1 conditions regardless of negate, and disallow
+	all other conditions.
+
+2015-12-10  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2015-12-09  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/rs6000/freebsd64.h: Remove the redefinition of WCHAR_TYPE.
+
+2015-12-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-12-08  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/68701
+	* config/i386/i386.c (ix86_option_override_internal): Enable
+	-maccumulate-outgoing-args when %ebp is fixed due to stack
+	realignment requirements.
+
+2015-12-10  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r231224.
+	2015-12-03  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* cfgexpand.c (expand_gimple_stmt_1): Return statement with
+	DECL as return value is allowed to have NULL bounds.
+
+2015-12-10  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2015-04-30  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR lto/65948
+	* ipa-devirt.c (odr_types_equivalent_p): NULLPTR_TYPE is equivalent
+	to itself.
+
+2015-12-09  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/68729
+	* config/pa/pa.c (pa_emit_move_sequence): Don't check that mode is
+	consistent with modes of the input and output operands when doing
+	reloads to and from floating point registers.  Do reload for all
+	address forms.
+
+2015-12-09  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2015-12-09  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/68790
+	* ipa-icf.c (sem_function::param_used_p): Return true
+	if ipa_node_params_sum equals to NULL.
+
+2015-12-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backport from mainline
+	2015-12-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68680
+	* calls.c (special_function_p): Return ECF_MAY_BE_ALLOCA for
+	BUILT_IN_ALLOCA{,_WITH_ALIGN}.  Don't check for __builtin_alloca
+	by name.
+
+	PR tree-optimization/68671
+	* tree-ssa-reassoc.c (maybe_optimize_range_tests): For basic
+	blocks starting with the successor of first bb we've modified
+	and ending with last_bb call reset_flow_sensitive_info_in_bb.
+
+2015-12-04  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2015-12-01  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/rs6000/freebsd64.h (ELFv2_ABI_CHECK): Add new macro.
+	(SUBSUBTARGET_OVERRIDE_OPTIONS): Use it to decide whether to set
+	rs6000_current_abi to ABI_AIX or ABI_ELFv2.
+
+2015-12-04  Richard Biener  <rguenther@suse.de>
+
+	* BASE-VER: Set to 5.3.1.
+
+2015-12-04  Release Manager
+
+	* GCC 5.3.0 released.
+
+2015-11-28  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* config/i386/freebsd.h (SUBTARGET32_DEFAULT_CPU): Change to i586.
+	Remove support for FreeBSD 5 and earlier.
+
+2015-11-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68552
+	* optabs.c (expand_vec_perm_1): Move vec_shr handling from here...
+	(expand_vec_perm): ... here.  Do it regardless of vec_perm_const_optab
+	or whether v0 == v1.
+
+2015-11-26  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	Backport from mainline
+	2015-09-30  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR rtl-optimization/67037    
+	* lra-constraints.c (process_addr_reg): Use copy_rtx when necessary.
+
+2015-11-26  David Edelsohn  <dje.gcc@gmail.com>
+
+	Backport from mainline
+	2015-11-25  David Edelsohn  <dje.gcc@gmail.com>
+
+	* config/rs6000/rs6000.c (rs6000_declare_alias): Rename and globalize
+	both the symbol and the "dot" symbol for function descriptors. Fix
+	inversion for rename of symbols with dollar sign.
+
+2015-11-26  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r230938.
+	2015-11-26  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/68416
+	* config/i386/i386.h (enum reg_class): Add
+	bounds registers to ALL_REGS.
+
+2015-11-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-11-26  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+	            Bernd Schmidt  <bschmidt@redhat.com>
+
+	PR rtl-optimization/67226
+	* calls.c (store_one_arg): Take into account
+	crtl->args.pretend_args_size when checking for overlap between
+	arg->value and argblock + arg->locate.offset during sibcall
+	optimization.
+
+2015-11-25  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/67954
+	* lra-constraints.c (curr_insn_transform): Add check on scratch
+	pseudo when change class to NO_REGS.  Add an assert.
+
+2015-11-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport form mainline
+	2015-11-24  David Edelsohn  <dje.gcc@gmail.com>
+		    Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.md (UNSPEC_XSRDPI): New unspec.
+	(Fv2): New mode attribute to be used when ISA 2.07 instructions
+	are used on SF values, and ISA 2.06 instructions on DF values.
+	(add<mode>3_fpr): Use <Fv2> instead of <Fv>.
+	(sub<mode>3_fpr): Use <Fv2> instead of <Fv>.
+	(mul<mode>3_fpr): Use <Fv2> instead of <Fv>.
+	(div<mode>3_fpr): Use <Fv2> instead of <Fv>.
+	(sqrt<mode>2): Use <Fv2> instead of <Fv>.
+	(fre<Fs>): Use <Fv2> instead of <Fv>.
+	(rsqrt<mode>2): Use <Fv2> instead of <Fv>.
+	(cmp<mode>_fpr): Use <Fv2> instead of <Fv>.
+	(xsrdpi<mode>): Add support for the lround function.
+	(lround<mode>di2): Likewise.
+	(fma<mode>4_fpr): Use <Fv2> instead of <Fv>.
+	(fms<mode>4_fpr): Use <Fv2> instead of <Fv>.
+	(nfma<mode>4_fpr): Use <Fv2> instead of <Fv>.
+	(nfms<mode>4_fpr): Use <Fv2> instead of <Fv>.
+
+2015-11-24  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2015-11-18  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/i386/freebsd.h (ASM_OUTPUT_MAX_SKIP_ALIGN): Bring in the
+	commit from r125920 for FreeBSD.
+
+2015-11-24  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r230796.
+	2015-11-24  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR c/68337
+	* gimple-fold.c: Include ipa-chkp.h.
+	(gimple_fold_builtin_memory_op): Don't fold call if we
+	are going to instrument it and it may copy pointers.
+
+2015-11-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-11-24  Bernd Schmidt <bschmidt@redhat.com>
+	            Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/68194
+	PR rtl-optimization/68328
+	PR rtl-optimization/68185
+	* ree.c (combine_reaching_defs): Reject copy_needed case if
+	copies_list is not empty.
+
+2015-11-24  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68221
+	* tree-ssa-sccvn.c (copy_reference_ops_from_ref): Properly
+	use mem_ref_offset.
+
+2015-11-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/68483
+	* tree-vect-generic.c (lower_vec_perm): If VEC_PERM_EXPR
+	is valid vec_shr pattern, don't lower it even if can_vec_perm_p
+	returns false.
+	* optabs.c (shift_amt_for_vec_perm_mask): Return NULL_RTX
+	whenever first is nelt or above.  Don't mask expected with
+	2 * nelt - 1.
+
+2015-11-23  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2015-10-05  Michael Meissner  <meissner@linux.vnet.ibm.com>
+		    Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/67808
+	* config/rs6000/rs6000.md (extenddftf2): In the expander, only
+	allow registers, but provide insns for the combiner to create for
+	loads from memory. Separate VSX code from non-VSX code. For
+	non-VSX code, combine extenddftf2_fprs into extenddftf2 and rename
+	externaldftf2_internal to externaldftf2_fprs. Reorder constraints
+	so that registers come before memory operations. Drop support from
+	converting DFmode to TFmode, if the DFmode value is in a GPR
+	register.
+	(extenddftf2_fprs): Likewise.
+	(extenddftf2_internal): Likewise.
+	(extenddftf2_vsx): Likewise.
+	(extendsftf2): In the expander, only allow registers, but provide
+	insns for the combiner to create for stores and loads.
+
+2015-11-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-11-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68363
+	* config/aarch64/aarch64.c (aarch64_madd_needs_nop): Reject arguments
+	that are not INSN_P.
+
+2015-11-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2015-06-22  Jan Hubicka  <hubicka@ucw.cz>
+		    Martin Liska  <mliska@suse.cz>
+
+	PR ipa/65908
+	* ipa-icf.c (sem_item::target_supports_symbol_aliases): Remove
+	construction of arg_types.
+	(sem_function::sem_function): Likewise.
+	(sem_function::~sem_function): Remove destruction of arg_types.
+	(sem_function::compatible_parm_types_p): New function.
+	(sem_function::equals_wpa): Reorg matching of return values
+	and parameter types.
+	(sem_function::equals_private): Reorg mathcing of argument types.
+	(sem_function::parse_tree_args): Remove.
+	(sem_function::param_used_p): New function.
+	* ipa-icf.h (init_wpa): Do not call it.
+	(parse_tree_args): Remove.
+	(compatible_parm_types_p): Declare.
+	(result_type): Remove.
+	(arg_types): Remove.
+	(param_used_p): Declare.
+
+2015-11-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-10-29  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/56956
+	* fold-const.c (fold_cond_expr_with_comparison): Do not fold
+	unsigned conditonal negation to ABS_EXPR.
+
+2015-11-22  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	Backport from mainline
+	2015-09-14  Manuel López-Ibáñe<manu@gcc.gnu.org>
+
+	PR fortran/67460
+	* diagnostic.c (diagnostic_initialize): Do not set
+	some_warnings_are_errors.
+	(diagnostic_finish): Use DK_WERROR count instead.
+	(diagnostic_report_diagnostic): Do not set
+	some_warnings_are_errors.
+	* diagnostic.h (struct diagnostic_context): Remove
+	some_warnings_are_errors.
+
+2015-11-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/66432
+	* tree-inline.c (copy_debug_stmt): If
+	gimple_debug_source_bind_get_value is DECL_ORIGIN of a PARM_DECL
+	in decl_debug_args, don't call remap_gimple_op_r on it.
+
+2015-11-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/68339
+	* omp-low.c (expand_simd_clones): Call node->get_body () before
+	allocating stuff in GC.
+
+2015-11-20  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/md.texi (Standard Names): Move entry for addptr3 around,
+	add entries for addv4, subv4, mulv4, umulv4 and negv3, fixes
+	glitch in entries for cbranch4 and jump.
+
+2015-11-20  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	* config/s390/s390.md ("bswaphi2"): New pattern.
+
+2015-11-20  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	* config/s390/s390.md (GPR1_REGNUM): New constant.
+	("*trunc<BFP:mode><DFP_ALL:mode>2")
+	("*trunc<DFP_ALL:mode><BFP:mode>2")
+	("trunc<BFP:mode><DFP_ALL:mode>2")
+	("trunc<DFP_ALL:mode><BFP:mode>2")
+	("*extend<BFP:mode><DFP_ALL:mode>2")
+	("*extend<DFP_ALL:mode><BFP:mode>2")
+	("extend<BFP:mode><DFP_ALL:mode>2")
+	("extend<DFP_ALL:mode><BFP:mode>2"): Clobber r1.
+
+2015-11-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR lto/61313
+	* configure.ac (PLUGIN_LD_SUFFIX): Do not touch the value specified
+	by the user.
+	* configure: Regenerate.
+
+2015-11-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/68408
+	* config/sparc/sp-elf.h (CTORS_SECTION_ASM_OP): Undefine.
+	(DTORS_SECTION_ASM_OP): Likewise.
+
+2015-11-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/68376
+	* ifcvt.c (noce_try_abs): Disable one_cmpl optimization if
+	encountering x <= 0 ? ~x : x or x > 0 ? ~x : x.
+
+	PR target/67770
+	* config/i386/i386.md (simple_return): Disable if
+	ix86_static_chain_on_stack is true.
+
+2015-11-18  Richard Henderson  <rth@redhat.com>
+
+	Backport from mainline
+	PR rtl-opt/67609
+	* config/i386/i386.c (ix86_cannot_change_mode_class): Tighten
+	sse check to the exact conditions of PR 67609.
+
+	* config/i386/i386.c (ix86_cannot_change_mode_class): Disallow
+	narrowing subregs on SSE and MMX registers.
+	* doc/tm.texi.in (CANNOT_CHANGE_MODE_CLASS): Clarify when subregs that
+	appear to be sub-words of multi-register pseudos must be rejected.
+	* doc/tm.texi: Regenerate.
+
+2015-11-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-11-07  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/68057
+	PR ipa/68220
+	* ipa-polymorphic-call.c
+	(ipa_polymorphic_call_context::restrict_to_inner_type): Fix ordering
+	issue when offset is out of range.
+	(contains_type_p): Fix out of range check, clear dynamic flag.
+
+	2015-10-23  Jan Hubicka  <hubicka@ucw.cz>
+ 
+	PR ipa/pr67600
+	* ipa-polymorphic-call.c
+	(ipa_polymorphic_call_context::get_dynamic_type): Do not confuse
+	instance offset with offset of outer type.
+ 
+	2015-10-12  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/67783
+	* ipa-inline-analysis.c (estimate_function_body_sizes): Re-add
+	code that analyzes IVs on each stmt but in a cheaper way avoiding
+	quadratic behavior.
+
+	2015-10-11  Jan Hubicka  <hubicka@ucw.cz>
+ 
+	PR ipa/67056
+	* ipa-polymorphic-call.c (possible_placement_new): If cur_offset
+	is negative we don't know the type.
+	(check_stmt_for_type_change): Skip constructors of non-polymorphic
+	types as those won't help devirutalization.
+
+	2015-08-11  Manuel López-Ibáñez  <manu@gcc.gnu.org>
+
+	PR c/66098
+	PR c/66711
+	* diagnostic.c (diagnostic_classify_diagnostic): Take -Werror into
+	account when deciding what was the command-line status.
+
+2015-11-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2015-11-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68143
+	* config/arm/arm.c (arm_block_set_unaligned_vect): Keep track of
+	offset from dstbase and use it appropriately in
+	adjust_automodify_address.
+	(arm_block_set_aligned_vect): Likewise.
+
+2015-11-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-10-28  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68067
+	* fold-const.c (negate_expr_p): We cannot negate plus or minus
+	if overflow is not wrapping.  Likewise multiplication unless
+	one operand is constant and not power of two.
+	(fold_negate_expr): Adjust accordingly.
+
+	2015-10-26  Richard Biener  <rguenther@suse.de>
+		Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR middle-end/67443
+	* alias.c (ao_ref_from_mem): Remove promoted subreg handling.
+	Properly prune ref->ref for accesses outside of ref.
+
+	2015-10-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68017
+	* tree-tailcall.c (eliminate_tail_call): Remove stmts backwards.
+
+	2015-09-23   Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67662
+	* fold-const.c (fold_binary_loc): Do not reassociate two vars with
+	undefined overflow unless they will cancel out.
+
+2015-11-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68157
+	* tree-ssa-reassoc.c (attempt_builtin_powi): Set uid of
+	pow_stmt or mul_stmt from stmt's uid.
+	(reassociate_bb): Set uid of mul_stmt from stmt's uid.
+
+2015-11-16  Charles Baylis  <charles.baylis@linaro.org>
+
+	Backport from mainline r227407
+	PR ipa/67280
+	* cgraphunit.c (cgraph_node::create_wrapper): Set can_throw_external
+	in new callgraph edge.
+
+2015-11-16  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2015-11-16  Oleg Endo  <olegendo@gcc.gnu.org>
+	            Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/68277
+	* config/sh/sh.md (addsi3_scr): Handle reg overlap of operands[0] and
+	operands[2].
+	(*addsi3): Add another insn_and_split variant for reload.
+
+2015-11-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/67265
+	* config/i386/i386.c (ix86_adjust_stack_and_probe): Remove obsolete
+	assertion on the CFA register.
+
+2015-11-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/67265
+	* ira.c (ira_setup_eliminable_regset): Do not necessarily create the
+	frame pointer for stack checking if non-call exceptions aren't used.
+	* config/i386/i386.c (ix86_finalize_stack_realign_flags): Likewise.
+
+2015-11-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68129
+	* config/aarch64/aarch64.h (TARGET_SUPPORTS_WIDE_INT): Define to 1.
+	* config/aarch64/aarch64.c (aarch64_print_operand, CONST_DOUBLE):
+	Delete VOIDmode case.  Assert that mode is not VOIDmode.
+	* config/aarch64/predicates.md (const0_operand): Remove const_double
+	match.
+
+2015-11-10  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Partial backport from trunk r228751.
+	PR tree-optimization/68238
+	2015-10-13  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-loop.c (vect_estimate_min_profitable_iters): Use
+	LOOP_VINFO_COMP_ALIAS_DDRS to estimate alias versioning cost.
+
+2015-11-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/57845
+	* config/sparc/sparc.c (sparc_function_value_1): In 32-bit mode, do
+	not promote the mode for aggregate types.
+
 2015-11-09  Mike Stump  <mikestump@comcast.net>
 
 	PR debug/66728

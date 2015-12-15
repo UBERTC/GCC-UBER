@@ -65,6 +65,13 @@ extern int dot_symbols;
 #define INVALID_64BIT "-m%s not supported in this configuration"
 #define INVALID_32BIT INVALID_64BIT
 
+/* Use LINUX64 instead of FREEBSD64 for compat with e.g. sysv4le.h */
+#ifdef LINUX64_DEFAULT_ABI_ELFv2
+#define ELFv2_ABI_CHECK (rs6000_elf_abi != 1)
+#else
+#define ELFv2_ABI_CHECK (rs6000_elf_abi == 2)
+#endif
+
 #undef  SUBSUBTARGET_OVERRIDE_OPTIONS
 #define SUBSUBTARGET_OVERRIDE_OPTIONS				\
   do								\
@@ -83,6 +90,12 @@ extern int dot_symbols;
 	    {							\
 	      rs6000_isa_flags &= ~OPTION_MASK_RELOCATABLE;	\
 	      error (INVALID_64BIT, "relocatable");		\
+	    }							\
+	  if (ELFv2_ABI_CHECK)					\
+	    {							\
+	      rs6000_current_abi = ABI_ELFv2;			\
+	      if (dot_symbols)					\
+		error ("-mcall-aixdesc incompatible with -mabi=elfv2"); \
 	    }							\
 	  if (rs6000_isa_flags & OPTION_MASK_EABI)		\
 	    {							\
@@ -304,7 +317,7 @@ extern int dot_symbols;
 
 /* rs6000.h gets this wrong for FreeBSD.  We use the GCC defaults instead.  */
 #undef WCHAR_TYPE
-#define	WCHAR_TYPE      (TARGET_64BIT ? "int" : "long int")
+
 #undef  WCHAR_TYPE_SIZE
 #define WCHAR_TYPE_SIZE 32
 

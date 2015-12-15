@@ -84,6 +84,8 @@
 
 #define LONG_DOUBLE_TYPE_SIZE	128
 
+#define TARGET_SUPPORTS_WIDE_INT 1
+
 /* The architecture reserves all bits of the address for hardware use,
    so the vbit must go into the delta field of pointers to member
    functions.  This is the same config as that in the AArch32
@@ -837,6 +839,9 @@ do {									     \
 #define CLEAR_INSN_CACHE(beg, end)				\
   extern void  __aarch64_sync_cache_range (void *, void *);	\
   __aarch64_sync_cache_range (beg, end)
+
+#define CANNOT_CHANGE_MODE_CLASS(FROM, TO, CLASS)	\
+  aarch64_cannot_change_mode_class (FROM, TO, CLASS)
 
 #define SHIFT_COUNT_TRUNCATED !TARGET_SIMD
 
