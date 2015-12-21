@@ -388,6 +388,7 @@ Marc Espie					<espie@cvs.openbsd.org>
 Ansgar Esztermann				<ansgar@thphy.uni-duesseldorf.de>
 Doug Evans					<dje@google.com>
 Chris Fairles					<cfairles@gcc.gnu.org>
+Alessandro Fanfarillo				<fanfarillo.gcc@gmail.com>
 Changpeng Fang					<changpeng.fang@amd.com>
 Li Feng						<nemokingdom@gmail.com>
 Max Filippov					<jcmvbkbc@gmail.com>
@@ -524,6 +525,7 @@ Andrea Ornstein					<andrea.ornstein@st.com>
 Patrick Palka					<ppalka@gcc.gnu.org>
 Seongbae Park					<seongbae.park@gmail.com>
 Devang Patel					<dpatel@apple.com>
+Andris Pavenis					<andris.pavenis@iki.fi>
 Fernando Pereira				<pronesto@gmail.com>
 Kaushik Phatak					<kaushik.phatak@kpitcummins.com>
 Nicolas Pitre					<nico@cam.org>
@@ -552,6 +554,7 @@ Matthew Sachs					<msachs@apple.com>
 Hariharan Sandanagobalane			<hariharan.gcc@gmail.com>
 Iain Sandoe					<iain@codesourcery.com>
 Duncan Sands					<baldrick@gcc.gnu.org>
+Sujoy Saraswati					<sujoy.saraswati@hpe.com>
 Trevor Saunders					<tsaunders@mozilla.com>
 William Schmidt					<wschmidt@linux.vnet.ibm.com>
 Tilo Schwarz					<tilo@tilo-schwarz.de>

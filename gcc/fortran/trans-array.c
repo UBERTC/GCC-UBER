@@ -7386,7 +7386,7 @@ gfc_conv_array_parameter (gfc_se * se, gfc_expr * expr, bool g77,
 		  && ref->u.ar.as->type != AS_ASSUMED_RANK
 		  && ref->u.ar.as->type != AS_ASSUMED_SHAPE)
 		      ||
-	     gfc_is_simply_contiguous (expr, false));
+	     gfc_is_simply_contiguous (expr, false, true));
 
   no_pack = contiguous && no_pack;
 
@@ -7464,7 +7464,7 @@ gfc_conv_array_parameter (gfc_se * se, gfc_expr * expr, bool g77,
     }
 
   if (g77 || (fsym && fsym->attr.contiguous
-	      && !gfc_is_simply_contiguous (expr, false)))
+	      && !gfc_is_simply_contiguous (expr, false, true)))
     {
       tree origptr = NULL_TREE;
 
@@ -8074,7 +8074,7 @@ structure_alloc_comps (gfc_symbol * der_type, tree decl,
 	    }
 
 	  if (cmp_has_alloc_comps
-		&& !c->attr.pointer
+		&& !c->attr.pointer && !c->attr.proc_pointer
 		&& !called_dealloc_with_status)
 	    {
 	      /* Do not deallocate the components of ultimate pointer
@@ -8264,7 +8264,8 @@ structure_alloc_comps (gfc_symbol * der_type, tree decl,
 	     components that are really allocated, the deep copy code has to
 	     be generated first and then added to the if-block in
 	     gfc_duplicate_allocatable ().  */
-	  if (cmp_has_alloc_comps)
+	  if (cmp_has_alloc_comps
+	      && !c->attr.proc_pointer)
 	    {
 	      rank = c->as ? c->as->rank : 0;
 	      tmp = fold_convert (TREE_TYPE (dcmp), comp);

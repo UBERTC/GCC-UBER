@@ -3814,6 +3814,7 @@ build_atomic_assign (location_t loc, tree lhs, enum tree_code modifycode,
   newval = create_tmp_var_raw (nonatomic_lhs_type);
   newval_addr = build_unary_op (loc, ADDR_EXPR, newval, 0);
   TREE_ADDRESSABLE (newval) = 1;
+  TREE_NO_WARNING (newval) = 1;
 
   loop_decl = create_artificial_label (loc);
   loop_label = build1 (LABEL_EXPR, void_type_node, loop_decl);
@@ -9544,24 +9545,36 @@ c_finish_return (location_t loc, tree retval, tree origtype)
       if ((warn_return_type || flag_isoc99)
 	  && valtype != 0 && TREE_CODE (valtype) != VOID_TYPE)
 	{
+	  bool warned_here;
 	  if (flag_isoc99)
-	    pedwarn (loc, 0, "%<return%> with no value, in "
-		     "function returning non-void");
+	    warned_here = pedwarn
+	      (loc, 0,
+	       "%<return%> with no value, in function returning non-void");
 	  else
-	    warning_at (loc, OPT_Wreturn_type, "%<return%> with no value, "
-			"in function returning non-void");
+	    warned_here = warning_at
+	      (loc, OPT_Wreturn_type,
+	       "%<return%> with no value, in function returning non-void");
 	  no_warning = true;
+	  if (warned_here)
+	    inform (DECL_SOURCE_LOCATION (current_function_decl),
+		    "declared here");
 	}
     }
   else if (valtype == 0 || TREE_CODE (valtype) == VOID_TYPE)
     {
       current_function_returns_null = 1;
+      bool warned_here;
       if (TREE_CODE (TREE_TYPE (retval)) != VOID_TYPE)
-	pedwarn (xloc, 0,
-		 "%<return%> with a value, in function returning void");
+	warned_here = pedwarn
+	  (xloc, 0,
+	   "%<return%> with a value, in function returning void");
       else
-	pedwarn (xloc, OPT_Wpedantic, "ISO C forbids "
-		 "%<return%> with expression, in function returning void");
+	warned_here = pedwarn
+	  (xloc, OPT_Wpedantic, "ISO C forbids "
+	   "%<return%> with expression, in function returning void");
+      if (warned_here)
+	inform (DECL_SOURCE_LOCATION (current_function_decl),
+		"declared here");
     }
   else
     {
@@ -10130,7 +10143,7 @@ c_process_expr_stmt (location_t loc, tree expr)
      out which is the result.  */
   if (!STATEMENT_LIST_STMT_EXPR (cur_stmt_list)
       && warn_unused_value)
-    emit_side_effect_warnings (loc, expr);
+    emit_side_effect_warnings (EXPR_LOC_OR_LOC (expr, loc), expr);
 
   exprv = expr;
   while (TREE_CODE (exprv) == COMPOUND_EXPR)

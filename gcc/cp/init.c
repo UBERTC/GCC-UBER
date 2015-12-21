@@ -729,9 +729,14 @@ perform_member_init (tree member, tree init)
 	      || same_type_ignoring_top_level_qualifiers_p (type,
 							    TREE_TYPE (init)))
 	    {
-	      init = build_vec_init_expr (type, init, tf_warning_or_error);
-	      init = build2 (INIT_EXPR, type, decl, init);
-	      finish_expr_stmt (init);
+	      if (TYPE_DOMAIN (type) && TYPE_MAX_VALUE (TYPE_DOMAIN (type)))
+		{
+		  /* Initialize the array only if it's not a flexible
+		     array member (i.e., if it has an upper bound).  */
+		  init = build_vec_init_expr (type, init, tf_warning_or_error);
+		  init = build2 (INIT_EXPR, type, decl, init);
+		  finish_expr_stmt (init);
+		}
 	    }
 	  else
 	    error ("invalid initializer for array member %q#D", member);
@@ -2075,6 +2080,8 @@ constant_value_1 (tree decl, bool strict_p, bool return_aggregate_cst_ok_p)
 	  && TREE_CODE (init) == TREE_LIST
 	  && TREE_CHAIN (init) == NULL_TREE)
 	init = TREE_VALUE (init);
+      /* Instantiate a non-dependent initializer.  */
+      init = instantiate_non_dependent_or_null (init);
       if (!init
 	  || !TREE_TYPE (init)
 	  || !TREE_CONSTANT (init)
@@ -2087,6 +2094,11 @@ constant_value_1 (tree decl, bool strict_p, bool return_aggregate_cst_ok_p)
  		 same everywhere.  */
 	      && (TREE_CODE (init) == CONSTRUCTOR
 		  || TREE_CODE (init) == STRING_CST)))
+	break;
+      /* Don't return a CONSTRUCTOR for a variable with partial run-time
+	 initialization, since it doesn't represent the entire value.  */
+      if (TREE_CODE (init) == CONSTRUCTOR
+	  && !DECL_INITIALIZED_BY_CONSTANT_EXPRESSION_P (decl))
 	break;
       decl = unshare_expr (init);
     }
@@ -4441,6 +4453,7 @@ build_delete (tree otype, tree addr, special_function_kind auto_delete,
       else
 	{
 	  /* Handle deleting a null pointer.  */
+	  warning_sentinel s (warn_address);
 	  ifexp = fold (cp_build_binary_op (input_location,
 					    NE_EXPR, addr, nullptr_node,
 					    complain));

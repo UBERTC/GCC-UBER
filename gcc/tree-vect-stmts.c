@@ -1304,8 +1304,8 @@ vect_init_vector (gimple *stmt, tree val, tree type, gimple_stmt_iterator *gsi)
 	     all zeros or all ones value before building a vector.  */
 	  if (VECTOR_BOOLEAN_TYPE_P (type))
 	    {
-	      tree true_val = build_zero_cst (TREE_TYPE (type));
-	      tree false_val = build_all_ones_cst (TREE_TYPE (type));
+	      tree true_val = build_all_ones_cst (TREE_TYPE (type));
+	      tree false_val = build_zero_cst (TREE_TYPE (type));
 
 	      if (CONSTANT_CLASS_P (val))
 		val = integer_zerop (val) ? false_val : true_val;
@@ -8649,10 +8649,7 @@ vect_is_simple_use (tree operand, vec_info *vinfo,
   else
     {
       stmt_vec_info stmt_vinfo = vinfo_for_stmt (*def_stmt);
-      if (is_a <bb_vec_info> (vinfo) && !STMT_VINFO_VECTORIZABLE (stmt_vinfo))
-	*dt = vect_external_def;
-      else
-	*dt = STMT_VINFO_DEF_TYPE (stmt_vinfo);
+      *dt = STMT_VINFO_DEF_TYPE (stmt_vinfo);
     }
 
   if (dump_enabled_p ())

@@ -1,3 +1,41 @@
+2015-12-18  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/68196
+	*expr.c (gfc_has_default_initializer): Prevent infinite recursion
+	through this function for procedure pointer components.
+	* trans-array.c (structure_alloc_comps): Ditto twice.
+
+2015-12-15  Alessandro Fanfarillo  <fanfarillo.gcc@gmail.com>
+
+	* resolve.c (resolve_critical): Committing symbols of
+	lock variables.
+
+2014-12-14  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/68850
+	* gfortran.texi (Standards): Mention TS 18508.
+	(Fortran 2003 and 2008 Status): Add section on TS 18508 status.
+	* intrinsic.texi (EVENT_QUERY): Add.
+
+2014-12-12  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/45859
+	* expr.c (gfc_is_simply_contiguous): Optionally permit array elements.
+	(gfc_check_pointer_assign): Update call.
+	* interface.c (compare_parameter): Ditto.
+	* trans-array.c (gfc_conv_array_parameter): Ditto.
+	* trans-intrinsic.c (gfc_conv_intrinsic_transfer,
+	conv_isocbinding_function): Ditto.
+	* gfortran.h (gfc_is_simply_contiguous): Update prototype.
+
+2014-12-12  Tobias Burnus  <burnus@net-b.de>
+
+	PR fortran/68815
+	* check.c (gfc_check_reshape): Replace %<%d%> by %qd.
+	* matchexp.c (gfc_match_defined_op_name): Use %qc.
+	* symbol.c (gfc_add_new_implicit_range,
+	gfc_merge_new_implicit): Ditto.
+
 2015-12-10  David Malcolm  <dmalcolm@redhat.com>
 
 	* io.c (gfc_match_open): Fix indentation.

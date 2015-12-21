@@ -1,3 +1,50 @@
+2015-12-15  Ilya Verbin  <ilya.verbin@intel.com>
+
+	* libgomp.h (REFCOUNT_LINK): Define.
+	(struct splay_tree_key_s): Add link_key.
+	* target.c (gomp_map_vars): Treat REFCOUNT_LINK objects as not mapped.
+	Replace target address of the pointer with target address of newly
+	mapped object in the splay tree.  Set link pointer on target to the
+	device address of the mapped object.
+	(gomp_unmap_vars): Restore target address of the pointer in the splay
+	tree for REFCOUNT_LINK objects after unmapping.
+	(gomp_load_image_to_device): Set refcount to REFCOUNT_LINK for "omp
+	declare target link" objects.
+	(gomp_unload_image_from_device): Replace j with i.  Force unmap of all
+	"omp declare target link" objects, which were mapped for the image.
+	(gomp_exit_data): Restore target address of the pointer in the splay
+	tree for REFCOUNT_LINK objects after unmapping.
+	* testsuite/libgomp.c/target-link-1.c: New file.
+
+2015-12-14  Ilya Verbin  <ilya.verbin@intel.com>
+
+	* libgomp.h (gomp_device_state): New enum.
+	(struct gomp_device_descr): Replace is_initialized with state.
+	(gomp_fini_device): Remove declaration.
+	* oacc-host.c (host_dispatch): Use state instead of is_initialized.
+	* oacc-init.c (acc_init_1): Use state instead of is_initialized.
+	(acc_shutdown_1): Likewise.  Inline gomp_fini_device.
+	(acc_set_device_type): Use state instead of is_initialized.
+	(acc_set_device_num): Likewise.
+	* target.c (resolve_device): Use state instead of is_initialized.
+	Do not initialize finalized device.
+	(gomp_map_vars): Do nothing if device is finalized.
+	(gomp_unmap_vars): Likewise.
+	(gomp_update): Likewise.
+	(GOMP_offload_register_ver): Use state instead of is_initialized.
+	(GOMP_offload_unregister_ver): Likewise.
+	(gomp_init_device): Likewise.
+	(gomp_unload_device): Likewise.
+	(gomp_fini_device): Remove.
+	(gomp_get_target_fn_addr): Do nothing if device is finalized.
+	(GOMP_target): Go to host fallback if device is finalized.
+	(GOMP_target_ext): Likewise.
+	(gomp_exit_data): Do nothing if device is finalized.
+	(gomp_target_task_fn): Go to host fallback if device is finalized.
+	(gomp_target_fini): New static function.
+	(gomp_target_init): Use state instead of is_initialized.
+	Call gomp_target_fini at exit.
+
 2015-12-09  Tom de Vries  <tom@codesourcery.com>
 
 	PR tree-optimization/68716

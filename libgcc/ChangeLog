@@ -1,3 +1,13 @@
+2015-12-18  Andris Pavenis  <andris.pavenis@iki.fi>
+
+	* config.host: Add *-*-msdosdjgpp to lists of i[34567]86-*-*
+	soft-fp targets 
+
+2015-12-16  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* unwind-generic.h (_Unwind_GetTextRelBase): Call __builtin_abort
+	instead of abort to avoid dependency on stdlib.h.
+
 2015-12-09  John David Anglin  <danglin@gcc.gnu.org>
 
 	* config/pa/fptr.c (__canonicalize_funcptr_for_compare): Remove code

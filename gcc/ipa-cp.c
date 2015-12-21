@@ -1877,6 +1877,18 @@ propagate_aggs_accross_jump_function (struct cgraph_edge *cs,
   return ret;
 }
 
+/* Return true if on the way cfrom CS->caller to the final (non-alias and
+   non-thunk) destination, the call passes through a thunk.  */
+
+static bool
+call_passes_through_thunk_p (cgraph_edge *cs)
+{
+  cgraph_node *alias_or_thunk = cs->callee;
+  while (alias_or_thunk->alias)
+    alias_or_thunk = alias_or_thunk->get_alias_target ();
+  return alias_or_thunk->thunk.thunk_p;
+}
+
 /* Propagate constants from the caller to the callee of CS.  INFO describes the
    caller.  */
 
@@ -1885,7 +1897,7 @@ propagate_constants_accross_call (struct cgraph_edge *cs)
 {
   struct ipa_node_params *callee_info;
   enum availability availability;
-  struct cgraph_node *callee, *alias_or_thunk;
+  cgraph_node *callee;
   struct ipa_edge_args *args;
   bool ret = false;
   int i, args_count, parms_count;
@@ -1923,10 +1935,7 @@ propagate_constants_accross_call (struct cgraph_edge *cs)
   /* If this call goes through a thunk we must not propagate to the first (0th)
      parameter.  However, we might need to uncover a thunk from below a series
      of aliases first.  */
-  alias_or_thunk = cs->callee;
-  while (alias_or_thunk->alias)
-    alias_or_thunk = alias_or_thunk->get_alias_target ();
-  if (alias_or_thunk->thunk.thunk_p)
+  if (call_passes_through_thunk_p (cs))
     {
       ret |= set_all_contains_variable (ipa_get_parm_lattices (callee_info,
 							       0));
@@ -2068,15 +2077,22 @@ ipa_get_indirect_edge_target_1 (struct cgraph_edge *ie,
       unsigned HOST_WIDE_INT offset;
       if (vtable_pointer_value_to_vtable (t, &vtable, &offset))
 	{
+	  bool can_refer;
 	  target = gimple_get_virt_method_for_vtable (ie->indirect_info->otr_token,
-						      vtable, offset);
-	  if (target)
+						      vtable, offset, &can_refer);
+	  if (can_refer)
 	    {
-	      if ((TREE_CODE (TREE_TYPE (target)) == FUNCTION_TYPE
-		   && DECL_FUNCTION_CODE (target) == BUILT_IN_UNREACHABLE)
+	      if (!target
+		  || (TREE_CODE (TREE_TYPE (target)) == FUNCTION_TYPE
+		      && DECL_FUNCTION_CODE (target) == BUILT_IN_UNREACHABLE)
 		  || !possible_polymorphic_call_target_p
 		       (ie, cgraph_node::get (target)))
-		target = ipa_impossible_devirt_target (ie, target);
+		{
+		  /* Do not speculate builtin_unreachable, it is stupid!  */
+		  if (ie->indirect_info->vptr_changed)
+		    return NULL;
+		  target = ipa_impossible_devirt_target (ie, target);
+		}
               *speculative = ie->indirect_info->vptr_changed;
 	      if (!*speculative)
 	        return target;
@@ -2154,7 +2170,11 @@ ipa_get_indirect_edge_target_1 (struct cgraph_edge *ie,
 
   if (target && !possible_polymorphic_call_target_p (ie,
 						     cgraph_node::get (target)))
-    target = ipa_impossible_devirt_target (ie, target);
+    {
+      if (*speculative)
+	return NULL;
+      target = ipa_impossible_devirt_target (ie, target);
+    }
 
   return target;
 }
@@ -3499,7 +3519,11 @@ find_more_scalar_values_for_callers_subset (struct cgraph_node *node,
 	  struct ipa_jump_func *jump_func;
 	  tree t;
 
-          if (i >= ipa_get_cs_argument_count (IPA_EDGE_REF (cs)))
+          if (i >= ipa_get_cs_argument_count (IPA_EDGE_REF (cs))
+	      || (i == 0
+		  && call_passes_through_thunk_p (cs))
+	      || (!cs->callee->instrumentation_clone
+		  && cs->callee->function_symbol ()->instrumentation_clone))
             {
               newval = NULL_TREE;
               break;

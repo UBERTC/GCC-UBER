@@ -1793,6 +1793,7 @@ extern void protected_set_expr_location (tree, location_t);
 #define TYPE_MAIN_VARIANT(NODE) (TYPE_CHECK (NODE)->type_common.main_variant)
 #define TYPE_CONTEXT(NODE) (TYPE_CHECK (NODE)->type_common.context)
 
+#define TYPE_MODE_RAW(NODE) (TYPE_CHECK (NODE)->type_common.mode)
 #define TYPE_MODE(NODE) \
   (VECTOR_TYPE_P (TYPE_CHECK (NODE)) \
    ? vector_type_mode (NODE) : (NODE)->type_common.mode)
@@ -5386,6 +5387,7 @@ extern void gt_pch_nx (tree &);
 extern void gt_pch_nx (tree &, gt_pointer_operator, void *);
 
 extern bool nonnull_arg_p (const_tree);
+extern bool is_redundant_typedef (const_tree);
 
 extern location_t
 set_source_range (tree expr, location_t start, location_t finish);

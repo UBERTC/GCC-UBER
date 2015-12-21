@@ -52,13 +52,6 @@ along with GCC; see the file COPYING3.  If not see
 #include "dbgcnt.h"
 #include "tree-parloops.h"
 #include "tree-cfgcleanup.h"
-
-#include <isl/constraint.h>
-#include <isl/set.h>
-#include <isl/map.h>
-#include <isl/options.h>
-#include <isl/union_map.h>
-
 #include "graphite.h"
 
 /* Print global statistics to FILE.  */
@@ -343,12 +336,12 @@ graphite_transform_loops (void)
   isl_ctx_free (ctx);
 }
 
-#else /* If ISL is not available: #ifndef HAVE_isl.  */
+#else /* If isl is not available: #ifndef HAVE_isl.  */
 
 static void
 graphite_transform_loops (void)
 {
-  sorry ("Graphite loop optimizations cannot be used (ISL is not available).");
+  sorry ("Graphite loop optimizations cannot be used (isl is not available).");
 }
 
 #endif

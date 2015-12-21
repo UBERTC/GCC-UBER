@@ -1880,14 +1880,6 @@
    && reload_completed"
   [(clobber (const_int 0))]
 {
-#if HOST_BITS_PER_WIDE_INT == 32
-  emit_insn (gen_movsi (gen_highpart (SImode, operands[0]),
-			(INTVAL (operands[1]) < 0) ?
-			constm1_rtx :
-			const0_rtx));
-  emit_insn (gen_movsi (gen_lowpart (SImode, operands[0]),
-			operands[1]));
-#else
   HOST_WIDE_INT low, high;
 
   low = trunc_int_for_mode (INTVAL (operands[1]), SImode);
@@ -1903,40 +1895,7 @@
 			  gen_highpart (SImode, operands[0])));
   else
     emit_insn (gen_movsi (gen_lowpart (SImode, operands[0]), GEN_INT (low)));
-#endif
-  DONE;
-})
 
-(define_split
-  [(set (match_operand:DI 0 "register_operand" "")
-        (match_operand:DI 1 "const_double_operand" ""))]
-  "reload_completed
-   && (! TARGET_V9
-       || (! TARGET_ARCH64
-           && ((GET_CODE (operands[0]) == REG
-                && SPARC_INT_REG_P (REGNO (operands[0])))
-               || (GET_CODE (operands[0]) == SUBREG
-                   && GET_CODE (SUBREG_REG (operands[0])) == REG
-                   && SPARC_INT_REG_P (REGNO (SUBREG_REG (operands[0])))))))"
-  [(clobber (const_int 0))]
-{
-  emit_insn (gen_movsi (gen_highpart (SImode, operands[0]),
-			GEN_INT (CONST_DOUBLE_HIGH (operands[1]))));
-
-  /* Slick... but this trick loses if this subreg constant part
-     can be done in one insn.  */
-  if (CONST_DOUBLE_LOW (operands[1]) == CONST_DOUBLE_HIGH (operands[1])
-      && ! SPARC_SETHI32_P (CONST_DOUBLE_HIGH (operands[1]))
-      && ! SPARC_SIMM13_P (CONST_DOUBLE_HIGH (operands[1])))
-    {
-      emit_insn (gen_movsi (gen_lowpart (SImode, operands[0]),
-			    gen_highpart (SImode, operands[0])));
-    }
-  else
-    {
-      emit_insn (gen_movsi (gen_lowpart (SImode, operands[0]),
-			    GEN_INT (CONST_DOUBLE_LOW (operands[1]))));
-    }
   DONE;
 })
 
@@ -2358,13 +2317,9 @@
 
   if (TARGET_ARCH64)
     {
-#if HOST_BITS_PER_WIDE_INT == 32
-      gcc_unreachable ();
-#else
       machine_mode mode = GET_MODE (operands[1]);
       rtx tem = simplify_subreg (DImode, operands[1], mode, 0);
       emit_insn (gen_movdi (operands[0], tem));
-#endif
     }
   else
     {
@@ -3682,17 +3637,7 @@
   operands[5] = gen_lowpart (SImode, operands[2]);
   operands[6] = gen_highpart (SImode, operands[0]);
   operands[7] = gen_highpart_mode (SImode, DImode, operands[1]);
-#if HOST_BITS_PER_WIDE_INT == 32
-  if (GET_CODE (operands[2]) == CONST_INT)
-    {
-      if (INTVAL (operands[2]) < 0)
-	operands[8] = constm1_rtx;
-      else
-	operands[8] = const0_rtx;
-    }
-  else
-#endif
-    operands[8] = gen_highpart_mode (SImode, DImode, operands[2]);
+  operands[8] = gen_highpart_mode (SImode, DImode, operands[2]);
 }
   [(set_attr "length" "2")])
 
@@ -3872,17 +3817,7 @@
   operands[5] = gen_lowpart (SImode, operands[2]);
   operands[6] = gen_highpart (SImode, operands[0]);
   operands[7] = gen_highpart (SImode, operands[1]);
-#if HOST_BITS_PER_WIDE_INT == 32
-  if (GET_CODE (operands[2]) == CONST_INT)
-    {
-      if (INTVAL (operands[2]) < 0)
-	operands[8] = constm1_rtx;
-      else
-	operands[8] = const0_rtx;
-    }
-  else
-#endif
-    operands[8] = gen_highpart_mode (SImode, DImode, operands[2]);
+  operands[8] = gen_highpart_mode (SImode, DImode, operands[2]);
 }
   [(set_attr "length" "2")])
 
@@ -4805,24 +4740,7 @@
 
 ;; Boolean instructions.
 
-;; We define DImode `and' so with DImode `not' we can get
-;; DImode `andn'.  Other combinations are possible.
-
-(define_expand "anddi3"
-  [(set (match_operand:DI 0 "register_operand" "")
-	(and:DI (match_operand:DI 1 "arith_double_operand" "")
-		(match_operand:DI 2 "arith_double_operand" "")))]
-  ""
-  "")
-
-(define_insn "*anddi3_sp32"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(and:DI (match_operand:DI 1 "arith_double_operand" "%r")
-		(match_operand:DI 2 "arith_double_operand" "rHI")))]
-  "! TARGET_ARCH64"
-  "#")
-
-(define_insn "*anddi3_sp64"
+(define_insn "anddi3"
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(and:DI (match_operand:DI 1 "arith_operand" "%r")
 		(match_operand:DI 2 "arith_operand" "rI")))]
@@ -4848,28 +4766,6 @@
   operands[4] = GEN_INT (~INTVAL (operands[2]));
 })
 
-(define_insn_and_split "*and_not_di_sp32"
-  [(set (match_operand:DI 0 "register_operand" "=&r")
-	(and:DI (not:DI (match_operand:DI 1 "register_operand" "%r"))
-		(match_operand:DI 2 "register_operand" "r")))]
-  "! TARGET_ARCH64"
-  "#"
-  "&& reload_completed
-   && ((GET_CODE (operands[0]) == REG
-        && SPARC_INT_REG_P (REGNO (operands[0])))
-       || (GET_CODE (operands[0]) == SUBREG
-           && GET_CODE (SUBREG_REG (operands[0])) == REG
-           && SPARC_INT_REG_P (REGNO (SUBREG_REG (operands[0])))))"
-  [(set (match_dup 3) (and:SI (not:SI (match_dup 4)) (match_dup 5)))
-   (set (match_dup 6) (and:SI (not:SI (match_dup 7)) (match_dup 8)))]
-  "operands[3] = gen_highpart (SImode, operands[0]);
-   operands[4] = gen_highpart (SImode, operands[1]);
-   operands[5] = gen_highpart (SImode, operands[2]);
-   operands[6] = gen_lowpart (SImode, operands[0]);
-   operands[7] = gen_lowpart (SImode, operands[1]);
-   operands[8] = gen_lowpart (SImode, operands[2]);"
-  [(set_attr "length" "2")])
-
 (define_insn "*and_not_di_sp64"
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(and:DI (not:DI (match_operand:DI 1 "register_operand" "%r"))
@@ -4884,22 +4780,7 @@
   ""
   "andn\t%2, %1, %0")
 
-(define_expand "iordi3"
-  [(set (match_operand:DI 0 "register_operand" "")
-	(ior:DI (match_operand:DI 1 "arith_double_operand" "")
-		(match_operand:DI 2 "arith_double_operand" "")))]
-  ""
-  "")
-
-(define_insn "*iordi3_sp32"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(ior:DI (match_operand:DI 1 "arith_double_operand" "%r")
-		(match_operand:DI 2 "arith_double_operand" "rHI")))]
-  "! TARGET_ARCH64"
-  "#"
-  [(set_attr "length" "2")])
-
-(define_insn "*iordi3_sp64"
+(define_insn "iordi3"
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(ior:DI (match_operand:DI 1 "arith_operand" "%r")
 		(match_operand:DI 2 "arith_operand" "rI")))]
@@ -4925,28 +4806,6 @@
   operands[4] = gen_int_mode (~INTVAL (operands[2]), SImode);
 })
 
-(define_insn_and_split "*or_not_di_sp32"
-  [(set (match_operand:DI 0 "register_operand" "=&r")
-	(ior:DI (not:DI (match_operand:DI 1 "register_operand" "r"))
-		(match_operand:DI 2 "register_operand" "r")))]
-  "! TARGET_ARCH64"
-  "#"
-  "&& reload_completed
-   && ((GET_CODE (operands[0]) == REG
-        && SPARC_INT_REG_P (REGNO (operands[0])))
-       || (GET_CODE (operands[0]) == SUBREG
-           && GET_CODE (SUBREG_REG (operands[0])) == REG
-           && SPARC_INT_REG_P (REGNO (SUBREG_REG (operands[0])))))"
-  [(set (match_dup 3) (ior:SI (not:SI (match_dup 4)) (match_dup 5)))
-   (set (match_dup 6) (ior:SI (not:SI (match_dup 7)) (match_dup 8)))]
-  "operands[3] = gen_highpart (SImode, operands[0]);
-   operands[4] = gen_highpart (SImode, operands[1]);
-   operands[5] = gen_highpart (SImode, operands[2]);
-   operands[6] = gen_lowpart (SImode, operands[0]);
-   operands[7] = gen_lowpart (SImode, operands[1]);
-   operands[8] = gen_lowpart (SImode, operands[2]);"
-  [(set_attr "length" "2")])
-
 (define_insn "*or_not_di_sp64"
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(ior:DI (not:DI (match_operand:DI 1 "register_operand" "r"))
@@ -4961,22 +4820,7 @@
   ""
   "orn\t%2, %1, %0")
 
-(define_expand "xordi3"
-  [(set (match_operand:DI 0 "register_operand" "")
-	(xor:DI (match_operand:DI 1 "arith_double_operand" "")
-		(match_operand:DI 2 "arith_double_operand" "")))]
-  ""
-  "")
-
-(define_insn "*xordi3_sp32"
-  [(set (match_operand:DI 0 "register_operand" "=r")
-	(xor:DI (match_operand:DI 1 "arith_double_operand" "%r")
-		(match_operand:DI 2 "arith_double_operand" "rHI")))]
-  "! TARGET_ARCH64"
-  "#"
-  [(set_attr "length" "2")])
-
-(define_insn "*xordi3_sp64"
+(define_insn "xordi3"
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(xor:DI (match_operand:DI 1 "arith_operand" "%rJ")
 		(match_operand:DI 2 "arith_operand" "rI")))]
@@ -5013,64 +4857,6 @@
 {
   operands[4] = gen_int_mode (~INTVAL (operands[2]), SImode);
 })
-
-;; Split DImode logical operations requiring two instructions.
-(define_split
-  [(set (match_operand:DI 0 "register_operand" "")
-	(match_operator:DI 1 "cc_arith_operator"	; AND, IOR, XOR
-			   [(match_operand:DI 2 "register_operand" "")
-			    (match_operand:DI 3 "arith_double_operand" "")]))]
-  "! TARGET_ARCH64
-   && reload_completed
-   && ((GET_CODE (operands[0]) == REG
-        && SPARC_INT_REG_P (REGNO (operands[0])))
-       || (GET_CODE (operands[0]) == SUBREG
-           && GET_CODE (SUBREG_REG (operands[0])) == REG
-           && SPARC_INT_REG_P (REGNO (SUBREG_REG (operands[0])))))"
-  [(set (match_dup 4) (match_op_dup:SI 1 [(match_dup 6) (match_dup 8)]))
-   (set (match_dup 5) (match_op_dup:SI 1 [(match_dup 7) (match_dup 9)]))]
-{
-  operands[4] = gen_highpart (SImode, operands[0]);
-  operands[5] = gen_lowpart (SImode, operands[0]);
-  operands[6] = gen_highpart (SImode, operands[2]);
-  operands[7] = gen_lowpart (SImode, operands[2]);
-#if HOST_BITS_PER_WIDE_INT == 32
-  if (GET_CODE (operands[3]) == CONST_INT)
-    {
-      if (INTVAL (operands[3]) < 0)
-	operands[8] = constm1_rtx;
-      else
-	operands[8] = const0_rtx;
-    }
-  else
-#endif
-    operands[8] = gen_highpart_mode (SImode, DImode, operands[3]);
-  operands[9] = gen_lowpart (SImode, operands[3]);
-})
-
-;; xnor patterns.  Note that (a ^ ~b) == (~a ^ b) == ~(a ^ b).
-;; Combine now canonicalizes to the rightmost expression.
-(define_insn_and_split "*xor_not_di_sp32"
-  [(set (match_operand:DI 0 "register_operand" "=&r")
-	(not:DI (xor:DI (match_operand:DI 1 "register_operand" "r")
-			(match_operand:DI 2 "register_operand" "r"))))]
-  "! TARGET_ARCH64"
-  "#"
-  "&& reload_completed
-   && ((GET_CODE (operands[0]) == REG
-        && SPARC_INT_REG_P (REGNO (operands[0])))
-       || (GET_CODE (operands[0]) == SUBREG
-           && GET_CODE (SUBREG_REG (operands[0])) == REG
-           && SPARC_INT_REG_P (REGNO (SUBREG_REG (operands[0])))))"
-  [(set (match_dup 3) (not:SI (xor:SI (match_dup 4) (match_dup 5))))
-   (set (match_dup 6) (not:SI (xor:SI (match_dup 7) (match_dup 8))))]
-  "operands[3] = gen_highpart (SImode, operands[0]);
-   operands[4] = gen_highpart (SImode, operands[1]);
-   operands[5] = gen_highpart (SImode, operands[2]);
-   operands[6] = gen_lowpart (SImode, operands[0]);
-   operands[7] = gen_lowpart (SImode, operands[1]);
-   operands[8] = gen_lowpart (SImode, operands[2]);"
-  [(set_attr "length" "2")])
 
 (define_insn "*xor_not_di_sp64"
   [(set (match_operand:DI 0 "register_operand" "=r")
@@ -5320,34 +5106,7 @@
   "subcc\t%%g0, %1, %0"
   [(set_attr "type" "compare")])
 
-;; We cannot use the "not" pseudo insn because the Sun assembler
-;; does not know how to make it work for constants.
-(define_expand "one_cmpldi2"
-  [(set (match_operand:DI 0 "register_operand" "")
-	(not:DI (match_operand:DI 1 "register_operand" "")))]
-  ""
-  "")
-
-(define_insn_and_split "*one_cmpldi2_sp32"
-  [(set (match_operand:DI 0 "register_operand" "=&r")
-	(not:DI (match_operand:DI 1 "register_operand" "r")))]
-  "! TARGET_ARCH64"
-  "#"
-  "&& reload_completed
-   && ((GET_CODE (operands[0]) == REG
-        && SPARC_INT_REG_P (REGNO (operands[0])))
-       || (GET_CODE (operands[0]) == SUBREG
-           && GET_CODE (SUBREG_REG (operands[0])) == REG
-           && SPARC_INT_REG_P (REGNO (SUBREG_REG (operands[0])))))"
-  [(set (match_dup 2) (not:SI (xor:SI (match_dup 3) (const_int 0))))
-   (set (match_dup 4) (not:SI (xor:SI (match_dup 5) (const_int 0))))]
-  "operands[2] = gen_highpart (SImode, operands[0]);
-   operands[3] = gen_highpart (SImode, operands[1]);
-   operands[4] = gen_lowpart (SImode, operands[0]);
-   operands[5] = gen_lowpart (SImode, operands[1]);"
-  [(set_attr "length" "2")])
-
-(define_insn "*one_cmpldi2_sp64"
+(define_insn "one_cmpldi2"
   [(set (match_operand:DI 0 "register_operand" "=r")
 	(not:DI (match_operand:DI 1 "arith_operand" "rI")))]
   "TARGET_ARCH64"

@@ -542,7 +542,7 @@ Objective-C and Objective-C++ Dialects}.
 -mnorm -mspfp -mspfp-compact -mspfp-fast -msimd -msoft-float -mswap @gol
 -mcrc -mdsp-packa -mdvbf -mlock -mmac-d16 -mmac-24 -mrtsc -mswape @gol
 -mtelephony -mxy -misize -mannotate-align -marclinux -marclinux_prof @gol
--mepilogue-cfi -mlong-calls -mmedium-calls -msdata @gol
+-mlong-calls -mmedium-calls -msdata @gol
 -mucb-mcount -mvolatile-cache @gol
 -malign-call -mauto-modify-reg -mbbit-peephole -mno-brcc @gol
 -mcase-vector-pcrel -mcompact-casesi -mno-cond-exec -mearly-cbranchsi @gol
@@ -7836,7 +7836,6 @@ also turns on the following optimization flags:
 -frerun-cse-after-loop  @gol
 -fsched-interblock  -fsched-spec @gol
 -fschedule-insns  -fschedule-insns2 @gol
--fsplit-paths @gol
 -fstrict-aliasing -fstrict-overflow @gol
 -ftree-builtin-call-dce @gol
 -ftree-switch-conversion -ftree-tail-merge @gol
@@ -7853,7 +7852,7 @@ Optimize yet more.  @option{-O3} turns on all optimizations specified
 by @option{-O2} and also turns on the @option{-finline-functions},
 @option{-funswitch-loops}, @option{-fpredictive-commoning},
 @option{-fgcse-after-reload}, @option{-ftree-loop-vectorize},
-@option{-ftree-loop-distribute-patterns},
+@option{-ftree-loop-distribute-patterns}, @option{-fsplit-paths}
 @option{-ftree-slp-vectorize}, @option{-fvect-cost-model},
 @option{-ftree-partial-pre} and @option{-fipa-cp-clone} options.
 
@@ -8953,12 +8952,12 @@ Enable the identity transformation for graphite.  For every SCoP we generate
 the polyhedral representation and transform it back to gimple.  Using
 @option{-fgraphite-identity} we can check the costs or benefits of the
 GIMPLE -> GRAPHITE -> GIMPLE transformation.  Some minimal optimizations
-are also performed by the code generator ISL, like index splitting and
+are also performed by the code generator isl, like index splitting and
 dead code elimination in loops.
 
 @item -floop-nest-optimize
 @opindex floop-nest-optimize
-Enable the ISL based loop nest optimizer.  This is a generic loop nest
+Enable the isl based loop nest optimizer.  This is a generic loop nest
 optimizer based on the Pluto optimization algorithms.  It calculates a loop
 structure optimized for data-locality and parallelism.  This option
 is experimental.
@@ -13149,14 +13148,6 @@ The following options control the semantics of generated code:
 
 @c semantically relevant code generation options
 @table @gcctabopt
-@item -mepilogue-cfi
-@opindex mepilogue-cfi
-Enable generation of call frame information for epilogues.
-
-@item -mno-epilogue-cfi
-@opindex mno-epilogue-cfi
-Disable generation of call frame information for epilogues.
-
 @item -mlong-calls
 @opindex mlong-calls
 Generate call insns as register indirect calls, thus providing access
@@ -13557,8 +13548,8 @@ of the @option{-mcpu=} option.  Permissible names are: @samp{armv2},
 @samp{armv6}, @samp{armv6j},
 @samp{armv6t2}, @samp{armv6z}, @samp{armv6kz}, @samp{armv6-m},
 @samp{armv7}, @samp{armv7-a}, @samp{armv7-r}, @samp{armv7-m}, @samp{armv7e-m},
-@samp{armv7ve}, @samp{armv8-a}, @samp{armv8-a+crc},
-@samp{iwmmxt}, @samp{iwmmxt2}, @samp{ep9312}.
+@samp{armv7ve}, @samp{armv8-a}, @samp{armv8-a+crc}, @samp{armv8.1-a},
+@samp{armv8.1-a+crc}, @samp{iwmmxt}, @samp{iwmmxt2}, @samp{ep9312}.
 
 @option{-march=armv7ve} is the armv7-a architecture with virtualization
 extensions.
@@ -13661,7 +13652,7 @@ available on the target.  Permissible names are: @samp{vfp}, @samp{vfpv3},
 @samp{vfpv3xd-fp16}, @samp{neon}, @samp{neon-fp16}, @samp{vfpv4},
 @samp{vfpv4-d16}, @samp{fpv4-sp-d16}, @samp{neon-vfpv4},
 @samp{fpv5-d16}, @samp{fpv5-sp-d16},
-@samp{fp-armv8}, @samp{neon-fp-armv8}, and @samp{crypto-neon-fp-armv8}.
+@samp{fp-armv8}, @samp{neon-fp-armv8} and @samp{crypto-neon-fp-armv8}.
 
 If @option{-msoft-float} is specified this specifies the format of
 floating-point values.
@@ -20905,14 +20896,12 @@ The default is to not print debug information.
 
 @item -march=@var{cpu-type}
 @opindex march
-Generate code that runs on @var{cpu-type}, which is the name of a system
-representing a certain processor type.  Possible values for
-@var{cpu-type} are @samp{g5}, @samp{g6}, @samp{z900}, @samp{z990},
-@samp{z9-109}, @samp{z9-ec}, @samp{z10},  @samp{z196}, @samp{zEC12},
-and @samp{z13}.
-When generating code using the instructions available on z/Architecture,
-the default is @option{-march=z900}.  Otherwise, the default is
-@option{-march=g5}.
+Generate code that runs on @var{cpu-type}, which is the name of a
+system representing a certain processor type.  Possible values for
+@var{cpu-type} are @samp{z900}, @samp{z990}, @samp{z9-109},
+@samp{z9-ec}, @samp{z10}, @samp{z196}, @samp{zEC12}, and @samp{z13}.
+The default is @option{-march=z900}.  @samp{g5} and @samp{g6} are
+deprecated and will be removed with future releases.
 
 @item -mtune=@var{cpu-type}
 @opindex mtune

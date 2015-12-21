@@ -1,3 +1,145 @@
+2015-12-20  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/utils2.c (gnat_rewrite_reference) <REALPART_EXPR>: New
+	case identical to FLOAT_EXPR.
+	<IMAGPART_EXPR>: Likewise.
+
+2015-12-20  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (gnat_to_gnu_entity) <E_Record_Type>: During
+	layout in type_annotate_only mode, skip discriminants of derived
+	tagged types renaming those of the parent type.
+	In type_annotate_only mode, if the type is tagged, do not override a
+	size clause but take into account the alignment of the tag.
+	(annotate_rep): In type_annotate_only mode, deal with  discriminants
+	of derived tagged types renaming those of the parent type.
+
+2015-12-20  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/utils.c (maybe_pad_type): In type_annotate_only mode,
+	retrieve the component type if this is an array and do not issue the
+	warning for concurrent types.
+
+2015-12-18  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/ada-tree.h (TYPE_DEBUG_TYPE): Remove duplicate.
+
+2015-12-17  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gcc-interface/ada-tree.h
+	(TYPE_IMPLEMENTS_PACKED_ARRAY_P, TYPE_CAN_HAVE_DEBUG_TYPE_P,
+	TYPE_ORIGINAL_PACKED_ARRAY, SET_TYPE_ORIGINAL_PACKED_ARRAY): New
+	macros.
+	* gcc-interface/decl.c (add_parallel_type_for_packed_array):
+	Rename to associate_original_type_to_packed_array.  When
+	-fgnat-encodings=minimal, set original packed array type as so
+	instead of as a parallel type to the implementation type.  In
+	this case, also rename the implementation type to the name of
+	the original array type.
+	(gnat_to_gnu_entity): Update invocations to
+	add_parallel_type_for_packed_array.  Tag ARRAY_TYPE nodes for
+	packed arrays with the TYPE_PACKED flag.
+	When -fgnat-encodings=minimal:
+	  - strip ___XP suffixes in packed arrays' names;
+	  - set the debug type for padding records around packed arrays
+	    to the packed array;
+	  - do not attach ___XUP types as parallel types of constrained
+	    array types.
+	* gcc-interface/misc.c (gnat_print_type): Update to handle
+	orignal packed arrays.
+	(gnat_get_debug_type): Update to reject packed arrays
+	implementation types.
+	(get_array_bit_stride): New.
+	(gnat_get_array_descr_info): Add packed arrays handling.
+	* gcc-interface/utils.c (maybe_pad_type): When
+	-fgnat-encodings=minimal, set the name of the padding type to
+	the one of the original packed type, if any.  Fix TYPE_DECL
+	peeling around the name of the input type.
+
+2015-12-17  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gcc-interface/misc.c (gnat_get_type_bias): New.
+	(LANG_HOOKS_GET_TYPE_BIAS): Redefine macro to implement the
+	get_type_bias language hook.
+
+2015-12-17  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gcc-interface/misc.c (gnat_get_array_descr_info): When the
+	array has more dimensions than the language hook can handle,
+	fall back to a nested arrays description.  Handle context-less
+	array types.
+
+2015-12-17  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gcc-interface/decl.c (gnat_to_gnu_entity): When
+	-fgnat-encodings-minimal, do not add ___XUP/XUT suffixes to type
+	names and do not generate ___XA parallel types.
+	* gcc-interface/misc.c (gnat_get_array_descr_info): Match fat
+	and thin pointers and generate the corresponding array type
+	descriptions.
+
+2015-12-17  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gcc-interface/ada-tree.def (POWER_EXPR): New binary operation.
+	* gcc-interface/ada-tree.h (TYPE_FIXED_POINT_P): New macro.
+	(TYPE_IS_FIXED_POINT_P): New macro.
+	(TYPE_SCALE_FACTOR): New macro.
+	(SET_TYPE_SCALE_FACTOR): New macro.
+	* gcc-interface/decl.c: Include urealp.h
+	(gnat_to_gnu_entity): Attach trees to encode scale factors to
+	fixed-point types.
+	* gcc-interface/misc.c (gnat_print_type): Print scale factors
+	for fixed-point types.
+	(gnat_get_fixed_point_type_info): New.
+	(gnat_init_ts): Initialize data for the POWER_EXPR binary
+	operation.
+	(LANG_HOOKS_GET_FIXED_POINT_INFO): Redefine macro to implement
+	the get_fixed_point_type_info language hook.
+
+2015-12-17  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gcc-interface/ada-tree.h (struct lang_type): Rename the t
+	field as t1 and add a t2 one.
+	(get_lang_specific): New.
+	(GET_TYPE_LANG_SPECIFIC): Refactor to use get_lang_specific.
+	(SET_TYPE_LANG_SPECIFIC): Likewise.
+	(GET_TYPE_LANG_SPECIFIC2): New macro.
+	(SET_TYPE_LANG_SPECIFIC2): New macro.
+	(TYPE_DEBUG_TYPE): New macro.
+	(SET_TYPE_DEBUG_TYPE): New macro.
+	* gcc-interface/decl.c (gnat_to_gnu_entity): When
+	-fgnat-encodings=minimal, set padding types' debug type to the
+	padded one (i.e. strip ___PAD GNAT encodings) and set
+	constrained record subtypes's debug type to the base type.
+	* gcc-interface/misc.c (gnat_print_type): Print debug types.
+	(gnat_get_debug_type): New.
+	(gnat_get_array_descr_info): When -fgnat-encodings=minimal, set
+	a byte stride for arrays that contain a type whose debug type
+	has variable length.
+	(LANG_HOOKS_GET_DEBUG_TYPE): Redefine macro to implement the
+	debug type language hook.
+	* gcc-interface/utils.c (maybe_pad_type): When
+	-fgnat-encodings=minimal, set padding types' debug type to the
+	padded one.  Restore XVZ variables creation when
+	-fgnat-encodings-minimal and use them to hold padding types'
+	byte size.  For library-level padding types, share this variable
+	across translation units.  Tag XVZ variables as artificial.
+
+2015-12-17  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gcc-interface/decl.c (gnat_to_gnu_entity): Disable ___XVS GNAT
+	encodings when -fgnat-encodings=minimal.
+	(components_to_record): Disable ___XVE, ___XVN, ___XVU and
+	___XVZ GNAT encodings when -fgnat-encodings=minimal.
+	* gcc-interface/utils.c (maybe_pad_type): Disable __XVS GNAT
+	encodings when -fgnat-encodings=minimal.
+
+2015-12-17  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gcc-interface/misc.c (gnat_encodings): Undefine macro and
+	declare a global variable.
+	(gnat_post_options): Initialize this global from options.
+
 2015-12-10  Eric Botcazou  <ebotcazou@adacore.com>
 
 	PR ada/48013

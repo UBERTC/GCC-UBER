@@ -1,3 +1,60 @@
+2015-12-18  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Fix a regression introduced by the fix of libstdc++/68276.
+	* src/c++11/ios.cc (_M_grow_words): Catch bad_alloc again so that
+	bad_array_new_length is handled properly.
+
+2015-12-18  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR libstdc++/68276
+
+	* src/c++11/ios.cc (_M_grow_words): Use nothrow new.
+	* testsuite/27_io/ios_base/storage/11584.cc: Adjust.
+
+2015-12-18  Andris Pavenis  <andris.pavenis@iki.fi>
+
+	* config/os/djgpp/error_constants.h: update according to DJGPP errno
+	macros.
+
+2015-12-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/68921
+	* src/c++11/futex.cc
+	(__atomic_futex_unsigned_base::_M_futex_wait_until): Use null pointer
+	as timeout argument.
+
+	* include/std/functional (_Mu<_Arg, false, false>::operator()): Restore
+	accidentally-removed volatile qualifier.
+
+	* include/std/functional (is_placeholder, is_bind_expression): Update
+	comments.
+	(_Safe_tuple_element): Replace with _Safe_tuple_element_t alias
+	template.
+	(_Mu): Remove vestigial TR1 return types and update coments.
+
+	PR libstdc++/68912
+	* include/std/functional (_Bind::operator()): Use lvalue functor to
+	deduce return type.
+	* testsuite/20_util/bind/68912.cc: New.
+
+2015-12-15  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/68863
+	* include/bits/regex_executor.tcc (_Executor::_M_lookahead):
+	Copy the captured content for lookahead, so that the backreferences
+	inside can refer to them.
+	* testsuite/28_regex/algorithms/regex_match/ecma/char/68863.cc:
+	New testcase.
+
+2015-12-14  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Document the implementation of Logical Operator Type Traits.
+
+	* doc/html/index.html: Regenerate.
+	* doc/html/manual/status.html: Likewise.
+	* doc/xml/manual/status_cxx2017.xml: Add P0013R1 to C++ 201z
+	and to Library Fundamentals 2 TS.
+
 2015-12-11  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR libstdc++/59768

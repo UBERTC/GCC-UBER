@@ -23,8 +23,26 @@ along with GCC; see the file COPYING3.  If not see
 #define GCC_GRAPHITE_POLY_H
 
 #include "sese.h"
+#include <isl/options.h>
+#include <isl/ctx.h>
+#include <isl/val_gmp.h>
+#include <isl/set.h>
+#include <isl/union_set.h>
+#include <isl/map.h>
+#include <isl/union_map.h>
+#include <isl/aff.h>
+#include <isl/constraint.h>
+#include <isl/flow.h>
+#include <isl/ilp.h>
+#include <isl/schedule.h>
+#include <isl/ast_build.h>
 
-#ifndef HAVE_ISL_OPTIONS_SET_SCHEDULE_SERIALIZE_SCCS
+#ifdef HAVE_ISL_OPTIONS_SET_SCHEDULE_SERIALIZE_SCCS
+/* isl 0.15 or later.  */
+#include <isl/schedule_node.h>
+
+#else
+/* isl 0.14 or 0.13.  */
 # define isl_stat int
 # define isl_stat_ok 0
 #endif
@@ -407,16 +425,14 @@ struct scop
      c = 2a + b  */
   isl_set *param_context;
 
-  /* The context used internally by ISL.  */
+  /* The context used internally by isl.  */
   isl_ctx *isl_context;
 
-  /* The original dependence relations:
-     RAW are read after write dependences,
-     WAR are write after read dependences,
-     WAW are write after write dependences.  */
-  isl_union_map *must_raw, *may_raw, *must_raw_no_source, *may_raw_no_source,
-    *must_war, *may_war, *must_war_no_source, *may_war_no_source,
-    *must_waw, *may_waw, *must_waw_no_source, *may_waw_no_source;
+  /* SCoP final schedule.  */
+  isl_schedule *schedule;
+
+  /* The data dependence relation among the data references in this scop.  */
+  isl_union_map *dependence;
 };
 
 extern scop_p new_scop (edge, edge);

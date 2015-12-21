@@ -8627,14 +8627,18 @@ fold_sizeof_expr (tree t)
 }
 
 /* Given the SIZE (i.e., number of elements) in an array, compute an
-   appropriate index type for the array.  If non-NULL, NAME is the
-   name of the thing being declared.  */
+   appropriate index type for the array.  When SIZE is null, the array
+   is a flexible array member.  If non-NULL, NAME is the name of
+   the entity being declared.  */
 
 tree
 compute_array_index_type (tree name, tree size, tsubst_flags_t complain)
 {
   tree itype;
   tree osize = size;
+
+  if (size == NULL_TREE)
+    return build_index_type (NULL_TREE);
 
   if (error_operand_p (size))
     return error_mark_node;
@@ -9765,11 +9769,18 @@ grokdeclarator (const cp_declarator *declarator,
   if (storage_class == sc_static)
     staticp = 1 + (decl_context == FIELD);
 
-  if (virtualp && staticp == 2)
+  if (virtualp)
     {
-      error ("member %qD cannot be declared both virtual and static", dname);
-      storage_class = sc_none;
-      staticp = 0;
+      if (staticp == 2)
+	{
+	  error ("member %qD cannot be declared both %<virtual%> "
+		 "and %<static%>", dname);
+	  storage_class = sc_none;
+	  staticp = 0;
+	}
+      if (constexpr_p)
+	error ("member %qD cannot be declared both %<virtual%> "
+	       "and %<constexpr%>", dname);
     }
   friendp = decl_spec_seq_has_spec_p (declspecs, ds_friend);
 
@@ -10149,7 +10160,8 @@ grokdeclarator (const cp_declarator *declarator,
 		      explicitp = 2;
 		    if (virtualp)
 		      {
-			permerror (input_location, "constructors cannot be declared virtual");
+			permerror (input_location,
+				   "constructors cannot be declared %<virtual%>");
 			virtualp = 0;
 		      }
 		    if (decl_context == FIELD
@@ -10905,7 +10917,7 @@ grokdeclarator (const cp_declarator *declarator,
     }
 
   {
-    tree decl;
+    tree decl = NULL_TREE;
 
     if (decl_context == PARM)
       {
@@ -10929,9 +10941,19 @@ grokdeclarator (const cp_declarator *declarator,
 	if (!staticp && TREE_CODE (type) == ARRAY_TYPE
 	    && TYPE_DOMAIN (type) == NULL_TREE)
 	  {
-	    tree itype = compute_array_index_type (dname, integer_zero_node,
-						   tf_warning_or_error);
-	    type = build_cplus_array_type (TREE_TYPE (type), itype);
+	    if (ctype
+		&& (TREE_CODE (ctype) == UNION_TYPE
+		    || TREE_CODE (ctype) == QUAL_UNION_TYPE))
+	      {
+		error ("flexible array member in union");
+		type = error_mark_node;
+	      }
+	    else
+	      {
+		tree itype = compute_array_index_type (dname, NULL_TREE,
+						       tf_warning_or_error);
+		type = build_cplus_array_type (TREE_TYPE (type), itype);
+	      }
 	  }
 
 	if (type == error_mark_node)
@@ -10974,7 +10996,7 @@ grokdeclarator (const cp_declarator *declarator,
 		   ARM 9.5 */
 		if (virtualp && TREE_CODE (ctype) == UNION_TYPE)
 		  {
-		    error ("function %qD declared virtual inside a union",
+		    error ("function %qD declared %<virtual%> inside a union",
 			   unqualified_id);
 		    return error_mark_node;
 		  }
@@ -10983,7 +11005,7 @@ grokdeclarator (const cp_declarator *declarator,
 		  {
 		    if (virtualp)
 		      {
-			error ("%qD cannot be declared virtual, since it "
+			error ("%qD cannot be declared %<virtual%>, since it "
 			       "is always static",
 			       unqualified_id);
 			virtualp = 0;
@@ -11099,17 +11121,21 @@ grokdeclarator (const cp_declarator *declarator,
 		     || !COMPLETE_TYPE_P (TREE_TYPE (type))
 		     || initialized == 0))
 	  {
-	    if (unqualified_id)
+	    if (TREE_CODE (type) != ARRAY_TYPE
+		|| !COMPLETE_TYPE_P (TREE_TYPE (type)))
 	      {
-		error ("field %qD has incomplete type %qT",
-		       unqualified_id, type);
-		cxx_incomplete_type_inform (strip_array_types (type));
-	      }
-	    else
-	      error ("name %qT has incomplete type", type);
+		if (unqualified_id)
+		  {
+		    error ("field %qD has incomplete type %qT",
+			   unqualified_id, type);
+		    cxx_incomplete_type_inform (strip_array_types (type));
+		  }
+		else
+		  error ("name %qT has incomplete type", type);
 
-	    type = error_mark_node;
-	    decl = NULL_TREE;
+		type = error_mark_node;
+		decl = NULL_TREE;
+	      }
 	  }
 	else
 	  {

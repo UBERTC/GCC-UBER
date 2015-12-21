@@ -236,8 +236,10 @@ md_file=
 
 # Obsolete configurations.
 case ${target} in
-# Currently there are no obsolete targets.
- nothing				\
+ *-interix*				\
+ | *-knetbsd-*				\
+ | *-openbsd2*				\
+ | *-openbsd3*				\
  )
     if test "x$enable_obsolete" != xyes; then
       echo "*** Configuration ${target} is obsolete." >&2

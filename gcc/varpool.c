@@ -296,9 +296,11 @@ varpool_node::get_constructor (void)
 
   /* We may have renamed the declaration, e.g., a static function.  */
   name = lto_get_decl_name_mapping (file_data, name);
+  struct lto_in_decl_state *decl_state
+	 = lto_get_function_in_decl_state (file_data, decl);
 
   data = lto_get_section_data (file_data, LTO_section_function_body,
-			       name, &len);
+			       name, &len, decl_state->compressed);
   if (!data)
     fatal_error (input_location, "%s: section %s is missing",
 		 file_data->file_name,
@@ -308,7 +310,7 @@ varpool_node::get_constructor (void)
   gcc_assert (DECL_INITIAL (decl) != error_mark_node);
   lto_stats.num_function_bodies++;
   lto_free_section_data (file_data, LTO_section_function_body, name,
-			 data, len);
+			 data, len, decl_state->compressed);
   lto_free_function_in_decl_state_for_node (this);
   timevar_pop (TV_IPA_LTO_CTORS_IN);
   return DECL_INITIAL (decl);
@@ -746,6 +748,13 @@ symbol_table::output_variables (void)
       /* Handled in output_in_order.  */
       if (node->no_reorder)
 	continue;
+#ifdef ACCEL_COMPILER
+      /* Do not assemble "omp declare target link" vars.  */
+      if (DECL_HAS_VALUE_EXPR_P (node->decl)
+	  && lookup_attribute ("omp declare target link",
+			       DECL_ATTRIBUTES (node->decl)))
+	continue;
+#endif
       if (node->assemble_decl ())
         changed = true;
     }

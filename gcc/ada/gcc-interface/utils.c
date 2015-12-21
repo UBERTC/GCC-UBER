@@ -1278,8 +1278,20 @@ maybe_pad_type (tree type, tree size, unsigned int align,
      type and name.  */
   record = make_node (RECORD_TYPE);
   TYPE_PADDING_P (record) = 1;
+  if (gnat_encodings == DWARF_GNAT_ENCODINGS_MINIMAL)
+    SET_TYPE_DEBUG_TYPE (record, type);
 
-  if (Present (gnat_entity))
+  /* ??? Kludge: padding types around packed array implementation types will be
+     considered as root types in the array descriptor language hook (see
+     gnat_get_array_descr_info). Give them the original packed array type
+     name so that the one coming from sources appears in the debugging
+     information.  */
+  if (gnat_encodings == DWARF_GNAT_ENCODINGS_MINIMAL
+      && TYPE_IMPLEMENTS_PACKED_ARRAY_P (type)
+      && TYPE_ORIGINAL_PACKED_ARRAY (type) != NULL_TREE)
+    TYPE_NAME (record)
+      = TYPE_NAME (TYPE_ORIGINAL_PACKED_ARRAY (type));
+  else if (Present (gnat_entity))
     TYPE_NAME (record) = create_concat_name (gnat_entity, "PAD");
 
   TYPE_ALIGN (record) = align ? align : orig_align;
@@ -1365,6 +1377,8 @@ maybe_pad_type (tree type, tree size, unsigned int align,
 	  && TREE_CODE (size) != INTEGER_CST
 	  && (definition || global_bindings_p ()))
 	{
+	  /* Whether or not gnat_entity comes from source, this XVZ variable is
+	     is a compilation artifact.  */
 	  size_unit
 	    = create_var_decl (concat_name (name, "XVZ"), NULL_TREE, sizetype,
 			      size_unit, true, global_bindings_p (),
@@ -1373,37 +1387,52 @@ maybe_pad_type (tree type, tree size, unsigned int align,
 	  TYPE_SIZE_UNIT (record) = size_unit;
 	}
 
-      tree marker = make_node (RECORD_TYPE);
-      tree orig_name = TYPE_IDENTIFIER (type);
+      /* There is no need to show what we are a subtype of when outputting as
+	 few encodings as possible: regular debugging infomation makes this
+	 redundant.  */
+      if (gnat_encodings != DWARF_GNAT_ENCODINGS_MINIMAL)
+	{
+	  tree marker = make_node (RECORD_TYPE);
+	  tree orig_name = TYPE_IDENTIFIER (type);
 
-      TYPE_NAME (marker) = concat_name (name, "XVS");
-      finish_record_type (marker,
-			  create_field_decl (orig_name,
-					     build_reference_type (type),
-					     marker, NULL_TREE, NULL_TREE,
-					     0, 0),
-			  0, true);
-      TYPE_SIZE_UNIT (marker) = size_unit;
+	  TYPE_NAME (marker) = concat_name (name, "XVS");
+	  finish_record_type (marker,
+			      create_field_decl (orig_name,
+						 build_reference_type (type),
+						 marker, NULL_TREE, NULL_TREE,
+						 0, 0),
+			      0, true);
+	  TYPE_SIZE_UNIT (marker) = size_unit;
 
-      add_parallel_type (record, marker);
+	  add_parallel_type (record, marker);
+	}
     }
 
   rest_of_record_type_compilation (record);
 
 built:
-  /* If the size was widened explicitly, maybe give a warning.  Take the
-     original size as the maximum size of the input if there was an
-     unconstrained record involved and round it up to the specified alignment,
-     if one was specified.  But don't do it if we are just annotating types
-     and the type is tagged, since tagged types aren't fully laid out in this
-     mode.  */
+  /* If a simple size was explicitly given, maybe issue a warning.  */
   if (!size
       || TREE_CODE (size) == COND_EXPR
       || TREE_CODE (size) == MAX_EXPR
-      || No (gnat_entity)
-      || (type_annotate_only && Is_Tagged_Type (Etype (gnat_entity))))
+      || No (gnat_entity))
     return record;
 
+  /* But don't do it if we are just annotating types and the type is tagged or
+     concurrent, since these types aren't fully laid out in this mode.  */
+  if (type_annotate_only)
+    {
+      Entity_Id gnat_type
+	= is_component_type
+	  ? Component_Type (gnat_entity) : Etype (gnat_entity);
+
+      if (Is_Tagged_Type (gnat_type) || Is_Concurrent_Type (gnat_type))
+	return record;
+    }
+
+  /* Take the original size as the maximum size of the input if there was an
+     unconstrained record involved and round it up to the specified alignment,
+     if one was specified, but only for aggregate types.  */
   if (CONTAINS_PLACEHOLDER_P (orig_size))
     orig_size = max_size (orig_size, true);
 
@@ -1890,7 +1919,7 @@ rest_of_record_type_compilation (tree record_type)
 
   /* If this record type is of variable size, make a parallel record type that
      will tell the debugger how the former is laid out (see exp_dbug.ads).  */
-  if (var_size)
+  if (var_size && gnat_encodings != DWARF_GNAT_ENCODINGS_MINIMAL)
     {
       tree new_record_type
 	= make_node (TREE_CODE (record_type) == QUAL_UNION_TYPE

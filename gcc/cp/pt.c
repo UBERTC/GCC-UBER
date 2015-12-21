@@ -5661,6 +5661,28 @@ instantiate_non_dependent_expr (tree expr)
   return instantiate_non_dependent_expr_sfinae (expr, tf_error);
 }
 
+/* Like instantiate_non_dependent_expr, but return NULL_TREE rather than
+   an uninstantiated expression.  */
+
+tree
+instantiate_non_dependent_or_null (tree expr)
+{
+  if (expr == NULL_TREE)
+    return NULL_TREE;
+  if (processing_template_decl)
+    {
+      if (instantiation_dependent_expression_p (expr)
+	  || !potential_constant_expression (expr))
+	expr = NULL_TREE;
+      else
+	{
+	  processing_template_decl_sentinel s;
+	  expr = instantiate_non_dependent_expr_internal (expr, tf_error);
+	}
+    }
+  return expr;
+}
+
 /* True iff T is a specialization of a variable template.  */
 
 bool
@@ -7881,9 +7903,9 @@ template_args_equal (tree ot, tree nt)
    template arguments.  Returns 0 otherwise, and updates OLDARG_PTR and
    NEWARG_PTR with the offending arguments if they are non-NULL.  */
 
-static int
-comp_template_args_with_info (tree oldargs, tree newargs,
-			      tree *oldarg_ptr, tree *newarg_ptr)
+int
+comp_template_args (tree oldargs, tree newargs,
+		    tree *oldarg_ptr, tree *newarg_ptr)
 {
   int i;
 
@@ -7911,15 +7933,6 @@ comp_template_args_with_info (tree oldargs, tree newargs,
 	}
     }
   return 1;
-}
-
-/* Returns 1 iff the OLDARGS and NEWARGS are in fact identical sets
-   of template arguments.  Returns 0 otherwise.  */
-
-int
-comp_template_args (tree oldargs, tree newargs)
-{
-  return comp_template_args_with_info (oldargs, newargs, NULL, NULL);
 }
 
 static void
@@ -10026,7 +10039,16 @@ instantiate_class_template_1 (tree type)
 			  if (can_complete_type_without_circularity (rtype))
 			    complete_type (rtype);
 
-			  if (!COMPLETE_TYPE_P (rtype))
+                          if (TREE_CODE (r) == FIELD_DECL
+                              && TREE_CODE (rtype) == ARRAY_TYPE
+                              && COMPLETE_TYPE_P (TREE_TYPE (rtype))
+                              && !COMPLETE_TYPE_P (rtype))
+                            {
+                              /* Flexible array mmembers of elements
+                                 of complete type have an incomplete type
+                                 and that's okay.  */
+                            }
+                          else if (!COMPLETE_TYPE_P (rtype))
 			    {
 			      cxx_incomplete_type_error (r, rtype);
 			      TREE_TYPE (r) = error_mark_node;
@@ -10794,12 +10816,16 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
 	  if (PACK_EXPANSION_LOCAL_P (t) || CONSTRAINT_VAR_P (parm_pack))
 	    arg_pack = retrieve_local_specialization (parm_pack);
 	  else
+	    /* We can't rely on local_specializations for a parameter
+	       name used later in a function declaration (such as in a
+	       late-specified return type).  Even if it exists, it might
+	       have the wrong value for a recursive call.  */
+	    need_local_specializations = true;
+
+	  if (!arg_pack)
 	    {
-	      /* We can't rely on local_specializations for a parameter
-		 name used later in a function declaration (such as in a
-		 late-specified return type).  Even if it exists, it might
-		 have the wrong value for a recursive call.  Just make a
-		 dummy decl, since it's only used for its type.  */
+	      /* This parameter pack was used in an unevaluated context.  Just
+		 make a dummy decl, since it's only used for its type.  */
 	      arg_pack = tsubst_decl (parm_pack, args, complain);
 	      if (arg_pack && DECL_PACK_P (arg_pack))
 		/* Partial instantiation of the parm_pack, we can't build
@@ -10807,7 +10833,6 @@ tsubst_pack_expansion (tree t, tree args, tsubst_flags_t complain,
 		arg_pack = NULL_TREE;
 	      else
 		arg_pack = make_fnparm_pack (arg_pack);
-	      need_local_specializations = true;
 	    }
 	}
       else if (TREE_CODE (parm_pack) == FIELD_DECL)
@@ -12763,9 +12788,14 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
       if (t == integer_type_node)
 	return t;
 
-      if (TREE_CODE (TYPE_MIN_VALUE (t)) == INTEGER_CST
-	  && TREE_CODE (TYPE_MAX_VALUE (t)) == INTEGER_CST)
-	return t;
+      if (TREE_CODE (TYPE_MIN_VALUE (t)) == INTEGER_CST)
+        {
+          if (!TYPE_MAX_VALUE (t))
+            return compute_array_index_type (NULL_TREE, NULL_TREE, complain);
+          
+          if (TREE_CODE (TYPE_MAX_VALUE (t)) == INTEGER_CST)
+            return t;
+        }
 
       {
 	tree max, omax = TREE_OPERAND (TYPE_MAX_VALUE (t), 0);
@@ -19034,8 +19064,8 @@ unify_pack_expansion (tree tparms, tree targs, tree packed_parms,
 	  tree bad_old_arg = NULL_TREE, bad_new_arg = NULL_TREE;
 	  tree old_args = ARGUMENT_PACK_ARGS (old_pack);
 
-	  if (!comp_template_args_with_info (old_args, new_args,
-					     &bad_old_arg, &bad_new_arg))
+	  if (!comp_template_args (old_args, new_args,
+				   &bad_old_arg, &bad_new_arg))
 	    /* Inconsistent unification of this parameter pack.  */
 	    return unify_parameter_pack_inconsistent (explain_p,
 						      bad_old_arg,

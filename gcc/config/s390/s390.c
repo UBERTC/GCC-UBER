@@ -6139,29 +6139,70 @@ s390_expand_vcond (rtx target, rtx then, rtx els,
   machine_mode result_mode;
   rtx result_target;
 
+  machine_mode target_mode = GET_MODE (target);
+  machine_mode cmp_mode = GET_MODE (cmp_op1);
+  rtx op = (cond == LT) ? els : then;
+
+  /* Try to optimize x < 0 ? -1 : 0 into (signed) x >> 31
+     and x < 0 ? 1 : 0 into (unsigned) x >> 31.  Likewise
+     for short and byte (x >> 15 and x >> 7 respectively).  */
+  if ((cond == LT || cond == GE)
+      && target_mode == cmp_mode
+      && cmp_op2 == CONST0_RTX (cmp_mode)
+      && op == CONST0_RTX (target_mode)
+      && s390_vector_mode_supported_p (target_mode)
+      && GET_MODE_CLASS (target_mode) == MODE_VECTOR_INT)
+    {
+      rtx negop = (cond == LT) ? then : els;
+
+      int shift = GET_MODE_BITSIZE (GET_MODE_INNER (target_mode)) - 1;
+
+      /* if x < 0 ? 1 : 0 or if x >= 0 ? 0 : 1 */
+      if (negop == CONST1_RTX (target_mode))
+	{
+	  rtx res = expand_simple_binop (cmp_mode, LSHIFTRT, cmp_op1,
+					 GEN_INT (shift), target,
+					 1, OPTAB_DIRECT);
+	  if (res != target)
+	    emit_move_insn (target, res);
+	  return;
+	}
+
+      /* if x < 0 ? -1 : 0 or if x >= 0 ? 0 : -1 */
+      else if (all_ones_operand (negop, target_mode))
+	{
+	  rtx res = expand_simple_binop (cmp_mode, ASHIFTRT, cmp_op1,
+					 GEN_INT (shift), target,
+					 0, OPTAB_DIRECT);
+	  if (res != target)
+	    emit_move_insn (target, res);
+	  return;
+	}
+    }
+
   /* We always use an integral type vector to hold the comparison
      result.  */
-  result_mode = GET_MODE (cmp_op1) == V2DFmode ? V2DImode : GET_MODE (cmp_op1);
+  result_mode = cmp_mode == V2DFmode ? V2DImode : cmp_mode;
   result_target = gen_reg_rtx (result_mode);
 
-  /* Alternatively this could be done by reload by lowering the cmp*
-     predicates.  But it appears to be better for scheduling etc. to
-     have that in early.  */
+  /* We allow vector immediates as comparison operands that
+     can be handled by the optimization above but not by the
+     following code.  Hence, force them into registers here.  */
   if (!REG_P (cmp_op1))
-    cmp_op1 = force_reg (GET_MODE (target), cmp_op1);
+    cmp_op1 = force_reg (target_mode, cmp_op1);
 
   if (!REG_P (cmp_op2))
-    cmp_op2 = force_reg (GET_MODE (target), cmp_op2);
+    cmp_op2 = force_reg (target_mode, cmp_op2);
 
   s390_expand_vec_compare (result_target, cond,
 			   cmp_op1, cmp_op2);
 
   /* If the results are supposed to be either -1 or 0 we are done
      since this is what our compare instructions generate anyway.  */
-  if (constm1_operand (then, GET_MODE (then))
+  if (all_ones_operand (then, GET_MODE (then))
       && const0_operand (els, GET_MODE (els)))
     {
-      emit_move_insn (target, gen_rtx_SUBREG (GET_MODE (target),
+      emit_move_insn (target, gen_rtx_SUBREG (target_mode,
 					      result_target, 0));
       return;
     }
@@ -6170,10 +6211,10 @@ s390_expand_vcond (rtx target, rtx then, rtx els,
   /* This gets triggered e.g.
      with gcc.c-torture/compile/pr53410-1.c */
   if (!REG_P (then))
-    then = force_reg (GET_MODE (target), then);
+    then = force_reg (target_mode, then);
 
   if (!REG_P (els))
-    els = force_reg (GET_MODE (target), els);
+    els = force_reg (target_mode, els);
 
   tmp = gen_rtx_fmt_ee (EQ, VOIDmode,
 			result_target,
@@ -6181,9 +6222,9 @@ s390_expand_vcond (rtx target, rtx then, rtx els,
 
   /* We compared the result against zero above so we have to swap then
      and els here.  */
-  tmp = gen_rtx_IF_THEN_ELSE (GET_MODE (target), tmp, els, then);
+  tmp = gen_rtx_IF_THEN_ELSE (target_mode, tmp, els, then);
 
-  gcc_assert (GET_MODE (target) == GET_MODE (then));
+  gcc_assert (target_mode == GET_MODE (then));
   emit_insn (gen_rtx_SET (target, tmp));
 }
 
@@ -9543,10 +9584,17 @@ s390_init_frame_layout (void)
 	 as base register to avoid save/restore overhead.  */
       if (!base_used)
 	cfun->machine->base_reg = NULL_RTX;
-      else if (crtl->is_leaf && !df_regs_ever_live_p (5))
-	cfun->machine->base_reg = gen_rtx_REG (Pmode, 5);
       else
-	cfun->machine->base_reg = gen_rtx_REG (Pmode, BASE_REGNUM);
+	{
+	  int br = 0;
+
+	  if (crtl->is_leaf)
+	    /* Prefer r5 (most likely to be free).  */
+	    for (br = 5; br >= 2 && df_regs_ever_live_p (br); br--)
+	      ;
+	  cfun->machine->base_reg =
+	    gen_rtx_REG (Pmode, (br > 0) ? br : BASE_REGNUM);
+	}
 
       s390_register_info ();
       s390_frame_info ();
@@ -13569,9 +13617,27 @@ s390_function_specific_restore (struct gcc_options *opts,
 }
 
 static void
-s390_option_override_internal (struct gcc_options *opts,
+s390_option_override_internal (bool main_args_p,
+			       struct gcc_options *opts,
 			       const struct gcc_options *opts_set)
 {
+  const char *prefix;
+  const char *suffix;
+
+  /* Set up prefix/suffix so the error messages refer to either the command
+     line argument, or the attribute(target).  */
+  if (main_args_p)
+    {
+      prefix = "-m";
+      suffix = "";
+    }
+  else
+    {
+      prefix = "option(\"";
+      suffix = "\")";
+    }
+
+
   /* Architecture mode defaults according to ABI.  */
   if (!(opts_set->x_target_flags & MASK_ZARCH))
     {
@@ -13583,13 +13649,26 @@ s390_option_override_internal (struct gcc_options *opts,
 
   /* Set the march default in case it hasn't been specified on cmdline.  */
   if (!opts_set->x_s390_arch)
-    opts->x_s390_arch = TARGET_ZARCH_P (opts->x_target_flags)
-      ? PROCESSOR_2064_Z900 : PROCESSOR_9672_G5;
+    opts->x_s390_arch = PROCESSOR_2064_Z900;
+  else if (opts->x_s390_arch == PROCESSOR_9672_G5
+	   || opts->x_s390_arch == PROCESSOR_9672_G6)
+    warning (OPT_Wdeprecated, "%sarch=%s%s is deprecated and will be removed "
+	     "in future releases; use at least %sarch=z900%s",
+	     prefix, opts->x_s390_arch == PROCESSOR_9672_G5 ? "g5" : "g6",
+	     suffix, prefix, suffix);
+
   opts->x_s390_arch_flags = processor_flags_table[(int) opts->x_s390_arch];
 
   /* Determine processor to tune for.  */
   if (!opts_set->x_s390_tune)
     opts->x_s390_tune = opts->x_s390_arch;
+  else if (opts->x_s390_tune == PROCESSOR_9672_G5
+	   || opts->x_s390_tune == PROCESSOR_9672_G6)
+    warning (OPT_Wdeprecated, "%stune=%s%s is deprecated and will be removed "
+	     "in future releases; use at least %stune=z900%s",
+	     prefix, opts->x_s390_tune == PROCESSOR_9672_G5 ? "g5" : "g6",
+	     suffix, prefix, suffix);
+
   opts->x_s390_tune_flags = processor_flags_table[opts->x_s390_tune];
 
   /* Sanity checks.  */
@@ -13800,7 +13879,7 @@ s390_option_override (void)
   /* Set up function hooks.  */
   init_machine_status = s390_init_machine_status;
 
-  s390_option_override_internal (&global_options, &global_options_set);
+  s390_option_override_internal (true, &global_options, &global_options_set);
 
   /* Save the initial options in case the user does function specific
      options.  */
@@ -14102,7 +14181,7 @@ s390_valid_target_attribute_tree (tree args,
 	dest[i] |= src[i];
 
       /* Do any overrides, such as arch=xxx, or tune=xxx support.  */
-      s390_option_override_internal (opts, &new_opts_set);
+      s390_option_override_internal (false, opts, &new_opts_set);
       /* Save the current options unless we are validating options for
 	 #pragma.  */
       t = build_target_option_node (opts);
