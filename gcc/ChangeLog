@@ -1,3 +1,198 @@
+2015-12-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/68910
+	* emit-rtl.c (set_unique_reg_note) <>REG_EQUAL>: Add bypass for USEs.
+	* config/sparc/sparc.md (anddi3): Enable only in 64-bit mode.
+	(iordi3): Likewise.
+	(xordi3): Likewise.
+	(one_cmpldi2): Likewise.
+	(*anddi3_sp32): Delete.
+	(*and_not_di_sp32): Likewise.
+	(*iordi3_sp32): Likewise.
+	(*or_not_di_sp32): Likewise.
+	(*xordi3_sp32): Likewise.
+	(*xor_not_di_sp32): Likewise.
+	(32-bit DImode logical operations splitter): Likewise.
+	(*one_cmpldi2_sp32): Likewise.
+
+2015-13-18  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/68729
+	* config/pa/pa.c (pa_emit_move_sequence): Reorganize handling of
+	floating-point reloads. Only reload operands that are not valid
+	floating-point memory operands.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/predicates.md (const_mask_operand): New predicate.
+	* config/s390/s390-builtins.def: Set a smaller bitmask for a few builtins.
+	* config/s390/vector.md: Change predicate from immediate_operand
+	to either const_int_operand or const_mask_operand.  Add special
+	insn conditions on patterns which have to exclude certain values.
+	* config/s390/vx-builtins.md: Likewise.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vector.md ("*vec_set<mode>"): Change shift count
+	mode from DI to SI.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtin-types.def: New builtin types added.
+	* config/s390/s390-builtins.def: Add s390_vec_splat_* definitions.
+	* config/s390/s390.c (s390_expand_builtin): Always truncate
+	constants to the mode in the pattern.
+	* config/s390/vecintrin.h: Let the vec_splat_* macros point to the
+	respective builtin __builtin_s390_vec_splat_*.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtin-types.def: Sort builtin types.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-c.c (s390_get_vstring_flags): Invert the
+	condition for the RT flag.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/constraints.md: Use private backport of
+	const_vec_duplicate_p s390_const_vec_duplicate_p.
+	* config/s390/s390-protos.h: Add prototype for
+	s390_const_vec_duplicate_p.
+	* config/s390/s390.c (s390_const_vec_duplicate_p): New function.
+	(s390_contiguous_bitmask_vector_p): Use s390_const_vec_duplicate_p.
+	(print_operand): Likewise.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/constraints.md ("jKK"): New constraint.
+	* config/s390/s390.c (tm-constrs.h): Include for
+	satisfies_constraint_*.
+	(s390_legitimate_constant_p): Allow jKK constants.  Use
+	satisfies_constraint_* also for the others.
+	(legitimate_reload_vector_constant_p): Likewise.
+	(print_operand): Allow h output modifier on vectors.
+	* config/s390/vector.md ("mov<mode>"): Add vrepi.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vector.md ("*vec_splats<mode>"): Fix constraint
+	letter I->K.
+
+2015-12-18  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-12-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68835
+	* tree.c (get_int_cst_ext_nunits): Return
+	cst.get_precision () / HOST_BITS_PER_WIDE_INT + 1
+	for all unsigned wi::neg_p (cst) constants.
+	(build_new_int_cst): If cst.get_precision is not a multiple
+	of HOST_BITS_PER_WIDE_INT, zero extend -1 to the precision
+	% HOST_BITS_PER_WIDE_INT.
+
+2015-12-16  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/68779
+	* config/pa/pa.md (atomic_loaddi): Honor -mdisable-fpregs.
+	(atomic_loaddi_1): Likewise.
+	(atomic_storedi): Likewise.
+	(atomic_storedi_1): Likewise.
+	(atomic_loaddf): Likewise.
+	(atomic_loaddf_1): Likewise.
+	(atomic_storedf): Likewise.
+	(atomic_storedf_1): Likewise.
+	Move all atomic patterns to end of file.
+
+2015-12-16  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-12-02  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/68184
+	* cgraphunit.c (cgraph_node::analyze): Set can_throw_external.
+
+2015-12-16  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-12-04  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68636
+	* builtins.c (get_pointer_alignment_1): Take care of byte to
+	bit alignment computation overflow.
+
+	2015-11-30  Richard Biener  <rguenther@suse.de>
+
+	PR c/68162
+	* dwarf2out.c (gen_type_die_with_usage): Keep variant types
+	of arrays.
+
+2015-12-14  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/66616
+	* ipa-cp.c (propagate_constants_accross_call): Move thuk check...
+	(call_passes_through_thunk_p): ...here.
+	(find_more_scalar_values_for_callers_subset): Perform thunk checks
+	like propagate_constants_accross_call does.
+
+2015-12-14  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline.
+	2015-12-09  James Greenhalgh  <james.greenhalgh@arm.com> 
+
+	PR rtl-optimization/67609
+	* config/aarch64/aarch64-protos.h
+	(aarch64_cannot_change_mode_class): Bring back.
+	* config/aarch64/aarch64.c
+	(aarch64_cannot_change_mode_class): Likewise.
+	* config/aarch64/aarch64.h (CANNOT_CHANGE_MODE_CLASS): Likewise.
+	* config/aarch64/aarch64.md (aarch64_movdi_<mode>low): Use
+	zero_extract rather than truncate.
+	(aarch64_movdi_<mode>high): Likewise.
+
+2015-12-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-12-11  Martin Liska  <mliska@suse.cz>
+		    Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/67484
+	* config/i386/i386.c (ix86_valid_target_attribute_tree):
+	Use ggc_strdup to copy option_strings to opts->x_ix86_arch_string and
+	opts->x_ix86_tune_string.
+
+2015-12-13  Alexandre Oliva <aoliva@redhat.com>
+
+	PR debug/67355
+	* var-tracking.c (reverse_op): Don't add dummy zero to reverse
+	ops that simplify back to the original value.
+	* alias.c (refs_newer_value_p): Cut off recursion for
+	expressions containing the original value.
+
 2015-12-10  Jakub Jelinek  <jakub@redhat.com>
 
 	PR rtl-optimization/68376

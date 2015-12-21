@@ -101,6 +101,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "plugin-api.h"
 #include "ipa-ref.h"
 #include "cgraph.h"
+#include "tm-constrs.h"
 
 /* Define the specific costs for a given cpu.  */
 
@@ -857,6 +858,15 @@ s390_expand_builtin (tree exp, rtx target, rtx subtarget ATTRIBUTE_UNUSED,
 
       insn_op = &insn_data[icode].operand[arity + nonvoid];
       op[arity] = expand_expr (arg, NULL_RTX, insn_op->mode, EXPAND_NORMAL);
+
+      /* expand_expr truncates constants to the target mode only if it
+	 is "convenient".  However, our checks below rely on this
+	 being done.  */
+      if (CONST_INT_P (op[arity])
+	  && SCALAR_INT_MODE_P (insn_op->mode)
+	  && GET_MODE (op[arity]) != insn_op->mode)
+	op[arity] = GEN_INT (trunc_int_for_mode (INTVAL (op[arity]),
+						 insn_op->mode));
 
       /* Wrap the expanded RTX for pointer types into a MEM expr with
 	 the proper mode.  This allows us to use e.g. (match_operand
@@ -2266,6 +2276,24 @@ s390_contiguous_bitmask_p (unsigned HOST_WIDE_INT in, int size,
   return true;
 }
 
+bool
+s390_const_vec_duplicate_p (rtx op)
+{
+ if (!VECTOR_MODE_P (GET_MODE (op))
+      || GET_CODE (op) != CONST_VECTOR
+      || !CONST_INT_P (XVECEXP (op, 0, 0)))
+    return false;
+
+  if (GET_MODE_NUNITS (GET_MODE (op)) > 1)
+    {
+      int i;
+
+      for (i = 1; i < GET_MODE_NUNITS (GET_MODE (op)); ++i)
+	if (!rtx_equal_p (XVECEXP (op, 0, i), XVECEXP (op, 0, 0)))
+	  return false;
+    }
+  return true;
+}
 /* Return true if OP contains the same contiguous bitfield in *all*
    its elements.  START and END can be used to obtain the start and
    end position of the bitfield.
@@ -2281,19 +2309,8 @@ s390_contiguous_bitmask_vector_p (rtx op, int *start, int *end)
   unsigned HOST_WIDE_INT mask;
   int length, size;
 
-  if (!VECTOR_MODE_P (GET_MODE (op))
-      || GET_CODE (op) != CONST_VECTOR
-      || !CONST_INT_P (XVECEXP (op, 0, 0)))
+  if (!s390_const_vec_duplicate_p (op))
     return false;
-
-  if (GET_MODE_NUNITS (GET_MODE (op)) > 1)
-    {
-      int i;
-
-      for (i = 1; i < GET_MODE_NUNITS (GET_MODE (op)); ++i)
-	if (!rtx_equal_p (XVECEXP (op, 0, i), XVECEXP (op, 0, 0)))
-	  return false;
-    }
 
   size = GET_MODE_UNIT_BITSIZE (GET_MODE (op));
   mask = UINTVAL (XVECEXP (op, 0, 0));
@@ -3657,9 +3674,11 @@ s390_legitimate_constant_p (machine_mode mode, rtx op)
       if (GET_MODE_SIZE (mode) != 16)
 	return 0;
 
-      if (!const0_operand (op, mode)
-	  && !s390_contiguous_bitmask_vector_p (op, NULL, NULL)
-	  && !s390_bytemask_vector_p (op, NULL))
+      if (!satisfies_constraint_j00 (op)
+	  && !satisfies_constraint_jm1 (op)
+	  && !satisfies_constraint_jKK (op)
+	  && !satisfies_constraint_jxx (op)
+	  && !satisfies_constraint_jyy (op))
 	return 0;
     }
 
@@ -3840,14 +3859,12 @@ legitimate_reload_fp_constant_p (rtx op)
 static bool
 legitimate_reload_vector_constant_p (rtx op)
 {
-  /* FIXME: Support constant vectors with all the same 16 bit unsigned
-     operands.  These can be loaded with vrepi.  */
-
   if (TARGET_VX && GET_MODE_SIZE (GET_MODE (op)) == 16
-      && (const0_operand (op, GET_MODE (op))
-	  || constm1_operand (op, GET_MODE (op))
-	  || s390_contiguous_bitmask_vector_p (op, NULL, NULL)
-	  || s390_bytemask_vector_p (op, NULL)))
+      && (satisfies_constraint_j00 (op)
+	  || satisfies_constraint_jm1 (op)
+	  || satisfies_constraint_jKK (op)
+	  || satisfies_constraint_jxx (op)
+	  || satisfies_constraint_jyy (op)))
     return true;
 
   return false;
@@ -7118,6 +7135,11 @@ print_operand (FILE *file, rtx x, int code)
     case CONST_VECTOR:
       switch (code)
 	{
+	case 'h':
+	  gcc_assert (s390_const_vec_duplicate_p (x));
+	  fprintf (file, HOST_WIDE_INT_PRINT_DEC,
+		   ((INTVAL (XVECEXP (x, 0, 0)) & 0xffff) ^ 0x8000) - 0x8000);
+	  break;
 	case 'e':
 	case 's':
 	  {
