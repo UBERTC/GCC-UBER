@@ -29678,6 +29678,8 @@ arm_valid_target_attribute_p (tree fndecl, tree ARG_UNUSED (name),
 
   DECL_FUNCTION_SPECIFIC_OPTIMIZATION (fndecl) = new_optimize;
 
+  finalize_options_struct (&func_options);
+
   return ret;
 }
 
