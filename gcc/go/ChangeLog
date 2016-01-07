@@ -1,3 +1,34 @@
+2016-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+	* gccgo.texi: Bump @copyrights-go year.
+
+2015-12-21  Ian Lance Taylor  <iant@google.com>
+
+	* go-gcc.cc (class Bvariable): Remove Gcc_tree parent class.  Add
+	t_ and orig_type_ fields.  Add new two parameter constructor.  Add
+	get_tree and get_decl methods.
+	(Gcc_backend::var_expression): Pass location to var get_tree.
+	(Gcc_backend::global_variable): Don't add VIEW_CONVERT_EXPR.  Use
+	two parameter constructor for Bvariable.
+	(Gcc_backend::global_variable_set_init): Don't remove
+	VIEW_CONVERT_EXPR.  Use var get_decl, not get_tree.
+	(Gcc_backend::write_global_definitions): Likewise.
+	(Gcc_backend::init_statement): Call var get_decl, not get_tree.
+	(Gcc_backend::block): Likewise.
+	(Gcc_backend::implicit_variable_set_init): Likewise.
+	(Gcc_backend::immutable_struct_set_init): Likewise.
+	(Gcc_backend::function_set_parameters): Likewise.
+
+2015-12-21  Ian Lance Taylor  <iant@google.com>
+
+	* go-gcc.cc (Gcc_backend::global_variable): If type is zero-sized,
+	add a VIEW_CONVERT_EXPR to the tree.
+	(Gcc_backend::global_variable_set_init): Remove any
+	VIEW_CONVERT_EXPR.
+	(Gcc_backend::write_global_definitions): Likewise.
+
 2015-11-30  Ian Lance Taylor  <iant@google.com>
 
 	PR go/68477
@@ -1135,7 +1166,7 @@
 
 	Go frontend added to gcc repository.
 
-Copyright (C) 2010-2015 Free Software Foundation, Inc.
+Copyright (C) 2010-2016 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright

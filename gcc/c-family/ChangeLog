@@ -1,3 +1,24 @@
+2016-01-05  David Malcolm  <dmalcolm@redhat.com>
+
+	PR c/69122
+	* c-indentation.c (get_visual_column): Remove default argument.
+	(should_warn_for_misleading_indentation): For the multiline case,
+	update call to get_visual_column for next_stmt_exploc so that it
+	captures the location of the first non-whitespace character in the
+	relevant line.  Don't issue warnings if there is non-whitespace
+	before the next statement.
+
+2016-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2015-12-21  David Malcolm  <dmalcolm@redhat.com>
+
+	* c-common.c (binary_op_error): Convert first param from
+	location_t to rich_location * and use it when emitting an error.
+	* c-common.h (binary_op_error): Convert first param from
+	location_t to rich_location *.
+
 2015-12-16  David Malcolm  <dmalcolm@redhat.com>
 
 	* c-common.h (conflict_marker_get_final_tok_kind): New prototype.
@@ -5969,7 +5990,7 @@
 	* c-common.c: Include gt-c-family-c-common.h.
 	* c-pragma.c: Include gt-c-family-c-pragma.h.
 
-Copyright (C) 2010-2015 Free Software Foundation, Inc.
+Copyright (C) 2010-2016 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright

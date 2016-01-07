@@ -1,5 +1,5 @@
 // go-gcc.cc -- Go frontend to gcc IR.
-// Copyright (C) 2011-2015 Free Software Foundation, Inc.
+// Copyright (C) 2011-2016 Free Software Foundation, Inc.
 // Contributed by Ian Lance Taylor, Google.
 
 // This file is part of GCC.
@@ -109,14 +109,6 @@ class Bblock : public Gcc_tree
   { }
 };
 
-class Bvariable : public Gcc_tree
-{
- public:
-  Bvariable(tree t)
-    : Gcc_tree(t)
-  { }
-};
-
 class Blabel : public Gcc_tree
 {
  public:
@@ -124,6 +116,57 @@ class Blabel : public Gcc_tree
     : Gcc_tree(t)
   { }
 };
+
+// Bvariable is a bit more complicated, because of zero-sized types.
+// The GNU linker does not permit dynamic variables with zero size.
+// When we see such a variable, we generate a version of the type with
+// non-zero size.  However, when referring to the global variable, we
+// want an expression of zero size; otherwise, if, say, the global
+// variable is passed to a function, we will be passing a
+// non-zero-sized value to a zero-sized value, which can lead to a
+// miscompilation.
+
+class Bvariable
+{
+ public:
+  Bvariable(tree t)
+    : t_(t), orig_type_(NULL)
+  { }
+
+  Bvariable(tree t, tree orig_type)
+    : t_(t), orig_type_(orig_type)
+  { }
+
+  // Get the tree for use as an expression.
+  tree
+  get_tree(Location) const;
+
+  // Get the actual decl;
+  tree
+  get_decl() const
+  { return this->t_; }
+
+ private:
+  tree t_;
+  tree orig_type_;
+};
+
+// Get the tree of a variable for use as an expression.  If this is a
+// zero-sized global, create an expression that refers to the decl but
+// has zero size.
+tree
+Bvariable::get_tree(Location location) const
+{
+  if (this->orig_type_ == NULL
+      || this->t_ == error_mark_node
+      || TREE_TYPE(this->t_) == this->orig_type_)
+    return this->t_;
+  // Return *(orig_type*)&decl.  */
+  tree t = build_fold_addr_expr_loc(location.gcc_location(), this->t_);
+  t = fold_build1_loc(location.gcc_location(), NOP_EXPR,
+		      build_pointer_type(this->orig_type_), t);
+  return build_fold_indirect_ref_loc(location.gcc_location(), t);
+}
 
 // This file implements the interface between the Go frontend proper
 // and the gcc IR.  This implements specific instantiations of
@@ -1158,9 +1201,9 @@ Gcc_backend::zero_expression(Btype* btype)
 // An expression that references a variable.
 
 Bexpression*
-Gcc_backend::var_expression(Bvariable* var, Location)
+Gcc_backend::var_expression(Bvariable* var, Location location)
 {
-  tree ret = var->get_tree();
+  tree ret = var->get_tree(location);
   if (ret == error_mark_node)
     return this->error_expression();
   return this->make_expression(ret);
@@ -1894,7 +1937,7 @@ Gcc_backend::expression_statement(Bexpression* expr)
 Bstatement*
 Gcc_backend::init_statement(Bvariable* var, Bexpression* init)
 {
-  tree var_tree = var->get_tree();
+  tree var_tree = var->get_decl();
   tree init_tree = init->get_tree();
   if (var_tree == error_mark_node || init_tree == error_mark_node)
     return this->error_statement();
@@ -2264,7 +2307,7 @@ Gcc_backend::block(Bfunction* function, Bblock* enclosing,
        pv != vars.end();
        ++pv)
     {
-      *pp = (*pv)->get_tree();
+      *pp = (*pv)->get_decl();
       if (*pp != error_mark_node)
 	pp = &DECL_CHAIN(*pp);
     }
@@ -2390,6 +2433,7 @@ Gcc_backend::global_variable(const std::string& package_name,
     return this->error_variable();
 
   // The GNU linker does not like dynamic variables with zero size.
+  tree orig_type_tree = type_tree;
   if ((is_external || !is_hidden) && int_size_in_bytes(type_tree) == 0)
     type_tree = this->non_zero_size_type(type_tree);
 
@@ -2419,7 +2463,7 @@ Gcc_backend::global_variable(const std::string& package_name,
 
   go_preserve_from_gc(decl);
 
-  return new Bvariable(decl);
+  return new Bvariable(decl, orig_type_tree);
 }
 
 // Set the initial value of a global variable.
@@ -2431,7 +2475,7 @@ Gcc_backend::global_variable_set_init(Bvariable* var, Bexpression* expr)
   if (expr_tree == error_mark_node)
     return;
   gcc_assert(TREE_CONSTANT(expr_tree));
-  tree var_decl = var->get_tree();
+  tree var_decl = var->get_decl();
   if (var_decl == error_mark_node)
     return;
   DECL_INITIAL(var_decl) = expr_tree;
@@ -2659,7 +2703,7 @@ Gcc_backend::implicit_variable_set_init(Bvariable* var, const std::string&,
 					Btype*, bool, bool, bool is_common,
 					Bexpression* init)
 {
-  tree decl = var->get_tree();
+  tree decl = var->get_decl();
   tree init_tree;
   if (init == NULL)
     init_tree = NULL_TREE;
@@ -2753,7 +2797,7 @@ Gcc_backend::immutable_struct_set_init(Bvariable* var, const std::string&,
 				       bool, bool is_common, Btype*, Location,
 				       Bexpression* initializer)
 {
-  tree decl = var->get_tree();
+  tree decl = var->get_decl();
   tree init_tree = initializer->get_tree();
   if (decl == error_mark_node || init_tree == error_mark_node)
     return;
@@ -2972,7 +3016,7 @@ Gcc_backend::function_set_parameters(Bfunction* function,
        pv != param_vars.end();
        ++pv)
     {
-      *pp = (*pv)->get_tree();
+      *pp = (*pv)->get_decl();
       gcc_assert(*pp != error_mark_node);
       pp = &DECL_CHAIN(*pp);
     }
@@ -3028,9 +3072,10 @@ Gcc_backend::write_global_definitions(
        p != variable_decls.end();
        ++p)
     {
-      if ((*p)->get_tree() != error_mark_node)
+      tree v = (*p)->get_decl();
+      if (v != error_mark_node)
         {
-          defs[i] = (*p)->get_tree();
+          defs[i] = v;
           go_preserve_from_gc(defs[i]);
           ++i;
         }

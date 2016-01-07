@@ -1,6 +1,6 @@
 // Uses-allocator Construction -*- C++ -*-
 
-// Copyright (C) 2010-2015 Free Software Foundation, Inc.
+// Copyright (C) 2010-2016 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -99,7 +99,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     __use_alloc(const _Alloc& __a)
     {
       __uses_alloc_t<_Tp, _Alloc, _Args...> __ret;
-      __ret._M_a = &__a;
+      __ret._M_a = std::__addressof(__a);
       return __ret;
     }
 

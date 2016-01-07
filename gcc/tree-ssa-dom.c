@@ -1,5 +1,5 @@
 /* SSA Dominator optimizations for trees
-   Copyright (C) 2001-2015 Free Software Foundation, Inc.
+   Copyright (C) 2001-2016 Free Software Foundation, Inc.
    Contributed by Diego Novillo <dnovillo@redhat.com>
 
 This file is part of GCC.
@@ -44,6 +44,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-ssa-dom.h"
 #include "gimplify.h"
 #include "tree-cfgcleanup.h"
+#include "dbgcnt.h"
 
 /* This file implements optimizations on the dominator tree.  */
 
@@ -1369,6 +1370,9 @@ dom_opt_dom_walker::before_dom_children (basic_block bb)
   /* Now prepare to process dominated blocks.  */
   record_edge_info (bb);
   cprop_into_successor_phis (bb, m_const_and_copies);
+  if (taken_edge && !dbg_cnt (dom_unreachable_edges))
+    return NULL;
+
   return taken_edge;
 }
 

@@ -1,5 +1,5 @@
 /* Pretty formatting of GENERIC trees in C syntax.
-   Copyright (C) 2001-2015 Free Software Foundation, Inc.
+   Copyright (C) 2001-2016 Free Software Foundation, Inc.
    Adapted from c-pretty-print.c by Diego Novillo <dnovillo@redhat.com>
 
 This file is part of GCC.
@@ -326,9 +326,6 @@ dump_omp_clause (pretty_printer *pp, tree clause, int spc, int flags)
       goto print_remap;
     case OMP_CLAUSE_DEVICE_RESIDENT:
       name = "device_resident";
-      goto print_remap;
-    case OMP_CLAUSE_USE_DEVICE:
-      name = "use_device";
       goto print_remap;
     case OMP_CLAUSE_TO_DECLARE:
       name = "to";

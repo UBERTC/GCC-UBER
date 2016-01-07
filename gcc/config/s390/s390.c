@@ -1,5 +1,5 @@
 /* Subroutines used for code generation on IBM S/390 and zSeries
-   Copyright (C) 1999-2015 Free Software Foundation, Inc.
+   Copyright (C) 1999-2016 Free Software Foundation, Inc.
    Contributed by Hartmut Penner (hpenner@de.ibm.com) and
                   Ulrich Weigand (uweigand@de.ibm.com) and
                   Andreas Krebbel (Andreas.Krebbel@de.ibm.com).
@@ -9593,7 +9593,7 @@ s390_init_frame_layout (void)
 	    for (br = 5; br >= 2 && df_regs_ever_live_p (br); br--)
 	      ;
 	  cfun->machine->base_reg =
-	    gen_rtx_REG (Pmode, (br > 0) ? br : BASE_REGNUM);
+	    gen_rtx_REG (Pmode, (br >= 2) ? br : BASE_REGNUM);
 	}
 
       s390_register_info ();

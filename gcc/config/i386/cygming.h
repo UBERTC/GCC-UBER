@@ -1,6 +1,6 @@
 /* Operating system specific defines to be used when targeting GCC for
    hosting on Windows32, using a Unix style C library and tools.
-   Copyright (C) 1995-2015 Free Software Foundation, Inc.
+   Copyright (C) 1995-2016 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -432,6 +432,11 @@ do {						\
       fputc ('\n', (FILE));           \
     }                                 \
   while (0)
+
+/* Use the weak support for ONE_ONLY decls.  */
+#undef  MAKE_DECL_ONE_ONLY
+#define MAKE_DECL_ONE_ONLY(DECL) (DECL_WEAK (DECL) = 1)
+
 #endif /* HAVE_GAS_WEAK */
 
 /* FIXME: SUPPORTS_WEAK && TARGET_HAVE_NAMED_SECTIONS is true,

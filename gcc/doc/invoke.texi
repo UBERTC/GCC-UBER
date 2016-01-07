@@ -1,4 +1,4 @@
-@c Copyright (C) 1988-2015 Free Software Foundation, Inc.
+@c Copyright (C) 1988-2016 Free Software Foundation, Inc.
 @c This is part of the GCC manual.
 @c For copying conditions, see the file gcc.texi.
 
@@ -8,7 +8,7 @@
 @c man end
 
 @c man begin COPYRIGHT
-Copyright @copyright{} 1988-2015 Free Software Foundation, Inc.
+Copyright @copyright{} 1988-2016 Free Software Foundation, Inc.
 
 Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version 1.3 or
@@ -260,7 +260,7 @@ Objective-C and Objective-C++ Dialects}.
 -Wignored-qualifiers  -Wincompatible-pointer-types @gol
 -Wimplicit  -Wimplicit-function-declaration  -Wimplicit-int @gol
 -Winit-self  -Winline  -Wno-int-conversion @gol
--Wno-int-to-pointer-cast -Wno-invalid-offsetof @gol
+-Wno-int-to-pointer-cast -Winvalid-memory-model -Wno-invalid-offsetof @gol
 -Winvalid-pch -Wlarger-than=@var{len} @gol
 -Wlogical-op -Wlogical-not-parentheses -Wlong-long @gol
 -Wmain -Wmaybe-uninitialized -Wmemset-transposed-args @gol
@@ -1103,7 +1103,8 @@ See RS/6000 and PowerPC Options.
 -mpclmul -mfsgsbase -mrdrnd -mf16c -mfma @gol
 -mprefetchwt1 -mclflushopt -mxsavec -mxsaves @gol
 -msse4a -m3dnow -mpopcnt -mabm -mbmi -mtbm -mfma4 -mxop -mlzcnt @gol
--mbmi2 -mfxsr -mxsave -mxsaveopt -mrtm -mlwp -mmpx -mmwaitx -mclzero -mthreads @gol
+-mbmi2 -mfxsr -mxsave -mxsaveopt -mrtm -mlwp -mmpx -mmwaitx -mclzero
+-mpku -mthreads @gol
 -mms-bitfields -mno-align-stringops  -minline-all-stringops @gol
 -minline-stringops-dynamically -mstringop-strategy=@var{alg} @gol
 -mmemcpy-strategy=@var{strategy} -mmemset-strategy=@var{strategy} @gol
@@ -4303,6 +4304,26 @@ Note that there may be no warning about a variable that is used only
 to compute a value that itself is never used, because such
 computations may be deleted by data flow analysis before the warnings
 are printed.
+
+@item -Winvalid-memory-model
+@opindex Winvalid-memory-model
+@opindex Wno-invalid-memory-model
+Warn for invocations of @ref{__atomic Builtins}, @ref{__sync Builtins},
+and the C11 atomic generic functions with a memory consistency argument
+that is either invalid for the operation or outside the range of values
+of the @code{memory_order} enumeration.  For example, since the
+@code{__atomic_store} and @code{__atomic_store_n} built-ins are only
+defined for the relaxed, release, and sequentially consistent memory
+orders the following code is diagnosed:
+
+@smallexample
+void store (int *i)
+@{
+  __atomic_store_n (i, 0, memory_order_consume);
+@}
+@end smallexample
+
+@option{-Winvalid-memory-model} is enabled by default.
 
 @item -Wmaybe-uninitialized
 @opindex Wmaybe-uninitialized
@@ -10283,7 +10304,7 @@ references to local frame addresses.
 @item -fstack-protector-explicit
 @opindex fstack-protector-explicit
 Like @option{-fstack-protector} but only protects those functions which
-have the @code{stack_protect} attribute
+have the @code{stack_protect} attribute.
 
 @item -fstdarg-opt
 @opindex fstdarg-opt
@@ -19693,7 +19714,8 @@ hardware instructions.
 
 The VSX instruction set (@option{-mvsx}, @option{-mcpu=power7}, or
 @option{-mcpu=power8}) must be enabled to use the @option{-mfloat128}
-option.
+option.  The @code{-mfloat128} option only works on PowerPC 64-bit
+Linux systems.
 
 @item -mfloat128-hardware
 @itemx -mno-float128-hardware
@@ -20376,7 +20398,7 @@ Newton-Raphson steps to increase precision instead of doing a divide or
 square root and divide for floating-point arguments.  You should use
 the @option{-ffast-math} option when using @option{-mrecip} (or at
 least @option{-funsafe-math-optimizations},
-@option{-finite-math-only}, @option{-freciprocal-math} and
+@option{-ffinite-math-only}, @option{-freciprocal-math} and
 @option{-fno-trapping-math}).  Note that while the throughput of the
 sequence is generally higher than the throughput of the non-reciprocal
 instruction, the precision of the sequence can be decreased by up to 2
@@ -22629,7 +22651,7 @@ AVX512CD instruction set support.
 
 @item skylake-avx512
 Intel Skylake Server CPU with 64-bit extensions, MOVBE, MMX, SSE, SSE2, SSE3,
-SSSE3, SSE4.1, SSE4.2, POPCNT, AVX, AVX2, AES, PCLMUL, FSGSBASE, RDRND, FMA,
+SSSE3, SSE4.1, SSE4.2, POPCNT, PKU, AVX, AVX2, AES, PCLMUL, FSGSBASE, RDRND, FMA,
 BMI, BMI2, F16C, RDSEED, ADCX, PREFETCHW, CLFLUSHOPT, XSAVEC, XSAVES, AVX512F,
 AVX512VL, AVX512BW, AVX512DQ and AVX512CD instruction set support.
 
@@ -23251,11 +23273,13 @@ preferred alignment to @option{-mpreferred-stack-boundary=2}.
 @need 200
 @itemx -mclzero
 @opindex mclzero
+@itemx -mpku
+@opindex mpku
 These switches enable the use of instructions in the MMX, SSE,
 SSE2, SSE3, SSSE3, SSE4.1, AVX, AVX2, AVX512F, AVX512PF, AVX512ER, AVX512CD,
 SHA, AES, PCLMUL, FSGSBASE, RDRND, F16C, FMA, SSE4A, FMA4, XOP, LWP, ABM,
 AVX512VL, AVX512BW, AVX512DQ, AVX512IFMA AVX512VBMI, BMI, BMI2, FXSR,
-XSAVE, XSAVEOPT, LZCNT, RTM, MPX, MWAITX or 3DNow!@:
+XSAVE, XSAVEOPT, LZCNT, RTM, MPX, MWAITX, PKU or 3DNow!@:
 extended instruction sets.  Each has a corresponding @option{-mno-} option
 to disable use of these instructions.
 
@@ -23366,7 +23390,7 @@ to increase precision instead of @code{DIVSS} and @code{SQRTSS}
 (and their vectorized
 variants) for single-precision floating-point arguments.  These instructions
 are generated only when @option{-funsafe-math-optimizations} is enabled
-together with @option{-finite-math-only} and @option{-fno-trapping-math}.
+together with @option{-ffinite-math-only} and @option{-fno-trapping-math}.
 Note that while the throughput of the sequence is higher than the throughput
 of the non-reciprocal instruction, the precision of the sequence can be
 decreased by up to 2 ulp (i.e. the inverse of 1.0 equals 0.99999994).
@@ -24418,21 +24442,20 @@ for @option{-fpie} and 2 for @option{-fPIE}.
 
 @item -fno-plt
 @opindex fno-plt
-Do not use PLT for external function calls in position-independent code.
-Instead, load callee address at call site from GOT and branch to it.
+Do not use the PLT for external function calls in position-independent code.
+Instead, load the callee address at call sites from the GOT and branch to it.
 This leads to more efficient code by eliminating PLT stubs and exposing
-GOT load to optimizations.  On architectures such as 32-bit x86 where
-PLT stubs expect GOT pointer in a specific register, this gives more
-register allocation freedom to the compiler.  Lazy binding requires PLT:
+GOT loads to optimizations.  On architectures such as 32-bit x86 where
+PLT stubs expect the GOT pointer in a specific register, this gives more
+register allocation freedom to the compiler.
+Lazy binding requires use of the PLT; 
 with @option{-fno-plt} all external symbols are resolved at load time.
 
-Alternatively, function attribute @code{noplt} can be used to avoid PLT
-for calls to specific external functions by marking those functions with
-this attribute.
+Alternatively, the function attribute @code{noplt} can be used to avoid calls
+through the PLT for specific external functions.
 
-Additionally, a few targets also convert calls to those functions that are
-marked to not use the PLT to use the GOT instead for non-position independent
-code.
+In position-dependent code, a few targets also convert calls to
+functions that are marked to not use the PLT to use the GOT instead.
 
 @item -fno-jump-tables
 @opindex fno-jump-tables
@@ -24631,6 +24654,9 @@ and grows downwards, you can use the flags
 @option{-fstack-limit-symbol=__stack_limit} and
 @option{-Wl,--defsym,__stack_limit=0x7ffe0000} to enforce a stack limit
 of 128KB@.  Note that this may only work with the GNU linker.
+
+You can locally override stack limit checking by using the
+@code{no_stack_limit} function attribute (@pxref{Function Attributes}).
 
 @item -fsplit-stack
 @opindex fsplit-stack

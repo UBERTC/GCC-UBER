@@ -1,3 +1,47 @@
+2016-01-06  David Malcolm  <dmalcolm@redhat.com>
+
+	* c-parser.c (c_parser_unary_expression): For dereferences, build
+	a combined location before calling build_indirect_ref, so that
+	error reports cover the full range, manually updating the c_expr
+	src_range.
+
+2016-01-06  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/69099
+	* c-convert.c (convert) [INTEGER_TYPE]: Drop ARG.  Don't pass ARG to
+	ubsan_instrument_float_cast.  Fold EXPR.  Use NULL_TREE instead of
+	NULL.
+
+2016-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2016-01-04  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68908
+	* c-typeck.c (build_atomic_assign): Improve commentary.  Add
+	optimization to use __atomic_fetch_* built-in if possible.
+
+2015-12-23  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* c-parser.c (c_parser_oacc_clause_use_device): Merge function
+	into...
+	(c_parser_omp_clause_use_device_ptr): ... this function.  Adjust
+	all users.
+
+2015-12-22  Marek Polacek  <polacek@redhat.com>
+
+	PR c/69002
+	* c-typeck.c (build_component_ref): Warn when acessing elements of
+	atomic structures or unions.
+
+2015-12-21  David Malcolm  <dmalcolm@redhat.com>
+
+	* c-typeck.c: Include "gcc-rich-location.h".
+	(build_binary_op): In the two places that call binary_op_error,
+	create a gcc_rich_location and populate it with the location of
+	the binary op and its two operands.
+
 2015-12-16  David Malcolm  <dmalcolm@redhat.com>
 
 	* c-parser.c (c_parser_statement_after_labels): When calling
@@ -3134,7 +3178,7 @@
 	* c-decl.c: Likewise.  Include gt-c-c-decl.h, not gt-c-decl.h.
 	* c-parser.c: Likewise.  Include gt-c-c-parser.h, not gt-c-parser.h.
 
-Copyright (C) 2012-2015 Free Software Foundation, Inc.
+Copyright (C) 2012-2016 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright

@@ -1,5 +1,5 @@
 /* OpenMP directive translation -- generate GCC trees from gfc_code.
-   Copyright (C) 2005-2015 Free Software Foundation, Inc.
+   Copyright (C) 2005-2016 Free Software Foundation, Inc.
    Contributed by Jakub Jelinek <jakub@redhat.com>
 
 This file is part of GCC.
@@ -1771,7 +1771,7 @@ gfc_trans_omp_clauses (stmtblock_t *block, gfc_omp_clauses *clauses,
 	  clause_code = OMP_CLAUSE_UNIFORM;
 	  goto add_clause;
 	case OMP_LIST_USE_DEVICE:
-	  clause_code = OMP_CLAUSE_USE_DEVICE;
+	  clause_code = OMP_CLAUSE_USE_DEVICE_PTR;
 	  goto add_clause;
 	case OMP_LIST_DEVICE_RESIDENT:
 	  clause_code = OMP_CLAUSE_DEVICE_RESIDENT;

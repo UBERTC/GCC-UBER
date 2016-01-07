@@ -3,7 +3,7 @@
 ;; expander, and the actual vector instructions will be in altivec.md and
 ;; vsx.md
 
-;; Copyright (C) 2009-2015 Free Software Foundation, Inc.
+;; Copyright (C) 2009-2016 Free Software Foundation, Inc.
 ;; Contributed by Michael Meissner <meissner@linux.vnet.ibm.com>
 
 ;; This file is part of GCC.
@@ -113,6 +113,7 @@
     }
   if (!BYTES_BIG_ENDIAN
       && VECTOR_MEM_VSX_P (<MODE>mode)
+      && !TARGET_P9_VECTOR
       && !gpr_or_gpr_p (operands[0], operands[1])
       && (memory_operand (operands[0], <MODE>mode)
           ^ memory_operand (operands[1], <MODE>mode)))

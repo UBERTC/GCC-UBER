@@ -1,5 +1,5 @@
 ;; Code and mode itertator and attribute definitions for the ARM backend
-;; Copyright (C) 2010-2015 Free Software Foundation, Inc.
+;; Copyright (C) 2010-2016 Free Software Foundation, Inc.
 ;; Contributed by ARM Ltd.
 ;;
 ;; This file is part of GCC.
@@ -307,6 +307,8 @@
 			      UNSPEC_VMIN UNSPEC_VMIN_U])
 
 (define_int_iterator VMAXMINF [UNSPEC_VMAX UNSPEC_VMIN])
+
+(define_int_iterator VMAXMINFNM [UNSPEC_VMAXNM UNSPEC_VMINNM])
 
 (define_int_iterator VPADDL [UNSPEC_VPADDL_S UNSPEC_VPADDL_U])
 
@@ -743,6 +745,13 @@
   (UNSPEC_VMIN "min") (UNSPEC_VMIN_U "min")
   (UNSPEC_VPMAX "max") (UNSPEC_VPMAX_U "max")
   (UNSPEC_VPMIN "min") (UNSPEC_VPMIN_U "min")
+])
+
+(define_int_attr fmaxmin [
+  (UNSPEC_VMAXNM "fmax") (UNSPEC_VMINNM "fmin")])
+
+(define_int_attr fmaxmin_op [
+  (UNSPEC_VMAXNM "vmaxnm") (UNSPEC_VMINNM "vminnm")
 ])
 
 (define_int_attr shift_op [

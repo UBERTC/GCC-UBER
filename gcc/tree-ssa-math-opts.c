@@ -1,5 +1,5 @@
 /* Global, SSA-based optimizations using mathematical identities.
-   Copyright (C) 2005-2015 Free Software Foundation, Inc.
+   Copyright (C) 2005-2016 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -1533,6 +1533,14 @@ gimple_expand_builtin_pow (gimple_stmt_iterator *gsi, location_t loc,
   /* If the exponent isn't a constant, there's nothing of interest
      to be done.  */
   if (TREE_CODE (arg1) != REAL_CST)
+    return NULL_TREE;
+
+  /* Don't perform the operation if flag_signaling_nans is on
+     and the operand is a signaling NaN.  */
+  if (HONOR_SNANS (TYPE_MODE (TREE_TYPE (arg1)))
+      && ((TREE_CODE (arg0) == REAL_CST
+	   && REAL_VALUE_ISSIGNALING_NAN (TREE_REAL_CST (arg0)))
+	  || REAL_VALUE_ISSIGNALING_NAN (TREE_REAL_CST (arg1))))
     return NULL_TREE;
 
   /* If the exponent is equivalent to an integer, expand to an optimal

@@ -1,5 +1,5 @@
 /* Output variables, constants and external declarations, for GNU compiler.
-   Copyright (C) 1987-2015 Free Software Foundation, Inc.
+   Copyright (C) 1987-2016 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -1420,6 +1420,9 @@ make_decl_rtl (tree decl)
 	 specifications.  */
       SET_DECL_ASSEMBLER_NAME (decl, NULL_TREE);
       DECL_HARD_REGISTER (decl) = 0;
+      /* Also avoid SSA inconsistencies by pretending this is an external
+	 decl now.  */
+      DECL_EXTERNAL (decl) = 1;
       return;
     }
   /* Now handle ordinary static variables and functions (in memory).

@@ -1,4 +1,4 @@
-#   Copyright (C) 1999-2015 Free Software Foundation, Inc.
+#   Copyright (C) 1999-2016 Free Software Foundation, Inc.
 
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -1442,8 +1442,7 @@ proc check_effective_target_cilkplus { } {
 	return 0;
     }
 
-    # No pthreads on NVPTX
-    if { [istarget nvptx-*-*] } {
+    if { ! [check_effective_target_pthread] } {
 	return 0;
     }
 

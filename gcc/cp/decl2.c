@@ -1,5 +1,5 @@
 /* Process declarations and variables for C++ compiler.
-   Copyright (C) 1988-2015 Free Software Foundation, Inc.
+   Copyright (C) 1988-2016 Free Software Foundation, Inc.
    Hacked by Michael Tiemann (tiemann@cygnus.com)
 
 This file is part of GCC.
@@ -4222,7 +4222,7 @@ decl_maybe_constant_var_p (tree decl)
     return false;
   if (DECL_DECLARED_CONSTEXPR_P (decl))
     return true;
-  if (DECL_VALUE_EXPR (decl))
+  if (DECL_HAS_VALUE_EXPR_P (decl))
     /* A proxy isn't constant.  */
     return false;
   return (CP_TYPE_CONST_NON_VOLATILE_P (type)

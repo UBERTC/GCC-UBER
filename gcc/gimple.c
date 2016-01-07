@@ -1,6 +1,6 @@
 /* Gimple IR support functions.
 
-   Copyright (C) 2007-2015 Free Software Foundation, Inc.
+   Copyright (C) 2007-2016 Free Software Foundation, Inc.
    Contributed by Aldy Hernandez <aldyh@redhat.com>
 
 This file is part of GCC.
@@ -1131,12 +1131,14 @@ gimple_build_omp_atomic_store (tree val)
 /* Build a GIMPLE_TRANSACTION statement.  */
 
 gtransaction *
-gimple_build_transaction (gimple_seq body, tree label)
+gimple_build_transaction (gimple_seq body)
 {
   gtransaction *p
     = as_a <gtransaction *> (gimple_alloc (GIMPLE_TRANSACTION, 0));
   gimple_transaction_set_body (p, body);
-  gimple_transaction_set_label (p, label);
+  gimple_transaction_set_label_norm (p, 0);
+  gimple_transaction_set_label_uninst (p, 0);
+  gimple_transaction_set_label_over (p, 0);
   return p;
 }
 

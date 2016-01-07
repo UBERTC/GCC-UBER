@@ -1,5 +1,5 @@
 /* Prototypes for exported functions defined in nvptx.c.
-   Copyright (C) 2014-2015 Free Software Foundation, Inc.
+   Copyright (C) 2014-2016 Free Software Foundation, Inc.
    Contributed by Bernd Schmidt <bernds@codesourcery.com>
 
    This file is part of GCC.
@@ -41,6 +41,5 @@ extern const char *nvptx_ptx_type_from_mode (machine_mode, bool);
 extern const char *nvptx_output_mov_insn (rtx, rtx);
 extern const char *nvptx_output_call_insn (rtx_insn *, rtx, rtx);
 extern const char *nvptx_output_return (void);
-extern rtx nvptx_maybe_convert_symbolic_operand (rtx);
 #endif
 #endif

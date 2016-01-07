@@ -1,4 +1,4 @@
-@c Copyright (C) 1988-2015 Free Software Foundation, Inc.
+@c Copyright (C) 1988-2016 Free Software Foundation, Inc.
 
 @c This is part of the GCC manual.
 @c For copying conditions, see the file gcc.texi.
@@ -954,22 +954,20 @@ typedef _Complex float __attribute__((mode(TC))) _Complex128;
 typedef _Complex float __attribute__((mode(XC))) _Complex80;
 @end smallexample
 
-On PowerPC Linux, Freebsd and Darwin systems, the default for
-@code{long double} is to use the IBM extended floating point format
-that uses a pair of @code{double} values to extend the precision.
-This means that the mode @code{TCmode} was already used by the
-traditional IBM long double format, and you would need to use the mode
-@code{KCmode}:
+On PowerPC 64-bit Linux systems there are currently problems in using
+the complex @code{__float128} type.  When these problems are fixed,
+you would use:
 
 @smallexample
 typedef _Complex float __attribute__((mode(KC))) _Complex128;
 @end smallexample
 
-Not all targets support additional floating-point types.  @code{__float80}
-and @code{__float128} types are supported on x86 and IA-64 targets.
-The @code{__float128} type is supported on hppa HP-UX.
-The @code{__float128} type is supported on PowerPC systems by default
-if the vector scalar instruction set (VSX) is enabled.
+Not all targets support additional floating-point types.
+@code{__float80} and @code{__float128} types are supported on x86 and
+IA-64 targets.  The @code{__float128} type is supported on hppa HP-UX.
+The @code{__float128} type is supported on PowerPC 64-bit Linux
+systems by default if the vector scalar instruction set (VSX) is
+enabled.
 
 On the PowerPC, @code{__ibm128} provides access to the IBM extended
 double format, and it is intended to be used by the library functions
@@ -2273,6 +2271,7 @@ GCC plugins may provide their own attributes.
 * MSP430 Function Attributes::
 * NDS32 Function Attributes::
 * Nios II Function Attributes::
+* Nvidia PTX Function Attributes::
 * PowerPC Function Attributes::
 * RL78 Function Attributes::
 * RX Function Attributes::
@@ -2280,6 +2279,7 @@ GCC plugins may provide their own attributes.
 * SH Function Attributes::
 * SPU Function Attributes::
 * Symbian OS Function Attributes::
+* V850 Function Attributes::
 * Visium Function Attributes::
 * x86 Function Attributes::
 * Xstormy16 Function Attributes::
@@ -2879,6 +2879,12 @@ prologue which decides whether to split the stack.  Functions with the
 @code{no_split_stack} attribute do not have that prologue, and thus
 may run with only a small amount of stack space available.
 
+@item no_stack_limit
+@cindex @code{no_stack_limit} function attribute
+This attribute locally overrides the @option{-fstack-limit-register}
+and @option{-fstack-limit-symbol} command-line options; it has the effect
+of disabling stack limit checking in the function it applies to.
+
 @item noclone
 @cindex @code{noclone} function attribute
 This function attribute prevents a function from being considered for
@@ -2934,6 +2940,36 @@ my_memcpy (void *dest, const void *src, size_t len)
         __attribute__((nonnull));
 @end smallexample
 
+@item noplt
+@cindex @code{noplt} function attribute
+The @code{noplt} attribute is the counterpart to option @option{-fno-plt}.
+Calls to functions marked with this attribute in position-independent code
+do not use the PLT.
+
+@smallexample
+@group
+/* Externally defined function foo.  */
+int foo () __attribute__ ((noplt));
+
+int
+main (/* @r{@dots{}} */)
+@{
+  /* @r{@dots{}} */
+  foo ();
+  /* @r{@dots{}} */
+@}
+@end group
+@end smallexample
+
+The @code{noplt} attribute on function @code{foo}
+tells the compiler to assume that
+the function @code{foo} is externally defined and that the call to
+@code{foo} must avoid the PLT
+in position-independent code.
+
+In position-dependent code, a few targets also convert calls to
+functions that are marked to not use the PLT to use the GOT instead.
+
 @item noreturn
 @cindex @code{noreturn} function attribute
 @cindex functions that never return
@@ -2978,35 +3014,6 @@ function cannot throw an exception.  For example, most functions in
 the standard C library can be guaranteed not to throw an exception
 with the notable exceptions of @code{qsort} and @code{bsearch} that
 take function pointer arguments.
-
-@item noplt
-@cindex @code{noplt} function attribute
-The @code{noplt} attribute is the counterpart to option @option{-fno-plt} and
-does not use PLT for calls to functions marked with this attribute in position
-independent code. 
-
-@smallexample
-@group
-/* Externally defined function foo.  */
-int foo () __attribute__ ((noplt));
-
-int
-main (/* @r{@dots{}} */)
-@{
-  /* @r{@dots{}} */
-  foo ();
-  /* @r{@dots{}} */
-@}
-@end group
-@end smallexample
-
-The @code{noplt} attribute on function foo tells the compiler to assume that
-the function foo is externally defined and the call to foo must avoid the PLT
-in position independent code.
-
-Additionally, a few targets also convert calls to those functions that are
-marked to not use the PLT to use the GOT instead for non-position independent
-code.
 
 @item optimize
 @cindex @code{optimize} function attribute
@@ -3122,44 +3129,35 @@ with a copy that redefines NULL appropriately.
 The warnings for missing or incorrect sentinels are enabled with
 @option{-Wformat}.
 
-@item stack_protect
-@cindex @code{stack_protect} function attribute
-This function attribute make a stack protection of the function if 
-flags @option{fstack-protector} or @option{fstack-protector-strong}
-or @option{fstack-protector-explicit} are set.
-
-@item target_clones (@var{options})
-@cindex @code{target_clones} function attribute
-The @code{target_clones} attribute is used to specify that a function is to
-be cloned into multiple versions compiled with different target options
-than specified on the command line.  The supported options and restrictions
-are the same as for @code{target} attribute.
-
-For instance on an x86, you could compile a function with
-@code{target_clones("sse4.1,avx")}. It will create 2 function clones,
-one compiled with @option{-msse4.1} and another with @option{-mavx}.
-At the function call it will create resolver @code{ifunc}, that will
-dynamically call a clone suitable for current architecture.
-
 @item simd
 @itemx simd("@var{mask}")
-@cindex @code{simd} function attribute.
+@cindex @code{simd} function attribute
 This attribute enables creation of one or more function versions that
 can process multiple arguments using SIMD instructions from a
 single invocation.  Specifying this attribute allows compiler to
 assume that such versions are available at link time (provided
 in the same or another translation unit).  Generated versions are
-target dependent and described in corresponding Vector ABI document.  For
+target-dependent and described in the corresponding Vector ABI document.  For
 x86_64 target this document can be found
 @w{@uref{https://sourceware.org/glibc/wiki/libmvec?action=AttachFile&do=view&target=VectorABI.txt,here}}.
+
+The optional argument @var{mask} may have the value
+@code{notinbranch} or @code{inbranch},
+and instructs the compiler to generate non-masked or masked
+clones correspondingly. By default, all clones are generated.
+
 The attribute should not be used together with Cilk Plus @code{vector}
 attribute on the same function.
-If the attribute is specified and @code{#pragma omp declare simd}
-present on a declaration and @code{-fopenmp} or @code{-fopenmp-simd}
+
+If the attribute is specified and @code{#pragma omp declare simd} is
+present on a declaration and the @option{-fopenmp} or @option{-fopenmp-simd}
 switch is specified, then the attribute is ignored.
-The optional argument @var{mask} may have "notinbranch" or "inbranch"
-value and instructs the compiler to generate non-masked or masked
-clones correspondingly. By default, all clones are generated.
+
+@item stack_protect
+@cindex @code{stack_protect} function attribute
+This attribute adds stack protection code to the function if 
+flags @option{-fstack-protector}, @option{-fstack-protector-strong}
+or @option{-fstack-protector-explicit} are set.
 
 @item target (@var{options})
 @cindex @code{target} function attribute
@@ -3197,6 +3195,19 @@ The options supported are specific to each target; refer to @ref{x86
 Function Attributes}, @ref{PowerPC Function Attributes},
 @ref{ARM Function Attributes},and @ref{Nios II Function Attributes},
 for details.
+
+@item target_clones (@var{options})
+@cindex @code{target_clones} function attribute
+The @code{target_clones} attribute is used to specify that a function
+be cloned into multiple versions compiled with different target options
+than specified on the command line.  The supported options and restrictions
+are the same as for @code{target} attribute.
+
+For instance, on an x86, you could compile a function with
+@code{target_clones("sse4.1,avx")}.  GCC creates two function clones,
+one compiled with @option{-msse4.1} and another with @option{-mavx}.
+It also creates a resolver function (see the @code{ifunc} attribute
+above) that dynamically selects a clone suitable for current architecture.
 
 @item unused
 @cindex @code{unused} function attribute
@@ -3385,55 +3396,6 @@ performing a reloadable link on them.
 At present, a declaration to which @code{weakref} is attached can
 only be @code{static}.
 
-@item lower
-@itemx upper
-@itemx either
-@cindex lower memory region on the MSP430
-@cindex upper memory region on the MSP430
-@cindex either memory region on the MSP430
-On the MSP430 target these attributes can be used to specify whether
-the function or variable should be placed into low memory, high
-memory, or the placement should be left to the linker to decide.  The
-attributes are only significant if compiling for the MSP430X
-architecture.
-
-The attributes work in conjunction with a linker script that has been
-augmented to specify where to place sections with a @code{.lower} and
-a @code{.upper} prefix.  So for example as well as placing the
-@code{.data} section the script would also specify the placement of a
-@code{.lower.data} and a @code{.upper.data} section.  The intention
-being that @code{lower} sections are placed into a small but easier to
-access memory region and the upper sections are placed into a larger, but
-slower to access region.
-
-The @code{either} attribute is special.  It tells the linker to place
-the object into the corresponding @code{lower} section if there is
-room for it.  If there is insufficient room then the object is placed
-into the corresponding @code{upper} section instead.  Note - the
-placement algorithm is not very sophisticated.  It will not attempt to
-find an optimal packing of the @code{lower} sections.  It just makes
-one pass over the objects and does the best that it can.  Using the
-@option{-ffunction-sections} and @option{-fdata-sections} command line
-options can help the packing however, since they produce smaller,
-easier to pack regions.
-
-@item reentrant
-On the MSP430 a function can be given the @code{reentant} attribute.
-This makes the function disable interrupts upon entry and enable
-interrupts upon exit.  Reentrant functions cannot be @code{naked}.
-
-@item critical
-On the MSP430 a function can be given the @code{critical} attribute.
-This makes the function disable interrupts upon entry and restore the
-previous interrupt enabled/disabled state upon exit.  A function
-cannot have both the @code{reentrant} and @code{critical} attributes.
-Critical functions cannot be @code{naked}.
-
-@item wakeup
-On the MSP430 a function can be given the @code{wakeup} attribute.
-Such a function must also have the @code{interrupt} attribute.  When a
-function with the @code{wakeup} attribute exists the processor will be
-woken up from any low-power state in which it may be residing.
 
 @end table
 
@@ -4245,6 +4207,17 @@ the @code{rtbd} instead of @code{rtsd}.
 @smallexample
 void f () __attribute__ ((break_handler));
 @end smallexample
+
+@item interrupt_handler
+@itemx fast_interrupt 
+@cindex @code{interrupt_handler} function attribute, MicroBlaze
+@cindex @code{fast_interrupt} function attribute, MicroBlaze
+These attributes indicate that the specified function is an interrupt
+handler.  Use the @code{fast_interrupt} attribute to indicate handlers
+used in low-latency interrupt mode, and @code{interrupt_handler} for
+interrupts that do not use low-latency handlers.  In both cases, GCC
+emits appropriate prologue code and generates a return from the handler
+using @code{rtid} instead of @code{rtsd}.
 @end table
 
 @node Microsoft Windows Function Attributes
@@ -4522,6 +4495,38 @@ This attribute only applies to interrupt functions.  It is silently
 ignored if applied to a non-interrupt function.  A wakeup interrupt
 function will rouse the processor from any low-power state that it
 might be in when the function exits.
+
+@item lower
+@itemx upper
+@itemx either
+@cindex @code{lower} function attribute, MSP430
+@cindex @code{upper} function attribute, MSP430
+@cindex @code{either} function attribute, MSP430
+On the MSP430 target these attributes can be used to specify whether
+the function or variable should be placed into low memory, high
+memory, or the placement should be left to the linker to decide.  The
+attributes are only significant if compiling for the MSP430X
+architecture.
+
+The attributes work in conjunction with a linker script that has been
+augmented to specify where to place sections with a @code{.lower} and
+a @code{.upper} prefix.  So, for example, as well as placing the
+@code{.data} section, the script also specifies the placement of a
+@code{.lower.data} and a @code{.upper.data} section.  The intention
+is that @code{lower} sections are placed into a small but easier to
+access memory region and the upper sections are placed into a larger, but
+slower to access, region.
+
+The @code{either} attribute is special.  It tells the linker to place
+the object into the corresponding @code{lower} section if there is
+room for it.  If there is insufficient room then the object is placed
+into the corresponding @code{upper} section instead.  Note that the
+placement algorithm is not very sophisticated.  It does not attempt to
+find an optimal packing of the @code{lower} sections.  It just makes
+one pass over the objects and does the best that it can.  Using the
+@option{-ffunction-sections} and @option{-fdata-sections} command-line
+options can help the packing, however, since they produce smaller,
+easier to pack regions.
 @end table
 
 @node NDS32 Function Attributes
@@ -4627,6 +4632,22 @@ command-line option, to select a predefined set of custom instructions
 named @var{name}.
 @xref{Nios II Options}, for more information.
 @end table
+@end table
+
+@node Nvidia PTX Function Attributes
+@subsection Nvidia PTX Function Attributes
+
+These function attributes are supported by the Nvidia PTX back end:
+
+@table @code
+@item kernel
+@cindex @code{kernel} attribute, Nvidia PTX
+This attribute indicates that the corresponding function should be compiled
+as a kernel function, which can be invoked from the host via the CUDA RT 
+library.
+By default functions are only callable only from other PTX functions.
+
+Kernel functions must have @code{void} return type.
 @end table
 
 @node PowerPC Function Attributes
@@ -5096,6 +5117,22 @@ depended upon to work reliably and are not supported.
 @xref{Microsoft Windows Function Attributes}, for discussion of the
 @code{dllexport} and @code{dllimport} attributes.
 
+@node V850 Function Attributes
+@subsection V850 Function Attributes
+
+The V850 back end supports these function attributes:
+
+@table @code
+@item interrupt
+@itemx interrupt_handler
+@cindex @code{interrupt} function attribute, V850
+@cindex @code{interrupt_handler} function attribute, V850
+Use these attributes to indicate
+that the specified function is an interrupt handler.  The compiler generates
+function entry and exit sequences suitable for use in an interrupt handler
+when either attribute is present.
+@end table
+
 @node Visium Function Attributes
 @subsection Visium Function Attributes
 
@@ -5433,7 +5470,9 @@ attributes.
 * Microsoft Windows Variable Attributes::
 * MSP430 Variable Attributes::
 * PowerPC Variable Attributes::
+* RL78 Variable Attributes::
 * SPU Variable Attributes::
+* V850 Variable Attributes::
 * x86 Variable Attributes::
 * Xstormy16 Variable Attributes::
 @end menu
@@ -6033,13 +6072,13 @@ The @code{shared} attribute is only available on Microsoft Windows@.
 
 @table @code
 @item noinit
-@cindex @code{noinit} MSP430 variable attribute
+@cindex @code{noinit} variable attribute, MSP430 
 Any data with the @code{noinit} attribute will not be initialised by
 the C runtime startup code, or the program loader.  Not initialising
 data in this way can reduce program startup times.
 
 @item persistent
-@cindex @code{persistent} MSP430 variable attribute
+@cindex @code{persistent} variable attribute, MSP430 
 Any variable with the @code{persistent} attribute will not be
 initialised by the C runtime startup code.  Instead its value will be
 set once, when the application is loaded, and then never initialised
@@ -6052,12 +6091,12 @@ placed.
 @item lower
 @itemx upper
 @itemx either
-@cindex @code{lower} memory region on the MSP430
-@cindex @code{upper} memory region on the MSP430
-@cindex @code{either} memory region on the MSP430
+@cindex @code{lower} variable attribute, MSP430 
+@cindex @code{upper} variable attribute, MSP430 
+@cindex @code{either} variable attribute, MSP430 
 These attributes are the same as the MSP430 function attributes of the
-same name.  These attributes can be applied to both functions and
-variables.
+same name (@pxref{MSP430 Function Attributes}).  
+These attributes can be applied to both functions and variables.
 @end table
 
 @node PowerPC Variable Attributes
@@ -6075,6 +6114,14 @@ documentation in @ref{x86 Variable Attributes}.
 For documentation of @code{altivec} attribute please see the
 documentation in @ref{PowerPC Type Attributes}.
 
+@node RL78 Variable Attributes
+@subsection RL78 Variable Attributes
+
+@cindex @code{saddr} variable attribute, RL78
+The RL78 back end supports the @code{saddr} variable attribute.  This
+specifies placement of the corresponding variable in the SADDR area,
+which can be accessed more efficiently than the default memory region.
+
 @node SPU Variable Attributes
 @subsection SPU Variable Attributes
 
@@ -6082,6 +6129,29 @@ documentation in @ref{PowerPC Type Attributes}.
 The SPU supports the @code{spu_vector} attribute for variables.  For
 documentation of this attribute please see the documentation in
 @ref{SPU Type Attributes}.
+
+@node V850 Variable Attributes
+@subsection V850 Variable Attributes
+
+These variable attributes are supported by the V850 back end:
+
+@table @code
+
+@item sda
+@cindex @code{sda} variable attribute, V850
+Use this attribute to explicitly place a variable in the small data area,
+which can hold up to 64 kilobytes.
+
+@item tda
+@cindex @code{tda} variable attribute, V850
+Use this attribute to explicitly place a variable in the tiny data area,
+which can hold up to 256 bytes in total.
+
+@item zda
+@cindex @code{zda} variable attribute, V850
+Use this attribute to explicitly place a variable in the first 32 kilobytes
+of memory.
+@end table
 
 @node x86 Variable Attributes
 @subsection x86 Variable Attributes
@@ -18341,6 +18411,13 @@ The following built-in functions are available when @option{-mclzero} is used.
 All of them generate the machine instruction that is part of the name.
 @smallexample
 void __builtin_i32_clzero (void *)
+@end smallexample
+
+The following built-in functions are available when @option{-mpku} is used.
+They generate reads and writes to PKRU.
+@smallexample
+void __builtin_ia32_wrpkru (unsigned int)
+unsigned int __builtin_ia32_rdpkru ()
 @end smallexample
 
 @node x86 transactional memory intrinsics
