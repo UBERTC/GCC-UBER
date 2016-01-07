@@ -2143,7 +2143,7 @@ analyze_scalar_evolution_in_loop (struct loop *wrto_loop, struct loop *use_loop,
   /* We cannot just do
 
      tmp = analyze_scalar_evolution (use_loop, version);
-     ev = resolve_mixers (wrto_loop, tmp, folded_casts);
+     ev = resolve_mixers (wrto_loop, tmp);
 
      as resolve_mixers would query the scalar evolution with respect to
      wrto_loop.  For example, in the situation described in the function
@@ -2152,9 +2152,9 @@ analyze_scalar_evolution_in_loop (struct loop *wrto_loop, struct loop *use_loop,
 
      analyze_scalar_evolution (use_loop, version) = k2
 
-     and resolve_mixers (loop1, k2, folded_casts) finds that the value of
-     k2 in loop 1 is 100, which is a wrong result, since we are interested
-     in the value in loop 3.
+     and resolve_mixers (loop1, k2) finds that the value of k2 in loop 1
+     is 100, which is a wrong result, since we are interested in the
+     value in loop 3.
 
      Instead, we need to proceed from use_loop to wrto_loop loop by loop,
      each time checking that there is no evolution in the inner loop.  */
@@ -2164,7 +2164,10 @@ analyze_scalar_evolution_in_loop (struct loop *wrto_loop, struct loop *use_loop,
   while (1)
     {
       tmp = analyze_scalar_evolution (use_loop, ev);
-      ev = resolve_mixers (use_loop, tmp, folded_casts);
+      ev = resolve_mixers (use_loop, tmp);
+
+      if (folded_casts && tmp != ev)
+	*folded_casts = true;
 
       if (use_loop == wrto_loop)
 	return ev;
@@ -2287,7 +2290,7 @@ loop_closed_phi_def (tree var)
 }
 
 static tree instantiate_scev_r (basic_block, struct loop *, struct loop *,
-				tree, bool *, int);
+				tree, bool, int);
 
 /* Analyze all the parameters of the chrec, between INSTANTIATE_BELOW
    and EVOLUTION_LOOP, that were left under a symbolic form.
@@ -2296,10 +2299,9 @@ static tree instantiate_scev_r (basic_block, struct loop *, struct loop *,
 
    CACHE is the cache of already instantiated values.
 
-   Variable pointed by FOLD_CONVERSIONS is set to TRUE when the
-   conversions that may wrap in signed/pointer type are folded, as long
-   as the value of the chrec is preserved.  If FOLD_CONVERSIONS is NULL
-   then we don't do such fold.
+   FOLD_CONVERSIONS should be set to true when the conversions that
+   may wrap in signed/pointer type are folded, as long as the value of
+   the chrec is preserved.
 
    SIZE_EXPR is used for computing the size of the expression to be
    instantiated, and to stop if it exceeds some limit.  */
@@ -2308,7 +2310,7 @@ static tree
 instantiate_scev_name (basic_block instantiate_below,
 		       struct loop *evolution_loop, struct loop *inner_loop,
 		       tree chrec,
-		       bool *fold_conversions,
+		       bool fold_conversions,
 		       int size_expr)
 {
   tree res;
@@ -2402,10 +2404,9 @@ instantiate_scev_name (basic_block instantiate_below,
 
    CACHE is the cache of already instantiated values.
 
-   Variable pointed by FOLD_CONVERSIONS is set to TRUE when the
-   conversions that may wrap in signed/pointer type are folded, as long
-   as the value of the chrec is preserved.  If FOLD_CONVERSIONS is NULL
-   then we don't do such fold.
+   FOLD_CONVERSIONS should be set to true when the conversions that
+   may wrap in signed/pointer type are folded, as long as the value of
+   the chrec is preserved.
 
    SIZE_EXPR is used for computing the size of the expression to be
    instantiated, and to stop if it exceeds some limit.  */
@@ -2413,7 +2414,7 @@ instantiate_scev_name (basic_block instantiate_below,
 static tree
 instantiate_scev_poly (basic_block instantiate_below,
 		       struct loop *evolution_loop, struct loop *,
-		       tree chrec, bool *fold_conversions, int size_expr)
+		       tree chrec, bool fold_conversions, int size_expr)
 {
   tree op1;
   tree op0 = instantiate_scev_r (instantiate_below, evolution_loop,
@@ -2447,10 +2448,9 @@ instantiate_scev_poly (basic_block instantiate_below,
 
    CACHE is the cache of already instantiated values.
 
-   Variable pointed by FOLD_CONVERSIONS is set to TRUE when the
-   conversions that may wrap in signed/pointer type are folded, as long
-   as the value of the chrec is preserved.  If FOLD_CONVERSIONS is NULL
-   then we don't do such fold.
+   FOLD_CONVERSIONS should be set to true when the conversions that
+   may wrap in signed/pointer type are folded, as long as the value of
+   the chrec is preserved.
 
    SIZE_EXPR is used for computing the size of the expression to be
    instantiated, and to stop if it exceeds some limit.  */
@@ -2460,7 +2460,7 @@ instantiate_scev_binary (basic_block instantiate_below,
 			 struct loop *evolution_loop, struct loop *inner_loop,
 			 tree chrec, enum tree_code code,
 			 tree type, tree c0, tree c1,
-			 bool *fold_conversions, int size_expr)
+			 bool fold_conversions, int size_expr)
 {
   tree op1;
   tree op0 = instantiate_scev_r (instantiate_below, evolution_loop, inner_loop,
@@ -2506,10 +2506,9 @@ instantiate_scev_binary (basic_block instantiate_below,
 
    CACHE is the cache of already instantiated values.
 
-   Variable pointed by FOLD_CONVERSIONS is set to TRUE when the
-   conversions that may wrap in signed/pointer type are folded, as long
-   as the value of the chrec is preserved.  If FOLD_CONVERSIONS is NULL
-   then we don't do such fold.
+   FOLD_CONVERSIONS should be set to true when the conversions that
+   may wrap in signed/pointer type are folded, as long as the value of
+   the chrec is preserved.
 
    SIZE_EXPR is used for computing the size of the expression to be
    instantiated, and to stop if it exceeds some limit.  */
@@ -2517,7 +2516,7 @@ instantiate_scev_binary (basic_block instantiate_below,
 static tree
 instantiate_array_ref (basic_block instantiate_below,
 		       struct loop *evolution_loop, struct loop *inner_loop,
-		       tree chrec, bool *fold_conversions, int size_expr)
+		       tree chrec, bool fold_conversions, int size_expr)
 {
   tree res;
   tree index = TREE_OPERAND (chrec, 1);
@@ -2544,10 +2543,9 @@ instantiate_array_ref (basic_block instantiate_below,
 
    CACHE is the cache of already instantiated values.
 
-   Variable pointed by FOLD_CONVERSIONS is set to TRUE when the
-   conversions that may wrap in signed/pointer type are folded, as long
-   as the value of the chrec is preserved.  If FOLD_CONVERSIONS is NULL
-   then we don't do such fold.
+   FOLD_CONVERSIONS should be set to true when the conversions that
+   may wrap in signed/pointer type are folded, as long as the value of
+   the chrec is preserved.
 
    SIZE_EXPR is used for computing the size of the expression to be
    instantiated, and to stop if it exceeds some limit.  */
@@ -2556,7 +2554,7 @@ static tree
 instantiate_scev_convert (basic_block instantiate_below,
 			  struct loop *evolution_loop, struct loop *inner_loop,
 			  tree chrec, tree type, tree op,
-			  bool *fold_conversions, int size_expr)
+			  bool fold_conversions, int size_expr)
 {
   tree op0 = instantiate_scev_r (instantiate_below, evolution_loop,
 				 inner_loop, op,
@@ -2567,21 +2565,19 @@ instantiate_scev_convert (basic_block instantiate_below,
 
   if (fold_conversions)
     {
-      tree tmp = chrec_convert_aggressive (type, op0, fold_conversions);
+      tree tmp = chrec_convert_aggressive (type, op0);
       if (tmp)
 	return tmp;
-
-      /* If we used chrec_convert_aggressive, we can no longer assume that
-	 signed chrecs do not overflow, as chrec_convert does, so avoid
-	 calling it in that case.  */
-      if (*fold_conversions)
-	{
-	  if (chrec && op0 == op)
-	    return chrec;
-
-	  return fold_convert (type, op0);
-	}
     }
+
+  if (chrec && op0 == op)
+    return chrec;
+
+  /* If we used chrec_convert_aggressive, we can no longer assume that
+     signed chrecs do not overflow, as chrec_convert does, so avoid
+     calling it in that case.  */
+  if (fold_conversions)
+    return fold_convert (type, op0);
 
   return chrec_convert (type, op0, NULL);
 }
@@ -2595,10 +2591,9 @@ instantiate_scev_convert (basic_block instantiate_below,
 
    CACHE is the cache of already instantiated values.
 
-   Variable pointed by FOLD_CONVERSIONS is set to TRUE when the
-   conversions that may wrap in signed/pointer type are folded, as long
-   as the value of the chrec is preserved.  If FOLD_CONVERSIONS is NULL
-   then we don't do such fold.
+   FOLD_CONVERSIONS should be set to true when the conversions that
+   may wrap in signed/pointer type are folded, as long as the value of
+   the chrec is preserved.
 
    SIZE_EXPR is used for computing the size of the expression to be
    instantiated, and to stop if it exceeds some limit.  */
@@ -2608,7 +2603,7 @@ instantiate_scev_not (basic_block instantiate_below,
 		      struct loop *evolution_loop, struct loop *inner_loop,
 		      tree chrec,
 		      enum tree_code code, tree type, tree op,
-		      bool *fold_conversions, int size_expr)
+		      bool fold_conversions, int size_expr)
 {
   tree op0 = instantiate_scev_r (instantiate_below, evolution_loop,
 				 inner_loop, op,
@@ -2646,10 +2641,9 @@ instantiate_scev_not (basic_block instantiate_below,
 
    CACHE is the cache of already instantiated values.
 
-   Variable pointed by FOLD_CONVERSIONS is set to TRUE when the
-   conversions that may wrap in signed/pointer type are folded, as long
-   as the value of the chrec is preserved.  If FOLD_CONVERSIONS is NULL
-   then we don't do such fold.
+   FOLD_CONVERSIONS should be set to true when the conversions that
+   may wrap in signed/pointer type are folded, as long as the value of
+   the chrec is preserved.
 
    SIZE_EXPR is used for computing the size of the expression to be
    instantiated, and to stop if it exceeds some limit.  */
@@ -2658,7 +2652,7 @@ static tree
 instantiate_scev_3 (basic_block instantiate_below,
 		    struct loop *evolution_loop, struct loop *inner_loop,
 		    tree chrec,
-		    bool *fold_conversions, int size_expr)
+		    bool fold_conversions, int size_expr)
 {
   tree op1, op2;
   tree op0 = instantiate_scev_r (instantiate_below, evolution_loop,
@@ -2695,10 +2689,9 @@ instantiate_scev_3 (basic_block instantiate_below,
 
    CACHE is the cache of already instantiated values.
 
-   Variable pointed by FOLD_CONVERSIONS is set to TRUE when the
-   conversions that may wrap in signed/pointer type are folded, as long
-   as the value of the chrec is preserved.  If FOLD_CONVERSIONS is NULL
-   then we don't do such fold.
+   FOLD_CONVERSIONS should be set to true when the conversions that
+   may wrap in signed/pointer type are folded, as long as the value of
+   the chrec is preserved.
 
    SIZE_EXPR is used for computing the size of the expression to be
    instantiated, and to stop if it exceeds some limit.  */
@@ -2707,7 +2700,7 @@ static tree
 instantiate_scev_2 (basic_block instantiate_below,
 		    struct loop *evolution_loop, struct loop *inner_loop,
 		    tree chrec,
-		    bool *fold_conversions, int size_expr)
+		    bool fold_conversions, int size_expr)
 {
   tree op1;
   tree op0 = instantiate_scev_r (instantiate_below, evolution_loop,
@@ -2736,10 +2729,9 @@ instantiate_scev_2 (basic_block instantiate_below,
 
    CACHE is the cache of already instantiated values.
 
-   Variable pointed by FOLD_CONVERSIONS is set to TRUE when the
-   conversions that may wrap in signed/pointer type are folded, as long
-   as the value of the chrec is preserved.  If FOLD_CONVERSIONS is NULL
-   then we don't do such fold.
+   FOLD_CONVERSIONS should be set to true when the conversions that
+   may wrap in signed/pointer type are folded, as long as the value of
+   the chrec is preserved.
 
    SIZE_EXPR is used for computing the size of the expression to be
    instantiated, and to stop if it exceeds some limit.  */
@@ -2748,7 +2740,7 @@ static tree
 instantiate_scev_1 (basic_block instantiate_below,
 		    struct loop *evolution_loop, struct loop *inner_loop,
 		    tree chrec,
-		    bool *fold_conversions, int size_expr)
+		    bool fold_conversions, int size_expr)
 {
   tree op0 = instantiate_scev_r (instantiate_below, evolution_loop,
 				 inner_loop, TREE_OPERAND (chrec, 0),
@@ -2770,10 +2762,9 @@ instantiate_scev_1 (basic_block instantiate_below,
 
    CACHE is the cache of already instantiated values.
 
-   Variable pointed by FOLD_CONVERSIONS is set to TRUE when the
-   conversions that may wrap in signed/pointer type are folded, as long
-   as the value of the chrec is preserved.  If FOLD_CONVERSIONS is NULL
-   then we don't do such fold.
+   FOLD_CONVERSIONS should be set to true when the conversions that
+   may wrap in signed/pointer type are folded, as long as the value of
+   the chrec is preserved.
 
    SIZE_EXPR is used for computing the size of the expression to be
    instantiated, and to stop if it exceeds some limit.  */
@@ -2782,7 +2773,7 @@ static tree
 instantiate_scev_r (basic_block instantiate_below,
 		    struct loop *evolution_loop, struct loop *inner_loop,
 		    tree chrec,
-		    bool *fold_conversions, int size_expr)
+		    bool fold_conversions, int size_expr)
 {
   /* Give up if the expression is larger than the MAX that we allow.  */
   if (size_expr++ > PARAM_VALUE (PARAM_SCEV_MAX_EXPR_SIZE))
@@ -2907,7 +2898,7 @@ instantiate_scev (basic_block instantiate_below, struct loop *evolution_loop,
     }
 
   res = instantiate_scev_r (instantiate_below, evolution_loop,
-			    NULL, chrec, NULL, 0);
+			    NULL, chrec, false, 0);
 
   if (destr)
     {
@@ -2931,10 +2922,9 @@ instantiate_scev (basic_block instantiate_below, struct loop *evolution_loop,
    of an expression.  */
 
 tree
-resolve_mixers (struct loop *loop, tree chrec, bool *folded_casts)
+resolve_mixers (struct loop *loop, tree chrec)
 {
   bool destr = false;
-  bool fold_conversions = false;
   if (!global_cache)
     {
       global_cache = new instantiate_cache_type;
@@ -2942,10 +2932,7 @@ resolve_mixers (struct loop *loop, tree chrec, bool *folded_casts)
     }
 
   tree ret = instantiate_scev_r (block_before_loop (loop), loop, NULL,
-				 chrec, &fold_conversions, 0);
-
-  if (folded_casts && !*folded_casts)
-    *folded_casts = fold_conversions;
+				 chrec, true, 0);
 
   if (destr)
     {
@@ -3398,8 +3385,7 @@ scev_const_prop (void)
 	      && !INTEGRAL_TYPE_P (type))
 	    continue;
 
-	  ev = resolve_mixers (loop, analyze_scalar_evolution (loop, name),
-			       NULL);
+	  ev = resolve_mixers (loop, analyze_scalar_evolution (loop, name));
 	  if (!is_gimple_min_invariant (ev)
 	      || !may_propagate_copy (name, ev))
 	    continue;
