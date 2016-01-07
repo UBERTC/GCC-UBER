@@ -1,7 +1,36 @@
+2015-12-31  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* config/i386/sse.md (define_insn "vec_dup<mode>"): Separate EVEX
+	alternative.
+
+2015-12-30  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* config/i386/sse.md (define_insn "vec_extract_hi_<mode>_maskm"):
+	Remove "prefix_extra".
+	(define_insn "vec_extract_hi_<mode>_mask"): New.
+	(define_insn "vec_extract_hi_<mode>"): Remove masking.
+
+2015-12-25  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+        2015-12-25  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/rs6000/freebsd64.h: Delete FREEBSD_DYNAMIC_LINKER32/64
+	defines. Use FBSD_DYNAMIC_LINKER instead.
+	Rename and simplify LINK_OS_FREEBSD_SPEC_DEF32/64 to
+	LINK_OS_FREEBSD_SPEC_DEF.
+
+2015-12-22  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	PR target/68872
+	* config/rs6000/rs6000.h (ASM_CPU_SPEC): For -mcpu=powerpc64le,
+	pass %(asm_cpu_power8).
+
 2015-12-19  Eric Botcazou  <ebotcazou@adacore.com>
 
 	PR rtl-optimization/68910
-	* emit-rtl.c (set_unique_reg_note) <>REG_EQUAL>: Add bypass for USEs.
+	* emit-rtl.c (set_unique_reg_note) <REG_EQUAL>: Add bypass for USEs.
 	* config/sparc/sparc.md (anddi3): Enable only in 64-bit mode.
 	(iordi3): Likewise.
 	(xordi3): Likewise.

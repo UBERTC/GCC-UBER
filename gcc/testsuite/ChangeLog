@@ -1,3 +1,44 @@
+2015-12-31  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* gcc.target/i386/avx512f-vbroadcastsd-3.c: New test.
+
+2015-12-30  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/69037
+	Backport from mainline:
+
+	2015-12-07  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68668
+	* gcc.dg/pr68668.c: New test.
+
+2015-12-30  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/68987
+	* gfortran.dg/error_format_2.f90: New test.
+
+2015-12-30  John David Anglin  <danglin@gcc.gnu.org>
+
+	* gfortran.dg/coarray_40.f90: Link with libatomic if available.
+	* gfortran.dg/coarray_lib_comm_1.f90: Revise to use
+	dg-additional-options.
+
+2015-12-30  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* gcc.target/i386/avx-vextractf128-256-5.c: New test.
+	* gcc.target/i386/avx512vl-vextractf32x4-1.c: Fix scan pattern.
+	* gcc.target/i386/avx512vl-vextracti32x4-1.c: Ditto.
+
+2015-12-28  John David Anglin  <danglin@gcc.gnu.org>
+
+	* gcc.dg/torture/pr67609.c: Add -fno-common option on hppa*-*-hpux*.
+
+2015-12-22  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	PR target/68872
+	* gcc.target/powerpc/pr68872.c: New test.
+
 2015-12-19  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gcc.target/sparc/20151219-1.c: New test.

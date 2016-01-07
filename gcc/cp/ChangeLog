@@ -1,4 +1,17 @@
+2015-12-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66921
+	* decl.c (cp_complete_array_type): Allow an initializer that
+	already has array type.
+
+	PR c++/67339
+	* parser.c (cp_parser_elaborated_type_specifier): Use CLASS_TYPE_P
+	rather than check for RECORD_TYPE.
+
 2015-12-20  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67411
+	* decl2.c (decl_maybe_constant_var_p): Use DECL_HAS_VALUE_EXPR_P.
 
 	PR c++/67411
 	* decl2.c (decl_maybe_constant_var_p): A proxy isn't constant.
