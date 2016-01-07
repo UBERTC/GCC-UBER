@@ -4488,17 +4488,6 @@ adjust_range_with_scev (value_range_t *vr, struct loop *loop,
 	  && is_positive_overflow_infinity (max)))
     return;
 
-  /* Even for valid range info, sometimes overflow flag will leak in.
-     As GIMPLE IL should have no constants with TREE_OVERFLOW set, we
-     drop them except for +-overflow_infinity which still need special
-     handling in vrp pass.  */
-  if (TREE_OVERFLOW_P (min)
-      && ! is_negative_overflow_infinity (min))
-    min = drop_tree_overflow (min);
-  if (TREE_OVERFLOW_P (max)
-      && ! is_positive_overflow_infinity (max))
-    max = drop_tree_overflow (max);
-
   set_value_range (vr, VR_RANGE, min, max, vr->equiv);
 }
 
@@ -8988,11 +8977,20 @@ vrp_visit_phi_node (gphi *phi)
 
       /* If we dropped either bound to +-INF then if this is a loop
 	 PHI node SCEV may known more about its value-range.  */
-      if (cmp_min > 0 || cmp_min < 0
+      if ((cmp_min > 0 || cmp_min < 0
 	   || cmp_max < 0 || cmp_max > 0)
-	goto scev_check;
+	  && (l = loop_containing_stmt (phi))
+	  && l->header == gimple_bb (phi))
+	adjust_range_with_scev (&vr_result, l, phi, lhs);
 
-      goto infinite_check;
+      /* If we will end up with a (-INF, +INF) range, set it to
+	 VARYING.  Same if the previous max value was invalid for
+	 the type and we end up with vr_result.min > vr_result.max.  */
+      if ((vrp_val_is_max (vr_result.max)
+	   && vrp_val_is_min (vr_result.min))
+	  || compare_values (vr_result.min,
+			     vr_result.max) > 0)
+	goto varying;
     }
 
   /* If the new range is different than the previous value, keep
@@ -9018,28 +9016,8 @@ update_range:
   /* Nothing changed, don't add outgoing edges.  */
   return SSA_PROP_NOT_INTERESTING;
 
-varying:
-  set_value_range_to_varying (&vr_result);
-
-scev_check:
-  /* If this is a loop PHI node SCEV may known more about its value-range.
-     scev_check can be reached from two paths, one is a fall through from above
-     "varying" label, the other is direct goto from code block which tries to
-     avoid infinite simulation.  */
-  if ((l = loop_containing_stmt (phi))
-      && l->header == gimple_bb (phi))
-    adjust_range_with_scev (&vr_result, l, phi, lhs);
-
-infinite_check:
-  /* If we will end up with a (-INF, +INF) range, set it to
-     VARYING.  Same if the previous max value was invalid for
-     the type and we end up with vr_result.min > vr_result.max.  */
-  if ((vr_result.type == VR_RANGE || vr_result.type == VR_ANTI_RANGE)
-      && !((vrp_val_is_max (vr_result.max) && vrp_val_is_min (vr_result.min))
-	   || compare_values (vr_result.min, vr_result.max) > 0))
-    goto update_range;
-
   /* No match found.  Set the LHS to VARYING.  */
+varying:
   set_value_range_to_varying (lhs_vr);
   return SSA_PROP_VARYING;
 }
