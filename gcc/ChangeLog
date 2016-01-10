@@ -1,3 +1,140 @@
+2016-01-10  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69062
+	* tree-parloops.c (loop_has_phi_with_address_arg): New function.
+	(parallelize_loops): Don't paralelize loop that has phi with address
+	arg.
+
+2016-01-10  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69039
+	* tree-parloops.c (try_create_reduction_list): Only allow single exit
+	phi for reduction.
+
+2016-01-09  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR middle-end/68743
+	* match.pd: Require target has function_c99_misc before doing
+	truncl(extend(x)) and trunc(extend(x)) -> extend(truncf(x)), etc.
+	
+2016-01-09  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* configure.ac (isl_options_set_schedule_serialize_sccs): Also 
+	use GMPINC.
+	* configure: Regenerate.
+
+2016-01-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/50865
+	PR tree-optimization/69097
+	* fold-const.h (expr_not_equal_to): New prototype.
+	* fold-const.c: Include stringpool.h and tree-ssanames.h.
+	(expr_not_equal_to): New function.
+	* match.pd (X % -Y is the same as X % Y): Don't optimize
+	unless X is known not to be equal to minimum or Y is known
+	not to be equal to -1.
+	* tree-vrp.c (simplify_div_or_mod_using_ranges): Add GSI argument.
+	fold TRUNC_MOD_EXPR if the second argument is not a power of two.
+	(simplify_stmt_using_ranges): Adjust caller.
+	(vrp_finalize): Call set_value_range on SSA_NAMEs before calling
+	substitute_and_fold.
+
+2016-01-09  Jan Hubicka  <hubicka@ucw.cz>
+
+	* ipa-icf.c (sem_item_optimizer::merge_classes): Do not ICE on VAR_DECL
+	w/o DECL_NAME.
+
+2016-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69167
+	* gimple-fold.c (replace_stmt_with_simplification): Also punt if
+	new SSA_NAME_OCCURS_IN_ABNORMAL_PHI SSA_NAMEs appear in operands of
+	ops[0] comparison.
+	* gimple-match-head.c (maybe_push_res_to_seq): Likewise.
+
+2016-01-08  Alan Lawrence  <alan.lawrence@arm.com>
+	    Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68707
+	* tree-vect-slp.c (vect_analyze_slp_instance): Cancel permuted SLP
+	instances that can be handled via vect_load_lanes.
+
+2016-01-08  Uros Bizjak  <ubizjak@gmail.com>
+
+	* symtab.c (symtab_node::equal_address_to): Return -1 instead of 2
+	if we can't determine address equivalence.
+	* alias.c (compare_base_decl): Update for changed return value of
+	symtab_node::equal_address_to.
+
+2016-01-08  Jason Merrill  <jason@redhat.com>
+
+	PR c++/68983
+	PR c++/67557
+	* function.c (assign_temp): Guard against TREE_ADDRESSABLE types here.
+	* expr.c (store_field): Not here.
+	* tree-cfgcleanup.c (fixup_noreturn_call): Don't clear LHS of a
+	call with TREE_ADDRESSABLE type.
+	* tree-cfg.c (verify_gimple_call): Adjust.
+
+2016-01-08  Olivier Hainque  <hainque@adacore.com>
+
+	* config/vxworks.h (VXWORKS_LIBGCC_SPEC): Don't link shared RTPs with
+	libc_internal.
+
+2016-01-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.target/rs6000/paired.md (reduc_smax_v2sf): Rename to...
+	(reduc_smax_scal_v2sf): ...here, make result SFmode, extract element.
+	(reduc_smin_v2sf): Rename to...
+	(reduc_smin_scal_v2sf): ...here, make result SFmode, extract element.
+	(reduc_splus_v2sf): Rename to...
+	(reduc_plus_scal_v2sf): ...here, make result SFmode, extract element.
+
+2016-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69162
+	* gimplify.c (gimplify_va_arg_expr): Encode original type of
+	valist argument in another argument.
+	(gimplify_modify_expr): Adjust for the above change.  Cleanup.
+	* tree-stdarg.c (expand_ifn_va_arg_1): Use new 3rd argument
+	to determine the va_list type, build a MEM_REF instead of
+	build_fold_indirect_ref.
+
+	PR tree-optimization/69172
+	* gimple-fold.c (gimple_fold_builtin_memory_chk): Pass type to
+	gimple_build.
+
+2016-01-08  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/67781
+	* tree-ssa-math-opts.c (find_bswap_or_nop): Zero out bytes in cmpxchg
+	and cmpnop in two steps: first the ones not accessed in original
+	gimple expression in a endian independent way and then the ones not
+	accessed in the final result in an endian-specific way.
+
+2016-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69083
+	* tree-vect-slp.c (vect_get_constant_vectors): For
+	VECTOR_BOOLEAN_TYPE_P assert op is fold_convertible_p to vector_type's
+	element type.  If op is fold_convertible_p to vector_type's element
+	type, use NOP_EXPR instead of VCE.
+
+2016-01-08  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/67778
+	PR rtl-optimization/68634
+	PR rtl-optimization/68909
+	* shrink-wrap.c (try_shrink_wrapping): Add comment.  Don't pop
+	block from the stack until done with it.  Remove a superfluous
+	bitmap set.  Remove a superfluous bitmap test.
+
+2016-01-07  Martin Sebor  <msebor@redhat.com>
+
+	PR c/68966
+	* doc/extend.texi (__atomic Builtins, __sync Builtins): Document
+	constraint on the type of arguments.
+
 2016-01-07  Andreas Tobler  <andreast@gcc.gnu.org>
 
 	* config/arm/freebsd.h: Rename SUBTARGET_OVERRIDE_OPTIONS to

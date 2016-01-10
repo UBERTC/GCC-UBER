@@ -1,3 +1,38 @@
+2016-01-09  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/69113
+	* decl2.c (comdat_linkage): Only set DECL_COMDAT if TREE_PUBLIC is set.
+
+2016-01-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/69164
+	* class.c (layout_class_type): Use copy_node to copy FIELD_DECLs.
+
+2016-01-08  Jason Merrill  <jason@redhat.com>
+
+	PR c++/69158
+	* constexpr.c (cxx_fold_indirect_ref): Handle array type differing
+	in completion.
+
+2016-01-08  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/68449
+	* constexpr.c (cxx_eval_constant_expression): Handle NULL initializer.
+
+2016-01-08  Jason Merrill  <jason@redhat.com>
+
+	* constexpr.c (cxx_eval_call_expression): Remove convert_to_void
+	workaround.
+
+	PR c++/68983
+	PR c++/67557
+	* cvt.c (convert_to_void): Don't strip a TARGET_EXPR of
+	TREE_ADDRESSABLE type.
+
+	PR c++/68983
+	PR c++/67557
+	* call.c (unsafe_copy_elision_p): Look through COMPOUND_EXPR.
+
 2016-01-05  Nathan Sidwell  <nathan@acm.org>
 
 	PR c++/58583

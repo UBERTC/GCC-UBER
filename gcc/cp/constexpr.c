@@ -1285,16 +1285,6 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
       ctx->values->put (new_ctx.object, ctor);
       ctx = &new_ctx;
     }
-  else if (DECL_BY_REFERENCE (DECL_RESULT (fun))
-	   && TREE_CODE (t) != AGGR_INIT_EXPR)
-    {
-      /* convert_to_void stripped our AGGR_INIT_EXPR, in which case we don't
-	 care about a constant value.  ??? we could still optimize away the
-	 call.  */
-      gcc_assert (ctx->quiet && !ctx->object);
-      *non_constant_p = true;
-      return t;
-    }
 
   bool non_constant_args = false;
   cxx_bind_parameters_in_call (ctx, t, &new_call,
@@ -2392,7 +2382,15 @@ cxx_fold_indirect_ref (location_t loc, tree type, tree op0, bool *empty_base)
       if (TREE_CODE (op) == CONST_DECL)
 	return DECL_INITIAL (op);
       /* *&p => p;  make sure to handle *&"str"[cst] here.  */
-      if (same_type_ignoring_top_level_qualifiers_p (optype, type))
+      if (same_type_ignoring_top_level_qualifiers_p (optype, type)
+	  /* Also handle the case where the desired type is an array of unknown
+	     bounds because the variable has had its bounds deduced since the
+	     ADDR_EXPR was created.  */
+	  || (TREE_CODE (type) == ARRAY_TYPE
+	      && TREE_CODE (optype) == ARRAY_TYPE
+	      && TYPE_DOMAIN (type) == NULL_TREE
+	      && same_type_ignoring_top_level_qualifiers_p (TREE_TYPE (optype),
+							    TREE_TYPE (type))))
 	{
 	  tree fop = fold_read_from_constant_string (op);
 	  if (fop)
@@ -3194,7 +3192,8 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 	r = TARGET_EXPR_INITIAL (r);
       if (VAR_P (r))
 	if (tree *p = ctx->values->get (r))
-	  r = *p;
+	  if (*p != NULL_TREE)
+	    r = *p;
       if (DECL_P (r))
 	{
 	  if (!ctx->quiet)

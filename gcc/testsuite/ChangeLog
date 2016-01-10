@@ -1,3 +1,113 @@
+2016-01-10  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/67779
+	* gfortran.dg/actual_array_offset_1: New test.
+
+2016-01-10  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69062
+	* gcc.dg/autopar/pr69062.c: New test.
+
+2016-01-10  Thomas Schwinge  <thomas@codesourcery.com>
+
+	* gcc.dg/vect/slp-perm-1.c: Fix scan-tree-dump syntax.
+	* gcc.dg/vect/slp-perm-2.c: Likewise.
+	* gcc.dg/vect/slp-perm-3.c: Likewise.
+	* gcc.dg/vect/slp-perm-5.c: Likewise.
+	* gcc.dg/vect/slp-perm-6.c: Likewise.
+	* gcc.dg/vect/slp-perm-7.c: Likewise.
+	* gcc.dg/vect/slp-perm-8.c: Likewise.
+
+2016-01-10  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69039
+	* gcc.dg/autopar/pr69039.c: New test.
+
+2016-01-09  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/69113
+	* g++.dg/pr69113.C: New test.
+
+2016-01-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/50865
+	PR tree-optimization/69097
+	* gcc.c-torture/execute/pr50865.c: New test.
+	* gcc.c-torture/execute/pr69097-1.c: New test.
+	* gcc.c-torture/execute/pr69097-2.c: New test.
+	* gcc.dg/pr69097-1.c: New test.
+	* gcc.dg/pr69097-2.c: New test.
+
+2016-01-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/69164
+	* g++.dg/opt/pr69164.C: New test.
+
+2016-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69167
+	* gcc.dg/pr69167.c: New test.
+
+2016-01-08  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/68449
+	* g++.dg/pr68449.C: New.
+
+2016-01-08  Alan Lawrence  <alan.lawrence@arm.com>
+
+	PR tree-optimization/68707
+	* lib/target-supports.exp (check_effective_target_vect_load_lanes): New.
+	* gcc.dg/vect/slp-perm-1.c: Look for vect_load_lanes instead of SLP
+	on platforms supporting it.
+	* gcc.dg/vect/slp-perm-2.c: Likewise.
+	* gcc.dg/vect/slp-perm-3.c: Likewise.
+	* gcc.dg/vect/slp-perm-5.c: Likewise.
+	* gcc.dg/vect/slp-perm-7.c: Likewise.
+	* gcc.dg/vect/slp-perm-8.c: Likewise.
+	* gcc.dg/vect/slp-perm-6.c: Look for vect_load_lanes in addition to SLP
+	on platforms supporting it.
+
+2016-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69162
+	* gcc.dg/pr69162.c: New test.
+
+	PR tree-optimization/69172
+	* gcc.dg/pr69172.c: New test.
+
+2016-01-08  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/67781
+	* gcc.c-torture/execute/pr67781.c: New file.
+
+2016-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69083
+	* gcc.dg/vect/pr69083.c: New test.
+
+2016-01-08  Sujoy Saraswati  <sujoy.saraswati@hpe.com>
+
+	PR tree-optimization/61441
+	* gcc.dg/pr61441.c: Restrict to linux and gnu targets.
+	Use -fexcess-precision=standard for compiler options.
+	Use fabs() only when  __FLT_EVAL_METHOD__ == 0.
+
+2016-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/69128
+	* gfortran.dg/gomp/pr69128.f90: New test.
+
+	PR c++/69145
+	* g++.dg/ext/pr69145-1.C: New test.
+	* g++.dg/ext/pr69145-2-very-long-filename.cc: New file.
+	* g++.dg/ext/pr69145-2.h: New file.
+
+2016-01-07  Martin Sebor  <msebor@redhat.com>
+
+	PR c/68966
+	* gcc.dg/atomic-fetch-bool.c: New test.
+	* gcc.dg/sync-fetch-bool.c: New test.
+
 2016-01-07  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR fortran/66680
@@ -77,9 +187,9 @@
 	* g++.dg/pr68991-1.C: New test.
 	* g++.dg/pr68991-2.C: Likewise.
 
-2016-01-05  Sergei Trofimovich <siarheit@google.com>
+2016-01-05  Sergei Trofimovich  <siarheit@google.com>
 
-        PR other/60465
+	PR other/60465
 	* gcc.target/ia64/pr60465-gprel64.c: New test.
 	* gcc.target/ia64/pr60465-gprel64-c37.c: New test.
 
