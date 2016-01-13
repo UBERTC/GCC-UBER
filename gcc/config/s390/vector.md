@@ -137,8 +137,8 @@
 
 ; Full HW vector size moves
 (define_insn "mov<mode>"
-  [(set (match_operand:V_128 0 "nonimmediate_operand" "=v, v,QR,  v,  v,  v,  v,v,d")
-	(match_operand:V_128 1 "general_operand"      " v,QR, v,j00,jm1,jyy,jxx,d,v"))]
+  [(set (match_operand:V_128 0 "nonimmediate_operand" "=v, v,QR,  v,  v,  v,  v,  v,v,d")
+	(match_operand:V_128 1 "general_operand"      " v,QR, v,j00,jm1,jyy,jxx,jKK,d,v"))]
   "TARGET_VX"
   "@
    vlr\t%v0,%v1
@@ -148,9 +148,10 @@
    vone\t%v0
    vgbm\t%v0,%t1
    vgm<bhfgq>\t%v0,%s1,%e1
+   vrepi<bhfgq>\t%v0,%h1
    vlvgp\t%v0,%1,%N1
    #"
-  [(set_attr "op_type" "VRR,VRX,VRX,VRI,VRI,VRI,VRI,VRR,*")])
+  [(set_attr "op_type" "VRR,VRX,VRX,VRI,VRI,VRI,VRI,VRI,VRR,*")])
 
 (define_split
   [(set (match_operand:V_128 0 "register_operand" "")
@@ -313,7 +314,7 @@
 (define_insn "*vec_set<mode>"
   [(set (match_operand:V                    0 "register_operand"             "=v, v,v")
 	(unspec:V [(match_operand:<non_vec> 1 "general_operand"               "d,QR,K")
-		   (match_operand:DI        2 "shift_count_or_setmem_operand" "Y, I,I")
+		   (match_operand:SI        2 "shift_count_or_setmem_operand" "Y, I,I")
 		   (match_operand:V         3 "register_operand"              "0, 0,0")]
 		  UNSPEC_VEC_SET))]
   "TARGET_VX"
@@ -363,18 +364,18 @@
 	 (vec_select:<non_vec>
 	  (match_operand:V_HW 1 "register_operand"  "v")
 	  (parallel
-	   [(match_operand:QI 2 "immediate_operand" "C")]))))]
-  "TARGET_VX"
+	   [(match_operand:QI 2 "const_mask_operand" "C")]))))]
+  "TARGET_VX && UINTVAL (operands[2]) < GET_MODE_NUNITS (<V_HW:MODE>mode)"
   "vrep<bhfgq>\t%v0,%v1,%2"
   [(set_attr "op_type" "VRI")])
 
 (define_insn "*vec_splats<mode>"
   [(set (match_operand:V_HW                          0 "register_operand" "=v,v,v,v")
-	(vec_duplicate:V_HW (match_operand:<non_vec> 1 "general_operand"  "QR,I,v,d")))]
+	(vec_duplicate:V_HW (match_operand:<non_vec> 1 "general_operand"  "QR,K,v,d")))]
   "TARGET_VX"
   "@
    vlrep<bhfgq>\t%v0,%1
-   vrepi<bhfgq>\t%v0,%1
+   vrepi<bhfgq>\t%v0,%h1
    vrep<bhfgq>\t%v0,%v1,0
    #"
   [(set_attr "op_type" "VRX,VRI,VRI,*")])
@@ -1072,7 +1073,7 @@
   [(set (match_operand:VI_HW_QHS 0 "register_operand" "=v")
 	(unspec:VI_HW_QHS [(match_operand:VI_HW_QHS 1 "register_operand" "v")
 			   (match_operand:VI_HW_QHS 2 "register_operand" "v")
-			   (match_operand:QI 3 "immediate_operand" "C")]
+			   (match_operand:QI 3 "const_mask_operand" "C")]
 			  UNSPEC_VEC_VFENE))
    (set (reg:CCRAW CC_REGNUM)
 	(unspec:CCRAW [(match_dup 1)

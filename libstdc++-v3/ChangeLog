@@ -1,3 +1,40 @@
+2016-01-12  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/69092
+	* include/bits/basic_string.h (basic_string::_S_copy_chars<_Iterator>):
+	Remove _GLIBCXX_NOEXCEPT.
+	testsuite/21_strings/basic_string/cons/char/69092.cc: New.
+
+	PR libstdc++/68995
+	* include/std/functional (_Function_handler::_M_invoke): Qualify
+	__callable_functor.
+	* testsuite/20_util/function/68995.cc: New.
+
+	PR libstdc++/69005
+	PR libstdc++/69222
+	* include/std/functional (function::_Invoke): Remove, use result_of.
+	(function::_Callable): Replace alias template with class template
+	and use partial specialization instead of _NotSelf alias template.
+	(function(_Functor)): Add "not self" constraint so that _Callable is
+	not used while type is incomplete.
+	* testsuite/20_util/function/69222.cc: New.
+
+2015-12-27  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	* include/bits/c++0x_warning.h Remove experimental language.
+
+2015-12-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/68912
+	* include/std/functional (_Bind::operator()): Use lvalue functor to
+	deduce return type.
+	* testsuite/20_util/bind/68912.cc: New.
+
+	PR libstdc++/68921
+	* src/c++11/futex.cc
+	(__atomic_futex_unsigned_base::_M_futex_wait_until): Use null pointer
+	as timeout argument.
+
 2015-12-15  Tim Shen  <timshen@google.com>
 
 	Backport from mainline

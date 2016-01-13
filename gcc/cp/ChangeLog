@@ -1,3 +1,53 @@
+2016-01-08  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/68449
+	* constexpr.c (cxx_eval_constant_expression): Handle NULL initializer.
+
+2016-01-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/68983
+	PR c++/67557
+	* call.c (unsafe_copy_elision_p): Look through COMPOUND_EXPR.
+
+2015-12-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66921
+	* decl.c (cp_complete_array_type): Allow an initializer that
+	already has array type.
+
+	PR c++/67339
+	* parser.c (cp_parser_elaborated_type_specifier): Use CLASS_TYPE_P
+	rather than check for RECORD_TYPE.
+
+2015-12-20  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67411
+	* decl2.c (decl_maybe_constant_var_p): Use DECL_HAS_VALUE_EXPR_P.
+
+	PR c++/67411
+	* decl2.c (decl_maybe_constant_var_p): A proxy isn't constant.
+
+2015-12-17  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67550
+	* init.c (constant_value_1): Don't return a CONSTRUCTOR missing
+	non-constant elements.
+
+	PR c++/67576
+	PR c++/25466
+	* rtti.c (build_typeid): Use save_expr, not stabilize_reference.
+
+2015-12-16  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/68162
+	* tree.c (c_build_qualified_type): Add extra arguments.
+
+2015-12-16  Jason Merrill  <jason@redhat.com>
+
+	PR c++/63628
+	* pt.c (tsubst_pack_expansion): Also make dummy decls if
+	retrieve_local_specialization fails.
+
 2015-12-04  Markus Trippelsdorf  <markus@trippelsdorf.de>
 
 	PR c++/67337

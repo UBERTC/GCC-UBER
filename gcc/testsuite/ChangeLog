@@ -1,3 +1,157 @@
+2016-01-12  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline r222186.
+	2015-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65689
+	* gcc.target/aarch64/c-output-template-4.c: New test.
+
+2015-01-10  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from mainline.
+	PR fortran/50221
+	* gfortran.dg/deferred_character_1.f90: New test.
+	* gfortran.dg/deferred_character_4.f90: New test for comment
+	#4 of the PR.
+
+	Backport from mainline.
+	PR fortran/68216
+	* gfortran.dg/deferred_character_2.f90: New test.
+
+	Backport from mainline.
+	PR fortran/67674
+	* gfortran.dg/deferred_character_3.f90: New test.
+
+	Backport from mainline.
+	PR fortran/63932
+	* gfortran.dg/deferred_character_5.f90: New test.
+
+	Backport from mainline.
+	PR fortran/66408
+	* gfortran.dg/deferred_character_6.f90: New test.
+
+	Backport from mainline.
+	PR fortran/49954
+	* gfortran.dg/deferred_character_7.f90: New test.
+
+	Backport from mainline.
+	PR fortran/67779
+	* gfortran.dg/actual_array_offset_1: New test.
+
+2016-01-08  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/68449
+	* g++.dg/pr68449.C: New.
+
+2016-01-08  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	2015-12-15  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/68851
+	* g++.dg/ipa/pr68851.C: New test.
+
+2016-01-08  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68648
+	* gcc.c-torture/execute/pr68648.c: New test.
+
+2015-12-31  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* gcc.target/i386/avx512f-vbroadcastsd-3.c: New test.
+
+2015-12-30  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/69037
+	Backport from mainline:
+
+	2015-12-07  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68668
+	* gcc.dg/pr68668.c: New test.
+
+2015-12-30  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/68987
+	* gfortran.dg/error_format_2.f90: New test.
+
+2015-12-30  John David Anglin  <danglin@gcc.gnu.org>
+
+	* gfortran.dg/coarray_40.f90: Link with libatomic if available.
+	* gfortran.dg/coarray_lib_comm_1.f90: Revise to use
+	dg-additional-options.
+
+2015-12-30  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* gcc.target/i386/avx-vextractf128-256-5.c: New test.
+	* gcc.target/i386/avx512vl-vextractf32x4-1.c: Fix scan pattern.
+	* gcc.target/i386/avx512vl-vextracti32x4-1.c: Ditto.
+
+2015-12-28  John David Anglin  <danglin@gcc.gnu.org>
+
+	* gcc.dg/torture/pr67609.c: Add -fno-common option on hppa*-*-hpux*.
+
+2015-12-22  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	PR target/68872
+	* gcc.target/powerpc/pr68872.c: New test.
+
+2015-12-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/sparc/20151219-1.c: New test.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/zvector/vec-splat-2.c: New test.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/vector/vec-vrepi-1.c: New test.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/zvector/vec-splat-1.c: New test.
+
+2015-12-18  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-12-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68835
+	* gcc.dg/pr68835-1.c: New test.
+	* gcc.dg/pr68835-2.c: New test.
+
+2015-12-16  Joseph Myers  <joseph@codesourcery.com>
+
+	PR c/68162
+	* gcc.dg/pr68162-1.c: New test.
+
+2015-12-16  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-12-02  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/68184
+	* g++.dg/torture/pr68184.C: New testcase.
+
+2015-12-15  Alessandro Fanfarillo  <fanfarillo@gmail.com>
+
+	Backport from mainline.
+	2015-12-15
+	Alessandro Fanfarillo <fanfarillo.gcc@gmail.com>
+
+	* gfortran.dg/coarray_critical_1.f90: New.
+
 2015-12-14  Tobias Burnus  <burnus@net-b.de>
 	    Alessandro Fanfarillo <fanfarillo.gcc@gmail.com>
 
@@ -15,7 +169,7 @@
 2015-12-14  James Greenhalgh  <james.greenhalgh@arm.com>
 
 	Backport from mainline.
-	2015-12-09  James Greenhalgh  <james.greenhalgh@arm.com> 
+	2015-12-09  James Greenhalgh  <james.greenhalgh@arm.com>
 
 	PR rtl-optimization/67609
 	* gcc.dg/torture/pr67609.c: New.

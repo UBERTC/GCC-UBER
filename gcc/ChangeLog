@@ -1,3 +1,266 @@
+2016-01-13  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69013
+	* tree-ssa-uninit.c (prune_uninit_phi_opnds_in_unrealizable_paths):
+	Exchange assert for a test.
+
+2016-01-12  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2016-01-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69198
+	* config/i386/i386.c (ix86_expand_special_args_builtin): Ensure
+	aligned_mem is properly set for AVX512-VL floating point masked
+	stores.
+
+	2015-12-04  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* config/i386/sse.md (<avx512>_store<mode>_mask): Fix
+	operand checked for alignment.
+
+2016-01-12  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline r222186.
+	2015-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65689
+	* genpreds.c (struct constraint_data): Add maybe_allows_reg and
+	maybe_allows_mem bitfields.
+	(maybe_allows_none_start, maybe_allows_none_end,
+	maybe_allows_reg_start, maybe_allows_reg_end, maybe_allows_mem_start,
+	maybe_allows_mem_end): New variables.
+	(compute_maybe_allows): New function.
+	(add_constraint): Use it to initialize maybe_allows_reg and
+	maybe_allows_mem fields.
+	(choose_enum_order): Sort the non-is_register/is_const_int/is_memory/
+	is_address constraints such that those that allow neither mem nor
+	reg come first, then those that only allow reg but not mem, then
+	those that only allow mem but not reg, then the rest.
+	(write_allows_reg_mem_function): New function.
+	(write_tm_preds_h): Call it.
+	* stmt.c (parse_output_constraint, parse_input_constraint): Use
+	the generated insn_extra_constraint_allows_reg_mem function
+	instead of always setting *allows_reg = true; *allows_mem = true;
+	for unknown extra constraints.
+
+2016-01-11  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.c (pa_emit_move_sequence): Handle floating point
+	reloads for other unsupported memory operands.
+
+2016-01-11  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/66616
+	* cgraphclones.c (duplicate_thunk_for_node): Copy can_change_signature
+	flag.
+
+2016-01-11  Yury Gribov  <y.gribov@samsung.com>
+
+	Backport from mainline
+	2016-01-11  Yury Gribov  <y.gribov@samsung.com>
+
+	PR 67425
+	* common.opt (frandom-seed): Fix parameter name.
+	* doc/invoke.texi (frandom-seed): Ditto and describe parameter.
+
+2016-01-08  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	2015-12-15  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/68851
+	* cgraph.c (collect_callers_of_node_1): Do not collect thunks.
+	* cgraph.h (cgraph_node): Change comment of collect_callers.
+
+2016-01-08  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/68648
+	* config/arm/arm.md (*andsi_iorsi3_notsi): Try to simplify
+	the complement of operands[3] during splitting.
+
+2015-12-31  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* config/i386/sse.md (define_insn "vec_dup<mode>"): Separate EVEX
+	alternative.
+
+2015-12-30  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* config/i386/sse.md (define_insn "vec_extract_hi_<mode>_maskm"):
+	Remove "prefix_extra".
+	(define_insn "vec_extract_hi_<mode>_mask"): New.
+	(define_insn "vec_extract_hi_<mode>"): Remove masking.
+
+2015-12-25  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2015-12-25  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/rs6000/freebsd64.h: Delete FREEBSD_DYNAMIC_LINKER32/64
+	defines. Use FBSD_DYNAMIC_LINKER instead.
+	Rename and simplify LINK_OS_FREEBSD_SPEC_DEF32/64 to
+	LINK_OS_FREEBSD_SPEC_DEF.
+
+2015-12-22  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	PR target/68872
+	* config/rs6000/rs6000.h (ASM_CPU_SPEC): For -mcpu=powerpc64le,
+	pass %(asm_cpu_power8).
+
+2015-12-19  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/68910
+	* emit-rtl.c (set_unique_reg_note) <REG_EQUAL>: Add bypass for USEs.
+	* config/sparc/sparc.md (anddi3): Enable only in 64-bit mode.
+	(iordi3): Likewise.
+	(xordi3): Likewise.
+	(one_cmpldi2): Likewise.
+	(*anddi3_sp32): Delete.
+	(*and_not_di_sp32): Likewise.
+	(*iordi3_sp32): Likewise.
+	(*or_not_di_sp32): Likewise.
+	(*xordi3_sp32): Likewise.
+	(*xor_not_di_sp32): Likewise.
+	(32-bit DImode logical operations splitter): Likewise.
+	(*one_cmpldi2_sp32): Likewise.
+
+2015-13-18  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/68729
+	* config/pa/pa.c (pa_emit_move_sequence): Reorganize handling of
+	floating-point reloads. Only reload operands that are not valid
+	floating-point memory operands.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/predicates.md (const_mask_operand): New predicate.
+	* config/s390/s390-builtins.def: Set a smaller bitmask for a few builtins.
+	* config/s390/vector.md: Change predicate from immediate_operand
+	to either const_int_operand or const_mask_operand.  Add special
+	insn conditions on patterns which have to exclude certain values.
+	* config/s390/vx-builtins.md: Likewise.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vector.md ("*vec_set<mode>"): Change shift count
+	mode from DI to SI.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtin-types.def: New builtin types added.
+	* config/s390/s390-builtins.def: Add s390_vec_splat_* definitions.
+	* config/s390/s390.c (s390_expand_builtin): Always truncate
+	constants to the mode in the pattern.
+	* config/s390/vecintrin.h: Let the vec_splat_* macros point to the
+	respective builtin __builtin_s390_vec_splat_*.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtin-types.def: Sort builtin types.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-c.c (s390_get_vstring_flags): Invert the
+	condition for the RT flag.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/constraints.md: Use private backport of
+	const_vec_duplicate_p s390_const_vec_duplicate_p.
+	* config/s390/s390-protos.h: Add prototype for
+	s390_const_vec_duplicate_p.
+	* config/s390/s390.c (s390_const_vec_duplicate_p): New function.
+	(s390_contiguous_bitmask_vector_p): Use s390_const_vec_duplicate_p.
+	(print_operand): Likewise.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/constraints.md ("jKK"): New constraint.
+	* config/s390/s390.c (tm-constrs.h): Include for
+	satisfies_constraint_*.
+	(s390_legitimate_constant_p): Allow jKK constants.  Use
+	satisfies_constraint_* also for the others.
+	(legitimate_reload_vector_constant_p): Likewise.
+	(print_operand): Allow h output modifier on vectors.
+	* config/s390/vector.md ("mov<mode>"): Add vrepi.
+
+2015-12-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+
+	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vector.md ("*vec_splats<mode>"): Fix constraint
+	letter I->K.
+
+2015-12-18  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2015-12-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/68835
+	* tree.c (get_int_cst_ext_nunits): Return
+	cst.get_precision () / HOST_BITS_PER_WIDE_INT + 1
+	for all unsigned wi::neg_p (cst) constants.
+	(build_new_int_cst): If cst.get_precision is not a multiple
+	of HOST_BITS_PER_WIDE_INT, zero extend -1 to the precision
+	% HOST_BITS_PER_WIDE_INT.
+
+2015-12-16  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/68779
+	* config/pa/pa.md (atomic_loaddi): Honor -mdisable-fpregs.
+	(atomic_loaddi_1): Likewise.
+	(atomic_storedi): Likewise.
+	(atomic_storedi_1): Likewise.
+	(atomic_loaddf): Likewise.
+	(atomic_loaddf_1): Likewise.
+	(atomic_storedf): Likewise.
+	(atomic_storedf_1): Likewise.
+	Move all atomic patterns to end of file.
+
+2015-12-16  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-12-02  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/68184
+	* cgraphunit.c (cgraph_node::analyze): Set can_throw_external.
+
+2015-12-16  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-12-04  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68636
+	* builtins.c (get_pointer_alignment_1): Take care of byte to
+	bit alignment computation overflow.
+
+	2015-11-30  Richard Biener  <rguenther@suse.de>
+
+	PR c/68162
+	* dwarf2out.c (gen_type_die_with_usage): Keep variant types
+	of arrays.
+
 2015-12-14  Martin Jambor  <mjambor@suse.cz>
 
 	PR ipa/66616
