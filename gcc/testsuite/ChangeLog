@@ -1,3 +1,58 @@
+2016-01-15  Alexander Fomin  <alexander.fomin@intel.com>
+
+	Backport from mainline
+	2016-01-13  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR target/69228
+	* gcc.target/i386/avx512pf-vscatterpf0dpd-1.c: Adjust.
+	* gcc.target/i386/avx512pf-vscatterpf0dps-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf0qpd-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf0qps-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1dpd-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1dps-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1qpd-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1qps-1.c: Likewise.
+
+2016-01-12  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline r222186.
+	2015-04-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/65689
+	* gcc.target/aarch64/c-output-template-4.c: New test.
+
+2015-01-10  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from mainline.
+	PR fortran/50221
+	* gfortran.dg/deferred_character_1.f90: New test.
+	* gfortran.dg/deferred_character_4.f90: New test for comment
+	#4 of the PR.
+
+	Backport from mainline.
+	PR fortran/68216
+	* gfortran.dg/deferred_character_2.f90: New test.
+
+	Backport from mainline.
+	PR fortran/67674
+	* gfortran.dg/deferred_character_3.f90: New test.
+
+	Backport from mainline.
+	PR fortran/63932
+	* gfortran.dg/deferred_character_5.f90: New test.
+
+	Backport from mainline.
+	PR fortran/66408
+	* gfortran.dg/deferred_character_6.f90: New test.
+
+	Backport from mainline.
+	PR fortran/49954
+	* gfortran.dg/deferred_character_7.f90: New test.
+
+	Backport from mainline.
+	PR fortran/67779
+	* gfortran.dg/actual_array_offset_1: New test.
+
 2016-01-08  Marek Polacek  <polacek@redhat.com>
 
 	PR c++/68449
@@ -129,7 +184,7 @@
 2015-12-14  James Greenhalgh  <james.greenhalgh@arm.com>
 
 	Backport from mainline.
-	2015-12-09  James Greenhalgh  <james.greenhalgh@arm.com> 
+	2015-12-09  James Greenhalgh  <james.greenhalgh@arm.com>
 
 	PR rtl-optimization/67609
 	* gcc.dg/torture/pr67609.c: New.

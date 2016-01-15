@@ -38259,7 +38259,11 @@ ix86_expand_special_args_builtin (const struct builtin_description *d,
       memory = 0;
       break;
     case VOID_FTYPE_PV8DF_V8DF_QI:
+    case VOID_FTYPE_PV4DF_V4DF_QI:
+    case VOID_FTYPE_PV2DF_V2DF_QI:
     case VOID_FTYPE_PV16SF_V16SF_HI:
+    case VOID_FTYPE_PV8SF_V8SF_QI:
+    case VOID_FTYPE_PV4SF_V4SF_QI:
     case VOID_FTYPE_PV8DI_V8DI_QI:
     case VOID_FTYPE_PV4DI_V4DI_QI:
     case VOID_FTYPE_PV2DI_V2DI_QI:
@@ -38319,10 +38323,6 @@ ix86_expand_special_args_builtin (const struct builtin_description *d,
     case VOID_FTYPE_PV16QI_V16QI_HI:
     case VOID_FTYPE_PV32QI_V32QI_SI:
     case VOID_FTYPE_PV64QI_V64QI_DI:
-    case VOID_FTYPE_PV4DF_V4DF_QI:
-    case VOID_FTYPE_PV2DF_V2DF_QI:
-    case VOID_FTYPE_PV8SF_V8SF_QI:
-    case VOID_FTYPE_PV4SF_V4SF_QI:
       nargs = 2;
       klass = store;
       /* Reserve memory operand for target.  */
@@ -40259,13 +40259,12 @@ rdseed_step:
 
       op0 = fixup_modeless_constant (op0, mode0);
 
-      if (GET_MODE (op0) == mode0
-	  || (GET_MODE (op0) == VOIDmode && op0 != constm1_rtx))
+      if (GET_MODE (op0) == mode0 || GET_MODE (op0) == VOIDmode)
 	{
 	  if (!insn_data[icode].operand[0].predicate (op0, mode0))
 	    op0 = copy_to_mode_reg (mode0, op0);
 	}
-      else if (op0 != constm1_rtx)
+      else
 	{
 	  op0 = copy_to_reg (op0);
 	  op0 = simplify_gen_subreg (mode0, op0, GET_MODE (op0), 0);
