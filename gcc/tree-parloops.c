@@ -1769,6 +1769,10 @@ try_transform_to_exit_first_loop_alt (struct loop *loop,
   if (!gimple_seq_nondebug_singleton_p (bb_seq (loop->latch)))
     return false;
 
+  /* Check whether the latch contains no phis.  */
+  if (phi_nodes (loop->latch) != NULL)
+    return false;
+
   /* Check whether the latch contains the loop iv increment.  */
   edge back = single_succ_edge (loop->latch);
   edge exit = single_dom_exit (loop);
@@ -2082,7 +2086,12 @@ create_parallel_loop (struct loop *loop, tree loop_fn, tree data,
 	 value is not modified in the loop, and we're done with this phi.  */
       if (!(gimple_code (def_stmt) == GIMPLE_PHI
 	    && gimple_bb (def_stmt) == loop->header))
-	continue;
+	{
+	  locus = gimple_phi_arg_location_from_edge (phi, exit);
+	  add_phi_arg (phi, def, guard, locus);
+	  add_phi_arg (phi, def, end, locus);
+	  continue;
+	}
 
       gphi *stmt = as_a <gphi *> (def_stmt);
       def = PHI_ARG_DEF_FROM_EDGE (stmt, loop_preheader_edge (loop));
@@ -2474,6 +2483,8 @@ gather_scalar_reductions (loop_p loop, reduction_info_table_type *reduction_list
 	  gimple *inner_stmt;
 	  bool single_use_p = single_imm_use (res, &use_p, &inner_stmt);
 	  gcc_assert (single_use_p);
+	  if (gimple_code (inner_stmt) != GIMPLE_PHI)
+	    continue;
 	  gphi *inner_phi = as_a <gphi *> (inner_stmt);
 	  if (simple_iv (loop->inner, loop->inner, PHI_RESULT (inner_phi),
 			 &iv, true))
@@ -2834,6 +2845,10 @@ unsigned
 pass_parallelize_loops::execute (function *fun)
 {
   if (number_of_loops (fun) <= 1)
+    return 0;
+
+  tree nthreads = builtin_decl_explicit (BUILT_IN_OMP_GET_NUM_THREADS);
+  if (nthreads == NULL_TREE)
     return 0;
 
   if (parallelize_loops ())

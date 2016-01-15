@@ -6543,7 +6543,16 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
     case ck_rvalue:
       expr = decay_conversion (expr, complain);
       if (expr == error_mark_node)
-	return error_mark_node;
+	{
+	  if (complain)
+	    {
+	      maybe_print_user_conv_context (convs);
+	      if (fn)
+		inform (DECL_SOURCE_LOCATION (fn),
+			"  initializing argument %P of %qD", argnum, fn);
+	    }
+	  return error_mark_node;
+	}
 
       if (! MAYBE_CLASS_TYPE_P (totype))
 	return expr;
@@ -7537,7 +7546,7 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
       for (j = 0; j < nargs; j++)
 	fargs[j] = maybe_constant_value (argarray[j]);
 
-      check_function_arguments (TREE_TYPE (fn), nargs, fargs);
+      check_function_arguments (input_location, TREE_TYPE (fn), nargs, fargs);
     }
 
   /* Avoid actually calling copy constructors and copy assignment operators,
@@ -7747,7 +7756,7 @@ build_cxx_call (tree fn, int nargs, tree *argarray,
       /* We need to take care that values to BUILT_IN_NORMAL
          are reduced.  */
       for (i = 0; i < nargs; i++)
-	argarray[i] = maybe_constant_value (argarray[i]);
+	argarray[i] = fold_non_dependent_expr (argarray[i]);
 
       if (!check_builtin_function_arguments (fndecl, nargs, argarray))
 	return error_mark_node;

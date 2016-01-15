@@ -985,9 +985,21 @@ vect_fixup_scalar_cycles_with_patterns (loop_vec_info loop_vinfo)
   FOR_EACH_VEC_ELT (LOOP_VINFO_REDUCTION_CHAINS (loop_vinfo), i, first)
     if (STMT_VINFO_IN_PATTERN_P (vinfo_for_stmt (first)))
       {
-	vect_fixup_reduc_chain (first);
-	LOOP_VINFO_REDUCTION_CHAINS (loop_vinfo)[i]
-	  = STMT_VINFO_RELATED_STMT (vinfo_for_stmt (first));
+	gimple *next = GROUP_NEXT_ELEMENT (vinfo_for_stmt (first));
+	while (next)
+	  {
+	    if (! STMT_VINFO_IN_PATTERN_P (vinfo_for_stmt (next)))
+	      break;
+	    next = GROUP_NEXT_ELEMENT (vinfo_for_stmt (next));
+	  }
+	/* If not all stmt in the chain are patterns try to handle
+	   the chain without patterns.  */
+	if (! next)
+	  {
+	    vect_fixup_reduc_chain (first);
+	    LOOP_VINFO_REDUCTION_CHAINS (loop_vinfo)[i]
+	      = STMT_VINFO_RELATED_STMT (vinfo_for_stmt (first));
+	  }
       }
 }
 
@@ -2177,10 +2189,11 @@ again:
 	   !gsi_end_p (si); gsi_next (&si))
 	{
 	  stmt_vec_info stmt_info = vinfo_for_stmt (gsi_stmt (si));
+	  STMT_SLP_TYPE (stmt_info) = loop_vect;
 	  if (STMT_VINFO_IN_PATTERN_P (stmt_info))
 	    {
-	      gcc_assert (STMT_SLP_TYPE (stmt_info) == loop_vect);
 	      stmt_info = vinfo_for_stmt (STMT_VINFO_RELATED_STMT (stmt_info));
+	      STMT_SLP_TYPE (stmt_info) = loop_vect;
 	      for (gimple_stmt_iterator pi
 		     = gsi_start (STMT_VINFO_PATTERN_DEF_SEQ (stmt_info));
 		   !gsi_end_p (pi); gsi_next (&pi))
@@ -2189,7 +2202,6 @@ again:
 		  STMT_SLP_TYPE (vinfo_for_stmt (pstmt)) = loop_vect;
 		}
 	    }
-	  STMT_SLP_TYPE (stmt_info) = loop_vect;
 	}
     }
   /* Free optimized alias test DDRS.  */
@@ -2579,7 +2591,7 @@ vect_is_simple_reduction (loop_vec_info loop_info, gimple *phi,
   struct loop *vect_loop = LOOP_VINFO_LOOP (loop_info);
   edge latch_e = loop_latch_edge (loop);
   tree loop_arg = PHI_ARG_DEF_FROM_EDGE (phi, latch_e);
-  gimple *def_stmt, *def1 = NULL, *def2 = NULL;
+  gimple *def_stmt, *def1 = NULL, *def2 = NULL, *phi_use_stmt = NULL;
   enum tree_code orig_code, code;
   tree op1, op2, op3 = NULL_TREE, op4 = NULL_TREE;
   tree type;
@@ -2628,6 +2640,8 @@ vect_is_simple_reduction (loop_vec_info loop_info, gimple *phi,
 			     "reduction used in loop.\n");
           return NULL;
         }
+
+      phi_use_stmt = use_stmt;
     }
 
   if (TREE_CODE (loop_arg) != SSA_NAME)
@@ -2710,7 +2724,8 @@ vect_is_simple_reduction (loop_vec_info loop_info, gimple *phi,
 	  && flow_bb_inside_loop_p (loop, gimple_bb (def_stmt))
           && loop->inner
           && flow_bb_inside_loop_p (loop->inner, gimple_bb (def1))
-          && is_gimple_assign (def1))
+          && is_gimple_assign (def1)
+	  && flow_bb_inside_loop_p (loop->inner, gimple_bb (phi_use_stmt)))
         {
           if (dump_enabled_p ())
             report_vect_op (MSG_NOTE, def_stmt,
@@ -4063,10 +4078,10 @@ get_initial_def_for_reduction (gimple *stmt, tree init_val,
   tree *elts;
   int i;
   bool nested_in_vect_loop = false;
-  tree init_value;
   REAL_VALUE_TYPE real_init_val = dconst0;
   int int_init_val = 0;
   gimple *def_stmt = NULL;
+  gimple_seq stmts = NULL;
 
   gcc_assert (vectype);
   nunits = TYPE_VECTOR_SUBPARTS (vectype);
@@ -4094,16 +4109,6 @@ get_initial_def_for_reduction (gimple *stmt, tree init_val,
       *adjustment_def = NULL;
       return vect_create_destination_var (init_val, vectype);
     }
-
-  if (TREE_CONSTANT (init_val))
-    {
-      if (SCALAR_FLOAT_TYPE_P (scalar_type))
-        init_value = build_real (scalar_type, TREE_REAL_CST (init_val));
-      else
-        init_value = build_int_cst (scalar_type, TREE_INT_CST_LOW (init_val));
-    }
-  else
-    init_value = init_val;
 
   switch (code)
     {
@@ -4181,7 +4186,10 @@ get_initial_def_for_reduction (gimple *stmt, tree init_val,
 		break;
 	      }
 	  }
-	init_def = build_vector_from_val (vectype, init_value);
+	init_val = gimple_convert (&stmts, TREE_TYPE (vectype), init_val);
+	if (! gimple_seq_empty_p (stmts))
+	  gsi_insert_seq_on_edge_immediate (loop_preheader_edge (loop), stmts);
+	init_def = build_vector_from_val (vectype, init_val);
 	break;
 
       default:
@@ -5743,15 +5751,11 @@ vectorizable_reduction (gimple *stmt, gimple_stmt_iterator *gsi,
 	    }
 	  else if (optab_handler (reduc_optab, vec_mode) == CODE_FOR_nothing)
 	    {
-	      optab = scalar_reduc_to_vector (reduc_optab, vectype_out);
-	      if (optab_handler (optab, vec_mode) == CODE_FOR_nothing)
-		{
-		  if (dump_enabled_p ())
-		    dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
-				     "reduc op not supported by target.\n");
+	      if (dump_enabled_p ())
+		dump_printf_loc (MSG_MISSED_OPTIMIZATION, vect_location,
+				 "reduc op not supported by target.\n");
 
-		  epilog_reduc_code = ERROR_MARK;
-		}
+	      epilog_reduc_code = ERROR_MARK;
 	    }
 
 	  /* When epilog_reduc_code is ERROR_MARK then a reduction will be
@@ -6926,4 +6930,11 @@ vect_transform_loop (loop_vec_info loop_vinfo)
 			 "OUTER LOOP VECTORIZED\n");
       dump_printf (MSG_NOTE, "\n");
     }
+
+  /* Free SLP instances here because otherwise stmt reference counting
+     won't work.  */
+  slp_instance instance;
+  FOR_EACH_VEC_ELT (LOOP_VINFO_SLP_INSTANCES (loop_vinfo), i, instance)
+    vect_free_slp_instance (instance);
+  LOOP_VINFO_SLP_INSTANCES (loop_vinfo).release ();
 }

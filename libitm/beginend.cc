@@ -36,9 +36,6 @@ gtm_rwlock GTM::gtm_thread::serial_lock;
 gtm_thread *GTM::gtm_thread::list_of_threads = 0;
 unsigned GTM::gtm_thread::number_of_threads = 0;
 
-gtm_stmlock GTM::gtm_stmlock_array[LOCK_ARRAY_SIZE];
-atomic<gtm_version> GTM::gtm_clock;
-
 /* ??? Move elsewhere when we figure out library initialization.  */
 uint64_t GTM::gtm_spin_count_var = 1000;
 
@@ -571,8 +568,9 @@ GTM::gtm_thread::trycommit ()
   gtm_word priv_time = 0;
   if (abi_disp()->trycommit (priv_time))
     {
-      // The transaction is now inactive. Everything that we still have to do
-      // will not synchronize with other transactions anymore.
+      // The transaction is now finished but we will still access some shared
+      // data if we have to ensure privatization safety.
+      bool do_read_unlock = false;
       if (state & gtm_thread::STATE_SERIAL)
         {
           gtm_thread::serial_lock.write_unlock ();
@@ -581,7 +579,27 @@ GTM::gtm_thread::trycommit ()
           priv_time = 0;
         }
       else
-	gtm_thread::serial_lock.read_unlock (this);
+	{
+	  // If we have to ensure privatization safety, we must not yet
+	  // release the read lock and become inactive because (1) we still
+	  // have to go through the list of all transactions, which can be
+	  // modified by serial mode threads, and (2) we interpret each
+	  // transactions' shared_state in the context of what we believe to
+	  // be the current method group (and serial mode transactions can
+	  // change the method group).  Therefore, if we have to ensure
+	  // privatization safety, delay becoming inactive but set a maximum
+	  // snapshot time (we have committed and thus have an empty snapshot,
+	  // so it will always be most recent).  Use release MO so that this
+	  // synchronizes with other threads observing our snapshot time.
+	  if (priv_time)
+	    {
+	      do_read_unlock = true;
+	      shared_state.store((~(typeof gtm_thread::shared_state)0) - 1,
+		  memory_order_release);
+	    }
+	  else
+	    gtm_thread::serial_lock.read_unlock (this);
+	}
       state = 0;
 
       // We can commit the undo log after dispatch-specific commit and after
@@ -601,8 +619,10 @@ GTM::gtm_thread::trycommit ()
           // acquisitions).  This ensures that if we read prior to other
           // reader transactions setting their shared_state to 0, then those
           // readers will observe our updates.  We can reuse the seq_cst fence
-          // in serial_lock.read_unlock() however, so we don't need another
-          // one here.
+          // in serial_lock.read_unlock() if we performed that; if not, we
+	  // issue the fence.
+	  if (do_read_unlock)
+	    atomic_thread_fence (memory_order_seq_cst);
 	  // TODO Don't just spin but also block using cond vars / futexes
 	  // here. Should probably be integrated with the serial lock code.
 	  for (gtm_thread *it = gtm_thread::list_of_threads; it != 0;
@@ -621,8 +641,11 @@ GTM::gtm_thread::trycommit ()
 	    }
 	}
 
-      // After ensuring privatization safety, we execute potentially
-      // privatizing actions (e.g., calling free()). User actions are first.
+      // After ensuring privatization safety, we are now truly inactive and
+      // thus can release the read lock.  We will also execute potentially
+      // privatizing actions (e.g., calling free()).  User actions are first.
+      if (do_read_unlock)
+	gtm_thread::serial_lock.read_unlock (this);
       commit_user_actions ();
       commit_allocations (false, 0);
 

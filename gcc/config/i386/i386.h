@@ -499,6 +499,8 @@ extern unsigned char ix86_tune_features[X86_TUNE_LAST];
     ix86_tune_features[X86_TUNE_ADJUST_UNROLL]
 #define TARGET_AVOID_FALSE_DEP_FOR_BMI \
 	ix86_tune_features[X86_TUNE_AVOID_FALSE_DEP_FOR_BMI]
+#define TARGET_ONE_IF_CONV_INSN \
+	ix86_tune_features[X86_TUNE_ONE_IF_CONV_INSN]
 
 /* Feature tests against the various architecture variations.  */
 enum ix86_arch_indices {
@@ -691,8 +693,11 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
    only SSE, rounding is correct; when using both SSE and the FPU,
    the rounding precision is indeterminate, since either may be chosen
    apparently at random.  */
-#define TARGET_FLT_EVAL_METHOD \
-  (TARGET_MIX_SSE_I387 ? -1 : TARGET_SSE_MATH ? 0 : 2)
+#define TARGET_FLT_EVAL_METHOD						\
+  (TARGET_80387								\
+   ? (TARGET_MIX_SSE_I387 ? -1						\
+      : (TARGET_SSE_MATH ? (TARGET_SSE2 ? 0 : -1) : 2))			\
+   : 0)
 
 /* Whether to allow x87 floating-point arithmetic on MODE (one of
    SFmode, DFmode and XFmode) in the current excess precision

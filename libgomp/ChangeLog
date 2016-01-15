@@ -1,3 +1,15 @@
+2016-01-15  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* testsuite/libgomp.oacc-fortran/kernels-data.f90: New test.
+
+2016-01-12  James Norris  <jnorris@codesourcery.com>
+
+	* libgomp.texi: Updates for OpenACC.
+
+2016-01-11  Alexander Monakov  <amonakov@ispras.ru>
+
+	* plugin/plugin-nvptx.c (link_ptx): Do not set CU_JIT_TARGET.
+
 2016-01-07  H.J. Lu  <hongjiu.lu@intel.com>
 
 	PR fortran/66680

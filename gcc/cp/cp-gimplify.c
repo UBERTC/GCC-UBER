@@ -617,14 +617,17 @@ cp_gimplify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p)
 	 LHS of an assignment might also be involved in the RHS, as in bug
 	 25979.  */
     case INIT_EXPR:
-      if (fn_contains_cilk_spawn_p (cfun)
-	  && cilk_detect_spawn_and_unwrap (expr_p))
+      if (fn_contains_cilk_spawn_p (cfun))
 	{
-	  cilk_cp_gimplify_call_params_in_spawned_fn (expr_p, pre_p, post_p);
-	  return (enum gimplify_status) gimplify_cilk_spawn (expr_p);
+	  if (cilk_detect_spawn_and_unwrap (expr_p))
+	    {
+	      cilk_cp_gimplify_call_params_in_spawned_fn (expr_p,
+							  pre_p, post_p);
+	      return (enum gimplify_status) gimplify_cilk_spawn (expr_p);
+	    }
+	  if (seen_error () && contains_cilk_spawn_stmt (*expr_p))
+	    return GS_ERROR;
 	}
-      if (seen_error ())
-	return GS_ERROR;
 
       cp_gimplify_init_expr (expr_p);
       if (TREE_CODE (*expr_p) != INIT_EXPR)
@@ -2086,7 +2089,11 @@ cp_fold (tree x)
       if ((code == COMPOUND_EXPR || code == MODIFY_EXPR)
 	  && ((op1 && TREE_SIDE_EFFECTS (op1))
 	       || (op0 && TREE_SIDE_EFFECTS (op0))))
-	break;
+	{
+	  if (op0 != TREE_OPERAND (x, 0) || op1 != TREE_OPERAND (x, 1))
+	    x = build2_loc (loc, code, TREE_TYPE (x), op0, op1);
+	  break;
+	}
       if (TREE_CODE (x) == COMPOUND_EXPR && !op0)
 	op0 = build_empty_stmt (loc);
 

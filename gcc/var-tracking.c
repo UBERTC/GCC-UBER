@@ -2224,7 +2224,7 @@ struct overlapping_mems
 };
 
 /* Remove all MEMs that overlap with COMS->LOC from the location list
-   of a hash table entry for a value.  COMS->ADDR must be a
+   of a hash table entry for a onepart variable.  COMS->ADDR must be a
    canonicalized form of COMS->LOC's address, and COMS->LOC must be
    canonicalized itself.  */
 
@@ -2235,7 +2235,7 @@ drop_overlapping_mem_locs (variable **slot, overlapping_mems *coms)
   rtx mloc = coms->loc, addr = coms->addr;
   variable *var = *slot;
 
-  if (var->onepart == ONEPART_VALUE)
+  if (var->onepart != NOT_ONEPART)
     {
       location_chain *loc, **locp;
       bool changed = false;
@@ -4682,11 +4682,11 @@ dataflow_set_preserve_mem_locs (variable **slot, dataflow_set *set)
 	{
 	  for (loc = var->var_part[0].loc_chain; loc; loc = loc->next)
 	    {
-	      /* We want to remove dying MEMs that doesn't refer to DECL.  */
+	      /* We want to remove dying MEMs that don't refer to DECL.  */
 	      if (GET_CODE (loc->loc) == MEM
 		  && (MEM_EXPR (loc->loc) != decl
 		      || INT_MEM_OFFSET (loc->loc) != 0)
-		  && !mem_dies_at_call (loc->loc))
+		  && mem_dies_at_call (loc->loc))
 		break;
 	      /* We want to move here MEMs that do refer to DECL.  */
 	      else if (GET_CODE (loc->loc) == VALUE
@@ -4769,14 +4769,14 @@ dataflow_set_preserve_mem_locs (variable **slot, dataflow_set *set)
 }
 
 /* Remove all MEMs from the location list of a hash table entry for a
-   value.  */
+   onepart variable.  */
 
 int
 dataflow_set_remove_mem_locs (variable **slot, dataflow_set *set)
 {
   variable *var = *slot;
 
-  if (var->onepart == ONEPART_VALUE)
+  if (var->onepart != NOT_ONEPART)
     {
       location_chain *loc, **locp;
       bool changed = false;
@@ -4921,6 +4921,63 @@ onepart_variable_different_p (variable *var1, variable *var2)
   return lc1 != lc2;
 }
 
+/* Return true if one-part variables VAR1 and VAR2 are different.
+   They must be in canonical order.  */
+
+static void
+dump_onepart_variable_differences (variable *var1, variable *var2)
+{
+  location_chain *lc1, *lc2;
+
+  gcc_assert (var1 != var2);
+  gcc_assert (dump_file);
+  gcc_assert (dv_as_opaque (var1->dv) == dv_as_opaque (var2->dv));
+  gcc_assert (var1->n_var_parts == 1
+	      && var2->n_var_parts == 1);
+
+  lc1 = var1->var_part[0].loc_chain;
+  lc2 = var2->var_part[0].loc_chain;
+
+  gcc_assert (lc1 && lc2);
+
+  while (lc1 && lc2)
+    {
+      switch (loc_cmp (lc1->loc, lc2->loc))
+	{
+	case -1:
+	  fprintf (dump_file, "removed: ");
+	  print_rtl_single (dump_file, lc1->loc);
+	  lc1 = lc1->next;
+	  continue;
+	case 0:
+	  break;
+	case 1:
+	  fprintf (dump_file, "added: ");
+	  print_rtl_single (dump_file, lc2->loc);
+	  lc2 = lc2->next;
+	  continue;
+	default:
+	  gcc_unreachable ();
+	}
+      lc1 = lc1->next;
+      lc2 = lc2->next;
+    }
+
+  while (lc1)
+    {
+      fprintf (dump_file, "removed: ");
+      print_rtl_single (dump_file, lc1->loc);
+      lc1 = lc1->next;
+    }
+
+  while (lc2)
+    {
+      fprintf (dump_file, "added: ");
+      print_rtl_single (dump_file, lc2->loc);
+      lc2 = lc2->next;
+    }
+}
+
 /* Return true if variables VAR1 and VAR2 are different.  */
 
 static bool
@@ -4964,19 +5021,32 @@ dataflow_set_different (dataflow_set *old_set, dataflow_set *new_set)
 {
   variable_iterator_type hi;
   variable *var1;
+  bool diffound = false;
+  bool details = (dump_file && (dump_flags & TDF_DETAILS));
+
+#define RETRUE					\
+  do						\
+    {						\
+      if (!details)				\
+	return true;				\
+      else					\
+	diffound = true;			\
+    }						\
+  while (0)
 
   if (old_set->vars == new_set->vars)
     return false;
 
   if (shared_hash_htab (old_set->vars)->elements ()
       != shared_hash_htab (new_set->vars)->elements ())
-    return true;
+    RETRUE;
 
   FOR_EACH_HASH_TABLE_ELEMENT (*shared_hash_htab (old_set->vars),
 			       var1, variable, hi)
     {
       variable_table_type *htab = shared_hash_htab (new_set->vars);
       variable *var2 = htab->find_with_hash (var1->dv, dv_htab_hash (var1->dv));
+
       if (!var2)
 	{
 	  if (dump_file && (dump_flags & TDF_DETAILS))
@@ -4984,26 +5054,49 @@ dataflow_set_different (dataflow_set *old_set, dataflow_set *new_set)
 	      fprintf (dump_file, "dataflow difference found: removal of:\n");
 	      dump_var (var1);
 	    }
-	  return true;
+	  RETRUE;
 	}
-
-      if (variable_different_p (var1, var2))
+      else if (variable_different_p (var1, var2))
 	{
-	  if (dump_file && (dump_flags & TDF_DETAILS))
+	  if (details)
 	    {
 	      fprintf (dump_file, "dataflow difference found: "
 		       "old and new follow:\n");
 	      dump_var (var1);
+	      if (dv_onepart_p (var1->dv))
+		dump_onepart_variable_differences (var1, var2);
 	      dump_var (var2);
 	    }
-	  return true;
+	  RETRUE;
 	}
     }
 
-  /* No need to traverse the second hashtab, if both have the same number
-     of elements and the second one had all entries found in the first one,
-     then it can't have any extra entries.  */
-  return false;
+  /* There's no need to traverse the second hashtab unless we want to
+     print the details.  If both have the same number of elements and
+     the second one had all entries found in the first one, then the
+     second can't have any extra entries.  */
+  if (!details)
+    return diffound;
+
+  FOR_EACH_HASH_TABLE_ELEMENT (*shared_hash_htab (new_set->vars),
+			       var1, variable, hi)
+    {
+      variable_table_type *htab = shared_hash_htab (old_set->vars);
+      variable *var2 = htab->find_with_hash (var1->dv, dv_htab_hash (var1->dv));
+      if (!var2)
+	{
+	  if (details)
+	    {
+	      fprintf (dump_file, "dataflow difference found: addition of:\n");
+	      dump_var (var1);
+	    }
+	  RETRUE;
+	}
+    }
+
+#undef RETRUE
+
+  return diffound;
 }
 
 /* Free the contents of dataflow set SET.  */

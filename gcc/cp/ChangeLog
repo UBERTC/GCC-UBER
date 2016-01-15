@@ -1,3 +1,72 @@
+2016-01-15  Jason Merrill  <jason@redhat.com>
+
+	PR c++/68847
+	* call.c (build_cxx_call): Use fold_non_dependent_expr.
+
+	* typeck2.c (cxx_incomplete_type_diagnostic): Use the location of
+	value.
+
+	PR c++/69257
+	* typeck.c (decay_conversion): Don't call mark_rvalue_use for
+	array/function-to-pointer conversion.  Call
+	complete_type_or_maybe_complain for lvalue-to-rvalue conversion.
+	* call.c (convert_like_real): Print call context if
+	decay_conversion errors.
+
+2016-01-14  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/68773
+	* parser.c (cp_parser_oacc_declare, cp_parser_omp_declare_target): Don't
+	set force_output.
+
+2016-01-14  Jason Merrill  <jason@redhat.com>
+
+	PR c++/69261
+	* constexpr.c (find_array_ctor_elt): Handle splitting RANGE_EXPR.
+
+2016-01-12  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/68979
+	* constexpr.c (cxx_eval_check_shift_p): Use permerror rather than
+	error_at and adjust the return value.
+
+2016-01-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR objc++/68511
+	PR c++/69213
+	* cp-gimplify.c (cp_gimplify_expr) <case INIT_EXPR>: Don't return
+	GS_ERROR whenever seen_error (), only if *expr_p contains
+	cilk spawn stmt, but cilk_detect_spawn_and_unwrap failed.
+
+	PR c++/66808
+	PR c++/69000
+	* pt.c (tsubst_decl): If not local_p, clear DECL_TEMPLATE_INFO.
+
+2016-01-11  Jason Merrill  <jason@redhat.com>
+
+	PR c++/69131
+	* method.c (walk_field_subobs): Add dtor_from_ctor parm.
+	(process_subob_fn): Likewise.  Don't consider triviality if true.
+	(synthesize_method_walk): Pass it.
+
+2016-01-11  David Malcolm  <dmalcolm@redhat.com>
+
+	PR c++/68795
+	* parser.c (cp_parser_postfix_expression): Initialize
+	close_paren_loc to UNKNOWN_LOCATION; only use it if
+	it has been written to by
+	cp_parser_parenthesized_expression_list.
+	(cp_parser_parenthesized_expression_list): Document the behavior
+	with respect to the CLOSE_PAREN_LOC param.
+
+2016-01-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/69211
+	* cp-gimplify.c (cp_fold): If COMPOUND_EXPR or MODIFY_EXPR
+	folded operands have side-effects, but folding changed any of them,
+	build a new tree with the folded operands instead of returning the
+	unfolded tree.
+
 2016-01-09  Marek Polacek  <polacek@redhat.com>
 
 	PR c++/69113

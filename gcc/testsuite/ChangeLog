@@ -1,3 +1,437 @@
+2016-01-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/66856
+	* gcc.dg/torture/pr66856-1.c: New testcase.
+	* gcc.dg/torture/pr66856-2.c: Likewise.
+
+2016-01-15  Richard Biener  <rguenther@suse.de>
+
+	PR debug/69137
+	* g++.dg/lto/pr69137_0.C: New testcase.
+
+2016-01-15  Richard Sandiford  <richard.sandiford@arm.com>
+
+	PR middle-end/69246
+	* gcc.target/i386/pr69246.c: New test.
+
+2016-01-15  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* gfortran.dg/bind_c_array_params_2.f90: Fix test patterns for
+	S/390.
+
+2016-01-15  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR c++/56194
+	* g++.dg/init/const9.C: Disable test on S/390.
+
+2016-01-15  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* g++.dg/Wframe-address.C: Test requires -mbackchain for s390*-*-*.
+	* g++.dg/Wno-frame-address.C: Ditto.
+
+2016-01-15  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* gcc.dg/tree-ssa/20040204-1.c: Do not xfail on S/390.
+
+2016-01-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68961
+	* gcc.dg/vect/costmodel/x86_64/costmodel-pr68961.c: New testcase.
+
+2016-01-15  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	* gcc.target/i386/pr65105-5.c: New test.
+
+2016-01-15  Jan Hubicka <hubicka@ucw.cz>
+
+	* gcc.c-torture/execute/alias-4.c: New testcase.
+
+2016-01-15  Jan Hubicka <hubicka@ucw.cz>
+
+	PR ipa/68148
+	* g++.dg/ipa/devirt-49.C: New testcase.
+
+2016-01-15  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/65837
+	* gcc.target/arm/attr-neon-builtin-fail2.c: New test.
+	* gcc.target/arm/lto/pr65837-attr_0.c: New test.
+	* gcc.target/arm/lto/pr65837_0.c: Fix skip condition and use ACLE name.
+
+2016-01-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69117
+	* gcc.dg/torture/pr69117.c: New testcase.
+
+2015-01-14  Ryan Burn  <contact@rnburn.com>
+
+	PR c++/69048
+	* g++.dg/cilk-plus/CK/pr69048.cc: New test.
+
+2016-01-14  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	PR testsuite/67509
+	* gfortran.dg/ieee/ieee_7.f90: For out of bound precision or
+	range tests use 100 * maximum instead of maximum + 1.
+
+2016-01-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/69244
+	* gcc.dg/guality/pr69244.c: New test.
+
+2016-01-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	* lib/target-supports.exp (check_effective_target_issignaling):
+	New procedure.
+	* gcc.dg/pr61441.c: Require issignaling effective target.
+
+2016-01-14  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/68803
+	* gcc.target/powerpc/20050603-3.c: Add xfails for powerpc64le.
+
+2016-01-14  David Malcolm  <dmalcolm@redhat.com>
+
+	PR c++/68819
+	PR preprocessor/69177
+	* gcc.dg/plugin/location-overflow-test-1.c: New test case.
+	* gcc.dg/plugin/location-overflow-test-2.c: New test case.
+	* gcc.dg/plugin/location_overflow_plugin.c: New test plugin.
+	* gcc.dg/plugin/plugin.exp (plugin_test_list): Add the above.
+
+2016-01-14  Marek Polacek  <polacek@redhat.com>
+
+	PR c/69262
+	* gcc.dg/array-15.c: New test.
+
+2016-01-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/68146
+	PR tree-optimization/69155
+	* gfortran.dg/pr68146.f: New test.
+	* gfortran.dg/pr69155.f90: New test.
+
+2016-01-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/68060
+	* gcc.dg/torture/pr68060-1.c: New testcase.
+	* gcc.dg/torture/pr68060-2.c: Likewise.
+
+2016-01-14  Nick Clifton  <nickc@redhat.com>
+
+	* lib/target-supports.exp
+	(check_effective_target_arm_neon_ok_nocache): Add an option
+	sequence that includes setting the ARM architecture to ARMv7-A.
+	* gcc.target/arm/attr-neon.c: Use dg-add-options to add the
+	command line options necessary to enable Neon support.
+	* gcc.target/arm/neon-vlshr-imm-1.c: Likewise.
+	* gcc.target/arm/neon-vshl-imm-1.c: Likewise.
+	* gcc.target/arm/neon-vshr-imm-1.c: Likewise.
+	* gcc.target/arm/pr69180.c: Likewise.
+
+2016-01-14  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/69270
+	* gcc.dg/tree-ssa/pr69270.c: New test.
+
+2016-01-13  Bernd Schmidt  <bschmidt@redhat.com>
+
+	PR c/66208
+	* c-c++-common/pr66208.c: New file.
+
+2016-01-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69156
+	* gcc.dg/pr69156.c: New test.
+
+2016-01-13  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* gcc.target/i386/pr69225-7.c: New test.
+
+2016-01-13  Richard Henderson  <rth@redhat.com>
+
+	* gcc.dg/tm/memopt-13.c: Update expected function.
+	* gcc.dg/tm/memopt-6.c: Likewise.
+
+2016-01-13  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/pr45685.c (dg-options): Add -mno-sse4.
+	* gcc.target/i386/pr68432-1.c (dg-options): Ditto.
+	* gcc.target/i386/pr68432-2.c (dg-options): Ditto.
+	* gcc.target/i386/pr68432-3.c (dg-options): Ditto.
+
+2016-01-13  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69169
+	* gcc.dg/pr69169.c: New test.
+
+2016-01-13  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR target/69228
+	* gcc.target/i386/avx512pf-vscatterpf0dpd-1.c: Adjust.
+	* gcc.target/i386/avx512pf-vscatterpf0dps-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf0qpd-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf0qps-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1dpd-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1dps-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1qpd-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1qps-1.c: Likewise.
+
+2016-01-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69247
+	* gcc.dg/pr69247.c: New test.
+
+2016-01-13  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69242
+	* gcc.dg/torture/pr69242.c: New testcase.
+
+2016-01-13  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69186
+	* gcc.dg/torture/pr69186.c: New testcase.
+
+2016-01-13  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/67755
+	* gcc.dg/tree-ssa/pr67755.c: New test.
+
+2016-01-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.c-torture/unsorted/dump-noaddr.x (dump_compare): Replace static
+	pass number in output by a star.
+
+2016-01-12  Bin Cheng  <bin.cheng@arm.com>
+
+	PR tree-optimization/68911
+	* gcc.c-torture/execute/pr68911.c: New test.
+
+2016-01-12  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/68979
+	* g++.dg/warn/permissive-1.C: New test.
+
+2016-01-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR objc++/68511
+	PR c++/69213
+	* g++.dg/opt/pr69213.C: New test.
+
+2016-01-12  Christian Bruel  <christian.bruel@st.com>
+
+	PR target/69180
+	* gcc.target/arm/pr69180.c: New test.
+
+2016-01-12  Richard Biener  <rguenther@suse.de>
+
+	PR lto/69077
+	* g++.dg/lto/pr69077_0.C: New testcase.
+	* g++.dg/lto/pr69077_1.C: Likewise.
+
+2016-01-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69175
+	* g++.dg/opt/pr69175.C: New test.
+
+2016-01-12  Alan Lawrence  <alan.lawrence@arm.com>
+
+	* gcc.dg/vect/fast-math-bb-slp-call-3.c: Declare functions as 'extern'
+	rather than #including math.h & stdlib.h.
+	* gcc.dg/vect/pr47001.c: Declare abort as 'extern', remove stdlib.h.
+	* gcc.dg/vect/pr49771.c: Likewise.
+	* gcc.dg/vect/vect-10-big-array.c: Likewise.
+	* gcc.dg/vect/vect-neg-store-1.c: Likewise.
+	* gcc.dg/vect/vect-neg-store-2.c: Likewise.
+	* gcc.dg/vect/slp-37.c: Change NULL to 0, remove stdlib.h.
+	* gcc.dg/vect/pr40254.c: Remove unnecessary include of stdlib.h.
+	* gcc.dg/vect/pr44507.c: Likewise.
+	* gcc.dg/vect/pr45902.c: Likewise.
+	* gcc.dg/vect/slp-widen-mult-half.c: Likewise.
+	* gcc.dg/vect/vect-117.c: Likewise.
+	* gcc.dg/vect/vect-99.c: Likewise.
+	* gcc.dg/vect/vect-aggressive-1.c: Likewise.
+	* gcc.dg/vect/vect-cond-1.c: Likewise.
+	* gcc.dg/vect/vect-cond-2.c: Likewise.
+	* gcc.dg/vect/vect-cond-3.c: Likewise.
+	* gcc.dg/vect/vect-cond-4.c: Likewise.
+	* gcc.dg/vect/vect-mask-load-1.c: Likewise.
+	* gcc.dg/vect/vect-mask-loadstore-1.c: Likewise.
+	* gcc.dg/vect/vect-over-widen-1-big-array.c: Likewise.
+	* gcc.dg/vect/vect-over-widen-1.c: Likewise.
+	* gcc.dg/vect/vect-over-widen-2-big-array.c: Likewise.
+	* gcc.dg/vect/vect-over-widen-2.c: Likewise.
+	* gcc.dg/vect/vect-over-widen-3-big-array.c: Likewise.
+	* gcc.dg/vect/vect-over-widen-3.c: Likewise.
+	* gcc.dg/vect/vect-over-widen-4-big-array.c: Likewise.
+	* gcc.dg/vect/vect-over-widen-4.c: Likewise.
+	* gcc.dg/vect/vect-widen-mult-const-s16.c: Likewise.
+	* gcc.dg/vect/vect-widen-mult-const-u16.c: Likewise.
+	* gcc.dg/vect/vect-widen-mult-half-u8.c: Likewise.
+	* gcc.dg/vect/vect-widen-mult-half.c: Likewise.
+	* gcc.dg/vect/no-trapping-math-vect-ifcvt-11.c: Remove unnecessary
+	include of signal.h.
+	* gcc.dg/vect/no-trapping-math-vect-ifcvt-12.c: Likewise.
+	* gcc.dg/vect/no-trapping-math-vect-ifcvt-13.c: Likewise.
+	* gcc.dg/vect/no-trapping-math-vect-ifcvt-14.c: Likewise.
+	* gcc.dg/vect/no-trapping-math-vect-ifcvt-15.c: Likewise.
+	* gcc.dg/vect/no-trapping-math-vect-ifcvt-16.c: Likewise.
+	* gcc.dg/vect/vect-ifcvt-16.c: Likewise.
+	* gcc.dg/vect/vect-ifcvt-17.c: Likewise.
+	* gcc.dg/vect/vect-ifcvt-2.c: Likewise.
+	* gcc.dg/vect/vect-ifcvt-3.c: Likewise.
+	* gcc.dg/vect/vect-ifcvt-4.c: Likewise.
+	* gcc.dg/vect/vect-ifcvt-5.c: Likewise.
+	* gcc.dg/vect/vect-ifcvt-5.c: Likewise.
+	* gcc.dg/vect/vect-ifcvt-6.c: Likewise.
+	* gcc.dg/vect/vect-ifcvt-7.c: Likewise.
+	* gcc.dg/vect/vect-ifcvt-9.c: Likewise.
+	* gcc.dg/vect/vect-outer-5.c: Likewise.
+	* gcc.dg/vect/vect-outer-6.c: Likewise.
+	* gcc.dg/vect/vect-strided-u8-i8-gap4-unknown.c: Remove unnecessary
+	include of stdio.h.
+
+2016-01-12  Nick Clifton  <nickc@redhat.com>
+
+	PR target/68913
+	* gcc.dg/lto/pr61886_0.c: Rename the external function called
+	to fread so that it will be found in all target runtimes.
+
+2016-01-12  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69053
+	* g++.dg/torture/pr69053.C: New testcase.
+
+2016-01-12  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69168
+	* gcc.dg/torture/pr69168.c: New testcase.
+
+2016-01-12  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69157
+	* gcc.dg/torture/pr69157.c: New testcase.
+
+2016-01-12  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69174
+	* gcc.dg/torture/pr69174.c: New testcase.
+
+2016-01-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/66808
+	PR c++/69000
+	* g++.dg/tls/pr66808.C: New test.
+	* g++.dg/tls/pr69000.C: New test.
+
+2016-01-11  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/swaps-p8-23.c: New test.
+	* gcc.target/powerpc/swaps-p8-24.c: Likewise.
+
+2016-01-11  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR tree-optimization/68356
+	* gcc.dg/torture/pr68264.c: Disable exp2 ERANGE test on hppa unix.
+
+2016-01-12  Kugan Vivekanandarajah  <kuganv@linaro.org>
+	    Jim Wilson  <jim.wilson@linaro.org>
+
+	PR target/69194
+	* gcc.target/arm/pr69194.c: New test.
+
+2016-01-11  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR target/69225
+	* gcc.target/i386/pr69225-1.c: New test.
+	* gcc.target/i386/pr69225-2.c: Likewise.
+	* gcc.target/i386/pr69225-3.c: Likewise.
+	* gcc.target/i386/pr69225-4.c: Likewise.
+	* gcc.target/i386/pr69225-5.c: Likewise.
+	* gcc.target/i386/pr69225-6.c: Likewise.
+
+2016-01-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/67462
+	* gcc.dg/ifcvt-3.c: Only compile on lp64 targets, include also i?86
+	if lp64.
+
+	PR target/69071
+	* gcc.dg/pr69071.c: New test.
+
+	PR c++/69211
+	* g++.dg/opt/pr69211.C: New test.
+
+	PR tree-optimization/69214
+	* gcc.c-torture/compile/pr69214.c: New test.
+
+2016-01-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/pr66232-10.c: Do not compile on ia32 target.
+	* gcc.target/i386/pr66232-11.c: Ditto.
+	* gcc.target/i386/pr66232-12.c: Ditto.
+	* gcc.target/i386/pr66232-13.c: Ditto.
+
+2016-01-11  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69173
+	* gcc.dg/torture/pr69173.c: New testcase.
+
+2016-01-11  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/68796
+	* gcc.target/aarch64/tst_5.c: New test.
+	* gcc.target/aarch64/tst_6.c: Likewise.
+
+2016-01-11  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/68841
+	* gcc.dg/pr68841.c: New test.
+	* gcc.c-torture/execute/pr68841.c: New test.
+
+2016-01-11  Yuri Rumyantsev  <ysrumyan@gmail.com>
+
+	PR rtl-optimization/68920
+	* gcc.dg/ifcvt-4.c: Add "--param max-rtl-if-conversion-insns=3" option
+	for ix86 targets.
+	* gcc.dg/ifcvt-5.c: New test.
+
+2016-01-11  Alexandre Oliva  <aoliva@redhat.com>
+
+	PR bootstrap/69123
+	* g++.dg/pr69123.C: New.
+
+2016-01-11  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/69010
+	* gcc.target/i386/pr69010.c: New test.
+
+2016-01-11  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/69044
+	* gcc.target/i386/chkp-pr69044.c: New test.
+
+2016-01-11  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69109
+	* gcc.dg/autopar/pr69109-2.c: New test.
+	* gcc.dg/autopar/pr69109.c: New test.
+
+2016-01-11  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69108
+	* gcc.dg/autopar/pr69108.c: New test.
+
+2016-01-10  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/69029
+	* c-c++-common/Wisleading-indentation.c: Augment test.
+
+2016-01-10  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/69154
+	* gfortran.dg/inline_matmul_12.f90:  New test.
+
 2016-01-10  Paul Thomas  <pault@gcc.gnu.org>
 
 	PR fortran/67779
@@ -120,7 +554,7 @@
 	* g++.dg/pr66655_1.cc: Test support file.
 	* g++.dg/pr66655.h: Test header file.
 
-2016-01-07  Dominique d'Humieres <dominiq@lps.ens.fr>
+2016-01-07  Dominique d'Humieres  <dominiq@lps.ens.fr>
 
 	PR fortran/66680
 	gfortran.dg/gomp/pr66680.f90: New test.

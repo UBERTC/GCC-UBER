@@ -2888,7 +2888,7 @@ proc check_effective_target_arm_neon_ok_nocache { } {
     global et_arm_neon_flags
     set et_arm_neon_flags ""
     if { [check_effective_target_arm32] } {
-	foreach flags {"" "-mfloat-abi=softfp" "-mfpu=neon" "-mfpu=neon -mfloat-abi=softfp"} {
+	foreach flags {"" "-mfloat-abi=softfp" "-mfpu=neon" "-mfpu=neon -mfloat-abi=softfp" "-mfpu=neon -mfloat-abi=softfp -march=armv7-a"} {
 	    if { [check_no_compiler_messages_nocache arm_neon_ok object {
 		int dummy;
 		#ifndef __ARM_NEON__
@@ -6287,8 +6287,19 @@ proc check_effective_target_pow10 { } {
     } "-lm" ]
 }
 
-# Return 1 if current options generate DFP instructions, 0 otherwise.
+# Return 1 if issignaling function exists.
+proc check_effective_target_issignaling {} {
+    return [check_runtime issignaling {
+	#define _GNU_SOURCE
+	#include <math.h>
+	int main ()
+	{
+	  return issignaling (0.0);
+	}
+    } "-lm" ]
+}
 
+# Return 1 if current options generate DFP instructions, 0 otherwise.
 proc check_effective_target_hard_dfp {} {
     return [check_no_messages_and_pattern hard_dfp "!adddd3" assembly {
 	typedef float d64 __attribute__((mode(DD)));
