@@ -1,3 +1,82 @@
+2016-01-19  Jason Merrill  <jason@redhat.com>
+
+	PR c++/59759
+	* pt.c (convert_template_argument): Handle VAR_DECL properly.
+
+2016-01-19  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/68586
+	* constexpr.c (clear_cv_cache): New.
+	* cp-gimplify.c (clear_fold_cache): New.
+	* cp-tree.h (clear_cv_cache, clear_fold_cache): Declare.
+	* decl.c (finish_enum_value_list): Call them.
+
+	PR c++/68965
+	* pt.c (tsubst_copy): Mark elements in expanded vector as used.
+
+2016-01-18  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/11858
+	PR c++/24663
+	PR c++/24664
+	* decl.c (grokdeclarator): Don't decay array parameter type to
+	a pointer type if it's dependent.
+	(grokparms): Invoke strip_top_quals instead of directly invoking
+	cp_build_qualified_type.
+	* pt.c (decay_dependent_array_parm_type): New static function.
+	(type_unification_real): Call decay_dependent_array_parm_type
+	to decay a dependent array parameter type to its corresponding
+	pointer type before unification.
+	(more_specialized_fn): Likewise.
+	(get_bindings): Likewise.
+	* tree.c (cp_build_qualified_type): Trivial typofix in
+	documentation.
+
+2016-01-18  Jason Merrill  <jason@redhat.com>
+
+	* cp-gimplify.c (cp_fold) [CONSTRUCTOR]: Don't clobber the input.
+
+	* cp-gimplify.c (cp_fold): Remove unnecessary special cases.
+
+	PR c++/68767
+	* cp-gimplify.c (cp_fold) [COND_EXPR]: Simplify.  Do fold COND_EXPR.
+	(contains_label_1, contains_label_p): Remove.
+
+2016-01-16  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/69091
+	* pt.c (type_dependent_expression_p): For a function template
+	specialization, a type is dependent iff any of its template
+	arguments are.
+
+2016-01-16  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	* cp-array-notation.c (cp_expand_cond_array_notations): Return
+	error_mark_node only if find_rank failed, not if it was
+	successful.
+
+2016-01-16  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/68936
+	* tree.c (build_min_non_dep_call_vec): Don't retain the
+	KOENIG_LOOKUP_P flag of the non-dependent expression that's
+	been built.
+	(build_min_non_dep_op_overload): Instead, do it here.
+
+2016-01-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/68271
+	* parser.h (cp_token): Remove pragma_kind field.  Add comment
+	with number of unused bits.
+	* parser.c (eof_token): Remove pragma_kind field initializer.
+	(cp_lexer_get_preprocessor_token): Don't set pragma_kind
+	field, don't clear CPP_PRAGMA u.value.
+	(cp_parser_pragma_kind): New function.
+	(cp_parser_omp_sections_scope, cp_parser_oacc_kernels_parallel,
+	cp_parser_omp_construct, cp_parser_initial_pragma,
+	cp_parser_pragma): Use cp_parser_pragma_kind instead of accessing
+	pragma_kind field.
+
 2016-01-15  Jason Merrill  <jason@redhat.com>
 
 	PR c++/68847

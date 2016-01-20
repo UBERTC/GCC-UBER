@@ -966,7 +966,12 @@ vect_build_slp_tree (vec_info *vinfo,
 	{
 	  /* If we have all children of child built up from scalars then just
 	     throw that away and build it up this node from scalars.  */
-	  if (!SLP_TREE_CHILDREN (child).is_empty ())
+	  if (!SLP_TREE_CHILDREN (child).is_empty ()
+	      /* ???  Rejecting patterns this way doesn't work.  We'd have to
+		 do extra work to cancel the pattern so the uses see the
+		 scalar version.  */
+	      && !is_pattern_stmt_p
+	            (vinfo_for_stmt (SLP_TREE_SCALAR_STMTS (child)[0])))
 	    {
 	      slp_tree grandchild;
 
@@ -1110,7 +1115,12 @@ vect_build_slp_tree (vec_info *vinfo,
 
 	      /* If we have all children of child built up from scalars then
 		 just throw that away and build it up this node from scalars.  */
-	      if (!SLP_TREE_CHILDREN (child).is_empty ())
+	      if (!SLP_TREE_CHILDREN (child).is_empty ()
+		  /* ???  Rejecting patterns this way doesn't work.  We'd have
+		     to do extra work to cancel the pattern so the uses see the
+		     scalar version.  */
+		  && !is_pattern_stmt_p
+			(vinfo_for_stmt (SLP_TREE_SCALAR_STMTS (child)[0])))
 		{
 		  unsigned int j;
 		  slp_tree grandchild;
@@ -2399,6 +2409,11 @@ vect_bb_slp_scalar_cost (basic_block bb,
       if ((*life)[i])
 	continue;
 
+      /* Count scalar stmts only once.  */
+      if (gimple_visited_p (stmt))
+	continue;
+      gimple_set_visited (stmt, true);
+
       stmt_info = vinfo_for_stmt (stmt);
       if (STMT_VINFO_DATA_REF (stmt_info))
         {
@@ -2440,6 +2455,11 @@ vect_bb_vectorization_profitable_p (bb_vec_info bb_vinfo)
 					      SLP_INSTANCE_TREE (instance),
 					      &life);
     }
+
+  /* Unset visited flag.  */
+  for (gimple_stmt_iterator gsi = bb_vinfo->region_begin;
+       gsi_stmt (gsi) != gsi_stmt (bb_vinfo->region_end); gsi_next (&gsi))
+    gimple_set_visited  (gsi_stmt (gsi), false);
 
   /* Complete the target-specific cost calculation.  */
   finish_cost (BB_VINFO_TARGET_COST_DATA (bb_vinfo), &vec_prologue_cost,

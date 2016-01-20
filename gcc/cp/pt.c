@@ -14010,7 +14010,12 @@ tsubst_copy (tree t, tree args, tsubst_flags_t complain, tree in_decl)
 	  --c_inhibit_evaluation_warnings;
 
 	  if (TREE_CODE (expanded) == TREE_VEC)
-	    len = TREE_VEC_LENGTH (expanded);
+	    {
+	      len = TREE_VEC_LENGTH (expanded);
+	      /* Set TREE_USED for the benefit of -Wunused.  */
+	      for (int i = 0; i < len; i++)
+		TREE_USED (TREE_VEC_ELT (expanded, i)) = true;
+	    }
 
 	  if (expanded == error_mark_node)
 	    return error_mark_node;
@@ -17729,6 +17734,23 @@ fn_type_unification (tree fn,
   return r;
 }
 
+/* TYPE is the type of a function parameter.  If TYPE is a (dependent)
+   ARRAY_TYPE, return the corresponding POINTER_TYPE to which it decays.
+   Otherwise return TYPE.  (We shouldn't see non-dependent ARRAY_TYPE
+   parameters because they get decayed as soon as they are declared.)  */
+
+static tree
+decay_dependent_array_parm_type (tree type)
+{
+  if (TREE_CODE (type) == ARRAY_TYPE)
+    {
+      gcc_assert (uses_template_parms (type));
+      return type_decays_to (type);
+    }
+
+  return type;
+}
+
 /* Adjust types before performing type deduction, as described in
    [temp.deduct.call] and [temp.deduct.conv].  The rules in these two
    sections are symmetric.  PARM is the type of a function parameter
@@ -18166,6 +18188,8 @@ type_unification_real (tree tparms,
 
       arg = args[ia];
       ++ia;
+
+      parm = decay_dependent_array_parm_type (parm);
 
       if (unify_one_argument (tparms, targs, parm, arg, subr, strict,
 			      explain_p))
@@ -19904,11 +19928,20 @@ unify (tree tparms, tree targs, tree parm, tree arg, int strict,
       return unify_template_argument_mismatch (explain_p, parm, arg);
 
     case VAR_DECL:
-      /* A non-type template parameter that is a variable should be a
-	 an integral constant, in which case, it whould have been
-	 folded into its (constant) value. So we should not be getting
-	 a variable here.  */
-      gcc_unreachable ();
+      /* We might get a variable as a non-type template argument in parm if the
+	 corresponding parameter is type-dependent.  Make any necessary
+	 adjustments based on whether arg is a reference.  */
+      if (CONSTANT_CLASS_P (arg))
+	parm = fold_non_dependent_expr (parm);
+      else if (REFERENCE_REF_P (arg))
+	{
+	  tree sub = TREE_OPERAND (arg, 0);
+	  STRIP_NOPS (sub);
+	  if (TREE_CODE (sub) == ADDR_EXPR)
+	    arg = TREE_OPERAND (sub, 0);
+	}
+      /* Now use the normal expression code to check whether they match.  */
+      goto expr;
 
     case TYPE_ARGUMENT_PACK:
     case NONTYPE_ARGUMENT_PACK:
@@ -19941,7 +19974,7 @@ unify (tree tparms, tree targs, tree parm, tree arg, int strict,
       if (is_overloaded_fn (parm) || type_unknown_p (parm))
 	return unify_success (explain_p);
       gcc_assert (EXPR_P (parm));
-
+    expr:
       /* We must be looking at an expression.  This can happen with
 	 something like:
 
@@ -20168,6 +20201,9 @@ more_specialized_fn (tree pat1, tree pat2, int len)
           /* This is the last comparison we need to do.  */
           len = 0;
         }
+
+      arg1 = decay_dependent_array_parm_type (arg1);
+      arg2 = decay_dependent_array_parm_type (arg2);
 
       if (TREE_CODE (arg1) == REFERENCE_TYPE)
 	{
@@ -20454,7 +20490,10 @@ get_bindings (tree fn, tree decl, tree explicit_args, bool check_rettype)
   for (arg = decl_arg_types, ix = 0;
        arg != NULL_TREE && arg != void_list_node;
        arg = TREE_CHAIN (arg), ++ix)
-    args[ix] = TREE_VALUE (arg);
+    {
+      args[ix] = TREE_VALUE (arg);
+      args[ix] = decay_dependent_array_parm_type (args[ix]);
+    }
 
   if (fn_type_unification (fn, explicit_args, targs,
 			   args, ix,
@@ -22759,12 +22798,12 @@ type_dependent_expression_p (tree expression)
 	      || dependent_scope_p (scope));
     }
 
+  /* A function template specialization is type-dependent if it has any
+     dependent template arguments.  */
   if (TREE_CODE (expression) == FUNCTION_DECL
       && DECL_LANG_SPECIFIC (expression)
-      && DECL_TEMPLATE_INFO (expression)
-      && (any_dependent_template_arguments_p
-	  (INNERMOST_TEMPLATE_ARGS (DECL_TI_ARGS (expression)))))
-    return true;
+      && DECL_TEMPLATE_INFO (expression))
+    return any_dependent_template_arguments_p (DECL_TI_ARGS (expression));
 
   if (TREE_CODE (expression) == TEMPLATE_DECL
       && !DECL_TEMPLATE_TEMPLATE_PARM_P (expression))

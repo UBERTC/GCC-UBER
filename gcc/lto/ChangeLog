@@ -1,3 +1,27 @@
+2016-01-19  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR lto/69136
+	* lto-symtab.c (lto_symtab_prevailing_virtual_decl): Abstract
+	decls have no assemblernames.
+
+2016-01-19  Martin Liska  <mliska@suse.cz>
+            Martin Jambor  <mjambor@suse.cz>
+
+	* lto-partition.c: Include "hsa.h"
+	(add_symbol_to_partition_1): Put hsa implementations into the
+	same partition as host implementations.
+
+2016-01-12  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR lto/69003
+	* lto-partition.c (rename_statics): Fix pasto.
+
+2016-01-18  Richard Biener  <rguenther@suse.de>
+
+	PR lto/69337
+	* lto-symtab.c (lto_symtab_merge): Return early for mismatched
+	function vs. variable.
+
 2016-01-12  Richard Biener  <rguenther@suse.de>
 
 	PR lto/69077
