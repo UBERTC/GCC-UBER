@@ -1,3 +1,41 @@
+2016-01-19  Richard Henderson  <rth@redhat.com>
+
+	PR bootstrap/69343
+	PR bootstrap/69339
+	Revert:
+	2016-01-13  Richard Henderson  <rth@redhat.com>
+
+	* Makefile.am (libitm_la_SOURCES) [ARCH_AARCH64]: Add vect128.cc
+	(libitm_la_SOURCES) [ARCH_ARM]: Add neon.cc
+	(libitm_la_SOURCES) [ARCH_PPC]: Add vect128.cc
+	(libitm_la_SOURCES) [ARCH_S390]: Add vect128.cc
+	* configure.ac (ARCH_AARCH64): New conditional.
+	(ARCH_PPC, ARCH_S390): Likewise.
+	* Makefile.in, configure: Rebuild.
+
+	* libitm.h (_ITM_TYPE_M128): Always define.
+	* vect64.cc: Split ...
+	* vect128.cc: ... out of...
+	* config/x86/x86_sse.cc: ... here.
+	* config/arm/neon.cc: New file.
+
+2016-01-19  Torvald Riegel  <triegel@redhat.com>
+
+	* local_type_traits: Remove file.
+	* libitm_i.h: Don't include it anymore.
+	(sized_integral): Remove.
+
+2016-01-16  Torvald Riegel  <triegel@redhat.com>
+
+	* method-gl.cc (gl_wt_dispatch::trycommit): Ensure proxy privatization
+	safety.
+	* method-ml.cc (ml_wt_dispatch::trycommit): Likewise.
+	* libitm/testsuite/libitm.c/priv-1.c: New.
+
+2015-01-15  Torvald Riegel  <triegel@redhat.com>
+
+	testsuite/libitm.c++/libstdc++-safeexc.C: New.
+
 2016-01-13  Torvald Riegel  <triegel@redhat.com>
 
 	* beginend.cc (gtm_thread::trycommit): Fix seq_cst fences.

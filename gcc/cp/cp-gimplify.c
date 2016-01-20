@@ -1851,38 +1851,6 @@ cxx_omp_disregard_value_expr (tree decl, bool shared)
 	 && DECL_OMP_PRIVATIZED_MEMBER (decl);
 }
 
-/* Callback for walk_tree, looking for LABEL_EXPR.  Return *TP if it is
-   a LABEL_EXPR; otherwise return NULL_TREE.  Do not check the subtrees
-   of GOTO_EXPR.  */
-
-static tree
-contains_label_1 (tree *tp, int *walk_subtrees, void *data ATTRIBUTE_UNUSED)
-{
-  switch (TREE_CODE (*tp))
-    {
-    case LABEL_EXPR:
-      return *tp;
-
-    case GOTO_EXPR:
-      *walk_subtrees = 0;
-
-      /* ... fall through ...  */
-
-    default:
-      return NULL_TREE;
-    }
-}
-
-/* Return whether the sub-tree ST contains a label which is accessible from
-   outside the sub-tree.  */
-
-static bool
-contains_label_p (tree st)
-{
-  return
-   walk_tree_without_duplicates (&st, contains_label_1 , NULL) != NULL_TREE;
-}
-
 /* Perform folding on expression X.  */
 
 tree
@@ -1927,6 +1895,14 @@ c_fully_fold (tree x, bool /*in_init*/, bool */*maybe_const*/)
 }
 
 static GTY((cache, deletable)) cache_map fold_cache;
+
+/* Dispose of the whole FOLD_CACHE.  */
+
+void
+clear_fold_cache (void)
+{
+  gt_cleare_cache (fold_cache);
+}
 
 /*  This function tries to fold an expression X.
     To avoid combinatorial explosion, folding results are kept in fold_cache.
@@ -1974,19 +1950,8 @@ cp_fold (tree x)
       if (VOID_TYPE_P (TREE_TYPE (x)))
 	return x;
 
-      if (!TREE_OPERAND (x, 0)
-	  || TREE_CODE (TREE_OPERAND (x, 0)) == NON_LVALUE_EXPR)
-	return x;
-
       loc = EXPR_LOCATION (x);
-      op0 = TREE_OPERAND (x, 0);
-
-      if (TREE_CODE (x) == NOP_EXPR
-	  && TREE_OVERFLOW_P (op0)
-	  && TREE_TYPE (x) == TREE_TYPE (op0))
-	return x;
-
-      op0 = cp_fold_maybe_rvalue (op0, rval_ops);
+      op0 = cp_fold_maybe_rvalue (TREE_OPERAND (x, 0), rval_ops);
 
       if (op0 != TREE_OPERAND (x, 0))
         x = fold_build1_loc (loc, code, TREE_TYPE (x), op0);
@@ -2032,16 +1997,6 @@ cp_fold (tree x)
     case POSTDECREMENT_EXPR:
     case POSTINCREMENT_EXPR:
     case INIT_EXPR:
-
-	loc = EXPR_LOCATION (x);
-	op0 = cp_fold (TREE_OPERAND (x, 0));
-	op1 = cp_fold_rvalue (TREE_OPERAND (x, 1));
-
-	if (TREE_OPERAND (x, 0) != op0 || TREE_OPERAND (x, 1) != op1)
-	  x = build2_loc (loc, code, TREE_TYPE (x), op0, op1);
-
-	break;
-
     case PREDECREMENT_EXPR:
     case PREINCREMENT_EXPR:
     case COMPOUND_EXPR:
@@ -2086,78 +2041,33 @@ cp_fold (tree x)
       loc = EXPR_LOCATION (x);
       op0 = cp_fold_maybe_rvalue (TREE_OPERAND (x, 0), rval_ops);
       op1 = cp_fold_rvalue (TREE_OPERAND (x, 1));
-      if ((code == COMPOUND_EXPR || code == MODIFY_EXPR)
-	  && ((op1 && TREE_SIDE_EFFECTS (op1))
-	       || (op0 && TREE_SIDE_EFFECTS (op0))))
-	{
-	  if (op0 != TREE_OPERAND (x, 0) || op1 != TREE_OPERAND (x, 1))
-	    x = build2_loc (loc, code, TREE_TYPE (x), op0, op1);
-	  break;
-	}
-      if (TREE_CODE (x) == COMPOUND_EXPR && !op0)
-	op0 = build_empty_stmt (loc);
 
       if (op0 != TREE_OPERAND (x, 0) || op1 != TREE_OPERAND (x, 1))
 	x = fold_build2_loc (loc, code, TREE_TYPE (x), op0, op1);
       else
 	x = fold (x);
 
-      if (TREE_CODE (x) == COMPOUND_EXPR && TREE_OPERAND (x, 0) == NULL_TREE
-	  && TREE_OPERAND (x, 1))
-	return TREE_OPERAND (x, 1);
       break;
 
     case VEC_COND_EXPR:
     case COND_EXPR:
 
+      /* Don't bother folding a void condition, since it can't produce a
+	 constant value.  Also, some statement-level uses of COND_EXPR leave
+	 one of the branches NULL, so folding would crash.  */
+      if (VOID_TYPE_P (TREE_TYPE (x)))
+	return x;
+
       loc = EXPR_LOCATION (x);
       op0 = cp_fold_rvalue (TREE_OPERAND (x, 0));
-
-      if (TREE_SIDE_EFFECTS (op0))
-	break;
-
       op1 = cp_fold (TREE_OPERAND (x, 1));
       op2 = cp_fold (TREE_OPERAND (x, 2));
 
-      if (TREE_CODE (op0) == INTEGER_CST)
-	{
-	  tree un;
-
-	  if (integer_zerop (op0))
-	    {
-	      un = op1;
-	      r = op2;
-	    }
-	  else
-	    {
-	      un = op2;
-	      r = op1;
-	    }
-
-          if ((!TREE_SIDE_EFFECTS (un) || !contains_label_p (un))
-              && (! VOID_TYPE_P (TREE_TYPE (r)) || VOID_TYPE_P (x)))
-            {
-	      if (CAN_HAVE_LOCATION_P (r)
-		  && EXPR_LOCATION (r) != loc
-		  && !(TREE_CODE (r) == SAVE_EXPR
-		       || TREE_CODE (r) == TARGET_EXPR
-		       || TREE_CODE (r) == BIND_EXPR))
-	        {
-		  r = copy_node (r);
-		  SET_EXPR_LOCATION (r, loc);
-	        }
-	      x = r;
-	    }
-
-	  break;
-	}
-
-      if (VOID_TYPE_P (TREE_TYPE (x)))
-	break;
-
-      x = build3_loc (loc, code, TREE_TYPE (x), op0, op1, op2);
-
-      if (code != COND_EXPR)
+      if (op0 != TREE_OPERAND (x, 0)
+	  || op1 != TREE_OPERAND (x, 1)
+	  || op2 != TREE_OPERAND (x, 2))
+	x = fold_build3_loc (loc, code, TREE_TYPE (x), op0, op1, op2);
+      else
 	x = fold (x);
 
       break;
@@ -2223,9 +2133,22 @@ cp_fold (tree x)
       {
 	unsigned i;
 	constructor_elt *p;
+	bool changed = false;
 	vec<constructor_elt, va_gc> *elts = CONSTRUCTOR_ELTS (x);
+	vec<constructor_elt, va_gc> *nelts = NULL;
+	vec_safe_reserve (nelts, vec_safe_length (elts));
 	FOR_EACH_VEC_SAFE_ELT (elts, i, p)
-	  p->value = cp_fold (p->value);
+	  {
+	    tree op = cp_fold (p->value);
+	    constructor_elt e = { p->index, op };
+	    nelts->quick_push (e);
+	    if (op != p->value)
+	      changed = true;
+	  }
+	if (changed)
+	  x = build_constructor (TREE_TYPE (x), nelts);
+	else
+	  vec_free (nelts);
 	break;
       }
     case TREE_VEC:

@@ -124,7 +124,7 @@ along with GCC; see the file COPYING3.  If not see
 	      NEXT_PASS (pass_lim);
 	      NEXT_PASS (pass_dominator, false /* may_peel_loop_headers_p */);
 	      NEXT_PASS (pass_dce);
-	      /* pass_parallelize_loops_oacc_kernels */
+	      NEXT_PASS (pass_parallelize_loops, true /* oacc_kernels_p */);
 	      NEXT_PASS (pass_expand_omp_ssa);
 	      NEXT_PASS (pass_rebuild_cgraph_edges);
 	  POP_INSERT_PASSES ()
@@ -151,6 +151,7 @@ along with GCC; see the file COPYING3.  If not see
   NEXT_PASS (pass_ipa_cp);
   NEXT_PASS (pass_ipa_cdtor_merge);
   NEXT_PASS (pass_target_clone);
+  NEXT_PASS (pass_ipa_hsa);
   NEXT_PASS (pass_ipa_inline);
   NEXT_PASS (pass_ipa_pure_const);
   NEXT_PASS (pass_ipa_reference);
@@ -272,10 +273,8 @@ along with GCC; see the file COPYING3.  If not see
 	      NEXT_PASS (pass_dce);
 	  POP_INSERT_PASSES ()
 	  NEXT_PASS (pass_iv_canon);
-	  NEXT_PASS (pass_parallelize_loops);
-	  PUSH_INSERT_PASSES_WITHIN (pass_parallelize_loops)
-	      NEXT_PASS (pass_expand_omp_ssa);
-	  POP_INSERT_PASSES ()
+	  NEXT_PASS (pass_parallelize_loops, false /* oacc_kernels_p */);
+	  NEXT_PASS (pass_expand_omp_ssa);
 	  NEXT_PASS (pass_ch_vect);
 	  NEXT_PASS (pass_if_conversion);
 	  /* pass_vectorize must immediately follow pass_if_conversion.
@@ -388,6 +387,7 @@ along with GCC; see the file COPYING3.  If not see
   NEXT_PASS (pass_nrv);
   NEXT_PASS (pass_cleanup_cfg_post_optimizing);
   NEXT_PASS (pass_warn_function_noreturn);
+  NEXT_PASS (pass_gen_hsail);
 
   NEXT_PASS (pass_expand);
 

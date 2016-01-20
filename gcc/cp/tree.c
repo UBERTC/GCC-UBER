@@ -1012,7 +1012,7 @@ c_build_qualified_type (tree type, int type_quals, tree /* orig_qual_type */,
    arrays correctly.  In particular, if TYPE is an array of T's, and
    TYPE_QUALS is non-empty, returns an array of qualified T's.
 
-   FLAGS determines how to deal with ill-formed qualifications. If
+   COMPLAIN determines how to deal with ill-formed qualifications. If
    tf_ignore_bad_quals is set, then bad qualifications are dropped
    (this is permitted if TYPE was introduced via a typedef or template
    type parameter). If bad qualifications are dropped and tf_warning
@@ -2747,7 +2747,6 @@ build_min_non_dep_call_vec (tree non_dep, tree fn, vec<tree, va_gc> *argvec)
     non_dep = TREE_OPERAND (non_dep, 0);
   TREE_TYPE (t) = TREE_TYPE (non_dep);
   TREE_SIDE_EFFECTS (t) = TREE_SIDE_EFFECTS (non_dep);
-  KOENIG_LOOKUP_P (t) = KOENIG_LOOKUP_P (non_dep);
   return convert_from_reference (t);
 }
 
@@ -2809,6 +2808,11 @@ build_min_non_dep_op_overload (enum tree_code op,
   va_end (p);
   call = build_min_non_dep_call_vec (non_dep, fn, args);
   release_tree_vector (args);
+
+  tree call_expr = call;
+  if (REFERENCE_REF_P (call_expr))
+    call_expr = TREE_OPERAND (call_expr, 0);
+  KOENIG_LOOKUP_P (call_expr) = KOENIG_LOOKUP_P (non_dep);
 
   return call;
 }

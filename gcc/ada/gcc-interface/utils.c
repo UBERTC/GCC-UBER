@@ -429,7 +429,7 @@ build_dummy_unc_pointer_types (Entity_Id gnat_desig_type, tree gnu_desig_type)
 bool
 global_bindings_p (void)
 {
-  return force_global || current_function_decl == NULL_TREE;
+  return force_global || !current_function_decl;
 }
 
 /* Enter a new binding level.  */
@@ -515,7 +515,7 @@ gnat_poplevel (void)
      parent block.  Otherwise, add it to the list of its parent.  */
   if (TREE_CODE (BLOCK_SUPERCONTEXT (block)) == FUNCTION_DECL)
     ;
-  else if (BLOCK_VARS (block) == NULL_TREE)
+  else if (!BLOCK_VARS (block))
     {
       BLOCK_SUBBLOCKS (level->chain->block)
 	= block_chainon (BLOCK_SUBBLOCKS (block),
@@ -570,9 +570,9 @@ gnat_set_type_context (tree type, tree context)
       /* Give a context to the parallel types and their stub decl, if any.
 	 Some parallel types seems to be present in multiple parallel type
 	 chains, so don't mess with their context if they already have one.  */
-      if (TYPE_CONTEXT (parallel_type) == NULL_TREE)
+      if (!TYPE_CONTEXT (parallel_type))
 	{
-	  if (TYPE_STUB_DECL (parallel_type) != NULL_TREE)
+	  if (TYPE_STUB_DECL (parallel_type))
 	    DECL_CONTEXT (TYPE_STUB_DECL (parallel_type)) = context;
 	  TYPE_CONTEXT (parallel_type) = context;
 	}
@@ -625,17 +625,18 @@ get_debug_scope (Node_Id gnat_node, bool *is_subprogram)
 	     the outer one.  */
 	  break;
 	}
+
       gnat_entity = Scope (gnat_entity);
     }
+
   return Empty;
 }
 
-/* If N is NULL, set TYPE's context to CONTEXT. Defer this to the processing of
-   N otherwise.  */
+/* If N is NULL, set TYPE's context to CONTEXT.  Defer this to the processing
+   of N otherwise.  */
 
 static void
-defer_or_set_type_context (tree type,
-			   tree context,
+defer_or_set_type_context (tree type, tree context,
 			   struct deferred_decl_context_node *n)
 {
   if (n)
@@ -644,7 +645,7 @@ defer_or_set_type_context (tree type,
     gnat_set_type_context (type, context);
 }
 
-/* Return global_context.  Create it if needed, first.  */
+/* Return global_context, but create it first if need be.  */
 
 static tree
 get_global_context (void)
@@ -654,6 +655,7 @@ get_global_context (void)
       global_context = build_translation_unit_decl (NULL_TREE);
       debug_hooks->register_main_translation_unit (global_context);
     }
+
   return global_context;
 }
 
@@ -694,14 +696,14 @@ gnat_pushdecl (tree decl, Node_Id gnat_node)
 
       /* External declarations (when force_global > 0) may not be in a
 	 local context.  */
-      else if (current_function_decl != NULL_TREE && force_global == 0)
+      else if (current_function_decl && force_global == 0)
 	context = current_function_decl;
     }
 
   /* If either we are forced to be in global mode or if both the GNAT scope and
-     the current_function_decl did not help determining the context, use the
+     the current_function_decl did not help in determining the context, use the
      global scope.  */
-  if (!deferred_decl_context && context == NULL_TREE)
+  if (!deferred_decl_context && !context)
     context = get_global_context ();
 
   /* Functions imported in another function are not really nested.
@@ -710,9 +712,9 @@ gnat_pushdecl (tree decl, Node_Id gnat_node)
      lower_nested_functions will then recompute it.  */
   if (TREE_CODE (decl) == FUNCTION_DECL
       && !TREE_PUBLIC (decl)
-      && context != NULL_TREE
+      && context
       && (TREE_CODE (context) == FUNCTION_DECL
-	  || decl_function_context (context) != NULL_TREE))
+	  || decl_function_context (context)))
     DECL_STATIC_CHAIN (decl) = 1;
 
   if (!deferred_decl_context)
@@ -1281,16 +1283,15 @@ maybe_pad_type (tree type, tree size, unsigned int align,
   if (gnat_encodings == DWARF_GNAT_ENCODINGS_MINIMAL)
     SET_TYPE_DEBUG_TYPE (record, type);
 
-  /* ??? Kludge: padding types around packed array implementation types will be
+  /* ??? Padding types around packed array implementation types will be
      considered as root types in the array descriptor language hook (see
      gnat_get_array_descr_info). Give them the original packed array type
      name so that the one coming from sources appears in the debugging
      information.  */
-  if (gnat_encodings == DWARF_GNAT_ENCODINGS_MINIMAL
-      && TYPE_IMPLEMENTS_PACKED_ARRAY_P (type)
-      && TYPE_ORIGINAL_PACKED_ARRAY (type) != NULL_TREE)
-    TYPE_NAME (record)
-      = TYPE_NAME (TYPE_ORIGINAL_PACKED_ARRAY (type));
+  if (TYPE_IMPL_PACKED_ARRAY_P (type)
+      && TYPE_ORIGINAL_PACKED_ARRAY (type)
+      && gnat_encodings == DWARF_GNAT_ENCODINGS_MINIMAL)
+    TYPE_NAME (record) = TYPE_NAME (TYPE_ORIGINAL_PACKED_ARRAY (type));
   else if (Present (gnat_entity))
     TYPE_NAME (record) = create_concat_name (gnat_entity, "PAD");
 
@@ -1594,6 +1595,48 @@ record_builtin_type (const char *name, tree type, bool artificial_p)
     debug_hooks->type_decl (type_decl, false);
 }
 
+/* Finish constructing the character type CHAR_TYPE.
+
+  In Ada character types are enumeration types and, as a consequence, are
+  represented in the front-end by integral types holding the positions of
+  the enumeration values as defined by the language, which means that the
+  integral types are unsigned.
+
+  Unfortunately the signedness of 'char' in C is implementation-defined
+  and GCC even has the option -fsigned-char to toggle it at run time.
+  Since GNAT's philosophy is to be compatible with C by default, to wit
+  Interfaces.C.char is defined as a mere copy of Character, we may need
+  to declare character types as signed types in GENERIC and generate the
+  necessary adjustments to make them behave as unsigned types.
+
+  The overall strategy is as follows: if 'char' is unsigned, do nothing;
+  if 'char' is signed, translate character types of CHAR_TYPE_SIZE and
+  character subtypes with RM_Size = Esize = CHAR_TYPE_SIZE into signed
+  types.  The idea is to ensure that the bit pattern contained in the
+  Esize'd objects is not changed, even though the numerical value will
+  be interpreted differently depending on the signedness.
+
+  For character types, the bounds are implicit and, therefore, need to
+  be adjusted.  Morever, the debug info needs the unsigned version.  */
+
+void
+finish_character_type (tree char_type)
+{
+  if (TYPE_UNSIGNED (char_type))
+    return;
+
+  /* Make a copy of the unsigned version since we'll modify it below.  */
+  tree unsigned_char_type = copy_type (gnat_unsigned_type_for (char_type));
+
+  TYPE_NAME (unsigned_char_type) = TYPE_NAME (char_type);
+  TYPE_STRING_FLAG (unsigned_char_type) = TYPE_STRING_FLAG (char_type);
+  TYPE_ARTIFICIAL (unsigned_char_type) = TYPE_ARTIFICIAL (char_type);
+
+  SET_TYPE_DEBUG_TYPE (char_type, unsigned_char_type);
+  SET_TYPE_RM_MIN_VALUE (char_type, TYPE_MIN_VALUE (unsigned_char_type));
+  SET_TYPE_RM_MAX_VALUE (char_type, TYPE_MAX_VALUE (unsigned_char_type));
+}
+
 /* Given a record type RECORD_TYPE and a list of FIELD_DECL nodes FIELD_LIST,
    finish constructing the record type as a fat pointer type.  */
 
@@ -1855,17 +1898,17 @@ add_parallel_type (tree type, tree parallel_type)
   SET_DECL_PARALLEL_TYPE (decl, parallel_type);
 
   /* If PARALLEL_TYPE already has a context, we are done.  */
-  if (TYPE_CONTEXT (parallel_type) != NULL_TREE)
+  if (TYPE_CONTEXT (parallel_type))
     return;
 
-  /* Otherwise, try to get one from TYPE's context.  */
-  if (TYPE_CONTEXT (type) != NULL_TREE)
-    /* TYPE already has a context, so simply propagate it to PARALLEL_TYPE.  */
+  /* Otherwise, try to get one from TYPE's context.  If so, simply propagate
+     it to PARALLEL_TYPE.  */
+  if (TYPE_CONTEXT (type))
     gnat_set_type_context (parallel_type, TYPE_CONTEXT (type));
 
-    /* ... otherwise TYPE has not context yet.  We know it will thanks to
-       gnat_pushdecl, and then its context will be propagated to PARALLEL_TYPE.
-       So we have nothing to do in this case.  */
+  /* Otherwise TYPE has not context yet.  We know it will have one thanks to
+     gnat_pushdecl and then its context will be propagated to PARALLEL_TYPE,
+     so we have nothing to do in this case.  */
 }
 
 /* Return true if TYPE has a parallel type.  */
@@ -2269,7 +2312,7 @@ create_range_type (tree type, tree min, tree max)
 {
   tree range_type;
 
-  if (type == NULL_TREE)
+  if (!type)
     type = sizetype;
 
   /* First build a type with the base range.  */
@@ -2905,32 +2948,30 @@ process_deferred_decl_context (bool force)
       while (Present (gnat_scope))
 	{
 	  context = compute_deferred_decl_context (gnat_scope);
-	  if (!force || context != NULL_TREE)
+	  if (!force || context)
 	    break;
 	  gnat_scope = get_debug_scope (gnat_scope, NULL);
 	}
 
       /* Imported declarations must not be in a local context (i.e. not inside
 	 a function).  */
-      if (context != NULL_TREE && node->force_global > 0)
+      if (context && node->force_global > 0)
 	{
 	  tree ctx = context;
 
-	  while (ctx != NULL_TREE)
+	  while (ctx)
 	    {
 	      gcc_assert (TREE_CODE (ctx) != FUNCTION_DECL);
-	      ctx = (DECL_P (ctx))
-		    ? DECL_CONTEXT (ctx)
-		    : TYPE_CONTEXT (ctx);
+	      ctx = DECL_P (ctx) ? DECL_CONTEXT (ctx) : TYPE_CONTEXT (ctx);
 	    }
 	}
 
       /* If FORCE, we want to get rid of all nodes in the queue: in case there
 	 was no elaborated scope, use the global context.  */
-      if (force && context == NULL_TREE)
+      if (force && !context)
 	context = get_global_context ();
 
-      if (context != NULL_TREE)
+      if (context)
 	{
 	  tree t;
 	  int i;
@@ -3355,35 +3396,16 @@ gnat_type_for_mode (machine_mode mode, int unsignedp)
   return NULL_TREE;
 }
 
-/* Return the unsigned version of a TYPE_NODE, a scalar type.  */
+/* Return the signed or unsigned version of TYPE_NODE, a scalar type, the
+   signedness being specified by UNSIGNEDP.  */
 
 tree
-gnat_unsigned_type (tree type_node)
+gnat_signed_or_unsigned_type_for (int unsignedp, tree type_node)
 {
-  tree type = gnat_type_for_size (TYPE_PRECISION (type_node), 1);
+  if (type_node == char_type_node)
+    return unsignedp ? unsigned_char_type_node : signed_char_type_node;
 
-  if (TREE_CODE (type_node) == INTEGER_TYPE && TYPE_MODULAR_P (type_node))
-    {
-      type = copy_node (type);
-      TREE_TYPE (type) = type_node;
-    }
-  else if (TREE_TYPE (type_node)
-	   && TREE_CODE (TREE_TYPE (type_node)) == INTEGER_TYPE
-	   && TYPE_MODULAR_P (TREE_TYPE (type_node)))
-    {
-      type = copy_node (type);
-      TREE_TYPE (type) = TREE_TYPE (type_node);
-    }
-
-  return type;
-}
-
-/* Return the signed version of a TYPE_NODE, a scalar type.  */
-
-tree
-gnat_signed_type (tree type_node)
-{
-  tree type = gnat_type_for_size (TYPE_PRECISION (type_node), 0);
+  tree type = gnat_type_for_size (TYPE_PRECISION (type_node), unsignedp);
 
   if (TREE_CODE (type_node) == INTEGER_TYPE && TYPE_MODULAR_P (type_node))
     {
@@ -4514,11 +4536,11 @@ convert (tree type, tree expr)
       if (TYPE_IS_THIN_POINTER_P (etype) && TYPE_IS_THIN_POINTER_P (type))
 	{
 	  tree etype_pos
-	    = TYPE_UNCONSTRAINED_ARRAY (TREE_TYPE (etype)) != NULL_TREE
+	    = TYPE_UNCONSTRAINED_ARRAY (TREE_TYPE (etype))
 	      ? byte_position (DECL_CHAIN (TYPE_FIELDS (TREE_TYPE (etype))))
 	      : size_zero_node;
 	  tree type_pos
-	    = TYPE_UNCONSTRAINED_ARRAY (TREE_TYPE (type)) != NULL_TREE
+	    = TYPE_UNCONSTRAINED_ARRAY (TREE_TYPE (type))
 	      ? byte_position (DECL_CHAIN (TYPE_FIELDS (TREE_TYPE (type))))
 	      : size_zero_node;
 	  tree byte_diff = size_diffop (type_pos, etype_pos);
@@ -4937,8 +4959,8 @@ unchecked_convert (tree type, tree expr, bool notrunc_p)
      are no considerations of precision or size involved.  */
   else if (INTEGRAL_TYPE_P (type)
 	   && TYPE_RM_SIZE (type)
-	   && (0 != compare_tree_int (TYPE_RM_SIZE (type),
-				      GET_MODE_BITSIZE (TYPE_MODE (type)))
+	   && (tree_int_cst_compare (TYPE_RM_SIZE (type),
+				     TYPE_SIZE (type)) < 0
 	       || (AGGREGATE_TYPE_P (etype)
 		   && TYPE_REVERSE_STORAGE_ORDER (etype))))
     {
@@ -4974,8 +4996,8 @@ unchecked_convert (tree type, tree expr, bool notrunc_p)
      type with reverse storage order and we also proceed similarly.  */
   else if (INTEGRAL_TYPE_P (etype)
 	   && TYPE_RM_SIZE (etype)
-	   && (0 != compare_tree_int (TYPE_RM_SIZE (etype),
-				      GET_MODE_BITSIZE (TYPE_MODE (etype)))
+	   && (tree_int_cst_compare (TYPE_RM_SIZE (etype),
+				     TYPE_SIZE (etype)) < 0
 	       || (AGGREGATE_TYPE_P (type)
 		   && TYPE_REVERSE_STORAGE_ORDER (type))))
     {
@@ -5095,26 +5117,25 @@ unchecked_convert (tree type, tree expr, bool notrunc_p)
      is an integral type of the same precision and signedness or if the output
      is a biased type or if both the input and output are unsigned.  */
   if (!notrunc_p
-      && INTEGRAL_TYPE_P (type) && TYPE_RM_SIZE (type)
-      && !(code == INTEGER_TYPE && TYPE_BIASED_REPRESENTATION_P (type))
-      && 0 != compare_tree_int (TYPE_RM_SIZE (type),
-				GET_MODE_BITSIZE (TYPE_MODE (type)))
+      && INTEGRAL_TYPE_P (type)
+      && TYPE_RM_SIZE (type)
+      && tree_int_cst_compare (TYPE_RM_SIZE (type), TYPE_SIZE (type)) < 0
       && !(INTEGRAL_TYPE_P (etype)
 	   && TYPE_UNSIGNED (type) == TYPE_UNSIGNED (etype)
-	   && operand_equal_p (TYPE_RM_SIZE (type),
-			       (TYPE_RM_SIZE (etype) != 0
-				? TYPE_RM_SIZE (etype) : TYPE_SIZE (etype)),
-			       0))
+	   && tree_int_cst_compare (TYPE_RM_SIZE (type),
+				    TYPE_RM_SIZE (etype)
+				    ? TYPE_RM_SIZE (etype)
+				    : TYPE_SIZE (etype)) == 0)
+      && !(code == INTEGER_TYPE && TYPE_BIASED_REPRESENTATION_P (type))
       && !(TYPE_UNSIGNED (type) && TYPE_UNSIGNED (etype)))
     {
       tree base_type
-	= gnat_type_for_mode (TYPE_MODE (type), TYPE_UNSIGNED (type));
+	= gnat_type_for_size (TREE_INT_CST_LOW (TYPE_SIZE (type)),
+			      TYPE_UNSIGNED (type));
       tree shift_expr
 	= convert (base_type,
 		   size_binop (MINUS_EXPR,
-			       bitsize_int
-			       (GET_MODE_BITSIZE (TYPE_MODE (type))),
-			       TYPE_RM_SIZE (type)));
+			       TYPE_SIZE (type), TYPE_RM_SIZE (type)));
       expr
 	= convert (type,
 		   build_binary_op (RSHIFT_EXPR, base_type,
@@ -5435,7 +5456,7 @@ builtin_type_for_size (int size, bool unsignedp)
 static void
 install_builtin_elementary_types (void)
 {
-  signed_size_type_node = gnat_signed_type (size_type_node);
+  signed_size_type_node = gnat_signed_type_for (size_type_node);
   pid_type_node = integer_type_node;
   void_list_node = build_void_list_node ();
 
@@ -6107,7 +6128,7 @@ def_builtin_1 (enum built_in_function fncode,
 
   /* Preserve an already installed decl.  It most likely was setup in advance
      (e.g. as part of the internal builtins) for specific reasons.  */
-  if (builtin_decl_explicit (fncode) != NULL_TREE)
+  if (builtin_decl_explicit (fncode))
     return;
 
   gcc_assert ((!both_p && !fallback_p)

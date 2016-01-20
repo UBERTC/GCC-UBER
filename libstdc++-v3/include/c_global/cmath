@@ -41,7 +41,9 @@
 #include <bits/c++config.h>
 #include <bits/cpp_type_traits.h>
 #include <ext/type_traits.h>
-#include <math.h>
+#define _GLIBCXX_INCLUDE_NEXT_C_HEADERS
+#include_next <math.h>
+#undef _GLIBCXX_INCLUDE_NEXT_C_HEADERS
 
 #ifndef _GLIBCXX_CMATH
 #define _GLIBCXX_CMATH 1
@@ -72,6 +74,8 @@
 #undef tan
 #undef tanh
 
+extern "C++"
+{
 namespace std _GLIBCXX_VISIBILITY(default)
 {
 _GLIBCXX_BEGIN_NAMESPACE_VERSION
@@ -1787,5 +1791,7 @@ _GLIBCXX_END_NAMESPACE_VERSION
 #if __STDCPP_WANT_MATH_SPEC_FUNCS__ == 1
 #  include <bits/specfun.h>
 #endif
+
+} // extern "C++"
 
 #endif

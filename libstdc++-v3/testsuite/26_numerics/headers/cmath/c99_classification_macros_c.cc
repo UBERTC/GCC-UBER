@@ -17,11 +17,9 @@
 // with this library; see the file COPYING3.  If not see
 // <http://www.gnu.org/licenses/>.
 
-// { dg-do compile }
+// { dg-do compile { xfail uclibc } }
+// { dg-excess-errors "" { target uclibc } }
 // { dg-add-options no_pch }
-
-// { dg-xfail-if "" { { *-*-linux* *-*-gnu* *-*-darwin* *-*-solaris2.1[01]* hppa*-*-hpux* *-*-mingw* *-*-aix* } || { uclibc || newlib } } { "*" } { "" } }
-// { dg-excess-errors "" { target { { *-*-linux* *-*-gnu* *-*-darwin* *-*-solaris2.1[01]* hppa*-*-hpux* *-*-mingw* *-*-aix* } || { uclibc || newlib } } } }
 
 #include <math.h>
 

@@ -266,18 +266,12 @@ add_comma_separated_to_vector (void **pvec, const char *arg)
   *pvec = v;
 }
 
-/* Initialize opts_obstack if not initialized.  */
+/* Initialize opts_obstack.  */
 
 void
 init_opts_obstack (void)
 {
-  static bool opts_obstack_initialized = false;
-
-  if (!opts_obstack_initialized)
-    {
-      opts_obstack_initialized = true;
-      gcc_obstack_init (&opts_obstack);
-    }
+  gcc_obstack_init (&opts_obstack);
 }
 
 /* Initialize OPTS and OPTS_SET before using them in parsing options.  */
@@ -287,7 +281,9 @@ init_options_struct (struct gcc_options *opts, struct gcc_options *opts_set)
 {
   size_t num_params = get_num_compiler_params ();
 
-  init_opts_obstack ();
+  /* Ensure that opts_obstack has already been initialized by the time
+     that we initialize any gcc_options instances (PR jit/68446).  */
+  gcc_assert (opts_obstack.chunk_size > 0);
 
   *opts = global_options_init;
 
@@ -1916,8 +1912,35 @@ common_handle_option (struct gcc_options *opts,
       break;
 
     case OPT_foffload_:
-      /* Deferred.  */
-      break;
+      {
+	const char *p = arg;
+	opts->x_flag_disable_hsa = true;
+	while (*p != 0)
+	  {
+	    const char *comma = strchr (p, ',');
+
+	    if ((strncmp (p, "disable", 7) == 0)
+		&& (p[7] == ',' || p[7] == '\0'))
+	      {
+		opts->x_flag_disable_hsa = true;
+		break;
+	      }
+
+	    if ((strncmp (p, "hsa", 3) == 0)
+		&& (p[3] == ',' || p[3] == '\0'))
+	      {
+#ifdef ENABLE_HSA
+		opts->x_flag_disable_hsa = false;
+#else
+		sorry ("HSA has not been enabled during configuration");
+#endif
+	      }
+	    if (!comma)
+	      break;
+	    p = comma + 1;
+	  }
+	break;
+      }
 
 #ifndef ACCEL_COMPILER
     case OPT_foffload_abi_:

@@ -75,6 +75,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "gcse.h"
 #include "tree-chkp.h"
 #include "omp-low.h"
+#include "hsa.h"
 
 #if defined(DBX_DEBUGGING_INFO) || defined(XCOFF_DEBUGGING_INFO)
 #include "dbxout.h"
@@ -517,6 +518,8 @@ compile_file (void)
 	chkp_finish_file ();
 
       omp_finish_file ();
+
+      hsa_output_brig ();
 
       output_shared_constant_pool ();
       output_object_blocks ();
@@ -2050,6 +2053,7 @@ toplev::main (int argc, char **argv)
   /* One-off initialization of options that does not need to be
      repeated when options are added for particular functions.  */
   init_options_once ();
+  init_opts_obstack ();
 
   /* Initialize global options structures; this must be repeated for
      each structure used for parsing options.  */
@@ -2131,11 +2135,15 @@ toplev::finalize (void)
   finalize_options_struct (&global_options);
   finalize_options_struct (&global_options_set);
 
+  /* save_decoded_options uses opts_obstack, so these must
+     be cleaned up together.  */
+  obstack_free (&opts_obstack, NULL);
   XDELETEVEC (save_decoded_options);
+  save_decoded_options = NULL;
+  save_decoded_options_count = 0;
 
   /* Clean up the context (and pass_manager etc). */
   delete g;
   g = NULL;
 
-  obstack_free (&opts_obstack, NULL);
 }

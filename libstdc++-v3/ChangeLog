@@ -1,3 +1,128 @@
+2016-01-20  Torvald Riegel  <triegel@redhat.com>
+
+	PR libstdc++/69310
+	* config/os/bsd/darwin/os_defines.h (_GLIBCXX_USE_WEAK_REF): Define.
+
+2016-01-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60401
+	* include/c_compatibility/math.h (acosh, asinh, atanh, acbrt,
+	copysign, erf, erfc, exp2, expm1, fdim, fma, fmax, fmin, hypot, ilogb,
+	lgamma, llrint, llround, log1p, log2, logb, lrint, lround, nearbyint,
+	nextafter, nexttoward, remainder, remquo, rint, round, scalbln, scalbn,
+	tgamma, trunc) [__cplusplus >= 201103L && _GLIBCXX_USE_C99_MATH_TR1]:
+	Add using declarations.
+	* testsuite/26_numerics/headers/cmath/60401.cc: New.
+
+	PR libstdc++/69386
+	* include/c_global/ccomplex: Ensure C++ language linkage.
+	* include/c_global/cmath: Likewise.
+	* include/c_global/cstdlib: Likewise.
+	* include/c_global/ctgmath: Likewise.
+	* testsuite/17_intro/headers/c++2011/linkage.cc: New.
+
+2016-01-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/14608
+	PR libstdc++/60401
+	* include/Makefile.am: Use c_compatibility math.h and stdlib.h for
+	--enable-cheaders=c_global configs.
+	* include/Makefile.in: Regenerate.
+	* include/c_compatibility/math.h: Remove obsolete _GLIBCXX_NAMESPACE_C
+	test and allow inclusion from C files.
+	* include/c_compatibility/stdlib.h: Likewise. Support freestanding.
+	(at_quick_exit, quick_exit): Add using directives.
+	* include/c_global/cmath: Use #include_next for math.h.
+	* include/c_global/cstdlib: Use #include_next for stdlib.h.
+	* testsuite/26_numerics/headers/cmath/14608.cc: New.
+	* testsuite/26_numerics/headers/cmath/c99_classification_macros_c.cc:
+	Remove xfail for most targets.
+	* testsuite/26_numerics/headers/cstdlib/60401.cc: New.
+
+2016-01-18  Torvald Riegel  <triegel@redhat.com>
+
+	* include/bits/c++config (_GLIBCXX_USE_WEAK_REF): New.
+	(_GLIBCXX_TXN_SAFE, _GLIBCXX_TXN_SAFE_DYN): Use	_GLIBCXX_USE_WEAK_REF
+	and move after its definition.
+	* config/os/aix/os_defines.h (_GLIBCXX_USE_WEAK_REF): Override.
+	* src/c++11/cow-stdexcept.cc: Use _GLIBCXX_USE_WEAK_REF instead of
+	__GXX_WEAK__, and only provide transactional clones if
+	_GLIBCXX_USE_WEAK_REF is true.  Don't provide stubs of libitm
+	functions.
+
+2016-01-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60637
+	* testsuite/26_numerics/headers/cmath/60637.cc: Add test.
+
+	PR libstdc++/69243
+	* include/std/functional (_Function_base::_M_not_empty_function):
+	Change overloads for pointers to take arguments by value.
+	* testsuite/20_util/function/cons/57465.cc: Add tests for
+	pointer-to-member cases.
+
+	PR libstdc++/69340
+	* src/c++11/cow-stdexcept.cc (_txnal_cow_string_C1_for_exceptions):
+	Use macros for exception handling and fix unused parameter warning.
+
+2016-01-17  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR libstdc++/68734
+	* config/abi/post/hppa-linux-gnu/baseline_symbols.txt: Update.
+
+2016-01-17  Torvald Riegel  <triegel@redhat.com>
+
+	* src/c++11/cow-stdexcept.cc (txnal_read_ptr): Fix static_assert.
+
+2016-01-16  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* config/abi/post/x86_64-linux-gnu/x32/baseline_symbols.txt: Add
+	__int128 symbols.
+
+2016-01-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/69293
+	* include/bits/uses_allocator.h (__uses_alloc<true, ...>): Add
+	static assertion that type is constructible from the arguments.
+	* testsuite/20_util/scoped_allocator/69293_neg.cc: New.
+	* testsuite/20_util/uses_allocator/69293_neg.cc: New.
+	* testsuite/20_util/uses_allocator/cons_neg.cc: Adjust dg-error.
+
+	PR libstdc++/69294
+	* acinclude.m4 (GLIBCXX_CHECK_MATH11_PROTO): Check for obsolete isinf
+	and isnan on AIX. Quote variables.
+	* configure: Regenerate.
+
+2016-01-15  Torvald Riegel  <triegel@redhat.com>
+
+	* include/bits/basic_string.h (basic_string): Declare friends.
+	* include/bits/c++config (_GLIBCXX_TXN_SAFE,
+	_GLIBCXX_TXN_SAFE_DYN, _GLIBCXX_USE_ALLOCATOR_NEW): New.
+	* include/std/stdexcept (logic_error, domain_error, invalid_argument,
+	length_error, out_of_range, runtime_error, range_error,
+	underflow_error, overflow_error): Declare members as transaction-safe.
+	(logic_error, runtime_error): Declare friend functions.
+	* libsupc++/exception (exception, bad_exception): Declare members as
+	transaction-safe.
+	* src/c++11/cow-stdexcept.cc: Define transactional clones for the
+	transaction-safe members of exceptions and helper functions.
+	* libsupc++/eh_exception.cc: Adjust and define transactional clones.
+	* config/abi/pre/gnu.ver (GLIBCXX_3.4.22) Add transactional clones.
+	(CXXABI_1.3.10): New.
+	* acinclude.m4 (GLIBCXX_CHECK_SIZE_T_MANGLING): New.
+	(GLIBCXX_ENABLE_ALLOCATOR): Set ENABLE_ALLOCATOR_NEW.
+	* configure.ac: Call GLIBCXX_CHECK_SIZE_T_MANGLING.
+	* include/Makefile.am: Write ENABLE_ALLOCATOR_NEW to c++config.h.
+	* include/Makefile.in: Regenerate.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* testsuite/util/testsuite_abi.cc (check_version): Add CXXABI_1.3.10.
+
+2016-01-15  Steve Ellcey  <sellcey@imgtec.com>
+
+	* include/ext/random.tcc: Use __builtin_isfinite instead of
+	std::isfinite.
+
 2016-01-15  Jonathan Wakely  <jwakely@redhat.com>
 
 	* include/bits/std_mutex.h: Fix Doxygen @file name.

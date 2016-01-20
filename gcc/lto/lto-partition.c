@@ -34,6 +34,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "ipa-prop.h"
 #include "ipa-inline.h"
 #include "lto-partition.h"
+#include "hsa.h"
 
 vec<ltrans_partition> ltrans_partitions;
 
@@ -170,6 +171,24 @@ add_symbol_to_partition_1 (ltrans_partition part, symtab_node *node)
 	 Therefore put it into the same partition.  */
       if (cnode->instrumented_version)
 	add_symbol_to_partition_1 (part, cnode->instrumented_version);
+
+      /* Add an HSA associated with the symbol.  */
+      if (hsa_summaries != NULL)
+	{
+	  hsa_function_summary *s = hsa_summaries->get (cnode);
+	  if (s->m_kind == HSA_KERNEL)
+	    {
+	      /* Add binded function.  */
+	      bool added = add_symbol_to_partition_1 (part,
+						      s->m_binded_function);
+	      gcc_assert (added);
+	      if (symtab->dump_file)
+		fprintf (symtab->dump_file,
+			 "adding an HSA function (host/gpu) to the "
+			 "partition: %s\n",
+			 s->m_binded_function->name ());
+	    }
+	}
     }
 
   add_references_to_partition (part, node);
@@ -1077,8 +1096,8 @@ rename_statics (lto_symtab_encoder_t encoder, symtab_node *node)
 		  IDENTIFIER_POINTER
 		    (DECL_ASSEMBLER_NAME (s->get_alias_target()->decl))))
 	&& ((s->real_symbol_p ()
-             && !DECL_EXTERNAL (node->decl)
-	     && !TREE_PUBLIC (node->decl))
+             && !DECL_EXTERNAL (s->decl)
+	     && !TREE_PUBLIC (s->decl))
  	    || may_need_named_section_p (encoder, s))
 	&& (!encoder
 	    || lto_symtab_encoder_lookup (encoder, s) != LCC_NOT_FOUND))
