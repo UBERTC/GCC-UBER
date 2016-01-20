@@ -10410,6 +10410,10 @@ Use the @command{bfd} linker instead of the default linker.
 @opindex fuse-ld=gold
 Use the @command{gold} linker instead of the default linker.
 
+@item -fuse-ld=mcld
+@opindex fuse-ld=mcld
+Use the @command{mcld} linker instead of the default linker.
+
 @cindex Libraries
 @item -l@var{library}
 @itemx -l @var{library}
