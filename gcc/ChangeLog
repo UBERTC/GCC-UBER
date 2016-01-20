@@ -1,3 +1,89 @@
+2016-01-20  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68513
+	* match.pd ((x & ~m) | (y & m)): Only perform on GIMPLE.
+
+2016-01-19  Sergei Trofimovich <siarheit@google.com>
+
+	Backport from mainline
+	PR other/60465
+	* config/ia64/ia64.c (ia64_expand_load_address): Use gprel64
+	for local symbolic operands.
+	* config/ia64/predicates.md (local_symbolic_operand64): New
+	predicate.
+
+2016-01-19  Jeff Law  <law@redhat.com>
+
+	Backport from mainline
+	2016-01-12  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/pr67755
+	* tree-ssa-threadupdate.c (struct ssa_local_info_t): Add new field
+	"need_profile_correction".
+	(thread_block_1): Initialize new field to false by default.  If we
+	have multiple thread paths through a common joiner to different
+	final targets, then set new field to true.
+	(compute_path_counts): Only do count adjustment when it's really
+	needed.
+
+2016-01-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-01-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/69135
+	* config/arm/vfp.md (l<vrint_pattern><su_optab><mode>si2): Set "conds"
+	attribute to unconditional.  Remove %? from output template.
+
+2016-01-18  Alexander Fomin  <alexander.fomin@intel.com>
+
+	Backport from mainline
+	2015-10-09  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR target/67895
+	* config/i386/sse.md (define_insn "sse_cvtsi2ss<round_name>"):
+	Adjust embedded rounding/SAE specifier position.
+	(define_insn "sse_cvtsi2ssq<round_name>"): Likewise.
+	(define_insn "cvtusi2<ssescalarmodesuffix>32<round_name>"): Likewise.
+	(define_insn "cvtusi2<ssescalarmodesuffix>64<round_name>"): Likewise.
+	(define_insn "sse2_cvtsi2sdq<round_name>"): Likewise.
+	(define_insn "avx512dq_rangep<mode><mask_name><round_saeonly_name>"):
+	Likewise.
+	(define_insn "avx512dq_ranges<mode><round_saeonly_name>"): Likewise.
+
+2016-01-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-01-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/69140
+	* config/i386/i386.c (ix86_frame_pointer_required): Enable
+	frame pointer for TARGET_64BIT_MS_ABI when stack is misaligned.
+
+2016-01-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline:
+	2016-01-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/68799
+	* gimple-ssa-strength-reduction.c (create_phi_basis): Directly
+	look up phi candidates in the statement-candidate map.
+	(phi_add_costs): Likewise.
+	(record_phi_increments): Likewise.
+	(phi_incr_cost): Likewise.
+	(ncd_with_phi): Likewise.
+	(all_phi_incrs_profitable): Likewise.
+
+2016-01-17  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	Backport from mainline
+	2016-01-12  Kugan Vivekanandarajah  <kuganv@linaro.org>
+		    Jim Wilson  <jim.wilson@linaro.org>
+
+	PR target/69194
+	* config/arm/arm-builtins.c (arm_expand_neon_args): Call
+	copy_to_mode_reg instead of force_reg.
+
 2016-01-15  Alexander Fomin  <alexander.fomin@intel.com>
 
 	Backport from mainline
