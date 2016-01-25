@@ -1,3 +1,42 @@
+2016-01-25  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR fortran/61831
+	* gfortran.dg/derived_constructor_comps_6.f90: Add missing } to fix
+	up dg-additional-options.
+
+2016-01-25  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/68283
+	gfortran.dg/pr68283.f90: New test.
+
+2016-01-23  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69426
+	* gcc.dg/autopar/pr69426.c: New test.
+
+2016-01-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-01-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/69403
+	* gcc.c-torture/execute/pr69403.c: New test.
+
+2016-01-21  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-07-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/gpr2fprsavecfi.c: New test.
+
+2016-01-21  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-01-08  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/67781
+	* gcc.c-torture/execute/pr67781.c: New file.
+
 2016-01-20  H.J. Lu  <hongjiu.lu@intel.com>
 
 	Backport from mainline
