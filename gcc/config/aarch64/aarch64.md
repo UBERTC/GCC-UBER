@@ -279,7 +279,7 @@
   "aarch64_ccmp_mode_to_code (GET_MODE (operands[1])) == GET_CODE (operands[5])"
   "@
    ccmp\\t%<w>2, %<w>3, %k5, %m4
-   ccmp\\t%<w>2, %<w>3, %k5, %m4
+   ccmp\\t%<w>2, %3, %k5, %m4
    ccmn\\t%<w>2, #%n3, %k5, %m4"
   [(set_attr "type" "alus_sreg,alus_imm,alus_imm")]
 )
@@ -1726,7 +1726,7 @@
   ""
   "@
   adds\\t%<w>0, %<w>1, %<w>2
-  adds\\t%<w>0, %<w>1, %<w>2
+  adds\\t%<w>0, %<w>1, %2
   subs\\t%<w>0, %<w>1, #%n2"
   [(set_attr "type" "alus_sreg,alus_imm,alus_imm")]
 )
@@ -1743,7 +1743,7 @@
   ""
   "@
   adds\\t%w0, %w1, %w2
-  adds\\t%w0, %w1, %w2
+  adds\\t%w0, %w1, %2
   subs\\t%w0, %w1, #%n2"
   [(set_attr "type" "alus_sreg,alus_imm,alus_imm")]
 )
@@ -1925,7 +1925,7 @@
   ""
   "@
   cmn\\t%<w>0, %<w>1
-  cmn\\t%<w>0, %<w>1
+  cmn\\t%<w>0, %1
   cmp\\t%<w>0, #%n1"
   [(set_attr "type" "alus_sreg,alus_imm,alus_imm")]
 )
@@ -2871,7 +2871,7 @@
   ""
   "@
    cmp\\t%<w>0, %<w>1
-   cmp\\t%<w>0, %<w>1
+   cmp\\t%<w>0, %1
    cmn\\t%<w>0, #%n1"
   [(set_attr "type" "alus_sreg,alus_imm,alus_imm")]
 )
@@ -3291,7 +3291,7 @@
   ""
   "@
   <logical>\\t%<w>0, %<w>1, %<w>2
-  <logical>\\t%<w>0, %<w>1, %<w>2
+  <logical>\\t%<w>0, %<w>1, %2
   <logical>\\t%0.<Vbtype>, %1.<Vbtype>, %2.<Vbtype>"
   [(set_attr "type" "logic_reg,logic_imm,neon_logic")
    (set_attr "simd" "*,*,yes")]
