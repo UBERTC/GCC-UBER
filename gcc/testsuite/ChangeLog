@@ -1,3 +1,71 @@
+2016-01-30  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/66707
+	gfortran.dg/common_23.f90: New test.
+
+	Backport from trunk.
+	2015-08-08  Bud Davis  <jmdavis@link.com>
+		    Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/59746
+	* gfortran.dg/common_22.f90: New.
+
+2016-01-29  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65546
+	* gcc.dg/vect/costmodel/ppc/costmodel-vect-31a.c: Correct
+	condition being checked, and disable it when the target supports
+	misaligned loads and stores.
+
+2016-01-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/69459
+	* gcc.target/i386/pr69459.c: New test.
+
+2016-01-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69551
+	* gcc.target/i386/pr69551.c: New test.
+
+2016-01-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/69542
+	* gcc.dg/torture/pr69542.c: New test.
+
+2016-01-28  Martin Jambor  <mjambor@suse.cz>
+
+	PR tree-optimization/69355
+	* gcc.dg/tree-ssa/pr69355.c: New test.
+
+2016-01-28  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/62536
+	* gfortran.dg/block_14.f08: New test.
+
+2016-01-27  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2016-01-27  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68062
+	* c-c++-common/vector-compare-4.c: New test.
+
+2016-01-27  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/69268
+	* gfortran.dg/allocatable_scalar_13.f90: Fixing counts of malloc/
+	free to fit the actual number of calls.
+	* gfortran.dg/allocate_with_source_16.f90: New test.
+
+2016-01-27  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/autopar/pr69110.c: Fix pass number.
+
+2016-01-26  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69110
+	* gcc.dg/autopar/pr69110.c: New test.
+
 2016-01-25  Peter Bergner  <bergner@vnet.ibm.com>
 
 	PR fortran/61831
@@ -103,8 +171,8 @@
 
 2016-01-19  Jeff Law  <law@redhat.com>
 
-        Backport from mainline
-        2016-01-12  Jeff Law  <law@redhat.com>
+	Backport from mainline
+	2016-01-12  Jeff Law  <law@redhat.com>
 
 	PR tree-optimization/67755
 	* gcc.dg/tree-ssa/pr67755.c: New test.
@@ -767,7 +835,7 @@
 2015-11-06  Vladimir Makarov  <vmakarov@redhat.com>
 
 	PR rtl-optimization/68106
-	* testsuite/gcc.target/aarch64/pr68106.c: New.
+	* gcc.target/aarch64/pr68106.c: New.
 
 2015-01-25  Paul Thomas  <pault@gcc.gnu.org>
 
@@ -887,8 +955,8 @@
 	Backport from mainline
 	2015-10-09  Martin Jambor  <mjambor@suse.cz>
 
-        * gcc.dg/ipa/ipa-sra-10.c: New test.
-        * gcc.dg/torture/pr67794.c: Likewise.
+	* gcc.dg/ipa/ipa-sra-10.c: New test.
+	* gcc.dg/torture/pr67794.c: Likewise.
 
 2015-10-22  Paul Thomas  <pault@gcc.gnu.org>
 
@@ -4009,7 +4077,7 @@
 
 2015-03-05  Martin Sebor  <msebor@redhat.com>
 
-	* PR testsuite/63175
+	PR testsuite/63175
 	* gcc.dg/vect/costmodel/ppc/costmodel-bb-slp-9a.c (main1): Move
 	checking of results into main to prevent it from getting optimized
 	away.

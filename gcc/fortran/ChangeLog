@@ -1,3 +1,32 @@
+2016-01-30  Bud Davis  <jmdavis@link.com>
+	    Mikael Morin  <mikael@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/59746
+	* symbol.c (gfc_restore_last_undo_checkpoint): Delete
+	a common block symbol if it was put in the list.
+
+2016-01-28  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/69484
+	* invoke.texi: Fix documentation of -Wall with respect to -Wtabs.
+
+2016-01-28  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/62536
+	* decl.c: Prevent setting gfc_current_ns to NULL when block statement's
+	nesting is incomplete.  There is already an error conditon, so having
+	gfc_current_ns pointing to an eventually wrong namespace does not matter
+	that much.
+
+2016-01-27  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/p69268
+	* trans-stmt.c (gfc_trans_allocate): Make sure the source=
+	expression is evaluated once only. Use gfc_trans_assignment ()
+	instead of explicitly calling gfc_trans_string_copy () to
+	reduce the code complexity in trans_allocate.
+
 2016-01-25  Dominique d'Humieres <dominiq@lps.ens.fr>
 
 	PR fortran/68283
