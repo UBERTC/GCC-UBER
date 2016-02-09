@@ -1,3 +1,38 @@
+2016-01-31  Jason Merrill  <jason@redhat.com>
+
+	PR c++/69009
+	* pt.c (partial_specialization_p, impartial_args): New.
+	(instantiate_decl): Call impartial_args.
+
+2016-01-27  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2016-01-27  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68062
+	* typeck.c (cp_build_binary_op): Promote operand to unsigned, if
+	needed.  Add -Wsign-compare warning.
+
+2016-01-27  Jason Merrill  <jason@redhat.com>
+
+	PR c++/68949
+	* optimize.c (maybe_clone_body): Clear DECL_SAVED_TREE of the alias.
+	* semantics.c (expand_or_defer_fn_1): Keep DECL_SAVED_TREE of
+	maybe-in-charge *tor.
+
+	PR c++/69131
+	* method.c (walk_field_subobs): Add dtor_from_ctor parm.
+	(process_subob_fn): Likewise.  Don't consider triviality if true.
+	(synthesize_method_walk): Pass it.
+
+2016-01-19  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2016-01-19  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/68965
+	* pt.c (tsubst_copy): Mark elements in expanded vector as used.
+
 2016-01-08  Marek Polacek  <polacek@redhat.com>
 
 	PR c++/68449

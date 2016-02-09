@@ -1,3 +1,304 @@
+2016-02-04  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-02-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69644
+	* gcc.dg/pr69644.c: New test.
+
+2016-02-03  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/67451
+	PR fortran/69418
+	* gfortran.dg/coarray_allocate_2.f08: New test.
+	* gfortran.dg/coarray_allocate_3.f08: New test.
+	* gfortran.dg/coarray_allocate_4.f08: New test.
+
+2016-02-02  Alan Modra  <amodra@gmail.com>
+
+	PR target/69548
+	* gcc.target/powerpc/pr69548.c: New test.
+
+2016-02-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2016-01-26  H.J. Lu  <hongjiu.lu@intel.com>
+	PR target/68986
+	* gcc.target/i386/pr68986-1.c: New test.
+	* gcc.target/i386/pr68986-2.c: Likewise.
+	* gcc.target/i386/pr68986-3.c: Likewise.
+
+2016-01-30  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/66707
+	gfortran.dg/common_23.f90: New test.
+
+	Backport from trunk.
+	2015-08-08  Bud Davis  <jmdavis@link.com>
+		    Mikael Morin  <mikael@gcc.gnu.org>
+
+	PR fortran/59746
+	* gfortran.dg/common_22.f90: New.
+
+2016-01-29  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65546
+	* gcc.dg/vect/costmodel/ppc/costmodel-vect-31a.c: Correct
+	condition being checked, and disable it when the target supports
+	misaligned loads and stores.
+
+2016-01-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/69459
+	* gcc.target/i386/pr69459.c: New test.
+
+2016-01-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69551
+	* gcc.target/i386/pr69551.c: New test.
+
+2016-01-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/69542
+	* gcc.dg/torture/pr69542.c: New test.
+
+2016-01-28  Martin Jambor  <mjambor@suse.cz>
+
+	PR tree-optimization/69355
+	* gcc.dg/tree-ssa/pr69355.c: New test.
+
+2016-01-28  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/62536
+	* gfortran.dg/block_14.f08: New test.
+
+2016-01-27  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2016-01-27  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68062
+	* c-c++-common/vector-compare-4.c: New test.
+
+2016-01-27  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/69268
+	* gfortran.dg/allocatable_scalar_13.f90: Fixing counts of malloc/
+	free to fit the actual number of calls.
+	* gfortran.dg/allocate_with_source_16.f90: New test.
+
+2016-01-27  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/autopar/pr69110.c: Fix pass number.
+
+2016-01-26  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69110
+	* gcc.dg/autopar/pr69110.c: New test.
+
+2016-01-25  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR fortran/61831
+	* gfortran.dg/derived_constructor_comps_6.f90: Add missing } to fix
+	up dg-additional-options.
+
+2016-01-25  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/68283
+	gfortran.dg/pr68283.f90: New test.
+
+2016-01-23  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69426
+	* gcc.dg/autopar/pr69426.c: New test.
+
+2016-01-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-01-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/69403
+	* gcc.c-torture/execute/pr69403.c: New test.
+
+2016-01-21  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-07-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/gpr2fprsavecfi.c: New test.
+
+2016-01-21  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-01-08  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/67781
+	* gcc.c-torture/execute/pr67781.c: New file.
+
+2016-01-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2016-01-20  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR testsuite/69366
+	* g++.dg/pr63995-1.C: Require non-x32 target, instead of,
+	the MPX run-time library, for compile-time MPX test.
+	* gcc.target/i386/chkp-always_inline.c: Likewise.
+	* gcc.target/i386/chkp-bndret.c: Likewise.
+	* gcc.target/i386/chkp-builtins-1.c: Likewise.
+	* gcc.target/i386/chkp-builtins-2.c: Likewise.
+	* gcc.target/i386/chkp-builtins-3.c: Likewise.
+	* gcc.target/i386/chkp-builtins-4.c: Likewise.
+	* gcc.target/i386/chkp-const-check-1.c: Likewise.
+	* gcc.target/i386/chkp-const-check-2.c: Likewise.
+	* gcc.target/i386/chkp-hidden-def.c: Likewise.
+	* gcc.target/i386/chkp-label-address.c: Likewise.
+	* gcc.target/i386/chkp-lifetime-1.c: Likewise.
+	* gcc.target/i386/chkp-narrow-bounds.c: Likewise.
+	* gcc.target/i386/chkp-remove-bndint-1.c: Likewise.
+	* gcc.target/i386/chkp-remove-bndint-2.c: Likewise.
+	* gcc.target/i386/chkp-strchr.c: Likewise.
+	* gcc.target/i386/chkp-strlen-1.c: Likewise.
+	* gcc.target/i386/chkp-strlen-2.c: Likewise.
+	* gcc.target/i386/chkp-strlen-3.c: Likewise.
+	* gcc.target/i386/chkp-strlen-4.c: Likewise.
+	* gcc.target/i386/chkp-strlen-5.c: Likewise.
+	* gcc.target/i386/chkp-stropt-1.c: Likewise.
+	* gcc.target/i386/chkp-stropt-10.c: Likewise.
+	* gcc.target/i386/chkp-stropt-11.c: Likewise.
+	* gcc.target/i386/chkp-stropt-12.c: Likewise.
+	* gcc.target/i386/chkp-stropt-13.c: Likewise.
+	* gcc.target/i386/chkp-stropt-14.c: Likewise.
+	* gcc.target/i386/chkp-stropt-15.c: Likewise.
+	* gcc.target/i386/chkp-stropt-16.c: Likewise.
+	* gcc.target/i386/chkp-stropt-2.c: Likewise.
+	* gcc.target/i386/chkp-stropt-3.c: Likewise.
+	* gcc.target/i386/chkp-stropt-4.c: Likewise.
+	* gcc.target/i386/chkp-stropt-5.c: Likewise.
+	* gcc.target/i386/chkp-stropt-6.c: Likewise.
+	* gcc.target/i386/chkp-stropt-7.c: Likewise.
+	* gcc.target/i386/chkp-stropt-8.c: Likewise.
+	* gcc.target/i386/chkp-stropt-9.c: Likewise.
+	* gcc.target/i386/pr63995-2.c: Likewise.
+	* gcc.target/i386/pr64805.c: Likewise.
+	* gcc.target/i386/pr65044.c: Likewise.
+	* gcc.target/i386/pr65167.c: Likewise.
+	* gcc.target/i386/pr65183.c: Likewise.
+	* gcc.target/i386/pr65184.c: Likewise.
+	* gcc.target/i386/thunk-retbnd.c: Likewise.
+
+2016-01-20  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68513
+	* gcc.dg/pr68513.c: New test.
+
+2016-01-19  Sergei Trofimovich <siarheit@google.com>
+
+	Backport from mainline
+	PR other/60465
+	* gcc.target/ia64/pr60465-gprel64.c: New test.
+	* gcc.target/ia64/pr60465-gprel64-c37.c: New test.
+
+2016-01-19  Jeff Law  <law@redhat.com>
+
+	Backport from mainline
+	2016-01-12  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/67755
+	* gcc.dg/tree-ssa/pr67755.c: New test.
+
+2016-01-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR testsuite/68820
+	* gcc.c-torture/execute/builtins/memops-asm.x: New file.
+	* gcc.c-torture/execute/builtins/strstr-asm.x: Ditto.
+	* gcc.c-torture/execute/builtins/strstr-asm.c: Remove dg-options.
+
+2016-01-19  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2016-01-19  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/68965
+	* g++.dg/cpp1y/parameter-pack-1.C: New test.
+	* g++.dg/cpp1y/parameter-pack-2.C: New test.
+
+2016-01-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-01-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/69135
+	* gcc.target/arm/pr69135_1.c: New test.
+
+2016-01-18  Alexander Fomin  <alexander.fomin@intel.com>
+
+	Backport from mainline
+	2015-10-09  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR target/67895
+	* gcc.target/i386/avx512dq-vrangepd-1.c: Adjust.
+	* gcc.target/i386/avx512dq-vrangeps-1.c: Likewise.
+	* gcc.target/i386/avx512dq-vrangesd-1.c: Likewise.
+	* gcc.target/i386/avx512dq-vrangess-1.c: Likewise.
+	* gcc.target/i386/avx512f-vcvtsi2sd64-1.c: Likewise.
+	* gcc.target/i386/avx512f-vcvtsi2ss-1.c: Likewise.
+	* gcc.target/i386/avx512f-vcvtsi2ss64-1.c: Likewise.
+	* gcc.target/i386/avx512f-vcvtusi2sd64-1.c: Likewise.
+	* gcc.target/i386/avx512f-vcvtusi2ss-1.c: Likewise.
+	* gcc.target/i386/avx512f-vcvtusi2ss64-1.c: Likewise.
+
+2016-01-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-01-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/69140
+	* gcc.target/i386/pr69140.c: New test
+
+2016-01-18  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/inline12.adb: New test.
+
+2016-01-17  Mikael Morin  <mikael@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/61831
+	* gfortran.dg/derived_constructor_components_6.f90: New file.
+	* gfortran.dg/allocate_with_source_14.f03: Change count of
+	__builtin_malloc from 21 to 23.
+
+2016-01-17  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/66082
+	* gfortran.dg/alloc_comp_auto_array_3.f90: New file. Count of
+	__builtin_malloc increased from 3 to 4, relative to trunk.
+
+2016-01-17  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	Backport from mainline
+	2016-01-12  Kugan Vivekanandarajah  <kuganv@linaro.org>
+		    Jim Wilson  <jim.wilson@linaro.org>
+
+	PR target/69194
+	* gcc.target/arm/pr69194.c: New test.
+
+2016-01-15  Alexander Fomin  <alexander.fomin@intel.com>
+
+	Backport from mainline
+	2016-01-13  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR target/69228
+	* gcc.target/i386/avx512pf-vscatterpf0dpd-1.c: Adjust.
+	* gcc.target/i386/avx512pf-vscatterpf0dps-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf0qpd-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf0qps-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1dpd-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1dps-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1qpd-1.c: Likewise.
+	* gcc.target/i386/avx512pf-vscatterpf1qps-1.c: Likewise.
+
 2016-01-12  James Greenhalgh  <james.greenhalgh@arm.com>
 
 	Backport from mainline r222186.
@@ -564,7 +865,7 @@
 2015-11-06  Vladimir Makarov  <vmakarov@redhat.com>
 
 	PR rtl-optimization/68106
-	* testsuite/gcc.target/aarch64/pr68106.c: New.
+	* gcc.target/aarch64/pr68106.c: New.
 
 2015-01-25  Paul Thomas  <pault@gcc.gnu.org>
 
@@ -684,8 +985,8 @@
 	Backport from mainline
 	2015-10-09  Martin Jambor  <mjambor@suse.cz>
 
-        * gcc.dg/ipa/ipa-sra-10.c: New test.
-        * gcc.dg/torture/pr67794.c: Likewise.
+	* gcc.dg/ipa/ipa-sra-10.c: New test.
+	* gcc.dg/torture/pr67794.c: Likewise.
 
 2015-10-22  Paul Thomas  <pault@gcc.gnu.org>
 
@@ -3806,7 +4107,7 @@
 
 2015-03-05  Martin Sebor  <msebor@redhat.com>
 
-	* PR testsuite/63175
+	PR testsuite/63175
 	* gcc.dg/vect/costmodel/ppc/costmodel-bb-slp-9a.c (main1): Move
 	checking of results into main to prevent it from getting optimized
 	away.

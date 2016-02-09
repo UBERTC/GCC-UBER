@@ -1,3 +1,274 @@
+2016-02-04  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backport from mainline
+	2016-02-04  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/64682
+	PR rtl-optimization/69567
+	* combine.c (distribute_notes) <REG_DEAD>: Place the death note
+	before I2 only if the register is both used and set in I2.
+
+2016-02-04  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-02-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69644
+	* config/rs6000/rs6000.c (rs6000_expand_atomic_compare_and_swap):
+	Force oldval into register if it does not satisfy reg_or_short_operand
+	predicate.  Fix up formatting.
+
+2016-02-03  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/69118
+	* config/i386/sse.md (define_insn "avx512f_maskcmp<mode>3"):
+	Fix target.
+
+2016-02-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/67032
+	* config/i386/i386.c (geode_cost): Increase cost of MMX and SSE moves.
+
+2016-02-02  Alan Modra  <amodra@gmail.com>
+
+	PR target/69548
+	* config/rs6000/predicates.md (quad_int_reg_operand): Don't
+	allow subregs.
+
+2016-02-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2016-01-26  H.J. Lu  <hongjiu.lu@intel.com>
+	PR target/68986
+	* config/i386/i386.c (ix86_compute_frame_layout): Move stack
+	alignment adjustment to ...
+	(ix86_update_stack_boundary): Here.  Don't over-align stack nor
+	change stack_alignment_needed for __tls_get_addr.
+	(ix86_finalize_stack_realign_flags): Use stack_alignment_needed
+	if __tls_get_addr is called.
+
+2016-02-01  Richard Henderson  <rth@redhat.com>
+
+	Backport from mainline.
+	2016-01-28  Richard Henderson  <rth@redhat.com>
+
+	PR target/69305
+	* config/aarch64/aarch64-modes.def (CC_Cmode): New
+	* config/aarch64/aarch64-protos.h: Update.
+	* config/aarch64/aarch64.c (aarch64_zero_extend_const_eq): New.
+	(aarch64_select_cc_mode): Add check for use of CC_Cmode.
+	(aarch64_get_condition_code_1): Handle CC_Cmode.
+	* config/aarch64/aarch64.md (addti3): Use adddi3_compareC.
+	(*add<mode>3_compareC_cconly_imm): New.
+	(*add<mode>3_compareC_cconly): New.
+	(*add<mode>3_compareC_imm): New.
+	(add<mode>3_compareC): New.
+	(add<mode>3_carryin, *addsi3_carryin_uxtw): Sort compare operand
+	to be first.  Use aarch64_carry_operation.
+	(*add<mode>3_carryin_alt1, *addsi3_carryin_alt1_uxtw): Remove.
+	(*add<mode>3_carryin_alt2, *addsi3_carryin_alt2_uxtw): Remove.
+	(*add<mode>3_carryin_alt3, *addsi3_carryin_alt3_uxtw): Remove.
+	(subti3): Use subdi3_compare1.
+	(*sub<mode>3_compare0): Rename from sub<mode>3_compare0.
+	(sub<mode>3_compare1): New.
+	(*sub<mode>3_carryin0, *subsi3_carryin_uxtw): New.
+	(*sub<mode>3_carryin): Use aarch64_borrow_operation.
+	(*subsi3_carryin_uxtw): Likewise.
+	(*ngc<mode>, *ngcsi_uxtw): Likewise.
+	(*sub<mode>3_carryin_alt, *subsi3_carryin_alt_uxtw): New.
+	* config/aarch64/iterators.md (DWI): New.
+	* config/aarch64/predicates.md (aarch64_carry_operation): New.
+	(aarch64_borrow_operation): New.
+
+2016-01-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/69459
+	* config/i386/constraints.md (C): Only accept constant zero operand.
+	(BC): New constraint.
+	* config/i386/sse.md (*mov<mode>_internal): Use BC constraint
+	instead of C constraint.
+	* doc/md.texi (Machine Constraints): Update description
+	of C constraint.
+
+2016-01-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69551
+	* config/i386/i386.c (ix86_expand_vector_set) <case V4SImode>: For
+	SSE1, copy target into the temporary reg first before recursing
+	on it.
+
+2016-01-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/69542
+	* lra-remat.c (calculate_local_reg_remat_bb_data): Only consider
+	non-debug insns.
+
+2016-01-28  Richard Henderson  <rth@redhat.com>
+
+	PR rtl-opt/69447
+	* lra-remat.c (subreg_regs): New.
+	(dump_candidates_and_remat_bb_data): Dump it.
+	(operand_to_remat): Reject if operand in subreg_regs.
+	(set_bb_regs): Collect subreg_regs.
+	(lra_remat): Init and free subreg_regs.  Compute
+	calculate_local_reg_remat_bb_data before create_cands.
+
+2016-01-28  Martin Jambor  <mjambor@suse.cz>
+
+	PR tree-optimization/69355
+	* tree-sra.c (analyze_access_subtree): Correct hole detection when
+	total_scalarization fails.
+
+2016-01-26  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69110
+	* tree-data-ref.c (initialize_data_dependence_relation): Handle
+	DR_NUM_DIMENSIONS == 0.
+
+2016-01-26  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/ia64/ia64.c (ia64_expand_vecint_compare): Use gen_int_mode.
+
+2016-01-23  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69426
+	* tree-parloops.c (eliminate_local_variables_stmt): Handle vdef of
+	removed clobber.
+
+2016-01-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-01-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/69403
+	* config/arm/thumb2.md (*thumb2_ior_scc_strict_it): Convert to
+	define_insn_and_split.  Ensure operands[1] and operands[0] do not
+	get assigned the same register.
+
+2016-01-21  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backported from mainline
+	2015-07-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_save_gprs_to_fprs): Add CFA_REGISTER
+	reg note to the GPR -> FPR save instructions.
+
+2016-01-21  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-01-08  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/67781
+	* tree-ssa-math-opts.c (find_bswap_or_nop): Zero out bytes in cmpxchg
+	and cmpnop in two steps: first the ones not accessed in original
+	gimple expression in a endian independent way and then the ones not
+	accessed in the final result in an endian-specific way.
+
+2016-01-20  Marek Polacek  <polacek@redhat.com>
+
+	PR c/68513
+	* match.pd ((x & ~m) | (y & m)): Only perform on GIMPLE.
+
+2016-01-19  Sergei Trofimovich <siarheit@google.com>
+
+	Backport from mainline
+	PR other/60465
+	* config/ia64/ia64.c (ia64_expand_load_address): Use gprel64
+	for local symbolic operands.
+	* config/ia64/predicates.md (local_symbolic_operand64): New
+	predicate.
+
+2016-01-19  Jeff Law  <law@redhat.com>
+
+	Backport from mainline
+	2016-01-12  Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/pr67755
+	* tree-ssa-threadupdate.c (struct ssa_local_info_t): Add new field
+	"need_profile_correction".
+	(thread_block_1): Initialize new field to false by default.  If we
+	have multiple thread paths through a common joiner to different
+	final targets, then set new field to true.
+	(compute_path_counts): Only do count adjustment when it's really
+	needed.
+
+2016-01-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-01-19  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/69135
+	* config/arm/vfp.md (l<vrint_pattern><su_optab><mode>si2): Set "conds"
+	attribute to unconditional.  Remove %? from output template.
+
+2016-01-18  Alexander Fomin  <alexander.fomin@intel.com>
+
+	Backport from mainline
+	2015-10-09  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR target/67895
+	* config/i386/sse.md (define_insn "sse_cvtsi2ss<round_name>"):
+	Adjust embedded rounding/SAE specifier position.
+	(define_insn "sse_cvtsi2ssq<round_name>"): Likewise.
+	(define_insn "cvtusi2<ssescalarmodesuffix>32<round_name>"): Likewise.
+	(define_insn "cvtusi2<ssescalarmodesuffix>64<round_name>"): Likewise.
+	(define_insn "sse2_cvtsi2sdq<round_name>"): Likewise.
+	(define_insn "avx512dq_rangep<mode><mask_name><round_saeonly_name>"):
+	Likewise.
+	(define_insn "avx512dq_ranges<mode><round_saeonly_name>"): Likewise.
+
+2016-01-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-01-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/69140
+	* config/i386/i386.c (ix86_frame_pointer_required): Enable
+	frame pointer for TARGET_64BIT_MS_ABI when stack is misaligned.
+
+2016-01-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline:
+	2016-01-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/68799
+	* gimple-ssa-strength-reduction.c (create_phi_basis): Directly
+	look up phi candidates in the statement-candidate map.
+	(phi_add_costs): Likewise.
+	(record_phi_increments): Likewise.
+	(phi_incr_cost): Likewise.
+	(ncd_with_phi): Likewise.
+	(all_phi_incrs_profitable): Likewise.
+
+2016-01-17  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	Backport from mainline
+	2016-01-12  Kugan Vivekanandarajah  <kuganv@linaro.org>
+		    Jim Wilson  <jim.wilson@linaro.org>
+
+	PR target/69194
+	* config/arm/arm-builtins.c (arm_expand_neon_args): Call
+	copy_to_mode_reg instead of force_reg.
+
+2016-01-15  Alexander Fomin  <alexander.fomin@intel.com>
+
+	Backport from mainline
+	2016-01-13  Alexander Fomin  <alexander.fomin@intel.com>
+
+	PR target/69228
+	* config/i386/sse.md (define_expand "avx512pf_gatherpf<mode>sf"):
+	Change first operand predicate from register_or_constm1_operand
+	to register_operand.
+	(define_expand "avx512pf_gatherpf<mode>df"): Likewise.
+	(define_expand "avx512pf_scatterpf<mode>sf"): Likewise.
+	(define_expand "avx512pf_scatterpf<mode>df"): Likewise.
+	(define_insn "*avx512pf_gatherpf<mode>sf"): Remove.
+	(define_insn "*avx512pf_gatherpf<mode>df"): Likewise.
+	(define_insn "*avx512pf_scatterpf<mode>sf"): Likewise.
+	(define_insn "*avx512pf_scatterpf<mode>df"): Likewise.
+	* config/i386/i386.c (ix86_expand_builtin): Remove first operand
+	comparison with constm1_rtx from vec_prefetch_gen part.
+
 2016-01-13  Richard Biener  <rguenther@suse.de>
 
 	PR tree-optimization/69013
@@ -138,7 +409,8 @@
 	2015-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
 
 	* config/s390/predicates.md (const_mask_operand): New predicate.
-	* config/s390/s390-builtins.def: Set a smaller bitmask for a few builtins.
+	* config/s390/s390-builtins.def: Set a smaller bitmask for a
+	few builtins.
 	* config/s390/vector.md: Change predicate from immediate_operand
 	to either const_int_operand or const_mask_operand.  Add special
 	insn conditions on patterns which have to exclude certain values.
@@ -272,7 +544,7 @@
 2015-12-14  James Greenhalgh  <james.greenhalgh@arm.com>
 
 	Backport from mainline.
-	2015-12-09  James Greenhalgh  <james.greenhalgh@arm.com> 
+	2015-12-09  James Greenhalgh  <james.greenhalgh@arm.com>
 
 	PR rtl-optimization/67609
 	* config/aarch64/aarch64-protos.h
@@ -411,7 +683,7 @@
 	Backport from mainline
 	2015-09-30  Bernd Edlinger  <bernd.edlinger@hotmail.de>
 
-	PR rtl-optimization/67037    
+	PR rtl-optimization/67037
 	* lra-constraints.c (process_addr_reg): Use copy_rtx when necessary.
 
 2015-11-26  David Edelsohn  <dje.gcc@gmail.com>
@@ -683,12 +955,12 @@
 	(contains_type_p): Fix out of range check, clear dynamic flag.
 
 	2015-10-23  Jan Hubicka  <hubicka@ucw.cz>
- 
+
 	PR ipa/pr67600
 	* ipa-polymorphic-call.c
 	(ipa_polymorphic_call_context::get_dynamic_type): Do not confuse
 	instance offset with offset of outer type.
- 
+
 	2015-10-12  Richard Biener  <rguenther@suse.de>
 
 	PR ipa/67783
@@ -697,7 +969,7 @@
 	quadratic behavior.
 
 	2015-10-11  Jan Hubicka  <hubicka@ucw.cz>
- 
+
 	PR ipa/67056
 	* ipa-polymorphic-call.c (possible_placement_new): If cur_offset
 	is negative we don't know the type.

@@ -1,3 +1,74 @@
+2016-02-03  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/67451
+	PR fortran/69418
+	* trans-expr.c (gfc_copy_class_to_class): For coarrays just the
+	pointer is passed.  Take it as is without trying to deref the
+	_data component.
+	* trans-stmt.c (gfc_trans_allocate): Take care of coarrays as
+	argument to source=-expression.
+
+2016-01-30  Bud Davis  <jmdavis@link.com>
+	    Mikael Morin  <mikael@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/59746
+	* symbol.c (gfc_restore_last_undo_checkpoint): Delete
+	a common block symbol if it was put in the list.
+
+2016-01-28  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/69484
+	* invoke.texi: Fix documentation of -Wall with respect to -Wtabs.
+
+2016-01-28  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/62536
+	* decl.c: Prevent setting gfc_current_ns to NULL when block statement's
+	nesting is incomplete.  There is already an error conditon, so having
+	gfc_current_ns pointing to an eventually wrong namespace does not matter
+	that much.
+
+2016-01-27  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/p69268
+	* trans-stmt.c (gfc_trans_allocate): Make sure the source=
+	expression is evaluated once only. Use gfc_trans_assignment ()
+	instead of explicitly calling gfc_trans_string_copy () to
+	reduce the code complexity in trans_allocate.
+
+2016-01-25  Dominique d'Humieres <dominiq@lps.ens.fr>
+
+	PR fortran/68283
+	* primary.c (gfc_variable_attr): revert revision r221955,
+	call gfc_internal_error only if there is no error.
+
+2016-01-17  Mikael Morin  <mikael@gcc.gnu.org>
+	    Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	Backport from trunk.
+	PR fortran/61831
+	* trans-array.c (gfc_conv_array_parameter): Guard allocatable
+	component deallocation code generation with descriptorless
+	calling convention flag.
+	* trans-expr.c (gfc_conv_expr_reference): Remove allocatable
+	component deallocation code generation from revision 212329.
+	(expr_may_alias_variables): New function.
+	(gfc_conv_procedure_call): New boolean elemental_proc to factor
+	check for procedure elemental-ness.  Rename boolean f to nodesc_arg
+	and declare it in the outer scope.  Use expr_may_alias_variables,
+	elemental_proc and nodesc_arg to decide whether generate allocatable
+	component deallocation code.
+	(gfc_trans_subarray_assign): Set deep copy flag.
+
+2016-01-17  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/66082
+	* trans-array.c (gfc_conv_array_parameter): Ensure that all
+	non-variable arrays with allocatable components have the
+	components deallocated after the procedure call.
+
 2016-01-10  Paul Thomas  <pault@gcc.gnu.org>
 
 	Update copyright years in updated files.
