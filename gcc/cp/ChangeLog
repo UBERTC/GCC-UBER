@@ -1,3 +1,33 @@
+2016-02-10  Jason Merrill  <jason@redhat.com>
+
+	PR c++/68926
+	* pt.c (resolve_nondeduced_context): Add complain parm.
+	(do_auto_deduction): Pass it.
+	* cvt.c (convert_to_void): Likewise.
+	* decl.c (cp_finish_decl): Likewise.
+	* init.c (build_new): Likewise.
+	* rtti.c (get_tinfo_decl_dynamic): Likewise.
+	* semantics.c (finish_decltype_type): Likewise.
+	* typeck.c (decay_conversion): Likewise.
+	* cp-tree.h: Adjust declaration.
+	* call.c (standard_conversion): Add complain parm, pass it along.
+	(implicit_conversion): Pass it.
+
+2016-02-10  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-02-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/59627
+	* parser.c (cp_parser_omp_declare_reduction): Set assembler name
+	of the DECL_OMP_DECLARE_REDUCTION_P decls.
+
+2016-01-31  Jason Merrill  <jason@redhat.com>
+
+	PR c++/69009
+	* pt.c (partial_specialization_p, impartial_args): New.
+	(instantiate_decl): Call impartial_args.
+
 2016-01-27  Marek Polacek  <polacek@redhat.com>
 
 	Backport from mainline

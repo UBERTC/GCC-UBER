@@ -1,3 +1,121 @@
+2016-02-10  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-02-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/59627
+	* g++.dg/gomp/pr59627.C: New test.
+
+	2016-02-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/69669
+	* c-c++-common/pr69669.c: New test.
+
+	2016-01-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69546
+	* gcc.dg/torture/pr69546.c: New test.
+
+	2016-01-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69399
+	* gcc.dg/torture/pr69399.c: New test.
+
+	2016-01-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69432
+	* g++.dg/opt/pr69432.C: New test.
+
+	2016-01-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69187
+	PR target/65624
+	* gcc.target/arm/pr69187.c: New test.
+
+	PR middle-end/67653
+	* c-c++-common/pr67653.c: New test.
+	* gcc.dg/torture/pr29119.c: Add dg-warning.
+
+	2016-01-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/65779
+	* gcc.dg/pr65779.c: New test.
+
+	PR rtl-optimization/68955
+	PR rtl-optimization/64557
+	* gcc.dg/torture/pr68955.c: New test.
+
+	2016-01-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69214
+	* gcc.c-torture/compile/pr69214.c: New test.
+
+	2016-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/69128
+	* gfortran.dg/gomp/pr69128.f90: New test.
+
+	2016-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/69055
+	* gfortran.dg/pr69055.f90: New test.
+
+	PR target/69015
+	* gcc.dg/pr69015.c: New test.
+
+	2015-12-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67376
+	* g++.dg/cpp0x/constexpr-67376.C: New test.
+
+	2015-12-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR preprocessor/57580
+	* c-c++-common/cpp/pr57580.c: New test.
+	* c-c++-common/gomp/pr57580.c: New test.
+
+2016-02-09  Alexander Fomin  <alexander.fomin@intel.com>
+
+	Backport from mainline
+	2016-02-09  Alexander Fomin  <alexander.fomin@intel.com>
+
+	* gcc.target/i386/avx512f-klogic-2.c: Adjust expectation.
+
+2016-02-09  Bernd Schmidt  <bernds@codesourcery.com>
+
+	PR middle-end/65702
+	* c-c++-common/pr67639.c: New test.
+
+2016-02-04  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-02-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69644
+	* gcc.dg/pr69644.c: New test.
+
+2016-02-03  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/67451
+	PR fortran/69418
+	* gfortran.dg/coarray_allocate_2.f08: New test.
+	* gfortran.dg/coarray_allocate_3.f08: New test.
+	* gfortran.dg/coarray_allocate_4.f08: New test.
+
+2016-02-02  Alan Modra  <amodra@gmail.com>
+
+	PR target/69548
+	* gcc.target/powerpc/pr69548.c: New test.
+
+2016-02-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2016-01-26  H.J. Lu  <hongjiu.lu@intel.com>
+	PR target/68986
+	* gcc.target/i386/pr68986-1.c: New test.
+	* gcc.target/i386/pr68986-2.c: Likewise.
+	* gcc.target/i386/pr68986-3.c: Likewise.
+
 2016-01-30  Dominique d'Humieres  <dominiq@lps.ens.fr>
 
 	PR fortran/66707

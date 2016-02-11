@@ -1,3 +1,169 @@
+2016-02-11  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2016-02-11  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/69713
+	* config/sh/sh.md (casesi_worker_0): Add T_REG use.
+
+2016-02-10  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-01-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69546
+	* wide-int.cc (wi::divmod_internal): For unsigned division
+	where both operands fit into uhwi, if o1 is 1 and o0 has
+	msb set, if divident_prec is larger than bits per hwi,
+	clear another quotient word and return 2 instead of 1.
+	Similarly for remainder with msb in HWI set, if dividend_prec
+	is larger than bits per hwi.
+
+	2016-01-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69399
+	* wide-int.h (wi::lrshift): For larger precisions, only
+	use fast path if shift is known to be < HOST_BITS_PER_WIDE_INT.
+
+	2016-01-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69432
+	* config/i386/i386.c: Include dojump.h.
+	(expand_small_movmem_or_setmem,
+	expand_set_or_movmem_prologue_epilogue_by_misaligned_moves): Spelling
+	fixes.
+	(ix86_expand_set_or_movmem): Call do_pending_stack_adjust () early
+	if dynamic_check != -1.
+
+	2016-01-21  Stefan Sørensen  <stefan.sorensen@spectralink.com>
+		    Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69187
+	PR target/65624
+	* config/arm/arm-builtins.c (arm_expand_neon_builtin): Increase
+	args array size by one to avoid buffer overflow.
+
+	2016-01-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/67653
+	* gimplify.c (gimplify_asm_expr): Warn if it is too late to
+	attempt to mark memory input operand addressable and
+	call prepare_gimple_addressable in that case.  Don't adjust
+	input_location for diagnostics, use error_at instead.
+
+	2016-01-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/65779
+	* shrink-wrap.c: Include valtrack.h.
+	(move_insn_for_shrink_wrap): Add DEBUG argument.  If
+	MAY_HAVE_DEBUG_INSNS, call dead_debug_add on DEBUG_INSNs
+	in between insn and where it will be moved to.  Call
+	dead_debug_insert_temp.
+	(prepare_shrink_wrap): Adjust caller.  Call dead_debug_local_init
+	first and dead_debug_local_finish at the end.
+	For uses and defs bitmap, handle all regs in between REGNO and
+	END_REGNO, not just the first one.
+
+	PR rtl-optimization/68955
+	PR rtl-optimization/64557
+	* dse.c (record_store, check_mem_read_rtx): Don't call get_addr
+	here.  Fix up formatting.
+	* alias.c (get_addr): Handle VALUE +/- CONST_SCALAR_INT_P.
+
+	2016-01-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/68269
+	* combine.c (expand_field_assignment): Punt if compute_mode is
+	unsupported scalar mode.
+
+	2016-01-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69214
+	* tree-vrp.c (simplify_cond_using_ranges): Don't propagate
+	innerop into a comparison if SSA_NAME_OCCURS_IN_ABNORMAL_PHI.
+	Formatting fix.
+
+	2016-01-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/68960
+	* gimple-expr.c (copy_var_decl): If var has DECL_USER_ALIGN set, copy
+	it and DECL_ALIGN too.
+
+	2016-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/69055
+	* ubsan.c (ubsan_instrument_float_cast): Call
+	initialize_sanitizer_builtins.
+
+	PR target/69015
+	* ifcvt.c (find_cond_trap): Give up if returnjump_p (jump).
+
+	2015-12-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67376
+	* fold-const.c (size_low_cst): Removed.
+	(fold_comparison): For POINTER_PLUS_EXPR where base is ADDR_EXPR
+	call get_inner_reference and handle INDIRECT_REF base of it.  Use
+	offset_int for computation of the bitpos.
+	(fold_binary_loc) <case EQ_EXPR, NE_EXPR>: Formatting
+	fixes for X +- Y CMP X and C - X CMP X folding.  Add X CMP X +- Y
+	and X CMP C - X folding.
+
+2016-02-09  Bernd Schmidt  <bernds@codesourcery.com>
+
+	PR middle-end/65702
+	* varasm.c (make_decl_rtl): Mark invalid register vars as
+	DECL_EXTERNAL.
+
+2016-02-04  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backport from mainline
+	2016-02-04  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/64682
+	PR rtl-optimization/69567
+	* combine.c (distribute_notes) <REG_DEAD>: Place the death note
+	before I2 only if the register is both used and set in I2.
+
+2016-02-04  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-02-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69644
+	* config/rs6000/rs6000.c (rs6000_expand_atomic_compare_and_swap):
+	Force oldval into register if it does not satisfy reg_or_short_operand
+	predicate.  Fix up formatting.
+
+2016-02-03  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/69118
+	* config/i386/sse.md (define_insn "avx512f_maskcmp<mode>3"):
+	Fix target.
+
+2016-02-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/67032
+	* config/i386/i386.c (geode_cost): Increase cost of MMX and SSE moves.
+
+2016-02-02  Alan Modra  <amodra@gmail.com>
+
+	PR target/69548
+	* config/rs6000/predicates.md (quad_int_reg_operand): Don't
+	allow subregs.
+
+2016-02-01  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2016-01-26  H.J. Lu  <hongjiu.lu@intel.com>
+	PR target/68986
+	* config/i386/i386.c (ix86_compute_frame_layout): Move stack
+	alignment adjustment to ...
+	(ix86_update_stack_boundary): Here.  Don't over-align stack nor
+	change stack_alignment_needed for __tls_get_addr.
+	(ix86_finalize_stack_realign_flags): Use stack_alignment_needed
+	if __tls_get_addr is called.
+
 2016-02-01  Richard Henderson  <rth@redhat.com>
 
 	Backport from mainline.
