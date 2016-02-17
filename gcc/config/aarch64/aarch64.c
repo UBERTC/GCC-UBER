@@ -409,7 +409,7 @@ static const struct tune_params cortexa53_tunings =
   &generic_branch_cost,
   4, /* memmov_cost  */
   2, /* issue_rate  */
-  (AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD
+  (AARCH64_FUSE_AES_AESMC | AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD
    | AARCH64_FUSE_MOVK_MOVK | AARCH64_FUSE_ADRP_LDR), /* fusible_ops  */
   8,	/* function_align.  */
   8,	/* jump_align.  */
@@ -431,7 +431,7 @@ static const struct tune_params cortexa57_tunings =
   &cortexa57_branch_cost,
   4, /* memmov_cost  */
   3, /* issue_rate  */
-  (AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD
+  (AARCH64_FUSE_AES_AESMC | AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD
    | AARCH64_FUSE_MOVK_MOVK), /* fusible_ops  */
   16,	/* function_align.  */
   8,	/* jump_align.  */
@@ -453,7 +453,7 @@ static const struct tune_params cortexa72_tunings =
   &generic_branch_cost,
   4, /* memmov_cost  */
   3, /* issue_rate  */
-  (AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD
+  (AARCH64_FUSE_AES_AESMC | AARCH64_FUSE_MOV_MOVK | AARCH64_FUSE_ADRP_ADD
    | AARCH64_FUSE_MOVK_MOVK), /* fusible_ops  */
   16,	/* function_align.  */
   8,	/* jump_align.  */
@@ -12891,6 +12891,10 @@ aarch_macro_fusion_pair_p (rtx_insn *prev, rtx_insn *curr)
               return true;
         }
     }
+
+  if ((aarch64_tune_params.fusible_ops & AARCH64_FUSE_AES_AESMC)
+       && aarch_crypto_can_dual_issue (prev, curr))
+    return true;
 
   if ((aarch64_tune_params.fusible_ops & AARCH64_FUSE_CMP_BRANCH)
       && any_condjump_p (curr))
