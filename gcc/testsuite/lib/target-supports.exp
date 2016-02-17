@@ -5126,7 +5126,8 @@ proc check_effective_target_section_anchors { } {
     } else {
         set et_section_anchors_saved 0
         if { [istarget powerpc*-*-*]
-	      || [istarget arm*-*-*] } {
+	      || [istarget arm*-*-*] 
+	      || [istarget aarch64*-*-*] } {
            set et_section_anchors_saved 1
         }
     }
