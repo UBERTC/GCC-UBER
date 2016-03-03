@@ -1,3 +1,44 @@
+2016-03-03  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline
+	2015-10-14  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* targhooks.c (default_target_option_pragma_parse): Do not warn if
+	called on behalf of "#pragma GCC pop_options".
+
+2016-03-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/70007
+	* gcse.c (compute_ld_motion_mems): Tidy up and also invalidate memory
+	references present in REG_EQUAL notes attached to non-SET patterns.
+
+2016-02-27  Jeff Law  <law@redhat.com>
+
+	Revert
+	2016-02-26  Richard Biener  <rguenther@suse.de>
+		    Jeff Law  <law@redhat.com>
+
+	Backport from mainline
+	2016-02-26  Richard Biener  <rguenther@suse.de>
+		    Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/69740
+	* cfghooks.c (remove_edge): Request loop fixups if we delete
+	an edge that might turn an irreducible loop into a natural
+	loop.
+
+2016-02-26  Richard Biener  <rguenther@suse.de>
+	    Jeff Law  <law@redhat.com>
+
+	Backport from mainline
+	2016-02-26  Richard Biener  <rguenther@suse.de>
+		    Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/69740
+	* cfghooks.c (remove_edge): Request loop fixups if we delete
+	an edge that might turn an irreducible loop into a natural
+	loop.
+
 2016-02-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
 
 	Backport from mainline

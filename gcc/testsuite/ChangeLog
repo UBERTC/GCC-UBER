@@ -1,3 +1,98 @@
+2016-03-03  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline
+	2015-10-14  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* gcc.dg/pragma-pop_options-1.c: New test.
+
+2016-03-03  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* lib/gcc-gdb-test.exp (gdb-test): Make log message match command.
+	Invoke gdb with -batch.
+	* lib/gcc-simulate-thread.exp (simulate-thread): Likewise.
+
+2016-03-02  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2015-11-25  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	* g++.dg/cpp0x/constexpr-array13.C: Fix.
+
+2016-03-02  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/i386/pr70007.c: Tweak.
+
+2016-03-02  Markus Trippelsdorf  <markus@trippelsdorf.de>
+	    Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/68087
+	* g++.dg/cpp0x/constexpr-array13.C: New.
+
+2016-03-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/i386/pr70007.c: New test.
+
+2016-02-28  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/60126
+	* gfortran.dg/pr60126.f90: New test.
+
+2016-02-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2016-02-28  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR tree-optimization/69989
+	* gcc.dg/torture/pr69989.c: New test.
+
+2016-02-27  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/61156
+	* gfortran.dg/include_6.f90: Update test.
+
+2016-02-27  Jeff Law  <law@redhat.com>
+
+	Revert
+	2016-02-26  Richard Biener  <rguenther@suse.de>
+		    Jeff Law  <law@redhat.com>
+
+	Backport from mainline
+	2016-02-26  Richard Biener  <rguenther@suse.de>
+		    Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/69740
+	* gcc.c-torture/compile/pr69740-1.c: New test.
+	* gcc.c-torture/compile/pr69740-2.c: New test.
+
+2016-02-27  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/61156
+	* gfortran.dg/include_6.f90: Update test.
+
+2016-02-26  Richard Biener  <rguenther@suse.de>
+	    Jeff Law  <law@redhat.com>
+
+	Backport from mainline
+	2016-02-26  Richard Biener  <rguenther@suse.de>
+		    Jeff Law  <law@redhat.com>
+
+	PR tree-optimization/69740
+	* gcc.c-torture/compile/pr69740-1.c: New test.
+	* gcc.c-torture/compile/pr69740-2.c: New test.
+
+2016-02-26  Michael Meissner  <meissner@linux.vnet.ibm.com>
+	    Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	PR target/61397
+	2016-02-26  Michael Meissner  <meissner@linux.vnet.ibm.com>
+	    Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/p8vector-ldst.c: Adjust to test desired
+	functionality for both 32-bit and 64-bit.
+
 2016-02-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
 
 	Backport from mainline
