@@ -1,3 +1,29 @@
+2016-03-05  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67364
+	* constexpr.c (cxx_eval_store_expression): Replace
+	CONSTRUCTOR_ELTS in nested CONSTRUCTORs, too.
+
+2016-03-04  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67364
+	* constexpr.c (cxx_eval_component_reference): Further tweak.
+
+	PR c++/70067
+	* tree.c (strip_typedefs): Handle TYPENAME_TYPE lookup finding the
+	same type.
+
+2016-03-03  Jason Merrill  <jason@redhat.com>
+
+	* call.c (build_aggr_conv): Use get_nsdmi.
+
+	PR c++/51406
+	* typeck.c (build_static_cast_1): Avoid folding back to lvalue.
+
+	PR c++/67364
+	* constexpr.c (cxx_eval_component_reference): Just return an empty
+	CONSTRUCTOR for an empty class.
+
 2016-03-01  Paolo Carlini  <paolo.carlini@oracle.com>
 
 	* call.c (build_op_delete_call, build_over_call): Check mark_used

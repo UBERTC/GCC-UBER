@@ -1,3 +1,69 @@
+2016-03-10  Alan Modra  <amodra@gmail.com>
+
+	* gcc.dg/pr69195.c: New.
+	* gcc.dg/pr69238.c: New.
+
+2016-03-09  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/69423
+	* gfortran.dg/deferred_character_15.f90 : New test.
+
+2016-03-09  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/49630
+	* gfortran.dg/deferred_character_13.f90: New test for the fix
+	of comment 3 of the PR.
+
+	Backport from trunk.
+	PR fortran/54070
+	* gfortran.dg/deferred_character_8.f90: New test
+	* gfortran.dg/allocate_error_5.f90: New test
+
+	Backport from trunk.
+	PR fortran/60593
+	* gfortran.dg/deferred_character_10.f90: New test
+
+	Backport from trunk.
+	PR fortran/60795
+	* gfortran.dg/deferred_character_14.f90: New test
+
+	Backport from trunk.
+	PR fortran/61147
+	* gfortran.dg/deferred_character_11.f90: New test
+
+	Backport from trunk.
+	PR fortran/64324
+	* gfortran.dg/deferred_character_9.f90: New test
+
+2016-03-07  Martin Jambor  <mjambor@suse.cz>
+
+	PR tree-optimization/69666
+	PR middle-end/69920
+	* gcc.dg/torture/pr69932.c: New test.
+	* gcc.dg/torture/pr69936.c: Likewise.
+
+2016-03-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2016-03-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* g++.dg/template/typename21.C: Remove c++98_only.
+
+2016-03-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Backport from mainline
+	2016-03-04  H.J. Lu  <hongjiu.lu@intel.com>
+
+	* g++.dg/template/typename21.C: Replace c++98 with c++98_only.
+
+2016-03-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70059
+	* gcc.target/i386/avx512f-pr70059.c: New test.
+	* gcc.target/i386/avx512dq-pr70059.c: New test.
+
 2016-03-03  Andre Vieira  <andre.simoesdiasvieira@arm.com>
 
 	Backport from mainline
