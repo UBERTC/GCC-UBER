@@ -1,3 +1,165 @@
+2016-03-09  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/69423
+	* trans-decl.c (create_function_arglist): Deferred character
+	length functions, with and without declared results, address
+	the passed reference type as '.result' and the local string
+	length as '..result'.
+	(gfc_null_and_pass_deferred_len): Helper function to null and
+	return deferred string lengths, as needed.
+	(gfc_trans_deferred_vars): Call it, thereby reducing repeated
+	code, add call for deferred arrays and reroute pointer function
+	results. Avoid using 'tmp' for anything other that a temporary
+	tree by introducing 'type_of_array' for the arrayspec type.
+
+2016-03-09  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/64324
+	* resolve.c (check_uop_procedure): Prevent deferred length
+	characters from being trapped by assumed length error.
+
+	Backport from trunk.
+	PR fortran/49630
+	PR fortran/54070
+	PR fortran/60593
+	PR fortran/60795
+	PR fortran/61147
+	PR fortran/64324
+	* trans-array.c (gfc_conv_scalarized_array_ref): Pass decl for
+	function as well as variable expressions.
+	(gfc_array_init_size): Add 'expr' as an argument. Use this to
+	correctly set the descriptor dtype for deferred characters.
+	(gfc_array_allocate): Add 'expr' to the call to
+	'gfc_array_init_size'.
+	* trans.c (gfc_build_array_ref): Expand logic for setting span
+	to include indirect references to character lengths.
+	* trans-decl.c (gfc_get_symbol_decl): Ensure that deferred
+	result char lengths that are PARM_DECLs are indirectly
+	referenced both for directly passed and by reference.
+	(create_function_arglist): If the length type is a pointer type
+	then store the length as the 'passed_length' and make the char
+	length an indirect reference to it.
+	(gfc_trans_deferred_vars): If a character length has escaped
+	being set as an indirect reference, return it via the 'passed
+	length'.
+	* trans-expr.c (gfc_conv_procedure_call): The length of
+	deferred character length results is set TREE_STATIC and set to
+	zero.
+	(gfc_trans_assignment_1): Do not fix the rse string_length if
+	it is a variable, a parameter or an indirect reference. Add the
+	code to trap assignment of scalars to unallocated arrays.
+	* trans-stmt.c (gfc_trans_allocate): Remove 'def_str_len' and
+	all references to it. Instead, replicate the code to obtain a
+	explicitly defined string length and provide a value before
+	array allocation so that the dtype is correctly set.
+	trans-types.c (gfc_get_character_type): If the character length
+	is a pointer, use the indirect reference.
+
+2016-02-27  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backported from mainline
+	PR fortran/61156
+	* scanner.c (add_path_to_list): If include path is not a directory,
+	issue a fatal error.
+
+2016-02-27  Alessandro Fanfarillo  <fanfarillo.gcc@gmail.com>
+
+	Backported from mainline
+	* trans.c (gfc_allocate_allocatable): size conversion
+	from byte to number of elements for event variables.
+	* trans-types.c (gfc_get_derived_type): event variables
+	represented as a pointer (like lock variable).
+
+2016-02-23  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backported from mainline
+	PR fortran/65996
+	* error.c (gfc_error): Save the state of abort_on_error and set
+	it to false for buffered errors to allow normal processing.
+	Restore the state before leaving.
+
+2016-02-12  Tobias Burnus  <burnus@net-b.de>
+	    Alessandro Fanfarillo  <fanfarillo.gcc@gmail.com>
+
+	Backported from mainline
+	2015-12-02  Tobias Burnus  <burnus@net-b.de>
+	Alessandro Fanfarillo  <fanfarillo.gcc@gmail.com>
+
+	* check.c (gfc_check_event_query): New function.
+	* dump-parse-tree.c (show_code_node): Handle EXEC_EVENT_POST,
+	EXEC_EVENT_WAIT.
+	* expr.c (gfc_check_vardef_context): New check for event variables
+	definition.
+	* gfortran.h (gfc_statement): Add ST_EVENT_POST, ST_EVENT_WAIT.
+	(gfc_isym_id): GFC_ISYM_EVENT_QUERY.
+	(struct symbol_attribute): New field.
+	(gfc_exec_op): Add EXEC_EVENT_POST and EXEC_EVENT_WAIT.
+	* gfortran.texi: Document about new events functions and minor
+	changes.
+	* interface.c (compare_parameter): New check.
+	(gfc_procedure_use): New check for explicit procedure interface.
+	(add_subroutines): Add event_query.
+	* intrinsic.h (gfc_check_event_query,gfc_resolve_event_query):
+	New prototypes.
+	* iresolve.c (gfc_resolve_event_query): New function.
+	* iso-fortran-env.def (event_type): New type.
+	* match.c (event_statement,gfc_match_event_post,gfc_match_event_wait):
+	New functions.
+	(gfc_match_name): New event post and event wait.
+	* match.h (gfc_match_event_post,gfc_match_event_wait):
+	New prototypes.
+	* module.c (ab_attribute): Add AB_EVENT_COMP.
+	(attr_bits): Likewise.
+	(mio_symbol_attribute): Handle event_comp attribute.
+	* parse.c (decode_statement): Add ST_EVENT_POST, ST_EVENT_WAIT.
+	(next_statement): Add ST_EVENT_POST, ST_EVENT_WAIT.
+	(gfc_ascii_statement): Add ST_EVENT_POST, ST_EVENT_WAIT.
+	(parse_derived): Check for event_type components.
+	* resolve.c (resolve_allocate_expr): Check for event variable def.
+	(resolve_lock_unlock): Renamed to resolve_lock_unlock_event. It
+	includes logic for locks and events.
+	(gfc_resolve_code): Call it.
+	(gfc_resolve_symbol): New check for event variable to be a corray.
+	* st.c (gfc_free_statement): Handle new EXEC_EVENT_POST and
+	EXEC_EVENT_WAIT.
+	* trans-decl.c (gfor_fndecl_caf_event_post,gfor_fndecl_caf_event_wait,
+	gfor_fndecl_caf_event_query): New global variables.
+	(generate_coarray_sym_init): Checking for event_type.
+	(gfc_conv_procedure_call): Check for C bind attribute.
+	* trans-intrinsic.c (conv_intrinsic_event_query): New function.
+	(conv_intrinsic_move_alloc): Call it.
+	* trans-stmt.c (gfc_trans_lock_unlock): Passing address
+	of actual argument.
+	(gfc_trans_sync): Likewise.
+	(gfc_trans_event_post_wait): New function.
+	* trans-stmt.h (gfc_trans_event_post_wait): New prototype.
+	* trans-types.c (gfc_get_derived_type): Integer_kind as event_type.
+	* trans.c (gfc_allocate_using_lib): New argument and logic for events.
+	(gfc_allocate_allocatable): Passing new argument.
+	(trans_code): Handle EXEC_EVENT_POST, EXEC_EVENT_WAIT.
+	* trans.h (gfc_coarray_type): New elements.
+	(gfor_fndecl_caf_event_post,gfor_fndecl_caf_event_wait,
+	gfor_fndecl_caf_event_query): Declare them.
+
+2016-02-10  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/69128
+	* trans.h (OMPWS_SCALARIZER_BODY): Define.
+	(OMPWS_NOWAIT): Renumber.
+	* trans-stmt.c (gfc_trans_where_3): Only set OMPWS_SCALARIZER_WS
+	if OMPWS_SCALARIZER_BODY is not set already, and set also
+	OMPWS_SCALARIZER_BODY until the final loop creation.
+	* trans-expr.c (gfc_trans_assignment_1): Likewise.
+	* trans-openmp.c (gfc_trans_omp_workshare): Also clear
+	OMPWS_SCALARIZER_BODY.
+	* trans-array.c (gfc_trans_scalarized_loop_end): Don't create
+	OMP_FOR if OMPWS_SCALARIZER_BODY is set.
+
 2016-02-03  Andre Vehreschild  <vehre@gcc.gnu.org>
 
 	PR fortran/67451

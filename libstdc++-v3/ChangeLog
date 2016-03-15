@@ -1,3 +1,34 @@
+2016-02-24  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/69939
+	* include/experimental/tuple (__apply_impl): Qualify get and forward.
+
+2016-02-16  Tim Shen  <timshen@google.com>
+
+	Backport from mainline
+	2016-02-16  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/69794
+	* include/bits/regex_scanner.h: Add different special character
+	sets for grep and egrep regex.
+	* include/bits/regex_scanner.tcc: Use _M_spec_char more uniformly.
+	* testsuite/28_regex/regression.cc: Add new testcase.
+
+2016-02-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/60976
+	* include/bits/alloc_traits.h (allocator_traits<allocator<_Tp>>):
+	Define partial specialization.
+	* testsuite/20_util/shared_ptr/cons/58659.cc: Add construct and
+	destroy members to std::allocator explicit specialization.
+
+2016-02-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/69116
+	* include/bits/valarray_before.h (__fun, __fun_with_valarray): Only
+	define result_type for types which can be safely used with valarrays.
+	* testsuite/26_numerics/valarray/69116.cc: New.
+
 2016-01-18  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR libstdc++/60637
