@@ -1,3 +1,103 @@
+2016-03-22  Martin Liska  <mliska@suse.cz>
+
+	backport from trunk:
+	
+	2016-03-21  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/70306
+	* ipa-icf.c (sem_function::parse): Skip static
+	constructors and destructors.
+
+2016-03-22  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70325
+	* config/i386/i386.c (def_builtin): Handle
+	OPTION_MASK_ISA_AVX512VL to be and-ed with other
+	bits.
+	(const struct builtin_description bdesc_special_args[]):
+	Remove duplicate ISA bits.
+
+2016-03-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/70327
+	* config/i386/i386.md (movxi): Use ix86_expand_vector_move instead
+	of ix86_expand_move.
+	(movoi): Ditto.
+	(movti): Use general_operand for operand 1 predicate.
+
+2016-03-21  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	PR ipa/70269
+	2016-03-18  Tom de Vries  <tom@codesourcery.com>
+
+	* cgraph.c (cgraph_node::get_body): Set dump_file to NULL after save.
+
+2016-03-21  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	2016-03-18  Tom de Vries  <tom@codesourcery.com>
+
+	PR ipa/70161
+	* cgraph.c (cgraph_node::get_body): Save, reset and restore
+	dump_file_name.
+	* passes.c (execute_one_ipa_transform_pass): Add missing argument to
+	execute_function_dump.
+	(execute_one_pass): Don't dump function if it will be dumped after ipa
+	transform.
+
+2016-03-21  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70293
+	* config/i386/sse.md: (define_insn "*vec_dup<mode>"/AVX2):
+	Block third alternative for AVX-512VL target,
+
+2016-03-17  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/70188
+	* config/pa/constraints.md: Revert 2015-02-13 change.  Use
+	define_constraint for "Q" and "T" constraints.
+
+2016-03-16  Alan Modra  <amodra@gmail.com>
+
+	PR rtl-optimization/69195
+	PR rtl-optimization/47992
+	* ira.c (indirect_jump_optimize): Ignore artificial defs.
+	Add comments.
+
+2016-03-15  Bernd Schmidt  <bschmidt@redhat.com>
+
+	Backport from mainline
+	2016-03-04  Bernd Schmidt  <bschmidt@redhat.com>
+
+	PR rtl-optimization/69941
+	* postreload.c (reload_combine_recognize_pattern): Ensure all uses of
+	the reg share its mode.
+
+2016-03-14  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-03-11  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/70131
+	* config/rs6000/rs6000.md (round32<mode>2_fprs): Do not do the
+	optimization if we have direct move.
+	(roundu32<mode>2_fprs): Likewise.
+
+2016-03-14  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2016-03-07  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR target/62281
+	* config/i386/sol2.h (STACK_REALIGN_DEFAULT): Define.
+
+2016-03-10  Ulrich Weigand  <Ulrich.Weigand@de.ibm.com>
+
+	PR target/70168
+	* config/rs6000/rs6000.c (rs6000_expand_atomic_compare_and_swap):
+	Handle overlapping retval and newval.
+
 2016-03-10  Alan Modra  <amodra@gmail.com>
 
 	PR rtl-optimization/69195
