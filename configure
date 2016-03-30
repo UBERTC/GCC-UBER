@@ -784,6 +784,8 @@ with_build_sysroot
 with_debug_prefix_map
 with_build_config
 enable_vtable_verify
+enable_bionic_libs
+enable_libatomic_ifuncs
 enable_serial_configure
 with_build_time_tools
 enable_maintainer_mode
@@ -1483,6 +1485,8 @@ Optional Features:
   --enable-objc-gc        enable use of Boehm's garbage collector with the GNU
                           Objective-C runtime
   --enable-vtable-verify    Enable vtable verification feature
+  --enable-bionic-libs    Use bionic libstdc++ libraries
+  --enable-bionic-libs    Enable/disable IFUNCs in libatomic library
   --enable-serial-[{host,target,build}-]configure
                           force sequential configuration of sub-packages for
                           the host, target or build machine, or all
@@ -7220,6 +7224,40 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_vtable_verify" >&5
 $as_echo "$enable_vtable_verify" >&6; }
+
+# Use same top-level configure hooks in libgcc/libstdc++/libvtv.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-bionic-libs" >&5
+$as_echo_n "checking for --enable-bionic-libs... " >&6; }
+# Check whether --enable-bionic-libs was given.
+if test "${enable_bionic_libs+set}" = set; then :
+  enableval=$enable_bionic_libs; case "$enableval" in
+ yes) enable_bionic_libs=yes ;;
+ no)  enable_bionic_libs=no ;;
+ *)   enable_bionic_libs=no;;
+ esac
+else
+  enable_bionic_libs=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_bionic_libs" >&5
+$as_echo "$enable_bionic_libs" >&6; }
+
+# Use same top-level configure hooks in libatomic.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --enable-libatomic-ifuncs" >&5
+$as_echo_n "checking for --enable-libatomic-ifuncs... " >&6; }
+# Check whether --enable-libatomic-ifuncs was given.
+if test "${enable_libatomic_ifuncs+set}" = set; then :
+  enableval=$enable_libatomic_ifuncs; case "$enableval" in
+ yes) enable_libatomic_ifuncs=yes ;;
+ no)  enable_libatomic_ifuncs=no ;;
+ *)   enable_libatomic_ifuncs=yes;;
+ esac
+else
+  enable_libatomic_ifuncs=yes
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $enable_libatomic_ifuncs" >&5
+$as_echo "$enable_libatomic_ifuncs" >&6; }
 
 # Record target_configdirs and the configure arguments for target and
 # build configuration in Makefile.

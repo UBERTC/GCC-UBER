@@ -344,7 +344,8 @@ extern void decode_options (struct gcc_options *opts,
 			    struct cl_decoded_option *decoded_options,
 			    unsigned int decoded_options_count,
 			    location_t loc,
-			    diagnostic_context *dc);
+			    diagnostic_context *dc,
+                            bool command_line);
 extern int option_enabled (int opt_idx, void *opts);
 extern bool get_option_state (struct gcc_options *, int,
 			      struct cl_option_state *);

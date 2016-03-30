@@ -2179,7 +2179,7 @@ final_scan_insn (rtx insn, FILE *file, int optimize_p ATTRIBUTE_UNUSED,
                                          current_function_decl);
 #else
 	      ASM_OUTPUT_LABEL (asm_out_file,
-				IDENTIFIER_POINTER (cold_function_name));
+				IDENTIFIER_POINTER (cold_partition_name));
 #endif
 	    }
 	  has_cold_section_p = true;

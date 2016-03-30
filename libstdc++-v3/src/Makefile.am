@@ -25,7 +25,11 @@ include $(top_srcdir)/fragment.am
 SUBDIRS = c++98 c++11
 
 # Cross compiler support.
-toolexeclib_LTLIBRARIES = libstdc++.la
+if ENABLE_BIONIC_LIBS
+  toolexeclib_LTLIBRARIES = libgnustl_shared.la
+else
+  toolexeclib_LTLIBRARIES = libstdc++.la
+endif
 
 vpath % $(top_srcdir)/src/c++98
 vpath % $(top_srcdir)/src/c++11
@@ -53,6 +57,25 @@ cxx11_sources = \
 	compatibility-thread-c++0x.cc \
 	compatibility-chrono.cc \
 	compatibility-condvar.cc
+
+libgnustl_shared_la_SOURCES = $(cxx98_sources) $(cxx11_sources)
+
+libgnustl_shared_la_LIBADD = \
+	$(GLIBCXX_LIBS) \
+	$(top_builddir)/libsupc++/libsupc++convenience.la \
+	$(top_builddir)/src/c++98/libc++98convenience.la \
+	$(top_builddir)/src/c++11/libc++11convenience.la
+
+libgnustl_shared_la_DEPENDENCIES = \
+	${version_dep} \
+	$(top_builddir)/libsupc++/libsupc++convenience.la \
+	$(top_builddir)/src/c++98/libc++98convenience.la \
+	$(top_builddir)/src/c++11/libc++11convenience.la
+
+libgnustl_shared_la_LDFLAGS = \
+	${libtool_version_info_string} ${version_arg} -lm
+
+libgnustl_shared_la_LINK = $(CXXLINK) $(libstdc___la_LDFLAGS)
 
 libstdc___la_SOURCES = $(cxx98_sources) $(cxx11_sources)
 
@@ -224,12 +247,12 @@ version_arg = -Wl,-M,libstdc++-symbols.ver-sun
 version_dep = libstdc++-symbols.ver-sun
 libstdc++-symbols.ver-sun : libstdc++-symbols.ver \
 		$(toplevel_srcdir)/contrib/make_sunver.pl \
-		$(libstdc___la_OBJECTS) $(libstdc___la_LIBADD)
+		$(libgnustl_shared_la_OBJECTS) $(libgnustl_shared_la_LIBADD)
 	CXXFILT="$(CXXFILT)"; export CXXFILT; \
 	perl $(toplevel_srcdir)/contrib/make_sunver.pl \
 	  libstdc++-symbols.ver \
-	  $(libstdc___la_OBJECTS:%.lo=.libs/%.o) \
-	 `echo $(libstdc___la_LIBADD) | \
+	  $(libgnustl_shared_la_OBJECTS:%.lo=.libs/%.o) \
+	 `echo $(libgnustl_shared_la_LIBADD) | \
 	    sed 's,/\([^/.]*\)\.la,/.libs/\1.a,g'` \
 	 > $@ || (rm -f $@ ; exit 1)
 endif

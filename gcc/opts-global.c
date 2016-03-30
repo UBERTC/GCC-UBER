@@ -299,7 +299,9 @@ lipo_save_cl_args (struct cl_decoded_option *decoded)
    the results of processing DECODED_OPTIONS and DECODED_OPTIONS_COUNT
    in OPTS and OPTS_SET and using DC for diagnostic state.  LANG_MASK
    contains has a single bit set representing the current language.
-   HANDLERS describes what functions to call for the options.  */
+   HANDLERS describes what functions to call for the options.
+   If COMMAND_LINE is true, this is being invoked for file level command
+   line options, otherwise for an optimize pragma or function attribute.  */
 
 static void
 read_cmdline_options (struct gcc_options *opts, struct gcc_options *opts_set,
@@ -308,7 +310,8 @@ read_cmdline_options (struct gcc_options *opts, struct gcc_options *opts_set,
 		      location_t loc,
 		      unsigned int lang_mask,
 		      const struct cl_option_handlers *handlers,
-		      diagnostic_context *dc)
+		      diagnostic_context *dc,
+                      bool command_line)
 {
   unsigned int i;
   int force_multi_module = 0;
@@ -341,7 +344,8 @@ read_cmdline_options (struct gcc_options *opts, struct gcc_options *opts_set,
       read_cmdline_option (opts, opts_set,
 			   decoded_options + i, loc, lang_mask, handlers,
 			   dc);
-      lipo_save_cl_args (decoded_options + i);
+      if (command_line)
+        lipo_save_cl_args (decoded_options + i);
     }
 }
 
@@ -393,12 +397,14 @@ set_default_handlers (struct cl_option_handlers *handlers)
 /* Parse command line options and set default flag values.  Do minimal
    options processing.  The decoded options are in *DECODED_OPTIONS
    and *DECODED_OPTIONS_COUNT; settings go in OPTS, OPTS_SET and DC;
-   the options are located at LOC.  */
+   the options are located at LOC.  If COMMAND_LINE is true, this is
+   being invoked for file level command line options, otherwise for
+   an optimize pragma or function attribute.  */
 void
 decode_options (struct gcc_options *opts, struct gcc_options *opts_set,
 		struct cl_decoded_option *decoded_options,
 		unsigned int decoded_options_count,
-		location_t loc, diagnostic_context *dc)
+		location_t loc, diagnostic_context *dc, bool command_line)
 {
   struct cl_option_handlers handlers;
 
@@ -415,7 +421,7 @@ decode_options (struct gcc_options *opts, struct gcc_options *opts_set,
   read_cmdline_options (opts, opts_set,
 			decoded_options, decoded_options_count,
 			loc, lang_mask,
-			&handlers, dc);
+			&handlers, dc, command_line);
 
   finish_options (opts, opts_set, loc);
 }

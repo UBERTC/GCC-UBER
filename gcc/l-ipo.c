@@ -414,7 +414,7 @@ pop_module_scope (void)
   at_eof = 1;
   cgraph_process_same_body_aliases ();
   lang_hooks.l_ipo.process_pending_decls (input_location);
-  lang_hooks.l_ipo.clear_deferred_fns ();
+  lang_hooks.l_ipo.reset_parsing_state ();
   at_eof = 0;
 
   is_last = is_last_module (current_module_id);

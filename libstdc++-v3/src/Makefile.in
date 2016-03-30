@@ -95,15 +95,21 @@ am__objects_2 = compatibility.lo compatibility-debug_list.lo \
 am__objects_3 = compatibility-c++0x.lo compatibility-atomic-c++0x.lo \
 	compatibility-thread-c++0x.lo compatibility-chrono.lo \
 	compatibility-condvar.lo
+am_libgnustl_shared_la_OBJECTS = $(am__objects_2) $(am__objects_3)
+libgnustl_shared_la_OBJECTS = $(am_libgnustl_shared_la_OBJECTS)
+@ENABLE_BIONIC_LIBS_TRUE@am_libgnustl_shared_la_rpath = -rpath \
+@ENABLE_BIONIC_LIBS_TRUE@	$(toolexeclibdir)
 am_libstdc___la_OBJECTS = $(am__objects_2) $(am__objects_3)
 libstdc___la_OBJECTS = $(am_libstdc___la_OBJECTS)
+@ENABLE_BIONIC_LIBS_FALSE@am_libstdc___la_rpath = -rpath \
+@ENABLE_BIONIC_LIBS_FALSE@	$(toolexeclibdir)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
-SOURCES = $(libstdc___la_SOURCES)
+SOURCES = $(libgnustl_shared_la_SOURCES) $(libstdc___la_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -224,6 +230,7 @@ SHELL = @SHELL@
 STRIP = @STRIP@
 SYMVER_FILE = @SYMVER_FILE@
 TOPLEVEL_INCLUDES = @TOPLEVEL_INCLUDES@
+USE_BIONIC_LIBS = @USE_BIONIC_LIBS@
 USE_NLS = @USE_NLS@
 VERSION = @VERSION@
 VTV_CXXFLAGS = @VTV_CXXFLAGS@
@@ -341,9 +348,10 @@ WARN_CXXFLAGS = \
 # -I/-D flags to pass when compiling.
 AM_CPPFLAGS = $(GLIBCXX_INCLUDES)
 SUBDIRS = c++98 c++11
+@ENABLE_BIONIC_LIBS_FALSE@toolexeclib_LTLIBRARIES = libstdc++.la
 
 # Cross compiler support.
-toolexeclib_LTLIBRARIES = libgnustl_shared.la
+@ENABLE_BIONIC_LIBS_TRUE@toolexeclib_LTLIBRARIES = libgnustl_shared.la
 @GLIBCXX_LDBL_COMPAT_FALSE@ldbl_compat_sources = 
 @GLIBCXX_LDBL_COMPAT_TRUE@ldbl_compat_sources = compatibility-ldbl.cc
 parallel_compat_sources = \
@@ -362,6 +370,23 @@ cxx11_sources = \
 	compatibility-chrono.cc \
 	compatibility-condvar.cc
 
+libgnustl_shared_la_SOURCES = $(cxx98_sources) $(cxx11_sources)
+libgnustl_shared_la_LIBADD = \
+	$(GLIBCXX_LIBS) \
+	$(top_builddir)/libsupc++/libsupc++convenience.la \
+	$(top_builddir)/src/c++98/libc++98convenience.la \
+	$(top_builddir)/src/c++11/libc++11convenience.la
+
+libgnustl_shared_la_DEPENDENCIES = \
+	${version_dep} \
+	$(top_builddir)/libsupc++/libsupc++convenience.la \
+	$(top_builddir)/src/c++98/libc++98convenience.la \
+	$(top_builddir)/src/c++11/libc++11convenience.la
+
+libgnustl_shared_la_LDFLAGS = \
+	${libtool_version_info_string} ${version_arg} -lm
+
+libgnustl_shared_la_LINK = $(CXXLINK) $(libstdc___la_LDFLAGS)
 libstdc___la_SOURCES = $(cxx98_sources) $(cxx11_sources)
 libstdc___la_LIBADD = \
 	$(GLIBCXX_LIBS) \
@@ -551,11 +576,10 @@ clean-toolexeclibLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
+libgnustl_shared.la: $(libgnustl_shared_la_OBJECTS) $(libgnustl_shared_la_DEPENDENCIES) 
+	$(libgnustl_shared_la_LINK) $(am_libgnustl_shared_la_rpath) $(libgnustl_shared_la_OBJECTS) $(libgnustl_shared_la_LIBADD) $(LIBS)
 libstdc++.la: $(libstdc___la_OBJECTS) $(libstdc___la_DEPENDENCIES) 
-	$(libstdc___la_LINK) -rpath $(toolexeclibdir) $(libstdc___la_OBJECTS) $(libstdc___la_LIBADD) $(LIBS)
-
-libgnustl_shared.la: $(libstdc___la_OBJECTS) $(libstdc___la_DEPENDENCIES)
-	$(libstdc___la_LINK) -rpath $(toolexeclibdir) $(libstdc___la_OBJECTS) $(libstdc___la_LIBADD) $(LIBS)
+	$(libstdc___la_LINK) $(am_libstdc___la_rpath) $(libstdc___la_OBJECTS) $(libstdc___la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -893,12 +917,12 @@ compatibility-condvar.o: compatibility-condvar.cc
 @ENABLE_SYMVERS_TRUE@	rm -f $@.tmp
 @ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@libstdc++-symbols.ver-sun : libstdc++-symbols.ver \
 @ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@		$(toplevel_srcdir)/contrib/make_sunver.pl \
-@ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@		$(libstdc___la_OBJECTS) $(libstdc___la_LIBADD)
+@ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@		$(libgnustl_shared_la_OBJECTS) $(libgnustl_shared_la_LIBADD)
 @ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@	CXXFILT="$(CXXFILT)"; export CXXFILT; \
 @ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@	perl $(toplevel_srcdir)/contrib/make_sunver.pl \
 @ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@	  libstdc++-symbols.ver \
-@ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@	  $(libstdc___la_OBJECTS:%.lo=.libs/%.o) \
-@ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@	 `echo $(libstdc___la_LIBADD) | \
+@ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@	  $(libgnustl_shared_la_OBJECTS:%.lo=.libs/%.o) \
+@ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@	 `echo $(libgnustl_shared_la_LIBADD) | \
 @ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@	    sed 's,/\([^/.]*\)\.la,/.libs/\1.a,g'` \
 @ENABLE_SYMVERS_SUN_TRUE@@ENABLE_SYMVERS_TRUE@	 > $@ || (rm -f $@ ; exit 1)
 @ENABLE_SYMVERS_DARWIN_TRUE@@ENABLE_SYMVERS_TRUE@libstdc++-symbols.explist : libstdc++-symbols.ver \

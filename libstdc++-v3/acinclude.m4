@@ -2317,6 +2317,32 @@ AC_DEFUN([GLIBCXX_ENABLE_VTABLE_VERIFY], [
 ])
 
 dnl
+dnl Use Bionic libstdc++ libraries.
+dnl
+dnl --enable-bionic-libs defines _GLIBCXX_BIONIC_LIBS to 1
+dnl --disable-bionic-libs defines _GLIBCXX_BIONIC_LIBS to 0
+
+dnl  +  Usage:  GLIBCXX_ENABLE_BIONIC_LIBS[(DEFAULT)]
+dnl       Where DEFAULT is `yes' or `no'.
+dnl
+AC_DEFUN([GLIBCXX_ENABLE_BIONIC_LIBS], [
+
+  GLIBCXX_ENABLE(bionic-libs,$1,,[enable bionic libs])
+
+  AC_MSG_CHECKING([for bionic libs support])
+  AC_MSG_RESULT([$enable_bionic_libs])
+
+  if test $enable_bionic_libs = yes; then
+    USE_BIONIC_LIBS="TRUE"
+  else
+    USE_BIONIC_LIBS="FALSE"
+  fi
+
+  AC_SUBST(USE_BIONIC_LIBS)
+  GLIBCXX_CONDITIONAL(ENABLE_BIONIC_LIBS, test $enable_bionic_libs = yes)
+])
+
+dnl
 dnl Check for parallel mode pre-requisites, including OpenMP support.
 dnl
 dnl  +  Usage:  GLIBCXX_ENABLE_PARALLEL
@@ -3524,7 +3550,13 @@ AC_DEFUN([GLIBCXX_CHECK_GTHREADS], [
 
   AC_MSG_CHECKING([for gthreads library])
 
-  AC_TRY_COMPILE([#include "gthr.h"],
+  if test $enable_bionic_libs = yes; then
+    ac_include_file="$glibcxx_thread_h"
+  else
+    ac_include_file="gthr-$target_thread_file.h"
+  fi
+
+  AC_TRY_COMPILE([#include "$ac_include_file"],
     [
       #ifndef __GTHREADS_CXX0X
       #error

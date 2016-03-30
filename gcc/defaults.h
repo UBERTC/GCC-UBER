@@ -1277,6 +1277,13 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define SET_RATIO(speed) MOVE_RATIO (speed)
 #endif
 
+/* Whether to warn about poisoned system directories by default.  */
+#ifdef ENABLE_POISON_SYSTEM_DIRECTORIES
+#define POISON_SYSTEM_DIRECTORIES_DEFAULT 1
+#else
+#define POISON_SYSTEM_DIRECTORIES_DEFAULT 0
+#endif
+
 /* Supply a default definition for FUNCTION_ARG_PADDING:
    usually pad upward, but pad short args downward on
    big-endian machines.  */

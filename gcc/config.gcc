@@ -1091,7 +1091,9 @@ arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtems*)
 	  tmake_file="${tmake_file} arm/t-symbian"
 	  ;;
 	esac
-	tm_file="${tm_file} arm/aout.h vxworks-dummy.h arm/arm.h"
+       tm_defines="${tm_defines} ANDROID_DEFAULT=0"
+       tm_file="${tm_file} arm/aout.h vxworks-dummy.h arm/arm.h linux-android.h"
+       extra_options="${extra_options} linux-android.opt"
 	;;
 avr-*-rtems*)
 	tm_file="elfos.h avr/elf.h avr/avr-arch.h avr/avr.h dbxelf.h avr/rtems.h rtems.h newlib-stdint.h"
@@ -2342,7 +2344,7 @@ powerpc-*-rtems*)
 powerpc*-*-linux*)
 	tm_file="${tm_file} dbxelf.h elfos.h freebsd-spec.h rs6000/sysv4.h linux-android.h"
 	extra_options="${extra_options} rs6000/sysv4.opt"
-	extra_options="${extra_options} linux-android.opt"
+        extra_options="${extra_options} linux-android.opt"
 	tmake_file="rs6000/t-fprules rs6000/t-ppcos ${tmake_file} rs6000/t-ppccomm"
 	extra_objs="$extra_objs rs6000-linux.o"
 	default_gnu_indirect_function=yes

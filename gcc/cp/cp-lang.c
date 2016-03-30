@@ -109,8 +109,8 @@ static tree get_template_argument_pack_elems_folded (const_tree);
 #define LANG_HOOKS_COPY_LANG_TYPE cp_lipo_copy_lang_type
 #undef LANG_HOOKS_PROCESS_PENDING_DECLS
 #define LANG_HOOKS_PROCESS_PENDING_DECLS cp_process_pending_declarations
-#undef LANG_HOOKS_CLEAR_DEFFERED_FNS
-#define LANG_HOOKS_CLEAR_DEFFERED_FNS cp_clear_deferred_fns
+#undef LANG_HOOKS_RESET_PARSING_STATE
+#define LANG_HOOKS_RESET_PARSING_STATE cp_reset_parsing_state
 #undef LANG_HOOKS_IS_GENERATED_TYPE
 #define LANG_HOOKS_IS_GENERATED_TYPE cp_is_compiler_generated_type
 #undef LANG_HOOKS_CMP_LANG_TYPE

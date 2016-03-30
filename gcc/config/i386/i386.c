@@ -1673,7 +1673,7 @@ struct processor_costs atom_cost = {
 };
 
 static stringop_algs slm_memcpy[2] = {
-  {libcall, {{11, loop, false}, {-1, rep_prefix_4_byte, false}}},
+  {libcall, {{11, loop, false}, {-1, libcall, false}}},
   {libcall, {{32, loop, false}, {64, rep_prefix_4_byte, false},
              {8192, rep_prefix_8_byte, false}, {-1, libcall, false}}}};
 static stringop_algs slm_memset[2] = {
@@ -4067,12 +4067,6 @@ ix86_option_override_internal (bool main_args_p,
 			 opts_set->x_param_values);
   maybe_set_param_value (PARAM_L2_CACHE_SIZE,
 			 ix86_tune_cost->l2_cache_size,
-			 opts->x_param_values,
-			 opts_set->x_param_values);
-
-  /* Increase full peel max insns parameter for x86.  */
-  maybe_set_param_value (PARAM_MAX_COMPLETELY_PEELED_INSNS,
-			 400,
 			 opts->x_param_values,
 			 opts_set->x_param_values);
 

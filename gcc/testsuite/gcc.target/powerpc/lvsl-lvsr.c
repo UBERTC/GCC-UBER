@@ -3,7 +3,7 @@
    causes them to appear twice in the file.  */
 
 /* { dg-do compile { target { powerpc64le-*-* } } } */
-/* { dg-options "-O0 -Wno-deprecated" } */
+/* { dg-options "-mcpu=power7 -O0 -Wno-deprecated" } */
 /* { dg-final { scan-assembler-times "lvsl" 2 } } */
 /* { dg-final { scan-assembler-times "lvsr" 2 } } */
 /* { dg-final { scan-assembler-times "lxvd2x" 2 } } */

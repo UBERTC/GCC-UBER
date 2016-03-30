@@ -8705,6 +8705,16 @@ finish_lambda_scope (void)
   lambda_scope_stack->pop ();
 }
 
+void
+clear_lambda_scope (void)
+{
+  if (!lambda_scope_stack)
+    return;
+  gcc_assert(lambda_scope_stack->is_empty());
+  lambda_scope = NULL_TREE;
+  lambda_count = 0;
+}
+
 /* Parse a lambda expression.
 
    lambda-expression:

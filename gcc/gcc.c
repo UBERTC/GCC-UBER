@@ -751,6 +751,19 @@ proper position among the other output files.  */
     %{fvtable-verify=preinit: -lvtv -u_vtable_map_vars_start -u_vtable_map_vars_end}}"
 #endif
 
+#if POISON_SYSTEM_DIRECTORIES_DEFAULT
+# define POISON_SYSTEM_DIRECTORIES_DEFAULT_SPEC "\
+%{!Wpoison-system-directories:%{!Wno-poison-system-directories:\
+  --warn-poison-system-directories}}"
+#else
+# define POISON_SYSTEM_DIRECTORIES_DEFAULT_SPEC ""
+#endif
+#define POISON_SYSTEM_DIRECTORIES_SPEC \
+ POISON_SYSTEM_DIRECTORIES_DEFAULT_SPEC " \
+ %{Wpoison-system-directories:--warn-poison-system-directories}\
+ %{Wno-poison-system-directories:--no-warn-poison-system-directories}\
+ %{Werror=poison-system-directories:--error-poison-system-directories}"
+
 /* -u* was put back because both BSD and SysV seem to support it.  */
 /* %{static:} simply prevents an error message if the target machine
    doesn't handle -static.  */
@@ -773,6 +786,7 @@ proper position among the other output files.  */
    "%{fuse-ld=*:-fuse-ld=%*}\
     %X %{o*} %{e*} %{N} %{n} %{r}\
     %{s} %{t} %{u*} %{z} %{Z} %{!nostdlib:%{!nostartfiles:%S}} " VTABLE_VERIFICATION_SPEC " \
+    " POISON_SYSTEM_DIRECTORIES_SPEC " \
     %{static:} %{L*} %(mfwrap) %(link_libgcc) " SANITIZER_EARLY_SPEC " %o\
     %{fopenmp|ftree-parallelize-loops=*:%:include(libgomp.spec)%(link_gomp)}\
     %{fcilkplus:%:include(libcilkrts.spec)%(link_cilkrts)}\

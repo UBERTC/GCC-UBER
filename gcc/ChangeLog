@@ -1,3 +1,37 @@
+2016-01-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/69403
+	* config/arm/thumb2.md (*thumb2_ior_scc_strict_it): Convert to
+	define_insn_and_split.  Ensure operands[1] and operands[0] do not
+	get assigned the same register.
+
+2015-10-28 Yvan Roux  <yvan.roux@linaro.org>
+	Sebastian Pop  <s.pop@samsung.com>
+
+	Backport from trunk r221007, r221675, r222011.
+	2015-04-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/65735
+	* tree-ssa-threadedge.c (fsm_find_control_statement_thread_paths):
+	Remove visited_phis argument, add visited_bbs, avoid recursing into the
+	same bb rather than just into the same phi node.
+	(thread_through_normal_block): Adjust caller.
+
+	2015-03-25  Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/65177
+        * tree-ssa-threadupdate.c (verify_seme): Renamed verify_jump_thread.
+	(bb_in_bbs): New.
+	(duplicate_seme_region): Renamed duplicate_thread_path.  Redirect all
+	edges not adjacent on the path to the original code.
+
+	2015-02-26  Sebastian Pop  <s.pop@samsung.com>
+
+	PR tree-optimization/65048
+	* tree-ssa-threadupdate.c (valid_jump_thread_path): New.
+	(thread_through_all_blocks): Call valid_jump_thread_path.
+	Remove invalid FSM jump-thread paths.
+
 2015-03-26  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
 
 	Backport of r214242, r214254, and bug fix patches from mainline
@@ -48,6 +82,83 @@
 	(union_defs): Likewise.
 	(entry_register): Likewise.
 	(web_main): Likewise.
+
+2015-03-05  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r212011, r214942, r214957, r215012, r215016, r218115
+	r218733, r218746, r220491.
+	2015-02-06  Sebastian Pop  <s.pop@samsung.com>
+		Brian Rzycki  <b.rzycki@samsung.com>
+
+	PR tree-optimization/64878
+	* tree-ssa-threadedge.c: Include tree-ssa-loop.h.
+	(fsm_find_control_statement_thread_paths): Add parameter seen_loop_phi.
+	Stop recursion at loop phi nodes after having visited a loop phi node.
+
+	2014-12-15  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/64246
+	* cfgloop.c (mark_loop_for_removal): Make safe against multiple
+	invocations on the same loop.
+
+	2014-12-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64284
+	* tree-ssa-threadupdate.c (duplicate_seme_region): Mark
+	the loop for removal if we copied the loop header.
+
+	2014-11-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/64083
+	* tree-ssa-threadupdate.c (thread_through_all_blocks): Do not
+	forcibly mark loop for removal the wrong way.
+
+	2014-09-08  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/63196
+	* tree-inline.c (copy_loops): The source loop header should
+	always be non-NULL.
+	(tree_function_versioning): If loops need fixup after removing
+	unreachable blocks fix them.
+	* omp-low.c (simd_clone_adjust): Do not add incr block to
+	loop under construction.
+
+	2014-09-08  Richard Biener  <rguenther@suse.de>
+
+	PR bootstrap/63204
+	* cfgloop.c (mark_loop_for_removal): Track former header
+	unconditionally.
+	* cfgloop.h (struct loop): Add former_header member unconditionally.
+	* loop-init.c (fix_loop_structure): Enable bogus loop removal
+	diagnostic unconditionally.
+
+	2014-09-05  Richard Biener  <rguenther@suse.de>
+
+	* cfgloop.c (mark_loop_for_removal): Record former header
+	when ENABLE_CHECKING.
+	* cfgloop.h (strut loop): Add former_header member when
+	ENABLE_CHECKING.
+	* loop-init.c (fix_loop_structure): Sanity check loops
+	marked for removal if they re-appeared.
+
+	2014-09-05  Richard Biener  <rguenther@suse.de>
+
+	* cfgloop.c (mark_loop_for_removal): New function.
+	* cfgloop.h (mark_loop_for_removal): Declare.
+	* cfghooks.c (delete_basic_block): Use mark_loop_for_removal.
+	(merge_blocks): Likewise.
+	(duplicate_block): Likewise.
+	* except.c (sjlj_emit_dispatch_table): Likewise.
+	* tree-eh.c (cleanup_empty_eh_merge_phis): Likewise.
+	* tree-ssa-threadupdate.c (ssa_redirect_edges): Likewise.
+	(thread_through_loop_header): Likewise.
+
+	2014-06-26  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/61607
+	* tree-ssa-threadupdate.c (ssa_redirect_edges): Cancel the
+	loop if we redirected its latch edge.
+	(thread_block_1): Do not cancel loops prematurely.
 
 2015-01-23  Jakub Jelinek  <jakub@redhat.com>
 
@@ -103,6 +214,38 @@
 
 	* expr.c (expand_expr_real_1) <normal_inner_ref>: Use the expression to
 	set the memory attributes in all cases but clear MEM_EXPR if need be.
+
+2015-01-14  Yvan Roux  <yvan.roux@linaro.org>
+
+	Backport from trunk r218451.
+	2014-12-06  James Greenhalgh  <james.greenhalgh@arm.com>
+	            Sebastian Pop  <s.pop@samsung.com>
+		    Brian Rzycki  <b.rzycki@samsung.com>
+
+	PR tree-optimization/54742
+	* params.def (max-fsm-thread-path-insns, max-fsm-thread-length)
+	(max-fsm-thread-paths): New.
+
+	* doc/invoke.texi (max-fsm-thread-path-insns, max-fsm-thread-length)
+	(max-fsm-thread-paths): Documented.
+
+	* tree-cfg.c (split_edge_bb_loc): Export.
+	* tree-cfg.h (split_edge_bb_loc): Declared extern.
+
+        * tree-ssa-threadedge.c (simplify_control_stmt_condition): Restore the
+	original value of cond when simplification fails.
+	(fsm_find_thread_path): New.
+	(fsm_find_control_statement_thread_paths): New.
+	(thread_through_normal_block):Call find_control_statement_thread_paths.
+
+	* tree-ssa-threadupdate.c (dump_jump_thread_path): Pretty print
+	EDGE_FSM_THREAD.
+	(verify_seme): New.
+	(duplicate_seme_region): New.
+	(thread_through_all_blocks): Generate code for EDGE_FSM_THREAD edges
+	calling duplicate_seme_region.
+
+	* tree-ssa-threadupdate.h (jump_thread_edge_type): Add EDGE_FSM_THREAD.
 
 2015-01-14  Jakub Jelinek  <jakub@redhat.com>
 
@@ -656,12 +799,6 @@
 	(sh_optimize_sett_clrt::execute): Do nothing if find_last_ccreg_values
 	returned false.
 
-2014-11-22  Uros Bizjak  <ubizjak@gmail.com>
-
-       * params.def (PARAM_MAX_COMPLETELY_PEELED_INSNS): Increase to 200.
-       * config/i386/i386.c (ix86_option_override_internal): Do not increase
-       PARAM_MAX_COMPLETELY_PEELED_INSNS.
-
 2014-11-22  Oleg Endo  <olegendo@gcc.gnu.org>
 
 	Backport from mainline
@@ -681,6 +818,12 @@
 	PR target/60111
 	* config/sh/sh.c: Use signed char for signed field.
 
+2014-11-22  Uros Bizjak  <ubizjak@gmail.com>
+
+       * params.def (PARAM_MAX_COMPLETELY_PEELED_INSNS): Increase to 200.
+       * config/i386/i386.c (ix86_option_override_internal): Do not increase
+       PARAM_MAX_COMPLETELY_PEELED_INSNS.
+
 2014-11-21  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
 
 	PR target/63673
@@ -693,6 +836,12 @@
 	PR tree-optimization/61750
 	* tree-ssa-forwprop.c (simplify_vce): Verify type sizes
 	match for the resulting VIEW_CONVERT_EXPR.
+
+2014-11-19  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	PR target/61915
+	* config/aarch64/aarch64.c (generic_regmove_cost): Increase FP move
+	cost.
 
 2014-11-19  Uros Bizjak  <ubizjak@gmail.com>
 
@@ -839,9 +988,9 @@
 2014-11-04  Jiong Wang  <jiong.wang@arm.com>
 2014-11-04  Wilco Dijkstra  <wilco.dijkstra@arm.com>
 
-	PR target/63293
-	* config/aarch64/aarch64.c (aarch64_expand_epiloue): Add barriers before
-	stack adjustment.
+       PR target/63293
+       * config/aarch64/aarch64.c (aarch64_expand_epiloue): Add barriers before
+       stack adjustment.
 
 2014-10-31  DJ Delorie  <dj@redhat.com>
 
@@ -904,13 +1053,6 @@
 
 	PR sanitizer/63638
 	* asan.c (enum asan_check_flags): Fixed ASAN_CHECK_LAST.
-
-2014-10-24  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
-
-	* config/aarch64/aarch64-elf-raw.h (CA53_ERR_835769_SPEC): Define.
-	(LINK_SPEC): Include CA53_ERR_835769_SPEC.
-	* config/aarch64/aarch64-linux.h (CA53_ERR_835769_SPEC): Define.
-	(LINK_SPEC): Include CA53_ERR_835769_SPEC.
 
 2014-10-24  Markus Trippelsdorf  <markus@trippelsdorf.de>
 
@@ -1245,17 +1387,6 @@
 	also check CALL_INSN_FUNCTION_USAGE for clobbers again after
 	killing regs_invalidated_by_call.
 
-2014-10-08  Rong Xu  <xur@google.com>
-
-	* gcov-tool.c (profile_overlap): New driver function
-	to compute profile overlap. 
-	(print_overlap_usage_message): New.
-	(overlap_usage): New.
-	(do_overlap): New.
-	(print_usage): Add calls to overlap function.
-	(main): Ditto.
-	* doc/gcov-tool.texi: Add documentation.
-
 2014-10-08  Oleg Endo  <olegendo@gcc.gnu.org>
 
 	Backport from mainline
@@ -1535,12 +1666,6 @@
 	PR target/61853
 	* config/pa/pa.c (pa_function_value): Directly handle aggregates
 	that fit exactly in a word or double word.
-
-2014-09-15  Sharad Singhai  <singhai@google.com>
-
-	Google Ref b/17114943
-
-	* l-ipo.c (promote_static_var_func): Update RTL with the unique name.
 
 2014-09-15  Markus Trippelsdorf  <markus@trippelsdorf.de>
 
@@ -3446,6 +3571,16 @@
 	PR target/60969
 	* config/i386/i386.md (*movsf_internal): Set MODE to SI for
 	alternative 12.
+
+2014-05-16  James Greenhalgh  <james.greenhalgh@arm.com>
+           Philipp Tomsich  <philipp.tomsich@theobroma-systems.com>
+
+       * config/aarch64/aarch64.c (aarch64_strip_shift_or_extend): Rename
+       to...
+       (aarch64_strip_extend): ...this, don't strip shifts, check RTX is
+       well formed.
+       (aarch64_rtx_mult_cost): New.
+       (aarch64_rtx_costs): Use it, refactor as appropriate.
 
 2014-05-16  Vladimir Makarov  <vmakarov@redhat.com>
 

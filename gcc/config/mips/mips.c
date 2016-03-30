@@ -16448,23 +16448,17 @@ mips_build_cvpointer_type (void)
 #define MIPS_ATYPE_V4QI mips_builtin_vector_type (intQI_type_node, V4QImode)
 #define MIPS_ATYPE_V4HI mips_builtin_vector_type (intHI_type_node, V4HImode)
 #define MIPS_ATYPE_V8QI mips_builtin_vector_type (intQI_type_node, V8QImode)
-
-#define MIPS_ATYPE_V2DI						\
-  mips_builtin_vector_type (long_long_integer_type_node, V2DImode)
+#define MIPS_ATYPE_V2DI mips_builtin_vector_type (intDI_type_node, V2DImode)
 #define MIPS_ATYPE_V4SI mips_builtin_vector_type (intSI_type_node, V4SImode)
 #define MIPS_ATYPE_V8HI mips_builtin_vector_type (intHI_type_node, V8HImode)
 #define MIPS_ATYPE_V16QI mips_builtin_vector_type (intQI_type_node, V16QImode)
 #define MIPS_ATYPE_V2DF mips_builtin_vector_type (double_type_node, V2DFmode)
 #define MIPS_ATYPE_V4SF mips_builtin_vector_type (float_type_node, V4SFmode)
 
-#define MIPS_ATYPE_UV2DI					\
-  mips_builtin_vector_type (long_long_unsigned_type_node, V2DImode)
-#define MIPS_ATYPE_UV4SI					\
-  mips_builtin_vector_type (unsigned_intSI_type_node, V4SImode)
-#define MIPS_ATYPE_UV8HI					\
-  mips_builtin_vector_type (unsigned_intHI_type_node, V8HImode)
-#define MIPS_ATYPE_UV16QI					\
-  mips_builtin_vector_type (unsigned_intQI_type_node, V16QImode)
+#define MIPS_ATYPE_UV2DI mips_builtin_vector_type (unsigned_intDI_type_node, V2DImode)
+#define MIPS_ATYPE_UV4SI mips_builtin_vector_type (unsigned_intSI_type_node, V4SImode)
+#define MIPS_ATYPE_UV8HI mips_builtin_vector_type (unsigned_intHI_type_node, V8HImode)
+#define MIPS_ATYPE_UV16QI mips_builtin_vector_type (unsigned_intQI_type_node, V16QImode)
 
 #define MIPS_ATYPE_UV2SI					\
   mips_builtin_vector_type (unsigned_intSI_type_node, V2SImode)

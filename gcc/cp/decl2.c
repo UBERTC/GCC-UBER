@@ -4178,10 +4178,10 @@ no_linkage_error (tree decl)
 	       "to declare function %q#D with linkage", t, decl);
 }
 
-/* Clear the list of deferred functions.  */
+/* Reset the parsing state for the next module.  */
 
 void
-cp_clear_deferred_fns (void)
+cp_reset_parsing_state (void)
 {
   vec_free (deferred_fns);
   deferred_fns = NULL;
@@ -4192,6 +4192,7 @@ cp_clear_deferred_fns (void)
   clear_pending_templates ();
   reset_anon_name ();
   reset_temp_count ();
+  clear_lambda_scope ();
 }
 
 /* Collect declarations from all namespaces relevant to SOURCE_FILE.  */

@@ -195,6 +195,7 @@ along with GCC; see the file COPYING3.  If not see
       NEXT_PASS (pass_split_crit_edges);
       NEXT_PASS (pass_pre);
       NEXT_PASS (pass_sink_code);
+      NEXT_PASS (pass_sancov);
       NEXT_PASS (pass_asan);
       NEXT_PASS (pass_tsan);
       NEXT_PASS (pass_tree_loop);
@@ -286,6 +287,7 @@ along with GCC; see the file COPYING3.  If not see
          to forward object-size and builtin folding results properly.  */
       NEXT_PASS (pass_copy_prop);
       NEXT_PASS (pass_dce);
+      NEXT_PASS (pass_sancov);
       NEXT_PASS (pass_asan);
       NEXT_PASS (pass_tsan);
       NEXT_PASS (pass_rename_ssa_copies);
@@ -308,6 +310,7 @@ along with GCC; see the file COPYING3.  If not see
   NEXT_PASS (pass_vtable_verify);
   NEXT_PASS (pass_lower_vector);
   NEXT_PASS (pass_lower_complex_O0);
+  NEXT_PASS (pass_sancov_O0);
   NEXT_PASS (pass_asan_O0);
   NEXT_PASS (pass_tsan_O0);
   NEXT_PASS (pass_sanopt);

@@ -5474,9 +5474,10 @@ ira (FILE *f)
 
 		  if (old_regno != new_regno)
 		    setup_reg_classes (new_regno, reg_preferred_class (old_regno),
-				       reg_alternate_class (old_regno),
-				       reg_allocno_class (old_regno));
+		                       reg_alternate_class (old_regno),
+		                       reg_allocno_class (old_regno));
 		}
+
 	    }
 	  else
 	    {

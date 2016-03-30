@@ -211,6 +211,11 @@ bool flag_opts_finished
 Variable
 unsigned int flag_sanitize
 
+fsanitize-coverage=trace-pc
+Common Report Var(flag_sanitize_coverage)
+Enable coverage-guided fuzzing code instrumentation.
+Inserts call to __sanitizer_cov_trace_pc into every basic block.
+
 ; Flag whether a prefix has been added to dump_base_name
 Variable
 bool dump_base_name_prefixed = false
@@ -620,6 +625,10 @@ Warn when a variable is assigned to itself
 Wpedantic
 Common Var(pedantic) Warning
 Issue warnings needed for strict compliance to the standard
+
+Wpoison-system-directories
+Common Var(flag_poison_system_directories) Init(POISON_SYSTEM_DIRECTORIES_DEFAULT) Warning
+Warn for -I and -L options using system directories if cross compiling
 
 Wshadow
 Common Var(warn_shadow) Warning

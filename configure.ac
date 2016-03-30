@@ -2544,6 +2544,30 @@ AC_ARG_ENABLE(vtable-verify,
 [enable_vtable_verify=no])
 AC_MSG_RESULT($enable_vtable_verify)
 
+# Use same top-level configure hooks in libgcc/libstdc++/libvtv.
+AC_MSG_CHECKING([for --enable-bionic-libs])
+AC_ARG_ENABLE(bionic-libs,
+[  --enable-bionic-libs    Use bionic libstdc++ libraries ],
+[case "$enableval" in
+ yes) enable_bionic_libs=yes ;;
+ no)  enable_bionic_libs=no ;;
+ *)   enable_bionic_libs=no;;
+ esac],
+[enable_bionic_libs=no])
+AC_MSG_RESULT($enable_bionic_libs)
+
+# Use same top-level configure hooks in libatomic.
+AC_MSG_CHECKING([for --enable-libatomic-ifuncs])
+AC_ARG_ENABLE(libatomic-ifuncs,
+[  --enable-bionic-libs    Enable/disable IFUNCs in libatomic library ],
+[case "$enableval" in
+ yes) enable_libatomic_ifuncs=yes ;;
+ no)  enable_libatomic_ifuncs=no ;;
+ *)   enable_libatomic_ifuncs=yes;;
+ esac],
+[enable_libatomic_ifuncs=yes])
+AC_MSG_RESULT($enable_libatomic_ifuncs)
+
 # Record target_configdirs and the configure arguments for target and
 # build configuration in Makefile.
 target_configdirs=`echo "${target_configdirs}" | sed -e 's/target-//g'`

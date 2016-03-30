@@ -456,7 +456,7 @@ static void
 update_equiv (int regno)
 {
   rtx x;
-  
+
   if ((x = ira_reg_equiv[regno].memory) != NULL_RTX)
     ira_reg_equiv[regno].memory
       = simplify_replace_fn_rtx (x, NULL_RTX, loc_equivalence_callback,
@@ -886,7 +886,7 @@ match_reload (signed char out, signed char *ins, enum reg_class goal_class,
 	  if (GET_CODE (in_rtx) == SUBREG)
 	    {
 	      rtx subreg_reg = SUBREG_REG (in_rtx);
-	      
+
 	      /* If SUBREG_REG is dying here and sub-registers IN_RTX
 		 and NEW_IN_REG are similar, we can use the same hard
 		 register for REG and SUBREG_REG.  */
@@ -1699,7 +1699,7 @@ process_alt_operands (int only_alternative)
       if (only_alternative >= 0 && nalt != only_alternative)
 	continue;
 
-            
+
       overall = losers = reject = reload_nregs = reload_sum = 0;
       for (nop = 0; nop < n_operands; nop++)
 	{
@@ -2473,7 +2473,7 @@ process_alt_operands (int only_alternative)
 #ifdef SECONDARY_MEMORY_NEEDED
 	      /* If reload requires moving value through secondary
 		 memory, it will need one more insn at least.  */
-	      if (this_alternative != NO_REGS 
+	      if (this_alternative != NO_REGS
 		  && REG_P (op) && (cl = get_reg_class (REGNO (op))) != NO_REGS
 		  && ((curr_static_id->operand[nop].type != OP_OUT
 		       && SECONDARY_MEMORY_NEEDED (cl, this_alternative,
@@ -3012,7 +3012,7 @@ process_address_1 (int nop, rtx *before, rtx *after)
 			    code = -1;
 			  }
 		      }
-		    
+
 		  }
 	      }
 	    if (code < 0)
@@ -3414,7 +3414,7 @@ curr_insn_transform (void)
 	change_p = true;
 	lra_update_dup (curr_id, i);
       }
-  
+
   if (change_p)
     /* If we've changed the instruction then any alternative that
        we chose previously may no longer be valid.  */
@@ -3707,7 +3707,8 @@ curr_insn_transform (void)
 		 assigment pass and the scratch pseudo will be
 		 spilled.  Spilled scratch pseudos are transformed
 		 back to scratches at the LRA end.  */
-	      && lra_former_scratch_operand_p (curr_insn, i))
+	      && lra_former_scratch_operand_p (curr_insn, i)
+              && lra_former_scratch_p (REGNO (op)))
 	    {
 	      int regno = REGNO (op);
 	      lra_change_class (regno, NO_REGS, "      Change to", true);
@@ -3716,6 +3717,8 @@ curr_insn_transform (void)
 		   spilled pseudo as there is only one such insn, the
 		   current one.  */
 		reg_renumber[regno] = -1;
+              lra_assert (bitmap_single_bit_set_p
+                          (&lra_reg_info[REGNO (op)].insn_bitmap));
 	    }
 	  /* We can do an optional reload.  If the pseudo got a hard
 	     reg, we might improve the code through inheritance.  If
@@ -4214,7 +4217,7 @@ lra_constraints (bool first_p)
 		   the equiv.  We could update the equiv insns after
 		   transformations including an equiv insn deletion
 		   but it is not worthy as such cases are extremely
-		   rare.  */ 
+		   rare.  */
 		|| contains_deleted_insn_p (ira_reg_equiv[i].init_insns)
 		/* If it is not a reverse equivalence, we check that a
 		   pseudo in rhs of the init insn is not dying in the
@@ -4306,7 +4309,7 @@ lra_constraints (bool first_p)
 		      can not be changed.  Such insns might be not in
 		      init_insns because we don't update equiv data
 		      during insn transformations.
-		      
+
 		      As an example, let suppose that a pseudo got
 		      hard register and on the 1st pass was not
 		      changed to equivalent constant.  We generate an

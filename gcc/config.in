@@ -144,6 +144,12 @@
 #endif
 
 
+/* Define to warn for use of native system header directories.  */
+#ifndef USED_FOR_TARGET
+#undef ENABLE_POISON_SYSTEM_DIRECTORIES
+#endif
+
+
 /* Define if you want all operations on RTL (the basic data structure of the
    optimizer and back end) to be checked for dynamic type safety at runtime.
    This is quite expensive. */

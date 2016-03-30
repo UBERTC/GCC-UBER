@@ -912,8 +912,8 @@ thread_around_empty_blocks (edge taken_edge,
 
 static bool
 fsm_find_thread_path (basic_block start_bb, basic_block end_bb,
-		      vec<basic_block, va_gc> *&path,
-		      pointer_set_t *visited_bbs, loop_p loop)
+                      vec<basic_block, va_gc> *&path,
+                      pointer_set_t *visited_bbs, loop_p loop)
 {
   if (loop != start_bb->loop_father)
     return false;
@@ -947,7 +947,7 @@ static int max_threaded_paths;
 
 static void
 fsm_find_control_statement_thread_paths (tree expr,
-					 pointer_set_t *visited_bbs,
+                                         pointer_set_t *visited_bbs,
 					 vec<basic_block, va_gc> *&path,
 					 bool seen_loop_phi)
 {
@@ -976,7 +976,7 @@ fsm_find_control_statement_thread_paths (tree expr,
     {
       /* Do not walk through more than one loop PHI node.  */
       if (seen_loop_phi)
-	return;
+        return;
       seen_loop_phi = true;
     }
 
@@ -997,23 +997,23 @@ fsm_find_control_statement_thread_paths (tree expr,
 
 	  if (fsm_find_thread_path (var_bb, e->src, next_path, visited_bbs,
 				    e->src->loop_father))
-	    ++e_count;
+            ++e_count;
 
-	  pointer_set_destroy (visited_bbs);
+          pointer_set_destroy (visited_bbs);
 
-	  /* If there is more than one path, stop.  */
-	  if (e_count > 1)
+          /* If there is more than one path, stop.  */
+          if (e_count > 1)
 	    {
-	      vec_free (next_path);
-	      return;
+              vec_free (next_path);
+              return;
 	    }
-	}
+        }
 
       /* Stop if we have not found a path: this could occur when the recursion
 	 is stopped by one of the bounds.  */
       if (e_count == 0)
 	{
-	  vec_free (next_path);
+          vec_free (next_path);
 	  return;
 	}
 
@@ -1034,18 +1034,17 @@ fsm_find_control_statement_thread_paths (tree expr,
 
       /* Skip edges pointing outside the current loop.  */
       if (!arg || var_bb->loop_father != bbi->loop_father)
-	continue;
+        continue;
 
       if (TREE_CODE (arg) == SSA_NAME)
-	{
+        {
 	  vec_safe_push (path, bbi);
-	  /* Recursively follow SSA_NAMEs looking for a constant definition.  */
+          /* Recursively follow SSA_NAMEs looking for a constant definition.  */
 	  fsm_find_control_statement_thread_paths (arg, visited_bbs, path,
 						   seen_loop_phi);
-
 	  path->pop ();
 	  continue;
-	}
+        }
 
       if (TREE_CODE (arg) != INTEGER_CST)
 	continue;
@@ -1066,12 +1065,12 @@ fsm_find_control_statement_thread_paths (tree expr,
 
       if (max_threaded_paths <= 0)
 	{
-	  if (dump_file && (dump_flags & TDF_DETAILS))
-	    fprintf (dump_file, "FSM jump-thread path not considered: "
+          if (dump_file && (dump_flags & TDF_DETAILS))
+            fprintf (dump_file, "FSM jump-thread path not considered: "
 		     "the number of previously recorded FSM paths to thread "
 		     "exceeds PARAM_MAX_FSM_THREAD_PATHS.\n");
 	  continue;
-	}
+        }
 
       /* Add BBI to the path.  */
       vec_safe_push (path, bbi);
@@ -1085,8 +1084,8 @@ fsm_find_control_statement_thread_paths (tree expr,
 
       /* Count the number of instructions on the path: as these instructions
 	 will have to be duplicated, we will not record the path if there are
-	 too many instructions on the path.  Also check that all the blocks in
-	 the path belong to a single loop.  */
+         too many instructions on the path.  Also check that all the blocks in
+         the path belong to a single loop.  */
       for (j = 1; j < path_length - 1; j++)
 	{
 	  basic_block bb = (*path)[j];
@@ -1109,23 +1108,23 @@ fsm_find_control_statement_thread_paths (tree expr,
 	}
 
       if (path_crosses_loops)
-	{
+        {
 	  if (dump_file && (dump_flags & TDF_DETAILS))
 	    fprintf (dump_file, "FSM jump-thread path not considered: "
 		     "the path crosses loops.\n");
 	  path->pop ();
-	  continue;
+          continue;
 	}
 
       if (n_insns >= PARAM_VALUE (PARAM_MAX_FSM_THREAD_PATH_INSNS))
-	{
+        {
 	  if (dump_file && (dump_flags & TDF_DETAILS))
 	    fprintf (dump_file, "FSM jump-thread path not considered: "
 		     "the number of instructions on the path "
 		     "exceeds PARAM_MAX_FSM_THREAD_PATH_INSNS.\n");
 	  path->pop ();
-	  continue;
-	}
+          continue;
+        }
 
       vec<jump_thread_edge *> *jump_thread_path
 	= new vec<jump_thread_edge *> ();
@@ -1137,7 +1136,7 @@ fsm_find_control_statement_thread_paths (tree expr,
 			      (*path)[path_length - j - 2]);
 	  gcc_assert (e);
 	  jump_thread_edge *x = new jump_thread_edge (e, EDGE_FSM_THREAD);
-	  jump_thread_path->safe_push (x);
+          jump_thread_path->safe_push (x);
 	}
 
       /* Add the edge taken when the control variable has value ARG.  */

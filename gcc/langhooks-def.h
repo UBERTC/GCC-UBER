@@ -214,7 +214,7 @@ extern tree lhd_make_node (enum tree_code);
 #define LANG_HOOKS_DUP_LANG_TYPE lhd_do_nothing_t_t
 #define LANG_HOOKS_COPY_LANG_TYPE lhd_do_nothing_t_t
 #define LANG_HOOKS_PROCESS_PENDING_DECLS lhd_do_nothing_u
-#define LANG_HOOKS_CLEAR_DEFFERED_FNS lhd_do_nothing
+#define LANG_HOOKS_RESET_PARSING_STATE lhd_do_nothing
 #define LANG_HOOKS_IS_GENERATED_TYPE lhd_do_nothing_t_return_bool
 #define LANG_HOOKS_CMP_LANG_TYPE lhd_do_nothing_t_t_return_int
 
@@ -231,7 +231,7 @@ extern tree lhd_make_node (enum tree_code);
   LANG_HOOKS_DUP_LANG_TYPE, \
   LANG_HOOKS_COPY_LANG_TYPE, \
   LANG_HOOKS_PROCESS_PENDING_DECLS, \
-  LANG_HOOKS_CLEAR_DEFFERED_FNS, \
+  LANG_HOOKS_RESET_PARSING_STATE, \
   LANG_HOOKS_IS_GENERATED_TYPE, \
   LANG_HOOKS_CMP_LANG_TYPE,  \
 }

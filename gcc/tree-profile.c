@@ -864,8 +864,20 @@ gimple_gen_edge_profiler (int edgeno, edge e)
     {
       gimple call;
       tree tree_edgeno = build_int_cst (gcov_type_node, edgeno);
-      tree tree_uid = build_int_cst (gcov_type_node,
+
+      tree tree_uid;
+      if (PARAM_VALUE (PARAM_PROFILE_FUNC_INTERNAL_ID))
+        {
+          tree_uid  = build_int_cst (gcov_type_node,
                                      current_function_funcdef_no);
+        }
+      else
+        {
+          gcc_assert (coverage_node_map_initialized_p ());
+
+          tree_uid = build_int_cst
+      (gcov_type_node, cgraph_get_node (current_function_decl)->profile_id);
+        }
       tree callback_fn_type
               = build_function_type_list (void_type_node,
                                           gcov_type_node,

@@ -4385,6 +4385,7 @@ extern int cp_unevaluated_operand;
 extern tree cp_convert_range_for (tree, tree, tree, bool);
 extern bool parsing_nsdmi (void);
 extern void inject_this_parameter (tree, cp_cv_quals);
+extern void clear_lambda_scope (void);
 
 /* in pt.c  */
 
@@ -5342,7 +5343,7 @@ extern void cplus_decl_attributes		(tree *, tree, int);
 extern void finish_anon_union			(tree);
 extern void cp_write_global_declarations	(void);
 extern void cp_process_pending_declarations     (location_t);
-extern void cp_clear_deferred_fns               (void);
+extern void cp_reset_parsing_state              (void);
 extern void cp_clear_constexpr_hashtable        (void);
 extern void cp_clear_conv_type_map              (void);
 extern tree coerce_new_type			(tree);

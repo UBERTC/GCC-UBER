@@ -932,6 +932,7 @@ with_system_zlib
 enable_maintainer_mode
 enable_link_mutex
 enable_version_specific_runtime_libs
+enable_poison_system_directories
 enable_canonical_prefixes
 enable_plugin
 enable_host_shared
@@ -1665,6 +1666,8 @@ Optional Features:
   --enable-version-specific-runtime-libs
                           specify that runtime libraries should be installed
                           in a compiler-specific directory
+  --enable-poison-system-directories
+                          warn for use of native system header directories
   --enable-canonical-prefixes
                           enable or disable prefix canonicalization
   --enable-plugin         enable plugin support
@@ -27020,7 +27023,7 @@ if test $gcc_cv_ld_pie = yes ; then
     # Check if linker supports -pie option with copy reloc
     case "$target" in
     *android*)
-	;;
+      ;;
     i?86-*-linux* | x86_64-*-linux*)
       cat > conftest1.s <<EOF
 	.globl	a_glob
@@ -27942,6 +27945,19 @@ fi
 if test x"$enable_canonical_prefixes" = xyes; then
 
 $as_echo "#define ENABLE_CANONICAL_PREFIXES 1" >>confdefs.h
+
+fi
+
+# Check whether --enable-poison-system-directories was given.
+if test "${enable_poison_system_directories+set}" = set; then :
+  enableval=$enable_poison_system_directories;
+else
+  enable_poison_system_directories=no
+fi
+
+if test "x${enable_poison_system_directories}" = "xyes"; then
+
+$as_echo "#define ENABLE_POISON_SYSTEM_DIRECTORIES 1" >>confdefs.h
 
 fi
 

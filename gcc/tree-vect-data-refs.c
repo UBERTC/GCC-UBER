@@ -615,7 +615,6 @@ vect_compute_data_ref_alignment (struct data_reference *dr)
   tree ref = DR_REF (dr);
   tree vectype;
   tree base, base_addr;
-  bool base_aligned;
   tree misalign;
   tree aligned_to, alignment;
 
@@ -688,6 +687,18 @@ vect_compute_data_ref_alignment (struct data_reference *dr)
     }
 
   base = build_fold_indirect_ref (base_addr);
+  /* To look at alignment of the base we have to preserve an inner MEM_REF
+     as that carriese alignment information of the actual access.  */
+  while (handled_component_p (base))
+    base = TREE_OPERAND (base, 0);
+  if (TREE_CODE (base) == MEM_REF)
+    base = build2 (MEM_REF, TREE_TYPE(base), base_addr,
+		   build_int_cst (TREE_TYPE (TREE_OPERAND (base, 1)), 0));
+  unsigned int base_alignment = get_object_alignment (base);
+
+  if (base_alignment >= TYPE_ALIGN (TREE_TYPE (vectype)))
+    DR_VECT_AUX (dr)->base_element_aligned = true;
+
   alignment = ssize_int (TYPE_ALIGN (vectype)/BITS_PER_UNIT);
 
   if ((aligned_to && tree_int_cst_compare (aligned_to, alignment) < 0)
@@ -703,19 +714,7 @@ vect_compute_data_ref_alignment (struct data_reference *dr)
       return true;
     }
 
-  if ((DECL_P (base)
-       && tree_int_cst_compare (ssize_int (DECL_ALIGN_UNIT (base)),
-				alignment) >= 0)
-      || (TREE_CODE (base_addr) == SSA_NAME
-	  && tree_int_cst_compare (ssize_int (TYPE_ALIGN_UNIT (TREE_TYPE (
-						      TREE_TYPE (base_addr)))),
-				   alignment) >= 0)
-      || (get_pointer_alignment (base_addr) >= TYPE_ALIGN (vectype)))
-    base_aligned = true;
-  else
-    base_aligned = false;
-
-  if (!base_aligned)
+  if (base_alignment < TYPE_ALIGN (vectype))
     {
       /* Do not change the alignment of global variables here if
 	 flag_section_anchors is enabled as we already generated
@@ -744,8 +743,9 @@ vect_compute_data_ref_alignment (struct data_reference *dr)
           dump_printf (MSG_NOTE, "\n");
         }
 
-      ((dataref_aux *)dr->aux)->base_decl = base;
-      ((dataref_aux *)dr->aux)->base_misaligned = true;
+      DR_VECT_AUX (dr)->base_decl = base;
+      DR_VECT_AUX (dr)->base_misaligned = true;
+      DR_VECT_AUX (dr)->base_element_aligned = true;
     }
 
   /* If this is a backward running DR then first access in the larger
@@ -3913,12 +3913,6 @@ vect_create_addr_base_for_vector_ref (gimple stmt,
 			    fold_convert (sizetype, offset), step);
       base_offset = fold_build2 (PLUS_EXPR, sizetype,
 				 base_offset, offset);
-    }
-  if (byte_offset)
-    {
-      byte_offset = fold_convert (sizetype, byte_offset);
-      base_offset = fold_build2 (PLUS_EXPR, sizetype,
-				 base_offset, byte_offset);
     }
   if (byte_offset)
     {

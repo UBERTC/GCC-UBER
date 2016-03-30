@@ -1394,10 +1394,7 @@ sjlj_emit_dispatch_table (rtx dispatch_label, int num_dispatch)
 	      {
 		for (loop = bb->loop_father;
 		     loop_outer (loop); loop = loop_outer (loop))
-		  {
-		    loop->header = NULL;
-		    loop->latch = NULL;
-		  }
+		  mark_loop_for_removal (loop);
 	      }
 	  }
 

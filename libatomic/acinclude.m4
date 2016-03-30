@@ -197,6 +197,11 @@ AC_DEFUN([LIBAT_CHECK_IFUNC], [
     void *foo_sel(void) { return foo_alt; }
     int foo(void) __attribute__((ifunc("foo_sel")));],
     [return foo();], libat_cv_have_ifunc=yes, libat_cv_have_ifunc=no)])
+
+  if test $enable_libatomic_ifuncs = no; then
+    libat_cv_have_ifunc=no
+  fi
+
   LIBAT_DEFINE_YESNO([HAVE_IFUNC], [$libat_cv_have_ifunc],
       [Define to 1 if the target supports __attribute__((ifunc(...))).])
 ])

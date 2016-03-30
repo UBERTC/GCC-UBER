@@ -1,7 +1,7 @@
 /* Test for deprecation messages on use of lvsl and lvsr for little endian.  */
 
 /* { dg-do compile { target { powerpc64le-*-* } } } */
-/* { dg-options "-O0 -Wdeprecated" } */
+/* { dg-options "-maltivec -O0 -Wdeprecated" } */
 
 #include <altivec.h>
 

@@ -275,8 +275,8 @@ struct lang_hooks_for_lipo
   /* Process decls after parsing of a source module.  */
   void (*process_pending_decls) (unsigned);
 
-  /* Clear the list of deferred functions.  */
-  void (*clear_deferred_fns) (void);
+  /* Reset the parsing state for the next module.  */
+  void (*reset_parsing_state) (void);
 
   /* Return true if T is compiler generated.  */
   bool (*is_compiler_generated_type) (tree t);

@@ -23,17 +23,6 @@
 	* Makefile.in: Regenerate.
 	* configure: Regenerate.
 
-2014-11-19  Wilco Dijkstra  <wdijkstr@arm.com>
-
-       PR target/61915
-       * config/aarch64/aarch64.c (generic_regmove_cost): Increase FP move
-       cost.
-
-2014-11-19  Renlin Li  <Renlin.Li@arm.com>
-
-	PR middle-end/63762
-	* ira.c (ira): Update preferred class.
-
 2014-10-30  Release Manager
 
 	* GCC 4.9.2 released.

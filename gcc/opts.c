@@ -734,13 +734,15 @@ finish_options (struct gcc_options *opts, struct gcc_options *opts_set,
      sections of the .o and executable files does not work (currently)
      with exception handling.  This is because there is no support for
      generating unwind info.  If opts->x_flag_exceptions is turned on
-     we need to turn off the partitioning optimization.  */
+     we need to turn off the partitioning optimization.
+     Enforcing this for DWARF2 based unwinding too because it could lead
+     to segfault.  */
 
   ui_except = targetm_common.except_unwind_info (opts);
 
   if (opts->x_flag_exceptions
       && opts->x_flag_reorder_blocks_and_partition
-      && (ui_except == UI_SJLJ || ui_except >= UI_TARGET))
+      && (ui_except >= UI_SJLJ))
     {
       if (opts_set->x_flag_reorder_blocks_and_partition)
         inform (loc,

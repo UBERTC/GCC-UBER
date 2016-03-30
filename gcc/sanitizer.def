@@ -365,3 +365,8 @@ DEF_SANITIZER_BUILTIN(BUILT_IN_UBSAN_HANDLE_LOAD_INVALID_VALUE,
 		      "__ubsan_handle_load_invalid_value",
 		      BT_FN_VOID_PTR_PTR,
 		      ATTR_COLD_NOTHROW_LEAF_LIST)
+/* Sanitizer coverage */
+DEF_SANITIZER_BUILTIN(BUILT_IN_SANITIZER_COV_TRACE_PC,
+		      "__sanitizer_cov_trace_pc",
+		      BT_FN_VOID,
+		      ATTR_NOTHROW_LEAF_LIST)
