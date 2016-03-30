@@ -1,3 +1,55 @@
+2016-03-30  Alan Modra  <amodra@gmail.com>
+
+	* gcc.dg/dfp/pr70052.c: New test.
+
+2016-02-29  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/69875
+	* gcc.target/arm/atomic_loaddi_acquire.x: New file.
+	* gcc.target/arm/atomic_loaddi_relaxed.x: Likewise.
+	* gcc.target/arm/atomic_loaddi_seq_cst.x: Likewise.
+	* gcc.target/arm/atomic_loaddi_1.c: New test.
+	* gcc.target/arm/atomic_loaddi_2.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_3.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_4.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_5.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_6.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_7.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_8.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_9.c: Likewise.
+
+2016-03-29  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-03-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* lib/target-supports.exp: Remove v7ve entry from loop
+	creating effective target checks.
+	(check_effective_target_arm_arch_v7ve_ok): New procedure.
+	(add_options_for_arm_arch_v7ve): Likewise.
+
+2016-03-28  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/70397
+	* gfortran.dg/unlimited_polymorphic_25.f90: New test.
+	* gfortran.dg/unlimited_polymorphic_26.f90: New test.
+
+2016-03-28  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70406
+	 * gcc.target/i386/pr70406.c: New test.
+
+2016-03-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/specs/double_record_extension3.ads: New test.
+
+2016-03-23  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2016-01-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/sparc/20151219-1.c: Skip in 64-bit mode.
+
 2016-03-22  Martin Liska  <mliska@suse.cz>
 
 	PR ipa/70306
