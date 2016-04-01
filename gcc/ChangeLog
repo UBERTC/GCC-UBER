@@ -1,3 +1,244 @@
+2016-03-31  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/70393
+	* varasm.c (output_constructor_regular_field): Flush bitfield
+	earlier.  Assert we don't want to move backwards.
+
+2016-03-31  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/arm/sync.md (arm_atomic_loaddi2_ldrd): Fix output template
+	for non-unified syntax.
+
+2016-03-31  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70453
+	* config/i386/sse.md (define_mode_attr shuffletype): Fix typo.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-12  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/69307
+	* sel-sched.c (choose_best_pseudo_reg): Properly check for hard
+	registers in modes that span more than one register.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-21  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/69102
+	* sched-deps.c (sched_analyze_insn): Do not set last_args_size field
+	when we have a readonly dependency context.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-15  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/69032
+	* sel-sched-ir.c (get_seqno_by_preds): Include both insn and head when
+	looping backwards over basic block insns.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-15  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR target/66660
+	* sel-sched-ir.c (merge_expr): Avoid changing the speculative pattern
+	to non-speculative when propagating trap bits.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-15  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR target/64411
+	* sched-deps.c (get_implicit_reg_pending_clobbers): New function,
+	factored out from ...
+	(sched_analyze_insn): ... here.
+	* sched-int.h (get_implicit_reg_pending_clobbers): Declare it.
+	* sel-sched-ir.c (setup_id_implicit_regs): New function, use
+	get_implicit_reg_pending_clobbers in it.
+	(setup_id_reg_sets): Use setup_id_implicit_regs.
+	(deps_init_id): Ditto.
+
+2016-03-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70460
+	* ira.c (indirect_jump_optimize): Don't substitute LABEL_REF
+	with operand from REG_LABEL_OPERAND, instead substitute
+	SET_SRC or REG_EQUAL note content if it is a LABEL_REF.
+	Don't do anything for REG_NON_LOCAL_GOTO jumps.
+
+2016-03-31  Alan Modra  <amodra@gmail.com>
+
+	Backport from mainline
+	2016-02-16  Alan Modra  <amodra@gmail.com>
+	PR target/68973
+	* config/rs6000/rs6000.md (reload_vsx_from_gprsf): Rewrite splitter.
+	(p8_mtvsrd_df, p8_mtvsrd_sf): New.
+	(p8_mtvsrd_1, p8_mtvsrd_2): Delete.
+	(p8_mtvsrwz): New.
+	(p8_mtvsrwz_1, p8_mtvsrwz_2): Delete.
+	(p8_xxpermdi_<mode>): Take two DF inputs rather than one TF.
+	(p8_fmrgow_<mode>): Likewise.
+	(reload_vsx_from_gpr<mode>): Adjust for above.  Use "wa" for
+	clobber constraint.
+	(reload_fpr_from_gpr<mode>): Adjust for above.  Use "d" for
+	op0 constraint.
+	(reload_vsx_from_gprsf): Use p8_mtvsrd_sf rather than attempting
+	to use movdi_internal64.  Remove op0_di.
+	* config/rs6000/vsx.md (vsx_xscvspdpn_directmove): Make op1 SFmode.
+
+2016-03-30  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2016-03-23  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/69917
+	* config/i386/sol2.h (ASM_OUTPUT_DEF_FROM_DECLS): Follow
+	transparent alias chain for decl assembler name.
+	* config/sol2.c (solaris_assemble_visibility): Likewise.
+
+2016-03-30  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backported from the mainline
+	2016-03-12  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/69614
+	* lra-constraints.c (delete_move_and_clobber): New.
+	(remove_inheritance_pseudos): Use it.
+
+2016-03-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70421
+	* config/i386/i386.c (ix86_expand_vector_set): Fix up argument order
+	in gen_blendm expander.
+
+	Backported from mainline
+	2016-03-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70429
+	* combine.c (simplify_shift_const_1): For ASHIFTRT don't optimize
+	(cst1 >> count) >> cst2 into (cst1 >> cst2) >> count if
+	mode != result_mode.
+
+	2016-03-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70329
+	* config/i386/i386.c (ix86_expand_vecop_qihi): Don't bother computing
+	d.perm[i] for i >= d.nelt.  If not full_interleave, compute d.perm[i]
+	in a way that works also for AVX512BW.
+
+	2016-03-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70296
+	* config/rs6000/rs6000-c.c (rs6000_macro_to_expand): If IDENT is
+	function-like macro, peek following token(s) if it is followed
+	by CPP_OPEN_PAREN token with optional padding in between, and
+	if not, don't treat it like a macro.
+
+	2016-03-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70222
+	* combine.c (simplify_shift_const_1): For A >> B >> C LSHIFTRT
+	optimization if mode is different from result_mode, queue up masking
+	of the result in outer_op.  Formatting fix.
+
+	2016-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/70169
+	* tree-ssa-loop.c (gen_lsm_tmp_name): Handle FUNCTION_DECL and
+	LABEL_DECL like VAR_DECL.  Emit nothing instead of gcc_unreachable
+	for unknown codes.
+
+	2016-03-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/70152
+	* tree-sra.c (replace_removed_params_ssa_names): Copy over
+	SSA_NAME_OCCURS_IN_ABNORMAL_PHI from old_name to new_name.
+
+	2016-03-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70062
+	* config/i386/i386.c (decide_alg): Add RECUR argument.  Revert
+	2016-02-22 changes, instead don't recurse if RECUR is already true.
+	Don't change *dynamic_check if RECUR.  Adjust recursive caller
+	to pass true to the new argument.
+	(ix86_expand_set_or_movmem): Adjust decide_alg caller.
+
+	2016-02-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69888
+	* config/i386/i386.c (decide_alg): Ensure we don't recurse with
+	identical arguments.  Formatting and spelling fixes.
+
+	2016-03-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70028
+	* config/i386/i386.md (kmovw): Move m constraint to 2nd alternative.
+	(*movhi_internal): Put mask moves from and to memory separately
+	from moves from/to GPRs.
+
+	2016-02-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69969
+	* config/rs6000/rs6000.c (rs6000_option_override_internal): Don't
+	complain about -mallow-movmisalign without -mvsx if
+	TARGET_ALLOW_MOVMISALIGN was not set explicitly.
+
+	2016-02-26  Jakub Jelinek  <jakub@redhat.com>
+		    Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/69891
+	* dse.c (scan_insn): If we can't figure out memset arguments
+	or they are non-constant, call clear_rhs_from_active_local_stores.
+
+	2016-02-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/69705
+	* dwarf2out.c (gen_variable_die): Work around buggy LTO
+	- allow NULL decl for Fortran DW_TAG_common_block variables.
+
+	2016-02-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/69838
+	* lra.c (lra_process_new_insns): If non-call exceptions are enabled,
+	call copy_reg_eh_region_note_forward on before and/or after sequences
+	and remove note from insn if it no longer can throw.
+
+	2016-02-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69802
+	* tree-ssa-reassoc.c (update_range_test): If op is
+	SSA_NAME_IS_DEFAULT_DEF, give up unless tem is a positive
+	op == 1 test of precision 1 integral op, otherwise handle
+	that case as op itself.  Fix up formatting.
+	(optimize_range_tests_to_bit_test, optimize_range_tests): Fix
+	up formatting.
+
+	PR rtl-optimization/69764
+	PR rtl-optimization/69771
+	* optabs.c (expand_binop): Ensure for shift optabs invalid CONST_INT
+	op1 is valid for GET_MODE_INNER (mode) and force it into a reg.
+
+	2016-02-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/69764
+	PR rtl-optimization/69771
+	* optabs.c (expand_binop_directly): For shift_optab_p, force
+	convert_modes with VOIDmode if xop1 has VOIDmode.
+
+	PR ipa/68672
+	* ipa-split.c (split_function): Compute retval early in all cases
+	if split_part_return_p and return_bb is not EXIT.  Remove all
+	clobber stmts and reset all debug stmts that refer to SSA_NAMEs
+	defined in split part, except if it is retval, in that case replace
+	the old retval with the lhs of the call to the split part.
+
 2016-03-30  Alan Modra  <amodra@gmail.com>
 
 	PR target/70052

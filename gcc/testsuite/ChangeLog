@@ -1,3 +1,164 @@
+2016-03-31  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/70393
+	* g++.dg/cpp0x/constexpr-virtual6.C: New.
+
+2016-03-31  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/arm/atomic_loaddi_relaxed_cond.c: New test.
+
+2016-03-31  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70453
+	* gcc.target/i386/pr70453.c: New test.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-21  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/69102
+	* gcc.c-torture/compile/pr69102.c: New test.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-15  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/69032
+	* gcc.dg/pr69032.c: New test.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-15  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR target/64411
+	* gcc.target/i386/pr64411.C: New test.
+
+2016-03-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70460
+	* gcc.c-torture/execute/pr70460.c: New test.
+
+2016-03-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR testsuite/70356
+	* gcc.target/i386/avx-vextractf128-256-5.c: Move
+	dg-require-effective-target after dg-do.
+
+2016-03-30  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backported from the mainline
+	2016-03-12  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/69614
+	* gcc.target/arm/pr69614.c: New.
+
+2016-03-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70421
+	* gcc.dg/torture/pr70421.c: New test.
+	* gcc.target/i386/avx512f-pr70421.c: New test.
+
+	Backported from mainline
+	2016-03-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70429
+	* gcc.c-torture/execute/pr70429.c: New test.
+
+	2016-03-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70329
+	* gcc.target/i386/avx512bw-pr70329-1.c: New test.
+	* gcc.target/i386/avx512bw-pr70329-2.c: New test.
+
+	2016-03-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70296
+	* gcc.target/powerpc/altivec-36.c: New test.
+
+	2016-03-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/70272
+	* g++.dg/opt/flifetime-dse6.C: New test.
+	* g++.dg/tree-ssa/ehcleanup-1.C: Adjust unreachable count.
+
+	2016-03-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70222
+	* gcc.c-torture/execute/pr70222-1.c: New test.
+	* gcc.c-torture/execute/pr70222-2.c: New test.
+
+	2016-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/70169
+	* gcc.dg/pr70169.c: New test.
+
+	2016-03-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/70152
+	* gcc.dg/pr70152.c: New test.
+
+	2016-03-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70062
+	* gcc.target/i386/pr70062.c: New test.
+
+	2016-02-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69888
+	* gcc.target/i386/pr69888.c: New test.
+
+	2016-03-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70028
+	* gcc.target/i386/pr70028.c: New test.
+
+	2016-02-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69969
+	* gcc.target/powerpc/pr69969.c: New test.
+
+	PR rtl-optimization/69891
+	* gcc.target/i386/pr69891.c: New test.
+
+	2016-02-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/69826
+	* c-c++-common/cilk-plus/CK/pr69826-1.c: New test.
+	* c-c++-common/cilk-plus/CK/pr69826-2.c: New test.
+
+	PR c++/67767
+	* g++.dg/cpp0x/pr67767.C: New test.
+
+	2016-02-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69802
+	* gcc.dg/pr69802.c: New test.
+
+	2016-02-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/69797
+	* c-c++-common/pr69797.c: New test.
+
+	2016-02-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69885
+	* gcc.dg/pr69885.c: New test.
+
+	2016-02-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/69764
+	PR rtl-optimization/69771
+	* c-c++-common/pr69764.c: New test.
+	* gcc.dg/torture/pr69771.c: New test.
+
+	PR ipa/68672
+	* g++.dg/ipa/pr68672-1.C: New test.
+	* g++.dg/ipa/pr68672-2.C: New test.
+	* g++.dg/ipa/pr68672-3.C: New test.
+
 2016-03-30  Alan Modra  <amodra@gmail.com>
 
 	* gcc.dg/dfp/pr70052.c: New test.
