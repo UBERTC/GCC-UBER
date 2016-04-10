@@ -483,8 +483,9 @@
   [(V16SF "f") (V16SI "i") (V8DF "f") (V8DI "i")
   (V8SF "f") (V8SI "i") (V4DF "f") (V4DI "i")
   (V4SF "f") (V4SI "i") (V2DF "f") (V2DI "i")
-  (V32QI "i") (V16HI "i") (V16QI "i") (V8HI "i")
-  (V64QI "i") (V1TI "i") (V2TI "i")])
+  (V32HI "i") (V16HI "i") (V8HI "i")
+  (V64QI "i") (V32QI "i") (V16QI "i")
+  (V4TI "i") (V2TI "i") (V1TI "i")])
 
 (define_mode_attr ssequartermode
   [(V16SF "V4SF") (V8DF "V2DF") (V16SI "V4SI") (V8DI "V2DI")])
@@ -677,7 +678,8 @@
 
 ;; Pointer size override for scalar modes (Intel asm dialect)
 (define_mode_attr iptr
-  [(V32QI "b") (V16HI "w") (V8SI "k") (V4DI "q")
+  [(V64QI "b") (V32HI "w") (V16SI "k") (V8DI "q")
+   (V32QI "b") (V16HI "w") (V8SI "k") (V4DI "q")
    (V16QI "b") (V8HI "w") (V4SI "k") (V2DI "q")
    (V8SF "k") (V4DF "q")
    (V4SF "k") (V2DF "q")
@@ -704,7 +706,8 @@
    (V64QI "8") (V32QI "8") (V16QI "8")
    (V32HI "16") (V16HI "16") (V8HI "16")
    (V16SI "32") (V8SI "32") (V4SI "32")
-   (V16SF "32") (V8DF "64")])
+   (V16SF "32") (V8SF "32") (V4SF "32")
+   (V8DF "64") (V4DF "64") (V2DF "64")])
 
 ;; SSE prefix for integer vector modes
 (define_mode_attr sseintprefix
@@ -10824,45 +10827,46 @@
     case MODE_XI:
       gcc_assert (TARGET_AVX512F);
     case MODE_OI:
-      gcc_assert (TARGET_AVX2 || TARGET_AVX512VL);
+      gcc_assert (TARGET_AVX2);
     case MODE_TI:
-      gcc_assert (TARGET_SSE2 || TARGET_AVX512VL);
+      gcc_assert (TARGET_SSE2);
       switch (<MODE>mode)
-      {
-        case V16SImode:
-        case V8DImode:
-          if (TARGET_AVX512F)
-          {
-            tmp = "pandn<ssemodesuffix>";
-            break;
-          }
-        case V8SImode:
-        case V4DImode:
-        case V4SImode:
-        case V2DImode:
-          if (TARGET_AVX512VL)
-          {
-            tmp = "pandn<ssemodesuffix>";
-            break;
-          }
-        default:
-          tmp = TARGET_AVX512VL ? "pandnq" : "pandn";
-      }
+	{
+	case V64QImode:
+	case V32HImode:
+	  /* There is no vpandnb or vpandnw instruction, nor vpandn for
+	     512-bit vectors. Use vpandnq instead.  */
+	  tmp = "pandnq";
+	  break;
+	case V16SImode:
+	case V8DImode:
+	  tmp = "pandn<ssemodesuffix>";
+	  break;
+	case V8SImode:
+	case V4DImode:
+	case V4SImode:
+	case V2DImode:
+	  tmp = TARGET_AVX512VL ? "pandn<ssemodesuffix>" : "pandn";
+	  break;
+	default:
+	  tmp = TARGET_AVX512VL ? "pandnq" : "pandn";
+	  break;
+	}
       break;
 
-   case MODE_V16SF:
+    case MODE_V16SF:
       gcc_assert (TARGET_AVX512F);
-   case MODE_V8SF:
+    case MODE_V8SF:
       gcc_assert (TARGET_AVX);
-   case MODE_V4SF:
+    case MODE_V4SF:
       gcc_assert (TARGET_SSE);
 
       tmp = "andnps";
       break;
 
-   default:
+    default:
       gcc_unreachable ();
-   }
+    }
 
   switch (which_alternative)
     {
@@ -10870,7 +10874,7 @@
       ops = "%s\t{%%2, %%0|%%0, %%2}";
       break;
     case 1:
-      ops = "v%s\t{%%2, %%1, %%0<mask_operand3_1>|%%0<mask_operand3_1>, %%1, %%2}";
+      ops = "v%s\t{%%2, %%1, %%0|%%0, %%1, %%2}";
       break;
     default:
       gcc_unreachable ();
@@ -10915,21 +10919,6 @@
 	  (match_operand:VI48_AVX512VL 3 "vector_move_operand" "0C")
 	  (match_operand:<avx512fmaskmode> 4 "register_operand" "Yk")))]
   "TARGET_AVX512F"
-  "vpandn<ssemodesuffix>\t{%2, %1, %0%{%4%}%N3|%0%{%4%}%N3, %1, %2}";
-  [(set_attr "type" "sselog")
-   (set_attr "prefix" "evex")
-   (set_attr "mode" "<sseinsnmode>")])
-
-(define_insn "*andnot<mode>3_mask"
-  [(set (match_operand:VI12_AVX512VL 0 "register_operand" "=v")
-	(vec_merge:VI12_AVX512VL
-	  (and:VI12_AVX512VL
-	    (not:VI12_AVX512VL
-	      (match_operand:VI12_AVX512VL 1 "register_operand" "v"))
-	    (match_operand:VI12_AVX512VL 2 "nonimmediate_operand" "vm"))
-	  (match_operand:VI12_AVX512VL 3 "vector_move_operand" "0C")
-	  (match_operand:<avx512fmaskmode> 4 "register_operand" "Yk")))]
-  "TARGET_AVX512BW"
   "vpandn<ssemodesuffix>\t{%2, %1, %0%{%4%}%N3|%0%{%4%}%N3, %1, %2}";
   [(set_attr "type" "sselog")
    (set_attr "prefix" "evex")
@@ -16655,8 +16644,9 @@
 	    (match_operand:VI_AVX512BW 1 "nonimmediate_operand" "v,m")
 	    (parallel [(const_int 0)]))))]
   "TARGET_AVX512F"
-  "vpbroadcast<ssemodesuffix>\t{%1, %0|%0, %<iptr>1}
-   vpbroadcast<ssemodesuffix>\t{%x1, %0|%0, %x1}"
+  "@
+   vpbroadcast<ssemodesuffix>\t{%x1, %0|%0, %x1}
+   vpbroadcast<ssemodesuffix>\t{%x1, %0|%0, %<iptr>1}"
   [(set_attr "type" "ssemov")
    (set_attr "prefix" "evex")
    (set_attr "mode" "<sseinsnmode>")])

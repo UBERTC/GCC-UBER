@@ -1,3 +1,167 @@
+2016-04-09  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2016-04-03  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/70416
+	PR target/67391
+	* config/sh/sh.md (*addsi3): Allow pattern when reload_in_progress is
+	set, but not for SP_REG operands.
+
+2016-04-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/sse.md (shuffletype): Add V32HI and V4TI modes.
+	(ssescalarsize): Add V8SF, V4SF, V4DF and V2DF modes.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/70177
+	* gimple-expr.h (extract_ops_from_tree_1): Renamed to ...
+	(extract_ops_from_tree): ... this.  In the 2 argument
+	overload remove _1 suffix.
+	* gimple-expr.c (extract_ops_from_tree_1): Renamed to ...
+	(extract_ops_from_tree): ... this.
+	* gimple.c (gimple_build_assign, gimple_assign_set_rhs_from_tree):
+	Adjust callers.
+	* tree-ssa-loop-niter.c (derive_constant_upper_bound): Likewise.
+	* tree-ssa-forwprop.c (defcodefor_name): Call 3 operand
+	extract_ops_from_tree instead of 2 operand one.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-24  Richard Biener  <rguenther@suse.de>
+		    Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/69760
+	* tree-scalar-evolution.c (interpret_rhs_expr): Re-write
+	conditionally executed ops to well-defined overflow behavior.
+
+	2016-03-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69983
+	* tree-chrec.c (eq_evolutions_p): Handle conversions, compare
+	types and fall back to operand_equal_p.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-24  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68963
+	* tree-ssa-loop-niter.c (derive_constant_upper_bound_ops): Fix
+	bogus check.
+	(record_nonwrapping_iv): Do not fall back to the low/high bound
+	for non-constant IV bases if the stmt is not always executed.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-01  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70022
+	* fold-const.c (fold_indirect_ref_1): Fix range checking for
+	vector BIT_FIELD_REF extract.
+
+	2016-03-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/70115
+	* tree-ssa-loop-ivcanon.c (propagate_into_all_uses): Remove.
+	(propagate_constants_for_unrolling): Use replace_uses_by.
+
+	2016-03-29  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70424
+	* ipa-prop.c (ipa_compute_jump_functions_for_edge): Always
+	use alignment returned by get_pointer_alignment_1 if it is
+	bigger than BITS_PER_UNIT.
+	* builtins.c (get_pointer_alignment_1): Do not return true
+	for alignment extracted from SSA info.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-30  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70450
+	* fold-const.c (extract_muldiv_1): Fix thinko in wide_int::from
+	usage.
+
+	2016-03-22  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70333
+	* fold-const.c (extract_muldiv_1): Properly perform multiplication
+	in the wide type.
+
+	2016-04-04  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/70484
+	* rtl.h (canon_output_dependence): Declare.
+	* alias.c (canon_output_dependence): New function.
+	* dse.c (record_store): Use canon_output_dependence rather
+	than canon_true_dependence.
+
+2016-04-05  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/predicates.md (integer_store_memory_operand): Accept
+	REG+D operands with a large offset when reload_in_progress is true.
+	(floating_point_store_memory_operand): Likewise.
+
+2016-04-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2015-12-08  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* config/i386/sse.md (define_insn "<avx512>_vec_dup<mode>_1"): Fix
+	assembler to make source always 128bit.
+
+2016-04-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/70510
+	* config/i386/sse.md (iptr): Add V64QI, V32HI, V16SI and V8DI modes.
+
+2016-04-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70525
+	* config/i386/sse.md (*andnot<mode>3): Simplify assertions.
+	Use vpandn<ssemodesuffix> for V16SI/V8DImode, vpandnq for
+	V32HI/V64QImode, don't use <mask_operand3_1>, fix up formatting.
+	(*andnot<mode>3_mask): Remove insn with VI12_AVX512VL iterator.
+
+2016-04-04  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+	    Jakub Jelinek <jakub@redhat.com>
+
+	PR middle-end/70457
+	* tree-inline.c (estimate_num_insn): Use gimple_call_builtin_p
+	to ensure a call statement is compatible with a built-in's
+	prototype.
+	* tree-ssa-math-opts.c (execute_cse_sincos_1): Likewise.
+	(pass_cse_sincos::execute): Likewise.
+	(pass_optimize_widening_mul::execute):	Likewise.
+
+2016-01-04  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from mainline
+	2015-11-10  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/68236
+	* haifa-sched.c (autopref_multipass_dfa_lookahead_guard): Return 0
+	if insn_queue doesn't exist.
+	(haifa_sched_finish): Reset insn_queue to NULL.
+
+2016-04-01  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline
+	2016-01-26  Roger Ferrer Ibáñez  <rofirrim@gmail.com>
+
+	PR target/67896
+	* config/aarch64/aarch64-builtins.c
+	(aarch64_init_simd_builtin_types): Do not set structural
+	equality to __Poly{8,16,64,128}_t types.
+
 2016-03-31  Nathan Sidwell  <nathan@acm.org>
 
 	PR c++/70393
@@ -262,8 +426,8 @@
 
 2016-03-28  Kirill Yukhin  <kirill.yukhin@intel.com>
 
-	 PR target/70406
-	 * config/i386/i386.md (define_split, andn): Fix modes.
+	PR target/70406
+	* config/i386/i386.md (define_split, andn): Fix modes.
 
 2016-03-24  John David Anglin  <danglin@gcc.gnu.org>
 
@@ -273,7 +437,7 @@
 2016-03-22  Martin Liska  <mliska@suse.cz>
 
 	backport from trunk:
-	
+
 	2016-03-21  Martin Liska  <mliska@suse.cz>
 
 	PR ipa/70306
@@ -284,8 +448,7 @@
 
 	PR target/70325
 	* config/i386/i386.c (def_builtin): Handle
-	OPTION_MASK_ISA_AVX512VL to be and-ed with other
-	bits.
+	OPTION_MASK_ISA_AVX512VL to be and-ed with other bits.
 	(const struct builtin_description bdesc_special_args[]):
 	Remove duplicate ISA bits.
 

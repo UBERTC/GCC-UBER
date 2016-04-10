@@ -1,3 +1,173 @@
+2016-04-09  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/70592
+	* gfortran.dg/deferred_character_17.f90: New test.
+
+2016-04-09  John David Anglin  <danglin@gcc.gnu.org>
+
+	* gcc.dg/uninit-19.c: Fix warning line for hppa*64*-*-*.
+
+	PR tree-optimization/68644
+	* gcc.dg/tree-ssa/ivopts-lt-2.c: Skip on hppa*-*-*.
+
+	PR rtl-optimization/64886
+	* gcc.dg/pr64434.c: Skip on hppa*-*-hpux*.
+
+2016-04-09  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2016-04-03  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/70416
+	PR target/67391
+	* gcc.target/sh/torture/pr70416.c: New.
+
+2016-04-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.c-torture/execute/20101011-1.c (__VISIUM__): Set DO_TEST to 0.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/70177
+	* gcc.dg/pr70177.c: New test.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-24  Richard Biener  <rguenther@suse.de>
+		Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/69760
+	* gcc.dg/torture/pr69760.c: New testcase.
+
+	2016-03-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69983
+	* gcc.dg/graphite/isl-codegen-loop-dumping.c: Adjust.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-24  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68963
+	* gcc.dg/torture/pr68963.c: New testcase.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-01  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70022
+	* gcc.dg/pr70022.c: New testcase.
+
+	2016-03-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/70115
+	* gcc.dg/torture/pr70115.c: New testcase.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-30  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70450
+	* gcc.dg/torture/pr70450.c: New testcase.
+
+	2016-03-22  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70333
+	* gcc.dg/torture/pr70333.c: New testcase.
+
+	2016-04-04  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/70484
+	* gcc.dg/torture/pr70484.c: New testcase.
+
+	2016-03-31  Richard Biener  <rguenther@suse.de>
+
+	PR c++/70430
+	* g++.dg/ext/vector30.C: New testcase.
+
+2016-04-05  Dominique d'Humieres  <dominiq@lps.ens.fr>
+	    Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	* gfortran.dg/fmt_pf.f90: New test.
+
+2016-04-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70525
+	* gcc.target/i386/pr70525.c: New test.
+
+2016-04-04  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+	    Jakub Jelinek <jakub@redhat.com>
+
+	PR middle-end/70457
+	* gcc.dg/torture/pr70457.c: New.
+
+2016-04-04  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/66911
+	* gfortran.dg/deferred_character_16.f90: New test.
+
+2016-04-04  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/65795
+	* gfortran.dg/coarray_allocate_6.f08: New test.
+
+2016-04-01  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r234666.
+	2016-04-01  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/69890
+	* gcc.dg/strlenopt.h (memmove): New.
+	* gcc.target/i386/chkp-strlen-1.c: Include "../../gcc.dg/strlenopt.h"
+	instead of "string.h".
+	* gcc.target/i386/chkp-strlen-2.c: Likewise.
+	* gcc.target/i386/chkp-strlen-3.c: Likewise.
+	* gcc.target/i386/chkp-strlen-4.c: Likewise.
+	* gcc.target/i386/chkp-strlen-5.c: Likewise.
+	* gcc.target/i386/chkp-stropt-1.c: Likewise.
+	* gcc.target/i386/chkp-stropt-10.c: Likewise.
+	* gcc.target/i386/chkp-stropt-11.c: Likewise.
+	* gcc.target/i386/chkp-stropt-12.c: Likewise.
+	* gcc.target/i386/chkp-stropt-13.c: Likewise.
+	* gcc.target/i386/chkp-stropt-14.c: Likewise.
+	* gcc.target/i386/chkp-stropt-15.c: Likewise.
+	* gcc.target/i386/chkp-stropt-16.c: Likewise.
+	* gcc.target/i386/chkp-stropt-2.c: Likewise.
+	* gcc.target/i386/chkp-stropt-3.c: Likewise.
+	* gcc.target/i386/chkp-stropt-4.c: Likewise.
+	* gcc.target/i386/chkp-stropt-5.c: Likewise.
+	* gcc.target/i386/chkp-stropt-6.c: Likewise.
+	* gcc.target/i386/chkp-stropt-7.c: Likewise.
+	* gcc.target/i386/chkp-stropt-8.c: Likewise.
+	* gcc.target/i386/chkp-stropt-9.c: Likewise.
+
+2016-01-04  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from mainline
+	2016-03-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70004
+	* gcc.target/aarch64/scalar_shift_1.c: (test_corners_sisd_di):
+	Delete.
+	(test_corners_sisd_si): Likewise.
+	(main): Remove checks of the above.
+	* gcc.target/aarch64/shift_wide_invalid_1.c: New test.
+
+2016-04-01  James Greenhalgh  <james.greenhalgh@srm.com>
+
+	Backport from mainline
+	2016-01-26  Roger Ferrer Ibáñez  <rofirrim@gmail.com>
+
+	PR target/67896
+	* gcc.target/aarch64/simd/pr67896.C: New.
+
 2016-03-31  Nathan Sidwell  <nathan@acm.org>
 
 	PR c++/70393
@@ -198,7 +368,7 @@
 2016-03-28  Kirill Yukhin  <kirill.yukhin@intel.com>
 
 	PR target/70406
-	 * gcc.target/i386/pr70406.c: New test.
+	* gcc.target/i386/pr70406.c: New test.
 
 2016-03-27  Eric Botcazou  <ebotcazou@adacore.com>
 
