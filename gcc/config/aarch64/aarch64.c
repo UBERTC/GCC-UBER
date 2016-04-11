@@ -629,7 +629,7 @@ struct aarch64_option_extension
 /* ISA extensions in AArch64.  */
 static const struct aarch64_option_extension all_extensions[] =
 {
-#define AARCH64_OPT_EXTENSION(NAME, FLAGS_ON, FLAGS_OFF, FEATURE_STRING) \
+#define AARCH64_OPT_EXTENSION(NAME, X, FLAGS_ON, FLAGS_OFF, FEATURE_STRING) \
   {NAME, FLAGS_ON, FLAGS_OFF},
 #include "aarch64-option-extensions.def"
 #undef AARCH64_OPT_EXTENSION
@@ -7293,83 +7293,6 @@ aarch64_add_stmt_cost (void *data, int count, enum vect_cost_for_stmt kind,
 
 static void initialize_aarch64_code_model (struct gcc_options *);
 
-/* Enum describing the various ways that the
-   aarch64_parse_{arch,tune,cpu,extension} functions can fail.
-   This way their callers can choose what kind of error to give.  */
-
-enum aarch64_parse_opt_result
-{
-  AARCH64_PARSE_OK,			/* Parsing was successful.  */
-  AARCH64_PARSE_MISSING_ARG,		/* Missing argument.  */
-  AARCH64_PARSE_INVALID_FEATURE,	/* Invalid feature modifier.  */
-  AARCH64_PARSE_INVALID_ARG		/* Invalid arch, tune, cpu arg.  */
-};
-
-/* Parse the architecture extension string STR and update ISA_FLAGS
-   with the architecture features turned on or off.  Return a
-   aarch64_parse_opt_result describing the result.  */
-
-static enum aarch64_parse_opt_result
-aarch64_parse_extension (char *str, unsigned long *isa_flags)
-{
-  /* The extension string is parsed left to right.  */
-  const struct aarch64_option_extension *opt = NULL;
-
-  /* Flag to say whether we are adding or removing an extension.  */
-  int adding_ext = -1;
-
-  while (str != NULL && *str != 0)
-    {
-      char *ext;
-      size_t len;
-
-      str++;
-      ext = strchr (str, '+');
-
-      if (ext != NULL)
-	len = ext - str;
-      else
-	len = strlen (str);
-
-      if (len >= 2 && strncmp (str, "no", 2) == 0)
-	{
-	  adding_ext = 0;
-	  len -= 2;
-	  str += 2;
-	}
-      else if (len > 0)
-	adding_ext = 1;
-
-      if (len == 0)
-	return AARCH64_PARSE_MISSING_ARG;
-
-
-      /* Scan over the extensions table trying to find an exact match.  */
-      for (opt = all_extensions; opt->name != NULL; opt++)
-	{
-	  if (strlen (opt->name) == len && strncmp (opt->name, str, len) == 0)
-	    {
-	      /* Add or remove the extension.  */
-	      if (adding_ext)
-		*isa_flags |= opt->flags_on;
-	      else
-		*isa_flags &= ~(opt->flags_off);
-	      break;
-	    }
-	}
-
-      if (opt->name == NULL)
-	{
-	  /* Extension not found in list.  */
-	  return AARCH64_PARSE_INVALID_FEATURE;
-	}
-
-      str = ext;
-    };
-
-  return AARCH64_PARSE_OK;
-}
-
 /* Parse the TO_PARSE string and put the architecture struct that it
    selects into RES and the architectural features into ISA_FLAGS.
    Return an aarch64_parse_opt_result describing the parse result.
@@ -8155,7 +8078,7 @@ aarch64_option_print (FILE *file, int indent, struct cl_target_option *ptr)
   unsigned long isa_flags = ptr->x_aarch64_isa_flags;
   const struct processor *arch = aarch64_get_arch (ptr->x_explicit_arch);
   std::string extension
-    = aarch64_get_extension_string_for_isa_flags (isa_flags);
+    = aarch64_get_extension_string_for_isa_flags (isa_flags, arch->flags);
 
   fprintf (file, "%*sselected tune = %s\n", indent, "", cpu->name);
   fprintf (file, "%*sselected arch = %s%s\n", indent, "",
@@ -10842,6 +10765,10 @@ aarch64_asm_preferred_eh_data_format (int code ATTRIBUTE_UNUSED, int global)
    return (global ? DW_EH_PE_indirect : 0) | DW_EH_PE_pcrel | type;
 }
 
+/* The last .arch and .tune assembly strings that we printed.  */
+static std::string aarch64_last_printed_arch_string;
+static std::string aarch64_last_printed_tune_string;
+
 /* Implement ASM_DECLARE_FUNCTION_NAME.  Output the ISA features used
    by the function fndecl.  */
 
@@ -10863,22 +10790,56 @@ aarch64_declare_function_name (FILE *stream, const char* name,
 
   unsigned long isa_flags = targ_options->x_aarch64_isa_flags;
   std::string extension
-    = aarch64_get_extension_string_for_isa_flags (isa_flags);
-  asm_fprintf (asm_out_file, "\t.arch %s%s\n",
-	       this_arch->name, extension.c_str ());
+    = aarch64_get_extension_string_for_isa_flags (isa_flags,
+						  this_arch->flags);
+  /* Only update the assembler .arch string if it is distinct from the last
+     such string we printed.  */
+  std::string to_print = this_arch->name + extension;
+  if (to_print != aarch64_last_printed_arch_string)
+    {
+      asm_fprintf (asm_out_file, "\t.arch %s\n", to_print.c_str ());
+      aarch64_last_printed_arch_string = to_print;
+    }
 
   /* Print the cpu name we're tuning for in the comments, might be
-     useful to readers of the generated asm.  */
-
+     useful to readers of the generated asm.  Do it only when it changes
+     from function to function and verbose assembly is requested.  */
   const struct processor *this_tune
     = aarch64_get_tune_cpu (targ_options->x_explicit_tune_core);
 
-  asm_fprintf (asm_out_file, "\t" ASM_COMMENT_START ".tune %s\n",
-	       this_tune->name);
+  if (flag_debug_asm && aarch64_last_printed_tune_string != this_tune->name)
+    {
+      asm_fprintf (asm_out_file, "\t" ASM_COMMENT_START ".tune %s\n",
+		   this_tune->name);
+      aarch64_last_printed_tune_string = this_tune->name;
+    }
 
   /* Don't forget the type directive for ELF.  */
   ASM_OUTPUT_TYPE_DIRECTIVE (stream, name, "function");
   ASM_OUTPUT_LABEL (stream, name);
+}
+
+/* Implements TARGET_ASM_FILE_START.  Output the assembly header.  */
+
+static void
+aarch64_start_file (void)
+{
+  struct cl_target_option *default_options
+    = TREE_TARGET_OPTION (target_option_default_node);
+
+  const struct processor *default_arch
+    = aarch64_get_arch (default_options->x_explicit_arch);
+  unsigned long default_isa_flags = default_options->x_aarch64_isa_flags;
+  std::string extension
+    = aarch64_get_extension_string_for_isa_flags (default_isa_flags,
+						  default_arch->flags);
+
+   aarch64_last_printed_arch_string = default_arch->name + extension;
+   aarch64_last_printed_tune_string = "";
+   asm_fprintf (asm_out_file, "\t.arch %s\n",
+		aarch64_last_printed_arch_string.c_str ());
+
+   default_file_start ();
 }
 
 /* Emit load exclusive.  */
@@ -13578,6 +13539,9 @@ aarch64_unspec_may_trap_p (const_rtx x, unsigned flags)
 #undef TARGET_ASM_CAN_OUTPUT_MI_THUNK
 #define TARGET_ASM_CAN_OUTPUT_MI_THUNK \
   hook_bool_const_tree_hwi_hwi_const_tree_true
+
+#undef TARGET_ASM_FILE_START
+#define TARGET_ASM_FILE_START aarch64_start_file
 
 #undef TARGET_ASM_OUTPUT_MI_THUNK
 #define TARGET_ASM_OUTPUT_MI_THUNK aarch64_output_mi_thunk

@@ -262,6 +262,18 @@ enum aarch64_extra_tuning_flags
 };
 #undef AARCH64_EXTRA_TUNING_OPTION
 
+/* Enum describing the various ways that the
+   aarch64_parse_{arch,tune,cpu,extension} functions can fail.
+   This way their callers can choose what kind of error to give.  */
+
+enum aarch64_parse_opt_result
+{
+  AARCH64_PARSE_OK,			/* Parsing was successful.  */
+  AARCH64_PARSE_MISSING_ARG,		/* Missing argument.  */
+  AARCH64_PARSE_INVALID_FEATURE,	/* Invalid feature modifier.  */
+  AARCH64_PARSE_INVALID_ARG		/* Invalid arch, tune, cpu arg.  */
+};
+
 extern struct tune_params aarch64_tune_params;
 
 HOST_WIDE_INT aarch64_initial_elimination_offset (unsigned, unsigned);
@@ -279,8 +291,6 @@ bool aarch64_float_const_zero_rtx_p (rtx);
 bool aarch64_function_arg_regno_p (unsigned);
 bool aarch64_gen_movmemqi (rtx *);
 bool aarch64_gimple_fold_builtin (gimple_stmt_iterator *);
-bool aarch64_handle_option (struct gcc_options *, struct gcc_options *,
-			     const struct cl_decoded_option *, location_t);
 bool aarch64_is_extend_from_extract (machine_mode, rtx, rtx);
 bool aarch64_is_long_call_p (rtx);
 bool aarch64_is_noplt_call_p (rtx);
@@ -314,7 +324,6 @@ bool aarch64_uimm12_shift (HOST_WIDE_INT);
 bool aarch64_use_return_insn_p (void);
 const char *aarch64_mangle_builtin_type (const_tree);
 const char *aarch64_output_casesi (rtx *);
-const char *aarch64_rewrite_selected_cpu (const char *name);
 
 enum aarch64_symbol_type aarch64_classify_symbol (rtx, rtx);
 enum aarch64_symbol_type aarch64_classify_tls_symbol (rtx);
@@ -335,7 +344,6 @@ rtx aarch64_simd_gen_const_vector_dup (machine_mode, int);
 bool aarch64_simd_mem_operand_p (rtx);
 rtx aarch64_simd_vect_par_cnst_half (machine_mode, bool);
 rtx aarch64_tls_get_addr (void);
-std::string aarch64_get_extension_string_for_isa_flags (unsigned long);
 tree aarch64_fold_builtin (tree, int, tree *, bool);
 unsigned aarch64_dbx_register_number (unsigned);
 unsigned aarch64_trampoline_size (void);
@@ -428,4 +436,14 @@ bool extract_base_offset_in_addr (rtx mem, rtx *base, rtx *offset);
 bool aarch64_operands_ok_for_ldpstp (rtx *, bool, enum machine_mode);
 bool aarch64_operands_adjust_ok_for_ldpstp (rtx *, bool, enum machine_mode);
 extern bool aarch64_nopcrelative_literal_loads;
+
+/* Defined in common/config/aarch64-common.c.  */
+bool aarch64_handle_option (struct gcc_options *, struct gcc_options *,
+			     const struct cl_decoded_option *, location_t);
+const char *aarch64_rewrite_selected_cpu (const char *name);
+enum aarch64_parse_opt_result aarch64_parse_extension (const char *,
+						       unsigned long *);
+std::string aarch64_get_extension_string_for_isa_flags (unsigned long,
+							unsigned long);
+
 #endif /* GCC_AARCH64_PROTOS_H */
