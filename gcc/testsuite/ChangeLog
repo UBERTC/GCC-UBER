@@ -1,3 +1,577 @@
+2016-04-11  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-04-08  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70566
+	* gcc.c-torture/execute/pr70566.c: New test.
+
+2016-04-11  Alan Modra  <amodra@gmail.com>
+
+	* gcc.target/powerpc/pr70117.c: New.
+
+2016-04-09  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/70592
+	* gfortran.dg/deferred_character_17.f90: New test.
+
+2016-04-09  John David Anglin  <danglin@gcc.gnu.org>
+
+	* gcc.dg/uninit-19.c: Fix warning line for hppa*64*-*-*.
+
+	PR tree-optimization/68644
+	* gcc.dg/tree-ssa/ivopts-lt-2.c: Skip on hppa*-*-*.
+
+	PR rtl-optimization/64886
+	* gcc.dg/pr64434.c: Skip on hppa*-*-hpux*.
+
+2016-04-09  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2016-04-03  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	PR target/70416
+	PR target/67391
+	* gcc.target/sh/torture/pr70416.c: New.
+
+2016-04-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.c-torture/execute/20101011-1.c (__VISIUM__): Set DO_TEST to 0.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/70177
+	* gcc.dg/pr70177.c: New test.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-24  Richard Biener  <rguenther@suse.de>
+		Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/69760
+	* gcc.dg/torture/pr69760.c: New testcase.
+
+	2016-03-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69983
+	* gcc.dg/graphite/isl-codegen-loop-dumping.c: Adjust.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-24  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68963
+	* gcc.dg/torture/pr68963.c: New testcase.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-01  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70022
+	* gcc.dg/pr70022.c: New testcase.
+
+	2016-03-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/70115
+	* gcc.dg/torture/pr70115.c: New testcase.
+
+2016-04-06  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-30  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70450
+	* gcc.dg/torture/pr70450.c: New testcase.
+
+	2016-03-22  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70333
+	* gcc.dg/torture/pr70333.c: New testcase.
+
+	2016-04-04  Richard Biener  <rguenther@suse.de>
+
+	PR rtl-optimization/70484
+	* gcc.dg/torture/pr70484.c: New testcase.
+
+	2016-03-31  Richard Biener  <rguenther@suse.de>
+
+	PR c++/70430
+	* g++.dg/ext/vector30.C: New testcase.
+
+2016-04-05  Dominique d'Humieres  <dominiq@lps.ens.fr>
+	    Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	* gfortran.dg/fmt_pf.f90: New test.
+
+2016-04-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70525
+	* gcc.target/i386/pr70525.c: New test.
+
+2016-04-04  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+	    Jakub Jelinek <jakub@redhat.com>
+
+	PR middle-end/70457
+	* gcc.dg/torture/pr70457.c: New.
+
+2016-04-04  Andre Vehreschild  <vehre@gmx.de>
+
+	PR fortran/66911
+	* gfortran.dg/deferred_character_16.f90: New test.
+
+2016-04-04  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/65795
+	* gfortran.dg/coarray_allocate_6.f08: New test.
+
+2016-04-01  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	Backport from mainline r234666.
+	2016-04-01  Ilya Enkovich  <enkovich.gnu@gmail.com>
+
+	PR target/69890
+	* gcc.dg/strlenopt.h (memmove): New.
+	* gcc.target/i386/chkp-strlen-1.c: Include "../../gcc.dg/strlenopt.h"
+	instead of "string.h".
+	* gcc.target/i386/chkp-strlen-2.c: Likewise.
+	* gcc.target/i386/chkp-strlen-3.c: Likewise.
+	* gcc.target/i386/chkp-strlen-4.c: Likewise.
+	* gcc.target/i386/chkp-strlen-5.c: Likewise.
+	* gcc.target/i386/chkp-stropt-1.c: Likewise.
+	* gcc.target/i386/chkp-stropt-10.c: Likewise.
+	* gcc.target/i386/chkp-stropt-11.c: Likewise.
+	* gcc.target/i386/chkp-stropt-12.c: Likewise.
+	* gcc.target/i386/chkp-stropt-13.c: Likewise.
+	* gcc.target/i386/chkp-stropt-14.c: Likewise.
+	* gcc.target/i386/chkp-stropt-15.c: Likewise.
+	* gcc.target/i386/chkp-stropt-16.c: Likewise.
+	* gcc.target/i386/chkp-stropt-2.c: Likewise.
+	* gcc.target/i386/chkp-stropt-3.c: Likewise.
+	* gcc.target/i386/chkp-stropt-4.c: Likewise.
+	* gcc.target/i386/chkp-stropt-5.c: Likewise.
+	* gcc.target/i386/chkp-stropt-6.c: Likewise.
+	* gcc.target/i386/chkp-stropt-7.c: Likewise.
+	* gcc.target/i386/chkp-stropt-8.c: Likewise.
+	* gcc.target/i386/chkp-stropt-9.c: Likewise.
+
+2016-01-04  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from mainline
+	2016-03-04  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70004
+	* gcc.target/aarch64/scalar_shift_1.c: (test_corners_sisd_di):
+	Delete.
+	(test_corners_sisd_si): Likewise.
+	(main): Remove checks of the above.
+	* gcc.target/aarch64/shift_wide_invalid_1.c: New test.
+
+2016-04-01  James Greenhalgh  <james.greenhalgh@srm.com>
+
+	Backport from mainline
+	2016-01-26  Roger Ferrer Ibáñez  <rofirrim@gmail.com>
+
+	PR target/67896
+	* gcc.target/aarch64/simd/pr67896.C: New.
+
+2016-03-31  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/70393
+	* g++.dg/cpp0x/constexpr-virtual6.C: New.
+
+2016-03-31  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70453
+	* gcc.target/i386/pr70453.c: New test.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-21  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/69102
+	* gcc.c-torture/compile/pr69102.c: New test.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-15  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR rtl-optimization/69032
+	* gcc.dg/pr69032.c: New test.
+
+2016-03-31  Andrey Belevantsev  <abel@ispras.ru>
+
+	Backport from mainline
+	2016-03-15  Andrey Belevantsev  <abel@ispras.ru>
+
+	PR target/64411
+	* gcc.target/i386/pr64411.C: New test.
+
+2016-03-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70460
+	* gcc.c-torture/execute/pr70460.c: New test.
+
+2016-03-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR testsuite/70356
+	* gcc.target/i386/avx-vextractf128-256-5.c: Move
+	dg-require-effective-target after dg-do.
+
+2016-03-30  Vladimir Makarov  <vmakarov@redhat.com>
+
+	Backported from the mainline
+	2016-03-12  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR target/69614
+	* gcc.target/arm/pr69614.c: New.
+
+2016-03-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70421
+	* gcc.dg/torture/pr70421.c: New test.
+	* gcc.target/i386/avx512f-pr70421.c: New test.
+
+	Backported from mainline
+	2016-03-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70429
+	* gcc.c-torture/execute/pr70429.c: New test.
+
+	2016-03-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70329
+	* gcc.target/i386/avx512bw-pr70329-1.c: New test.
+	* gcc.target/i386/avx512bw-pr70329-2.c: New test.
+
+	2016-03-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70296
+	* gcc.target/powerpc/altivec-36.c: New test.
+
+	2016-03-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/70272
+	* g++.dg/opt/flifetime-dse6.C: New test.
+	* g++.dg/tree-ssa/ehcleanup-1.C: Adjust unreachable count.
+
+	2016-03-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70222
+	* gcc.c-torture/execute/pr70222-1.c: New test.
+	* gcc.c-torture/execute/pr70222-2.c: New test.
+
+	2016-03-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/70169
+	* gcc.dg/pr70169.c: New test.
+
+	2016-03-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/70152
+	* gcc.dg/pr70152.c: New test.
+
+	2016-03-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70062
+	* gcc.target/i386/pr70062.c: New test.
+
+	2016-02-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69888
+	* gcc.target/i386/pr69888.c: New test.
+
+	2016-03-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70028
+	* gcc.target/i386/pr70028.c: New test.
+
+	2016-02-26  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69969
+	* gcc.target/powerpc/pr69969.c: New test.
+
+	PR rtl-optimization/69891
+	* gcc.target/i386/pr69891.c: New test.
+
+	2016-02-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/69826
+	* c-c++-common/cilk-plus/CK/pr69826-1.c: New test.
+	* c-c++-common/cilk-plus/CK/pr69826-2.c: New test.
+
+	PR c++/67767
+	* g++.dg/cpp0x/pr67767.C: New test.
+
+	2016-02-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/69802
+	* gcc.dg/pr69802.c: New test.
+
+	2016-02-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/69797
+	* c-c++-common/pr69797.c: New test.
+
+	2016-02-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69885
+	* gcc.dg/pr69885.c: New test.
+
+	2016-02-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/69764
+	PR rtl-optimization/69771
+	* c-c++-common/pr69764.c: New test.
+	* gcc.dg/torture/pr69771.c: New test.
+
+	PR ipa/68672
+	* g++.dg/ipa/pr68672-1.C: New test.
+	* g++.dg/ipa/pr68672-2.C: New test.
+	* g++.dg/ipa/pr68672-3.C: New test.
+
+2016-03-30  Alan Modra  <amodra@gmail.com>
+
+	* gcc.dg/dfp/pr70052.c: New test.
+
+2016-02-29  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/69875
+	* gcc.target/arm/atomic_loaddi_acquire.x: New file.
+	* gcc.target/arm/atomic_loaddi_relaxed.x: Likewise.
+	* gcc.target/arm/atomic_loaddi_seq_cst.x: Likewise.
+	* gcc.target/arm/atomic_loaddi_1.c: New test.
+	* gcc.target/arm/atomic_loaddi_2.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_3.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_4.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_5.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_6.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_7.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_8.c: Likewise.
+	* gcc.target/arm/atomic_loaddi_9.c: Likewise.
+
+2016-03-29  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-03-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* lib/target-supports.exp: Remove v7ve entry from loop
+	creating effective target checks.
+	(check_effective_target_arm_arch_v7ve_ok): New procedure.
+	(add_options_for_arm_arch_v7ve): Likewise.
+
+2016-03-28  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/70397
+	* gfortran.dg/unlimited_polymorphic_25.f90: New test.
+	* gfortran.dg/unlimited_polymorphic_26.f90: New test.
+
+2016-03-28  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70406
+	* gcc.target/i386/pr70406.c: New test.
+
+2016-03-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/specs/double_record_extension3.ads: New test.
+
+2016-03-23  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2016-01-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/sparc/20151219-1.c: Skip in 64-bit mode.
+
+2016-03-22  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/70306
+	* gcc.dg/ipa/pr70306.c: New test.
+
+2016-03-22  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70325
+	* gcc.target/i386/pr70325.c: New test.
+
+2016-03-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/70327
+	* gcc.target/i386/pr70327.c: New test.
+
+2016-03-21  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	PR ipa/70269
+	2016-03-18  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/pr70269.c: New test.
+
+2016-03-21  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	2016-03-18  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/pr70161-2.c: New test.
+	* gcc.dg/pr70161.c: New test.
+
+2016-03-21  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2016-03-15  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/70209
+	* g++.dg/ext/attribute-may-alias-4.C: New test.
+
+2016-03-21  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70293
+	* gcc.target/i386/pr70293.c: New test.
+
+2016-03-18  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline
+	2015-06-09  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	* g++.dg/ext/pr57735.C: Do not override -mfloat-abi directives
+	passed by the testsuite driver.
+
+2016-03-18  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline
+	2015-07-16  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/arm/no-volatile-in-it.c: Skip if -mcpu is overriden.
+
+2016-03-17  Andre Vieira  <Andre.SimoesDiasVieira@arm.com>
+
+	Backport from mainline.
+	2015-05-21  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* gcc.target/arm/simd/simd.exp: Skip all tests if no arm_neon_ok
+	effective target support.  If no arm_neon_hw support, do not attempt
+	to execute the tests; only compile them.
+	* gcc.target/arm/simd/vextf32_1.c: Remove explicit "dg-do run"
+	and "dg-require-effective-target arm_neon_ok".
+	* gcc.target/arm/simd/vextp16_1.c: Likewise.
+	* gcc.target/arm/simd/vextp64_1.c: Likewise.
+	* gcc.target/arm/simd/vextp8_1.c: Likewise.
+	* gcc.target/arm/simd/vextQf32_1.c: Likewise.
+	* gcc.target/arm/simd/vextQp16_1.c: Likewise.
+	* gcc.target/arm/simd/vextQp64_1.c: Likewise.
+	* gcc.target/arm/simd/vextQp8_1.c: Likewise.
+	* gcc.target/arm/simd/vextQs16_1.c: Likewise.
+	* gcc.target/arm/simd/vextQs32_1.c: Likewise.
+	* gcc.target/arm/simd/vextQs64_1.c: Likewise.
+	* gcc.target/arm/simd/vextQs8_1.c: Likewise.
+	* gcc.target/arm/simd/vextQu16_1.c: Likewise.
+	* gcc.target/arm/simd/vextQu32_1.c: Likewise.
+	* gcc.target/arm/simd/vextQu64_1.c: Likewise.
+	* gcc.target/arm/simd/vextQu8_1.c: Likewise.
+	* gcc.target/arm/simd/vexts16_1.c: Likewise.
+	* gcc.target/arm/simd/vexts32_1.c: Likewise.
+	* gcc.target/arm/simd/vexts64_1.c: Likewise.
+	* gcc.target/arm/simd/vexts8_1.c: Likewise.
+	* gcc.target/arm/simd/vextu16_1.c: Likewise.
+	* gcc.target/arm/simd/vextu32_1.c: Likewise.
+	* gcc.target/arm/simd/vextu64_1.c: Likewise.
+	* gcc.target/arm/simd/vextu8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev16p8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev16qp8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev16qs8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev16qu8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev16s8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev16u8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32p16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32p8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32qp16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32qp8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32qs16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32qs8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32qu16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32qu8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32s16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32s8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32u16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev32u8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64f32_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64p16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64p8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64qf32_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64qp16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64qp8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64qs16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64qs32_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64qs8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64qu16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64qu32_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64qu8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64s16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64s32_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64s8_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64u16_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64u32_1.c: Likewise.
+	* gcc.target/arm/simd/vrev64u8_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnf32_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnp16_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnp8_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnqf32_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnqp16_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnqp8_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnqs16_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnqs32_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnqs8_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnqu16_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnqu32_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnqu8_1.c: Likewise.
+	* gcc.target/arm/simd/vtrns16_1.c: Likewise.
+	* gcc.target/arm/simd/vtrns32_1.c: Likewise.
+	* gcc.target/arm/simd/vtrns8_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnu16_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnu32_1.c: Likewise.
+	* gcc.target/arm/simd/vtrnu8_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpf32_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpp16_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpp8_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpqf32_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpqp16_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpqp8_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpqs16_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpqs32_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpqs8_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpqu16_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpqu32_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpqu8_1.c: Likewise.
+	* gcc.target/arm/simd/vuzps16_1.c: Likewise.
+	* gcc.target/arm/simd/vuzps32_1.c: Likewise.
+	* gcc.target/arm/simd/vuzps8_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpu16_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpu32_1.c: Likewise.
+	* gcc.target/arm/simd/vuzpu8_1.c: Likewise.
+	* gcc.target/arm/simd/vzipf32_1.c: Likewise.
+	* gcc.target/arm/simd/vzipp16_1.c: Likewise.
+	* gcc.target/arm/simd/vzipp8_1.c: Likewise.
+	* gcc.target/arm/simd/vzipqf32_1.c: Likewise.
+	* gcc.target/arm/simd/vzipqp16_1.c: Likewise.
+	* gcc.target/arm/simd/vzipqp8_1.c: Likewise.
+	* gcc.target/arm/simd/vzipqs16_1.c: Likewise.
+	* gcc.target/arm/simd/vzipqs32_1.c: Likewise.
+	* gcc.target/arm/simd/vzipqs8_1.c: Likewise.
+	* gcc.target/arm/simd/vzipqu16_1.c: Likewise.
+	* gcc.target/arm/simd/vzipqu32_1.c: Likewise.
+	* gcc.target/arm/simd/vzipqu8_1.c: Likewise.
+	* gcc.target/arm/simd/vzips16_1.c: Likewise.
+	* gcc.target/arm/simd/vzips32_1.c: Likewise.
+	* gcc.target/arm/simd/vzips8_1.c: Likewise.
+	* gcc.target/arm/simd/vzipu16_1.c: Likewise.
+	* gcc.target/arm/simd/vzipu32_1.c: Likewise.
+	* gcc.target/arm/simd/vzipu8_1.c: Likewise.
+
 2016-03-15  Bernd Schmidt  <bschmidt@redhat.com>
 
 	Backport from mainline

@@ -647,7 +647,9 @@ gfc_trans_stop (gfc_code *code, bool error_stop)
 				 ? (flag_coarray == GFC_FCOARRAY_LIB
 				    ? gfor_fndecl_caf_error_stop_str
 				    : gfor_fndecl_error_stop_string)
-				 : gfor_fndecl_stop_string,
+				 : (flag_coarray == GFC_FCOARRAY_LIB
+				    ? gfor_fndecl_caf_stop_str
+				    : gfor_fndecl_stop_string),
 				 2, build_int_cst (pchar_type_node, 0), tmp);
     }
   else if (code->expr1->ts.type == BT_INTEGER)
@@ -658,7 +660,9 @@ gfc_trans_stop (gfc_code *code, bool error_stop)
 				 ? (flag_coarray == GFC_FCOARRAY_LIB
 				    ? gfor_fndecl_caf_error_stop
 				    : gfor_fndecl_error_stop_numeric)
-				 : gfor_fndecl_stop_numeric_f08, 1,
+				 : (flag_coarray == GFC_FCOARRAY_LIB
+				    ? gfor_fndecl_caf_stop_numeric
+				    : gfor_fndecl_stop_numeric_f08), 1,
 				 fold_convert (gfc_int4_type_node, se.expr));
     }
   else
@@ -669,7 +673,9 @@ gfc_trans_stop (gfc_code *code, bool error_stop)
 				 ? (flag_coarray == GFC_FCOARRAY_LIB
 				    ? gfor_fndecl_caf_error_stop_str
 				    : gfor_fndecl_error_stop_string)
-				 : gfor_fndecl_stop_string,
+				 : (flag_coarray == GFC_FCOARRAY_LIB
+				    ? gfor_fndecl_caf_stop_str
+				    : gfor_fndecl_stop_string),
 				 2, se.expr, se.string_length);
     }
 
@@ -5530,13 +5536,22 @@ gfc_trans_allocate (gfc_code * code)
 	  if (expr3_len == NULL_TREE
 	      && code->expr3->ts.type == BT_CHARACTER)
 	    {
+	      gfc_init_se (&se, NULL);
 	      if (code->expr3->ts.u.cl
 		  && code->expr3->ts.u.cl->length)
 		{
-		  gfc_init_se (&se, NULL);
 		  gfc_conv_expr (&se, code->expr3->ts.u.cl->length);
 		  gfc_add_block_to_block (&block, &se.pre);
 		  expr3_len = gfc_evaluate_now (se.expr, &block);
+		}
+	      else
+		{
+		  /* The string_length is not set in the symbol, which prevents
+		     it being set in the ts.  Deduce it by converting expr3.  */
+		  gfc_conv_expr (&se, code->expr3);
+		  gfc_add_block_to_block (&block, &se.pre);
+		  gcc_assert (se.string_length);
+		  expr3_len = gfc_evaluate_now (se.string_length, &block);
 		}
 	      gcc_assert (expr3_len);
 	    }

@@ -3872,7 +3872,8 @@ update_equiv_regs (void)
   free (pdx_subregs);
 }
 
-/* A pass over indirect jumps, converting simple cases to direct jumps.  */
+/* A pass over indirect jumps, converting simple cases to direct jumps.
+   Combine does this optimization too, but only within a basic block.  */
 static void
 indirect_jump_optimize (void)
 {
@@ -3882,7 +3883,8 @@ indirect_jump_optimize (void)
   FOR_EACH_BB_REVERSE_FN (bb, cfun)
     {
       rtx_insn *insn = BB_END (bb);
-      if (!JUMP_P (insn))
+      if (!JUMP_P (insn)
+	  || find_reg_note (insn, REG_NON_LOCAL_GOTO, NULL_RTX))
 	continue;
 
       rtx x = pc_set (insn);
@@ -3892,13 +3894,21 @@ indirect_jump_optimize (void)
       int regno = REGNO (SET_SRC (x));
       if (DF_REG_DEF_COUNT (regno) == 1)
 	{
-	  rtx_insn *def_insn = DF_REF_INSN (DF_REG_DEF_CHAIN (regno));
-	  rtx note = find_reg_note (def_insn, REG_LABEL_OPERAND, NULL_RTX);
-
-	  if (note)
+	  df_ref def = DF_REG_DEF_CHAIN (regno);
+	  if (!DF_REF_IS_ARTIFICIAL (def))
 	    {
-	      rtx lab = gen_rtx_LABEL_REF (Pmode, XEXP (note, 0));
-	      if (validate_replace_rtx (SET_SRC (x), lab, insn))
+	      rtx_insn *def_insn = DF_REF_INSN (def);
+	      rtx lab = NULL_RTX;
+	      rtx set = single_set (def_insn);
+	      if (set && GET_CODE (SET_SRC (set)) == LABEL_REF)
+		lab = SET_SRC (set);
+	      else
+		{
+		  rtx eqnote = find_reg_note (def_insn, REG_EQUAL, NULL_RTX);
+		  if (eqnote && GET_CODE (XEXP (eqnote, 0)) == LABEL_REF)
+		    lab = XEXP (eqnote, 0);
+		}
+	      if (lab && validate_replace_rtx (SET_SRC (x), lab, insn))
 		rebuild_p = true;
 	    }
 	}

@@ -1242,21 +1242,6 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
       return t;
     }
 
-  /* Shortcut trivial constructor/op=.  */
-  if (trivial_fn_p (fun))
-    {
-      if (call_expr_nargs (t) == 2)
-	{
-	  tree arg = convert_from_reference (get_nth_callarg (t, 1));
-	  return cxx_eval_constant_expression (ctx, arg,
-					       lval, non_constant_p,
-					       overflow_p);
-	}
-      else if (TREE_CODE (t) == AGGR_INIT_EXPR
-	       && AGGR_INIT_ZERO_FIRST (t))
-	return build_zero_init (DECL_CONTEXT (fun), NULL_TREE, false);
-    }
-
   /* We can't defer instantiating the function any longer.  */
   if (!DECL_INITIAL (fun)
       && DECL_TEMPLOID_INSTANTIATION (fun))
@@ -2867,16 +2852,39 @@ cxx_eval_store_expression (const constexpr_ctx *ctx, tree t,
       else
 	{
 	  gcc_assert (TREE_CODE (index) == FIELD_DECL);
-	  for (unsigned HOST_WIDE_INT idx = 0;
+
+	  /* We must keep the CONSTRUCTOR's ELTS in FIELD order.
+	     Usually we meet initializers in that order, but it is
+	     possible for base types to be placed not in program
+	     order.  */
+	  tree fields = TYPE_FIELDS (DECL_CONTEXT (index));
+	  unsigned HOST_WIDE_INT idx;
+
+	  for (idx = 0;
 	       vec_safe_iterate (CONSTRUCTOR_ELTS (*valp), idx, &cep);
 	       idx++)
-	    if (index == cep->index)
-	      break;
-	  if (!cep)
 	    {
-	      constructor_elt ce = { index, NULL_TREE };
-	      cep = vec_safe_push (CONSTRUCTOR_ELTS (*valp), ce);
+	      if (index == cep->index)
+		goto found;
+
+	      /* The field we're initializing must be on the field
+		 list.  Look to see if it is present before the
+		 field the current ELT initializes.  */
+	      for (; fields != cep->index; fields = DECL_CHAIN (fields))
+		if (index == fields)
+		  goto insert;
 	    }
+
+	  /* We fell off the end of the CONSTRUCTOR, so insert a new
+	     entry at the end.  */
+	insert:
+	  {
+	    constructor_elt ce = { index, NULL_TREE };
+
+	    vec_safe_insert (CONSTRUCTOR_ELTS (*valp), idx, ce);
+	    cep = CONSTRUCTOR_ELT (*valp, idx);
+	  }
+	found:;
 	}
       valp = &cep->value;
     }
