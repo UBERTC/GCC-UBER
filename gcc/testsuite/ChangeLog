@@ -1,3 +1,39 @@
+2016-04-15  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70662
+	* gcc.target/i386/pr70662.c: New test.
+
+2016-04-14  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-03-31  Nick Clifton  <nickc@redhat.com>
+
+	PR target/70044
+	* gcc.target/aarch64/pr70044.c: New test.
+
+2016-04-13  Alan Modra  <amodra@gmail.com>
+
+	Backport from mainline
+	2016-03-31  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+	* g++.dg/template/ptrmem30.C (read): Rename to data_read.
+	(Holder::foo): Reflect this.
+
+	2016-03-22  Patrick Palka  <ppalka@gcc.gnu.org>
+	PR c++/70096
+	* g++.dg/template/ptrmem30.C: New test.
+
+2016-04-11  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-04-08  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70566
+	* gcc.c-torture/execute/pr70566.c: New test.
+
+2016-04-11  Alan Modra  <amodra@gmail.com>
+
+	* gcc.target/powerpc/pr70117.c: New.
+
 2016-04-09  Dominique d'Humieres  <dominiq@lps.ens.fr>
 
 	PR fortran/70592

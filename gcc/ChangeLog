@@ -1,3 +1,50 @@
+2016-04-15  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70662
+	* config/i386/sse.md(define_insn "<avx512>_vec_dup<mode><mask_name>"):
+	Fix mode size check.
+
+2016-04-15  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70662
+	* config/i386/sse.md(define_insn "<avx512>_vec_dup<mode><mask_name>"):
+	Use proper memory operand modifiers.
+
+2016-04-14  Nick Clifton  <nickc@redhat.com>
+            Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70044
+	* config/aarch64/aarch64.c
+	(aarch64_override_options_after_change): When forcing
+	flag_omit_frame_pointer to be true, use a special value that can
+	be detected if this function is called again, thus preventing
+	flag_omit_leaf_frame_pointer from being forced to be false.
+
+2016-04-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/70630
+	* config/sparc/sparc.c (sparc_compute_frame_size): Add parentheses.
+
+2016-04-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-04-08  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70566
+	* config/arm/thumb2.md (tst + branch-> lsls + branch
+	peephole below *orsi_not_shiftsi_si): Require that condition
+	register is dead after the peephole.
+	(second peephole after the above): Likewise.
+
+2016-04-11  Alan Modra  <amodra@gmail.com>
+
+	PR target/70117
+	* builtins.c (fold_builtin_classify): For IBM extended precision,
+	look at just the high-order double to test for NaN.
+	(fold_builtin_interclass_mathfn): Similarly for Inf.  For isnormal
+	test just the high double for Inf but both doubles for subnormal
+	limit.
+
 2016-04-09  Oleg Endo  <olegendo@gcc.gnu.org>
 
 	Backport from mainline
