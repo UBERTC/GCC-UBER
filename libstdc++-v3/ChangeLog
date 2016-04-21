@@ -1,3 +1,48 @@
+2016-04-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2016-01-26  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/69478
+	* include/bits/stl_algobase.h (__copy_move<_IsMove, true,
+	random_access_iterator_tag>): Check is_move_assignable when moving.
+	(__copy_move_backwards<_IsMove, true, random_access_iterator_tag>):
+	Likewise.
+	* testsuite/25_algorithms/copy/move_iterators/69478.cc: New.
+	* testsuite/25_algorithms/copy_backward/move_iterators/69478.cc: New.
+	* testsuite/25_algorithms/move/69478.cc: New.
+	* testsuite/25_algorithms/move_backward/69478.cc: New.
+
+	Backport from mainline
+	2016-04-05  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/70503
+	* src/c++11/thread.cc (execute_native_thread_routine,
+	execute_native_thread_routine_compat): Give internal linkage.
+	* testsuite/30_threads/thread/70503.cc: New test.
+
+	Backport from mainline
+	2016-01-25  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/69464
+	* include/Makefile.am: Add new header.
+	* include/Makefile.in: Regenerate.
+	* include/bits/random.h (uniform_int_distribution): Move to
+	bits/uniform_int_dist.h.
+	* include/bits/random.tcc (uniform_int_distribution::operator(),
+	uniform_int_distribution::__generate_impl): Likewise.
+	* include/bits/uniform_int_dist.h: New header.
+	* include/bits/stl_algo.h [__cplusplus >= 201103L]: Include
+	<bits/uniform_int_dist.h> instead of <random>.
+	* testsuite/20_util/specialized_algorithms/uninitialized_copy/
+	move_iterators/1.cc: Include correct header for uninitialized_copy.
+	* testsuite/20_util/specialized_algorithms/uninitialized_copy_n/
+	move_iterators/1.cc: Likewise.
+	* testsuite/25_algorithms/nth_element/58800.cc: Include correct
+	header for vector.
+	* testsuite/26_numerics/random/pr60037-neg.cc: Adjust dg-error lines.
+	* testsuite/libstdc++-prettyprinters/whatis.cc: Include <random>.
+
 2016-04-06  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* src/Makefile.am (libstdc++-symbols.ver): Remove useless /dev/null.

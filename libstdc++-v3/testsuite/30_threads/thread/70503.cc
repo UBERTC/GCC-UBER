@@ -1,4 +1,4 @@
-// Copyright (C) 2013-2015 Free Software Foundation, Inc.
+// Copyright (C) 2016 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -15,39 +15,24 @@
 // with this library; see the file COPYING3.  If not see
 // <http://www.gnu.org/licenses/>.
 
-// 25.3.2 [lib.alg.nth.element]
+// { dg-do link }
+// { dg-options "-std=gnu++11 -static" { target *-*-*gnu* } }
+// { dg-require-cstdint "" }
+// { dg-require-gthreads "" }
+// { dg-require-effective-target static }
 
-// { dg-options "-std=gnu++11" }
+#include <thread>
 
-#include <algorithm>
-#include <vector>
-#include <testsuite_hooks.h>
-#include <testsuite_iterators.h>
-
-using __gnu_test::test_container;
-using __gnu_test::random_access_iterator_wrapper;
-
-typedef test_container<int, random_access_iterator_wrapper> Container;
-
-void test01()
-{
-  std::vector<int> v = {
-    207089,
-    202585,
-    180067,
-    157549,
-    211592,
-    216096,
-    207089
-  };
-
-  Container con(v.data(), v.data() + 7);
-
-  std::nth_element(con.begin(), con.begin() + 3, con.end());
+extern "C" {
+  // Should not get multiple definition errors from libstdc++.a(thread.o)
+  void execute_native_thread_routine(void) { }
+  void execute_native_thread_routine_compat(void) { }
 }
 
 int main()
 {
-  test01();
-  return 0;
+  execute_native_thread_routine();
+  execute_native_thread_routine_compat();
+
+  std::thread{}.detach();  // ensure libstdc++.a(thread.o) is linked in
 }

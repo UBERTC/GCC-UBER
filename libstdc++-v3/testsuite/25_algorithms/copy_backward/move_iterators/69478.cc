@@ -1,4 +1,7 @@
-// Copyright (C) 2013-2015 Free Software Foundation, Inc.
+// { dg-options "-std=gnu++11" }
+// { dg-do compile }
+
+// Copyright (C) 2016 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -15,39 +18,23 @@
 // with this library; see the file COPYING3.  If not see
 // <http://www.gnu.org/licenses/>.
 
-// 25.3.2 [lib.alg.nth.element]
-
-// { dg-options "-std=gnu++11" }
+// PR libstdc++/69478
 
 #include <algorithm>
-#include <vector>
-#include <testsuite_hooks.h>
-#include <testsuite_iterators.h>
+#include <iterator>
 
-using __gnu_test::test_container;
-using __gnu_test::random_access_iterator_wrapper;
-
-typedef test_container<int, random_access_iterator_wrapper> Container;
-
-void test01()
+void
+test01()
 {
-  std::vector<int> v = {
-    207089,
-    202585,
-    180067,
-    157549,
-    211592,
-    216096,
-    207089
+  // A move-only type that is also a trivial class.
+  struct trivial_rvalstruct
+  {
+    trivial_rvalstruct() = default;
+    trivial_rvalstruct(trivial_rvalstruct&&) = default;
+    trivial_rvalstruct& operator=(trivial_rvalstruct&&) = default;
   };
+  static_assert(std::is_trivial<trivial_rvalstruct>::value, "");
 
-  Container con(v.data(), v.data() + 7);
-
-  std::nth_element(con.begin(), con.begin() + 3, con.end());
-}
-
-int main()
-{
-  test01();
-  return 0;
+  trivial_rvalstruct a[1], b[1];
+  copy_backward(std::make_move_iterator(a), std::make_move_iterator(a+1), b);
 }
