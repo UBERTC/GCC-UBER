@@ -78726,15 +78726,9 @@ $as_echo "$res_mutex_timedlock" >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for gthreads library" >&5
 $as_echo_n "checking for gthreads library... " >&6; }
 
-  if test $enable_bionic_libs = yes; then
-    ac_include_file="$glibcxx_thread_h"
-  else
-    ac_include_file="gthr-$target_thread_file.h"
-  fi
-
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
-#include "$ac_include_file"
+#include "gthr-$target_thread_file.h"
 int
 main ()
 {
