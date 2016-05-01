@@ -366,6 +366,7 @@ void aarch64_emit_call_insn (rtx);
 void aarch64_register_pragmas (void);
 void aarch64_relayout_simd_types (void);
 void aarch64_reset_previous_fndecl (void);
+void aarch64_save_restore_target_globals (tree);
 
 /* Initialize builtins for SIMD intrinsics.  */
 void init_aarch64_simd_builtins (void);
