@@ -1,3 +1,84 @@
+2016-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/70963
+	* gcc.target/powerpc/pr70963.c: New.
+
+2016-05-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/70635
+	* g++.dg/parse/pr70635.C: New.
+
+2016-05-02  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from mainline
+	PR libgfortran/70684
+	* gfortran.dg/list_read_14.f90: New test.
+
+2016-05-02  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-04-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/70526
+	* g++.dg/torture/pr70526.C: New testcase.
+
+2016-04-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70858
+	* gcc.target/i386/pr70858.c: New test.
+
+2016-04-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-03-14  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/70098
+	* lib/target-supports.exp (check_effective_target_powerpc64_no_dm):
+	New function.
+	* g++.dg/pr70098.C: New testcase.
+
+2016-04-20  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR target/70674
+	* gcc.target/s390/pr70674.c: New test.
+
+2016-04-18  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2016-03-31  Marek Polacek  <polacek@redhat.com>
+
+	PR c/70297
+	* c-c++-common/pr70297.c: New test.
+	* g++.dg/cpp0x/typedef-redecl.C: New test.
+	* gcc.dg/typedef-redecl2.c: New test.
+
+2016-04-15  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	PR target/70662
+	* gcc.target/i386/pr70662.c: New test.
+
+2016-04-14  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-03-31  Nick Clifton  <nickc@redhat.com>
+
+	PR target/70044
+	* gcc.target/aarch64/pr70044.c: New test.
+
+2016-04-13  Alan Modra  <amodra@gmail.com>
+
+	Backport from mainline
+	2016-03-31  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+	* g++.dg/template/ptrmem30.C (read): Rename to data_read.
+	(Holder::foo): Reflect this.
+
+	2016-03-22  Patrick Palka  <ppalka@gcc.gnu.org>
+	PR c++/70096
+	* g++.dg/template/ptrmem30.C: New test.
+
 2016-04-11  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	Backport from mainline

@@ -1,3 +1,42 @@
+2016-05-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/70635
+	* pt.c (resolve_typename_type): Fix typos in infinite recursion
+	avoidance mechanism.
+
+2016-04-18  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2016-03-31  Marek Polacek  <polacek@redhat.com>
+
+	PR c/70297
+	* decl.c (duplicate_decls): Also set TYPE_ALIGN and TYPE_USER_ALIGN.
+
+2016-04-18  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2015-11-11  Jason Merrill  <jason@redhat.com>
+
+	* decl.c (duplicate_decls): When combining typedefs, remove the
+	new type from the variants list.
+
+2016-04-15  Jason Merrill  <jason@redhat.com>
+
+	* pt.c (tsubst_copy_and_build) [LAMBDA_EXPR]: Get
+	LAMBDA_EXPR_RETURN_TYPE from the instantiated closure.
+
+	PR c++/67164
+	* pt.c (copy_template_args): New.
+	(tsubst_pack_expansion): Use it.
+
+2016-04-13  Alan Modra  <amodra@gmail.com>
+
+	Backport from mainline
+	2016-03-22  Patrick Palka  <ppalka@gcc.gnu.org>
+	PR target/70107
+	PR c++/70096
+	* pt.c (tsubst_decl): Clear the DECL_MODE of the new decl.
+
 2016-04-06  Richard Biener  <rguenther@suse.de>
 
 	Backport from mainline
