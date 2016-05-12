@@ -3551,9 +3551,9 @@ AC_DEFUN([GLIBCXX_CHECK_GTHREADS], [
   AC_MSG_CHECKING([for gthreads library])
 
   if test $enable_bionic_libs = yes; then
-    ac_include_file="$glibcxx_thread_h"
-  else
     ac_include_file="gthr-$target_thread_file.h"
+  else
+    ac_include_file="$glibcxx_thread_h"
   fi
 
   AC_TRY_COMPILE([#include "$ac_include_file"],

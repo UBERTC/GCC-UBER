@@ -277,7 +277,7 @@ AC_CACHE_CHECK([dependency style of $depcc],
 	break
       fi
       ;;
-    msvisualcpp | msvcmsys)
+    msvc7 | msvc7msys | msvisualcpp | msvcmsys)
       # This compiler won't grok `-c -o', but also, the minuso test has
       # not run yet.  These depmodes are late enough in the game, and
       # so weak that their functioning should not be impacted.
@@ -342,10 +342,13 @@ AC_DEFUN([AM_DEP_TRACK],
 if test "x$enable_dependency_tracking" != xno; then
   am_depcomp="$ac_aux_dir/depcomp"
   AMDEPBACKSLASH='\'
+  am__nodep='_no'
 fi
 AM_CONDITIONAL([AMDEP], [test "x$enable_dependency_tracking" != xno])
 AC_SUBST([AMDEPBACKSLASH])dnl
 _AM_SUBST_NOTMAKE([AMDEPBACKSLASH])dnl
+AC_SUBST([am__nodep])dnl
+_AM_SUBST_NOTMAKE([am__nodep])dnl
 ])
 
 # Generate code to set up dependency tracking.              -*- Autoconf -*-
@@ -918,10 +921,11 @@ AC_DEFUN([AM_SUBST_NOTMAKE], [_AM_SUBST_NOTMAKE($@)])
 # a tarball read from stdin.
 #     $(am__untar) < result.tar
 AC_DEFUN([_AM_PROG_TAR],
-[# Always define AMTAR for backward compatibility.
-AM_MISSING_PROG([AMTAR], [tar])
+[# Always define AMTAR for backward compatibility.  Yes, it's still used
+# in the wild :-(  We should find a proper way to deprecate it ...
+AC_SUBST([AMTAR], ['$${TAR-tar}'])
 m4_if([$1], [v7],
-     [am__tar='${AMTAR} chof - "$$tardir"'; am__untar='${AMTAR} xf -'],
+     [am__tar='$${TAR-tar} chof - "$$tardir"' am__untar='$${TAR-tar} xf -'],
      [m4_case([$1], [ustar],, [pax],,
               [m4_fatal([Unknown tar format])])
 AC_MSG_CHECKING([how to create a $1 tar archive])

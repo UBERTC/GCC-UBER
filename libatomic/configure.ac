@@ -218,6 +218,9 @@ LIBAT_CHECK_ATTRIBUTE_DLLEXPORT
 LIBAT_CHECK_ATTRIBUTE_ALIAS
 if test x$try_ifunc = xyes; then
   LIBAT_CHECK_IFUNC
+  if test $enable_libatomic_ifuncs = no; then
+    libat_cv_have_ifunc=no
+  fi
 fi
 
 # Check linker support.
