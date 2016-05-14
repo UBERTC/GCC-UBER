@@ -1,3 +1,101 @@
+2016-05-12  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-05-10  Martin Liska  <mliska@suse.cz>
+
+	* tree-inline.c (remap_dependence_clique): Do not remap
+	debugging statements.
+
+2016-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/70963
+	* config/rs6000/vsx.md (vsx_xvcvdpsxds_scale): Generate correct
+	code for a zero scale factor.
+	(vsx_xvcvdpuxds_scale): Likewise.
+
+2016-05-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-05-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.md ("*vec_cmp<insn_cmp>df_cconly")
+	("*fixuns_truncdfdi2_z13")
+	("*fixuns_trunc<FP:mode><GPR:mode>2_z196")
+	("*fix_truncdfdi2_bfp_z13", "*floatunsdidf2_z13")
+	("*extendsfdf2_z13"): Replace TARGET_Z13 with TARGET_VX.
+
+2016-05-10  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2016-04-27  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/rtems.h (LIB_SPEC): Add -latomic.
+
+2016-05-10  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2016-04-27  Joel Sherrill  <joel@rtems.org>
+
+	* config/microblaze/rtems.h: Redefine LINK_SPEC to avoid
+	xilink.ld and flags not relevant to RTEMS.
+
+2016-05-02  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-04-05  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/70526
+	* tree-sra.c (build_ref_for_offset): Use prev_base to
+	extract the alias pointer type.
+
+2016-04-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/70858
+	* config/i386/i386.c (bdesc_special_args): Add | OPTION_MASK_ISA_64BIT
+	to __builtin_ia32_lwpval64 and __builtin_ia32_lwpins64.
+	(bdesc_args): Add | OPTION_MASK_ISA_64BIT to __builtin_ia32_bextr_u64,
+	__builtin_ia32_bextri_u64, __builtin_ia32_bzhi_di,
+	__builtin_ia32_pdep_di and __builtin_ia32_pext_di.
+
+2016-04-28  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-03-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR driver/70132
+	* config/arm/driver-arm.c (host_detect_local_cpu): Reorder exit logic
+	to not call fclose twice on file.
+
+2016-04-28  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-01-18  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* config/arm/arm.c (thumb1_reorg): Check that the comparison is
+	against the constant 0.
+
+2016-04-27  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-04-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000-builtin.def: Correct pasto error for
+	stxvd2x and stxvw4x built-in functions.
+
+2016-04-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-03-14  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/70098
+	* config/rs6000/rs6000.md (*ctr<mode>_internal1, *ctr<mode>_internal2,
+	*ctr<mode>_internal5, *ctr<mode>_internal6): Also allow "d" as output.
+	(define_split for the GPR case): Use int_reg_operand instead of
+	gpc_reg_operand for the output.
+
 2016-04-22  H.J. Lu  <hongjiu.lu@intel.com>
 
 	Backport from mainline
