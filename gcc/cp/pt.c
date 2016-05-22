@@ -12824,9 +12824,10 @@ tsubst_baselink (tree baselink, tree object_type,
     /* Add back the template arguments, if present.  */
     if (BASELINK_P (baselink) && template_id_p)
       BASELINK_FUNCTIONS (baselink)
-	= build_nt (TEMPLATE_ID_EXPR,
-		    BASELINK_FUNCTIONS (baselink),
-		    template_args);
+	= build2 (TEMPLATE_ID_EXPR,
+		  unknown_type_node,
+		  BASELINK_FUNCTIONS (baselink),
+		  template_args);
     /* Update the conversion operator type.  */
     BASELINK_OPTYPE (baselink) = optype;
 
@@ -20597,7 +20598,7 @@ instantiate_decl (tree d, int defer_ok,
       if (enter_context)
         pop_nested_class ();
 
-      if (variable_template_p (td))
+      if (variable_template_p (gen_tmpl))
 	note_variable_template_instantiation (d);
     }
   else if (TREE_CODE (d) == FUNCTION_DECL && DECL_DEFAULTED_FN (code_pattern))

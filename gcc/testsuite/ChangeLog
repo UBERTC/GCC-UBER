@@ -1,3 +1,145 @@
+2016-05-21  Iain Sandoe  <iain@codesourcery.com>
+	    Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	Backport from mainline
+	2015-12-17  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR target/67973
+
+	* lib/target-supports.exp (check_effective_target_stabs): New proc.
+	* g++.dg/cpp0x/alias-decl-debug-0.C: Restrict to stabs targets.
+	* g++.dg/other/PR23205.C: Likewise.
+	* g++.dg/other/pr23205-2.C: Likewise.
+	* gcc.dg/20040813-1.c: Likewise.
+	* gcc.dg/darwin-20040809-2.c: Likewise.
+	* objc.dg/stabs-1.m: Likewise.
+
+2016-05-20  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/70466
+	* g++.dg/template/pr70466-1.C: New.
+	* g++.dg/template/pr70466-2.C: Likewise.
+
+2016-05-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/71204
+	* gfortran.dg/pr71204.f90: New test.
+
+2016-05-20  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-02  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67278
+	* gcc.dg/simd-7.c: New testcase.
+
+	2016-03-02  Richard Biener  <rguenther@suse.de>
+		Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/67278
+	* gcc.dg/simd-8.c: New testcase.
+
+	2016-03-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/67278
+	* gcc.dg/simd-7.c: Add -w -Wno-psabi to dg-options.
+
+ 	PR target/67278
+ 	* gcc.dg/simd-8.c: Add -w -Wno-psabi to dg-options.
+
+2016-05-20  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69720
+	* gcc.dg/vect/vect-outer-pr69720.c: New testcase.
+
+2016-05-20  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-01  Bin Cheng  <bin.cheng@arm.com>
+
+	PR tree-optimization/67921
+	* c-c++-common/ubsan/pr67921.c: New test.
+
+	2016-05-06  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70941
+	* gcc.dg/torture/pr70941.c: New testcase.
+
+	2016-05-06  Jakub Jelinek  <jakub@redhat.com>
+ 
+	PR middle-end/70941
+	* gcc.dg/torture/pr70941.c (abort): Remove prototype.
+	(a, b, c, d): Change type from char to signed char.
+	(main): Compare against (signed char) -1634678893 instead of
+	hardcoded -109.  Use __builtin_abort instead of abort.
+ 
+	2016-05-06  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70931
+	* gfortran.dg/pr70931.f90: New testcase.
+
+	2016-04-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/70623
+	* gcc.dg/torture/pr70623.c: New testcase.
+	* gcc.dg/torture/pr70623-2.c: Likewise.
+
+	2016-04-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/70780
+	* gcc.dg/torture/pr70780.c: New testcase.
+
+2016-05-19  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/70646
+	* gcc.dg/ipa/pr70646.c: New test.
+
+2016-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+	PR tree-optimization/69400
+	* gcc.dg/plugin/wide-int_plugin.c (test_wide_int_mod_trunc): New
+	function.
+	(plugin_init): Call it.
+	* gcc.dg/torture/pr69400.c: New test.
+
+2016-03-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/70135
+	* g++.dg/cpp1y/constexpr-loop4.C: New test.
+	* g++.dg/ubsan/pr70135.C: New test.
+
+2016-05-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-05-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70809
+	* gcc.target/aarch64/pr70809_1.c: New test.
+
+2016-05-18  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from mainline r236377.
+	2016-05-18  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* gcc.target/aarch64/tail_indirect_call_1.c: Scan for "br\t",
+	"blr\t" and switch to scan-assembler-times.
+
+2016-05-15  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-05-11  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/pr70963.c: Require at least power8 at both
+	compile and run time.
+
+2016-05-15  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/69603
+	* gfortran.dg/pr69603.f90: New testcase.
+
 2016-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
 
 	Backport from mainline

@@ -1,3 +1,176 @@
+2016-05-21  Iain Sandoe  <iain@codesourcery.com>
+	    Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	Backport from mainline
+	2015-12-17  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR target/67973
+	* configure.ac (gcc_cv_as_stabs_directive): New test.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+	* config/darwin.h (DBX_DEBUGGING_INFO): Wrap in
+	HAVE_AS_STABS_DIRECTIVE.
+	(PREFERRED_DEBUGGING_TYPE): Likewise.
+	* config/i386/darwin.h (PREFERRED_DEBUGGING_TYPE): Only include
+	DBX_DEBUG if HAVE_AS_STABS_DIRECTIVE.
+
+	* doc/sourcebuild.texi (Effective-Target Keywords, Environment
+	attributes): Document stabs.
+
+2016-05-21  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Backport from mainline
+	2015-06-29  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* config/nios2/nios2.c (nios2_delegitimize_address): Make
+	assert less restrictive.
+
+2016-05-20  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/arm/arm.c (arm_expand_prologue): Set the stack usage to 0
+	for naked functions.
+	(thumb1_expand_prologue): Likewise.
+
+2016-05-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	* sched-deps.c (sched_analyze_2) <case TRAP_IF>: Also
+	force pending loads from memory.
+
+2016-05-20  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-03-02  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/67278
+	* tree-cfg.c (verify_expr): Adjust BIT_FIELD_REF case.
+
+	2016-03-02  Richard Biener  <rguenther@suse.de>
+		    Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/67278
+	* config/i386/i386.c (type_natural_mode): Handle XFmode vectors.
+
+2016-05-20  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69720
+	* tree-vect-loop.c (get_initial_def_for_reduction): Avoid
+	the adjustment_def path for possibly vectorized defs.
+	(vect_create_epilog_for_reduction): Handle vectorized initial
+	defs properly.
+
+2016-05-20  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-01  Bin Cheng  <bin.cheng@arm.com>
+
+	PR tree-optimization/67921
+	* fold-const.c (split_tree): New parameters.  Convert pointer
+	type variable part to proper type before negating.
+	(fold_binary_loc): Pass new arguments to split_tree.
+
+	2016-05-06  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70941
+	* fold-const.c (split_tree): Always convert to the original type
+	before negating.
+
+	2016-05-06  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70931
+	* dwarf2out.c (native_encode_initializer): Skip zero-sized fields.
+
+	2016-04-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/70623
+	* tree-ssa-pre.c (changed_blocks): Make global ...
+	(compute_antic): ... local here.  Move and fix worklist
+	handling here.  Do not clear EDGE_DFS_BACK.
+	(compute_antic_aux): Add dumping for MAX assumed succs.  Remove
+	worklist handling, dump when ANTIC_IN changed.
+	(compute_partial_antic_aux): Remove worklist handling.
+	(init_pre): Do not compute post dominators.  Add a comment about
+	the CFG order chosen.
+	(fini_pre): Do not free post dominators.
+
+	2016-04-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/70780
+	* tree-ssa-pre.c (compute_antic_aux): Also return true if the block
+	wasn't visited yet.
+	(compute_antic): Mark blocks with abnormal preds as visited as
+	they have a final empty antic-in solution already.
+
+2016-05-19  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/70646
+	* ipa-prop.c (determine_locally_known_aggregate_parts): Bail out early
+	if parameter PARAM_IPA_MAX_AGG_ITEMS is zero.
+
+2016-05-19  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/70646
+	* ipa-inline.h (condition): New field size.
+	* ipa-inline-analysis.c (add_condition): New parameter SIZE, use it
+	for comaprison and store it into the new condition.
+	(evaluate_conditions_for_known_args): Use condition size to check
+	access sizes for all but CHANGED conditions.
+	(unmodified_parm_1): New parameter size_p, store access size into it.
+	(unmodified_parm): Likewise.
+	(unmodified_parm_or_parm_agg_item): Likewise.
+	(eliminated_by_inlining_prob): Pass NULL to unmodified_parm as size_p.
+	(set_cond_stmt_execution_predicate): Extract access sizes and store
+	them to conditions.
+	(set_switch_stmt_execution_predicate): Likewise.
+	(will_be_nonconstant_expr_predicate): Likewise.
+	(will_be_nonconstant_predicate): Likewise.
+	(inline_read_section): Stream condition size.
+	(inline_write_summary): Likewise.
+	* lto-streamer.h (LTO_minor_version): Bump.
+
+2016-05-19  Richard Sandiford  <richard.sandiford@arm.com>
+
+2016-01-26  Richard Sandiford  <richard.sandiford@arm.com>
+
+	PR tree-optimization/69400
+	* wide-int.cc (wi_pack): Take the precision as argument and
+	perform canonicalization here rather than in the callers.
+	Use the main loop to handle all full-width HWIs.  Add a
+	zero HWI if in_len isn't a full result.
+	(wi::divmod_internal): Update accordingly.
+	(wi::mul_internal): Likewise.  Simplify.
+
+2016-05-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/71145
+	* config/alpha/alpha.md (trap): Add (use (reg:DI 29)).
+	(*exception_receiver_1): Return "#" for TARGET_EXPLICIT_RELOCS.
+
+2016-05-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/70353
+	* tree-inline.c (remap_decls): Don't add_local_decl if
+	cfun is null.
+
+2016-05-18  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-05-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70809
+	* config/aarch64/aarch64-simd.md (aarch64_vmls<mode>): Delete.
+
+2016-05-17  Jim Wilson  <jim.wilson@linaro.org>
+
+	Partial backport from trunk r228017.
+	2015-09-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/70613
+	* doc/invoke.texi (-fabi-version): Document version 9.
+	(-Wabi): Document version 9.  Mention version 8 is default for GCC 5.1.
+
 2016-05-12  Martin Liska  <mliska@suse.cz>
 
 	Backport from mainline
@@ -127,7 +300,7 @@
 	Use proper memory operand modifiers.
 
 2016-04-14  Nick Clifton  <nickc@redhat.com>
-            Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+	    Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	PR target/70044
 	* config/aarch64/aarch64.c
