@@ -1,3 +1,58 @@
+2016-05-25  Jakub Jelinek  <jakub@redhat.com>
+
+	* config/i386/i386.h (TARGET_AVOID_4BYTE_PREFIXES): Define.
+	* config/i386/constraints.md (Yr): Test TARGET_AVOID_4BYTE_PREFIXES
+	rather than X86_TUNE_AVOID_4BYTE_PREFIXES.  Use SSE_REGS instead
+	of ALL_SSE_REGS.  Return SSE_REGS also when TARGET_AVX.
+
+2016-05-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-02-11  Alexandre Oliva  <aoliva@redhat.com>
+
+	PR target/69634
+	* regstat.c (regstat_bb_compute_calls_crossed): Disregard
+	debug insns.
+
+	2015-10-30  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/68142
+	* fold-const.c (extract_muldiv_1): Avoid introducing undefined
+	overflow.
+
+	2016-03-24  Richard Henderson  <rth@redhat.com>
+
+        PR middle-end/69845
+	* fold-const.c (extract_muldiv_1): Correct test for multiplication
+	overflow.
+
+2016-05-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2015-12-11  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/68814
+	* rtlanal.c (set_noop_p): Use BITS_BIG_ENDIAN instead of
+	BYTES_BIG_ENDIAN.
+
+	2016-01-12  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR lto/69003
+	* lto-partition.c (rename_statics): Fix pasto.
+
+	2016-01-13  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR ipa/66487
+	* ipa-polymorphic-call.c (inlined_polymorphic_ctor_dtor_block_p):
+	use block_ultimate_origin
+	(noncall-stmt_may_be_vtbl_ptr_store): Likewise.
+
+	2016-01-21  Roman Zhuykov  <zhroma@ispras.ru>
+
+	PR target/69252
+	* modulo-sched.c (optimize_sc):	Allow branch-scheduling to add a new
+	first stage.
+
 2016-05-21  Iain Sandoe  <iain@codesourcery.com>
 	    Dominique d'Humieres  <dominiq@lps.ens.fr>
 
