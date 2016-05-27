@@ -1,4 +1,4 @@
-// Copyright (C) 2015 Free Software Foundation, Inc.
+// Copyright (C) 2016 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -28,59 +28,36 @@ void
 test01()
 {
   bool test __attribute__((unused)) = false;
-
   std::error_code ec;
-  auto p = __gnu_test::nonexistent_path();
-  canonical( p, ec );
+
+  // Test empty path.
+  fs::path p;
+  bool b = create_directory( p, ec );
   VERIFY( ec );
+  VERIFY( !b );
 
-  p = fs::current_path();
-  canonical( p, ec );
+  // Test non-existent path
+  p = __gnu_test::nonexistent_path();
+  VERIFY( !exists(p) );
+
+  b = create_directory(p, ec); // create the directory once
   VERIFY( !ec );
+  VERIFY( b );
+  VERIFY( exists(p) );
 
-  p = "/";
-  p = canonical( p, ec );
-  VERIFY( p == "/" );
+  // Test existing path (libstdc++/71036).
+  b = create_directory(p, ec);
   VERIFY( !ec );
-
-  p = "/.";
-  p = canonical( p, ec );
-  VERIFY( p == "/" );
+  VERIFY( !b );
+  b = create_directory(p);
   VERIFY( !ec );
+  VERIFY( !b );
 
-  p = "/..";
-  p = canonical( p, ec );
-  VERIFY( p == "/" );
-  VERIFY( !ec );
-
-  p = "/../.././.";
-  p = canonical( p, ec );
-  VERIFY( p == "/" );
-  VERIFY( !ec );
-}
-
-void
-test02()
-{
-#if __cpp_exceptions
-  bool test __attribute__((unused)) = false;
-
-  fs::path p = "rel", base = __gnu_test::nonexistent_path();
-  fs::path e1, e2;
-  try {
-    canonical(p, base);
-  } catch (const fs::filesystem_error& e) {
-    e1 = e.path1();
-    e2 = e.path2();
-  }
-  VERIFY( e1 == p );
-  VERIFY( e2 == base );
-#endif
+  remove_all(p, ec);
 }
 
 int
 main()
 {
   test01();
-  test02();
 }
