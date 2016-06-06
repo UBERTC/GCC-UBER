@@ -568,6 +568,12 @@
 #endif
 
 
+/* Define if your assembler supports relocs needed by -fpic. */
+#ifndef USED_FOR_TARGET
+#undef HAVE_AS_SMALL_PIC_RELOCS
+#endif
+
+
 /* Define if your assembler supports SPARC4 instructions. */
 #ifndef USED_FOR_TARGET
 #undef HAVE_AS_SPARC4
@@ -600,9 +606,9 @@
 #endif
 
 
-/* Define if your assembler supports relocs needed by -fpic. */
+/* Define if your assembler supports .stabs. */
 #ifndef USED_FOR_TARGET
-#undef HAVE_AS_SMALL_PIC_RELOCS
+#undef HAVE_AS_STABS_DIRECTIVE
 #endif
 
 
