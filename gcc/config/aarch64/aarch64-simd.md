@@ -4649,7 +4649,7 @@
    ld1\\t{%S0.16b - %<Vendreg>0.16b}, %1"
   [(set_attr "type" "multiple,neon_store<nregs>_<nregs>reg_q,\
 		     neon_load<nregs>_<nregs>reg_q")
-   (set (attr "length") (symbol_ref "aarch64_simd_attr_length_move (insn)"))]
+   (set_attr "length" "<insn_count>,4,4")]
 )
 
 (define_insn "aarch64_be_ld1<mode>"
@@ -4682,7 +4682,7 @@
    stp\\t%q1, %R1, %0
    ldp\\t%q0, %R0, %1"
   [(set_attr "type" "multiple,neon_stp_q,neon_ldp_q")
-   (set (attr "length") (symbol_ref "aarch64_simd_attr_length_move (insn)"))]
+   (set_attr "length" "8,4,4")]
 )
 
 (define_insn "*aarch64_be_movci"
@@ -4693,7 +4693,7 @@
        || register_operand (operands[1], CImode))"
   "#"
   [(set_attr "type" "multiple")
-   (set (attr "length") (symbol_ref "aarch64_simd_attr_length_move (insn)"))]
+   (set_attr "length" "12,4,4")]
 )
 
 (define_insn "*aarch64_be_movxi"
@@ -4704,7 +4704,7 @@
        || register_operand (operands[1], XImode))"
   "#"
   [(set_attr "type" "multiple")
-   (set (attr "length") (symbol_ref "aarch64_simd_attr_length_move (insn)"))]
+   (set_attr "length" "16,4,4")]
 )
 
 (define_split
