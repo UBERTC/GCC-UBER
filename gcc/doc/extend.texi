@@ -13863,6 +13863,23 @@ The @code{__builtin_divde}, @code{__builtin_divdeo},
 64-bit environment support ISA 2.06 or later.
 
 The following built-in functions are available for the PowerPC family
+of processors, starting with ISA 3.0 or later (@option{-mcpu=power9}
+or @option{-mmodulo}):
+@smallexample
+long long __builtin_darn (void);
+long long __builtin_darn_raw (void);
+int __builtin_darn_32 (void);
+@end smallexample
+
+The @code{__builtin_darn} and @code{__builtin_darn_raw}
+functions require a
+64-bit environment supporting ISA 3.0 or later.
+The @code{__builtin_darn} function provides a 64-bit conditioned
+random number.  The @code{__builtin_darn_raw} function provides a
+64-bit raw random number.  The @code{__builtin_darn_32} function
+provides a 32-bit random number.
+
+The following built-in functions are available for the PowerPC family
 of processors when hardware decimal floating point
 (@option{-mhard-dfp}) is available:
 @smallexample
@@ -15932,6 +15949,18 @@ void vec_st (vector double, int, vector double *);
 void vec_st (vector double, int, double *);
 vector double vec_sub (vector double, vector double);
 vector double vec_trunc (vector double);
+vector double vec_xl (int, vector double *);
+vector double vec_xl (int, double *);
+vector long long vec_xl (int, vector long long *);
+vector long long vec_xl (int, long long *);
+vector unsigned long long vec_xl (int, vector unsigned long long *);
+vector unsigned long long vec_xl (int, unsigned long long *);
+vector float vec_xl (int, vector float *);
+vector float vec_xl (int, float *);
+vector int vec_xl (int, vector int *);
+vector int vec_xl (int, int *);
+vector unsigned int vec_xl (int, vector unsigned int *);
+vector unsigned int vec_xl (int, unsigned int *);
 vector double vec_xor (vector double, vector double);
 vector double vec_xor (vector double, vector bool long);
 vector double vec_xor (vector bool long, vector double);
@@ -15941,6 +15970,18 @@ vector long vec_xor (vector bool long, vector long);
 vector unsigned long vec_xor (vector unsigned long, vector unsigned long);
 vector unsigned long vec_xor (vector unsigned long, vector bool long);
 vector unsigned long vec_xor (vector bool long, vector unsigned long);
+void vec_xst (vector double, int, vector double *);
+void vec_xst (vector double, int, double *);
+void vec_xst (vector long long, int, vector long long *);
+void vec_xst (vector long long, int, long long *);
+void vec_xst (vector unsigned long long, int, vector unsigned long long *);
+void vec_xst (vector unsigned long long, int, unsigned long long *);
+void vec_xst (vector float, int, vector float *);
+void vec_xst (vector float, int, float *);
+void vec_xst (vector int, int, vector int *);
+void vec_xst (vector int, int, int *);
+void vec_xst (vector unsigned int, int, vector unsigned int *);
+void vec_xst (vector unsigned int, int, unsigned int *);
 int vec_all_eq (vector double, vector double);
 int vec_all_ge (vector double, vector double);
 int vec_all_gt (vector double, vector double);
@@ -16055,7 +16096,7 @@ if the VSX instruction set is available.  The @samp{vec_vsx_ld} and
 @samp{LXVW4X}, @samp{STXVD2X}, and @samp{STXVW4X} instructions.
 
 If the ISA 2.07 additions to the vector/scalar (power8-vector)
-instruction set is available, the following additional functions are
+instruction set are available, the following additional functions are
 available for both 32-bit and 64-bit targets.  For 64-bit targets, you
 can use @var{vector long} instead of @var{vector long long},
 @var{vector bool long} instead of @var{vector bool long long}, and
@@ -16368,7 +16409,7 @@ vector unsigned long long vec_vupklsw (vector int);
 @end smallexample
 
 If the ISA 2.07 additions to the vector/scalar (power8-vector)
-instruction set is available, the following additional functions are
+instruction set are available, the following additional functions are
 available for 64-bit targets.  New vector types
 (@var{vector __int128_t} and @var{vector __uint128_t}) are available
 to hold the @var{__int128_t} and @var{__uint128_t} types to use these
@@ -16421,6 +16462,60 @@ int __builtin_bcdsub_lt (vector __int128_t, vector__int128_t);
 int __builtin_bcdsub_eq (vector __int128_t, vector__int128_t);
 int __builtin_bcdsub_gt (vector __int128_t, vector__int128_t);
 int __builtin_bcdsub_ov (vector __int128_t, vector__int128_t);
+@end smallexample
+
+If the ISA 3.00 additions to the vector/scalar (power9-vector)
+instruction set are available:
+
+@smallexample
+vector long long vec_vctz (vector long long);
+vector unsigned long long vec_vctz (vector unsigned long long);
+vector int vec_vctz (vector int);
+vector unsigned int vec_vctz (vector int);
+vector short vec_vctz (vector short);
+vector unsigned short vec_vctz (vector unsigned short);
+vector signed char vec_vctz (vector signed char);
+vector unsigned char vec_vctz (vector unsigned char);
+
+vector signed char vec_vctzb (vector signed char);
+vector unsigned char vec_vctzb (vector unsigned char);
+
+vector long long vec_vctzd (vector long long);
+vector unsigned long long vec_vctzd (vector unsigned long long);
+
+vector short vec_vctzh (vector short);
+vector unsigned short vec_vctzh (vector unsigned short);
+
+vector int vec_vctzw (vector int);
+vector unsigned int vec_vctzw (vector int);
+
+vector int vec_vprtyb (vector int);
+vector unsigned int vec_vprtyb (vector unsigned int);
+vector long long vec_vprtyb (vector long long);
+vector unsigned long long vec_vprtyb (vector unsigned long long);
+
+vector int vec_vprtybw (vector int);
+vector unsigned int vec_vprtybw (vector unsigned int);
+
+vector long long vec_vprtybd (vector long long);
+vector unsigned long long vec_vprtybd (vector unsigned long long);
+@end smallexample
+
+
+If the ISA 3.00 additions to the vector/scalar (power9-vector)
+instruction set are available for 64-bit targets:
+
+@smallexample
+vector long vec_vprtyb (vector long);
+vector unsigned long vec_vprtyb (vector unsigned long);
+vector __int128_t vec_vprtyb (vector __int128_t);
+vector __uint128_t vec_vprtyb (vector __uint128_t);
+
+vector long vec_vprtybd (vector long);
+vector unsigned long vec_vprtybd (vector unsigned long);
+
+vector __int128_t vec_vprtybq (vector __int128_t);
+vector __uint128_t vec_vprtybd (vector __uint128_t);
 @end smallexample
 
 If the cryptographic instructions are enabled (@option{-mcrypto} or
@@ -16482,6 +16577,28 @@ The second argument to the @var{__builtin_crypto_vshasigmad} and
 @var{__builtin_crypto_vshasigmaw} builtin functions must be a constant
 integer that is 0 or 1.  The third argument to these builtin functions
 must be a constant integer in the range of 0 to 15.
+
+If the ISA 3.00 additions to the vector/scalar (power9-vector)
+instruction set are available, the following additional functions are
+available for both 32-bit and 64-bit targets.
+
+vector short vec_xl (int, vector short *);
+vector short vec_xl (int, short *);
+vector unsigned short vec_xl (int, vector unsigned short *);
+vector unsigned short vec_xl (int, unsigned short *);
+vector char vec_xl (int, vector char *);
+vector char vec_xl (int, char *);
+vector unsigned char vec_xl (int, vector unsigned char *);
+vector unsigned char vec_xl (int, unsigned char *);
+
+void vec_xst (vector short, int, vector short *);
+void vec_xst (vector short, int, short *);
+void vec_xst (vector unsigned short, int, vector unsigned short *);
+void vec_xst (vector unsigned short, int, unsigned short *);
+void vec_xst (vector char, int, vector char *);
+void vec_xst (vector char, int, char *);
+void vec_xst (vector unsigned char, int, vector unsigned char *);
+void vec_xst (vector unsigned char, int, unsigned char *);
 
 @node PowerPC Hardware Transactional Memory Built-in Functions
 @subsection PowerPC Hardware Transactional Memory Built-in Functions
@@ -17114,6 +17231,45 @@ double __builtin_vis_fnhaddd (double, double);
 int64_t __builtin_vis_umulxhi (int64_t, int64_t);
 int64_t __builtin_vis_xmulx (int64_t, int64_t);
 int64_t __builtin_vis_xmulxhi (int64_t, int64_t);
+@end smallexample
+
+When you use the @option{-mvis4} switch, the VIS version 4.0 built-in
+functions also become available:
+
+@smallexample
+v8qi __builtin_vis_fpadd8 (v8qi, v8qi);
+v8qi __builtin_vis_fpadds8 (v8qi, v8qi);
+v8qi __builtin_vis_fpaddus8 (v8qi, v8qi);
+v4hi __builtin_vis_fpaddus16 (v4hi, v4hi);
+
+v8qi __builtin_vis_fpsub8 (v8qi, v8qi);
+v8qi __builtin_vis_fpsubs8 (v8qi, v8qi);
+v8qi __builtin_vis_fpsubus8 (v8qi, v8qi);
+v4hi __builtin_vis_fpsubus16 (v4hi, v4hi);
+
+long __builtin_vis_fpcmple8 (v8qi, v8qi);
+long __builtin_vis_fpcmpgt8 (v8qi, v8qi);
+long __builtin_vis_fpcmpule16 (v4hi, v4hi);
+long __builtin_vis_fpcmpugt16 (v4hi, v4hi);
+long __builtin_vis_fpcmpule32 (v2si, v2si);
+long __builtin_vis_fpcmpugt32 (v2si, v2si);
+
+v8qi __builtin_vis_fpmax8 (v8qi, v8qi);
+v4hi __builtin_vis_fpmax16 (v4hi, v4hi);
+v2si __builtin_vis_fpmax32 (v2si, v2si);
+
+v8qi __builtin_vis_fpmaxu8 (v8qi, v8qi);
+v4hi __builtin_vis_fpmaxu16 (v4hi, v4hi);
+v2si __builtin_vis_fpmaxu32 (v2si, v2si);
+
+
+v8qi __builtin_vis_fpmin8 (v8qi, v8qi);
+v4hi __builtin_vis_fpmin16 (v4hi, v4hi);
+v2si __builtin_vis_fpmin32 (v2si, v2si);
+
+v8qi __builtin_vis_fpminu8 (v8qi, v8qi);
+v4hi __builtin_vis_fpminu16 (v4hi, v4hi);
+v2si __builtin_vis_fpminu32 (v2si, v2si);
 @end smallexample
 
 @node SPU Built-in Functions

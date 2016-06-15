@@ -327,8 +327,8 @@
 #define vec_sqrt __builtin_vec_sqrt
 #define vec_vsx_ld __builtin_vec_vsx_ld
 #define vec_vsx_st __builtin_vec_vsx_st
-#define vec_xl __builtin_vec_vsx_ld
-#define vec_xst __builtin_vec_vsx_st
+#define vec_xl __builtin_vec_xl
+#define vec_xst __builtin_vec_xst
 
 /* Note, xxsldi and xxpermdi were added as __builtin_vsx_<xxx> functions
    instead of __builtin_vec_<xxx>  */
@@ -382,6 +382,23 @@
 #define vec_vsubuqm __builtin_vec_vsubuqm
 #define vec_vupkhsw __builtin_vec_vupkhsw
 #define vec_vupklsw __builtin_vec_vupklsw
+#endif
+
+#ifdef _ARCH_PWR9
+/* Vector additions added in ISA 3.0.  */
+#define vec_vctz __builtin_vec_vctz
+#define vec_cntlz __builtin_vec_vctz
+#define vec_vctzb __builtin_vec_vctzb
+#define vec_vctzd __builtin_vec_vctzd
+#define vec_vctzh __builtin_vec_vctzh
+#define vec_vctzw __builtin_vec_vctzw
+#define vec_vprtyb __builtin_vec_vprtyb
+#define vec_vprtybd __builtin_vec_vprtybd
+#define vec_vprtybw __builtin_vec_vprtybw
+
+#ifdef _ARCH_PPC64
+#define vec_vprtybq __builtin_vec_vprtybq
+#endif
 #endif
 
 /* Predicates.

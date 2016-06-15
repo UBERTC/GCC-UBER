@@ -1,3 +1,1064 @@
+2016-06-14  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-06-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71494
+	* tree-nested.c (convert_nonlocal_reference_stmt): For GIMPLE_GOTO
+	without LABEL_DECL, set *handled_ops_p to false instead of true.
+
+	2016-06-08  Jakub Jelinek  <jakub@redhat.com>
+		    Richard Biener  <rguenther@suse.de>
+
+	PR c++/71448
+	* fold-const.c (fold_comparison): Handle CONSTANT_CLASS_P (base0)
+	the same as DECL_P (base0) for indirect_base0.  Use equality_code
+	in one further place.
+
+	2016-06-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/71405
+	* tree-ssa.c (execute_update_addresses_taken): For clobber with
+	incompatible type, build a new clobber with the right type instead
+	of building a VIEW_CONVERT_EXPR around it.
+
+2016-06-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* tree-ssa-sccvn.c (vn_reference_lookup_3): Use a uniform test and
+	update shared_lookup_references only once after changing operands.
+
+2016-06-13  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71505
+	* tree-vect-data-refs.c (vect_analyze_data_ref_accesses): Make
+	assert match comment.
+
+2016-06-13  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-06-13  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR target/71379
+	* config/s390/s390.c (s390_expand_builtin): Increase MAX_ARGS by
+	one.
+
+2016-06-10  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR middle-end/71373
+	Backport from trunk r237291:
+	* tree-nested.c (convert_nonlocal_omp_clauses)
+	(convert_local_omp_clauses): Handle OMP_CLAUSE_ASYNC,
+	OMP_CLAUSE_WAIT, OMP_CLAUSE_INDEPENDENT, OMP_CLAUSE_AUTO,
+	OMP_CLAUSE__CACHE_, OMP_CLAUSE_TILE.
+
+	Backport from trunk r237291:
+	* gimplify.c (gimplify_adjust_omp_clauses): Discard
+	OMP_CLAUSE_TILE.
+	* omp-low.c (scan_sharing_clauses): Don't expect OMP_CLAUSE_TILE.
+
+	Backport from trunk r237290:
+	* omp-low.c (scan_sharing_clauses): Don't expect
+	OMP_CLAUSE__CACHE_.
+
+	Backport trunk r235964:
+	2016-05-06  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* gimple.c (gimple_call_same_target_p): Unique functions are eq.
+	* tree-ssa-tail-merge.c (same_succ::equal): Check pointer eq
+	equality first.
+
+2016-06-09  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2016-05-31  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/vsx.md (vsx_splat_<mode>, V2DI/V2DF): Simplify
+	alternatives, eliminating preferred register class.  Add support
+	for the MTVSRDD instruction in ISA 3.0.
+	(vsx_splat_v4si_internal): Use splat_input_operand instead of
+	reg_or_indexed_operand.
+	(vsx_splat_v4sf_internal): Likewise.
+
+	Back port from trunk
+	2016-05-31  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/71186
+	* config/rs6000/vsx.md (xxspltib_<mode>_nosplit): Add alternatives
+	for loading up all 0's or all 1's.
+
+	Back port from trunk
+	2016-05-18  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/70915
+	* config/rs6000/constraints.md (wE constraint): New constraint
+	for a vector constant that can be loaded with XXSPLTIB.
+	(wM constraint): New constraint for a vector constant of a 1's.
+	(wS constraint): New constraint for a vector constant that can be
+	loaded with XXSPLTIB and a vector sign extend instruction.
+	* config/rs6000/predicates.md (xxspltib_constant_split): New
+	predicates for wE/wS constraints.
+	(xxspltib_constant_nosplit): Likewise.
+	(easy_vector_constant): Add support for constants that can be
+	loaded via XXSPLTIB.
+	(splat_input_operand): Add support for ISA 3.0 word splat operations.
+	* config/rs6000/rs6000.c (xxspltib_constant_p): New function to
+	return if a constant can be loaded with the ISA 3.0 XXSPLTIB
+	instruction and possibly with a sign extension.
+	(output_vec_const_move): Add support for XXSPLTIB. If we are
+	loading up 0/-1 into Altivec registers, prefer using VSPLTISW
+	instead of XXLXOR/XXLORC.
+	(rs6000_expand_vector_init): Add support for ISA 3.0 word splat
+	operations.
+	(rs6000_legitimize_reload_address): Likewise.
+	(rs6000_output_move_128bit): Use output_vec_const_move to emit
+	constants.
+	* config/rs6000/vsx.md (VSX_M): Add TImode (if -mvsx-timode) and
+	combine VSX_M and VSX_M2 into one iterator.
+	(VSX_M2): Likewise.
+	(VSINT_84): New iterators for loading constants with XXSPLTIB.
+	(VSINT_842): Likewise.
+	(UNSPEC_VSX_SIGN_EXTEND): New UNSPEC.
+	(xxspltib_v16qi): New insns to load up constants with the ISA 3.0
+	XXSPLTIB instruction.
+	(xxspltib_<mode>_nosplit): Likewise.
+	(xxspltib_<mode>_split): New insn to load up constants with
+	XXSPLTIB and a sign extend instruction.
+	(vsx_mov<mode>): Replace single move that handled all vector types
+	with separate 32-bit and 64-bit moves.  Combine the movti_<bit>
+	moves (when -mvsx-timode is in effect) into the main vector
+	moves.  Eliminate separate moves for <VSr> <VSa>, where the
+	preferred register class (<VSr>) is listed first, and the
+	secondary register class (<VSa>) is listed second with a '?' to
+	discourage use.  Prefer loading 0/-1 in any VSX register for ISA
+	3.0, and Altivec registers for ISA 2.06/2.07 (PR target/70915) so
+	that if the register was involved in a slow operation, the
+	clear/set operation does not wait for the slow operation to
+	finish.  Adjust the length attributes for 32-bit mode.  Use
+	rs6000_output_move_128bit and drop the use of the string
+	instructions for 32-bit movti when -mvsx-timode is in effect.  Use
+	spacing so that the alternatives and attributes don't generate
+	long lines, and put things in columns, so that it is easier to
+	match up the operands and attributes with the insn alternatives.
+	(vsx_mov<mode>_64bit): Likewise.
+	(vsx_mov<mode>_32bit): Likewise.
+	(vsx_movti_64bit): Fold movti into normal vector moves.
+	(vsx_movti_32bit): Likewise.
+	(vsx_splat_<mode>, V4SI/V4SF modes): Add support for ISA 3.0 word
+	splat instructions.
+	(vsx_splat_v4si_internal): Likewise.
+	(vsx_splat_v4sf_internal): Likewise.
+	(vector fusion peepholes): Use VSX_M instead of VSX_M2.
+	(vsx_sign_extend_qi_<mode>): New ISA 3.0 instructions to sign
+	extend vector elements.
+	(vsx_sign_extend_hi_<mode>): Likewise.
+	(vsx_sign_extend_si_v2di): Likewise.
+	* config/rs6000/rs6000-protos.h (xxspltib_constant_p): Add
+	declaration.
+	* doc/md.texi (PowerPC constraints): Document the wE, wM, and wS
+	constraints.  Add trailing period to wL documentation.
+
+2016-06-08  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	Backport from mainline
+	2016-06-08  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* config/sparc/driver-sparc.c (cpu_names): Fix the entry for the
+	SPARC-M7 and add an entry for SPARC-S7 cpus (Sonoma).
+
+2016-06-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	Backport from mainline
+	2016-06-06  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* config/sparc/sparc.md (cpu): Add niagara7 cpu type.
+	Include the M7 SPARC DFA scheduler.
+	New attribute v3pipe.
+	Annotate insns with v3pipe where appropriate.
+	Define cpu_feature vis4.
+	Add lzd instruction type and set it on clzdi_sp64 and clzsi_sp64.
+	Add (V8QI "8") to vbits.
+	Add insns {add,sub}v8qi3
+	Add insns ss{add,sub}v8qi3
+	Add insns us{add,sub}{v8qi,v4hi}3
+	Add insns {min,max}{v8qi,v4hi,v2si}3
+	Add insns {minu,maxu}{v8qi,v4hi,v2si}3
+	Add insns fpcmp{le,gt,ule,ug,ule,ugt}{8,16,32}_vis.
+	* config/sparc/niagara4.md: Add a comment explaining the
+	discrepancy between the documented latenty numbers and the
+	implemented ones.
+	* config/sparc/niagara7.md: New file.
+	* configure.ac (HAVE_AS_SPARC5_VIS4): Define if the assembler
+	supports SPARC5 and VIS 4.0 instructions.
+	* configure: Regenerate.
+	* config.in: Likewise.
+	* config.gcc: niagara7 is a supported cpu in sparc*-*-* targets.
+	* config/sparc/sol2.h (ASM_CPU32_DEFAUILT_SPEC): Set for
+	TARGET_CPU_niagara7.
+	(ASM_CPU64_DEFAULT_SPEC): Likewise.
+	(CPP_CPU_SPEC): Handle niagara7.
+	(ASM_CPU_SPEC): Likewise.
+	* config/sparc/sparc-opts.h (processor_type): Add
+	PROCESSOR_NIAGARA7.
+	(mvis4): New option.
+	* config/sparc/sparc.h (TARGET_CPU_niagara7): Define.
+	(AS_NIAGARA7_FLAG): Define.
+	(ASM_CPU64_DEFAULT_SPEC): Set for niagara7.
+	(CPP_CPU64_DEFAULT_SPEC): Likewise.
+	(CPP_CPU_SPEC): Handle niagara7.
+	(ASM_CPU_SPEC): Likewise.
+	* config/sparc/sparc.c (niagara7_costs): Define.
+	(sparc_option_override): Handle niagara7 and adjust cache-related
+	parameters with better values for niagara cpus.  Also support VIS4.
+	(sparc32_initialize_trampoline): Likewise.
+	(sparc_use_sched_lookahead): Likewise.
+	(sparc_issue_rate): Likewise.
+	(sparc_register_move_cost): Likewise.
+	(dump_target_flag_bits): Support VIS4.
+	(sparc_vis_init_builtins): Likewise.
+	(sparc_builtins): Likewise.
+	* config/sparc/sparc-c.c (sparc_target_macros): Define __VIS__ for
+	VIS4 4.0.
+	* config/sparc/driver-sparc.c (cpu_names): Add SPARC-M7 and
+	UltraSparc M7.
+	* config/sparc/sparc.opt (sparc_processor_type): New value
+	niagara7.
+	* config/sparc/visintrin.h (__attribute__): Prototypes for the
+	VIS4 builtins.
+	* doc/invoke.texi (SPARC Options): Document -mcpu=niagara7 and
+	-mvis4.
+	* doc/extend.texi (SPARC VIS Built-in Functions): Document the
+	VIS4 builtins.
+
+	2016-05-30  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* config.gcc (sparc*-*-*): Support cpu_32, cpu_64, tune_32 and
+	tune_64.
+	* doc/install.texi (--with-cpu-32, --with-cpu-64): Document
+	support on SPARC.
+	* config/sparc/linux64.h (OPTION_DEFAULT_SPECS): Add entries for
+	cpu_32, cpu_64, tune_32 and tune_64.
+	* config/sparc/sol2.h (OPTION_DEFAULT_SPECS): Likewise.
+
+2016-06-08  Ilya Verbin  <ilya.verbin@intel.com>
+
+	Backport from mainline
+	2016-05-25  Ilya Verbin  <ilya.verbin@intel.com>
+
+	* config/i386/i386-builtin-types.def: Add V16SI_FTYPE_V16SF,
+	V8DF_FTYPE_V8DF_ROUND, V16SF_FTYPE_V16SF_ROUND, V16SI_FTYPE_V16SF_ROUND.
+	* config/i386/i386.c (enum ix86_builtins): Add
+	IX86_BUILTIN_CVTPS2DQ512_MASK, IX86_BUILTIN_FLOORPS512,
+	IX86_BUILTIN_FLOORPD512, IX86_BUILTIN_CEILPS512, IX86_BUILTIN_CEILPD512,
+	IX86_BUILTIN_TRUNCPS512, IX86_BUILTIN_TRUNCPD512,
+	IX86_BUILTIN_CVTPS2DQ512, IX86_BUILTIN_VEC_PACK_SFIX512,
+	IX86_BUILTIN_FLOORPS_SFIX512, IX86_BUILTIN_CEILPS_SFIX512,
+	IX86_BUILTIN_ROUNDPS_AZ_SFIX512.
+	(builtin_description bdesc_args): Add __builtin_ia32_floorps512,
+	__builtin_ia32_ceilps512, __builtin_ia32_truncps512,
+	__builtin_ia32_floorpd512, __builtin_ia32_ceilpd512,
+	__builtin_ia32_truncpd512, __builtin_ia32_cvtps2dq512,
+	__builtin_ia32_vec_pack_sfix512, __builtin_ia32_roundps_az_sfix512,
+	__builtin_ia32_floorps_sfix512, __builtin_ia32_ceilps_sfix512.
+	Change IX86_BUILTIN_CVTPS2DQ512 to IX86_BUILTIN_CVTPS2DQ512_MASK for
+	__builtin_ia32_cvtps2dq512_mask.
+	(ix86_expand_args_builtin): Handle V8DF_FTYPE_V8DF_ROUND,
+	V16SF_FTYPE_V16SF_ROUND, V16SI_FTYPE_V16SF_ROUND, V16SI_FTYPE_V16SF.
+	(ix86_builtin_vectorized_function): Handle builtins mentioned above.
+	* config/i386/sse.md
+	(<mask_codefor>avx512f_fix_notruncv16sfv16si<mask_name><round_name>):
+	Rename to ...
+	(avx512f_fix_notruncv16sfv16si<mask_name><round_name>): ... this.
+	(<mask_codefor>avx512f_cvtpd2dq512<mask_name><round_name>): Rename
+	to ...
+	(avx512f_cvtpd2dq512<mask_name><round_name>): ... this.
+	(avx512f_vec_pack_sfix_v8df): New define_expand.
+	(avx512f_roundpd512): Rename to ...
+	(avx512f_round<castmode>512): ... this.  Change iterator.
+	(avx512f_roundps512_sfix): New define_expand.
+	(round<mode>2_sfix): Change iterator.
+
+2016-06-07  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2016-06-07  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* doc/invoke.texi (RS/6000 and PowerPC Options): Document -mhtm and
+	-mno-htm.
+
+2016-06-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/71389
+	* config/i386/i386.c (ix86_avx256_split_vector_move_misalign):
+	Copy op1 RTX to avoid invalid sharing.
+	(ix86_expand_vector_move_misalign): Ditto.
+
+2016-06-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/71259
+	* tree-vect-slp.c (vect_get_constant_vectors): For
+	VECTOR_BOOLEAN_TYPE_P, return all ones constant instead of
+	one for constant op, and use COND_EXPR for non-constant.
+
+2016-06-06  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from trunk
+	2016-06-02  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70830
+	* config/arm/arm.c (arm_output_multireg_pop): Guard "pop" on update.
+
+2016-06-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-06-01  Uros Bizjak  <ubizjak@gmail.com>
+		    Jocelyn Mayer  <l_indien@magic.fr>
+
+	PR target/67310
+	* config/i386/driver-i386.c (host_detect_local_cpu): Correctly
+	detect processor family for signature_CENTAUR_ebx.
+	<case PROCESSOR_I486>: Pass c3, winchip2 or winchip-c6 for
+	signature_CENTAUR_ebx.
+	<case PROCESSOR _PENTIUMPRO>: Pass c3-2 for signature_CENTAUR_ebx.
+	<default>: Pass x86-64 for has_longmode.
+
+2016-06-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71387
+	* cgraph.c (cgraph_edge::redirect_call_stmt_to_callee): If redirecting
+	to noreturn e->callee->decl that has void return type and void
+	arguments, adjust gimple_call_fntype and remove lhs even if it had
+	previously addressable type.
+
+2016-06-02  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2016-05-26  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.c (rs6000_emit_p9_fp_minmax): New function
+	for ISA 3.0 min/max support.
+	(rs6000_emit_p9_fp_cmove): New function for ISA 3.0 floating point
+	conditional move support.
+	(rs6000_emit_cmove): Call rs6000_emit_p9_fp_minmax and
+	rs6000_emit_p9_fp_cmove if the ISA 3.0 instructions are
+	available.
+	* config/rs6000/rs6000.md (SFDF2): New iterator to allow doing
+	conditional moves where the comparison type is different from move
+	type.
+	(fp_minmax): New code iterator for smin/smax.
+	(minmax): New code attributes for min/max.
+	(SMINMAX): Likewise.
+	(smax<mode>3): Combine min, max insns into one insn using the
+	fp_minmax code iterator.  Add support for ISA 3.0 min/max
+	instructions that don't need -ffast-math.
+	(s<minmax><mode>3): Likewise.
+	(smax<mode>3_vsx): Likewise.
+	(smin<mode>3): Likewise.
+	(s<minmax><mode>3_vsx): Likewise.
+	(smin<mode>3_vsx): Likewise.
+	(pre-VSX min/max splitters): Likewise.
+	(s<minmax><mode>3_fpr): Likewise.
+	(movsfcc): Rewrite floating point conditional moves to combine
+	SFmode/DFmode into a single insn.
+	(mov<mode>cc): Likewise.
+	(movdfcc): Likewise.
+	(fselsfsf4): Combine FSEL cases into a single insn, using SFDF and
+	SFDF2 iterators to handle all combinations.
+	(fseldfsf4): Likewise.
+	(fsel<SFDF:mode><SFDF2:mode>4): Likewise.
+	(fseldfdf4): Likewise.
+	(fselsfdf4): Likewise.
+	(mov<SFDF:mode><SFDF2:mode>cc_p9): Add support for the ISA 3.0
+	comparison instructions that set a 0/-1 mask, and use it for
+	floating point conditional move via XXSEL.
+	(fpmask<mode>): Likewise.
+	(xxsel<mode>): Likewise.
+	* config/rs6000/predicates.md (min_max_operator): Delete, no
+	longer used.
+	(fpmask_comparison_operaton): New insn for ISA 3.0 comparison
+	instructions that generate a 0/-1 mask for use with XXSEL.
+	* config/rs6000/rs6000.h (TARGET_MINMAX_SF): New helper macros to
+	say whether floating point min/max is available, either through
+	FSEL, ISA 2.06 min/max, and ISA 3.0 min/max instrucitons.
+	(TARGET_MINMAX_DF): Likewise.
+
+	Back port from trunk
+	2016-05-18  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/predicate.md (all_ones_constant): New predicate
+	for vector constant with all 1's set.
+
+2016-06-02  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	Back port from trunk
+	2016-05-19  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	* config/rs6000/altivec.md (UNSPEC_DARN): New unspec constant.
+	(UNSPEC_DARN_32): New unspec constant.
+	(UNSPEC_DARN_RAW): New unspec constant.
+	(darn_32): New instruction.
+	(darn_raw): New instruction.
+	(darn): New instruction.
+	* config/rs6000/rs6000-builtin.def (RS6000_BUILTIN_0): Add
+	support and documentation for this macro.
+	(BU_P9_MISC_1): New macro definition.
+	(BU_P9_64BIT_MISC_0): New macro definition.
+	(BU_P9_MISC_0): New macro definition.
+	(darn_32): New builtin definition.
+	(darn_raw): New builtin definition.
+	(darn): New builtin definition.
+	* config/rs6000/rs6000.c: Add #define RS6000_BUILTIN_0 and #undef
+	RS6000_BUILTIN_0 directives to surround each occurrence of
+	#include "rs6000-builtin.def".
+	(rs6000_builtin_mask_calculate): Add in the RS6000_BTM_MODULO and
+	RS6000_BTM_64BIT flags to the returned mask, depending on
+	configuration.
+	(def_builtin): Correct an error in the assignments made to the
+	debugging variable attr_string.
+	(rs6000_expand_builtin): Add support for no-operand built-in
+	functions.
+	(builtin_function_type): Remove fatal_error assertion that is no
+	longer valid.
+	(rs6000_common_init_builtins): Add support for no-operand built-in
+	functions.
+	* config/rs6000/rs6000.h (RS6000_BTM_MODULO): New macro
+	definition.
+	(RS6000_BTM_PURE): Enhance comment to clarify intent of this flag
+	definition.
+	(RS6000_BTM_64BIT): New macro definition.
+	* doc/extend.texi: Document __builtin_darn (void),
+	__builtin_darn_raw (void), and __builtin_darn_32 (void) built-in
+	functions.
+
+2016-06-01  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2016-05-23  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/71201
+	* config/rs6000/altivec.md (altivec_vperm_<mode>_internal): Drop
+	ISA 3.0 xxperm fusion alternative.
+	(altivec_vperm_v8hiv16qi): Likewise.
+	(altivec_vperm_<mode>_uns_internal): Likewise.
+	(vperm_v8hiv4si): Likewise.
+	(vperm_v16qiv8hi): Likewise.
+
+	Back port from trunk
+	2016-05-23  Michael Meissner  <meissner@linux.vnet.ibm.com>
+		    Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	* config/rs6000/rs6000.c (rs6000_expand_vector_set): Generate
+	vpermr/xxpermr on ISA 3.0.
+	(altivec_expand_vec_perm_le): Likewise.
+	* config/rs6000/altivec.md (UNSPEC_VPERMR): New unspec.
+	(altivec_vpermr_<mode>_internal): Add VPERMR/XXPERMR support for
+	ISA 3.0.
+
+	Back port from trunk
+	2016-05-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/altivec.md (VParity): New mode iterator for vector
+	parity built-in functions.
+	(p9v_ctz<mode>2): Add support for ISA 3.0 vector count trailing
+	zeros.
+	(p9v_parity<mode>2): Likewise.
+	* config/rs6000/vector.md (VEC_IP): New mode iterator for vector
+	parity.
+	(ctz<mode>2): ISA 3.0 expander for vector count trailing zeros.
+	(parity<mode>2): ISA 3.0 expander for vector parity.
+	* config/rs6000/rs6000-builtin.def (BU_P9_MISC_1): New macros for
+	power9 built-ins.
+	(BU_P9_64BIT_MISC_0): Likewise.
+	(BU_P9_MISC_0): Likewise.
+	(BU_P9V_AV_1): Likewise.
+	(BU_P9V_AV_2): Likewise.
+	(BU_P9V_AV_3): Likewise.
+	(BU_P9V_AV_P): Likewise.
+	(BU_P9V_VSX_1): Likewise.
+	(BU_P9V_OVERLOAD_1): Likewise.
+	(BU_P9V_OVERLOAD_2): Likewise.
+	(BU_P9V_OVERLOAD_3): Likewise.
+	(VCTZB): Add vector count trailing zeros support.
+	(VCTZH): Likewise.
+	(VCTZW): Likewise.
+	(VCTZD): Likewise.
+	(VPRTYBD): Add vector parity support.
+	(VPRTYBQ): Likewise.
+	(VPRTYBW): Likewise.
+	(VCTZ): Add overloaded vector count trailing zeros support.
+	(VPRTYB): Add overloaded vector parity support.
+	* config/rs6000/rs6000-c.c (altivec_overloaded_builtins): Add
+	overloaded vector count trailing zeros and parity instructions.
+	* config/rs6000/rs6000.md (wd mode attribute): Add V1TI and TI for
+	vector parity support.
+	* config/rs6000/altivec.h (vec_vctz): Add ISA 3.0 vector count
+	trailing zeros support.
+	(vec_cntlz): Likewise.
+	(vec_vctzb): Likewise.
+	(vec_vctzd): Likewise.
+	(vec_vctzh): Likewise.
+	(vec_vctzw): Likewise.
+	(vec_vprtyb): Add ISA 3.0 vector parity support.
+	(vec_vprtybd): Likewise.
+	(vec_vprtybw): Likewise.
+	(vec_vprtybq): Likewise.
+	* doc/extend.texi (PowerPC AltiVec Built-in Functions): Document
+	the ISA 3.0 vector count trailing zeros and vector parity built-in
+	functions.
+
+	Back port from trunk
+	2016-05-24  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/altivec.md (VNEG iterator): New iterator for
+	VNEGW/VNEGD instructions.
+	(p9_neg<mode>2): New insns for ISA 3.0 VNEGW/VNEGD.
+	(neg<mode>2): Add expander for V2DImode added in ISA 2.07, and
+	support for ISA 3.0 VNEGW/VNEGD instructions.
+
+	Back port from trunk
+	2016-05-11  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/predicates.md (quad_memory_operand): Move most of
+	the code into quad_address_p and call it to share code with
+	vsx_quad_dform_memory_operand.
+	(vsx_quad_dform_memory_operand): New predicate for ISA 3.0 vector
+	d-form support.
+	* config/rs6000/rs6000.opt (-mlra): Switch to being an option mask
+	bit instead of being a separate word.  Split -mpower9-dform into
+	two switches, -mpower9-dform-scalar and -mpower9-dform-vector.
+	* config/rs6000/rs6000.c (RELOAD_REG_QUAD_OFFSET): New addr_mask
+	for the register class supporting 128-bit quad word memory offsets.
+	(mode_supports_vsx_dform_quad): Helper function to return if the
+	register class uses quad word memory offsets.
+	(rs6000_debug_addr_mask): Add support for quad word memory offsets.
+	(rs6000_debug_reg_global): Always print if we are using LRA or not.
+	(rs6000_setup_reg_addr_masks): If ISA 3.0 vector d-form
+	instructions are enabled, set up the appropriate addr_masks for
+	128-bit types.
+	(rs6000_init_hard_regno_mode_ok): wb constraint is now based on
+	-mpower9-dform-scalar, instead of -mpower9-dform.
+	(rs6000_option_override_internal): Split -mpower9-dform into two
+	switches, -mpower9-dform-scalar and -mpower9-dform-vector.  The
+	-mpower9-dform switch sets or clears both.  If we are not using
+	the LRA register allocator, do not enable -mpower9-dform-vector by
+	default.  If we are using LRA, enable -mpower9-dform-vector and
+	-mvsx-timode if it is appropriate.  Issue a warning if either
+	-mpower9-dform-vector or -mvsx-timode are explicitly used without
+	enabling LRA.
+	(quad_address_offset_p): New helper function to return if the
+	offset is legal for quad word memory instructions.
+	(quad_address_p): New function to determin if GPR or vector
+	register quad word memory addresses are legal.
+	(mem_operand_gpr): Validate quad word address offsets.
+	(reg_offset_addressing_ok_p): Add support for ISA 3.0 vector
+	d-form (register + offset) instructions.
+	(offsettable_ok_by_alignment): Likewise.
+	(rs6000_legitimate_offset_address_p): Likewise.
+	(legitimate_lo_sum_address_p): Likewise.
+	(rs6000_legitimize_address): Likewise.
+	(rs6000_legitimize_reload_address): Add more debug statements for
+	-mdebug=addr.
+	(rs6000_legitimate_address_p): Add support for ISA 3.0 vector
+	d-form instructions.
+	(rs6000_secondary_reload_memory): Add support for ISA 3.0 vector
+	d-form instructions.  Distinguish different cases in debug
+	output.	(rs6000_secondary_reload_inner): Add support for ISA 3.0 vector
+	d-form instructions.
+	(rs6000_preferred_reload_class): Likewise.
+	(rs6000_output_move_128bit): Add support for ISA 3.0 d-form
+	instructions.  If ISA 3.0 is available, generate lxvx/stxvx instead
+	of the ISA 2.06 indexed memory instructions.
+	(rs6000_emit_prologue): If we have ISA 3.0 d-form instructions,
+	use them to save/restore the saved vector registers instead of
+	using Altivec instructions.
+	(rs6000_emit_epilogue): Likewise.
+	(rs6000_lra_p): Use TARGET_LRA instead of the old option word.
+	(rs6000_opt_masks): Split -mpower9-dform into
+	-mpower9-dform-scalar and -mpower9-dform-vector.
+	(rs6000_print_options_internal): Print -mno-<switch> if <switch>
+	was not selected.
+	* config/rs6000/vsx.md (p9_vecload_<mode>): Delete hack to emit
+	ISA 3.0 vector indexed memory instructions, and fold the code into
+	the normal mov<mode> patterns.
+	(p9_vecstore_<mode>): Likewise.
+	(vsx_mov<mode>): Add support for ISA 3.0 vector d-form
+	instructions.
+	(vsx_movti_64bit): Likewise.
+	(vsx_movti_32bit): Likewise.
+	* config/rs6000/constraints.md (wO constraint): New constraint for
+	ISA 3.0 vector d-form support.
+	* config/rs6000/rs6000-cpus.def (ISA_3_0_MASKS_SERVER): Use
+	-mpower9-dform-scalar instead of -mpower9-dform.  Add note not to
+	include -mpower9-dform-vector until we switch over to LRA.
+	(POWERPC_MASKS): Add -mlra. Split -mpower9-dform into two.
+	switches, -mpower9-dform-scalar and -mpower9-dform-vector.
+	* config/rs6000/rs6000-protos.h (quad_address_p): Add declaration.
+	* doc/invoke.texi (RS/6000 and PowerPC Options): Add documentation
+	for -mpower9-dform and -mlra.
+	* doc/md.texi (wO constraint): Document wO constraint.
+
+2016-06-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* tree-vect-loop.c (vect_determine_vectorization_factor): Also compute
+	the factor for live Phi nodes.
+
+2016-06-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71371
+	* gimplify.c (gimplify_omp_for): Temporarily clear gimplify_omp_ctxp
+	around creation of the temporary.
+
+2016-06-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* tree-vect-loop.c (vect_determine_vectorization_factor): Also take
+	into account live statements for mask producers.
+
+2016-05-31  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-05-11  Richard Biener  <rguenther@suse.de>
+
+	PR debug/71057
+	* dwarf2out.c (retry_incomplete_types): Set early_dwarf.
+	(dwarf2out_finish): Move retry_incomplete_types call ...
+	(dwarf2out_early_finish): ... here.
+
+2016-05-31  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/71056
+	* config/arm/arm-builtins.c (arm_builtin_vectorized_function): Return
+	NULL_TREE early if NEON is not available.  Remove now redundant check
+	in ARM_CHECK_BUILTIN_MODE.
+
+2016-05-31  Tom de Vries  <tom@codesourcery.com>
+
+	backport:
+	2016-05-31  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69068
+	* graphite-isl-ast-to-gimple.c (copy_bb_and_scalar_dependences): Handle
+	phis with more than two args.
+
+2016-05-30  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2016-05-30  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config.gcc: Move hard float support for arm*hf*-*-freebsd* into
+	armv6*-*-freebsd* for FreeBSD 11. Eliminate the arm*hf*-*-freebsd*
+	target.
+
+2016-05-30  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-04-29  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/altivec.h: Change definitions of vec_xl and
+	vec_xst.
+	* config/rs6000/rs6000-builtin.def (LD_ELEMREV_V2DF): New.
+	(LD_ELEMREV_V2DI): New.
+	(LD_ELEMREV_V4SF): New.
+	(LD_ELEMREV_V4SI): New.
+	(LD_ELEMREV_V8HI): New.
+	(LD_ELEMREV_V16QI): New.
+	(ST_ELEMREV_V2DF): New.
+	(ST_ELEMREV_V2DI): New.
+	(ST_ELEMREV_V4SF): New.
+	(ST_ELEMREV_V4SI): New.
+	(ST_ELEMREV_V8HI): New.
+	(ST_ELEMREV_V16QI): New.
+	(XL): New.
+	(XST): New.
+	* config/rs6000/rs6000-c.c (altivec_overloaded_builtins): Add
+	descriptions for VSX_BUILTIN_VEC_XL and VSX_BUILTIN_VEC_XST.
+	* config/rs6000/rs6000.c (rs6000_builtin_mask_calculate): Map from
+	TARGET_P9_VECTOR to RS6000_BTM_P9_VECTOR.
+	(altivec_expand_builtin): Add handling for
+	VSX_BUILTIN_ST_ELEMREV_<MODE> and VSX_BUILTIN_LD_ELEMREV_<MODE>.
+	(rs6000_invalid_builtin): Add error-checking for
+	RS6000_BTM_P9_VECTOR.
+	(altivec_init_builtins): Define builtins used to implement vec_xl
+	and vec_xst.
+	(rs6000_builtin_mask_names): Define power9-vector.
+	* config/rs6000/rs6000.h (MASK_P9_VECTOR): Define.
+	(RS6000_BTM_P9_VECTOR): Define.
+	(RS6000_BTM_COMMON): Include RS6000_BTM_P9_VECTOR.
+	* config/rs6000/vsx.md (vsx_ld_elemrev_v2di): New define_insn.
+	(vsx_ld_elemrev_v2df): Likewise.
+	(vsx_ld_elemrev_v4sf): Likewise.
+	(vsx_ld_elemrev_v4si): Likewise.
+	(vsx_ld_elemrev_v8hi): Likewise.
+	(vsx_ld_elemrev_v16qi): Likewise.
+	(vsx_st_elemrev_v2df): Likewise.
+	(vsx_st_elemrev_v2di): Likewise.
+	(vsx_st_elemrev_v4sf): Likewise.
+	(vsx_st_elemrev_v4si): Likewise.
+	(vsx_st_elemrev_v8hi): Likewise.
+	(vsx_st_elemrev_v16qi): Likewise.
+	* doc/extend.texi: Add prototypes for vec_xl and vec_xst.  Correct
+	grammar.
+
+2016-05-30  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-05-11  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/71002
+	* alias.c (reference_alias_ptr_type): Preserve alias-set zero
+	if the langhook insists on it.
+	* fold-const.c (make_bit_field_ref): Add arg for the original
+	reference and preserve its alias-set.
+	(decode_field_reference): Take exp by reference and adjust it
+	to the original memory reference.
+	(optimize_bit_field_compare): Adjust callers.
+	(fold_truth_andor_1): Likewise.
+
+	2016-05-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/71071
+	* fold-const.c (fold_checksum_tree): Allow modification
+	of TYPE_ALIAS_SET during folding.
+
+2016-05-30  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/visium/visium.c (visium_split_double_add): Minor tweaks.
+	(visium_expand_copysign): Use gen_int_mode directly.
+	(visium_compute_frame_size): Minor tweaks.
+
+2016-05-30  Tom de Vries  <tom@codesourcery.com>
+
+	backport:
+	2016-05-30  Tom de Vries  <tom@codesourcery.com>
+
+	PR tree-optimization/69067
+	* graphite-isl-ast-to-gimple.c (get_def_bb_for_const): Remove assert.
+
+2016-05-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/visium/visium-protos.h (split_double_move): Rename into...
+	(visium_split_double_move): ...this.
+	(visium_split_double_add): Declare.
+	* config/visium/visium.c (split_double_move): Rename into...
+	(visium_split_double_move): ...this.
+	(visium_split_double_add): New function.
+	(visium_expand_copysign): Renumber operands for consistency.
+	* config/visium/visium.md (DImode move splitter): Adjust to renaming.
+	(DFmode move splitter): Likewise.
+	(*addi3_insn): Split by means of visium_split_double_add.
+	(*adddi3_insn_flags): Delete.
+	(*plus_plus_sltu<subst_arith>): New insn.
+	(*subdi3_insn): Split by means of visium_split_double_add.
+	(subdi3_insn_flags): Delete.
+	(*minus_minus_sltu<subst_arith>): New insn.
+	(*negdi2_insn): Split by means of visium_split_double_add.
+	(*negdi2_insn_flags): Delete.
+
+2016-05-27  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r236810.
+	2016-05-27  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR middle-end/71279
+	* fold-const.c (fold_ternary_loc): Don't fold VEC_COND_EXPR
+	into comparison.
+
+2016-05-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* tree-ssa-phiopt.c (factor_out_conditional_conversion): Remove
+	redundant test and bail out if the type of the new operand is not
+	a GIMPLE register type after stripping a VIEW_CONVERT_EXPR.
+
+2016-05-24  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/71147
+	* tree.h (complete_or_array_type_p): New inline function.
+
+2016-05-24  Jakub Jelinek  <jakub@redhat.com>
+
+	* config/i386/i386.h (TARGET_AVOID_4BYTE_PREFIXES): Define.
+	* config/i386/constraints.md (Yr): Test TARGET_AVOID_4BYTE_PREFIXES
+	rather than X86_TUNE_AVOID_4BYTE_PREFIXES.  Use SSE_REGS instead
+	of ALL_SSE_REGS.  Return SSE_REGS also when TARGET_AVX.
+
+2016-05-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71257
+	* tree-vect-stmts.c (vectorizable_simd_clone_call): Handle
+	SIMD_CLONE_ARG_TYPE_LINEAR_REF_CONSTANT_STEP like
+	SIMD_CLONE_ARG_TYPE_LINEAR_CONSTANT_STEP.  Add
+	SIMD_CLONE_ARG_TYPE_LINEAR_VAL_CONSTANT_STEP and
+	SIMD_CLONE_ARG_TYPE_LINEAR_UVAL_CONSTANT_STEP cases explicitly.
+
+2016-05-23  Martin Jambor  <mjambor@suse.cz>
+
+	* hsa-gen.c (gen_hsa_insns_for_switch_stmt): Create an empty
+	default block if a PHI node in the original one would be resized.
+
+2016-05-23  Martin Jambor  <mjambor@suse.cz>
+
+	PR tree-optimization/70884
+	* tree-sra.c (initialize_constant_pool_replacements): Do not check
+	should_scalarize_away_bitmap and cannot_scalarize_away_bitmap bits.
+	(sort_and_splice_var_accesses): Do not consider multiple scalar reads
+	of constant pool data as a reason for scalarization.
+
+2016-05-20  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/arm/arm.c (arm_expand_prologue): Set the stack usage to 0
+	for naked functions.
+	(thumb1_expand_prologue): Likewise.
+
+2016-05-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71210
+	* gimple-fold.c (gimple_fold_call): Do not remove lhs of noreturn
+	calls if the LHS is variable length or has addressable type.
+	If targets[0]->decl is a noreturn call with void return type and
+	zero arguments, adjust fntype and remove lhs in that case.
+
+2016-05-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	* sched-deps.c (sched_analyze_2) <case TRAP_IF>: Also
+	force pending loads from memory.
+
+2016-05-19  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2016-05-19  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/71031
+	* tree-vrp.c (extract_range_from_binary_expr_1): Turn assert into a
+	condition and adjust the code a bit.
+
+2016-05-19  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/70646
+	* ipa-prop.c (determine_locally_known_aggregate_parts): Bail out early
+	if parameter PARAM_IPA_MAX_AGG_ITEMS is zero.
+
+2016-05-19  Martin Jambor  <mjambor@suse.cz>
+
+	PR ipa/70646
+	* ipa-inline.h (condition): New field size.
+	* ipa-inline-analysis.c (add_condition): New parameter SIZE, use it
+	for comaprison and store it into the new condition.
+	(evaluate_conditions_for_known_args): Use condition size to check
+	access sizes for all but CHANGED conditions.
+	(unmodified_parm_1): New parameter size_p, store access size into it.
+	(unmodified_parm): Likewise.
+	(unmodified_parm_or_parm_agg_item): Likewise.
+	(eliminated_by_inlining_prob): Pass NULL to unmodified_parm as size_p.
+	(set_cond_stmt_execution_predicate): Extract access sizes and store
+	them to conditions.
+	(set_switch_stmt_execution_predicate): Likewise.
+	(will_be_nonconstant_expr_predicate): Likewise.
+	(will_be_nonconstant_predicate): Likewise.
+	(inline_read_section): Stream condition size.
+	(inline_write_summary): Likewise.
+	* lto-streamer.h (LTO_minor_version): Bump.
+
+2016-05-18  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-05-18  Martin Liska  <mliska@suse.cz>
+
+	PR fortran/70856
+	* ipa-icf.c (sem_variable::merge): Set DECL_PT_UID for
+	merged variables.
+
+2016-05-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71100
+	* cgraph.c (cgraph_edge::redirect_call_stmt_to_callee): Don't drop
+	lhs if it has TREE_ADDRESSABLE type.
+
+2016-05-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/71145
+	* config/alpha/alpha.md (trap): Add (use (reg:DI 29)).
+	(*exception_receiver_1): Return "#" for TARGET_EXPLICIT_RELOCS.
+
+2016-05-17  Thomas Schwinge  <thomas@codesourcery.com>
+
+	Backport trunk r235748:
+	PR target/70860
+	* config/nvptx/nvptx.c (nvptx_libcall_value): Handle NULL cfun.
+	(nvptx_function_value): Assert non-NULL cfun.
+
+2016-05-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-05-17  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70809
+	* config/aarch64/aarch64-simd.md (aarch64_vmls<mode>): Delete.
+
+2016-05-16  Martin Jambor  <mjambor@suse.cz>
+
+	* hsa-gen.c (fillup_for_decl): Increase alignment to natural one.
+	(get_symbol_for_decl): Sorry if a global symbol in under-aligned.
+
+2016-05-16  Martin Jambor  <mjambor@suse.cz>
+
+	PR hsa/70857
+	* omp-low.c (grid_expand_target_grid_body): Copy RESULT_DECL of
+	the outlined kernel function.
+
+2016-05-16  James Norris  <jnorris@codesourcery.com>
+
+	Backport from mainline r236098.
+	2016-05-10  James Norris  <jnorris@codesourcery.com>
+
+	PR driver/68463
+	* config/rs6000/sysv4.h (CRTOFFLOADBEGIN): Define. Add crtoffloadbegin.o
+	if offloading is enabled and -fopenacc or -fopenmp is specified.
+	(CRTOFFLOADEND): Likewise.
+	(STARTFILE_LINUX_SPEC): Add CRTOFFLOADBEGIN.
+	(ENDFILE_LINUX_SPEC): Add CRTOFFLOADEND.
+
+2016-05-16  Alan Modra  <amodra@gmail.com>
+
+	Apply from mainline
+	2016-05-10  Alan Modra  <amodra@gmail.com>
+	PR target/70947
+	* config/rs6000/rs6000.c (rs6000_expand_split_stack_prologue): Stop
+	regrename modifying insns saving lr before __morestack call.
+	* config/rs6000/rs6000.md (split_stack_return): Similarly for
+	insns restoring lr after __morestack call.
+
+2016-05-13  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-04-27  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/70760
+	* tree-ssa-structalias.c (find_func_aliases_for_call): Use
+	aggregate_value_p to determine if a function result is
+	returned by reference.
+
+	2016-05-06  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70931
+	* dwarf2out.c (native_encode_initializer): Skip zero-sized fields.
+
+	2016-05-06  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/70941
+	* fold-const.c (split_tree): Always convert to the original type
+	before negating.
+
+2016-05-12  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-05-10  Martin Liska  <mliska@suse.cz>
+
+	* tree-inline.c (remap_dependence_clique): Do not remap
+	debugging statements.
+
+2016-05-12  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r236171.
+	2016-05-12  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR tree-optimization/71006
+	* tree-vect-loop.c (vect_determine_vectorization_factor): Don't
+	consider COND_EXPR as a mask producer.
+
+2016-05-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-05-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/70830
+	* config/arm/arm.c (arm_output_multireg_pop): Avoid POP instruction
+	when popping the PC and within an interrupt handler routine.
+	Add missing tab to output of "ldmfd".
+	(output_return_instruction): Output LDMFD with SP update rather
+	than POP when returning from interrupt handler.
+
+2016-05-11  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r236088.
+	2016-05-10  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR middle-end/70877
+	* tree-chkp.c (chkp_add_bounds_to_call_stmt): Handle
+	calls with type casted fndecl.
+
+2016-05-11  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r236086.
+	2016-05-10  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR tree-optimization/70876
+	* tree-chkp.c (chkp_find_bounds_1): Support WITH_SIZE_EXPR.
+	* gcc/calls.c (initialize_argument_information): Bind bounds
+	with corresponding args passed by reference.
+
+2016-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/70963
+	* config/rs6000/vsx.md (vsx_xvcvdpsxds_scale): Generate correct
+	code for a zero scale factor.
+	(vsx_xvcvdpuxds_scale): Likewise.
+
+2016-05-10  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-05-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/70916
+	* tree-vect-patterns.c (vect_recog_mask_conversion_pattern): Give up
+	if COND_EXPR rhs1 is neither SSA_NAME nor COMPARISON_CLASS_P.
+
+2016-05-10  Yuri Rumyantsev  <ysrumyan@gmail.com>
+
+	Backport from mainline r235962.
+	2016-05-06  Yuri Rumyantsev  <ysrumyan@gmail.com>
+
+	PR debug/70935
+	* tree-ssa-loop-unswitch.c (find_loop_guard): Reject guard edge with
+	loop latch destination.
+
+2016-05-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-05-10  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.md ("*vec_cmp<insn_cmp>df_cconly")
+	("*fixuns_truncdfdi2_z13")
+	("*fixuns_trunc<FP:mode><GPR:mode>2_z196")
+	("*fix_truncdfdi2_bfp_z13", "*floatunsdidf2_z13")
+	("*extendsfdf2_z13"): Replace TARGET_Z13 with TARGET_VX.
+
+2016-05-10  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2016-04-27  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/rtems.h (LIB_SPEC): Add -latomic.
+
+2016-05-10  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2016-04-27  Joel Sherrill  <joel@rtems.org>
+
+	* config/microblaze/rtems.h: Redefine LINK_SPEC to avoid
+	xilink.ld and flags not relevant to RTEMS.
+
+2016-05-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (absneg splitters with general regs): Use
+	general_reg_operand predicate.
+	(btsq peephole2): Use x86_64_immediate_operand to check if new
+	value is suitable for immediate operand.  Generate emitted insn
+	using RTL expressions.
+	(btcq peephole2): Ditto.
+	(btrq peephole2): Ditto.  Generate correct immediate operand
+	for AND masking.
+
 2016-05-07  Tom de Vries  <tom@codesourcery.com>
 
 	backport:
@@ -158,7 +1219,7 @@
 	constant boolean.
 
 2016-04-20  Andrew Pinski  <apinski@cavium.com>
-            Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+	    Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
 
 	PR target/64971
 	* config/aarch64/aarch64.md (sibcall): Force call

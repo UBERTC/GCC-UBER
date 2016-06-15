@@ -996,14 +996,15 @@ See RS/6000 and PowerPC Options.
 -mpointers-to-nested-functions -mno-pointers-to-nested-functions @gol
 -msave-toc-indirect -mno-save-toc-indirect @gol
 -mpower8-fusion -mno-mpower8-fusion -mpower8-vector -mno-power8-vector @gol
--mcrypto -mno-crypto -mdirect-move -mno-direct-move @gol
+-mcrypto -mno-crypto -mhtm -mno-htm -mdirect-move -mno-direct-move @gol
 -mquad-memory -mno-quad-memory @gol
 -mquad-memory-atomic -mno-quad-memory-atomic @gol
 -mcompat-align-parm -mno-compat-align-parm @gol
 -mupper-regs-df -mno-upper-regs-df -mupper-regs-sf -mno-upper-regs-sf @gol
 -mupper-regs -mno-upper-regs -mmodulo -mno-modulo @gol
 -mfloat128 -mno-float128 -mfloat128-hardware -mno-float128-hardware @gol
--mpower9-fusion -mno-mpower9-fusion -mpower9-vector -mno-power9-vector}
+-mpower9-fusion -mno-mpower9-fusion -mpower9-vector -mno-power9-vector @gol
+-mpower9-dform -mno-power9-dform -mlra -mno-lra}
 
 @emph{RX Options}
 @gccoptlist{-m64bit-doubles  -m32bit-doubles  -fpu  -nofpu@gol
@@ -13666,7 +13667,6 @@ Enable the use of indexed loads.  This can be problematic because some
 optimizers then assume that indexed stores exist, which is not
 the case.
 
-@item -mlra
 @opindex mlra
 Enable Local Register Allocation.  This is still experimental for ARC,
 so by default the compiler uses standard reload
@@ -19876,9 +19876,9 @@ following options:
 -mpopcntb -mpopcntd  -mpowerpc64 @gol
 -mpowerpc-gpopt  -mpowerpc-gfxopt  -msingle-float -mdouble-float @gol
 -msimple-fpu -mstring  -mmulhw  -mdlmzb  -mmfpgpr -mvsx @gol
--mcrypto -mdirect-move -mpower8-fusion -mpower8-vector @gol
+-mcrypto -mdirect-move -mhtm -mpower8-fusion -mpower8-vector @gol
 -mquad-memory -mquad-memory-atomic -mmodulo -mfloat128 -mfloat128-hardware @gol
--mpower9-fusion -mpower9-vector}
+-mpower9-fusion -mpower9-vector -mpower9-dform}
 
 The particular options set for any particular CPU varies between
 compiler versions, depending on what setting seems to produce optimal
@@ -20002,6 +20002,12 @@ This switch enables or disables the generation of ISEL instructions.
 This switch has been deprecated.  Use @option{-misel} and
 @option{-mno-isel} instead.
 
+@item -mlra
+@opindex mlra
+Enable Local Register Allocation.  This is still experimental for PowerPC,
+so by default the compiler uses standard reload
+(i.e. @option{-mno-lra}).
+
 @item -mspe
 @itemx -mno-spe
 @opindex mspe
@@ -20043,6 +20049,14 @@ access to the cryptographic instructions that were added in version
 Generate code that uses (does not use) the instructions to move data
 between the general purpose registers and the vector/scalar (VSX)
 registers that were added in version 2.07 of the PowerPC ISA.
+
+@item -mhtm
+@itemx -mno-htm
+@opindex mhtm
+@opindex mno-htm
+Enable (disable) the use of the built-in functions that allow direct
+access to the Hardware Transactional Memory (HTM) instructions that
+were added in version 2.07 of the PowerPC ISA.
 
 @item -mpower8-fusion
 @itemx -mno-power8-fusion
@@ -20151,9 +20165,18 @@ processors.
 @opindex mpower9-vector
 @opindex mno-power9-vector
 Generate code that uses (does not use) the vector and scalar
-instructions that were added in version 2.07 of the PowerPC ISA.  Also
+instructions that were added in version 3.0 of the PowerPC ISA.  Also
 enable the use of built-in functions that allow more direct access to
 the vector instructions.
+
+@item -mpower9-dform
+@itemx -mno-power9-dform
+@opindex mpower9-dform
+@opindex mno-power9-dform
+Enable (disable) scalar d-form (register + offset) memory instructions
+to load/store traditional Altivec registers. If the @var{LRA} register
+allocator is enabled, also enable (disable) vector d-form memory
+instructions.
 
 @item -mfloat-gprs=@var{yes/single/double/no}
 @itemx -mfloat-gprs
@@ -22067,7 +22090,7 @@ for machine type @var{cpu_type}.  Supported values for @var{cpu_type} are
 @samp{leon}, @samp{leon3}, @samp{leon3v7}, @samp{sparclite}, @samp{f930},
 @samp{f934}, @samp{sparclite86x}, @samp{sparclet}, @samp{tsc701}, @samp{v9},
 @samp{ultrasparc}, @samp{ultrasparc3}, @samp{niagara}, @samp{niagara2},
-@samp{niagara3} and @samp{niagara4}.
+@samp{niagara3}, @samp{niagara4} and @samp{niagara7}.
 
 Native Solaris and GNU/Linux toolchains also support the value @samp{native},
 which selects the best architecture option for the host processor.
@@ -22095,7 +22118,7 @@ f930, f934, sparclite86x
 tsc701
 
 @item v9
-ultrasparc, ultrasparc3, niagara, niagara2, niagara3, niagara4
+ultrasparc, ultrasparc3, niagara, niagara2, niagara3, niagara4, niagara7
 @end table
 
 By default (unless configured otherwise), GCC generates code for the V7
@@ -22137,7 +22160,9 @@ Sun UltraSPARC T1 chips.  With @option{-mcpu=niagara2}, the compiler
 additionally optimizes it for Sun UltraSPARC T2 chips. With
 @option{-mcpu=niagara3}, the compiler additionally optimizes it for Sun
 UltraSPARC T3 chips.  With @option{-mcpu=niagara4}, the compiler
-additionally optimizes it for Sun UltraSPARC T4 chips.
+additionally optimizes it for Sun UltraSPARC T4 chips.  With
+@option{-mcpu=niagara7}, the compiler additionally optimizes it for
+Oracle SPARC M7 chips.
 
 @item -mtune=@var{cpu_type}
 @opindex mtune
@@ -22147,12 +22172,13 @@ option @option{-mcpu=@var{cpu_type}} does.
 
 The same values for @option{-mcpu=@var{cpu_type}} can be used for
 @option{-mtune=@var{cpu_type}}, but the only useful values are those
-that select a particular CPU implementation.  Those are @samp{cypress},
-@samp{supersparc}, @samp{hypersparc}, @samp{leon}, @samp{leon3},
-@samp{leon3v7}, @samp{f930}, @samp{f934}, @samp{sparclite86x}, @samp{tsc701},
-@samp{ultrasparc}, @samp{ultrasparc3}, @samp{niagara}, @samp{niagara2},
-@samp{niagara3} and @samp{niagara4}.  With native Solaris and GNU/Linux
-toolchains, @samp{native} can also be used.
+that select a particular CPU implementation.  Those are
+@samp{cypress}, @samp{supersparc}, @samp{hypersparc}, @samp{leon},
+@samp{leon3}, @samp{leon3v7}, @samp{f930}, @samp{f934},
+@samp{sparclite86x}, @samp{tsc701}, @samp{ultrasparc},
+@samp{ultrasparc3}, @samp{niagara}, @samp{niagara2}, @samp{niagara3},
+@samp{niagara4} and @samp{niagara7}.  With native Solaris and
+GNU/Linux toolchains, @samp{native} can also be used.
 
 @item -mv8plus
 @itemx -mno-v8plus
@@ -22189,6 +22215,16 @@ version 3.0 of the UltraSPARC Visual Instruction Set extensions.  The
 default is @option{-mvis3} when targeting a cpu that supports such
 instructions, such as niagara-3 and later.  Setting @option{-mvis3}
 also sets @option{-mvis2} and @option{-mvis}.
+
+@item -mvis4
+@itemx -mno-vis4
+@opindex mvis4
+@opindex mno-vis4
+With @option{-mvis4}, GCC generates code that takes advantage of
+version 4.0 of the UltraSPARC Visual Instruction Set extensions.  The
+default is @option{-mvis4} when targeting a cpu that supports such
+instructions, such as niagara-7 and later.  Setting @option{-mvis4}
+also sets @option{-mvis3}, @option{-mvis2} and @option{-mvis}.
 
 @item -mcbcond
 @itemx -mno-cbcond

@@ -216,7 +216,8 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
 
 	  gcc_assert (stmt_info);
 
-	  if (STMT_VINFO_RELEVANT_P (stmt_info))
+	  if (STMT_VINFO_RELEVANT_P (stmt_info)
+	      || STMT_VINFO_LIVE_P (stmt_info))
             {
 	      gcc_assert (!STMT_VINFO_VECTYPE (stmt_info));
               scalar_type = TREE_TYPE (PHI_RESULT (phi));
@@ -437,9 +438,12 @@ vect_determine_vectorization_factor (loop_vec_info loop_vinfo)
 	      /* Bool ops don't participate in vectorization factor
 		 computation.  For comparison use compared types to
 		 compute a factor.  */
-	      if (TREE_CODE (scalar_type) == BOOLEAN_TYPE)
+	      if (TREE_CODE (scalar_type) == BOOLEAN_TYPE
+		  && is_gimple_assign (stmt)
+		  && gimple_assign_rhs_code (stmt) != COND_EXPR)
 		{
-		  if (STMT_VINFO_RELEVANT_P (stmt_info))
+		  if (STMT_VINFO_RELEVANT_P (stmt_info)
+		      || STMT_VINFO_LIVE_P (stmt_info))
 		    mask_producers.safe_push (stmt_info);
 		  bool_result = true;
 

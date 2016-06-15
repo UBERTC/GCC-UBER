@@ -8224,7 +8224,13 @@ gimplify_adjust_omp_clauses (gimple_seq *pre_p, gimple_seq body, tree *list_p,
 	case OMP_CLAUSE_VECTOR:
 	case OMP_CLAUSE_AUTO:
 	case OMP_CLAUSE_SEQ:
+	  break;
+
 	case OMP_CLAUSE_TILE:
+	  /* We're not yet making use of the information provided by OpenACC
+	     tile clauses.  Discard these here, to simplify later middle end
+	     processing.  */
+	  remove = true;
 	  break;
 
 	default:
@@ -8952,7 +8958,12 @@ gimplify_omp_for (tree *expr_p, gimple_seq *pre_p)
 	       || (ort == ORT_SIMD
 		   && TREE_VEC_LENGTH (OMP_FOR_INIT (for_stmt)) > 1))
 	{
+	  struct gimplify_omp_ctx *ctx = gimplify_omp_ctxp;
+	  /* Make sure omp_add_variable is not called on it prematurely.
+	     We call it ourselves a few lines later.  */
+	  gimplify_omp_ctxp = NULL;
 	  var = create_tmp_var (TREE_TYPE (decl), get_name (decl));
+	  gimplify_omp_ctxp = ctx;
 	  TREE_OPERAND (t, 0) = var;
 
 	  gimplify_seq_add_stmt (&for_body, gimple_build_assign (decl, var));

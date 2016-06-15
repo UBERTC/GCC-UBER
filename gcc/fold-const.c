@@ -117,14 +117,8 @@ static enum tree_code compcode_to_comparison (enum comparison_code);
 static int operand_equal_for_comparison_p (tree, tree, tree);
 static int twoval_comparison_p (tree, tree *, tree *, int *);
 static tree eval_subst (location_t, tree, tree, tree, tree, tree);
-static tree make_bit_field_ref (location_t, tree, tree,
-				HOST_WIDE_INT, HOST_WIDE_INT, int, int);
 static tree optimize_bit_field_compare (location_t, enum tree_code,
 					tree, tree, tree);
-static tree decode_field_reference (location_t, tree, HOST_WIDE_INT *,
-				    HOST_WIDE_INT *,
-				    machine_mode *, int *, int *, int *,
-				    tree *, tree *);
 static int simple_operand_p (const_tree);
 static bool simple_operand_p_2 (tree);
 static tree range_binop (enum tree_code, tree, tree, int, tree, int);
@@ -836,11 +830,10 @@ split_tree (location_t loc, tree in, tree type, enum tree_code code,
 	*minus_litp = *litp, *litp = 0;
       if (neg_conp_p)
 	*conp = negate_expr (*conp);
-      if (neg_var_p)
+      if (neg_var_p && var)
 	{
-	  /* Convert to TYPE before negating a pointer type expr.  */
-	  if (var && POINTER_TYPE_P (TREE_TYPE (var)))
-	    var = fold_convert_loc (loc, type, var);
+	  /* Convert to TYPE before negating.  */
+	  var = fold_convert_loc (loc, type, var);
 	  var = negate_expr (var);
 	}
     }
@@ -863,10 +856,12 @@ split_tree (location_t loc, tree in, tree type, enum tree_code code,
       else if (*minus_litp)
 	*litp = *minus_litp, *minus_litp = 0;
       *conp = negate_expr (*conp);
-      /* Convert to TYPE before negating a pointer type expr.  */
-      if (var && POINTER_TYPE_P (TREE_TYPE (var)))
-	var = fold_convert_loc (loc, type, var);
-      var = negate_expr (var);
+      if (var)
+	{
+	  /* Convert to TYPE before negating.  */
+	  var = fold_convert_loc (loc, type, var);
+	  var = negate_expr (var);
+	}
     }
 
   return var;
@@ -3781,14 +3776,22 @@ distribute_real_division (location_t loc, enum tree_code code, tree type,
 
 /* Return a BIT_FIELD_REF of type TYPE to refer to BITSIZE bits of INNER
    starting at BITPOS.  The field is unsigned if UNSIGNEDP is nonzero
-   and uses reverse storage order if REVERSEP is nonzero.  */
+   and uses reverse storage order if REVERSEP is nonzero.  ORIG_INNER
+   is the original memory reference used to preserve the alias set of
+   the access.  */
 
 static tree
-make_bit_field_ref (location_t loc, tree inner, tree type,
+make_bit_field_ref (location_t loc, tree inner, tree orig_inner, tree type,
 		    HOST_WIDE_INT bitsize, HOST_WIDE_INT bitpos,
 		    int unsignedp, int reversep)
 {
   tree result, bftype;
+
+  if (get_alias_set (inner) != get_alias_set (orig_inner))
+    inner = fold_build2 (MEM_REF, TREE_TYPE (inner),
+			 build_fold_addr_expr (inner),
+			 build_int_cst
+			  (reference_alias_ptr_type (orig_inner), 0));
 
   if (bitpos == 0 && !reversep)
     {
@@ -3915,13 +3918,13 @@ optimize_bit_field_compare (location_t loc, enum tree_code code,
        and return.  */
     return fold_build2_loc (loc, code, compare_type,
 			fold_build2_loc (loc, BIT_AND_EXPR, unsigned_type,
-				     make_bit_field_ref (loc, linner,
+				     make_bit_field_ref (loc, linner, lhs,
 							 unsigned_type,
 							 nbitsize, nbitpos,
 							 1, lreversep),
 				     mask),
 			fold_build2_loc (loc, BIT_AND_EXPR, unsigned_type,
-				     make_bit_field_ref (loc, rinner,
+				     make_bit_field_ref (loc, rinner, rhs,
 							 unsigned_type,
 							 nbitsize, nbitpos,
 							 1, rreversep),
@@ -3966,8 +3969,8 @@ optimize_bit_field_compare (location_t loc, enum tree_code code,
   /* Make a new bitfield reference, shift the constant over the
      appropriate number of bits and mask it with the computed mask
      (in case this was a signed field).  If we changed it, make a new one.  */
-  lhs = make_bit_field_ref (loc, linner, unsigned_type, nbitsize, nbitpos, 1,
-			    lreversep);
+  lhs = make_bit_field_ref (loc, linner, lhs, unsigned_type,
+			    nbitsize, nbitpos, 1, lreversep);
 
   rhs = const_binop (BIT_AND_EXPR,
 		     const_binop (LSHIFT_EXPR,
@@ -4006,11 +4009,12 @@ optimize_bit_field_compare (location_t loc, enum tree_code code,
    do anything with.  */
 
 static tree
-decode_field_reference (location_t loc, tree exp, HOST_WIDE_INT *pbitsize,
+decode_field_reference (location_t loc, tree *exp_, HOST_WIDE_INT *pbitsize,
 			HOST_WIDE_INT *pbitpos, machine_mode *pmode,
 			int *punsignedp, int *preversep, int *pvolatilep,
 			tree *pmask, tree *pand_mask)
 {
+  tree exp = *exp_;
   tree outer_type = 0;
   tree and_mask = 0;
   tree mask, inner, offset;
@@ -4046,6 +4050,8 @@ decode_field_reference (location_t loc, tree exp, HOST_WIDE_INT *pbitsize,
       || *pbitsize < 0 || offset != 0
       || TREE_CODE (inner) == PLACEHOLDER_EXPR)
     return 0;
+
+  *exp_ = exp;
 
   /* If the number of bits in the reference is the same as the bitsize of
      the outer type, then the outer type gives the signedness. Otherwise
@@ -5655,19 +5661,19 @@ fold_truth_andor_1 (location_t loc, enum tree_code code, tree truth_type,
 
   ll_reversep = lr_reversep = rl_reversep = rr_reversep = 0;
   volatilep = 0;
-  ll_inner = decode_field_reference (loc, ll_arg,
+  ll_inner = decode_field_reference (loc, &ll_arg,
 				     &ll_bitsize, &ll_bitpos, &ll_mode,
 				     &ll_unsignedp, &ll_reversep, &volatilep,
 				     &ll_mask, &ll_and_mask);
-  lr_inner = decode_field_reference (loc, lr_arg,
+  lr_inner = decode_field_reference (loc, &lr_arg,
 				     &lr_bitsize, &lr_bitpos, &lr_mode,
 				     &lr_unsignedp, &lr_reversep, &volatilep,
 				     &lr_mask, &lr_and_mask);
-  rl_inner = decode_field_reference (loc, rl_arg,
+  rl_inner = decode_field_reference (loc, &rl_arg,
 				     &rl_bitsize, &rl_bitpos, &rl_mode,
 				     &rl_unsignedp, &rl_reversep, &volatilep,
 				     &rl_mask, &rl_and_mask);
-  rr_inner = decode_field_reference (loc, rr_arg,
+  rr_inner = decode_field_reference (loc, &rr_arg,
 				     &rr_bitsize, &rr_bitpos, &rr_mode,
 				     &rr_unsignedp, &rr_reversep, &volatilep,
 				     &rr_mask, &rr_and_mask);
@@ -5829,12 +5835,14 @@ fold_truth_andor_1 (location_t loc, enum tree_code code, tree truth_type,
       lr_mask = const_binop (BIT_IOR_EXPR, lr_mask, rr_mask);
       if (lnbitsize == rnbitsize && xll_bitpos == xlr_bitpos)
 	{
-	  lhs = make_bit_field_ref (loc, ll_inner, lntype, lnbitsize, lnbitpos,
+	  lhs = make_bit_field_ref (loc, ll_inner, ll_arg,
+				    lntype, lnbitsize, lnbitpos,
 				    ll_unsignedp || rl_unsignedp, ll_reversep);
 	  if (! all_ones_mask_p (ll_mask, lnbitsize))
 	    lhs = build2 (BIT_AND_EXPR, lntype, lhs, ll_mask);
 
-	  rhs = make_bit_field_ref (loc, lr_inner, rntype, rnbitsize, rnbitpos,
+	  rhs = make_bit_field_ref (loc, lr_inner, lr_arg,
+				    rntype, rnbitsize, rnbitpos,
 				    lr_unsignedp || rr_unsignedp, lr_reversep);
 	  if (! all_ones_mask_p (lr_mask, rnbitsize))
 	    rhs = build2 (BIT_AND_EXPR, rntype, rhs, lr_mask);
@@ -5856,11 +5864,11 @@ fold_truth_andor_1 (location_t loc, enum tree_code code, tree truth_type,
 	{
 	  tree type;
 
-	  lhs = make_bit_field_ref (loc, ll_inner, lntype,
+	  lhs = make_bit_field_ref (loc, ll_inner, ll_arg, lntype,
 				    ll_bitsize + rl_bitsize,
 				    MIN (ll_bitpos, rl_bitpos),
 				    ll_unsignedp, ll_reversep);
-	  rhs = make_bit_field_ref (loc, lr_inner, rntype,
+	  rhs = make_bit_field_ref (loc, lr_inner, lr_arg, rntype,
 				    lr_bitsize + rr_bitsize,
 				    MIN (lr_bitpos, rr_bitpos),
 				    lr_unsignedp, lr_reversep);
@@ -5925,7 +5933,8 @@ fold_truth_andor_1 (location_t loc, enum tree_code code, tree truth_type,
      reference we will make.  Unless the mask is all ones the width of
      that field, perform the mask operation.  Then compare with the
      merged constant.  */
-  result = make_bit_field_ref (loc, ll_inner, lntype, lnbitsize, lnbitpos,
+  result = make_bit_field_ref (loc, ll_inner, ll_arg,
+			       lntype, lnbitsize, lnbitpos,
 			       ll_unsignedp || rl_unsignedp, ll_reversep);
 
   ll_mask = const_binop (BIT_IOR_EXPR, ll_mask, rl_mask);
@@ -8566,9 +8575,9 @@ fold_comparison (location_t loc, enum tree_code code, tree type,
 	  if ((offset0 == offset1
 	       || (offset0 && offset1
 		   && operand_equal_p (offset0, offset1, 0)))
-	      && (code == EQ_EXPR
-		  || code == NE_EXPR
-		  || (indirect_base0 && DECL_P (base0))
+	      && (equality_code
+		  || (indirect_base0
+		      && (DECL_P (base0) || CONSTANT_CLASS_P (base0)))
 		  || POINTER_TYPE_OVERFLOW_UNDEFINED))
 
 	    {
@@ -8607,7 +8616,8 @@ fold_comparison (location_t loc, enum tree_code code, tree type,
 	     6.5.6/8 and /9 with respect to the signed ptrdiff_t.  */
 	  else if (bitpos0 == bitpos1
 		   && (equality_code
-		       || (indirect_base0 && DECL_P (base0))
+		       || (indirect_base0
+			   && (DECL_P (base0) || CONSTANT_CLASS_P (base0)))
 		       || POINTER_TYPE_OVERFLOW_UNDEFINED))
 	    {
 	      /* By converting to signed sizetype we cover middle-end pointer
@@ -11631,9 +11641,9 @@ fold_ternary_loc (location_t loc, enum tree_code code, tree type,
       /* Convert A ? 0 : 1 to !A.  This prefers the use of NOT_EXPR
 	 over COND_EXPR in cases such as floating point comparisons.  */
       if (integer_zerop (op1)
-	  && (code == VEC_COND_EXPR ? integer_all_onesp (op2)
-				    : (integer_onep (op2)
-				       && !VECTOR_TYPE_P (type)))
+	  && code == COND_EXPR
+	  && integer_onep (op2)
+	  && !VECTOR_TYPE_P (type)
 	  && truth_value_p (TREE_CODE (arg0)))
 	return pedantic_non_lvalue_loc (loc,
 				    fold_convert_loc (loc, type,
@@ -12305,7 +12315,8 @@ fold_checksum_tree (const_tree expr, struct md5_ctx *ctx,
 	       || TYPE_REFERENCE_TO (expr)
 	       || TYPE_CACHED_VALUES_P (expr)
 	       || TYPE_CONTAINS_PLACEHOLDER_INTERNAL (expr)
-	       || TYPE_NEXT_VARIANT (expr)))
+	       || TYPE_NEXT_VARIANT (expr)
+	       || TYPE_ALIAS_SET_KNOWN_P (expr)))
     {
       /* Allow these fields to be modified.  */
       tree tmp;
@@ -12315,6 +12326,7 @@ fold_checksum_tree (const_tree expr, struct md5_ctx *ctx,
       TYPE_POINTER_TO (tmp) = NULL;
       TYPE_REFERENCE_TO (tmp) = NULL;
       TYPE_NEXT_VARIANT (tmp) = NULL;
+      TYPE_ALIAS_SET (tmp) = -1;
       if (TYPE_CACHED_VALUES_P (tmp))
 	{
 	  TYPE_CACHED_VALUES_P (tmp) = 0;

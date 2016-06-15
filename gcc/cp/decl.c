@@ -5329,10 +5329,7 @@ layout_var_decl (tree decl)
     complete_type (type);
   if (!DECL_SIZE (decl)
       && TREE_TYPE (decl) != error_mark_node
-      && (COMPLETE_TYPE_P (type)
-	  || (TREE_CODE (type) == ARRAY_TYPE
-	      && !TYPE_DOMAIN (type)
-	      && COMPLETE_TYPE_P (TREE_TYPE (type)))))
+      && complete_or_array_type_p (type))
     layout_decl (decl, 0);
 
   if (!DECL_EXTERNAL (decl) && DECL_SIZE (decl) == NULL_TREE)
@@ -6633,6 +6630,13 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
                                                    adc_variable_type);
       if (type == error_mark_node)
 	return;
+      if (TREE_CODE (type) == FUNCTION_TYPE)
+	{
+	  error ("initializer for %<decltype(auto) %D%> has function type "
+		 "(did you forget the %<()%> ?)", decl);
+	  TREE_TYPE (decl) = error_mark_node;
+	  return;
+	}
       cp_apply_type_quals_to_decl (cp_type_quals (type), decl);
     }
 
@@ -11186,8 +11190,7 @@ grokdeclarator (const cp_declarator *declarator,
 	  }
 	else if (!staticp && !dependent_type_p (type)
 		 && !COMPLETE_TYPE_P (complete_type (type))
-		 && (TREE_CODE (type) != ARRAY_TYPE
-		     || !COMPLETE_TYPE_P (TREE_TYPE (type))
+		 && (!complete_or_array_type_p (type)
 		     || initialized == 0))
 	  {
 	    if (TREE_CODE (type) != ARRAY_TYPE
@@ -13382,6 +13385,19 @@ finish_enum_value_list (tree enumtype)
       use_short_enum = flag_short_enums
         || lookup_attribute ("packed", TYPE_ATTRIBUTES (enumtype));
 
+      /* If the precision of the type was specified with an attribute and it
+	 was too small, give an error.  Otherwise, use it.  */
+      if (TYPE_PRECISION (enumtype))
+	{
+	  if (precision > TYPE_PRECISION (enumtype))
+	    error ("specified mode too small for enumeral values");
+	  else
+	    {
+	      use_short_enum = true;
+	      precision = TYPE_PRECISION (enumtype);
+	    }
+	}
+
       for (itk = (use_short_enum ? itk_char : itk_int);
            itk != itk_none;
            itk++)
@@ -14999,8 +15015,9 @@ complete_vars (tree type)
 	  tree var = iv->decl;
 	  tree type = TREE_TYPE (var);
 
-	  if (TYPE_MAIN_VARIANT (strip_array_types (type))
-	      == iv->incomplete_type)
+	  if (type != error_mark_node
+	      && (TYPE_MAIN_VARIANT (strip_array_types (type))
+		  == iv->incomplete_type))
 	    {
 	      /* Complete the type of the variable.  The VAR_DECL itself
 		 will be laid out in expand_expr.  */

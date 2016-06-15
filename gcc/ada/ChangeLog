@@ -1,3 +1,50 @@
+2016-06-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (gnat_to_gnu_entity) <E_Variable>: Deal with
+	PLUS_EXPR in the expression of a renaming.
+
+2016-06-11  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/trans.c (Case_Statement_to_gnu): Deal with characters.
+
+2016-06-11  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gcc-interface/decl.c (gnat_to_gnu_entity): Do not clobber
+	gnat_entity_name with temporary names for XUP and XUT types.
+
+2016-06-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/utils.c (gnat_internal_attribute_table): Add support
+	for noinline and noclone attributes.
+	(handle_noinline_attribute): New handler.
+	(handle_noclone_attribute): Likewise.
+
+2016-06-06  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/utils2.c (build_call_alloc_dealloc): Do not substitute
+	placeholder expressions here but...
+	* gcc-interface/trans.c (gnat_to_gnu) <N_Free_Statement>: ...here.
+	Make an exception to the protection of a CALL_EXPR result with an
+	unconstrained type only in the same cases as Call_to_gnu.
+
+2016-06-01  Simon Wright  <simon@pushface.org>
+
+	PR ada/71358
+	* g-comlin.adb (Display_Section_Help): Do not dereference
+	Config.Switches if it's null.
+	(Getopt): Likewise.
+
+2016-05-31  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* s-osinte-kfreebsd-gnu.ads (clock_getres): Define.
+	(Get_Page_Size): Remove duplicate and return int.
+
+2016-05-31  Jan Sommer  <soja-lists@aries.uberspace.de>
+
+	PR ada/71317
+	* s-osinte-rtems.ads (clock_getres): Define.
+	(Get_Page_Size): Remove duplicate and return int.
+
 2016-05-06  Eric Botcazou  <ebotcazou@adacore.com>
 
 	PR ada/70969

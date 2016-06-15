@@ -2483,13 +2483,15 @@ Attribute_to_gnu (Node_Id gnat_node, tree *gnu_result_type_p, int attribute)
 static tree
 Case_Statement_to_gnu (Node_Id gnat_node)
 {
-  tree gnu_result, gnu_expr, gnu_label;
+  tree gnu_result, gnu_expr, gnu_type, gnu_label;
   Node_Id gnat_when;
   location_t end_locus;
   bool may_fallthru = false;
 
   gnu_expr = gnat_to_gnu (Expression (gnat_node));
   gnu_expr = convert (get_base_type (TREE_TYPE (gnu_expr)), gnu_expr);
+  gnu_expr = maybe_character_value (gnu_expr);
+  gnu_type = TREE_TYPE (gnu_expr);
 
   /* We build a SWITCH_EXPR that contains the code with interspersed
      CASE_LABEL_EXPRs for each label.  */
@@ -2559,6 +2561,11 @@ Case_Statement_to_gnu (Node_Id gnat_node)
 	  gcc_assert (!gnu_low  || TREE_CODE (gnu_low)  == INTEGER_CST);
 	  gcc_assert (!gnu_high || TREE_CODE (gnu_high) == INTEGER_CST);
 
+	  if (gnu_low && TREE_TYPE (gnu_low) != gnu_type)
+	    gnu_low = convert (gnu_type, gnu_low);
+	  if (gnu_high && TREE_TYPE (gnu_high) != gnu_type)
+	    gnu_high = convert (gnu_type, gnu_high);
+
 	  add_stmt_with_node (build_case_label (gnu_low, gnu_high, label),
 			      gnat_choice);
 	  choices_added_p = true;
@@ -2590,8 +2597,8 @@ Case_Statement_to_gnu (Node_Id gnat_node)
   /* Now emit a definition of the label the cases branch to, if any.  */
   if (may_fallthru)
     add_stmt (build1 (LABEL_EXPR, void_type_node, gnu_label));
-  gnu_result = build3 (SWITCH_EXPR, TREE_TYPE (gnu_expr), gnu_expr,
-		       end_stmt_group (), NULL_TREE);
+  gnu_result
+    = build3 (SWITCH_EXPR, gnu_type, gnu_expr, end_stmt_group (), NULL_TREE);
 
   return gnu_result;
 }
@@ -7635,10 +7642,11 @@ gnat_to_gnu (Node_Id gnat_node)
 	  else
 	    gnu_actual_obj_type = gnu_obj_type;
 
+	  tree gnu_size = TYPE_SIZE_UNIT (gnu_actual_obj_type);
+	  gnu_size = SUBSTITUTE_PLACEHOLDER_IN_EXPR (gnu_size, gnu_ptr);
+
 	  gnu_result
-	      = build_call_alloc_dealloc (gnu_ptr,
-					  TYPE_SIZE_UNIT (gnu_actual_obj_type),
-					  gnu_obj_type,
+	      = build_call_alloc_dealloc (gnu_ptr, gnu_size, gnu_obj_type,
 					  Procedure_To_Call (gnat_node),
 					  Storage_Pool (gnat_node),
 					  gnat_node);
@@ -7719,16 +7727,22 @@ gnat_to_gnu (Node_Id gnat_node)
 				    N_Raise_Constraint_Error));
     }
 
-  /* If the result has side-effects and is of an unconstrained type, make a
-     SAVE_EXPR so that we can be sure it will only be referenced once.  But
-     this is useless for a call to a function that returns an unconstrained
-     type with default discriminant, as we cannot compute the size of the
-     actual returned object.  We must do this before any conversions.  */
+  /* If the result has side-effects and is of an unconstrained type, protect
+     the expression in case it will be referenced multiple times, i.e. for
+     its value and to compute the size of an object.  But do it neither for
+     an object nor a renaming declaration, nor a return statement of a call
+     to a function that returns an unconstrained record type with default
+     discriminant, because there is no size to be computed in these cases
+     and this will create a useless temporary.  We must do this before any
+     conversions.  */
   if (TREE_SIDE_EFFECTS (gnu_result)
-      && !(TREE_CODE (gnu_result) == CALL_EXPR
-	   && type_is_padding_self_referential (TREE_TYPE (gnu_result)))
       && (TREE_CODE (gnu_result_type) == UNCONSTRAINED_ARRAY_TYPE
-	  || CONTAINS_PLACEHOLDER_P (TYPE_SIZE (gnu_result_type))))
+	  || CONTAINS_PLACEHOLDER_P (TYPE_SIZE (gnu_result_type)))
+      && !(TREE_CODE (gnu_result) == CALL_EXPR
+	   && type_is_padding_self_referential (TREE_TYPE (gnu_result))
+	   && (Nkind (Parent (gnat_node)) == N_Object_Declaration
+	       || Nkind (Parent (gnat_node)) == N_Object_Renaming_Declaration
+	       || Nkind (Parent (gnat_node)) == N_Simple_Return_Statement)))
     gnu_result = gnat_protect_expr (gnu_result);
 
   /* Now convert the result to the result type, unless we are in one of the
