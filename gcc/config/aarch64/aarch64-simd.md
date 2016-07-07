@@ -382,7 +382,7 @@
   [(set_attr "type" "neon<fp>_mul_<Vetype>_scalar<q>")]
 )
 
-(define_insn "aarch64_rsqrte_<mode>2"
+(define_insn "aarch64_rsqrte<mode>"
   [(set (match_operand:VALLF 0 "register_operand" "=w")
 	(unspec:VALLF [(match_operand:VALLF 1 "register_operand" "w")]
 		     UNSPEC_RSQRTE))]
@@ -390,7 +390,7 @@
   "frsqrte\\t%<v>0<Vmtype>, %<v>1<Vmtype>"
   [(set_attr "type" "neon_fp_rsqrte_<Vetype><q>")])
 
-(define_insn "aarch64_rsqrts_<mode>3"
+(define_insn "aarch64_rsqrts<mode>"
   [(set (match_operand:VALLF 0 "register_operand" "=w")
 	(unspec:VALLF [(match_operand:VALLF 1 "register_operand" "w")
 	       (match_operand:VALLF 2 "register_operand" "w")]
@@ -474,23 +474,14 @@
   [(set_attr "type" "neon_arith_acc<q>")]
 )
 
-(define_insn "fabd<mode>_3"
-  [(set (match_operand:VDQF 0 "register_operand" "=w")
-	(abs:VDQF (minus:VDQF
-		   (match_operand:VDQF 1 "register_operand" "w")
-		   (match_operand:VDQF 2 "register_operand" "w"))))]
+(define_insn "fabd<mode>3"
+  [(set (match_operand:VALLF 0 "register_operand" "=w")
+	(abs:VALLF
+	  (minus:VALLF
+	    (match_operand:VALLF 1 "register_operand" "w")
+	    (match_operand:VALLF 2 "register_operand" "w"))))]
   "TARGET_SIMD"
-  "fabd\t%0.<Vtype>, %1.<Vtype>, %2.<Vtype>"
-  [(set_attr "type" "neon_fp_abd_<Vetype><q>")]
-)
-
-(define_insn "*fabd_scalar<mode>3"
-  [(set (match_operand:GPF 0 "register_operand" "=w")
-        (abs:GPF (minus:GPF
-                 (match_operand:GPF 1 "register_operand" "w")
-                 (match_operand:GPF 2 "register_operand" "w"))))]
-  "TARGET_SIMD"
-  "fabd\t%<s>0, %<s>1, %<s>2"
+  "fabd\t%<v>0<Vmtype>, %<v>1<Vmtype>, %<v>2<Vmtype>"
   [(set_attr "type" "neon_fp_abd_<Vetype><q>")]
 )
 
@@ -1790,6 +1781,28 @@
   [(set_attr "type" "neon_fp_cvt_widen_s")]
 )
 
+;; Convert between fixed-point and floating-point (vector modes)
+
+(define_insn "<FCVT_F2FIXED:fcvt_fixed_insn><VDQF:mode>3"
+  [(set (match_operand:<VDQF:FCVT_TARGET> 0 "register_operand" "=w")
+	(unspec:<VDQF:FCVT_TARGET> [(match_operand:VDQF 1 "register_operand" "w")
+				    (match_operand:SI 2 "immediate_operand" "i")]
+	 FCVT_F2FIXED))]
+  "TARGET_SIMD"
+  "<FCVT_F2FIXED:fcvt_fixed_insn>\t%<v>0<Vmtype>, %<v>1<Vmtype>, #%2"
+  [(set_attr "type" "neon_fp_to_int_<VDQF:Vetype><q>")]
+)
+
+(define_insn "<FCVT_FIXED2F:fcvt_fixed_insn><VDQ_SDI:mode>3"
+  [(set (match_operand:<VDQ_SDI:FCVT_TARGET> 0 "register_operand" "=w")
+	(unspec:<VDQ_SDI:FCVT_TARGET> [(match_operand:VDQ_SDI 1 "register_operand" "w")
+				       (match_operand:SI 2 "immediate_operand" "i")]
+	 FCVT_FIXED2F))]
+  "TARGET_SIMD"
+  "<FCVT_FIXED2F:fcvt_fixed_insn>\t%<v>0<Vmtype>, %<v>1<Vmtype>, #%2"
+  [(set_attr "type" "neon_int_to_fp_<VDQ_SDI:Vetype><q>")]
+)
+
 ;; ??? Note that the vectorizer usage of the vec_unpacks_[lo/hi] patterns
 ;; is inconsistent with vector ordering elsewhere in the compiler, in that
 ;; the meaning of HI and LO changes depending on the target endianness.
@@ -1991,6 +2004,16 @@
   }
 )
 
+(define_insn "aarch64_faddp<mode>"
+ [(set (match_operand:VDQF 0 "register_operand" "=w")
+       (unspec:VDQF [(match_operand:VDQF 1 "register_operand" "w")
+		     (match_operand:VDQF 2 "register_operand" "w")]
+		     UNSPEC_FADDV))]
+ "TARGET_SIMD"
+ "faddp\t%0.<Vtype>, %1.<Vtype>, %2.<Vtype>"
+  [(set_attr "type" "neon_fp_reduc_add_<Vetype><q>")]
+)
+
 (define_insn "aarch64_reduc_plus_internal<mode>"
  [(set (match_operand:VDQV 0 "register_operand" "=w")
        (unspec:VDQV [(match_operand:VDQV 1 "register_operand" "w")]
@@ -2018,15 +2041,6 @@
   [(set_attr "type" "neon_fp_reduc_add_<Vetype><q>")]
 )
 
-(define_insn "aarch64_addpv4sf"
- [(set (match_operand:V4SF 0 "register_operand" "=w")
-       (unspec:V4SF [(match_operand:V4SF 1 "register_operand" "w")]
-		    UNSPEC_FADDV))]
- "TARGET_SIMD"
- "faddp\\t%0.4s, %1.4s, %1.4s"
-  [(set_attr "type" "neon_fp_reduc_add_s_q")]
-)
-
 (define_expand "reduc_plus_scal_v4sf"
  [(set (match_operand:SF 0 "register_operand")
        (unspec:V4SF [(match_operand:V4SF 1 "register_operand")]
@@ -2035,8 +2049,8 @@
 {
   rtx elt = GEN_INT (ENDIAN_LANE_N (V4SFmode, 0));
   rtx scratch = gen_reg_rtx (V4SFmode);
-  emit_insn (gen_aarch64_addpv4sf (scratch, operands[1]));
-  emit_insn (gen_aarch64_addpv4sf (scratch, scratch));
+  emit_insn (gen_aarch64_faddpv4sf (scratch, operands[1], operands[1]));
+  emit_insn (gen_aarch64_faddpv4sf (scratch, scratch, scratch));
   emit_insn (gen_aarch64_get_lanev4sf (operands[0], scratch, elt));
   DONE;
 })

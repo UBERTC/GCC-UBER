@@ -449,3 +449,21 @@
   /* Implemented by aarch64_sqrdml<SQRDMLH_AS:rdma_as>h_laneq<mode>.  */
   BUILTIN_VSDQ_HSI (QUADOP_LANE, sqrdmlah_laneq, 0)
   BUILTIN_VSDQ_HSI (QUADOP_LANE, sqrdmlsh_laneq, 0)
+
+  /* Implemented by <FCVT_F2FIXED/FIXED2F:fcvt_fixed_insn><*><*>3.  */
+  BUILTIN_VSDQ_SDI (SHIFTIMM, scvtf, 3)
+  BUILTIN_VSDQ_SDI (FCVTIMM_SUS, ucvtf, 3)
+  BUILTIN_VALLF (SHIFTIMM, fcvtzs, 3)
+  BUILTIN_VALLF (SHIFTIMM_USS, fcvtzu, 3)
+
+  /* Implemented by aarch64_rsqrte<mode>.  */
+  BUILTIN_VALLF (UNOP, rsqrte, 0)
+
+  /* Implemented by aarch64_rsqrts<mode>.  */
+  BUILTIN_VALLF (BINOP, rsqrts, 0)
+
+  /* Implemented by fabd<mode>3.  */
+  BUILTIN_VALLF (BINOP, fabd, 3)
+
+  /* Implemented by aarch64_faddp<mode>.  */
+  BUILTIN_VDQF (BINOP, faddp, 0)
