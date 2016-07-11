@@ -1,3 +1,51 @@
+2016-07-06  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Implement LWG 2451, optional<T> should 'forward' T's
+	implicit conversions.
+	* include/experimental/optional (__is_optional_impl, __is_optional):
+	New.
+	(optional()): Make constexpr and default.
+	(optional(_Up&&), optional(const optional<_Up>&),
+	optional(optional<_Up>&& __t): New.
+	(operator=(_Up&&)): Constrain.
+	(operator=(const optional<_Up>&), operator=(optional<_Up>&&)): New.
+	* testsuite/experimental/optional/cons/value.cc:
+	Add tests for the functionality added by LWG 2451.
+	* testsuite/experimental/optional/cons/value_neg.cc: New.
+
+2016-07-05  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Implement LWG 2509,
+	any_cast doesn't work with rvalue reference targets and cannot
+	move with a value target.
+	* include/experimental/any (any(_ValueType&&)): Constrain and
+	add an overload that doesn't forward.
+	(any_cast(any&&)): Constrain and add an overload that moves.
+	* testsuite/experimental/any/misc/any_cast.cc: Add tests for
+	the functionality added by LWG 2509.
+
+2016-07-04  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR libstdc++/71313
+	* src/filesystem/ops.cc (remove_all(const path&, error_code&)):
+	Call remove_all for children of a directory.
+	* testsuite/experimental/filesystem/operations/create_directories.cc:
+	Adjust.
+
+2016-06-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/71545
+	* include/bits/stl_algobase.h (lower_bound, lexicographical_compare):
+	Remove irreflexive checks.
+	* include/bits/stl_algo.h (lower_bound, upper_bound, equal_range,
+	binary_search): Likewise.
+	* testsuite/25_algorithms/equal_range/partitioned.cc: New test.
+	* testsuite/25_algorithms/lexicographical_compare/71545.cc: New test.
+	* testsuite/25_algorithms/lower_bound/partitioned.cc: New test.
+	* testsuite/25_algorithms/upper_bound/partitioned.cc: New test.
+	* testsuite/util/testsuite_iterators.h (__gnu_test::test_container):
+	Add constructor from array.
+
 2016-05-26  Jonathan Wakely  <jwakely@redhat.com>
 
 	Backport from mainline

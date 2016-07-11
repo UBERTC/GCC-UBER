@@ -962,8 +962,13 @@ complex @code{__float128} type.  When these problems are fixed, you
 would use the following syntax to declare @code{_Complex128} to be a
 complex @code{__float128} type:
 
+On the PowerPC Linux VSX targets, you can declare complex types using
+the corresponding internal complex type, @code{KCmode} for
+@code{__float128} type and @code{ICmode} for @code{__ibm128} type:
+
 @smallexample
-typedef _Complex float __attribute__((mode(KC))) _Complex128;
+typedef _Complex float __attribute__((mode(KC))) _Complex_float128;
+typedef _Complex float __attribute__((mode(IC))) _Complex_ibm128;
 @end smallexample
 
 Not all targets support additional floating-point types.
@@ -13840,6 +13845,40 @@ The @code{__builtin_ppc_mftb} function always generates one instruction and
 returns the Time Base Register value as an unsigned long, throwing away
 the most significant word on 32-bit environments.
 
+Additional built-in functions are available for the 64-bit PowerPC
+family of processors, for efficient use of 128-bit floating point
+(@code{__float128}) values.
+
+The following floating-point built-in functions are available with
+@code{-mfloat128} and Altivec support.  All of them implement the
+function that is part of the name.
+
+@smallexample
+__float128 __builtin_fabsq (__float128)
+__float128 __builtin_copysignq (__float128, __float128)
+@end smallexample
+
+The following built-in functions are available with @code{-mfloat128}
+and Altivec support.
+
+@table @code
+@item __float128 __builtin_infq (void)
+Similar to @code{__builtin_inf}, except the return type is @code{__float128}.
+@findex __builtin_infq
+
+@item __float128 __builtin_huge_valq (void)
+Similar to @code{__builtin_huge_val}, except the return type is @code{__float128}.
+@findex __builtin_huge_valq
+
+@item __float128 __builtin_nanq (void)
+Similar to @code{__builtin_nan}, except the return type is @code{__float128}.
+@findex __builtin_nanq
+
+@item __float128 __builtin_nansq (void)
+Similar to @code{__builtin_nans}, except the return type is @code{__float128}.
+@findex __builtin_nansq
+@end table
+
 The following built-in functions are available for the PowerPC family
 of processors, starting with ISA 2.06 or later (@option{-mcpu=power7}
 or @option{-mpopcntd}):
@@ -13863,12 +13902,31 @@ The @code{__builtin_divde}, @code{__builtin_divdeo},
 64-bit environment support ISA 2.06 or later.
 
 The following built-in functions are available for the PowerPC family
-of processors, starting with ISA 3.0 or later (@option{-mcpu=power9}
-or @option{-mmodulo}):
+of processors, starting with ISA 3.0 or later (@option{-mcpu=power9}):
 @smallexample
 long long __builtin_darn (void);
 long long __builtin_darn_raw (void);
 int __builtin_darn_32 (void);
+
+int __builtin_dfp_dtstsfi_lt (unsigned int comparison, _Decimal64 value);
+int __builtin_dfp_dtstsfi_lt (unsigned int comparison, _Decimal128 value);
+int __builtin_dfp_dtstsfi_lt_dd (unsigned int comparison, _Decimal64 value);
+int __builtin_dfp_dtstsfi_lt_td (unsigned int comparison, _Decimal128 value);
+
+int __builtin_dfp_dtstsfi_gt (unsigned int comparison, _Decimal64 value);
+int __builtin_dfp_dtstsfi_gt (unsigned int comparison, _Decimal128 value);
+int __builtin_dfp_dtstsfi_gt_dd (unsigned int comparison, _Decimal64 value);
+int __builtin_dfp_dtstsfi_gt_td (unsigned int comparison, _Decimal128 value);
+
+int __builtin_dfp_dtstsfi_eq (unsigned int comparison, _Decimal64 value);
+int __builtin_dfp_dtstsfi_eq (unsigned int comparison, _Decimal128 value);
+int __builtin_dfp_dtstsfi_eq_dd (unsigned int comparison, _Decimal64 value);
+int __builtin_dfp_dtstsfi_eq_td (unsigned int comparison, _Decimal128 value);
+
+int __builtin_dfp_dtstsfi_ov (unsigned int comparison, _Decimal64 value);
+int __builtin_dfp_dtstsfi_ov (unsigned int comparison, _Decimal128 value);
+int __builtin_dfp_dtstsfi_ov_dd (unsigned int comparison, _Decimal64 value);
+int __builtin_dfp_dtstsfi_ov_td (unsigned int comparison, _Decimal128 value);
 @end smallexample
 
 The @code{__builtin_darn} and @code{__builtin_darn_raw}
@@ -13878,6 +13936,38 @@ The @code{__builtin_darn} function provides a 64-bit conditioned
 random number.  The @code{__builtin_darn_raw} function provides a
 64-bit raw random number.  The @code{__builtin_darn_32} function
 provides a 32-bit random number.
+
+The @code{__builtin_dfp_dtstsfi_lt} function returns a non-zero value
+if and only if the number of signficant digits of its @code{value} argument
+is less than its @code{comparison} argument.  The
+@code{__builtin_dfp_dtstsfi_lt_dd} and
+@code{__builtin_dfp_dtstsfi_lt_td} functions behave similarly, but
+require that the type of the @code{value} argument be
+@code{__Decimal64} and @code{__Decimal128} respectively.
+
+The @code{__builtin_dfp_dtstsfi_gt} function returns a non-zero value
+if and only if the number of signficant digits of its @code{value} argument
+is greater than its @code{comparison} argument.  The
+@code{__builtin_dfp_dtstsfi_gt_dd} and
+@code{__builtin_dfp_dtstsfi_gt_td} functions behave similarly, but
+require that the type of the @code{value} argument be
+@code{__Decimal64} and @code{__Decimal128} respectively.
+
+The @code{__builtin_dfp_dtstsfi_eq} function returns a non-zero value
+if and only if the number of signficant digits of its @code{value} argument
+equals its @code{comparison} argument.  The
+@code{__builtin_dfp_dtstsfi_eq_dd} and
+@code{__builtin_dfp_dtstsfi_eq_td} functions behave similarly, but
+require that the type of the @code{value} argument be
+@code{__Decimal64} and @code{__Decimal128} respectively.
+
+The @code{__builtin_dfp_dtstsfi_ov} function returns a non-zero value
+if and only if its @code{value} argument has an undefined number of
+significant digits, such as when @code{value} is an encoding of @code{NaN}.
+The @code{__builtin_dfp_dtstsfi_ov_dd} and
+@code{__builtin_dfp_dtstsfi_ov_td} functions behave similarly, but
+require that the type of the @code{value} argument be
+@code{__Decimal64} and @code{__Decimal128} respectively.
 
 The following built-in functions are available for the PowerPC family
 of processors when hardware decimal floating point
@@ -16517,6 +16607,61 @@ vector unsigned long vec_vprtybd (vector unsigned long);
 vector __int128_t vec_vprtybq (vector __int128_t);
 vector __uint128_t vec_vprtybd (vector __uint128_t);
 @end smallexample
+
+The following built-in vector functions are available for the PowerPC family
+of processors, starting with ISA 3.0 or later (@option{-mcpu=power9})
+or with @option{-mpower9-vector}:
+
+@smallexample
+__vector unsigned char
+vec_absd (__vector unsigned char arg1, __vector unsigned char arg2);
+__vector unsigned short
+vec_absd (__vector unsigned short arg1, __vector unsigned short arg2);
+__vector unsigned int
+vec_absd (__vector unsigned int arg1, __vector unsigned int arg2);
+
+__vector unsigned char
+vec_absdb (__vector unsigned char arg1, __vector unsigned char arg2);
+__vector unsigned short
+vec_absdh (__vector unsigned short arg1, __vector unsigned short arg2);
+__vector unsigned int
+vec_absdw (__vector unsigned int arg1, __vector unsigned int arg2);
+
+__vector unsigned char
+vec_slv (__vector unsigned char src, __vector unsigned char shift_distance);
+__vector unsigned char
+vec_srv (__vector unsigned char src, __vector unsigned char shift_distance);
+@end smallexample
+
+The @code{vec_absd}, @code{vec_absdb}, @code{vec_absdh}, and
+@code{vec_absdw} built-in functions each computes the absolute
+differences of the pairs of vector elements supplied in its two vector
+arguments, placing the absolute differences into the corresponding
+elements of the vector result.
+
+The @code{vec_slv} and @code{vec_srv} functions operate on
+all of the bytes of their @code{src} and @code{shift_distance}
+arguments in parallel.  The behavior of the @code{vec_slv} is as if
+there existed a temporary array of 17 unsigned characters
+@code{slv_array} within which elements 0 through 15 are the same as
+the entries in the @code{src} array and element 16 equals 0.  The
+result returned from the @code{vec_slv} function is a
+@code{__vector} of 16 unsigned characters within which element
+@code{i} is computed using the C expression
+@code{0xff & (*((unsigned short *)(slv_array + i)) << (0x07 &
+shift_distance[i]))},
+with this resulting value coerced to the @code{unsigned char} type.
+The behavior of the @code{vec_srv} is as if
+there existed a temporary array of 17 unsigned characters
+@code{srv_array} within which element 0 equals zero and
+elements 1 through 16 equal the elements 0 through 15 of
+the @code{src} array.  The
+result returned from the @code{vec_srv} function is a
+@code{__vector} of 16 unsigned characters within which element
+@code{i} is computed using the C expression
+@code{0xff & (*((unsigned short *)(srv_array + i)) >>
+(0x07 & shift_distance[i]))},
+with this resulting value coerced to the @code{unsigned char} type.
 
 If the cryptographic instructions are enabled (@option{-mcrypto} or
 @option{-mcpu=power8}), the following builtins are enabled.

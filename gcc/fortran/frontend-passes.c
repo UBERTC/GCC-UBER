@@ -175,6 +175,13 @@ realloc_string_callback (gfc_code **c, int *walk_subtrees ATTRIBUTE_UNUSED,
   if (!gfc_check_dependency (expr1, expr2, true))
     return 0;
 
+  /* gfc_check_dependency doesn't always pick up identical expressions.
+     However, eliminating the above sends the compiler into an infinite
+     loop on valid expressions.  Without this check, the gimplifier emits
+     an ICE for a = a, where a is deferred character length.  */
+  if (!gfc_dep_compare_expr (expr1, expr2))
+    return 0;
+
   current_code = c;
   inserted_block = NULL;
   changed_statement = NULL;
@@ -658,12 +665,10 @@ create_var (gfc_expr * e, const char *vname)
     {
       gfc_expr *length;
 
+      symbol->ts.u.cl = gfc_new_charlen (ns, NULL);
       length = constant_string_length (e);
       if (length)
-	{
-	  symbol->ts.u.cl = gfc_new_charlen (ns, NULL);
-	  symbol->ts.u.cl->length = length;
-	}
+	symbol->ts.u.cl->length = length;
       else
 	symbol->attr.allocatable = 1;
     }

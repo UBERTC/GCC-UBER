@@ -1,3 +1,419 @@
+2016-07-09  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71783
+	* gfortran.dg/dependency_46.f90:  New test.
+
+2016-07-08  Cesar Philippidis  <cesar@codesourcery.com>
+
+	Backport from trunk:
+	2016-07-08  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* gfortran.dg/goacc/pr71704.f90: New test.
+
+2016-07-08  Martin Liska  <mliska@suse.cz>
+
+	Backported from mainline
+	2016-07-08  Martin Liska  <mliska@suse.cz>
+
+	* gcc.dg/torture/pr71606.c: New test.
+
+2016-07-08  Jiong Wang  <jiong.wang@arm.com>
+
+	Back port from the trunk
+	2016-07-08  Jiong Wang  <jiong.wang@arm.com>
+
+	* gcc.target/aarch64/simd/vminmaxnm_1.c: New.
+
+2016-07-08  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2016-07-08  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/71806
+	* gcc.target/powerpc/p9-lxvx-stxvx-3.c: Add -mfloat128 option.
+
+2016-07-07  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from the trunk
+	2016-07-01  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/71720
+	* gcc.target/powerpc/pr71720.c: New test.
+
+2016-07-07  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	Backport from mainline r237885
+	2016-06-30  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	* gcc.target/powerpc/dfp/dfp.exp: New dejagnu test script.
+	* gcc.target/powerpc/dfp/dtstsfi-0.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-1.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-10.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-11.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-12.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-13.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-14.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-15.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-16.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-17.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-18.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-19.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-2.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-20.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-21.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-22.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-23.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-24.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-25.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-26.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-27.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-28.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-29.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-3.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-30.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-31.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-32.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-33.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-34.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-35.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-36.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-37.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-38.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-39.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-4.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-40.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-41.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-42.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-43.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-44.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-45.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-46.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-47.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-48.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-49.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-5.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-50.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-51.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-52.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-53.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-54.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-55.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-56.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-57.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-58.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-59.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-6.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-60.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-61.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-62.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-63.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-64.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-65.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-66.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-67.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-68.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-69.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-7.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-70.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-71.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-72.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-73.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-74.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-75.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-76.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-77.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-78.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-79.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-8.c: New test.
+	* gcc.target/powerpc/dfp/dtstsfi-9.c: New test.
+
+2016-07-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-06-13  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/64516
+	* gcc.dg/align-3.c: New testcase.
+
+2016-07-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-05-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71264
+	* gcc.dg/vect/pr71264.c: New testcase.
+
+	2016-06-07  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/71423
+	* gcc.dg/torture/pr71423.c: New testcase.
+
+	2016-06-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71521
+	* gcc.dg/tree-ssa/vrp101.c: New testcase.
+
+	2016-06-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71452
+	* gcc.dg/torture/pr71452.c: New testcase.
+
+	2016-06-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71522
+	* gcc.dg/torture/pr71522.c: New testcase.
+
+2016-07-06  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	Backport from mainline
+	2016-07-06  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	PR target/50739	
+	* gcc.target/avr/pr50739.c: New test.
+
+2016-07-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-01  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.dg/const-float128-ped.c: Require __float128 effective
+	target and options.
+	* gcc.dg/const-float128.c: Likewise.
+	* gcc.dg/torture/float128-cmp-invalid.c: Require
+	__float128 and base_quadfloat_support effective targets, and
+	__float128 options.
+	* gcc.dg/torture/float128-div-underflow.c: Likewise.
+	* gcc.dg/torture/float128-extend-nan.c: Likewise.
+	* gcc.dg/torture/fp-int-convert-float128-timode-2.c: Likewise.
+	* gcc.dg/torture/fp-int-convert-float128-timode-3.c: Likewise.
+	* gcc.dg/torture/fp-int-convert-float128-timode.c: Likewise.
+	* lib/target-supports.exp (check_effective_target___float128):
+	New.
+	(add_options_for___float128): New.
+	(check_effective_target_base_quadword_support): New.
+
+2016-07-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71739
+	* g++.dg/cpp0x/pr71739.C: New test.
+
+2016-07-04  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backport from mainline
+	2016-06-27  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/71670
+	* gcc.target/powerpc/pr71670.c: New testcase.
+
+2016-07-02  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-07-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/71687
+	* gfortran.dg/gomp/pr71687.f90: New test.
+
+	2016-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/71704
+	* gfortran.dg/gomp/pr71704.f90: New test.
+
+	PR fortran/71705
+	* gfortran.dg/gomp/pr71705.f90: New test.
+
+	2016-06-29  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/71685
+	* gcc.dg/pr71685.c: New test.
+
+	2016-06-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71626
+	* gcc.c-torture/execute/pr71626-1.c: New test.
+	* gcc.c-torture/execute/pr71626-2.c: New test.
+
+	2016-06-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/71559
+	* gcc.target/i386/sse2-pr71559.c: New test.
+	* gcc.target/i386/avx-pr71559.c: New test.
+	* gcc.target/i386/avx512f-pr71559.c: New test.
+
+2016-07-01  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	Backport from trunk r237659
+	2016-06-21  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	* gcc.target/powerpc/darn-0.c: Add dejagnu directives to disable
+	test if effective-target is not powerpc_p9vector_ok, or if a -mcpu
+	override other than -mcpu=power9 command-line option is specified,
+	or if the target operating system is aix.
+	* gcc.target/powerpc/darn-1.c: Likewise.
+	* gcc.target/powerpc/darn-2.c: Likewise.
+	* gcc.target/powerpc/vslv-0.c: Add dejagnu directives to disable
+	test if effective-target is not powerpc_p9vector_ok or if the
+	target operating system is aix.
+	* gcc.target/powerpc/vslv-1.c: Likewise.
+	* gcc.target/powerpc/vsrv-0.c: Likewise.
+	* gcc.target/powerpc/vsrv-1.c: Likewise.
+
+2016-07-01  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from trunk
+	2016-06-27  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/71656
+	* gcc.target/powerpc/pr71656-1.c: New test.
+	* gcc.target/powerpc/pr71656-2.c: New test.
+
+2016-07-01  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-06-24  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/abs128-1.c: New.
+	* gcc.target/powerpc/copysign128-1.c: New.
+	* gcc.target/powerpc/inf128-1.c: New.
+	* gcc.target/powerpc/nan128-1.c: New.
+
+	Backport from mainline
+	2016-06-28  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/abs128-1.c: Require VSX.
+	* gcc.target/powerpc/copysign128-1.c: Likewise.
+	* gcc.target/powerpc/inf128-1.c: Likewise.
+	* gcc.target/powerpc/nan128-1.c: Likewise.
+
+2016-07-01  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from trunk
+	2016-07-01  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/71698
+	* gcc.target/powerpc/pr71698.c: New test.
+
+2016-07-01  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	Backport from trunk r236992
+	2016-06-01  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	* gcc.target/powerpc/vslv-0.c: New test.
+	* gcc.target/powerpc/vslv-1.c: New test.
+	* gcc.target/powerpc/vsrv-0.c: New test.
+	* gcc.target/powerpc/vsrv-1.c: New test.
+
+2016-06-30  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	Backport from trunk r237390
+	2016-06-13  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+	Backport from trunk r237646
+	2016-06-20  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	* gcc.target/powerpc/vadsdu-0.c: New test.
+	* gcc.target/powerpc/vadsdu-1.c: New test.
+	* gcc.target/powerpc/vadsdu-2.c: New test.
+	* gcc.target/powerpc/vadsdu-3.c: New test.
+	* gcc.target/powerpc/vadsdu-4.c: New test.
+	* gcc.target/powerpc/vadsdu-5.c: New test.
+	* gcc.target/powerpc/vadsdub-1.c: New test.
+	* gcc.target/powerpc/vadsdub-2.c: New test.
+	* gcc.target/powerpc/vadsduh-1.c: New test.
+	* gcc.target/powerpc/vadsduh-2.c: New test.
+	* gcc.target/powerpc/vadsduw-1.c: New test.
+	* gcc.target/powerpc/vadsduw-2.c: New test.
+
+2016-06-30  David Malcolm  <dmalcolm@redhat.com>
+
+	Backport from trunk r237880.
+	2016-06-30  David Malcolm  <dmalcolm@redhat.com>
+
+	PR driver/71651
+	* gcc.dg/spellcheck-options-12.c: New test case.
+
+2016-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71693
+	* gcc.c-torture/compile/pr71693.c: New test.
+
+2016-06-29  Cesar Philippidis  <cesar@codesourcery.com>
+
+	Back port from trunk
+	2016-06-29  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* gfortran.dg/goacc/asyncwait-2.f95: Updated expected diagnostics.
+	* gfortran.dg/goacc/asyncwait-3.f95: Likewise.
+	* gfortran.dg/goacc/asyncwait-4.f95: Add test coverage.
+
+2016-06-27  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/70673
+	* gfortran.dg/pr70673.f90: New test.
+
+2016-06-27  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2016-05-02  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/float128-complex-1.c: New tests for complex
+	__float128.
+	* gcc.target/powerpc/float128-complex-2.c: Likewise.
+
+2016-06-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/71647
+	* gcc.target/i386/pr71647.c: New test.
+
+2016-06-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/guality/param-5.c: New test.
+
+2016-06-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/71588
+	* gcc.dg/pr71558.c: New test.
+
+	Backported from mainline
+	2016-06-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71581
+	* gcc.dg/pr71581.c: New test.
+
+	2016-06-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71528
+	* g++.dg/opt/pr71528.C: New test.
+
+2016-06-20  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r237484.
+	2016-06-15  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR middle-end/71529
+	* gcc.target/i386/pr71529.C: New test.
+
+2016-06-20  Georg-Johann Lay  <avr@gjlay.de>
+	    Pitchumani Sivanupandi  <pitchumani.s@atmel.com>
+
+	Backport from 2016-06-20 trunk r237589, r236558.
+
+	PR target/71103
+	* gcc.target/avr/pr71103.c: New test.
+	* gcc.target/avr/torture/pr71103-2.c: New test.
+
+2016-06-16  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-06-14  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+	* gcc.target/powerpc/vsx-elemrev-2.c: Change effective target
+	requirements, and disable for AIX for now.
+	* gcc.target/powerpc/vsx-elemrev-4.c: Likewise.
+
+2016-06-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/71554
+	* gcc.c-torture/execute/pr71554.c: New test.
+
 2016-06-14  Paolo Carlini  <paolo.carlini@oracle.com>
 
 	PR c++/70572

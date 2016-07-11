@@ -114,6 +114,9 @@
    UNSPEC_STVLXL
    UNSPEC_STVRX
    UNSPEC_STVRXL
+   UNSPEC_VSLV
+   UNSPEC_VSRV
+   UNSPEC_VADU
    UNSPEC_VMULWHUB
    UNSPEC_VMULWLUB
    UNSPEC_VMULWHSB
@@ -239,7 +242,7 @@
     default: gcc_unreachable ();
     }
 }
-  [(set_attr "type" "vecstore,vecload,vecsimple,store,load,*,vecsimple,*,*")
+  [(set_attr "type" "vecstore,vecload,veclogical,store,load,*,veclogical,*,*")
    (set_attr "length" "4,4,4,20,20,20,4,8,32")])
 
 ;; Unlike other altivec moves, allow the GPRs, since a normal use of TImode
@@ -265,7 +268,7 @@
     default: gcc_unreachable ();
     }
 }
-  [(set_attr "type" "vecstore,vecload,vecsimple,store,load,*,vecsimple,*")])
+  [(set_attr "type" "vecstore,vecload,veclogical,store,load,*,veclogical,*")])
 
 ;; Load up a vector with the most significant bit set by loading up -1 and
 ;; doing a shift left
@@ -600,7 +603,7 @@
 		(match_operand:VI2 2 "altivec_register_operand" "v")))]
   "<VI_unit>"
   "vcmpequ<VI_char> %0,%1,%2"
-  [(set_attr "type" "veccmp")])
+  [(set_attr "type" "veccmpfx")])
 
 (define_insn "*altivec_gt<mode>"
   [(set (match_operand:VI2 0 "altivec_register_operand" "=v")
@@ -608,7 +611,7 @@
 		(match_operand:VI2 2 "altivec_register_operand" "v")))]
   "<VI_unit>"
   "vcmpgts<VI_char> %0,%1,%2"
-  [(set_attr "type" "veccmp")])
+  [(set_attr "type" "veccmpfx")])
 
 (define_insn "*altivec_gtu<mode>"
   [(set (match_operand:VI2 0 "altivec_register_operand" "=v")
@@ -616,7 +619,7 @@
 		 (match_operand:VI2 2 "altivec_register_operand" "v")))]
   "<VI_unit>"
   "vcmpgtu<VI_char> %0,%1,%2"
-  [(set_attr "type" "veccmp")])
+  [(set_attr "type" "veccmpfx")])
 
 (define_insn "*altivec_eqv4sf"
   [(set (match_operand:V4SF 0 "altivec_register_operand" "=v")
@@ -651,7 +654,7 @@
 	 (match_operand:VM 3 "altivec_register_operand" "v")))]
   "VECTOR_MEM_ALTIVEC_P (<MODE>mode)"
   "vsel %0,%3,%2,%1"
-  [(set_attr "type" "vecperm")])
+  [(set_attr "type" "vecmove")])
 
 (define_insn "*altivec_vsel<mode>_uns"
   [(set (match_operand:VM 0 "altivec_register_operand" "=v")
@@ -662,7 +665,7 @@
 	 (match_operand:VM 3 "altivec_register_operand" "v")))]
   "VECTOR_MEM_ALTIVEC_P (<MODE>mode)"
   "vsel %0,%3,%2,%1"
-  [(set_attr "type" "vecperm")])
+  [(set_attr "type" "vecmove")])
 
 ;; Fused multiply add.
 
@@ -1631,6 +1634,24 @@
   "vslo %0,%1,%2"
   [(set_attr "type" "vecperm")])
 
+(define_insn "vslv"
+  [(set (match_operand:V16QI 0 "register_operand" "=v")
+	(unspec:V16QI [(match_operand:V16QI 1 "register_operand" "v")
+		       (match_operand:V16QI 2 "register_operand" "v")]
+         UNSPEC_VSLV))]
+  "TARGET_P9_VECTOR"
+  "vslv %0,%1,%2"
+  [(set_attr "type" "vecsimple")])
+
+(define_insn "vsrv"
+  [(set (match_operand:V16QI 0 "register_operand" "=v")
+	(unspec:V16QI [(match_operand:V16QI 1 "register_operand" "v")
+		       (match_operand:V16QI 2 "register_operand" "v")]
+         UNSPEC_VSRV))]
+  "TARGET_P9_VECTOR"
+  "vsrv %0,%1,%2"
+  [(set_attr "type" "vecsimple")])
+
 (define_insn "*altivec_vsl<VI_char>"
   [(set (match_operand:VI2 0 "register_operand" "=v")
         (ashift:VI2 (match_operand:VI2 1 "register_operand" "v")
@@ -2051,7 +2072,7 @@
 		   UNSPEC_VPERMR))]
   "TARGET_P9_VECTOR"
   "@
-   vpermr %0,%1,%2,%3
+   vpermr %0,%2,%1,%3
    xxpermr %x0,%x2,%x3"
   [(set_attr "type" "vecperm")
    (set_attr "length" "4")])
@@ -2262,7 +2283,7 @@
 		(match_dup 2)))]
   "<VI_unit>"
   "vcmpequ<VI_char>. %0,%1,%2"
-  [(set_attr "type" "veccmp")])
+  [(set_attr "type" "veccmpfx")])
 
 (define_insn "*altivec_vcmpgts<VI_char>_p"
   [(set (reg:CC 74)
@@ -2274,7 +2295,7 @@
 		(match_dup 2)))]
   "<VI_unit>"
   "vcmpgts<VI_char>. %0,%1,%2"
-  [(set_attr "type" "veccmp")])
+  [(set_attr "type" "veccmpfx")])
 
 (define_insn "*altivec_vcmpgtu<VI_char>_p"
   [(set (reg:CC 74)
@@ -2286,7 +2307,7 @@
 		 (match_dup 2)))]
   "<VI_unit>"
   "vcmpgtu<VI_char>. %0,%1,%2"
-  [(set_attr "type" "veccmp")])
+  [(set_attr "type" "veccmpfx")])
 
 (define_insn "*altivec_vcmpeqfp_p"
   [(set (reg:CC 74)
@@ -3394,6 +3415,24 @@
   [(set_attr "length" "4")
    (set_attr "type" "vecsimple")])
 
+;; Vector absolute difference unsigned
+(define_expand "vadu<mode>3"
+  [(set (match_operand:VI 0 "register_operand")
+        (unspec:VI [(match_operand:VI 1 "register_operand")
+		    (match_operand:VI 2 "register_operand")]
+         UNSPEC_VADU))]
+  "TARGET_P9_VECTOR")
+
+;; Vector absolute difference unsigned
+(define_insn "*p9_vadu<mode>3"
+  [(set (match_operand:VI 0 "register_operand" "=v")
+        (unspec:VI [(match_operand:VI 1 "register_operand" "v")
+		    (match_operand:VI 2 "register_operand" "v")]
+         UNSPEC_VADU))]
+  "TARGET_P9_VECTOR"
+  "vabsdu<wd> %0,%1,%2"
+  [(set_attr "type" "vecsimple")])
+
 ;; Vector count trailing zeros
 (define_insn "*p9v_ctz<mode>2"
   [(set (match_operand:VI2 0 "register_operand" "=v")
@@ -3591,21 +3630,21 @@
 (define_insn "darn_32"
   [(set (match_operand:SI 0 "register_operand" "=r")
         (unspec:SI [(const_int 0)] UNSPEC_DARN_32))]
-  "TARGET_MODULO"
+  "TARGET_P9_MISC"
   "darn %0,0"
   [(set_attr "type" "integer")])
 
 (define_insn "darn_raw"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (unspec:DI [(const_int 0)] UNSPEC_DARN_RAW))]
-  "TARGET_MODULO && TARGET_64BIT"
+  "TARGET_P9_MISC && TARGET_64BIT"
   "darn %0,2"
   [(set_attr "type" "integer")])
 
 (define_insn "darn"
   [(set (match_operand:DI 0 "register_operand" "=r")
         (unspec:DI [(const_int 0)] UNSPEC_DARN))]
-  "TARGET_MODULO && TARGET_64BIT"
+  "TARGET_P9_MISC && TARGET_64BIT"
   "darn %0,1"
   [(set_attr "type" "integer")])
 
