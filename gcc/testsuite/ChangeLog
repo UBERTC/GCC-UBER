@@ -1,3 +1,124 @@
+2016-07-11  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71783
+	* gfortran.dg/dependency_46.f90:  New test.
+
+2016-07-08  Cesar Philippidis  <cesar@codesourcery.com>
+
+	Backport from trunk:
+	2016-07-08  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* gfortran.dg/goacc/pr71704.f90: New test.
+
+2016-07-08  Martin Liska  <mliska@suse.cz>
+
+	Backported from mainline
+	2016-07-08  Martin Liska  <mliska@suse.cz>
+
+	* gcc.dg/torture/pr71606.c: New test.
+
+2016-07-07  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/69019
+	* gcc.target/powerpc/ti_math1.c: Allow addze as well as adde.
+
+2016-07-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-03-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/68062
+	* c-c++-common/vector-compare-4.c: Add -Wno-psabi to dg-options.
+
+	2016-02-02  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* c-c++-common/vector-compare-4.c: Prune "non-standard ABI extension"
+	warning.
+
+	2016-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/71704
+	* gfortran.dg/gomp/pr71704.f90: New test.
+
+	PR fortran/71705
+	* gfortran.dg/gomp/pr71705.f90: New test.
+
+	2016-06-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71626
+	* gcc.c-torture/execute/pr71626-1.c: New test.
+	* gcc.c-torture/execute/pr71626-2.c: New test.
+
+	2016-06-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/71588
+	* gcc.dg/pr71558.c: New test.
+
+	2016-06-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71581
+	* gcc.dg/pr71581.c: New test.
+
+	2016-06-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71528
+	* g++.dg/opt/pr71528.C: New test.
+
+	PR c++/71516
+	* g++.dg/init/pr71516.C: New test.
+
+	2016-06-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71494
+	* gcc.c-torture/execute/pr71494.c: New test.
+
+	2016-06-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/71498
+	* c-c++-common/ubsan/bounds-13.c: New test.
+
+	2016-04-13  Jakub Jelinek  <jakub@redhat.com>
+ 
+	PR c++/70641
+	* g++.dg/opt/pr70641.C: New test.
+
+	PR middle-end/70633
+	* gcc.c-torture/compile/pr70633.c: New test.
+
+	PR debug/70628
+	* gcc.dg/torture/pr70628.c: New test.
+
+	2016-04-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70574
+	* gcc.target/i386/avx2-pr70574.c: New test.
+
+	2016-04-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/70336
+	* c-c++-common/pr70336.c: New test.
+	* gcc.dg/torture/builtin-isinf_sign-1.c (foo): Guard tests
+	no longer optimized away at -O0 with #ifndef __OPTIMIZE__.
+
+2016-07-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-06-07  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/71423
+	* gcc.dg/torture/pr71423.c: New testcase.
+
+	2016-06-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71452
+	* gcc.dg/torture/pr71452.c: New testcase.
+
+	2016-06-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71522
+	* gcc.dg/torture/pr71522.c: New testcase.
+
 2016-06-30  Jakub Jelinek  <jakub@redhat.com>
 
 	PR middle-end/71693

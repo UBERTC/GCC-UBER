@@ -1,3 +1,105 @@
+2016-07-08  Martin Liska  <mliska@suse.cz>
+
+	Backported from mainline
+	2016-07-08  Martin Liska  <mliska@suse.cz>
+
+	PR middle-end/71606
+	* fold-const.c (fold_convertible_p): As COMPLEX_TYPE
+	folding produces SAVE_EXPRs, thus return false for the type.
+
+2016-07-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-06-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71626
+	* config/i386/i386.c (ix86_expand_vector_move): For SUBREG of
+	a constant, force its SUBREG_REG into memory or register instead
+	of whole op1.
+
+	2016-06-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/71588
+	* tree-ssa-strlen.c (valid_builtin_call): New function.
+	(adjust_last_stmt, handle_builtin_memset, strlen_optimize_stmt): Use
+	it.
+
+	2016-06-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71581
+	* tree-ssa-uninit.c (warn_uninit): If EXPR and VAR are NULL,
+	see if T isn't anonymous SSA_NAME with COMPLEX_EXPR created
+	for conversion of scalar user var to complex type and use the
+	underlying SSA_NAME_VAR in that case.  If EXPR is still NULL,
+	punt.
+
+	2016-06-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71494
+	* tree-nested.c (convert_nonlocal_reference_stmt): For GIMPLE_GOTO
+	without LABEL_DECL, set *handled_ops_p to false instead of true.
+
+	2016-04-13  Jakub Jelinek  <jakub@redhat.com>
+ 
+	PR c++/70641
+	* ipa-pure-const.c (pass_nothrow::execute): Call maybe_clean_eh_stmt
+	on all recursive call stmts.  Return TODO_cleanup_cfg if any dead
+	eh edges have been purged.
+
+	PR middle-end/70633
+	* gimplify.c (gimplify_init_constructor): Clear TREE_STATIC if
+	gimplification turns some element into non-constant.
+
+	2016-04-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/70628
+	* explow.c (convert_memory_address_addr_space_1): Formatting fix.
+
+	PR debug/70628
+	* rtl.h (convert_memory_address_addr_space_1): New prototype.
+	* explow.c (convert_memory_address_addr_space_1): No longer static,
+	add NO_EMIT argument and don't call convert_modes if true, pass
+	it down recursively, remove break after return.
+	(convert_memory_address_addr_space): Adjust caller.
+	* simplify-rtx.c (simplify_unary_operation_1): Call
+	convert_memory_address_addr_space_1 instead of convert_memory_address,
+	if it returns NULL, don't simplify.
+
+	2016-04-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/70574
+	* fwprop.c (forward_propagate_and_simplify): Don't add
+	REG_EQUAL note if DF_REF_REG (use) is a paradoxical subreg.
+	(try_fwprop_subst): Don't add REG_EQUAL note if there are any
+	paradoxical subregs within *loc.
+
+	2016-04-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/70336
+	* match.pd (nested int casts): Limit to GIMPLE.
+
+2016-07-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-06-07  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/71423
+	* match.pd ((X | ~Y) -> Y <= X): Properly invert the comparison
+	for signed ops.
+
+	2016-06-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71452
+	* tree-ssa.c (non_rewritable_lvalue_p): Make sure that the
+	type used for the SSA rewrite has enough precision to cover
+	the dynamic type of the location.
+
+	2016-06-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71522
+	* tree-ssa.c (non_rewritable_lvalue_p): Do not rewrite non-float
+	copying into float copying.
+
 2016-07-01  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* config/arm/arm.c (arm_function_ok_for_sibcall): Add another check
