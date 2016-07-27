@@ -1,3 +1,23 @@
+2016-07-25  Jason Merrill  <jason@redhat.com>
+
+	PR c++/71833
+	* pt.c (coerce_template_parameter_pack): Fix logic for
+	pack index.
+
+2016-07-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/69223
+	* semantics.c (apply_deduced_return_type): Call
+	complete_type_or_else before building the new RESULT_DECL.
+
+	PR c++/71630
+	* pt.c (instantiate_decl): Fix pattern_defined for namespace scope
+	variable templates.
+
+	PR c++/71913
+	* call.c (unsafe_copy_elision_p): It's OK to elide when
+	initializing an unknown object.
+
 2016-07-20  Jakub Jelinek  <jakub@redhat.com>
 
 	PR c++/71909
