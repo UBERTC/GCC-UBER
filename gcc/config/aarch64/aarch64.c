@@ -250,6 +250,22 @@ static const struct cpu_addrcost_table xgene1_addrcost_table =
   0, /* imm_offset  */
 };
 
+static const struct cpu_addrcost_table vulcan_addrcost_table =
+{
+    {
+      0, /* hi  */
+      0, /* si  */
+      0, /* di  */
+      2, /* ti  */
+    },
+  0, /* pre_modify  */
+  0, /* post_modify  */
+  2, /* register_offset  */
+  3, /* register_sextend  */
+  3, /* register_zextend  */
+  0, /* imm_offset  */
+};
+
 static const struct cpu_regmove_cost generic_regmove_cost =
 {
   1, /* GP2GP  */
@@ -306,6 +322,15 @@ static const struct cpu_regmove_cost xgene1_regmove_cost =
   8, /* GP2FP  */
   8, /* FP2GP  */
   2 /* FP2FP  */
+};
+
+static const struct cpu_regmove_cost vulcan_regmove_cost =
+{
+  1, /* GP2GP  */
+  /* Avoid the use of int<->fp moves for spilling.  */
+  8, /* GP2FP  */
+  8, /* FP2GP  */
+  4  /* FP2FP  */
 };
 
 /* Generic costs for vector insn classes.  */
@@ -379,6 +404,24 @@ static const struct cpu_vector_cost xgene1_vector_cost =
   1 /* cond_not_taken_branch_cost  */
 };
 
+/* Costs for vector insn classes for Vulcan.  */
+static const struct cpu_vector_cost vulcan_vector_cost =
+{
+  6, /* scalar_stmt_cost  */
+  4, /* scalar_load_cost  */
+  1, /* scalar_store_cost  */
+  6, /* vec_stmt_cost  */
+  3, /* vec_permute_cost  */
+  6, /* vec_to_scalar_cost  */
+  5, /* scalar_to_vec_cost  */
+  8, /* vec_align_load_cost  */
+  8, /* vec_unalign_load_cost  */
+  4, /* vec_unalign_store_cost  */
+  4, /* vec_store_cost  */
+  2, /* cond_taken_branch_cost  */
+  1  /* cond_not_taken_branch_cost  */
+};
+
 /* Generic costs for branch instructions.  */
 static const struct cpu_branch_cost generic_branch_cost =
 {
@@ -388,6 +431,13 @@ static const struct cpu_branch_cost generic_branch_cost =
 
 /* Branch costs for Cortex-A57.  */
 static const struct cpu_branch_cost cortexa57_branch_cost =
+{
+  1,  /* Predictable.  */
+  3   /* Unpredictable.  */
+};
+
+/* Branch costs for Vulcan.  */
+static const struct cpu_branch_cost vulcan_branch_cost =
 {
   1,  /* Predictable.  */
   3   /* Unpredictable.  */
@@ -617,6 +667,31 @@ static const struct tune_params xgene1_tunings =
   2,	/* min_div_recip_mul_df.  */
   0,	/* max_case_values.  */
   0,	/* cache_line_size.  */
+  tune_params::AUTOPREFETCHER_OFF,	/* autoprefetcher_model.  */
+  (AARCH64_EXTRA_TUNE_NONE)	/* tune_flags.  */
+};
+
+static const struct tune_params vulcan_tunings =
+{
+  &vulcan_extra_costs,
+  &vulcan_addrcost_table,
+  &vulcan_regmove_cost,
+  &vulcan_vector_cost,
+  &vulcan_branch_cost,
+  &generic_approx_modes,
+  4, /* memmov_cost.  */
+  4, /* issue_rate.  */
+  AARCH64_FUSE_NOTHING, /* fuseable_ops.  */
+  16,	/* function_align.  */
+  8,	/* jump_align.  */
+  16,	/* loop_align.  */
+  3,	/* int_reassoc_width.  */
+  2,	/* fp_reassoc_width.  */
+  2,	/* vec_reassoc_width.  */
+  2,	/* min_div_recip_mul_sf.  */
+  2,	/* min_div_recip_mul_df.  */
+  0,	/* max_case_values.  */
+  64,	/* cache_line_size.  */
   tune_params::AUTOPREFETCHER_OFF,	/* autoprefetcher_model.  */
   (AARCH64_EXTRA_TUNE_NONE)	/* tune_flags.  */
 };
