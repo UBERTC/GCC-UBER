@@ -405,7 +405,7 @@
 		     UNSPEC_RSQRT))]
   "TARGET_SIMD"
 {
-  aarch64_emit_approx_rsqrt (operands[0], operands[1]);
+  aarch64_emit_approx_sqrt (operands[0], operands[1], true);
   DONE;
 })
 
@@ -1509,7 +1509,19 @@
   [(set_attr "type" "neon_fp_mul_<Vetype><q>")]
 )
 
-(define_insn "div<mode>3"
+(define_expand "div<mode>3"
+ [(set (match_operand:VDQF 0 "register_operand")
+       (div:VDQF (match_operand:VDQF 1 "general_operand")
+		 (match_operand:VDQF 2 "register_operand")))]
+ "TARGET_SIMD"
+{
+  if (aarch64_emit_approx_div (operands[0], operands[1], operands[2]))
+    DONE;
+
+  operands[1] = force_reg (<MODE>mode, operands[1]);
+})
+
+(define_insn "*div<mode>3"
  [(set (match_operand:VDQF 0 "register_operand" "=w")
        (div:VDQF (match_operand:VDQF 1 "register_operand" "w")
 		 (match_operand:VDQF 2 "register_operand" "w")))]
@@ -4284,7 +4296,16 @@
 
 ;; sqrt
 
-(define_insn "sqrt<mode>2"
+(define_expand "sqrt<mode>2"
+  [(set (match_operand:VDQF 0 "register_operand")
+	(sqrt:VDQF (match_operand:VDQF 1 "register_operand")))]
+  "TARGET_SIMD"
+{
+  if (aarch64_emit_approx_sqrt (operands[0], operands[1], false))
+    DONE;
+})
+
+(define_insn "*sqrt<mode>2"
   [(set (match_operand:VDQF 0 "register_operand" "=w")
         (sqrt:VDQF (match_operand:VDQF 1 "register_operand" "w")))]
   "TARGET_SIMD"

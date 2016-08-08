@@ -178,6 +178,25 @@ struct cpu_branch_cost
   const int unpredictable;  /* Unpredictable branch or optimizing for speed.  */
 };
 
+/* Control approximate alternatives to certain FP operators.  */
+#define AARCH64_APPROX_MODE(MODE) \
+  ((MIN_MODE_FLOAT <= (MODE) && (MODE) <= MAX_MODE_FLOAT) \
+   ? (1 << ((MODE) - MIN_MODE_FLOAT)) \
+   : (MIN_MODE_VECTOR_FLOAT <= (MODE) && (MODE) <= MAX_MODE_VECTOR_FLOAT) \
+     ? (1 << ((MODE) - MIN_MODE_VECTOR_FLOAT \
+	      + MAX_MODE_FLOAT - MIN_MODE_FLOAT + 1)) \
+     : (0))
+#define AARCH64_APPROX_NONE (0)
+#define AARCH64_APPROX_ALL (-1)
+
+/* Allowed modes for approximations.  */
+struct cpu_approx_modes
+{
+  const unsigned int division;		/* Division.  */
+  const unsigned int sqrt;		/* Square root.  */
+  const unsigned int recip_sqrt;	/* Reciprocal square root.  */
+};
+
 struct tune_params
 {
   const struct cpu_cost_table *insn_extra_cost;
@@ -185,6 +204,7 @@ struct tune_params
   const struct cpu_regmove_cost *regmove_cost;
   const struct cpu_vector_cost *vec_costs;
   const struct cpu_branch_cost *branch_costs;
+  const struct cpu_approx_modes *approx_modes;
   int memmov_cost;
   int issue_rate;
   unsigned int fusible_ops;
@@ -287,6 +307,8 @@ bool aarch64_cannot_change_mode_class (machine_mode,
 				       enum reg_class);
 bool aarch64_const_vec_all_same_int_p (rtx, HOST_WIDE_INT);
 bool aarch64_constant_address_p (rtx);
+bool aarch64_emit_approx_div (rtx, rtx, rtx);
+bool aarch64_emit_approx_sqrt (rtx, rtx, bool);
 bool aarch64_expand_movmem (rtx *);
 bool aarch64_float_const_zero_rtx_p (rtx);
 bool aarch64_function_arg_regno_p (unsigned);
@@ -368,7 +390,6 @@ void aarch64_register_pragmas (void);
 void aarch64_relayout_simd_types (void);
 void aarch64_reset_previous_fndecl (void);
 void aarch64_save_restore_target_globals (tree);
-void aarch64_emit_approx_rsqrt (rtx, rtx);
 
 /* Initialize builtins for SIMD intrinsics.  */
 void init_aarch64_simd_builtins (void);
