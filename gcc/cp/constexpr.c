@@ -390,7 +390,12 @@ build_data_member_initialization (tree t, vec<constructor_elt, va_gc> **vec)
 	gcc_assert (TREE_TYPE (member) == vtbl_ptr_type_node);
     }
 
-  CONSTRUCTOR_APPEND_ELT (*vec, member, init);
+  /* Value-initialization can produce multiple initializers for the
+     same field; use the last one.  */
+  if (!vec_safe_is_empty (*vec) && (*vec)->last().index == member)
+    (*vec)->last().value = init;
+  else
+    CONSTRUCTOR_APPEND_ELT (*vec, member, init);
   return true;
 }
 
@@ -1450,9 +1455,19 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
     }
   else
     {
-      if (!result || result == error_mark_node)
+      if (result && result != error_mark_node)
+	/* OK */;
+      else if (!DECL_SAVED_TREE (fun))
 	{
-	  gcc_assert (DECL_SAVED_TREE (fun));
+	  /* When at_eof >= 2, cgraph has started throwing away
+	     DECL_SAVED_TREE, so fail quietly.  FIXME we get here because of
+	     late code generation for VEC_INIT_EXPR, which needs to be
+	     completely reconsidered.  */
+	  gcc_assert (at_eof >= 2 && ctx->quiet);
+	  *non_constant_p = true;
+	}
+      else
+	{
 	  tree body, parms, res;
 
 	  /* Reuse or create a new unshared copy of this function's body.  */
@@ -1756,6 +1771,10 @@ cxx_eval_binary_expression (const constexpr_ctx *ctx, tree t,
 	       && (null_member_pointer_value_p (lhs)
 		   || null_member_pointer_value_p (rhs)))
 	r = constant_boolean_node (!is_code_eq, type);
+      else if (TREE_CODE (lhs) == PTRMEM_CST)
+	lhs = cplus_expand_constant (lhs);
+      else if (TREE_CODE (rhs) == PTRMEM_CST)
+	rhs = cplus_expand_constant (rhs);
     }
 
   if (r == NULL_TREE)
@@ -2030,40 +2049,47 @@ cxx_eval_array_reference (const constexpr_ctx *ctx, tree t,
   else
     found = (i < len);
 
-  if (!found)
+  if (found)
     {
-      if (TREE_CODE (ary) == CONSTRUCTOR
-	  && CONSTRUCTOR_NO_IMPLICIT_ZERO (ary))
+      tree r;
+      if (TREE_CODE (ary) == CONSTRUCTOR)
+	r = (*CONSTRUCTOR_ELTS (ary))[i].value;
+      else if (elem_nchars == 1)
+	r = build_int_cst (cv_unqualified (TREE_TYPE (TREE_TYPE (ary))),
+			   TREE_STRING_POINTER (ary)[i]);
+      else
 	{
-	  /* 'ary' is part of the aggregate initializer we're currently
-	     building; if there's no initializer for this element yet,
-	     that's an error.  */
-	  if (!ctx->quiet)
-	    error ("accessing uninitialized array element");
-	  *non_constant_p = true;
-	  return t;
+	  tree type = cv_unqualified (TREE_TYPE (TREE_TYPE (ary)));
+	  r = native_interpret_expr (type, (const unsigned char *)
+				     TREE_STRING_POINTER (ary)
+				     + i * elem_nchars, elem_nchars);
 	}
+      if (r)
+	/* Don't VERIFY_CONSTANT here.  */
+	return r;
 
-      /* If it's within the array bounds but doesn't have an explicit
-	 initializer, it's value-initialized.  */
-      tree val = build_value_init (elem_type, tf_warning_or_error);
-      return cxx_eval_constant_expression (ctx, val, lval, non_constant_p,
-					   overflow_p);
+      /* Otherwise the element doesn't have a value yet.  */
     }
 
-  if (TREE_CODE (ary) == CONSTRUCTOR)
-    return (*CONSTRUCTOR_ELTS (ary))[i].value;
-  else if (elem_nchars == 1)
-    return build_int_cst (cv_unqualified (TREE_TYPE (TREE_TYPE (ary))),
-			  TREE_STRING_POINTER (ary)[i]);
-  else
+  /* Not found.  */
+
+  if (TREE_CODE (ary) == CONSTRUCTOR
+      && CONSTRUCTOR_NO_IMPLICIT_ZERO (ary))
     {
-      tree type = cv_unqualified (TREE_TYPE (TREE_TYPE (ary)));
-      return native_interpret_expr (type, (const unsigned char *)
-					  TREE_STRING_POINTER (ary)
-					  + i * elem_nchars, elem_nchars);
+      /* 'ary' is part of the aggregate initializer we're currently
+	 building; if there's no initializer for this element yet,
+	 that's an error.  */
+      if (!ctx->quiet)
+	error ("accessing uninitialized array element");
+      *non_constant_p = true;
+      return t;
     }
-  /* Don't VERIFY_CONSTANT here.  */
+
+  /* If it's within the array bounds but doesn't have an explicit
+     initializer, it's value-initialized.  */
+  tree val = build_value_init (elem_type, tf_warning_or_error);
+  return cxx_eval_constant_expression (ctx, val, lval, non_constant_p,
+				       overflow_p);
 }
 
 /* Subroutine of cxx_eval_constant_expression.
@@ -3288,6 +3314,12 @@ label_matches (tree *jump_target, tree_stmt_iterator i,
 	{
 	  if (!CASE_LOW (stmt))
 	    default_label = i;
+	  else if (CASE_HIGH (stmt))
+	    {
+	      if (tree_int_cst_le (CASE_LOW (stmt), *jump_target)
+		  && tree_int_cst_le (*jump_target, CASE_HIGH (stmt)))
+		return true;
+	    }
 	  else if (tree_int_cst_equal (*jump_target, CASE_LOW (stmt)))
 	    return true;
 	}
@@ -3720,6 +3752,19 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 
     case REALPART_EXPR:
     case IMAGPART_EXPR:
+      if (lval)
+	{
+	  r = cxx_eval_constant_expression (ctx, TREE_OPERAND (t, 0), lval,
+					    non_constant_p, overflow_p);
+	  if (r == error_mark_node)
+	    ;
+	  else if (r == TREE_OPERAND (t, 0))
+	    r = t;
+	  else
+	    r = fold_build1 (TREE_CODE (t), TREE_TYPE (t), r);
+	  break;
+	}
+      /* FALLTHRU */
     case CONJ_EXPR:
     case FIX_TRUNC_EXPR:
     case FLOAT_EXPR:
@@ -5146,10 +5191,12 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
     case GOTO_EXPR:
       {
 	tree *target = &TREE_OPERAND (t, 0);
-	/* Gotos representing break and continue are OK; we should have
-	   rejected other gotos in parsing.  */
-	gcc_assert (breaks (target) || continues (target));
-	return true;
+	/* Gotos representing break and continue are OK.  */
+	if (breaks (target) || continues (target))
+	  return true;
+	if (flags & tf_error)
+	  error ("%<goto%> is not a constant-expression");
+	return false;
       }
 
     default:
@@ -5157,7 +5204,7 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
 	return false;
 
       sorry ("unexpected AST of kind %s", get_tree_code_name (TREE_CODE (t)));
-      gcc_unreachable();
+      gcc_unreachable ();
       return false;
     }
 #undef RECUR

@@ -1,3 +1,425 @@
+2016-08-22  Release Manager
+
+	* GCC 6.2.0 released.
+
+2016-08-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/62171
+	* gcc.dg/vect/pr62171.c: Remove default vector testsuite flags.
+
+2016-08-18  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Backport from mainline
+	2016-08-18  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	PR middle-end/70895
+	* gfortran.dg/goacc/loop-tree-1.f90: Add gimple scan-tree-dump test.
+	* c-c++-common/goacc/reduction-1.c: Likewise.
+	* c-c++-common/goacc/reduction-2.c: Likewise.
+	* c-c++-common/goacc/reduction-3.c: Likewise.
+	* c-c++-common/goacc/reduction-4.c: Likewise.
+
+2016-08-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR testsuite/77034
+	Backported from mainline
+	2016-07-25  Jason Merrill  <jason@redhat.com>
+
+	* g++.dg/init/elide5.C (operator new): Use decltype(sizeof(1)) instead
+	of unsigned long.
+
+2016-08-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/73434
+	* gcc.dg/torture/pr73434.c: New testcase.
+
+2016-08-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/72824
+	* gcc.c-torture/execute/ieee/pr72824-2.c: New test.
+
+2016-08-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-08-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/76342
+	* gcc.target/i386/pr76342.c: New test.
+
+2016-08-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/71512
+	* g++.dg/ubsan/pr71512.C: New test.
+	* c-c++-common/ubsan/pr71512-1.c: New test.
+	* c-c++-common/ubsan/pr71512-2.c: New test.
+
+2016-08-12  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	Backport from mainline
+	2016-08-11  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR tree-optimization/71083
+	* gcc.c-torture/execute/pr71083.c: New test.
+	* gnat.dg/loop_optimization23.adb: New test.
+	* gnat.dg/loop_optimization23_pkg.ads: New test.
+	* gnat.dg/loop_optimization23_pkg.adb: New test.
+
+2016-08-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/67410
+	* gcc.dg/pr67410.c: New test.
+
+2016-08-12  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline
+	2016-08-05  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	PR Target/72819
+	* gcc.target/aarch64/aapcs64/abitest-common.h: Define half-precision
+	registers.
+	* gcc.target/aarch64/aapcs64/abitest.S (dumpregs): Add assembly for
+	saving the half-precision registers.
+	* gcc.target/aarch64/aapcs64/func-ret-1.c: Test that an __fp16
+	value is returned in h0.
+	* gcc.target/aarch64/aapcs64/test_2.c: Check that __FP16 arguments
+	are passed in FP/SIMD registers.
+	* gcc.target/aarch64/aapcs64/test_27.c: New, test that __fp16 HFA
+	passing works corrcetly.
+	* gcc.target/aarch64/aapcs64/type-def.h (hfa_f16x1_t): New.
+	(hfa_f16x2_t): Likewise.
+	(hfa_f16x3_t): Likewise.
+	* gcc.target/aarch64/aapcs64/va_arg-1.c: Check that __fp16 values
+	are promoted to double and passed in a double register.
+	* gcc.target/aarch64/aapcs64/va_arg-2.c: Check that __fp16 values
+	are promoted to double and stacked.
+	* gcc.target/aarch64/aapcs64/va_arg-4.c: Check stacking of HFA of
+	__fp16 data types.
+	* gcc.target/aarch64/aapcs64/va_arg-5.c: Likewise.
+	* gcc.target/aarch64/aapcs64/va_arg-16.c: New, check HFAs of
+	__fp16 first get passed in FP/SIMD registers, then stacked.
+
+2016-08-11  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/71123
+	* gfortran.dg/namelist_90.f: New test
+
+2016-08-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/72868
+	* constexpr.c (label_matches): Handle case range expressions.
+
+	Backported from mainline
+	2016-08-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/72816
+	* gcc.dg/pr72816.c: Remove dg-error.
+
+	2016-08-07  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/72816
+	* gcc.dg/pr72816.c: New test.
+
+2016-08-11  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71936
+	* gfortran.dg/allocate_with_source_21.f03: New test.
+
+2016-08-11  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/72698
+	* gfortran.dg/allocate_with_source_20.f03: New test.
+
+2016-08-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-08-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/72853
+	* gcc.target/powerpc/pr72853.c: New test.
+
+2016-08-10  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-08-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/72824
+	* gcc.c-torture/execute/ieee/pr72824.c: New test.
+
+2016-08-09  Martin Jambor  <mjambor@suse.cz>
+
+        PR ipa/71981
+        * gcc.dg/ipa/pr71981.c: New test.
+
+2016-08-09  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-07-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71881
+	* gcc.dg/torture/pr71881.c: New testcase.
+
+2016-08-09  Alan Modra  <amodra@gmail.com>
+
+	* gcc.c-torture/compile/pr72802.c: New.
+
+2016-08-08  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/72800
+	* g++.dg/cpp1y/lambda-ice1.C: New.
+
+2016-07-25  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/70524
+	* gfortran.dg/dependency_48.f90: New test.
+
+2016-08-07  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/71795
+	Backport from trunk
+	* gfortran.dg/array_constructor_50.f90:  New test.
+
+2016-08-07  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/70040
+	Backport from trunk
+	* gfortran.dg/pr70040.f90:  New testcase.
+
+2016-08-05  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/68724
+	* g++.dg/cpp0x/pr68724.C: New.
+
+2016-08-04  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from trunk
+	2016-07-26  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/71869
+	* gcc.target/powerpc/float128-cmp.c: New test to make sure that
+	IEEE built-in functions handle quiet and signalling NaNs
+	correctly.
+
+2016-08-01  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2016-06-16 trunk r237536, r237910.
+	2016-06-16  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	PR target/71151
+	* gcc.target/avr/pr71151-1.c: New test.
+	* gcc.target/avr/pr71151-2.c: New test.
+	* gcc.target/avr/pr71151-3.c: New test.
+	* gcc.target/avr/pr71151-4.c: New test.
+	* gcc.target/avr/pr71151-5.c: New test.
+	* gcc.target/avr/pr71151-6.c: New test.
+	* gcc.target/avr/pr71151-7.c: New test.
+	* gcc.target/avr/pr71151-8.c: New test.
+	* gcc.target/avr/pr71151-common.h: New file.
+
+2016-07-31  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-31  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/divkc3-1.c: Require POWER8 hardware.
+	* gcc.target/powerpc/mulkc3-1.c: Likewise.
+
+2016-07-28  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/71883
+	* gfortran.dg/pr71883.f90 : New test.
+
+2016-07-26  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-26  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/pr63354.c: Require lp64 since
+	-mprofile-kernel is not legal with -m32.
+
+2016-07-22  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backported from trunk:
+	PR fortran/71807
+	* gfortran.dg/null_9.f90: New test.
+
+2016-07-22  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/70842
+	* gfortran.dg/select_type_35.f03: New test.
+
+2016-07-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71728
+	* g++.dg/other/pr71728.C: New test.
+
+	PR c++/71941
+	* g++.dg/gomp/pr71941.C: New test.
+
+2016-07-21  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/70822
+	PR c++/70106
+	* g++.dg/cpp1y/auto-fn32.C: New test.
+	* g++.dg/cpp1y/paren4.C: New test.
+
+2016-07-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71909
+	* g++.dg/parse/pr71909.C: New test.
+	* g++.dg/tm/pr71909.C: New test.
+
+2016-07-20  Martin Jambor  <mjambor@suse.cz>
+
+        PR fortran/71688
+        gfortran.dg/pr71688.f90: New test.
+
+2016-07-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/71916
+	* gcc.c-torture/compile/pr71916.c: New test.
+
+	PR middle-end/71874
+	* g++.dg/torture/pr71874.C: New test.
+
+	Backported from mainline
+	2016-07-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71835
+	* g++.dg/conversion/ambig3.C: New test.
+
+	PR c++/71828
+	* g++.dg/cpp0x/constexpr-71828.C: New test.
+
+	PR c++/71822
+	* g++.dg/template/defarg21.C: New test.
+
+	PR c++/71871
+	* g++.dg/ext/vector31.C: New test.
+
+	2016-07-07  Jakub Jelinek  <jakub@redhat.com>
+		    Kai Tietz  <ktietz70@googlemail.com>
+
+	PR c++/70869
+	PR c++/71054
+	* g++.dg/cpp0x/pr70869.C: New test.
+	* g++.dg/cpp0x/pr71054.C: New test.
+
+2016-07-18  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from mainline
+	2016-07-18  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/71493
+	* gcc.target/powerpc/pr71493-1.c: New test.
+	* gcc.target/powerpc/pr71493-2.c: Likewise.
+
+2016-07-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/nolrl-1.c: New test.
+
+2016-07-15  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71764
+	* gfortran.dg/pr71764.f90: New test.
+
+2016-07-15  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-15  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* g++.dg/pr70098.C: Remove XFAIL for powerpc64_no_dm.
+	* gcc.target/powerpc/pr71763.c: Likewise.
+
+2016-07-15  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-15  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/divkc3-1.c: Require p8vector support.
+	* gcc.target/powerpc/mulkc3-1.c: Likewise.
+
+2016-07-14  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/divkc3-1.c: New.
+	* gcc.target/powerpc/mulkc3-1.c: New.
+
+2016-07-14  Alan Modra  <amodra@gmail.com>
+
+	PR target/71733
+	* gcc.target/powerpc/p9-novsx.c: New.
+
+2016-07-13  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71623
+	* gfortran.dg/deferred_character_17.f90: New test.
+
+2016-07-13  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r238086.
+	2016-07-07  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR ipa/71624
+	* g++.dg/pr71624.C: New test.
+
+2016-07-12  Michael Meissner  <meissner@linux.vnet.ibm.com>
+	    Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-05  Michael Meissner  <meissner@linux.vnet.ibm.com>
+	            Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/signbit-1.c: New test.
+	* gcc.target/powerpc/signbit-2.c: New test.
+	* gcc.target/powerpc/signbit-3.c: New test.
+
+2016-07-12  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-12  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/71805
+	* gcc.target/powerpc/pr71805.c: New test.
+
+2016-07-12  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backport from mainline
+	2016-07-06  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/70098
+	PR target/71763
+	* gcc.target/powerpc/pr71763.c: New file.
+
+2016-07-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71758
+	* c-c++-common/gomp/pr71758.c: New test.
+	* gfortran.dg/gomp/pr71758.f90: New test.
+
+	PR tree-optimization/71823
+	* gcc.dg/vect/pr71823.c: New test.
+
+2016-07-11  Yuri Rumyantsev  <ysrumyan@gmail.com>
+
+	Backport from mainline r238055.
+	2016-07-06  Yuri Rumyantsev  <ysrumyan@gmail.com>
+
+	PR tree-optimization/71518
+        * gcc.dg/pr71518.c: New test.
+
 2016-07-09  Thomas Koenig  <tkoenig@gcc.gnu.org>
 
 	Backport from trunk:
@@ -169,7 +591,7 @@
 	Backport from mainline
 	2016-07-06  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
 
-	PR target/50739	
+	PR target/50739
 	* gcc.target/avr/pr50739.c: New test.
 
 2016-07-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>

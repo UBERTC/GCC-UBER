@@ -7200,6 +7200,12 @@ gfc_trans_subcomponent_assign (tree dest, gfc_component * cm, gfc_expr * expr,
       tmp = gfc_trans_alloc_subarray_assign (tmp, cm, expr);
       gfc_add_expr_to_block (&block, tmp);
     }
+  else if (init && cm->attr.allocatable && expr->expr_type == EXPR_NULL)
+    {
+      /* NULL initialization for allocatable components.  */
+      gfc_add_modify (&block, dest, fold_convert (TREE_TYPE (dest),
+						  null_pointer_node));
+    }
   else if (init && (cm->attr.allocatable
 	   || (cm->ts.type == BT_CLASS && CLASS_DATA (cm)->attr.allocatable
 	       && expr->ts.type != BT_CLASS)))
@@ -7358,7 +7364,6 @@ gfc_trans_structure_assign (tree dest, gfc_expr * expr, bool init)
     {
       gfc_se se, lse;
 
-      gcc_assert (cm->backend_decl == NULL);
       gfc_init_se (&se, NULL);
       gfc_init_se (&lse, NULL);
       gfc_conv_expr (&se, gfc_constructor_first (expr->value.constructor)->expr);

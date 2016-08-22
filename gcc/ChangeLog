@@ -1,3 +1,509 @@
+2016-08-22  Richard Biener  <rguenther@suse.de>
+
+	* BASE-VER: Set to 6.2.1.
+
+2016-08-22  Release Manager
+
+	* GCC 6.2.0 released.
+
+2016-08-18  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	Backport from mainline
+	2016-08-18  Chung-Lin Tang  <cltang@codesourcery.com>
+
+	PR middle-end/70895
+	* gimplify.c (omp_add_variable): Adjust/add variable mapping on
+	enclosing parallel construct for reduction variables on OpenACC loop
+	directives.
+
+2016-08-18  Oleg Endo  <olegendo@gcc.gnu.org>
+
+	Backport from mainline
+	2016-06-17  DJ Delorie  <dj@redhat.com>
+
+	PR target/71338
+	* config/rl78/rl78-expand.c (umulqihi3): Enable for G10.
+	* config/rl78/rl78-virtual.c (umulhi3_shift_virt): Likewise.
+	(umulqihi3_virt): Likewise.
+	* config/rl78/rl78-real.c (umulhi3_shift_real): Likewise.
+	(umulqihi3_real): Likewise.
+
+2016-08-16  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/install.texi (*-*-solaris2*): Adjust latest change.
+
+2016-08-15  Martin Liska  <mliska@suse.cz>
+
+	Backported from mainline
+	2016-08-15  Martin Liska  <mliska@suse.cz>
+
+	PR driver/72765
+	* gcc.c (do_spec_1): Call save_string with the right size.
+
+2016-08-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/71906
+	* dwarf2out.c (string_types): New variable.
+	(gen_array_type_die): Change early_dwarf handling of
+	DW_AT_string_length, create DW_OP_call4 referencing the
+	length var temporarily.  Handle parameters that are pointers
+	to string length.
+	(adjust_string_types): New function.
+	(gen_subprogram_die): Temporarily set string_types to local var,
+	call adjust_string_types if needed.
+	(non_dwarf_expression, copy_deref_exprloc, optimize_string_length):
+	New functions.
+	(resolve_addr): Adjust DW_AT_string_length if it is DW_OP_call4.
+
+2016-08-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/73434
+	* tree-ssa-sccvn.c (vn_reference_maybe_forwprop_address): Preserve
+	TBAA info on the base when forwarding a non-invariant address.
+
+2016-08-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/install.texi (*-*-solaris2*): Fix version number and document
+	requirement on GNU make for building libjava with the Solaris linker.
+
+2016-08-15  Martin Liska  <mliska@suse.cz>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/72824
+	* tree-loop-distribution.c (const_with_all_bytes_same)
+	<case VECTOR_CST>: Fix a typo.
+
+2016-08-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-08-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/76342
+	* config/i386/avx512fintrin.h (_mm512_undefined_epi32):
+	Renamed from _mm512_undefined_si512.
+	(_mm_undefined_si512): New definition.
+
+	Backport from mainline:
+	2016-08-09  David Wohlferd  <dw@LimeGreenSocks.com>
+
+	* config/i3836/avx512fintrin.h (_mm512_cvtsepi64_epi32): Remove
+	unused variable __O.
+
+	Backport from mainline:
+	2016-08-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/72843
+	* config/i386/i386.md (*movtf_internal): Use
+	lra_in_progress || reload_completed instead of !can_create_pseudo_p
+	in the insn constraint.
+	(*movxf_internal): Ditto.
+	(*movdf_internal): Ditto.
+	(*movsf_internal): Ditto.
+
+2016-08-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/71512
+	* ubsan.c (instrument_si_overflow): Pass true instead of false
+	to gsi_replace.
+	(pass_ubsan::execute): Call gimple_purge_dead_eh_edges at the end
+	of bbs.  Return TODO_cleanup_cfg if any returned true.
+
+2016-08-12  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	Backport from mainline
+	2016-08-11  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR tree-optimization/71083
+	* tree-predcom.c (ref_at_iteration): Correctly align the
+	reference type.
+
+2016-08-12  James Greenhalgh  <james.greenhalgh@arm.com
+
+	Backport from mainline
+	2016-08-05  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	PR Target/72819
+	* config/aarch64/aarch64.h (aarch64_fp16_type_node): Declare.
+	(aarch64_fp16_ptr_type_node): Likewise.
+	* config/aarch64/aarch64-simd-builtins.c
+	(aarch64_fp16_ptr_type_node): Define.
+	(aarch64_init_fp16_types): New, refactored out of...
+	(aarch64_init_builtins): ...here, update to call
+	aarch64_init_fp16_types.
+	* config/aarch64/aarch64.c (aarch64_gimplify_va_arg_expr): Handle
+	HFmode.
+	(aapcs_vfp_sub_candidate): Likewise.
+
+2016-08-11  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-08-11  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtin-types.def: Add INT128 types.
+	* config/s390/s390-builtins.def: Add INT128 variants for the add
+	sub low-level builtins dealing with TImode.
+	* config/s390/s390.c (s390_expand_builtin): Allow mode conversions
+	via subreg when expanding a builtin.
+	* config/s390/s390.md: Remove UNSPEC_VEC_ADDC_U128,
+	UNSPEC_VEC_SUB_U128, and UNSPEC_VEC_SUBC_U128 constants.
+	Fix comment.
+	* config/s390/vecintrin.h: Adjust builtin names accordingly.
+	* config/s390/vx-builtins.md ("vec_add_u128"): Remove expander.
+	("vec_addc<mode>", "vec_addc_u128"): Merge to
+	"vacc<bhfgq>_<mode>".
+	("vec_adde_u128"): Rename to "vacq". Change mode to TImode.
+	("vec_addec_u128"): Rename to "vacccq". Change mode to TImode.
+	("vec_subc<mode>", "vec_subc_u128"): Merge to
+	"vscbi<bhfgq>_<mode>".
+	("vec_sube_u128"): Rename to "vsbiq". Change mode to TImode.
+	("vec_subec_u128"): Rename to "vsbcbiq". Change mode to TImode.
+
+2016-08-11  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-08-11  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtins.def: Mark last operand of s390_vlvg*
+	and s390_vlgv* builtins as element selector.
+
+2016-08-11  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-06  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_expand_vec_init): Force initializer
+	element to register if it doesn't match general_operand.
+
+2016-08-11  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-06-13  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/vecintrin.h: Fix file description in comment.
+
+2016-08-11  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-06-13  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-builtin-types.def: Change builtin type naming
+	scheme to match builtin-types.def.
+
+2016-08-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-08-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/72853
+	* config/rs6000/rs6000.c (mem_operand_ds_form): Add check for op
+	being an offsettable address.
+
+2016-08-10  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-08-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/72824
+	* tree-loop-distribution.c (const_with_all_bytes_same): Verify
+	real_zerop is not negative.
+
+2016-08-09  Martin Jambor  <mjambor@suse.cz>
+
+        PR ipa/71981
+        * ipa-polymorphic-call.c (get_dynamic_type): Bail out gracefully
+        if instance is a MEM_REF.
+
+2016-08-09  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-08-09  Richard Biener  <rguenther@suse.de>
+
+	PR ipa/68273
+	* ipa-prop.c (ipa_modify_formal_parameters): Build
+	parameter types with natural alignment also for the
+	over-aligned case.
+
+	2016-07-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71881
+	* tree-loop-distribution.c (destroy_loop): Remove blocks in
+	reverse DOM order to make debug temp generation happy.
+
+2016-08-09  Alan Modra  <amodra@gmail.com>
+
+	PR target/72802
+	* config/rs6000/rs6000.md (mov<mode>_hardfloat): Sort
+	alternatives.  Put loads first, then stores, and reg/reg moves
+	within same class later.  Delete attr length.
+
+2016-08-09  Alan Modra  <amodra@gmail.com>
+
+	PR target/72802
+	* config/rs6000/rs6000.c (mem_operand_gpr): Remove vsx dform test.
+	(mem_operand_ds_form): New predicate.
+	* config/rs6000/rs6000-protos.h (mem_operand_ds_form): Declare.
+	* config/rs6000/constraints.md (wY): New constraint.
+	* config/rs6000/rs6000.md (f32_lm2, f32_sm2): Use wY for SF.
+	(extendsfdf2_fpr): Replace o constraint with wY.
+
+2016-08-08  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2016-07-29 trunk r238863.
+
+	PR rtl-optimization/71976
+	* combine.c (get_last_value): Return 0 if the argument for which
+	the function is called has a wider mode than the recorded value.
+
+2016-08-04  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from trunk
+	2016-07-26  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/71869
+	* config/rs6000/rs6000.c (rs6000_generate_compare): Rework
+	__float128 support when we don't have hardware support, so that
+	the IEEE built-in functions like isgreater, first call __unordkf3
+	to make sure neither operand is a NaN, and if both operands are
+	ordered, do the normal comparison.
+
+2016-08-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/72805
+	* config/i386/avx512fintrin.h (_mm512_cmp_epi32_mask) [!__OPTIMIZE__]:
+	Cast builtin function result to __mmask16 instead of __mmask8.
+	(_mm512_cmp_epu32_mask) [!__OPTIMIZE__]: Ditto.
+	(_mm512_mask_cmp_epi32_mask) [!__OPTIMIZE__]: Ditto.
+	(_mm512_mask_cmp_epu32_mask) [!__OPTIMIZE__]: Ditto.
+
+2016-08-03  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR 70677
+	* common/config/avr/avr-common.c (avr_option_optimization_table)
+	[OPT_LEVELS_ALL]: Turn off -fcaller-saves.
+
+2016-08-01  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2016-08-01 trunk r238948.
+
+	PR target/72767
+	* config/avr/avr.md (length) [branch]: Correct insn length
+	attribute for forward branches.
+
+2016-08-01  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2016-06-16 trunk r237536.
+	2016-06-16  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	PR target/71151
+	* config/avr/avr.c (avr_asm_init_sections): Remove setup of
+	progmem_swtable_section.
+	(progmem_swtable_section): Remove.
+	(avr_asm_function_rodata_section): Remove.
+	(TARGET_ASM_FUNCTION_RODATA_SECTION): Remove.
+	* config/avr/avr.h (JUMP_TABLES_IN_TEXT_SECTION): Define to 1.
+
+2016-07-29  Marek Polacek  <polacek@redhat.com>
+
+	Backport from mainline
+	2016-07-29  Marek Polacek  <polacek@redhat.com>
+
+	PR c/7652
+	* config/rs6000/rs6000.c (altivec_expand_ld_builtin): Add break.
+	(altivec_expand_st_builtin): Likewise.
+	* config/i386/i386.c (ix86_expand_args_builtin): Likewise.
+	(ix86_expand_round_builtin): Likewise.
+
+2016-07-27  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/71216
+	* config/rs6000/rs6000.c (rs6000_file_start): Fix condition for
+	when to emit a ".machine" pseudo-op.
+
+2016-07-26  Alan Modra  <amodra@gmail.com>
+
+	PR target/72103
+	* config/rs6000/rs6000.c (rs6000_secondary_reload): Initialize
+	sri->t_icode.
+
+2016-07-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/71953
+	* asan.c (asan_dynamic_init_call): Call asan_init_shadow_ptr_types
+	before builtin_decl_implicit.
+
+	* tree-object-size.c (unknown): Use HOST_WIDE_INT_M1U instead of -1.
+
+2016-07-21  Andrew Sutton  <andrew.n.sutton@gmail.com>
+
+	Improving concepts performance and diagnostics.
+	* timevar.def (TV_CONSTRAINT_SAT, TV_CONSTRAINT_SUB): New time vars
+	for constraint satisfaction and subsumption.
+	* timevar.h (auto_timevar): New constructor that matches the push/pop
+	pattern of usage in pt.c.
+
+2016-07-20  John David Anglin  <danglin@gcc.gnu.org>
+
+	Backport from mainline
+	2016-07-16  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.c (hppa_profile_hook): Allocate stack space for
+	register parameters.  Remove code to initialize argument pointer
+	on TARGET_64BIT.  Optimize call to _mcount when it can be reached
+	using a pc-relative branch.  Cleanup conditional code.
+	* config/pa/pa.md (call_mcount): New expander.
+	(call_mcount_nonpic): New insn.
+	(call_mcount_pic): New insn and split.
+	(call_mcount_pic_post_reload): New insn.
+	(call_mcount_64bit): New insn and split.
+	(call_mcount_64bit_post_reload): New insn.
+
+2016-07-20  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-20  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_encode_section_info): Remove mode size
+	check.
+
+2016-07-20  Martin Jambor  <mjambor@suse.cz>
+
+	PR fortran/71688
+	* trans-decl.c (gfc_generate_function_code): Use get_create rather
+	than create to get a call graph node.
+
+2016-07-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/71916
+	* cfgrtl.c (contains_no_active_insn_p): Return false also for
+	bb which have a single succ fake edge.
+
+2016-07-19  Aldy Hernandez  <aldyh@redhat.com>
+
+	PR debug/71855
+	* dwarf2out.c (gen_subprogram_die): Only call
+	gen_unspecified_parameters_die while dumping early dwarf.
+
+2016-07-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71874
+	* gimple-fold.c (fold_builtin_memory_op): Use
+	get_addr_base_and_unit_offset instead of get_ref_base_and_extent.
+
+2016-07-18  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from mainline
+	2016-07-18  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/71493
+	* config/rs6000/rs6000.c (rs6000_function_value): Fix
+	unintentional System V.4 structure return breakage for structures
+	with a single floating point element.
+
+2016-07-18  Martin Liska  <mliska@suse.cz>
+
+	Backported from mainline
+	2016-07-12  Martin Liska  <mliska@suse.cz>
+
+	PR rtl-optimization/71634
+	* ira-build.c (mark_loops_for_removal): Properly iterate
+	loops.
+
+2016-07-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-18  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390.c (s390_encode_section_info): Always set
+	notaligned marker if mode size is 0 or no MEM_ALIGN info could be
+	found.
+
+2016-07-15  Alan Modra  <amodra@gmail.com>
+
+	Apply from mainline
+	2016-07-11  Alan Modra  <amodra@gmail.com>
+	* config/rs6000/rs6000.md (UNSPEC_DOLOOP): New unspec.
+	(ctr<mode>): Add unspec.
+	(ctr<mode>_internal*): Likewise.
+
+2016-07-14  Alan Modra  <amodra@gmail.com>
+
+	PR target/71733
+	* config/rs6000/rs6000.c (rs6000_option_override_internal): Deal
+	with p9_vector override before power9-dform override.
+
+2016-07-13  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	Backport from mainline r238086.
+	2016-07-07  Ilya Enkovich  <ilya.enkovich@intel.com>
+
+	PR ipa/71624
+	* ipa-inline-analysis.c (compute_inline_parameters): Set
+	local.can_change_signature to false for intrumentation
+	thunk callees.
+
+2016-07-12  Michael Meissner  <meissner@linux.vnet.ibm.com>
+	    Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-05  Michael Meissner  <meissner@linux.vnet.ibm.com>
+	            Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000-protos.h (rs6000_split_signbit): New
+	prototype.
+	* config/rs6000/rs6000.c (rs6000_split_signbit): New function.
+	* config/rs6000/rs6000.md (UNSPEC_SIGNBIT): New constant.
+	(SIGNBIT): New mode iterator.
+	(Fsignbit): New mode attribute.
+	(signbit<mode>2): Change operand1 to match FLOAT128 instead of
+	IBM128; dispatch to gen_signbit{kf,tf}2_dm for __float128
+	when direct moves are available.
+	(signbit<mode>2_dm): New define_insn_and_split).
+	(signbit<mode>2_dm2): New define_insn.
+
+2016-07-12  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-12  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/71805
+	* config/rs6000/altivec.md (altivec_vperm_<mode>_internal):
+	The xxperm and xxpermr instructions require that the 2nd input
+	operand overlap with the output operand, and not the 1st.
+	(altivec_vperm_v8hiv16qi): Likewise.
+	(altivec_vperm_<mode>_uns_internal): Likewise.
+	(altivec_vpermr_<mode>_internal): Likewise.
+	(vperm_v8hiv4si): Likewise.
+	(vperm_v16qiv8hi): Likewise.
+
+2016-07-12  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backport from mainline
+	2016-07-06  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/70098
+	PR target/71763
+	* config/rs6000/rs6000.md (*ctr<mode>_internal1, *ctr<mode>_internal2,
+	*ctr<mode>_internal5, *ctr<mode>_internal6): Add *wi to the output
+	constraint.
+
+2016-07-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/71758
+	* omp-low.c (expand_omp_target): Gimplify device.
+
+	PR tree-optimization/71823
+	* tree-vect-stmts.c (vectorizable_operation): Use vect_get_vec_defs
+	to get vec_oprnds2 from op2.
+
+2016-07-11  Yuri Rumyantsev  <ysrumyan@gmail.com>
+
+	Backport from mainline r238055.
+	2016-07-06  Yuri Rumyantsev  <ysrumyan@gmail.com>
+
+	PR tree-optimization/71518
+	* tree-vect-data-refs.c (vect_compute_data_ref_alignment): Adjust
+	misalign also for outer loops with negative step.
+
 2016-07-08  Martin Liska  <mliska@suse.cz>
 
 	Backported from mainline
@@ -192,7 +698,7 @@
 	Backport from mainline
 	2016-07-06  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
 
-	PR target/50739	
+	PR target/50739
 	* config/avr/avr.c (avr_asm_select_section): Strip off
 	SECTION_DECLARED from flags when calling get_section.
 

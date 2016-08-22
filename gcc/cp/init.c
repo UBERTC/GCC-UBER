@@ -1816,6 +1816,19 @@ expand_aggr_init_1 (tree binfo, tree true_exp, tree exp, tree init, int flags,
       return;
     }
 
+  /* List-initialization from {} becomes value-initialization for non-aggregate
+     classes with default constructors.  Handle this here when we're
+     initializing a base, so protected access works.  */
+  if (exp != true_exp && init && TREE_CODE (init) == TREE_LIST)
+    {
+      tree elt = TREE_VALUE (init);
+      if (DIRECT_LIST_INIT_P (elt)
+	  && CONSTRUCTOR_ELTS (elt) == 0
+	  && CLASSTYPE_NON_AGGREGATE (type)
+	  && TYPE_HAS_DEFAULT_CONSTRUCTOR (type))
+	init = void_type_node;
+    }
+
   /* If an explicit -- but empty -- initializer list was present,
      that's value-initialization.  */
   if (init == void_type_node)
@@ -2072,8 +2085,13 @@ constant_value_1 (tree decl, bool strict_p, bool return_aggregate_cst_ok_p)
 	  && TREE_CODE (init) == TREE_LIST
 	  && TREE_CHAIN (init) == NULL_TREE)
 	init = TREE_VALUE (init);
-      /* Instantiate a non-dependent initializer.  */
-      init = instantiate_non_dependent_or_null (init);
+      /* Instantiate a non-dependent initializer for user variables.  We
+	 mustn't do this for the temporary for an array compound literal;
+	 trying to instatiate the initializer will keep creating new
+	 temporaries until we crash.  Probably it's not useful to do it for
+	 other artificial variables, either.  */
+      if (!DECL_ARTIFICIAL (decl))
+	init = instantiate_non_dependent_or_null (init);
       if (!init
 	  || !TREE_TYPE (init)
 	  || !TREE_CONSTANT (init)

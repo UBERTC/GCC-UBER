@@ -1,3 +1,352 @@
+2016-08-22  Release Manager
+
+	* GCC 6.2.0 released.
+
+2016-08-13  Jason Merrill  <jason@redhat.com>
+
+	PR c++/71972
+	* constexpr.c (cxx_eval_array_reference): Handle looking for the
+	value of an element we're currently modifying.
+
+2016-08-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/72868
+	* constexpr.c (label_matches): Handle case range expressions.
+
+2016-08-11  Jason Merrill  <jason@redhat.com>
+
+	PR c++/73456
+	* logic.cc (non_atomic_constraint_p): Handle EXPR_PACK_EXPANSION.
+
+2016-08-08  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/72800
+	* lambda.c (add_capture): Check lambda_capture_field_type return
+	value for error_mark_node.
+
+2016-08-05  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/68724
+	* pt.c (unify): TRAIT_EXPR is an expr.
+
+2016-08-04  Jason Merrill  <jason@redhat.com>
+
+	PR c++/72415
+	* pt.c (tsubst_pack_expansion): Pull a single pack expansion out
+	of the TREE_VEC.
+
+2016-07-29  Jason Merrill  <jason@redhat.com>
+
+	PR c++/72457
+	* init.c (expand_aggr_init_1): Only handle value-init of bases.
+	* constexpr.c (build_data_member_initialization): Handle multiple
+	initializers for the same field.
+
+2016-07-25  Jason Merrill  <jason@redhat.com>
+
+	PR c++/71576
+	* call.c (convert_like_real): Use lvalue_kind.
+
+	PR c++/71833
+	* pt.c (coerce_template_parameter_pack): Fix logic for
+	pack index.
+
+2016-07-23  Jason Merrill  <jason@redhat.com>
+
+	PR c++/55922
+	PR c++/63151
+	* init.c (expand_aggr_init_1): Handle list-initialization from {}.
+
+	PR c++/70709
+	* class.c (walk_subobject_offsets): Handle 0-length array.
+
+	PR c++/70778
+	* pt.c (tsubst): Also substitute into the template of a
+	BOUND_TEMPLATE_TEMPLATE_PARM.
+
+	PR c++/71738
+	* pt.c (lookup_template_class_1): Handle getting template from tsubst.
+
+	PR c++/71350
+	* decl.c (reshape_init_r): Check complain for missing braces warning.
+
+2016-07-22  Jason Merrill  <jason@redhat.com>
+
+	PR c++/71748
+	PR c++/52746
+	* pt.c (tsubst_baselink): Call
+	adjust_result_of_qualified_name_lookup for unqualified
+	destructors.
+
+2016-07-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/69223
+	* semantics.c (apply_deduced_return_type): Call
+	complete_type_or_else before building the new RESULT_DECL.
+
+	PR c++/71630
+	* pt.c (instantiate_decl): Fix pattern_defined for namespace scope
+	variable templates.
+
+	PR c++/71913
+	* call.c (unsafe_copy_elision_p): It's OK to elide when
+	initializing an unknown object.
+
+2016-07-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71728
+	* constexpr.c (potential_constant_expression_1) <case GOTO_EXPR>:
+	Replace assert with test, return false if the goto isn't break
+	or continue.  Formatting fix.
+
+2016-07-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71941
+	* cp-gimplify.c (cp_genericize): For nested cp_genericize calls
+	save/restore bc_label array.
+
+2016-07-21  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR c++/70822
+	PR c++/70106
+	* cp-tree.h (REF_PARENTHESIZED_P): Make this flag apply to
+	SCOPE_REFs too.
+	* pt.c (tsubst_qualified_id): If REF_PARENTHESIZED_P is set
+	on the qualified_id then propagate it to the resulting
+	expression.
+	(do_auto_deduction): Check REF_PARENTHESIZED_P on SCOPE_REFs
+	too.
+	* semantics.c (force_paren_expr): If given a SCOPE_REF, just set
+	its REF_PARENTHESIZED_P flag.
+
+2016-07-21  Andrew Sutton  <andrew.n.sutton@gmail.com>
+	    Jason Merrill  <jason@redhat.com>
+
+	Improving concepts performance and diagnostics.
+	PR c++/67565
+	PR c++/67579
+	PR c++/71843
+	* cp-tree.def (CHECK_CONSTR): New.
+	* cp-tree.h (CHECK_CONSTR_CONCEPT): New.
+	(CHECK_CONSTR_ARGS): New.
+	* constraint.cc (make_predicate_constraint): Remove in favor of
+	normalize_expression.
+	(resolve_constraint_check): Actually return error_mark_node when
+	resolution fails.
+	(resolve_variable_concept_check): Perform coercion as if processing
+	a template. Also return errors on resolution failure.
+	(lift_*): Remove all of these functions. Don't unnecessarily inline
+	concepts.
+	(learn_*): Add facilities to memoize implications for subsumption
+	during normalization.
+	(expanding_concept): New.
+	(expand_concept): New. Return the inlined and normalized definition
+	of a concept when needed.
+	(transform_*, xform_*): Rename to normalize_* to better reflect the
+	responsibility of those functions.
+	(normalize_template_id_expression): Check for non-boolean operands
+	when possible. Generate check constraints instead of normal variable
+	references.
+	(normalize_call_expression): Report errors when resolution fails.
+	(check_for_logical_overloads): Rewrite this check to more accurately
+	report the error.
+	(normalize_atom): Check for overloaded calls and invalid types before
+	determining if the expression refers to a concept.
+	(build_constraints): Don't cache normalized constraints or decomposed
+	assumptions.
+	(finish_shorthand_constraint): Return a normalized expression instead
+	of a predicate constraint.
+	(finish_template_introduction): Same.
+	(placeholder_extract_concept_and_args): Rewrite this since we only
+	ever get check constraints here.
+	(equivalent_placeholder_constraints): Rewrite in terms of check
+	constraints, and handle error_mark_nodes correctly.
+	(tsubst_check_constraint, tsubst_expr_constr, tsubst_type_constr)
+	(tsubst_implicit_conversion_constr)
+	(tsubst_argument_deduction_constr, tsubst_exception_constr)
+	(tsubst_parameterized_constraint, tsubst_constraint): New.
+	(tsbust_conjunection): Replace with tsubst_logical_operator and
+	actually generate the right kind of constraint.
+	(tsubst_requirement_body): Reverse the order of substituted arguments
+	so that they appear in the order written (helps diagnostics).
+	(satisfy_check_constraint): New.
+	(satisfy_conjunction): Simplify.
+	(satisfy_disjunction): Same.
+	(satisfy_constraint_1): Handle check constraints.
+	(eval_constr): New (private) global state.
+	(evaluating_constraints_sentinel): New. Manages eval_constr.
+	(satisfy_constraint): Add timing variables.
+	(satisfy_associated_constraints): Add hooks for memoization.
+	(evaluate_function_concept): Build a check constraint instead of
+	normalizing its definition.
+	(evaluate_variable_concept): Same.
+	(evaluate_constraint_expression): Normalize, but in the current
+	declaration processing context.
+	(evaluating_constraints_p): New.
+	(elide_constraint_failure_p): Actually emit constraint_thresh errors.
+	(diagnose_*): Remove artificial indentation. Add a new parameter to
+	each that tracks the current (complete) constraint prior to any
+	substitutions.
+	(diagnose_expression): Removed.
+	(diagnose_call_expression): Same.
+	(diagnose_template_id): Same.
+	(diagnose_template_id): New.
+	(diagnose_logical_constraint): New.
+	(diagnose_expression_constraint): Show the original expression.
+	(diagnose_type_constraint): Show the original type.
+	(diagnose_implicit_conversion_constraint): Be specific about
+	failures, don't re-diagnose a known-to-be-failed substitutions,
+	and manage elisions properly.
+	(diagnose_argument_deduction_constraint): Same.
+	(diagnose_exception_constraint): Same.
+	(diagnose_parameterized_constraint): Same.
+	(constraint_p): Allow EXPR_PACK_EXPANSION.
+	* logic.cc (next_by_distance): Removed. No longer used.
+	(any_p): Renamed from any_of.
+	(term_entry, term_hasher): New.
+	(term_list): Rewrite to include a hash table for quick lookup.
+	Also, make less stateful.
+	(proof_state): Extend to allow goals to be discharged once
+	satisfied.
+	(non_atomic_constraint_p): New.
+	(any_non_atomic_constraints_p): New.
+	(...rest...): Previous implementation completely replaced with an
+	iterative algorithm that opportunistically prunes the search space
+	before committing to using more memory.
+	* parser.c: (cp_parser_type_parameter): Normalize constraints.
+	(cp_parser_explicit_template_declaration): Same.
+	* pt.c: (finish_template_variable): Be less redundant with this error
+	message.
+	(template_args_equal): No longer static.
+	(tsubst_decl): Don't try to find specializations of variables that
+	have already been instantiated.
+	(build_non_dependent_expr): Avoid infinite recursion during concept
+	expansion.
+	(make_constrained_auto): Normalize constraints.
+	(do_auto_deduction): When doing auto deduction from a
+	partial-concept-id, be sure to include the explicit args checking
+	the constraints.
+	(constraint_sat_*): New. Memoize satisfied constraints.
+	(concept_spec_*): New. Memoize expressions associated with a concept
+	specialization.
+	(constraint_memos, concept_memos): New.
+	(lookup_constraint_satisfaction, memoize_constraint_satisfaction): New.
+	(lookup_concept_satisfaction, memoize_concept_satisfaction): New.
+	(get_concept_expansion, save_concept_expansion): New.
+	(hash_subsumption_args): New.
+	(comp_subsumption_args): New.
+	(subsumption_*): New. Memoize parts of the subsumption relation.
+	(lookup_subsumption_result, save_subsumption_result): New.
+	(init_constraint_processing): Initialize memo tables.
+	(get_constraints): Shortcut if !flag_concepts.
+	* decl.c (grokfndecl): Normalize constraints.
+	* error.c (dump_simple_decl): Print "concept" when appropriate.
+	(dump_function_decl): Same.
+	(dump_template_decl): Don't write requirements when we're not
+	printing the header.
+	(dump_expr): Handle fold expressions.
+	* cxx-pretty-print.c (cxx_pretty_printer::expression): Handle
+	fold expressions.
+	(get_fold_operator): New.
+	(pp_cxx_unary_left_fold_expression): New.
+	(pp_cxx_unary_right_fold_expression): New.
+	(pp_cxx_binary_fold_expression): New.
+	(pp_cxx_check_constraint): New.
+	(pp_cxx_*_constraint): Rewrite the grammar of internal constraints
+	to make them easier to read when debugging.
+	* search.c (accessible_p): Don't shortcut when evaluating constraints.
+	* tree.c (cp_tree_equal): Handle CHECK_CONSTR.
+
+2016-07-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/70781
+	* parser.c (cp_parser_lambda_expression): Unset OK if there was an
+	error parsing the lambda-declarator.
+
+	PR c++/71896
+	* constexpr.c (cxx_eval_binary_expression): Handle comparison
+	between lowered and unlowered PTRMEM_CST.
+
+	PR c++/71092
+	* constexpr.c (cxx_eval_call_expression): Fail quietly when cgraph
+	threw away DECL_SAVED_TREE.
+
+	PR c++/71117
+	Core 2189
+	* call.c (add_template_conv_candidate): Disable if there are
+	viable candidates.
+
+	PR c++/71495
+	* call.c (convert_like_real): Mask complain.
+
+	PR c++/71511
+	* typeck2.c (cxx_incomplete_type_diagnostic): Handle DECLTYPE_TYPE.
+
+	PR c++/71513
+	* pt.c (tsubst_attributes): Fix loop logic.
+
+	PR c++/71604
+	PR c++/54430
+	* parser.c (cp_parser_range_for): Modify IDENTIFIER_BINDING directly.
+	(cp_parser_simple_declaration): Diagnose type definition in
+	for-range-declaration.
+
+	PR c++/71711
+	* operators.def: Add *_FOLD_EXPR.
+	* cp-tree.h (FOLD_EXPR_P): Parenthesize.
+	* mangle.c (write_expression): Handle fold-expressions.
+	* pt.c (tsubst_unary_left_fold, tsubst_binary_left_fold)
+	(tsubst_unary_right_fold, tsubst_binary_right_fold): Handle
+	partial instantiation.
+
+	PR c++/71814
+	* mangle.c (write_expression): Handle sizeof... an argument pack.
+
+	PR c++/71718
+	* pt.c (push_tinst_level_loc): Set at_eof before fatal_error.
+
+	PR c++/70824
+	* init.c (constant_value_1): Don't instantiated DECL_INITIAL of
+	artificial variables.
+
+	* lambda.c (maybe_add_lambda_conv_op): Fix null object argument.
+
+2016-07-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71909
+	* parser.c (cp_parser_save_member_function_body): Consume
+	__transaction_relaxed or __transaction_atomic with optional
+	attribute.  Only skip catch with block if try keyword is seen.
+
+2016-07-19  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-07-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71835
+	* call.c (build_op_call_1): Use convert_like_with_context only
+	if cand->fn is a decl.
+
+	PR c++/71828
+	* constexpr.c (cxx_eval_constant_expression) <case REALPART_EXPR>:
+	For lval don't use cxx_eval_unary_expression and instead recurse
+	and if needed rebuild the reference.
+
+	PR c++/71822
+	* cp-gimplify.c (cp_gimplify_expr) <case VEC_INIT_EXPR>: Recursively
+	fold *expr_p before genericizing it.
+
+	PR c++/71871
+	* typeck.c (build_x_conditional_expr): Revert the 2012-10-25 change.
+
+	2016-07-07  Jakub Jelinek  <jakub@redhat.com>
+		    Kai Tietz  <ktietz70@googlemail.com>
+
+	PR c++/70869
+	PR c++/71054
+	* cp-gimplify.c (cp_genericize_r): For DECL_EXPR for non-static
+	artificial vars, genericize their initializers.
+
 2016-06-21  Jakub Jelinek  <jakub@redhat.com>
 
 	Backported from mainline

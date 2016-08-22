@@ -5439,9 +5439,19 @@ gfc_trans_allocate (gfc_code * code)
 	}
       gfc_add_block_to_block (&block, &se.pre);
       gfc_add_block_to_block (&post, &se.post);
+
+      /* Special case when string in expr3 is zero.  */
+      if (code->expr3->ts.type == BT_CHARACTER
+	  && integer_zerop (se.string_length))
+	{
+	  gfc_init_se (&se, NULL);
+	  temp_var_needed = false;
+	  expr3_len = integer_zero_node;
+	  e3_is = E3_MOLD;
+	}
       /* Prevent aliasing, i.e., se.expr may be already a
 	     variable declaration.  */
-      if (se.expr != NULL_TREE && temp_var_needed)
+      else if (se.expr != NULL_TREE && temp_var_needed)
 	{
 	  tree var, desc;
 	  tmp = GFC_DESCRIPTOR_TYPE_P (TREE_TYPE (se.expr)) || is_coarray ?
@@ -5670,11 +5680,8 @@ gfc_trans_allocate (gfc_code * code)
       gcc_assert (expr3_esize);
       expr3_esize = fold_convert (sizetype, expr3_esize);
       if (e3_is == E3_MOLD)
-	{
-	  /* The expr3 is no longer valid after this point.  */
-	  expr3 = NULL_TREE;
-	  e3_is = E3_UNSET;
-	}
+	/* The expr3 is no longer valid after this point.  */
+	expr3 = NULL_TREE;
     }
   else if (code->ext.alloc.ts.type != BT_UNKNOWN)
     {
@@ -5694,9 +5701,11 @@ gfc_trans_allocate (gfc_code * code)
 	  tmp = gfc_get_char_type (code->ext.alloc.ts.kind);
 	  tmp = TYPE_SIZE_UNIT (tmp);
 	  tmp = fold_convert (TREE_TYPE (se_sz.expr), tmp);
+	  gfc_add_block_to_block (&block, &se_sz.pre);
 	  expr3_esize = fold_build2_loc (input_location, MULT_EXPR,
 					 TREE_TYPE (se_sz.expr),
 					 tmp, se_sz.expr);
+	  expr3_esize = gfc_evaluate_now (expr3_esize, &block);
 	}
     }
 
@@ -5895,6 +5904,7 @@ gfc_trans_allocate (gfc_code * code)
 		 source= or mold= expression.  */
 	      gfc_init_se (&se_sz, NULL);
 	      gfc_conv_expr (&se_sz, code->ext.alloc.ts.u.cl->length);
+	      gfc_add_block_to_block (&block, &se_sz.pre);
 	      gfc_add_modify (&block, al_len,
 			      fold_convert (TREE_TYPE (al_len),
 					    se_sz.expr));
@@ -5979,11 +5989,19 @@ gfc_trans_allocate (gfc_code * code)
 		 specified by a type spec for deferred length character
 		 arrays or unlimited polymorphic objects without a
 		 source= or mold= expression.  */
-	      gfc_init_se (&se_sz, NULL);
-	      gfc_conv_expr (&se_sz, code->ext.alloc.ts.u.cl->length);
-	      gfc_add_modify (&block, al_len,
-			      fold_convert (TREE_TYPE (al_len),
-					    se_sz.expr));
+	      if (expr3_esize == NULL_TREE || code->ext.alloc.ts.kind != 1)
+		{
+		  gfc_init_se (&se_sz, NULL);
+		  gfc_conv_expr (&se_sz, code->ext.alloc.ts.u.cl->length);
+		  gfc_add_block_to_block (&block, &se_sz.pre);
+		  gfc_add_modify (&block, al_len,
+				  fold_convert (TREE_TYPE (al_len),
+						se_sz.expr));
+		}
+	      else
+		gfc_add_modify (&block, al_len,
+				fold_convert (TREE_TYPE (al_len),
+					      expr3_esize));
 	    }
 	  else
 	    /* No length information needed, because type to allocate
@@ -5992,7 +6010,7 @@ gfc_trans_allocate (gfc_code * code)
 			    fold_convert (TREE_TYPE (al_len),
 					  integer_zero_node));
 	}
-      if (code->expr3 && !code->expr3->mold)
+      if (code->expr3 && !code->expr3->mold && e3_is != E3_MOLD)
 	{
 	  /* Initialization via SOURCE block (or static default initializer).
 	     Classes need some special handling, so catch them first.  */

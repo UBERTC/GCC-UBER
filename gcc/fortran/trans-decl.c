@@ -1639,26 +1639,23 @@ gfc_get_symbol_decl (gfc_symbol * sym)
 	  && !(sym->attr.use_assoc && !intrinsic_array_parameter)))
     gfc_defer_symbol_init (sym);
 
+  /* Associate names can use the hidden string length variable
+     of their associated target.  */
+  if (sym->ts.type == BT_CHARACTER
+      && TREE_CODE (length) != INTEGER_CST)
+    {
+      gfc_finish_var_decl (length, sym);
+      gcc_assert (!sym->value);
+    }
+
   gfc_finish_var_decl (decl, sym);
 
   if (sym->ts.type == BT_CHARACTER)
-    {
-      /* Character variables need special handling.  */
-      gfc_allocate_lang_decl (decl);
-
-      /* Associate names can use the hidden string length variable
-	 of their associated target.  */
-      if (TREE_CODE (length) != INTEGER_CST)
-	{
-	  gfc_finish_var_decl (length, sym);
-	  gcc_assert (!sym->value);
-	}
-    }
+    /* Character variables need special handling.  */
+    gfc_allocate_lang_decl (decl);
   else if (sym->attr.subref_array_pointer)
-    {
-      /* We need the span for these beasts.  */
-      gfc_allocate_lang_decl (decl);
-    }
+    /* We need the span for these beasts.  */
+    gfc_allocate_lang_decl (decl);
 
   if (sym->attr.subref_array_pointer)
     {
@@ -4050,6 +4047,8 @@ gfc_trans_deferred_vars (gfc_symbol * proc_sym, gfc_wrapped_block * block)
       else if (proc_sym->as)
 	{
 	  tree result = TREE_VALUE (current_fake_result_decl);
+	  gfc_save_backend_locus (&loc);
+	  gfc_set_backend_locus (&proc_sym->declared_at);
 	  gfc_trans_dummy_array_bias (proc_sym, result, block);
 
 	  /* An automatic character length, pointer array result.  */
@@ -4059,8 +4058,6 @@ gfc_trans_deferred_vars (gfc_symbol * proc_sym, gfc_wrapped_block * block)
 	      tmp = NULL;
 	      if (proc_sym->ts.deferred)
 		{
-		  gfc_save_backend_locus (&loc);
-		  gfc_set_backend_locus (&proc_sym->declared_at);
 		  gfc_start_block (&init);
 		  tmp = gfc_null_and_pass_deferred_len (proc_sym, &init, &loc);
 		  gfc_add_init_cleanup (block, gfc_finish_block (&init), tmp);
@@ -6335,7 +6332,7 @@ gfc_generate_function_code (gfc_namespace * ns)
 	 function has already called cgraph_create_node, which also created
 	 the cgraph node for this function.  */
       if (!has_coarray_vars || flag_coarray != GFC_FCOARRAY_LIB)
-	(void) cgraph_node::create (fndecl);
+	(void) cgraph_node::get_create (fndecl);
     }
   else
     cgraph_node::finalize_function (fndecl, true);

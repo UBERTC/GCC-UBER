@@ -125,6 +125,7 @@ gfc_run_passes (gfc_namespace *ns)
   doloop_level = 0;
   doloop_warn (ns);
   doloop_list.release ();
+  int w, e;
 
   if (flag_frontend_optimize)
     {
@@ -135,6 +136,10 @@ gfc_run_passes (gfc_namespace *ns)
 
       expr_array.release ();
     }
+
+  gfc_get_errors (&w, &e);
+  if (e > 0)
+   return;
 
   if (flag_realloc_lhs)
     realloc_strings (ns);
@@ -611,6 +616,7 @@ create_var (gfc_expr * e, const char *vname)
   gfc_code *n;
   gfc_namespace *ns;
   int i;
+  bool deferred;
 
   if (e->expr_type == EXPR_CONSTANT || is_fe_temp (e))
     return gfc_copy_expr (e);
@@ -661,6 +667,7 @@ create_var (gfc_expr * e, const char *vname)
 	}
     }
 
+  deferred = 0;
   if (e->ts.type == BT_CHARACTER && e->rank == 0)
     {
       gfc_expr *length;
@@ -670,7 +677,10 @@ create_var (gfc_expr * e, const char *vname)
       if (length)
 	symbol->ts.u.cl->length = length;
       else
-	symbol->attr.allocatable = 1;
+	{
+	  symbol->attr.allocatable = 1;
+	  deferred = 1;
+	}
     }
 
   symbol->attr.flavor = FL_VARIABLE;
@@ -682,6 +692,7 @@ create_var (gfc_expr * e, const char *vname)
   result = gfc_get_expr ();
   result->expr_type = EXPR_VARIABLE;
   result->ts = e->ts;
+  result->ts.deferred = deferred;
   result->rank = e->rank;
   result->shape = gfc_copy_shape (e->shape, e->rank);
   result->symtree = symtree;
@@ -1253,6 +1264,11 @@ combine_array_constructor (gfc_expr *e)
 
   /* With FORALL, the BLOCKS created by create_var will cause an ICE.  */
   if (forall_level > 0)
+    return false;
+
+  /* Inside an iterator, things can get hairy; we are likely to create
+     an invalid temporary variable.  */
+  if (iterator_level > 0)
     return false;
 
   op1 = e->value.op.op1;

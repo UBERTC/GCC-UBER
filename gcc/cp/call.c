@@ -3184,6 +3184,12 @@ add_template_conv_candidate (struct z_candidate **candidates, tree tmpl,
 			     tree return_type, tree access_path,
 			     tree conversion_path, tsubst_flags_t complain)
 {
+  /* Making this work broke PR 71117, so until the committee resolves core
+     issue 2189, let's disable this candidate if there are any viable call
+     operators.  */
+  if (any_strictly_viable (*candidates))
+    return NULL;
+
   return
     add_template_candidate_real (candidates, tmpl, NULL_TREE, NULL_TREE,
 				 NULL_TREE, arglist, return_type, access_path,
@@ -4386,8 +4392,11 @@ build_op_call_1 (tree obj, vec<tree, va_gc> **args, tsubst_flags_t complain)
 	result = build_over_call (cand, LOOKUP_NORMAL, complain);
       else
 	{
-	  obj = convert_like_with_context (cand->convs[0], obj, cand->fn, -1,
-					   complain);
+	  if (DECL_P (cand->fn))
+	    obj = convert_like_with_context (cand->convs[0], obj, cand->fn,
+					     -1, complain);
+	  else
+	    obj = convert_like (cand->convs[0], obj, complain);
 	  obj = convert_from_reference (obj);
 	  result = cp_build_function_call_vec (obj, args, complain);
 	}
@@ -6547,7 +6556,7 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
       expr = decay_conversion (expr, complain);
       if (expr == error_mark_node)
 	{
-	  if (complain)
+	  if (complain & tf_error)
 	    {
 	      maybe_print_user_conv_context (convs);
 	      if (fn)
@@ -6641,7 +6650,7 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
 	       for a non-reference copy-initialization (8.5).  */
 
 	    tree type = TREE_TYPE (ref_type);
-	    cp_lvalue_kind lvalue = real_lvalue_p (expr);
+	    cp_lvalue_kind lvalue = lvalue_kind (expr);
 
 	    gcc_assert (same_type_ignoring_top_level_qualifiers_p
 			(type, next_conversion (convs)->type));
@@ -7170,10 +7179,11 @@ static bool
 unsafe_copy_elision_p (tree target, tree exp)
 {
   tree type = TYPE_MAIN_VARIANT (TREE_TYPE (exp));
-  if (type == CLASSTYPE_AS_BASE (type))
+  /* It's safe to elide the copy for a class with no tail padding.  */
+  if (tree_int_cst_equal (TYPE_SIZE (type), CLASSTYPE_SIZE (type)))
     return false;
-  if (!is_base_field_ref (target)
-      && resolves_to_fixed_type_p (target, NULL))
+  /* It's safe to elide the copy if we aren't initializing a base object.  */
+  if (!is_base_field_ref (target))
     return false;
   tree init = TARGET_EXPR_INITIAL (exp);
   /* build_compound_expr pushes COMPOUND_EXPR inside TARGET_EXPR.  */

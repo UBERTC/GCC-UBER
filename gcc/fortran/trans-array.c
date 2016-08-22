@@ -5421,12 +5421,19 @@ gfc_array_allocate (gfc_se * se, gfc_expr * expr, tree status, tree errmsg,
 
   if (ref->u.ar.type == AR_FULL && expr3 != NULL)
     {
+      gfc_ref *old_ref = ref;
       /* F08:C633: Array shape from expr3.  */
       ref = expr3->ref;
 
       /* Find the last reference in the chain.  */
       if (!retrieve_last_ref (&ref, &prev_ref))
-	return false;
+	{
+	  if (expr3->expr_type == EXPR_FUNCTION
+	      && gfc_expr_attr (expr3).dimension)
+	    ref = old_ref;
+	  else
+	    return false;
+	}
       alloc_w_e3_arr_spec = true;
     }
 
@@ -6093,7 +6100,12 @@ gfc_trans_dummy_array_bias (gfc_symbol * sym, tree tmpdesc,
       return;
     }
 
+  loc.nextc = NULL;
   gfc_save_backend_locus (&loc);
+  /* loc.nextc is not set by save_backend_locus but the location routines
+     depend on it.  */
+  if (loc.nextc == NULL)
+    loc.nextc = loc.lb->line;
   gfc_set_backend_locus (&sym->declared_at);
 
   /* Descriptor type.  */

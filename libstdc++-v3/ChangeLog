@@ -1,3 +1,128 @@
+2016-08-22  Release Manager
+
+	* GCC 6.2.0 released.
+
+2016-08-06  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2016-08-05  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/functional (function::_Callable): Use lvalue in
+	result_of expression.
+	* testsuite/20_util/function/cons/refqual.cc: New test.
+
+	Backport from mainline
+	2016-07-22  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/71964
+	* include/bits/stl_tree.h (_Rb_tree(_Rb_tree&&)): Move allocator.
+	* testsuite/23_containers/set/allocator/71964.cc: New test.
+
+	Backport from mainline
+	2016-08-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/21_strings/basic_string/allocator/wchar_t/copy.cc:
+	Remove reundant check for _GLIBCXX_USE_WCHAR_T and fix char type.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/copy_assign.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/minimal.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/move.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/move_assign.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/noexcept.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/swap.cc:
+	Likewise.
+
+	Backport from mainline
+	2016-05-04  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/70940
+	* include/experimental/memory_resource
+	(__resource_adaptor_imp::do_allocate): Do not default-construct
+	rebound allocator.
+	(__resource_adaptor_imp::do_deallocate): Likewise. Use
+	allocator_traits to get pointer type.
+	(__null_memory_resource::do_allocate): Remove unused parameters.
+	(__null_memory_resource::do_deallocate): Likewise.
+	(__null_memory_resource::do_is_equal): Likewise. Add return statement.
+	* testsuite/experimental/type_erased_allocator/1.cc: Combine with ...
+	* testsuite/experimental/type_erased_allocator/1_neg.cc: This, and
+	move to ...
+	* testsuite/experimental/memory_resource/1.cc: Here.
+	* testsuite/experimental/memory_resource/null_memory_resource.cc: New.
+	* testsuite/experimental/memory_resource/resource_adaptor.cc: New.
+
+	Backport from mainline
+	2016-08-03  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/allocator.h (__cpp_lib_incomplete_container_elements):
+	Define feature-test macro.
+	* include/std/shared_mutex (__cpp_lib_shared_mutex): Uncomment.
+	* include/std/type_traits (__cpp_lib_logical_traits): Fix value.
+
+	Backport from mainline
+	2016-08-03  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/stl_function.h: Remove commented-out macro.
+	* include/bits/stl_tree.h (__cpp_lib_generic_associative_lookup):
+	Define feature-test macro.
+	* testsuite/experimental/feat-cxx14.cc: Add tests for more macros.
+
+	* testsuite/lib/libstdc++.exp (check_v3_target_filesystem_ts): Improve
+	comments.
+
+	* doc/xml/manual/status_cxx2011.xml: Change "mainline GCC SVN" to
+	refer to the release series.
+	* doc/xml/manual/status_cxx2014.xml: Likewise. Update TS status.
+	* doc/xml/manual/status_cxx2017.xml: Likewise.
+	* doc/html/manual/status.html: Regenerate.
+
+	* include/experimental/propagate_const (propagate_const::__t): Rename
+	to _M_t and remove comment. Qualify std::move and std::forward.
+	* testsuite/experimental/propagate_const/cons/default.cc: Fix test.
+
+2016-08-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/lib/libstdc++.exp (v3-build_support): Add
+	-fno-lto to additional flags for compiling libtestc++.a objects.
+
+2016-07-29  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/abi.xml: Document 6.0.22 library version.
+	* doc/html/manual/abi.html: Regenerate.
+
+2016-07-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2016-07-14  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/experimental/functional: Include <parallel/algorithm> in
+	Parallel Mode.
+
+	Backport from mainline
+	2016-07-14  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/experimental/functional/searchers.cc: Include <algorithm>
+	for std::search.
+
+	PR libstdc++/71856
+	* include/bits/c++config (_GLIBCXX_ASSERTIONS): Define to 1 not empty.
+	* include/parallel/balanced_quicksort.h: Include <unistd.h> for sleep.
+	* include/parallel/compiletime_settings.h (_GLIBCXX_ASSERTIONS):
+	Do not define here.
+
+	Backport from mainline
+	2016-06-06  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/71320
+	* src/filesystem/ops.cc (permissions(const path&, perms, error_code&)):
+	Add or remove permissions according to perms argument.
+	* testsuite/experimental/filesystem/operations/permissions.cc: New
+	test.
+
 2016-07-06  Ville Voutilainen  <ville.voutilainen@gmail.com>
 
 	Implement LWG 2451, optional<T> should 'forward' T's

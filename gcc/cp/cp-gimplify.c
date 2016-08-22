@@ -592,6 +592,8 @@ cp_gimplify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p)
 				  init, VEC_INIT_EXPR_VALUE_INIT (*expr_p),
 				  from_array,
 				  tf_warning_or_error);
+	hash_set<tree> pset;
+	cp_walk_tree (expr_p, cp_fold_r, &pset, NULL);
 	cp_genericize_tree (expr_p);
 	ret = GS_OK;
 	input_location = loc;
@@ -1278,7 +1280,15 @@ cp_genericize_r (tree *stmt_p, int *walk_subtrees, void *data)
     {
       tree d = DECL_EXPR_DECL (stmt);
       if (TREE_CODE (d) == VAR_DECL)
-	gcc_assert (CP_DECL_THREAD_LOCAL_P (d) == DECL_THREAD_LOCAL_P (d));
+	{
+	  gcc_assert (CP_DECL_THREAD_LOCAL_P (d) == DECL_THREAD_LOCAL_P (d));
+	  /* User var initializers should be genericized during containing
+	     BIND_EXPR genericization when walk_tree walks DECL_INITIAL
+	     of BIND_EXPR_VARS.  Artificial temporaries might not be
+	     mentioned there though, so walk them now.  */
+	  if (DECL_ARTIFICIAL (d) && !TREE_STATIC (d) && DECL_INITIAL (d))
+	    cp_walk_tree (&DECL_INITIAL (d), cp_genericize_r, data, NULL);
+	}
     }
   else if (TREE_CODE (stmt) == OMP_PARALLEL
 	   || TREE_CODE (stmt) == OMP_TASK
@@ -1559,6 +1569,13 @@ cp_genericize (tree fndecl)
   if (DECL_CLONED_FUNCTION_P (fndecl))
     return;
 
+  /* Allow cp_genericize calls to be nested.  */
+  tree save_bc_label[2];
+  save_bc_label[bc_break] = bc_label[bc_break];
+  save_bc_label[bc_continue] = bc_label[bc_continue];
+  bc_label[bc_break] = NULL_TREE;
+  bc_label[bc_continue] = NULL_TREE;
+
   /* Expand all the array notations here.  */
   if (flag_cilkplus 
       && contains_array_notation_expr (DECL_SAVED_TREE (fndecl)))
@@ -1578,6 +1595,8 @@ cp_genericize (tree fndecl)
 
   gcc_assert (bc_label[bc_break] == NULL);
   gcc_assert (bc_label[bc_continue] == NULL);
+  bc_label[bc_break] = save_bc_label[bc_break];
+  bc_label[bc_continue] = save_bc_label[bc_continue];
 }
 
 /* Build code to apply FN to each member of ARG1 and ARG2.  FN may be
