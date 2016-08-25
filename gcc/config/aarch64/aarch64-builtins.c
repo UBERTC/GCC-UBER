@@ -62,6 +62,7 @@
 #define si_UP    SImode
 #define sf_UP    SFmode
 #define hi_UP    HImode
+#define hf_UP    HFmode
 #define qi_UP    QImode
 #define UP(X) X##_UP
 
@@ -138,6 +139,10 @@ static enum aarch64_type_qualifiers
 aarch64_types_binop_ssu_qualifiers[SIMD_MAX_BUILTIN_ARGS]
   = { qualifier_none, qualifier_none, qualifier_unsigned };
 #define TYPES_BINOP_SSU (aarch64_types_binop_ssu_qualifiers)
+static enum aarch64_type_qualifiers
+aarch64_types_binop_uss_qualifiers[SIMD_MAX_BUILTIN_ARGS]
+  = { qualifier_unsigned, qualifier_none, qualifier_none };
+#define TYPES_BINOP_USS (aarch64_types_binop_uss_qualifiers)
 static enum aarch64_type_qualifiers
 aarch64_types_binopp_qualifiers[SIMD_MAX_BUILTIN_ARGS]
   = { qualifier_poly, qualifier_poly, qualifier_poly };
