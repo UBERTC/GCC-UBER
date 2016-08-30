@@ -406,7 +406,7 @@
    (match_operand:SI 2 "immediate_operand" "")]
   "TARGET_NEON"
 {
-  HOST_WIDE_INT elem = (HOST_WIDE_INT) 1 << INTVAL (operands[2]);
+  HOST_WIDE_INT elem = HOST_WIDE_INT_1 << INTVAL (operands[2]);
   emit_insn (gen_vec_set<mode>_internal (operands[0], operands[1],
 					 GEN_INT (elem), operands[0]));
   DONE;
@@ -1082,7 +1082,7 @@
       }
     else
       {
-	if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) == 1
+	if (operands[2] == CONST1_RTX (SImode)
 	    && (!reg_overlap_mentioned_p (operands[0], operands[1])
 		|| REGNO (operands[0]) == REGNO (operands[1])))
 	  /* This clobbers CC.  */
@@ -1184,7 +1184,7 @@
       }
     else
       {
-	if (CONST_INT_P (operands[2]) && INTVAL (operands[2]) == 1
+	if (operands[2] == CONST1_RTX (SImode)
 	    && (!reg_overlap_mentioned_p (operands[0], operands[1])
 		|| REGNO (operands[0]) == REGNO (operands[1])))
 	  /* This clobbers CC.  */

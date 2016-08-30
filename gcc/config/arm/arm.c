@@ -104,7 +104,6 @@ static void arm_print_operand_address (FILE *, machine_mode, rtx);
 static bool arm_print_operand_punct_valid_p (unsigned char code);
 static const char *fp_const_from_val (REAL_VALUE_TYPE *);
 static arm_cc get_arm_condition_code (rtx);
-static HOST_WIDE_INT int_log2 (HOST_WIDE_INT);
 static const char *output_multi_immediate (rtx *, const char *, const char *,
 					   int, HOST_WIDE_INT);
 static const char *shift_op (rtx, HOST_WIDE_INT *);
@@ -4148,7 +4147,7 @@ optimal_immediate_sequence (enum rtx_code code, unsigned HOST_WIDE_INT val,
      yield a shorter sequence, we may as well use zero.  */
   insns1 = optimal_immediate_sequence_1 (code, val, return_sequence, best_start);
   if (best_start != 0
-      && ((((unsigned HOST_WIDE_INT) 1) << best_start) < val))
+      && ((HOST_WIDE_INT_1U << best_start) < val))
     {
       insns2 = optimal_immediate_sequence_1 (code, val, &tmp_sequence, 0);
       if (insns2 <= insns1)
@@ -4979,7 +4978,7 @@ arm_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
   if (mode == VOIDmode)
     mode = GET_MODE (*op1);
 
-  maxval = (((unsigned HOST_WIDE_INT) 1) << (GET_MODE_BITSIZE(mode) - 1)) - 1;
+  maxval = (HOST_WIDE_INT_1U << (GET_MODE_BITSIZE (mode) - 1)) - 1;
 
   /* For DImode, we have GE/LT/GEU/LTU comparisons.  In ARM mode
      we can also use cmp/cmpeq for GTU/LEU.  GT/LE must be either
@@ -8347,8 +8346,8 @@ thumb1_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer)
 	  int i;
 	  /* This duplicates the tests in the andsi3 expander.  */
 	  for (i = 9; i <= 31; i++)
-	    if ((((HOST_WIDE_INT) 1) << i) - 1 == INTVAL (x)
-		|| (((HOST_WIDE_INT) 1) << i) - 1 == ~INTVAL (x))
+	    if ((HOST_WIDE_INT_1 << i) - 1 == INTVAL (x)
+		|| (HOST_WIDE_INT_1 << i) - 1 == ~INTVAL (x))
 	      return COSTS_N_INSNS (2);
 	}
       else if (outer == ASHIFT || outer == ASHIFTRT
@@ -9088,7 +9087,7 @@ thumb1_size_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer)
     case CONST_INT:
       if (outer == SET)
         {
-          if ((unsigned HOST_WIDE_INT) INTVAL (x) < 256)
+          if (UINTVAL (x) < 256)
             return COSTS_N_INSNS (1);
 	  /* See split "TARGET_THUMB1 && satisfies_constraint_J".  */
 	  if (INTVAL (x) >= -255 && INTVAL (x) <= -1)
@@ -9109,8 +9108,8 @@ thumb1_size_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer)
           int i;
           /* This duplicates the tests in the andsi3 expander.  */
           for (i = 9; i <= 31; i++)
-            if ((((HOST_WIDE_INT) 1) << i) - 1 == INTVAL (x)
-                || (((HOST_WIDE_INT) 1) << i) - 1 == ~INTVAL (x))
+            if ((HOST_WIDE_INT_1 << i) - 1 == INTVAL (x)
+                || (HOST_WIDE_INT_1 << i) - 1 == ~INTVAL (x))
               return COSTS_N_INSNS (2);
         }
       else if (outer == ASHIFT || outer == ASHIFTRT
@@ -12285,7 +12284,7 @@ vfp3_const_double_index (rtx x)
 
   /* We can permit four significant bits of mantissa only, plus a high bit
      which is always 1.  */
-  mask = ((unsigned HOST_WIDE_INT)1 << (point_pos - 5)) - 1;
+  mask = (HOST_WIDE_INT_1U << (point_pos - 5)) - 1;
   if ((mantissa & mask) != 0)
     return -1;
 
@@ -16391,7 +16390,7 @@ get_jump_table_size (rtx_jump_table_data *insn)
 	{
 	case 1:
 	  /* Round up size  of TBB table to a halfword boundary.  */
-	  size = (size + 1) & ~(HOST_WIDE_INT)1;
+	  size = (size + 1) & ~HOST_WIDE_INT_1;
 	  break;
 	case 2:
 	  /* No padding necessary for TBH.  */
@@ -19093,7 +19092,8 @@ shift_op (rtx op, HOST_WIDE_INT *amountp)
 	  return NULL;
 	}
 
-      *amountp = int_log2 (*amountp);
+      *amountp = exact_log2 (*amountp);
+      gcc_assert (IN_RANGE (*amountp, 0, 31));
       return ARM_LSL_NAME;
 
     default:
@@ -19123,22 +19123,6 @@ shift_op (rtx op, HOST_WIDE_INT *amountp)
     return NULL;
 
   return mnem;
-}
-
-/* Obtain the shift from the POWER of two.  */
-
-static HOST_WIDE_INT
-int_log2 (HOST_WIDE_INT power)
-{
-  HOST_WIDE_INT shift = 0;
-
-  while ((((HOST_WIDE_INT) 1 << shift) & power) == 0)
-    {
-      gcc_assert (shift <= 31);
-      shift++;
-    }
-
-  return shift;
 }
 
 /* Output a .ascii pseudo-op, keeping track of lengths.  This is
@@ -27897,7 +27881,11 @@ vfp3_const_double_for_fract_bits (rtx operand)
 	  HOST_WIDE_INT value = real_to_integer (&r0);
 	  value = value & 0xffffffff;
 	  if ((value != 0) && ( (value & (value - 1)) == 0))
-	    return int_log2 (value);
+	    {
+	      int ret = exact_log2 (value);
+	      gcc_assert (IN_RANGE (ret, 0, 31));
+	      return ret;
+	    }
 	}
     }
   return 0;
@@ -29912,7 +29900,7 @@ arm_fusion_enabled_p (tune_params::fuse_ops op)
 static unsigned HOST_WIDE_INT
 arm_asan_shadow_offset (void)
 {
-  return (unsigned HOST_WIDE_INT) 1 << 29;
+  return HOST_WIDE_INT_1U << 29;
 }
 
 
