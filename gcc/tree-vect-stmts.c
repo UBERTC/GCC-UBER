@@ -6328,7 +6328,6 @@ vectorizable_load (gimple *stmt, gimple_stmt_iterator *gsi, gimple **vec_stmt,
          that leaves unused vector loads around punt - we at least create
 	 very sub-optimal code in that case (and blow up memory,
 	 see PR65518).  */
-      bool force_peeling = false;
       if (first_stmt == stmt
 	  && !GROUP_NEXT_ELEMENT (stmt_info))
 	{
@@ -6342,7 +6341,7 @@ vectorizable_load (gimple *stmt, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 	    }
 
 	  /* Single-element interleaving requires peeling for gaps.  */
-	  force_peeling = true;
+	  gcc_assert (GROUP_GAP (stmt_info));
 	}
 
       /* If there is a gap in the end of the group or the group size cannot
@@ -6350,8 +6349,7 @@ vectorizable_load (gimple *stmt, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 	 elements in the last iteration and thus need to peel that off.  */
       if (loop_vinfo
 	  && ! STMT_VINFO_STRIDED_P (stmt_info)
-	  && (force_peeling
-	      || GROUP_GAP (vinfo_for_stmt (first_stmt)) != 0
+	  && (GROUP_GAP (vinfo_for_stmt (first_stmt)) != 0
 	      || (!slp && vf % GROUP_SIZE (vinfo_for_stmt (first_stmt)) != 0)))
 	{
 	  if (dump_enabled_p ())
