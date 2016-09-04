@@ -1907,6 +1907,61 @@ aarch64_expand_mov_immediate (rtx dest, rtx imm)
   aarch64_internal_mov_immediate (dest, imm, true, GET_MODE (dest));
 }
 
+/* Add DELTA to REGNUM in mode MODE.  SCRATCHREG can be used to held
+   intermediate value if necessary.
+
+   This function is sometimes used to adjust the stack pointer, so we must
+   ensure that it can never cause transient stack deallocation by writing an
+   invalid value into REGNUM.  */
+
+static void
+aarch64_add_constant (machine_mode mode, int regnum, int scratchreg,
+		      HOST_WIDE_INT delta, bool frame_related_p)
+{
+  HOST_WIDE_INT mdelta = abs_hwi (delta);
+  rtx this_rtx = gen_rtx_REG (mode, regnum);
+  rtx_insn *insn;
+
+  /* Do nothing if mdelta is zero.  */
+  if (!mdelta)
+    return;
+
+  /* We only need single instruction if the offset fit into add/sub.  */
+  if (aarch64_uimm12_shift (mdelta))
+    {
+      insn = emit_insn (gen_add2_insn (this_rtx, GEN_INT (delta)));
+      RTX_FRAME_RELATED_P (insn) = frame_related_p;
+      return;
+    }
+
+  /* We need two add/sub instructions, each one performing part of the
+     calculation.  Don't do this if the addend can be loaded into register with
+     a single instruction, in that case we prefer a move to a scratch register
+     following by an addition.  */
+  if (mdelta < 0x1000000 && !aarch64_move_imm (delta, mode))
+    {
+      HOST_WIDE_INT low_off = mdelta & 0xfff;
+
+      low_off = delta < 0 ? -low_off : low_off;
+      insn = emit_insn (gen_add2_insn (this_rtx, GEN_INT (low_off)));
+      RTX_FRAME_RELATED_P (insn) = frame_related_p;
+      insn = emit_insn (gen_add2_insn (this_rtx, GEN_INT (delta - low_off)));
+      RTX_FRAME_RELATED_P (insn) = frame_related_p;
+      return;
+    }
+
+  /* Otherwise use generic function to handle all other situations.  */
+  rtx scratch_rtx = gen_rtx_REG (mode, scratchreg);
+  aarch64_internal_mov_immediate (scratch_rtx, GEN_INT (delta), true, mode);
+  insn = emit_insn (gen_add2_insn (this_rtx, scratch_rtx));
+  if (frame_related_p)
+    {
+      RTX_FRAME_RELATED_P (insn) = frame_related_p;
+      rtx adj = plus_constant (mode, this_rtx, delta);
+      add_reg_note (insn , REG_CFA_ADJUST_CFA, gen_rtx_SET (this_rtx, adj));
+    }
+}
+
 static bool
 aarch64_function_ok_for_sibcall (tree decl ATTRIBUTE_UNUSED,
 				 tree exp ATTRIBUTE_UNUSED)
@@ -3038,36 +3093,7 @@ aarch64_expand_prologue (void)
       frame_size -= (offset + crtl->outgoing_args_size);
       fp_offset = 0;
 
-      if (frame_size >= 0x1000000)
-	{
-	  rtx op0 = gen_rtx_REG (Pmode, IP0_REGNUM);
-	  emit_move_insn (op0, GEN_INT (-frame_size));
-	  insn = emit_insn (gen_add2_insn (stack_pointer_rtx, op0));
-
-	  add_reg_note (insn, REG_CFA_ADJUST_CFA,
-			gen_rtx_SET (stack_pointer_rtx,
-				     plus_constant (Pmode, stack_pointer_rtx,
-						    -frame_size)));
-	  RTX_FRAME_RELATED_P (insn) = 1;
-	}
-      else if (frame_size > 0)
-	{
-	  int hi_ofs = frame_size & 0xfff000;
-	  int lo_ofs = frame_size & 0x000fff;
-
-	  if (hi_ofs)
-	    {
-	      insn = emit_insn (gen_add2_insn
-				(stack_pointer_rtx, GEN_INT (-hi_ofs)));
-	      RTX_FRAME_RELATED_P (insn) = 1;
-	    }
-	  if (lo_ofs)
-	    {
-	      insn = emit_insn (gen_add2_insn
-				(stack_pointer_rtx, GEN_INT (-lo_ofs)));
-	      RTX_FRAME_RELATED_P (insn) = 1;
-	    }
-	}
+      aarch64_add_constant (Pmode, SP_REGNUM, IP0_REGNUM, -frame_size, true);
     }
   else
     frame_size = -1;
@@ -3287,31 +3313,7 @@ aarch64_expand_epilogue (bool for_sibcall)
       if (need_barrier_p)
 	emit_insn (gen_stack_tie (stack_pointer_rtx, stack_pointer_rtx));
 
-      if (frame_size >= 0x1000000)
-	{
-	  rtx op0 = gen_rtx_REG (Pmode, IP0_REGNUM);
-	  emit_move_insn (op0, GEN_INT (frame_size));
-	  insn = emit_insn (gen_add2_insn (stack_pointer_rtx, op0));
-	}
-      else
-	{
-          int hi_ofs = frame_size & 0xfff000;
-          int lo_ofs = frame_size & 0x000fff;
-
-	  if (hi_ofs && lo_ofs)
-	    {
-	      insn = emit_insn (gen_add2_insn
-				(stack_pointer_rtx, GEN_INT (hi_ofs)));
-	      RTX_FRAME_RELATED_P (insn) = 1;
-	      frame_size = lo_ofs;
-	    }
-	  insn = emit_insn (gen_add2_insn
-			    (stack_pointer_rtx, GEN_INT (frame_size)));
-	}
-
-      /* Reset the CFA to be SP + 0.  */
-      add_reg_note (insn, REG_CFA_DEF_CFA, stack_pointer_rtx);
-      RTX_FRAME_RELATED_P (insn) = 1;
+      aarch64_add_constant (Pmode, SP_REGNUM, IP0_REGNUM, frame_size, true);
     }
 
   /* Stack adjustment for exception handler.  */
@@ -3378,122 +3380,6 @@ aarch64_final_eh_return_addr (void)
 				       - 2 * UNITS_PER_WORD));
 }
 
-/* Possibly output code to build up a constant in a register.  For
-   the benefit of the costs infrastructure, returns the number of
-   instructions which would be emitted.  GENERATE inhibits or
-   enables code generation.  */
-
-static int
-aarch64_build_constant (int regnum, HOST_WIDE_INT val, bool generate)
-{
-  int insns = 0;
-
-  if (aarch64_bitmask_imm (val, DImode))
-    {
-      if (generate)
-	emit_move_insn (gen_rtx_REG (Pmode, regnum), GEN_INT (val));
-      insns = 1;
-    }
-  else
-    {
-      int i;
-      int ncount = 0;
-      int zcount = 0;
-      HOST_WIDE_INT valp = val >> 16;
-      HOST_WIDE_INT valm;
-      HOST_WIDE_INT tval;
-
-      for (i = 16; i < 64; i += 16)
-	{
-	  valm = (valp & 0xffff);
-
-	  if (valm != 0)
-	    ++ zcount;
-
-	  if (valm != 0xffff)
-	    ++ ncount;
-
-	  valp >>= 16;
-	}
-
-      /* zcount contains the number of additional MOVK instructions
-	 required if the constant is built up with an initial MOVZ instruction,
-	 while ncount is the number of MOVK instructions required if starting
-	 with a MOVN instruction.  Choose the sequence that yields the fewest
-	 number of instructions, preferring MOVZ instructions when they are both
-	 the same.  */
-      if (ncount < zcount)
-	{
-	  if (generate)
-	    emit_move_insn (gen_rtx_REG (Pmode, regnum),
-			    GEN_INT (val | ~(HOST_WIDE_INT) 0xffff));
-	  tval = 0xffff;
-	  insns++;
-	}
-      else
-	{
-	  if (generate)
-	    emit_move_insn (gen_rtx_REG (Pmode, regnum),
-			    GEN_INT (val & 0xffff));
-	  tval = 0;
-	  insns++;
-	}
-
-      val >>= 16;
-
-      for (i = 16; i < 64; i += 16)
-	{
-	  if ((val & 0xffff) != tval)
-	    {
-	      if (generate)
-		emit_insn (gen_insv_immdi (gen_rtx_REG (Pmode, regnum),
-					   GEN_INT (i),
-					   GEN_INT (val & 0xffff)));
-	      insns++;
-	    }
-	  val >>= 16;
-	}
-    }
-  return insns;
-}
-
-static void
-aarch64_add_constant (int regnum, int scratchreg, HOST_WIDE_INT delta)
-{
-  HOST_WIDE_INT mdelta = delta;
-  rtx this_rtx = gen_rtx_REG (Pmode, regnum);
-  rtx scratch_rtx = gen_rtx_REG (Pmode, scratchreg);
-
-  if (mdelta < 0)
-    mdelta = -mdelta;
-
-  if (mdelta >= 4096 * 4096)
-    {
-      (void) aarch64_build_constant (scratchreg, delta, true);
-      emit_insn (gen_add3_insn (this_rtx, this_rtx, scratch_rtx));
-    }
-  else if (mdelta > 0)
-    {
-      if (mdelta >= 4096)
-	{
-	  emit_insn (gen_rtx_SET (scratch_rtx, GEN_INT (mdelta / 4096)));
-	  rtx shift = gen_rtx_ASHIFT (Pmode, scratch_rtx, GEN_INT (12));
-	  if (delta < 0)
-	    emit_insn (gen_rtx_SET (this_rtx,
-				    gen_rtx_MINUS (Pmode, this_rtx, shift)));
-	  else
-	    emit_insn (gen_rtx_SET (this_rtx,
-				    gen_rtx_PLUS (Pmode, this_rtx, shift)));
-	}
-      if (mdelta % 4096 != 0)
-	{
-	  scratch_rtx = GEN_INT ((delta < 0 ? -1 : 1) * (mdelta % 4096));
-	  emit_insn (gen_rtx_SET (this_rtx,
-				  gen_rtx_PLUS (Pmode, this_rtx, scratch_rtx)));
-	}
-    }
-}
-
 /* Output code to add DELTA to the first argument, and then jump
    to FUNCTION.  Used for C++ multiple inheritance.  */
 static void
@@ -3514,7 +3400,7 @@ aarch64_output_mi_thunk (FILE *file, tree thunk ATTRIBUTE_UNUSED,
   emit_note (NOTE_INSN_PROLOGUE_END);
 
   if (vcall_offset == 0)
-    aarch64_add_constant (this_regno, IP1_REGNUM, delta);
+    aarch64_add_constant (Pmode, this_regno, IP1_REGNUM, delta, false);
   else
     {
       gcc_assert ((vcall_offset & (POINTER_BYTES - 1)) == 0);
@@ -3530,7 +3416,7 @@ aarch64_output_mi_thunk (FILE *file, tree thunk ATTRIBUTE_UNUSED,
 	    addr = gen_rtx_PRE_MODIFY (Pmode, this_rtx,
 				       plus_constant (Pmode, this_rtx, delta));
 	  else
-	    aarch64_add_constant (this_regno, IP1_REGNUM, delta);
+	    aarch64_add_constant (Pmode, this_regno, IP1_REGNUM, delta, false);
 	}
 
       if (Pmode == ptr_mode)
@@ -3544,7 +3430,8 @@ aarch64_output_mi_thunk (FILE *file, tree thunk ATTRIBUTE_UNUSED,
 	  addr = plus_constant (Pmode, temp0, vcall_offset);
       else
 	{
-	  (void) aarch64_build_constant (IP1_REGNUM, vcall_offset, true);
+	  aarch64_internal_mov_immediate (temp1, GEN_INT (vcall_offset), true,
+					  Pmode);
 	  addr = gen_rtx_PLUS (Pmode, temp0, temp1);
 	}
 
