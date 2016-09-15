@@ -3278,7 +3278,9 @@ foreach { armfunc armflag armdef } { v4 "-march=armv4 -marm" __ARM_ARCH_4__
 				     v7m "-march=armv7-m -mthumb" __ARM_ARCH_7M__
 				     v7em "-march=armv7e-m -mthumb" __ARM_ARCH_7EM__
 				     v8a "-march=armv8-a" __ARM_ARCH_8A__
-				     v8_1a "-march=armv8.1a" __ARM_ARCH_8A__ } {
+				     v8_1a "-march=armv8.1a" __ARM_ARCH_8A__
+				     v8m_base "-march=armv8-m.base -mthumb" __ARM_ARCH_8M_BASE__
+				     v8m_main "-march=armv8-m.main -mthumb" __ARM_ARCH_8M_MAIN__ } {
     eval [string map [list FUNC $armfunc FLAG $armflag DEF $armdef ] {
 	proc check_effective_target_arm_arch_FUNC_ok { } {
 	    if { [ string match "*-marm*" "FLAG" ] &&
@@ -3406,13 +3408,45 @@ proc check_effective_target_arm_cortex_m { } {
 	return 0
     }
     return [check_no_compiler_messages arm_cortex_m assembly {
-	#if !defined(__ARM_ARCH_7M__) \
-            && !defined (__ARM_ARCH_7EM__) \
-            && !defined (__ARM_ARCH_6M__)
-	#error !__ARM_ARCH_7M__ && !__ARM_ARCH_7EM__ && !__ARM_ARCH_6M__
+	#if defined(__ARM_ARCH_ISA_ARM)
+	#error __ARM_ARCH_ISA_ARM is defined
 	#endif
 	int i;
     } "-mthumb"]
+}
+
+# Return 1 if this is an ARM target where -mthumb causes Thumb-1 to be
+# used and MOVT/MOVW instructions to be available.
+
+proc check_effective_target_arm_thumb1_movt_ok {} {
+    if [check_effective_target_arm_thumb1_ok] {
+	return [check_no_compiler_messages arm_movt object {
+	    int
+	    foo (void)
+	    {
+	      asm ("movt r0, #42");
+	    }
+	} "-mthumb"]
+    } else {
+	return 0
+    }
+}
+
+# Return 1 if this is an ARM target where -mthumb causes Thumb-1 to be
+# used and CBZ and CBNZ instructions are available.
+
+proc check_effective_target_arm_thumb1_cbz_ok {} {
+    if [check_effective_target_arm_thumb1_ok] {
+	return [check_no_compiler_messages arm_movt object {
+	    int
+	    foo (void)
+	    {
+	      asm ("cbz r0, 2f\n2:");
+	    }
+	} "-mthumb"]
+    } else {
+	return 0
+    }
 }
 
 # Return 1 if this compilation turns on string_ops_prefer_neon on.

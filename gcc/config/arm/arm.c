@@ -2307,9 +2307,11 @@ static const struct processors *arm_selected_arch;
 static const struct processors *arm_selected_cpu;
 static const struct processors *arm_selected_tune;
 
-/* The name of the preprocessor macro to define for this architecture.  */
+/* The name of the preprocessor macro to define for this architecture.  PROFILE
+   is replaced by the architecture name (eg. 8A) in arm_option_override () and
+   is thus chosen to be big enough to hold the longest architecture name.  */
 
-char arm_arch_name[] = "__ARM_ARCH_0UNK__";
+char arm_arch_name[] = "__ARM_ARCH_PROFILE__";
 
 /* Available values for -mfpu=.  */
 
@@ -2950,7 +2952,8 @@ arm_option_override_internal (struct gcc_options *opts,
   if (! opts_set->x_arm_restrict_it)
     opts->x_arm_restrict_it = arm_arch8;
 
-  if (!TARGET_THUMB2_P (opts->x_target_flags))
+  /* ARM execution state and M profile don't have [restrict] IT.  */
+  if (!TARGET_THUMB2_P (opts->x_target_flags) || !arm_arch_notm)
     opts->x_arm_restrict_it = 0;
 
   /* Enable -munaligned-access by default for
@@ -2961,7 +2964,8 @@ arm_option_override_internal (struct gcc_options *opts,
 
      Disable -munaligned-access by default for
      - all pre-ARMv6 architecture-based processors
-     - ARMv6-M architecture-based processors.  */
+     - ARMv6-M architecture-based processors
+     - ARMv8-M Baseline processors.  */
 
   if (! opts_set->x_unaligned_access)
     {
@@ -3953,7 +3957,7 @@ const_ok_for_op (HOST_WIDE_INT i, enum rtx_code code)
     {
     case SET:
       /* See if we can use movw.  */
-      if (arm_arch_thumb2 && (i & 0xffff0000) == 0)
+      if (TARGET_HAVE_MOVT && (i & 0xffff0000) == 0)
 	return 1;
       else
 	/* Otherwise, try mvn.  */
@@ -8276,6 +8280,12 @@ arm_legitimate_constant_p_1 (machine_mode, rtx x)
 static bool
 thumb_legitimate_constant_p (machine_mode mode ATTRIBUTE_UNUSED, rtx x)
 {
+  /* Splitters for TARGET_USE_MOVT call arm_emit_movpair which creates high
+     RTX.  These RTX must therefore be allowed for Thumb-1 so that when run
+     for ARMv8-M Baseline or later the result is valid.  */
+  if (TARGET_HAVE_MOVT && GET_CODE (x) == HIGH)
+    x = XEXP (x, 0);
+
   return (CONST_INT_P (x)
 	  || CONST_DOUBLE_P (x)
 	  || CONSTANT_ADDRESS_P (x)
@@ -8362,7 +8372,9 @@ thumb1_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer)
     case CONST_INT:
       if (outer == SET)
 	{
-	  if ((unsigned HOST_WIDE_INT) INTVAL (x) < 256)
+	  if (UINTVAL (x) < 256
+	      /* 16-bit constant.  */
+	      || (TARGET_HAVE_MOVT && !(INTVAL (x) & 0xffff0000)))
 	    return 0;
 	  if (thumb_shiftable_const (INTVAL (x)))
 	    return COSTS_N_INSNS (2);
@@ -9065,7 +9077,7 @@ static inline int
 thumb1_size_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer)
 {
   machine_mode mode = GET_MODE (x);
-  int words;
+  int words, cost;
 
   switch (code)
     {
@@ -9111,17 +9123,27 @@ thumb1_size_rtx_costs (rtx x, enum rtx_code code, enum rtx_code outer)
       /* A SET doesn't have a mode, so let's look at the SET_DEST to get
 	 the mode.  */
       words = ARM_NUM_INTS (GET_MODE_SIZE (GET_MODE (SET_DEST (x))));
-      return COSTS_N_INSNS (words)
-	     + COSTS_N_INSNS (1) * (satisfies_constraint_J (SET_SRC (x))
-				    || satisfies_constraint_K (SET_SRC (x))
-				       /* thumb1_movdi_insn.  */
-				    || ((words > 1) && MEM_P (SET_SRC (x))));
+      cost = COSTS_N_INSNS (words);
+      if (satisfies_constraint_J (SET_SRC (x))
+	  || satisfies_constraint_K (SET_SRC (x))
+	     /* Too big an immediate for a 2-byte mov, using MOVT.  */
+	  || (CONST_INT_P (SET_SRC (x))
+	      && UINTVAL (SET_SRC (x)) >= 256
+	      && TARGET_HAVE_MOVT
+	      && satisfies_constraint_j (SET_SRC (x)))
+	     /* thumb1_movdi_insn.  */
+	  || ((words > 1) && MEM_P (SET_SRC (x))))
+	cost += COSTS_N_INSNS (1);
+      return cost;
 
     case CONST_INT:
       if (outer == SET)
         {
           if (UINTVAL (x) < 256)
             return COSTS_N_INSNS (1);
+	  /* movw is 4byte long.  */
+	  if (TARGET_HAVE_MOVT && !(INTVAL (x) & 0xffff0000))
+	    return COSTS_N_INSNS (2);
 	  /* See split "TARGET_THUMB1 && satisfies_constraint_J".  */
 	  if (INTVAL (x) >= -255 && INTVAL (x) <= -1)
             return COSTS_N_INSNS (2);
@@ -26020,7 +26042,7 @@ arm_file_start (void)
 	      const char* pos = strchr (arm_selected_arch->name, '+');
 	      if (pos)
 		{
-		  char buf[15];
+		  char buf[32];
 		  gcc_assert (strlen (arm_selected_arch->name)
 			      <= sizeof (buf) / sizeof (*pos));
 		  strncpy (buf, arm_selected_arch->name,

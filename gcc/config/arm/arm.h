@@ -232,7 +232,7 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 
 /* Should MOVW/MOVT be used in preference to a constant pool.  */
 #define TARGET_USE_MOVT \
-  (arm_arch_thumb2 \
+  (TARGET_HAVE_MOVT \
    && (arm_disable_literal_pool \
        || (!optimize_size && !current_tune->prefer_constant_pool)))
 
@@ -261,11 +261,22 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 			     || arm_arch7) && arm_arch_notm)
 
 /* Nonzero if this chip supports load-acquire and store-release.  */
-#define TARGET_HAVE_LDACQ	(TARGET_ARM_ARCH >= 8)
+#define TARGET_HAVE_LDACQ	(TARGET_ARM_ARCH >= 8 && TARGET_32BIT)
+
+/* Nonzero if this chip supports LDAEXD and STLEXD.  */
+#define TARGET_HAVE_LDACQEXD	(TARGET_ARM_ARCH >= 8	\
+				 && TARGET_32BIT	\
+				 && arm_arch_notm)
+
+/* Nonzero if this chip provides the MOVW and MOVT instructions.  */
+#define TARGET_HAVE_MOVT	(arm_arch_thumb2 || arm_arch8)
+
+/* Nonzero if this chip provides the CBZ and CBNZ instructions.  */
+#define TARGET_HAVE_CBZ		(arm_arch_thumb2 || arm_arch8)
 
 /* Nonzero if integer division instructions supported.  */
 #define TARGET_IDIV	((TARGET_ARM && arm_arch_arm_hwdiv)	\
-			 || (TARGET_THUMB2 && arm_arch_thumb_hwdiv))
+			 || (TARGET_THUMB && arm_arch_thumb_hwdiv))
 
 /* Nonzero if disallow volatile memory access in IT block.  */
 #define TARGET_NO_VOLATILE_CE		(arm_arch_no_volatile_ce)
@@ -398,7 +409,9 @@ enum base_architecture
   BASE_ARCH_7R = 7,
   BASE_ARCH_7M = 7,
   BASE_ARCH_7EM = 7,
-  BASE_ARCH_8A = 8
+  BASE_ARCH_8A = 8,
+  BASE_ARCH_8M_BASE = 8,
+  BASE_ARCH_8M_MAIN = 8
 };
 
 /* The major revision number of the ARM Architecture implemented by the target.  */
