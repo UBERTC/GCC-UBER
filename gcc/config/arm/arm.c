@@ -814,6 +814,13 @@ int arm_arch8 = 0;
 /* Nonzero if this chip supports the ARMv8.1 extensions.  */
 int arm_arch8_1 = 0;
 
+/* Nonzero if this chip supports the ARM Architecture 8.2 extensions.  */
+int arm_arch8_2 = 0;
+
+/* Nonzero if this chip supports the FP16 instructions extension of ARM
+   Architecture 8.2.  */
+int arm_fp16_inst = 0;
+
 /* Nonzero if this chip can benefit from load scheduling.  */
 int arm_ld_sched = 0;
 
@@ -3217,6 +3224,7 @@ arm_option_override (void)
   arm_arch7em = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH7EM);
   arm_arch8 = ARM_FSET_HAS_CPU1 (insn_flags, FL_ARCH8);
   arm_arch8_1 = ARM_FSET_HAS_CPU2 (insn_flags, FL2_ARCH8_1);
+  arm_arch8_2 = ARM_FSET_HAS_CPU2 (insn_flags, FL2_ARCH8_2);
   arm_arch_thumb1 = ARM_FSET_HAS_CPU1 (insn_flags, FL_THUMB);
   arm_arch_thumb2 = ARM_FSET_HAS_CPU1 (insn_flags, FL_THUMB2);
   arm_arch_xscale = ARM_FSET_HAS_CPU1 (insn_flags, FL_XSCALE);
@@ -3233,6 +3241,13 @@ arm_option_override (void)
   arm_tune_cortex_a9 = (arm_tune == cortexa9) != 0;
   arm_arch_crc = ARM_FSET_HAS_CPU1 (insn_flags, FL_CRC32);
   arm_m_profile_small_mul = ARM_FSET_HAS_CPU1 (insn_flags, FL_SMALLMUL);
+  arm_fp16_inst = ARM_FSET_HAS_CPU2 (insn_flags, FL2_FP16INST);
+  if (arm_fp16_inst)
+    {
+      if (arm_fp16_format == ARM_FP16_FORMAT_ALTERNATIVE)
+	error ("selected fp16 options are incompatible.");
+      arm_fp16_format = ARM_FP16_FORMAT_IEEE;
+    }
 
   /* V5 code we generate is completely interworking capable, so we turn off
      TARGET_INTERWORK here to avoid many tests later on.  */
@@ -13221,7 +13236,7 @@ coproc_secondary_reload_class (machine_mode mode, rtx x, bool wb)
 {
   if (mode == HFmode)
     {
-      if (!TARGET_NEON_FP16)
+      if (!TARGET_NEON_FP16 && !TARGET_VFP_FP16INST)
 	return GENERAL_REGS;
       if (s_register_operand (x, mode) || neon_vector_mem_operand (x, 2, true))
 	return NO_REGS;
@@ -18672,6 +18687,8 @@ output_move_vfp (rtx *operands)
   rtx reg, mem, addr, ops[2];
   int load = REG_P (operands[0]);
   int dp = GET_MODE_SIZE (GET_MODE (operands[0])) == 8;
+  int sp = (!TARGET_VFP_FP16INST
+	    || GET_MODE_SIZE (GET_MODE (operands[0])) == 4);
   int integer_p = GET_MODE_CLASS (GET_MODE (operands[0])) == MODE_INT;
   const char *templ;
   char buff[50];
@@ -18687,6 +18704,7 @@ output_move_vfp (rtx *operands)
   gcc_assert ((mode == HFmode && TARGET_HARD_FLOAT && TARGET_VFP)
 	      || mode == SFmode
 	      || mode == DFmode
+	      || mode == HImode
 	      || mode == SImode
 	      || mode == DImode
               || (TARGET_NEON && VALID_NEON_DREG_MODE (mode)));
@@ -18717,7 +18735,7 @@ output_move_vfp (rtx *operands)
 
   sprintf (buff, templ,
 	   load ? "ld" : "st",
-	   dp ? "64" : "32",
+	   dp ? "64" : sp ? "32" : "16",
 	   dp ? "P" : "",
 	   integer_p ? "\t%@ int" : "");
   output_asm_insn (buff, ops);
@@ -23478,6 +23496,10 @@ arm_hard_regno_mode_ok (unsigned int regno, machine_mode mode)
 	return VFP_REGNO_OK_FOR_DOUBLE (regno);
 
       if (mode == HFmode)
+	return VFP_REGNO_OK_FOR_SINGLE (regno);
+
+      /* VFP registers can hold HImode values.  */
+      if (mode == HImode)
 	return VFP_REGNO_OK_FOR_SINGLE (regno);
 
       if (TARGET_NEON)
@@ -28529,6 +28551,8 @@ arm_evpc_neon_vuzp (struct expand_vec_perm_d *d)
     case V8QImode:  gen = gen_neon_vuzpv8qi_internal;  break;
     case V8HImode:  gen = gen_neon_vuzpv8hi_internal;  break;
     case V4HImode:  gen = gen_neon_vuzpv4hi_internal;  break;
+    case V8HFmode:  gen = gen_neon_vuzpv8hf_internal;  break;
+    case V4HFmode:  gen = gen_neon_vuzpv4hf_internal;  break;
     case V4SImode:  gen = gen_neon_vuzpv4si_internal;  break;
     case V2SImode:  gen = gen_neon_vuzpv2si_internal;  break;
     case V2SFmode:  gen = gen_neon_vuzpv2sf_internal;  break;
@@ -28602,6 +28626,8 @@ arm_evpc_neon_vzip (struct expand_vec_perm_d *d)
     case V8QImode:  gen = gen_neon_vzipv8qi_internal;  break;
     case V8HImode:  gen = gen_neon_vzipv8hi_internal;  break;
     case V4HImode:  gen = gen_neon_vzipv4hi_internal;  break;
+    case V8HFmode:  gen = gen_neon_vzipv8hf_internal;  break;
+    case V4HFmode:  gen = gen_neon_vzipv4hf_internal;  break;
     case V4SImode:  gen = gen_neon_vzipv4si_internal;  break;
     case V2SImode:  gen = gen_neon_vzipv2si_internal;  break;
     case V2SFmode:  gen = gen_neon_vzipv2sf_internal;  break;
@@ -28654,6 +28680,8 @@ arm_evpc_neon_vrev (struct expand_vec_perm_d *d)
 	case V8QImode:  gen = gen_neon_vrev32v8qi;  break;
 	case V8HImode:  gen = gen_neon_vrev64v8hi;  break;
 	case V4HImode:  gen = gen_neon_vrev64v4hi;  break;
+	case V8HFmode:  gen = gen_neon_vrev64v8hf;  break;
+	case V4HFmode:  gen = gen_neon_vrev64v4hf;  break;
 	default:
 	  return false;
 	}
@@ -28737,6 +28765,8 @@ arm_evpc_neon_vtrn (struct expand_vec_perm_d *d)
     case V8QImode:  gen = gen_neon_vtrnv8qi_internal;  break;
     case V8HImode:  gen = gen_neon_vtrnv8hi_internal;  break;
     case V4HImode:  gen = gen_neon_vtrnv4hi_internal;  break;
+    case V8HFmode:  gen = gen_neon_vtrnv8hf_internal;  break;
+    case V4HFmode:  gen = gen_neon_vtrnv4hf_internal;  break;
     case V4SImode:  gen = gen_neon_vtrnv4si_internal;  break;
     case V2SImode:  gen = gen_neon_vtrnv2si_internal;  break;
     case V2SFmode:  gen = gen_neon_vtrnv2sf_internal;  break;
@@ -28812,6 +28842,8 @@ arm_evpc_neon_vext (struct expand_vec_perm_d *d)
     case V8HImode: gen = gen_neon_vextv8hi; break;
     case V2SImode: gen = gen_neon_vextv2si; break;
     case V4SImode: gen = gen_neon_vextv4si; break;
+    case V4HFmode: gen = gen_neon_vextv4hf; break;
+    case V8HFmode: gen = gen_neon_vextv8hf; break;
     case V2SFmode: gen = gen_neon_vextv2sf; break;
     case V4SFmode: gen = gen_neon_vextv4sf; break;
     case V2DImode: gen = gen_neon_vextv2di; break;
@@ -29337,7 +29369,7 @@ arm_validize_comparison (rtx *comparison, rtx * op1, rtx * op2)
 {
   enum rtx_code code = GET_CODE (*comparison);
   int code_int;
-  machine_mode mode = (GET_MODE (*op1) == VOIDmode) 
+  machine_mode mode = (GET_MODE (*op1) == VOIDmode)
     ? GET_MODE (*op2) : GET_MODE (*op1);
 
   gcc_assert (GET_MODE (*op1) != VOIDmode || GET_MODE (*op2) != VOIDmode);
@@ -29365,6 +29397,14 @@ arm_validize_comparison (rtx *comparison, rtx * op1, rtx * op2)
 	*op2 = force_reg (mode, *op2);
       return true;
 
+    case HFmode:
+      if (!TARGET_VFP_FP16INST)
+	break;
+      /* FP16 comparisons are done in SF mode.  */
+      mode = SFmode;
+      *op1 = convert_to_mode (mode, *op1, 1);
+      *op2 = convert_to_mode (mode, *op2, 1);
+      /* Fall through.  */
     case SFmode:
     case DFmode:
       if (!arm_float_compare_operand (*op1, mode))

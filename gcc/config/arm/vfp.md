@@ -18,6 +18,199 @@
 ;; along with GCC; see the file COPYING3.  If not see
 ;; <http://www.gnu.org/licenses/>.  */
 
+;; Patterns for HI moves which provide more data transfer instructions when VFP
+;; support is enabled.
+(define_insn "*arm_movhi_vfp"
+ [(set
+   (match_operand:HI 0 "nonimmediate_operand"
+    "=rk,  r, r, m, r, *t,  r, *t")
+   (match_operand:HI 1 "general_operand"
+    "rIk, K, n, r, mi, r, *t, *t"))]
+ "TARGET_ARM && TARGET_HARD_FLOAT && TARGET_VFP
+  && !TARGET_VFP_FP16INST
+  && (register_operand (operands[0], HImode)
+       || register_operand (operands[1], HImode))"
+{
+  switch (which_alternative)
+    {
+    case 0:
+      return "mov%?\t%0, %1\t%@ movhi";
+    case 1:
+      return "mvn%?\t%0, #%B1\t%@ movhi";
+    case 2:
+      return "movw%?\t%0, %L1\t%@ movhi";
+    case 3:
+      return "strh%?\t%1, %0\t%@ movhi";
+    case 4:
+      return "ldrh%?\t%0, %1\t%@ movhi";
+    case 5:
+    case 6:
+      return "vmov%?\t%0, %1\t%@ int";
+    case 7:
+      return "vmov%?.f32\t%0, %1\t%@ int";
+    default:
+      gcc_unreachable ();
+    }
+}
+ [(set_attr "predicable" "yes")
+  (set_attr_alternative "type"
+   [(if_then_else
+     (match_operand 1 "const_int_operand" "")
+     (const_string "mov_imm")
+     (const_string "mov_reg"))
+    (const_string "mvn_imm")
+    (const_string "mov_imm")
+    (const_string "store1")
+    (const_string "load1")
+    (const_string "f_mcr")
+    (const_string "f_mrc")
+    (const_string "fmov")])
+  (set_attr "arch" "*, *, v6t2, *, *, *, *, *")
+  (set_attr "pool_range" "*, *, *, *, 256, *, *, *")
+  (set_attr "neg_pool_range" "*, *, *, *, 244, *, *, *")
+  (set_attr "length" "4")]
+)
+
+(define_insn "*thumb2_movhi_vfp"
+ [(set
+   (match_operand:HI 0 "nonimmediate_operand"
+    "=rk, r, l, r, m, r, *t, r, *t")
+   (match_operand:HI 1 "general_operand"
+    "rk, I, Py, n, r, m, r, *t, *t"))]
+ "TARGET_THUMB2 && TARGET_HARD_FLOAT && TARGET_VFP
+  && !TARGET_VFP_FP16INST
+  && (register_operand (operands[0], HImode)
+       || register_operand (operands[1], HImode))"
+{
+  switch (which_alternative)
+    {
+    case 0:
+    case 1:
+    case 2:
+      return "mov%?\t%0, %1\t%@ movhi";
+    case 3:
+      return "movw%?\t%0, %L1\t%@ movhi";
+    case 4:
+      return "strh%?\t%1, %0\t%@ movhi";
+    case 5:
+      return "ldrh%?\t%0, %1\t%@ movhi";
+    case 6:
+    case 7:
+      return "vmov%?\t%0, %1\t%@ int";
+    case 8:
+      return "vmov%?.f32\t%0, %1\t%@ int";
+    default:
+      gcc_unreachable ();
+    }
+}
+ [(set_attr "predicable" "yes")
+  (set_attr "predicable_short_it"
+   "yes, no, yes, no, no, no, no, no, no")
+  (set_attr "type"
+   "mov_reg, mov_imm, mov_imm, mov_imm, store1, load1,\
+    f_mcr, f_mrc, fmov")
+  (set_attr "arch" "*, *, *, v6t2, *, *, *, *, *")
+  (set_attr "pool_range" "*, *, *, *, *, 4094, *, *, *")
+  (set_attr "neg_pool_range" "*, *, *, *, *, 250, *, *, *")
+  (set_attr "length" "2, 4, 2, 4, 4, 4, 4, 4, 4")]
+)
+
+;; Patterns for HI moves which provide more data transfer instructions when FP16
+;; instructions are available.
+(define_insn "*arm_movhi_fp16"
+ [(set
+   (match_operand:HI 0 "nonimmediate_operand"
+    "=r,  r, r, m, r, *t,  r, *t")
+   (match_operand:HI 1 "general_operand"
+    "rIk, K, n, r, mi, r, *t, *t"))]
+ "TARGET_ARM && TARGET_VFP_FP16INST
+  && (register_operand (operands[0], HImode)
+       || register_operand (operands[1], HImode))"
+{
+  switch (which_alternative)
+    {
+    case 0:
+      return "mov%?\t%0, %1\t%@ movhi";
+    case 1:
+      return "mvn%?\t%0, #%B1\t%@ movhi";
+    case 2:
+      return "movw%?\t%0, %L1\t%@ movhi";
+    case 3:
+      return "strh%?\t%1, %0\t%@ movhi";
+    case 4:
+      return "ldrh%?\t%0, %1\t%@ movhi";
+    case 5:
+    case 6:
+      return "vmov.f16\t%0, %1\t%@ int";
+    case 7:
+      return "vmov%?.f32\t%0, %1\t%@ int";
+    default:
+      gcc_unreachable ();
+    }
+}
+ [(set_attr "predicable" "yes, yes, yes, yes, yes, no, no, yes")
+  (set_attr_alternative "type"
+   [(if_then_else
+     (match_operand 1 "const_int_operand" "")
+     (const_string "mov_imm")
+     (const_string "mov_reg"))
+    (const_string "mvn_imm")
+    (const_string "mov_imm")
+    (const_string "store1")
+    (const_string "load1")
+    (const_string "f_mcr")
+    (const_string "f_mrc")
+    (const_string "fmov")])
+  (set_attr "arch" "*, *, v6t2, *, *, *, *, *")
+  (set_attr "pool_range" "*, *, *, *, 256, *, *, *")
+  (set_attr "neg_pool_range" "*, *, *, *, 244, *, *, *")
+  (set_attr "length" "4")]
+)
+
+(define_insn "*thumb2_movhi_fp16"
+ [(set
+   (match_operand:HI 0 "nonimmediate_operand"
+    "=rk, r, l, r, m, r, *t, r, *t")
+   (match_operand:HI 1 "general_operand"
+    "rk, I, Py, n, r, m, r, *t, *t"))]
+ "TARGET_THUMB2 && TARGET_VFP_FP16INST
+  && (register_operand (operands[0], HImode)
+       || register_operand (operands[1], HImode))"
+{
+  switch (which_alternative)
+    {
+    case 0:
+    case 1:
+    case 2:
+      return "mov%?\t%0, %1\t%@ movhi";
+    case 3:
+      return "movw%?\t%0, %L1\t%@ movhi";
+    case 4:
+      return "strh%?\t%1, %0\t%@ movhi";
+    case 5:
+      return "ldrh%?\t%0, %1\t%@ movhi";
+    case 6:
+    case 7:
+      return "vmov.f16\t%0, %1\t%@ int";
+    case 8:
+      return "vmov%?.f32\t%0, %1\t%@ int";
+    default:
+      gcc_unreachable ();
+    }
+}
+ [(set_attr "predicable"
+   "yes, yes, yes, yes, yes, yes, no, no, yes")
+  (set_attr "predicable_short_it"
+   "yes, no, yes, no, no, no, no, no, no")
+  (set_attr "type"
+   "mov_reg, mov_imm, mov_imm, mov_imm, store1, load1,\
+    f_mcr, f_mrc, fmov")
+  (set_attr "arch" "*, *, *, v6t2, *, *, *, *, *")
+  (set_attr "pool_range" "*, *, *, *, *, 4094, *, *, *")
+  (set_attr "neg_pool_range" "*, *, *, *, *, 250, *, *, *")
+  (set_attr "length" "2, 4, 2, 4, 4, 4, 4, 4, 4")]
+)
+
 ;; SImode moves
 ;; ??? For now do not allow loading constants into vfp regs.  This causes
 ;; problems because small constants get converted into adds.
@@ -53,7 +246,8 @@
     }
   "
   [(set_attr "predicable" "yes")
-   (set_attr "type" "mov_reg,mov_reg,mvn_imm,mov_imm,load1,store1,f_mcr,f_mrc,fmov,f_loads,f_stores")
+   (set_attr "type" "mov_reg,mov_reg,mvn_imm,mov_imm,load1,store1,
+		     f_mcr,f_mrc,fmov,f_loads,f_stores")
    (set_attr "pool_range"     "*,*,*,*,4096,*,*,*,*,1020,*")
    (set_attr "neg_pool_range" "*,*,*,*,4084,*,*,*,*,1008,*")]
 )
@@ -211,10 +405,87 @@
  )
 
 ;; HFmode moves
+
+(define_insn "*movhf_vfp_fp16"
+  [(set (match_operand:HF 0 "nonimmediate_operand"
+			  "= r,m,t,r,t,r,t,t,Um,r")
+	(match_operand:HF 1 "general_operand"
+			  "  m,r,t,r,r,t,Dv,Um,t,F"))]
+  "TARGET_32BIT
+   && TARGET_VFP_FP16INST
+   && (s_register_operand (operands[0], HFmode)
+       || s_register_operand (operands[1], HFmode))"
+ {
+  switch (which_alternative)
+    {
+    case 0: /* ARM register from memory.  */
+      return \"ldrh%?\\t%0, %1\\t%@ __fp16\";
+    case 1: /* Memory from ARM register.  */
+      return \"strh%?\\t%1, %0\\t%@ __fp16\";
+    case 2: /* S register from S register.  */
+      return \"vmov\\t%0, %1\t%@ __fp16\";
+    case 3: /* ARM register from ARM register.  */
+      return \"mov%?\\t%0, %1\\t%@ __fp16\";
+    case 4: /* S register from ARM register.  */
+    case 5: /* ARM register from S register.  */
+    case 6: /* S register from immediate.  */
+      return \"vmov.f16\\t%0, %1\t%@ __fp16\";
+    case 7: /* S register from memory.  */
+      return \"vld1.16\\t{%z0}, %A1\";
+    case 8: /* Memory from S register.  */
+      return \"vst1.16\\t{%z1}, %A0\";
+    case 9: /* ARM register from constant.  */
+      {
+	long bits;
+	rtx ops[4];
+
+	bits = real_to_target (NULL, CONST_DOUBLE_REAL_VALUE (operands[1]),
+			       HFmode);
+	ops[0] = operands[0];
+	ops[1] = GEN_INT (bits);
+	ops[2] = GEN_INT (bits & 0xff00);
+	ops[3] = GEN_INT (bits & 0x00ff);
+
+	if (arm_arch_thumb2)
+	  output_asm_insn (\"movw\\t%0, %1\", ops);
+	else
+	  output_asm_insn (\"mov\\t%0, %2\;orr\\t%0, %0, %3\", ops);
+	return \"\";
+       }
+    default:
+      gcc_unreachable ();
+    }
+ }
+  [(set_attr "predicable" "yes, yes, no, yes, no, no, no, no, no, no")
+   (set_attr "predicable_short_it" "no, no, no, yes,\
+				    no, no, no, no,\
+				    no, no")
+   (set_attr_alternative "type"
+    [(const_string "load1") (const_string "store1")
+     (const_string "fmov") (const_string "mov_reg")
+     (const_string "f_mcr") (const_string "f_mrc")
+     (const_string "fconsts") (const_string "neon_load1_1reg")
+     (const_string "neon_store1_1reg")
+     (if_then_else (match_test "arm_arch_thumb2")
+      (const_string "mov_imm")
+      (const_string "multiple"))])
+   (set_attr_alternative "length"
+    [(const_int 4) (const_int 4)
+     (const_int 4) (const_int 4)
+     (const_int 4) (const_int 4)
+     (const_int 4) (const_int 4)
+     (const_int 4)
+     (if_then_else (match_test "arm_arch_thumb2")
+      (const_int 4)
+      (const_int 8))])]
+)
+
 (define_insn "*movhf_vfp_neon"
   [(set (match_operand:HF 0 "nonimmediate_operand" "= t,Um,r,m,t,r,t,r,r")
 	(match_operand:HF 1 "general_operand"	   " Um, t,m,r,t,r,r,t,F"))]
-  "TARGET_32BIT && TARGET_HARD_FLOAT && TARGET_NEON_FP16
+  "TARGET_32BIT
+   && TARGET_HARD_FLOAT && TARGET_NEON_FP16
+   && !TARGET_VFP_FP16INST
    && (   s_register_operand (operands[0], HFmode)
        || s_register_operand (operands[1], HFmode))"
   "*
@@ -268,8 +539,10 @@
 (define_insn "*movhf_vfp"
   [(set (match_operand:HF 0 "nonimmediate_operand" "=r,m,t,r,t,r,r")
 	(match_operand:HF 1 "general_operand"	   " m,r,t,r,r,t,F"))]
-  "TARGET_32BIT && TARGET_HARD_FLOAT && TARGET_VFP
+  "TARGET_32BIT
+   && TARGET_HARD_FLOAT && TARGET_VFP
    && !TARGET_NEON_FP16
+   && !TARGET_VFP_FP16INST
    && (   s_register_operand (operands[0], HFmode)
        || s_register_operand (operands[1], HFmode))"
   "*
@@ -670,8 +943,62 @@
    (set_attr "type" "ffarithd")]
 )
 
+;; ABS and NEG for FP16.
+(define_insn "<absneg_str>hf2"
+  [(set (match_operand:HF 0 "s_register_operand" "=w")
+    (ABSNEG:HF (match_operand:HF 1 "s_register_operand" "w")))]
+ "TARGET_VFP_FP16INST"
+ "v<absneg_str>.f16\t%0, %1"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "ffariths")]
+)
+
+(define_expand "neon_vabshf"
+ [(set
+   (match_operand:HF 0 "s_register_operand")
+   (abs:HF (match_operand:HF 1 "s_register_operand")))]
+ "TARGET_VFP_FP16INST"
+{
+  emit_insn (gen_abshf2 (operands[0], operands[1]));
+  DONE;
+})
+
+;; VRND for FP16.
+(define_insn "neon_v<fp16_rnd_str>hf"
+  [(set (match_operand:HF 0 "s_register_operand" "=w")
+    (unspec:HF
+     [(match_operand:HF 1 "s_register_operand" "w")]
+     FP16_RND))]
+ "TARGET_VFP_FP16INST"
+ "<fp16_rnd_insn>.f16\t%0, %1"
+ [(set_attr "conds" "unconditional")
+  (set_attr "type" "neon_fp_round_s")]
+)
+
+(define_insn "neon_vrndihf"
+  [(set (match_operand:HF 0 "s_register_operand" "=w")
+    (unspec:HF
+     [(match_operand:HF 1 "s_register_operand" "w")]
+     UNSPEC_VRNDI))]
+  "TARGET_VFP_FP16INST"
+  "vrintr.f16\t%0, %1"
+ [(set_attr "conds" "unconditional")
+  (set_attr "type" "neon_fp_round_s")]
+)
 
 ;; Arithmetic insns
+
+(define_insn "addhf3"
+  [(set
+    (match_operand:HF 0 "s_register_operand" "=w")
+    (plus:HF
+     (match_operand:HF 1 "s_register_operand" "w")
+     (match_operand:HF 2 "s_register_operand" "w")))]
+ "TARGET_VFP_FP16INST"
+ "vadd.f16\t%0, %1, %2"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fadds")]
+)
 
 (define_insn "*addsf3_vfp"
   [(set (match_operand:SF	   0 "s_register_operand" "=t")
@@ -695,6 +1022,17 @@
    (set_attr "type" "faddd")]
 )
 
+(define_insn "subhf3"
+ [(set
+   (match_operand:HF 0 "s_register_operand" "=w")
+   (minus:HF
+    (match_operand:HF 1 "s_register_operand" "w")
+    (match_operand:HF 2 "s_register_operand" "w")))]
+ "TARGET_VFP_FP16INST"
+ "vsub.f16\t%0, %1, %2"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fadds")]
+)
 
 (define_insn "*subsf3_vfp"
   [(set (match_operand:SF	    0 "s_register_operand" "=t")
@@ -720,6 +1058,19 @@
 
 
 ;; Division insns
+
+;; FP16 Division.
+(define_insn "divhf3"
+  [(set
+    (match_operand:HF	   0 "s_register_operand" "=w")
+    (div:HF
+     (match_operand:HF 1 "s_register_operand" "w")
+     (match_operand:HF 2 "s_register_operand" "w")))]
+  "TARGET_VFP_FP16INST"
+  "vdiv.f16\t%0, %1, %2"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fdivs")]
+)
 
 ; VFP9 Erratum 760019: It's potentially unsafe to overwrite the input
 ; operands, so mark the output as early clobber for VFPv2 on ARMv5 or
@@ -751,6 +1102,17 @@
 
 ;; Multiplication insns
 
+(define_insn "mulhf3"
+ [(set
+   (match_operand:HF 0 "s_register_operand" "=w")
+   (mult:HF (match_operand:HF 1 "s_register_operand" "w")
+	    (match_operand:HF 2 "s_register_operand" "w")))]
+  "TARGET_VFP_FP16INST"
+  "vmul.f16\t%0, %1, %2"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fmuls")]
+)
+
 (define_insn "*mulsf3_vfp"
   [(set (match_operand:SF	   0 "s_register_operand" "=t")
 	(mult:SF (match_operand:SF 1 "s_register_operand" "t")
@@ -771,6 +1133,26 @@
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")
    (set_attr "type" "fmuld")]
+)
+
+(define_insn "*mulsf3neghf_vfp"
+  [(set (match_operand:HF		   0 "s_register_operand" "=t")
+	(mult:HF (neg:HF (match_operand:HF 1 "s_register_operand" "t"))
+		 (match_operand:HF	   2 "s_register_operand" "t")))]
+  "TARGET_VFP_FP16INST && !flag_rounding_math"
+  "vnmul.f16\\t%0, %1, %2"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fmuls")]
+)
+
+(define_insn "*negmulhf3_vfp"
+  [(set (match_operand:HF		   0 "s_register_operand" "=t")
+	(neg:HF (mult:HF (match_operand:HF 1 "s_register_operand" "t")
+		 (match_operand:HF	   2 "s_register_operand" "t"))))]
+  "TARGET_VFP_FP16INST"
+  "vnmul.f16\\t%0, %1, %2"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fmuls")]
 )
 
 (define_insn "*mulsf3negsf_vfp"
@@ -822,6 +1204,18 @@
 ;; Multiply-accumulate insns
 
 ;; 0 = 1 * 2 + 0
+(define_insn "*mulsf3addhf_vfp"
+ [(set (match_operand:HF 0 "s_register_operand" "=t")
+       (plus:HF
+	(mult:HF (match_operand:HF 2 "s_register_operand" "t")
+		 (match_operand:HF 3 "s_register_operand" "t"))
+	(match_operand:HF 1 "s_register_operand" "0")))]
+  "TARGET_VFP_FP16INST"
+  "vmla.f16\\t%0, %2, %3"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fmacs")]
+)
+
 (define_insn "*mulsf3addsf_vfp"
   [(set (match_operand:SF		    0 "s_register_operand" "=t")
 	(plus:SF (mult:SF (match_operand:SF 2 "s_register_operand" "t")
@@ -847,6 +1241,17 @@
 )
 
 ;; 0 = 1 * 2 - 0
+(define_insn "*mulhf3subhf_vfp"
+  [(set (match_operand:HF 0 "s_register_operand" "=t")
+	(minus:HF (mult:HF (match_operand:HF 2 "s_register_operand" "t")
+			   (match_operand:HF 3 "s_register_operand" "t"))
+		  (match_operand:HF 1 "s_register_operand" "0")))]
+  "TARGET_VFP_FP16INST"
+  "vnmls.f16\\t%0, %2, %3"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fmacs")]
+)
+
 (define_insn "*mulsf3subsf_vfp"
   [(set (match_operand:SF		     0 "s_register_operand" "=t")
 	(minus:SF (mult:SF (match_operand:SF 2 "s_register_operand" "t")
@@ -872,6 +1277,17 @@
 )
 
 ;; 0 = -(1 * 2) + 0
+(define_insn "*mulhf3neghfaddhf_vfp"
+  [(set (match_operand:HF 0 "s_register_operand" "=t")
+	(minus:HF (match_operand:HF 1 "s_register_operand" "0")
+		  (mult:HF (match_operand:HF 2 "s_register_operand" "t")
+			   (match_operand:HF 3 "s_register_operand" "t"))))]
+  "TARGET_VFP_FP16INST"
+  "vmls.f16\\t%0, %2, %3"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fmacs")]
+)
+
 (define_insn "*mulsf3negsfaddsf_vfp"
   [(set (match_operand:SF		     0 "s_register_operand" "=t")
 	(minus:SF (match_operand:SF	     1 "s_register_operand" "0")
@@ -898,6 +1314,18 @@
 
 
 ;; 0 = -(1 * 2) - 0
+(define_insn "*mulhf3neghfsubhf_vfp"
+  [(set (match_operand:HF 0 "s_register_operand" "=t")
+	(minus:HF (mult:HF
+		   (neg:HF (match_operand:HF 2 "s_register_operand" "t"))
+		   (match_operand:HF 3 "s_register_operand" "t"))
+		  (match_operand:HF 1 "s_register_operand" "0")))]
+  "TARGET_VFP_FP16INST"
+  "vnmla.f16\\t%0, %2, %3"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fmacs")]
+)
+
 (define_insn "*mulsf3negsfsubsf_vfp"
   [(set (match_operand:SF		      0 "s_register_operand" "=t")
 	(minus:SF (mult:SF
@@ -926,6 +1354,30 @@
 
 ;; Fused-multiply-accumulate
 
+(define_insn "fmahf4"
+  [(set (match_operand:HF 0 "register_operand" "=w")
+    (fma:HF
+     (match_operand:HF 1 "register_operand" "w")
+     (match_operand:HF 2 "register_operand" "w")
+     (match_operand:HF 3 "register_operand" "0")))]
+ "TARGET_VFP_FP16INST"
+ "vfma.f16\\t%0, %1, %2"
+ [(set_attr "conds" "unconditional")
+  (set_attr "type" "ffmas")]
+)
+
+(define_expand "neon_vfmahf"
+  [(match_operand:HF 0 "s_register_operand")
+   (match_operand:HF 1 "s_register_operand")
+   (match_operand:HF 2 "s_register_operand")
+   (match_operand:HF 3 "s_register_operand")]
+  "TARGET_VFP_FP16INST"
+{
+  emit_insn (gen_fmahf4 (operands[0], operands[2], operands[3],
+			 operands[1]));
+  DONE;
+})
+
 (define_insn "fma<SDF:mode>4"
   [(set (match_operand:SDF 0 "register_operand" "=<F_constraint>")
         (fma:SDF (match_operand:SDF 1 "register_operand" "<F_constraint>")
@@ -937,6 +1389,30 @@
    (set_attr "predicable_short_it" "no")
    (set_attr "type" "ffma<vfp_type>")]
 )
+
+(define_insn "fmsubhf4_fp16"
+ [(set (match_operand:HF 0 "register_operand" "=w")
+   (fma:HF
+    (neg:HF (match_operand:HF 1 "register_operand" "w"))
+    (match_operand:HF 2 "register_operand" "w")
+    (match_operand:HF 3 "register_operand" "0")))]
+ "TARGET_VFP_FP16INST"
+ "vfms.f16\\t%0, %1, %2"
+ [(set_attr "conds" "unconditional")
+  (set_attr "type" "ffmas")]
+)
+
+(define_expand "neon_vfmshf"
+  [(match_operand:HF 0 "s_register_operand")
+   (match_operand:HF 1 "s_register_operand")
+   (match_operand:HF 2 "s_register_operand")
+   (match_operand:HF 3 "s_register_operand")]
+  "TARGET_VFP_FP16INST"
+{
+  emit_insn (gen_fmsubhf4_fp16 (operands[0], operands[2], operands[3],
+				operands[1]));
+  DONE;
+})
 
 (define_insn "*fmsub<SDF:mode>4"
   [(set (match_operand:SDF 0 "register_operand" "=<F_constraint>")
@@ -951,6 +1427,17 @@
    (set_attr "type" "ffma<vfp_type>")]
 )
 
+(define_insn "*fnmsubhf4"
+  [(set (match_operand:HF 0 "register_operand" "=w")
+	(fma:HF (match_operand:HF 1 "register_operand" "w")
+		 (match_operand:HF 2 "register_operand" "w")
+		 (neg:HF (match_operand:HF 3 "register_operand" "0"))))]
+  "TARGET_VFP_FP16INST"
+  "vfnms.f16\\t%0, %1, %2"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "ffmas")]
+)
+
 (define_insn "*fnmsub<SDF:mode>4"
   [(set (match_operand:SDF 0 "register_operand" "=<F_constraint>")
 	(fma:SDF (match_operand:SDF 1 "register_operand" "<F_constraint>")
@@ -961,6 +1448,17 @@
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")
    (set_attr "type" "ffma<vfp_type>")]
+)
+
+(define_insn "*fnmaddhf4"
+  [(set (match_operand:HF 0 "register_operand" "=w")
+	(fma:HF (neg:HF (match_operand:HF 1 "register_operand" "w"))
+		 (match_operand:HF 2 "register_operand" "w")
+		 (neg:HF (match_operand:HF 3 "register_operand" "0"))))]
+  "TARGET_VFP_FP16INST"
+  "vfnma.f16\\t%0, %1, %2"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "ffmas")]
 )
 
 (define_insn "*fnmadd<SDF:mode>4"
@@ -1002,7 +1500,7 @@
 (define_insn "extendhfsf2"
   [(set (match_operand:SF		   0 "s_register_operand" "=t")
 	(float_extend:SF (match_operand:HF 1 "s_register_operand" "t")))]
-  "TARGET_32BIT && TARGET_HARD_FLOAT && TARGET_FP16"
+  "TARGET_32BIT && TARGET_HARD_FLOAT && (TARGET_FP16 || TARGET_VFP_FP16INST)"
   "vcvtb%?.f32.f16\\t%0, %1"
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")
@@ -1012,7 +1510,7 @@
 (define_insn "truncsfhf2"
   [(set (match_operand:HF		   0 "s_register_operand" "=t")
 	(float_truncate:HF (match_operand:SF 1 "s_register_operand" "t")))]
-  "TARGET_32BIT && TARGET_HARD_FLOAT && TARGET_FP16"
+  "TARGET_32BIT && TARGET_HARD_FLOAT && (TARGET_FP16 || TARGET_VFP_FP16INST)"
   "vcvtb%?.f16.f32\\t%0, %1"
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")
@@ -1104,6 +1602,27 @@
 
 
 ;; Sqrt insns.
+
+(define_insn "neon_vsqrthf"
+  [(set (match_operand:HF 0 "s_register_operand" "=w")
+	(sqrt:HF (match_operand:HF 1 "s_register_operand" "w")))]
+  "TARGET_VFP_FP16INST"
+  "vsqrt.f16\t%0, %1"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "fsqrts")]
+)
+
+(define_insn "neon_vrsqrtshf"
+  [(set
+    (match_operand:HF 0 "s_register_operand" "=w")
+    (unspec:HF [(match_operand:HF 1 "s_register_operand" "w")
+		(match_operand:HF 2 "s_register_operand" "w")]
+     UNSPEC_VRSQRTS))]
+ "TARGET_VFP_FP16INST"
+ "vrsqrts.f16\t%0, %1, %2"
+ [(set_attr "conds" "unconditional")
+  (set_attr "type" "fsqrts")]
+)
 
 ; VFP9 Erratum 760019: It's potentially unsafe to overwrite the input
 ; operands, so mark the output as early clobber for VFPv2 on ARMv5 or
@@ -1261,9 +1780,6 @@
 )
 
 ;; Fixed point to floating point conversions.
-(define_code_iterator FCVT [unsigned_float float])
-(define_code_attr FCVTI32typename [(unsigned_float "u32") (float "s32")])
-
 (define_insn "*combine_vcvt_f32_<FCVTI32typename>"
   [(set (match_operand:SF 0 "s_register_operand" "=t")
 	(mult:SF (FCVT:SF (match_operand:SI 1 "s_register_operand" "0"))
@@ -1307,6 +1823,125 @@
    (set_attr "predicable_short_it" "no")
    (set_attr "type" "f_cvtf2i")]
  )
+
+;; FP16 conversions.
+(define_insn "neon_vcvth<sup>hf"
+ [(set (match_operand:HF 0 "s_register_operand" "=w")
+   (unspec:HF
+    [(match_operand:SI 1 "s_register_operand" "w")]
+    VCVTH_US))]
+ "TARGET_VFP_FP16INST"
+ "vcvt.f16.<sup>%#32\t%0, %1"
+ [(set_attr "conds" "unconditional")
+  (set_attr "type" "f_cvti2f")]
+)
+
+(define_insn "neon_vcvth<sup>si"
+ [(set (match_operand:SI 0 "s_register_operand" "=w")
+   (unspec:SI
+    [(match_operand:HF 1 "s_register_operand" "w")]
+    VCVTH_US))]
+ "TARGET_VFP_FP16INST"
+ "vcvt.<sup>%#32.f16\t%0, %1"
+ [(set_attr "conds" "unconditional")
+  (set_attr "type" "f_cvtf2i")]
+)
+
+;; The neon_vcvth<sup>_nhf patterns are used to generate the instruction for the
+;; vcvth_n_f16_<sup>32 arm_fp16 intrinsics.  They are complicated by the
+;; hardware requirement that the source and destination registers are the same
+;; despite having different machine modes.  The approach is to use a temporary
+;; register for the conversion and move that to the correct destination.
+
+;; Generate an unspec pattern for the intrinsic.
+(define_insn "neon_vcvth<sup>_nhf_unspec"
+ [(set
+   (match_operand:SI 0 "s_register_operand" "=w")
+   (unspec:SI
+    [(match_operand:SI 1 "s_register_operand" "0")
+     (match_operand:SI 2 "immediate_operand" "i")]
+    VCVT_HF_US_N))
+ (set
+  (match_operand:HF 3 "s_register_operand" "=w")
+  (float_truncate:HF (float:SF (match_dup 0))))]
+ "TARGET_VFP_FP16INST"
+{
+  neon_const_bounds (operands[2], 1, 33);
+  return "vcvt.f16.<sup>32\t%0, %0, %2\;vmov.f32\t%3, %0";
+}
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "f_cvti2f")]
+)
+
+;; Generate the instruction patterns needed for vcvth_n_f16_s32 neon intrinsics.
+(define_expand "neon_vcvth<sup>_nhf"
+ [(match_operand:HF 0 "s_register_operand")
+  (unspec:HF [(match_operand:SI 1 "s_register_operand")
+	      (match_operand:SI 2 "immediate_operand")]
+   VCVT_HF_US_N)]
+"TARGET_VFP_FP16INST"
+{
+  rtx op1 = gen_reg_rtx (SImode);
+
+  neon_const_bounds (operands[2], 1, 33);
+
+  emit_move_insn (op1, operands[1]);
+  emit_insn (gen_neon_vcvth<sup>_nhf_unspec (op1, op1, operands[2],
+					     operands[0]));
+  DONE;
+})
+
+;; The neon_vcvth<sup>_nsi patterns are used to generate the instruction for the
+;; vcvth_n_<sup>32_f16 arm_fp16 intrinsics.  They have the same restrictions and
+;; are implemented in the same way as the neon_vcvth<sup>_nhf patterns.
+
+;; Generate an unspec pattern, constraining the registers.
+(define_insn "neon_vcvth<sup>_nsi_unspec"
+ [(set (match_operand:SI 0 "s_register_operand" "=w")
+   (unspec:SI
+    [(fix:SI
+      (fix:SF
+       (float_extend:SF
+	(match_operand:HF 1 "s_register_operand" "w"))))
+     (match_operand:SI 2 "immediate_operand" "i")]
+    VCVT_SI_US_N))]
+ "TARGET_VFP_FP16INST"
+{
+  neon_const_bounds (operands[2], 1, 33);
+  return "vmov.f32\t%0, %1\;vcvt.<sup>%#32.f16\t%0, %0, %2";
+}
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "f_cvtf2i")]
+)
+
+;; Generate the instruction patterns needed for vcvth_n_f16_s32 neon intrinsics.
+(define_expand "neon_vcvth<sup>_nsi"
+ [(match_operand:SI 0 "s_register_operand")
+  (unspec:SI
+   [(match_operand:HF 1 "s_register_operand")
+    (match_operand:SI 2 "immediate_operand")]
+   VCVT_SI_US_N)]
+ "TARGET_VFP_FP16INST"
+{
+  rtx op1 = gen_reg_rtx (SImode);
+
+  neon_const_bounds (operands[2], 1, 33);
+  emit_insn (gen_neon_vcvth<sup>_nsi_unspec (op1, operands[1], operands[2]));
+  emit_move_insn (operands[0], op1);
+  DONE;
+})
+
+(define_insn "neon_vcvt<vcvth_op>h<sup>si"
+ [(set
+   (match_operand:SI 0 "s_register_operand" "=w")
+   (unspec:SI
+    [(match_operand:HF 1 "s_register_operand" "w")]
+    VCVT_HF_US))]
+ "TARGET_VFP_FP16INST"
+ "vcvt<vcvth_op>.<sup>%#32.f16\t%0, %1"
+  [(set_attr "conds" "unconditional")
+   (set_attr "type" "f_cvtf2i")]
+)
 
 ;; Store multiple insn used in function prologue.
 (define_insn "*push_multi_vfp"
@@ -1377,6 +2012,20 @@
 )
 
 ;; Scalar forms for the IEEE-754 fmax()/fmin() functions
+
+(define_insn "neon_<fmaxmin_op>hf"
+ [(set
+   (match_operand:HF 0 "s_register_operand" "=w")
+   (unspec:HF
+    [(match_operand:HF 1 "s_register_operand" "w")
+     (match_operand:HF 2 "s_register_operand" "w")]
+    VMAXMINFNM))]
+ "TARGET_VFP_FP16INST"
+ "<fmaxmin_op>.f16\t%0, %1, %2"
+ [(set_attr "conds" "unconditional")
+  (set_attr "type" "f_minmaxs")]
+)
+
 (define_insn "<fmaxmin><mode>3"
   [(set (match_operand:SDF 0 "s_register_operand" "=<F_constraint>")
 	(unspec:SDF [(match_operand:SDF 1 "s_register_operand" "<F_constraint>")
