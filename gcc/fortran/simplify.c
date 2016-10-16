@@ -490,6 +490,8 @@ simplify_transformation_to_scalar (gfc_expr *result, gfc_expr *array, gfc_expr *
 	}
 
       result = op (result, gfc_copy_expr (a));
+      if (!result)
+	return result;
     }
 
   return result;
@@ -3713,8 +3715,12 @@ gfc_simplify_len (gfc_expr *e, gfc_expr *kind)
     }
   else if (e->expr_type == EXPR_VARIABLE && e->ts.type == BT_CHARACTER
 	   && e->symtree->n.sym
+	   && e->symtree->n.sym->ts.type != BT_DERIVED
 	   && e->symtree->n.sym->assoc && e->symtree->n.sym->assoc->target
-	   && e->symtree->n.sym->assoc->target->ts.type == BT_DERIVED)
+	   && e->symtree->n.sym->assoc->target->ts.type == BT_DERIVED
+	   && e->symtree->n.sym->assoc->target->symtree->n.sym
+	   && UNLIMITED_POLY (e->symtree->n.sym->assoc->target->symtree->n.sym))
+
     /* The expression in assoc->target points to a ref to the _data component
        of the unlimited polymorphic entity.  To get the _len component the last
        _data ref needs to be stripped and a ref to the _len component added.  */

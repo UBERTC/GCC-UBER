@@ -404,6 +404,7 @@ match_data_constant (gfc_expr **result)
     {
       gfc_error ("Symbol %qs must be a PARAMETER in DATA statement at %C",
 		 name);
+      *result = NULL;
       return MATCH_ERROR;
     }
   else if (dt_sym && dt_sym->attr.flavor == FL_DERIVED)
@@ -759,6 +760,7 @@ char_len_param_value (gfc_expr **expr, bool *deferred)
     goto syntax;
   else if ((*expr)->expr_type == EXPR_VARIABLE)
     {
+      bool t;
       gfc_expr *e;
 
       e = gfc_copy_expr (*expr);
@@ -770,7 +772,16 @@ char_len_param_value (gfc_expr **expr, bool *deferred)
 	  && e->ref->u.ar.dimen_type[0] == DIMEN_RANGE)
 	goto syntax;
 
-      gfc_reduce_init_expr (e);
+      t = gfc_reduce_init_expr (e);
+
+      if (!t && e->ts.type == BT_UNKNOWN
+	  && e->symtree->n.sym->attr.untyped == 1
+	  && (e->symtree->n.sym->ns->seen_implicit_none == 1
+	      || e->symtree->n.sym->ns->parent->seen_implicit_none == 1))
+	{
+	  gfc_free_expr (e);
+	  goto syntax;
+	}
 
       if ((e->ref && e->ref->type == REF_ARRAY
 	   && e->ref->u.ar.type != AR_ELEMENT) 
@@ -1194,9 +1205,36 @@ build_sym (const char *name, gfc_charlen *cl, bool cl_deferred,
 {
   symbol_attribute attr;
   gfc_symbol *sym;
+  int upper;
 
   if (gfc_get_symbol (name, NULL, &sym))
     return false;
+
+  /* Check if the name has already been defined as a type.  The
+     first letter of the symtree will be in upper case then.  Of
+     course, this is only necessary if the upper case letter is
+     actually different.  */
+
+  upper = TOUPPER(name[0]);
+  if (upper != name[0])
+    {
+      char u_name[GFC_MAX_SYMBOL_LEN + 1];
+      gfc_symtree *st;
+      int nlen;
+
+      nlen = strlen(name);
+      gcc_assert (nlen <= GFC_MAX_SYMBOL_LEN);
+      strncpy (u_name, name, nlen + 1);
+      u_name[0] = upper;
+
+      st = gfc_find_symtree (gfc_current_ns->sym_root, u_name);
+
+      if (st)
+	{
+	  gfc_error ("Symbol %qs at %C also declared as a type", name);
+	  return false;
+	}
+    }
 
   /* Start updating the symbol table.  Add basic type attribute if present.  */
   if (current_ts.type != BT_UNKNOWN
@@ -1280,10 +1318,14 @@ gfc_set_constant_character_len (int len, gfc_expr *expr, int check_len)
   gfc_char_t *s;
   int slen;
 
-  gcc_assert (expr->expr_type == EXPR_CONSTANT);
-
   if (expr->ts.type != BT_CHARACTER)
     return;
+ 
+  if (expr->expr_type != EXPR_CONSTANT)
+    {
+      gfc_error_now ("CHARACTER length must be a constant at %L", &expr->where);
+      return;
+    }
 
   slen = expr->value.character.length;
   if (len != slen)
@@ -1677,8 +1719,10 @@ build_struct (const char *name, gfc_charlen *cl, gfc_expr **init,
 
       if (c->initializer->expr_type == EXPR_CONSTANT)
 	gfc_set_constant_character_len (len, c->initializer, -1);
-      else if (mpz_cmp (c->ts.u.cl->length->value.integer,
-			c->initializer->ts.u.cl->length->value.integer))
+      else if (c->initializer
+		&& c->initializer->ts.u.cl
+		&& mpz_cmp (c->ts.u.cl->length->value.integer,
+			    c->initializer->ts.u.cl->length->value.integer))
 	{
 	  gfc_constructor *ctor;
 	  ctor = gfc_constructor_first (c->initializer->value.constructor);

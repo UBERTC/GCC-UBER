@@ -22,9 +22,9 @@
 #include "system.h"
 #include "coretypes.h"
 #include "tm.h"
+#include "hard-reg-set.h"
 #include "rtl.h"
 #include "regs.h"
-#include "hard-reg-set.h"
 #include "insn-config.h"
 #include "conditions.h"
 #include "insn-attr.h"
@@ -2526,8 +2526,44 @@ avr_notice_update_cc (rtx body ATTRIBUTE_UNUSED, rtx_insn *insn)
       break;
 
     case CC_NONE:
-      /* Insn does not affect CC at all.  */
-      break;
+      /* Insn does not affect CC at all, but it might set some registers
+         that are stored in cc_status.  If such a register is affected by
+         the current insn, for example by means of a SET or a CLOBBER,
+         then we must reset cc_status; cf. PR77326.
+
+         Unfortunately, set_of cannot be used as reg_overlap_mentioned_p
+         will abort on COMPARE (which might be found in cc_status.value1/2).
+         Thus work out the registers set by the insn and regs mentioned
+         in cc_status.value1/2.  */
+
+      if (cc_status.value1
+          || cc_status.value2)
+        {
+          HARD_REG_SET regs_used;
+          HARD_REG_SET regs_set;
+          CLEAR_HARD_REG_SET (regs_used);
+
+          if (cc_status.value1
+              && !CONSTANT_P (cc_status.value1))
+            {
+              find_all_hard_regs (cc_status.value1, &regs_used);
+            }
+
+          if (cc_status.value2
+              && !CONSTANT_P (cc_status.value2))
+            {
+              find_all_hard_regs (cc_status.value2, &regs_used);
+            }
+
+          find_all_hard_reg_sets (insn, &regs_set, false);
+
+          if (hard_reg_set_intersect_p (regs_used, regs_set))
+            {
+              CC_STATUS_INIT;
+            }
+        }
+
+      break; // CC_NONE
 
     case CC_SET_N:
       CC_STATUS_INIT;
@@ -9086,6 +9122,8 @@ avr_eval_addr_attrib (rtx x)
       if (SYMBOL_REF_FLAGS (x) & SYMBOL_FLAG_IO)
 	{
 	  attr = lookup_attribute ("io", DECL_ATTRIBUTES (decl));
+	  if (!attr || !TREE_VALUE (attr))
+	    attr = lookup_attribute ("io_low", DECL_ATTRIBUTES (decl));
 	  gcc_assert (attr);
 	}
       if (!attr || !TREE_VALUE (attr))
@@ -10199,6 +10237,7 @@ avr_rtx_costs_1 (rtx x, int codearg, int outer_code ATTRIBUTE_UNUSED,
           break;
 
 	case SImode:
+	case DImode:
 	  if (AVR_HAVE_MUL)
             {
               if (!speed)
@@ -10224,7 +10263,10 @@ avr_rtx_costs_1 (rtx x, int codearg, int outer_code ATTRIBUTE_UNUSED,
                 *total = COSTS_N_INSNS (AVR_HAVE_JMP_CALL ? 5 : 4);
             }
 
-          return true;
+	   if (mode == DImode)
+	     *total *= 2;
+
+	   return true;
 
 	default:
 	  return false;
@@ -10801,7 +10843,7 @@ avr_address_cost (rtx x, machine_mode mode ATTRIBUTE_UNUSED,
       && (REG_P (XEXP (x, 0))
           || GET_CODE (XEXP (x, 0)) == SUBREG))
     {
-      if (INTVAL (XEXP (x, 1)) >= 61)
+      if (INTVAL (XEXP (x, 1)) > MAX_LD_OFFSET(mode))
         cost = 18;
     }
   else if (CONSTANT_ADDRESS_P (x))

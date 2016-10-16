@@ -3975,6 +3975,8 @@ gfc_trans_deferred_vars (gfc_symbol * proc_sym, gfc_wrapped_block * block)
       else if (proc_sym->as)
 	{
 	  tree result = TREE_VALUE (current_fake_result_decl);
+	  gfc_save_backend_locus (&loc);
+	  gfc_set_backend_locus (&proc_sym->declared_at);
 	  gfc_trans_dummy_array_bias (proc_sym, result, block);
 
 	  /* An automatic character length, pointer array result.  */
@@ -3984,8 +3986,6 @@ gfc_trans_deferred_vars (gfc_symbol * proc_sym, gfc_wrapped_block * block)
 	      tmp = NULL;
 	      if (proc_sym->ts.deferred)
 		{
-		  gfc_save_backend_locus (&loc);
-		  gfc_set_backend_locus (&proc_sym->declared_at);
 		  gfc_start_block (&init);
 		  tmp = gfc_null_and_pass_deferred_len (proc_sym, &init, &loc);
 		  gfc_add_init_cleanup (block, gfc_finish_block (&init), tmp);
@@ -5191,9 +5191,19 @@ generate_local_decl (gfc_symbol * sym)
 	    }
 	  else if (!sym->attr.use_assoc)
 	    {
-	      gfc_warning (OPT_Wunused_variable,
-			   "Unused variable %qs declared at %L",
-			   sym->name, &sym->declared_at);
+	      /* Corner case: the symbol may be an entry point.  At this point,
+		 it may appear to be an unused variable.  Suppress warning.  */
+	      bool enter = false;
+	      gfc_entry_list *el;
+
+	      for (el = sym->ns->entries; el; el=el->next)
+		if (strcmp(sym->name, el->sym->name) == 0)
+		  enter = true;
+
+	      if (!enter)
+		gfc_warning (OPT_Wunused_variable,
+			     "Unused variable %qs declared at %L",
+			     sym->name, &sym->declared_at);
 	      if (sym->backend_decl != NULL_TREE)
 		TREE_NO_WARNING(sym->backend_decl) = 1;
 	    }
@@ -6068,7 +6078,7 @@ gfc_generate_function_code (gfc_namespace * ns)
 	 function has already called cgraph_create_node, which also created
 	 the cgraph node for this function.  */
       if (!has_coarray_vars || flag_coarray != GFC_FCOARRAY_LIB)
-	(void) cgraph_node::create (fndecl);
+	(void) cgraph_node::get_create (fndecl);
     }
   else
     cgraph_node::finalize_function (fndecl, true);

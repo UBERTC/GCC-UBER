@@ -1,3 +1,282 @@
+2016-10-05  Steven G. Kargl  <kargls@gcc.gnu.org>
+
+	PR fortran/58991
+	PR fortran/58992
+	* resolve.c (resolve_assoc_var):  Fix CHARACTER type-spec for a
+	selector in ASSOCIATE.
+	(resolve_fl_variable): Skip checks for an ASSOCIATE variable.
+
+2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+
+	PR fortran/77391
+	* resolve.c (deferred_requirements): New function to check F2008:C402.
+	(resolve_fl_variable,resolve_fl_parameter): Use it.
+ 
+2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+
+	PR fortran/77380
+	* dependency.c (gfc_check_dependency): Do not assert with
+	-fcoarray=lib.
+
+2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+
+	PR fortran/61318
+	* interface.c (compare_parameter): Use better locus for error message.
+
+2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+
+	PR fortran/71859
+	* check.c(numeric_check): Prevent ICE.  Issue error for invalid
+	subroutine as an actual argument when numeric argument is expected.
+
+2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+ 
+	Backport of trunk
+
+	PR fortran/69867
+	* decl.c (build_struct): Ensure that pointers point to something.
+
+	PR fortran/69962
+	* decl.c (gfc_set_constant_character_len):  if expr is not
+	constant issue an error instead of an ICE.
+
+2016-09-30  Steven g. Kargl  <kargl@gcc.gnu.org>
+
+	Backport of trunk
+
+	PR fortran/77351
+	* frontend-passes.c (remove_trim,combine_array_constructor): Check for
+	NULL pointer.
+
+2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+ 
+	PR fortran/68566
+	* check.c (gfc_check_reshape): Check for constant expression.
+
+2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+
+	PR fortran/71799
+	* resolve.c(gfc_resolve_iterator): Failure of type conversion need
+	not ICE.
+
+2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
+ 
+	Backport from trunk
+
+	PR fortran/70006
+	* io.c (gfc_resolve_dt): Use correct locus.
+	* resolve.c (resolve_branch): Ditto.
+
+2016-09-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+
+	PR fortran/77420
+	* trans-common.c:  Handle array elements in equivalence when
+	the lower and upper bounds of array spec are NULL.
+
+	PR fortran/77460
+	* simplify.c (simplify_transformation_to_scalar):  On error, result
+	may be NULL, simply return.
+
+2016-09-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/77506
+	* array.c (gfc_match_array_constructor): CHARACTER(len=*) cannot
+	appear in an array constructor.
+
+	PR fortran/77507
+	* intrinsic.c (add_functions):  Use correct keyword.
+
+2016-09-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/71067
+	* decl.c (match_data_constant): On error, set 'result' to NULL.
+
+	PR fortran/77260
+	* gcc/fortran/trans-decl.c (generate_local_decl): Suppress warning
+	for unused variable if symbol is entry point.
+
+2016-09-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/69514
+	* array.c (gfc_match_array_constructor):  If type-spec is present,
+	walk the array constructor performing possible conversions for 
+	numeric types.
+
+2016-09-28  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	backport from trunk
+	PR fortran/71730
+	* decl.c (char_len_param_value): Check return value of
+	gfc_reduce_init_expr().
+
+	PR fortran/77612
+	* decl.c (char_len_param_value): Check parent namespace for 
+	seen_implicit_none.
+
+2016-09-28  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	backport from trunk
+	PR fortran/77694
+	* frontend-passes.c (optimize_binop_array_assignment): Check pointer
+	for NULL.
+
+2016-08-13  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/68147
+	* frontend-passes.c (realloc_string_callback): Don't set
+	walk_subtrees.
+
+2016-08-11  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/72698
+	* trans-stmt.c (gfc_trans_allocate): Prevent generating code for
+	copy of zero sized string and with it an ICE.
+
+2016-08-09  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/71795
+	* frontend-passes.c (combine_array_constructor):  Don't
+	do anything if the expression is inside an array iterator.
+
+2016-08-09  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/69742
+	* frontend-passes.c (cfe-expr_0):  Don't register functions
+	from within an ASSOCIATE statement.
+
+2016-08-08  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/60526
+	* decl.c (build_sym):  If the name has already been defined as a
+	type, it has a symtree with an upper case letter at the beginning.
+	If such a symtree exists, issue an error and exit.  Don't do
+	this if there is no corresponding upper case letter.
+
+2016-08-08  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/70524
+	* trans-array.c (gfc_trans_dummy_array_bias): Ensure that the
+	location information is correctly set.
+	* trans-decl.c (gfc_trans_deferred_vars): Set the locus of the
+	current construct early.
+
+2016-07-29  Steven G. Kargl  <kargl@gcc.gnu.org>
+	    Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71883
+	* frontend-passes.c (gfc_run_passes): Bail out if there are any
+	errors.
+	* error.c (gfc_internal_error): If there are any errors in the
+	buffer, exit with EXIT_FAILURE.
+
+2016-07-22  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71807
+	* trans-expr.c (gfc_trans_subcomponent_assign): Special casing
+	when allocatable component is set to null() in initializer.
+
+2016-07-22  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/70842
+	* simplify.c (gfc_simplify_len): Only for unlimited polymorphic
+	types replace the expression's _data ref with a _len ref.
+
+2016-07-15  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71764
+	* trans-expr.c (gfc_trans_structure_assign): Remove assert.
+
+2016-07-13  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71623
+	* trans-stmt.c (gfc_trans_allocate): Add code of pre block of typespec
+	in allocate to parent block.
+
+2016-07-11  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71783
+	* frontend-passes.c (create_var):  Always allocate a charlen
+	for character variables.
+
+2016-07-08  Cesar Philippidis  <cesar@codesourcery.com>
+
+	Backport from trunk:
+	2016-07-08  Cesar Philippidis  <cesar@codesourcery.com>
+
+	* parse.c (matcha): Define.
+	(decode_oacc_directive): Add spec_only local var and set it.  Use
+	matcha to parse acc directives except for routine and declare.  Return
+	ST_GET_FCN_CHARACTERISTICS if a non-declarative directive could be
+	matched.
+
+2016-07-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-07-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/71717
+	* trans-openmp.c (gfc_omp_privatize_by_reference): Return false
+	for GFC_DECL_ASSOCIATE_VAR_P with POINTER_TYPE.
+
+	2016-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/71704
+	* parse.c (matchs, matcho): Move right before decode_omp_directive.
+	If spec_only, only gfc_match the keyword and if successful, goto
+	do_spec_only.
+	(matchds, matchdo): Define.
+	(decode_omp_directive): Add spec_only local var and set it.
+	Use matchds or matchdo macros instead of matchs or matcho
+	for declare target, declare simd, declare reduction and threadprivate
+	directives.  Return ST_GET_FCN_CHARACTERISTICS if a non-declarative
+	directive could be matched.
+	(next_statement): For ST_GET_FCN_CHARACTERISTICS restore
+	gfc_current_locus from old_locus even if there is no label.
+
+	PR fortran/71705
+	* trans-openmp.c (gfc_trans_omp_clauses): Set TREE_ADDRESSABLE on
+	decls in to/from clauses.
+
+2016-06-27  Paul Thomas  <pault@gcc.gnu.org>
+
+	PR fortran/70673
+	* frontend-passes.c (realloc_string_callback): Add a call to
+	gfc_dep_compare_expr.
+
+2016-06-12  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/60751
+	* io.c (gfc_resolve_dt): Replace GFC_STD_GNU with GFC_STD_LEGACY.
+
 2016-06-03  Release Manager
 
 	* GCC 5.4.0 released.

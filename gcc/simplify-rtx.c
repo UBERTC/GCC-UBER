@@ -1482,7 +1482,14 @@ simplify_unary_operation_1 (enum rtx_code code, machine_mode mode, rtx op)
 		  && REG_P (SUBREG_REG (op))
 		  && REG_POINTER (SUBREG_REG (op))
 		  && GET_MODE (SUBREG_REG (op)) == Pmode)))
-	return convert_memory_address (Pmode, op);
+	{
+	  temp
+	    = convert_memory_address_addr_space_1 (Pmode, op,
+						   ADDR_SPACE_GENERIC, false,
+						   true);
+	  if (temp)
+	    return temp;
+	}
 #endif
       break;
 
@@ -1603,7 +1610,14 @@ simplify_unary_operation_1 (enum rtx_code code, machine_mode mode, rtx op)
 		  && REG_P (SUBREG_REG (op))
 		  && REG_POINTER (SUBREG_REG (op))
 		  && GET_MODE (SUBREG_REG (op)) == Pmode)))
-	return convert_memory_address (Pmode, op);
+	{
+	  temp
+	    = convert_memory_address_addr_space_1 (Pmode, op,
+						   ADDR_SPACE_GENERIC, false,
+						   true);
+	  if (temp)
+	    return temp;
+	}
 #endif
       break;
 

@@ -2678,7 +2678,6 @@ ix86_target_string (HOST_WIDE_INT isa, int flags, const char *arch,
     { "-mxsaves",	OPTION_MASK_ISA_XSAVES },
     { "-mmpx",          OPTION_MASK_ISA_MPX },
     { "-mclwb",		OPTION_MASK_ISA_CLWB },
-    { "-mpcommit",	OPTION_MASK_ISA_PCOMMIT },
     { "-mmwaitx",	OPTION_MASK_ISA_MWAITX  },
   };
 
@@ -3192,8 +3191,7 @@ ix86_option_override_internal (bool main_args_p,
 #define PTA_AVX512IFMA		(HOST_WIDE_INT_1 << 53)
 #define PTA_AVX512VBMI		(HOST_WIDE_INT_1 << 54)
 #define PTA_CLWB		(HOST_WIDE_INT_1 << 55)
-#define PTA_PCOMMIT		(HOST_WIDE_INT_1 << 56)
-#define PTA_MWAITX		(HOST_WIDE_INT_1 << 57)
+#define PTA_MWAITX		(HOST_WIDE_INT_1 << 56)
 
 #define PTA_CORE2 \
   (PTA_64BIT | PTA_MMX | PTA_SSE | PTA_SSE2 | PTA_SSE3 | PTA_SSSE3 \
@@ -3756,9 +3754,6 @@ ix86_option_override_internal (bool main_args_p,
 	if (processor_alias_table[i].flags & PTA_PREFETCHWT1
 	    && !(opts->x_ix86_isa_flags_explicit & OPTION_MASK_ISA_PREFETCHWT1))
 	  opts->x_ix86_isa_flags |= OPTION_MASK_ISA_PREFETCHWT1;
-	if (processor_alias_table[i].flags & PTA_PCOMMIT
-	    && !(opts->x_ix86_isa_flags_explicit & OPTION_MASK_ISA_PCOMMIT))
-	  opts->x_ix86_isa_flags |= OPTION_MASK_ISA_PCOMMIT;
 	if (processor_alias_table[i].flags & PTA_CLWB
 	    && !(opts->x_ix86_isa_flags_explicit & OPTION_MASK_ISA_CLWB))
 	  opts->x_ix86_isa_flags |= OPTION_MASK_ISA_CLWB;
@@ -4772,7 +4767,6 @@ ix86_valid_target_attribute_inner_p (tree args, char *p_strings[],
     IX86_ATTR_ISA ("avx512vbmi",	OPT_mavx512vbmi),
     IX86_ATTR_ISA ("avx512ifma",	OPT_mavx512ifma),
     IX86_ATTR_ISA ("clwb",	OPT_mclwb),
-    IX86_ATTR_ISA ("pcommit",	OPT_mpcommit),
     IX86_ATTR_ISA ("mwaitx",	OPT_mmwaitx),
 
     /* enum options */
@@ -17588,12 +17582,29 @@ ix86_expand_vector_move (machine_mode mode, rtx operands[])
      of the register, once we have that information we may be able
      to handle some of them more efficiently.  */
   if (can_create_pseudo_p ()
-      && register_operand (op0, mode)
       && (CONSTANT_P (op1)
 	  || (GET_CODE (op1) == SUBREG
 	      && CONSTANT_P (SUBREG_REG (op1))))
-      && !standard_sse_constant_p (op1))
-    op1 = validize_mem (force_const_mem (mode, op1));
+      && ((register_operand (op0, mode)
+	   && !standard_sse_constant_p (op1))
+	  /* ix86_expand_vector_move_misalign() does not like constants.  */
+	  || (SSE_REG_MODE_P (mode)
+	      && MEM_P (op0)
+	      && MEM_ALIGN (op0) < align)))
+    {
+      if (SUBREG_P (op1))
+	{
+	  machine_mode imode = GET_MODE (SUBREG_REG (op1));
+	  rtx r = force_const_mem (imode, SUBREG_REG (op1));
+	  if (r)
+	    r = validize_mem (r);
+	  else
+	    r = force_reg (imode, SUBREG_REG (op1));
+	  op1 = simplify_gen_subreg (mode, r, imode, SUBREG_BYTE (op1));
+	}
+      else
+	op1 = validize_mem (force_const_mem (mode, op1));
+    }
 
   /* We need to check memory alignment for SSE mode since attribute
      can make operands unaligned.  */
@@ -17604,13 +17615,8 @@ ix86_expand_vector_move (machine_mode mode, rtx operands[])
     {
       rtx tmp[2];
 
-      /* ix86_expand_vector_move_misalign() does not like constants ... */
-      if (CONSTANT_P (op1)
-	  || (GET_CODE (op1) == SUBREG
-	      && CONSTANT_P (SUBREG_REG (op1))))
-	op1 = validize_mem (force_const_mem (mode, op1));
-
-      /* ... nor both arguments in memory.  */
+      /* ix86_expand_vector_move_misalign() does not like both
+	 arguments in memory.  */
       if (!register_operand (op0, mode)
 	  && !register_operand (op1, mode))
 	op1 = force_reg (mode, op1);
@@ -17696,7 +17702,7 @@ ix86_avx256_split_vector_move_misalign (rtx op0, rtx op1)
 	  m = adjust_address (op0, mode, 0);
 	  emit_insn (extract (m, op1, const0_rtx));
 	  m = adjust_address (op0, mode, 16);
-	  emit_insn (extract (m, op1, const1_rtx));
+	  emit_insn (extract (m, copy_rtx (op1), const1_rtx));
 	}
       else
 	emit_insn (store_unaligned (op0, op1));
@@ -18004,7 +18010,7 @@ ix86_expand_vector_move_misalign (machine_mode mode, rtx operands[])
 	      m = adjust_address (op0, V2SFmode, 0);
 	      emit_insn (gen_sse_storelps (m, op1));
 	      m = adjust_address (op0, V2SFmode, 8);
-	      emit_insn (gen_sse_storehps (m, op1));
+	      emit_insn (gen_sse_storehps (m, copy_rtx (op1)));
 	    }
 	}
     }
@@ -30477,9 +30483,6 @@ enum ix86_builtins
   /* CLWB instructions.  */
   IX86_BUILTIN_CLWB,
 
-  /* PCOMMIT instructions.  */
-  IX86_BUILTIN_PCOMMIT,
-
   /* CLFLUSHOPT instructions.  */
   IX86_BUILTIN_CLFLUSHOPT,
 
@@ -31267,9 +31270,6 @@ static const struct builtin_description bdesc_special_args[] =
   { OPTION_MASK_ISA_AVX512VL, CODE_FOR_avx512vl_ss_truncatev4siv4hi2_mask_store, "__builtin_ia32_pmovsdw128mem_mask", IX86_BUILTIN_PMOVSDW128_MEM, UNKNOWN, (int) VOID_FTYPE_PV8HI_V4SI_QI },
   { OPTION_MASK_ISA_AVX512VL, CODE_FOR_avx512vl_us_truncatev8siv8hi2_mask_store, "__builtin_ia32_pmovusdw256mem_mask", IX86_BUILTIN_PMOVUSDW256_MEM, UNKNOWN, (int) VOID_FTYPE_PV8HI_V8SI_QI },
   { OPTION_MASK_ISA_AVX512VL, CODE_FOR_avx512vl_us_truncatev4siv4hi2_mask_store, "__builtin_ia32_pmovusdw128mem_mask", IX86_BUILTIN_PMOVUSDW128_MEM, UNKNOWN, (int) VOID_FTYPE_PV8HI_V4SI_QI },
-
-  /* PCOMMIT.  */
-  { OPTION_MASK_ISA_PCOMMIT, CODE_FOR_pcommit, "__builtin_ia32_pcommit", IX86_BUILTIN_PCOMMIT, UNKNOWN, (int) VOID_FTYPE_VOID },
 };
 
 /* Builtins with variable number of arguments.  */
@@ -37733,6 +37733,7 @@ ix86_expand_args_builtin (const struct builtin_description *d,
     case 5:
       pat = GEN_FCN (icode) (real_target, args[0].op, args[1].op,
 			     args[2].op, args[3].op, args[4].op);
+      break;
     case 6:
       pat = GEN_FCN (icode) (real_target, args[0].op, args[1].op,
 			     args[2].op, args[3].op, args[4].op,
@@ -38108,6 +38109,7 @@ ix86_expand_round_builtin (const struct builtin_description *d,
     case 5:
       pat = GEN_FCN (icode) (target, args[0].op, args[1].op,
 			     args[2].op, args[3].op, args[4].op);
+      break;
     case 6:
       pat = GEN_FCN (icode) (target, args[0].op, args[1].op,
 			     args[2].op, args[3].op, args[4].op,
