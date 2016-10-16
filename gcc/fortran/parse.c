@@ -1071,13 +1071,8 @@ next_free (void)
 	    }
 
 	  if (gfc_match_eos () == MATCH_YES)
-	    {
-	      gfc_warning_now (0, "Ignoring statement label in empty statement "
-			       "at %L", &label_locus);
-	      gfc_free_st_label (gfc_statement_label);
-	      gfc_statement_label = NULL;
-	      return ST_NONE;
-	    }
+	    gfc_error_now ("Statement label without statement at %L",
+			   &label_locus);
 	}
     }
   else if (c == '!')
@@ -1333,8 +1328,7 @@ next_fixed (void)
 
 blank_line:
   if (digit_flag)
-    gfc_warning_now (0, "Ignoring statement label in empty statement at %L",
-		     &label_locus);
+    gfc_error_now ("Statement label without statement at %L", &label_locus);
 
   gfc_current_locus.lb->truncated = 0;
   gfc_advance_line ();
@@ -4701,6 +4695,7 @@ parse_omp_oacc_atomic (bool omp_p)
   np = new_level (cp);
   np->op = cp->op;
   np->block = NULL;
+  np->ext.omp_atomic = cp->ext.omp_atomic;
   count = 1 + ((cp->ext.omp_atomic & GFC_OMP_ATOMIC_MASK)
 	       == GFC_OMP_ATOMIC_CAPTURE);
 

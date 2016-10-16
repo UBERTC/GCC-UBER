@@ -3784,7 +3784,6 @@ ix86_target_string (HOST_WIDE_INT isa, int flags, const char *arch,
     { "-mxsaves",	OPTION_MASK_ISA_XSAVES },
     { "-mmpx",          OPTION_MASK_ISA_MPX },
     { "-mclwb",		OPTION_MASK_ISA_CLWB },
-    { "-mpcommit",	OPTION_MASK_ISA_PCOMMIT },
     { "-mmwaitx",	OPTION_MASK_ISA_MWAITX  },
     { "-mclzero",	OPTION_MASK_ISA_CLZERO  },
     { "-mpku",		OPTION_MASK_ISA_PKU  },
@@ -4339,11 +4338,10 @@ ix86_option_override_internal (bool main_args_p,
 #define PTA_AVX512IFMA		(HOST_WIDE_INT_1 << 53)
 #define PTA_AVX512VBMI		(HOST_WIDE_INT_1 << 54)
 #define PTA_CLWB		(HOST_WIDE_INT_1 << 55)
-#define PTA_PCOMMIT		(HOST_WIDE_INT_1 << 56)
-#define PTA_MWAITX		(HOST_WIDE_INT_1 << 57)
-#define PTA_CLZERO		(HOST_WIDE_INT_1 << 58)
-#define PTA_NO_80387		(HOST_WIDE_INT_1 << 59)
-#define PTA_PKU		(HOST_WIDE_INT_1 << 60)
+#define PTA_MWAITX		(HOST_WIDE_INT_1 << 56)
+#define PTA_CLZERO		(HOST_WIDE_INT_1 << 57)
+#define PTA_NO_80387		(HOST_WIDE_INT_1 << 58)
+#define PTA_PKU		(HOST_WIDE_INT_1 << 59)
 
 #define PTA_CORE2 \
   (PTA_64BIT | PTA_MMX | PTA_SSE | PTA_SSE2 | PTA_SSE3 | PTA_SSSE3 \
@@ -4391,8 +4389,8 @@ ix86_option_override_internal (bool main_args_p,
       {"lakemont", PROCESSOR_LAKEMONT, CPU_PENTIUM, PTA_NO_80387},
       {"pentium-mmx", PROCESSOR_PENTIUM, CPU_PENTIUM, PTA_MMX},
       {"winchip-c6", PROCESSOR_I486, CPU_NONE, PTA_MMX},
-      {"winchip2", PROCESSOR_I486, CPU_NONE, PTA_MMX | PTA_3DNOW | PTA_PRFCHW},
-      {"c3", PROCESSOR_I486, CPU_NONE, PTA_MMX | PTA_3DNOW | PTA_PRFCHW},
+      {"winchip2", PROCESSOR_I486, CPU_NONE, PTA_MMX | PTA_3DNOW},
+      {"c3", PROCESSOR_I486, CPU_NONE, PTA_MMX | PTA_3DNOW},
       {"c3-2", PROCESSOR_PENTIUMPRO, CPU_PENTIUMPRO,
 	PTA_MMX | PTA_SSE | PTA_FXSR},
       {"i686", PROCESSOR_PENTIUMPRO, CPU_PENTIUMPRO, 0},
@@ -4437,43 +4435,43 @@ ix86_option_override_internal (bool main_args_p,
       {"knl", PROCESSOR_KNL, CPU_SLM, PTA_KNL},
       {"intel", PROCESSOR_INTEL, CPU_SLM, PTA_NEHALEM},
       {"geode", PROCESSOR_GEODE, CPU_GEODE,
-	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_PREFETCH_SSE | PTA_PRFCHW},
+	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_PREFETCH_SSE},
       {"k6", PROCESSOR_K6, CPU_K6, PTA_MMX},
-      {"k6-2", PROCESSOR_K6, CPU_K6, PTA_MMX | PTA_3DNOW | PTA_PRFCHW},
-      {"k6-3", PROCESSOR_K6, CPU_K6, PTA_MMX | PTA_3DNOW | PTA_PRFCHW},
+      {"k6-2", PROCESSOR_K6, CPU_K6, PTA_MMX | PTA_3DNOW},
+      {"k6-3", PROCESSOR_K6, CPU_K6, PTA_MMX | PTA_3DNOW},
       {"athlon", PROCESSOR_ATHLON, CPU_ATHLON,
-	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_PREFETCH_SSE | PTA_PRFCHW},
+	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_PREFETCH_SSE},
       {"athlon-tbird", PROCESSOR_ATHLON, CPU_ATHLON,
-	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_PREFETCH_SSE | PTA_PRFCHW},
+	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_PREFETCH_SSE},
       {"athlon-4", PROCESSOR_ATHLON, CPU_ATHLON,
-	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE | PTA_PRFCHW | PTA_FXSR},
+	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE | PTA_FXSR},
       {"athlon-xp", PROCESSOR_ATHLON, CPU_ATHLON,
-	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE | PTA_PRFCHW | PTA_FXSR},
+	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE | PTA_FXSR},
       {"athlon-mp", PROCESSOR_ATHLON, CPU_ATHLON,
-	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE | PTA_PRFCHW | PTA_FXSR},
+	PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE | PTA_FXSR},
       {"x86-64", PROCESSOR_K8, CPU_K8,
 	PTA_64BIT | PTA_MMX | PTA_SSE | PTA_SSE2 | PTA_NO_SAHF | PTA_FXSR},
       {"k8", PROCESSOR_K8, CPU_K8,
 	PTA_64BIT | PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE
-	| PTA_SSE2 | PTA_NO_SAHF | PTA_PRFCHW | PTA_FXSR},
+	| PTA_SSE2 | PTA_NO_SAHF | PTA_FXSR},
       {"k8-sse3", PROCESSOR_K8, CPU_K8,
 	PTA_64BIT | PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE
-	| PTA_SSE2 | PTA_SSE3 | PTA_NO_SAHF | PTA_PRFCHW | PTA_FXSR},
+	| PTA_SSE2 | PTA_SSE3 | PTA_NO_SAHF | PTA_FXSR},
       {"opteron", PROCESSOR_K8, CPU_K8,
 	PTA_64BIT | PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE
-	| PTA_SSE2 | PTA_NO_SAHF | PTA_PRFCHW | PTA_FXSR},
+	| PTA_SSE2 | PTA_NO_SAHF | PTA_FXSR},
       {"opteron-sse3", PROCESSOR_K8, CPU_K8,
 	PTA_64BIT | PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE
-	| PTA_SSE2 | PTA_SSE3 | PTA_NO_SAHF | PTA_PRFCHW | PTA_FXSR},
+	| PTA_SSE2 | PTA_SSE3 | PTA_NO_SAHF | PTA_FXSR},
       {"athlon64", PROCESSOR_K8, CPU_K8,
 	PTA_64BIT | PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE
-	| PTA_SSE2 | PTA_NO_SAHF | PTA_PRFCHW | PTA_FXSR},
+	| PTA_SSE2 | PTA_NO_SAHF | PTA_FXSR},
       {"athlon64-sse3", PROCESSOR_K8, CPU_K8,
 	PTA_64BIT | PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE
-	| PTA_SSE2 | PTA_SSE3 | PTA_NO_SAHF | PTA_PRFCHW | PTA_FXSR},
+	| PTA_SSE2 | PTA_SSE3 | PTA_NO_SAHF | PTA_FXSR},
       {"athlon-fx", PROCESSOR_K8, CPU_K8,
 	PTA_64BIT | PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE
-	| PTA_SSE2 | PTA_NO_SAHF | PTA_PRFCHW | PTA_FXSR},
+	| PTA_SSE2 | PTA_NO_SAHF | PTA_FXSR},
       {"amdfam10", PROCESSOR_AMDFAM10, CPU_AMDFAM10,
 	PTA_64BIT | PTA_MMX | PTA_3DNOW | PTA_3DNOW_A | PTA_SSE | PTA_SSE2
 	| PTA_SSE3 | PTA_SSE4A | PTA_CX16 | PTA_ABM | PTA_PRFCHW | PTA_FXSR},
@@ -4927,9 +4925,6 @@ ix86_option_override_internal (bool main_args_p,
 	if (processor_alias_table[i].flags & PTA_PREFETCHWT1
 	    && !(opts->x_ix86_isa_flags_explicit & OPTION_MASK_ISA_PREFETCHWT1))
 	  opts->x_ix86_isa_flags |= OPTION_MASK_ISA_PREFETCHWT1;
-	if (processor_alias_table[i].flags & PTA_PCOMMIT
-	    && !(opts->x_ix86_isa_flags_explicit & OPTION_MASK_ISA_PCOMMIT))
-	  opts->x_ix86_isa_flags |= OPTION_MASK_ISA_PCOMMIT;
 	if (processor_alias_table[i].flags & PTA_CLWB
 	    && !(opts->x_ix86_isa_flags_explicit & OPTION_MASK_ISA_CLWB))
 	  opts->x_ix86_isa_flags |= OPTION_MASK_ISA_CLWB;
@@ -5183,14 +5178,10 @@ ix86_option_override_internal (bool main_args_p,
 
   /* Enable SSE prefetch.  */
   if (TARGET_SSE_P (opts->x_ix86_isa_flags)
-      || (TARGET_PRFCHW && !TARGET_3DNOW_P (opts->x_ix86_isa_flags)))
-    x86_prefetch_sse = true;
-
-  /* Enable prefetch{,w} instructions for -m3dnow and -mprefetchwt1.  */
-  if (TARGET_3DNOW_P (opts->x_ix86_isa_flags)
+      || (TARGET_PRFCHW_P (opts->x_ix86_isa_flags)
+	  && !TARGET_3DNOW_P (opts->x_ix86_isa_flags))
       || TARGET_PREFETCHWT1_P (opts->x_ix86_isa_flags))
-    opts->x_ix86_isa_flags
-      |= OPTION_MASK_ISA_PRFCHW & ~opts->x_ix86_isa_flags_explicit;
+    x86_prefetch_sse = true;
 
   /* Enable popcnt instruction for -msse4.2 or -mabm.  */
   if (TARGET_SSE4_2_P (opts->x_ix86_isa_flags)
@@ -5476,11 +5467,12 @@ ix86_option_override_internal (bool main_args_p,
   if (!(opts_set->x_target_flags & MASK_STV))
     opts->x_target_flags |= MASK_STV;
   /* Disable STV if -mpreferred-stack-boundary={2,3} or
-     -mincoming-stack-boundary={2,3} - the needed
+     -mincoming-stack-boundary={2,3} or -mstackrealign - the needed
      stack realignment will be extra cost the pass doesn't take into
      account and the pass can't realign the stack.  */
   if (ix86_preferred_stack_boundary < 128
-      || ix86_incoming_stack_boundary < 128)
+      || ix86_incoming_stack_boundary < 128
+      || opts->x_ix86_force_align_arg_pointer)
     opts->x_target_flags &= ~MASK_STV;
   if (!ix86_tune_features[X86_TUNE_AVX256_UNALIGNED_LOAD_OPTIMAL]
       && !(opts_set->x_target_flags & MASK_AVX256_SPLIT_UNALIGNED_LOAD))
@@ -5978,7 +5970,6 @@ ix86_valid_target_attribute_inner_p (tree args, char *p_strings[],
     IX86_ATTR_ISA ("avx512vbmi",	OPT_mavx512vbmi),
     IX86_ATTR_ISA ("avx512ifma",	OPT_mavx512ifma),
     IX86_ATTR_ISA ("clwb",	OPT_mclwb),
-    IX86_ATTR_ISA ("pcommit",	OPT_mpcommit),
     IX86_ATTR_ISA ("mwaitx",	OPT_mmwaitx),
     IX86_ATTR_ISA ("clzero",    OPT_mclzero),
     IX86_ATTR_ISA ("pku",	OPT_mpku),
@@ -9916,6 +9907,9 @@ ix86_build_builtin_va_list_64 (void)
 
   layout_type (record);
 
+  TYPE_ATTRIBUTES (record) = tree_cons (get_identifier ("sysv_abi va_list"),
+					NULL_TREE, TYPE_ATTRIBUTES (record));
+
   /* The correct type is an array type of one element.  */
   return build_array_type (record, build_index_type (size_zero_node));
 }
@@ -9928,17 +9922,36 @@ ix86_build_builtin_va_list (void)
 {
   if (TARGET_64BIT)
     {
-      /* Initialize ABI specific va_list builtin types.  */
-      tree sysv_va_list, ms_va_list;
+      /* Initialize ABI specific va_list builtin types.
 
-      sysv_va_list = ix86_build_builtin_va_list_64 ();
-      sysv_va_list_type_node = build_variant_type_copy (sysv_va_list);
+	 In lto1, we can encounter two va_list types:
+	 - one as a result of the type-merge across TUs, and
+	 - the one constructed here.
+	 These two types will not have the same TYPE_MAIN_VARIANT, and therefore
+	 a type identity check in canonical_va_list_type based on
+	 TYPE_MAIN_VARIANT (which we used to have) will not work.
+	 Instead, we tag each va_list_type_node with its unique attribute, and
+	 look for the attribute in the type identity check in
+	 canonical_va_list_type.
+
+	 Tagging sysv_va_list_type_node directly with the attribute is
+	 problematic since it's a array of one record, which will degrade into a
+	 pointer to record when used as parameter (see build_va_arg comments for
+	 an example), dropping the attribute in the process.  So we tag the
+	 record instead.  */
+
+      /* For SYSV_ABI we use an array of one record.  */
+      sysv_va_list_type_node = ix86_build_builtin_va_list_64 ();
 	
       /* For MS_ABI we use plain pointer to argument area.  */
-      ms_va_list = build_pointer_type (char_type_node);
-      ms_va_list_type_node = build_variant_type_copy (ms_va_list);
+      tree char_ptr_type = build_pointer_type (char_type_node);
+      tree attr = tree_cons (get_identifier ("ms_abi va_list"), NULL_TREE,
+			     TYPE_ATTRIBUTES (char_ptr_type));
+      ms_va_list_type_node = build_type_attribute_variant (char_ptr_type, attr);
 
-      return (ix86_abi == MS_ABI) ? ms_va_list : sysv_va_list;
+      return ((ix86_abi == MS_ABI)
+	      ? ms_va_list_type_node
+	      : sysv_va_list_type_node);
     }
   else
     {
@@ -22671,7 +22684,7 @@ ix86_expand_sse_fp_minmax (rtx dest, enum rtx_code code, rtx cmp_op0,
 
   /* We want to check HONOR_NANS and HONOR_SIGNED_ZEROS here,
      but MODE may be a vector mode and thus not appropriate.  */
-  if (!flag_finite_math_only || !flag_unsafe_math_optimizations)
+  if (!flag_finite_math_only || flag_signed_zeros)
     {
       int u = is_min ? UNSPEC_IEEE_MIN : UNSPEC_IEEE_MAX;
       rtvec v;
@@ -32141,9 +32154,6 @@ enum ix86_builtins
   /* CLWB instructions.  */
   IX86_BUILTIN_CLWB,
 
-  /* PCOMMIT instructions.  */
-  IX86_BUILTIN_PCOMMIT,
-
   /* CLFLUSHOPT instructions.  */
   IX86_BUILTIN_CLFLUSHOPT,
 
@@ -32946,9 +32956,6 @@ static const struct builtin_description bdesc_special_args[] =
   { OPTION_MASK_ISA_AVX512VL, CODE_FOR_avx512vl_ss_truncatev4siv4hi2_mask_store, "__builtin_ia32_pmovsdw128mem_mask", IX86_BUILTIN_PMOVSDW128_MEM, UNKNOWN, (int) VOID_FTYPE_PV8HI_V4SI_UQI },
   { OPTION_MASK_ISA_AVX512VL, CODE_FOR_avx512vl_us_truncatev8siv8hi2_mask_store, "__builtin_ia32_pmovusdw256mem_mask", IX86_BUILTIN_PMOVUSDW256_MEM, UNKNOWN, (int) VOID_FTYPE_PV8HI_V8SI_UQI },
   { OPTION_MASK_ISA_AVX512VL, CODE_FOR_avx512vl_us_truncatev4siv4hi2_mask_store, "__builtin_ia32_pmovusdw128mem_mask", IX86_BUILTIN_PMOVUSDW128_MEM, UNKNOWN, (int) VOID_FTYPE_PV8HI_V4SI_UQI },
-
-  /* PCOMMIT.  */
-  { OPTION_MASK_ISA_PCOMMIT, CODE_FOR_pcommit, "__builtin_ia32_pcommit", IX86_BUILTIN_PCOMMIT, UNKNOWN, (int) VOID_FTYPE_VOID },
 
   /* RDPKRU and WRPKRU.  */
   { OPTION_MASK_ISA_PKU, CODE_FOR_rdpkru,  "__builtin_ia32_rdpkru", IX86_BUILTIN_RDPKRU, UNKNOWN, (int) UNSIGNED_FTYPE_VOID },
@@ -40361,7 +40368,7 @@ ix86_expand_builtin (tree exp, rtx target, rtx subtarget,
 	  error ("%qE needs isa option %s", fndecl, opts);
 	  free (opts);
 	}
-      return const0_rtx;
+      return expand_call (exp, target, ignore);
     }
 
   switch (fcode)
@@ -48848,6 +48855,8 @@ static const struct attribute_spec ix86_attribute_table[] =
   /* ms_abi and sysv_abi calling convention function attributes.  */
   { "ms_abi", 0, 0, false, true, true, ix86_handle_abi_attribute, true },
   { "sysv_abi", 0, 0, false, true, true, ix86_handle_abi_attribute, true },
+  { "ms_abi va_list", 0, 0, false, false, false, NULL, false },
+  { "sysv_abi va_list", 0, 0, false, false, false, NULL, false },
   { "ms_hook_prologue", 0, 0, true, false, false, ix86_handle_fndecl_attribute,
     false },
   { "callee_pop_aggregate_return", 1, 1, false, true, true,
@@ -52690,8 +52699,6 @@ ix86_fn_abi_va_list (tree fndecl)
 static tree
 ix86_canonical_va_list_type (tree type)
 {
-  tree wtype, htype;
-
   /* Resolve references and pointers to va_list type.  */
   if (TREE_CODE (type) == MEM_REF)
     type = TREE_TYPE (type);
@@ -52700,64 +52707,25 @@ ix86_canonical_va_list_type (tree type)
   else if (POINTER_TYPE_P (type) && TREE_CODE (TREE_TYPE (type)) == ARRAY_TYPE)
     type = TREE_TYPE (type);
 
-  if (TARGET_64BIT && va_list_type_node != NULL_TREE)
+  if (TARGET_64BIT)
     {
-      wtype = va_list_type_node;
-	  gcc_assert (wtype != NULL_TREE);
-      htype = type;
-      if (TREE_CODE (wtype) == ARRAY_TYPE)
-	{
-	  /* If va_list is an array type, the argument may have decayed
-	     to a pointer type, e.g. by being passed to another function.
-	     In that case, unwrap both types so that we can compare the
-	     underlying records.  */
-	  if (TREE_CODE (htype) == ARRAY_TYPE
-	      || POINTER_TYPE_P (htype))
-	    {
-	      wtype = TREE_TYPE (wtype);
-	      htype = TREE_TYPE (htype);
-	    }
-	}
-      if (TYPE_MAIN_VARIANT (wtype) == TYPE_MAIN_VARIANT (htype))
-	return va_list_type_node;
-      wtype = sysv_va_list_type_node;
-	  gcc_assert (wtype != NULL_TREE);
-      htype = type;
-      if (TREE_CODE (wtype) == ARRAY_TYPE)
-	{
-	  /* If va_list is an array type, the argument may have decayed
-	     to a pointer type, e.g. by being passed to another function.
-	     In that case, unwrap both types so that we can compare the
-	     underlying records.  */
-	  if (TREE_CODE (htype) == ARRAY_TYPE
-	      || POINTER_TYPE_P (htype))
-	    {
-	      wtype = TREE_TYPE (wtype);
-	      htype = TREE_TYPE (htype);
-	    }
-	}
-      if (TYPE_MAIN_VARIANT (wtype) == TYPE_MAIN_VARIANT (htype))
-	return sysv_va_list_type_node;
-      wtype = ms_va_list_type_node;
-	  gcc_assert (wtype != NULL_TREE);
-      htype = type;
-      if (TREE_CODE (wtype) == ARRAY_TYPE)
-	{
-	  /* If va_list is an array type, the argument may have decayed
-	     to a pointer type, e.g. by being passed to another function.
-	     In that case, unwrap both types so that we can compare the
-	     underlying records.  */
-	  if (TREE_CODE (htype) == ARRAY_TYPE
-	      || POINTER_TYPE_P (htype))
-	    {
-	      wtype = TREE_TYPE (wtype);
-	      htype = TREE_TYPE (htype);
-	    }
-	}
-      if (TYPE_MAIN_VARIANT (wtype) == TYPE_MAIN_VARIANT (htype))
+      if (lookup_attribute ("ms_abi va_list", TYPE_ATTRIBUTES (type)))
 	return ms_va_list_type_node;
+
+      if ((TREE_CODE (type) == ARRAY_TYPE
+	   && integer_zerop (array_type_nelts (type)))
+	  || POINTER_TYPE_P (type))
+	{
+	  tree elem_type = TREE_TYPE (type);
+	  if (TREE_CODE (elem_type) == RECORD_TYPE
+	      && lookup_attribute ("sysv_abi va_list",
+				   TYPE_ATTRIBUTES (elem_type)))
+	    return sysv_va_list_type_node;
+	}
+
       return NULL_TREE;
     }
+
   return std_canonical_va_list_type (type);
 }
 
@@ -53662,9 +53630,7 @@ ix86_preferred_simd_mode (machine_mode mode)
 	return V4SFmode;
 
     case DFmode:
-      if (!TARGET_VECTORIZE_DOUBLE)
-	return word_mode;
-      else if (TARGET_AVX512F)
+      if (TARGET_AVX512F)
 	return V8DFmode;
       else if (TARGET_AVX && !TARGET_PREFER_AVX128)
 	return V4DFmode;
@@ -53749,9 +53715,14 @@ ix86_add_stmt_cost (void *data, int count, enum vect_cost_for_stmt kind,
   tree vectype = stmt_info ? stmt_vectype (stmt_info) : NULL_TREE;
   int stmt_cost = ix86_builtin_vectorization_cost (kind, vectype, misalign);
 
+  /* Penalize DFmode vector operations for !TARGET_VECTORIZE_DOUBLE.  */
+  if (kind == vector_stmt && !TARGET_VECTORIZE_DOUBLE
+      && vectype && GET_MODE_INNER (TYPE_MODE (vectype)) == DFmode)
+    stmt_cost *= 5;  /* FIXME: The value here is arbitrary.  */
+
   /* Statements in an inner loop relative to the loop being
      vectorized are weighted more heavily.  The value here is
-      arbitrary and could potentially be improved with analysis.  */
+     arbitrary and could potentially be improved with analysis.  */
   if (where == vect_body && stmt_info && stmt_in_inner_loop_p (stmt_info))
     count *= 50;  /* FIXME.  */
 

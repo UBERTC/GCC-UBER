@@ -6508,15 +6508,15 @@ gfc_resolve_iterator (gfc_iterator *iter, bool real_ok, bool own_scope)
   /* Convert start, end, and step to the same type as var.  */
   if (iter->start->ts.kind != iter->var->ts.kind
       || iter->start->ts.type != iter->var->ts.type)
-    gfc_convert_type (iter->start, &iter->var->ts, 2);
+    gfc_convert_type (iter->start, &iter->var->ts, 1);
 
   if (iter->end->ts.kind != iter->var->ts.kind
       || iter->end->ts.type != iter->var->ts.type)
-    gfc_convert_type (iter->end, &iter->var->ts, 2);
+    gfc_convert_type (iter->end, &iter->var->ts, 1);
 
   if (iter->step->ts.kind != iter->var->ts.kind
       || iter->step->ts.type != iter->var->ts.type)
-    gfc_convert_type (iter->step, &iter->var->ts, 2);
+    gfc_convert_type (iter->step, &iter->var->ts, 1);
 
   if (iter->start->expr_type == EXPR_CONSTANT
       && iter->end->expr_type == EXPR_CONSTANT
@@ -8244,6 +8244,18 @@ resolve_assoc_var (gfc_symbol* sym, bool resolve_target)
   /* Mark this as an associate variable.  */
   sym->attr.associate_var = 1;
 
+  /* Fix up the type-spec for CHARACTER types.  */
+  if (sym->ts.type == BT_CHARACTER && !sym->attr.select_type_temporary)
+    {
+      if (!sym->ts.u.cl)
+	sym->ts.u.cl = target->ts.u.cl;
+
+      if (!sym->ts.u.cl->length)
+	sym->ts.u.cl->length
+	  = gfc_get_int_expr (gfc_default_integer_kind,
+			      NULL, target->value.character.length);
+    }
+
   /* If the target is a good class object, so is the associate variable.  */
   if (sym->ts.type == BT_CLASS && gfc_expr_attr (target).class_ok)
     sym->attr.class_ok = 1;
@@ -8936,7 +8948,7 @@ resolve_branch (gfc_st_label *label, gfc_code *code)
   if (label->defined == ST_LABEL_UNKNOWN)
     {
       gfc_error ("Label %d referenced at %L is never defined", label->value,
-		 &label->where);
+		 &code->loc);
       return;
     }
 
@@ -9431,6 +9443,24 @@ gfc_resolve_blocks (gfc_code *b, gfc_namespace *ns)
 	case EXEC_WAIT:
 	  break;
 
+	case EXEC_OMP_ATOMIC:
+	case EXEC_OACC_ATOMIC:
+	  {
+	    gfc_omp_atomic_op aop
+	      = (gfc_omp_atomic_op) (b->ext.omp_atomic & GFC_OMP_ATOMIC_MASK);
+
+	    /* Verify this before calling gfc_resolve_code, which might
+	       change it.  */
+	    gcc_assert (b->next && b->next->op == EXEC_ASSIGN);
+	    gcc_assert (((aop != GFC_OMP_ATOMIC_CAPTURE)
+			 && b->next->next == NULL)
+			|| ((aop == GFC_OMP_ATOMIC_CAPTURE)
+			    && b->next->next != NULL
+			    && b->next->next->op == EXEC_ASSIGN
+			    && b->next->next->next == NULL));
+	  }
+	  break;
+
 	case EXEC_OACC_PARALLEL_LOOP:
 	case EXEC_OACC_PARALLEL:
 	case EXEC_OACC_KERNELS_LOOP:
@@ -9443,9 +9473,7 @@ gfc_resolve_blocks (gfc_code *b, gfc_namespace *ns)
 	case EXEC_OACC_CACHE:
 	case EXEC_OACC_ENTER_DATA:
 	case EXEC_OACC_EXIT_DATA:
-	case EXEC_OACC_ATOMIC:
 	case EXEC_OACC_ROUTINE:
-	case EXEC_OMP_ATOMIC:
 	case EXEC_OMP_CRITICAL:
 	case EXEC_OMP_DISTRIBUTE:
 	case EXEC_OMP_DISTRIBUTE_PARALLEL_DO:
@@ -11479,6 +11507,27 @@ resolve_fl_variable_derived (gfc_symbol *sym, int no_init_flag)
 }
 
 
+/* F2008, C402 (R401):  A colon shall not be used as a type-param-value
+   except in the declaration of an entity or component that has the POINTER
+   or ALLOCATABLE attribute.  */
+
+static bool
+deferred_requirements (gfc_symbol *sym)
+{
+  if (sym->ts.deferred
+      && !(sym->attr.pointer
+	   || sym->attr.allocatable
+	   || sym->attr.omp_udr_artificial_var))
+    {
+      gfc_error ("Entity %qs at %L has a deferred type parameter and "
+		 "requires either the POINTER or ALLOCATABLE attribute",
+		 sym->name, &sym->declared_at);
+      return false;
+    }
+  return true;
+}
+
+
 /* Resolve symbols with flavor variable.  */
 
 static bool
@@ -11518,19 +11567,10 @@ resolve_fl_variable (gfc_symbol *sym, int mp_flag)
     }
 
   /* Constraints on deferred type parameter.  */
-  if (sym->ts.deferred
-      && !(sym->attr.pointer
-	   || sym->attr.allocatable
-	   || sym->attr.omp_udr_artificial_var))
-    {
-      gfc_error ("Entity %qs at %L has a deferred type parameter and "
-		 "requires either the pointer or allocatable attribute",
-		     sym->name, &sym->declared_at);
-      specification_expr = saved_specification_expr;
-      return false;
-    }
+  if (!deferred_requirements (sym))
+    return false;
 
-  if (sym->ts.type == BT_CHARACTER)
+  if (sym->ts.type == BT_CHARACTER && !sym->attr.associate_var)
     {
       /* Make sure that character string variables with assumed length are
 	 dummy arguments.  */
@@ -11960,6 +12000,13 @@ resolve_fl_procedure (gfc_symbol *sym, int mp_flag)
 	 symbol instead of 'sym'.  */
       iface = sym->ts.interface;
       sym->ts.interface = NULL;
+
+      /* Make sure that the result uses the correct charlen for deferred
+	 length results.  */
+      if (iface && sym->result
+	  && iface->ts.type == BT_CHARACTER
+	  && iface->ts.deferred)
+	sym->result->ts.u.cl = iface->ts.u.cl;
 
       if (iface == NULL)
 	goto check_formal;
@@ -13639,6 +13686,10 @@ resolve_fl_parameter (gfc_symbol *sym)
 		 "or of deferred shape", sym->name, &sym->declared_at);
       return false;
     }
+
+  /* Constraints on deferred type parameter.  */
+  if (!deferred_requirements (sym))
+    return false;
 
   /* Make sure a parameter that has been implicitly typed still
      matches the implicit type, since PARAMETER statements can precede
@@ -15660,7 +15711,8 @@ gfc_resolve (gfc_namespace *ns)
   /* As gfc_resolve can be called during resolution of an OpenMP construct
      body, we should clear any state associated to it, so that say NS's
      DO loops are not interpreted as OpenMP loops.  */
-  gfc_omp_save_and_clear_state (&old_omp_state);
+  if (!ns->construct_entities)
+    gfc_omp_save_and_clear_state (&old_omp_state);
 
   resolve_types (ns);
   component_assignment_level = 0;
@@ -15672,5 +15724,6 @@ gfc_resolve (gfc_namespace *ns)
 
   gfc_run_passes (ns);
 
-  gfc_omp_restore_state (&old_omp_state);
+  if (!ns->construct_entities)
+    gfc_omp_restore_state (&old_omp_state);
 }

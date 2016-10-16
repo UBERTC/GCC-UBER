@@ -26,3 +26,7 @@ static_assert(lcm(21, 6) == 42, "");
 static_assert(lcm(41, 0) == 0, "LCD with zero is zero");
 static_assert(lcm(0, 7) == 0, "LCD with zero is zero");
 static_assert(lcm(0, 0) == 0, "no division by zero");
+
+static_assert(lcm(1u, 2) == 2, "unsigned and signed");
+static_assert(lcm(3, 4u) == 12, "signed and unsigned");
+static_assert(lcm(5u, 6u) == 30, "unsigned and unsigned");

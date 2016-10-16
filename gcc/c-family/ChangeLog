@@ -1,3 +1,21 @@
+2016-09-27  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-09-06  Richard Biener  <rguenther@suse.de>
+
+	PR c/77450
+	* c-common.c (c_common_mark_addressable_vec): Handle
+	COMPOUND_LITERAL_EXPR.
+
+2016-09-13  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	2016-09-13  Jason Merrill  <jason@redhat.com>
+		    Tom de Vries  <tom@codesourcery.com>
+
+	PR c++/77427
+	* c-common.c (set_underlying_type): Don't treat array as builtin type.
+
 2016-08-22  Release Manager
 
 	* GCC 6.2.0 released.

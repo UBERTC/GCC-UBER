@@ -837,15 +837,16 @@ split_tree (location_t loc, tree in, tree type, enum tree_code code,
 	  var = negate_expr (var);
 	}
     }
+  else if (TREE_CONSTANT (in))
+    *conp = in;
   else if (TREE_CODE (in) == BIT_NOT_EXPR
 	   && code == PLUS_EXPR)
     {
-      /* -X - 1 is folded to ~X, undo that here.  */
+      /* -X - 1 is folded to ~X, undo that here.  Do _not_ do this
+         when IN is constant.  */
       *minus_litp = build_one_cst (TREE_TYPE (in));
       var = negate_expr (TREE_OPERAND (in, 0));
     }
-  else if (TREE_CONSTANT (in))
-    *conp = in;
   else
     var = in;
 
@@ -14102,7 +14103,6 @@ fold_relational_const (enum tree_code code, tree type, tree op0, tree op1)
       if (!VECTOR_TYPE_P (type))
 	{
 	  /* Have vector comparison with scalar boolean result.  */
-	  bool result = true;
 	  gcc_assert ((code == EQ_EXPR || code == NE_EXPR)
 		      && VECTOR_CST_NELTS (op0) == VECTOR_CST_NELTS (op1));
 	  for (unsigned i = 0; i < VECTOR_CST_NELTS (op0); i++)
@@ -14110,11 +14110,12 @@ fold_relational_const (enum tree_code code, tree type, tree op0, tree op1)
 	      tree elem0 = VECTOR_CST_ELT (op0, i);
 	      tree elem1 = VECTOR_CST_ELT (op1, i);
 	      tree tmp = fold_relational_const (code, type, elem0, elem1);
-	      result &= integer_onep (tmp);
+	      if (tmp == NULL_TREE)
+		return NULL_TREE;
+	      if (integer_zerop (tmp))
+		return constant_boolean_node (false, type);
 	    }
-	  if (code == NE_EXPR)
-	    result = !result;
-	  return constant_boolean_node (result, type);
+	  return constant_boolean_node (true, type);
 	}
       unsigned count = VECTOR_CST_NELTS (op0);
       tree *elts =  XALLOCAVEC (tree, count);

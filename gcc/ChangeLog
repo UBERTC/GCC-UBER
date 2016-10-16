@@ -1,3 +1,491 @@
+2016-10-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/sparc/sparc.c (sparc_expand_vec_perm_bmask): Use a scratch
+	register as destination of bmask.
+	(vector_init_bshuffle): Likewise.
+	* config/sparc/sparc.md (vec_perm_constv8qi): Likewise.
+	(bmaskdi_vis): Enable only in 64-bit mode.
+
+2016-10-13  Andrew Senkevich  <andrew.senkevich@intel.com>
+
+	Backport from trunk
+	* common/config/i386/i386-common.c (OPTION_MASK_ISA_PCOMMIT_UNSET,
+	OPTION_MASK_ISA_PCOMMIT_SET): Deleted definitions.
+	(ix86_handle_option): Deleted handle of OPT_mpcommit.
+	* config.gcc: Deleted pcommitintrin.h
+	* config/i386/pcommitintrin.h: Deleted file.
+	* config/i386/cpuid.h (bit_PCOMMIT): Deleted.
+	* config/i386/driver-i386.c (host_detect_local_cpu): Deleted pcommit
+	detection.
+	* config/i386/i386-c.c (ix86_target_macros_internal): Deleted define
+	__PCOMMIT__.
+	* config/i386/i386.c (ix86_target_string): Deleted -mpcommit.
+	(PTA_PCOMMIT, IX86_BUILTIN_PCOMMIT, __builtin_ia32_pcommit): Deleted.
+	(ix86_option_override_internal): Deleted handle of option.
+	(ix86_valid_target_attribute_inner_p): Deleted pcommit.
+	* config/i386/i386.h (TARGET_PCOMMIT, TARGET_PCOMMIT_P): Deleted.
+	* config/i386/i386.md (unspecv): Deleted UNSPECV_PCOMMIT.
+	(pcommit): Deleted instruction.
+	* config/i386/i386.opt: Mention -mpcommit deprecation.
+	* config/i386/x86intrin.h: Deleted inclusion of pcommitintrin.h.
+
+2016-10-13  Tom de Vries  <tom@codesourcery.com>
+
+	revert:
+	2016-10-11  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	2016-10-11  Tom de Vries  <tom@codesourcery.com>
+
+	PR middle-end/77558
+	* builtins.c (std_canonical_va_list_type): Remove RECORD_TYPE
+	special-casing.
+
+2016-10-11  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	2016-10-11  Tom de Vries  <tom@codesourcery.com>
+
+	PR middle-end/77558
+	* builtins.c (std_canonical_va_list_type): Remove RECORD_TYPE
+	special-casing.
+
+2016-10-10  Georg-Johann Lay  <avr@gjlay.de>
+
+	* config/avr/gen-avr-mmcu-texi.c (string.h): Include.
+
+2016-10-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/77874
+	* config/i386/sse.md (<mask_codefor><code><mode>3<mask_name>):
+	Remove wrong assert.
+	(<floatsuffix>float<sseintvecmodelower><mode>2<mask_name><round_name>:
+	Use <round_constraint> as operand 1 constraint.
+
+2016-10-06  James Clarke  <jrtc27@jrtc27.com>
+            Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/77759
+	* config/sparc/sparc.c (classify_data_t): Remove int_regs field.
+	(classify_registers): Don't set it
+	(function_arg_slotno): Don't initialize and test it.  Tidy up.
+
+2016-10-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-09-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/driver-i386.c (host_detect_local_cpu): Check maximum
+	ext_level before calling CPUID with 0x80000008.
+
+	2016-09-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/77756
+	* config/i386/cpuid.h (__get_cpuid_count): New.
+	(__get_cpuid): Rename __level to __leaf.
+
+2016-09-30  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+
+	2016-09-21  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/77670
+	* config/rs6000/predicates.md (invert_fpmask_comparison_operator):
+	New predicate that matches the ISA 3.0 XSCMP{EQ,GT,GE}DP
+	instructions when you want to invert the test.
+	* config/rs6000/rs6000.md (fpmask<mode>): Use the arguments in the
+	correct order for XXSEL.
+	(mov<SFDF:mode><SFDF2:mode>cc_invert_p9): Define the inverted test
+	for using XSCMP{EQ,GT,GE}DP.
+
+2016-09-28  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+	    Alan Modra  <amodra@gmail.com>
+
+	Backport from mainline
+	2016-07-01  Alan Modra  <amodra@gmail.com>
+
+	PR rtl-optimization/71709
+	* ira-lives.c (find_call_crossed_cheap_reg): Exit loop on arg reg
+	being set, not referenced.
+
+2016-09-27  David Edelsohn  <dje.gcc@gmail.com>
+
+	Backport from mainline
+	2016-09-27  David Edelsohn  <dje.gcc@gmail.com>
+
+	* config/rs6000/rs6000.c (rs6000_output_symbol): Don't modify
+	VAR_DECL string.
+
+	2016-09-24  David Edelsohn  <dje.gcc@gmail.com>
+
+	* configure.ac (gcc_cv_as_aix_dwloc): Fix typo in assembly fragment.
+	* configure: Regenerate.
+
+2016-09-27  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-09-01  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/77436
+	* tree-chrec.c (tree_fold_binomial): Use widest_int, properly
+	check whether the result fits the desired result type.
+
+	2016-09-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77514
+	* tree-ssa-pre.c (create_expression_by_pieces): Optimize
+	search for folded stmt.
+
+	2016-09-15  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77514
+	* tree-ssa-pre.c (create_expression_by_pieces): Handle garbage
+	only forced_stmts sequence.
+
+	2016-09-15  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/77544
+	* fold-const.c (split_tree): Do not split constant ~X.
+
+	2016-09-19  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/77605
+	* tree-data-ref.c (analyze_subscript_affine_affine): Use the
+	proper niter to bound the loops.
+
+	2016-09-22  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/77679
+	* gimple-fold.c (fold_array_ctor_reference): Turn asserts into
+	fold fails.
+
+2016-09-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-09-21  Richard Biener  <rguenther@suse.de>
+		    Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/77621
+	* tree-vect-data-refs.c (vect_analyze_data_ref_accesses): Split
+	group at non-vectorizable stmts.
+
+	Backport from mainline
+	2016-09-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/77621
+	* config/i386/i386.c (ix86_preferred_simd_mode) <case DFmode>:
+	Don't return word_mode for !TARGET_VECTORIZE_DOUBLE.
+	(ix86_add_stmt_cost): Penalize DFmode vector operations
+	for !TARGET_VECTORIZE_DOUBLE.
+
+2016-09-22  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+
+	Backport from 2016-09-22 trunk r240388.
+
+	* config/avr/avr.c (avr_rtx_costs_1): Handle DImode MULT.
+	(avr_address_cost): Replace 61 with MAX_LD_OFFSET(mode).
+
+2016-09-21  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* doc/rtl.texi (JUMP_LABEL): Document RETURN and SIMPLE_RETURN values.
+
+2016-09-21  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2016-09-21 trunk r240306.
+
+	PR target/77326
+	* config/avr/avr.c (avr_notice_update_cc) [CC_NONE]: If insn
+	touches some regs mentioned in cc_status, do CC_STATUS_INIT.
+
+2016-09-20  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-07-14  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* lra-constraints.c (match_reload): Pass information about other
+	output operands.  Create new unique register value if matching input
+	operand shares same register value as output operand being considered.
+	(curr_insn_transform): Record output operands already processed.
+
+2016-09-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/extend.texi (Integer Overflow Builtins): Fix type of out
+	parameters for functions taking long long arguments.
+
+2016-09-16  David Edelsohn  <dje.gcc@gmail.com>
+
+	Backported from mainline
+	2016-08-26  David Edelsohn  <dje.gcc@gmail.com>
+
+	PR target/77349
+	* config/rs6000/xcoff.h (DWARF_OFFSET_SIZE): Define as PTR_SIZE.
+
+2016-09-16  Jakub Jelinek  <jakub@redhat.com>
+	    Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR middle-end/77594
+	* internal-fn.c (expand_arith_overflow) <case MINUS_EXPR>: Don't fall
+	through into expand_addsub_overflow after expand_neg_overflow.
+
+2016-09-16  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-09-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/68260
+	* tsan.c: Include target.h.
+	(enum tsan_atomic_action): Add bool_clear and bool_test_and_set.
+	(BOOL_CLEAR, BOOL_TEST_AND_SET): Define.
+	(tsan_atomic_table): Add BUILT_IN_ATOMIC_CLEAR and
+	BUILT_IN_ATOMIC_TEST_AND_SET entries.
+	(instrument_builtin_call): Handle bool_clear and bool_test_and_set.
+
+	2016-09-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/77516
+	* omp-low.c (lower_rec_simd_input_clauses): Use max_vf for non-positive
+	OMP_CLAUSE_SAFELEN_EXPR.
+
+	2016-09-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/69255
+	* config/i386/i386.c (ix86_expand_builtin): For builtin with
+	unsupported or unknown ISA, use expand_call.
+
+2016-09-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-09-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR rtl-optimization/77452
+	* explow.c (plus_constant) <case MEM>: Extract scalar constant from
+	inner-mode reference to a CONST_VECTOR constant in the constant pool.
+
+2016-09-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-08-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/72866
+	* tree-vect-patterns.c (search_type_for_mask): Turn into
+	a small wrapper, move all code to ...
+	(search_type_for_mask_1): ... this new function.  Add caching
+	and adjust recursive calls.
+
+	PR debug/77363
+	* dwarf2out.c (modified_type_die): Use lookup_type_die (type)
+	instead of lookup_type_die (type_main_variant (type)) even for array
+	types.
+
+	PR middle-end/77377
+	* simplify-rtx.c (avoid_constant_pool_reference): For out of bounds
+	constant pool reference return x instead of c.
+
+	2016-08-19  Jakub Jelinek  <jakub@redhat.com>
+
+	* config/i386/t-i386 (i386-c.o): Don't depend on
+	i386-builtin-types.inc.
+	(i386.o): Depend on i386-builtin-types.inc.
+
+	2016-08-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/77259
+	* tree-ssa-pre.c (eliminate_dom_walker::before_dom_children): If
+	turning a call into __builtin_unreachable-like noreturn call, adjust
+	gimple_call_set_fntype.
+	* tree-cfgcleanup.c (fixup_noreturn_call): Remove lhs also if
+	gimple_call_fntype has void return type.
+
+	2016-08-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/71910
+	* tree-cfg.c (execute_fixup_cfg): Add node variable, use it.  Before inlining,
+	add cgraph edge for the added __builtin_unreachable call.
+
+2016-09-01  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/extend.texi (SPU Built-in Functions): Remove stale
+	references to material formerly at IBM and Sony.
+
+2016-09-01  Matthew Wahab  <matthew.wahab@arm.com>
+
+	PR target/77281
+	* config/arm/arm.c (neon_valid_immediate): Delete declaration.
+	Use const_vec_duplicate to check for duplicated elements.
+
+2016-09-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/i386/i386.c (ix86_option_override_internal): Also disable the
+	STV pass if -mstackrealign is enabled.
+
+2016-08-31  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	Backport from mainline
+	2016-08-27  Patrick Palka  <ppalka@gcc.gnu.org>
+
+	PR tree-optimization/71077
+	PR tree-optimization/68542
+	* fold-const.c (fold_relational_const): Fix folding of
+	VECTOR_CST comparisons that have a scalar boolean result type.
+
+2016-08-31  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/install.texi (Binaries): www.opencsw.org now uses https.
+
+2016-08-31  Jakub Sejdak  <jakub.sejdak@phoesys.com>
+
+	* config.gcc: Add support for arm*-*-phoenix* targets.
+	* config/arm/t-phoenix: New.
+	* config/phoenix.h: New.
+
+2016-08-29  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/77403
+	* config/i386/sse.md (vec_set_lo_<mode><mask_name>): Fix assembler
+	template for intel asm dialect.
+	(vec_set_hi_<mode><mask_name>): Ditto.
+
+2016-08-29  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* Makefile.in (gcov-iov.h): Add dummy recipe.
+
+2016-08-28  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-08-23  Venkataramanan Kumar  <venkataramanan.kumar@amd.com>
+
+	* config/i386/i386.c (processor_alias_table): Enable PTA_PRFCHW
+	for targets amdfam10 and barcelona.
+
+	Backport from mainline
+	2016-08-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/77270
+	* config/i386/i386.md (prefetch): When TARGET_PRFCHW or
+	TARGET_PREFETCHWT1 are disabled, emit 3dNOW! write prefetches for
+	non-SSE2 athlons only, otherwise prefer SSE prefetches.
+
+	Backport from mainline
+	2016-08-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/77270
+	* config/i386/i386.c (ix86_option_override_internal): Remove
+	PTA_PRFCHW from entries that also have PTA_3DNOW flag.
+	Enable SSE prefetch also for TARGET_PREFETCHWT1.
+	Do not try to enable TARGET_PRFCHW ISA flag here.
+	* config/i386/i386.md (prefetch): Enable also for TARGET_3DNOW.
+	Rewrite expander function body.
+	(*prefetch_3dnow): Enable for TARGET_3DNOW and TARGET_PREFETCHWT1.
+
+2016-08-28  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	2016-08-28  Tom de Vries  <tom@codesourcery.com>
+
+	PR lto/70955
+	* config/i386/i386.c (ix86_build_builtin_va_list_64): Tag type with
+	'sysv_abi va_list' attribute.
+	(ix86_build_builtin_va_list): Tag type with 'ms_abi va_list' attribute.
+	(ix86_canonical_va_list_type): Handle 'sysv_abi/ms_abi va_list'
+	attributes.
+
+2016-08-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-08-11  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/72863
+	* vsx.md (vsx_load_<mode>): For P8LE, emit swaps at expand time.
+	(vsx_store_<mode>): Likewise.
+
+2016-08-24  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-08-17  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/76490
+	* tree-vrp.c (update_value_range): Preserve overflow infinities
+	when intersecting with ranges from get_range_info.
+	(operand_less_p): Handle overflow infinities correctly.
+	(value_range_constant_singleton): Use vrp_operand_equal_p
+	to handle overflow max/min correctly.
+	(vrp_valueize): Likewise.
+	(union_ranges): Likewise.
+	(intersect_ranges): Likewise.
+
+2016-08-24  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/arm/t-rtems: Add vfp multilib.
+
+2016-08-23  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-08-16  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/76783
+	* tree-ssa-propagate.c (ssa_prop_init): Use RPO order.  Clear
+	BB visited flags at start.
+
+	2016-08-12  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/72851
+	* tree-ssa-propagate.c: Include cfganal.h.  Rewrite block and stmt
+	worklists to use bitmaps indexed in execution order.
+	(executable_blocks, cfg_blocks_num, cfg_blocks_tail, cfg_blocks_head,
+	bb_in_list, interesting_ssa_edges, varying_ssa_edges): Remove.
+	(cfg_blocks): Make a bitmap.
+	(bb_to_cfg_order, cfg_order_to_bb, ssa_edge_worklist, uid_to_stmt):
+	New globals.
+	(cfg_blocks_empty_p): Adjust.
+	(cfg_blocks_add): Likewise.
+	(cfg_blocks_get): Likewise.
+	(add_ssa_edge): Likewise.
+	(add_control_edge): Likewise.
+	(simulate_stmt): Likewise.
+	(process_ssa_edge_worklist): Likewise.
+	(simulate_block): Likewise.
+	(ssa_prop_init): Compute PRE order and stmt UIDs.
+	(ssa_prop_fini): Adjust.
+	(ssa_propagate): Adjust.
+
+2016-08-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2016-08-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/72867
+	* config/i386/sse.md (<code><mode>3<mask_name><round_saeonly_name>):
+	Emit ieee_<ieee_maxmin><mode>3<mask_name><round_saeonly_name>
+	for !flag_finite_math_only or flag_signed_zeros.
+	(*<code><mode>3<mask_name><round_saeonly_name>): Rename from
+	*<code><mode>3_finite<mask_name><round_saeonly_name>.  Do not
+	depend on flag_finite_math_only.
+	(ieee_<ieee_maxmin><mode>3<mask_name><round_saeonly_name>):
+	New insn pattern.
+	(*<code><mode>3<mask_name><round_saeonly_name>): Remove.
+	(*ieee_smin<mode>3): Ditto.
+	(*ieee_smax<mode>3): Ditto.
+	* config/i386/mmx.md (mmx_<code>v2sf3): Emit
+	mmx_ieee_<ieee_maxmin>v2sf3 for !flag_finite_math_only or
+	flag_signed_zeros.
+	(*mmx_<code>v2sf3): Rename from *mmx_<code>v2sf3_finite.  Do not
+	depend on flag_finite_math_only.
+	(mmx_ieee_<ieee_maxmin>v2sf3): New insn pattern.
+	(*mmx_<code>v2sf3): Remove.
+	* config/i386/subst.md (round_saeonly_mask_arg3): New subst attribute.
+	* config/i386/i386.c (ix86_expand_sse_fp_mimnax): Check
+	flag_signed_zeros instead of !flag_unsafe_math_optimizations.
+
+2016-08-22  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-07-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR middle-end/71700
+	* expr.c (store_constructor): Mask sign-extended bits when widening
+	sub-word constructor element at the start of a word.
+
 2016-08-22  Richard Biener  <rguenther@suse.de>
 
 	* BASE-VER: Set to 6.2.1.
@@ -209,9 +697,9 @@
 
 2016-08-09  Martin Jambor  <mjambor@suse.cz>
 
-        PR ipa/71981
-        * ipa-polymorphic-call.c (get_dynamic_type): Bail out gracefully
-        if instance is a MEM_REF.
+	PR ipa/71981
+	* ipa-polymorphic-call.c (get_dynamic_type): Bail out gracefully
+	if instance is a MEM_REF.
 
 2016-08-09  Richard Biener  <rguenther@suse.de>
 

@@ -1,3 +1,17 @@
+2016-09-29  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/77707
+	io/transfer.c (next_record): Flush before calculating next_record.
+	Correctly calculate.
+
+2016-09-28  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/77507
+ 	* ieee/ieee_arithmetic.F90 (IEEE_VALUE_4,IEEE_VALUE_8,IEEE_VALULE_10,
+	IEEE_VALUE_16):  Use correct keyword.
+
 2016-08-22  Release Manager
 
 	* GCC 6.2.0 released.

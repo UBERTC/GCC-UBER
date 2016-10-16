@@ -6284,7 +6284,6 @@ traverse_record_type (const_tree type, bool named, T *data,
 
 typedef struct
 {
-  bool int_regs;	/* true if field eligible to int registers.  */
   bool fp_regs;		/* true if field eligible to FP registers.  */
   bool fp_regs_in_first_word;	/* true if such field in first word.  */
 } classify_data_t;
@@ -6301,8 +6300,6 @@ classify_registers (const_tree, HOST_WIDE_INT bitpos, bool fp,
       if (bitpos < BITS_PER_WORD)
 	data->fp_regs_in_first_word = true;
     }
-  else
-    data->int_regs = true;
 }
 
 /* Compute the slot number to pass an argument in.
@@ -6429,23 +6426,25 @@ function_arg_slotno (const struct sparc_args *cum, machine_mode mode,
 
 	  if (TREE_CODE (type) == RECORD_TYPE)
 	    {
-	      classify_data_t data = { false, false, false };
+	      classify_data_t data = { false, false };
 	      traverse_record_type<classify_data_t, classify_registers>
 		(type, named, &data);
 
-	      /* If all slots are filled except for the last one, but there
-		 is no FP field in the first word, then must pass on stack.  */
-	      if (data.fp_regs
-		  && !data.fp_regs_in_first_word
-		  && slotno >= SPARC_FP_ARG_MAX - 1)
-		return -1;
-
-	      /* If there are only int args and all int slots are filled,
-		 then must pass on stack.  */
-	      if (!data.fp_regs
-		  && data.int_regs
-		  && slotno >= SPARC_INT_ARG_MAX)
-		return -1;
+	      if (data.fp_regs)
+		{
+		  /* If all FP slots are filled except for the last one and
+		     there is no FP field in the first word, then must pass
+		     on stack.  */
+		  if (slotno >= SPARC_FP_ARG_MAX - 1
+		      && !data.fp_regs_in_first_word)
+		    return -1;
+		}
+	      else
+		{
+		  /* If all int slots are filled, then must pass on stack.  */
+		  if (slotno >= SPARC_INT_ARG_MAX)
+		    return -1;
+		}
 	    }
 
 	  /* PREGNO isn't set since both int and FP regs can be used.  */
@@ -11949,7 +11948,7 @@ sparc_expand_vec_perm_bmask (machine_mode vmode, rtx sel)
     }
 
   /* Always perform the final addition/merge within the bmask insn.  */
-  emit_insn (gen_bmasksi_vis (gen_rtx_REG (SImode, 0), sel, t_1));
+  emit_insn (gen_bmasksi_vis (gen_reg_rtx (SImode), sel, t_1));
 }
 
 /* Implement TARGET_FRAME_POINTER_REQUIRED.  */
@@ -12215,7 +12214,7 @@ vector_init_bshuffle (rtx target, rtx elt, machine_mode mode,
     }
 
   sel = force_reg (SImode, GEN_INT (bmask));
-  emit_insn (gen_bmasksi_vis (gen_rtx_REG (SImode, 0), sel, const0_rtx));
+  emit_insn (gen_bmasksi_vis (gen_reg_rtx (SImode), sel, const0_rtx));
   emit_insn (final_insn);
 }
 
