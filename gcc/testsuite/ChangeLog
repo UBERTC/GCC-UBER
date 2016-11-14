@@ -1,3 +1,276 @@
+2016-11-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/renaming11.ad[sb]: New test.
+
+2016-11-13  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/lto21.adb: New test.
+	* gnat.dg/lto21_pkg1.ads: New helper.
+	* gnat.dg/lto21_pkg2.ad[sb]: Likewise.
+
+2016-11-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78310
+	* gcc.target/i386/pr78310.c: New test.
+
+2016-11-11  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR target/77822
+	* gcc.target/s390/pr77822.c: New test for PR/77822.
+
+2016-11-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78262
+	* gcc.target/i386/pr78262.c: New test.
+
+2016-11-07  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78221
+	* gfortran.dg/warn_conversion_9.f90:  New test.
+
+2016-11-07  Richard Biener  <rguenther@suse.de>
+
+	PR target/78229
+	* g++.dg/pr78229.C: New testcase.
+
+2016-11-05  Martin Sebor  <msebor@redhat.com>
+
+	Backport from trunk.
+	PR c/71115
+	* gcc.dg/init-excess-2.c: New test.
+	* gcc.dg/Woverride-init-1.c: Adjust.
+	* gcc.dg/Woverride-init-2.c: Same.
+
+2016-11-05  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/78039
+	* g++.dg/ext/flexary18.C: New test.
+	* g++.dg/ext/flexary19.C: New test.
+
+2016-11-03  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2016-10-24  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR target/77483
+	* gcc.target/i386/mask-unpack.c (dg-options): Add -mno-stackrealign.
+	* gcc.target/i386/pr65105-1.c: Likewise.
+	* gcc.target/i386/pr65105-2.c: Likewise.
+	* gcc.target/i386/pr65105-3.c: Likewise.
+	* gcc.target/i386/pr65105-5.c: Likewise.
+	* gcc.target/i386/pr67761.c: Likewise.
+
+2016-11-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-08-12  Martin Liska  <mliska@suse.cz>
+
+	* g++.dg/gcov/gcov-16.C: New test.
+	* lib/gcov.exp: Support new argument for run-gcov function.
+
+2016-11-03  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-09-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77768
+	* gcc.dg/torture/pr77768.c: New testcase.
+
+2016-11-02  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/69544
+	PR fortran/78178
+	* gfortran.dg/where_5.f90:  New test.
+	* gfortran.dg/where_6.f90:  New test.
+
+2016-11-02  Will Schmidt  <will_schmidt@vnet.ibm.com>
+
+	Backport from trunk
+	2016-10-26  Will Schmidt <will_schmidt@vnet.ibm.com>
+
+	PR middle-end/72747
+	* c-c++-common/pr72747-1.c: New test.
+	* c-c++-common/pr72747-2.c: Likewise.
+
+2016-11-02  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-10-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77839
+	* gcc.dg/torture/pr77839.c: New testcase.
+
+	2016-09-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77745
+	* g++.dg/torture/pr77745.C: New testcase.
+
+	2016-09-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77648
+	* gcc.dg/torture/pr77648-1.c: New testcase.
+	* gcc.dg/torture/pr77648-2.c: Likewise.
+
+2016-11-02  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* lib/target-supports.exp (check_gc_sections_available): Use
+	-print-prog-name=ld to determine linker used.
+
+2016-11-01  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-10-21  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/78038
+	* gcc.target/aarch64/pr78038.c: New test.
+
+2016-10-31  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78123
+	* gfortran.dg/fmt_t_9.f: New test.
+
+2016-10-31  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/71902
+	* gfortran.dg/dependency_47.f90:  New test.
+	* gfortran.dg/dependency_49.f90:  New test.
+
+2016-10-30  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/67219
+	* gfortran.dg/pr67219.f90:  New test.
+
+2016-10-26  Steven G. Kargl <kargl@gcc.gnu.org>
+
+	PR fortran/78092
+	* gfortran.dg/pr78092.f90: New test.
+
+2016-10-26  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78108
+	* gfortran.dg/submodule_18.f08: New test.
+	* gfortran.dg/submodule_19.f08: New test.
+
+2016-10-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/bmi-6.c: XFAIL.
+
+	Backport from mainline
+	2016-10-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/78057
+	* gcc.target/i386/pr78057.c: New test.
+
+	Backport from mainline
+	2016-10-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78037
+	* gcc.target/i386/pr78037.c: New test.
+
+2016-10-25  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/opt59.adb: New test.
+	* gnat.dg/opt59_pkg.ad[sb]: New helper.
+
+2016-10-24  Bernd Edlinge  <bernd.edlinger@hotmail.de>
+
+	Backport from mainline r240313, r240355, r240573
+	2016-09-21  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR tree-optimization/77550
+	* g++.dg/pr77550.C: New test.
+
+	2016-09-22  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* g++.dg/pr77550.C: Use __SIZE_TYPE__.
+
+	2016-09-28  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	PR c++/77748
+	* g++.dg/pr77550.C: Avoid undefined behavior.
+
+2016-10-24  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/71895
+	* gfortran.dg/pr71895.f90: New test.
+
+2016-10-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-10-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/77916
+	* gcc.dg/torture/pr77916.c: New.
+
+2016-10-23  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/77763
+	* gfortran.dg/pr77763.f90
+
+2016-10-23  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/61420
+	PR fortran/78013
+	* gfortran.dg/proc_ptr_49.f90: New test.
+
+2016-10-23  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78021
+	* gfortran.dg/string_length_3.f90:  New test.
+
+2016-10-23  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backported from trunk
+	PR fortran/72832
+	* gfortran.dg/allocate_with_source_22.f03: New test.
+	* gfortran.dg/allocate_with_source_23.f03: New test.  Expected to
+	fail.
+
+2016-10-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/77991
+	* gcc.target/i386/pr77991.c: New test.
+
+2016-10-17  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backported from trunk
+	PR fortran/77978
+	* gfortran.dg/pr77978_1.f90: New test.
+	* gfortran.dg/pr77978_2.f90: Ditto.
+	* gfortran.dg/pr77978_3.f90: Ditto.
+
+
+2016-10-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-10-13  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/77937
+	* gcc.dg/torture/pr77937-1.c: New.
+	* gcc.dg/torture/pr77937-2.c: New.
+
+2016-10-17  Martin Liska  <mliska@suse.cz>
+
+	Backported from mainline
+	2016-10-13  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/77943
+	* g++.dg/tree-ssa/pr77943.C: New test.
+
+2016-10-16  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/77915
+	* gfortran.dg/matmul_11.f90:  New test.
+
 2016-10-15  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gcc.target/sparc/bmaskbshuf.c: Rename to...
@@ -14,20 +287,20 @@
 	* g++.dg/ext/flexary18.C: New test.
 	* g++.dg/torture/pr64312.C: Add a dg-error directive to an ill-formed
 	regression test.
-        * g++.dg/compat/struct-layout-1_generate.c (subfield): Add argument.
-        Avoid generating a flexible array member in an array.
+	* g++.dg/compat/struct-layout-1_generate.c (subfield): Add argument.
+	Avoid generating a flexible array member in an array.
 
 2016-10-13  Andrew Senkevich  <andrew.senkevich@intel.com>
 
 	Backport from trunk
-	* testsuite/gcc.target/i386/pcommit-1.c: Deleted test.
-	* testsuite/gcc.target/i386/sse-12.c: Deleted -pcommit option.
-	* testsuite/gcc.target/i386/sse-13.c: Ditto.
-	* testsuite/gcc.target/i386/sse-14.c: Ditto.
-	* testsuite/gcc.target/i386/sse-22.c: Ditto.
-	* testsuite/gcc.target/i386/sse-23.c: Ditto.
-	* testsuite/g++.dg/other/i386-2.C: Ditto.
-	* testsuite/g++.dg/other/i386-3.C: Ditto.
+	* gcc.target/i386/pcommit-1.c: Deleted test.
+	* gcc.target/i386/sse-12.c: Deleted -pcommit option.
+	* gcc.target/i386/sse-13.c: Ditto.
+	* gcc.target/i386/sse-14.c: Ditto.
+	* gcc.target/i386/sse-22.c: Ditto.
+	* gcc.target/i386/sse-23.c: Ditto.
+	* g++.dg/other/i386-2.C: Ditto.
+	* g++.dg/other/i386-3.C: Ditto.
 
 2016-10-11  Steven G. Kargl  <kargl@gcc.gnu.org>
 
@@ -63,7 +336,7 @@
 	* gfortran.dg/proc_ptr_comp_20.f90: Ditto.
 
 2016-10-06  James Clarke  <jrtc27@jrtc27.com>
-            Eric Botcazou  <ebotcazou@adacore.com>
+	    Eric Botcazou  <ebotcazou@adacore.com>
 
 	* g++.dg/other/pr77759.C: New test.
 
@@ -2131,7 +2404,7 @@
 	* g++.dg/cpp1y/vla13.C: Same.
 	* g++.dg/cpp1y/vla14.C: Same.
 	* g++.dg/cpp1y/vla3.C: Same.
-	* gcc/testsuite/g++.dg/init/array24.C: Same.
+	* g++.dg/init/array24.C: Same.
 	* g++.dg/ubsan/vla-1.C: Same.
 
 2016-04-14  Marek Polacek  <polacek@redhat.com>
@@ -2163,7 +2436,7 @@
 	* g++.dg/cpp1y/vla13.C: New test.
 	* g++.dg/cpp1y/vla14.C: New test.
 	* g++.dg/cpp1y/vla3.C: Restore deleted test.
-	* gcc/testsuite/g++.dg/init/array24.C: Fully brace VLA initializer.
+	* g++.dg/init/array24.C: Fully brace VLA initializer.
 	* g++.dg/ubsan/vla-1.C: Disable exceptions.
 
 2016-04-13  Jakub Jelinek  <jakub@redhat.com>
@@ -2191,8 +2464,8 @@
 2016-04-13  Marek Polacek  <polacek@redhat.com>
 
 	PR c/70436
-	* testsuite/gcc.dg/Wparentheses-12.c: New test.
-	* testsuite/gcc.dg/Wparentheses-13.c: New test.
+	* gcc.dg/Wparentheses-12.c: New test.
+	* gcc.dg/Wparentheses-13.c: New test.
 
 2016-04-13  Ilya Enkovich  <ilya.enkovich@intel.com>
 
@@ -2439,7 +2712,7 @@
 2016-04-06  Vladimir Makarov  <vmakarov@redhat.com>
 
 	PR rtl-optimization/70398
-	* testsuite/gcc.target/aarch64/pr70398.c: New.
+	* gcc.target/aarch64/pr70398.c: New.
 
 2016-04-06  Eric Botcazou  <ebotcazou@adacore.com>
 

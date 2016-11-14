@@ -1,3 +1,165 @@
+2016-10-24  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Backport from mainline:
+
+	2016-10-24  Ville Voutilainen  <ville.voutilainen@gmail.com>
+	Cross-port the latest resolution of LWG2756 and some
+	bug-fixes to experimental::optional.
+	PR libstdc++/77288
+	PR libstdc++/77727
+	* include/experimental/optional (_Optional_base):
+	Remove constructors that take a _Tp.
+	(__is_optional_impl, __is_optional): Remove.
+	(__converts_from_optional): New.
+	(optional(_Up&&)): Fix constraints, call base with in_place.
+	(optional(const optional<_Up>&)): Fix constraints, use emplace.
+	(optional(optional<_Up>&&)): Likewise.
+	(operator=(_Up&&)): Fix constraints.
+	(operator=(const optional<_Up>&)): Likewise.
+	(operator=(optional<_Up>&&)): Likewise.
+	(emplace(_Args&&...)): Constrain.
+	(emplace(initializer_list<_Up>, _Args&&...)): Likewise.
+	* testsuite/experimental/optional/77288.cc: New.
+	* testsuite/experimental/optional/assignment/5.cc: Adjust.
+	* testsuite/experimental/optional/cons/77727.cc: New.
+	* testsuite/experimental/optional/cons/value.cc: Adjust.
+
+2016-10-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/78052
+	* include/bits/allocator.h (allocator<void>::construct)
+	(allocator<void>::destroy): Define.
+	* testsuite/20_util/allocator/void.cc: New test.
+
+2016-10-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/20_util/unique_ptr/cons/cv_qual.cc: Move negative tests
+	to new file.
+	* testsuite/20_util/unique_ptr/cons/cv_qual_neg.cc: New file.  Fix
+	test for incompatible deleters to not also use incompatible types.
+	Add tests for incompatible array types.
+
+	PR libstdc++/77990
+	* include/bits/unique_ptr.h (unique_ptr::unique_ptr(pointer)): Set
+	pointer member after value-initialization of tuple.
+	* testsuite/20_util/unique_ptr/assign/48635_neg.cc: Adjust dg-errors.
+	* testsuite/20_util/unique_ptr/cons/77990.cc: New test.
+	* testsuite/20_util/unique_ptr/cons/cv_qual.cc: Adjust dg-error.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/77987
+	* include/bits/unique_ptr.h (unique_ptr<T[], D>::reset<U>(U)): Copy
+	value to pointer of the correct type to swap, to support conversions
+	allowed by LWG 2118 / N4089.
+	* testsuite/20_util/unique_ptr/assign/assign_neg.cc: Move test for
+	incompatible deleters from ...
+	* testsuite/20_util/unique_ptr/assign/cv_qual.cc: ... here.
+	* testsuite/20_util/unique_ptr/modifiers/cv_qual.cc: Move tests for
+	incompatible pointers to ...
+	* testsuite/20_util/unique_ptr/modifiers/reset_neg.cc: ... here. Move
+	destructor definition to base class. Test for invalid derived-to-base
+	conversion.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/20_util/function/77322.cc: Remove effective-target from
+	dg-do directive.
+	* testsuite/20_util/function/cons/72820.cc: Likewise.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline:
+	2016-10-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/appendix_contributing.xml (contrib.organization):
+	Replace <literallayout> with nested <variablelist> elements. Update
+	some more outdated text.
+	* doc/html/*: Regenerate.
+
+	Backport from mainline:
+	2016-10-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/appendix_contributing.xml (contrib.organization):
+	Describe other subdirectories and add markup. Remove outdated
+	reference to check-script target.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline:
+	2016-10-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/status_cxx2011.xml: Correct C++11 status.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline:
+	2016-10-13  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/26_numerics/random/default_random_engine.cc: Use VERIFY
+	instead of assert.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline:
+	2016-10-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/experimental/string_view (basic_string_view::_S_compare):
+	Remove redundant const from return type.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline:
+	2016-10-13  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/experimental/functional (boyer_moore_searcher)
+	(__boyer_moore_map_base, __boyer_moore_array_base): Qualify containers
+	with _GLIBCXX_STD_C.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline:
+	2016-10-13  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/experimental/propagate_const (element_type): Qualify
+	declval.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline:
+	2016-08-22  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/77322
+	* doc/xml/manual/intro.xml: Document DR 2062 change.
+	* include/std/functional (function::swap): Add noexcept.
+	(swap(function<Res(Args...)&, function<Res(Args...)&)): Likewise.
+	* testsuite/20_util/function/77322.cc: New test.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline:
+	2016-08-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/20_util/reference_wrapper/invoke-2.cc: Fix invalid dg-do
+	directive and use effective target instead of dg-options.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline:
+	2016-08-06  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/72820
+	* include/std/functional (_Function_base::_Base_manager::_M_clone):
+	Qualify new operator.
+	* testsuite/20_util/function/cons/72820.cc: New test.
+
+2016-10-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/77994
+	* include/experimental/algorithm (experimental::sample): Convert size
+	argument to iterator difference type. Fix invalid use of input
+	iterator. Defend against overloaded comma operator.
+
 2016-10-05  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR libstdc++/70101
