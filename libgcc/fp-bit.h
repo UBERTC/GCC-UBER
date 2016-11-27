@@ -270,13 +270,6 @@ typedef unsigned int UTItype __attribute__ ((mode (TI)));
 #	define sub 		__subdf3
 #	define multiply 	__muldf3
 #	define divide 		__divdf3
-#	define compare 		__cmpdf2
-#	define _eq_f2 		__eqdf2
-#	define _ne_f2 		__nedf2
-#	define _gt_f2 		__gtdf2
-#	define _ge_f2 		__gedf2
-#	define _lt_f2 		__ltdf2
-#	define _le_f2 		__ledf2
 #	define _unord_f2	__unorddf2
 #	define usi_to_float 	__floatunsidf
 #	define si_to_float 	__floatsidf
