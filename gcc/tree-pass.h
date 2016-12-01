@@ -505,6 +505,7 @@ extern rtl_opt_pass *make_pass_rtl_hoist (gcc::context *ctxt);
 extern rtl_opt_pass *make_pass_rtl_store_motion (gcc::context *ctxt);
 extern rtl_opt_pass *make_pass_cse_after_global_opts (gcc::context *ctxt);
 extern rtl_opt_pass *make_pass_rtl_ifcvt (gcc::context *ctxt);
+extern rtl_opt_pass *make_pass_simplify_got (gcc::context *ctxt);
 
 extern rtl_opt_pass *make_pass_into_cfg_layout_mode (gcc::context *ctxt);
 extern rtl_opt_pass *make_pass_outof_cfg_layout_mode (gcc::context *ctxt);

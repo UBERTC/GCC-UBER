@@ -38,6 +38,10 @@
 
 #pragma GCC visibility pop
 
+#if !defined(SYS_futex)
+#define SYS_futex __NR_futex
+#endif
+
 static inline void
 futex_wait (int *addr, int val)
 {

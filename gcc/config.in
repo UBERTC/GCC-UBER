@@ -1909,6 +1909,12 @@
 #endif
 
 
+/* Define if your system supports PT_GNU_EH_FRAME for static executable. */
+#ifndef USED_FOR_TARGET
+#undef USE_EH_FRAME_HDR_FOR_STATIC
+#endif
+
+
 /* Define to 1 if the 'long long' (or '__int64') is wider than 'long' but
    still efficiently supported by the host hardware. */
 #ifndef USED_FOR_TARGET

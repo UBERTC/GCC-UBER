@@ -189,6 +189,13 @@ case "$host" in
        void *g(void *d) { return NULL; }],
       [pthread_t t; pthread_create(&t,NULL,g,NULL);])],
      [XPCFLAGS=" -Wc,-pthread"],
+     [CFLAGS="$save_CFLAGS" LIBS="$LIBS"
+      AC_LINK_IFELSE(
+       [AC_LANG_PROGRAM(
+        [#include <pthread.h>
+         void *g(void *d) { return NULL; }],
+        [pthread_t t; pthread_create(&t,NULL,g,NULL);])],
+       [],
      [CFLAGS="$save_CFLAGS" LIBS="-lpthread $LIBS"
       AC_LINK_IFELSE(
        [AC_LANG_PROGRAM(
@@ -196,7 +203,7 @@ case "$host" in
          void *g(void *d) { return NULL; }],
         [pthread_t t; pthread_create(&t,NULL,g,NULL);])],
        [],
-       [AC_MSG_ERROR([Pthreads are required to build libgomp])])])
+       [AC_MSG_ERROR([Pthreads are required to build libgomp])])])])
 esac
 
 # Check for functions needed.

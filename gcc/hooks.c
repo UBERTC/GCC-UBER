@@ -365,6 +365,13 @@ hook_uint_mode_0 (enum machine_mode m ATTRIBUTE_UNUSED)
   return 0;
 }
 
+/* Generic hook that returns NULL_RTX. */
+rtx
+hook_rtx_void_null (void)
+{
+  return NULL;
+}
+
 /* Generic hook that takes three trees and returns the last one as is.  */
 tree
 hook_tree_tree_tree_tree_3rd_identity (tree a ATTRIBUTE_UNUSED,

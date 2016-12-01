@@ -28,6 +28,8 @@ along with GCC; see the file COPYING3.  If not see
 #include <isl/constraint.h>
 #include <isl/ilp.h>
 #include <isl/aff.h>
+#include <isl/deprecated/int.h>
+#include <isl/deprecated/ilp_int.h>
 #include <cloog/cloog.h>
 #include <cloog/isl/domain.h>
 #ifdef HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE

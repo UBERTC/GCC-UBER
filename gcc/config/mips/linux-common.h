@@ -35,7 +35,7 @@ along with GCC; see the file COPYING3.  If not see
 #undef  SUBTARGET_CC1_SPEC
 #define SUBTARGET_CC1_SPEC						\
   LINUX_OR_ANDROID_CC (GNU_USER_TARGET_CC1_SPEC,			\
-		       GNU_USER_TARGET_CC1_SPEC " " ANDROID_CC1_SPEC)
+		       GNU_USER_TARGET_CC1_SPEC " " ANDROID_CC1_SPEC("-fpic"))
 
 #undef  CC1PLUS_SPEC
 #define CC1PLUS_SPEC							\

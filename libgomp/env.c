@@ -48,6 +48,10 @@
 #include <limits.h>
 #include <errno.h>
 
+#ifndef PAGE_SIZE
+#define PAGE_SIZE 4096
+#endif
+
 #ifndef HAVE_STRTOULL
 # define strtoull(ptr, eptr, base) strtoul (ptr, eptr, base)
 #endif

@@ -8805,6 +8805,10 @@ Use the @command{bfd} linker instead of the default linker.
 @opindex fuse-ld=gold
 Use the @command{gold} linker instead of the default linker.
 
+@item -fuse-ld=mcld
+@opindex fuse-ld=mcld
+Use the @command{mcld} linker instead of the default linker.
+
 @item -fcprop-registers
 @opindex fcprop-registers
 After register allocation and post-register allocation instruction splitting,

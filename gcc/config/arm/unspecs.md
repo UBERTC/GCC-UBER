@@ -83,6 +83,7 @@
                         ; FPSCR rounding mode and signal inexactness.
   UNSPEC_VRINTA         ; Represent a float to integral float rounding
                         ; towards nearest, ties away from zero.
+  UNSPEC_GOT_PREL_SYM   ; Specify an R_ARM_GOT_PREL relocation of a symbol
 ])
 
 (define_c_enum "unspec" [

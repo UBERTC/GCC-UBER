@@ -347,6 +347,7 @@ along with GCC; see the file COPYING3.  If not see
 	  NEXT_PASS (pass_rtl_loop_done);
 	  TERMINATE_PASS_LIST ()
       POP_INSERT_PASSES ()
+      NEXT_PASS (pass_simplify_got);
       NEXT_PASS (pass_web);
       NEXT_PASS (pass_rtl_cprop);
       NEXT_PASS (pass_cse2);

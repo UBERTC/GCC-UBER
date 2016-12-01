@@ -30,6 +30,9 @@ along with GCC; see the file COPYING3.  If not see
 #include <isl/map.h>
 #include <isl/union_map.h>
 #include <isl/ilp.h>
+#include <isl/deprecated/int.h>
+#include <isl/deprecated/ilp_int.h>
+#include <isl/deprecated/constraint_int.h>
 #include <cloog/cloog.h>
 #include <cloog/isl/domain.h>
 #ifdef HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE

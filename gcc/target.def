@@ -5116,6 +5116,51 @@ specific target options and the caller does not use the same options.",
 
 HOOK_VECTOR_END (target_option)
 
+/* Functions used to simplify GOT access.  */
+#undef HOOK_PREFIX
+#define HOOK_PREFIX "TARGET_"
+HOOK_VECTOR (TARGET_SIMPLIFY_GOT_ACCESS, simplify_got_access)
+
+/* Function to get the pic_reg which holds the base address of GOT.  */
+DEFHOOK
+(get_pic_reg,
+ "",
+ rtx, (void),
+ hook_rtx_void_null)
+
+/* Function to clear the pic_reg which is useless now.  */
+DEFHOOK
+(clear_pic_reg,
+ "",
+ void, (void),
+ NULL)
+
+/* Function to detect if the specified insn loads a global variable's
+   address from GOT. If so returns that symbol.  */
+DEFHOOK
+(loaded_global_var,
+ "",
+ rtx, (rtx insn, rtx *offset_reg, rtx *offset_insn),
+ NULL)
+
+/* This function checks if it satisfies the target dependent conditions
+   that we can simplify GOT accesses.  */
+DEFHOOK
+(can_simplify_got_access,
+ "",
+ bool, (int n_symbol, int n_access),
+ NULL)
+
+/* This function does the actual rewriting of GOT accesses.  */
+DEFHOOK
+(load_global_address,
+ "",
+ void, (rtx symbol, rtx offset_reg, rtx address_reg, rtx load_insn,
+	rtx offset_insn),
+ NULL)
+
+HOOK_VECTOR_END (got_access)
+
 /* For targets that need to mark extra registers as live on entry to
    the function, they should define this target hook and set their
    bits in the bitmap passed in. */
