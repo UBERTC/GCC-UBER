@@ -915,8 +915,9 @@ aarch64*-*-elf)
 	TM_MULTILIB_CONFIG=`echo $TM_MULTILIB_CONFIG | sed 's/^,//'`
 	;;
 aarch64*-*-linux*)
-	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h glibc-stdint.h"
+	tm_file="${tm_file} dbxelf.h elfos.h gnu-user.h linux.h linux-android.h glibc-stdint.h"
 	tm_file="${tm_file} aarch64/aarch64-elf.h aarch64/aarch64-linux.h"
+	extra_options="${extra_options} linux-android.opt"
 	tmake_file="${tmake_file} aarch64/t-aarch64 aarch64/t-aarch64-linux"
 	case $target in
 	aarch64_be-*)

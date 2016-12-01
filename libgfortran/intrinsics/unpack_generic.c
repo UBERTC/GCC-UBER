@@ -278,7 +278,7 @@ unpack1 (gfc_array_char *ret, const gfc_array_char *vector,
       return;
 # endif
 
-# ifdef HAVE_GFC_REAL_16
+# if 0 && defined(HAVE_GFC_REAL_16)
     case GFC_DTYPE_REAL_16:
       unpack1_r16 ((gfc_array_r16 *) ret, (gfc_array_r16 *) vector,
 		   mask, (gfc_array_r16 *) field);
@@ -310,7 +310,7 @@ unpack1 (gfc_array_char *ret, const gfc_array_char *vector,
       return;
 # endif
 
-# ifdef HAVE_GFC_COMPLEX_16
+# if 0 && defined(HAVE_GFC_COMPLEX_16)
     case GFC_DTYPE_COMPLEX_16:
       unpack1_c16 ((gfc_array_c16 *) ret, (gfc_array_c16 *) vector,
 		   mask, (gfc_array_c16 *) field);
@@ -489,7 +489,7 @@ unpack0 (gfc_array_char *ret, const gfc_array_char *vector,
       return;
 # endif
 
-# ifdef HAVE_GFC_REAL_16
+# if 0 && defined(HAVE_GFC_REAL_16)
     case GFC_DTYPE_REAL_16:
       unpack0_r16 ((gfc_array_r16 *) ret, (gfc_array_r16 *) vector,
 		   mask, (GFC_REAL_16 *) field);
@@ -521,7 +521,7 @@ unpack0 (gfc_array_char *ret, const gfc_array_char *vector,
       return;
 # endif
 
-# ifdef HAVE_GFC_COMPLEX_16
+# if 0 && defined(HAVE_GFC_COMPLEX_16)
     case GFC_DTYPE_COMPLEX_16:
       unpack0_c16 ((gfc_array_c16 *) ret, (gfc_array_c16 *) vector,
 		   mask, (GFC_COMPLEX_16 *) field);

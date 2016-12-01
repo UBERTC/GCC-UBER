@@ -103,7 +103,7 @@ internal_unpack (gfc_array_char * d, const void * s)
       return;
 # endif
 
-# if defined(HAVE_GFC_REAL_16)
+# if 0 && defined(HAVE_GFC_REAL_16)
     case GFC_DTYPE_REAL_16:
       internal_unpack_r16 ((gfc_array_r16 *) d, (const GFC_REAL_16 *) s);
       return;
@@ -131,7 +131,7 @@ internal_unpack (gfc_array_char * d, const void * s)
       return;
 # endif
 
-# if defined(HAVE_GFC_COMPLEX_16)
+# if 0 && defined(HAVE_GFC_COMPLEX_16)
     case GFC_DTYPE_COMPLEX_16:
       internal_unpack_c16 ((gfc_array_c16 *) d, (const GFC_COMPLEX_16 *) s);
       return;

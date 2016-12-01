@@ -95,7 +95,7 @@ internal_pack (gfc_array_char * source)
       return internal_pack_r10 ((gfc_array_r10 *) source);
 # endif
 
-# if defined (HAVE_GFC_REAL_16)
+# if 0 && defined (HAVE_GFC_REAL_16)
     case GFC_DTYPE_REAL_16:
       return internal_pack_r16 ((gfc_array_r16 *) source);
 # endif
@@ -119,7 +119,7 @@ internal_pack (gfc_array_char * source)
       return internal_pack_c10 ((gfc_array_c10 *) source);
 # endif
 
-# if defined (HAVE_GFC_COMPLEX_16)
+# if 0 && defined (HAVE_GFC_COMPLEX_16)
     case GFC_DTYPE_COMPLEX_16:
       return internal_pack_c16 ((gfc_array_c16 *) source);
 # endif

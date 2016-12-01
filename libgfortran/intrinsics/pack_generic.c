@@ -312,7 +312,7 @@ pack (gfc_array_char *ret, const gfc_array_char *array,
       return;
 # endif
 
-# ifdef HAVE_GFC_REAL_16
+# if 0 && defined(HAVE_GFC_REAL_16)
     case GFC_DTYPE_REAL_16:
       pack_r16 ((gfc_array_r16 *) ret, (gfc_array_r16 *) array,
 		(gfc_array_l1 *) mask, (gfc_array_r16 *) vector);
@@ -344,7 +344,7 @@ pack (gfc_array_char *ret, const gfc_array_char *array,
       return;
 # endif
 
-# ifdef HAVE_GFC_COMPLEX_16
+# if 0 && defined(HAVE_GFC_COMPLEX_16)
     case GFC_DTYPE_COMPLEX_16:
       pack_c16 ((gfc_array_c16 *) ret, (gfc_array_c16 *) array,
 		(gfc_array_l1 *) mask, (gfc_array_c16 *) vector);
