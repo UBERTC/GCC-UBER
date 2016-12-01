@@ -377,7 +377,22 @@ endif
 # overriding that with #pragmas.
 vis_hide = @vis_hide@
 
-ifneq (,$(vis_hide))
+# Bionic (Android's libc) has a nasty hack to grab __aeabi_uidiv and
+# friends from libgcc.a and re-export them as a workaround for incorrectly
+# built blobs.
+# This hack stops working if the symbols are marked .hidden - so don't do
+# it on Android targets.
+
+hide_symbols=yes
+ifeq (,$(vis_hide))
+  hide_symbols=no
+endif
+ifneq (,$(findstring android,$(target_noncanonical)))
+  hide_symbols=no
+  vis_hide=
+endif
+
+ifneq (no,$(hide_symbols))
 
 # If we have -fvisibility=hidden, then we need to generate hide
 # lists for object files implemented in assembly.

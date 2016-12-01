@@ -4840,6 +4840,35 @@ GCC_TARGET_TEMPLATE([HAVE_LD_EH_FRAME_HDR])
 if test x"$gcc_cv_ld_eh_frame_hdr" = xyes; then
 	AC_DEFINE(HAVE_LD_EH_FRAME_HDR, 1,
 [Define if your linker supports .eh_frame_hdr.])
+  AC_ARG_ENABLE(eh-frame-hdr-for-static,
+   [AS_HELP_STRING([--enable-eh-frame-hdr-for-static],
+     [enable linker PT_GNU_EH_FRAME support for static executable])],
+   [case $enable_eh_frame_hdr_for_static in
+    yes | no) ;;
+    *) AC_MSG_ERROR(['$enable_eh_frame_hdr_for_static' is an invalid
+value for --enable-eh-frame-hdr-for-static.
+Valid choices are 'yes' and 'no'.]) ;;
+    esac],
+# Only support for glibc 2.3.0 or higher with AT_PHDR/AT_PHNUM from
+# Linux kernel.
+   [[if test x$host = x$build -a x$host = x$target &&
+       ldd --version 2>&1 >/dev/null &&
+       glibcver=`ldd --version 2>/dev/null | sed 's/.* //;q'`; then
+      glibcmajor=`expr "$glibcver" : "\([0-9]*\)"`
+      glibcminor=`expr "$glibcver" : "[2-9]*\.\([0-9]*\)"`
+      glibcnum=`expr $glibcmajor \* 1000 + $glibcminor`
+      if test "$glibcnum" -ge 2003 ; then
+	auvx=`LD_SHOW_AUXV=1 ldd 2>/dev/null`
+	if echo "$auvx" | grep AT_PHDR > /dev/null &&
+	   echo "$auvx" | grep AT_PHNUM > /dev/null; then
+	  enable_eh_frame_hdr_for_static=yes
+	fi
+      fi
+    fi]])
+  if test x$enable_eh_frame_hdr_for_static = xyes; then
+    AC_DEFINE(USE_EH_FRAME_HDR_FOR_STATIC, 1,
+[Define if your system supports PT_GNU_EH_FRAME for static executable.])
+  fi
 fi
 AC_MSG_RESULT($gcc_cv_ld_eh_frame_hdr)
 

@@ -15555,6 +15555,12 @@ case "$target" in
 /* end confdefs.h.  */
 #include <sys/syscall.h>
 	   int lk;
+#if !defined(SYS_gettid)
+#define SYS_gettid __NR_gettid
+#endif
+#if !defined(SYS_futex)
+#define SYS_futex __NR_futex
+#endif
 int
 main ()
 {
@@ -15607,6 +15613,12 @@ rm -f core conftest.err conftest.$ac_objext \
 /* end confdefs.h.  */
 #include <sys/syscall.h>
 	   int lk;
+#if !defined(SYS_gettid)
+#define SYS_gettid __NR_gettid
+#endif
+#if !defined(SYS_futex)
+#define SYS_futex __NR_futex
+#endif
 int
 main ()
 {

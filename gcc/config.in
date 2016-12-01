@@ -2124,6 +2124,10 @@
 #undef USE_CYGWIN_LIBSTDCXX_WRAPPERS
 #endif
 
+/* Define if your system supports PT_GNU_EH_FRAME for static executables. */
+#ifndef USED_FOR_TARGET
+#undef USE_EH_FRAME_HDR_FOR_STATIC
+#endif
 
 /* Define to 1 if the 'long long' type is wider than 'long' but still
    efficiently supported by the host hardware. */
