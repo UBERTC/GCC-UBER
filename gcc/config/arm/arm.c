@@ -2324,8 +2324,8 @@ char arm_arch_name[] = "__ARM_ARCH_PROFILE__";
 
 const struct arm_fpu_desc all_fpus[] =
 {
-#define ARM_FPU(NAME, MODEL, REV, VFP_REGS, FEATURES) \
-  { NAME, MODEL, REV, VFP_REGS, FEATURES },
+#define ARM_FPU(NAME, REV, VFP_REGS, FEATURES) \
+  { NAME, REV, VFP_REGS, FEATURES },
 #include "arm-fpus.def"
 #undef ARM_FPU
 };
@@ -2804,8 +2804,8 @@ arm_option_check_internal (struct gcc_options *opts)
   const struct arm_fpu_desc *fpu_desc = &all_fpus[opts->x_arm_fpu_index];
 
   /* iWMMXt and NEON are incompatible.  */
-    if (TARGET_IWMMXT && TARGET_VFP
-      && ARM_FPU_FSET_HAS (fpu_desc->features, FPU_FL_NEON))
+    if (TARGET_IWMMXT
+	&& ARM_FPU_FSET_HAS (fpu_desc->features, FPU_FL_NEON))
     error ("iWMMXt and NEON are incompatible");
 
   /* Make sure that the processor choice does not conflict with any of the
@@ -3285,10 +3285,8 @@ arm_option_override (void)
   /* If soft-float is specified then don't use FPU.  */
   if (TARGET_SOFT_FLOAT)
     arm_fpu_attr = FPU_NONE;
-  else if (TARGET_VFP)
-    arm_fpu_attr = FPU_VFP;
   else
-    gcc_unreachable();
+    arm_fpu_attr = FPU_VFP;
 
   if (TARGET_AAPCS_BASED)
     {
@@ -3308,15 +3306,14 @@ arm_option_override (void)
       if (arm_abi == ARM_ABI_IWMMXT)
 	arm_pcs_default = ARM_PCS_AAPCS_IWMMXT;
       else if (arm_float_abi == ARM_FLOAT_ABI_HARD
-	       && TARGET_HARD_FLOAT
-	       && TARGET_VFP)
+	       && TARGET_HARD_FLOAT)
 	arm_pcs_default = ARM_PCS_AAPCS_VFP;
       else
 	arm_pcs_default = ARM_PCS_AAPCS;
     }
   else
     {
-      if (arm_float_abi == ARM_FLOAT_ABI_HARD && TARGET_VFP)
+      if (arm_float_abi == ARM_FLOAT_ABI_HARD)
 	sorry ("-mfloat-abi=hard and VFP");
 
       if (arm_abi == ARM_ABI_APCS)
@@ -3874,7 +3871,7 @@ use_return_insn (int iscond, rtx sibling)
 
   /* Can't be done if any of the VFP regs are pushed,
      since this also requires an insn.  */
-  if (TARGET_HARD_FLOAT && TARGET_VFP)
+  if (TARGET_HARD_FLOAT)
     for (regno = FIRST_VFP_REGNUM; regno <= LAST_VFP_REGNUM; regno++)
       if (df_regs_ever_live_p (regno) && !call_used_regs[regno])
 	return 0;
@@ -5328,7 +5325,6 @@ arm_function_value_regno_p (const unsigned int regno)
   if (regno == ARG_REGISTER (1)
       || (TARGET_32BIT
 	  && TARGET_AAPCS_BASED
-	  && TARGET_VFP
 	  && TARGET_HARD_FLOAT
 	  && regno == FIRST_VFP_REGNUM)
       || (TARGET_IWMMXT_ABI
@@ -5347,7 +5343,7 @@ arm_apply_result_size (void)
 
   if (TARGET_32BIT)
     {
-      if (TARGET_HARD_FLOAT_ABI && TARGET_VFP)
+      if (TARGET_HARD_FLOAT_ABI)
 	size += 32;
       if (TARGET_IWMMXT_ABI)
 	size += 8;
@@ -5795,7 +5791,7 @@ use_vfp_abi (enum arm_pcs pcs_variant, bool is_double)
   if (pcs_variant != ARM_PCS_AAPCS_LOCAL)
     return false;
 
-  return (TARGET_32BIT && TARGET_VFP && TARGET_HARD_FLOAT &&
+  return (TARGET_32BIT && TARGET_HARD_FLOAT &&
 	  (TARGET_VFP_DOUBLE || !is_double));
 }
 
@@ -7256,8 +7252,7 @@ arm_legitimate_address_outer_p (machine_mode mode, rtx x, RTX_CODE outer,
     return 1;
 
   use_ldrd = (TARGET_LDRD
-	      && (mode == DImode
-		  || (mode == DFmode && (TARGET_SOFT_FLOAT || TARGET_VFP))));
+	      && (mode == DImode || mode == DFmode));
 
   if (code == POST_INC || code == PRE_DEC
       || ((code == PRE_INC || code == POST_DEC)
@@ -7342,8 +7337,7 @@ thumb2_legitimate_address_p (machine_mode mode, rtx x, int strict_p)
     return 1;
 
   use_ldrd = (TARGET_LDRD
-	      && (mode == DImode
-		  || (mode == DFmode && (TARGET_SOFT_FLOAT || TARGET_VFP))));
+	      && (mode == DImode || mode == DFmode));
 
   if (code == POST_INC || code == PRE_DEC
       || ((code == PRE_INC || code == POST_DEC)
@@ -7436,7 +7430,6 @@ arm_legitimate_index_p (machine_mode mode, rtx index, RTX_CODE outer,
 
   /* Standard coprocessor addressing modes.  */
   if (TARGET_HARD_FLOAT
-      && TARGET_VFP
       && (mode == SFmode || mode == DFmode))
     return (code == CONST_INT && INTVAL (index) < 1024
 	    && INTVAL (index) > -1024
@@ -7556,7 +7549,6 @@ thumb2_legitimate_index_p (machine_mode mode, rtx index, int strict_p)
   /* ??? Combine arm and thumb2 coprocessor addressing modes.  */
   /* Standard coprocessor addressing modes.  */
   if (TARGET_HARD_FLOAT
-      && TARGET_VFP
       && (mode == SFmode || mode == DFmode))
     return (code == CONST_INT && INTVAL (index) < 1024
 	    /* Thumb-2 allows only > -256 index range for it's core register
@@ -8102,8 +8094,7 @@ arm_legitimize_address (rtx x, rtx orig_x, machine_mode mode)
 
 	  /* VFP addressing modes actually allow greater offsets, but for
 	     now we just stick with the lowest common denominator.  */
-	  if (mode == DImode
-	      || ((TARGET_SOFT_FLOAT || TARGET_VFP) && mode == DFmode))
+	  if (mode == DImode || mode == DFmode)
 	    {
 	      low_n = n & 0x0f;
 	      n &= ~0x0f;
@@ -18701,7 +18692,7 @@ output_move_vfp (rtx *operands)
 
   gcc_assert (REG_P (reg));
   gcc_assert (IS_VFP_REGNUM (REGNO (reg)));
-  gcc_assert ((mode == HFmode && TARGET_HARD_FLOAT && TARGET_VFP)
+  gcc_assert ((mode == HFmode && TARGET_HARD_FLOAT)
 	      || mode == SFmode
 	      || mode == DFmode
 	      || mode == HImode
@@ -19546,7 +19537,7 @@ arm_get_vfp_saved_size (void)
 
   saved = 0;
   /* Space for saved VFP registers.  */
-  if (TARGET_HARD_FLOAT && TARGET_VFP)
+  if (TARGET_HARD_FLOAT)
     {
       count = 0;
       for (regno = FIRST_VFP_REGNUM;
@@ -20545,7 +20536,7 @@ arm_emit_vfp_multi_reg_pop (int first_reg, int num_regs, rtx base_reg)
   REG_NOTES (par) = dwarf;
 
   /* Make sure cfa doesn't leave with IP_REGNUM to allow unwinding fron FP.  */
-  if (TARGET_VFP && REGNO (base_reg) == IP_REGNUM)
+  if (REGNO (base_reg) == IP_REGNUM)
     {
       RTX_FRAME_RELATED_P (par) = 1;
       add_reg_note (par, REG_CFA_DEF_CFA, hard_frame_pointer_rtx);
@@ -21006,7 +20997,7 @@ arm_get_frame_offsets (void)
       func_type = arm_current_func_type ();
       /* Space for saved VFP registers.  */
       if (! IS_VOLATILE (func_type)
-	  && TARGET_HARD_FLOAT && TARGET_VFP)
+	  && TARGET_HARD_FLOAT)
 	saved += arm_get_vfp_saved_size ();
     }
   else /* TARGET_THUMB1 */
@@ -21227,7 +21218,7 @@ arm_save_coproc_regs(void)
 	saved_size += 8;
       }
 
-  if (TARGET_HARD_FLOAT && TARGET_VFP)
+  if (TARGET_HARD_FLOAT)
     {
       start_reg = FIRST_VFP_REGNUM;
 
@@ -23472,7 +23463,7 @@ arm_hard_regno_mode_ok (unsigned int regno, machine_mode mode)
 {
   if (GET_MODE_CLASS (mode) == MODE_CC)
     return (regno == CC_REGNUM
-	    || (TARGET_HARD_FLOAT && TARGET_VFP
+	    || (TARGET_HARD_FLOAT
 		&& regno == VFPCC_REGNUM));
 
   if (regno == CC_REGNUM && GET_MODE_CLASS (mode) != MODE_CC)
@@ -23486,8 +23477,7 @@ arm_hard_regno_mode_ok (unsigned int regno, machine_mode mode)
        start of an even numbered register pair.  */
     return (ARM_NUM_REGS (mode) < 2) || (regno < LAST_LO_REGNUM);
 
-  if (TARGET_HARD_FLOAT && TARGET_VFP
-      && IS_VFP_REGNUM (regno))
+  if (TARGET_HARD_FLOAT && IS_VFP_REGNUM (regno))
     {
       if (mode == SFmode || mode == SImode)
 	return VFP_REGNO_OK_FOR_SINGLE (regno);
@@ -25232,7 +25222,7 @@ arm_expand_epilogue_apcs_frame (bool really_return)
         floats_from_frame += 4;
       }
 
-  if (TARGET_HARD_FLOAT && TARGET_VFP)
+  if (TARGET_HARD_FLOAT)
     {
       int start_reg;
       rtx ip_rtx = gen_rtx_REG (SImode, IP_REGNUM);
@@ -25478,7 +25468,7 @@ arm_expand_epilogue (bool really_return)
         }
     }
 
-  if (TARGET_HARD_FLOAT && TARGET_VFP)
+  if (TARGET_HARD_FLOAT)
     {
       /* Generate VFP register multi-pop.  */
       int end_reg = LAST_VFP_REGNUM + 1;
@@ -26089,7 +26079,7 @@ arm_file_start (void)
       if (print_tune_info)
 	arm_print_tune_info ();
 
-      if (! TARGET_SOFT_FLOAT && TARGET_VFP)
+      if (! TARGET_SOFT_FLOAT)
 	{
 	  if (TARGET_HARD_FLOAT && TARGET_VFP_SINGLE)
 	    arm_emit_eabi_attribute ("Tag_ABI_HardFP_use", 27, 1);
@@ -27804,7 +27794,7 @@ arm_conditional_register_usage (void)
   if (TARGET_THUMB1)
     fixed_regs[LR_REGNUM] = call_used_regs[LR_REGNUM] = 1;
 
-  if (TARGET_32BIT && TARGET_HARD_FLOAT && TARGET_VFP)
+  if (TARGET_32BIT && TARGET_HARD_FLOAT)
     {
       /* VFPv3 registers are disabled when earlier VFP
 	 versions are selected due to the definition of
@@ -29407,9 +29397,9 @@ arm_validize_comparison (rtx *comparison, rtx * op1, rtx * op2)
       /* Fall through.  */
     case SFmode:
     case DFmode:
-      if (!arm_float_compare_operand (*op1, mode))
+      if (!vfp_compare_operand (*op1, mode))
 	*op1 = force_reg (mode, *op1);
-      if (!arm_float_compare_operand (*op2, mode))
+      if (!vfp_compare_operand (*op2, mode))
 	*op2 = force_reg (mode, *op2);
       return true;
     default:
@@ -30198,9 +30188,8 @@ arm_can_inline_p (tree caller, tree callee)
   if ((caller_fpu->features & callee_fpu->features) != callee_fpu->features)
     return false;
 
-  /* Need same model and regs.  */
-  if (callee_fpu->model != caller_fpu->model
-      || callee_fpu->regs != callee_fpu->regs)
+  /* Need same FPU regs.  */
+  if (callee_fpu->regs != callee_fpu->regs)
     return false;
 
   /* OK to inline between different modes.
