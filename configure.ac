@@ -819,6 +819,9 @@ case "${target}" in
   *-*-vxworks*)
     noconfigdirs="$noconfigdirs ${libgcj}"
     ;;
+  aarch64*-*-freebsd*)
+    noconfigdirs="$noconfigdirs target-libffi"
+    ;;
   alpha*-*-*vms*)
     noconfigdirs="$noconfigdirs ${libgcj}"
     ;;
