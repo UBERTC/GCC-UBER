@@ -1958,26 +1958,31 @@ aarch64_expand_mov_immediate (rtx dest, rtx imm)
   aarch64_internal_mov_immediate (dest, imm, true, GET_MODE (dest));
 }
 
-/* Add DELTA to REGNUM in mode MODE.  SCRATCHREG can be used to held
-   intermediate value if necessary.
+/* Add DELTA to REGNUM in mode MODE.  SCRATCHREG can be used to hold a
+   temporary value if necessary.  FRAME_RELATED_P should be true if
+   the RTX_FRAME_RELATED flag should be set and CFA adjustments added
+   to the generated instructions.  If SCRATCHREG is known to hold
+   abs (delta), EMIT_MOVE_IMM can be set to false to avoid emitting the
+   immediate again.
 
-   This function is sometimes used to adjust the stack pointer, so we must
-   ensure that it can never cause transient stack deallocation by writing an
-   invalid value into REGNUM.  */
+   Since this function may be used to adjust the stack pointer, we must
+   ensure that it cannot cause transient stack deallocation (for example
+   by first incrementing SP and then decrementing when adjusting by a
+   large immediate).  */
 
 static void
-aarch64_add_constant (machine_mode mode, int regnum, int scratchreg,
-		      HOST_WIDE_INT delta, bool frame_related_p)
+aarch64_add_constant_internal (machine_mode mode, int regnum, int scratchreg,
+			       HOST_WIDE_INT delta, bool frame_related_p,
+			       bool emit_move_imm)
 {
   HOST_WIDE_INT mdelta = abs_hwi (delta);
   rtx this_rtx = gen_rtx_REG (mode, regnum);
   rtx_insn *insn;
 
-  /* Do nothing if mdelta is zero.  */
   if (!mdelta)
     return;
 
-  /* We only need single instruction if the offset fit into add/sub.  */
+  /* Single instruction adjustment.  */
   if (aarch64_uimm12_shift (mdelta))
     {
       insn = emit_insn (gen_add2_insn (this_rtx, GEN_INT (delta)));
@@ -1985,11 +1990,10 @@ aarch64_add_constant (machine_mode mode, int regnum, int scratchreg,
       return;
     }
 
-  /* We need two add/sub instructions, each one performing part of the
-     calculation.  Don't do this if the addend can be loaded into register with
-     a single instruction, in that case we prefer a move to a scratch register
-     following by an addition.  */
-  if (mdelta < 0x1000000 && !aarch64_move_imm (delta, mode))
+  /* Emit 2 additions/subtractions if the adjustment is less than 24 bits.
+     Only do this if mdelta is not a 16-bit move as adjusting using a move
+     is better.  */
+  if (mdelta < 0x1000000 && !aarch64_move_imm (mdelta, mode))
     {
       HOST_WIDE_INT low_off = mdelta & 0xfff;
 
@@ -2001,16 +2005,39 @@ aarch64_add_constant (machine_mode mode, int regnum, int scratchreg,
       return;
     }
 
-  /* Otherwise use generic function to handle all other situations.  */
+  /* Emit a move immediate if required and an addition/subtraction.  */
   rtx scratch_rtx = gen_rtx_REG (mode, scratchreg);
-  aarch64_internal_mov_immediate (scratch_rtx, GEN_INT (delta), true, mode);
-  insn = emit_insn (gen_add2_insn (this_rtx, scratch_rtx));
+  if (emit_move_imm)
+    aarch64_internal_mov_immediate (scratch_rtx, GEN_INT (mdelta), true, mode);
+  insn = emit_insn (delta < 0 ? gen_sub2_insn (this_rtx, scratch_rtx)
+			      : gen_add2_insn (this_rtx, scratch_rtx));
   if (frame_related_p)
     {
       RTX_FRAME_RELATED_P (insn) = frame_related_p;
       rtx adj = plus_constant (mode, this_rtx, delta);
       add_reg_note (insn , REG_CFA_ADJUST_CFA, gen_rtx_SET (this_rtx, adj));
     }
+}
+
+static inline void
+aarch64_add_constant (machine_mode mode, int regnum, int scratchreg,
+		      HOST_WIDE_INT delta)
+{
+  aarch64_add_constant_internal (mode, regnum, scratchreg, delta, false, true);
+}
+
+static inline void
+aarch64_add_sp (int scratchreg, HOST_WIDE_INT delta, bool emit_move_imm)
+{
+  aarch64_add_constant_internal (Pmode, SP_REGNUM, scratchreg, delta,
+				 true, emit_move_imm);
+}
+
+static inline void
+aarch64_sub_sp (int scratchreg, HOST_WIDE_INT delta, bool frame_related_p)
+{
+  aarch64_add_constant_internal (Pmode, SP_REGNUM, scratchreg, -delta,
+				 frame_related_p, true);
 }
 
 static bool
@@ -2737,7 +2764,7 @@ static void
 aarch64_layout_frame (void)
 {
   HOST_WIDE_INT offset = 0;
-  int regno;
+  int regno, last_fp_reg = INVALID_REGNUM;
 
   if (reload_completed && cfun->machine->frame.laid_out)
     return;
@@ -2771,7 +2798,10 @@ aarch64_layout_frame (void)
   for (regno = V0_REGNUM; regno <= V31_REGNUM; regno++)
     if (df_regs_ever_live_p (regno)
 	&& !call_used_regs[regno])
-      cfun->machine->frame.reg_offset[regno] = SLOT_REQUIRED;
+      {
+	cfun->machine->frame.reg_offset[regno] = SLOT_REQUIRED;
+	last_fp_reg = regno;
+      }
 
   if (frame_pointer_needed)
     {
@@ -2795,9 +2825,21 @@ aarch64_layout_frame (void)
 	offset += UNITS_PER_WORD;
       }
 
+  HOST_WIDE_INT max_int_offset = offset;
+  offset = ROUND_UP (offset, STACK_BOUNDARY / BITS_PER_UNIT);
+  bool has_align_gap = offset != max_int_offset;
+
   for (regno = V0_REGNUM; regno <= V31_REGNUM; regno++)
     if (cfun->machine->frame.reg_offset[regno] == SLOT_REQUIRED)
       {
+	/* If there is an alignment gap between integer and fp callee-saves,
+	   allocate the last fp register to it if possible.  */
+	if (regno == last_fp_reg && has_align_gap && (offset & 8) == 0)
+	  {
+	    cfun->machine->frame.reg_offset[regno] = max_int_offset;
+	    break;
+	  }
+
 	cfun->machine->frame.reg_offset[regno] = offset;
 	if (cfun->machine->frame.wb_candidate1 == INVALID_REGNUM)
 	  cfun->machine->frame.wb_candidate1 = regno;
@@ -3218,7 +3260,7 @@ aarch64_expand_prologue (void)
 	aarch64_emit_probe_stack_range (STACK_CHECK_PROTECT, frame_size);
     }
 
-  aarch64_add_constant (Pmode, SP_REGNUM, IP0_REGNUM, -initial_adjust, true);
+  aarch64_sub_sp (IP0_REGNUM, initial_adjust, true);
 
   if (callee_adjust != 0)
     aarch64_push_regs (reg1, reg2, callee_adjust);
@@ -3239,8 +3281,7 @@ aarch64_expand_prologue (void)
 			     callee_adjust != 0 || frame_pointer_needed);
   aarch64_save_callee_saves (DFmode, callee_offset, V0_REGNUM, V31_REGNUM,
 			     callee_adjust != 0 || frame_pointer_needed);
-  aarch64_add_constant (Pmode, SP_REGNUM, IP1_REGNUM, -final_adjust,
-			!frame_pointer_needed);
+  aarch64_sub_sp (IP1_REGNUM, final_adjust, !frame_pointer_needed);
 }
 
 /* Return TRUE if we can use a simple_return insn.
@@ -3305,7 +3346,7 @@ aarch64_expand_epilogue (bool for_sibcall)
       RTX_FRAME_RELATED_P (insn) = callee_adjust == 0;
     }
   else
-    aarch64_add_constant (Pmode, SP_REGNUM, IP1_REGNUM, final_adjust, true);
+    aarch64_add_sp (IP1_REGNUM, final_adjust, df_regs_ever_live_p (IP1_REGNUM));
 
   aarch64_restore_callee_saves (DImode, callee_offset, R0_REGNUM, R30_REGNUM,
 				callee_adjust != 0, &cfi_ops);
@@ -3328,7 +3369,7 @@ aarch64_expand_epilogue (bool for_sibcall)
       cfi_ops = NULL;
     }
 
-  aarch64_add_constant (Pmode, SP_REGNUM, IP0_REGNUM, initial_adjust, true);
+  aarch64_add_sp (IP0_REGNUM, initial_adjust, df_regs_ever_live_p (IP0_REGNUM));
 
   if (cfi_ops)
     {
@@ -3423,7 +3464,7 @@ aarch64_output_mi_thunk (FILE *file, tree thunk ATTRIBUTE_UNUSED,
   emit_note (NOTE_INSN_PROLOGUE_END);
 
   if (vcall_offset == 0)
-    aarch64_add_constant (Pmode, this_regno, IP1_REGNUM, delta, false);
+    aarch64_add_constant (Pmode, this_regno, IP1_REGNUM, delta);
   else
     {
       gcc_assert ((vcall_offset & (POINTER_BYTES - 1)) == 0);
@@ -3439,7 +3480,7 @@ aarch64_output_mi_thunk (FILE *file, tree thunk ATTRIBUTE_UNUSED,
 	    addr = gen_rtx_PRE_MODIFY (Pmode, this_rtx,
 				       plus_constant (Pmode, this_rtx, delta));
 	  else
-	    aarch64_add_constant (Pmode, this_regno, IP1_REGNUM, delta, false);
+	    aarch64_add_constant (Pmode, this_regno, IP1_REGNUM, delta);
 	}
 
       if (Pmode == ptr_mode)
