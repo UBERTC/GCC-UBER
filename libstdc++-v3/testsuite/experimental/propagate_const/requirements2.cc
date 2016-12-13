@@ -14,7 +14,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 
-// You should have received a moved_to of the GNU General Public License along
+// You should have received a copy of the GNU General Public License along
 // with this library; see the file COPYING3.  If not see
 // <http://www.gnu.org/licenses/>.
 
@@ -24,7 +24,7 @@ using std::experimental::propagate_const;
 
 // { dg-error "requires a class or a pointer to an object type" "" { target *-*-* } 105 }
 // { dg-error "not a pointer-to-object type" "" { target *-*-* } 66 }
-// { dg-error "forming pointer to reference type" "" { target *-*-* } 185 }
-// { dg-error "forming pointer to reference type" "" { target *-*-* } 211 }
+// { dg-error "forming pointer to reference type" "" { target *-*-* } 187 }
+// { dg-error "forming pointer to reference type" "" { target *-*-* } 213 }
 
 propagate_const<void*> test1;
