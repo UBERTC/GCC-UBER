@@ -1,3 +1,204 @@
+2016-12-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-11-17  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR target/77933
+	* gcc.target/arm/pr77933-1.c: New test.
+	* gcc.target/arm/pr77933-2.c: Likewise.
+
+2016-12-12  Bernd Schmidt  <bschmidt@redhat.com>
+
+	Backport from mainline
+	2016-11-07  Bernd Schmidt  <bschmidt@redhat.com>
+
+        PR rtl-optimization/77309
+        * gcc.dg/torture/pr77309.c: New test.
+
+2016-12-08  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/78551
+	* g++.dg/cpp1y/pr78551.C: New.
+
+2016-12-07  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-11-16  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/empty_fiq_handler.c: New test.
+
+	Backport from mainline
+	2016-11-21  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/empty_fiq_handler.c: Skip if -mthumb is passed in and
+	target is Thumb-only.
+
+2016-12-04  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78443
+	* gfortran.dg/typebound_proc_35.f90: New test case.
+
+2016-12-02  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-10-21  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/78038
+	* gcc.target/aarch64/pr78038.c: New test.
+
+2016-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/vector/vec-scalar-cmp-1.c: Fix and harden the
+	pattern checks.
+	* gcc.target/s390/zvector/vec-cmp-1.c: New test.
+
+2016-12-01  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78279
+	* gfortran.dg/pr78279.f90: New test.
+
+2016-11-24  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78500
+	* gfortran.dg/class_result_4.f90: New test.
+
+2016-11-23  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78297
+	* gfortran.dg/pr78297.f90: New test.
+
+2016-11-23  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/66227
+	* gfortran.dg/extends_type_of_3.f90: Fix and extend the test case.
+
+2016-11-20  Harald Anlauf  <anlauf@gmx.de>
+ 
+	PR fortran/69741
+	* gfortran.dg/forall_18.f90: New testcase.
+
+2016-11-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78310
+	* gcc.target/i386/pr78310.c: New test.
+
+2016-11-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78262
+	* gcc.target/i386/pr78262.c: New test.
+
+2016-11-06  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/69544
+	PR fortran/78178
+	* gfortran.dg/where_5.f90:  New test.
+	* gfortran.dg/where_6.f90:  New test.
+
+2016-11-05  Martin Sebor  <msebor@redhat.com>
+
+	Backport from trunk.
+	PR c/71115
+	* gcc.dg/init-excess-2.c: New test.
+	* gcc.dg/Woverride-init-1.c: Adjust.
+	* gcc.dg/Woverride-init-2.c: Same.
+
+2016-11-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-08-12  Martin Liska  <mliska@suse.cz>
+
+	* g++.dg/gcov/gcov-16.C: New test.
+	* lib/gcov.exp: Support new argument for run-gcov function.
+
+2016-11-02  Will Schmidt  <will_schmidt@vnet.ibm.com>
+
+	Backport from trunk
+	2016-10-26  Will Schmidt <will_schmidt@vnet.ibm.com>
+
+	PR middle-end/72747
+	* c-c++-common/pr72747-1.c: New test.
+	* c-c++-common/pr72747-2.c: Likewise.
+
+2016-11-02  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* lib/target-supports.exp (check_gc_sections_available): Use
+	-print-prog-name=ld to determine linker used.
+
+2016-10-31  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/71902
+	* gfortran.dg/dependency_47.f90:  New test.
+	* gfortran.dg/dependency_49.f90:  New test.
+
+2016-10-31  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78123
+	* gfortran.dg/fmt_t_9.f: New test.
+
+2016-10-24  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78021
+	* gfortran.dg/string_length_3.f90:  New test.
+
+2016-10-24  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/71895
+	* gfortran.dg/pr71895.f90: New test.
+
+2016-10-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/61420
+	PR fortran/78013
+	* gfortran.dg/proc_ptr_49.f90: New test.
+
+2016-10-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-10-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/77916
+	* gcc.dg/torture/pr77916.c: New.
+
+2016-10-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/77991
+	* gcc.target/i386/pr77991.c: New test.
+
+2016-10-17  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/77978
+	* gfortran.dg/pr77978_1.f90: New test.
+	* gfortran.dg/pr77978_2.f90: Ditto.
+	* gfortran.dg/pr77978_3.f90: Ditto.
+
+2016-10-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-10-13  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/77937
+	* gcc.dg/torture/pr77937-1.c: New.
+	* gcc.dg/torture/pr77937-2.c: New.
+
+2016-10-17  Martin Liska  <mliska@suse.cz>
+
+	Backported from mainline
+	2016-10-13  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/77943
+	* g++.dg/tree-ssa/pr77943.C: New test.
+
 2016-10-15  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gcc.target/sparc/bmaskbshuf.c: Rename to...
@@ -7,14 +208,14 @@
 2016-10-13  Andrew Senkevich  <andrew.senkevich@intel.com>
 
 	Backport from trunk
-	* testsuite/gcc.target/i386/pcommit-1.c: Deleted test.
-	* testsuite/gcc.target/i386/sse-12.c: Deleted -pcommit option.
-	* testsuite/gcc.target/i386/sse-13.c: Ditto.
-	* testsuite/gcc.target/i386/sse-14.c: Ditto.
-	* testsuite/gcc.target/i386/sse-22.c: Ditto.
-	* testsuite/gcc.target/i386/sse-23.c: Ditto.
-	* testsuite/g++.dg/other/i386-2.C: Ditto.
-	* testsuite/g++.dg/other/i386-3.C: Ditto.
+	* gcc.target/i386/pcommit-1.c: Deleted test.
+	* gcc.target/i386/sse-12.c: Deleted -pcommit option.
+	* gcc.target/i386/sse-13.c: Ditto.
+	* gcc.target/i386/sse-14.c: Ditto.
+	* gcc.target/i386/sse-22.c: Ditto.
+	* gcc.target/i386/sse-23.c: Ditto.
+	* g++.dg/other/i386-2.C: Ditto.
+	* g++.dg/other/i386-3.C: Ditto.
 
 2016-10-10  Eric Botcazou  <ebotcazou@adacore.com>
 
@@ -56,7 +257,7 @@
 	subroutine as an actual argument when numeric argument is expected.
 
 2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
- 
+
 	Backport from trunk
 
 	PR fortran/69867
@@ -82,14 +283,14 @@
 2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	Backport from trunk
- 
+
 	PR fortran/71799
 	* gfortran.dg/pr71799.f90: New test.
 
 2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	Backport from trunk
- 
+
 	PR fortran/70006
 	* gfortran.dg/pr70006.f90: New test.
 

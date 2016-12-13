@@ -398,7 +398,8 @@ gfc_compare_derived_types (gfc_symbol *derived1, gfc_symbol *derived2)
   if (derived1 == derived2)
     return 1;
 
-  gcc_assert (derived1 && derived2);
+  if (!derived1 || !derived2)
+    gfc_internal_error ("gfc_compare_derived_types: invalid derived type");
 
   /* Special case for comparing derived types across namespaces.  If the
      true names and module names are the same and the module name is
@@ -3651,7 +3652,7 @@ matching_typebound_op (gfc_expr** tb_base,
 
 	if (base->expr->ts.type == BT_CLASS)
 	  {
-	    if (CLASS_DATA (base->expr) == NULL
+	    if (!base->expr->ts.u.derived || CLASS_DATA (base->expr) == NULL
 		|| !gfc_expr_attr (base->expr).class_ok)
 	      continue;
 	    derived = CLASS_DATA (base->expr)->ts.u.derived;

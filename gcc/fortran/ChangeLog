@@ -1,3 +1,84 @@
+2016-12-04  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78443
+	* class.c (add_proc_comp): Add a vtype component for non-overridable
+	procedures that are overriding.
+
+2016-12-01  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78279
+	* dependency.c (identical_array_ref): Convert gcc_assert to conditional
+	and gfc_internal_error.
+
+2016-11-24  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78500
+	* expr.c (gfc_check_vardef_contextm): Fix NULL pointer dereference.
+	* interface.c (matching_typebound_op): Ditto.
+
+2016-11-23  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78297
+	* trans-common.c (finish_equivalences): Do not dereference a NULL pointer.
+
+2016-11-23  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/66227
+	* simplify.c (gfc_simplify_extends_type_of): Fix missed optimization.
+	Prevent over-simplification. Fix a comment. Add a comment.
+
+2016-11-20  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/69741
+	* resolve.c (gfc_resolve_forall): Check for nonscalar index variables.
+
+2016-11-06  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/69544
+	PR fortran/78178
+	* match.c (match_simple_where):  Fill in locus for assigment
+	in simple WHERE statement.
+	(gfc_match_where):  Likewise.
+
+2016-11-01  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/71902
+	* frontend-passes.c (realloc_string_callback): Also check for the
+	lhs being deferred.  Name temporary variable "realloc_string".
+
+2016-10-24  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78021
+	* gfc_compare_functions:  Strings with different lengths in
+	argument lists compare unequal.
+
+2016-10-24  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/71895
+	* interface.c (gfc_compare_derived_types):  Convert gcc_assert()
+	to a gfc_internal_error() to prevent an ICE.
+
+2016-10-24  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/61420
+	PR fortran/78013
+	* resolve.c (resolve_variable): Obtain the typespec for a
+	variable expression, when the variable is a function result
+	that is a procedure pointer.
+
+2016-10-17  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/77978
+	* match.c (gfc_match_stopcode): Fix error reporting for several
+	deficiencies in matching stop-codes.
+
 2016-10-05  Steven G. Kargl  <kargls@gcc.gnu.org>
 
 	PR fortran/58991
@@ -13,7 +94,7 @@
 	PR fortran/77391
 	* resolve.c (deferred_requirements): New function to check F2008:C402.
 	(resolve_fl_variable,resolve_fl_parameter): Use it.
- 
+
 2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	Backport from trunk
@@ -38,7 +119,7 @@
 	subroutine as an actual argument when numeric argument is expected.
 
 2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
- 
+
 	Backport of trunk
 
 	PR fortran/69867
@@ -59,7 +140,7 @@
 2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	Backport from trunk
- 
+
 	PR fortran/68566
 	* check.c (gfc_check_reshape): Check for constant expression.
 
@@ -72,7 +153,7 @@
 	not ICE.
 
 2016-09-30  Steven G. Kargl  <kargl@gcc.gnu.org>
- 
+
 	Backport from trunk
 
 	PR fortran/70006
@@ -116,7 +197,7 @@
 	Backport from trunk
 	PR fortran/69514
 	* array.c (gfc_match_array_constructor):  If type-spec is present,
-	walk the array constructor performing possible conversions for 
+	walk the array constructor performing possible conversions for
 	numeric types.
 
 2016-09-28  Steven G. Kargl  <kargl@gcc.gnu.org>
@@ -127,7 +208,7 @@
 	gfc_reduce_init_expr().
 
 	PR fortran/77612
-	* decl.c (char_len_param_value): Check parent namespace for 
+	* decl.c (char_len_param_value): Check parent namespace for
 	seen_implicit_none.
 
 2016-09-28  Steven G. Kargl  <kargl@gcc.gnu.org>

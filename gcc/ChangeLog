@@ -1,3 +1,241 @@
+2016-12-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-11-17  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR target/77933
+	* config/arm/arm.c (thumb1_expand_prologue): Distinguish between lr
+	being live in the function and lr needing to be saved.  Distinguish
+	between already saved pushable registers and registers to push.
+	Check for LR being an available pushable register.
+
+2016-12-12  Bernd Schmidt  <bschmidt@redhat.com>
+
+	Backport from mainline
+	2016-11-07  Bernd Schmidt  <bschmidt@redhat.com>
+
+        PR rtl-optimization/77309
+        * combine.c (make_compound_operation): Allow EQ for IN_CODE, and
+        don't assume an equality comparison for plain COMPARE.
+        (simplify_comparison): Pass a more accurate code to
+        make_compound_operation.
+
+2016-12-07  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backport from mainline
+	2016-11-12  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/77957
+	* config/rs6000/rs6000.c (rs6000_output_function_epilogue): Don't
+	return early if !optional_tbtab.
+
+2016-12-07  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-11-16  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* config/arm/arm.md (arm_addsi3): Add alternative for addition of
+	general register with general register or ARM constant into SP
+	register.
+
+2016-12-06  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+	            Stefan Freudenberger  <stefan@reservoir.com>
+
+	PR tree-optimization/78646
+	* gimple-ssa-strength-reduction.c (replace_ref): The pointer
+	addition used for the memory base expression should have the type
+	of the candidate.
+
+2016-12-02  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-10-21  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/78038
+	* ree.c (get_defs): Return NULL if a defining insn for REG cannot
+	be deduced to set REG through the RTL structure.
+	(make_defs_and_copies_lists): Return false on a failing get_defs call.
+
+2016-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config/s390/s390-modes.def (CCVEQANY, CCVH, CCVHANY, CCVHU)
+	(CCVHUANY): Remove modes.
+	(CCVIH, CCVIHU, CCVIALL, CCVIANY, CCVFALL, CCVFANY): Add modes and
+	documentation.
+	* config/s390/s390.c (s390_match_ccmode_set): Rename cc modes.
+	(s390_expand_vec_compare_scalar): Pick one of the cc consumer
+	modes.
+	(s390_branch_condition_mask): Adjust to use the new cc consumer
+	modes.  The new modes allow for proper reversal in the middle-end.
+	(s390_expand_vec_compare_cc): Determine the proper cc producer and
+	consumer modes for a comparison.
+	* config/s390/s390.md: Rename CCVH to CCVIH and CCVHU to CCVIHU
+	throughout the file.
+	* config/s390/vx-builtins.md: Likewise.
+
+2016-12-01  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-01  Alan Modra  <amodra@gmail.com>
+
+	* gcc/config/rs6000/rs6000.c (insn_is_swappable_p): Properly
+	look inside UNSPEC_VSX_XXSPLTW vec.
+
+2016-11-29  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	Backported from mainline
+	2016-11-19  Kaz Kojima  <kkojima@gcc.gnu.org>
+
+	PR target/78426
+	* config/sh/sh-mem.cc (sh_expand_cmpnstr): Use copy_to_mode_reg
+	instead of force_reg.
+	(sh_expand_setmem): Likewise.
+
+2016-11-24  Martin Liska  <mliska@suse.cz>
+	Backported from mainline
+	2016-11-22  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/78309
+	* ipa-icf.c (void sem_item::set_hash): Update m_hash_set.
+	(sem_function::get_hash): Use the new field.
+	(sem_function::parse): Remove an argument from ctor.
+	(sem_variable::parse): Likewise.
+	(sem_variable::get_hash): Use the new field.
+	(sem_item_optimizer::read_section): Use new ctor and set hash.
+	* ipa-icf.h: _hash is removed from sem_item::sem_item,
+	sem_variable::sem_variable, sem_function::sem_function.
+
+2016-11-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (*<any_or:code>hi_1): Fix operand 2 constraints.
+	(kxnor<mode>): Return "#" for alternative 0.
+
+2016-11-22  Uros Bizjak  <ubizjak@gmail.com>
+
+	* Makefile.in ($(lang_checks_parallelized)): Fix detection
+	of -j argument.
+
+2016-11-15  Matthias Klose  <doko@ubuntu.com>
+
+	* doc/install.texi: Move the 'Overriding configure test results'
+	subsub section to the 'Cross-Compiler-Specific Options' sub section.
+
+2016-11-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78310
+	* config/i386/i386.md (rotate to rotatex splitter): Avoid overflow
+	when calculating operand 2.
+	(rotate to rotatex zext splitter): Ditto.
+
+2016-11-09  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78262
+	* config/i386/i386.md (*<shift_insn><mode>3_doubleword): Mark
+	operand 0 as earlyclobber.
+	(*ashl<mode>3_doubleword): Ditto for all operand 0 alternatives.
+
+2016-11-06  Jack Howarth  <howarth.at.gcc@gmail.com>
+
+	PR driver/78206
+	* incpath.c: (remove_dup(): Also silently ignore EPERM.
+
+2016-11-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-08-12  Martin Liska  <mliska@suse.cz>
+		    Adam Fineman  <afineman@afineman.com>
+
+	* gcov.c (process_file): Create .gcov file when .gcda
+	file is missing.
+
+2016-11-03  Eric Botcazou  <ebotcazou@adacore.com>
+
+	Backport from mainline
+	2016-10-17  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* explow.c (validize_mem): Do not modify the argument in-place.
+
+2016-11-02  Will Schmidt  <will_schmidt@vnet.ibm.com>
+
+	Backport from trunk
+	2016-10-26  Will Schmidt <will_schmidt@vnet.ibm.com>
+
+	PR middle-end/72747
+	* gimplify.c (gimplify_init_constructor): Move emit of constructor
+	assignment to earlier in the if/else logic.
+
+2016-10-29  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.h (BIGGEST_ALIGNMENT): Adjust comment.
+	(MALLOC_ABI_ALIGNMENT): Define.
+
+2016-10-23  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-10-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/77916
+	* gimple-ssa-strength-reduction.c (create_add_on_incoming_edge):
+	Don't allow a MINUS_EXPR for pointer arithmetic for either known
+	or unknown strides.
+	(record_increment): Increments of -1 for unknown strides just use
+	a multiply initializer like other negative values.
+	(analyze_increments): Remove stopgap solution for -1 increment
+	applied to pointer arithmetic.
+	(insert_initializers): Requirement of initializer for -1 should be
+	based on pointer-typedness of the candidate basis.
+
+2016-10-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/77991
+	* config/i386/i386.c (legitimize_tls_address)
+	<case TLS_MODEL_INITIAL_EXEC>: For TARGET_64BIT || TARGET_ANY_GNU_TLS
+	convert dest to Pmode if different than Pmode.
+
+2016-10-18  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	Backport from mainline
+	2016-10-11  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	* tree-vrp.c (vrp_intersect_ranges_1): Allocate bitmap before
+	  copying.
+
+2016-10-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-10-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/77937
+	* gimple-ssa-strength-reduction.c (analyze_increments): Use
+	POINTER_TYPE_P on the candidate type to determine whether
+	candidates in this chain require pointer arithmetic.
+
+	2016-10-13  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/77937
+	* gimple-ssa-strength-reduction.c (analyze_increments): Set cost
+	to infinite when we have a pointer with an increment of -1.
+
+2016-10-17  Martin Liska  <mliska@suse.cz>
+
+	Backported from mainline
+	2016-10-13  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/77943
+	* tree-ssa-tail-merge.c (merge_stmts_p): Do not merge BBs with
+	a different EH landing pads.
+
+2016-10-16  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/sparc/sparc.c (sparc_expand_vector_init): Only accept literal
+	constants in CONST_VECTORs.
+
 2016-10-15  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* config/sparc/sparc.c (sparc_expand_vec_perm_bmask): Use a scratch
