@@ -1,3 +1,16 @@
+2016-12-04  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78443
+	* class.c (add_proc_comp): Add a vtype component for non-overridable
+	procedures that are overriding.
+
+2016-12-01  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78279
+	* dependency.c (identical_array_ref): Convert gcc_assert to conditional
+	and gfc_internal_error.
+
 2016-11-24  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/78500

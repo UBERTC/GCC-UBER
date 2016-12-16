@@ -1,3 +1,79 @@
+2016-12-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/78731
+	* gcc.dg/torture/pr78731.c: New testcase.
+
+2016-12-14  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-11-25  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/77673
+	* gcc.dg/pr77673.c: New test.
+
+2016-12-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-11-17  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR target/77933
+	* gcc.target/arm/pr77933-1.c: New test.
+	* gcc.target/arm/pr77933-2.c: Likewise.
+
+2016-12-12  Bernd Schmidt  <bschmidt@redhat.com>
+
+	Backport from mainline
+	2016-11-07  Bernd Schmidt  <bschmidt@redhat.com>
+
+        PR rtl-optimization/77309
+        * gcc.dg/torture/pr77309.c: New test.
+
+2016-12-08  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/78551
+	* g++.dg/cpp1y/pr78551.C: New.
+
+2016-12-07  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-11-16  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/empty_fiq_handler.c: New test.
+
+	Backport from mainline
+	2016-11-21  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/empty_fiq_handler.c: Skip if -mthumb is passed in and
+	target is Thumb-only.
+
+2016-12-04  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78443
+	* gfortran.dg/typebound_proc_35.f90: New test case.
+
+2016-12-02  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	Backport from mainline
+	2016-10-21  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR rtl-optimization/78038
+	* gcc.target/aarch64/pr78038.c: New test.
+
+2016-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-02  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/vector/vec-scalar-cmp-1.c: Fix and harden the
+	pattern checks.
+	* gcc.target/s390/zvector/vec-cmp-1.c: New test.
+
+2016-12-01  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78279
+	* gfortran.dg/pr78279.f90: New test.
+
 2016-11-24  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/78500
