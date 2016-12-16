@@ -1,3 +1,31 @@
+2016-12-09  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78593
+	* primary.c (gfc_match_varspec): Check if sym is non-null to avoid ICE.
+
+2016-12-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-09-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/77666
+	* trans-openmp.c (gfc_omp_private_outer_ref): Return true even for
+	references to allocatable arrays.
+
+2016-12-04  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78443
+	* class.c (add_proc_comp): Add a vtype component for non-overridable
+	procedures that are overriding.
+
+2016-12-01  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78279
+	* dependency.c (identical_array_ref): Convert gcc_assert to conditional
+	and gfc_internal_error.
+
 2016-11-24  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	PR fortran/78500
