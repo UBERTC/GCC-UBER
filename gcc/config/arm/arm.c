@@ -22224,9 +22224,13 @@ arm_print_operand (FILE *stream, rtx x, int code)
 	memsize = MEM_SIZE (x);
 
 	/* Only certain alignment specifiers are supported by the hardware.  */
-	if (memsize == 32 && (align % 32) == 0)
+	/* Note that ARM EABI only guarentees 8-byte stack alignment. While GCC
+	   honors stricter alignment of composite type in user code, it doesn't
+	   observe the alignment of memory passed as an extra argument for function
+	   returning large composite type.  See http://gcc.gnu.org/bugzilla/show_bug.cgi?id=57271 */
+	if (memsize == 32 && (align % 32) == 0 && !TARGET_AAPCS_BASED)
 	  align_bits = 256;
-	else if ((memsize == 16 || memsize == 32) && (align % 16) == 0)
+	else if ((memsize == 16 || memsize == 32) && (align % 16) == 0 && !TARGET_AAPCS_BASED)
 	  align_bits = 128;
 	else if (memsize >= 8 && (align % 8) == 0)
 	  align_bits = 64;
