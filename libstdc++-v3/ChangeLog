@@ -1,3 +1,65 @@
+2016-12-24  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/ext/random.tcc: Fix usage of _OutputIteratorConcept.
+
+2016-12-21  Jason Merrill  <jason@redhat.com>
+
+	* testsuite/util/testsuite_tr1.h (test_property): Don't define both
+	variadic and non-variadic overloads.
+
+2016-12-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/71444
+	* config/os/mingw32-w64/error_constants.h
+	(address_family_not_supported, address_in_use, address_not_available)
+	(already_connected, connection_aborted, connection_already_in_progress)
+	connection_refused, connection_reset, cross_device_link)
+	(destination_address_required, host_unreachable, message_size)
+	(network_down, network_reset, network_unreachable, no_buffer_space)
+	(no_protocol_option, not_a_socket, not_connected, operation_canceled)
+	(operation_in_progress, operation_not_supported, protocol_error)
+	(protocol_not_supported, too_many_links, too_many_symbolic_link_levels)
+	(value_too_large, wrong_protocol_type): Define.
+	(bad_message, identifier_removed, no_link, no_message_available)
+	(no_message, no_stream_resources, not_a_stream, owner_dead)
+	(state_not_recoverable, stream_timeout, text_file_busy): Define
+	conditionally.
+	* testsuite/19_diagnostics/headers/system_error/errc_std_c++0x.cc:
+	Guard test for no_message with _GLIBCXX_HAVE_ENOMSG.
+
+2016-12-19  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Make the perfect-forwarding constructor of a two-element tuple
+	sfinae away when the first argument is an allocator_arg.
+	* include/std/tuple (tuple(_U1&&, _U2&&)): Constrain.
+	* testsuite/20_util/tuple/cons/allocator_with_any.cc: New.
+	* testsuite/20_util/tuple/element_access/get_neg.cc: Adjust.
+
+2016-12-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/stl_map.h (map::erase(iterator)): Add Doxygen markup
+	to reuse documentation for erase(const_iterator) overload.
+	* include/bits/stl_multimap.h (multimap::erase(iterator)): Likewise.
+
+	* include/bits/stl_tree.h (_Rb_tree::_M_erase_aux(const_iterator)):
+	Add assertion for undefined argument.
+	(_Rb_tree::_M_erase_aux(const_iterator, const_iterator)): Call
+	_M_erase_aux directly instead of through erase.
+	(_Rb_tree::_M_erase_aux(const Key&)): Likewise.
+	* testsuite/23_containers/map/modifiers/erase/end_neg.cc: New test.
+
+2016-12-16  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Implement LWG 2769, Redundant const in the return type of
+	any_cast(const any&).
+	* include/std/any (_AnyCast): New.
+	(any_cast(const any&)): Use it and add an explicit cast for return.
+	(any_cast(any&)): Likewise.
+	(any_cast(any&&)): Likewise.
+	* testsuite/20_util/any/misc/any_cast.cc: Add a test for a type
+	that has an explicit copy constructor.
+	* testsuite/20_util/any/misc/any_cast_neg.cc: Adjust.
+
 2016-12-15  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR libstdc++/59170

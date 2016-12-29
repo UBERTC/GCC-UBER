@@ -27,7 +27,6 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 
 #include "io.h"
 #include "unix.h"
-#include <stdlib.h>
 #include <limits.h>
 
 #ifdef HAVE_UNISTD_H
@@ -36,7 +35,6 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <assert.h>
 
 #include <string.h>
 #include <errno.h>

@@ -1,3 +1,369 @@
+2016-12-28  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78904
+	* gcc.target/i386/pr78904-4.c: New test.
+	* gcc.target/i386/pr78904-5.c: Ditto.
+
+2016-12-27  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/p9-vinsert4b-2.c: Update test to test for 13
+	being out of bounds instead of 12.
+
+2016-12-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78904
+	* gcc.target/i386/pr78904-3.c: New test.
+
+2016-12-27  Alexander Ivchenko  <alexander.ivchenko@intel.com>
+
+        * gcc.target/i386/mpx/memcpy-1.c: New test.
+
+2016-12-27  Alexander Ivchenko  <alexander.ivchenko@intel.com>
+
+	* gcc.target/i386/mpx/vla-trailing-1-lbv.c: New test.
+	* gcc.target/i386/mpx/vla-trailing-1-nov.c: Ditto.
+	* gcc.target/i386/mpx/vla-trailing-1-ubv.c: Ditto.
+
+2016-12-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78904
+	* gcc.target/i386/pr78904-2.c: New test.
+
+2016-12-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78904
+	* gcc.target/i386/pr78904-1.c: New test.
+
+2016-12-23  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	* gfortran.dg/class_assign_1.f08: New test.
+
+2016-12-23  Toma Tabacu  <toma.tabacu@imgtec.com>
+
+	* gcc.target/mips/oddspreg-2.c (dg-options): Remove dg-skip-if for
+	-fno-fat-lto-objects and add the -ffat-lto-objects option, along with
+	an explanation for its purpose.
+	* gcc.target/mips/oddspreg-3.c (dg-options): Likewise.
+	* gcc.target/mips/oddspreg-6.c (dg-options): Likewise.
+	* gcc.target/mips/no-dsp-1.c: Add an explanation for the purpose of
+	-ffat-lto-objects.
+	* gcc.target/mips/pr54240.c: Likewise.
+	* gcc.target/mips/r10k-cache-barrier-14.c: Likewise.
+	* gcc.target/mips/soft-float-1.c: Likewise.
+
+2016-12-22  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	* gcc.dg/gimplefe-20.c: New test-case.
+
+2016-12-22  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/litpool-str-1.c: New test.
+
+2016-12-22  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* gcc.target/s390/md/setmem_long-1.c: Use "s390_useable_hw".
+	* gcc.target/s390/md/rXsbg_mode_sXl.c: Likewise.
+	* gcc.target/s390/md/andc-splitter-1.c: Likewise.
+	* gcc.target/s390/md/andc-splitter-2.c: Likewise.
+	* lib/gcc-dg.exp (gcc-dg-runtest): Export torture_current_flags.
+	* gcc.target/s390/s390.exp: Import torture_current_flags.
+	(check_effective_target_s390_useable_hw): New.
+	(check_effective_target_s390_z900_hw): New.
+	(check_effective_target_s390_z990_hw): New.
+	(check_effective_target_s390_z9_ec_hw): New.
+	(check_effective_target_s390_z10_hw): New.
+	(check_effective_target_s390_z196_hw): New.
+	(check_effective_target_s390_zEC12_hw): New.
+	(check_effective_target_s390_z13_hw): New.
+	(check_effective_target_z10_instructions): Removed.
+	(torture tests): Add optimization level without -march=.
+	Reorder torture tests for good cache usage.
+
+2016-12-22  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/78886
+	* gcc.dg/tree-ssa/pr78886.c: New test.
+
+2016-12-22  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR testsuite/52641
+	* gcc.dg/pr35258.c (main) <temp>: Use an integer value that has
+	at least a size of 4.
+	* gcc.dg/Walloca-1.c (foo1): Use alloca with 30000 (instead of 90000).
+	* gcc.dg/graphite/pr46185.c: Require int32plus, size32plus.
+	* gcc.dg/graphite/isl-ast-op-select.c: Same.
+	* gcc.dg/graphite/pr42205-1.c: Require int32plus.
+	* gcc.dg/graphite/pr42221.c: Same.
+	* gcc.dg/tree-ssa/pr65136.c: Same.
+	* gcc.dg/tree-ssa/sra-20.c: Same.
+	* gcc.dg/graphite/scop-0.c: Require size32plus.
+	* gcc.dg/graphite/scop-22.c: Same.
+	* gcc.dg/graphite/scop-3.c: Same.
+	* gcc.dg/graphite/scop-dsyr2k.c: Same.
+	* gcc.dg/graphite/scop-dsyrk.c: Same.
+	* gcc.dg/graphite/scop-mvt.c: Same.
+	* gcc.dg/graphite/scop-sor.c: Same.
+	* gcc.dg/tree-ssa/pr68529-3.c: Same.
+	* gcc.dg/tree-ssa/pr66449.c [long != pointer]: Use intptr_t if.
+	* gcc.dg/tree-ssa/pr70919.c [int <= 2]: Use 32-bit int as needed.
+	* gcc.dg/tree-ssa/pr71408.c: Same.
+	* gcc.dg/fold-and-rshift-2.c: Same.
+	* gcc.dg/tree-ssa/ssa-dom-thread-8.c (f2) [long != pointer]: Use
+	uintptr_t instead of long for int representation of address.
+	* gcc.dg/tree-ssa/tailcall-7-run.c: Require trampolines.
+
+2016-12-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/78858
+	* c-c++-common/ubsan/pr78858.c: New test.
+	* gcc.dg/nonnull-5.c: New test.
+
+2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/72707
+	* g++.dg/warn/Wshadow-12.C: New test.
+
+2016-12-21  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/78580
+	* gcc.target/i386/pr78580.c: New.
+
+2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/77830
+	* g++.dg/cpp1y/pr77830.C: New test.
+	* g++.dg/cpp0x/pr65398.C: Adjust expected diagnostics.
+
+2016-12-21  Bernd Schmidt  <bschmidt@redhat.com>
+
+	PR target/71321
+	* gcc.target/i386/pr71321.c: New test.
+
+2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/78866
+	* gfortran.dg/gomp/map-1.f90: Add expected error.
+	* gfortran.dg/gomp/pr78866-1.f90: New test.
+	* gfortran.dg/gomp/pr78866-2.f90: New test.
+
+2016-12-21  David Edelsohn  <dje.gcc@gmail.com>
+
+	* gcc.dg/vect/costmodel/ppc/costmodel-bb-slp-9a-pr63175.c: XFAIL
+	lwz on AIX.
+
+2016-12-21  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* gcc.target/arm/unsigned-extend-2.c: Update testcase.
+
+2016-12-21  Martin Liska  <mliska@suse.cz>
+
+	PR driver/78863
+	* gcc.dg/spellcheck-options-13.c: New test.
+
+2016-12-21  Alexander Monakov  <amonakov@ispras.ru>
+
+	* gcc.target/nvptx/decl-shared.c (v_common): Add 'common' attribute to
+	explicitly request the desired storage class.
+
+2016-12-21  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR testsuite/52641
+	* gcc.dg/builtin-object-size-16.c (ia0, ia1, ia9): Handle case
+	where neither short nor int has a size of 4; use long.
+	* gcc.dg/builtin-object-size-17.c: Same.
+	* gcc.dg/builtin-stringop-chk-1.c (test2) <struct S>: Use int32_t
+	for components as 4 components are supposed to occupy 16 bytes.
+	* gcc.dg/pr78408-1.c: Require target size32plus.
+	* gcc.dg/pr78408-2.c: Same.
+	* gcc.dg/tree-ssa/pr78428.c. Require target int32plus.
+	* gcc.dg/tree-ssa/tailcall-7.c: Require target trampolines.
+
+2016-12-21  Toma Tabacu  <toma.tabacu@imgtec.com>
+
+	* gcc.target/mips/msa-builtins.c (msa_insert_d): Tweak expected output.
+
+2016-12-21  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR fortran/78867
+	* gfortran.dg/string_length_4.f90: New test.
+
+2016-12-21  Georg-Johann Lay  <avr@gjlay.de>
+
+	* gcc.target/avr/mmcu: New folder for compile-tests with -mmcu=.
+	* gcc.target/avr/mmcu/avr-mmcu.exp: New file.
+	* gcc.target/avr/pr58545.c: Move to gcc.target/avr/mmcu.
+	* gcc.target/avr/tiny-caller-save.c: Dito.
+	* gcc.target/avr/tiny-memx.c: Dito.
+
+2016-12-21  Naveen H.S  <Naveen.Hurugalawadi@cavium.com>
+
+	* gcc.dg/max.c: New Testcase.
+	* gcc.dg/min.c: New Testcase.
+
+2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/77767
+	* gcc.c-torture/execute/pr77767.c: New test.
+
+2016-12-20  Pat Haugen  <pthaugen@us.ibm.com>
+
+	* gcc.dg/sms-3.c: Add -fno-sched-pressure for powerpc.
+	* gcc.dg/sms-6.c: Likewise.
+
+2016-12-20  David Edelsohn  <dje.gcc@gmail.com>
+
+	* gcc.dg/tls/alias-1.c: dg-add-options tls.
+	* gcc.dg/pr70859-2.c: Define _ISOC99_SOURCE on AIX.
+
+2016-12-20  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* gcc.target/arm/pr78255-2.c: Fix to work for targets
+	that do not optimize for tailcall.
+
+2016-12-20  David Edelsohn  <dje.gcc@gmail.com>
+
+	* gcc.dg/tls/pr78796.c: dg-add-options tls.
+	* gcc.target/powerpc/fold-vec-mult-int.c: power8-vector.
+	* gcc.target/powerpc/fold-vec-mult-longlong.c: -maix64.
+
+2016-12-20  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/gimplefe-19.c: New testcase.
+
+2016-12-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/78694
+	* gcc.c-torture/compile/pr78694.c: New test.
+
+2016-12-20  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR testsuite/71232
+	* gnat.dg/vect1.adb: Add -fno-vect-cost-model to dg-options.
+	* gnat.dg/vect2.adb: Likewise.
+	* gnat.dg/vect3.adb: Likewise.
+	* gnat.dg/vect4.adb: Likewise.
+	* gnat.dg/vect5.adb: Likewise.
+	* gnat.dg/vect6.adb: Likewise.
+
+2016-12-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/pr59874-3.c: New test.
+
+2016-12-19  Will Schmidt  <will_schmidt@vnet.ibm.com>
+
+	* gcc.dg/vmx/mult-even-odd-be-order.c: Mark variables as volatile.
+	* gcc.target/powerpc/fold-vec-mult-char.c: New.
+	* gcc.target/powerpc/fold-vec-mult-float.c: New.
+	* gcc.target/powerpc/fold-vec-mult-floatdouble.c: New.
+	* gcc.target/powerpc/fold-vec-mult-int.c: New.
+	* gcc.target/powerpc/fold-vec-mult-int128-p8.c: New.
+	* gcc.target/powerpc/fold-vec-mult-int128-p9.c: New.
+	* gcc.target/powerpc/fold-vec-mult-longlong.c: New.
+	* gcc.target/powerpc/fold-vec-mult-short.c: New.
+
+2016-12-19  Will Schmidt  <will_schmidt@vnet.ibm.com>
+
+	* gcc.target/powerpc/fold-vec-sub-char.c: New.
+	* gcc.target/powerpc/fold-vec-sub-float.c: New.
+	* gcc.target/powerpc/fold-vec-sub-floatdouble.c: New.
+	* gcc.target/powerpc/fold-vec-sub-int.c: New.
+	* gcc.target/powerpc/fold-vec-sub-int128.c: New.
+	* gcc.target/powerpc/fold-vec-sub-longlong.c: New.
+	* gcc.target/powerpc/fold-vec-sub-short.c: New.
+
+2016-12-19  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR target/78748
+	* gcc.c-torture/compile/pr78748.c: New test.
+
+2016-12-18  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/78848
+	* gfortran.dg/dtio_22.f90: New test.
+
+2016-12-18  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/78592
+	* gfortran.dg/dtio_21.f90: New test.
+
+2016-12-17  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/78746
+	* charlen_03.f90: Remove test.
+	* charlen_10.f90: Ditto.
+
+2016-12-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/78832
+	* gcc.dg/asan/pr78832.c: New test.
+
+2016-12-17  Andrew Senkevich  <andrew.senkevich@intel.com>
+
+	* gcc.target/i386/avx512bw-kaddd-1.c: New test.
+	* gcc.target/i386/avx512bw-kaddq-1.c: Ditto.
+	* gcc.target/i386/avx512dq-kaddb-1.c: Ditto.
+	* gcc.target/i386/avx512f-kaddw-1.c: Ditto.
+
+2016-12-17  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/78239
+	* gfortran.dg/fimplicit_none_1.f90:  New test.
+	* gfortran.dg/fimplicit_none_2.f90:  New test.
+
+2016-12-16  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	* gcc.target/powerpc/byte-in-either-range-0.c: New test.
+	* gcc.target/powerpc/byte-in-either-range-1.c: New test.
+	* gcc.target/powerpc/byte-in-range-0.c: New test.
+	* gcc.target/powerpc/byte-in-range-1.c: New test.
+	* gcc.target/powerpc/byte-in-set-0.c: New test.
+	* gcc.target/powerpc/byte-in-set-1.c: New test.
+	* gcc.target/powerpc/byte-in-set-2.c: New test.
+
+2016-12-16  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/78622
+	* gfortran.dg/dtio_20.f03: New test.
+
+2016-12-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/78757
+	* gfortran.dg/char_result_16.f90: New test.
+
+2016-12-16  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/ubfiz_lsl_1.c: New test.
+
+2016-12-16  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.target/aarch64/ubfx_lsr_1.c: New test.
+
+2016-12-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/78408
+	* gcc.dg/pr78408-1.c: New test.
+	* gcc.dg/pr78408-2.c: New test.
+
+2016-12-16  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/78819
+	* gcc.dg/tree-ssa/vrp112.c: New test.
+
+2016-12-16  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/opt61.adb: New test.
+	* gnat.dg/opt61_pkg.ad[sb]: New helper.
+
+2016-12-16  Richard Biener  <rguenther@suse.de>
+
+	PR c++/71694
+	* g++.dg/pr71694.C: New testcase.
+
+2016-12-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/71632
+	* gcc.dg/pr71632.c: New testcase.
+
 2016-12-15  Andrew Senkevich  <andrew.senkevich@intel.com>
 
 	* gcc.target/i386/avx512bw-kmovd-1.c: New test.
@@ -164,7 +530,7 @@
 
 2016-12-14  Toma Tabacu  <toma.tabacu@imgtec.com>
 
-	* gcc.target/mips/msa-builtins-err.c (dg-options): Add 
+	* gcc.target/mips/msa-builtins-err.c (dg-options): Add
 	-ffat-lto-objects option.
 
 2016-12-14  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>

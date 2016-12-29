@@ -1,3 +1,104 @@
+2016-12-27  Jakub Jelinek  <jakub@redhat.com>
+
+	* gfortran.h (gfc_error): Rename overload with OPT argument to...
+	(gfc_error_opt): ... this.
+	* error.c (gfc_error): Rename overloads with OPT argument to...
+	(gfc_error_opt): ... this.  Adjust callers.
+	(gfc_notify_std, gfc_error): Adjust callers.
+	* resolve.c (resolve_structure_cons, resolve_global_procedure): Use
+	gfc_error_opt instead of gfc_error.
+	* interface.c (argument_rank_mismatch, compare_parameter,
+	gfc_check_typebound_override): Likewise.  Fix up formatting.
+
+2016-12-23  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	* trans-expr.c (trans_class_assignment): Allocate memory of _vptr->size
+        before assigning an allocatable class object.
+	(gfc_trans_assignment_1): Flag that (re-)alloc of the class object
+	shall be done.
+
+2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/78866
+	* openmp.c (resolve_omp_clauses): Diagnose assumed size arrays in
+	OpenMP map, to and from clauses.
+	* trans-openmp.c: Include diagnostic-core.h, temporarily redefining
+	GCC_DIAG_STYLE to __gcc_tdiag__.
+	(gfc_omp_finish_clause): Diagnose implicitly mapped assumed size
+	arrays.
+
+2016-12-21  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	PR fortran/78867
+	* trans-expr.c (gfc_conv_procedure_call): Emit DECL_EXPR also for
+	non-pointer character results.
+
+2016-12-21  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* iresolve.c (gfc_resolve_ftell): Call "ftell" instead of "ftell2".
+
+2016-12-20  Janne Blomqvist  <jb@gcc.gnu.org>
+
+	* trans-types.c (gfc_init_types): Don't redefine boolean type node.
+
+2016-12-19  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* trans-decl.c (create_main_function): Remove unused elements to
+	the set_options call.
+
+2016-12-19  Francois-Xavier Coudert  <fxcoudert@gcc.gnu.org>
+
+	* trans.h: Remove gfor_fndecl_stop_numeric_f08.
+	* trans-decl.c: Remove gfor_fndecl_stop_numeric_f08.
+	* trans-stmt.c (gfc_trans_stop): Use gfor_fndecl_stop_numeric
+	instead of gfor_fndecl_stop_numeric_f08.
+
+2016-12-19  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/78545
+	* intrinsic.texi: Minor documentation fixes for non-standard
+	time-related intrinsics. Add references to standard intrinsics and
+	linkify some existing references.
+
+2016-12-18  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/78545
+	* intrinsic.texi: Fix documentation for GMTIME and LTIME.
+
+2016-12-18  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/78848
+	* trans-io.c (get_dtio_proc): Generate non-typebound DTIO call for class
+	variables, if no typebound DTIO procedure is available.
+
+2016-12-18  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/78592
+	* interfac.c (gfc_find_specific_dtio_proc): Fixup for r243005, making
+	sure that the generic list is followed through until the end.
+
+2016-12-17  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/78239
+	* decl.c (char_len_param_value): Actually commit previous change.
+
+2016-12-17  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/78239
+	* decl.c( char_len_param_value): Also check for -fimplicit-none
+	when determining if implicit none is in force.
+
+2016-12-16  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/78622
+	* io.c (format_lex): Continue of string delimiter seen.
+
+2016-12-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/78757
+	* trans-expr.c (gfc_conv_procedure_call): Emit DECL_EXPR for the
+	type pstr var points to.
+
 2016-12-15  Janus Weil  <janus@gcc.gnu.org>
 
 	PR fortran/78798

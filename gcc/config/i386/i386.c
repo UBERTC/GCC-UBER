@@ -22585,12 +22585,12 @@ ix86_expand_fp_compare (enum rtx_code code, rtx op0, rtx op1, rtx scratch)
 	case UNGT:
 	  if (code == GT || !TARGET_IEEE_FP)
 	    {
-	      emit_insn (gen_testqi_ext_ccno_0 (scratch, GEN_INT (0x45)));
+	      emit_insn (gen_testqi_ext_1_ccno (scratch, GEN_INT (0x45)));
 	      code = EQ;
 	    }
 	  else
 	    {
-	      emit_insn (gen_andqi_ext_0 (scratch, scratch, GEN_INT (0x45)));
+	      emit_insn (gen_andqi_ext_1 (scratch, scratch, GEN_INT (0x45)));
 	      emit_insn (gen_addqi_ext_1 (scratch, scratch, constm1_rtx));
 	      emit_insn (gen_cmpqi_ext_3 (scratch, GEN_INT (0x44)));
 	      intcmp_mode = CCmode;
@@ -22601,14 +22601,14 @@ ix86_expand_fp_compare (enum rtx_code code, rtx op0, rtx op1, rtx scratch)
 	case UNLT:
 	  if (code == LT && TARGET_IEEE_FP)
 	    {
-	      emit_insn (gen_andqi_ext_0 (scratch, scratch, GEN_INT (0x45)));
+	      emit_insn (gen_andqi_ext_1 (scratch, scratch, GEN_INT (0x45)));
 	      emit_insn (gen_cmpqi_ext_3 (scratch, const1_rtx));
 	      intcmp_mode = CCmode;
 	      code = EQ;
 	    }
 	  else
 	    {
-	      emit_insn (gen_testqi_ext_ccno_0 (scratch, const1_rtx));
+	      emit_insn (gen_testqi_ext_1_ccno (scratch, const1_rtx));
 	      code = NE;
 	    }
 	  break;
@@ -22616,13 +22616,13 @@ ix86_expand_fp_compare (enum rtx_code code, rtx op0, rtx op1, rtx scratch)
 	case UNGE:
 	  if (code == GE || !TARGET_IEEE_FP)
 	    {
-	      emit_insn (gen_testqi_ext_ccno_0 (scratch, GEN_INT (0x05)));
+	      emit_insn (gen_testqi_ext_1_ccno (scratch, GEN_INT (0x05)));
 	      code = EQ;
 	    }
 	  else
 	    {
-	      emit_insn (gen_andqi_ext_0 (scratch, scratch, GEN_INT (0x45)));
-	      emit_insn (gen_xorqi_cc_ext_1 (scratch, scratch, const1_rtx));
+	      emit_insn (gen_andqi_ext_1 (scratch, scratch, GEN_INT (0x45)));
+	      emit_insn (gen_xorqi_ext_1_cc (scratch, scratch, const1_rtx));
 	      code = NE;
 	    }
 	  break;
@@ -22630,7 +22630,7 @@ ix86_expand_fp_compare (enum rtx_code code, rtx op0, rtx op1, rtx scratch)
 	case UNLE:
 	  if (code == LE && TARGET_IEEE_FP)
 	    {
-	      emit_insn (gen_andqi_ext_0 (scratch, scratch, GEN_INT (0x45)));
+	      emit_insn (gen_andqi_ext_1 (scratch, scratch, GEN_INT (0x45)));
 	      emit_insn (gen_addqi_ext_1 (scratch, scratch, constm1_rtx));
 	      emit_insn (gen_cmpqi_ext_3 (scratch, GEN_INT (0x40)));
 	      intcmp_mode = CCmode;
@@ -22638,7 +22638,7 @@ ix86_expand_fp_compare (enum rtx_code code, rtx op0, rtx op1, rtx scratch)
 	    }
 	  else
 	    {
-	      emit_insn (gen_testqi_ext_ccno_0 (scratch, GEN_INT (0x45)));
+	      emit_insn (gen_testqi_ext_1_ccno (scratch, GEN_INT (0x45)));
 	      code = NE;
 	    }
 	  break;
@@ -22646,14 +22646,14 @@ ix86_expand_fp_compare (enum rtx_code code, rtx op0, rtx op1, rtx scratch)
 	case UNEQ:
 	  if (code == EQ && TARGET_IEEE_FP)
 	    {
-	      emit_insn (gen_andqi_ext_0 (scratch, scratch, GEN_INT (0x45)));
+	      emit_insn (gen_andqi_ext_1 (scratch, scratch, GEN_INT (0x45)));
 	      emit_insn (gen_cmpqi_ext_3 (scratch, GEN_INT (0x40)));
 	      intcmp_mode = CCmode;
 	      code = EQ;
 	    }
 	  else
 	    {
-	      emit_insn (gen_testqi_ext_ccno_0 (scratch, GEN_INT (0x40)));
+	      emit_insn (gen_testqi_ext_1_ccno (scratch, GEN_INT (0x40)));
 	      code = NE;
 	    }
 	  break;
@@ -22661,24 +22661,24 @@ ix86_expand_fp_compare (enum rtx_code code, rtx op0, rtx op1, rtx scratch)
 	case LTGT:
 	  if (code == NE && TARGET_IEEE_FP)
 	    {
-	      emit_insn (gen_andqi_ext_0 (scratch, scratch, GEN_INT (0x45)));
-	      emit_insn (gen_xorqi_cc_ext_1 (scratch, scratch,
+	      emit_insn (gen_andqi_ext_1 (scratch, scratch, GEN_INT (0x45)));
+	      emit_insn (gen_xorqi_ext_1_cc (scratch, scratch,
 					     GEN_INT (0x40)));
 	      code = NE;
 	    }
 	  else
 	    {
-	      emit_insn (gen_testqi_ext_ccno_0 (scratch, GEN_INT (0x40)));
+	      emit_insn (gen_testqi_ext_1_ccno (scratch, GEN_INT (0x40)));
 	      code = EQ;
 	    }
 	  break;
 
 	case UNORDERED:
-	  emit_insn (gen_testqi_ext_ccno_0 (scratch, GEN_INT (0x04)));
+	  emit_insn (gen_testqi_ext_1_ccno (scratch, GEN_INT (0x04)));
 	  code = NE;
 	  break;
 	case ORDERED:
-	  emit_insn (gen_testqi_ext_ccno_0 (scratch, GEN_INT (0x04)));
+	  emit_insn (gen_testqi_ext_1_ccno (scratch, GEN_INT (0x04)));
 	  code = EQ;
 	  break;
 
@@ -39752,24 +39752,19 @@ ix86_secondary_reload (bool in_p, rtx x, reg_class_t rclass,
   /* QImode spills from non-QI registers require
      intermediate register on 32bit targets.  */
   if (mode == QImode
-      && (MAYBE_MASK_CLASS_P (rclass)
-	  || (!TARGET_64BIT && !in_p
-	      && INTEGER_CLASS_P (rclass)
-	      && MAYBE_NON_Q_CLASS_P (rclass))))
+      && ((!TARGET_64BIT && !in_p
+	   && INTEGER_CLASS_P (rclass)
+	   && MAYBE_NON_Q_CLASS_P (rclass))
+	  || (!TARGET_AVX512DQ
+	      && MAYBE_MASK_CLASS_P (rclass))))
     {
-      int regno;
-
-      if (REG_P (x))
-	regno = REGNO (x);
-      else
-	regno = -1;
-
-      if (regno >= FIRST_PSEUDO_REGISTER || SUBREG_P (x))
-	regno = true_regnum (x);
+      int regno = true_regnum (x);
 
       /* Return Q_REGS if the operand is in memory.  */
       if (regno == -1)
 	return Q_REGS;
+
+      return NO_REGS;
     }
 
   /* This condition handles corner case where an expression involving
@@ -44370,7 +44365,7 @@ ix86_emit_fp_unordered_jump (rtx label)
     }
   else
     {
-      emit_insn (gen_testqi_ext_ccno_0 (reg, GEN_INT (0x04)));
+      emit_insn (gen_testqi_ext_1_ccno (reg, GEN_INT (0x04)));
 
       temp = gen_rtx_REG (CCNOmode, FLAGS_REG);
       temp = gen_rtx_NE (VOIDmode, temp, const0_rtx);
@@ -44528,7 +44523,7 @@ void ix86_emit_i387_round (rtx op0, rtx op1)
     }
 
   /* flags = signbit(a) */
-  emit_insn (gen_testqi_ext_ccno_0 (scratch, GEN_INT (0x02)));
+  emit_insn (gen_testqi_ext_1_ccno (scratch, GEN_INT (0x02)));
 
   /* if (flags) then res = -res */
   tmp = gen_rtx_IF_THEN_ELSE (VOIDmode,

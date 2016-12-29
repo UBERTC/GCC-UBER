@@ -926,6 +926,7 @@ wrapup_globals_for_namespace (tree name_space, void* data ATTRIBUTE_UNUSED)
 	    && DECL_EXTERNAL (decl)
 	    && !TREE_PUBLIC (decl)
 	    && !DECL_ARTIFICIAL (decl)
+	    && !DECL_FRIEND_PSEUDO_TEMPLATE_INSTANTIATION (decl)
 	    && !TREE_NO_WARNING (decl))
 	  {
 	    warning_at (DECL_SOURCE_LOCATION (decl),
@@ -4159,6 +4160,9 @@ cxx_init_decl_processing (void)
 
   global_type_node = make_node (LANG_TYPE);
   record_unknown_type (global_type_node, "global type");
+
+  any_targ_node = make_node (LANG_TYPE);
+  record_unknown_type (any_targ_node, "any type");
 
   /* Now, C++.  */
   current_lang_name = lang_name_cplusplus;

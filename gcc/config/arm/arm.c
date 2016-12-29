@@ -16111,35 +16111,37 @@ dump_minipool (rtx_insn *scan)
 	      fputc ('\n', dump_file);
 	    }
 
+	  rtx val = copy_rtx (mp->value);
+
 	  switch (GET_MODE_SIZE (mp->mode))
 	    {
 #ifdef HAVE_consttable_1
 	    case 1:
-	      scan = emit_insn_after (gen_consttable_1 (mp->value), scan);
+	      scan = emit_insn_after (gen_consttable_1 (val), scan);
 	      break;
 
 #endif
 #ifdef HAVE_consttable_2
 	    case 2:
-	      scan = emit_insn_after (gen_consttable_2 (mp->value), scan);
+	      scan = emit_insn_after (gen_consttable_2 (val), scan);
 	      break;
 
 #endif
 #ifdef HAVE_consttable_4
 	    case 4:
-	      scan = emit_insn_after (gen_consttable_4 (mp->value), scan);
+	      scan = emit_insn_after (gen_consttable_4 (val), scan);
 	      break;
 
 #endif
 #ifdef HAVE_consttable_8
 	    case 8:
-	      scan = emit_insn_after (gen_consttable_8 (mp->value), scan);
+	      scan = emit_insn_after (gen_consttable_8 (val), scan);
 	      break;
 
 #endif
 #ifdef HAVE_consttable_16
 	    case 16:
-              scan = emit_insn_after (gen_consttable_16 (mp->value), scan);
+              scan = emit_insn_after (gen_consttable_16 (val), scan);
               break;
 
 #endif
@@ -27637,7 +27639,7 @@ arm_mangle_type (const_tree type)
 static const int thumb_core_reg_alloc_order[] =
 {
    3,  2,  1,  0,  4,  5,  6,  7,
-  14, 12,  8,  9, 10, 11
+  12, 14,  8,  9, 10, 11
 };
 
 /* Adjust register allocation order when compiling for Thumb.  */

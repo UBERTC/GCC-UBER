@@ -100,18 +100,6 @@
 	  && (REGNO (op) > LAST_VIRTUAL_REGISTER || QI_REGNO_P (REGNO (op))));
 })
 
-;; Match nonimmediate operands, but exclude memory operands on 64bit targets.
-(define_predicate "nonimmediate_x64nomem_operand"
-  (if_then_else (match_test "TARGET_64BIT")
-    (match_operand 0 "register_operand")
-    (match_operand 0 "nonimmediate_operand")))
-
-;; Match general operands, but exclude memory operands on 64bit targets.
-(define_predicate "general_x64nomem_operand"
-  (if_then_else (match_test "TARGET_64BIT")
-    (match_operand 0 "nonmemory_operand")
-    (match_operand 0 "general_operand")))
-
 ;; Match register operands, but include memory operands for TARGET_SSE_MATH.
 (define_predicate "register_ssemem_operand"
   (if_then_else
@@ -765,6 +753,14 @@
   return i == 2 || i == 4 || i == 8;
 })
 
+;; Match 1, 2, or 3.  Used for lea shift amounts.
+(define_predicate "const123_operand"
+  (match_code "const_int")
+{
+  HOST_WIDE_INT i = INTVAL (op);
+  return i == 1 || i == 2 || i == 3;
+})
+
 ;; Match 2, 3, 6, or 7
 (define_predicate "const2367_operand"
   (match_code "const_int")
@@ -1040,6 +1036,10 @@
 (define_predicate "reg_or_0_operand"
   (ior (match_operand 0 "register_operand")
        (match_operand 0 "const0_operand")))
+
+(define_predicate "norex_memory_operand"
+  (and (match_operand 0 "memory_operand")
+       (not (match_test "x86_extended_reg_mentioned_p (op)"))))
 
 ;; Return true for RTX codes that force SImode address.
 (define_predicate "SImode_address_operand"

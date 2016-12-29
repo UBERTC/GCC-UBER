@@ -521,12 +521,6 @@
 ;; All 256bit vector integer modes
 (define_mode_iterator VI_256 [V32QI V16HI V8SI V4DI])
 
-;; All 512bit vector integer modes
-(define_mode_iterator VI_512
-  [(V64QI "TARGET_AVX512BW")
-   (V32HI "TARGET_AVX512BW")
-   V16SI V8DI])
-
 ;; Various 128bit vector integer mode combinations
 (define_mode_iterator VI12_128 [V16QI V8HI])
 (define_mode_iterator VI14_128 [V16QI V4SI])
@@ -1306,9 +1300,6 @@
 (define_mode_iterator SWI1248_AVX512BW
   [QI HI (SI "TARGET_AVX512BW") (DI "TARGET_AVX512BW")])
 
-;; Mask variant shift mnemonics
-(define_code_attr mshift [(ashift "shiftl") (lshiftrt "shiftr")])
-
 (define_expand "kmov<mskmodesuffix>"
   [(set (match_operand:SWI1248_AVX512BWDQ 0 "nonimmediate_operand")
 	(match_operand:SWI1248_AVX512BWDQ 1 "nonimmediate_operand"))]
@@ -1403,6 +1394,21 @@
 	       (const_string "HI")
 	   ]
 	   (const_string "<MODE>")))])
+
+(define_insn "kadd<mode>"
+  [(set (match_operand:SWI1248_AVX512BWDQ 0 "register_operand" "=k")
+	(plus:SWI1248_AVX512BWDQ
+	  (match_operand:SWI1248_AVX512BWDQ 1 "register_operand" "k")
+	  (match_operand:SWI1248_AVX512BWDQ 2 "register_operand" "k")))
+   (unspec [(const_int 0)] UNSPEC_MASKOP)]
+  "TARGET_AVX512F"
+  "kadd<mskmodesuffix>\t{%2, %1, %0|%0, %1, %2}"
+  [(set_attr "type" "msklog")
+   (set_attr "prefix" "vex")
+   (set_attr "mode" "<MODE>")])
+
+;; Mask variant shift mnemonics
+(define_code_attr mshift [(ashift "shiftl") (lshiftrt "shiftr")])
 
 (define_insn "*k<code><mode>"
   [(set (match_operand:SWI1248_AVX512BWDQ 0 "register_operand" "=k")
@@ -11237,17 +11243,17 @@
    (set_attr "prefix" "orig,vex")
    (set_attr "mode" "TI")])
 
-(define_expand "vcond<V_512:mode><VI_512:mode>"
+(define_expand "vcond<V_512:mode><VI_AVX512BW:mode>"
   [(set (match_operand:V_512 0 "register_operand")
 	(if_then_else:V_512
 	  (match_operator 3 ""
-	    [(match_operand:VI_512 4 "nonimmediate_operand")
-	     (match_operand:VI_512 5 "general_operand")])
+	    [(match_operand:VI_AVX512BW 4 "nonimmediate_operand")
+	     (match_operand:VI_AVX512BW 5 "general_operand")])
 	  (match_operand:V_512 1)
 	  (match_operand:V_512 2)))]
   "TARGET_AVX512F
    && (GET_MODE_NUNITS (<V_512:MODE>mode)
-       == GET_MODE_NUNITS (<VI_512:MODE>mode))"
+       == GET_MODE_NUNITS (<VI_AVX512BW:MODE>mode))"
 {
   bool ok = ix86_expand_int_vcond (operands);
   gcc_assert (ok);
@@ -11303,17 +11309,17 @@
   DONE;
 })
 
-(define_expand "vcondu<V_512:mode><VI_512:mode>"
+(define_expand "vcondu<V_512:mode><VI_AVX512BW:mode>"
   [(set (match_operand:V_512 0 "register_operand")
 	(if_then_else:V_512
 	  (match_operator 3 ""
-	    [(match_operand:VI_512 4 "nonimmediate_operand")
-	     (match_operand:VI_512 5 "nonimmediate_operand")])
+	    [(match_operand:VI_AVX512BW 4 "nonimmediate_operand")
+	     (match_operand:VI_AVX512BW 5 "nonimmediate_operand")])
 	  (match_operand:V_512 1 "general_operand")
 	  (match_operand:V_512 2 "general_operand")))]
   "TARGET_AVX512F
    && (GET_MODE_NUNITS (<V_512:MODE>mode)
-       == GET_MODE_NUNITS (<VI_512:MODE>mode))"
+       == GET_MODE_NUNITS (<VI_AVX512BW:MODE>mode))"
 {
   bool ok = ix86_expand_int_vcond (operands);
   gcc_assert (ok);

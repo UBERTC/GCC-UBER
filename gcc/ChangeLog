@@ -1,3 +1,525 @@
+2016-12-28  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78904
+	* config/i386/constraints.md (Bn): New special memory constraint.
+	* config/i386/predicates.md (norex_memory_operand): New predicate.
+	* config/i386/i386.md (*extzvqi_mem_rex64): New insn pattern and
+	corresponding peephole2 pattern.
+
+2016-12-27  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* doc/cppdiropts.texi, doc/cppwarnopts.texi:  New files, split from...
+	* doc/cppopts.texi: .... here.
+	* doc/cpp.texi (Invocation): Adjust includes.
+	* doc/invoke.texi (Option Summary): Add missing preprocesor-related
+	options.  Adjust sorting and formatting.
+	(Warning Options): Include cppwarnopts.texi.
+	(Preprocessor Options): Add pointers and list the specific
+	preprocessor options from cppopts.texi first instead of last.
+	(Directory Options): Move/merge documentation of -I, -iquote, and
+	-I- to cppdiropts.texi.  Include that file here.
+
+2016-12-27  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	* config/rs6000/predicates.md (const_0_to_12_operand): Rename
+	predicate and change test from 0..11 to 0..12 to match the
+	semantics of the word extract/insert instructions.  Change all
+	callers.
+	(const_0_to_11_operand): Likewise.
+	* config/rs6000/rs6000.c (altivec_expand_builtin): Likewise.
+	* config/rs6000/vsx.md (vextract4b): Likewise.
+	(vextract4b_internal): Likewise.
+	(vinsert4b): Likewise.
+	(vinsert4b_internal): Likewise.
+	(vinsert4b_di): Likewise.
+	(vinsert4b_di_internal): Likewise.
+	* config/rs6000/rs6000.md (zero_extendsi<mode>2): Fix offset used
+	in xxextractuw to zero extend the word in the vector registers.
+	(lfiwzx): Likewise.
+
+2016-12-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (ix86_secondary_reload): Require QImode
+	intermediate for QImode mask register spill only for !TARGET_AVX512DQ.
+	Always use true_regnum to determine operand regno.
+
+2016-12-27  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* doc/cppopts.texi: Delete redundant documentation for -x.  Move
+	-fno-show-column documentation to...
+	* doc/invoke.texi (Diagnostic Message Formatting Options):  ...here.
+	Update the option summary.
+
+2016-12-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (VI_512): Remove.
+	(vcond<V_512:mode><VI_AVX512BW:mode>): Use VI_AVX512BW
+	mode iterator instead of VI_512.
+	(vcondu<V_512:mode><VI_AVX512BW:mode>): Ditto.
+
+2016-12-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR translation/78922
+	* config/i386/stringop.opt: Remove.
+
+2016-12-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78904
+	* config/i386/constraints.md (Bc): New special memory constraint.
+	* config/i386/i386.md (*cmpqi_ext_1, *extvqi, *extzvqi): Use Bc
+	constraint with nonimmediate_operand to allow constant memory operands.
+	(*cmpqi_ext_3, insv<mode>_1, addqi_ext_1, *testqi_ext_1, andqi_ext_1)
+	(*<any_or:code>qi_ext_1, *xorqi_ext_1_cc): Use Bc constraint
+	with general_operand to allow constant memory operands.
+
+2016-12-27  Alexander Ivchenko  <alexander.ivchenko@intel.com>
+
+	* c-family/c.opt (flag_chkp_flexible_struct_trailing_arrays):
+	Add new option.
+	(fchkp-narrow-to-innermost-array): Fix typo.
+	* doc/cpp.texi (flag_chkp_flexible_struct_trailing_arrays): Ditto.
+	* tree-chkp.c (chkp_may_narrow_to_field ): Forbid
+	narrowing when flag_chkp_flexible_struct_trailing_arrays is used
+	and the field is the last array field in the structure.
+
+2016-12-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (andqi_ext_1): Use general_operand
+	predicate for operand 2.
+
+2016-12-27  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78904
+	* config/i386/i386.md (*cmpqi_ext_1, *extvqi, *extzvqi): Use
+	nonimmediate_operand instead of nonimmediate_x64nomem_operand.
+	(*cmpqi_ext_3, insv<mode>_1, addqi_ext_1, *testqi_ext_1, andqi_ext_1)
+	(*<any_or:code>qi_ext_1, *xorqi_ext_1_cc): Use general_operand
+	instead of general_x64nomem_operand.
+	* config/i386/predicates.md (nonimmediate_x64nomem_operand): Remove.
+	(general_x64nomem_operand): Ditto.
+
+2016-12-26  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78904
+	* config/i386/i386.md (addqi_ext_1): Canonicalize insn pattern w.r.t.
+	zero_extract RTXes.
+	(*addqi_ext_2): Ditto.
+	(testqi_ext_ccno_0): Canonicalize expander w.r.t. zero_extract RTXes.
+	(testqi_ext_1_ccno): Rename from testqi_ext_ccno_0.
+	(*testqi_ext_0): Merge with *testqi_ext_1.
+	(*testqi_ext_1): Canonicalize insn pattern w.r.t. zero_extract RTXes.
+	Update corresponding splitter.
+	(*testqi_ext_2): Canonicalize insn pattern w.r.t. zero_extract RTXes.
+	(*andqi_ext_0): Merge with *andqi_ext_1.
+	(andqi_ext_1): Canonicalize insn pattern w.r.t. zero_extract RTXes.
+	Rename from *andqi_ext_1.  Update corresponding splitter and
+	peephole2 patterns.
+	(*andqi_ext_1_cc): Rename from *andqi_ext_0_cc.
+	(*andqi_ext_2): Canonicalize insn pattern w.r.t. zero_extract RTXes.
+	(*<any_or:code>qi_ext_0): Merge with *andqi_ext_1.
+	(*<any_or:code>qi_ext_1): Canonicalize insn pattern w.r.t.
+	zero_extract RTXes.  Update corresponding splitter.
+	(*<any_or:code>qi_ext_2): Canonicalize insn pattern w.r.t.
+	zero_extract RTXes.
+	(xorqi_cc_ext_1): Canonicalize expander w.r.t. zero_extract RTXes.
+	(xorqi_ext_1_cc): Rename from xorqi_cc_ext_1.
+	(*xorqi_cc_ext_1): Canonicalize insn pattern w.r.t. zero_extract RTXes.
+	Update corresponding splitter.
+	(*xorqi_ext_1_cc): Rename from *xorqi_cc_ext_1.
+	(isinfxf2): Update calls to renamed expanders.
+	(isinf<mode>2): Ditto.
+	* config/i386/i386.c (ix86_expand_fp_compare): Ditto.
+	(ix86_emit_fp_unordered_jump): Ditto.
+	(ix86_emit_i387_round): Ditto.
+
+2016-12-26  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/invoke.texi (SPARC options): Add missing documentation for -mlra.
+
+	* doc/cpp.texi (Invocation): Remove space in command.
+
+2016-12-25  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* doc/cpp.texi (Invocation): Revise to indicate that GCC driver
+	options are only documented in the GCC manual.
+	* doc/cppopts.texi: Delete documentation of GCC driver options
+	-o, -Wall, -Wtraditional, -Werror, -Wsystem-headers, -w,
+	-pedantic, -pedantic-errors, -std=, -ansi, --help, --target-help,
+	-v, -version.  Update -Wcomment, -Wtrigraphs, -Wundef,
+	-Wexpansion-to-defined, -Wno-endif-labels, -traditional,
+	-traditional-cpp, -trigraphs to merge text previously in GCC manual.
+	* doc/invoke.texi (Option Summary): Move -trigraphs, -traditional,
+	and -traditional-cpp from C dialect options to preprocessor options.
+	(C Dialect Options): Likewise.
+	(Warning Options): Delete documentation of -Wcomment, -Wtrigraphs,
+	-Wexpansion-to-defined, -Wundef, and -Wno-endif-labels.
+
+2016-12-24  Richard Sandiford  <richard.sandiford@arm.com>
+
+	* tree-core.h (tree_base): Document the meaning of public_flag
+	for SSA names.
+	* tree.h (SSA_NAME_IS_VIRTUAL_OPERAND): New macro.
+	(SET_SSA_NAME_VAR_OR_IDENTIFIER): Record whether the variable
+	is a virtual operand.
+	* gimple-expr.h (virtual_operand_p): Use SSA_NAME_IS_VIRTUAL_OPERAND.
+
+2016-12-22  Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	* tree-pretty-print.c (dump_generic_node): Change dump format for
+	REALPART_EXPR and IMAGPART_EXPR with TDF_GIMPLE.
+
+2016-12-22  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* varasm.c (build_constant_desc): Use the alignment of the var
+	decl instead of the original expression.
+
+2016-12-22  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* config/s390/s390-c.c (s390_cpu_cpp_builtins_internal): Define
+	__S390_ARCH_LEVEL__.
+
+2016-12-22  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/78886
+	* tree-ssa-strlen.c (handle_builtin_malloc): Return when LHS
+	is equal to NULL.
+
+2016-12-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/78817
+	* vec.h (vec<T, va_heap, vl_ptr>::safe_grow_cleared): Revert
+	2016-12-15 change.
+
+2016-12-21  Vladimir Makarov  <vmakarov@redhat.com>
+
+	PR rtl-optimization/78580
+	* ira-costs.c (find_costs_and_classes): Make regno_aclass
+	translated into an allocno class.
+
+2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/78817
+	* tree-pass.h (make_pass_post_ipa_warn): Declare.
+	* builtins.c (validate_arglist): Adjust get_nonnull_args call.
+	Check for NULL pointer argument to nonnull arg here.
+	(validate_arg): Revert 2016-12-14 changes.
+	* calls.h (get_nonnull_args): Remove declaration.
+	* tree-ssa-ccp.c: Include diagnostic-core.h.
+	(pass_data_post_ipa_warn): New variable.
+	(pass_post_ipa_warn): New class.
+	(pass_post_ipa_warn::execute): New method.
+	(make_pass_post_ipa_warn): New function.
+	* tree.h (get_nonnull_args): Declare.
+	* tree.c (get_nonnull_args): New function.
+	* calls.c (maybe_warn_null_arg): Removed.
+	(maybe_warn_null_arg): Removed.
+	(initialize_argument_information): Revert 2016-12-14 changes.
+	* passes.def: Add pass_post_ipa_warn after first ccp after IPA.
+
+2016-12-21  Pat Haugen  <pthaugen@us.ibm.com>
+
+	PR rtl-optimization/11488
+	* common/config/rs6000/rs6000-common.c
+	(rs6000_option_optimization_table): Enable -fsched-pressure.
+	* config/rs6000/rs6000.c (TARGET_COMPUTE_PRESSURE_CLASSES): Define
+	target hook.
+	(rs6000_option_override_internal): Set default -fsched-pressure
+	algorithm.
+	(rs6000_compute_pressure_classes): Implement target hook.
+
+2016-12-21  Bill Seurer  <seurer@linux.vnet.ibm.com>
+
+	PR sanitizer/65479
+	* config/rs6000/rs6000.c (rs6000_option_override_internal): Add
+	-fasynchronous-unwind-tables option when -fsanitize=address is
+	specified.
+
+2016-12-21  Bernd Schmidt  <bschmidt@redhat.com>
+
+	PR target/71321
+	* config/i386/i386.md (lea<mode>_general_2b, lea<mode>_general_3b): New
+	patterns.
+	* config/i386/predicates.md (const123_operand): New.
+
+2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+	    Martin Liska  <mliska@suse.cz>
+
+	PR driver/78863
+	* gcc.c (driver::build_option_suggestions): Do not add
+	-fsanitize=all as a suggestion candidate.
+
+2016-12-21  Alexander Monakov  <amonakov@ispras.ru>
+
+	PR target/78831
+	* config/nvptx/nvptx.c (init_softstack_frame): Remove assert.  Compute
+	crtl->is_leaf only if unset.  Adjust comment.
+
+2016-12-21  Andrew Pinski  <apinski@cavium.com>
+
+	* match.pd (max:c @0 (plus@2 @0 INTEGER_CST@1)): New Pattern.
+	(min:c @0 (plus@2 @0 INTEGER_CST@1)) : New Pattern.
+
+2016-12-20  James Greenhalgh  <james.greenhalghj@arm.com>
+
+	* common.opt (excess_precision): Tag as SetByCombined.
+	* opts.c (set_fast_math_flags): Also set
+	flag_excess_precision_cmdline.
+	(fast_math_flags_set_p): Also check flag_excess_precision_cmdline.
+	* doc/invoke.texi (-fexcess-precision): Drop text saying the
+	option has no effect under -ffast-math, make it clear that
+	-ffast-math will cause -fexcess-precision=fast by default even for
+	standards compliant modes.
+	(-ffast-math): Document that this sets -fexcess-precision=fast.
+
+2016-12-20  Richard Biener  <rguenther@suse.de>
+
+	* passes.c (execute_one_pass): Handle going out of SSA w/o
+	hitting pass_startwith.  Handle skipping property providers.
+
+2016-12-20  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/78694
+	* config/arm/arm.c (dump_minipool): Copy mp->value before emitting it
+	in the minipool to avoid invalid RTL sharing.
+
+2016-12-19  Aaron Sawdey  <acsawdey@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000-protos.h (expand_strn_compare): Declare.
+	* config/rs6000/rs6000.md (UNSPEC_CMPB): New unspec.
+	(cmpb<mode>3): pattern for generating cmpb.
+	(cmpstrnsi): pattern to expand strncmp ().
+	* config/rs6000/rs6000.opt (mstring-compare-inline-limit): Add a new
+	target option for controlling how much code inline expansion of
+	strncmp() will be allowed to generate.
+	* config/rs6000/rs6000.c (expand_strncmp_align_check): generate code
+	for runtime page crossing check of strncmp () args.
+	(expand_strn_compare): Function to do builtin expansion of strncmp ().
+
+2016-12-19  David Malcolm  <dmalcolm@redhat.com>
+
+	* print-rtl-function.c (print_rtx_function): Update
+	example in comment to reflect current format.
+
+2016-12-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (*popcounthi2_1): New insn_and_split pattern.
+
+2016-12-19  Sandra Loosemore  <sandra@codesourcery.com>
+
+	* doc/cpp.texi: Clean up anachronistic C99 references and remove
+	discussion of very old GCC versions.
+	(Differences from previous versions): Delete entire section.
+
+2016-12-19  Will Schmidt  <will_schmidt@vnet.ibm.com>
+
+	* config/rs6000/rs6000.c (rs6000_gimple_fold_builtin): Add handling for
+	early expansion of vector multiply and subtract builtins.
+
+2016-12-19  David Malcolm  <dmalcolm@redhat.com>
+
+	* print-rtl.c (rtx_writer::print_rtx_operand_code_r): For
+	non-virtual pseudos in compact mode, wrap the regno in '<' and '>'
+	rather than using a '%' prefix.
+	* rtl-tests.c (selftest::test_dumping_regs): Update for above change.
+
+2016-12-19  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	PR target/78748
+	* config/s390/s390.md ("*andc_split_<mode>"): Allow memory destination
+	only if it coincides with operand 2.
+
+2016-12-19  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	* combine.c (change_zero_ext): Skip generation of redundant AND.
+
+2016-12-19  Krister Walfridsson  <krister.walfridsson@gmail.com>
+
+	* config/netbsd.h (LINK_EH_SPEC): Define.
+
+2016-12-18  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* lra-constraints.c (process_address): Add forward declaration.
+	(simplify_operand_subreg): In the MEM case, if the adjusted memory
+	reference is not sufficient aligned and the address was invalid,
+	reload the address before reloading the original memory reference.
+	Fix long lines and add a final return for the sake of clarity.
+
+2016-12-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/78832
+	* sanopt.c (sanitize_asan_mark_unpoison): Remove next variable, use
+	continue if gsi_next should be skipped.
+	(sanitize_asan_mark_poison): Remove prev variable, use continue if
+	gsi_prev should be skipped.  When removing ASAN_MARK, do gsi_prev
+	first and gsi_remove on a previously made copy of the iterator.
+
+2016-12-17  Andrew Senkevich  <andrew.senkevich@intel.com>
+
+	* config/i386/avx512bwintrin.h: Add new k-mask intrinsics.
+	* config/i386/avx512dqintrin.h: Ditto.
+	* config/i386/avx512fintrin.h: Ditto.
+	* config/i386/i386-builtin.def (__builtin_ia32_kaddqi,
+	__builtin_ia32_kaddhi, __builtin_ia32_kaddsi,
+	__builtin_ia32_kadddi): New.
+	* config/i386/sse.md (kadd<mode>): New.
+
+2016-12-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (*tzcnt<mode>_1): Merge *tzcnt<mode>_1_falsedep_1
+	and *tzcnt<mode>_1 to define_insn_and_split pattern.  Adjust split
+	condition to split after epilogue_completed.
+	(ctz<mode>2): Remove expander.
+	(ctz<mode>2): Merge *ctz<mode>2_falsedep_1 and *ctz<mode>2 to
+	define_insn_and_split pattern.  Adjust split condition to split
+	after epilogue_completed.
+	(clz<mode>2_lznct): Remove expander.
+	(clz<mode>2_lzcnt): Merge *clz<mode>2_lzcnt_falsedep_1 and
+	*clz<mode>2 to define_insn_and_split pattern.  Adjust split
+	condition to split after epilogue_completed.
+	(<lt_zcnt>_<mode>): Remove expander.
+	(<lt_zcnt>_<mode>): Merge *<lt_zcnt>_<mode>_falsedep_1 and
+	*<lt_zcnt>_<mode> to define_insn_and_split pattern.  Adjust split
+	condition to split after epilogue_completed.
+	(<lt_zcnt>_hi): New insn pattern.
+	(popcount<mode>2): Remove expander.
+	(popcount<mode>2): Merge *popcount<mode>2_falsedep_1 and
+	*popcount<mode>2 to define_insn_and_split pattern.  Adjust split
+	condition to split after epilogue_completed.
+	(popcounthi2): New insn pattern.
+
+2016-12-16  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	* config/rs6000/altivec.md (UNSPEC_CMPRB): New unspec value.
+	(UNSPEC_CMPRB2): New unspec value.
+	(UNSPEC_CMPEQB): New unspec value.
+	(cmprb): New expansion.
+	(*cmprb_internal): New insn.
+	(*setb_internal): New insn.
+	(cmprb2): New expansion.
+	(*cmprb2_internal): New insn.
+	(cmpeqb): New expansion.
+	(*cmpeqb_internal): New insn.
+	* config/rs6000/rs6000-builtin.def (BU_P9_2): New macro.
+	(BU_P9_64BIT_2): Likewise.
+	(BU_P9_OVERLOAD_2): Likewise.
+	(CMPRB): Add byte-in-range built-in function.
+	(CMBRB2): Add byte-in-either-range built-in function.
+	(CMPEQB): Add byte-in-set built-in function.
+	(CMPRB): Add overload support for byte-in-range function.
+	(CMPRB2): Add overload support for byte-in-either-range function.
+	(CMPEQB): Add overload support for byte-in-set built-in function.
+	* config/rs6000/rs6000-c.c (P9_BUILTIN_CMPRB): Macro expansion to
+	define argument types for new builtin.
+	(P9_BUILTIN_CMPRB2): Likewise.
+	(P9_BUILTIN_CMPEQB): Likewise.
+	* doc/extend.texi (PowerPC AltiVec Built-in Functions): Rearrange
+	the order of presentation for certain built-in functions
+	(scalar_extract_exp, scalar_extract_sig, scalar_insert_exp)
+	(scalar_cmp_exp_gt, scalar_cmp_exp_lt, scalar_cmp_exp_eq)
+	(scalar_cmp_exp_unordered, scalar_test_data_class)
+	(scalar_test_neg) to improve locality and flow.  Document
+	the new __builtin_scalar_byte_in_set,
+	__builtin_scalar_byte_in_range, and
+	__builtin_scalar_byte_in_either_range functions.
+
+2016-12-16  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.md: New define_split above bswap<mode>2.
+
+2016-12-16  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* config/aarch64/aarch64.md: New define_split above insv<mode>.
+
+2016-12-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/78408
+	* tree-ssa-ccp.c: Include tree-dfa.h.
+	(optimize_memcpy): New function.
+	(pass_fold_builtins::execute): Use it.  Remove useless conditional
+	break after BUILT_IN_VA_*.
+
+2016-12-16  Marek Polacek  <polacek@redhat.com>
+
+	PR tree-optimization/78819
+	* tree-vrp.c (find_switch_asserts): Return if the insertion limit is 0.
+	Don't register an assertion if the default case shares a label with
+	another case.
+
+2016-12-16  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	* config/arm/arm.md (subsi3_carryin): Add Thumb-2 RSC #0.
+	(arm_negdi2) Rename to negdi2_insn, allow on Thumb-2.
+	* config/arm/thumb2.md (thumb2_negdi2): Remove pattern.
+
+2016-12-16  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	* config/arm/arm.c (thumb_core_reg_alloc_order): Swap R12 and R14.
+
+2016-12-16  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* config/arc/arc.md (call_prof): Remove.
+	(call_value_prof): Likewise.
+	(sibcall_prof): Likewise.
+	(sibcall_value_prof): Likewise.
+
+2016-12-16  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* config/arc/arc.h (LINK_SPEC): Tidy up.
+	(ENDFILE_SPEC): Likewise.
+	(LIB_SPEC): Likewise.
+	(STARTFILE_SPEC): Include gcrt0 when profiling.
+	(FUNCTION_PROFILER): Use __mcount.
+	* config/arc/arc.opt (mucb-mcount): Remove.
+	* doc/invoke.texi (ARC): Remove mucb-mcount doc.
+	* arc/arc-protos.h (arc_profile_call): Remove.
+	* config/arc/arc.c (write_profile_sections): Likewise.
+	(arc_profile_call): Likewise.
+	(unspec_prof_hash): Likewise.
+	(unspec_prof_htab_eq): Likewise.
+	(arc_legitimate_constant_p): Remove UNSPEC_PROF.
+	(arc_reorg): Remove call to write_profile_sections.
+	* config/arc/arc.md (call): Remove call to arc_profile_call.
+	(call_value): Likewise.
+	(sibcall): Likewise.
+	(sibcall_value): Likewise.
+	(define_constants): Remove UNSPEC_PROF.
+
+2016-12-16  Claudiu Zissulescu  <claziss@synopsys.com>
+
+	* config/arc/arc.md (mulsidi_600): Change to insn_and_split,
+	generate new mul64 insn for core multiplication work.
+	(umulsidi_600): Likewise, but use mulu64 insn.
+	(mul64): New pattern, content taken from old mulsidi_600 insn pattern.
+	(mulu64): Likewise, but using umulsidi_600.
+	(mulsidi3): Remove move to destination, this is now handled by
+	mulsidi_600 insn_and_split.
+	(umulsidi3): Likewise, but using umulsidi_600.
+
+2016-12-16  Richard Biener  <rguenther@suse.de>
+
+	PR c++/71694
+	* langhooks-def.h (lhd_unit_size_without_reusable_padding): Declare.
+	(LANG_HOOKS_UNIT_SIZE_WITHOUT_REUSABLE_PADDING): Define.
+	(LANG_HOOKS_FOR_TYPES_INITIALIZER): Adjust.
+	* langhooks.h (struct lang_hooks_for_types): Add
+	unit_size_without_reusable_padding.
+	* langhooks.c (lhd_unit_size_without_reusable_padding): New.
+	* stor-layout.c (finish_bitfield_representative): Use
+	unit_size_without_reusable_padding langhook to decide on the
+	last representatives size.
+
+2016-12-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/71632
+	* expr.c (expand_cond_expr_using_cmove): Bail out early if
+	we end up recursing via TER.
+
+2016-12-15  Martin Sebor  <msebor@redhat.com>
+
+	PR bootstrap/78817
+	* vec.h (vec<T, va_heap, vl_ptr>::safe_grow_cleared): Assert
+	a pointer is non-null.
+
 2016-12-15  Andrew Senkevich  <andrew.senkevich@intel.com>
 
 	* config/i386/avx512bwintrin.h: Add new k-mask intrinsics.
@@ -287,9 +809,9 @@
 
 	* arm-opts.h (struct arm_arch_core_flag): Add new field ISA.
 	Initialize it.
-   	(arm_arch_core_flag): Delete flags field.
-    	(arm_arch_core_flags): Don't initialize flags field.
- 	* common/config/arm/arm-common.c (check_isa_bits_for): New function.
+	(arm_arch_core_flag): Delete flags field.
+	(arm_arch_core_flags): Don't initialize flags field.
+	* common/config/arm/arm-common.c (check_isa_bits_for): New function.
 	(arm_target_thumb_only): Use new isa bits arrays.
 
 2016-12-15  Richard Earnshaw  <rearnsha@arm.com>

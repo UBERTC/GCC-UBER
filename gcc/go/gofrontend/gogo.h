@@ -202,6 +202,27 @@ class Gogo
   }
 
   // Given a name which may or may not have been hidden, return the
+  // name to use within a mangled symbol name.
+  static std::string
+  mangle_possibly_hidden_name(const std::string& name)
+  { 
+    // FIXME: This adds in pkgpath twice for hidden symbols, which is
+    // less than ideal.
+    std::string n;
+    if (!Gogo::is_hidden_name(name))
+      n = name;
+    else
+      {
+        n = ".";
+        std::string pkgpath = Gogo::hidden_name_pkgpath(name);
+        n.append(Gogo::pkgpath_for_symbol(pkgpath));
+        n.append(1, '.');
+        n.append(Gogo::unpack_hidden_name(name));
+      }
+    return n;
+  }
+
+  // Given a name which may or may not have been hidden, return the
   // name to use in an error message.
   static std::string
   message_name(const std::string& name);
@@ -773,14 +794,16 @@ class Gogo
   Named_object*
   create_initialization_function(Named_object* fndecl, Bstatement* code_stmt);
 
-  // Initialize imported packages.
+  // Initialize imported packages. BFUNCTION is the function
+  // into which the package init calls will be placed.
   void
-  init_imports(std::vector<Bstatement*>&);
+  init_imports(std::vector<Bstatement*>&, Bfunction* bfunction);
 
   // Register variables with the garbage collector.
   void
   register_gc_vars(const std::vector<Named_object*>&,
-                   std::vector<Bstatement*>&);
+                   std::vector<Bstatement*>&,
+                   Bfunction* init_bfunction);
 
   // Type used to map import names to packages.
   typedef std::map<std::string, Package*> Imports;

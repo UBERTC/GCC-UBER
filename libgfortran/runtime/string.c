@@ -24,7 +24,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 
 #include "libgfortran.h"
 #include <string.h>
-#include <stdlib.h>
+#include <strings.h>
 
 
 /* Given a fortran string, return its length exclusive of the trailing

@@ -40,6 +40,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #include "config.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <stddef.h>
 #include <float.h>
 #include <stdarg.h>
@@ -649,9 +650,6 @@ iexport_proto(set_args);
 
 extern void get_args (int *, char ***);
 internal_proto(get_args);
-
-extern void store_exe_path (const char *);
-export_proto(store_exe_path);
 
 /* backtrace.c */
 

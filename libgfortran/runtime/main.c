@@ -23,15 +23,7 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 <http://www.gnu.org/licenses/>.  */
 
 #include "libgfortran.h"
-#include <stdlib.h>
-#include <string.h>
-#include <limits.h>
-#include <errno.h>
 
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
 
 /* Stupid function to be sure the constructor is always linked in, even
    in the case of static linking.  See PR libfortran/22298 for details.  */
@@ -69,15 +61,6 @@ determine_endianness (void)
 
 static int argc_save;
 static char **argv_save;
-
-
-void
-store_exe_path (const char * argv0 __attribute__ ((unused)))
-{
-  /* This function is now useless, but is retained due to ABI compatibility.
-    Remove when bumping the library ABI.  */
-  ;
-}
 
 
 /* Set the saved values of the command line arguments.  */
