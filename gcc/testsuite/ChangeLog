@@ -1,3 +1,25 @@
+2016-12-22  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78239
+	* gfortran.dg/fimplicit_none_1.f90:  New test.
+	* gfortran.dg/fimplicit_none_2.f90:  New test.
+
+2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/77767
+	* gcc.c-torture/execute/pr77767.c: New test.
+
+	Backported from mainline
+	2016-12-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR ipa/77905
+	* g++.dg/ipa/pr77905.C: New test.
+
+2016-12-21  Release Manager
+
+	* GCC 6.3.0 released.
+
 2016-12-15  Jakub Jelinek  <jakub@redhat.com>
 
 	PR middle-end/78540
