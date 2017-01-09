@@ -1,3 +1,129 @@
+2017-01-09  Andre Vieira <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline
+	2016-12-20  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* gcc.target/arm/pr78255-2.c: Fix to work for targets
+	that do not optimize for tailcall.
+
+2017-01-09  Andre Vieira <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline
+	2016-12-09  Andre Vieira <andre.simoesdiasvieira@arm.com>
+
+	PR rtl-optimization/78255
+	* gcc.target/aarch64/pr78255.c: New.
+	* gcc.target/arm/pr78255-1.c: New.
+	* gcc.target/arm/pr78255-2.c: New.
+
+2017-01-06  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	Backport from mainline
+	2016-10-25  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	PR target/78041
+	* gcc.target/arm/pr78041.c: New test.
+
+2017-01-05  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-22  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/litpool-str-1.c: New test.
+
+2017-01-04  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-05-11  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71055
+	* gcc.dg/torture/pr71055.c: New testcase.
+
+2017-01-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-12-21  Martin Liska  <mliska@suse.cz>
+
+	PR driver/78863
+	* gcc.dg/spellcheck-options-13.c: New test.
+
+2017-01-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-12-22  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/78886
+	* gcc.dg/tree-ssa/pr78886.c: New test.
+
+2017-01-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-12-13  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/78428
+	* gcc.dg/tree-ssa/pr78428.c: New test.
+
+2016-12-22  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78239
+	* gfortran.dg/fimplicit_none_1.f90:  New test.
+	* gfortran.dg/fimplicit_none_2.f90:  New test.
+
+2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/77767
+	* gcc.c-torture/execute/pr77767.c: New test.
+
+	Backported from mainline
+	2016-12-13  Jakub Jelinek  <jakub@redhat.com>
+
+	PR ipa/77905
+	* g++.dg/ipa/pr77905.C: New test.
+
+2016-12-21  Release Manager
+
+	* GCC 6.3.0 released.
+
+2016-12-15  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/78540
+	* gcc.dg/pr78540.c: Add -w to dg-options.
+
+	PR target/77834
+	* gcc.dg/pr77834.c: Add -w to dg-options.
+
+2016-12-14  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/78701
+	* g++.dg/cpp0x/pr78701.C: New.
+
+2016-12-14  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/78796
+	* gcc.dg/tls/pr78796.c: New test.
+
+2016-12-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/78731
+	* gcc.dg/torture/pr78731.c: New testcase.
+
+2016-12-14  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-11-25  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/77673
+	* gcc.dg/pr77673.c: New test.
+
+2016-12-13  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-07  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/72717
+	* gcc.target/powerpc/pr72717.c: New test.
+
 2016-12-12  Bernd Schmidt  <bschmidt@redhat.com>
 
 	Backport from mainline
