@@ -4172,6 +4172,7 @@ write_header (void)
 #include \"diagnostic-core.h\"\n\
 #include \"reload.h\"\n\
 #include \"regs.h\"\n\
+#include \"memmodel.h\"\n\
 #include \"tm-constrs.h\"\n\
 \n");
 

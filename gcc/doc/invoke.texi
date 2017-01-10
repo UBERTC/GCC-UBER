@@ -634,7 +634,8 @@ Objective-C and Objective-C++ Dialects}.
 -mneon-for-64bits @gol
 -mslow-flash-data @gol
 -masm-syntax-unified @gol
--mrestrict-it}
+-mrestrict-it @gol
+-mcmse}
 
 @emph{AVR Options}
 @gccoptlist{-mmcu=@var{mcu} -maccumulate-args -mbranch-cost=@var{cost} @gol
@@ -14062,6 +14063,8 @@ Permissible names are: @samp{arm2}, @samp{arm250},
 @samp{cortex-a32}, @samp{cortex-a35}, @samp{cortex-a53}, @samp{cortex-a57},
 @samp{cortex-a72}, @samp{cortex-a73}, @samp{cortex-r4},
 @samp{cortex-r4f}, @samp{cortex-r5}, @samp{cortex-r7}, @samp{cortex-r8},
+@samp{cortex-m33},
+@samp{cortex-m23},
 @samp{cortex-m7},
 @samp{cortex-m4},
 @samp{cortex-m3},
@@ -14371,6 +14374,12 @@ Print CPU tuning information as comment in assembler file.  This is
 an option used only for regression testing of the compiler and not
 intended for ordinary use in compiling code.  This option is disabled
 by default.
+
+@item -mcmse
+@opindex mcmse
+Generate secure code as per the "ARMv8-M Security Extensions: Requirements on
+Development Tools Engineering Specification", which can be found on
+@url{http://infocenter.arm.com/help/topic/com.arm.doc.ecm0359818/ECM0359818_armv8m_security_extensions_reqs_on_dev_tools_1_0.pdf}.
 @end table
 
 @node AVR Options

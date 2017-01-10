@@ -55,6 +55,10 @@
    (set_attr "type" "multiple")]
 )
 
+;; Changes to the constraints of this pattern must be propagated to those of
+;; atomic additions in sync.md and to the logic for bind_old_new in
+;; arm_split_atomic_op in arm.c.  These must be at least as strict as the
+;; constraints here and aim to be as permissive.
 (define_insn_and_split "*thumb1_addsi3"
   [(set (match_operand:SI          0 "register_operand" "=l,l,l,*rk,*hk,l,k,l,l,l")
 	(plus:SI (match_operand:SI 1 "register_operand" "%0,0,l,*0,*0,k,k,0,l,k")
@@ -131,6 +135,10 @@
    (set_attr "type" "multiple")]
 )
 
+;; Changes to the constraints of this pattern must be propagated to those of
+;; atomic subtractions in sync.md and to the logic for bind_old_new in
+;; arm_split_atomic_op in arm.c.  These must be at least as strict as the
+;; constraints here and aim to be as permissive.
 (define_insn "thumb1_subsi3_insn"
   [(set (match_operand:SI           0 "register_operand" "=l")
 	(minus:SI (match_operand:SI 1 "register_operand" "l")
@@ -173,6 +181,10 @@
    (set_attr "type" "muls")]
 )
 
+;; Changes to the constraints of this pattern must be propagated to those of
+;; atomic bitwise ANDs and NANDs in sync.md and to the logic for bind_old_new
+;; in arm_split_atomic_op in arm.c.  These must be at least as strict as the
+;; constraints here and aim to be as permissive.
 (define_insn "*thumb1_andsi3_insn"
   [(set (match_operand:SI         0 "register_operand" "=l")
 	(and:SI (match_operand:SI 1 "register_operand" "%0")
@@ -227,6 +239,10 @@
    (set_attr "type" "logics_reg")]
 )
 
+;; Changes to the constraints of this pattern must be propagated to those of
+;; atomic inclusive ORs in sync.md and to the logic for bind_old_new in
+;; arm_split_atomic_op in arm.c.  These must be at least as strict as the
+;; constraints here and aim to be as permissive.
 (define_insn "*thumb1_iorsi3_insn"
   [(set (match_operand:SI         0 "register_operand" "=l")
 	(ior:SI (match_operand:SI 1 "register_operand" "%0")
@@ -237,6 +253,10 @@
    (set_attr "conds" "set")
    (set_attr "type" "logics_reg")])
 
+;; Changes to the constraints of this pattern must be propagated to those of
+;; atomic exclusive ORs in sync.md and to the logic for bind_old_new in
+;; arm_split_atomic_op in arm.c.  These must be at least as strict as the
+;; constraints here and aim to be as permissive.
 (define_insn "*thumb1_xorsi3_insn"
   [(set (match_operand:SI         0 "register_operand" "=l")
 	(xor:SI (match_operand:SI 1 "register_operand" "%0")
@@ -1059,6 +1079,9 @@
 	    (const_string "multiple")))]
 )
 
+;; Changes to the constraints of this pattern must be propagated to those of
+;; atomic compare_and_swap splitters in sync.md.  These must be at least as
+;; strict as the constraints here and aim to be as permissive.
 (define_insn "cbranchsi4_insn"
   [(set (pc) (if_then_else
 	      (match_operator 0 "arm_comparison_operator"
@@ -1120,6 +1143,9 @@
    (set_attr "type" "multiple")]
 )
 
+;; Changes to the constraints of this pattern must be propagated to those of
+;; atomic compare_and_swap splitters in sync.md.  These must be at least as
+;; strict as the constraints here and aim to be as permissive.
 (define_insn "cbranchsi4_scratch"
   [(set (pc) (if_then_else
 	      (match_operator 4 "arm_comparison_operator"
@@ -1705,6 +1731,19 @@
    (set_attr "type" "call")]
 )
 
+(define_insn "*nonsecure_call_reg_thumb1_v5"
+  [(call (unspec:SI [(mem:SI (match_operand:SI 0 "register_operand" "l*r"))]
+		    UNSPEC_NONSECURE_MEM)
+	 (match_operand 1 "" ""))
+   (use (match_operand 2 "" ""))
+   (clobber (reg:SI LR_REGNUM))
+   (clobber (match_dup 0))]
+  "TARGET_THUMB1 && use_cmse && !SIBLING_CALL_P (insn)"
+  "bl\\t__gnu_cmse_nonsecure_call"
+  [(set_attr "length" "4")
+   (set_attr "type" "call")]
+)
+
 (define_insn "*call_reg_thumb1"
   [(call (mem:SI (match_operand:SI 0 "register_operand" "l*r"))
 	 (match_operand 1 "" ""))
@@ -1734,6 +1773,21 @@
   "TARGET_THUMB1 && arm_arch5"
   "blx\\t%1"
   [(set_attr "length" "2")
+   (set_attr "type" "call")]
+)
+
+(define_insn "*nonsecure_call_value_reg_thumb1_v5"
+  [(set (match_operand 0 "" "")
+	(call (unspec:SI
+	       [(mem:SI (match_operand:SI 1 "register_operand" "l*r"))]
+	       UNSPEC_NONSECURE_MEM)
+	      (match_operand 2 "" "")))
+   (use (match_operand 3 "" ""))
+   (clobber (reg:SI LR_REGNUM))
+   (clobber (match_dup 1))]
+  "TARGET_THUMB1 && use_cmse"
+  "bl\\t__gnu_cmse_nonsecure_call"
+  [(set_attr "length" "4")
    (set_attr "type" "call")]
 )
 
@@ -1843,8 +1897,13 @@
   "*
     return thumb1_unexpanded_epilogue ();
   "
-  ; Length is absolute worst case
-  [(set_attr "length" "44")
+  ; Length is absolute worst case, when using CMSE and if this is an entry
+  ; function an extra 4 (MSR) bytes will be added.
+  [(set (attr "length")
+	(if_then_else
+	 (match_test "IS_CMSE_ENTRY (arm_current_func_type ())")
+	 (const_int 48)
+	 (const_int 44)))
    (set_attr "type" "block")
    ;; We don't clobber the conditions, but the potential length of this
    ;; operation is sufficient to make conditionalizing the sequence

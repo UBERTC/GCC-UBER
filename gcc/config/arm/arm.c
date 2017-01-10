@@ -27,6 +27,7 @@
 #include "target.h"
 #include "rtl.h"
 #include "tree.h"
+#include "memmodel.h"
 #include "cfghooks.h"
 #include "df.h"
 #include "tm_p.h"
@@ -61,6 +62,7 @@
 #include "builtins.h"
 #include "tm-constrs.h"
 #include "rtl-iter.h"
+#include "gimplify.h"
 
 /* This file should be included last.  */
 #include "target-def.h"
@@ -134,6 +136,8 @@ static tree arm_handle_isr_attribute (tree *, tree, tree, int, bool *);
 #if TARGET_DLLIMPORT_DECL_ATTRIBUTES
 static tree arm_handle_notshared_attribute (tree *, tree, tree, int, bool *);
 #endif
+static tree arm_handle_cmse_nonsecure_entry (tree *, tree, tree, int, bool *);
+static tree arm_handle_cmse_nonsecure_call (tree *, tree, tree, int, bool *);
 static void arm_output_function_epilogue (FILE *, HOST_WIDE_INT);
 static void arm_output_function_prologue (FILE *, HOST_WIDE_INT);
 static int arm_comp_type_attributes (const_tree, const_tree);
@@ -343,6 +347,11 @@ static const struct attribute_spec arm_attribute_table[] =
   { "notshared",    0, 0, false, true, false, arm_handle_notshared_attribute,
     false },
 #endif
+  /* ARMv8-M Security Extensions support.  */
+  { "cmse_nonsecure_entry", 0, 0, true, false, false,
+    arm_handle_cmse_nonsecure_entry, false },
+  { "cmse_nonsecure_call", 0, 0, true, false, false,
+    arm_handle_cmse_nonsecure_call, true },
   { NULL,           0, 0, false, false, false, NULL, false }
 };
 
@@ -895,6 +904,9 @@ int arm_condexec_masklen = 0;
 
 /* Nonzero if chip supports the ARMv8 CRC instructions.  */
 int arm_arch_crc = 0;
+
+/* Nonzero if chip supports the ARMv8-M security extensions.  */
+int arm_arch_cmse = 0;
 
 /* Nonzero if the core has a very small, high-latency, multiply unit.  */
 int arm_m_profile_small_mul = 0;
@@ -2233,7 +2245,8 @@ const struct tune_params arm_cortex_m7_tune =
 };
 
 /* The arm_v6m_tune is duplicated from arm_cortex_tune, rather than
-   arm_v6t2_tune. It is used for cortex-m0, cortex-m1 and cortex-m0plus.  */
+   arm_v6t2_tune.  It is used for cortex-m0, cortex-m1, cortex-m0plus and
+   cortex-m23.  */
 const struct tune_params arm_v6m_tune =
 {
   arm_9e_rtx_costs,
@@ -3240,6 +3253,7 @@ arm_option_override (void)
   arm_arch_no_volatile_ce = ARM_FSET_HAS_CPU1 (insn_flags, FL_NO_VOLATILE_CE);
   arm_tune_cortex_a9 = (arm_tune == cortexa9) != 0;
   arm_arch_crc = ARM_FSET_HAS_CPU1 (insn_flags, FL_CRC32);
+  arm_arch_cmse = ARM_FSET_HAS_CPU2 (insn_flags, FL2_CMSE);
   arm_m_profile_small_mul = ARM_FSET_HAS_CPU1 (insn_flags, FL_SMALLMUL);
   arm_fp16_inst = ARM_FSET_HAS_CPU2 (insn_flags, FL2_FP16INST);
   if (arm_fp16_inst)
@@ -3506,6 +3520,9 @@ arm_option_override (void)
   if (target_slow_flash_data)
     arm_disable_literal_pool = true;
 
+  if (use_cmse && !arm_arch_cmse)
+    error ("target CPU does not support ARMv8-M Security Extensions");
+
   /* Disable scheduling fusion by default if it's not armv7 processor
      or doesn't prefer ldrd/strd.  */
   if (flag_schedule_fusion == 2
@@ -3637,6 +3654,9 @@ arm_compute_func_type (void)
     type |= TARGET_INTERWORK ? ARM_FT_INTERWORKED : ARM_FT_NORMAL;
   else
     type |= arm_isr_value (TREE_VALUE (a));
+
+  if (lookup_attribute ("cmse_nonsecure_entry", attr))
+    type |= ARM_FT_CMSE_ENTRY;
 
   return type;
 }
@@ -3863,6 +3883,11 @@ use_return_insn (int iscond, rtx sibling)
 	  && df_regs_ever_live_p (PIC_OFFSET_TABLE_REGNUM))
 	return 0;
     }
+
+  /* ARMv8-M nonsecure entry function need to use bxns to return and thus need
+     several instructions if anything needs to be popped.  */
+  if (saved_int_regs && IS_CMSE_ENTRY (func_type))
+    return 0;
 
   /* If there are saved registers but the LR isn't saved, then we need
      two instructions for the return.  */
@@ -6638,6 +6663,185 @@ arm_handle_notshared_attribute (tree *node,
 }
 #endif
 
+/* This function returns true if a function with declaration FNDECL and type
+   FNTYPE uses the stack to pass arguments or return variables and false
+   otherwise.  This is used for functions with the attributes
+   'cmse_nonsecure_call' or 'cmse_nonsecure_entry' and this function will issue
+   diagnostic messages if the stack is used.  NAME is the name of the attribute
+   used.  */
+
+static bool
+cmse_func_args_or_return_in_stack (tree fndecl, tree name, tree fntype)
+{
+  function_args_iterator args_iter;
+  CUMULATIVE_ARGS args_so_far_v;
+  cumulative_args_t args_so_far;
+  bool first_param = true;
+  tree arg_type, prev_arg_type = NULL_TREE, ret_type;
+
+  /* Error out if any argument is passed on the stack.  */
+  arm_init_cumulative_args (&args_so_far_v, fntype, NULL_RTX, fndecl);
+  args_so_far = pack_cumulative_args (&args_so_far_v);
+  FOREACH_FUNCTION_ARGS (fntype, arg_type, args_iter)
+    {
+      rtx arg_rtx;
+      machine_mode arg_mode = TYPE_MODE (arg_type);
+
+      prev_arg_type = arg_type;
+      if (VOID_TYPE_P (arg_type))
+	continue;
+
+      if (!first_param)
+	arm_function_arg_advance (args_so_far, arg_mode, arg_type, true);
+      arg_rtx = arm_function_arg (args_so_far, arg_mode, arg_type, true);
+      if (!arg_rtx
+	  || arm_arg_partial_bytes (args_so_far, arg_mode, arg_type, true))
+	{
+	  error ("%qE attribute not available to functions with arguments "
+		 "passed on the stack", name);
+	  return true;
+	}
+      first_param = false;
+    }
+
+  /* Error out for variadic functions since we cannot control how many
+     arguments will be passed and thus stack could be used.  stdarg_p () is not
+     used for the checking to avoid browsing arguments twice.  */
+  if (prev_arg_type != NULL_TREE && !VOID_TYPE_P (prev_arg_type))
+    {
+      error ("%qE attribute not available to functions with variable number "
+	     "of arguments", name);
+      return true;
+    }
+
+  /* Error out if return value is passed on the stack.  */
+  ret_type = TREE_TYPE (fntype);
+  if (arm_return_in_memory (ret_type, fntype))
+    {
+      error ("%qE attribute not available to functions that return value on "
+	     "the stack", name);
+      return true;
+    }
+  return false;
+}
+
+/* Called upon detection of the use of the cmse_nonsecure_entry attribute, this
+   function will check whether the attribute is allowed here and will add the
+   attribute to the function declaration tree or otherwise issue a warning.  */
+
+static tree
+arm_handle_cmse_nonsecure_entry (tree *node, tree name,
+				 tree /* args */,
+				 int /* flags */,
+				 bool *no_add_attrs)
+{
+  tree fndecl;
+
+  if (!use_cmse)
+    {
+      *no_add_attrs = true;
+      warning (OPT_Wattributes, "%qE attribute ignored without -mcmse option.",
+	       name);
+      return NULL_TREE;
+    }
+
+  /* Ignore attribute for function types.  */
+  if (TREE_CODE (*node) != FUNCTION_DECL)
+    {
+      warning (OPT_Wattributes, "%qE attribute only applies to functions",
+	       name);
+      *no_add_attrs = true;
+      return NULL_TREE;
+    }
+
+  fndecl = *node;
+
+  /* Warn for static linkage functions.  */
+  if (!TREE_PUBLIC (fndecl))
+    {
+      warning (OPT_Wattributes, "%qE attribute has no effect on functions "
+	       "with static linkage", name);
+      *no_add_attrs = true;
+      return NULL_TREE;
+    }
+
+  *no_add_attrs |= cmse_func_args_or_return_in_stack (fndecl, name,
+						TREE_TYPE (fndecl));
+  return NULL_TREE;
+}
+
+
+/* Called upon detection of the use of the cmse_nonsecure_call attribute, this
+   function will check whether the attribute is allowed here and will add the
+   attribute to the function type tree or otherwise issue a diagnostic.  The
+   reason we check this at declaration time is to only allow the use of the
+   attribute with declarations of function pointers and not function
+   declarations.  This function checks NODE is of the expected type and issues
+   diagnostics otherwise using NAME.  If it is not of the expected type
+   *NO_ADD_ATTRS will be set to true.  */
+
+static tree
+arm_handle_cmse_nonsecure_call (tree *node, tree name,
+				 tree /* args */,
+				 int /* flags */,
+				 bool *no_add_attrs)
+{
+  tree decl = NULL_TREE, fntype = NULL_TREE;
+  tree type;
+
+  if (!use_cmse)
+    {
+      *no_add_attrs = true;
+      warning (OPT_Wattributes, "%qE attribute ignored without -mcmse option.",
+	       name);
+      return NULL_TREE;
+    }
+
+  if (TREE_CODE (*node) == VAR_DECL || TREE_CODE (*node) == TYPE_DECL)
+    {
+      decl = *node;
+      fntype = TREE_TYPE (decl);
+    }
+
+  while (fntype != NULL_TREE && TREE_CODE (fntype) == POINTER_TYPE)
+    fntype = TREE_TYPE (fntype);
+
+  if (!decl || TREE_CODE (fntype) != FUNCTION_TYPE)
+    {
+	warning (OPT_Wattributes, "%qE attribute only applies to base type of a "
+		 "function pointer", name);
+	*no_add_attrs = true;
+	return NULL_TREE;
+    }
+
+  *no_add_attrs |= cmse_func_args_or_return_in_stack (NULL, name, fntype);
+
+  if (*no_add_attrs)
+    return NULL_TREE;
+
+  /* Prevent trees being shared among function types with and without
+     cmse_nonsecure_call attribute.  */
+  type = TREE_TYPE (decl);
+
+  type = build_distinct_type_copy (type);
+  TREE_TYPE (decl) = type;
+  fntype = type;
+
+  while (TREE_CODE (fntype) != FUNCTION_TYPE)
+    {
+      type = fntype;
+      fntype = TREE_TYPE (fntype);
+      fntype = build_distinct_type_copy (fntype);
+      TREE_TYPE (type) = fntype;
+    }
+
+  /* Construct a type attribute and add it to the function type.  */
+  tree attrs = tree_cons (get_identifier ("cmse_nonsecure_call"), NULL_TREE,
+			  TYPE_ATTRIBUTES (fntype));
+  TYPE_ATTRIBUTES (fntype) = attrs;
+  return NULL_TREE;
+}
+
 /* Return 0 if the attributes for two types are incompatible, 1 if they
    are compatible, and 2 if they are nearly compatible (which causes a
    warning to be generated).  */
@@ -6675,6 +6879,14 @@ arm_comp_type_attributes (const_tree type1, const_tree type2)
   l2 = lookup_attribute ("isr", TYPE_ATTRIBUTES (type2)) != NULL;
   if (! l2)
     l1 = lookup_attribute ("interrupt", TYPE_ATTRIBUTES (type2)) != NULL;
+  if (l1 != l2)
+    return 0;
+
+  l1 = lookup_attribute ("cmse_nonsecure_call",
+			 TYPE_ATTRIBUTES (type1)) != NULL;
+  l2 = lookup_attribute ("cmse_nonsecure_call",
+			 TYPE_ATTRIBUTES (type2)) != NULL;
+
   if (l1 != l2)
     return 0;
 
@@ -6795,6 +7007,20 @@ arm_function_ok_for_sibcall (tree decl, tree exp)
   /* Never tailcall from an ISR routine - it needs a special exit sequence.  */
   if (IS_INTERRUPT (func_type))
     return false;
+
+  /* ARMv8-M non-secure entry functions need to return with bxns which is only
+     generated for entry functions themselves.  */
+  if (IS_CMSE_ENTRY (arm_current_func_type ()))
+    return false;
+
+  /* We do not allow ARMv8-M non-secure calls to be turned into sibling calls,
+     this would complicate matters for later code generation.  */
+  if (TREE_CODE (exp) == CALL_EXPR)
+    {
+      tree fntype = TREE_TYPE (TREE_TYPE (CALL_EXPR_FN (exp)));
+      if (lookup_attribute ("cmse_nonsecure_call", TYPE_ATTRIBUTES (fntype)))
+	return false;
+    }
 
   if (!VOID_TYPE_P (TREE_TYPE (DECL_RESULT (cfun->decl))))
     {
@@ -17347,6 +17573,470 @@ note_invalid_constants (rtx_insn *insn, HOST_WIDE_INT address, int do_pushes)
   return;
 }
 
+/* This function computes the clear mask and PADDING_BITS_TO_CLEAR for structs
+   and unions in the context of ARMv8-M Security Extensions.  It is used as a
+   helper function for both 'cmse_nonsecure_call' and 'cmse_nonsecure_entry'
+   functions.  The PADDING_BITS_TO_CLEAR pointer can be the base to either one
+   or four masks, depending on whether it is being computed for a
+   'cmse_nonsecure_entry' return value or a 'cmse_nonsecure_call' argument
+   respectively.  The tree for the type of the argument or a field within an
+   argument is passed in ARG_TYPE, the current register this argument or field
+   starts in is kept in the pointer REGNO and updated accordingly, the bit this
+   argument or field starts at is passed in STARTING_BIT and the last used bit
+   is kept in LAST_USED_BIT which is also updated accordingly.  */
+
+static unsigned HOST_WIDE_INT
+comp_not_to_clear_mask_str_un (tree arg_type, int * regno,
+			       uint32_t * padding_bits_to_clear,
+			       unsigned starting_bit, int * last_used_bit)
+
+{
+  unsigned HOST_WIDE_INT not_to_clear_reg_mask = 0;
+
+  if (TREE_CODE (arg_type) == RECORD_TYPE)
+    {
+      unsigned current_bit = starting_bit;
+      tree field;
+      long int offset, size;
+
+
+      field = TYPE_FIELDS (arg_type);
+      while (field)
+	{
+	  /* The offset within a structure is always an offset from
+	     the start of that structure.  Make sure we take that into the
+	     calculation of the register based offset that we use here.  */
+	  offset = starting_bit;
+	  offset += TREE_INT_CST_ELT (DECL_FIELD_BIT_OFFSET (field), 0);
+	  offset %= 32;
+
+	  /* This is the actual size of the field, for bitfields this is the
+	     bitfield width and not the container size.  */
+	  size = TREE_INT_CST_ELT (DECL_SIZE (field), 0);
+
+	  if (*last_used_bit != offset)
+	    {
+	      if (offset < *last_used_bit)
+		{
+		  /* This field's offset is before the 'last_used_bit', that
+		     means this field goes on the next register.  So we need to
+		     pad the rest of the current register and increase the
+		     register number.  */
+		  uint32_t mask;
+		  mask  = ((uint32_t)-1) - ((uint32_t) 1 << *last_used_bit);
+		  mask++;
+
+		  padding_bits_to_clear[*regno] |= mask;
+		  not_to_clear_reg_mask |= HOST_WIDE_INT_1U << *regno;
+		  (*regno)++;
+		}
+	      else
+		{
+		  /* Otherwise we pad the bits between the last field's end and
+		     the start of the new field.  */
+		  uint32_t mask;
+
+		  mask = ((uint32_t)-1) >> (32 - offset);
+		  mask -= ((uint32_t) 1 << *last_used_bit) - 1;
+		  padding_bits_to_clear[*regno] |= mask;
+		}
+	      current_bit = offset;
+	    }
+
+	  /* Calculate further padding bits for inner structs/unions too.  */
+	  if (RECORD_OR_UNION_TYPE_P (TREE_TYPE (field)))
+	    {
+	      *last_used_bit = current_bit;
+	      not_to_clear_reg_mask
+		|= comp_not_to_clear_mask_str_un (TREE_TYPE (field), regno,
+						  padding_bits_to_clear, offset,
+						  last_used_bit);
+	    }
+	  else
+	    {
+	      /* Update 'current_bit' with this field's size.  If the
+		 'current_bit' lies in a subsequent register, update 'regno' and
+		 reset 'current_bit' to point to the current bit in that new
+		 register.  */
+	      current_bit += size;
+	      while (current_bit >= 32)
+		{
+		  current_bit-=32;
+		  not_to_clear_reg_mask |= HOST_WIDE_INT_1U << *regno;
+		  (*regno)++;
+		}
+	      *last_used_bit = current_bit;
+	    }
+
+	  field = TREE_CHAIN (field);
+	}
+      not_to_clear_reg_mask |= HOST_WIDE_INT_1U << *regno;
+    }
+  else if (TREE_CODE (arg_type) == UNION_TYPE)
+    {
+      tree field, field_t;
+      int i, regno_t, field_size;
+      int max_reg = -1;
+      int max_bit = -1;
+      uint32_t mask;
+      uint32_t padding_bits_to_clear_res[NUM_ARG_REGS]
+	= {-1, -1, -1, -1};
+
+      /* To compute the padding bits in a union we only consider bits as
+	 padding bits if they are always either a padding bit or fall outside a
+	 fields size for all fields in the union.  */
+      field = TYPE_FIELDS (arg_type);
+      while (field)
+	{
+	  uint32_t padding_bits_to_clear_t[NUM_ARG_REGS]
+	    = {0U, 0U, 0U, 0U};
+	  int last_used_bit_t = *last_used_bit;
+	  regno_t = *regno;
+	  field_t = TREE_TYPE (field);
+
+	  /* If the field's type is either a record or a union make sure to
+	     compute their padding bits too.  */
+	  if (RECORD_OR_UNION_TYPE_P (field_t))
+	    not_to_clear_reg_mask
+	      |= comp_not_to_clear_mask_str_un (field_t, &regno_t,
+						&padding_bits_to_clear_t[0],
+						starting_bit, &last_used_bit_t);
+	  else
+	    {
+	      field_size = TREE_INT_CST_ELT (DECL_SIZE (field), 0);
+	      regno_t = (field_size / 32) + *regno;
+	      last_used_bit_t = (starting_bit + field_size) % 32;
+	    }
+
+	  for (i = *regno; i < regno_t; i++)
+	    {
+	      /* For all but the last register used by this field only keep the
+		 padding bits that were padding bits in this field.  */
+	      padding_bits_to_clear_res[i] &= padding_bits_to_clear_t[i];
+	    }
+
+	    /* For the last register, keep all padding bits that were padding
+	       bits in this field and any padding bits that are still valid
+	       as padding bits but fall outside of this field's size.  */
+	    mask = (((uint32_t) -1) - ((uint32_t) 1 << last_used_bit_t)) + 1;
+	    padding_bits_to_clear_res[regno_t]
+	      &= padding_bits_to_clear_t[regno_t] | mask;
+
+	  /* Update the maximum size of the fields in terms of registers used
+	     ('max_reg') and the 'last_used_bit' in said register.  */
+	  if (max_reg < regno_t)
+	    {
+	      max_reg = regno_t;
+	      max_bit = last_used_bit_t;
+	    }
+	  else if (max_reg == regno_t && max_bit < last_used_bit_t)
+	    max_bit = last_used_bit_t;
+
+	  field = TREE_CHAIN (field);
+	}
+
+      /* Update the current padding_bits_to_clear using the intersection of the
+	 padding bits of all the fields.  */
+      for (i=*regno; i < max_reg; i++)
+	padding_bits_to_clear[i] |= padding_bits_to_clear_res[i];
+
+      /* Do not keep trailing padding bits, we do not know yet whether this
+	 is the end of the argument.  */
+      mask = ((uint32_t) 1 << max_bit) - 1;
+      padding_bits_to_clear[max_reg]
+	|= padding_bits_to_clear_res[max_reg] & mask;
+
+      *regno = max_reg;
+      *last_used_bit = max_bit;
+    }
+  else
+    /* This function should only be used for structs and unions.  */
+    gcc_unreachable ();
+
+  return not_to_clear_reg_mask;
+}
+
+/* In the context of ARMv8-M Security Extensions, this function is used for both
+   'cmse_nonsecure_call' and 'cmse_nonsecure_entry' functions to compute what
+   registers are used when returning or passing arguments, which is then
+   returned as a mask.  It will also compute a mask to indicate padding/unused
+   bits for each of these registers, and passes this through the
+   PADDING_BITS_TO_CLEAR pointer.  The tree of the argument type is passed in
+   ARG_TYPE, the rtl representation of the argument is passed in ARG_RTX and
+   the starting register used to pass this argument or return value is passed
+   in REGNO.  It makes use of 'comp_not_to_clear_mask_str_un' to compute these
+   for struct and union types.  */
+
+static unsigned HOST_WIDE_INT
+compute_not_to_clear_mask (tree arg_type, rtx arg_rtx, int regno,
+			     uint32_t * padding_bits_to_clear)
+
+{
+  int last_used_bit = 0;
+  unsigned HOST_WIDE_INT not_to_clear_mask;
+
+  if (RECORD_OR_UNION_TYPE_P (arg_type))
+    {
+      not_to_clear_mask
+	= comp_not_to_clear_mask_str_un (arg_type, &regno,
+					 padding_bits_to_clear, 0,
+					 &last_used_bit);
+
+
+      /* If the 'last_used_bit' is not zero, that means we are still using a
+	 part of the last 'regno'.  In such cases we must clear the trailing
+	 bits.  Otherwise we are not using regno and we should mark it as to
+	 clear.  */
+      if (last_used_bit != 0)
+	padding_bits_to_clear[regno]
+	  |= ((uint32_t)-1) - ((uint32_t) 1 << last_used_bit) + 1;
+      else
+	not_to_clear_mask &= ~(HOST_WIDE_INT_1U << regno);
+    }
+  else
+    {
+      not_to_clear_mask = 0;
+      /* We are not dealing with structs nor unions.  So these arguments may be
+	 passed in floating point registers too.  In some cases a BLKmode is
+	 used when returning or passing arguments in multiple VFP registers.  */
+      if (GET_MODE (arg_rtx) == BLKmode)
+	{
+	  int i, arg_regs;
+	  rtx reg;
+
+	  /* This should really only occur when dealing with the hard-float
+	     ABI.  */
+	  gcc_assert (TARGET_HARD_FLOAT_ABI);
+
+	  for (i = 0; i < XVECLEN (arg_rtx, 0); i++)
+	    {
+	      reg = XEXP (XVECEXP (arg_rtx, 0, i), 0);
+	      gcc_assert (REG_P (reg));
+
+	      not_to_clear_mask |= HOST_WIDE_INT_1U << REGNO (reg);
+
+	      /* If we are dealing with DF mode, make sure we don't
+		 clear either of the registers it addresses.  */
+	      arg_regs = ARM_NUM_REGS (GET_MODE (reg));
+	      if (arg_regs > 1)
+		{
+		  unsigned HOST_WIDE_INT mask;
+		  mask = HOST_WIDE_INT_1U << (REGNO (reg) + arg_regs);
+		  mask -= HOST_WIDE_INT_1U << REGNO (reg);
+		  not_to_clear_mask |= mask;
+		}
+	    }
+	}
+      else
+	{
+	  /* Otherwise we can rely on the MODE to determine how many registers
+	     are being used by this argument.  */
+	  int arg_regs = ARM_NUM_REGS (GET_MODE (arg_rtx));
+	  not_to_clear_mask |= HOST_WIDE_INT_1U << REGNO (arg_rtx);
+	  if (arg_regs > 1)
+	    {
+	      unsigned HOST_WIDE_INT
+	      mask = HOST_WIDE_INT_1U << (REGNO (arg_rtx) + arg_regs);
+	      mask -= HOST_WIDE_INT_1U << REGNO (arg_rtx);
+	      not_to_clear_mask |= mask;
+	    }
+	}
+    }
+
+  return not_to_clear_mask;
+}
+
+/* Saves callee saved registers, clears callee saved registers and caller saved
+   registers not used to pass arguments before a cmse_nonsecure_call.  And
+   restores the callee saved registers after.  */
+
+static void
+cmse_nonsecure_call_clear_caller_saved (void)
+{
+  basic_block bb;
+
+  FOR_EACH_BB_FN (bb, cfun)
+    {
+      rtx_insn *insn;
+
+      FOR_BB_INSNS (bb, insn)
+	{
+	  uint64_t to_clear_mask, float_mask;
+	  rtx_insn *seq;
+	  rtx pat, call, unspec, reg, cleared_reg, tmp;
+	  unsigned int regno, maxregno;
+	  rtx address;
+	  CUMULATIVE_ARGS args_so_far_v;
+	  cumulative_args_t args_so_far;
+	  tree arg_type, fntype;
+	  bool using_r4, first_param = true;
+	  function_args_iterator args_iter;
+	  uint32_t padding_bits_to_clear[4] = {0U, 0U, 0U, 0U};
+	  uint32_t * padding_bits_to_clear_ptr = &padding_bits_to_clear[0];
+
+	  if (!NONDEBUG_INSN_P (insn))
+	    continue;
+
+	  if (!CALL_P (insn))
+	    continue;
+
+	  pat = PATTERN (insn);
+	  gcc_assert (GET_CODE (pat) == PARALLEL && XVECLEN (pat, 0) > 0);
+	  call = XVECEXP (pat, 0, 0);
+
+	  /* Get the real call RTX if the insn sets a value, ie. returns.  */
+	  if (GET_CODE (call) == SET)
+	      call = SET_SRC (call);
+
+	  /* Check if it is a cmse_nonsecure_call.  */
+	  unspec = XEXP (call, 0);
+	  if (GET_CODE (unspec) != UNSPEC
+	      || XINT (unspec, 1) != UNSPEC_NONSECURE_MEM)
+	    continue;
+
+	  /* Determine the caller-saved registers we need to clear.  */
+	  to_clear_mask = (1LL << (NUM_ARG_REGS)) - 1;
+	  maxregno = NUM_ARG_REGS - 1;
+	  /* Only look at the caller-saved floating point registers in case of
+	     -mfloat-abi=hard.  For -mfloat-abi=softfp we will be using the
+	     lazy store and loads which clear both caller- and callee-saved
+	     registers.  */
+	  if (TARGET_HARD_FLOAT_ABI)
+	    {
+	      float_mask = (1LL << (D7_VFP_REGNUM + 1)) - 1;
+	      float_mask &= ~((1LL << FIRST_VFP_REGNUM) - 1);
+	      to_clear_mask |= float_mask;
+	      maxregno = D7_VFP_REGNUM;
+	    }
+
+	  /* Make sure the register used to hold the function address is not
+	     cleared.  */
+	  address = RTVEC_ELT (XVEC (unspec, 0), 0);
+	  gcc_assert (MEM_P (address));
+	  gcc_assert (REG_P (XEXP (address, 0)));
+	  to_clear_mask &= ~(1LL << REGNO (XEXP (address, 0)));
+
+	  /* Set basic block of call insn so that df rescan is performed on
+	     insns inserted here.  */
+	  set_block_for_insn (insn, bb);
+	  df_set_flags (DF_DEFER_INSN_RESCAN);
+	  start_sequence ();
+
+	  /* Make sure the scheduler doesn't schedule other insns beyond
+	     here.  */
+	  emit_insn (gen_blockage ());
+
+	  /* Walk through all arguments and clear registers appropriately.
+	  */
+	  fntype = TREE_TYPE (MEM_EXPR (address));
+	  arm_init_cumulative_args (&args_so_far_v, fntype, NULL_RTX,
+				    NULL_TREE);
+	  args_so_far = pack_cumulative_args (&args_so_far_v);
+	  FOREACH_FUNCTION_ARGS (fntype, arg_type, args_iter)
+	    {
+	      rtx arg_rtx;
+	      machine_mode arg_mode = TYPE_MODE (arg_type);
+
+	      if (VOID_TYPE_P (arg_type))
+		continue;
+
+	      if (!first_param)
+		arm_function_arg_advance (args_so_far, arg_mode, arg_type,
+					  true);
+
+	      arg_rtx = arm_function_arg (args_so_far, arg_mode, arg_type,
+					  true);
+	      gcc_assert (REG_P (arg_rtx));
+	      to_clear_mask
+		&= ~compute_not_to_clear_mask (arg_type, arg_rtx,
+					       REGNO (arg_rtx),
+					       padding_bits_to_clear_ptr);
+
+	      first_param = false;
+	    }
+
+	  /* Clear padding bits where needed.  */
+	  cleared_reg = XEXP (address, 0);
+	  reg = gen_rtx_REG (SImode, IP_REGNUM);
+	  using_r4 = false;
+	  for (regno = R0_REGNUM; regno < NUM_ARG_REGS; regno++)
+	    {
+	      if (padding_bits_to_clear[regno] == 0)
+		continue;
+
+	      /* If this is a Thumb-1 target copy the address of the function
+		 we are calling from 'r4' into 'ip' such that we can use r4 to
+		 clear the unused bits in the arguments.  */
+	      if (TARGET_THUMB1 && !using_r4)
+		{
+		  using_r4 =  true;
+		  reg = cleared_reg;
+		  emit_move_insn (gen_rtx_REG (SImode, IP_REGNUM),
+					  reg);
+		}
+
+	      tmp = GEN_INT ((((~padding_bits_to_clear[regno]) << 16u) >> 16u));
+	      emit_move_insn (reg, tmp);
+	      /* Also fill the top half of the negated
+		 padding_bits_to_clear.  */
+	      if (((~padding_bits_to_clear[regno]) >> 16) > 0)
+		{
+		  tmp = GEN_INT ((~padding_bits_to_clear[regno]) >> 16);
+		  emit_insn (gen_rtx_SET (gen_rtx_ZERO_EXTRACT (SImode, reg,
+								GEN_INT (16),
+								GEN_INT (16)),
+					  tmp));
+		}
+
+	      emit_insn (gen_andsi3 (gen_rtx_REG (SImode, regno),
+				     gen_rtx_REG (SImode, regno),
+				     reg));
+
+	    }
+	  if (using_r4)
+	    emit_move_insn (cleared_reg,
+			    gen_rtx_REG (SImode, IP_REGNUM));
+
+	  /* We use right shift and left shift to clear the LSB of the address
+	     we jump to instead of using bic, to avoid having to use an extra
+	     register on Thumb-1.  */
+	  tmp = gen_rtx_LSHIFTRT (SImode, cleared_reg, const1_rtx);
+	  emit_insn (gen_rtx_SET (cleared_reg, tmp));
+	  tmp = gen_rtx_ASHIFT (SImode, cleared_reg, const1_rtx);
+	  emit_insn (gen_rtx_SET (cleared_reg, tmp));
+
+	  /* Clearing all registers that leak before doing a non-secure
+	     call.  */
+	  for (regno = R0_REGNUM; regno <= maxregno; regno++)
+	    {
+	      if (!(to_clear_mask & (1LL << regno)))
+		continue;
+
+	      /* If regno is an even vfp register and its successor is also to
+		 be cleared, use vmov.  */
+	      if (IS_VFP_REGNUM (regno))
+		{
+		  if (TARGET_VFP_DOUBLE
+		      && VFP_REGNO_OK_FOR_DOUBLE (regno)
+		      && to_clear_mask & (1LL << (regno + 1)))
+		    emit_move_insn (gen_rtx_REG (DFmode, regno++),
+				    CONST0_RTX (DFmode));
+		  else
+		    emit_move_insn (gen_rtx_REG (SFmode, regno),
+				    CONST0_RTX (SFmode));
+		}
+	      else
+		emit_move_insn (gen_rtx_REG (SImode, regno), cleared_reg);
+	    }
+
+	  seq = get_insns ();
+	  end_sequence ();
+	  emit_insn_before (seq, insn);
+
+	}
+    }
+}
+
 /* Rewrite move insn into subtract of 0 if the condition codes will
    be useful in next conditional jump insn.  */
 
@@ -17647,6 +18337,8 @@ arm_reorg (void)
   HOST_WIDE_INT address = 0;
   Mfix * fix;
 
+  if (use_cmse)
+    cmse_nonsecure_call_clear_caller_saved ();
   if (TARGET_THUMB1)
     thumb1_reorg ();
   else if (TARGET_THUMB2)
@@ -18018,6 +18710,23 @@ vfp_emit_fstmd (int base_reg, int count)
 
   return count * 8;
 }
+
+/* Returns true if -mcmse has been passed and the function pointed to by 'addr'
+   has the cmse_nonsecure_call attribute and returns false otherwise.  */
+
+bool
+detect_cmse_nonsecure_call (tree addr)
+{
+  if (!addr)
+    return FALSE;
+
+  tree fntype = TREE_TYPE (addr);
+  if (use_cmse && lookup_attribute ("cmse_nonsecure_call",
+				    TYPE_ATTRIBUTES (fntype)))
+    return TRUE;
+  return FALSE;
+}
+
 
 /* Emit a call instruction with pattern PAT.  ADDR is the address of
    the call target.  */
@@ -19630,6 +20339,7 @@ output_return_instruction (rtx operand, bool really_return, bool reverse,
 	 (e.g. interworking) then we can load the return address
 	 directly into the PC.  Otherwise we must load it into LR.  */
       if (really_return
+	  && !IS_CMSE_ENTRY (func_type)
 	  && (IS_INTERRUPT (func_type) || !TARGET_INTERWORK))
 	return_reg = reg_names[PC_REGNUM];
       else
@@ -19770,8 +20480,45 @@ output_return_instruction (rtx operand, bool really_return, bool reverse,
 	  break;
 
 	default:
+	  if (IS_CMSE_ENTRY (func_type))
+	    {
+	      /* Check if we have to clear the 'GE bits' which is only used if
+		 parallel add and subtraction instructions are available.  */
+	      if (TARGET_INT_SIMD)
+		snprintf (instr, sizeof (instr),
+			  "msr%s\tAPSR_nzcvqg, %%|lr", conditional);
+	      else
+		snprintf (instr, sizeof (instr),
+			  "msr%s\tAPSR_nzcvq, %%|lr", conditional);
+
+	      output_asm_insn (instr, & operand);
+	      if (TARGET_HARD_FLOAT && !TARGET_THUMB1)
+		{
+		  /* Clear the cumulative exception-status bits (0-4,7) and the
+		     condition code bits (28-31) of the FPSCR.  We need to
+		     remember to clear the first scratch register used (IP) and
+		     save and restore the second (r4).  */
+		  snprintf (instr, sizeof (instr), "push\t{%%|r4}");
+		  output_asm_insn (instr, & operand);
+		  snprintf (instr, sizeof (instr), "vmrs\t%%|ip, fpscr");
+		  output_asm_insn (instr, & operand);
+		  snprintf (instr, sizeof (instr), "movw\t%%|r4, #65376");
+		  output_asm_insn (instr, & operand);
+		  snprintf (instr, sizeof (instr), "movt\t%%|r4, #4095");
+		  output_asm_insn (instr, & operand);
+		  snprintf (instr, sizeof (instr), "and\t%%|ip, %%|r4");
+		  output_asm_insn (instr, & operand);
+		  snprintf (instr, sizeof (instr), "vmsr\tfpscr, %%|ip");
+		  output_asm_insn (instr, & operand);
+		  snprintf (instr, sizeof (instr), "pop\t{%%|r4}");
+		  output_asm_insn (instr, & operand);
+		  snprintf (instr, sizeof (instr), "mov\t%%|ip, %%|lr");
+		  output_asm_insn (instr, & operand);
+		}
+	      snprintf (instr, sizeof (instr), "bxns\t%%|lr");
+	    }
 	  /* Use bx if it's available.  */
-	  if (arm_arch5 || arm_arch4t)
+	  else if (arm_arch5 || arm_arch4t)
 	    sprintf (instr, "bx%s\t%%|lr", conditional);
 	  else
 	    sprintf (instr, "mov%s\t%%|pc, %%|lr", conditional);
@@ -19782,6 +20529,44 @@ output_return_instruction (rtx operand, bool really_return, bool reverse,
     }
 
   return "";
+}
+
+/* Output in FILE asm statements needed to declare the NAME of the function
+   defined by its DECL node.  */
+
+void
+arm_asm_declare_function_name (FILE *file, const char *name, tree decl)
+{
+  size_t cmse_name_len;
+  char *cmse_name = 0;
+  char cmse_prefix[] = "__acle_se_";
+
+  /* When compiling with ARMv8-M Security Extensions enabled, we should print an
+     extra function label for each function with the 'cmse_nonsecure_entry'
+     attribute.  This extra function label should be prepended with
+     '__acle_se_', telling the linker that it needs to create secure gateway
+     veneers for this function.  */
+  if (use_cmse && lookup_attribute ("cmse_nonsecure_entry",
+				    DECL_ATTRIBUTES (decl)))
+    {
+      cmse_name_len = sizeof (cmse_prefix) + strlen (name);
+      cmse_name = XALLOCAVEC (char, cmse_name_len);
+      snprintf (cmse_name, cmse_name_len, "%s%s", cmse_prefix, name);
+      targetm.asm_out.globalize_label (file, cmse_name);
+
+      ARM_DECLARE_FUNCTION_NAME (file, cmse_name, decl);
+      ASM_OUTPUT_TYPE_DIRECTIVE (file, cmse_name, "function");
+    }
+
+  ARM_DECLARE_FUNCTION_NAME (file, name, decl);
+  ASM_OUTPUT_TYPE_DIRECTIVE (file, name, "function");
+  ASM_DECLARE_RESULT (file, DECL_RESULT (decl));
+  ASM_OUTPUT_LABEL (file, name);
+
+  if (cmse_name)
+    ASM_OUTPUT_LABEL (file, cmse_name);
+
+  ARM_OUTPUT_FN_UNWIND (file, TRUE);
 }
 
 /* Write the function name into the code section, directly preceding
@@ -19833,10 +20618,6 @@ arm_output_function_prologue (FILE *f, HOST_WIDE_INT frame_size)
 {
   unsigned long func_type;
 
-  /* ??? Do we want to print some of the below anyway?  */
-  if (TARGET_THUMB1)
-    return;
-
   /* Sanity check.  */
   gcc_assert (!arm_ccfsm_state && !arm_target_insn);
 
@@ -19871,6 +20652,8 @@ arm_output_function_prologue (FILE *f, HOST_WIDE_INT frame_size)
     asm_fprintf (f, "\t%@ Nested: function declared inside another function.\n");
   if (IS_STACKALIGN (func_type))
     asm_fprintf (f, "\t%@ Stack Align: May be called with mis-aligned SP.\n");
+  if (IS_CMSE_ENTRY (func_type))
+    asm_fprintf (f, "\t%@ Non-secure entry function: called from non-secure code.\n");
 
   asm_fprintf (f, "\t%@ args = %d, pretend = %d, frame = %wd\n",
 	       crtl->args.size,
@@ -23937,8 +24720,8 @@ thumb_pop (FILE *f, unsigned long mask)
   if (mask & (1 << PC_REGNUM))
     {
       /* Catch popping the PC.  */
-      if (TARGET_INTERWORK || TARGET_BACKTRACE
-	  || crtl->calls_eh_return)
+      if (TARGET_INTERWORK || TARGET_BACKTRACE || crtl->calls_eh_return
+	  || IS_CMSE_ENTRY (arm_current_func_type ()))
 	{
 	  /* The PC is never poped directly, instead
 	     it is popped into r3 and then BX is used.  */
@@ -23999,7 +24782,14 @@ thumb_exit (FILE *f, int reg_containing_return_addr)
       if (crtl->calls_eh_return)
 	asm_fprintf (f, "\tadd\t%r, %r\n", SP_REGNUM, ARM_EH_STACKADJ_REGNUM);
 
-      asm_fprintf (f, "\tbx\t%r\n", reg_containing_return_addr);
+      if (IS_CMSE_ENTRY (arm_current_func_type ()))
+	{
+	  asm_fprintf (f, "\tmsr\tAPSR_nzcvq, %r\n",
+		       reg_containing_return_addr);
+	  asm_fprintf (f, "\tbxns\t%r\n", reg_containing_return_addr);
+	}
+      else
+	asm_fprintf (f, "\tbx\t%r\n", reg_containing_return_addr);
       return;
     }
   /* Otherwise if we are not supporting interworking and we have not created
@@ -24008,7 +24798,8 @@ thumb_exit (FILE *f, int reg_containing_return_addr)
   else if (!TARGET_INTERWORK
 	   && !TARGET_BACKTRACE
 	   && !is_called_in_ARM_mode (current_function_decl)
-	   && !crtl->calls_eh_return)
+	   && !crtl->calls_eh_return
+	   && !IS_CMSE_ENTRY (arm_current_func_type ()))
     {
       asm_fprintf (f, "\tpop\t{%r}\n", PC_REGNUM);
       return;
@@ -24231,7 +25022,21 @@ thumb_exit (FILE *f, int reg_containing_return_addr)
     asm_fprintf (f, "\tadd\t%r, %r\n", SP_REGNUM, ARM_EH_STACKADJ_REGNUM);
 
   /* Return to caller.  */
-  asm_fprintf (f, "\tbx\t%r\n", reg_containing_return_addr);
+  if (IS_CMSE_ENTRY (arm_current_func_type ()))
+    {
+      /* This is for the cases where LR is not being used to contain the return
+         address.  It may therefore contain information that we might not want
+	 to leak, hence it must be cleared.  The value in R0 will never be a
+	 secret at this point, so it is safe to use it, see the clearing code
+	 in 'cmse_nonsecure_entry_clear_before_return'.  */
+      if (reg_containing_return_addr != LR_REGNUM)
+	asm_fprintf (f, "\tmov\tlr, r0\n");
+
+      asm_fprintf (f, "\tmsr\tAPSR_nzcvq, %r\n", reg_containing_return_addr);
+      asm_fprintf (f, "\tbxns\t%r\n", reg_containing_return_addr);
+    }
+  else
+    asm_fprintf (f, "\tbx\t%r\n", reg_containing_return_addr);
 }
 
 /* Scan INSN just before assembler is output for it.
@@ -25096,6 +25901,149 @@ thumb1_expand_prologue (void)
     cfun->machine->lr_save_eliminated = 0;
 }
 
+/* Clear caller saved registers not used to pass return values and leaked
+   condition flags before exiting a cmse_nonsecure_entry function.  */
+
+void
+cmse_nonsecure_entry_clear_before_return (void)
+{
+  uint64_t to_clear_mask[2];
+  uint32_t padding_bits_to_clear = 0;
+  uint32_t * padding_bits_to_clear_ptr = &padding_bits_to_clear;
+  int regno, maxregno = IP_REGNUM;
+  tree result_type;
+  rtx result_rtl;
+
+  to_clear_mask[0] = (1ULL << (NUM_ARG_REGS)) - 1;
+  to_clear_mask[0] |= (1ULL << IP_REGNUM);
+
+  /* If we are not dealing with -mfloat-abi=soft we will need to clear VFP
+     registers.  We also check that TARGET_HARD_FLOAT and !TARGET_THUMB1 hold
+     to make sure the instructions used to clear them are present.  */
+  if (TARGET_HARD_FLOAT && !TARGET_THUMB1)
+    {
+      uint64_t float_mask = (1ULL << (D7_VFP_REGNUM + 1)) - 1;
+      maxregno = LAST_VFP_REGNUM;
+
+      float_mask &= ~((1ULL << FIRST_VFP_REGNUM) - 1);
+      to_clear_mask[0] |= float_mask;
+
+      float_mask = (1ULL << (maxregno - 63)) - 1;
+      to_clear_mask[1] = float_mask;
+
+      /* Make sure we don't clear the two scratch registers used to clear the
+	 relevant FPSCR bits in output_return_instruction.  */
+      emit_use (gen_rtx_REG (SImode, IP_REGNUM));
+      to_clear_mask[0] &= ~(1ULL << IP_REGNUM);
+      emit_use (gen_rtx_REG (SImode, 4));
+      to_clear_mask[0] &= ~(1ULL << 4);
+    }
+
+  /* If the user has defined registers to be caller saved, these are no longer
+     restored by the function before returning and must thus be cleared for
+     security purposes.  */
+  for (regno = NUM_ARG_REGS; regno < LAST_VFP_REGNUM; regno++)
+    {
+      /* We do not touch registers that can be used to pass arguments as per
+	 the AAPCS, since these should never be made callee-saved by user
+	 options.  */
+      if (IN_RANGE (regno, FIRST_VFP_REGNUM, D7_VFP_REGNUM))
+	continue;
+      if (IN_RANGE (regno, IP_REGNUM, PC_REGNUM))
+	continue;
+      if (call_used_regs[regno])
+	to_clear_mask[regno / 64] |= (1ULL << (regno % 64));
+    }
+
+  /* Make sure we do not clear the registers used to return the result in.  */
+  result_type = TREE_TYPE (DECL_RESULT (current_function_decl));
+  if (!VOID_TYPE_P (result_type))
+    {
+      result_rtl = arm_function_value (result_type, current_function_decl, 0);
+
+      /* No need to check that we return in registers, because we don't
+	 support returning on stack yet.  */
+      to_clear_mask[0]
+	&= ~compute_not_to_clear_mask (result_type, result_rtl, 0,
+				       padding_bits_to_clear_ptr);
+    }
+
+  if (padding_bits_to_clear != 0)
+    {
+      rtx reg_rtx;
+      /* Padding bits to clear is not 0 so we know we are dealing with
+	 returning a composite type, which only uses r0.  Let's make sure that
+	 r1-r3 is cleared too, we will use r1 as a scratch register.  */
+      gcc_assert ((to_clear_mask[0] & 0xe) == 0xe);
+
+      reg_rtx = gen_rtx_REG (SImode, R1_REGNUM);
+
+      /* Fill the lower half of the negated padding_bits_to_clear.  */
+      emit_move_insn (reg_rtx,
+		      GEN_INT ((((~padding_bits_to_clear) << 16u) >> 16u)));
+
+      /* Also fill the top half of the negated padding_bits_to_clear.  */
+      if (((~padding_bits_to_clear) >> 16) > 0)
+	emit_insn (gen_rtx_SET (gen_rtx_ZERO_EXTRACT (SImode, reg_rtx,
+						      GEN_INT (16),
+						      GEN_INT (16)),
+				GEN_INT ((~padding_bits_to_clear) >> 16)));
+
+      emit_insn (gen_andsi3 (gen_rtx_REG (SImode, R0_REGNUM),
+			   gen_rtx_REG (SImode, R0_REGNUM),
+			   reg_rtx));
+    }
+
+  for (regno = R0_REGNUM; regno <= maxregno; regno++)
+    {
+      if (!(to_clear_mask[regno / 64] & (1ULL << (regno % 64))))
+	continue;
+
+      if (IS_VFP_REGNUM (regno))
+	{
+	  /* If regno is an even vfp register and its successor is also to
+	     be cleared, use vmov.  */
+	  if (TARGET_VFP_DOUBLE
+	      && VFP_REGNO_OK_FOR_DOUBLE (regno)
+	      && to_clear_mask[regno / 64] & (1ULL << ((regno % 64) + 1)))
+	    {
+	      emit_move_insn (gen_rtx_REG (DFmode, regno),
+			      CONST1_RTX (DFmode));
+	      emit_use (gen_rtx_REG (DFmode, regno));
+	      regno++;
+	    }
+	  else
+	    {
+	      emit_move_insn (gen_rtx_REG (SFmode, regno),
+			      CONST1_RTX (SFmode));
+	      emit_use (gen_rtx_REG (SFmode, regno));
+	    }
+	}
+      else
+	{
+	  if (TARGET_THUMB1)
+	    {
+	      if (regno == R0_REGNUM)
+		emit_move_insn (gen_rtx_REG (SImode, regno),
+				const0_rtx);
+	      else
+		/* R0 has either been cleared before, see code above, or it
+		   holds a return value, either way it is not secret
+		   information.  */
+		emit_move_insn (gen_rtx_REG (SImode, regno),
+				gen_rtx_REG (SImode, R0_REGNUM));
+	      emit_use (gen_rtx_REG (SImode, regno));
+	    }
+	  else
+	    {
+	      emit_move_insn (gen_rtx_REG (SImode, regno),
+			      gen_rtx_REG (SImode, LR_REGNUM));
+	      emit_use (gen_rtx_REG (SImode, regno));
+	    }
+	}
+    }
+}
+
 /* Generate pattern *pop_multiple_with_stack_update_and_return if single
    POP instruction can be generated.  LR should be replaced by PC.  All
    the checks required are already done by  USE_RETURN_INSN ().  Hence,
@@ -25117,6 +26065,12 @@ thumb2_expand_return (bool simple_return)
 
   if (!simple_return && saved_regs_mask)
     {
+      /* TODO: Verify that this path is never taken for cmse_nonsecure_entry
+	 functions or adapt code to handle according to ACLE.  This path should
+	 not be reachable for cmse_nonsecure_entry functions though we prefer
+	 to assert it for now to ensure that future code changes do not silently
+	 change this behavior.  */
+      gcc_assert (!IS_CMSE_ENTRY (arm_current_func_type ()));
       if (num_regs == 1)
         {
           rtx par = gen_rtx_PARALLEL (VOIDmode, rtvec_alloc (2));
@@ -25139,6 +26093,8 @@ thumb2_expand_return (bool simple_return)
     }
   else
     {
+      if (IS_CMSE_ENTRY (arm_current_func_type ()))
+	cmse_nonsecure_entry_clear_before_return ();
       emit_jump_insn (simple_return_rtx);
     }
 }
@@ -25197,6 +26153,10 @@ thumb1_expand_epilogue (void)
 
   if (! df_regs_ever_live_p (LR_REGNUM))
     emit_use (gen_rtx_REG (SImode, LR_REGNUM));
+
+  /* Clear all caller-saved regs that are not used to return.  */
+  if (IS_CMSE_ENTRY (arm_current_func_type ()))
+    cmse_nonsecure_entry_clear_before_return ();
 }
 
 /* Epilogue code for APCS frame.  */
@@ -25534,6 +26494,7 @@ arm_expand_epilogue (bool really_return)
 
       if (ARM_FUNC_TYPE (func_type) != ARM_FT_INTERWORKED
           && (TARGET_ARM || ARM_FUNC_TYPE (func_type) == ARM_FT_NORMAL)
+	  && !IS_CMSE_ENTRY (func_type)
           && !IS_STACKALIGN (func_type)
           && really_return
           && crtl->args.pretend_args_size == 0
@@ -25629,6 +26590,14 @@ arm_expand_epilogue (bool really_return)
       arm_add_cfa_adjust_cfa_note (tmp, amount,
 				   stack_pointer_rtx, stack_pointer_rtx);
     }
+
+    /* Clear all caller-saved regs that are not used to return.  */
+    if (IS_CMSE_ENTRY (arm_current_func_type ()))
+      {
+	/* CMSE_ENTRY always returns.  */
+	gcc_assert (really_return);
+	cmse_nonsecure_entry_clear_before_return ();
+      }
 
   if (!really_return)
     return;
@@ -28133,9 +29102,9 @@ emit_unlikely_jump (rtx insn)
 void
 arm_expand_compare_and_swap (rtx operands[])
 {
-  rtx bval, rval, mem, oldval, newval, is_weak, mod_s, mod_f, x;
+  rtx bval, bdst, rval, mem, oldval, newval, is_weak, mod_s, mod_f, x;
   machine_mode mode;
-  rtx (*gen) (rtx, rtx, rtx, rtx, rtx, rtx, rtx);
+  rtx (*gen) (rtx, rtx, rtx, rtx, rtx, rtx, rtx, rtx);
 
   bval = operands[0];
   rval = operands[1];
@@ -28192,43 +29161,54 @@ arm_expand_compare_and_swap (rtx operands[])
       gcc_unreachable ();
     }
 
-  emit_insn (gen (rval, mem, oldval, newval, is_weak, mod_s, mod_f));
+  bdst = TARGET_THUMB1 ? bval : gen_rtx_REG (CCmode, CC_REGNUM);
+  emit_insn (gen (bdst, rval, mem, oldval, newval, is_weak, mod_s, mod_f));
 
   if (mode == QImode || mode == HImode)
     emit_move_insn (operands[1], gen_lowpart (mode, rval));
 
   /* In all cases, we arrange for success to be signaled by Z set.
      This arrangement allows for the boolean result to be used directly
-     in a subsequent branch, post optimization.  */
-  x = gen_rtx_REG (CCmode, CC_REGNUM);
-  x = gen_rtx_EQ (SImode, x, const0_rtx);
-  emit_insn (gen_rtx_SET (bval, x));
+     in a subsequent branch, post optimization.  For Thumb-1 targets, the
+     boolean negation of the result is also stored in bval because Thumb-1
+     backend lacks dependency tracking for CC flag due to flag-setting not
+     being represented at RTL level.  */
+  if (TARGET_THUMB1)
+      emit_insn (gen_cstoresi_eq0_thumb1 (bval, bdst));
+  else
+    {
+      x = gen_rtx_EQ (SImode, bdst, const0_rtx);
+      emit_insn (gen_rtx_SET (bval, x));
+    }
 }
 
 /* Split a compare and swap pattern.  It is IMPLEMENTATION DEFINED whether
    another memory store between the load-exclusive and store-exclusive can
    reset the monitor from Exclusive to Open state.  This means we must wait
    until after reload to split the pattern, lest we get a register spill in
-   the middle of the atomic sequence.  */
+   the middle of the atomic sequence.  Success of the compare and swap is
+   indicated by the Z flag set for 32bit targets and by neg_bval being zero
+   for Thumb-1 targets (ie. negation of the boolean value returned by
+   atomic_compare_and_swapmode standard pattern in operand 0).  */
 
 void
 arm_split_compare_and_swap (rtx operands[])
 {
-  rtx rval, mem, oldval, newval, scratch;
+  rtx rval, mem, oldval, newval, neg_bval;
   machine_mode mode;
   enum memmodel mod_s, mod_f;
   bool is_weak;
   rtx_code_label *label1, *label2;
   rtx x, cond;
 
-  rval = operands[0];
-  mem = operands[1];
-  oldval = operands[2];
-  newval = operands[3];
-  is_weak = (operands[4] != const0_rtx);
-  mod_s = memmodel_from_int (INTVAL (operands[5]));
-  mod_f = memmodel_from_int (INTVAL (operands[6]));
-  scratch = operands[7];
+  rval = operands[1];
+  mem = operands[2];
+  oldval = operands[3];
+  newval = operands[4];
+  is_weak = (operands[5] != const0_rtx);
+  mod_s = memmodel_from_int (INTVAL (operands[6]));
+  mod_f = memmodel_from_int (INTVAL (operands[7]));
+  neg_bval = TARGET_THUMB1 ? operands[0] : operands[8];
   mode = GET_MODE (mem);
 
   bool is_armv8_sync = arm_arch8 && is_mm_sync (mod_s);
@@ -28260,26 +29240,44 @@ arm_split_compare_and_swap (rtx operands[])
 
   arm_emit_load_exclusive (mode, rval, mem, use_acquire);
 
-  cond = arm_gen_compare_reg (NE, rval, oldval, scratch);
-  x = gen_rtx_NE (VOIDmode, cond, const0_rtx);
-  x = gen_rtx_IF_THEN_ELSE (VOIDmode, x,
-			    gen_rtx_LABEL_REF (Pmode, label2), pc_rtx);
-  emit_unlikely_jump (gen_rtx_SET (pc_rtx, x));
+  /* Z is set to 0 for 32bit targets (resp. rval set to 1) if oldval != rval,
+     as required to communicate with arm_expand_compare_and_swap.  */
+  if (TARGET_32BIT)
+    {
+      cond = arm_gen_compare_reg (NE, rval, oldval, neg_bval);
+      x = gen_rtx_NE (VOIDmode, cond, const0_rtx);
+      x = gen_rtx_IF_THEN_ELSE (VOIDmode, x,
+				gen_rtx_LABEL_REF (Pmode, label2), pc_rtx);
+      emit_unlikely_jump (gen_rtx_SET (pc_rtx, x));
+    }
+  else
+    {
+      emit_move_insn (neg_bval, const1_rtx);
+      cond = gen_rtx_NE (VOIDmode, rval, oldval);
+      if (thumb1_cmpneg_operand (oldval, SImode))
+	emit_unlikely_jump (gen_cbranchsi4_scratch (neg_bval, rval, oldval,
+						    label2, cond));
+      else
+	emit_unlikely_jump (gen_cbranchsi4_insn (cond, rval, oldval, label2));
+    }
 
-  arm_emit_store_exclusive (mode, scratch, mem, newval, use_release);
+  arm_emit_store_exclusive (mode, neg_bval, mem, newval, use_release);
 
   /* Weak or strong, we want EQ to be true for success, so that we
      match the flags that we got from the compare above.  */
-  cond = gen_rtx_REG (CCmode, CC_REGNUM);
-  x = gen_rtx_COMPARE (CCmode, scratch, const0_rtx);
-  emit_insn (gen_rtx_SET (cond, x));
+  if (TARGET_32BIT)
+    {
+      cond = gen_rtx_REG (CCmode, CC_REGNUM);
+      x = gen_rtx_COMPARE (CCmode, neg_bval, const0_rtx);
+      emit_insn (gen_rtx_SET (cond, x));
+    }
 
   if (!is_weak)
     {
-      x = gen_rtx_NE (VOIDmode, cond, const0_rtx);
-      x = gen_rtx_IF_THEN_ELSE (VOIDmode, x,
-				gen_rtx_LABEL_REF (Pmode, label1), pc_rtx);
-      emit_unlikely_jump (gen_rtx_SET (pc_rtx, x));
+      /* Z is set to boolean value of !neg_bval, as required to communicate
+	 with arm_expand_compare_and_swap.  */
+      x = gen_rtx_NE (VOIDmode, neg_bval, const0_rtx);
+      emit_unlikely_jump (gen_cbranchsi4 (x, neg_bval, const0_rtx, label1));
     }
 
   if (!is_mm_relaxed (mod_f))
@@ -28294,6 +29292,15 @@ arm_split_compare_and_swap (rtx operands[])
     emit_label (label2);
 }
 
+/* Split an atomic operation pattern.  Operation is given by CODE and is one
+   of PLUS, MINUS, IOR, XOR, SET (for an exchange operation) or NOT (for a nand
+   operation).  Operation is performed on the content at MEM and on VALUE
+   following the memory model MODEL_RTX.  The content at MEM before and after
+   the operation is returned in OLD_OUT and NEW_OUT respectively while the
+   success of the operation is returned in COND.  Using a scratch register or
+   an operand register for these determines what result is returned for that
+   pattern.  */
+
 void
 arm_split_atomic_op (enum rtx_code code, rtx old_out, rtx new_out, rtx mem,
 		     rtx value, rtx model_rtx, rtx cond)
@@ -28302,6 +29309,7 @@ arm_split_atomic_op (enum rtx_code code, rtx old_out, rtx new_out, rtx mem,
   machine_mode mode = GET_MODE (mem);
   machine_mode wmode = (mode == DImode ? DImode : SImode);
   rtx_code_label *label;
+  bool all_low_regs, bind_old_new;
   rtx x;
 
   bool is_armv8_sync = arm_arch8 && is_mm_sync (model);
@@ -28335,6 +29343,28 @@ arm_split_atomic_op (enum rtx_code code, rtx old_out, rtx new_out, rtx mem,
   value = simplify_gen_subreg (wmode, value, mode, 0);
 
   arm_emit_load_exclusive (mode, old_out, mem, use_acquire);
+
+  /* Does the operation require destination and first operand to use the same
+     register?  This is decided by register constraints of relevant insn
+     patterns in thumb1.md.  */
+  gcc_assert (!new_out || REG_P (new_out));
+  all_low_regs = REG_P (value) && REGNO_REG_CLASS (REGNO (value)) == LO_REGS
+		 && new_out && REGNO_REG_CLASS (REGNO (new_out)) == LO_REGS
+		 && REGNO_REG_CLASS (REGNO (old_out)) == LO_REGS;
+  bind_old_new =
+    (TARGET_THUMB1
+     && code != SET
+     && code != MINUS
+     && (code != PLUS || (!all_low_regs && !satisfies_constraint_L (value))));
+
+  /* We want to return the old value while putting the result of the operation
+     in the same register as the old value so copy the old value over to the
+     destination register and use that register for the operation.  */
+  if (old_out && bind_old_new)
+    {
+      emit_move_insn (new_out, old_out);
+      old_out = new_out;
+    }
 
   switch (code)
     {

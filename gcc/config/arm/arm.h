@@ -252,21 +252,25 @@ extern void (*arm_lang_output_object_attributes_hook)(void);
 #define TARGET_HAVE_MEMORY_BARRIER (TARGET_HAVE_DMB || TARGET_HAVE_DMB_MCR)
 
 /* Nonzero if this chip supports ldrex and strex */
-#define TARGET_HAVE_LDREX        ((arm_arch6 && TARGET_ARM) || arm_arch7)
+#define TARGET_HAVE_LDREX        ((arm_arch6 && TARGET_ARM)	\
+				  || arm_arch7			\
+				  || (arm_arch8 && !arm_arch_notm))
 
 /* Nonzero if this chip supports LPAE.  */
 #define TARGET_HAVE_LPAE						\
   (arm_arch7 && ARM_FSET_HAS_CPU1 (insn_flags, FL_FOR_ARCH7VE))
 
 /* Nonzero if this chip supports ldrex{bh} and strex{bh}.  */
-#define TARGET_HAVE_LDREXBH ((arm_arch6k && TARGET_ARM) || arm_arch7)
+#define TARGET_HAVE_LDREXBH ((arm_arch6k && TARGET_ARM)		\
+			     || arm_arch7			\
+			     || (arm_arch8 && !arm_arch_notm))
 
 /* Nonzero if this chip supports ldrexd and strexd.  */
 #define TARGET_HAVE_LDREXD (((arm_arch6k && TARGET_ARM) \
 			     || arm_arch7) && arm_arch_notm)
 
 /* Nonzero if this chip supports load-acquire and store-release.  */
-#define TARGET_HAVE_LDACQ	(TARGET_ARM_ARCH >= 8 && TARGET_32BIT)
+#define TARGET_HAVE_LDACQ	(TARGET_ARM_ARCH >= 8)
 
 /* Nonzero if this chip supports LDAEXD and STLEXD.  */
 #define TARGET_HAVE_LDACQEXD	(TARGET_ARM_ARCH >= 8	\
@@ -523,6 +527,9 @@ extern bool arm_disable_literal_pool;
 
 /* Nonzero if chip supports the ARMv8 CRC instructions.  */
 extern int arm_arch_crc;
+
+/* Nonzero if chip supports the ARMv8-M Security Extensions.  */
+extern int arm_arch_cmse;
 
 #ifndef TARGET_DEFAULT
 #define TARGET_DEFAULT  (MASK_APCS_FRAME)
@@ -1383,6 +1390,7 @@ enum reg_class
 #define ARM_FT_VOLATILE		(1 << 4) /* Does not return.  */
 #define ARM_FT_NESTED		(1 << 5) /* Embedded inside another func.  */
 #define ARM_FT_STACKALIGN	(1 << 6) /* Called with misaligned stack.  */
+#define ARM_FT_CMSE_ENTRY	(1 << 7) /* ARMv8-M non-secure entry function.  */
 
 /* Some macros to test these flags.  */
 #define ARM_FUNC_TYPE(t)	(t & ARM_FT_TYPE_MASK)
@@ -1391,6 +1399,7 @@ enum reg_class
 #define IS_NAKED(t)        	(t & ARM_FT_NAKED)
 #define IS_NESTED(t)       	(t & ARM_FT_NESTED)
 #define IS_STACKALIGN(t)       	(t & ARM_FT_STACKALIGN)
+#define IS_CMSE_ENTRY(t)	(t & ARM_FT_CMSE_ENTRY)
 
 
 /* Structure used to hold the function stack frame layout.  Offsets are
@@ -2261,13 +2270,18 @@ extern const char *arm_rewrite_mcpu (int argc, const char **argv);
    "   :%{march=*:-march=%*}}"					\
    BIG_LITTLE_SPEC
 
+extern const char *arm_target_thumb_only (int argc, const char **argv);
+#define TARGET_MODE_SPEC_FUNCTIONS					\
+  { "target_mode_check", arm_target_thumb_only },
+
 /* -mcpu=native handling only makes sense with compiler running on
    an ARM chip.  */
 #if defined(__arm__)
 extern const char *host_detect_local_cpu (int argc, const char **argv);
 # define EXTRA_SPEC_FUNCTIONS						\
   { "local_cpu_detect", host_detect_local_cpu },			\
-  BIG_LITTLE_CPU_SPEC_FUNCTIONS
+  BIG_LITTLE_CPU_SPEC_FUNCTIONS						\
+  TARGET_MODE_SPEC_FUNCTIONS
 
 # define MCPU_MTUNE_NATIVE_SPECS					\
    " %{march=native:%<march=native %:local_cpu_detect(arch)}"		\
@@ -2275,10 +2289,21 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
    " %{mtune=native:%<mtune=native %:local_cpu_detect(tune)}"
 #else
 # define MCPU_MTUNE_NATIVE_SPECS ""
-# define EXTRA_SPEC_FUNCTIONS BIG_LITTLE_CPU_SPEC_FUNCTIONS
+# define EXTRA_SPEC_FUNCTIONS						\
+	BIG_LITTLE_CPU_SPEC_FUNCTIONS					\
+	TARGET_MODE_SPEC_FUNCTIONS
 #endif
 
-#define DRIVER_SELF_SPECS MCPU_MTUNE_NATIVE_SPECS
+/* Automatically add -mthumb for Thumb-only targets if mode isn't specified
+   via the configuration option --with-mode or via the command line. The
+   function target_mode_check is called to do the check with either:
+   - an array of -march values if any is given;
+   - an array of -mcpu values if any is given;
+   - an empty array.  */
+#define TARGET_MODE_SPECS						\
+  " %{!marm:%{!mthumb:%:target_mode_check(%{march=*:%*;mcpu=*:%*;:})}}"
+
+#define DRIVER_SELF_SPECS MCPU_MTUNE_NATIVE_SPECS TARGET_MODE_SPECS
 #define TARGET_SUPPORTS_WIDE_INT 1
 
 /* For switching between functions with different target attributes.  */
