@@ -25,7 +25,8 @@ extern volatile intgo runtime_MemProfileRate
 
 struct gotraceback_ret {
 	int32 level;
-	bool crash;
+	bool  all;
+	bool  crash;
 };
 
 extern struct gotraceback_ret gotraceback(void)
@@ -92,15 +93,6 @@ runtime_cputicks(void)
   // TODO: need more entropy to better seed fastrand1.
   return runtime_nanotime();
 #endif
-}
-
-// Called to initialize a new m (including the bootstrap m).
-// Called on the parent thread (main thread in case of bootstrap), can allocate memory.
-void
-runtime_mpreinit(M *mp)
-{
-	mp->gsignal = runtime_malg(true, true, (byte**)&mp->gsignalstack, &mp->gsignalstacksize);
-	mp->gsignal->m = mp;
 }
 
 void
@@ -190,5 +182,9 @@ runtime_cpuinit()
 	if (__get_cpuid(1, &eax, &ebx, &ecx, &edx)) {
 		setCpuidECX(ecx);
 	}
+
+#if defined(HAVE_AS_X86_AES)
+	setSupportAES(true);
+#endif
 #endif
 }

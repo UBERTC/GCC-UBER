@@ -1,3 +1,25 @@
+2017-01-10  David Malcolm  <dmalcolm@redhat.com>
+
+	PR c++/77949
+	* line-map.c (linemap_position_for_column): When calling
+	linemap_start_line, detect if a new linemap was created with
+	0 column bits, and bail out early if this is the case.
+	(linemap_position_for_loc_and_offset): Replace overzealous
+	linemap_assert_fails with a simple conditional; use correct
+	bit count.
+
+2017-01-07  David Malcolm  <dmalcolm@redhat.com>
+
+	PR c++/72803
+	* line-map.c (linemap_line_start): When determining if the highest
+	column given out so far will fit into a proposed change to the
+	current map, use the effective number of column bits, rather than
+	the total number of column + range bits.
+
+2017-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
 2016-12-15  David Malcolm  <dmalcolm@redhat.com>
 
 	PR preprocessor/78680
@@ -4986,7 +5008,7 @@
 	* include/symtab.h: Moved from gcc/hashtable.h.  Change header
 	guard name.
 
-Copyright (C) 2004-2016 Free Software Foundation, Inc.
+Copyright (C) 2004-2017 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright

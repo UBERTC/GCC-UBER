@@ -1281,6 +1281,12 @@ package Sinfo is
    --    target of the assignment or initialization is used to generate the
    --    left-hand side of individual assignment to each sub-component.
 
+   --  Expression_Copy (Node2-Sem)
+   --    Present in N_Pragma_Argument_Association nodes. Contains a copy of the
+   --    original expression. This field is best used to store pragma-dependent
+   --    modifications performed on the original expression such as replacement
+   --    of the current type instance or substitutions of primitives.
+
    --  First_Inlined_Subprogram (Node3-Sem)
    --    Present in the N_Compilation_Unit node for the main program. Points
    --    to a chain of entities for subprograms that are to be inlined. The
@@ -2528,8 +2534,8 @@ package Sinfo is
       --  Psect_Object is always converted to Common_Object, but there are
       --  undoubtedly many other similar notes required ???
 
-      --  Note: a utility function Pragma_Name may be applied to pragma nodes
-      --  to conveniently obtain the Chars field of the Pragma_Identifier.
+      --  Note: utility functions Pragma_Name_Unmapped and Pragma_Name may be
+      --  applied to pragma nodes to obtain the Chars or its mapped version.
 
       --  Note: if From_Aspect_Specification is set, then Sloc points to the
       --  aspect name, as does the Pragma_Identifier. In this case if the
@@ -2571,6 +2577,7 @@ package Sinfo is
       --  N_Pragma_Argument_Association
       --  Sloc points to first token in association
       --  Chars (Name1) (set to No_Name if no pragma argument identifier)
+      --  Expression_Copy (Node2-Sem)
       --  Expression (Node3)
 
       ------------------------
@@ -9181,6 +9188,9 @@ package Sinfo is
    function Expression
      (N : Node_Id) return Node_Id;    -- Node3
 
+   function Expression_Copy
+     (N : Node_Id) return Node_Id;    -- Node2
+
    function Expressions
      (N : Node_Id) return List_Id;    -- List1
 
@@ -10227,6 +10237,9 @@ package Sinfo is
    procedure Set_Expression
      (N : Node_Id; Val : Node_Id);            -- Node3
 
+   procedure Set_Expression_Copy
+     (N : Node_Id; Val : Node_Id);            -- Node2
+
    procedure Set_Expressions
      (N : Node_Id; Val : List_Id);            -- List1
 
@@ -11006,9 +11019,24 @@ package Sinfo is
    -- Utility Functions --
    -----------------------
 
+   procedure Map_Pragma_Name (From, To : Name_Id);
+   --  Used in the implementation of pragma Rename_Pragma. Maps pragma name
+   --  From to pragma name To, so From can be used as a synonym for To.
+
+   Too_Many_Pragma_Mappings : exception;
+   --  Raised if Map_Pragma_Name is called too many times. We expect that few
+   --  programs will use it at all, and those that do will use it approximately
+   --  once or twice.
+
    function Pragma_Name (N : Node_Id) return Name_Id;
-   pragma Inline (Pragma_Name);
-   --  Convenient function to obtain Chars field of Pragma_Identifier
+   --  Obtain the name of pragma N from the Chars field of its identifier. If
+   --  the pragma has been renamed using Rename_Pragma, this routine returns
+   --  the name of the renaming.
+
+   function Pragma_Name_Unmapped (N : Node_Id) return Name_Id;
+   --  Obtain the name of pragma N from the Chars field of its identifier. This
+   --  form of name extraction does not take into account renamings performed
+   --  by Rename_Pragma.
 
    -----------------------------
    -- Syntactic Parent Tables --
@@ -11069,7 +11097,7 @@ package Sinfo is
 
      N_Pragma_Argument_Association =>
        (1 => True,    --  Chars (Name1)
-        2 => False,   --  unused
+        2 => False,   --  Expression_Copy (Node2-Sem)
         3 => True,    --  Expression (Node3)
         4 => False,   --  unused
         5 => False),  --  unused
@@ -12531,14 +12559,14 @@ package Sinfo is
         5 => False),  --  unused
 
      N_Push_Program_Error_Label =>
-       (1 => False,   --  Exception_Label
+       (1 => False,   --  unused
         2 => False,   --  unused
         3 => False,   --  unused
         4 => False,   --  unused
         5 => False),  --  Exception_Label
 
      N_Push_Storage_Error_Label =>
-       (1 => False,   --  Exception_Label
+       (1 => False,   --  unused
         2 => False,   --  unused
         3 => False,   --  unused
         4 => False,   --  unused
@@ -12777,6 +12805,7 @@ package Sinfo is
    pragma Inline (Explicit_Actual_Parameter);
    pragma Inline (Explicit_Generic_Actual_Parameter);
    pragma Inline (Expression);
+   pragma Inline (Expression_Copy);
    pragma Inline (Expressions);
    pragma Inline (First_Bit);
    pragma Inline (First_Inlined_Subprogram);
@@ -13123,6 +13152,7 @@ package Sinfo is
    pragma Inline (Set_Explicit_Actual_Parameter);
    pragma Inline (Set_Explicit_Generic_Actual_Parameter);
    pragma Inline (Set_Expression);
+   pragma Inline (Set_Expression_Copy);
    pragma Inline (Set_Expressions);
    pragma Inline (Set_First_Bit);
    pragma Inline (Set_First_Inlined_Subprogram);

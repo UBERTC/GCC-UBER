@@ -1036,9 +1036,16 @@ package body Sem_Attr is
                      Set_Never_Set_In_Source (Ent, False);
                   end if;
 
-                  --  Mark entity as address taken, and kill current values
+                  --  Mark entity as address taken in the case of
+                  --  'Unrestricted_Access or subprograms, and kill current
+                  --  values.
 
-                  Set_Address_Taken (Ent);
+                  if Aname = Name_Unrestricted_Access
+                    or else Is_Subprogram (Ent)
+                  then
+                     Set_Address_Taken (Ent);
+                  end if;
+
                   Kill_Current_Values (Ent);
                   exit;
 
@@ -1053,7 +1060,7 @@ package body Sem_Attr is
             end loop;
          end;
 
-         --  Check for aliased view.. We allow a nonaliased prefix when within
+         --  Check for aliased view. We allow a nonaliased prefix when within
          --  an instance because the prefix may have been a tagged formal
          --  object, which is defined to be aliased even when the actual
          --  might not be (other instance cases will have been caught in the
@@ -3833,6 +3840,42 @@ package body Sem_Attr is
          Check_Standard_Prefix;
          Rewrite (N, New_Occurrence_Of (Boolean_Literals (Fast_Math), Loc));
 
+      -----------------------
+      -- Finalization_Size --
+      -----------------------
+
+      when Attribute_Finalization_Size =>
+         Check_E0;
+
+         --  The prefix denotes an object
+
+         if Is_Object_Reference (P) then
+            Check_Object_Reference (P);
+
+         --  The prefix denotes a type
+
+         elsif Is_Entity_Name (P) and then Is_Type (Entity (P)) then
+            Check_Type;
+            Check_Not_Incomplete_Type;
+
+            --  Attribute 'Finalization_Size is not defined for class-wide
+            --  types because it is not possible to know statically whether
+            --  a definite type will have controlled components or not.
+
+            if Is_Class_Wide_Type (Etype (P)) then
+               Error_Attr_P
+                 ("prefix of % attribute cannot denote a class-wide type");
+            end if;
+
+         --  The prefix denotes an illegal construct
+
+         else
+            Error_Attr_P
+              ("prefix of % attribute must be a definite type or an object");
+         end if;
+
+         Set_Etype (N, Universal_Integer);
+
       -----------
       -- First --
       -----------
@@ -4377,7 +4420,7 @@ package body Sem_Attr is
             --  that the pragma appears in an appropriate loop location.
 
             if Nkind (Original_Node (Stmt)) = N_Pragma
-              and then Nam_In (Pragma_Name (Original_Node (Stmt)),
+              and then Nam_In (Pragma_Name_Unmapped (Original_Node (Stmt)),
                                Name_Loop_Invariant,
                                Name_Loop_Variant,
                                Name_Assert,
@@ -4422,7 +4465,17 @@ package body Sem_Attr is
          --  purpose if they appear in an appropriate location in a loop,
          --  which was already checked by the top level pragma circuit).
 
-         if No (Enclosing_Pragma) then
+         --  Loop_Entry also denotes a value and as such can appear within an
+         --  expression that is an argument for another loop aspect. In that
+         --  case it will have been expanded into the corresponding assignment.
+
+         if Expander_Active
+           and then Nkind (Parent (N)) = N_Assignment_Statement
+           and then not Comes_From_Source (Parent (N))
+         then
+            null;
+
+         elsif No (Enclosing_Pragma) then
             Error_Attr ("attribute% must appear within appropriate pragma", N);
          end if;
 
@@ -4476,11 +4529,15 @@ package body Sem_Attr is
          --  early transformation also avoids the generation of a useless loop
          --  entry constant.
 
-         if Is_Ignored (Enclosing_Pragma) then
+         if Present (Enclosing_Pragma)
+           and then Is_Ignored (Enclosing_Pragma)
+         then
             Rewrite (N, Relocate_Node (P));
-         end if;
+            Preanalyze_And_Resolve (N);
 
-         Preanalyze_And_Resolve (P);
+         else
+            Preanalyze_And_Resolve (P);
+         end if;
       end Loop_Entry;
 
       -------------
@@ -8398,6 +8455,13 @@ package body Sem_Attr is
          Fold_Uint (N,
            Eval_Fat.Exponent (P_Base_Type, Expr_Value_R (E1)), Static);
 
+      -----------------------
+      -- Finalization_Size --
+      -----------------------
+
+      when Attribute_Finalization_Size =>
+         null;
+
       -----------
       -- First --
       -----------
@@ -10982,9 +11046,13 @@ package body Sem_Attr is
                end;
             end if;
 
-            --  Mark that address of entity is taken
+            --  Mark that address of entity is taken in case of
+            --  'Unrestricted_Access or in case of a subprogram.
 
-            if Is_Entity_Name (P) then
+            if Is_Entity_Name (P)
+             and then (Attr_Id = Attribute_Unrestricted_Access
+                        or else Is_Subprogram (Entity (P)))
+            then
                Set_Address_Taken (Entity (P));
             end if;
 

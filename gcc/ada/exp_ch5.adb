@@ -2939,7 +2939,7 @@ package body Exp_Ch5 is
       --  For an element iterator, the Element aspect must be present,
       --  (this is checked during analysis) and the expansion takes the form:
 
-      --    Cursor : Cursor_type := First (Container);
+      --    Cursor : Cursor_Type := First (Container);
       --    Elmt : Element_Type;
       --    while Has_Element (Cursor, Container) loop
       --       Elmt := Element (Container, Cursor);
@@ -2951,10 +2951,10 @@ package body Exp_Ch5 is
       --   In that case we create a block to hold a variable declaration
       --   initialized with a call to Element, and generate:
 
-      --    Cursor : Cursor_type := First (Container);
+      --    Cursor : Cursor_Type := First (Container);
       --    while Has_Element (Cursor, Container) loop
       --       declare
-      --          Elmt : Element-Type := Element (Container, Cursor);
+      --          Elmt : Element_Type := Element (Container, Cursor);
       --       begin
       --          <original loop statements>
       --          Cursor := Next (Container, Cursor);
@@ -2968,7 +2968,7 @@ package body Exp_Ch5 is
       Set_Ekind (Cursor, E_Variable);
       Insert_Action (N, Init);
 
-      --  Declaration for Element.
+      --  Declaration for Element
 
       Elmt_Decl :=
         Make_Object_Declaration (Loc,
@@ -3209,10 +3209,6 @@ package body Exp_Ch5 is
             if Present (Condition_Actions (E))
               or else Compile_Time_Known_Value (Condition (E))
             then
-               --  Note this is not an implicit if statement, since it is part
-               --  of an explicit if statement in the source (or of an implicit
-               --  if statement that has already been tested).
-
                New_If :=
                  Make_If_Statement (Sloc (E),
                    Condition       => Condition (E),
@@ -3243,6 +3239,15 @@ package body Exp_Ch5 is
                end if;
 
                Analyze (New_If);
+
+               --  Note this is not an implicit if statement, since it is part
+               --  of an explicit if statement in the source (or of an implicit
+               --  if statement that has already been tested). We set the flag
+               --  after calling Analyze to avoid generating extra warnings
+               --  specific to pure if statements, however (see
+               --  Sem_Ch5.Analyze_If_Statement).
+
+               Set_Comes_From_Source (New_If, Comes_From_Source (N));
                return;
 
             --  No special processing for that elsif part, move to next
@@ -3764,14 +3769,18 @@ package body Exp_Ch5 is
                elsif Is_Derived_Type (T) then
 
                   --  The default iterator must be a primitive operation of the
-                  --  type, at the same dispatch slot position.
+                  --  type, at the same dispatch slot position. The DT position
+                  --  may not be established if type is not frozen yet.
 
                   Prim := First_Elmt (Primitive_Operations (T));
                   while Present (Prim) loop
                      Op := Node (Prim);
 
-                     if Chars (Op) = Chars (Iter)
-                       and then DT_Position (Op) = DT_Position (Iter)
+                     if Alias (Op) = Iter
+                       or else
+                         (Chars (Op) = Chars (Iter)
+                           and then Present (DTC_Entity (Op))
+                           and then DT_Position (Op) = DT_Position (Iter))
                      then
                         return Op;
                      end if;
@@ -4667,7 +4676,9 @@ package body Exp_Ch5 is
                                        and then not Comp_Asn
                                        and then not No_Ctrl_Actions (N)
                                        and then Tagged_Type_Expansion;
-      Tag_Id  : Entity_Id;
+      Adj_Call : Node_Id;
+      Fin_Call : Node_Id;
+      Tag_Id   : Entity_Id;
 
    begin
       --  Finalize the target of the assignment when controlled
@@ -4700,10 +4711,14 @@ package body Exp_Ch5 is
          null;
 
       else
-         Append_To (Res,
+         Fin_Call :=
            Make_Final_Call
              (Obj_Ref => Duplicate_Subexpr_No_Checks (L),
-              Typ     => Etype (L)));
+              Typ     => Etype (L));
+
+         if Present (Fin_Call) then
+            Append_To (Res, Fin_Call);
+         end if;
       end if;
 
       --  Save the Tag in a local variable Tag_Id
@@ -4756,10 +4771,14 @@ package body Exp_Ch5 is
       --  init proc since it is an initialization more than an assignment).
 
       if Ctrl_Act then
-         Append_To (Res,
+         Adj_Call :=
            Make_Adjust_Call
              (Obj_Ref => Duplicate_Subexpr_Move_Checks (L),
-              Typ     => Etype (L)));
+              Typ     => Etype (L));
+
+         if Present (Adj_Call) then
+            Append_To (Res, Adj_Call);
+         end if;
       end if;
 
       return Res;

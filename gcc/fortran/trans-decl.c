@@ -1,5 +1,5 @@
 /* Backend function setup
-   Copyright (C) 2002-2016 Free Software Foundation, Inc.
+   Copyright (C) 2002-2017 Free Software Foundation, Inc.
    Contributed by Paul Brook
 
 This file is part of GCC.
@@ -5145,6 +5145,13 @@ generate_coarray_sym_init (gfc_symbol *sym)
       tmp = gfc_trans_assignment (gfc_lval_expr_from_sym (sym), sym->value,
 				  true, false);
       sym->attr.pointer = 0;
+      gfc_add_expr_to_block (&caf_init_block, tmp);
+    }
+  else if (sym->ts.type == BT_DERIVED && sym->ts.u.derived->attr.pointer_comp)
+    {
+      tmp = gfc_nullify_alloc_comp (sym->ts.u.derived, decl, sym->as
+				    ? sym->as->rank : 0,
+				    GFC_STRUCTURE_CAF_MODE_IN_COARRAY);
       gfc_add_expr_to_block (&caf_init_block, tmp);
     }
 }

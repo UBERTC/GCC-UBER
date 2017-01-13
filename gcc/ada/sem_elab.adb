@@ -304,7 +304,7 @@ package body Sem_Elab is
     (Call : Node_Id;
      Subp : Entity_Id;
      Scop : Entity_Id);
-   --  The current unit U may depend semantically on some unit P which is not
+   --  The current unit U may depend semantically on some unit P that is not
    --  in the current context. If there is an elaboration call that reaches P,
    --  we need to indicate that P requires an Elaborate_All, but this is not
    --  effective in U's ali file, if there is no with_clause for P. In this
@@ -446,6 +446,15 @@ package body Sem_Elab is
          return;
       end if;
 
+      --  If an instance of a generic package contains a controlled object (so
+      --  we're calling Initialize at elaboration time), and the instance is in
+      --  a package body P that says "with P;", then we need to return without
+      --  adding "pragma Elaborate_All (P);" to P.
+
+      if U = Main_Unit_Entity then
+         return;
+      end if;
+
       Itm := First (CI);
       while Present (Itm) loop
          if Nkind (Itm) = N_With_Clause then
@@ -495,10 +504,8 @@ package body Sem_Elab is
       end if;
 
       --  Here if we do not find with clause on spec or body. We just ignore
-      --  this case, it means that the elaboration involves some other unit
+      --  this case; it means that the elaboration involves some other unit
       --  than the unit being compiled, and will be caught elsewhere.
-
-      null;
    end Activate_Elaborate_All_Desirable;
 
    ------------------
@@ -528,7 +535,7 @@ package body Sem_Elab is
        --  Generate a call to Error_Msg_NE with parameters Msg_D or Msg_S (for
        --  dynamic or static elaboration model), N and Ent. Msg_D is a real
        --  warning (output if Msg_D is non-null and Elab_Warnings is set),
-       --  Msg_S is an info message (output if Elab_Info_Messages is set.
+       --  Msg_S is an info message (output if Elab_Info_Messages is set).
 
       function Find_W_Scope return Entity_Id;
       --  Find top-level scope for called entity (not following renamings
@@ -919,7 +926,7 @@ package body Sem_Elab is
 
       --  If the call is in an instance, and the called entity is not
       --  defined in the same instance, then the elaboration issue focuses
-      --  around the unit containing the template, it is this unit which
+      --  around the unit containing the template, it is this unit that
       --  requires an Elaborate_All.
 
       --  However, if we are doing dynamic elaboration, we need to chase the
@@ -967,7 +974,7 @@ package body Sem_Elab is
       --  For the case where N is not an instance, and is not a call within
       --  instance to other than a generic formal, we recompute E_Scope
       --  for the error message, since we do NOT want to go to the unit
-      --  which has the ultimate declaration in the case of renaming and
+      --  that has the ultimate declaration in the case of renaming and
       --  derivation and we also want to go to the generic unit in the
       --  case of an instance, and no further.
 
@@ -1009,7 +1016,7 @@ package body Sem_Elab is
          return;
       end if;
 
-      Is_DIC_Proc := Is_Nontrivial_Default_Init_Cond_Procedure (Ent);
+      Is_DIC_Proc := Is_Nontrivial_DIC_Procedure (Ent);
 
       --  Elaboration issues in SPARK are reported only for source constructs
       --  and for nontrivial Default_Initial_Condition procedures. The latter
@@ -1184,7 +1191,7 @@ package body Sem_Elab is
             null;
 
          --  Do not generate an Elaborate_All for finalization routines
-         --  which perform partial clean up as part of initialization.
+         --  that perform partial clean up as part of initialization.
 
          elsif In_Init_Proc and then Is_Finalization_Procedure (Ent) then
             null;
@@ -1389,7 +1396,7 @@ package body Sem_Elab is
          return;
       end if;
 
-      --  Here we have a reference at elaboration time which must be checked
+      --  Here we have a reference at elaboration time that must be checked
 
       if Debug_Flag_LL then
          Write_Str ("  Check_Elab_Ref: ");
@@ -2689,7 +2696,7 @@ package body Sem_Elab is
       procedure Collect_Tasks (Decls : List_Id);
       --  Collect the types of the tasks that are to be activated in the given
       --  list of declarations, in order to perform elaboration checks on the
-      --  corresponding task procedures which are called implicitly here.
+      --  corresponding task procedures that are called implicitly here.
 
       function Outer_Unit (E : Entity_Id) return Entity_Id;
       --  find enclosing compilation unit of Entity, ignoring subunits, or

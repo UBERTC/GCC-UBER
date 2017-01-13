@@ -1,5 +1,5 @@
 /* Unit tests for RTL-handling.
-   Copyright (C) 2015-2016 Free Software Foundation, Inc.
+   Copyright (C) 2015-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -200,6 +200,7 @@ test_single_set ()
 static void
 test_uncond_jump ()
 {
+  set_new_first_and_last_insn (NULL, NULL);
   rtx_insn *label = gen_label_rtx ();
   rtx jump_pat = gen_rtx_SET (pc_rtx,
 			      gen_rtx_LABEL_REF (VOIDmode,

@@ -1,5 +1,5 @@
 /* C/ObjC/C++ command line option handling.
-   Copyright (C) 2002-2016 Free Software Foundation, Inc.
+   Copyright (C) 2002-2017 Free Software Foundation, Inc.
    Contributed by Neil Booth.
 
 This file is part of GCC.
@@ -744,7 +744,12 @@ c_common_post_options (const char **pfilename)
       in_fnames[0] = "";
     }
   else if (strcmp (in_fnames[0], "-") == 0)
-    in_fnames[0] = "";
+    {
+      if (pch_file)
+	error ("cannot use %<-%> as input filename for a precompiled header");
+
+      in_fnames[0] = "";
+    }
 
   if (out_fname == NULL || !strcmp (out_fname, "-"))
     out_fname = "";

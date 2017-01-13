@@ -1,5 +1,5 @@
 /* Output routines for GCC for ARM.
-   Copyright (C) 1991-2016 Free Software Foundation, Inc.
+   Copyright (C) 1991-2017 Free Software Foundation, Inc.
    Contributed by Pieter `Tiggr' Schoenmakers (rcpieter@win.tue.nl)
    and Martin Simmons (@harleqn.co.uk).
    More major hacks by Richard Earnshaw (rearnsha@arm.com).
@@ -813,6 +813,9 @@ int arm_arch5 = 0;
 
 /* Nonzero if this chip supports the ARM Architecture 5E extensions.  */
 int arm_arch5e = 0;
+
+/* Nonzero if this chip supports the ARM Architecture 5TE extensions.  */
+int arm_arch5te = 0;
 
 /* Nonzero if this chip supports the ARM Architecture 6 extensions.  */
 int arm_arch6 = 0;
@@ -2290,50 +2293,14 @@ const struct tune_params arm_fa726te_tune =
   tune_params::SCHED_AUTOPREF_OFF
 };
 
-
-/* Not all of these give usefully different compilation alternatives,
-   but there is no simple way of generalizing them.  */
-static const struct processors all_cores[] =
-{
-  /* ARM Cores */
-#define ARM_CORE(NAME, X, IDENT, TUNE_FLAGS, ARCH, ISA, COSTS)	\
-  {NAME, TARGET_CPU_##IDENT, TUNE_FLAGS, #ARCH, BASE_ARCH_##ARCH, \
-   {ISA isa_nobit}, &arm_##COSTS##_tune},
-#include "arm-cores.def"
-#undef ARM_CORE
-  {NULL, TARGET_CPU_arm_none, 0, NULL, BASE_ARCH_0, {isa_nobit}, NULL}
-};
-
-static const struct processors all_architectures[] =
-{
-  /* ARM Architectures */
-  /* We don't specify tuning costs here as it will be figured out
-     from the core.  */
-
-#define ARM_ARCH(NAME, CORE, TUNE_FLAGS, ARCH, ISA)			\
-  {NAME, TARGET_CPU_##CORE, TUNE_FLAGS, #ARCH, BASE_ARCH_##ARCH,	\
-  {ISA isa_nobit}, NULL},
-#include "arm-arches.def"
-#undef ARM_ARCH
-  {NULL, TARGET_CPU_arm_none, 0, NULL, BASE_ARCH_0, {isa_nobit}, NULL}
-};
+/* Auto-generated CPU, FPU and architecture tables.  */
+#include "arm-cpu-data.h"
 
 /* The name of the preprocessor macro to define for this architecture.  PROFILE
    is replaced by the architecture name (eg. 8A) in arm_option_override () and
    is thus chosen to be big enough to hold the longest architecture name.  */
 
 char arm_arch_name[] = "__ARM_ARCH_PROFILE__";
-
-/* Available values for -mfpu=.  */
-
-const struct arm_fpu_desc all_fpus[] =
-{
-#undef ARM_FPU
-#define ARM_FPU(NAME, CNAME, ISA)	\
-  { NAME, {ISA isa_nobit} },
-#include "arm-fpus.def"
-#undef ARM_FPU
-};
 
 /* Supported TLS relocations.  */
 
@@ -3372,6 +3339,8 @@ arm_option_override (void)
   arm_arch4t = arm_arch4 && bitmap_bit_p (arm_active_target.isa, isa_bit_thumb);
   arm_arch5 = bitmap_bit_p (arm_active_target.isa, isa_bit_ARMv5);
   arm_arch5e = bitmap_bit_p (arm_active_target.isa, isa_bit_ARMv5e);
+  arm_arch5te = arm_arch5e
+    && bitmap_bit_p (arm_active_target.isa, isa_bit_thumb);
   arm_arch6 = bitmap_bit_p (arm_active_target.isa, isa_bit_ARMv6);
   arm_arch6k = bitmap_bit_p (arm_active_target.isa, isa_bit_ARMv6k);
   arm_arch_notm = bitmap_bit_p (arm_active_target.isa, isa_bit_notm);
@@ -7300,10 +7269,14 @@ legitimize_pic_address (rtx orig, machine_mode mode, rtx reg)
 	 same segment as the GOT.  Unfortunately, the flexibility of linker
 	 scripts means that we can't be sure of that in general, so assume
 	 that GOTOFF is never valid on VxWorks.  */
+      /* References to weak symbols cannot be resolved locally: they
+	 may be overridden by a non-weak definition at link time.  */
       rtx_insn *insn;
       if ((GET_CODE (orig) == LABEL_REF
-	   || (GET_CODE (orig) == SYMBOL_REF &&
-	       SYMBOL_REF_LOCAL_P (orig)))
+	   || (GET_CODE (orig) == SYMBOL_REF
+	       && SYMBOL_REF_LOCAL_P (orig)
+	       && (SYMBOL_REF_DECL (orig)
+		   ? !DECL_WEAK (SYMBOL_REF_DECL (orig)) : 1)))
 	  && NEED_GOT_RELOC
 	  && arm_pic_data_is_text_relative)
 	insn = arm_pic_static_addr (orig, reg);
@@ -12206,7 +12179,7 @@ neon_lane_bounds (rtx operand, HOST_WIDE_INT low, HOST_WIDE_INT high,
 /* Bounds-check constants.  */
 
 void
-neon_const_bounds (rtx operand, HOST_WIDE_INT low, HOST_WIDE_INT high)
+arm_const_bounds (rtx operand, HOST_WIDE_INT low, HOST_WIDE_INT high)
 {
   bounds_check (operand, low, high, NULL_TREE, "constant");
 }
@@ -22510,8 +22483,14 @@ arm_assemble_integer (rtx x, unsigned int size, int aligned_p)
 	{
 	  /* See legitimize_pic_address for an explanation of the
 	     TARGET_VXWORKS_RTP check.  */
+	  /* References to weak symbols cannot be resolved locally:
+	     they may be overridden by a non-weak definition at link
+	     time.  */
 	  if (!arm_pic_data_is_text_relative
-	      || (GET_CODE (x) == SYMBOL_REF && !SYMBOL_REF_LOCAL_P (x)))
+	      || (GET_CODE (x) == SYMBOL_REF
+		  && (!SYMBOL_REF_LOCAL_P (x)
+		      || (SYMBOL_REF_DECL (x)
+			  ? DECL_WEAK (SYMBOL_REF_DECL (x)) : 0))))
 	    fputs ("(GOT)", asm_out_file);
 	  else
 	    fputs ("(GOTOFF)", asm_out_file);
@@ -30892,4 +30871,109 @@ arm_expand_divmod_libfunc (rtx libfunc, machine_mode mode,
   *rem_p = remainder;
 }
 
+/*  This function checks for the availability of the coprocessor builtin passed
+    in BUILTIN for the current target.  Returns true if it is available and
+    false otherwise.  If a BUILTIN is passed for which this function has not
+    been implemented it will cause an exception.  */
+
+bool
+arm_coproc_builtin_available (enum unspecv builtin)
+{
+  /* None of these builtins are available in Thumb mode if the target only
+     supports Thumb-1.  */
+  if (TARGET_THUMB1)
+    return false;
+
+  switch (builtin)
+    {
+      case VUNSPEC_CDP:
+      case VUNSPEC_LDC:
+      case VUNSPEC_LDCL:
+      case VUNSPEC_STC:
+      case VUNSPEC_STCL:
+      case VUNSPEC_MCR:
+      case VUNSPEC_MRC:
+	if (arm_arch4)
+	  return true;
+	break;
+      case VUNSPEC_CDP2:
+      case VUNSPEC_LDC2:
+      case VUNSPEC_LDC2L:
+      case VUNSPEC_STC2:
+      case VUNSPEC_STC2L:
+      case VUNSPEC_MCR2:
+      case VUNSPEC_MRC2:
+	/* Only present in ARMv5*, ARMv6 (but not ARMv6-M), ARMv7* and
+	   ARMv8-{A,M}.  */
+	if (arm_arch5)
+	  return true;
+	break;
+      case VUNSPEC_MCRR:
+      case VUNSPEC_MRRC:
+	/* Only present in ARMv5TE, ARMv6 (but not ARMv6-M), ARMv7* and
+	   ARMv8-{A,M}.  */
+	if (arm_arch6 || arm_arch5te)
+	  return true;
+	break;
+      case VUNSPEC_MCRR2:
+      case VUNSPEC_MRRC2:
+	if (arm_arch6)
+	  return true;
+	break;
+      default:
+	gcc_unreachable ();
+    }
+  return false;
+}
+
+/* This function returns true if OP is a valid memory operand for the ldc and
+   stc coprocessor instructions and false otherwise.  */
+
+bool
+arm_coproc_ldc_stc_legitimate_address (rtx op)
+{
+  HOST_WIDE_INT range;
+  /* Has to be a memory operand.  */
+  if (!MEM_P (op))
+    return false;
+
+  op = XEXP (op, 0);
+
+  /* We accept registers.  */
+  if (REG_P (op))
+    return true;
+
+  switch GET_CODE (op)
+    {
+      case PLUS:
+	{
+	  /* Or registers with an offset.  */
+	  if (!REG_P (XEXP (op, 0)))
+	    return false;
+
+	  op = XEXP (op, 1);
+
+	  /* The offset must be an immediate though.  */
+	  if (!CONST_INT_P (op))
+	    return false;
+
+	  range = INTVAL (op);
+
+	  /* Within the range of [-1020,1020].  */
+	  if (!IN_RANGE (range, -1020, 1020))
+	    return false;
+
+	  /* And a multiple of 4.  */
+	  return (range % 4) == 0;
+	}
+      case PRE_INC:
+      case POST_INC:
+      case PRE_DEC:
+      case POST_DEC:
+	return REG_P (XEXP (op, 0));
+      default:
+	gcc_unreachable ();
+    }
+  return false;
+}
 #include "gt-arm.h"

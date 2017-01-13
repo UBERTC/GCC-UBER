@@ -1,5 +1,5 @@
 /* Control flow graph manipulation code for GNU compiler.
-   Copyright (C) 1987-2016 Free Software Foundation, Inc.
+   Copyright (C) 1987-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -1794,6 +1794,10 @@ rtl_tidy_fallthru_edge (edge e)
 
       q = PREV_INSN (q);
     }
+  /* Unconditional jumps with side-effects (i.e. which we can't just delete
+     together with the barrier) should never have a fallthru edge.  */
+  else if (JUMP_P (q) && any_uncondjump_p (q))
+    return;
 
   /* Selectively unlink the sequence.  */
   if (q != PREV_INSN (BB_HEAD (c)))

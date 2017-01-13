@@ -1,5 +1,5 @@
 /* Machine description for AArch64 architecture.
-   Copyright (C) 2009-2016 Free Software Foundation, Inc.
+   Copyright (C) 2009-2017 Free Software Foundation, Inc.
    Contributed by ARM Ltd.
 
    This file is part of GCC.
@@ -64,6 +64,8 @@
 #include "sched-int.h"
 #include "target-globals.h"
 #include "common/common-target.h"
+#include "selftest.h"
+#include "selftest-rtl.h"
 
 /* This file should be included last.  */
 #include "target-def.h"
@@ -268,7 +270,7 @@ static const struct cpu_addrcost_table qdf24xx_addrcost_table =
   0 /* imm_offset  */
 };
 
-static const struct cpu_addrcost_table vulcan_addrcost_table =
+static const struct cpu_addrcost_table thunderx2t99_addrcost_table =
 {
     {
       0, /* hi  */
@@ -351,7 +353,7 @@ static const struct cpu_regmove_cost qdf24xx_regmove_cost =
   4 /* FP2FP  */
 };
 
-static const struct cpu_regmove_cost vulcan_regmove_cost =
+static const struct cpu_regmove_cost thunderx2t99_regmove_cost =
 {
   1, /* GP2GP  */
   /* Avoid the use of int<->fp moves for spilling.  */
@@ -450,7 +452,7 @@ static const struct cpu_vector_cost xgene1_vector_cost =
 };
 
 /* Costs for vector insn classes for Vulcan.  */
-static const struct cpu_vector_cost vulcan_vector_cost =
+static const struct cpu_vector_cost thunderx2t99_vector_cost =
 {
   6, /* scalar_stmt_cost  */
   4, /* scalar_load_cost  */
@@ -482,7 +484,7 @@ static const struct cpu_branch_cost cortexa57_branch_cost =
 };
 
 /* Branch costs for Vulcan.  */
-static const struct cpu_branch_cost vulcan_branch_cost =
+static const struct cpu_branch_cost thunderx2t99_branch_cost =
 {
   1,  /* Predictable.  */
   3   /* Unpredictable.  */
@@ -768,13 +770,13 @@ static const struct tune_params qdf24xx_tunings =
   (AARCH64_EXTRA_TUNE_NONE)		/* tune_flags.  */
 };
 
-static const struct tune_params vulcan_tunings =
+static const struct tune_params thunderx2t99_tunings =
 {
-  &vulcan_extra_costs,
-  &vulcan_addrcost_table,
-  &vulcan_regmove_cost,
-  &vulcan_vector_cost,
-  &vulcan_branch_cost,
+  &thunderx2t99_extra_costs,
+  &thunderx2t99_addrcost_table,
+  &thunderx2t99_regmove_cost,
+  &thunderx2t99_vector_cost,
+  &thunderx2t99_branch_cost,
   &generic_approx_modes,
   4, /* memmov_cost.  */
   4, /* issue_rate.  */
@@ -14605,6 +14607,52 @@ aarch64_excess_precision (enum excess_precision_type type)
   return FLT_EVAL_METHOD_UNPREDICTABLE;
 }
 
+/* Target-specific selftests.  */
+
+#if CHECKING_P
+
+namespace selftest {
+
+/* Selftest for the RTL loader.
+   Verify that the RTL loader copes with a dump from
+   print_rtx_function.  This is essentially just a test that class
+   function_reader can handle a real dump, but it also verifies
+   that lookup_reg_by_dump_name correctly handles hard regs.
+   The presence of hard reg names in the dump means that the test is
+   target-specific, hence it is in this file.  */
+
+static void
+aarch64_test_loading_full_dump ()
+{
+  rtl_dump_test t (SELFTEST_LOCATION, locate_file ("aarch64/times-two.rtl"));
+
+  ASSERT_STREQ ("times_two", IDENTIFIER_POINTER (DECL_NAME (cfun->decl)));
+
+  rtx_insn *insn_1 = get_insn_by_uid (1);
+  ASSERT_EQ (NOTE, GET_CODE (insn_1));
+
+  rtx_insn *insn_15 = get_insn_by_uid (15);
+  ASSERT_EQ (INSN, GET_CODE (insn_15));
+  ASSERT_EQ (USE, GET_CODE (PATTERN (insn_15)));
+
+  /* Verify crtl->return_rtx.  */
+  ASSERT_EQ (REG, GET_CODE (crtl->return_rtx));
+  ASSERT_EQ (0, REGNO (crtl->return_rtx));
+  ASSERT_EQ (SImode, GET_MODE (crtl->return_rtx));
+}
+
+/* Run all target-specific selftests.  */
+
+static void
+aarch64_run_selftests (void)
+{
+  aarch64_test_loading_full_dump ();
+}
+
+} // namespace selftest
+
+#endif /* #if CHECKING_P */
+
 #undef TARGET_ADDRESS_COST
 #define TARGET_ADDRESS_COST aarch64_address_cost
 
@@ -14976,6 +15024,11 @@ aarch64_libgcc_floating_mode_supported_p
 
 #undef TARGET_OMIT_STRUCT_RETURN_REG
 #define TARGET_OMIT_STRUCT_RETURN_REG true
+
+#if CHECKING_P
+#undef TARGET_RUN_TARGET_SELFTESTS
+#define TARGET_RUN_TARGET_SELFTESTS selftest::aarch64_run_selftests
+#endif /* #if CHECKING_P */
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

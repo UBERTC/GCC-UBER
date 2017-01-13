@@ -2264,6 +2264,12 @@ package body Exp_Ch6 is
       --  expression for the value of the actual, EF is the entity for the
       --  extra formal.
 
+      procedure Add_View_Conversion_Invariants
+        (Formal : Entity_Id;
+         Actual : Node_Id);
+      --  Adds invariant checks for every intermediate type between the range
+      --  of a view converted argument to its ancestor (from parent to child).
+
       function Inherited_From_Formal (S : Entity_Id) return Entity_Id;
       --  Within an instance, a type derived from an untagged formal derived
       --  type inherits from the original parent, not from the actual. The
@@ -2349,6 +2355,64 @@ package body Exp_Ch6 is
             Set_Is_Accessibility_Actual (Parent (Expr));
          end if;
       end Add_Extra_Actual;
+
+      ------------------------------------
+      -- Add_View_Conversion_Invariants --
+      ------------------------------------
+
+      procedure Add_View_Conversion_Invariants
+        (Formal : Entity_Id;
+         Actual : Node_Id)
+      is
+         Arg        : Entity_Id;
+         Curr_Typ   : Entity_Id;
+         Inv_Checks : List_Id;
+         Par_Typ    : Entity_Id;
+
+      begin
+         Inv_Checks := No_List;
+
+         --  Extract the argument from a potentially nested set of view
+         --  conversions.
+
+         Arg := Actual;
+         while Nkind (Arg) = N_Type_Conversion loop
+            Arg := Expression (Arg);
+         end loop;
+
+         --  Move up the derivation chain starting with the type of the formal
+         --  parameter down to the type of the actual object.
+
+         Curr_Typ := Empty;
+         Par_Typ  := Etype (Arg);
+         while Par_Typ /= Etype (Formal) and Par_Typ /= Curr_Typ loop
+            Curr_Typ := Par_Typ;
+
+            if Has_Invariants (Curr_Typ)
+              and then Present (Invariant_Procedure (Curr_Typ))
+            then
+               --  Verify the invariate of the current type. Generate:
+
+               --    <Curr_Typ>Invariant (Curr_Typ (Arg));
+
+               Prepend_New_To (Inv_Checks,
+                 Make_Procedure_Call_Statement (Loc,
+                   Name                   =>
+                     New_Occurrence_Of
+                       (Invariant_Procedure (Curr_Typ), Loc),
+                   Parameter_Associations => New_List (
+                     Make_Type_Conversion (Loc,
+                       Subtype_Mark => New_Occurrence_Of (Curr_Typ, Loc),
+                       Expression   => New_Copy_Tree (Arg)))));
+            end if;
+
+            Par_Typ := Base_Type (Etype (Curr_Typ));
+         end loop;
+
+         if not Is_Empty_List (Inv_Checks) then
+            Insert_Actions_After (N, Inv_Checks);
+         end if;
+      end Add_View_Conversion_Invariants;
 
       ---------------------------
       -- Inherited_From_Formal --
@@ -3231,6 +3295,20 @@ package body Exp_Ch6 is
             Insert_Action (Actual,
               Make_Transportable_Check (Loc,
                 Duplicate_Subexpr_Move_Checks (Actual)));
+         end if;
+
+         --  Perform invariant checks for all intermediate types in a view
+         --  conversion after successful return from a call that passes the
+         --  view conversion as an IN OUT or OUT parameter (RM 7.3.2 (12/3,
+         --  13/3, 14/3)). Consider only source conversion in order to avoid
+         --  generating spurious checks on complex expansion such as object
+         --  initialization through an extension aggregate.
+
+         if Comes_From_Source (N)
+           and then Ekind (Formal) /= E_In_Parameter
+           and then Nkind (Actual) = N_Type_Conversion
+         then
+            Add_View_Conversion_Invariants (Formal, Actual);
          end if;
 
          --  This label is required when skipping extra actual generation for
@@ -5618,7 +5696,7 @@ package body Exp_Ch6 is
 
          elsif Present (Next (N))
            and then Nkind (Next (N)) = N_Pragma
-           and then Get_Pragma_Id (Pragma_Name (Next (N))) = Pragma_Import
+           and then Get_Pragma_Id (Next (N)) = Pragma_Import
          then
             --  In SPARK, subprogram declarations are also permitted in
             --  declarative parts when immediately followed by a corresponding
@@ -6006,6 +6084,7 @@ package body Exp_Ch6 is
       --  case this must be handled as an inter-object call.
 
       if not In_Open_Scopes (Scop)
+        or else Is_Entry_Wrapper (Current_Scope)
         or else not Is_Entity_Name (Name (N))
       then
          if Nkind (Name (N)) = N_Selected_Component then
@@ -6013,6 +6092,19 @@ package body Exp_Ch6 is
 
          elsif Nkind (Name (N)) = N_Indexed_Component then
             Rec := Prefix (Prefix (Name (N)));
+
+         --  If this is a call within an entry wrapper, it appears within a
+         --  precondition that calls another primitive of the synchronized
+         --  type. The target object of the call is the first actual on the
+         --  wrapper. Note that this is an external call, because the wrapper
+         --  is called outside of the synchronized object. This means that
+         --  an entry call to an entry with preconditions involves two
+         --  synchronized operations.
+
+         elsif Ekind (Current_Scope) = E_Procedure
+           and then Is_Entry_Wrapper (Current_Scope)
+         then
+            Rec := New_Occurrence_Of (First_Entity (Current_Scope), Sloc (N));
 
          else
             --  If the context is the initialization procedure for a protected
@@ -7515,6 +7607,14 @@ package body Exp_Ch6 is
       Return_Obj_Id   : Entity_Id;
       Return_Obj_Decl : Entity_Id;
 
+      Definite : Boolean;
+      --  True if result subtype is definite, or has a size that does not
+      --  require secondary stack usage (i.e. no variant part or components
+      --  whose type depends on discriminants). In particular, untagged types
+      --  with only access discriminants do not require secondary stack use.
+      --  Note that if the return type is tagged we must always use the sec.
+      --  stack because the call may dispatch on result.
+
    begin
       --  Step past qualification, type conversion (which can occur in actual
       --  parameter contexts), and unchecked conversion (which can occur in
@@ -7554,6 +7654,10 @@ package body Exp_Ch6 is
       end if;
 
       Result_Subt := Etype (Function_Id);
+      Definite :=
+        (Is_Definite_Subtype (Underlying_Type (Result_Subt))
+             and then not Is_Tagged_Type (Result_Subt))
+          or else not Requires_Transient_Scope (Underlying_Type (Result_Subt));
 
       --  If the build-in-place function returns a controlled object, then the
       --  object needs to be finalized immediately after the context. Since
@@ -7592,10 +7696,10 @@ package body Exp_Ch6 is
             Analyze (Function_Call);
          end;
 
-      --  When the result subtype is constrained, an object of the subtype is
+      --  When the result subtype is definite, an object of the subtype is
       --  declared and an access value designating it is passed as an actual.
 
-      elsif Is_Constrained (Underlying_Type (Result_Subt)) then
+      elsif Definite then
 
          --  Create a temporary object to hold the function result
 

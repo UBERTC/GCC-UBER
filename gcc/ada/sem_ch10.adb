@@ -393,8 +393,8 @@ package body Sem_Ch10 is
 
                elsif Nkind (Cont_Item) = N_Pragma
                  and then
-                   Nam_In (Pragma_Name (Cont_Item), Name_Elaborate,
-                                                    Name_Elaborate_All)
+                   Nam_In (Pragma_Name_Unmapped (Cont_Item),
+                           Name_Elaborate, Name_Elaborate_All)
                  and then not Used_Type_Or_Elab
                then
                   Prag_Unit :=
@@ -1590,6 +1590,7 @@ package body Sem_Ch10 is
 
          Set_Has_Completion (Nam);
          Set_Scope (Defining_Entity (N), Current_Scope);
+         Set_Ekind (Defining_Entity (N), E_Package_Body);
          Set_Corresponding_Spec_Of_Stub (N, Nam);
          Generate_Reference (Nam, Id, 'b');
          Analyze_Proper_Body (N, Nam);
@@ -1931,6 +1932,7 @@ package body Sem_Ch10 is
 
       else
          Set_Scope (Defining_Entity (N), Current_Scope);
+         Set_Ekind (Defining_Entity (N), E_Protected_Body);
          Set_Has_Completion (Etype (Nam));
          Set_Corresponding_Spec_Of_Stub (N, Nam);
          Generate_Reference (Nam, Defining_Identifier (N), 'b');
@@ -2384,6 +2386,7 @@ package body Sem_Ch10 is
 
       else
          Set_Scope (Defining_Entity (N), Current_Scope);
+         Set_Ekind (Defining_Entity (N), E_Task_Body);
          Generate_Reference (Nam, Defining_Identifier (N), 'b');
          Set_Corresponding_Spec_Of_Stub (N, Nam);
 
@@ -2529,21 +2532,7 @@ package body Sem_Ch10 is
          Set_Analyzed (N);
       end if;
 
-      --  If the library unit is a predefined unit, and we are in high
-      --  integrity mode, then temporarily reset Configurable_Run_Time_Mode
-      --  for the analysis of the with'ed unit. This mode does not prevent
-      --  explicit with'ing of run-time units.
-
-      if Configurable_Run_Time_Mode
-        and then Is_Predefined_File_Name (Unit_File_Name (Get_Source_Unit (U)))
-      then
-         Configurable_Run_Time_Mode := False;
-         Semantics (Library_Unit (N));
-         Configurable_Run_Time_Mode := True;
-
-      else
-         Semantics (Library_Unit (N));
-      end if;
+      Semantics (Library_Unit (N));
 
       Intunit := Is_Internal_File_Name (Unit_File_Name (Current_Sem_Unit));
 

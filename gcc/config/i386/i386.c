@@ -1,5 +1,5 @@
 /* Subroutines used for code generation on IA-32.
-   Copyright (C) 1988-2016 Free Software Foundation, Inc.
+   Copyright (C) 1988-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -4306,20 +4306,22 @@ ix86_target_string (HOST_WIDE_INT isa, HOST_WIDE_INT isa2, int flags,
     { "-mxsave",	OPTION_MASK_ISA_XSAVE },
     { "-mxsaveopt",	OPTION_MASK_ISA_XSAVEOPT },
     { "-mprefetchwt1",	OPTION_MASK_ISA_PREFETCHWT1 },
-    { "-mclflushopt",   OPTION_MASK_ISA_CLFLUSHOPT },
+    { "-mclflushopt",	OPTION_MASK_ISA_CLFLUSHOPT },
     { "-mxsavec",	OPTION_MASK_ISA_XSAVEC },
     { "-mxsaves",	OPTION_MASK_ISA_XSAVES },
-    { "-mmpx",          OPTION_MASK_ISA_MPX },
+    { "-mmpx",		OPTION_MASK_ISA_MPX },
     { "-mclwb",		OPTION_MASK_ISA_CLWB },
-    { "-mmwaitx",	OPTION_MASK_ISA_MWAITX  },
-    { "-mclzero",	OPTION_MASK_ISA_CLZERO  },
-    { "-mpku",		OPTION_MASK_ISA_PKU  },
+    { "-mmwaitx",	OPTION_MASK_ISA_MWAITX },
+    { "-mclzero",	OPTION_MASK_ISA_CLZERO },
+    { "-mpku",		OPTION_MASK_ISA_PKU }
   };
   /* Additional structure for isa flags.  */
   static struct ix86_target_opts isa_opts2[] =
   {
     { "-mavx5124vnniw", OPTION_MASK_ISA_AVX5124VNNIW },
     { "-mavx5124fmaps", OPTION_MASK_ISA_AVX5124FMAPS },
+    { "-mavx512vpopcntdq", OPTION_MASK_ISA_AVX512VPOPCNTDQ },
+    { "-msgx",		OPTION_MASK_ISA_SGX }
   };
   /* Flag options.  */
   static struct ix86_target_opts flag_opts[] =
@@ -4349,10 +4351,10 @@ ix86_target_string (HOST_WIDE_INT isa, HOST_WIDE_INT isa2, int flags,
     { "-mvect8-ret-in-mem",		MASK_VECT8_RETURNS },
     { "-m8bit-idiv",			MASK_USE_8BIT_IDIV },
     { "-mvzeroupper",			MASK_VZEROUPPER },
-    { "-mstv",				MASK_STV},
-    { "-mavx256-split-unaligned-load",	MASK_AVX256_SPLIT_UNALIGNED_LOAD},
-    { "-mavx256-split-unaligned-store",	MASK_AVX256_SPLIT_UNALIGNED_STORE},
-    { "-mprefer-avx128",		MASK_PREFER_AVX128},
+    { "-mstv",				MASK_STV },
+    { "-mavx256-split-unaligned-load",	MASK_AVX256_SPLIT_UNALIGNED_LOAD },
+    { "-mavx256-split-unaligned-store",	MASK_AVX256_SPLIT_UNALIGNED_STORE },
+    { "-mprefer-avx128",		MASK_PREFER_AVX128 }
   };
 
   /* Additional flag options.  */
@@ -4857,39 +4859,39 @@ ix86_option_override_internal (bool main_args_p,
   unsigned int ix86_arch_mask;
   const bool ix86_tune_specified = (opts->x_ix86_tune_string != NULL);
 
-#define PTA_3DNOW	 	(HOST_WIDE_INT_1 << 0)
-#define PTA_3DNOW_A	 	(HOST_WIDE_INT_1 << 1)
+#define PTA_3DNOW		(HOST_WIDE_INT_1 << 0)
+#define PTA_3DNOW_A		(HOST_WIDE_INT_1 << 1)
 #define PTA_64BIT		(HOST_WIDE_INT_1 << 2)
 #define PTA_ABM			(HOST_WIDE_INT_1 << 3)
-#define PTA_AES		 	(HOST_WIDE_INT_1 << 4)
+#define PTA_AES			(HOST_WIDE_INT_1 << 4)
 #define PTA_AVX			(HOST_WIDE_INT_1 << 5)
-#define PTA_BMI		 	(HOST_WIDE_INT_1 << 6)
+#define PTA_BMI			(HOST_WIDE_INT_1 << 6)
 #define PTA_CX16		(HOST_WIDE_INT_1 << 7)
 #define PTA_F16C		(HOST_WIDE_INT_1 << 8)
 #define PTA_FMA			(HOST_WIDE_INT_1 << 9)
-#define PTA_FMA4	 	(HOST_WIDE_INT_1 << 10)
+#define PTA_FMA4		(HOST_WIDE_INT_1 << 10)
 #define PTA_FSGSBASE		(HOST_WIDE_INT_1 << 11)
-#define PTA_LWP		 	(HOST_WIDE_INT_1 << 12)
-#define PTA_LZCNT	 	(HOST_WIDE_INT_1 << 13)
+#define PTA_LWP			(HOST_WIDE_INT_1 << 12)
+#define PTA_LZCNT		(HOST_WIDE_INT_1 << 13)
 #define PTA_MMX			(HOST_WIDE_INT_1 << 14)
 #define PTA_MOVBE		(HOST_WIDE_INT_1 << 15)
 #define PTA_NO_SAHF		(HOST_WIDE_INT_1 << 16)
 #define PTA_PCLMUL		(HOST_WIDE_INT_1 << 17)
 #define PTA_POPCNT		(HOST_WIDE_INT_1 << 18)
 #define PTA_PREFETCH_SSE	(HOST_WIDE_INT_1 << 19)
-#define PTA_RDRND	 	(HOST_WIDE_INT_1 << 20)
+#define PTA_RDRND		(HOST_WIDE_INT_1 << 20)
 #define PTA_SSE			(HOST_WIDE_INT_1 << 21)
 #define PTA_SSE2		(HOST_WIDE_INT_1 << 22)
 #define PTA_SSE3		(HOST_WIDE_INT_1 << 23)
-#define PTA_SSE4_1	 	(HOST_WIDE_INT_1 << 24)
-#define PTA_SSE4_2	 	(HOST_WIDE_INT_1 << 25)
+#define PTA_SSE4_1		(HOST_WIDE_INT_1 << 24)
+#define PTA_SSE4_2		(HOST_WIDE_INT_1 << 25)
 #define PTA_SSE4A		(HOST_WIDE_INT_1 << 26)
 #define PTA_SSSE3		(HOST_WIDE_INT_1 << 27)
-#define PTA_TBM		 	(HOST_WIDE_INT_1 << 28)
-#define PTA_XOP		 	(HOST_WIDE_INT_1 << 29)
+#define PTA_TBM			(HOST_WIDE_INT_1 << 28)
+#define PTA_XOP			(HOST_WIDE_INT_1 << 29)
 #define PTA_AVX2		(HOST_WIDE_INT_1 << 30)
-#define PTA_BMI2	 	(HOST_WIDE_INT_1 << 31)
-#define PTA_RTM		 	(HOST_WIDE_INT_1 << 32)
+#define PTA_BMI2		(HOST_WIDE_INT_1 << 31)
+#define PTA_RTM			(HOST_WIDE_INT_1 << 32)
 #define PTA_HLE			(HOST_WIDE_INT_1 << 33)
 #define PTA_PRFCHW		(HOST_WIDE_INT_1 << 34)
 #define PTA_RDSEED		(HOST_WIDE_INT_1 << 35)
@@ -4916,9 +4918,11 @@ ix86_option_override_internal (bool main_args_p,
 #define PTA_MWAITX		(HOST_WIDE_INT_1 << 56)
 #define PTA_CLZERO		(HOST_WIDE_INT_1 << 57)
 #define PTA_NO_80387		(HOST_WIDE_INT_1 << 58)
-#define PTA_PKU		(HOST_WIDE_INT_1 << 59)
+#define PTA_PKU			(HOST_WIDE_INT_1 << 59)
 #define PTA_AVX5124VNNIW	(HOST_WIDE_INT_1 << 60)
 #define PTA_AVX5124FMAPS	(HOST_WIDE_INT_1 << 61)
+#define PTA_AVX512VPOPCNTDQ	(HOST_WIDE_INT_1 << 62)
+#define PTA_SGX			(HOST_WIDE_INT_1 << 63)
 
 #define PTA_CORE2 \
   (PTA_64BIT | PTA_MMX | PTA_SSE | PTA_SSE2 | PTA_SSE3 | PTA_SSSE3 \
@@ -5581,6 +5585,12 @@ ix86_option_override_internal (bool main_args_p,
 	if (processor_alias_table[i].flags & PTA_AVX5124FMAPS
 	    && !(opts->x_ix86_isa_flags2_explicit & OPTION_MASK_ISA_AVX5124FMAPS))
 	  opts->x_ix86_isa_flags2 |= OPTION_MASK_ISA_AVX5124FMAPS;
+	if (processor_alias_table[i].flags & PTA_AVX512VPOPCNTDQ
+	    && !(opts->x_ix86_isa_flags2_explicit & OPTION_MASK_ISA_AVX512VPOPCNTDQ))
+	  opts->x_ix86_isa_flags2 |= OPTION_MASK_ISA_AVX512VPOPCNTDQ;
+	if (processor_alias_table[i].flags & PTA_SGX
+	    && !(opts->x_ix86_isa_flags2_explicit & OPTION_MASK_ISA_SGX))
+	  opts->x_ix86_isa_flags2 |= OPTION_MASK_ISA_SGX;
 
 	if (processor_alias_table[i].flags & (PTA_PREFETCH_SSE | PTA_SSE))
 	  x86_prefetch_sse = true;
@@ -6608,6 +6618,7 @@ ix86_valid_target_attribute_inner_p (tree args, char *p_strings[],
     /* isa options */
     IX86_ATTR_ISA ("3dnow",	OPT_m3dnow),
     IX86_ATTR_ISA ("abm",	OPT_mabm),
+    IX86_ATTR_ISA ("sgx",	OPT_msgx),
     IX86_ATTR_ISA ("bmi",	OPT_mbmi),
     IX86_ATTR_ISA ("bmi2",	OPT_mbmi2),
     IX86_ATTR_ISA ("lzcnt",	OPT_mlzcnt),
@@ -6625,6 +6636,7 @@ ix86_valid_target_attribute_inner_p (tree args, char *p_strings[],
     IX86_ATTR_ISA ("avx512vl",	OPT_mavx512vl),
     IX86_ATTR_ISA ("avx5124fmaps",	OPT_mavx5124fmaps),
     IX86_ATTR_ISA ("avx5124vnniw",	OPT_mavx5124vnniw),
+    IX86_ATTR_ISA ("avx512vpopcntdq",	OPT_mavx512vpopcntdq),
     IX86_ATTR_ISA ("mmx",	OPT_mmmx),
     IX86_ATTR_ISA ("pclmul",	OPT_mpclmul),
     IX86_ATTR_ISA ("popcnt",	OPT_mpopcnt),
@@ -10390,7 +10402,7 @@ function_value_32 (machine_mode orig_mode, machine_mode mode,
       int sse_level = ix86_function_sseregparm (fntype, fn, false);
       if (sse_level == -1)
 	{
-	  error ("calling %qD with SSE caling convention without "
+	  error ("calling %qD with SSE calling convention without "
 		 "SSE/SSE2 enabled", fn);
 	  sorry ("this is a GCC bug that can be worked around by adding "
 		 "attribute used to function called");
@@ -28732,7 +28744,7 @@ memory_address_length (rtx addr, bool lea)
   else if (disp && !base && !index)
     {
       len += 4;
-      if (rip_relative_addr_p (&parts))
+      if (!rip_relative_addr_p (&parts))
 	len++;
     }
   else
@@ -33300,6 +33312,7 @@ fold_builtin_cpu (tree fndecl, tree *args)
     F_AVX512IFMA,
     F_AVX5124VNNIW,
     F_AVX5124FMAPS,
+    F_AVX512VPOPCNTDQ,
     F_MAX
   };
 
@@ -33414,6 +33427,7 @@ fold_builtin_cpu (tree fndecl, tree *args)
       {"avx512ifma",F_AVX512IFMA},
       {"avx5124vnniw",F_AVX5124VNNIW},
       {"avx5124fmaps",F_AVX5124FMAPS},
+      {"avx512vpopcntdq",F_AVX512VPOPCNTDQ}
     };
 
   tree __processor_model_type = build_processor_model_struct ();
@@ -34891,8 +34905,10 @@ ix86_expand_args_builtin (const struct builtin_description *d,
     case V16SF_FTYPE_V4SF:
     case V16SI_FTYPE_V4SI:
     case V16SI_FTYPE_V16SF:
+    case V16SI_FTYPE_V16SI:
     case V16SF_FTYPE_V16SF:
     case V8DI_FTYPE_UQI:
+    case V8DI_FTYPE_V8DI:
     case V8DF_FTYPE_V4DF:
     case V8DF_FTYPE_V2DF:
     case V8DF_FTYPE_V8DF:
@@ -51206,6 +51222,209 @@ ix86_test_dumping_memory_blockage ()
        "            ] UNSPEC_MEMORY_BLOCKAGE)))\n", pat, &r);
 }
 
+/* Verify loading an RTL dump; specifically a dump of copying
+   a param on x86_64 from a hard reg into the frame.
+   This test is target-specific since the dump contains target-specific
+   hard reg names.  */
+
+static void
+ix86_test_loading_dump_fragment_1 ()
+{
+  rtl_dump_test t (SELFTEST_LOCATION,
+		   locate_file ("x86_64/copy-hard-reg-into-frame.rtl"));
+
+  rtx_insn *insn = get_insn_by_uid (1);
+
+  /* The block structure and indentation here is purely for
+     readability; it mirrors the structure of the rtx.  */
+  tree mem_expr;
+  {
+    rtx pat = PATTERN (insn);
+    ASSERT_EQ (SET, GET_CODE (pat));
+    {
+      rtx dest = SET_DEST (pat);
+      ASSERT_EQ (MEM, GET_CODE (dest));
+      /* Verify the "/c" was parsed.  */
+      ASSERT_TRUE (RTX_FLAG (dest, call));
+      ASSERT_EQ (SImode, GET_MODE (dest));
+      {
+	rtx addr = XEXP (dest, 0);
+	ASSERT_EQ (PLUS, GET_CODE (addr));
+	ASSERT_EQ (DImode, GET_MODE (addr));
+	{
+	  rtx lhs = XEXP (addr, 0);
+	  /* Verify that the "frame" REG was consolidated.  */
+	  ASSERT_RTX_PTR_EQ (frame_pointer_rtx, lhs);
+	}
+	{
+	  rtx rhs = XEXP (addr, 1);
+	  ASSERT_EQ (CONST_INT, GET_CODE (rhs));
+	  ASSERT_EQ (-4, INTVAL (rhs));
+	}
+      }
+      /* Verify the "[1 i+0 S4 A32]" was parsed.  */
+      ASSERT_EQ (1, MEM_ALIAS_SET (dest));
+      /* "i" should have been handled by synthesizing a global int
+	 variable named "i".  */
+      mem_expr = MEM_EXPR (dest);
+      ASSERT_NE (mem_expr, NULL);
+      ASSERT_EQ (VAR_DECL, TREE_CODE (mem_expr));
+      ASSERT_EQ (integer_type_node, TREE_TYPE (mem_expr));
+      ASSERT_EQ (IDENTIFIER_NODE, TREE_CODE (DECL_NAME (mem_expr)));
+      ASSERT_STREQ ("i", IDENTIFIER_POINTER (DECL_NAME (mem_expr)));
+      /* "+0".  */
+      ASSERT_TRUE (MEM_OFFSET_KNOWN_P (dest));
+      ASSERT_EQ (0, MEM_OFFSET (dest));
+      /* "S4".  */
+      ASSERT_EQ (4, MEM_SIZE (dest));
+      /* "A32.  */
+      ASSERT_EQ (32, MEM_ALIGN (dest));
+    }
+    {
+      rtx src = SET_SRC (pat);
+      ASSERT_EQ (REG, GET_CODE (src));
+      ASSERT_EQ (SImode, GET_MODE (src));
+      ASSERT_EQ (5, REGNO (src));
+      tree reg_expr = REG_EXPR (src);
+      /* "i" here should point to the same var as for the MEM_EXPR.  */
+      ASSERT_EQ (reg_expr, mem_expr);
+    }
+  }
+}
+
+/* Verify that the RTL loader copes with a call_insn dump.
+   This test is target-specific since the dump contains a target-specific
+   hard reg name.  */
+
+static void
+ix86_test_loading_call_insn ()
+{
+  /* The test dump includes register "xmm0", where requires TARGET_SSE
+     to exist.  */
+  if (!TARGET_SSE)
+    return;
+
+  rtl_dump_test t (SELFTEST_LOCATION, locate_file ("x86_64/call-insn.rtl"));
+
+  rtx_insn *insn = get_insns ();
+  ASSERT_EQ (CALL_INSN, GET_CODE (insn));
+
+  /* "/j".  */
+  ASSERT_TRUE (RTX_FLAG (insn, jump));
+
+  rtx pat = PATTERN (insn);
+  ASSERT_EQ (CALL, GET_CODE (SET_SRC (pat)));
+
+  /* Verify REG_NOTES.  */
+  {
+    /* "(expr_list:REG_CALL_DECL".   */
+    ASSERT_EQ (EXPR_LIST, GET_CODE (REG_NOTES (insn)));
+    rtx_expr_list *note0 = as_a <rtx_expr_list *> (REG_NOTES (insn));
+    ASSERT_EQ (REG_CALL_DECL, REG_NOTE_KIND (note0));
+
+    /* "(expr_list:REG_EH_REGION (const_int 0 [0])".  */
+    rtx_expr_list *note1 = note0->next ();
+    ASSERT_EQ (REG_EH_REGION, REG_NOTE_KIND (note1));
+
+    ASSERT_EQ (NULL, note1->next ());
+  }
+
+  /* Verify CALL_INSN_FUNCTION_USAGE.  */
+  {
+    /* "(expr_list:DF (use (reg:DF 21 xmm0))".  */
+    rtx_expr_list *usage
+      = as_a <rtx_expr_list *> (CALL_INSN_FUNCTION_USAGE (insn));
+    ASSERT_EQ (EXPR_LIST, GET_CODE (usage));
+    ASSERT_EQ (DFmode, GET_MODE (usage));
+    ASSERT_EQ (USE, GET_CODE (usage->element ()));
+    ASSERT_EQ (NULL, usage->next ());
+  }
+}
+
+/* Verify that the RTL loader copes a dump from print_rtx_function.
+   This test is target-specific since the dump contains target-specific
+   hard reg names.  */
+
+static void
+ix86_test_loading_full_dump ()
+{
+  rtl_dump_test t (SELFTEST_LOCATION, locate_file ("x86_64/times-two.rtl"));
+
+  ASSERT_STREQ ("times_two", IDENTIFIER_POINTER (DECL_NAME (cfun->decl)));
+
+  rtx_insn *insn_1 = get_insn_by_uid (1);
+  ASSERT_EQ (NOTE, GET_CODE (insn_1));
+
+  rtx_insn *insn_7 = get_insn_by_uid (7);
+  ASSERT_EQ (INSN, GET_CODE (insn_7));
+  ASSERT_EQ (PARALLEL, GET_CODE (PATTERN (insn_7)));
+
+  rtx_insn *insn_15 = get_insn_by_uid (15);
+  ASSERT_EQ (INSN, GET_CODE (insn_15));
+  ASSERT_EQ (USE, GET_CODE (PATTERN (insn_15)));
+
+  /* Verify crtl->return_rtx.  */
+  ASSERT_EQ (REG, GET_CODE (crtl->return_rtx));
+  ASSERT_EQ (0, REGNO (crtl->return_rtx));
+  ASSERT_EQ (SImode, GET_MODE (crtl->return_rtx));
+}
+
+/* Verify that the RTL loader copes with UNSPEC and UNSPEC_VOLATILE insns.
+   In particular, verify that it correctly loads the 2nd operand.
+   This test is target-specific since these are machine-specific
+   operands (and enums).  */
+
+static void
+ix86_test_loading_unspec ()
+{
+  rtl_dump_test t (SELFTEST_LOCATION, locate_file ("x86_64/unspec.rtl"));
+
+  ASSERT_STREQ ("test_unspec", IDENTIFIER_POINTER (DECL_NAME (cfun->decl)));
+
+  ASSERT_TRUE (cfun);
+
+  /* Test of an UNSPEC.  */
+   rtx_insn *insn = get_insns ();
+  ASSERT_EQ (INSN, GET_CODE (insn));
+  rtx set = single_set (insn);
+  ASSERT_NE (NULL, set);
+  rtx dst = SET_DEST (set);
+  ASSERT_EQ (MEM, GET_CODE (dst));
+  rtx src = SET_SRC (set);
+  ASSERT_EQ (UNSPEC, GET_CODE (src));
+  ASSERT_EQ (BLKmode, GET_MODE (src));
+  ASSERT_EQ (UNSPEC_MEMORY_BLOCKAGE, XINT (src, 1));
+
+  rtx v0 = XVECEXP (src, 0, 0);
+
+  /* Verify that the two uses of the first SCRATCH have pointer
+     equality.  */
+  rtx scratch_a = XEXP (dst, 0);
+  ASSERT_EQ (SCRATCH, GET_CODE (scratch_a));
+
+  rtx scratch_b = XEXP (v0, 0);
+  ASSERT_EQ (SCRATCH, GET_CODE (scratch_b));
+
+  ASSERT_EQ (scratch_a, scratch_b);
+
+  /* Verify that the two mems are thus treated as equal.  */
+  ASSERT_TRUE (rtx_equal_p (dst, v0));
+
+  /* Verify the the insn is recognized.  */
+  ASSERT_NE(-1, recog_memoized (insn));
+
+  /* Test of an UNSPEC_VOLATILE, which has its own enum values.  */
+  insn = NEXT_INSN (insn);
+  ASSERT_EQ (INSN, GET_CODE (insn));
+
+  set = single_set (insn);
+  ASSERT_NE (NULL, set);
+
+  src = SET_SRC (set);
+  ASSERT_EQ (UNSPEC_VOLATILE, GET_CODE (src));
+  ASSERT_EQ (UNSPECV_RDTSCP, XINT (src, 1));
+}
+
 /* Run all target-specific selftests.  */
 
 static void
@@ -51213,6 +51432,13 @@ ix86_run_selftests (void)
 {
   ix86_test_dumping_hard_regs ();
   ix86_test_dumping_memory_blockage ();
+
+  /* Various tests of loading RTL dumps, here because they contain
+     ix86-isms (e.g. names of hard regs).  */
+  ix86_test_loading_dump_fragment_1 ();
+  ix86_test_loading_call_insn ();
+  ix86_test_loading_full_dump ();
+  ix86_test_loading_unspec ();
 }
 
 } // namespace selftest

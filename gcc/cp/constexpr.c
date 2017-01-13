@@ -2,7 +2,7 @@
    constexpr functions.  These routines are used both during actual parsing
    and during the instantiation of template functions.
 
-   Copyright (C) 1998-2016 Free Software Foundation, Inc.
+   Copyright (C) 1998-2017 Free Software Foundation, Inc.
 
    This file is part of GCC.
 
@@ -5661,6 +5661,7 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
       /* We can see these in statement-expressions.  */
       return true;
 
+    case CLEANUP_STMT:
     case EMPTY_CLASS_EXPR:
       return false;
 

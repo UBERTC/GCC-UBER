@@ -1284,6 +1284,14 @@ package body Sinfo is
       return Node3 (N);
    end Expression;
 
+   function Expression_Copy
+      (N : Node_Id) return Node_Id is
+   begin
+      pragma Assert (False
+        or else NT (N).Nkind = N_Pragma_Argument_Association);
+      return Node2 (N);
+   end Expression_Copy;
+
    function Expressions
       (N : Node_Id) return List_Id is
    begin
@@ -4555,6 +4563,14 @@ package body Sinfo is
       Set_Node3_With_Parent (N, Val);
    end Set_Expression;
 
+   procedure Set_Expression_Copy
+      (N : Node_Id; Val : Node_Id) is
+   begin
+      pragma Assert (False
+        or else NT (N).Nkind = N_Pragma_Argument_Association);
+      Set_Node2 (N, Val);  -- semantic field, no parent set
+   end Set_Expression_Copy;
+
    procedure Set_Expressions
       (N : Node_Id; Val : List_Id) is
    begin
@@ -6813,9 +6829,53 @@ package body Sinfo is
    -- Pragma_Name --
    -----------------
 
-   function Pragma_Name (N : Node_Id) return Name_Id is
+   function Pragma_Name_Unmapped (N : Node_Id) return Name_Id is
    begin
       return Chars (Pragma_Identifier (N));
+   end Pragma_Name_Unmapped;
+
+   ---------------------
+   -- Map_Pragma_Name --
+   ---------------------
+
+   --  We don't want to introduce a dependence on some hash table package or
+   --  similar, so we use a simple array of Key => Value pairs, and do a linear
+   --  search. Linear search is plenty efficient, given that we don't expect
+   --  more than a couple of entries in the mapping.
+
+   type Name_Pair is record
+      Key   : Name_Id;
+      Value : Name_Id;
+   end record;
+
+   type Pragma_Map_Index is range 1 .. 100;
+   Pragma_Map : array (Pragma_Map_Index) of Name_Pair;
+   Last_Pair : Pragma_Map_Index'Base range 0 .. Pragma_Map_Index'Last := 0;
+
+   procedure Map_Pragma_Name (From, To : Name_Id) is
+   begin
+      if Last_Pair = Pragma_Map'Last then
+         raise Too_Many_Pragma_Mappings;
+      end if;
+
+      Last_Pair := Last_Pair + 1;
+      Pragma_Map (Last_Pair) := (Key => From, Value => To);
+   end Map_Pragma_Name;
+
+   -----------------
+   -- Pragma_Name --
+   -----------------
+
+   function Pragma_Name (N : Node_Id) return Name_Id is
+      Result : constant Name_Id := Pragma_Name_Unmapped (N);
+   begin
+      for J in Pragma_Map'Range loop
+         if Result = Pragma_Map (J).Key then
+            return Pragma_Map (J).Value;
+         end if;
+      end loop;
+
+      return Result;
    end Pragma_Name;
 
 end Sinfo;

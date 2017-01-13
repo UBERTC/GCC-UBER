@@ -1,5 +1,5 @@
 /* Build expressions with type checking for C++ compiler.
-   Copyright (C) 1987-2016 Free Software Foundation, Inc.
+   Copyright (C) 1987-2017 Free Software Foundation, Inc.
    Hacked by Michael Tiemann (tiemann@cygnus.com)
 
 This file is part of GCC.
@@ -4604,6 +4604,12 @@ cp_build_binary_op (location_t location,
 	  else
 	    result_type = type0;
 
+	  if (char_type_p (TREE_TYPE (orig_op1))
+	      && warning (OPT_Wpointer_compare,
+			  "comparison between pointer and zero character "
+			  "constant"))
+	    inform (input_location,
+		    "did you mean to dereference the pointer?");
 	  warn_for_null_address (location, op0, complain);
 	}
       else if (((code1 == POINTER_TYPE || TYPE_PTRDATAMEM_P (type1))
@@ -4618,6 +4624,12 @@ cp_build_binary_op (location_t location,
 	  else
 	    result_type = type1;
 
+	  if (char_type_p (TREE_TYPE (orig_op0))
+	      && warning (OPT_Wpointer_compare,
+			  "comparison between pointer and zero character "
+			  "constant"))
+	    inform (input_location,
+		    "did you mean to dereference the pointer?");
 	  warn_for_null_address (location, op1, complain);
 	}
       else if ((code0 == POINTER_TYPE && code1 == POINTER_TYPE)
@@ -5907,6 +5919,8 @@ cp_build_unary_op (enum tree_code code, tree xarg, bool noconvert,
 	    inform (location, "did you mean to use logical not (%<!%>)?");
 	  arg = cp_perform_integral_promotions (arg, complain);
 	}
+      else if (!noconvert && VECTOR_TYPE_P (TREE_TYPE (arg)))
+	arg = mark_rvalue_use (arg);
       break;
 
     case ABS_EXPR:

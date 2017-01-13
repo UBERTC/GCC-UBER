@@ -1,5 +1,5 @@
 /* -*- C++ -*- Parser.
-   Copyright (C) 2000-2016 Free Software Foundation, Inc.
+   Copyright (C) 2000-2017 Free Software Foundation, Inc.
    Written by Mark Mitchell <mark@codesourcery.com>.
 
    This file is part of GCC.
@@ -766,7 +766,7 @@ cp_lexer_previous_token (cp_lexer *lexer)
   /* Skip past purged tokens.  */
   while (tp->purged_p)
     {
-      gcc_assert (tp != lexer->buffer->address ());
+      gcc_assert (tp != vec_safe_address (lexer->buffer));
       tp--;
     }
 
@@ -11147,12 +11147,12 @@ cp_parser_selection_statement (cp_parser* parser, bool *if_p,
 
 	    /* Outside a template, the non-selected branch of a constexpr
 	       if is a 'discarded statement', i.e. unevaluated.  */
-	    bool was_discarded = parser->in_discarded_stmt;
+	    bool was_discarded = in_discarded_stmt;
 	    bool discard_then = (cx && !processing_template_decl
 				 && integer_zerop (condition));
 	    if (discard_then)
 	      {
-		parser->in_discarded_stmt = true;
+		in_discarded_stmt = true;
 		++c_inhibit_evaluation_warnings;
 	      }
 
@@ -11166,7 +11166,7 @@ cp_parser_selection_statement (cp_parser* parser, bool *if_p,
 	    if (discard_then)
 	      {
 		THEN_CLAUSE (statement) = NULL_TREE;
-		parser->in_discarded_stmt = was_discarded;
+		in_discarded_stmt = was_discarded;
 		--c_inhibit_evaluation_warnings;
 	      }
 
@@ -11178,7 +11178,7 @@ cp_parser_selection_statement (cp_parser* parser, bool *if_p,
 				     && integer_nonzerop (condition));
 		if (discard_else)
 		  {
-		    parser->in_discarded_stmt = true;
+		    in_discarded_stmt = true;
 		    ++c_inhibit_evaluation_warnings;
 		  }
 
@@ -11235,7 +11235,7 @@ cp_parser_selection_statement (cp_parser* parser, bool *if_p,
 		if (discard_else)
 		  {
 		    ELSE_CLAUSE (statement) = NULL_TREE;
-		    parser->in_discarded_stmt = was_discarded;
+		    in_discarded_stmt = was_discarded;
 		    --c_inhibit_evaluation_warnings;
 		  }
 	      }
@@ -12143,7 +12143,7 @@ cp_parser_jump_statement (cp_parser* parser)
 	     expression.  */
 	  expr = NULL_TREE;
 	/* Build the return-statement.  */
-	if (current_function_auto_return_pattern && parser->in_discarded_stmt)
+	if (current_function_auto_return_pattern && in_discarded_stmt)
 	  /* Don't deduce from a discarded return statement.  */;
 	else
 	  statement = finish_return_stmt (expr);
@@ -12723,8 +12723,17 @@ cp_parser_simple_declaration (cp_parser* parser,
       break;
 
   tree last_type;
+  bool auto_specifier_p;
+  /* NULL_TREE if both variable and function declaration are allowed,
+     error_mark_node if function declaration are not allowed and
+     a FUNCTION_DECL that should be diagnosed if it is followed by
+     variable declarations.  */
+  tree auto_function_declaration;
 
   last_type = NULL_TREE;
+  auto_specifier_p
+    = decl_specifiers.type && type_uses_auto (decl_specifiers.type);
+  auto_function_declaration = NULL_TREE;
 
   /* Keep going until we hit the `;' at the end of the simple
      declaration.  */
@@ -12770,9 +12779,31 @@ cp_parser_simple_declaration (cp_parser* parser,
       if (cp_parser_error_occurred (parser))
 	goto done;
 
-      if (auto_result)
+      if (auto_specifier_p && cxx_dialect >= cxx14)
 	{
-	  if (last_type && last_type != error_mark_node
+	  /* If the init-declarator-list contains more than one
+	     init-declarator, they shall all form declarations of
+	     variables.  */
+	  if (auto_function_declaration == NULL_TREE)
+	    auto_function_declaration
+	      = TREE_CODE (decl) == FUNCTION_DECL ? decl : error_mark_node;
+	  else if (TREE_CODE (decl) == FUNCTION_DECL
+		   || auto_function_declaration != error_mark_node)
+	    {
+	      error_at (decl_specifiers.locations[ds_type_spec],
+			"non-variable %qD in declaration with more than one "
+			"declarator with placeholder type",
+			TREE_CODE (decl) == FUNCTION_DECL
+			? decl : auto_function_declaration);
+	      auto_function_declaration = error_mark_node;
+	    }
+	}
+
+      if (auto_result
+	  && (!processing_template_decl || !type_uses_auto (auto_result)))
+	{
+	  if (last_type
+	      && last_type != error_mark_node
 	      && !same_type_p (auto_result, last_type))
 	    {
 	      /* If the list of declarators contains more than one declarator,
@@ -12892,7 +12923,7 @@ cp_parser_simple_declaration (cp_parser* parser,
 
 /* Helper of cp_parser_simple_declaration, parse a decomposition declaration.
      decl-specifier-seq ref-qualifier [opt] [ identifier-list ]
-       brace-or-equal-initializer ;  */
+       initializer ;  */
 
 static tree
 cp_parser_decomposition_declaration (cp_parser *parser,
@@ -12991,21 +13022,12 @@ cp_parser_decomposition_declaration (cp_parser *parser,
       || cp_lexer_next_token_is_not (parser->lexer, CPP_COLON))
     {
       bool non_constant_p = false, is_direct_init = false;
-      tree initializer;
       *init_loc = cp_lexer_peek_token (parser->lexer)->location;
-      /* Parse the initializer.  */
-      if (cp_lexer_next_token_is (parser->lexer, CPP_OPEN_BRACE))
-	{
-	  initializer = cp_parser_braced_list (parser, &non_constant_p);
-	  CONSTRUCTOR_IS_DIRECT_INIT (initializer) = 1;
-	  is_direct_init = true;
-	}
-      else
-	{
-	  /* Consume the `='.  */
-	  cp_parser_require (parser, CPP_EQ, RT_EQ);
-	  initializer = cp_parser_initializer_clause (parser, &non_constant_p);
-	}
+      tree initializer = cp_parser_initializer (parser, &is_direct_init,
+						&non_constant_p);
+      if (TREE_CODE (initializer) == TREE_LIST)
+	initializer = build_x_compound_expr_from_list (initializer, ELK_INIT,
+						       tf_warning_or_error);
 
       if (decl != error_mark_node)
 	{
@@ -18341,6 +18363,7 @@ cp_parser_using_declaration (cp_parser* parser,
       /* Look for the `using' keyword.  */
       cp_parser_require_keyword (parser, RID_USING, RT_USING);
       
+ again:
       /* Peek at the next token.  */
       token = cp_lexer_peek_token (parser->lexer);
       /* See if it's `typename'.  */
@@ -18407,6 +18430,16 @@ cp_parser_using_declaration (cp_parser* parser,
       if (!cp_parser_parse_definitely (parser))
 	return false;
     }
+  else if (cp_lexer_next_token_is (parser->lexer, CPP_ELLIPSIS))
+    {
+      cp_token *ell = cp_lexer_consume_token (parser->lexer);
+      if (cxx_dialect < cxx1z
+	  && !in_system_header_at (ell->location))
+	pedwarn (ell->location, 0,
+		 "pack expansion in using-declaration only available "
+		 "with -std=c++1z or -std=gnu++1z");
+      qscope = make_pack_expansion (qscope);
+    }
 
   /* The function we call to handle a using-declaration is different
      depending on what scope we are in.  */
@@ -18424,7 +18457,7 @@ cp_parser_using_declaration (cp_parser* parser,
       if (at_class_scope_p ())
 	{
 	  /* Create the USING_DECL.  */
-	  decl = do_class_using_decl (parser->scope, identifier);
+	  decl = do_class_using_decl (qscope, identifier);
 
 	  if (decl && typename_p)
 	    USING_DECL_TYPENAME_P (decl) = 1;
@@ -18457,6 +18490,17 @@ cp_parser_using_declaration (cp_parser* parser,
 	  else
 	    do_toplevel_using_decl (decl, qscope, identifier);
 	}
+    }
+
+  if (!access_declaration_p
+      && cp_lexer_next_token_is (parser->lexer, CPP_COMMA))
+    {
+      cp_token *comma = cp_lexer_consume_token (parser->lexer);
+      if (cxx_dialect < cxx1z)
+	pedwarn (comma->location, 0,
+		 "comma-separated list in using-declaration only available "
+		 "with -std=c++1z or -std=gnu++1z");
+      goto again;
     }
 
   /* Look for the final `;'.  */
@@ -22120,7 +22164,10 @@ cp_parser_class_specifier_1 (cp_parser* parser)
 	  next_loc = linemap_position_for_loc_and_offset (line_table, loc, 1);
 
 	rich_location richloc (line_table, next_loc);
-	richloc.add_fixit_insert_before (next_loc, ";");
+
+	/* If we successfully offset the location, suggest the fix-it.  */
+	if (next_loc != loc)
+	  richloc.add_fixit_insert_before (next_loc, ";");
 
 	if (CLASSTYPE_DECLARED_CLASS (type))
 	  error_at_rich_loc (&richloc,
@@ -24878,11 +24925,7 @@ cp_parser_std_attribute_spec (cp_parser *parser)
 
       if (!cp_parser_parse_definitely (parser))
 	{
-	  gcc_assert (alignas_expr == error_mark_node
-		      || alignas_expr == NULL_TREE);
-
-	  alignas_expr =
-	    cp_parser_assignment_expression (parser);
+	  alignas_expr = cp_parser_assignment_expression (parser);
 	  if (alignas_expr == error_mark_node)
 	    cp_parser_skip_to_end_of_statement (parser);
 	  if (alignas_expr == NULL_TREE

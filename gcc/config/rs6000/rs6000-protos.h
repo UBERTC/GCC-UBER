@@ -1,5 +1,5 @@
 /* Definitions of target machine for GNU compiler, for IBM RS/6000.
-   Copyright (C) 2000-2016 Free Software Foundation, Inc.
+   Copyright (C) 2000-2017 Free Software Foundation, Inc.
    Contributed by Richard Kenner (kenner@vlsi1.ultra.nyu.edu)
 
    This file is part of GCC.
@@ -153,6 +153,7 @@ extern void rs6000_fatal_bad_address (rtx);
 extern rtx create_TOC_reference (rtx, rtx);
 extern void rs6000_split_multireg_move (rtx, rtx);
 extern void rs6000_emit_le_vsx_move (rtx, rtx, machine_mode);
+extern bool valid_sf_si_move (rtx, rtx, machine_mode);
 extern void rs6000_emit_move (rtx, rtx, machine_mode);
 extern rtx rs6000_secondary_memory_needed_rtx (machine_mode);
 extern machine_mode rs6000_secondary_memory_needed_mode (machine_mode);

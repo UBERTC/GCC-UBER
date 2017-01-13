@@ -1,5 +1,5 @@
 /* Prototypes for exported functions defined in arm.c and pe.c
-   Copyright (C) 1999-2016 Free Software Foundation, Inc.
+   Copyright (C) 1999-2017 Free Software Foundation, Inc.
    Contributed by Richard Earnshaw (rearnsha@arm.com)
    Minor hacks by Nick Clifton (nickc@cygnus.com)
 
@@ -96,7 +96,7 @@ extern rtx neon_make_constant (rtx);
 extern tree arm_builtin_vectorized_function (unsigned int, tree, tree);
 extern void neon_expand_vector_init (rtx, rtx);
 extern void neon_lane_bounds (rtx, HOST_WIDE_INT, HOST_WIDE_INT, const_tree);
-extern void neon_const_bounds (rtx, HOST_WIDE_INT, HOST_WIDE_INT);
+extern void arm_const_bounds (rtx, HOST_WIDE_INT, HOST_WIDE_INT);
 extern HOST_WIDE_INT neon_element_bits (machine_mode);
 extern void neon_emit_pair_result_insn (machine_mode,
 					rtx (*) (rtx, rtx, rtx, rtx),
@@ -176,6 +176,8 @@ extern void arm_expand_compare_and_swap (rtx op[]);
 extern void arm_split_compare_and_swap (rtx op[]);
 extern void arm_split_atomic_op (enum rtx_code, rtx, rtx, rtx, rtx, rtx, rtx);
 extern rtx arm_load_tp (rtx);
+extern bool arm_coproc_builtin_available (enum unspecv);
+extern bool arm_coproc_ldc_stc_legitimate_address (rtx);
 
 #if defined TREE_CODE
 extern void arm_init_cumulative_args (CUMULATIVE_ARGS *, tree, rtx, tree);

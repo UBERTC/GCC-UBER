@@ -4390,7 +4390,9 @@ Unary_expression::do_get_backend(Translate_context* context)
                 Bexpression* crash =
 		  gogo->runtime_error(RUNTIME_ERROR_NIL_DEREFERENCE,
 				      loc)->get_backend(context);
-                bexpr = gogo->backend()->conditional_expression(btype, compare,
+                Bfunction* bfn = context->function()->func_value()->get_decl();
+                bexpr = gogo->backend()->conditional_expression(bfn, btype,
+                                                                compare,
                                                                 crash, bexpr,
                                                                 loc);
 
@@ -5335,7 +5337,6 @@ Binary_expression::lower_array_comparison(Gogo* gogo,
   Expression_list* args = new Expression_list();
   args->push_back(this->operand_address(inserter, this->left_));
   args->push_back(this->operand_address(inserter, this->right_));
-  args->push_back(Expression::make_type_info(at, TYPE_INFO_SIZE));
 
   Expression* ret = Expression::make_call(func, args, false, loc);
 
@@ -5993,6 +5994,7 @@ Binary_expression::do_get_backend(Translate_context* context)
       Bexpression* zero_expr =
           gogo->backend()->integer_constant_expression(left_btype, zero);
       overflow = zero_expr;
+      Bfunction* bfn = context->function()->func_value()->get_decl();
       if (this->op_ == OPERATOR_RSHIFT
 	  && !left_type->integer_type()->is_unsigned())
 	{
@@ -6001,11 +6003,12 @@ Binary_expression::do_get_backend(Translate_context* context)
                                                  zero_expr, loc);
           Bexpression* neg_one_expr =
               gogo->backend()->integer_constant_expression(left_btype, neg_one);
-          overflow = gogo->backend()->conditional_expression(btype, neg_expr,
+          overflow = gogo->backend()->conditional_expression(bfn,
+                                                             btype, neg_expr,
                                                              neg_one_expr,
                                                              zero_expr, loc);
 	}
-      ret = gogo->backend()->conditional_expression(btype, compare, ret,
+      ret = gogo->backend()->conditional_expression(bfn, btype, compare, ret,
                                                     overflow, loc);
       mpz_clear(bitsval);
     }
@@ -6028,7 +6031,9 @@ Binary_expression::do_get_backend(Translate_context* context)
 						   loc)->get_backend(context);
 
 	  // right == 0 ? (__go_runtime_error(...), 0) : ret
-          ret = gogo->backend()->conditional_expression(btype, check, crash,
+          Bfunction* bfn = context->function()->func_value()->get_decl();
+          ret = gogo->backend()->conditional_expression(bfn, btype,
+                                                        check, crash,
 							ret, loc);
 	}
 
@@ -6048,6 +6053,7 @@ Binary_expression::do_get_backend(Translate_context* context)
               gogo->backend()->integer_constant_expression(btype, zero);
           Bexpression* one_expr =
               gogo->backend()->integer_constant_expression(btype, one);
+          Bfunction* bfn = context->function()->func_value()->get_decl();
 
 	  if (type->integer_type()->is_unsigned())
 	    {
@@ -6059,12 +6065,12 @@ Binary_expression::do_get_backend(Translate_context* context)
                                                      left, right, loc);
 	      if (this->op_ == OPERATOR_DIV)
                 overflow =
-                    gogo->backend()->conditional_expression(btype, cmp,
+                    gogo->backend()->conditional_expression(bfn, btype, cmp,
                                                             one_expr, zero_expr,
                                                             loc);
 	      else
                 overflow =
-                    gogo->backend()->conditional_expression(btype, cmp,
+                    gogo->backend()->conditional_expression(bfn, btype, cmp,
                                                             zero_expr, left,
                                                             loc);
 	    }
@@ -6084,7 +6090,8 @@ Binary_expression::do_get_backend(Translate_context* context)
           overflow = gogo->backend()->convert_expression(btype, overflow, loc);
 
 	  // right == -1 ? - left : ret
-          ret = gogo->backend()->conditional_expression(btype, check, overflow,
+          ret = gogo->backend()->conditional_expression(bfn, btype,
+                                                        check, overflow,
                                                         ret, loc);
 	}
     }
@@ -6742,8 +6749,9 @@ Bound_method_expression::create_thunk(Gogo* gogo, const Method* method,
   sfl->push_back(Struct_field(Typed_identifier("val.1",
 					       orig_fntype->receiver()->type(),
 					       loc)));
-  Type* closure_type = Type::make_struct_type(sfl, loc);
-  closure_type = Type::make_pointer_type(closure_type);
+  Struct_type* st = Type::make_struct_type(sfl, loc);
+  st->set_is_struct_incomparable();
+  Type* closure_type = Type::make_pointer_type(st);
 
   Function_type* new_fntype = orig_fntype->copy_with_names();
 
@@ -6897,6 +6905,7 @@ Bound_method_expression::do_flatten(Gogo* gogo, Named_object*,
 						  loc)));
   fields->push_back(Struct_field(Typed_identifier("val.1", val->type(), loc)));
   Struct_type* st = Type::make_struct_type(fields, loc);
+  st->set_is_struct_incomparable();
 
   Expression_list* vals = new Expression_list();
   vals->push_back(Expression::make_func_code_reference(thunk, loc));
@@ -9684,6 +9693,7 @@ Call_expression::do_flatten(Gogo* gogo, Named_object*,
         }
 
       Struct_type* st = Type::make_struct_type(sfl, loc);
+      st->set_is_struct_incomparable();
       this->call_temp_ = Statement::make_temporary(st, NULL, loc);
       inserter->insert(this->call_temp_);
     }
@@ -10921,12 +10931,13 @@ Array_index_expression::do_get_backend(Translate_context* context)
   bad_index = gogo->backend()->binary_expression(OPERATOR_OROR, start_too_large,
 						 bad_index, loc);
 
+  Bfunction* bfn = context->function()->func_value()->get_decl();
   if (this->end_ == NULL)
     {
       // Simple array indexing.  This has to return an l-value, so
       // wrap the index check into START.
       start =
-	gogo->backend()->conditional_expression(int_btype, bad_index,
+        gogo->backend()->conditional_expression(bfn, int_btype, bad_index,
 						crash, start, loc);
 
       Bexpression* ret;
@@ -11015,7 +11026,7 @@ Array_index_expression::do_get_backend(Translate_context* context)
 
   Bexpression* ctor =
     gogo->backend()->constructor_expression(struct_btype, init, loc);
-  return gogo->backend()->conditional_expression(struct_btype, bad_index,
+  return gogo->backend()->conditional_expression(bfn, struct_btype, bad_index,
 						 crash, ctor, loc);
 }
 
@@ -11229,6 +11240,7 @@ String_index_expression::do_get_backend(Translate_context* context)
     }
 
   Expression* start = Expression::make_cast(int_type, this->start_, loc);
+  Bfunction* bfn = context->function()->func_value()->get_decl();
 
   if (this->end_ == NULL)
     {
@@ -11251,8 +11263,9 @@ String_index_expression::do_get_backend(Translate_context* context)
 
       Btype* byte_btype = bytes->type()->points_to()->get_backend(gogo);
       Bexpression* index_error = bad_index->get_backend(context);
-      return gogo->backend()->conditional_expression(byte_btype, index_error,
-						     crash, index, loc);
+      return gogo->backend()->conditional_expression(bfn, byte_btype,
+                                                     index_error, crash,
+                                                     index, loc);
     }
 
   Expression* end = NULL;
@@ -11272,7 +11285,7 @@ String_index_expression::do_get_backend(Translate_context* context)
 
   Btype* str_btype = strslice->type()->get_backend(gogo);
   Bexpression* index_error = bad_index->get_backend(context);
-  return gogo->backend()->conditional_expression(str_btype, index_error,
+  return gogo->backend()->conditional_expression(bfn, str_btype, index_error,
 						 crash, bstrslice, loc);
 }
 
@@ -11566,7 +11579,8 @@ Field_reference_expression::do_lower(Gogo* gogo, Named_object* function,
   Expression* length_expr = Expression::make_integer_ul(s.length(), NULL, loc);
 
   Type* byte_type = gogo->lookup_global("byte")->type_value();
-  Type* array_type = Type::make_array_type(byte_type, length_expr);
+  Array_type* array_type = Type::make_array_type(byte_type, length_expr);
+  array_type->set_is_array_incomparable();
 
   Expression_list* bytes = new Expression_list();
   for (std::string::const_iterator p = s.begin(); p != s.end(); p++)
@@ -11844,8 +11858,9 @@ Interface_field_reference_expression::create_thunk(Gogo* gogo,
   Type* vt = Type::make_pointer_type(Type::make_void_type());
   sfl->push_back(Struct_field(Typed_identifier("fn.0", vt, loc)));
   sfl->push_back(Struct_field(Typed_identifier("val.1", type, loc)));
-  Type* closure_type = Type::make_struct_type(sfl, loc);
-  closure_type = Type::make_pointer_type(closure_type);
+  Struct_type* st = Type::make_struct_type(sfl, loc);
+  st->set_is_struct_incomparable();
+  Type* closure_type = Type::make_pointer_type(st);
 
   Function_type* new_fntype = orig_fntype->copy_with_names();
 
@@ -11944,6 +11959,7 @@ Interface_field_reference_expression::do_get_backend(Translate_context* context)
 						  this->expr_->type(),
 						  loc)));
   Struct_type* st = Type::make_struct_type(fields, loc);
+  st->set_is_struct_incomparable();
 
   Expression_list* vals = new Expression_list();
   vals->push_back(Expression::make_func_code_reference(thunk, loc));
@@ -11962,8 +11978,10 @@ Interface_field_reference_expression::do_get_backend(Translate_context* context)
   Bexpression* bcrash = gogo->runtime_error(RUNTIME_ERROR_NIL_DEREFERENCE,
 					    loc)->get_backend(context);
 
+  Bfunction* bfn = context->function()->func_value()->get_decl();
   Bexpression* bcond =
-      gogo->backend()->conditional_expression(NULL, bnil_check, bcrash, NULL, loc);
+      gogo->backend()->conditional_expression(bfn, NULL,
+                                              bnil_check, bcrash, NULL, loc);
   Bfunction* bfunction = context->function()->func_value()->get_decl();
   Bstatement* cond_statement =
       gogo->backend()->expression_statement(bfunction, bcond);
@@ -12931,7 +12949,9 @@ Slice_construction_expression::Slice_construction_expression(
   Type* int_type = Type::lookup_integer_type("int");
   length = Expression::make_integer_ul(lenval, int_type, location);
   Type* element_type = type->array_type()->element_type();
-  this->valtype_ = Type::make_array_type(element_type, length);
+  Array_type* array_type = Type::make_array_type(element_type, length);
+  array_type->set_is_array_incomparable();
+  this->valtype_ = array_type;
 }
 
 // Traversal.
@@ -13162,8 +13182,9 @@ Map_construction_expression::do_flatten(Gogo* gogo, Named_object*,
         }
 
       Expression* element_count = Expression::make_integer_ul(i, NULL, loc);
-      Type* ctor_type =
+      Array_type* ctor_type =
           Type::make_array_type(this->element_type_, element_count);
+      ctor_type->set_is_array_incomparable();
       Expression* constructor =
           new Fixed_array_construction_expression(ctor_type, NULL,
                                                   value_pairs, loc);
@@ -14864,7 +14885,9 @@ Interface_info_expression::do_type()
             sfl->push_back(Struct_field(Typed_identifier(fname, mft, loc)));
           }
 
-        Pointer_type *pt = Type::make_pointer_type(Type::make_struct_type(sfl, loc));
+	Struct_type* st = Type::make_struct_type(sfl, loc);
+	st->set_is_struct_incomparable();
+	Pointer_type *pt = Type::make_pointer_type(st);
         result_types[itype] = pt;
         return pt;
       }
@@ -15098,7 +15121,9 @@ Interface_mtable_expression::do_type()
        p != interface_methods->end();
        ++p)
     sfl->push_back(Struct_field(*p));
-  this->method_table_type_ = Type::make_struct_type(sfl, this->location());
+  Struct_type* st = Type::make_struct_type(sfl, this->location());
+  st->set_is_struct_incomparable();
+  this->method_table_type_ = st;
   return this->method_table_type_;
 }
 
@@ -15402,7 +15427,8 @@ Conditional_expression::do_get_backend(Translate_context* context)
   Bexpression* cond = this->cond_->get_backend(context);
   Bexpression* then = this->then_->get_backend(context);
   Bexpression* belse = this->else_->get_backend(context);
-  return gogo->backend()->conditional_expression(result_btype, cond, then,
+  Bfunction* bfn = context->function()->func_value()->get_decl();
+  return gogo->backend()->conditional_expression(bfn, result_btype, cond, then,
 						 belse, this->location());
 }
 

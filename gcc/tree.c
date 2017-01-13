@@ -1,5 +1,5 @@
 /* Language-independent node constructors for parse phase of GNU compiler.
-   Copyright (C) 1987-2016 Free Software Foundation, Inc.
+   Copyright (C) 1987-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -508,6 +508,8 @@ initialize_tree_contains_struct (void)
 	{
 	case TS_TYPED:
 	case TS_BLOCK:
+	case TS_OPTIMIZATION:
+	case TS_TARGET_OPTION:
 	  MARK_TS_BASE (code);
 	  break;
 
@@ -532,8 +534,6 @@ initialize_tree_contains_struct (void)
 	case TS_VEC:
 	case TS_BINFO:
 	case TS_OMP_CLAUSE:
-	case TS_OPTIMIZATION:
-	case TS_TARGET_OPTION:
 	  MARK_TS_COMMON (code);
 	  break;
 
@@ -9746,10 +9746,10 @@ get_file_function_name (const char *type)
 	file = LOCATION_FILE (input_location);
 
       len = strlen (file);
-      q = (char *) alloca (9 + 17 + len + 1);
+      q = (char *) alloca (9 + 19 + len + 1);
       memcpy (q, file, len + 1);
 
-      snprintf (q + len, 9 + 17 + 1, "_%08X_" HOST_WIDE_INT_PRINT_HEX, 
+      snprintf (q + len, 9 + 19 + 1, "_%08X_" HOST_WIDE_INT_PRINT_HEX,
 		crc32_string (0, name), get_random_seed (false));
 
       p = q;
@@ -13320,7 +13320,7 @@ verify_type_variant (const_tree t, tree tv)
      - aggregates may have new TYPE_FIELDS list that list variants of
        the main variant TYPE_FIELDS.
      - vector types may differ by TYPE_VECTOR_OPAQUE
-     - TYPE_METHODS is always NULL for vairant types and maintained for
+     - TYPE_METHODS is always NULL for variant types and maintained for
        main variant only.
    */
 
@@ -13523,7 +13523,7 @@ verify_type_variant (const_tree t, tree tv)
   if (type_with_alias_set_p (t)
       && !gimple_canonical_types_compatible_p (t, tv, false))
     {
-      error ("type is not compatible with its vairant");
+      error ("type is not compatible with its variant");
       debug_tree (tv);
       error ("type variant's TREE_TYPE");
       debug_tree (TREE_TYPE (tv));

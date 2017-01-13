@@ -1,5 +1,5 @@
 /* Subroutines common to both C and C++ pretty-printers.
-   Copyright (C) 2002-2016 Free Software Foundation, Inc.
+   Copyright (C) 2002-2017 Free Software Foundation, Inc.
    Contributed by Gabriel Dos Reis <gdr@integrable-solutions.net>
 
 This file is part of GCC.
@@ -2376,7 +2376,8 @@ pp_c_tree_decl_identifier (c_pretty_printer *pp, tree t)
   else
     {
       static char xname[8];
-      sprintf (xname, "<U%4x>", ((unsigned)((uintptr_t)(t) & 0xffff)));
+      sprintf (xname, "<U%4hx>", ((unsigned short) ((uintptr_t) (t)
+						    & 0xffff)));
       name = xname;
     }
 

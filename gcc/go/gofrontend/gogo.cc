@@ -740,10 +740,11 @@ Gogo::register_gc_vars(const std::vector<Named_object*>& var_gc,
                                                           "__size", uint_type);
 
   Location builtin_loc = Linemap::predeclared_location();
-  Expression* length = Expression::make_integer_ul(var_gc.size(), NULL,
-						   builtin_loc);
-
+  unsigned roots_len = var_gc.size() + this->gc_roots_.size() + 1;
+  Expression* length = Expression::make_integer_ul(roots_len, NULL,
+                                                   builtin_loc);
   Array_type* root_array_type = Type::make_array_type(root_type, length);
+  root_array_type->set_is_array_incomparable();
   Type* ptdt = Type::make_type_descriptor_ptr_type();
   Struct_type* root_list_type =
       Type::make_builtin_struct_type(2,
@@ -2343,7 +2344,7 @@ Gogo::clear_file_scope()
 // parse tree is lowered.
 
 void
-Gogo::queue_specific_type_function(Type* type, Named_type* name,
+Gogo::queue_specific_type_function(Type* type, Named_type* name, int64_t size,
 				   const std::string& hash_name,
 				   Function_type* hash_fntype,
 				   const std::string& equal_name,
@@ -2351,7 +2352,7 @@ Gogo::queue_specific_type_function(Type* type, Named_type* name,
 {
   go_assert(!this->specific_type_functions_are_written_);
   go_assert(!this->in_global_scope());
-  Specific_type_function* tsf = new Specific_type_function(type, name,
+  Specific_type_function* tsf = new Specific_type_function(type, name, size,
 							   hash_name,
 							   hash_fntype,
 							   equal_name,
@@ -2386,7 +2387,7 @@ Specific_type_functions::type(Type* t)
     case Type::TYPE_NAMED:
       {
 	Named_type* nt = t->named_type();
-	if (!t->compare_is_identity(this->gogo_) && t->is_comparable())
+	if (t->needs_specific_type_functions(this->gogo_))
 	  t->type_functions(this->gogo_, nt, NULL, NULL, &hash_fn, &equal_fn);
 
 	// If this is a struct type, we don't want to make functions
@@ -2420,7 +2421,7 @@ Specific_type_functions::type(Type* t)
 
     case Type::TYPE_STRUCT:
     case Type::TYPE_ARRAY:
-      if (!t->compare_is_identity(this->gogo_) && t->is_comparable())
+      if (t->needs_specific_type_functions(this->gogo_))
 	t->type_functions(this->gogo_, NULL, NULL, NULL, &hash_fn, &equal_fn);
       break;
 
@@ -2443,7 +2444,7 @@ Gogo::write_specific_type_functions()
     {
       Specific_type_function* tsf = this->specific_type_functions_.back();
       this->specific_type_functions_.pop_back();
-      tsf->type->write_specific_type_functions(this, tsf->name,
+      tsf->type->write_specific_type_functions(this, tsf->name, tsf->size,
 					       tsf->hash_name,
 					       tsf->hash_fntype,
 					       tsf->equal_name,
@@ -4833,7 +4834,8 @@ Function::closure_var()
       // we find them.
       Location loc = this->type_->location();
       Struct_field_list* sfl = new Struct_field_list;
-      Type* struct_type = Type::make_struct_type(sfl, loc);
+      Struct_type* struct_type = Type::make_struct_type(sfl, loc);
+      struct_type->set_is_struct_incomparable();
       Variable* var = new Variable(Type::make_pointer_type(struct_type),
 				   NULL, false, false, false, loc);
       var->set_is_used();
@@ -5716,7 +5718,8 @@ Function::build_defer_wrapper(Gogo* gogo, Named_object* named_function,
       Expression* ref =
 	Expression::make_temporary_reference(this->defer_stack_, end_loc);
       Bexpression* bref = ref->get_backend(&context);
-      ret = gogo->backend()->conditional_expression(NULL, bref, ret, NULL,
+      ret = gogo->backend()->conditional_expression(this->fndecl_,
+                                                    NULL, bref, ret, NULL,
                                                     end_loc);
       stmts.push_back(gogo->backend()->expression_statement(this->fndecl_, ret));
     }

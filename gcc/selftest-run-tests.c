@@ -1,5 +1,5 @@
 /* Implementation of selftests.
-   Copyright (C) 2015-2016 Free Software Foundation, Inc.
+   Copyright (C) 2015-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -72,6 +72,7 @@ selftest::run_tests ()
   tree_c_tests ();
   gimple_c_tests ();
   rtl_tests_c_tests ();
+  read_rtl_function_c_tests ();
 
   /* Higher-level tests, or for components that other selftests don't
      rely on.  */

@@ -7,6 +7,7 @@
 package runtime
 
 import (
+	"runtime/internal/atomic"
 	"unsafe"
 )
 
@@ -23,8 +24,7 @@ import (
 
 var Entersyscall = entersyscall
 var Exitsyscall = exitsyscall
-
-// var LockedOSThread = lockedOSThread
+var LockedOSThread = lockedOSThread
 
 // var Xadduintptr = xadduintptr
 
@@ -47,39 +47,6 @@ func GCMask(x interface{}) (ret []byte) {
 	return nil
 }
 
-//func testSchedLocalQueue()
-//func testSchedLocalQueueSteal()
-//
-//func RunSchedLocalQueueTest() {
-//	testSchedLocalQueue()
-//}
-//
-//func RunSchedLocalQueueStealTest() {
-//	testSchedLocalQueueSteal()
-//}
-
-//var StringHash = stringHash
-//var BytesHash = bytesHash
-//var Int32Hash = int32Hash
-//var Int64Hash = int64Hash
-//var EfaceHash = efaceHash
-//var IfaceHash = ifaceHash
-//var MemclrBytes = memclrBytes
-
-var HashLoad = &hashLoad
-
-// entry point for testing
-//func GostringW(w []uint16) (s string) {
-//	s = gostringw(&w[0])
-//	return
-//}
-
-//var Gostringnocopy = gostringnocopy
-//var Maxstring = &maxstring
-
-//type Uintreg uintreg
-
-/*
 func RunSchedLocalQueueTest() {
 	_p_ := new(p)
 	gs := make([]g, len(_p_.runq))
@@ -177,14 +144,26 @@ func RunSchedLocalQueueEmptyTest(iters int) {
 	}
 }
 
-var StringHash = stringHash
-var BytesHash = bytesHash
-var Int32Hash = int32Hash
-var Int64Hash = int64Hash
-var EfaceHash = efaceHash
-var IfaceHash = ifaceHash
-var MemclrBytes = memclrBytes
-*/
+//var StringHash = stringHash
+//var BytesHash = bytesHash
+//var Int32Hash = int32Hash
+//var Int64Hash = int64Hash
+//var EfaceHash = efaceHash
+//var IfaceHash = ifaceHash
+//var MemclrBytes = memclrBytes
+
+var HashLoad = &hashLoad
+
+// entry point for testing
+//func GostringW(w []uint16) (s string) {
+//	s = gostringw(&w[0])
+//	return
+//}
+
+//var Gostringnocopy = gostringnocopy
+//var Maxstring = &maxstring
+
+//type Uintreg uintreg
 
 var Open = open
 var Close = closefd

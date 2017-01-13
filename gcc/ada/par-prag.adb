@@ -43,7 +43,7 @@ with System.WCh_Con; use System.WCh_Con;
 separate (Par)
 
 function Prag (Pragma_Node : Node_Id; Semi : Source_Ptr) return Node_Id is
-   Prag_Name   : constant Name_Id    := Pragma_Name (Pragma_Node);
+   Prag_Name   : constant Name_Id    := Pragma_Name_Unmapped (Pragma_Node);
    Prag_Id     : constant Pragma_Id  := Get_Pragma_Id (Prag_Name);
    Pragma_Sloc : constant Source_Ptr := Sloc (Pragma_Node);
    Arg_Count   : Nat;
@@ -1396,6 +1396,7 @@ begin
            Pragma_Machine_Attribute              |
            Pragma_Main                           |
            Pragma_Main_Storage                   |
+           Pragma_Max_Queue_Length               |
            Pragma_Memory_Size                    |
            Pragma_No_Body                        |
            Pragma_No_Elaboration_Code_All        |
@@ -1449,7 +1450,9 @@ begin
            Pragma_Restricted_Run_Time            |
            Pragma_Rational                       |
            Pragma_Ravenscar                      |
+           Pragma_Rename_Pragma                  |
            Pragma_Reviewable                     |
+           Pragma_Secondary_Stack_Size           |
            Pragma_Share_Generic                  |
            Pragma_Shared                         |
            Pragma_Shared_Passive                 |

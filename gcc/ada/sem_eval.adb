@@ -23,6 +23,7 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
+with Aspects;  use Aspects;
 with Atree;    use Atree;
 with Checks;   use Checks;
 with Debug;    use Debug;
@@ -347,7 +348,11 @@ package body Sem_Eval is
 
       --  Here we have a static predicate (note that it could have arisen from
       --  an explicitly specified Dynamic_Predicate whose expression met the
-      --  rules for being predicate-static).
+      --  rules for being predicate-static). If the expression is known at
+      --  compile time and obeys the predicate, then it is static and must be
+      --  labeled as such, which matters e.g. for case statements. The original
+      --  expression may be a type conversion of a variable with a known value,
+      --  which might otherwise not be marked static.
 
       --  Case of real static predicate
 
@@ -356,6 +361,7 @@ package body Sem_Eval is
               (Val => Make_Real_Literal (Sloc (Expr), Expr_Value_R (Expr)),
                Typ => Typ)
          then
+            Set_Is_Static_Expression (Expr);
             return;
          end if;
 
@@ -365,6 +371,7 @@ package body Sem_Eval is
          if Real_Or_String_Static_Predicate_Matches
               (Val => Expr_Value_S (Expr), Typ => Typ)
          then
+            Set_Is_Static_Expression (Expr);
             return;
          end if;
 
@@ -376,6 +383,7 @@ package body Sem_Eval is
          --  If static predicate matches, nothing to do
 
          if Choices_Match (Expr, Static_Discrete_Predicate (Typ)) = Match then
+            Set_Is_Static_Expression (Expr);
             return;
          end if;
       end if;
@@ -4982,7 +4990,13 @@ package body Sem_Eval is
       then
          return False;
 
-      elsif Has_Dynamic_Predicate_Aspect (Typ) then
+      --  If there is a dynamic predicate for the type (declared or inherited)
+      --  the expression is not static.
+
+      elsif Has_Dynamic_Predicate_Aspect (Typ)
+        or else (Is_Derived_Type (Typ)
+                  and then Has_Aspect (Typ, Aspect_Dynamic_Predicate))
+      then
          return False;
 
       --  String types

@@ -1,5 +1,5 @@
 /* Definitions of target machine for GNU compiler, for IBM RS/6000.
-   Copyright (C) 1992-2016 Free Software Foundation, Inc.
+   Copyright (C) 1992-2017 Free Software Foundation, Inc.
    Contributed by Richard Kenner (kenner@vlsi1.ultra.nyu.edu)
 
    This file is part of GCC.
@@ -608,6 +608,12 @@ extern int rs6000_vector_align[];
 				 && TARGET_POWERPC64)
 #define TARGET_VEXTRACTUB	(TARGET_P9_VECTOR && TARGET_DIRECT_MOVE \
 				 && TARGET_UPPER_REGS_DI && TARGET_POWERPC64)
+
+
+/* Whether we should avoid (SUBREG:SI (REG:SF) and (SUBREG:SF (REG:SI).  */
+#define TARGET_NO_SF_SUBREG	TARGET_DIRECT_MOVE_64BIT
+#define TARGET_ALLOW_SF_SUBREG	(!TARGET_DIRECT_MOVE_64BIT)
+
 /* This wants to be set for p8 and newer.  On p7, overlapping unaligned
    loads are slow. */
 #define TARGET_EFFICIENT_OVERLAPPING_UNALIGNED TARGET_EFFICIENT_UNALIGNED_VSX

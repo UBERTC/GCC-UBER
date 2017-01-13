@@ -1,5 +1,5 @@
 ; Options for the C, ObjC, C++ and ObjC++ front ends.
-; Copyright (C) 2003-2016 Free Software Foundation, Inc.
+; Copyright (C) 2003-2017 Free Software Foundation, Inc.
 ;
 ; This file is part of GCC.
 ;
@@ -313,7 +313,7 @@ C ObjC C++ ObjC++ Var(warn_alloc_zero) Warning
 -Walloc-zero Warn for calls to allocation functions that specify zero bytes.
 
 Walloca-larger-than=
-C ObjC C++ ObjC++ Var(warn_alloca_limit) Warning Joined RejectNegative UInteger
+C ObjC C++ LTO ObjC++ Var(warn_alloca_limit) Warning Joined RejectNegative UInteger
 -Walloca-larger-than=<number> Warn on unbounded uses of
 alloca, and on bounded uses of alloca whose bound can be larger than
 <number> bytes.
@@ -520,14 +520,14 @@ Wformat-extra-args
 C ObjC C++ ObjC++ Var(warn_format_extra_args) Warning LangEnabledBy(C ObjC C++ ObjC++,Wformat=, warn_format >= 1, 0)
 Warn if passing too many arguments to a function for its format string.
 
-Wformat-length
-C ObjC C++ ObjC++ Warning Alias(Wformat-length=, 1, 0)
-Warn about function calls with format strings that write past the end
-of the destination region.  Same as -Wformat-length=1.
-
 Wformat-nonliteral
 C ObjC C++ ObjC++ Var(warn_format_nonliteral) Warning LangEnabledBy(C ObjC C++ ObjC++,Wformat=, warn_format >= 2, 0)
 Warn about format strings that are not literals.
+
+Wformat-overflow
+C ObjC C++ LTO ObjC++ Warning Alias(Wformat-overflow=, 1, 0)
+Warn about function calls with format strings that write past the end
+of the destination region.  Same as -Wformat-overflow=1.
 
 Wformat-security
 C ObjC C++ ObjC++ Var(warn_format_security) Warning LangEnabledBy(C ObjC C++ ObjC++,Wformat=, warn_format >= 2, 0)
@@ -536,6 +536,11 @@ Warn about possible security problems with format functions.
 Wformat-signedness
 C ObjC C++ ObjC++ Var(warn_format_signedness) Warning
 Warn about sign differences with format functions.
+
+Wformat-truncation
+C ObjC C++ LTO ObjC++ Warning Alias(Wformat-truncation=, 1, 0)
+Warn about calls to snprintf and similar functions that truncate output.
+Same as -Wformat-truncation=1.
 
 Wformat-y2k
 C ObjC C++ ObjC++ Var(warn_format_y2k) Warning LangEnabledBy(C ObjC C++ ObjC++,Wformat=,warn_format >= 2, 0)
@@ -549,10 +554,14 @@ Wformat=
 C ObjC C++ ObjC++ Joined RejectNegative UInteger Var(warn_format) Warning LangEnabledBy(C ObjC C++ ObjC++,Wall, 1, 0)
 Warn about printf/scanf/strftime/strfmon format string anomalies.
 
-Wformat-length=
-C ObjC C++ ObjC++ Joined RejectNegative UInteger Var(warn_format_length) Warning LangEnabledBy(C ObjC C++ ObjC++,Wformat=, warn_format >= 1, 0)
+Wformat-overflow=
+C ObjC C++ LTO ObjC++ Joined RejectNegative UInteger Var(warn_format_overflow) Warning LangEnabledBy(C ObjC C++ ObjC++,Wformat=, warn_format >= 1, 0)
 Warn about function calls with format strings that write past the end
 of the destination region.
+
+Wformat-truncation=
+C ObjC C++ ObjC++ Joined RejectNegative UInteger Var(warn_format_trunc) Warning LangEnabledBy(C ObjC C++ ObjC++,Wformat=, warn_format >= 1, 0)
+Warn about calls to snprintf and similar functions that truncate output.
 
 Wignored-qualifiers
 C C++ Var(warn_ignored_qualifiers) Warning EnabledBy(Wextra)
@@ -793,7 +802,7 @@ C ObjC C++ ObjC++ Warning Alias(Wnormalized=,nfc,none)
 
 Wnormalized=
 C ObjC C++ ObjC++ RejectNegative Joined Warning CPP(warn_normalize) CppReason(CPP_W_NORMALIZE) Init(normalized_C) Var(cpp_warn_normalize) Enum(cpp_normalize_level)
--Wnormalized=<none|id|nfc|nfkc>	Warn about non-normalised Unicode strings.
+-Wnormalized=<none|id|nfc|nfkc>	Warn about non-normalized Unicode strings.
 
 ; Required for these enum values.
 SourceInclude
@@ -869,6 +878,10 @@ Warn about function pointer arithmetic.
 Wpointer-sign
 C ObjC Var(warn_pointer_sign) Warning LangEnabledBy(C ObjC,Wall || Wpedantic)
 Warn when a pointer differs in signedness in an assignment.
+
+Wpointer-compare
+C ObjC C++ ObjC++ Var(warn_pointer_compare) Init(1) Warning
+Warn when a pointer is compared with a zero character constant.
 
 Wpointer-to-int-cast
 C ObjC Var(warn_pointer_to_int_cast) Init(1) Warning
@@ -1626,8 +1639,8 @@ fsquangle
 C++ ObjC++ Ignore Warn(switch %qs is no longer supported)
 
 fsso-struct=
-C ObjC Joined Enum(sso_struct) Var(default_sso) Init(SSO_NATIVE)
--fsso-struct=[big-endian|little-endian]	Set the default scalar storage order.
+C ObjC Joined RejectNegative Enum(sso_struct) Var(default_sso) Init(SSO_NATIVE)
+-fsso-struct=[big-endian|little-endian|native]	Set the default scalar storage order.
 
 Enum
 Name(sso_struct) Type(enum scalar_storage_order_kind) UnknownError(unrecognized scalar storage order value %qs)
@@ -1637,6 +1650,9 @@ Enum(sso_struct) String(big-endian) Value(SSO_BIG_ENDIAN)
 
 EnumValue
 Enum(sso_struct) String(little-endian) Value(SSO_LITTLE_ENDIAN)
+
+EnumValue
+Enum(sso_struct) String(native) Value(SSO_NATIVE)
 
 fstats
 C++ ObjC++ Var(flag_detailed_statistics)
@@ -1655,7 +1671,7 @@ Follow the C++17 evaluation order requirements for assignment expressions,
 shift, member function calls, etc.
 
 fstrong-eval-order=
-C++ ObjC++ Common Var(flag_strong_eval_order) Joined Enum(strong_eval_order) Init(-1)
+C++ ObjC++ Common Var(flag_strong_eval_order) Joined Enum(strong_eval_order) RejectNegative Init(-1)
 Follow the C++17 evaluation order requirements for assignment expressions,
 shift, member function calls, etc.
 

@@ -128,15 +128,25 @@ test_int_range (int n)
 
   sink (f_int_1 (SR (min, 1234)));
   sink (f_int_1 (SR (-2, -1)));   /* { dg-warning "argument 1 range \\\[-2, -1\\\] is negative" } */
+
   sink (f_int_1 (SR (1235, 2345)));  /* { dg-warning "argument 1 range \\\[1235, 2345\\\] exceeds maximum object size 1234" } */
-  sink (f_int_1 (SR (max - 1, max)));   /* { dg-warning "argument 1 range \\\[\[0-9\]+\[lu\]*, \[0-9\]+\[lu\]*\\\] exceeds maximum object size 1234" } */
+  sink (f_int_1 (SR (max - 1, max)));   /* { dg-warning "argument 1 range \\\[\[0-9\]+, \[0-9\]+\\\] exceeds maximum object size 1234" } */
 
   sink (f_int_1 (SAR (-1, 1)));
   sink (f_int_1 (SAR (-2, 12)));
   sink (f_int_1 (SAR (-3, 123)));
-  sink (f_int_1 (SAR (-4, 1234)));   /* { dg-warning "argument 1 range \\\[1235, -5\\\] is both negative and exceeds maximum object size 1234" } */
+  sink (f_int_1 (SAR (-4, 1234)));   /* { dg-warning "argument 1 range \\\[1235, \[0-9\]+\\\] exceeds maximum object size 1234" } */
   sink (f_int_1 (SAR (min + 1, 1233)));
-  sink (f_int_1 (SAR (min + 2, 1235)));   /* { dg-warning "argument 1 range \\\[1236, -\[0-9\]+\\\] is both negative and exceeds maximum object size 1234" } */
+
+  /* Avoid failures described in bug 79051.  */
+  sink (f_int_1 (SAR (min + 2, 1235)));   /* { dg-warning "argument 1 range \\\[1236, \[0-9\]+\\\] exceeds maximum object size 1234" "" { target { x86_64-*-* } } } */
+
+  sink (f_int_1 (SAR (0, max)));   /* { dg-warning "argument 1 range \\\[-\[0-9\]*, -1\\\] is negative" } */
+  /* The range below includes zero which would be diagnosed by
+     -Walloc-size-zero but since all other values are negative it
+     is diagnosed by -Walloc-size-larger-than.  */
+  sink (f_int_1 (SAR (1, max)));   /* { dg-warning "argument 1 range \\\[-\[0-9\]*, 0\\\] is negative" } */
+  sink (f_int_1 (SAR (2, max)));
 }
 
 void
@@ -149,12 +159,12 @@ test_size_cst (void)
 
   sink (f_size_2 (   0, 1234));
   sink (f_size_2 (   1, 1234));
-  sink (f_size_2 (   2, 1234));  /* { dg-warning "product .2\[lu\]* \\* 1234\[lu\]*. of arguments 1 and 2 exceeds maximum object size \[0-9\]+" } */
-  sink (f_size_2 (1234, 1234));  /* { dg-warning "product .1234\[lu\]* \\* 1234\[lu\]*. of arguments 1 and 2 exceeds maximum object size 1234" } */
-  sink (f_size_2 (1235, 1234));  /* { dg-warning "argument 1 value .1235\[lu\]*. exceeds maximum object size 1234" } */
-  sink (f_size_2 (1234, 1235));  /* { dg-warning "argument 2 value .1235\[lu\]*. exceeds maximum object size 1234" } */
-  sink (f_size_2 (1234, max));  /* { dg-warning "argument 2 value .\[0-9\]+\[lu\]*. exceeds maximum object size 1234" } */
-  sink (f_size_2 (max, 1234));  /* { dg-warning "argument 1 value .\[0-9\]+\[lu\]*. exceeds maximum object size 1234" } */
+  sink (f_size_2 (   2, 1234));  /* { dg-warning "product .2 \\* 1234. of arguments 1 and 2 exceeds maximum object size \[0-9\]+" } */
+  sink (f_size_2 (1234, 1234));  /* { dg-warning "product .1234 \\* 1234. of arguments 1 and 2 exceeds maximum object size 1234" } */
+  sink (f_size_2 (1235, 1234));  /* { dg-warning "argument 1 value .1235. exceeds maximum object size 1234" } */
+  sink (f_size_2 (1234, 1235));  /* { dg-warning "argument 2 value .1235. exceeds maximum object size 1234" } */
+  sink (f_size_2 (1234, max));  /* { dg-warning "argument 2 value .\[0-9\]+. exceeds maximum object size 1234" } */
+  sink (f_size_2 (max, 1234));  /* { dg-warning "argument 1 value .\[0-9\]+. exceeds maximum object size 1234" } */
 }
 
 void
@@ -172,7 +182,7 @@ test_size_range (size_t n)
   sink (f_size_1 (UAR (1, 1)));
   /* Since the only valid argument in the anti-range below is zero
      a warning is expected even though -Walloc-zero is not specified.  */
-  sink (f_size_1 (UAR (1, 1234)));   /* { dg-warning "argument 1 range \\\[\[0-9\]+\[lu\]*, \[0-9\]+\[lu\]*\\\] exceeds maximum object size " } */
+  sink (f_size_1 (UAR (1, 1234)));   /* { dg-warning "argument 1 range \\\[\[0-9\]+, \[0-9\]+\\\] exceeds maximum object size " } */
   /* The only valid argument in this range is 1.  */
   sink (f_size_1 (UAR (2, max / 2)));
 
@@ -181,11 +191,11 @@ test_size_range (size_t n)
   sink (f_size_2 (1234, n));
 
   sink (f_size_2 (UR (0, 1), 1234));
-  sink (f_size_2 (UR (0, 1), 1235));   /* { dg-warning "argument 2 value .1235\[lu\]*. exceeds maximum object size 1234" } */
+  sink (f_size_2 (UR (0, 1), 1235));   /* { dg-warning "argument 2 value .1235. exceeds maximum object size 1234" } */
 
-  sink (f_size_2 (UR (1235, 1236), n));  /* { dg-warning "argument 1 range \\\[1235\[lu\]*, 1236\[lu\]*\\\] exceeds maximum object size 1234" } */
+  sink (f_size_2 (UR (1235, 1236), n));  /* { dg-warning "argument 1 range \\\[1235, 1236\\\] exceeds maximum object size 1234" } */
 
-  sink (f_size_2 (UR (1235, 1236), UR (max / 2, max)));  /* { dg-warning "argument 1 range \\\[\[0-9\]+\[lu\]*, \[0-9\]+\[lu\]*\\\] exceeds maximum object size " } */
-/* { dg-warning "argument 2 range \\\[\[0-9\]+\[lu\]*, \[0-9\]+\[lu\]*\\\] exceeds maximum object size " "argument 2" { target *-*-* } .-1 } */
+  sink (f_size_2 (UR (1235, 1236), UR (max / 2, max)));  /* { dg-warning "argument 1 range \\\[\[0-9\]+, \[0-9\]+\\\] exceeds maximum object size " } */
+/* { dg-warning "argument 2 range \\\[\[0-9\]+, \[0-9\]+\\\] exceeds maximum object size " "argument 2" { target *-*-* } .-1 } */
 
 }

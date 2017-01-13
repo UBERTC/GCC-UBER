@@ -1,5 +1,5 @@
 /* Handle parameterized types (templates) for GNU -*- C++ -*-.
-   Copyright (C) 1992-2016 Free Software Foundation, Inc.
+   Copyright (C) 1992-2017 Free Software Foundation, Inc.
    Written by Ken Raeburn (raeburn@cygnus.com) while at Watchmaker Computing.
    Rewritten by Jason Merrill (jason@cygnus.com).
 
@@ -6386,7 +6386,7 @@ convert_nontype_argument (tree type, tree expr, tsubst_flags_t complain)
 	   to leave it in that form rather than lower it to a
 	   CONSTRUCTOR.  */;
       else if (INTEGRAL_OR_ENUMERATION_TYPE_P (type))
-	expr = maybe_constant_value (expr);
+	/* Constant value checking is done later with type conversion.  */;
       else if (cxx_dialect >= cxx1z)
 	{
 	  if (TREE_CODE (type) != REFERENCE_TYPE)
@@ -12591,16 +12591,42 @@ tsubst_decl (tree t, tree args, tsubst_flags_t complain)
       if (DECL_DEPENDENT_P (t)
 	  || uses_template_parms (USING_DECL_SCOPE (t)))
 	{
-	  tree inst_scope = tsubst_copy (USING_DECL_SCOPE (t), args,
-					 complain, in_decl);
+	  tree scope = USING_DECL_SCOPE (t);
 	  tree name = tsubst_copy (DECL_NAME (t), args, complain, in_decl);
-	  r = do_class_using_decl (inst_scope, name);
-	  if (!r)
-	    r = error_mark_node;
+	  if (PACK_EXPANSION_P (scope))
+	    {
+	      tree vec = tsubst_pack_expansion (scope, args, complain, in_decl);
+	      int len = TREE_VEC_LENGTH (vec);
+	      r = make_tree_vec (len);
+	      for (int i = 0; i < len; ++i)
+		{
+		  tree escope = TREE_VEC_ELT (vec, i);
+		  tree elt = do_class_using_decl (escope, name);
+		  if (!elt)
+		    {
+		      r = error_mark_node;
+		      break;
+		    }
+		  else
+		    {
+		      TREE_PROTECTED (elt) = TREE_PROTECTED (t);
+		      TREE_PRIVATE (elt) = TREE_PRIVATE (t);
+		    }
+		  TREE_VEC_ELT (r, i) = elt;
+		}
+	    }
 	  else
 	    {
-	      TREE_PROTECTED (r) = TREE_PROTECTED (t);
-	      TREE_PRIVATE (r) = TREE_PRIVATE (t);
+	      tree inst_scope = tsubst_copy (USING_DECL_SCOPE (t), args,
+					     complain, in_decl);
+	      r = do_class_using_decl (inst_scope, name);
+	      if (!r)
+		r = error_mark_node;
+	      else
+		{
+		  TREE_PROTECTED (r) = TREE_PROTECTED (t);
+		  TREE_PRIVATE (r) = TREE_PRIVATE (t);
+		}
 	    }
 	}
       else
@@ -13988,7 +14014,8 @@ tsubst (tree t, tree args, tsubst_flags_t complain, tree in_decl)
 
 	if (DECLTYPE_FOR_LAMBDA_CAPTURE (t))
 	  type = lambda_capture_field_type (type,
-					    DECLTYPE_FOR_INIT_CAPTURE (t));
+					    DECLTYPE_FOR_INIT_CAPTURE (t),
+					    DECLTYPE_FOR_REF_CAPTURE (t));
 	else if (DECLTYPE_FOR_LAMBDA_PROXY (t))
 	  type = lambda_proxy_type (type);
 	else

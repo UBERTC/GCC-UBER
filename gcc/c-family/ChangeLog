@@ -1,3 +1,64 @@
+2017-01-12  Martin Sebor  <msebor@redhat.com>
+
+	(-Wformat-overflow): ...to this.
+
+2017-01-11  Martin Sebor  <msebor@redhat.com>
+
+	PR c/78768
+	* c.opt (-Walloca-larger-than, -Wformat-length, -Wformat-truncation):
+	Also enable for LTO.
+
+2017-01-10  Jason Merrill  <jason@redhat.com>
+
+	Implement P0195R2, C++17 variadic using.
+	* c-cppbuiltin.c (c_cpp_builtins): Define __cpp_variadic_using.
+
+2017-01-09  Jakub Jelinek  <jakub@redhat.com>
+
+	PR translation/79019
+	PR translation/79020
+	* c.opt (Wnormalized=): Fix typo in description.
+
+2017-01-08  Martin Sebor  <msebor@redhat.com>
+
+	PR middle-end/77708
+	* c.opt (-Wformat-truncation): New option.
+
+2017-01-06  Alexandre Oliva <aoliva@redhat.com>
+
+	* c-pretty-print.c (pp_c_tree_decl_identifier): Convert 16-bit
+	value to unsigned short to fit in 4 hex digits without
+	warnings.
+
+2017-01-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* c.opt (fsso-struct): Add 'native' value.
+
+2017-01-05  Martin Liska  <mliska@suse.cz>
+
+	PR pch/78970
+	* c-opts.c (c_common_post_options): Reject '-' filename for a precompiled
+	header.
+
+2017-01-04  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/64767
+	* c.opt (Wpointer-compare): New option.
+
+2017-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR driver/78957
+	* c.opt (fsso-struct=): Add RejectNegative.
+
+2017-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2016-12-29  Martin Liska  <mliska@suse.cz>
+
+	PR c/78933
+	* c.opt (strong-eval-order): Add RejectNegative keyword.
+
 2016-12-22  Jason Merrill  <jason@redhat.com>
 
 	Implement P0522R0, matching of template template arguments.
@@ -7404,7 +7465,7 @@ gcc/testsuite/ChangeLog:
 	* c-common.c: Include gt-c-family-c-common.h.
 	* c-pragma.c: Include gt-c-family-c-pragma.h.
 
-Copyright (C) 2010-2016 Free Software Foundation, Inc.
+Copyright (C) 2010-2017 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright

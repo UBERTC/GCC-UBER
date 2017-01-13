@@ -59,10 +59,10 @@ with Sem_Res;  use Sem_Res;
 with Sem_Type; use Sem_Type;
 with Sem_Util; use Sem_Util;
 with Sem_Warn; use Sem_Warn;
+with Sinfo;    use Sinfo;
 with Sinput;   use Sinput;
 with Snames;   use Snames;
 with Stand;    use Stand;
-with Sinfo;    use Sinfo;
 with Targparm; use Targparm;
 with Ttypes;   use Ttypes;
 with Tbuild;   use Tbuild;
@@ -1888,7 +1888,7 @@ package body Sem_Ch13 is
                Set_From_Aspect_Specification (Aitem);
             end Make_Aitem_Pragma;
 
-         --  Start of processing for Analyze_Aspect_Specifications
+         --  Start of processing for Analyze_One_Aspect
 
          begin
             --  Skip aspect if already analyzed, to avoid looping in some cases
@@ -1934,7 +1934,24 @@ package body Sem_Ch13 is
 
             Set_Analyzed (Aspect);
             Set_Entity (Aspect, E);
+
+            --  Build the reference to E that will be used in the built pragmas
+
             Ent := New_Occurrence_Of (E, Sloc (Id));
+
+            if A_Id = Aspect_Attach_Handler
+              or else A_Id = Aspect_Interrupt_Handler
+            then
+               --  Decorate the reference as comming from the sources and force
+               --  its reanalysis to generate the reference to E; required to
+               --  avoid reporting spurious warning on E as unreferenced entity
+               --  (because aspects are not fully analyzed).
+
+               Set_Comes_From_Source (Ent, Comes_From_Source (Id));
+               Set_Entity (Ent, Empty);
+
+               Analyze (Ent);
+            end if;
 
             --  Check for duplicate aspect. Note that the Comes_From_Source
             --  test allows duplicate Pre/Post's that we generate internally
@@ -2063,9 +2080,10 @@ package body Sem_Ch13 is
                     Aspect_Output               |
                     Aspect_Read                 |
                     Aspect_Scalar_Storage_Order |
+                    Aspect_Secondary_Stack_Size |
+                    Aspect_Simple_Storage_Pool  |
                     Aspect_Size                 |
                     Aspect_Small                |
-                    Aspect_Simple_Storage_Pool  |
                     Aspect_Storage_Pool         |
                     Aspect_Stream_Size          |
                     Aspect_Value_Size           |
@@ -2428,7 +2446,7 @@ package body Sem_Ch13 is
                         end if;
                      end;
 
-                     --  Handling for these Aspects in subprograms is complete
+                     --  Handling for these aspects in subprograms is complete
 
                      goto Continue;
 
@@ -2822,6 +2840,19 @@ package body Sem_Ch13 is
 
                   goto Continue;
                end Initializes;
+
+               --  Max_Queue_Length
+
+               when Aspect_Max_Queue_Length =>
+                  Make_Aitem_Pragma
+                    (Pragma_Argument_Associations => New_List (
+                       Make_Pragma_Argument_Association (Loc,
+                         Expression => Relocate_Node (Expr))),
+                     Pragma_Name                  => Name_Max_Queue_Length);
+
+                  Decorate (Aspect, Aitem);
+                  Insert_Pragma (Aitem);
+                  goto Continue;
 
                --  Obsolescent
 
@@ -5682,6 +5713,47 @@ package body Sem_Ch13 is
                Set_SSO_Set_High_By_Default (Base_Type (U_Ent), False);
             end if;
          end Scalar_Storage_Order;
+
+         --------------------------
+         -- Secondary_Stack_Size --
+         --------------------------
+
+         when Attribute_Secondary_Stack_Size => Secondary_Stack_Size :
+         begin
+            --  Secondary_Stack_Size attribute definition clause not allowed
+            --  except from aspect specification.
+
+            if From_Aspect_Specification (N) then
+               if not Is_Task_Type (U_Ent) then
+                  Error_Msg_N
+                    ("Secondary Stack Size can only be defined for task", Nam);
+
+               elsif Duplicate_Clause then
+                  null;
+
+               else
+                  Check_Restriction (No_Secondary_Stack, Expr);
+
+                  --  The expression must be analyzed in the special manner
+                  --  described in "Handling of Default and Per-Object
+                  --  Expressions" in sem.ads.
+
+                  --  The visibility to the discriminants must be restored
+
+                  Push_Scope_And_Install_Discriminants (U_Ent);
+                  Preanalyze_Spec_Expression (Expr, Any_Integer);
+                  Uninstall_Discriminants_And_Pop_Scope (U_Ent);
+
+                  if not Is_OK_Static_Expression (Expr) then
+                     Check_Restriction (Static_Storage_Size, Expr);
+                  end if;
+               end if;
+
+            else
+               Error_Msg_N
+                 ("attribute& cannot be set with definition clause", N);
+            end if;
+         end Secondary_Stack_Size;
 
          ----------
          -- Size --
@@ -9136,6 +9208,9 @@ package body Sem_Ch13 is
          when Aspect_Relative_Deadline =>
             T := RTE (RE_Time_Span);
 
+         when Aspect_Secondary_Stack_Size =>
+            T := Standard_Integer;
+
          when Aspect_Small =>
             T := Universal_Real;
 
@@ -9251,6 +9326,7 @@ package body Sem_Ch13 is
               Aspect_Implicit_Dereference       |
               Aspect_Initial_Condition          |
               Aspect_Initializes                |
+              Aspect_Max_Queue_Length           |
               Aspect_Obsolescent                |
               Aspect_Part_Of                    |
               Aspect_Post                       |

@@ -1,5 +1,5 @@
 /* Definitions of target machine for GCC for IA-32.
-   Copyright (C) 1988-2016 Free Software Foundation, Inc.
+   Copyright (C) 1988-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -85,6 +85,8 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define TARGET_AVX5124FMAPS_P(x) TARGET_ISA_AVX5124FMAPS_P(x)
 #define TARGET_AVX5124VNNIW	TARGET_ISA_AVX5124VNNIW
 #define TARGET_AVX5124VNNIW_P(x) TARGET_ISA_AVX5124VNNIW_P(x)
+#define TARGET_AVX512VPOPCNTDQ	TARGET_ISA_AVX512VPOPCNTDQ
+#define TARGET_AVX512VPOPCNTDQ_P(x) TARGET_ISA_AVX512VPOPCNTDQ_P(x)
 #define TARGET_FMA	TARGET_ISA_FMA
 #define TARGET_FMA_P(x)	TARGET_ISA_FMA_P(x)
 #define TARGET_SSE4A	TARGET_ISA_SSE4A
@@ -98,6 +100,8 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define TARGET_ROUND	TARGET_ISA_ROUND
 #define TARGET_ABM	TARGET_ISA_ABM
 #define TARGET_ABM_P(x)	TARGET_ISA_ABM_P(x)
+#define TARGET_SGX	TARGET_ISA_SGX
+#define TARGET_SGX_P(x)	TARGET_ISA_SGX_P(x)
 #define TARGET_BMI	TARGET_ISA_BMI
 #define TARGET_BMI_P(x)	TARGET_ISA_BMI_P(x)
 #define TARGET_BMI2	TARGET_ISA_BMI2

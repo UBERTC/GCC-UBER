@@ -1,6 +1,6 @@
 /* Handle modules, which amounts to loading and saving symbols and
    their attendant structures.
-   Copyright (C) 2000-2016 Free Software Foundation, Inc.
+   Copyright (C) 2000-2017 Free Software Foundation, Inc.
    Contributed by Andy Vaught
 
 This file is part of GCC.
@@ -4702,7 +4702,7 @@ load_omp_udrs (void)
   mio_lparen ();
   while (peek_atom () != ATOM_RPAREN)
     {
-      const char *name, *newname;
+      const char *name = NULL, *newname;
       char *altname;
       gfc_typespec ts;
       gfc_symtree *st;

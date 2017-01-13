@@ -1,5 +1,5 @@
 /* Parser for GIMPLE.
-   Copyright (C) 2016 Free Software Foundation, Inc.
+   Copyright (C) 2016-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -727,6 +727,79 @@ c_parser_gimple_postfix_expression (c_parser *parser)
       if (c_parser_peek_token (parser)->id_kind == C_ID_ID)
 	{
 	  tree id = c_parser_peek_token (parser)->value;
+	  if (strcmp (IDENTIFIER_POINTER (id), "__MEM") == 0)
+	    {
+	      /* __MEM '<' type-name [ ',' number ] '>'
+	               '(' [ '(' type-name ')' ] unary-expression
+		           [ '+' number ] ')'  */
+	      location_t loc = c_parser_peek_token (parser)->location;
+	      c_parser_consume_token (parser);
+	      struct c_type_name *type_name = NULL;
+	      tree alignment = NULL_TREE;
+	      if (c_parser_require (parser, CPP_LESS, "expected %<<%>"))
+	        {
+		  type_name = c_parser_type_name (parser);
+		  /* Optional alignment.  */
+		  if (c_parser_next_token_is (parser, CPP_COMMA))
+		    {
+		      c_parser_consume_token (parser);
+		      alignment
+			= c_parser_gimple_postfix_expression (parser).value;
+		    }
+		  c_parser_skip_until_found (parser,
+					     CPP_GREATER, "expected %<>%>");
+		}
+	      struct c_expr ptr;
+	      ptr.value = error_mark_node;
+	      tree alias_off = NULL_TREE;
+	      if (c_parser_require (parser, CPP_OPEN_PAREN, "expected %<(%>"))
+		{
+		  tree alias_type = NULL_TREE;
+		  /* Optional alias-type cast.  */
+		  if (c_parser_next_token_is (parser, CPP_OPEN_PAREN))
+		    {
+		      c_parser_consume_token (parser);
+		      struct c_type_name *alias_type_name
+			= c_parser_type_name (parser);
+		      c_parser_skip_until_found (parser, CPP_CLOSE_PAREN,
+						 "expected %<)%>");
+		      if (alias_type_name)
+			{
+			  tree tem;
+			  alias_type = groktypename (alias_type_name,
+						     &tem, NULL);
+			}
+		    }
+		  ptr = c_parser_gimple_unary_expression (parser);
+		  if (! alias_type)
+		    alias_type = TREE_TYPE (ptr.value);
+		  /* Optional constant offset.  */
+		  if (c_parser_next_token_is (parser, CPP_PLUS))
+		    {
+		      c_parser_consume_token (parser);
+		      alias_off
+			= c_parser_gimple_postfix_expression (parser).value;
+		      alias_off = fold_convert (alias_type, alias_off);
+		    }
+		  if (! alias_off)
+		    alias_off = build_int_cst (alias_type, 0);
+		  c_parser_skip_until_found (parser, CPP_CLOSE_PAREN,
+					     "expected %<)%>");
+		}
+	      if (! type_name || c_parser_error (parser))
+		{
+		  c_parser_set_error (parser, false);
+		  return expr;
+		}
+	      tree tem = NULL_TREE;
+	      tree type = groktypename (type_name, &tem, NULL);
+	      if (alignment)
+		type = build_aligned_type (type, tree_to_uhwi (alignment));
+	      expr.value = build2_loc (loc, MEM_REF,
+				       type, ptr.value, alias_off);
+	      break;
+	    }
+	  /* SSA name.  */
 	  unsigned version, ver_offset;
 	  if (! lookup_name (id)
 	      && c_parser_parse_ssa_name_id (id, &version, &ver_offset))
@@ -1259,118 +1332,120 @@ c_parser_gimple_switch_stmt (c_parser *parser, gimple_seq *seq)
   gimple_seq switch_body = NULL;
   c_parser_consume_token (parser);
 
-  if (c_parser_require (parser, CPP_OPEN_PAREN, "expected %<(%>"))
-    {
-      cond_expr = c_parser_gimple_postfix_expression (parser);
-      if (! c_parser_require (parser, CPP_CLOSE_PAREN, "expected %<)%>"))
-	return;
-    }
+  if (! c_parser_require (parser, CPP_OPEN_PAREN, "expected %<(%>"))
+    return;
+  cond_expr = c_parser_gimple_postfix_expression (parser);
+  if (! c_parser_require (parser, CPP_CLOSE_PAREN, "expected %<)%>"))
+    return;
 
-  if (c_parser_require (parser, CPP_OPEN_BRACE, "expected %<{%>"))
+  if (! c_parser_require (parser, CPP_OPEN_BRACE, "expected %<{%>"))
+    return;
+
+  while (c_parser_next_token_is_not (parser, CPP_CLOSE_BRACE))
     {
-      while (c_parser_next_token_is_not (parser, CPP_CLOSE_BRACE))
+      if (c_parser_next_token_is (parser, CPP_EOF))
 	{
-	  if (c_parser_next_token_is (parser, CPP_EOF))
-	    {
-	      c_parser_error (parser, "expected statement");
-	      return;
-	    }
+	  c_parser_error (parser, "expected statement");
+	  return;
+	}
 
-	  switch (c_parser_peek_token (parser)->keyword)
-	    {
-	    case RID_CASE:
+      switch (c_parser_peek_token (parser)->keyword)
+	{
+	case RID_CASE:
+	  {
+	    c_expr exp1;
+	    location_t loc = c_parser_peek_token (parser)->location;
+	    c_parser_consume_token (parser);
+
+	    if (c_parser_next_token_is (parser, CPP_NAME)
+		|| c_parser_peek_token (parser)->type == CPP_NUMBER)
+	      exp1 = c_parser_gimple_postfix_expression (parser);
+	    else
 	      {
-		c_expr exp1;
-		location_t loc = c_parser_peek_token (parser)->location;
-		c_parser_consume_token (parser);
-
-		if (c_parser_next_token_is (parser, CPP_NAME)
-		    || c_parser_peek_token (parser)->type == CPP_NUMBER)
-		  exp1 = c_parser_gimple_postfix_expression (parser);
-		else
-		  c_parser_error (parser, "expected expression");
-
-		if (c_parser_next_token_is (parser, CPP_COLON))
-		  {
-		    c_parser_consume_token (parser);
-		    if (c_parser_next_token_is (parser, CPP_NAME))
-		      {
-			label = c_parser_peek_token (parser)->value;
-			c_parser_consume_token (parser);
-			tree decl = lookup_label_for_goto (loc, label);
-			case_label = build_case_label (exp1.value, NULL_TREE,
-						       decl);
-			labels.safe_push (case_label);
-			if (! c_parser_require (parser, CPP_SEMICOLON,
-						"expected %<;%>"))
-			  return;
-		      }
-		    else if (! c_parser_require (parser, CPP_NAME,
-						 "expected label"))
-		      return;
-		  }
-		else if (! c_parser_require (parser, CPP_SEMICOLON,
-					    "expected %<:%>"))
-		  return;
-		break;
+		c_parser_error (parser, "expected expression");
+		return;
 	      }
-	    case RID_DEFAULT:
+
+	    if (c_parser_next_token_is (parser, CPP_COLON))
 	      {
-		location_t loc = c_parser_peek_token (parser)->location;
-		c_parser_consume_token (parser);
-		if (c_parser_next_token_is (parser, CPP_COLON))
-		  {
-		    c_parser_consume_token (parser);
-		    if (c_parser_next_token_is (parser, CPP_NAME))
-		      {
-			label = c_parser_peek_token (parser)->value;
-			c_parser_consume_token (parser);
-			tree decl = lookup_label_for_goto (loc, label);
-			default_label = build_case_label (NULL_TREE, NULL_TREE,
-							  decl);
-			if (! c_parser_require (parser, CPP_SEMICOLON,
-						"expected %<;%>"))
-			  return;
-		      }
-		    else if (! c_parser_require (parser, CPP_NAME,
-						 "expected label"))
-		      return;
-		  }
-		else if (! c_parser_require (parser, CPP_SEMICOLON,
-					    "expected %<:%>"))
-		  return;
-		break;
-	      }
-	    case RID_GOTO:
-	      {
-		location_t loc = c_parser_peek_token (parser)->location;
 		c_parser_consume_token (parser);
 		if (c_parser_next_token_is (parser, CPP_NAME))
 		  {
-		    c_parser_gimple_goto_stmt (loc,
-					       c_parser_peek_token
-					         (parser)->value,
-					       &switch_body);
+		    label = c_parser_peek_token (parser)->value;
 		    c_parser_consume_token (parser);
-		    if (c_parser_next_token_is (parser, CPP_SEMICOLON))
-		      c_parser_consume_token (parser);
-		    else
-		      {
-			c_parser_error (parser, "expected semicolon");
-			return;
-		      }
+		    tree decl = lookup_label_for_goto (loc, label);
+		    case_label = build_case_label (exp1.value, NULL_TREE,
+						   decl);
+		    labels.safe_push (case_label);
+		    if (! c_parser_require (parser, CPP_SEMICOLON,
+					    "expected %<;%>"))
+		      return;
 		  }
 		else if (! c_parser_require (parser, CPP_NAME,
-					    "expected label"))
+					     "expected label"))
 		  return;
-		break;
 	      }
-	    default:
-	      c_parser_error (parser, "expected case label or goto statement");
+	    else if (! c_parser_require (parser, CPP_SEMICOLON,
+					 "expected %<:%>"))
 	      return;
-	    }
-
+	    break;
+	  }
+	case RID_DEFAULT:
+	  {
+	    location_t loc = c_parser_peek_token (parser)->location;
+	    c_parser_consume_token (parser);
+	    if (c_parser_next_token_is (parser, CPP_COLON))
+	      {
+		c_parser_consume_token (parser);
+		if (c_parser_next_token_is (parser, CPP_NAME))
+		  {
+		    label = c_parser_peek_token (parser)->value;
+		    c_parser_consume_token (parser);
+		    tree decl = lookup_label_for_goto (loc, label);
+		    default_label = build_case_label (NULL_TREE, NULL_TREE,
+						      decl);
+		    if (! c_parser_require (parser, CPP_SEMICOLON,
+					    "expected %<;%>"))
+		      return;
+		  }
+		else if (! c_parser_require (parser, CPP_NAME,
+					     "expected label"))
+		  return;
+	      }
+	    else if (! c_parser_require (parser, CPP_SEMICOLON,
+					 "expected %<:%>"))
+	      return;
+	    break;
+	  }
+	case RID_GOTO:
+	  {
+	    location_t loc = c_parser_peek_token (parser)->location;
+	    c_parser_consume_token (parser);
+	    if (c_parser_next_token_is (parser, CPP_NAME))
+	      {
+		c_parser_gimple_goto_stmt (loc,
+					   c_parser_peek_token
+					   (parser)->value,
+					   &switch_body);
+		c_parser_consume_token (parser);
+		if (c_parser_next_token_is (parser, CPP_SEMICOLON))
+		  c_parser_consume_token (parser);
+		else
+		  {
+		    c_parser_error (parser, "expected semicolon");
+		    return;
+		  }
+	      }
+	    else if (! c_parser_require (parser, CPP_NAME,
+					 "expected label"))
+	      return;
+	    break;
+	  }
+	default:
+	  c_parser_error (parser, "expected case label or goto statement");
+	  return;
 	}
+
     }
   if (! c_parser_require (parser, CPP_CLOSE_BRACE, "expected %<}%>"))
     return;

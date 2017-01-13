@@ -1,5 +1,5 @@
 ;; GCC machine description for SSE instructions
-;; Copyright (C) 2005-2016 Free Software Foundation, Inc.
+;; Copyright (C) 2005-2017 Free Software Foundation, Inc.
 ;;
 ;; This file is part of GCC.
 ;;
@@ -1181,8 +1181,8 @@
 			 (match_operand:DF 3 "memory_operand")))]
   "TARGET_SSE2 && TARGET_SSE_UNALIGNED_LOAD_OPTIMAL
    && ix86_operands_ok_for_move_multiple (operands, true, DFmode)"
-  [(set (match_dup 2) (match_dup 4))]
-  "operands[4] = adjust_address (operands[1], V2DFmode, 0);")
+  [(set (match_dup 2) (match_dup 5))]
+  "operands[5] = adjust_address (operands[1], V2DFmode, 0);")
 
 (define_peephole2
   [(set (match_operand:DF 0 "sse_reg_operand")
@@ -1193,8 +1193,8 @@
   "TARGET_SSE2 && TARGET_SSE_UNALIGNED_LOAD_OPTIMAL
    && REGNO (operands[4]) == REGNO (operands[2])
    && ix86_operands_ok_for_move_multiple (operands, true, DFmode)"
-  [(set (match_dup 2) (match_dup 4))]
-  "operands[4] = adjust_address (operands[1], V2DFmode, 0);")
+  [(set (match_dup 2) (match_dup 5))]
+  "operands[5] = adjust_address (operands[1], V2DFmode, 0);")
 
 ;; Merge movlpd/movhpd to movupd for TARGET_SSE_UNALIGNED_STORE_OPTIMAL targets.
 (define_peephole2
@@ -19875,3 +19875,10 @@
    [(set_attr ("type") ("ssemuladd"))
     (set_attr ("prefix") ("evex"))
     (set_attr ("mode") ("TI"))])
+
+(define_insn "vpopcount<mode><mask_name>"
+  [(set (match_operand:VI48_512 0 "register_operand" "=v")
+	(popcount:VI48_512
+          (match_operand:VI48_512 1 "nonimmediate_operand" "vm")))]
+  "TARGET_AVX512VPOPCNTDQ"
+  "vpopcnt<ssemodesuffix>\t{%1, %0<mask_operand2>|%0<mask_operand2>, %1}")

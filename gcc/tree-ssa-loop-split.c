@@ -1,5 +1,5 @@
 /* Loop splitting.
-   Copyright (C) 2015 Free Software Foundation, Inc.
+   Copyright (C) 2015-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -497,7 +497,7 @@ split_loop (struct loop *loop1, struct tree_niter_desc *niter)
   unsigned i;
   bool changed = false;
   tree guard_iv;
-  tree border;
+  tree border = NULL_TREE;
   affine_iv iv;
 
   bbs = get_loop_body (loop1);

@@ -1,6 +1,6 @@
 ; Options for the language- and target-independent parts of the compiler.
 
-; Copyright (C) 2003-2016 Free Software Foundation, Inc.
+; Copyright (C) 2003-2017 Free Software Foundation, Inc.
 ;
 ; This file is part of GCC.
 ;
@@ -1262,7 +1262,7 @@ Suppress output of addresses in debugging dumps.
 freport-bug
 Common Driver Var(flag_report_bug)
 Collect and dump debug information into temporary file if ICE in C/C++
-compiler occured.
+compiler occurred.
 
 fdump-internal-locations
 Common Var(flag_dump_locations) Init(0)
@@ -2648,7 +2648,7 @@ Common Undocumented Var(flag_use_linker_plugin)
 ; will be set according to optimize, debug_info_level and debug_hooks
 ; in process_options ().
 fvar-tracking
-Common Report Var(flag_var_tracking) Init(2) Optimization
+Common Report Var(flag_var_tracking) Init(2) PerFunction
 Perform variable tracking.
 
 ; Positive if we should track variables at assignments, negative if
@@ -2656,13 +2656,13 @@ Perform variable tracking.
 ; annotations.  When flag_var_tracking_assignments ==
 ; AUTODETECT_VALUE it will be set according to flag_var_tracking.
 fvar-tracking-assignments
-Common Report Var(flag_var_tracking_assignments) Init(2) Optimization
+Common Report Var(flag_var_tracking_assignments) Init(2) PerFunction
 Perform variable tracking by annotating assignments.
 
 ; Nonzero if we should toggle flag_var_tracking_assignments after
 ; processing options and computing its default.  */
 fvar-tracking-assignments-toggle
-Common Report Var(flag_var_tracking_assignments_toggle) Optimization
+Common Report Var(flag_var_tracking_assignments_toggle) PerFunction
 Toggle -fvar-tracking-assignments.
 
 ; Positive if we should track uninitialized variables, negative if
@@ -2670,7 +2670,7 @@ Toggle -fvar-tracking-assignments.
 ; annotations.  When flag_var_tracking_uninit == AUTODETECT_VALUE it
 ; will be set according to flag_var_tracking.
 fvar-tracking-uninit
-Common Report Var(flag_var_tracking_uninit) Optimization
+Common Report Var(flag_var_tracking_uninit) PerFunction
 Perform variable tracking and also tag variables that are uninitialized.
 
 ftree-vectorize
@@ -2710,12 +2710,8 @@ EnumValue
 Enum(vect_cost_model) String(cheap) Value(VECT_COST_MODEL_CHEAP)
 
 fvect-cost-model
-Common RejectNegative Alias(fvect-cost-model=,dynamic)
+Common Alias(fvect-cost-model=,dynamic,unlimited)
 Enables the dynamic vectorizer cost model.  Preserved for backward compatibility.
-
-fno-vect-cost-model
-Common RejectNegative Alias(fvect-cost-model=,unlimited)
-Enables the unlimited vectorizer cost model.  Preserved for backward compatibility.
 
 ftree-vect-loop-version
 Common Ignore

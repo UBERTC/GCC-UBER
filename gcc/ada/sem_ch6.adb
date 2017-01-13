@@ -62,6 +62,7 @@ with Sem_Ch3;   use Sem_Ch3;
 with Sem_Ch4;   use Sem_Ch4;
 with Sem_Ch5;   use Sem_Ch5;
 with Sem_Ch8;   use Sem_Ch8;
+with Sem_Ch9;   use Sem_Ch9;
 with Sem_Ch10;  use Sem_Ch10;
 with Sem_Ch12;  use Sem_Ch12;
 with Sem_Ch13;  use Sem_Ch13;
@@ -2397,9 +2398,10 @@ package body Sem_Ch6 is
                Next_Decl := Next (Decl);
 
                if Nkind (Decl) = N_Pragma
-                 and then Nam_In (Pragma_Name (Decl), Name_Ghost,
-                                                      Name_SPARK_Mode,
-                                                      Name_Volatile_Function)
+                 and then Nam_In (Pragma_Name_Unmapped (Decl),
+                                  Name_Ghost,
+                                  Name_SPARK_Mode,
+                                  Name_Volatile_Function)
                then
                   Remove (Decl);
                   Insert_After (To, Decl);
@@ -2598,8 +2600,8 @@ package body Sem_Ch6 is
          begin
             if Nkind (N) = N_Pragma
                 and then
-                  (Pragma_Name (N) = Name_Inline_Always
-                    or else (Pragma_Name (N) = Name_Inline
+                  (Pragma_Name_Unmapped (N) = Name_Inline_Always
+                    or else (Pragma_Name_Unmapped (N) = Name_Inline
                       and then
                         (Front_End_Inlining or else Optimization_Level > 0)))
                and then Present (Pragma_Argument_Associations (N))
@@ -3640,6 +3642,21 @@ package body Sem_Ch6 is
             Generate_Definition (Body_Id);
             Generate_Reference
               (Body_Id, Body_Id, 'b', Set_Ref => False, Force => True);
+
+            --  If the body is an entry wrapper created for an entry with
+            --  preconditions, it must be compiled in the context of the
+            --  enclosing synchronized object, because it may mention other
+            --  operations of the type.
+
+            if Is_Entry_Wrapper (Body_Id) then
+               declare
+                  Prot : constant Entity_Id := Etype (First_Entity (Body_Id));
+               begin
+                  Push_Scope (Prot);
+                  Install_Declarations (Prot);
+               end;
+            end if;
+
             Install_Formals (Body_Id);
 
             Push_Scope (Body_Id);
@@ -4000,6 +4017,14 @@ package body Sem_Ch6 is
 
       Process_End_Label (HSS, 't', Current_Scope);
       End_Scope;
+
+      --  If we are compiling an entry wrapper, remove the enclosing
+      --  synchronized object from the stack.
+
+      if Is_Entry_Wrapper (Body_Id) then
+         End_Scope;
+      end if;
+
       Check_Subprogram_Order (N);
       Set_Analyzed (Body_Id);
 
@@ -7183,6 +7208,15 @@ package body Sem_Ch6 is
          return Ctype <= Mode_Conformant
            or else Subtypes_Statically_Match (Type_1, Full_View (Type_2));
 
+      --  Another confusion between views in a nested instance with an
+      --  actual private type whose full view is not in scope.
+
+      elsif Ekind (Type_2) = E_Private_Subtype
+        and then In_Instance
+        and then Etype (Type_2) = Type_1
+      then
+         return True;
+
       --  In Ada 2012, incomplete types (including limited views) can appear
       --  as actuals in instantiations.
 
@@ -8442,9 +8476,21 @@ package body Sem_Ch6 is
       elsif Is_Entity_Name (E1) and then Is_Entity_Name (E2) then
          if Present (Entity (E1)) then
             return Entity (E1) = Entity (E2)
+
+              --  One may be a discriminant that has been replaced by
+              --  the correspondding discriminal
+
               or else (Chars (Entity (E1)) = Chars (Entity (E2))
                         and then Ekind (Entity (E1)) = E_Discriminant
-                        and then Ekind (Entity (E2)) = E_In_Parameter);
+                        and then Ekind (Entity (E2)) = E_In_Parameter)
+
+             --  AI12-050 : the loop variables of quantified expressions
+             --  match if the have the same identifier, even though they
+             --  are different entities.
+
+              or else (Chars (Entity (E1)) = Chars (Entity (E2))
+                       and then Ekind (Entity (E1)) = E_Loop_Parameter
+                       and then Ekind (Entity (E2)) = E_Loop_Parameter);
 
          elsif Nkind (E1) = N_Expanded_Name
            and then Nkind (E2) = N_Expanded_Name

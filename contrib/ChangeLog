@@ -1,3 +1,25 @@
+2017-01-11  Richard Earnshaw  <rearnsha@arm.com>
+
+	* gcc_update: Adjust touch list for ARM.
+
+2017-01-08  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* download_ecj: Remove.
+
+2017-01-05  Martin Liska  <mliska@suse.cz>
+
+	* vimrc: Update indentation definition.
+
+2017-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	* update-copyright.py (GCCCmdLine): Add include, libcc1, libiberty,
+	libssp, libvtv and lto-plugin to default_dirs.
+
+2017-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	* update-copyright.py (TestsuiteFilter): Skip params/README.
+	(GCCCmdLine): Remove libjava and libjava/testsuite add_dir.
+
 2016-12-14  Martin Liska  <mliska@suse.cz>
 
 	* analyze_brprob.py: Add new column to output and new sorting

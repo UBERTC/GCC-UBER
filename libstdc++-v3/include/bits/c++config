@@ -1,6 +1,6 @@
 // Predefined symbols and macros -*- C++ -*-
 
-// Copyright (C) 1997-2016 Free Software Foundation, Inc.
+// Copyright (C) 1997-2017 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -423,7 +423,7 @@ namespace std
 #endif
 
 // Debug Mode implies checking assertions.
-#ifdef _GLIBCXX_DEBUG
+#if defined(_GLIBCXX_DEBUG) && !defined(_GLIBCXX_ASSERTIONS)
 # define _GLIBCXX_ASSERTIONS 1
 #endif
 

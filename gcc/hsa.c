@@ -1,5 +1,5 @@
 /* Implementation of commonly needed HSAIL related functions and methods.
-   Copyright (C) 2013-2016 Free Software Foundation, Inc.
+   Copyright (C) 2013-2017 Free Software Foundation, Inc.
    Contributed by Martin Jambor <mjambor@suse.cz> and
    Martin Liska <mliska@suse.cz>.
 
@@ -90,10 +90,7 @@ bool
 hsa_callable_function_p (tree fndecl)
 {
   return (lookup_attribute ("omp declare target", DECL_ATTRIBUTES (fndecl))
-	  && !lookup_attribute ("oacc function", DECL_ATTRIBUTES (fndecl))
-	  /* At this point, this is enough to identify clones for
-	     parallel, which for HSA would need to be kernels anyway.  */
-	  && !DECL_ARTIFICIAL (fndecl));
+	  && !lookup_attribute ("oacc function", DECL_ATTRIBUTES (fndecl)));
 }
 
 /* Allocate HSA structures that are are used when dealing with different

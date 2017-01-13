@@ -498,9 +498,10 @@ package body Sem_Ch9 is
 
                      elsif Kind = N_Pragma then
                         declare
-                           Prag_Name : constant Name_Id   := Pragma_Name (N);
+                           Prag_Name : constant Name_Id   :=
+                             Pragma_Name (N);
                            Prag_Id   : constant Pragma_Id :=
-                                         Get_Pragma_Id (Prag_Name);
+                             Get_Pragma_Id (Prag_Name);
 
                         begin
                            if Prag_Id = Pragma_Export
@@ -1668,7 +1669,7 @@ package body Sem_Ch9 is
    --  The Defining_Identifier of the entry index specification is local to the
    --  entry body, but it must be available in the entry barrier which is
    --  evaluated outside of the entry body. The index is eventually renamed as
-   --  a run-time object, so is visibility is strictly a front-end concern. In
+   --  a run-time object, so its visibility is strictly a front-end concern. In
    --  order to make it available to the barrier, we create an additional
    --  scope, as for a loop, whose only declaration is the index name. This
    --  loop is not attached to the tree and does not appear as an entity local
@@ -2210,6 +2211,11 @@ package body Sem_Ch9 is
          if Known_To_Have_Preelab_Init (Def_Id) then
             Set_Must_Have_Preelab_Init (T);
          end if;
+
+         --  Propagate Default_Initial_Condition-related attributes from the
+         --  private type to the protected type.
+
+         Propagate_DIC_Attributes (T, From_Typ => Def_Id);
 
          --  Propagate invariant-related attributes from the private type to
          --  the protected type.
@@ -3144,6 +3150,11 @@ package body Sem_Ch9 is
          if Known_To_Have_Preelab_Init (Def_Id) then
             Set_Must_Have_Preelab_Init (T);
          end if;
+
+         --  Propagate Default_Initial_Condition-related attributes from the
+         --  private type to the task type.
+
+         Propagate_DIC_Attributes (T, From_Typ => Def_Id);
 
          --  Propagate invariant-related attributes from the private type to
          --  task type.

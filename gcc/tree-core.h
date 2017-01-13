@@ -1,5 +1,5 @@
 /* Core data structures for the 'tree' type.
-   Copyright (C) 1989-2016 Free Software Foundation, Inc.
+   Copyright (C) 1989-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -1794,7 +1794,7 @@ struct GTY(()) tree_statement_list
 /* Optimization options used by a function.  */
 
 struct GTY(()) tree_optimization_option {
-  struct tree_common common;
+  struct tree_base base;
 
   /* The optimization options used by the user.  */
   struct cl_optimization *opts;
@@ -1815,7 +1815,7 @@ struct GTY(()) target_globals;
 /* Target options used by a function.  */
 
 struct GTY(()) tree_target_option {
-  struct tree_common common;
+  struct tree_base base;
 
   /* Target globals for the corresponding target option.  */
   struct target_globals *globals;

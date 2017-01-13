@@ -1,5 +1,5 @@
 /* Output Dwarf2 format symbol table information from GCC.
-   Copyright (C) 1992-2016 Free Software Foundation, Inc.
+   Copyright (C) 1992-2017 Free Software Foundation, Inc.
    Contributed by Gary Funck (gary@intrepid.com).
    Derived from DWARF 1 implementation of Ron Guilmette (rfg@monkeys.com).
    Extensively modified by Jason Merrill (jason@cygnus.com).
@@ -2996,14 +2996,16 @@ skeleton_chain_node;
 /* Fixed size portion of the DWARF compilation unit header.  */
 #define DWARF_COMPILE_UNIT_HEADER_SIZE \
   (DWARF_INITIAL_LENGTH_SIZE + DWARF_OFFSET_SIZE			\
-   + (dwarf_version >= 5						\
-      ? 4 + DWARF_TYPE_SIGNATURE_SIZE + DWARF_OFFSET_SIZE : 3))
+   + (dwarf_version >= 5 ? 4 : 3))
 
 /* Fixed size portion of the DWARF comdat type unit header.  */
 #define DWARF_COMDAT_TYPE_UNIT_HEADER_SIZE \
   (DWARF_COMPILE_UNIT_HEADER_SIZE					\
-   + (dwarf_version >= 5						\
-      ? 0 : DWARF_TYPE_SIGNATURE_SIZE + DWARF_OFFSET_SIZE))
+   + DWARF_TYPE_SIGNATURE_SIZE + DWARF_OFFSET_SIZE)
+
+/* Fixed size portion of the DWARF skeleton compilation unit header.  */
+#define DWARF_COMPILE_UNIT_SKELETON_HEADER_SIZE \
+  (DWARF_COMPILE_UNIT_HEADER_SIZE + (dwarf_version >= 5 ? 8 : 0))
 
 /* Fixed size portion of public names info.  */
 #define DWARF_PUBNAMES_HEADER_SIZE (2 * DWARF_OFFSET_SIZE + 2)
@@ -3356,6 +3358,7 @@ static int get_AT_flag (dw_die_ref, enum dwarf_attribute);
 static unsigned get_AT_unsigned (dw_die_ref, enum dwarf_attribute);
 static inline dw_die_ref get_AT_ref (dw_die_ref, enum dwarf_attribute);
 static bool is_cxx (void);
+static bool is_cxx (const_tree);
 static bool is_fortran (void);
 static bool is_ada (void);
 static bool remove_AT (dw_die_ref, enum dwarf_attribute);
@@ -4988,6 +4991,27 @@ is_cxx (void)
 
   return (lang == DW_LANG_C_plus_plus || lang == DW_LANG_ObjC_plus_plus
 	  || lang == DW_LANG_C_plus_plus_11 || lang == DW_LANG_C_plus_plus_14);
+}
+
+/* Return TRUE if DECL was created by the C++ frontend.  */
+
+static bool
+is_cxx (const_tree decl)
+{
+  if (in_lto_p)
+    {
+      const_tree context = decl;
+      while (context && TREE_CODE (context) != TRANSLATION_UNIT_DECL)
+	{
+	  if (TREE_CODE (context) == BLOCK)
+	    context = BLOCK_SUPERCONTEXT (context);
+	  else
+	    context = get_containing_scope (context);
+	}
+      if (context && TRANSLATION_UNIT_LANGUAGE (context))
+	return strncmp (TRANSLATION_UNIT_LANGUAGE (context), "GNU C++", 7) == 0;
+    }
+  return is_cxx ();
 }
 
 /* Return TRUE if the language is Java.  */
@@ -9044,7 +9068,9 @@ calc_die_sizes (dw_die_ref die)
 static void
 calc_base_type_die_sizes (void)
 {
-  unsigned long die_offset = DWARF_COMPILE_UNIT_HEADER_SIZE;
+  unsigned long die_offset = (dwarf_split_debug_info
+			      ? DWARF_COMPILE_UNIT_SKELETON_HEADER_SIZE
+			      : DWARF_COMPILE_UNIT_HEADER_SIZE);
   unsigned int i;
   dw_die_ref base_type;
 #if ENABLE_ASSERT_CHECKING
@@ -9586,7 +9612,7 @@ output_loc_list (dw_loc_list_ref list_head)
 	 perhaps put it into DW_TAG_dwarf_procedure and refer to that
 	 in the expression, but >= 64KB expressions for a single value
 	 in a single range are unlikely very useful.  */
-      if (size > 0xffff)
+      if (dwarf_version < 5 && size > 0xffff)
 	continue;
       if (dwarf_version >= 5)
 	{
@@ -9637,8 +9663,6 @@ output_loc_list (dw_loc_list_ref list_head)
 		    {
 		      if (strcmp (curr2->begin, curr2->end) == 0
 			  && !curr2->force)
-			continue;
-		      if ((unsigned long) size_of_locs (curr2->expr) > 0xffff)
 			continue;
 		      break;
 		    }
@@ -9740,8 +9764,13 @@ output_loc_list (dw_loc_list_ref list_head)
 	}
 
       /* Output the block length for this list of location operations.  */
-      gcc_assert (size <= 0xffff);
-      dw2_asm_output_data (2, size, "%s", "Location expression size");
+      if (dwarf_version >= 5)
+	dw2_asm_output_data_uleb128 (size, "Location expression size");
+      else
+	{
+	  gcc_assert (size <= 0xffff);
+	  dw2_asm_output_data (2, size, "Location expression size");
+	}
 
       output_loc_sequence (curr->expr, -1);
     }
@@ -10302,7 +10331,9 @@ output_comp_unit (dw_die_ref die, int output_if_empty,
   delete extern_map;
 
   /* Initialize the beginning DIE offset - and calculate sizes/offsets.  */
-  next_die_offset = DWARF_COMPILE_UNIT_HEADER_SIZE;
+  next_die_offset = (dwo_id
+		     ? DWARF_COMPILE_UNIT_SKELETON_HEADER_SIZE
+		     : DWARF_COMPILE_UNIT_HEADER_SIZE);
   calc_die_sizes (die);
 
   oldsym = die->die_id.die_symbol;
@@ -10330,12 +10361,6 @@ output_comp_unit (dw_die_ref die, int output_if_empty,
       if (dwo_id != NULL)
 	for (int i = 0; i < 8; i++)
 	  dw2_asm_output_data (1, dwo_id[i], i == 0 ? "DWO id" : NULL);
-      else
-	/* Hope all the padding will be removed for DWARF 5 final for
-	   DW_AT_compile and DW_AT_partial.  */
-	dw2_asm_output_data (8, 0, "Padding 1");
-
-      dw2_asm_output_data (DWARF_OFFSET_SIZE, 0, "Padding 2");
     }
   output_die (die);
 
@@ -10430,10 +10455,11 @@ output_skeleton_debug_sections (dw_die_ref comp_unit,
      header.  */
   if (DWARF_INITIAL_LENGTH_SIZE - DWARF_OFFSET_SIZE == 4)
     dw2_asm_output_data (4, 0xffffffff,
-      "Initial length escape value indicating 64-bit DWARF extension");
+			 "Initial length escape value indicating 64-bit "
+			 "DWARF extension");
 
   dw2_asm_output_data (DWARF_OFFSET_SIZE,
-                       DWARF_COMPILE_UNIT_HEADER_SIZE
+		       DWARF_COMPILE_UNIT_SKELETON_HEADER_SIZE
                        - DWARF_INITIAL_LENGTH_SIZE
                        + size_of_die (comp_unit),
                       "Length of Compilation Unit Info");
@@ -10449,12 +10475,8 @@ output_skeleton_debug_sections (dw_die_ref comp_unit,
   if (dwarf_version < 5)
     dw2_asm_output_data (1, DWARF2_ADDR_SIZE, "Pointer Size (in bytes)");
   else
-    {
-      for (int i = 0; i < 8; i++)
-	dw2_asm_output_data (1, dwo_id[i], i == 0 ? "DWO id" : NULL);
-
-      dw2_asm_output_data (DWARF_OFFSET_SIZE, 0, "Padding 2");
-    }
+    for (int i = 0; i < 8; i++)
+      dw2_asm_output_data (1, dwo_id[i], i == 0 ? "DWO id" : NULL);
 
   comp_unit->die_abbrev = SKELETON_COMP_DIE_ABBREV;
   output_die (comp_unit);
@@ -20930,6 +20952,11 @@ gen_enumeration_type_die (tree type, dw_die_ref context_die)
 	  if (ENUM_IS_OPAQUE (type))
 	    add_AT_flag (type_die, DW_AT_declaration, 1);
 	}
+      if (!dwarf_strict)
+	add_AT_unsigned (type_die, DW_AT_encoding,
+			 TYPE_UNSIGNED (type)
+			 ? DW_ATE_unsigned
+			 : DW_ATE_signed);
     }
   else if (! TYPE_SIZE (type))
     return type_die;
@@ -24754,7 +24781,7 @@ is_naming_typedef_decl (const_tree decl)
       /* It looks like Ada produces TYPE_DECLs that are very similar
          to C++ naming typedefs but that have different
          semantics. Let's be specific to c++ for now.  */
-      || !is_cxx ())
+      || !is_cxx (decl))
     return FALSE;
 
   return (DECL_ORIGINAL_TYPE (decl) == NULL_TREE

@@ -1,5 +1,5 @@
 /* Definitions for C++ parsing and type checking.
-   Copyright (C) 1987-2016 Free Software Foundation, Inc.
+   Copyright (C) 1987-2017 Free Software Foundation, Inc.
    Contributed by Michael Tiemann (tiemann@cygnus.com)
 
 This file is part of GCC.
@@ -181,6 +181,7 @@ operator == (const cp_expr &lhs, tree rhs)
       BIND_EXPR_BODY_BLOCK (in BIND_EXPR)
       DECL_NON_TRIVIALLY_INITIALIZED_P (in VAR_DECL)
       CALL_EXPR_ORDERED_ARGS (in CALL_EXPR, AGGR_INIT_EXPR)
+      DECLTYPE_FOR_REF_CAPTURE (in DECLTYPE_TYPE)
    4: TREE_HAS_CONSTRUCTOR (in INDIRECT_REF, SAVE_EXPR, CONSTRUCTOR,
 	  CALL_EXPR, or FIELD_DECL).
       IDENTIFIER_TYPENAME_P (in IDENTIFIER_NODE)
@@ -1280,6 +1281,10 @@ struct GTY(()) saved_scope {
   BOOL_BITFIELD x_processing_explicit_instantiation : 1;
   BOOL_BITFIELD need_pop_function_context : 1;
 
+/* Nonzero if we are parsing the discarded statement of a constexpr
+   if-statement.  */
+  BOOL_BITFIELD discarded_stmt : 1;
+
   int unevaluated_operand;
   int inhibit_evaluation_warnings;
   int noexcept_operand;
@@ -1339,6 +1344,8 @@ extern GTY(()) struct saved_scope *scope_chain;
 #define processing_template_decl scope_chain->x_processing_template_decl
 #define processing_specialization scope_chain->x_processing_specialization
 #define processing_explicit_instantiation scope_chain->x_processing_explicit_instantiation
+
+#define in_discarded_stmt scope_chain->discarded_stmt
 
 /* RAII sentinel to handle clearing processing_template_decl and restoring
    it when done.  */
@@ -4103,6 +4110,8 @@ more_aggr_init_expr_args_p (const aggr_init_expr_arg_iterator *iter)
   TREE_LANG_FLAG_1 (DECLTYPE_TYPE_CHECK (NODE))
 #define DECLTYPE_FOR_LAMBDA_PROXY(NODE) \
   TREE_LANG_FLAG_2 (DECLTYPE_TYPE_CHECK (NODE))
+#define DECLTYPE_FOR_REF_CAPTURE(NODE) \
+  TREE_LANG_FLAG_3 (DECLTYPE_TYPE_CHECK (NODE))
 
 /* Nonzero for VAR_DECL and FUNCTION_DECL node means that `extern' was
    specified in its declaration.  This can also be set for an
@@ -6528,7 +6537,7 @@ extern tree finish_trait_expr			(enum cp_trait_kind, tree, tree);
 extern tree build_lambda_expr                   (void);
 extern tree build_lambda_object			(tree);
 extern tree begin_lambda_type                   (tree);
-extern tree lambda_capture_field_type		(tree, bool);
+extern tree lambda_capture_field_type		(tree, bool, bool);
 extern tree lambda_return_type			(tree);
 extern tree lambda_proxy_type			(tree);
 extern tree lambda_function			(tree);

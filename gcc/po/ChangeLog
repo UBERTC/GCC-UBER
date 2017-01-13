@@ -1,3 +1,39 @@
+2017-01-09  Joseph Myers  <joseph@codesourcery.com>
+
+	* da.po, es.po, sv.po, vi.po: Update.
+
+2017-01-06  Joseph Myers  <joseph@codesourcery.com>
+
+	* fr.po: Update.
+
+2017-01-03  Joseph Myers  <joseph@codesourcery.com>
+
+	* be.po, da.po, de.po, el.po, es.po, fi.po, fr.po, hr.po, id.po,
+	ja.po, nl.po, ru.po, sr.po, sv.po, tr.po, uk.po, vi.po, zh_CN.po,
+	zh_TW.po: Update.
+
+2017-01-02  Joseph Myers  <joseph@codesourcery.com>
+
+	* es.po: Update.
+
+2017-01-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Update copyright years.
+
+2017-01-01  Joseph Myers  <joseph@codesourcery.com>
+
+	* gcc.pot: Regenerate.
+
+2016-12-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR translation/78745
+	* exgettext: Handle multi-line help texts in *.opt files.
+	* gcc.pot: Regenerate.
+
+2016-12-30  Joseph Myers  <joseph@codesourcery.com>
+
+	* es.po, fr.po: Update.
+
 2016-12-22  Joseph Myers  <joseph@codesourcery.com>
 
 	* es.po: Update.
@@ -2225,7 +2261,7 @@ Sun Oct 31 17:17:18 1999  Jeffrey A Law  (law@cygnus.com)
 	libiberty/include directories.
 
 
-Copyright (C) 1999-2016 Free Software Foundation, Inc.
+Copyright (C) 1999-2017 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright
@@ -4275,7 +4311,7 @@ Sun Oct 31 17:17:18 1999  Jeffrey A Law  (law@cygnus.com)
 	libiberty/include directories.
 
 
-Copyright (C) 1999-2016 Free Software Foundation, Inc.
+Copyright (C) 1999-2017 Free Software Foundation, Inc.
 
 Copying and distribution of this file, with or without modification,
 are permitted in any medium without royalty provided the copyright

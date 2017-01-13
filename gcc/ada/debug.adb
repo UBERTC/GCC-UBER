@@ -127,8 +127,8 @@ package body Debug is
    --  d.G  Ignore calls through generic formal parameters for elaboration
    --  d.H  GNSA mode for ASIS
    --  d.I  Do not ignore enum representation clauses in CodePeer mode
-   --  d.J  Disable parallel SCIL generation mode
-   --  d.K
+   --  d.J
+   --  d.K  Enable generation of contract-only procedures in CodePeer mode
    --  d.L  Depend on back end for limited types in if and case expressions
    --  d.M  Relaxed RM semantics
    --  d.N  Add node to all entities
@@ -376,8 +376,7 @@ package body Debug is
    --       general Elaborate_All is still required because of nested calls.
 
    --  dE   Apply compile time elaboration checking for with relations between
-   --       predefined units. Normally no checks are made (it seems that at
-   --       least on the SGI, such checks run into trouble).
+   --       predefined units. Normally no checks are made.
 
    --  dF   Front end data layout enabled. Normally front end data layout
    --       is only enabled if the target parameter Backend_Layout is False.
@@ -407,7 +406,7 @@ package body Debug is
    --  dL   Output trace information on elaboration checking. This debug
    --       switch causes output to be generated showing each call or
    --       instantiation as it is checked, and the progress of the recursive
-   --       trace through calls at elaboration time.
+   --       trace through elaboration calls at compile time.
 
    --  dM   Assume all variables have been modified, and ignore current value
    --       indications. This debug flag disconnects the tracking of constant
@@ -642,9 +641,12 @@ package body Debug is
    --       cases being able to change this default might be useful to remove
    --       some false positives.
 
-   --  d.J  Disable parallel SCIL generation. Normally SCIL file generation is
-   --       done in parallel to speed processing. This switch disables this
-   --       behavior.
+   --  d.K  Enable generation of contract-only procedures in CodePeer mode and
+   --       report a warning on subprograms for which the contract-only body
+   --       cannot be built. Currently reported on subprograms defined in
+   --       nested package specs that have some formal (or return type) whose
+   --       type is a private type defined in some enclosing package and that
+   --       have pre/postconditions.
 
    --  d.L  Normally the front end generates special expansion for conditional
    --       expressions of a limited type. This debug flag removes this special

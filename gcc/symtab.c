@@ -1,5 +1,5 @@
 /* Symbol table.
-   Copyright (C) 2012-2016 Free Software Foundation, Inc.
+   Copyright (C) 2012-2017 Free Software Foundation, Inc.
    Contributed by Jan Hubicka
 
 This file is part of GCC.
@@ -1029,7 +1029,7 @@ symtab_node::verify_base (void)
     }
   if (analyzed && !definition)
     {
-      error ("node is analyzed byt it is not a definition");
+      error ("node is analyzed but it is not a definition");
       error_found = true;
     }
   if (cpp_implicit_alias && !alias)
@@ -1259,7 +1259,8 @@ symtab_node::make_decl_local (void)
       TREE_ADDRESSABLE (decl) = 1;
       TREE_STATIC (decl) = 1;
     }
-  else gcc_assert (TREE_CODE (decl) == FUNCTION_DECL);
+  else
+    gcc_assert (TREE_CODE (decl) == FUNCTION_DECL);
 
   DECL_COMDAT (decl) = 0;
   DECL_WEAK (decl) = 0;
@@ -1439,7 +1440,7 @@ symtab_node::fixup_same_cpp_alias_visibility (symtab_node *target)
 }
 
 /* Set section, do not recurse into aliases.
-   When one wants to change section of symbol and its aliases,
+   When one wants to change section of a symbol and its aliases,
    use set_section.  */
 
 void
@@ -2214,6 +2215,9 @@ symtab_node::binds_to_current_def_p (symtab_node *ref)
 {
   if (!definition)
     return false;
+  if (transparent_alias)
+    return definition
+	   && get_alias_target()->binds_to_current_def_p (ref);
   if (decl_binds_to_current_def_p (decl))
     return true;
 
@@ -2225,8 +2229,6 @@ symtab_node::binds_to_current_def_p (symtab_node *ref)
   if (DECL_EXTERNAL (decl))
     return false;
 
-  if (!externally_visible)
-    debug ();
   gcc_assert (externally_visible);
 
   if (ref)

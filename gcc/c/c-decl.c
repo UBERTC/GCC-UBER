@@ -1,5 +1,5 @@
 /* Process declarations and variables for C compiler.
-   Copyright (C) 1988-2016 Free Software Foundation, Inc.
+   Copyright (C) 1988-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -1420,6 +1420,8 @@ pop_file_scope (void)
   if (pch_file)
     {
       c_common_write_pch ();
+      /* Ensure even the callers don't try to finalize the CU.  */
+      flag_syntax_only = 1;
       return;
     }
 

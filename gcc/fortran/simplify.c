@@ -1,5 +1,5 @@
 /* Simplify intrinsic functions at compile-time.
-   Copyright (C) 2000-2016 Free Software Foundation, Inc.
+   Copyright (C) 2000-2017 Free Software Foundation, Inc.
    Contributed by Andy Vaught & Katherine Holcomb
 
 This file is part of GCC.
@@ -610,9 +610,17 @@ simplify_transformation_to_array (gfc_expr *result, gfc_expr *array, gfc_expr *d
 	  n++;
 	  if (n < result->rank)
 	    {
-	      count [n]++;
+	      /* If the nested loop is unrolled GFC_MAX_DIMENSIONS
+		 times, we'd warn for the last iteration, because the
+		 array index will have already been incremented to the
+		 array sizes, and we can't tell that this must make
+		 the test against result->rank false, because ranks
+		 must not exceed GFC_MAX_DIMENSIONS.  */
+	      GCC_DIAGNOSTIC_PUSH_IGNORED (-Warray-bounds)
+	      count[n]++;
 	      base += sstride[n];
 	      dest += dstride[n];
+	      GCC_DIAGNOSTIC_POP
 	    }
 	  else
 	    done = true;

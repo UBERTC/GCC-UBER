@@ -1,5 +1,5 @@
 /* Interprocedural analyses.
-   Copyright (C) 2005-2016 Free Software Foundation, Inc.
+   Copyright (C) 2005-2017 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -178,9 +178,10 @@ struct GTY (()) ipa_jump_func
   /* Information about zero/non-zero bits.  */
   struct ipa_bits bits;
 
-  /* Information about value range.  */
-  bool vr_known;
+  /* Information about value range, containing valid data only when vr_known is
+     true.  */
   value_range m_vr;
+  bool vr_known;
 
   enum jump_func_type type;
   /* Represents a value of a jump function.  pass_through is used only in jump

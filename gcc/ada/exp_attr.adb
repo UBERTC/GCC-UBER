@@ -1568,9 +1568,10 @@ package body Exp_Attr is
 
       procedure Rewrite_Stream_Proc_Call (Pname : Entity_Id) is
          Item       : constant Node_Id   := Next (First (Exprs));
+         Item_Typ   : constant Entity_Id := Etype (Item);
          Formal     : constant Entity_Id := Next_Formal (First_Formal (Pname));
          Formal_Typ : constant Entity_Id := Etype (Formal);
-         Is_Written : constant Boolean   := (Ekind (Formal) /= E_In_Parameter);
+         Is_Written : constant Boolean   := Ekind (Formal) /= E_In_Parameter;
 
       begin
          --  The expansion depends on Item, the second actual, which is
@@ -1583,7 +1584,7 @@ package body Exp_Attr is
 
          if Nkind (Item) = N_Indexed_Component
            and then Is_Packed (Base_Type (Etype (Prefix (Item))))
-           and then Base_Type (Etype (Item)) /= Base_Type (Formal_Typ)
+           and then Base_Type (Item_Typ) /= Base_Type (Formal_Typ)
            and then Is_Written
          then
             declare
@@ -1595,23 +1596,22 @@ package body Exp_Attr is
                Decl :=
                  Make_Object_Declaration (Loc,
                    Defining_Identifier => Temp,
-                   Object_Definition    =>
-                     New_Occurrence_Of (Formal_Typ, Loc));
+                   Object_Definition   => New_Occurrence_Of (Formal_Typ, Loc));
                Set_Etype (Temp, Formal_Typ);
 
                Assn :=
                  Make_Assignment_Statement (Loc,
-                   Name => New_Copy_Tree (Item),
+                   Name       => New_Copy_Tree (Item),
                    Expression =>
                      Unchecked_Convert_To
-                       (Etype (Item), New_Occurrence_Of (Temp, Loc)));
+                       (Item_Typ, New_Occurrence_Of (Temp, Loc)));
 
                Rewrite (Item, New_Occurrence_Of (Temp, Loc));
                Insert_Actions (N,
                  New_List (
                    Decl,
                    Make_Procedure_Call_Statement (Loc,
-                     Name => New_Occurrence_Of (Pname, Loc),
+                     Name                   => New_Occurrence_Of (Pname, Loc),
                      Parameter_Associations => Exprs),
                    Assn));
 
@@ -1626,17 +1626,25 @@ package body Exp_Attr is
          --  operation is not inherited), we are all set, and can use the
          --  argument unchanged.
 
-         --  For all other cases we do an unchecked conversion of the second
-         --  parameter to the type of the formal of the procedure we are
-         --  calling. This deals with the private type cases, and with going
-         --  to the root type as required in elementary type case.
-
          if not Is_Class_Wide_Type (Entity (Pref))
            and then not Is_Class_Wide_Type (Etype (Item))
-           and then Base_Type (Etype (Item)) /= Base_Type (Formal_Typ)
+           and then Base_Type (Item_Typ) /= Base_Type (Formal_Typ)
          then
-            Rewrite (Item,
-              Unchecked_Convert_To (Formal_Typ, Relocate_Node (Item)));
+            --  Perform a view conversion when either the argument or the
+            --  formal parameter are of a private type.
+
+            if Is_Private_Type (Formal_Typ)
+              or else Is_Private_Type (Item_Typ)
+            then
+               Rewrite (Item,
+                 Unchecked_Convert_To (Formal_Typ, Relocate_Node (Item)));
+
+            --  Otherwise perform a regular type conversion to ensure that all
+            --  relevant checks are installed.
+
+            else
+               Rewrite (Item, Convert_To (Formal_Typ, Relocate_Node (Item)));
+            end if;
 
             --  For untagged derived types set Assignment_OK, to prevent
             --  copies from being created when the unchecked conversion
@@ -1665,7 +1673,7 @@ package body Exp_Attr is
 
          Rewrite (N,
            Make_Procedure_Call_Statement (Loc,
-             Name => New_Occurrence_Of (Pname, Loc),
+             Name                   => New_Occurrence_Of (Pname, Loc),
              Parameter_Associations => Exprs));
 
          Analyze (N);
@@ -3127,6 +3135,121 @@ package body Exp_Attr is
 
          Analyze_And_Resolve (N, Standard_String);
       end External_Tag;
+
+      -----------------------
+      -- Finalization_Size --
+      -----------------------
+
+      when Attribute_Finalization_Size => Finalization_Size : declare
+         function Calculate_Header_Size return Node_Id;
+         --  Generate a runtime call to calculate the size of the hidden header
+         --  along with any added padding which would precede a heap-allocated
+         --  object of the prefix type.
+
+         ---------------------------
+         -- Calculate_Header_Size --
+         ---------------------------
+
+         function Calculate_Header_Size return Node_Id is
+         begin
+            --  Generate:
+            --    Universal_Integer
+            --      (Header_Size_With_Padding (Pref'Alignment))
+
+            return
+              Convert_To (Universal_Integer,
+                Make_Function_Call (Loc,
+                  Name                   =>
+                    New_Occurrence_Of (RTE (RE_Header_Size_With_Padding), Loc),
+
+                  Parameter_Associations => New_List (
+                    Make_Attribute_Reference (Loc,
+                      Prefix         => New_Copy_Tree (Pref),
+                      Attribute_Name => Name_Alignment))));
+         end Calculate_Header_Size;
+
+         --  Local variables
+
+         Size : Entity_Id;
+
+      --  Start of Finalization_Size
+
+      begin
+         --  An object of a class-wide type first requires a runtime check to
+         --  determine whether it is actually controlled or not. Depending on
+         --  the outcome of this check, the Finalization_Size of the object
+         --  may be zero or some positive value.
+         --
+         --  In this scenario, Pref'Finalization_Size is expanded into
+         --
+         --    Size : Integer := 0;
+         --
+         --    if Needs_Finalization (Pref'Tag) then
+         --       Size :=
+         --         Universal_Integer
+         --           (Header_Size_With_Padding (Pref'Alignment));
+         --    end if;
+         --
+         --  and the attribute reference is replaced with a reference to Size.
+
+         if Is_Class_Wide_Type (Ptyp) then
+            Size := Make_Temporary (Loc, 'S');
+
+            Insert_Actions (N, New_List (
+
+              --  Generate:
+              --    Size : Integer := 0;
+
+              Make_Object_Declaration (Loc,
+                Defining_Identifier => Size,
+                Object_Definition   =>
+                  New_Occurrence_Of (Standard_Integer, Loc),
+                Expression          => Make_Integer_Literal (Loc, 0)),
+
+              --  Generate:
+              --    if Needs_Finalization (Pref'Tag) then
+              --       Size :=
+              --         Universal_Integer
+              --           (Header_Size_With_Padding (Pref'Alignment));
+              --    end if;
+
+              Make_If_Statement (Loc,
+                Condition              =>
+                  Make_Function_Call (Loc,
+                    Name                   =>
+                      New_Occurrence_Of (RTE (RE_Needs_Finalization), Loc),
+
+                    Parameter_Associations => New_List (
+                      Make_Attribute_Reference (Loc,
+                        Prefix         => New_Copy_Tree (Pref),
+                        Attribute_Name => Name_Tag))),
+
+                Then_Statements        => New_List (
+                   Make_Assignment_Statement (Loc,
+                     Name       => New_Occurrence_Of (Size, Loc),
+                     Expression => Calculate_Header_Size)))));
+
+            Rewrite (N, New_Occurrence_Of (Size, Loc));
+
+         --  The prefix is known to be controlled at compile time. Calculate
+         --  Finalization_Size by calling function Header_Size_With_Padding.
+
+         elsif Needs_Finalization (Ptyp) then
+            Rewrite (N, Calculate_Header_Size);
+
+         --  The prefix is not an object with controlled parts, so its
+         --  Finalization_Size is zero.
+
+         else
+            Rewrite (N, Make_Integer_Literal (Loc, 0));
+         end if;
+
+         --  Due to cases where the entity type of the attribute is already
+         --  resolved the rewritten N must get re-resolved to its appropriate
+         --  type.
+
+         Analyze_And_Resolve (N, Typ);
+      end Finalization_Size;
 
       -----------
       -- First --

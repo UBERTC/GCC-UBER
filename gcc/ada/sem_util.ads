@@ -209,24 +209,6 @@ package Sem_Util is
    --  Determine whether a selected component has a type that depends on
    --  discriminants, and build actual subtype for it if so.
 
-   function Build_Default_Init_Cond_Call
-     (Loc    : Source_Ptr;
-      Obj_Id : Entity_Id;
-      Typ    : Entity_Id) return Node_Id;
-   --  Build a call to the default initial condition procedure of type Typ with
-   --  Obj_Id as the actual parameter.
-
-   procedure Build_Default_Init_Cond_Procedure_Bodies (Priv_Decls : List_Id);
-   --  Inspect the contents of private declarations Priv_Decls and build the
-   --  bodies the default initial condition procedures for all types subject
-   --  to pragma Default_Initial_Condition.
-
-   procedure Build_Default_Init_Cond_Procedure_Declaration (Typ : Entity_Id);
-   --  If private type Typ is subject to pragma Default_Initial_Condition,
-   --  build the declaration of the procedure which verifies the assumption
-   --  of the pragma at runtime. The declaration is inserted after the related
-   --  pragma.
-
    function Build_Default_Subtype
      (T : Entity_Id;
       N : Node_Id) return Entity_Id;
@@ -574,13 +556,11 @@ package Sem_Util is
    --  Returns the declaration node enclosing N (including possibly N itself),
    --  if any, or Empty otherwise.
 
-   function Enclosing_Generic_Body
-     (N : Node_Id) return Node_Id;
+   function Enclosing_Generic_Body (N : Node_Id) return Node_Id;
    --  Returns the Node_Id associated with the innermost enclosing generic
    --  body, if any. If none, then returns Empty.
 
-   function Enclosing_Generic_Unit
-     (N : Node_Id) return Node_Id;
+   function Enclosing_Generic_Unit (N : Node_Id) return Node_Id;
    --  Returns the Node_Id associated with the innermost enclosing generic
    --  unit, if any. If none, then returns Empty.
 
@@ -917,9 +897,12 @@ package Sem_Util is
       Loc : Source_Ptr) return Node_Id;
    --  This function returns an identifier denoting the E_Enumeration_Literal
    --  entity for the specified value from the enumeration type or subtype T.
-   --  The second argument is the Pos value, which is assumed to be in range.
-   --  The third argument supplies a source location for constructed nodes
-   --  returned by this function.
+   --  The second argument is the Pos value. Constraint_Error is raised if
+   --  argument Pos is not in range. The third argument supplies a source
+   --  location for constructed nodes returned by this function. If No_Location
+   --  is supplied as source location, the location of the returned node is
+   --  copied from the original source location for the enumeration literal,
+   --  when available.
 
    function Get_Iterable_Type_Primitive
      (Typ : Entity_Id;
@@ -930,6 +913,10 @@ package Sem_Util is
    procedure Get_Library_Unit_Name_String (Decl_Node : Node_Id);
    --  Retrieve the fully expanded name of the library unit declared by
    --  Decl_Node into the name buffer.
+
+   function Get_Max_Queue_Length (Id : Entity_Id) return Uint;
+   --  Return the argument of pragma Max_Queue_Length or zero if the annotation
+   --  is not present. It is assumed that Id denotes an entry.
 
    function Get_Name_Entity_Id (Id : Name_Id) return Entity_Id;
    pragma Inline (Get_Name_Entity_Id);
@@ -951,7 +938,7 @@ package Sem_Util is
 
    function Get_Pragma_Id (N : Node_Id) return Pragma_Id;
    pragma Inline (Get_Pragma_Id);
-   --  Obtains the Pragma_Id from the Chars field of Pragma_Identifier (N)
+   --  Obtains the Pragma_Id from Pragma_Name_Unmapped (N)
 
    function Get_Qualified_Name
      (Id     : Entity_Id;
@@ -1104,6 +1091,10 @@ package Sem_Util is
    --  Use_Full_View controls if the check is done using its full view (if
    --  available).
 
+   function Has_Max_Queue_Length (Id : Entity_Id) return Boolean;
+   --  Determine whether Id is subject to pragma Max_Queue_Length. It is
+   --  assumed that Id denotes an entry.
+
    function Has_No_Obvious_Side_Effects (N : Node_Id) return Boolean;
    --  This is a simple minded function for determining whether an expression
    --  has no obvious side effects. It is used only for determining whether
@@ -1200,6 +1191,9 @@ package Sem_Util is
    --  Returns True if node N appears within a pragma that acts as an assertion
    --  expression. See Sem_Prag for the list of qualifying pragmas.
 
+   function In_Generic_Scope (E : Entity_Id) return Boolean;
+   --  Returns True if entity E is inside a generic scope
+
    function In_Instance return Boolean;
    --  Returns True if the current scope is within a generic instance
 
@@ -1254,10 +1248,6 @@ package Sem_Util is
    --  component if it is known at compile time. A value of No_Uint means that
    --  either the value is not yet known before back-end processing or it is
    --  not known at compile time after back-end processing.
-
-   procedure Inherit_Default_Init_Cond_Procedure (Typ : Entity_Id);
-   --  Inherit the default initial condition procedure from the parent type of
-   --  derived type Typ.
 
    procedure Inherit_Rep_Item_Chain (Typ : Entity_Id; From_Typ : Entity_Id);
    --  Inherit the rep item chain of type From_Typ without clobbering any
@@ -1517,8 +1507,7 @@ package Sem_Util is
    --  parameter of the current enclosing subprogram.
    --  Why are OUT parameters not considered here ???
 
-   function Is_Nontrivial_Default_Init_Cond_Procedure
-     (Id : Entity_Id) return Boolean;
+   function Is_Nontrivial_DIC_Procedure (Id : Entity_Id) return Boolean;
    --  Determine whether entity Id denotes the procedure that verifies the
    --  assertion expression of pragma Default_Initial_Condition and if it does,
    --  the encapsulated expression is nontrivial.
@@ -1739,6 +1728,10 @@ package Sem_Util is
    --  Use_Original_Node is used to perform the test on Original_Node (N). By
    --  default is True since this routine is commonly invoked as part of the
    --  semantic analysis and it must not be disturbed by the rewriten nodes.
+
+   function Is_Verifiable_DIC_Pragma (Prag : Node_Id) return Boolean;
+   --  Determine whether pragma Default_Initial_Condition denoted by Prag has
+   --  an assertion expression which should be verified at runtime.
 
    function Is_Visibly_Controlled (T : Entity_Id) return Boolean;
    --  Check whether T is derived from a visibly controlled type. This is true
@@ -2039,12 +2032,6 @@ package Sem_Util is
    --  parameter Ent gives the entity to which the End_Label refers,
    --  and to which cross-references are to be generated.
 
-   procedure Propagate_Invariant_Attributes
-     (Typ      : Entity_Id;
-      From_Typ : Entity_Id);
-   --  Inherit all invariant-related attributes form type From_Typ. Typ is the
-   --  destination type.
-
    procedure Propagate_Concurrent_Flags
      (Typ      : Entity_Id;
       Comp_Typ : Entity_Id);
@@ -2053,6 +2040,18 @@ package Sem_Util is
    --  are set (recursively) on any composite type which has a component marked
    --  by one of these flags. This procedure can only set flags for Typ, and
    --  never clear them. Comp_Typ is the type of a component or a parent.
+
+   procedure Propagate_DIC_Attributes
+     (Typ      : Entity_Id;
+      From_Typ : Entity_Id);
+   --  Inherit all Default_Initial_Condition-related attributes from type
+   --  From_Typ. Typ is the destination type.
+
+   procedure Propagate_Invariant_Attributes
+     (Typ      : Entity_Id;
+      From_Typ : Entity_Id);
+   --  Inherit all invariant-related attributes form type From_Typ. Typ is the
+   --  destination type.
 
    procedure Record_Possible_Part_Of_Reference
      (Var_Id : Entity_Id;
@@ -2333,12 +2332,12 @@ package Sem_Util is
    --  Return the entity which represents declaration N, so that different
    --  views of the same entity have the same unique defining entity:
    --    * entry declaration and entry body
-   --    * package spec and body
-   --    * protected type declaration, protected body stub and protected body
+   --    * package spec, package body, and package body stub
+   --    * protected type declaration, protected body, and protected body stub
    --    * private view and full view of a deferred constant
    --    * private view and full view of a type
-   --    * subprogram declaration, subprogram stub and subprogram body
-   --    * task type declaration, task body stub and task body
+   --    * subprogram declaration, subprogram, and subprogram body stub
+   --    * task type declaration, task body, and task body stub
    --  In other cases, return the defining entity for N.
 
    function Unique_Entity (E : Entity_Id) return Entity_Id;
