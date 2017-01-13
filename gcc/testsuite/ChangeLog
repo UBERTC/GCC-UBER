@@ -1,3 +1,89 @@
+2017-01-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-01-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/79044
+	* gcc.target/powerpc/swaps-p8-26.c: New.
+
+2017-01-11  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/77812
+	* g++.dg/pr77812.C: New.
+
+2017-01-10  Thomas Schwinge  <thomas@codesourcery.com>
+
+	Backport from trunk r241334:
+	2016-10-19  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR tree-optimization/78024
+	* gcc.dg/goacc/loop-processing-1.c: New file.
+
+2017-01-09  Andre Vieira <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline
+	2016-12-20  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+
+	* gcc.target/arm/pr78255-2.c: Fix to work for targets
+	that do not optimize for tailcall.
+
+2017-01-09  Andre Vieira <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline
+	2016-12-09  Andre Vieira <andre.simoesdiasvieira@arm.com>
+
+	PR rtl-optimization/78255
+	* gcc.target/aarch64/pr78255.c: New.
+	* gcc.target/arm/pr78255-1.c: New.
+	* gcc.target/arm/pr78255-2.c: New.
+
+2017-01-06  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	Backport from mainline
+	2016-10-25  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	PR target/78041
+	* gcc.target/arm/pr78041.c: New test.
+
+2017-01-05  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-22  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/litpool-str-1.c: New test.
+
+2017-01-04  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-05-11  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71055
+	* gcc.dg/torture/pr71055.c: New testcase.
+
+2017-01-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-12-21  Martin Liska  <mliska@suse.cz>
+
+	PR driver/78863
+	* gcc.dg/spellcheck-options-13.c: New test.
+
+2017-01-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-12-22  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/78886
+	* gcc.dg/tree-ssa/pr78886.c: New test.
+
+2017-01-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-12-13  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/78428
+	* gcc.dg/tree-ssa/pr78428.c: New test.
+
 2016-12-22  Thomas Koenig  <tkoenig@gcc.gnu.org>
 
 	Backport from trunk
