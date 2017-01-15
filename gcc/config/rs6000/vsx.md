@@ -1353,7 +1353,7 @@
 ;; Used by direct move to move a SFmode value from GPR to VSX register
 (define_insn "vsx_xscvspdpn_directmove"
   [(set (match_operand:SF 0 "vsx_register_operand" "=wa")
-	(unspec:SF [(match_operand:DI 1 "vsx_register_operand" "wa")]
+	(unspec:SF [(match_operand:SF 1 "vsx_register_operand" "wa")]
 		   UNSPEC_VSX_CVSPDPN))]
   "TARGET_XSCVSPDPN"
   "xscvspdpn %x0,%x1"
@@ -1415,10 +1415,15 @@
 {
   rtx op0 = operands[0];
   rtx op1 = operands[1];
-  rtx tmp = gen_reg_rtx (V2DFmode);
-  int scale = INTVAL(operands[2]);
-  if (scale != 0)
-    rs6000_scale_v2df (tmp, op1, scale);
+  rtx tmp;
+  int scale = INTVAL (operands[2]);
+  if (scale == 0)
+    tmp = op1;
+  else
+    {
+      tmp  = gen_reg_rtx (V2DFmode);
+      rs6000_scale_v2df (tmp, op1, scale);
+    }
   emit_insn (gen_vsx_xvcvdpsxds (op0, tmp));
   DONE;
 })
@@ -1439,10 +1444,15 @@
 {
   rtx op0 = operands[0];
   rtx op1 = operands[1];
-  rtx tmp = gen_reg_rtx (V2DFmode);
-  int scale = INTVAL(operands[2]);
-  if (scale != 0)
-    rs6000_scale_v2df (tmp, op1, scale);
+  rtx tmp;
+  int scale = INTVAL (operands[2]);
+  if (scale == 0)
+    tmp = op1;
+  else
+    {
+      tmp = gen_reg_rtx (V2DFmode);
+      rs6000_scale_v2df (tmp, op1, scale);
+    }
   emit_insn (gen_vsx_xvcvdpuxds (op0, tmp));
   DONE;
 })

@@ -7919,7 +7919,7 @@ aarch64_madd_needs_nop (rtx insn)
   if (!aarch64_fix_a53_err835769)
     return false;
 
-  if (recog_memoized (insn) < 0)
+  if (!INSN_P (insn) || recog_memoized (insn) < 0)
     return false;
 
   attr_type = get_attr_type (insn);
@@ -9934,6 +9934,18 @@ aarch64_cannot_change_mode_class (enum machine_mode from,
 				  enum machine_mode to,
 				  enum reg_class rclass)
 {
+  /* We cannot allow word_mode subregs of full vector modes.
+     Otherwise the middle-end will assume it's ok to store to
+     (subreg:DI (reg:TI 100) 0) in order to modify only the low 64 bits
+     of the 128-bit register.  However, after reload the subreg will
+     be dropped leaving a plain DImode store.  See PR67609 for a more
+     detailed dicussion.  In some other cases we can be permissive and
+     return false.  */
+  if (reg_classes_intersect_p (FP_REGS, rclass)
+      && GET_MODE_SIZE (to) == UNITS_PER_WORD
+      && GET_MODE_SIZE (from) > UNITS_PER_WORD)
+    return true;
+
   /* Full-reg subregs are allowed on general regs or any class if they are
      the same size.  */
   if (GET_MODE_SIZE (from) == GET_MODE_SIZE (to)

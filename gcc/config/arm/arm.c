@@ -21183,7 +21183,11 @@ arm_expand_prologue (void)
 
   /* Naked functions don't have prologues.  */
   if (IS_NAKED (func_type))
-    return;
+    {
+      if (flag_stack_usage_info)
+	current_function_static_stack_size = 0;
+      return;
+    }
 
   /* Make a copy of c_f_p_a_s as we may need to modify it locally.  */
   args_to_push = crtl->args.pretend_args_size;
@@ -27235,7 +27239,11 @@ thumb1_expand_prologue (void)
 
   /* Naked functions don't have prologues.  */
   if (IS_NAKED (func_type))
-    return;
+    {
+      if (flag_stack_usage_info)
+	current_function_static_stack_size = 0;
+      return;
+    }
 
   if (IS_INTERRUPT (func_type))
     {
@@ -31724,6 +31732,38 @@ arm_emit_coreregs_64bit_shift (enum rtx_code code, rtx out, rtx in,
   #undef BRANCH
 }
 
+/* Returns true if the pattern is a valid symbolic address, which is either a
+   symbol_ref or (symbol_ref + addend).
+
+   According to the ARM ELF ABI, the initial addend of REL-type relocations
+   processing MOVW and MOVT instructions is formed by interpreting the 16-bit
+   literal field of the instruction as a 16-bit signed value in the range
+   -32768 <= A < 32768.  */
+
+bool
+arm_valid_symbolic_address_p (rtx addr)
+{
+  rtx xop0, xop1 = NULL_RTX;
+  rtx tmp = addr;
+
+  if (GET_CODE (tmp) == SYMBOL_REF || GET_CODE (tmp) == LABEL_REF)
+    return true;
+
+  /* (const (plus: symbol_ref const_int))  */
+  if (GET_CODE (addr) == CONST)
+    tmp = XEXP (addr, 0);
+
+  if (GET_CODE (tmp) == PLUS)
+    {
+      xop0 = XEXP (tmp, 0);
+      xop1 = XEXP (tmp, 1);
+
+      if (GET_CODE (xop0) == SYMBOL_REF && CONST_INT_P (xop1))
+	  return IN_RANGE (INTVAL (xop1), -0x8000, 0x7fff);
+    }
+
+  return false;
+}
 
 /* Returns true if a valid comparison operation and makes
    the operands in a form that is valid.  */

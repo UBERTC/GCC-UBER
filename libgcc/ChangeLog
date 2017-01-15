@@ -1,3 +1,38 @@
+2016-08-03  Release Manager
+
+	* GCC 4.9.4 released.
+
+2016-05-17  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2016-05-10  Joel Sherrill <joel@rtems.org>
+
+	PR libgcc/70720
+	* config.host (moxie-*-rtems*): Merge this stanza with other moxie
+	targets so the same extra_parts are built.  Also have tmake_file add
+	on to its value rather than override.
+
+2016-03-21  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	Backport from mainline
+	2016-03-16  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	PR target/38239
+	* config/gmon-sol2.c [__i386__] (_mcount): Save and restore
+	call-clobbered registers.
+	(internal_mcount): Remove __i386__ handling.
+
+2015-12-09  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/fptr.c (__canonicalize_funcptr_for_compare): Remove code
+	to initialize call to __dl_fixup once.
+
+2015-12-01  John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/fptr.c (__canonicalize_funcptr_for_compare): Initialize
+	fixup values if saved GOT address doesn't match runtime address.
+	(fixup_branch_offset): Reorder list.
+
 2015-10-19  Venkataramanan Kumar  <Venkataramanan.kumar@amd.com>
 
 	Backport from mainline

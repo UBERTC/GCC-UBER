@@ -59,6 +59,7 @@ gfc_omp_privatize_by_reference (const_tree decl)
       if (GFC_DECL_GET_SCALAR_POINTER (decl)
 	  || GFC_DECL_GET_SCALAR_ALLOCATABLE (decl)
 	  || GFC_DECL_CRAY_POINTEE (decl)
+	  || GFC_DECL_ASSOCIATE_VAR_P (decl)
 	  || VOID_TYPE_P (TREE_TYPE (TREE_TYPE (decl))))
 	return false;
 
@@ -2114,6 +2115,8 @@ gfc_trans_omp_clauses (stmtblock_t *block, gfc_omp_clauses *clauses,
 		  tree decl = gfc_get_symbol_decl (n->sym);
 		  if (gfc_omp_privatize_by_reference (decl))
 		    decl = build_fold_indirect_ref (decl);
+		  else if (DECL_P (decl))
+		    TREE_ADDRESSABLE (decl) = 1;
 		  if (GFC_DESCRIPTOR_TYPE_P (TREE_TYPE (decl)))
 		    {
 		      tree type = TREE_TYPE (decl);
@@ -3903,7 +3906,7 @@ gfc_trans_omp_workshare (gfc_code *code, gfc_omp_clauses *clauses)
 
       /* By default, every gfc_code is a single unit of work.  */
       ompws_flags |= OMPWS_CURR_SINGLEUNIT;
-      ompws_flags &= ~OMPWS_SCALARIZER_WS;
+      ompws_flags &= ~(OMPWS_SCALARIZER_WS | OMPWS_SCALARIZER_BODY);
 
       switch (code->op)
 	{

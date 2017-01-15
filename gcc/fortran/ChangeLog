@@ -1,3 +1,92 @@
+2016-08-03  Release Manager
+
+	* GCC 4.9.4 released.
+
+2016-07-15  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk:
+	PR fortran/71764
+	* trans-expr.c (gfc_trans_structure_assign): Remove assert.
+
+2016-07-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-07-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/71717
+	* trans-openmp.c (gfc_omp_privatize_by_reference): Return false
+	for GFC_DECL_ASSOCIATE_VAR_P with POINTER_TYPE.
+
+	2016-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/71704
+	* parse.c (matchs, matcho): If spec_only, only gfc_match the keyword
+	and if successful, goto do_spec_only.
+	(matchds, matchdo): Define.
+	(decode_omp_directive): Add spec_only local var and set it.
+	Use matchds or matchdo macros instead of matchs or matcho
+	for declare target, declare simd, declare reduction and threadprivate
+	directives.  Return ST_GET_FCN_CHARACTERISTICS if a non-declarative
+	directive could be matched.
+	(next_statement): For ST_GET_FCN_CHARACTERISTICS restore
+	gfc_current_locus from old_locus even if there is no label.
+
+	PR fortran/71705
+	* trans-openmp.c (gfc_trans_omp_clauses): Set TREE_ADDRESSABLE on
+	decls in to/from clauses.
+
+2016-05-26  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/66461
+	* scanner.c (gfc_next_char_literal): Clear end_flag when adjusting
+	current locus back to old_locus.
+
+2016-02-28  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backported from mainline
+	PR fortran/61156
+	* scanner.c (add_path_to_list): If include path is not a directory,
+	issue a fatal error.
+
+2016-02-11  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-01-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/69128
+	* trans.h (OMPWS_SCALARIZER_BODY): Define.
+	(OMPWS_NOWAIT): Renumber.
+	* trans-stmt.c (gfc_trans_where_3): Only set OMPWS_SCALARIZER_WS
+	if OMPWS_SCALARIZER_BODY is not set already, and set also
+	OMPWS_SCALARIZER_BODY until the final loop creation.
+	* trans-expr.c (gfc_trans_assignment_1): Likewise.
+	* trans-openmp.c (gfc_trans_omp_workshare): Also clear
+	OMPWS_SCALARIZER_BODY.
+	* trans-array.c (gfc_trans_scalarized_loop_end): Don't create
+	OMP_FOR if OMPWS_SCALARIZER_BODY is set.
+
+2015-11-27  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/68218
+	* trans-array.c (gfc_array_init_size): Add gfc_evaluate_now() when
+	array spec in allocate is a function call.
+
+2015-11-25  Paul Thomas  <pault@gcc.gnu.org>
+
+	Backport from trunk.
+	PR fortran/68196
+	* class.c (has_finalizer_component): Prevent infinite recursion
+	through this function if the derived type and that of its
+	component are the same.
+	* trans-types.c (gfc_get_derived_type): Do the same for proc
+	pointers by ignoring the explicit interface for the component.
+
+	PR fortran/66465
+	* check.c (same_type_check): If either of the expressions is
+	BT_PROCEDURE, use the typespec from the symbol, rather than the
+	expression.
+
 2013-10-19  Paul Thomas  <pault@gcc.gnu.org>
 
 	Backport from trunk

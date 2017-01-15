@@ -1,3 +1,131 @@
+2016-08-03  Release Manager
+
+	* GCC 4.9.4 released.
+
+2016-07-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/69223
+	* semantics.c (apply_deduced_return_type): Call
+	complete_type_or_else before building the new RESULT_DECL.
+
+	PR c++/71913
+	* call.c (unsafe_copy_elision_p): It's OK to elide when
+	initializing an unknown object.
+
+2016-07-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71909
+	* parser.c (cp_parser_save_member_function_body): Consume
+	__transaction_relaxed or __transaction_atomic with optional
+	attribute.  Only skip catch with block if try keyword is seen.
+
+2016-07-19  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-07-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/71871
+	* typeck.c (build_x_conditional_expr): Revert the 2012-10-25 change.
+
+2016-07-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-02-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/67767
+	* parser.c (cp_parser_std_attribute_spec_seq): Don't assume
+	attr_spec is always single element chain, chain all the attributes
+	properly together in the right order.
+
+2016-05-18  Jason Merrill  <jason@redhat.com>
+
+	PR c++/70505
+	* pt.c (tsubst_baselink): Give the new TEMPLATE_ID_EXPR
+	unknown_type_node, too.
+
+2016-04-13  Alan Modra  <amodra@gmail.com>
+
+	Backport from mainline
+	2016-03-22  Patrick Palka  <ppalka@gcc.gnu.org>
+	PR target/70107
+	PR c++/70096
+	* pt.c (tsubst_decl): Clear the DECL_MODE of the new decl.
+
+2016-03-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backported from mainline
+	2014-12-19  Kai Tietz  <ktietz@redhat.com>
+
+	PR c++/61198
+	* pt.c (most_general_template): Don't break for template-alias.
+
+2016-03-03  Jason Merrill  <jason@redhat.com>
+
+	PR c++/65061
+	* parser.c (cp_parser_template_name): Call strip_using_decl.
+
+2016-02-25  Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	Backported from mainline
+	2016-02-19  Jakub Jelinek  <jakub@redhat.com>
+		    Bernd Edlinger  <bernd.edlinger@hotmail.de>
+
+	* Make-lang.in: Invoke gperf with -L C++.
+	* cfns.gperf: Remove prototypes for hash and libc_name_p
+	inlines.
+	* cfns.h: Regenerated.
+	* except.c (nothrow_libfn_p): Adjust.
+
+2016-02-11  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-02-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/59627
+	* parser.c (cp_parser_omp_declare_reduction): Set assembler name
+	of the DECL_OMP_DECLARE_REDUCTION_P decls.
+
+2016-02-10  Jason Merrill  <jason@redhat.com>
+
+	PR c++/68926
+	* pt.c (resolve_nondeduced_context): Add complain parm.
+	(do_auto_deduction): Pass it.
+	* cvt.c (convert_to_void): Likewise.
+	* decl.c (cp_finish_decl): Likewise.
+	* init.c (build_new): Likewise.
+	* rtti.c (get_tinfo_decl_dynamic): Likewise.
+	* semantics.c (finish_decltype_type): Likewise.
+	* typeck.c (decay_conversion): Likewise.
+	* cp-tree.h: Adjust declaration.
+
+2016-01-07  Jason Merrill  <jason@redhat.com>
+
+	PR c++/68983
+	PR c++/67557
+	* call.c (unsafe_copy_elision_p): Look through COMPOUND_EXPR.
+
+2015-12-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/66921
+	* decl.c (cp_complete_array_type): Allow an initializer that
+	already has array type.
+
+2015-12-17  Jason Merrill  <jason@redhat.com>
+
+	PR c++/67576
+	PR c++/25466
+	* rtti.c (build_typeid): Use save_expr, not stabilize_reference.
+
+	PR c++/67557
+	* call.c (is_base_field_ref): New.
+	(unsafe_copy_elision_p): New.
+	(build_over_call): Use it.
+
+2015-12-04  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	PR c++/67337
+	* mangle.c (write_template_prefix): Guard against context==NULL.
+
 2015-08-17  Jason Merrill  <jason@redhat.com>
 
 	PR c++/66957

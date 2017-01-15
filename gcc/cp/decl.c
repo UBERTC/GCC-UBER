@@ -6215,7 +6215,7 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
       if (TREE_CODE (d_init) == TREE_LIST)
 	d_init = build_x_compound_expr_from_list (d_init, ELK_INIT,
 						  tf_warning_or_error);
-      d_init = resolve_nondeduced_context (d_init);
+      d_init = resolve_nondeduced_context (d_init, tf_warning_or_error);
       type = TREE_TYPE (decl) = do_auto_deduction (type, d_init,
 						   auto_node);
       if (type == error_mark_node)
@@ -7138,7 +7138,8 @@ cp_complete_array_type (tree *ptype, tree initial_value, bool do_default)
 
   /* Don't get confused by a CONSTRUCTOR for some other type.  */
   if (initial_value && TREE_CODE (initial_value) == CONSTRUCTOR
-      && !BRACE_ENCLOSED_INITIALIZER_P (initial_value))
+      && !BRACE_ENCLOSED_INITIALIZER_P (initial_value)
+      && TREE_CODE (TREE_TYPE (initial_value)) != ARRAY_TYPE)
     return 1;
 
   if (initial_value)

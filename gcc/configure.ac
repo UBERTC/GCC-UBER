@@ -2098,7 +2098,7 @@ AC_ARG_WITH(plugin-ld,
 [AS_HELP_STRING([[--with-plugin-ld=[ARG]]], [specify the plugin linker])],
 [if test x"$withval" != x; then
    ORIGINAL_PLUGIN_LD_FOR_TARGET="$withval"
-   PLUGIN_LD_SUFFIX=`echo $withval | sed -e "s,$target_alias-,,"`
+   PLUGIN_LD_SUFFIX="$withval"
  fi])
 AC_SUBST(ORIGINAL_PLUGIN_LD_FOR_TARGET)
 AC_DEFINE_UNQUOTED(PLUGIN_LD_SUFFIX, "$PLUGIN_LD_SUFFIX", [Specify plugin linker])
@@ -2745,6 +2745,11 @@ fi
 AC_DEFINE_UNQUOTED(HAVE_GAS_SHF_MERGE,
   [`if test $gcc_cv_as_shf_merge = yes; then echo 1; else echo 0; fi`],
 [Define 0/1 if your assembler supports marking sections with SHF_MERGE flag.])
+
+gcc_GAS_CHECK_FEATURE([stabs directive], gcc_cv_as_stabs_directive, ,,
+[.stabs "gcc2_compiled.",60,0,0,0],,
+[AC_DEFINE(HAVE_AS_STABS_DIRECTIVE, 1,
+  [Define if your assembler supports .stabs.])])
 
 gcc_GAS_CHECK_FEATURE([COMDAT group support (GNU as)],
  gcc_cv_as_comdat_group,
@@ -5535,6 +5540,8 @@ if test "x${CLOOGLIBS}" != "x" ; then
 
   # Check whether isl_schedule_constraints_compute_schedule is available;
   # it's new in ISL-0.13.
+  # Check whether isl_options_set_schedule_serialize_sccs is available;
+  # it's new in ISL-0.15.
   saved_CFLAGS="$CFLAGS"
   CFLAGS="$CFLAGS $ISLINC"
   saved_LIBS="$LIBS"
@@ -5547,12 +5554,24 @@ if test "x${CLOOGLIBS}" != "x" ; then
               [ac_has_isl_schedule_constraints_compute_schedule=no])
   AC_MSG_RESULT($ac_has_isl_schedule_constraints_compute_schedule)
 
+  AC_MSG_CHECKING([Checking for isl_options_set_schedule_serialize_sccs])
+  AC_TRY_LINK([#include <isl/schedule.h>],
+              [isl_options_set_schedule_serialize_sccs (NULL, 0);],
+              [ac_has_isl_options_set_schedule_serialize_sccs=yes],
+              [ac_has_isl_options_set_schedule_serialize_sccs=no])
+  AC_MSG_RESULT($ac_has_isl_options_set_schedule_serialize_sccs)
+
   LIBS="$saved_LIBS"
   CFLAGS="$saved_CFLAGS"
 
   if test x"$ac_has_isl_schedule_constraints_compute_schedule" = x"yes"; then
      AC_DEFINE(HAVE_ISL_SCHED_CONSTRAINTS_COMPUTE_SCHEDULE, 1,
                [Define if isl_schedule_constraints_compute_schedule exists.])
+  fi
+
+  if test x"$ac_has_isl_options_set_schedule_serialize_sccs" = x"yes"; then
+     AC_DEFINE(HAVE_ISL_OPTIONS_SET_SCHEDULE_SERIALIZE_SCCS, 1,
+               [Define if isl_options_set_schedule_serialize_sccs exists.])
   fi
 fi
 

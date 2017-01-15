@@ -141,7 +141,8 @@ next_char (st_parameter_dt *dtp)
       dtp->u.p.at_eol = 0;
       c = dtp->u.p.last_char;
       dtp->u.p.last_char = EOF - 1;
-      goto done;
+      dtp->u.p.at_eol = (c == '\n' || c == '\r' || c == EOF);
+      return c;
     }
 
   /* Read from line_buffer if enabled.  */
@@ -155,7 +156,8 @@ next_char (st_parameter_dt *dtp)
 	{
 	  dtp->u.p.line_buffer[dtp->u.p.line_buffer_pos] = '\0';
 	  dtp->u.p.line_buffer_pos++;
-	  goto done;
+	  dtp->u.p.at_eol = (c == '\n' || c == '\r' || c == EOF);
+	  return c;
 	}
 
       dtp->u.p.line_buffer_pos = 0;
@@ -1006,21 +1008,6 @@ read_character (st_parameter_dt *dtp, int length __attribute__ ((unused)))
     default:
       if (dtp->u.p.namelist_mode)
 	{
-	  if (dtp->u.p.current_unit->delim_status == DELIM_NONE)
-	    {
-	      /* No delimiters so finish reading the string now.  */
-	      int i;
-	      push_char (dtp, c);
-	      for (i = dtp->u.p.ionml->string_length; i > 1; i--)
-		{
-		  if ((c = next_char (dtp)) == EOF)
-		    goto done_eof;
-		  push_char (dtp, c);
-		}
-	      dtp->u.p.saved_type = BT_CHARACTER;
-	      free_line (dtp);
-	      return;
-	    }
 	  unget_char (dtp, c);
 	  return;
 	}

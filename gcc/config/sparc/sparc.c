@@ -4980,13 +4980,18 @@ sparc_compute_frame_size (HOST_WIDE_INT size, int leaf_function)
 
   /* Calculate space needed for global registers.  */
   if (TARGET_ARCH64)
-    for (i = 0; i < 8; i++)
-      if (save_global_or_fp_reg_p (i, 0))
-	n_global_fp_regs += 2;
+    {
+      for (i = 0; i < 8; i++)
+	if (save_global_or_fp_reg_p (i, 0))
+	  n_global_fp_regs += 2;
+    }
   else
-    for (i = 0; i < 8; i += 2)
-      if (save_global_or_fp_reg_p (i, 0) || save_global_or_fp_reg_p (i + 1, 0))
-	n_global_fp_regs += 2;
+    {
+      for (i = 0; i < 8; i += 2)
+	if (save_global_or_fp_reg_p (i, 0)
+	    || save_global_or_fp_reg_p (i + 1, 0))
+	  n_global_fp_regs += 2;
+    }
 
   /* In the flat window model, find out which local and in registers need to
      be saved.  We don't reserve space in the current frame for them as they
@@ -7384,9 +7389,10 @@ sparc_function_value_1 (const_tree type, enum machine_mode mode,
 	mode = word_mode;
     }
 
-  /* We should only have pointer and integer types at this point.  This must
-     match sparc_promote_function_mode.  */
+  /* We should only have pointer and integer types at this point, except with
+     -freg-struct-return.  This must match sparc_promote_function_mode.  */
   else if (TARGET_ARCH32
+	   && !(type && AGGREGATE_TYPE_P (type))
 	   && mclass == MODE_INT
 	   && GET_MODE_SIZE (mode) < UNITS_PER_WORD)
     mode = word_mode;

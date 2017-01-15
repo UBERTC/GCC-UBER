@@ -546,7 +546,8 @@
 
 ;; Pointer size override for scalar modes (Intel asm dialect)
 (define_mode_attr iptr
-  [(V32QI "b") (V16HI "w") (V8SI "k") (V4DI "q")
+  [(V16SI "k") (V8DI "q")
+   (V32QI "b") (V16HI "w") (V8SI "k") (V4DI "q")
    (V16QI "b") (V8HI "w") (V4SI "k") (V2DI "q")
    (V8SF "k") (V4DF "q")
    (V4SF "k") (V2DF "q")
@@ -655,7 +656,7 @@
 
 (define_insn "*mov<mode>_internal"
   [(set (match_operand:VMOVE 0 "nonimmediate_operand"               "=v,v ,m")
-	(match_operand:VMOVE 1 "nonimmediate_or_sse_const_operand"  "C ,vm,v"))]
+	(match_operand:VMOVE 1 "nonimmediate_or_sse_const_operand"  "BC,vm,v"))]
   "TARGET_SSE
    && (register_operand (operands[0], <MODE>mode)
        || register_operand (operands[1], <MODE>mode))"
@@ -9725,13 +9726,13 @@
 {
   int mask = INTVAL (operands[3]);
   if (mask == 0)
-    emit_insn (gen_vec_set_lo_<mode>_mask
-      (operands[0], operands[1], operands[2],
-       operands[4], operands[5]));
+    emit_insn (gen_vec_set_lo_<mode>_mask (operands[0], operands[1],
+					   operands[2], operands[4],
+					   operands[5]));
   else
-    emit_insn (gen_vec_set_hi_<mode>_mask
-      (operands[0], operands[1], operands[2],
-       operands[4], operands[5]));
+    emit_insn (gen_vec_set_hi_<mode>_mask (operands[0], operands[1],
+					   operands[2], operands[4],
+					   operands[5]));
   DONE;
 })
 
@@ -9742,7 +9743,7 @@
 	  (vec_select:<ssehalfvecmode>
 	    (match_operand:V8FI 1 "register_operand" "v")
 	    (parallel [(const_int 4) (const_int 5)
-              (const_int 6) (const_int 7)]))))]
+		       (const_int 6) (const_int 7)]))))]
   "TARGET_AVX512F"
   "vinsert<shuffletype>64x4\t{$0x0, %2, %1, %0<mask_operand3>|%0<mask_operand3>, %1, %2, $0x0}"
   [(set_attr "type" "sselog")
@@ -9753,11 +9754,11 @@
 (define_insn "vec_set_hi_<mode><mask_name>"
   [(set (match_operand:V8FI 0 "register_operand" "=v")
 	(vec_concat:V8FI
-	  (match_operand:<ssehalfvecmode> 2 "nonimmediate_operand" "vm")
 	  (vec_select:<ssehalfvecmode>
 	    (match_operand:V8FI 1 "register_operand" "v")
 	    (parallel [(const_int 0) (const_int 1)
-              (const_int 2) (const_int 3)]))))]
+		       (const_int 2) (const_int 3)]))
+	  (match_operand:<ssehalfvecmode> 2 "nonimmediate_operand" "vm")))]
   "TARGET_AVX512F"
   "vinsert<shuffletype>64x4\t{$0x1, %2, %1, %0<mask_operand3>|%0<mask_operand3>, %1, %2, $0x1}"
   [(set_attr "type" "sselog")

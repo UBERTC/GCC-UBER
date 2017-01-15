@@ -6936,7 +6936,7 @@ finish_decltype_type (tree expr, bool id_expression_or_member_access_p,
 
   /* The type denoted by decltype(e) is defined as follows:  */
 
-  expr = resolve_nondeduced_context (expr);
+  expr = resolve_nondeduced_context (expr, complain);
 
   if (invalid_nonstatic_memfn_p (expr, complain))
     return error_mark_node;
@@ -10662,6 +10662,10 @@ apply_deduced_return_type (tree fco, tree return_type)
   if (result == NULL_TREE)
     return;
   if (TREE_TYPE (result) == return_type)
+    return;
+
+  if (!processing_template_decl && !VOID_TYPE_P (return_type)
+      && !complete_type_or_else (return_type, NULL_TREE))
     return;
 
   /* We already have a DECL_RESULT from start_preparsed_function.

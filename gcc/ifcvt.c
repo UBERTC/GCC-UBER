@@ -2096,12 +2096,26 @@ noce_try_abs (struct noce_if_info *if_info)
 
   /* Work around funny ideas get_condition has wrt canonicalization.
      Note that these rtx constants are known to be CONST_INT, and
-     therefore imply integer comparisons.  */
+     therefore imply integer comparisons.
+     The one_cmpl case is more complicated, as we want to handle
+     only x < 0 ? ~x : x or x >= 0 ? x : ~x to one_cmpl_abs (x)
+     and x < 0 ? x : ~x or x >= 0 ? ~x : x to ~one_cmpl_abs (x),
+     but not other cases (x > -1 is equivalent of x >= 0).  */
   if (c == constm1_rtx && GET_CODE (cond) == GT)
     ;
   else if (c == const1_rtx && GET_CODE (cond) == LT)
-    ;
-  else if (c != CONST0_RTX (GET_MODE (b)))
+    {
+      if (one_cmpl)
+	return FALSE;
+    }
+  else if (c == CONST0_RTX (GET_MODE (b)))
+    {
+      if (one_cmpl
+	  && GET_CODE (cond) != GE
+	  && GET_CODE (cond) != LT)
+	return FALSE;
+    }
+  else
     return FALSE;
 
   /* Determine what sort of operation this is.  */
@@ -3753,8 +3767,11 @@ find_cond_trap (basic_block test_bb, edge then_edge, edge else_edge)
     return FALSE;
 
   /* If the conditional jump is more than just a conditional jump, then
-     we can not do if-conversion on this block.  */
-  if (! onlyjump_p (jump))
+     we can not do if-conversion on this block.  Give up for returnjump_p,
+     changing a conditional return followed by unconditional trap for
+     conditional trap followed by unconditional return is likely not
+     beneficial and harder to handle.  */
+  if (! onlyjump_p (jump) || returnjump_p (jump))
     return FALSE;
 
   /* We must be comparing objects whose modes imply the size.  */

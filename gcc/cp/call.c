@@ -6734,6 +6734,43 @@ mark_versions_used (tree fn)
     }
 }
 
+/* Return true iff T refers to a base field.  */
+
+static bool
+is_base_field_ref (tree t)
+{
+  STRIP_NOPS (t);
+  if (TREE_CODE (t) == ADDR_EXPR)
+    t = TREE_OPERAND (t, 0);
+  if (TREE_CODE (t) == COMPONENT_REF)
+    t = TREE_OPERAND (t, 1);
+  if (TREE_CODE (t) == FIELD_DECL)
+    return DECL_FIELD_IS_BASE (t);
+  return false;
+}
+
+/* We can't elide a copy from a function returning by value to a base
+   subobject, as the callee might clobber tail padding.  Return true iff this
+   could be that case.  */
+
+static bool
+unsafe_copy_elision_p (tree target, tree exp)
+{
+  tree type = TYPE_MAIN_VARIANT (TREE_TYPE (exp));
+  /* It's safe to elide the copy for a class with no tail padding.  */
+  if (tree_int_cst_equal (TYPE_SIZE (type), CLASSTYPE_SIZE (type)))
+    return false;
+  /* It's safe to elide the copy if we aren't initializing a base object.  */
+  if (!is_base_field_ref (target))
+    return false;
+  tree init = TARGET_EXPR_INITIAL (exp);
+  /* build_compound_expr pushes COMPOUND_EXPR inside TARGET_EXPR.  */
+  while (TREE_CODE (init) == COMPOUND_EXPR)
+    init = TREE_OPERAND (init, 1);
+  return (TREE_CODE (init) == AGGR_INIT_EXPR
+	  && !AGGR_INIT_VIA_CTOR_P (init));
+}
+
 /* Subroutine of the various build_*_call functions.  Overload resolution
    has chosen a winning candidate CAND; build up a CALL_EXPR accordingly.
    ARGS is a TREE_LIST of the unconverted arguments to the call.  FLAGS is a
@@ -7133,7 +7170,9 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
 	  else if (trivial)
 	    return force_target_expr (DECL_CONTEXT (fn), arg, complain);
 	}
-      else if (TREE_CODE (arg) == TARGET_EXPR || trivial)
+      else if (trivial
+	       || (TREE_CODE (arg) == TARGET_EXPR
+		   && !unsafe_copy_elision_p (fa, arg)))
 	{
 	  tree to = stabilize_reference (cp_build_indirect_ref (fa, RO_NULL,
 								complain));

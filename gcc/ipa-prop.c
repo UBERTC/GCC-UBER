@@ -971,10 +971,10 @@ ipa_load_from_parm_agg_1 (vec<ipa_param_descriptor> descriptors,
 bool
 ipa_load_from_parm_agg (struct ipa_node_params *info, gimple stmt,
 			tree op, int *index_p, HOST_WIDE_INT *offset_p,
-			bool *by_ref_p)
+			HOST_WIDE_INT *size_p, bool *by_ref_p)
 {
   return ipa_load_from_parm_agg_1 (info->descriptors, NULL, stmt, op, index_p,
-				   offset_p, NULL, by_ref_p);
+				   offset_p, size_p, by_ref_p);
 }
 
 /* Given that an actual argument is an SSA_NAME (given in NAME) and is a result
@@ -1373,6 +1373,9 @@ determine_known_aggregate_parts (gimple call, tree arg, tree arg_type,
   tree arg_base;
   bool check_ref, by_ref;
   ao_ref r;
+
+  if (PARAM_VALUE (PARAM_IPA_MAX_AGG_ITEMS) == 0)
+    return;
 
   /* The function operates in three stages.  First, we prepare check_ref, r,
      arg_base and arg_offset based on what is actually passed as an actual

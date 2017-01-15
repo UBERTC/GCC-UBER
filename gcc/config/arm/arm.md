@@ -3361,8 +3361,22 @@
   "#"   ; "orr%?\\t%0, %1, %2\;bic%?\\t%0, %0, %3"
   "&& reload_completed"
   [(set (match_dup 0) (ior:SI (match_dup 1) (match_dup 2)))
-   (set (match_dup 0) (and:SI (not:SI (match_dup 3)) (match_dup 0)))]
-  ""
+   (set (match_dup 0) (and:SI (match_dup 4) (match_dup 5)))]
+  {
+     /* If operands[3] is a constant make sure to fold the NOT into it
+	to avoid creating a NOT of a CONST_INT.  */
+    rtx not_rtx = simplify_gen_unary (NOT, SImode, operands[3], SImode);
+    if (CONST_INT_P (not_rtx))
+      {
+	operands[4] = operands[0];
+	operands[5] = not_rtx;
+      }
+    else
+      {
+	operands[5] = operands[0];
+	operands[4] = not_rtx;
+      }
+  }
   [(set_attr "length" "8")
    (set_attr "ce_count" "2")
    (set_attr "predicable" "yes")
@@ -6226,7 +6240,7 @@
   [(set (match_operand:SI 0 "nonimmediate_operand" "=r")
 	(lo_sum:SI (match_operand:SI 1 "nonimmediate_operand" "0")
 		   (match_operand:SI 2 "general_operand"      "i")))]
-  "arm_arch_thumb2"
+  "arm_arch_thumb2 && arm_valid_symbolic_address_p (operands[2])"
   "movt%?\t%0, #:upper16:%c2"
   [(set_attr "predicable" "yes")
    (set_attr "predicable_short_it" "no")
@@ -7220,7 +7234,7 @@
 (define_insn "*arm32_movhf"
   [(set (match_operand:HF 0 "nonimmediate_operand" "=r,m,r,r")
 	(match_operand:HF 1 "general_operand"	   " m,r,r,F"))]
-  "TARGET_32BIT && !(TARGET_HARD_FLOAT && TARGET_FP16) && !arm_restrict_it
+  "TARGET_32BIT && !(TARGET_HARD_FLOAT && TARGET_FP16)
    && (	  s_register_operand (operands[0], HFmode)
        || s_register_operand (operands[1], HFmode))"
   "*
@@ -7258,7 +7272,8 @@
   [(set_attr "conds" "unconditional")
    (set_attr "type" "load1,store1,mov_reg,multiple")
    (set_attr "length" "4,4,4,8")
-   (set_attr "predicable" "yes")]
+   (set_attr "predicable" "yes")
+   (set_attr "predicable_short_it" "no")]
 )
 
 (define_insn "*thumb1_movhf"

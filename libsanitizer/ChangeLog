@@ -1,3 +1,24 @@
+2016-08-03  Release Manager
+
+	* GCC 4.9.4 released.
+
+2016-07-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-05-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/71160
+	* asan/asan_malloc_linux.cc: Cherry pick upstream r254395
+	and r269633.
+
+2016-04-05  Maxim Ostapenko  <m.ostapenko@samsung.com>
+
+	PR sanitizer/70474
+	* asan/asan_mac.cc (GetMacosVersionInternal): Cherry pick
+	upstream r241487, 221379 and r224315.
+	(void MaybeReexec): Cherry pick upstream r241487.
+	* asan/asan_mac.h (enum MacosVersion): Cherry pick upstream r224315.
+
 2015-06-26  Release Manager
 
 	* GCC 4.9.3 released.

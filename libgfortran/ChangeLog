@@ -1,3 +1,27 @@
+2016-08-03  Release Manager
+
+	* GCC 4.9.4 released.
+
+2016-05-05  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk.
+	PR libgfortran/70684
+	* io/list_read (next_char): Add '\r' to check for end of line.
+	factor. (two places)
+
+2016-04-05  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+	    Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR libgfortran/70235
+	* io/write_float.def: Fix PF format for negative values of the scale
+	factor.
+
+2016-02-18  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from gcc-5-branch.
+	PR libgfortran/69668
+	* io/list_read.c (read_character): Remove code related to DELIM_NONE.
+
 2015-08-28  James Greenhalgh  <james.greenhalgh@arm.com>
 
 	Backport from gcc-5-branch.
