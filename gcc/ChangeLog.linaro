@@ -1,3 +1,8 @@
+2017-01-16  Yvan Roux  <yvan.roux@linaro.org>
+
+	GCC Linaro 4.9-2017.01 snapshot.
+	* LINARO-VERSION: Update.
+
 2016-08-29  Yvan Roux  <yvan.roux@linaro.org>
 
 	* LINARO-VERSION: Bump version.
