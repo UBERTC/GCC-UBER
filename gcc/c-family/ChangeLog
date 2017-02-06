@@ -1,3 +1,21 @@
+2017-01-24  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-09-06  Richard Biener  <rguenther@suse.de>
+
+	PR c/77450
+	* c-common.c (c_common_mark_addressable_vec): Handle
+	COMPOUND_LITERAL_EXPR.
+
+2017-01-10  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-05  Martin Liska  <mliska@suse.cz>
+
+	PR pch/78970
+	* c-opts.c (c_common_post_options): Reject '-' filename for a precompiled
+	header.
+
 2016-07-07  Jakub Jelinek  <jakub@redhat.com>
 
 	Backported from mainline

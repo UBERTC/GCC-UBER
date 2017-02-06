@@ -1,3 +1,362 @@
+2017-02-03  Maxim Ostapenko  <m.ostapenko@samsung.com>
+
+	PR lto/79061
+	* asan.c (asan_add_global): Force has_dynamic_init to zero in LTO mode.
+
+2017-01-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-01-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/79034
+	* tree-call-cdce.c (shrink_wrap_one_built_in_call_with_conds):
+	Propagate out degenerate PHIs in the joiner.
+
+	2016-11-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/78224
+	* tree-call-cdce.c (shrink_wrap_one_built_in_call_with_conds):
+	Split the fallthru edge in case its successor may have PHIs.
+	Do not free dominance info.
+
+2017-01-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-09-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77745
+	* tree-ssa-pre.c (eliminate_dom_walker::before_dom_children):
+	When removing redundant stores make sure to check compatibility
+	of the TBAA state for downstream accesses.
+	* tree-ssa-sccvn.c (visit_reference_op_store): Likewise for when
+	value-numbering virtual operands for store matches.
+
+	2016-09-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77768
+	* tree-ssa-sccvn.c (visit_reference_op_store): Properly deal
+	with stores to a place we know has a constant value.
+	* tree-vrp.c (set_defs_to_varying): New helper avoiding
+	writing to vr_const_varying.
+	(vrp_initialize): Call it.
+	(vrp_visit_stmt): Likewise.
+	(evrp_dom_walker::before_dom_children): Likewise.
+	* tree-ssa-pre.c (eliminate_dom_walker::before_dom_children):
+	Handle stores to readonly memory when removing redundant stores.
+
+2017-01-24  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	Backport from mainline
+	PR target/78041
+	* config/arm/neon.md (ashldi3_neon): Add "r 0 i" and "&r r i" variants.
+	Remove partial overlap check for shift by 1.
+	(ashldi3_neon): Likewise.
+
+2017-01-24  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-09-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77646
+	* tree-ssa-sccvn.c (visit_reference_op_call): Always value-number
+	a VDEF.
+
+	2016-11-05  David Edelsohn  <dje.gcc@gmail.com>
+		Richard Biener  <rguenther@suse.de>
+
+	PR bootstrap/78188
+	PR c++/71848
+	* ipa-comdats.c (pass_ipa_comdats::gate): Require HAVE_COMDAT_GROUP.
+
+	2016-09-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77648
+	* tree-ssa-structalias.c (process_constraint): Handle all DEREF
+	with complex RHS.
+	(make_transitive_closure_constraints): Adjust comment.
+	(make_any_offset_constraints): New function.
+	(handle_rhs_call): Make sure to first expand a pointer to all
+	subfields before transitively closing it.
+	(handle_const_call): Likewise.  Properly expand returned
+	pointers as well.
+	(handle_pure_call): Likewise.
+
+	2016-10-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77879
+	* tree-ssa-structalias.c (handle_const_call): Properly handle
+	NRV return slots.
+	(handle_pure_call): Likewise.
+
+2017-01-24  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-10-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77855
+	* tree-ssa-pre.c (prune_clobbered_mems): Queue exprs to remove
+	instead of removing the current item while iterating over the set
+	which is not safe.
+
+	2016-09-01  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/77436
+	* tree-chrec.c (tree_fold_binomial): Use widest_int, properly
+	check whether the result fits the desired result type.
+
+	2016-09-19  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/77605
+	* tree-data-ref.c (analyze_subscript_affine_affine): Use the
+	proper niter to bound the loops.
+
+	2016-11-02  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/78047
+	* tree-ssa-structalias.c (push_fields_onto_fieldstack): Initialize
+	fake field at offset zero conservatively regarding to may_have_pointers.
+
+	2016-11-02  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/78185
+	* loop-invariant.c (find_invariant_insn): Never hoist trapping or
+	faulting instructions.
+	* tree-ssa-loop-im.c: Include tree-ssa-loop-niter.h.
+	(fill_always_executed_in_1): Honor infinite child loops.
+
+	2016-11-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/78333
+	* gimplify.c (gimplify_function_tree): Do not instrument
+	GNU extern inline functions.
+
+2017-01-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	PR lto/69188
+	* tree-profile.c (init_ic_make_global_vars): Do not call
+	finalize_decl.
+	(gimple_init_gcov_profiler): Likewise.
+
+2017-01-21  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	Backport from mainline
+	2016-12-29  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/extend.texi (Cilk Plus Builtins): cilkplus.org now uses
+	https by default.
+	* doc/passes.texi (Cilk Plus Transformation): Ditto.
+	* doc/generic.texi (Statements for C++): Ditto, and use @uref.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-13  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/79043
+	* function.c (set_cfun): Add new argument force.
+	* function.h (set_cfun): Likewise.
+	* ipa-inline-transform.c (inline_call): Use the function when
+	strict alising from is dropped for function we inline to.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-03-26  Richard Biener  <rguenther@suse.de>
+	            Prathamesh Kulkarni  <prathamesh.kulkarni@linaro.org>
+
+	PR ipa/70366
+	* ipa-inline-transform.c (inline_call): Pass opts_for_fn (to->decl)
+	instead of
+	TREE_OPTIMIZATION (DECL_FUNCTION_SPECIFIC_OPTIMIZATION (to->decl))
+	as 2nd argument to cl_optimization_restore().
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2015-12-01  Jan Hubicka  <hubicka@ucw.cz>
+
+	* c-common.c (parse_optimize_options): Do not silently ignore
+	-fstrict-aliasing changes.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-01-01  Jan Hubicka  <hubicka@ucw.cz>
+
+	* ipa-inline-transform.c (inline_call): Drop
+	-fstrict-aliasing when 	inlining -fno-strict-aliasing into
+	-fstrict-aliasing body.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-17  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/71207
+	* ipa-polymorphic-call.c (contains_type_p): Fix wrong
+	assumption and add comment.
+
+2017-01-17 Thomas Preud'homme <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-12-07 Thomas Preud'homme <thomas.preudhomme@arm.com>
+
+	PR rtl-optimization/78617
+	* lra-remat.c (do_remat): Initialize live_hard_regs from live in
+	registers, also setting hard registers mapped to pseudo registers.
+
+2017-01-11  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from mainline r244320.
+	2017-01-11  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	PR target/78253
+	* config/arm/arm.c (legitimize_pic_address): Handle reference to
+	weak symbol.
+	(arm_assemble_integer): Likewise.
+
+2016-01-12  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* postreload.c (reload_cse_simplify): Check for NO_FUNCTION_CSE
+	definition instead of using it directly.
+
+2017-01-12  Maxim Ostapenko  <m.ostapenko@samsung.com>
+
+	Backport from mainline
+	2017-01-12  Maxim Ostapenko  <m.ostapenko@samsung.com>
+
+	PR lto/79042
+	* lto-cgraph.c (lto_output_varpool_node): Pack dynamically_initialized
+	bit.
+	(input_varpool_node): Unpack dynamically_initialized bit.
+	* lto-streamer.h (LTO_minor_version): Bump version.
+
+2017-01-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (memory_address_length): Increase len
+	only when rip_relative_addr_p returns false.
+
+2017-01-11  Andre Vieira <andre.simoesdiasvieira@arm.com>
+
+	Backport from mainline
+	2016-12-09  Andre Vieira <andre.simoesdiasvieira@arm.com>
+
+	PR rtl-optimization/78255
+	* gcc/postreload.c (reload_cse_simplify): Do not CSE a function if
+	NO_FUNCTION_CSE is true.
+
+2017-01-10  Bill Seurer  <seurer@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-21  Bill Seurer  <seurer@linux.vnet.ibm.com>
+
+	PR sanitizer/65479
+	* config/rs6000/rs6000.c (rs6000_option_override_internal): Add
+	-fasynchronous-unwind-tables option when -fsanitize=address is
+	specified.
+
+2017-01-10  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-09  Martin Liska  <mliska@suse.cz>
+
+	PR pch/78970
+	* gcc.c (driver_handle_option): Handle OPT_E and set
+	have_E.
+	(lookup_compiler): Do not show error message with have_E.
+
+2017-01-10  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-05  Martin Liska  <mliska@suse.cz>
+
+	PR pch/78970
+	* gcc.c (lookup_compiler): Reject '-' filename for a precompiled
+	header.
+
+2017-01-10  Chung-Ju Wu  <jasonwucj@gmail.com>
+
+	Backport from mainline
+	2016-04-28  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/70668
+	* config/nds32/nds32.md (casesi): Don't access the operands array
+	out of bounds.
+
+2017-01-09  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2016-10-10  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config.gcc: Add aarch64-*-freebsd* support.
+	* config.host: Likewise.
+	* config/aarch64/aarch64-freebsd.h: New file.
+	* config/aarch64/t-aarch64-freebsd: Ditto.
+
+2017-01-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-12-22  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/78886
+	* tree-ssa-strlen.c (handle_builtin_malloc): Return when LHS
+	is equal to NULL.
+
+2017-01-03  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-12-13  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/78428
+	* expr.c (store_constructor_field): Add new arguments to the
+	function.
+	(store_constructor): Set up bitregion_end and add
+	gcc_unreachable to fields that have either non-constant size
+	or (and) offset.
+
+2016-12-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR translation/78922
+	* config/i386/stringop.opt: Remove.
+
+2016-12-14  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/78731
+	* tree-ssa-threadedge.c (simplify_control_stmt_condition):
+	If we've seen a backedge to not walk the SSA value chain.
+	(thread_around_empty_blocks): Pass down whether we've seen
+	a backedge to simplify_control_stmt_condition.
+	(thread_through_normal_block): Likewise.
+
+2016-12-14  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-11-25  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* tree-ssa-math-opts.c (struct symbolic_number): Improve comment.
+
+2016-12-14  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-11-25  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR tree-optimization/77673
+	* tree-ssa-math-opts.c (struct symbolic_number): Add new src field.
+	(init_symbolic_number): Initialize src field from src parameter.
+	(perform_symbolic_merge): Select most dominated statement as the
+	source statement.  Set src field of resulting n structure from the
+	input src with the lowest address.
+	(find_bswap_or_nop): Rename source_stmt into ins_stmt.
+	(bswap_replace): Rename src_stmt into ins_stmt.  Initially get source
+	of load from src field rather than insertion statement.  Cancel
+	optimization if statement analyzed is not dominated by the insertion
+	statement.
+	(pass_optimize_bswap::execute): Rename src_stmt to ins_stmt.  Compute
+	dominance information.
+
 2016-12-13  Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
 	Backport from mainline
