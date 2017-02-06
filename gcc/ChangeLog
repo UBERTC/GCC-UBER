@@ -1,3 +1,316 @@
+2017-02-03  Carl Love  <cel@us.ibm.com>
+
+	Backport of two commits from mainline, r244943 and r244904,
+	dated 017-01-26 and 2017-01-25 respectively
+
+	* config/rs6000/rs6000-c (altivec_overloaded_builtins): Fix order
+	of entries for ALTIVEC_BUILTIN_VEC_PACKS.  Remove bogus entries
+	for P8V_BUILTIN_VEC_VGBBD.
+
+2017-02-03  Walter Lee  <walt@tilera.com>
+
+	Backport from mainline
+	2017-02-03  Walter Lee  <walt@tilera.com>
+
+	PR target/78862
+	* config/tilegx/tilegx.md (tilegx_expand_prologue): Add blockage
+	after initial stackframe link reg save.
+	* config/tilepro/tilepro.md (tilepro_expand_prologue): Likewise.
+
+2017-02-03  Maxim Ostapenko  <m.ostapenko@samsung.com>
+
+	PR lto/79061
+	* asan.c (asan_add_global): Force has_dynamic_init to zero in LTO mode.
+
+2017-01-31  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-01-29  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/79268
+	* config/rs6000/altivec.h (vec_xl): Revise #define.
+	(vec_xst): Likewise.
+
+2017-01-26  Eric Botcazou  <ebotcazou@adacore.com>
+
+	Backport from mainline
+	2017-01-10  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* expr.c (store_field): In the bitfield case, fetch the return value
+	from the registers before applying a single big-endian adjustment.
+	Always do a final load for a BLKmode value not larger than a word.
+
+	2017-01-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* expr.c (store_field): In the bitfield case, if the value comes from
+	a function call and is of an aggregate type returned in registers, do
+	not modify the field mode; extract the value in all cases if the mode
+	is BLKmode and the size is not larger than a word.
+
+2017-01-26  Richard Biener  <rguenther@suse.de>
+
+	* tree-vrp.c (vrp_visit_assignment_or_call): Use set_defs_to_varying.
+
+	Backport from mainline
+	2016-01-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/79034
+	* tree-call-cdce.c (shrink_wrap_one_built_in_call_with_conds):
+	Propagate out degenerate PHIs in the joiner.
+
+	2016-12-13  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/78742
+	* tree.c (cst_and_fits_in_hwi): Look if the actual value fits.
+	* tree-object-size.c (compute_builtin_object_size): Use
+	tree_fits_shwi_p.
+	* tree-data-ref.c (initialize_matrix_A): Remove excess assert.
+
+2017-01-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-09-03  Kirill Yukhin  <kirill.yukhin@intel.com>
+
+	* ubsan.c (ubsan_use_new_style_p): Fix check for empty string.
+
+2017-01-24  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR target/77439
+	* config/arm/arm.c (arm_function_ok_for_sibcall): Add back restriction
+	for long calls with APCS frame and VFP.
+
+2017-01-24  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78478
+	Revert:
+	2013-11-05  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/rtemself.h (LONG_DOUBLE_TYPE_SIZE): New define.
+
+2017-01-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	PR lto/69188
+	* tree-profile.c (init_ic_make_global_vars): Do not call
+	finalize_decl.
+	(gimple_init_gcov_profiler): Likewise.
+
+2017-01-21  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	Backport from mainline
+	2016-12-29  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/extend.texi (Cilk Plus Builtins): cilkplus.org now uses
+	https by default.
+	* doc/passes.texi (Cilk Plus Transformation): Ditto.
+	* doc/generic.texi (Statements for C++): Ditto, and use @uref.
+
+2017-01-20  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-01-16  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.c (rtx_is_swappable_p): Change
+	UNSPEC_VSX__XXSPLTD to require special splat handling.
+
+2017-01-20  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	Backport from mainline
+	PR target/77455
+	* config/aarch64/aarch64.md (eh_return): Remove pattern and splitter.
+	* config/aarch64/aarch64.h (AARCH64_EH_STACKADJ_REGNUM): Remove.
+	(EH_RETURN_HANDLER_RTX): New define.
+	* config/aarch64/aarch64.c (aarch64_frame_pointer_required):
+	Force frame pointer in EH return functions.
+	(aarch64_expand_epilogue): Add barrier for eh_return.
+	(aarch64_final_eh_return_addr): Remove.
+	(aarch64_eh_return_handler_rtx): New function.
+	* config/aarch64/aarch64-protos.h (aarch64_final_eh_return_addr):
+	Remove.
+	(aarch64_eh_return_handler_rtx): New prototype.
+
+2017-01-20  Richard Earnshaw  <rearnsha@arm.com>
+
+	Backported from mainline
+	2017-01-19  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR rtl-optimization/79121
+	* expr.c (expand_expr_real_2, case LSHIFT_EXPR): Look at the signedness
+	of the inner type when shifting an extended value.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-13  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/79043
+	* function.c (set_cfun): Add new argument force.
+	* function.h (set_cfun): Likewise.
+	* ipa-inline-transform.c (inline_call): Use the function when
+	strict alising from is dropped for function we inline to.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-17  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/71207
+	* ipa-polymorphic-call.c (contains_type_p): Fix wrong
+	assumption and add comment.
+
+2017-01-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/72488
+	* tree-ssa-sccvn.c (run_scc_vn): When we abort the VN make
+	sure to restore SSA info.
+
+2017-01-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/78839
+	* dwarf2out.c (field_byte_offset): Restore the
+	PCC_BITFIELD_TYPE_MATTERS behavior for INTEGER_CST DECL_FIELD_OFFSET
+	and DECL_FIELD_BIT_OFFSET.  Use fold_build2 instead of build2 + fold.
+	(analyze_variants_discr, gen_variant_part): Use fold_build2 instead
+	of build2 + fold.
+
+2017-01-17  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-12-07  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR rtl-optimization/78617
+	* lra-remat.c (do_remat): Initialize live_hard_regs from live in
+	registers, also setting hard registers mapped to pseudo registers.
+
+2017-01-13  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from mainline r244320.
+	2017-01-11  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	PR target/78253
+	* config/arm/arm.c (legitimize_pic_address): Handle reference to
+	weak symbol.
+	(arm_assemble_integer): Likewise.
+
+2017-01-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-01-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/79044
+	* config/rs6000/rs6000.c (insn_is_swappable_p): Mark
+	element-reversing loads and stores as not swappable.
+
+2017-01-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (memory_address_length): Increase len
+	only when rip_relative_addr_p returns false.
+
+2017-01-11  Maxim Ostapenko  <m.ostapenko@samsung.com>
+
+	Backport from mainline
+	2017-01-11  Maxim Ostapenko  <m.ostapenko@samsung.com>
+
+	PR lto/79042
+	* lto-cgraph.c (lto_output_varpool_node): Pack dynamically_initialized
+	bit.
+	(input_varpool_node): Unpack dynamically_initialized bit.
+	* lto-streamer.h (LTO_minor_version): Bump version.
+
+2017-01-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-30  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/78900
+	* config/rs6000/rs6000.c (rs6000_split_signbit): Change some
+	assertions.  Add support for doing the signbit if the IEEE 128-bit
+	floating point value is in a GPR.
+	* config/rs6000/rs6000.md (Fsignbit): Delete.
+	(signbit<mode>2_dm): Delete using <Fsignbit> and just use "wa".
+	Update the length attribute if the value is in a GPR.
+	(signbit<mode>2_dm_<su>ext): Add combiner pattern to eliminate
+	the sign or zero extension instruction, since the value is always
+	0/1.
+	(signbit<mode>2_dm2): Delete using <Fsignbit>.
+
+2017-01-10  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-09  Martin Liska  <mliska@suse.cz>
+
+	PR pch/78970
+	* gcc.c (driver_handle_option): Handle OPT_E and set
+	have_E.
+	(lookup_compiler): Do not show error message with have_E.
+
+2017-01-10  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-05  Martin Liska  <mliska@suse.cz>
+
+	PR pch/78970
+	* gcc.c (lookup_compiler): Reject '-' filename for a precompiled
+	header.
+
+2017-01-10  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR tree-optimization/78024
+	* omp-low.c (oacc_loop_discovery): Call clear_bb_flags.
+
+	Backport trunk r239086:
+	2016-08-03  Nathan Sidwell  <nathan@codesourcery.com>
+
+	* config/nvptx/nvptx.c (nvptx_declare_function_name): Round frame
+	size to DImode boundary.
+	(nvptx_propagate): Likewise.
+
+2017-01-10  Chung-Ju Wu  <jasonwucj@gmail.com>
+
+	Backport from mainline
+	2016-04-28  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR target/70668
+	* config/nds32/nds32.md (casesi): Don't access the operands array
+	out of bounds.
+
+2017-01-09  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2016-10-10  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config.gcc: Add aarch64-*-freebsd* support.
+	* config.host: Likewise.
+	* config/aarch64/aarch64-freebsd.h: New file.
+	* config/aarch64/t-aarch64-freebsd: Ditto.
+
+2017-01-09  Bill Seurer  <seurer@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-12-21  Bill Seurer  <seurer@linux.vnet.ibm.com>
+
+	PR sanitizer/65479
+	* config/rs6000/rs6000.c (rs6000_option_override_internal): Add
+	-fasynchronous-unwind-tables option when -fsanitize=address is
+	specified.
+
+2017-01-09  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2016-09-19  Richard Biener  <rguenther@suse.de>
+
+	* dwarf2out.c (dwarf2out_late_global_decl): When being during the
+	early debug phase do not add locations but only const value
+	attributes.
+
+	Backport from mainline
+	2016-10-20  Richard Biener  <rguenther@suse.de>
+
+	* cgraphunit.c (analyze_functions): Set node->definition to
+	false to signal symbol removal to debug_hooks->late_global_decl.
+
 2017-01-09  Andre Vieira <andre.simoesdiasvieira@arm.com>
 
 	Backport from mainline

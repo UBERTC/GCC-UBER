@@ -1,3 +1,212 @@
+2017-02-03  Carl Love  <cel@us.ibm.com>
+
+	* gcc.target/powerpc/builtins-3-p8.c:  Add new testfile for missing
+	vec_packs built-in tests.
+
+2017-02-03  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-01-27  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65484
+	* g++.dg/vect/pr36648.cc: Modify to reflect that the loop is not
+	vectorized on POWER unless hardware misaligned loads are
+	available.
+
+2017-01-31  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-01-29  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/79268
+	* gcc.target/powerpc/pr79268.c: New file.
+	* gcc.target/powerpc/vsx-elemrev-1.c: Delete file.
+	* gcc.target/powerpc/vsx-elemrev-2.c: Likewise.
+	* gcc.target/powerpc/vsx-elemrev-3.c: Likewise.
+	* gcc.target/powerpc/vsx-elemrev-4.c: Likewise.
+
+2017-01-29  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk
+	2017-01-13  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/70697
+	* gfortran.dg/coarray/event_4.f08: New test.
+
+2017-01-29  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	Backport from trunk
+	2017-01-19  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/70696
+	* gfortran.dg/coarray_43.f90: New test.
+
+	2017-01-18  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/70696
+	* gfortran.dg/coarray_event_1.f08: New test.
+
+	2017-01-13  Andre Vehreschild  <vehre@gcc.gnu.org>
+
+	PR fortran/70696
+	* gfortran.dg/coarray/event_3.f08: New test.
+
+2017-01-28  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR testsuite/70583
+	* g++.old-deja/g++.abi/vtable2.C: Adjust CMP_VPTR define on hppa.
+
+2017-01-26  Eric Botcazou  <ebotcazou@adacore.com>
+
+	2017-01-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* g++.dg/opt/call2.C: New test.
+	* g++.dg/opt/call3.C: Likewise.
+	* gnat.dg/array26.adb: New test.
+	* gnat.dg/array26_pkg.ad[sb]: New helper.
+	* gnat.dg/array27.adb: New test.
+	* gnat.dg/array27_pkg.ad[sb]: New helper.
+	* gnat.dg/array28.adb: New test.
+	* gnat.dg/array28_pkg.ad[sb]: New helper.
+
+2017-01-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-01-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/79034
+	* g++.dg/torture/pr79034.C: New testcase.
+
+	2016-12-13  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/78742
+	* gcc.dg/torture/pr78742.c: New testcase.
+
+2017-01-24  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/arm/vfp-longcall-apcs.c: New test.
+
+2017-01-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-01-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.dg/lto/pr69188_0.c: Require profiling support for testcase.
+
+2017-01-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	PR lto/69188
+	* gcc.dg/lto/pr69188_0.c: New test.
+	* gcc.dg/lto/pr69188_1.c: New test.
+
+2017-01-20  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-01-16  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/swaps-p8-27.c: New.
+
+2017-01-20  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	Backport from mainline
+	PR target/77455
+	* gcc.target/aarch64/eh_return.c: New test.
+
+2017-01-20  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2017-01-04  Marek Polacek  <polacek@redhat.com>
+
+	PR c++/77545
+	PR c++/77284
+	* g++.dg/cpp0x/range-for32.C: New test.
+	* g++.dg/cpp0x/range-for33.C: New test.
+
+2017-01-20  Richard Earnshaw  <rearnsha@arm.com>
+
+	Backported from mainline
+	2017-01-19  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR rtl-optimization/79121
+	* gcc.c-torture/execute/pr79121.c: New test.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-13  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/79043
+	* gcc.c-torture/execute/pr79043.c: New test.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-17  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/71207
+	* g++.dg/ipa/pr71207.C: New test.
+
+2017-01-17  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-01-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/78341
+	* g++.dg/cpp0x/pr78341.C: New test.
+
+	PR middle-end/50199
+	* gcc.dg/lto/pr50199_0.c: New test.
+
+	2017-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/78949
+	* c-c++-common/Wunused-var-16.c: New test.
+
+	PR c++/78693
+	* g++.dg/cpp0x/pr78693.C: New test.
+
+	PR c++/71182
+	* g++.dg/cpp0x/pr71182.C: New test.
+
+	2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/78866
+	* gfortran.dg/gomp/map-1.f90: Add expected error.
+	* gfortran.dg/gomp/pr78866-1.f90: New test.
+	* gfortran.dg/gomp/pr78866-2.f90: New test.
+
+2017-01-17  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-12-07  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR rtl-optimization/78617
+	* gcc.c-torture/execute/pr78617.c: New test.
+
+2017-01-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-01-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/79044
+	* gcc.target/powerpc/swaps-p8-26.c: New.
+
+2017-01-11  Nathan Sidwell  <nathan@acm.org>
+
+	PR c++/77812
+	* g++.dg/pr77812.C: New.
+
+2017-01-10  Thomas Schwinge  <thomas@codesourcery.com>
+
+	Backport from trunk r241334:
+	2016-10-19  Thomas Schwinge  <thomas@codesourcery.com>
+
+	PR tree-optimization/78024
+	* gcc.dg/goacc/loop-processing-1.c: New file.
+
 2017-01-09  Andre Vieira <andre.simoesdiasvieira@arm.com>
 
 	Backport from mainline

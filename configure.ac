@@ -820,7 +820,7 @@ case "${target}" in
     noconfigdirs="$noconfigdirs ${libgcj}"
     ;;
   aarch64*-*-freebsd*)
-    noconfigdirs="$noconfigdirs target-libffi"
+    noconfigdirs="$noconfigdirs ${libgcj}"
     ;;
   alpha*-*-*vms*)
     noconfigdirs="$noconfigdirs ${libgcj}"
