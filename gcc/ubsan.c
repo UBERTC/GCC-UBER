@@ -408,7 +408,9 @@ ubsan_type_descriptor (tree type, enum ubsan_print_style pstyle)
 	{
 	  pp_left_bracket (&pretty_name);
 	  tree dom = TYPE_DOMAIN (t);
-	  if (dom && TREE_CODE (TYPE_MAX_VALUE (dom)) == INTEGER_CST)
+	  if (dom != NULL_TREE
+	      && TYPE_MAX_VALUE (dom) != NULL_TREE
+	      && TREE_CODE (TYPE_MAX_VALUE (dom)) == INTEGER_CST)
 	    {
 	      if (tree_fits_uhwi_p (TYPE_MAX_VALUE (dom))
 		  && tree_to_uhwi (TYPE_MAX_VALUE (dom)) + 1 != 0)
@@ -1471,7 +1473,7 @@ ubsan_use_new_style_p (location_t loc)
 
   expanded_location xloc = expand_location (loc);
   if (xloc.file == NULL || strncmp (xloc.file, "\1", 2) == 0
-      || xloc.file == '\0' || xloc.file[0] == '\xff'
+      || xloc.file[0] == '\0' || xloc.file[0] == '\xff'
       || xloc.file[1] == '\xff')
     return false;
 

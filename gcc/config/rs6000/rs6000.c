@@ -14180,6 +14180,8 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
     }
   else if (icode == CODE_FOR_vsx_xxpermdi_v2df
            || icode == CODE_FOR_vsx_xxpermdi_v2di
+           || icode == CODE_FOR_vsx_xxpermdi_v2df_be
+           || icode == CODE_FOR_vsx_xxpermdi_v2di_be
            || icode == CODE_FOR_vsx_xxsldwi_v16qi
            || icode == CODE_FOR_vsx_xxsldwi_v8hi
            || icode == CODE_FOR_vsx_xxsldwi_v4si
@@ -17080,6 +17082,7 @@ builtin_function_type (machine_mode mode_ret, machine_mode mode_arg0,
       break;
 
       /* unsigned args, signed return.  */
+    case VSX_BUILTIN_XVCVUXDSP:
     case VSX_BUILTIN_XVCVUXDDP_UNS:
     case ALTIVEC_BUILTIN_UNSFLOAT_V4SI_V4SF:
       h.uns_p[1] = 1;
@@ -38588,6 +38591,7 @@ rtx_is_swappable_p (rtx op, unsigned int *special)
 	  case UNSPEC_VSX_CVSPDPN:
 	    return 0;
 	  case UNSPEC_VSPLT_DIRECT:
+	  case UNSPEC_VSX_XXSPLTD:
 	    *special = SH_SPLAT;
 	    return 1;
 	  case UNSPEC_REDUC_PLUS:
