@@ -273,9 +273,9 @@ static const struct cpu_addrcost_table qdf24xx_addrcost_table =
 static const struct cpu_addrcost_table thunderx2t99_addrcost_table =
 {
     {
-      0, /* hi  */
-      0, /* si  */
-      0, /* di  */
+      1, /* hi  */
+      1, /* si  */
+      1, /* di  */
       2, /* ti  */
     },
   0, /* pre_modify  */
@@ -365,10 +365,12 @@ static const struct cpu_regmove_cost thunderx2t99_regmove_cost =
 /* Generic costs for vector insn classes.  */
 static const struct cpu_vector_cost generic_vector_cost =
 {
-  1, /* scalar_stmt_cost  */
+  1, /* scalar_int_stmt_cost  */
+  1, /* scalar_fp_stmt_cost  */
   1, /* scalar_load_cost  */
   1, /* scalar_store_cost  */
-  1, /* vec_stmt_cost  */
+  1, /* vec_int_stmt_cost  */
+  1, /* vec_fp_stmt_cost  */
   2, /* vec_permute_cost  */
   1, /* vec_to_scalar_cost  */
   1, /* scalar_to_vec_cost  */
@@ -383,10 +385,12 @@ static const struct cpu_vector_cost generic_vector_cost =
 /* ThunderX costs for vector insn classes.  */
 static const struct cpu_vector_cost thunderx_vector_cost =
 {
-  1, /* scalar_stmt_cost  */
+  1, /* scalar_int_stmt_cost  */
+  1, /* scalar_fp_stmt_cost  */
   3, /* scalar_load_cost  */
   1, /* scalar_store_cost  */
-  4, /* vec_stmt_cost  */
+  4, /* vec_int_stmt_cost  */
+  4, /* vec_fp_stmt_cost  */
   4, /* vec_permute_cost  */
   2, /* vec_to_scalar_cost  */
   2, /* scalar_to_vec_cost  */
@@ -401,10 +405,12 @@ static const struct cpu_vector_cost thunderx_vector_cost =
 /* Generic costs for vector insn classes.  */
 static const struct cpu_vector_cost cortexa57_vector_cost =
 {
-  1, /* scalar_stmt_cost  */
+  1, /* scalar_int_stmt_cost  */
+  1, /* scalar_fp_stmt_cost  */
   4, /* scalar_load_cost  */
   1, /* scalar_store_cost  */
-  2, /* vec_stmt_cost  */
+  2, /* vec_int_stmt_cost  */
+  2, /* vec_fp_stmt_cost  */
   3, /* vec_permute_cost  */
   8, /* vec_to_scalar_cost  */
   8, /* scalar_to_vec_cost  */
@@ -418,10 +424,12 @@ static const struct cpu_vector_cost cortexa57_vector_cost =
 
 static const struct cpu_vector_cost exynosm1_vector_cost =
 {
-  1, /* scalar_stmt_cost  */
+  1, /* scalar_int_stmt_cost  */
+  1, /* scalar_fp_stmt_cost  */
   5, /* scalar_load_cost  */
   1, /* scalar_store_cost  */
-  3, /* vec_stmt_cost  */
+  3, /* vec_int_stmt_cost  */
+  3, /* vec_fp_stmt_cost  */
   3, /* vec_permute_cost  */
   3, /* vec_to_scalar_cost  */
   3, /* scalar_to_vec_cost  */
@@ -436,10 +444,12 @@ static const struct cpu_vector_cost exynosm1_vector_cost =
 /* Generic costs for vector insn classes.  */
 static const struct cpu_vector_cost xgene1_vector_cost =
 {
-  1, /* scalar_stmt_cost  */
+  1, /* scalar_int_stmt_cost  */
+  1, /* scalar_fp_stmt_cost  */
   5, /* scalar_load_cost  */
   1, /* scalar_store_cost  */
-  2, /* vec_stmt_cost  */
+  2, /* vec_int_stmt_cost  */
+  2, /* vec_fp_stmt_cost  */
   2, /* vec_permute_cost  */
   4, /* vec_to_scalar_cost  */
   4, /* scalar_to_vec_cost  */
@@ -454,10 +464,12 @@ static const struct cpu_vector_cost xgene1_vector_cost =
 /* Costs for vector insn classes for Vulcan.  */
 static const struct cpu_vector_cost thunderx2t99_vector_cost =
 {
-  6, /* scalar_stmt_cost  */
+  1, /* scalar_int_stmt_cost  */
+  6, /* scalar_fp_stmt_cost  */
   4, /* scalar_load_cost  */
   1, /* scalar_store_cost  */
-  6, /* vec_stmt_cost  */
+  5, /* vec_int_stmt_cost  */
+  6, /* vec_fp_stmt_cost  */
   3, /* vec_permute_cost  */
   6, /* vec_to_scalar_cost  */
   5, /* scalar_to_vec_cost  */
@@ -780,7 +792,7 @@ static const struct tune_params thunderx2t99_tunings =
   &generic_approx_modes,
   4, /* memmov_cost.  */
   4, /* issue_rate.  */
-  AARCH64_FUSE_NOTHING, /* fuseable_ops.  */
+  (AARCH64_FUSE_CMP_BRANCH | AARCH64_FUSE_AES_AESMC), /* fusible_ops  */
   16,	/* function_align.  */
   8,	/* jump_align.  */
   16,	/* loop_align.  */
@@ -2762,6 +2774,10 @@ aarch64_frame_pointer_required (void)
       && (!crtl->is_leaf || df_regs_ever_live_p (LR_REGNUM)))
     return true;
 
+  /* Force a frame pointer for EH returns so the return address is at FP+8.  */
+  if (crtl->calls_eh_return)
+    return true;
+
   return false;
 }
 
@@ -3117,6 +3133,22 @@ aarch64_gen_load_pair (machine_mode mode, rtx reg1, rtx mem1, rtx reg2,
     default:
       gcc_unreachable ();
     }
+}
+
+/* Return TRUE if return address signing should be enabled for the current
+   function, otherwise return FALSE.  */
+
+bool
+aarch64_return_address_signing_enabled (void)
+{
+  /* This function should only be called after frame laid out.   */
+  gcc_assert (cfun->machine->frame.laid_out);
+
+  /* If signing scope is AARCH64_FUNCTION_NON_LEAF, we only sign a leaf function
+     if it's LR is pushed onto stack.  */
+  return (aarch64_ra_sign_scope == AARCH64_FUNCTION_ALL
+	  || (aarch64_ra_sign_scope == AARCH64_FUNCTION_NON_LEAF
+	      && cfun->machine->frame.reg_offset[LR_REGNUM] >= 0));
 }
 
 /* Emit code to save the callee-saved registers from register number START
@@ -3537,6 +3569,14 @@ aarch64_expand_prologue (void)
   unsigned reg2 = cfun->machine->frame.wb_candidate2;
   rtx_insn *insn;
 
+  /* Sign return address for functions.  */
+  if (aarch64_return_address_signing_enabled ())
+    {
+      insn = emit_insn (gen_pacisp ());
+      add_reg_note (insn, REG_CFA_TOGGLE_RA_MANGLE, const0_rtx);
+      RTX_FRAME_RELATED_P (insn) = 1;
+    }
+
   if (flag_stack_usage_info)
     current_function_static_stack_size = frame_size;
 
@@ -3620,7 +3660,8 @@ aarch64_expand_epilogue (bool for_sibcall)
 			 + cfun->machine->frame.saved_varargs_size) != 0;
 
   /* Emit a barrier to prevent loads from a deallocated stack.  */
-  if (final_adjust > crtl->outgoing_args_size || cfun->calls_alloca)
+  if (final_adjust > crtl->outgoing_args_size || cfun->calls_alloca
+      || crtl->calls_eh_return)
     {
       emit_insn (gen_stack_tie (stack_pointer_rtx, stack_pointer_rtx));
       need_barrier_p = false;
@@ -3672,6 +3713,29 @@ aarch64_expand_epilogue (bool for_sibcall)
       RTX_FRAME_RELATED_P (insn) = 1;
     }
 
+  /* We prefer to emit the combined return/authenticate instruction RETAA,
+     however there are three cases in which we must instead emit an explicit
+     authentication instruction.
+
+	1) Sibcalls don't return in a normal way, so if we're about to call one
+	   we must authenticate.
+
+	2) The RETAA instruction is not available before ARMv8.3-A, so if we are
+	   generating code for !TARGET_ARMV8_3 we can't use it and must
+	   explicitly authenticate.
+
+	3) On an eh_return path we make extra stack adjustments to update the
+	   canonical frame address to be the exception handler's CFA.  We want
+	   to authenticate using the CFA of the function which calls eh_return.
+    */
+  if (aarch64_return_address_signing_enabled ()
+      && (for_sibcall || !TARGET_ARMV8_3 || crtl->calls_eh_return))
+    {
+      insn = emit_insn (gen_autisp ());
+      add_reg_note (insn, REG_CFA_TOGGLE_RA_MANGLE, const0_rtx);
+      RTX_FRAME_RELATED_P (insn) = 1;
+    }
+
   /* Stack adjustment for exception handler.  */
   if (crtl->calls_eh_return)
     {
@@ -3688,52 +3752,40 @@ aarch64_expand_epilogue (bool for_sibcall)
     emit_jump_insn (ret_rtx);
 }
 
-/* Return the place to copy the exception unwinding return address to.
-   This will probably be a stack slot, but could (in theory be the
-   return register).  */
+/* Implement EH_RETURN_HANDLER_RTX.  EH returns need to either return
+   normally or return to a previous frame after unwinding.
+
+   An EH return uses a single shared return sequence.  The epilogue is
+   exactly like a normal epilogue except that it has an extra input
+   register (EH_RETURN_STACKADJ_RTX) which contains the stack adjustment
+   that must be applied after the frame has been destroyed.  An extra label
+   is inserted before the epilogue which initializes this register to zero,
+   and this is the entry point for a normal return.
+
+   An actual EH return updates the return address, initializes the stack
+   adjustment and jumps directly into the epilogue (bypassing the zeroing
+   of the adjustment).  Since the return address is typically saved on the
+   stack when a function makes a call, the saved LR must be updated outside
+   the epilogue.
+
+   This poses problems as the store is generated well before the epilogue,
+   so the offset of LR is not known yet.  Also optimizations will remove the
+   store as it appears dead, even after the epilogue is generated (as the
+   base or offset for loading LR is different in many cases).
+
+   To avoid these problems this implementation forces the frame pointer
+   in eh_return functions so that the location of LR is fixed and known early.
+   It also marks the store volatile, so no optimization is permitted to
+   remove the store.  */
 rtx
-aarch64_final_eh_return_addr (void)
+aarch64_eh_return_handler_rtx (void)
 {
-  HOST_WIDE_INT fp_offset;
+  rtx tmp = gen_frame_mem (Pmode,
+    plus_constant (Pmode, hard_frame_pointer_rtx, UNITS_PER_WORD));
 
-  aarch64_layout_frame ();
-
-  fp_offset = cfun->machine->frame.frame_size
-	      - cfun->machine->frame.hard_fp_offset;
-
-  if (cfun->machine->frame.reg_offset[LR_REGNUM] < 0)
-    return gen_rtx_REG (DImode, LR_REGNUM);
-
-  /* DSE and CSELIB do not detect an alias between sp+k1 and fp+k2.  This can
-     result in a store to save LR introduced by builtin_eh_return () being
-     incorrectly deleted because the alias is not detected.
-     So in the calculation of the address to copy the exception unwinding
-     return address to, we note 2 cases.
-     If FP is needed and the fp_offset is 0, it means that SP = FP and hence
-     we return a SP-relative location since all the addresses are SP-relative
-     in this case.  This prevents the store from being optimized away.
-     If the fp_offset is not 0, then the addresses will be FP-relative and
-     therefore we return a FP-relative location.  */
-
-  if (frame_pointer_needed)
-    {
-      if (fp_offset)
-        return gen_frame_mem (DImode,
-			      plus_constant (Pmode, hard_frame_pointer_rtx, UNITS_PER_WORD));
-      else
-        return gen_frame_mem (DImode,
-			      plus_constant (Pmode, stack_pointer_rtx, UNITS_PER_WORD));
-    }
-
-  /* If FP is not needed, we calculate the location of LR, which would be
-     at the top of the saved registers block.  */
-
-  return gen_frame_mem (DImode,
-			plus_constant (Pmode,
-				       stack_pointer_rtx,
-				       fp_offset
-				       + cfun->machine->frame.saved_regs_size
-				       - 2 * UNITS_PER_WORD));
+  /* Mark the store volatile, so no optimization is permitted to remove it.  */
+  MEM_VOLATILE_P (tmp) = true;
+  return tmp;
 }
 
 /* Output code to add DELTA to the first argument, and then jump
@@ -5747,7 +5799,10 @@ aarch64_elf_asm_constructor (rtx symbol, int priority)
   else
     {
       section *s;
-      char buf[18];
+      /* While priority is known to be in range [0, 65535], so 18 bytes
+         would be enough, the compiler might not know that.  To avoid
+         -Wformat-truncation false positive, use a larger size.  */
+      char buf[23];
       snprintf (buf, sizeof (buf), ".init_array.%.5u", priority);
       s = get_section (buf, SECTION_WRITE, NULL);
       switch_to_section (s);
@@ -5764,7 +5819,10 @@ aarch64_elf_asm_destructor (rtx symbol, int priority)
   else
     {
       section *s;
-      char buf[18];
+      /* While priority is known to be in range [0, 65535], so 18 bytes
+         would be enough, the compiler might not know that.  To avoid
+         -Wformat-truncation false positive, use a larger size.  */
+      char buf[23];
       snprintf (buf, sizeof (buf), ".fini_array.%.5u", priority);
       s = get_section (buf, SECTION_WRITE, NULL);
       switch_to_section (s);
@@ -8073,50 +8131,55 @@ aarch64_builtin_vectorization_cost (enum vect_cost_for_stmt type_of_cost,
 				    int misalign ATTRIBUTE_UNUSED)
 {
   unsigned elements;
+  const cpu_vector_cost *costs = aarch64_tune_params.vec_costs;
+  bool fp = false;
+
+  if (vectype != NULL)
+    fp = FLOAT_TYPE_P (vectype);
 
   switch (type_of_cost)
     {
       case scalar_stmt:
-	return aarch64_tune_params.vec_costs->scalar_stmt_cost;
+	return fp ? costs->scalar_fp_stmt_cost : costs->scalar_int_stmt_cost;
 
       case scalar_load:
-	return aarch64_tune_params.vec_costs->scalar_load_cost;
+	return costs->scalar_load_cost;
 
       case scalar_store:
-	return aarch64_tune_params.vec_costs->scalar_store_cost;
+	return costs->scalar_store_cost;
 
       case vector_stmt:
-	return aarch64_tune_params.vec_costs->vec_stmt_cost;
+	return fp ? costs->vec_fp_stmt_cost : costs->vec_int_stmt_cost;
 
       case vector_load:
-	return aarch64_tune_params.vec_costs->vec_align_load_cost;
+	return costs->vec_align_load_cost;
 
       case vector_store:
-	return aarch64_tune_params.vec_costs->vec_store_cost;
+	return costs->vec_store_cost;
 
       case vec_to_scalar:
-	return aarch64_tune_params.vec_costs->vec_to_scalar_cost;
+	return costs->vec_to_scalar_cost;
 
       case scalar_to_vec:
-	return aarch64_tune_params.vec_costs->scalar_to_vec_cost;
+	return costs->scalar_to_vec_cost;
 
       case unaligned_load:
-	return aarch64_tune_params.vec_costs->vec_unalign_load_cost;
+	return costs->vec_unalign_load_cost;
 
       case unaligned_store:
-	return aarch64_tune_params.vec_costs->vec_unalign_store_cost;
+	return costs->vec_unalign_store_cost;
 
       case cond_branch_taken:
-	return aarch64_tune_params.vec_costs->cond_taken_branch_cost;
+	return costs->cond_taken_branch_cost;
 
       case cond_branch_not_taken:
-	return aarch64_tune_params.vec_costs->cond_not_taken_branch_cost;
+	return costs->cond_not_taken_branch_cost;
 
       case vec_perm:
-	return aarch64_tune_params.vec_costs->vec_permute_cost;
+	return costs->vec_permute_cost;
 
       case vec_promote_demote:
-	return aarch64_tune_params.vec_costs->vec_stmt_cost;
+	return fp ? costs->vec_fp_stmt_cost : costs->vec_int_stmt_cost;
 
       case vec_construct:
         elements = TYPE_VECTOR_SUBPARTS (vectype);
@@ -8896,6 +8959,9 @@ aarch64_override_options (void)
     error ("Assembler does not support -mabi=ilp32");
 #endif
 
+  if (aarch64_ra_sign_scope != AARCH64_FUNCTION_NONE && TARGET_ILP32)
+    sorry ("Return address signing is only supported for -mabi=lp64");
+
   /* Make sure we properly set up the explicit options.  */
   if ((aarch64_cpu_string && valid_cpu)
        || (aarch64_tune_string && valid_tune))
@@ -9279,6 +9345,8 @@ static const struct aarch64_attribute_info aarch64_attributes[] =
   { "cpu", aarch64_attr_custom, false, aarch64_handle_attr_cpu, OPT_mcpu_ },
   { "tune", aarch64_attr_custom, false, aarch64_handle_attr_tune,
      OPT_mtune_ },
+  { "sign-return-address", aarch64_attr_enum, false, NULL,
+     OPT_msign_return_address_ },
   { NULL, aarch64_attr_custom, false, NULL, OPT____ }
 };
 
@@ -10777,6 +10845,8 @@ aarch64_simd_container_mode (machine_mode mode, unsigned width)
 	    return V2DFmode;
 	  case SFmode:
 	    return V4SFmode;
+	  case HFmode:
+	    return V8HFmode;
 	  case SImode:
 	    return V4SImode;
 	  case HImode:
@@ -10793,6 +10863,8 @@ aarch64_simd_container_mode (machine_mode mode, unsigned width)
 	  {
 	  case SFmode:
 	    return V2SFmode;
+	  case HFmode:
+	    return V4HFmode;
 	  case SImode:
 	    return V2SImode;
 	  case HImode:
@@ -10842,21 +10914,6 @@ aarch64_mangle_type (const_tree type)
 
   /* Use the default mangling.  */
   return NULL;
-}
-
-
-/* Return true if the rtx_insn contains a MEM RTX somewhere
-   in it.  */
-
-static bool
-has_memory_op (rtx_insn *mem_insn)
-{
-  subrtx_iterator::array_type array;
-  FOR_EACH_SUBRTX (iter, array, PATTERN (mem_insn), ALL)
-    if (MEM_P (*iter))
-      return true;
-
-  return false;
 }
 
 /* Find the first rtx_insn before insn that will generate an assembly
@@ -10951,7 +11008,7 @@ aarch64_madd_needs_nop (rtx_insn* insn)
      Restore recog state to INSN to avoid state corruption.  */
   extract_constrain_insn_cached (insn);
 
-  if (!prev || !has_memory_op (prev))
+  if (!prev || !contains_mem_rtx_p (PATTERN (prev)))
     return false;
 
   body = single_set (prev);
@@ -11244,14 +11301,16 @@ aarch64_mov_operand_p (rtx x, machine_mode mode)
 
 /* Return a const_int vector of VAL.  */
 rtx
-aarch64_simd_gen_const_vector_dup (machine_mode mode, int val)
+aarch64_simd_gen_const_vector_dup (machine_mode mode, HOST_WIDE_INT val)
 {
   int nunits = GET_MODE_NUNITS (mode);
   rtvec v = rtvec_alloc (nunits);
   int i;
 
+  rtx cache = GEN_INT (val);
+
   for (i=0; i < nunits; i++)
-    RTVEC_ELT (v, i) = GEN_INT (val);
+    RTVEC_ELT (v, i) = cache;
 
   return gen_rtx_CONST_VECTOR (mode, v);
 }
@@ -14077,6 +14136,26 @@ aarch64_sched_fusion_priority (rtx_insn *insn, int max_pri,
   return;
 }
 
+/* Implement the TARGET_SCHED_ADJUST_PRIORITY hook.
+   Adjust priority of sha1h instructions so they are scheduled before
+   other SHA1 instructions.  */
+
+static int
+aarch64_sched_adjust_priority (rtx_insn *insn, int priority)
+{
+  rtx x = PATTERN (insn);
+
+  if (GET_CODE (x) == SET)
+    {
+      x = SET_SRC (x);
+
+      if (GET_CODE (x) == UNSPEC && XINT (x, 1) == UNSPEC_SHA1H)
+	return priority + 10;
+    }
+
+  return priority;
+}
+
 /* Given OPERANDS of consecutive load/store, check if we can merge
    them into ldp/stp.  LOAD is true if they are load instructions.
    MODE is the mode of memory operands.  */
@@ -14607,6 +14686,35 @@ aarch64_excess_precision (enum excess_precision_type type)
   return FLT_EVAL_METHOD_UNPREDICTABLE;
 }
 
+/* Implement TARGET_SCHED_CAN_SPECULATE_INSN.  Return true if INSN can be
+   scheduled for speculative execution.  Reject the long-running division
+   and square-root instructions.  */
+
+static bool
+aarch64_sched_can_speculate_insn (rtx_insn *insn)
+{
+  switch (get_attr_type (insn))
+    {
+      case TYPE_SDIV:
+      case TYPE_UDIV:
+      case TYPE_FDIVS:
+      case TYPE_FDIVD:
+      case TYPE_FSQRTS:
+      case TYPE_FSQRTD:
+      case TYPE_NEON_FP_SQRT_S:
+      case TYPE_NEON_FP_SQRT_D:
+      case TYPE_NEON_FP_SQRT_S_Q:
+      case TYPE_NEON_FP_SQRT_D_Q:
+      case TYPE_NEON_FP_DIV_S:
+      case TYPE_NEON_FP_DIV_D:
+      case TYPE_NEON_FP_DIV_S_Q:
+      case TYPE_NEON_FP_DIV_D_Q:
+	return false;
+      default:
+	return true;
+    }
+}
+
 /* Target-specific selftests.  */
 
 #if CHECKING_P
@@ -14995,8 +15103,14 @@ aarch64_libgcc_floating_mode_supported_p
 #define TARGET_USE_BY_PIECES_INFRASTRUCTURE_P \
   aarch64_use_by_pieces_infrastructure_p
 
+#undef TARGET_SCHED_CAN_SPECULATE_INSN
+#define TARGET_SCHED_CAN_SPECULATE_INSN aarch64_sched_can_speculate_insn
+
 #undef TARGET_CAN_USE_DOLOOP_P
 #define TARGET_CAN_USE_DOLOOP_P can_use_doloop_if_innermost
+
+#undef TARGET_SCHED_ADJUST_PRIORITY
+#define TARGET_SCHED_ADJUST_PRIORITY aarch64_sched_adjust_priority
 
 #undef TARGET_SCHED_MACRO_FUSION_P
 #define TARGET_SCHED_MACRO_FUSION_P aarch64_macro_fusion_p
@@ -15024,6 +15138,10 @@ aarch64_libgcc_floating_mode_supported_p
 
 #undef TARGET_OMIT_STRUCT_RETURN_REG
 #define TARGET_OMIT_STRUCT_RETURN_REG true
+
+/* The architecture reserves bits 0 and 1 so use bit 2 for descriptors.  */
+#undef TARGET_CUSTOM_FUNCTION_DESCRIPTORS
+#define TARGET_CUSTOM_FUNCTION_DESCRIPTORS 4
 
 #if CHECKING_P
 #undef TARGET_RUN_TARGET_SELFTESTS

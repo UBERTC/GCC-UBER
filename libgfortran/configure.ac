@@ -556,6 +556,9 @@ AC_CHECK_FUNC([fpresetsticky],[have_fpresetsticky=yes AC_DEFINE([HAVE_FPRESETSTI
 AC_CHECK_FUNC([fp_trap],[have_fp_trap=yes AC_DEFINE([HAVE_FP_TRAP],[1],[fp_trap is present])])
 AC_CHECK_FUNC([fp_enable],[have_fp_enable=yes AC_DEFINE([HAVE_FP_ENABLE],[1],[fp_enable is present])])
 
+# Check if _SOFT_FLOAT is defined
+AC_CHECK_DEFINE([_SOFT_FLOAT],[have_soft_float=yes])
+
 # Runs configure.host to set up necessary host-dependent shell variables.
 # We then display a message about it, and propagate them through the
 # build chain.
@@ -620,6 +623,9 @@ LIBGFOR_CHECK_AVX2
 
 # Check wether we support AVX512f extensions
 LIBGFOR_CHECK_AVX512F
+
+# Determine what GCC version number to use in filesystem paths.
+GCC_BASE_VER
 
 AC_CACHE_SAVE
 

@@ -77,7 +77,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "gcse.h"
 #include "tree-chkp.h"
 #include "omp-offload.h"
-#include "hsa.h"
+#include "hsa-common.h"
 #include "edit-context.h"
 
 #if defined(DBX_DEBUGGING_INFO) || defined(XCOFF_DEBUGGING_INFO)
@@ -91,6 +91,10 @@ along with GCC; see the file COPYING3.  If not see
 #endif
 
 #include "selftest.h"
+
+#ifdef HAVE_isl
+#include <isl/version.h>
+#endif
 
 static void general_init (const char *, bool);
 static void do_compile ();
@@ -678,10 +682,8 @@ print_version (FILE *file, const char *indent, bool show_global_state)
 	   GCC_GMP_STRINGIFY_VERSION, MPFR_VERSION_STRING, MPC_VERSION_STRING,
 #ifndef HAVE_isl
 	   "none"
-#elif HAVE_ISL_OPTIONS_SET_SCHEDULE_SERIALIZE_SCCS
-	   "0.15"
 #else
-	   "0.14 or 0.13"
+	   isl_version ()
 #endif
 	   );
   if (strcmp (GCC_GMP_STRINGIFY_VERSION, gmp_version))
@@ -1258,10 +1260,9 @@ process_options (void)
       || flag_loop_nest_optimize
       || flag_graphite_identity
       || flag_loop_parallelize_all)
-    sorry ("Graphite loop optimizations cannot be used (isl is not available)"
-	   "(-fgraphite, -fgraphite-identity, -floop-block, "
-	   "-floop-interchange, -floop-strip-mine, -floop-parallelize-all, "
-	   "-floop-unroll-and-jam, and -ftree-loop-linear)");
+    sorry ("Graphite loop optimizations cannot be used (isl is not available) "
+	   "(-fgraphite, -fgraphite-identity, -floop-nest-optimize, "
+	   "-floop-parallelize-all)");
 #endif
 
   if (flag_check_pointer_bounds)

@@ -468,6 +468,10 @@ Wdiv-by-zero
 C ObjC C++ ObjC++ Var(warn_div_by_zero) Init(1) Warning
 Warn about compile-time integer division by zero.
 
+Wduplicated-branches
+C ObjC C++ ObjC++ Var(warn_duplicated_branches) Init(0) Warning
+Warn about duplicated branches in if-else statements.
+
 Wduplicated-cond
 C ObjC C++ ObjC++ Var(warn_duplicated_cond) Init(0) Warning
 Warn about duplicated conditions in an if-else-if chain.
@@ -802,7 +806,7 @@ C ObjC C++ ObjC++ Warning Alias(Wnormalized=,nfc,none)
 
 Wnormalized=
 C ObjC C++ ObjC++ RejectNegative Joined Warning CPP(warn_normalize) CppReason(CPP_W_NORMALIZE) Init(normalized_C) Var(cpp_warn_normalize) Enum(cpp_normalize_level)
--Wnormalized=<none|id|nfc|nfkc>	Warn about non-normalized Unicode strings.
+-Wnormalized=[none|id|nfc|nfkc]	Warn about non-normalized Unicode strings.
 
 ; Required for these enum values.
 SourceInclude
@@ -1762,7 +1766,7 @@ ObjC ObjC++ Var(flag_zero_link)
 Generate lazy class lookup (via objc_getClass()) for use in Zero-Link mode.
 
 gen-decls
-ObjC ObjC++ Var(flag_gen_declaration)
+ObjC ObjC++ Driver Var(flag_gen_declaration)
 Dump declarations to a .decl file.
 
 femit-struct-debug-baseonly

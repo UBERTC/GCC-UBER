@@ -337,6 +337,12 @@ package Sem_Util is
    --  and the context is external to the protected operation, to warn against
    --  a possible unlocked access to data.
 
+   function Choice_List (N : Node_Id) return List_Id;
+   --  Utility to retrieve the choices of a Component_Association or the
+   --  Discrete_Choices of an Iterated_Component_Association. For various
+   --  reasons these nodes have a different structure even though they play
+   --  similar roles in array aggregates.
+
    function Collect_Body_States (Body_Id : Entity_Id) return Elist_Id;
    --  Gather the entities of all abstract states and objects declared in the
    --  body state space of package body Body_Id.
@@ -417,6 +423,12 @@ package Sem_Util is
    --  the subprogram has a body that acts as spec. This is done for some cases
    --  of inlining, and for private protected ops. Also used to create bodies
    --  for stubbed subprograms.
+
+   procedure Copy_SPARK_Mode_Aspect (From : Node_Id; To : Node_Id);
+   --  Copy the SPARK_Mode aspect if present in the aspect specifications
+   --  of node From to node To. On entry it is assumed that To does not have
+   --  aspect specifications. If From has no aspects, the routine has no
+   --  effect.
 
    function Copy_Subprogram_Spec (Spec : Node_Id) return Node_Id;
    --  Replicate a function or a procedure specification denoted by Spec. The
@@ -608,6 +620,10 @@ package Sem_Util is
    --  inappropriate use of limited type T. If useful, it adds additional
    --  continuation lines to the message explaining why type T is limited.
    --  Messages are placed at node N.
+
+   function Expression_Of_Expression_Function
+     (Subp : Entity_Id) return Node_Id;
+   --  Return the expression of expression function Subp
 
    type Extensions_Visible_Mode is
      (Extensions_Visible_None,
@@ -885,11 +901,19 @@ package Sem_Util is
    --  ancestor declared in a parent unit, even if there is an intermediate
    --  derivation that does not see the full view of that ancestor.
 
-   procedure Get_Index_Bounds (N : Node_Id; L, H : out Node_Id);
+   procedure Get_Index_Bounds
+     (N             : Node_Id;
+      L             : out Node_Id;
+      H             : out Node_Id;
+      Use_Full_View : Boolean := False);
    --  This procedure assigns to L and H respectively the values of the low and
    --  high bounds of node N, which must be a range, subtype indication, or the
    --  name of a scalar subtype. The result in L, H may be set to Error if
    --  there was an earlier error in the range.
+   --  Use_Full_View is intended for use by clients other than the compiler
+   --  (specifically, gnat2scil) to indicate that we want the full view if
+   --  the index type turns out to be a partial view; this case should not
+   --  arise during normal compilation of semantically correct programs.
 
    function Get_Enum_Lit_From_Pos
      (T   : Entity_Id;
@@ -1361,6 +1385,9 @@ package Sem_Util is
    function Is_Declaration (N : Node_Id) return Boolean;
    --  Determine whether arbitrary node N denotes a declaration
 
+   function Is_Declaration_Other_Than_Renaming (N : Node_Id) return Boolean;
+   --  Determine whether arbitrary node N denotes a non-renaming declaration
+
    function Is_Declared_Within_Variant (Comp : Entity_Id) return Boolean;
    --  Returns True iff component Comp is declared within a variant part
 
@@ -1473,6 +1500,20 @@ package Sem_Util is
    --  E is a subprogram. Return True is E is an implicit operation inherited
    --  by the derived type declaration for type Typ.
 
+   function Is_Inlinable_Expression_Function (Subp : Entity_Id) return Boolean;
+   --  Return True if Subp is an expression function that fulfills all the
+   --  following requirements for inlining:
+   --     1. pragma/aspect Inline_Always
+   --     2. No formals
+   --     3. No contracts
+   --     4. No dispatching primitive
+   --     5. Result subtype controlled (or with controlled components)
+   --     6. Result subtype not subject to type-invariant checks
+   --     7. Result subtype not a class-wide type
+   --     8. Return expression naming an object global to the function
+   --     9. Nominal subtype of the returned object statically compatible
+   --        with the result subtype of the expression function.
+
    function Is_Iterator (Typ : Entity_Id) return Boolean;
    --  AI05-0139-2: Check whether Typ is one of the predefined interfaces in
    --  Ada.Iterator_Interfaces, or it is derived from one.
@@ -1506,6 +1547,12 @@ package Sem_Util is
    --  Determines whether Expr is a reference to a variable or IN OUT mode
    --  parameter of the current enclosing subprogram.
    --  Why are OUT parameters not considered here ???
+
+   function Is_Name_Reference (N : Node_Id) return Boolean;
+   --  Determine whether arbitrary node N is a reference to a name. This is
+   --  similar to Is_Object_Reference but returns True only if N can be renamed
+   --  without the need for a temporary, the typical example of an object not
+   --  in this category being a function call.
 
    function Is_Nontrivial_DIC_Procedure (Id : Entity_Id) return Boolean;
    --  Determine whether entity Id denotes the procedure that verifies the
@@ -1846,21 +1893,21 @@ package Sem_Util is
       Map       : Elist_Id   := No_Elist;
       New_Sloc  : Source_Ptr := No_Location;
       New_Scope : Entity_Id  := Empty) return Node_Id;
-   --  Given a node that is the root of a subtree, Copy_Tree copies the entire
-   --  syntactic subtree, including recursively any descendants whose parent
-   --  field references a copied node (descendants not linked to a copied node
-   --  by the parent field are not copied, instead the copied tree references
-   --  the same descendant as the original in this case, which is appropriate
-   --  for non-syntactic fields such as Etype). The parent pointers in the
-   --  copy are properly set. Copy_Tree (Empty/Error) returns Empty/Error.
-   --  The one exception to the rule of not copying semantic fields is that
-   --  any implicit types attached to the subtree are duplicated, so that
-   --  the copy contains a distinct set of implicit type entities. Thus this
-   --  function is used when it is necessary to duplicate an analyzed tree,
-   --  declared in the same or some other compilation unit. This function is
-   --  declared here rather than in atree because it uses semantic information
-   --  in particular concerning the structure of itypes and the generation of
-   --  public symbols.
+   --  Given a node that is the root of a subtree, New_Copy_Tree copies the
+   --  entire syntactic subtree, including recursively any descendants whose
+   --  parent field references a copied node (descendants not linked to a
+   --  copied node by the parent field are not copied, instead the copied tree
+   --  references the same descendant as the original in this case, which is
+   --  appropriate for non-syntactic fields such as Etype). The parent pointers
+   --  in the copy are properly set. New_Copy_Tree (Empty/Error) returns
+   --  Empty/Error. The one exception to the rule of not copying semantic
+   --  fields is that any implicit types attached to the subtree are
+   --  duplicated, so that the copy contains a distinct set of implicit type
+   --  entities. Thus this function is used when it is necessary to duplicate
+   --  an analyzed tree, declared in the same or some other compilation unit.
+   --  This function is declared here rather than in atree because it uses
+   --  semantic information in particular concerning the structure of itypes
+   --  and the generation of public symbols.
 
    --  The Map argument, if set to a non-empty Elist, specifies a set of
    --  mappings to be applied to entities in the tree. The map has the form:

@@ -403,13 +403,13 @@ maybe_default_option (struct gcc_options *opts,
     handle_generated_option (opts, opts_set, default_opt->opt_index,
 			     default_opt->arg, default_opt->value,
 			     lang_mask, DK_UNSPECIFIED, loc,
-			     handlers, dc);
+			     handlers, true, dc);
   else if (default_opt->arg == NULL
 	   && !option->cl_reject_negative)
     handle_generated_option (opts, opts_set, default_opt->opt_index,
 			     default_opt->arg, !default_opt->value,
 			     lang_mask, DK_UNSPECIFIED, loc,
-			     handlers, dc);
+			     handlers, true, dc);
 }
 
 /* As indicated by the optimization level LEVEL (-Os if SIZE is set,
@@ -2150,6 +2150,8 @@ common_handle_option (struct gcc_options *opts,
 	opts->x_flag_profile_values = value;
       if (!opts_set->x_flag_inline_functions)
 	opts->x_flag_inline_functions = value;
+      if (!opts_set->x_flag_ipa_bit_cp)
+	opts->x_flag_ipa_bit_cp = value;
       /* FIXME: Instrumentation we insert makes ipa-reference bitmaps
 	 quadratic.  Disable the pass until better memory representation
 	 is done.  */

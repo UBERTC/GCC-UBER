@@ -4148,7 +4148,16 @@ try_combine (rtx_insn *i3, rtx_insn *i2, rtx_insn *i1, rtx_insn *i0,
 				     PATTERN (undobuf.other_insn)))
 	      ||(REG_NOTE_KIND (note) == REG_UNUSED
 		 && !reg_set_p (XEXP (note, 0),
-				PATTERN (undobuf.other_insn))))
+				PATTERN (undobuf.other_insn)))
+	      /* Simply drop equal note since it may be no longer valid
+		 for other_insn.  It may be possible to record that CC
+		 register is changed and only discard those notes, but
+		 in practice it's unnecessary complication and doesn't
+		 give any meaningful improvement.
+
+		 See PR78559.  */
+	      || REG_NOTE_KIND (note) == REG_EQUAL
+	      || REG_NOTE_KIND (note) == REG_EQUIV)
 	    remove_note (undobuf.other_insn, note);
 	}
 
@@ -9044,11 +9053,31 @@ if_then_else_cond (rtx x, rtx *ptrue, rtx *pfalse)
      the same value, compute the new true and false values.  */
   else if (BINARY_P (x))
     {
-      cond0 = if_then_else_cond (XEXP (x, 0), &true0, &false0);
-      cond1 = if_then_else_cond (XEXP (x, 1), &true1, &false1);
+      rtx op0 = XEXP (x, 0);
+      rtx op1 = XEXP (x, 1);
+      cond0 = if_then_else_cond (op0, &true0, &false0);
+      cond1 = if_then_else_cond (op1, &true1, &false1);
+
+      if ((cond0 != 0 && cond1 != 0 && !rtx_equal_p (cond0, cond1))
+	  && (REG_P (op0) || REG_P (op1)))
+	{
+	  /* Try to enable a simplification by undoing work done by
+	     if_then_else_cond if it converted a REG into something more
+	     complex.  */
+	  if (REG_P (op0))
+	    {
+	      cond0 = 0;
+	      true0 = false0 = op0;
+	    }
+	  else
+	    {
+	      cond1 = 0;
+	      true1 = false1 = op1;
+	    }
+	}
 
       if ((cond0 != 0 || cond1 != 0)
-	  && ! (cond0 != 0 && cond1 != 0 && ! rtx_equal_p (cond0, cond1)))
+	  && ! (cond0 != 0 && cond1 != 0 && !rtx_equal_p (cond0, cond1)))
 	{
 	  /* If if_then_else_cond returned zero, then true/false are the
 	     same rtl.  We must copy one of them to prevent invalid rtl
@@ -11201,6 +11230,7 @@ recog_for_combine_1 (rtx *pnewpat, rtx_insn *insn, rtx *pnotes)
       old_icode = INSN_CODE (insn);
       PATTERN (insn) = pat;
       REG_NOTES (insn) = notes;
+      INSN_CODE (insn) = insn_code_number;
 
       /* Allow targets to reject combined insn.  */
       if (!targetm.legitimate_combined_insn (insn))
@@ -14257,6 +14287,11 @@ distribute_notes (rtx notes, rtx_insn *from_insn, rtx_insn *i3, rtx_insn *i2,
 			  distribute_notes (old_notes, tem_insn, tem_insn, NULL,
 					    NULL_RTX, NULL_RTX, NULL_RTX);
 			  distribute_links (LOG_LINKS (tem_insn));
+
+			  unsigned int regno = REGNO (XEXP (note, 0));
+			  reg_stat_type *rsp = &reg_stat[regno];
+			  if (rsp->last_set == tem_insn)
+			    record_value_for_reg (XEXP (note, 0), NULL, NULL_RTX);
 
 			  SET_INSN_DELETED (tem_insn);
 			  if (tem_insn == i2)

@@ -1085,7 +1085,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	__shared_ptr(_Yp* __p, _Deleter __d)
 	: _M_ptr(__p), _M_refcount(__p, __d)
 	{
-	  static_assert(__is_callable<_Deleter(_Yp*)>::value,
+	  static_assert(__is_callable<_Deleter&(_Yp*&)>::value,
 	      "deleter expression d(p) is well-formed");
 	  _M_enable_shared_from_this_with(__p);
 	}
@@ -1095,7 +1095,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	__shared_ptr(_Yp* __p, _Deleter __d, _Alloc __a)
 	: _M_ptr(__p), _M_refcount(__p, __d, std::move(__a))
 	{
-	  static_assert(__is_callable<_Deleter(_Yp*)>::value,
+	  static_assert(__is_callable<_Deleter&(_Yp*&)>::value,
 	      "deleter expression d(p) is well-formed");
 	  _M_enable_shared_from_this_with(__p);
 	}
@@ -1817,10 +1817,13 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 	_M_weak_assign(_Tp1* __p, const __shared_count<_Lp>& __n) const noexcept
 	{ _M_weak_this._M_assign(__p, __n); }
 
-      friend void
+      friend const __enable_shared_from_this*
       __enable_shared_from_this_base(const __shared_count<_Lp>&,
 				     const __enable_shared_from_this* __p)
       { return __p; }
+
+      template<typename, _Lock_policy>
+	friend class __shared_ptr;
 
       mutable __weak_ptr<_Tp, _Lp>  _M_weak_this;
     };

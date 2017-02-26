@@ -1446,7 +1446,7 @@ const __memx void *pfoo = &foo;
 
 @noindent
 Such code requires at least binutils 2.23, see
-@w{@uref{http://sourceware.org/PR13503,PR13503}}.
+@w{@uref{https://sourceware.org/PR13503,PR13503}}.
 
 @item
 On the reduced Tiny devices like ATtiny40, no address spaces are supported.
@@ -3512,6 +3512,12 @@ command-line option.
 Specifies the core for which to tune the performance of this function and also
 whose architectural features to use.  The behavior and valid arguments are the
 same as for the @option{-mcpu=} command-line option.
+
+@item sign-return-address
+@cindex @code{sign-return-address} function attribute, AArch64
+Select the function scope on which return address signing will be applied.  The
+behavior and permissible arguments are the same as for the command-line option
+@option{-msign-return-address=}.  The default value is @code{none}.
 
 @end table
 
@@ -10097,7 +10103,7 @@ after addition, conditional jump on carry etc.
 @section x86-Specific Memory Model Extensions for Transactional Memory
 
 The x86 architecture supports additional memory ordering flags
-to mark lock critical sections for hardware lock elision. 
+to mark critical sections for hardware lock elision. 
 These must be specified in addition to an existing memory order to
 atomic intrinsics.
 
@@ -12651,7 +12657,7 @@ void __builtin_arm_set_fpscr (unsigned int)
 @subsection ARM ARMv8-M Security Extensions
 
 GCC implements the ARMv8-M Security Extensions as described in the ARMv8-M
-Security Extensions: Requiremenets on Development Tools Engineering
+Security Extensions: Requirements on Development Tools Engineering
 Specification, which can be found at
 @uref{http://infocenter.arm.com/help/topic/com.arm.doc.ecm0359818/ECM0359818_armv8m_security_extensions_reqs_on_dev_tools_1_0.pdf}.
 
@@ -13987,7 +13993,7 @@ data elements.  The following vectors typedefs are included in @code{msa.h}:
 @item @code{v2f64}, a vector of two 64-bit doubles.
 @end itemize
 
-Intructions and corresponding built-ins may have additional restrictions and/or
+Instructions and corresponding built-ins may have additional restrictions and/or
 input/output values manipulated:
 @itemize
 @item @code{imm0_1}, an integer literal in range 0 to 1;
@@ -15127,17 +15133,19 @@ unsigned long long int scalar_extract_sig (double source);
 
 double
 scalar_insert_exp (unsigned long long int significand, unsigned long long int exponent);
+double
+scalar_insert_exp (double significand, unsigned long long int exponent);
 
 int scalar_cmp_exp_gt (double arg1, double arg2);
 int scalar_cmp_exp_lt (double arg1, double arg2);
 int scalar_cmp_exp_eq (double arg1, double arg2);
 int scalar_cmp_exp_unordered (double arg1, double arg2);
 
-int scalar_test_data_class (float source, unsigned int condition);
-int scalar_test_data_class (double source, unsigned int condition);
+bool scalar_test_data_class (float source, const int condition);
+bool scalar_test_data_class (double source, const int condition);
 
-int scalar_test_neg (float source);
-int scalar_test_neg (double source);
+bool scalar_test_neg (float source);
+bool scalar_test_neg (double source);
 
 int __builtin_byte_in_set (unsigned char u, unsigned long long set);
 int __builtin_byte_in_range (unsigned char u, unsigned int range);
@@ -15172,19 +15180,30 @@ random number.  The @code{__builtin_darn_raw} function provides a
 64-bit raw random number.  The @code{__builtin_darn_32} function
 provides a 32-bit random number.
 
-The @code{scalar_extract_sig} and @code{scalar_insert_exp}
+The @code{scalar_extract_exp} and @code{scalar_extract_sig}
 functions require a 64-bit environment supporting ISA 3.0 or later.
-The @code{scalar_extract_exp} and @code{vec_extract_sig} built-in
-functions return the significand and exponent respectively of their
-@code{source} arguments.  The
-@code{scalar_insert_exp} built-in function returns a double-precision
+The @code{scalar_extract_exp} and @code{scalar_extract_sig} built-in
+functions return the significand and the biased exponent value
+respectively of their @code{source} arguments.
+Within the result returned by @code{scalar_extract_sig},
+the @code{0x10000000000000} bit is set if the
+function's @code{source} argument is in normalized form.
+Otherwise, this bit is set to 0.
+Note that the sign of the significand is not represented in the result
+returned from the @code{scalar_extract_sig} function.  Use the
+@code{scalar_test_neg} function to test the sign of its @code{double}
+argument.
+
+The @code{scalar_insert_exp} 
+function requires a 64-bit environment supporting ISA 3.0 or later.
+The @code{scalar_insert_exp} built-in function returns a double-precision
 floating point value that is constructed by assembling the values of its
 @code{significand} and @code{exponent} arguments.  The sign of the
 result is copied from the most significant bit of the
 @code{significand} argument.  The significand and exponent components
 of the result are composed of the least significant 11 bits of the
-@code{significand} argument and the least significant 52 bits of the
-@code{exponent} argument.
+@code{exponent} argument and the least significant 52 bits of the
+@code{significand} argument.
 
 The @code{scalar_cmp_exp_gt}, @code{scalar_cmp_exp_lt},
 @code{scalar_cmp_exp_eq}, and @code{scalar_cmp_exp_unordered} built-in
@@ -15193,11 +15212,11 @@ than, equal to, or not comparable to @code{arg2} respectively.  The
 arguments are not comparable if one or the other equals NaN (not a
 number). 
 
-The @code{scalar_test_data_class} built-in functions return a non-zero
-value if any of the condition tests enabled by the value of the
-@code{condition} variable are true.  The
-@code{condition} argument must be an unsigned integer with value not
-exceeding 127.  The
+The @code{scalar_test_data_class} built-in function returns 1
+if any of the condition tests enabled by the value of the
+@code{condition} variable are true, and 0 otherwise.  The
+@code{condition} argument must be a compile-time constant integer with
+value not exceeding 127.  The
 @code{condition} argument is encoded as a bitmask with each bit
 enabling the testing of a different condition, as characterized by the
 following:
@@ -15211,10 +15230,8 @@ following:
 0x01    Test for -Denormal
 @end smallexample
 
-If all of the enabled test conditions are false, the return value is 0.
-
-The @code{scalar_test_neg} built-in functions return a non-zero value
-if their @code{source} argument holds a negative value.
+The @code{scalar_test_neg} built-in function returns 1 if its
+@code{source} argument holds a negative value, 0 otherwise.
 
 The @code{__builtin_byte_in_set} function requires a
 64-bit environment supporting ISA 3.0 or later.  This function returns
@@ -16303,6 +16320,12 @@ vector unsigned short vec_vmuloub (vector unsigned char,
                                    vector unsigned char);
 
 vector float vec_nmsub (vector float, vector float, vector float);
+
+vector signed char vec_nabs (vector signed char);
+vector signed short vec_nabs (vector signed short);
+vector signed int vec_nabs (vector signed int);
+vector float vec_nabs (vector float);
+vector double vec_nabs (vector double);
 
 vector float vec_nor (vector float, vector float);
 vector signed int vec_nor (vector signed int, vector signed int);
@@ -17710,6 +17733,8 @@ vector long long vec_min (vector long long, vector long long);
 vector unsigned long long vec_min (vector unsigned long long,
                                    vector unsigned long long);
 
+vector signed long long vec_nabs (vector signed long long);
+
 vector long long vec_nand (vector long long, vector long long);
 vector long long vec_nand (vector bool long long, vector long long);
 vector long long vec_nand (vector long long, vector bool long long);
@@ -17827,6 +17852,10 @@ vector unsigned long long vec_vaddudm (vector unsigned long long,
 
 vector long long vec_vbpermq (vector signed char, vector signed char);
 vector long long vec_vbpermq (vector unsigned char, vector unsigned char);
+
+vector unsigned char vec_bperm (vector unsigned char, vector unsigned char);
+vector unsigned long long vec_bperm (vector unsigned __int128,
+                                     vector unsigned char);
 
 vector long long vec_cntlz (vector long long);
 vector unsigned long long vec_cntlz (vector unsigned long long);
@@ -17996,6 +18025,9 @@ If the ISA 3.0 instruction set additions (@option{-mcpu=power9})
 are available:
 
 @smallexample
+vector unsigned long long vec_bperm (vector unsigned long long,
+                                     vector unsigned char);
+
 vector bool char vec_cmpne (vector bool char, vector bool char);
 vector bool short vec_cmpne (vector bool short, vector bool short);
 vector bool int vec_cmpne (vector bool int, vector bool int);
@@ -18119,39 +18151,66 @@ elements of the vector result.
 The following built-in functions are available for the PowerPC family
 of processors, starting with ISA 3.0 or later (@option{-mcpu=power9}):
 @smallexample
-__vector int
+__vector unsigned int
 vec_extract_exp (__vector float source);
-__vector long long int
+__vector unsigned long long int
 vec_extract_exp (__vector double source);
 
-__vector int
+__vector unsigned int
 vec_extract_sig (__vector float source);
-__vector long long int
+__vector unsigned long long int
 vec_extract_sig (__vector double source);
 
 __vector float
 vec_insert_exp (__vector unsigned int significands,
                 __vector unsigned int exponents);
+__vector float
+vec_insert_exp (__vector unsigned float significands,
+                __vector unsigned int exponents);
 __vector double
 vec_insert_exp (__vector unsigned long long int significands,
                 __vector unsigned long long int exponents);
+__vector double
+vec_insert_exp (__vector unsigned double significands,
+                __vector unsigned long long int exponents);
 
-__vector int vec_test_data_class (__vector float source,
-                                  unsigned int condition);
-__vector long long int vec_test_data_class (__vector double source,
-                                            unsigned int condition);
+__vector bool int vec_test_data_class (__vector float source,
+                                       const int condition);
+__vector bool long long int vec_test_data_class (__vector double source,
+                                                 const int condition);
 @end smallexample
 
 The @code{vec_extract_sig} and @code{vec_extract_exp} built-in
-functions return vectors representing the significands and exponents
-of their @code{source} arguments respectively.  The
-@code{vec_insert_exp} built-in functions return a vector of single- or
-double-precision floating
+functions return vectors representing the significands and biased
+exponent values of their @code{source} arguments respectively.
+Within the result vector returned by @code{vec_extract_sig}, the
+@code{0x800000} bit of each vector element returned when the
+function's @code{source} argument is of type @code{float} is set to 1
+if the corresponding floating point value is in normalized form.
+Otherwise, this bit is set to 0.  When the @code{source} argument is
+of type @code{double}, the @code{0x10000000000000} bit within each of
+the result vector's elements is set according to the same rules.
+Note that the sign of the significand is not represented in the result
+returned from the @code{vec_extract_sig} function.  To extract the
+sign bits, use the
+@code{vec_cpsgn} function, which returns a new vector within which all
+of the sign bits of its second argument vector are overwritten with the
+sign bits copied from the coresponding elements of its first argument
+vector, and all other (non-sign) bits of the second argument vector
+are copied unchanged into the result vector.
+
+The @code{vec_insert_exp} built-in functions return a vector of
+single- or double-precision floating
 point values constructed by assembling the values of their
 @code{significands} and @code{exponents} arguments into the
-corresponding elements of the returned vector.  The sign of each
+corresponding elements of the returned vector.
+The sign of each
 element of the result is copied from the most significant bit of the
-corresponding entry within the @code{significands} argument.  The
+corresponding entry within the @code{significands} argument.
+Note that the relevant
+bits of the @code{significands} argument are the same, for both integer
+and floating point types.
+The
 significand and exponent components of each element of the result are
 composed of the least significant bits of the corresponding
 @code{significands} element and the least significant bits of the
@@ -18160,8 +18219,8 @@ corresponding @code{exponents} element.
 The @code{vec_test_data_class} built-in function returns a vector
 representing the results of testing the @code{source} vector for the
 condition selected by the @code{condition} argument.  The
-@code{condition} argument must be an unsigned integer with value not
-exceeding 127.  The
+@code{condition} argument must be a compile-time constant integer with
+value not exceeding 127.  The
 @code{condition} argument is encoded as a bitmask with each bit
 enabling the testing of a different condition, as characterized by the
 following:
@@ -18178,6 +18237,71 @@ following:
 If any of the enabled test conditions is true, the corresponding entry
 in the result vector is -1.  Otherwise (all of the enabled test
 conditions are false), the corresponding entry of the result vector is 0.
+
+The following built-in functions are available for the PowerPC family
+of processors, starting with ISA 3.0 or later (@option{-mcpu=power9}):
+@smallexample
+vector unsigned int vec_rlmi (vector unsigned int, vector unsigned int,
+                              vector unsigned int);
+vector unsigned long long vec_rlmi (vector unsigned long long,
+                                    vector unsigned long long,
+                                    vector unsigned long long);
+vector unsigned int vec_rlnm (vector unsigned int, vector unsigned int,
+                              vector unsigned int);
+vector unsigned long long vec_rlnm (vector unsigned long long,
+                                    vector unsigned long long,
+                                    vector unsigned long long);
+vector unsigned int vec_vrlnm (vector unsigned int, vector unsigned int);
+vector unsigned long long vec_vrlnm (vector unsigned long long,
+                                     vector unsigned long long);
+@end smallexample
+
+The result of @code{vec_rlmi} is obtained by rotating each element of
+the first argument vector left and inserting it under mask into the
+second argument vector.  The third argument vector contains the mask
+beginning in bits 11:15, the mask end in bits 19:23, and the shift
+count in bits 27:31, of each element.
+
+The result of @code{vec_rlnm} is obtained by rotating each element of
+the first argument vector left and ANDing it with a mask specified by
+the second and third argument vectors.  The second argument vector
+contains the shift count for each element in the low-order byte.  The
+third argument vector contains the mask end for each element in the
+low-order byte, with the mask begin in the next higher byte.
+
+The result of @code{vec_vrlnm} is obtained by rotating each element
+of the first argument vector left and ANDing it with a mask.  The
+second argument vector contains the mask  beginning in bits 11:15,
+the mask end in bits 19:23, and the shift count in bits 27:31,
+of each element.
+
+If the ISA 3.0 instruction set additions (@option{-mcpu=power9})
+are available:
+@smallexample
+vector signed char vec_revb (vector signed char);
+vector unsigned char vec_revb (vector unsigned char);
+vector short vec_revb (vector short);
+vector unsigned short vec_revb (vector unsigned short);
+vector int vec_revb (vector int);
+vector unsigned int vec_revb (vector unsigned int);
+vector float vec_revb (vector float);
+vector long long vec_revb (vector long long);
+vector unsigned long long vec_revb (vector unsigned long long);
+vector double vec_revb (vector double);
+@end smallexample
+
+On 64-bit targets, if the ISA 3.0 additions (@option{-mcpu=power9})
+are available:
+@smallexample
+vector long vec_revb (vector long);
+vector unsigned long vec_revb (vector unsigned long);
+vector __int128_t vec_revb (vector __int128_t);
+vector __uint128_t vec_revb (vector __uint128_t);
+@end smallexample
+
+The @code{vec_revb} built-in function reverses the bytes on an element
+by element basis.  A vector of @code{vector unsigned char} or
+@code{vector signed char} reverses the bytes in the whole word.
 
 If the cryptographic instructions are enabled (@option{-mcrypto} or
 @option{-mcpu=power8}), the following builtins are enabled.
@@ -19389,9 +19513,8 @@ v2si __builtin_ia32_psradi (v2si, int)
 @end smallexample
 
 The following built-in functions are made available either with
-@option{-msse}, or with a combination of @option{-m3dnow} and
-@option{-march=athlon}.  All of them generate the machine
-instruction that is part of the name.
+@option{-msse}, or with @option{-m3dnowa}.  All of them generate
+the machine instruction that is part of the name.
 
 @smallexample
 v4hi __builtin_ia32_pmulhuw (v4hi, v4hi)
@@ -20491,9 +20614,8 @@ v2sf __builtin_ia32_pi2fd (v2si)
 v4hi __builtin_ia32_pmulhrw (v4hi, v4hi)
 @end smallexample
 
-The following built-in functions are available when both @option{-m3dnow}
-and @option{-march=athlon} are used.  All of them generate the machine
-instruction that is part of the name.
+The following built-in functions are available when @option{-m3dnowa} is used.
+All of them generate the machine instruction that is part of the name.
 
 @smallexample
 v2si __builtin_ia32_pf2iw (v2sf)
@@ -21416,7 +21538,7 @@ In C++, if an initializer is present for a thread-local variable, it must
 be a @var{constant-expression}, as defined in 5.19.2 of the ANSI/ISO C++
 standard.
 
-See @uref{http://www.akkadia.org/drepper/tls.pdf,
+See @uref{https://www.akkadia.org/drepper/tls.pdf,
 ELF Handling For Thread-Local Storage} for a detailed explanation of
 the four thread-local storage addressing models, and how the runtime
 is expected to function.
@@ -21678,7 +21800,6 @@ Predefined Macros,cpp,The GNU C Preprocessor}).
                         method denoted by a @samp{->*} or @samp{.*} expression.
 * C++ Attributes::      Variable, function, and type attributes for C++ only.
 * Function Multiversioning::   Declaring multiple function versions.
-* Namespace Association:: Strong using-directives for namespace association.
 * Type Traits::         Compiler support for type traits.
 * C++ Concepts::        Improved support for generic programming.
 * Deprecated Features:: Things will disappear from G++.
@@ -22244,8 +22365,6 @@ does not have constructors or destructors.
 
 @end table
 
-See also @ref{Namespace Association}.
-
 @node Function Multiversioning
 @section Function Multiversioning
 @cindex function versions
@@ -22303,51 +22422,6 @@ taken just like a regular function.  GCC takes care of doing the
 dispatching to call the right version at runtime.  Refer to the
 @uref{http://gcc.gnu.org/wiki/FunctionMultiVersioning, GCC wiki on
 Function Multiversioning} for more details.
-
-@node Namespace Association
-@section Namespace Association
-
-@strong{Caution:} The semantics of this extension are equivalent
-to C++ 2011 inline namespaces.  Users should use inline namespaces
-instead as this extension will be removed in future versions of G++.
-
-A using-directive with @code{__attribute ((strong))} is stronger
-than a normal using-directive in two ways:
-
-@itemize @bullet
-@item
-Templates from the used namespace can be specialized and explicitly
-instantiated as though they were members of the using namespace.
-
-@item
-The using namespace is considered an associated namespace of all
-templates in the used namespace for purposes of argument-dependent
-name lookup.
-@end itemize
-
-The used namespace must be nested within the using namespace so that
-normal unqualified lookup works properly.
-
-This is useful for composing a namespace transparently from
-implementation namespaces.  For example:
-
-@smallexample
-namespace std @{
-  namespace debug @{
-    template <class T> struct A @{ @};
-  @}
-  using namespace debug __attribute ((__strong__));
-  template <> struct A<int> @{ @};   // @r{OK to specialize}
-
-  template <class T> void f (A<T>);
-@}
-
-int main()
-@{
-  f (std::A<float>());             // @r{lookup finds} std::f
-  f (std::A<int>());
-@}
-@end smallexample
 
 @node Type Traits
 @section Type Traits

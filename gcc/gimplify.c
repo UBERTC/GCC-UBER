@@ -1206,8 +1206,21 @@ asan_poison_variables (hash_set<tree> *variables, bool poison, gimple_seq *seq_p
 
   sorted_variables.qsort (sort_by_decl_uid);
 
-  for (unsigned i = 0; i < sorted_variables.length (); i++)
-    asan_poison_variable (sorted_variables[i], poison, seq_p);
+  unsigned i;
+  tree var;
+  FOR_EACH_VEC_ELT (sorted_variables, i, var)
+    {
+      asan_poison_variable (var, poison, seq_p);
+
+      /* Add use_after_scope_memory attribute for the variable in order
+	 to prevent re-written into SSA.  */
+      if (!lookup_attribute (ASAN_USE_AFTER_SCOPE_ATTRIBUTE,
+			     DECL_ATTRIBUTES (var)))
+	DECL_ATTRIBUTES (var)
+	  = tree_cons (get_identifier (ASAN_USE_AFTER_SCOPE_ATTRIBUTE),
+		       integer_one_node,
+		       DECL_ATTRIBUTES (var));
+    }
 }
 
 /* Gimplify a BIND_EXPR.  Just voidify and recurse.  */
@@ -1985,7 +1998,7 @@ should_warn_for_implicit_fallthrough (gimple_stmt_iterator *gsi_p, tree label)
   if (FALLTHROUGH_LABEL_P (label))
     return false;
 
-  /* Don't warn for a non-case label followed by a statement:
+  /* Don't warn for non-case labels followed by a statement:
        case 0:
 	 foo ();
        label:
@@ -1993,7 +2006,12 @@ should_warn_for_implicit_fallthrough (gimple_stmt_iterator *gsi_p, tree label)
      as these are likely intentional.  */
   if (!case_label_p (&gimplify_ctxp->case_labels, label))
     {
-      gsi_next (&gsi);
+      tree l;
+      while (!gsi_end_p (gsi)
+	     && gimple_code (gsi_stmt (gsi)) == GIMPLE_LABEL
+	     && (l = gimple_label_label (as_a <glabel *> (gsi_stmt (gsi))))
+	     && !case_label_p (&gimplify_ctxp->case_labels, l))
+	gsi_next (&gsi);
       if (gsi_end_p (gsi) || gimple_code (gsi_stmt (gsi)) != GIMPLE_LABEL)
 	return false;
     }
@@ -4586,8 +4604,8 @@ gimplify_init_constructor (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
     }
 
   object = TREE_OPERAND (*expr_p, 0);
-  ctor = TREE_OPERAND (*expr_p, 1) =
-    optimize_compound_literals_in_ctor (TREE_OPERAND (*expr_p, 1));
+  ctor = TREE_OPERAND (*expr_p, 1)
+    = optimize_compound_literals_in_ctor (TREE_OPERAND (*expr_p, 1));
   type = TREE_TYPE (ctor);
   elts = CONSTRUCTOR_ELTS (ctor);
   ret = GS_ALL_DONE;
@@ -4911,6 +4929,8 @@ gimplify_init_constructor (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
     {
       tree lhs = TREE_OPERAND (*expr_p, 0);
       tree rhs = TREE_OPERAND (*expr_p, 1);
+      if (want_value && object == lhs)
+	lhs = unshare_expr (lhs);
       gassign *init = gimple_build_assign (lhs, rhs);
       gimplify_seq_add_stmt (pre_p, init);
     }
@@ -7132,7 +7152,7 @@ omp_notice_variable (struct gimplify_omp_ctx *ctx, tree decl, bool in_code)
 	  gcc_assert (DECL_P (t));
 	  n2 = splay_tree_lookup (ctx->variables, (splay_tree_key) t);
 	  if (n2)
-	    n2->value |= GOVD_SEEN;
+	    omp_notice_variable (ctx, t, true);
 	}
     }
 
@@ -8320,20 +8340,11 @@ gimplify_scan_omp_clauses (tree *list_p, gimple_seq *pre_p,
 	    remove = true;
 	  break;
 
-	case OMP_CLAUSE_TILE:
-	  for (tree list = OMP_CLAUSE_TILE_LIST (c); !remove && list;
-	       list = TREE_CHAIN (list))
-	    {
-	      if (gimplify_expr (&TREE_VALUE (list), pre_p, NULL,
-				 is_gimple_val, fb_rvalue) == GS_ERROR)
-		remove = true;
-	    }
-	  break;
-
 	case OMP_CLAUSE_NOWAIT:
 	case OMP_CLAUSE_ORDERED:
 	case OMP_CLAUSE_UNTIED:
 	case OMP_CLAUSE_COLLAPSE:
+	case OMP_CLAUSE_TILE:
 	case OMP_CLAUSE_AUTO:
 	case OMP_CLAUSE_SEQ:
 	case OMP_CLAUSE_INDEPENDENT:
@@ -8927,8 +8938,9 @@ gimplify_adjust_omp_clauses (gimple_seq *pre_p, gimple_seq body, tree *list_p,
 	  if ((ctx->region_type & ORT_TARGET) != 0
 	      && !(n->value & GOVD_SEEN)
 	      && GOMP_MAP_ALWAYS_P (OMP_CLAUSE_MAP_KIND (c)) == 0
-	      && !lookup_attribute ("omp declare target link",
-				    DECL_ATTRIBUTES (decl)))
+	      && (!is_global_var (decl)
+		  || !lookup_attribute ("omp declare target link",
+					DECL_ATTRIBUTES (decl))))
 	    {
 	      remove = true;
 	      /* For struct element mapping, if struct is never referenced
@@ -9102,13 +9114,7 @@ gimplify_adjust_omp_clauses (gimple_seq *pre_p, gimple_seq body, tree *list_p,
 	case OMP_CLAUSE_VECTOR:
 	case OMP_CLAUSE_AUTO:
 	case OMP_CLAUSE_SEQ:
-	  break;
-
 	case OMP_CLAUSE_TILE:
-	  /* We're not yet making use of the information provided by OpenACC
-	     tile clauses.  Discard these here, to simplify later middle end
-	     processing.  */
-	  remove = true;
 	  break;
 
 	default:
@@ -9563,10 +9569,13 @@ gimplify_omp_for (tree *expr_p, gimple_seq *pre_p)
 						 (OMP_FOR_INIT (for_stmt))
 					       * 2);
     }
-  int collapse = 1;
+  int collapse = 1, tile = 0;
   c = omp_find_clause (OMP_FOR_CLAUSES (for_stmt), OMP_CLAUSE_COLLAPSE);
   if (c)
     collapse = tree_to_shwi (OMP_CLAUSE_COLLAPSE_EXPR (c));
+  c = omp_find_clause (OMP_FOR_CLAUSES (for_stmt), OMP_CLAUSE_TILE);
+  if (c)
+    tile = list_length (OMP_CLAUSE_TILE_LIST (c));
   for (i = 0; i < TREE_VEC_LENGTH (OMP_FOR_INIT (for_stmt)); i++)
     {
       t = TREE_VEC_ELT (OMP_FOR_INIT (for_stmt), i);
@@ -9980,7 +9989,7 @@ gimplify_omp_for (tree *expr_p, gimple_seq *pre_p)
 	  OMP_CLAUSE_LINEAR_STEP (c2) = OMP_CLAUSE_LINEAR_STEP (c);
 	}
 
-      if ((var != decl || collapse > 1) && orig_for_stmt == for_stmt)
+      if ((var != decl || collapse > 1 || tile) && orig_for_stmt == for_stmt)
 	{
 	  for (c = OMP_FOR_CLAUSES (for_stmt); c ; c = OMP_CLAUSE_CHAIN (c))
 	    if (((OMP_CLAUSE_CODE (c) == OMP_CLAUSE_LASTPRIVATE
@@ -11967,8 +11976,11 @@ gimplify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
   if (fallback == fb_none && *expr_p && !is_gimple_stmt (*expr_p))
     {
       /* We aren't looking for a value, and we don't have a valid
-	 statement.  If it doesn't have side-effects, throw it away.  */
-      if (!TREE_SIDE_EFFECTS (*expr_p))
+	 statement.  If it doesn't have side-effects, throw it away.
+	 We can also get here with code such as "*&&L;", where L is
+	 a LABEL_DECL that is marked as FORCED_LABEL.  */
+      if (TREE_CODE (*expr_p) == LABEL_DECL
+	  || !TREE_SIDE_EFFECTS (*expr_p))
 	*expr_p = NULL;
       else if (!TREE_THIS_VOLATILE (*expr_p))
 	{

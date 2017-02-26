@@ -124,6 +124,9 @@ enum rid
   /* "__PHI", for parsing PHI function in GIMPLE FE.  */
   RID_PHI,
 
+  /* "__RTL", for the RTL-parsing extension to the C frontend.  */
+  RID_RTL,
+
   /* C11 */
   RID_ALIGNAS, RID_GENERIC,
 
@@ -804,7 +807,8 @@ extern const char *fname_as_string (int);
 extern tree fname_decl (location_t, unsigned, tree);
 
 extern int check_user_alignment (const_tree, bool);
-extern bool check_function_arguments (location_t loc, const_tree, int, tree *);
+extern bool check_function_arguments (location_t loc, const_tree, const_tree,
+				      int, tree *);
 extern void check_function_arguments_recurse (void (*)
 					      (void *, tree,
 					       unsigned HOST_WIDE_INT),
@@ -1498,7 +1502,7 @@ extern void warnings_for_convert_and_check (location_t, tree, tree, tree);
 extern void c_do_switch_warnings (splay_tree, location_t, tree, tree, bool,
 				  bool);
 extern void warn_for_omitted_condop (location_t, tree);
-extern void warn_for_restrict (unsigned, vec<tree, va_gc> *);
+extern void warn_for_restrict (unsigned, tree *, unsigned);
 
 /* Places where an lvalue, or modifiable lvalue, may be required.
    Used to select diagnostic messages in lvalue_error and
@@ -1537,6 +1541,7 @@ extern void maybe_warn_bool_compare (location_t, enum tree_code, tree, tree);
 extern bool maybe_warn_shift_overflow (location_t, tree, tree);
 extern void warn_duplicated_cond_add_or_warn (location_t, tree, vec<tree> **);
 extern bool diagnose_mismatched_attributes (tree, tree);
+extern tree do_warn_duplicated_branches_r (tree *, int *, void *);
 
 /* In c-attribs.c.  */
 extern bool attribute_takes_identifier_p (const_tree);

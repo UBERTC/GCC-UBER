@@ -3878,33 +3878,52 @@ Unary_expression::do_is_static_initializer() const
   if (this->op_ == OPERATOR_MULT)
     return false;
   else if (this->op_ == OPERATOR_AND)
-    {
-      // The address of a global variable can used as a static
-      // initializer.
-      Var_expression* ve = this->expr_->var_expression();
-      if (ve != NULL)
-	{
-	  Named_object* no = ve->named_object();
-	  return no->is_variable() && no->var_value()->is_global();
-	}
-
-      // The address of a composite literal can be used as a static
-      // initializer if the composite literal is itself usable as a
-      // static initializer.
-      if (this->expr_->is_composite_literal()
-	  && this->expr_->is_static_initializer())
-	return true;
-
-      // The address of a string constant can be used as a static
-      // initializer.  This can not be written in Go itself but this
-      // is used when building a type descriptor.
-      if (this->expr_->string_expression() != NULL)
-	return true;
-
-      return false;
-    }
+    return Unary_expression::base_is_static_initializer(this->expr_);
   else
     return this->expr_->is_static_initializer();
+}
+
+// Return whether the address of EXPR can be used as a static
+// initializer.
+
+bool
+Unary_expression::base_is_static_initializer(Expression* expr)
+{
+  // The address of a field reference can be a static initializer if
+  // the base can be a static initializer.
+  Field_reference_expression* fre = expr->field_reference_expression();
+  if (fre != NULL)
+    return Unary_expression::base_is_static_initializer(fre->expr());
+
+  // The address of an index expression can be a static initializer if
+  // the base can be a static initializer and the index is constant.
+  Array_index_expression* aind = expr->array_index_expression();
+  if (aind != NULL)
+    return (aind->end() == NULL
+	    && aind->start()->is_constant()
+	    && Unary_expression::base_is_static_initializer(aind->array()));
+
+  // The address of a global variable can be a static initializer.
+  Var_expression* ve = expr->var_expression();
+  if (ve != NULL)
+    {
+      Named_object* no = ve->named_object();
+      return no->is_variable() && no->var_value()->is_global();
+    }
+
+  // The address of a composite literal can be used as a static
+  // initializer if the composite literal is itself usable as a
+  // static initializer.
+  if (expr->is_composite_literal() && expr->is_static_initializer())
+    return true;
+
+  // The address of a string constant can be used as a static
+  // initializer.  This can not be written in Go itself but this is
+  // used when building a type descriptor.
+  if (expr->string_expression() != NULL)
+    return true;
+
+  return false;
 }
 
 // Apply unary opcode OP to UNC, setting NC.  Return true if this
@@ -7091,7 +7110,7 @@ class Builtin_call_expression : public Call_expression
   Expression* flatten_append(Gogo*, Named_object*, Statement_inserter*);
 
   bool
-  check_int_value(Expression*, bool is_length);
+  check_int_value(Expression*, bool is_length, bool* small);
 
   // A pointer back to the general IR structure.  This avoids a global
   // variable, or passing it around everywhere.
@@ -7462,6 +7481,7 @@ Builtin_call_expression::lower_make(Statement_inserter* inserter)
 
   ++parg;
   Expression* len_arg;
+  bool len_small = false;
   if (parg == args->end())
     {
       if (is_slice)
@@ -7475,17 +7495,18 @@ Builtin_call_expression::lower_make(Statement_inserter* inserter)
     {
       len_arg = *parg;
       len_arg->determine_type(&int_context);
-      if (!this->check_int_value(len_arg, true))
+      if (!this->check_int_value(len_arg, true, &len_small))
 	return Expression::make_error(this->location());
       ++parg;
     }
 
   Expression* cap_arg = NULL;
+  bool cap_small = false;
   if (is_slice && parg != args->end())
     {
       cap_arg = *parg;
       cap_arg->determine_type(&int_context);
-      if (!this->check_int_value(cap_arg, false))
+      if (!this->check_int_value(cap_arg, false, &cap_small))
 	return Expression::make_error(this->location());
 
       Numeric_constant nclen;
@@ -7526,9 +7547,13 @@ Builtin_call_expression::lower_make(Statement_inserter* inserter)
 	  inserter->insert(temp);
 	  len_arg = Expression::make_temporary_reference(temp, loc);
 	  cap_arg = Expression::make_temporary_reference(temp, loc);
+	  cap_small = len_small;
 	}
-      call = Runtime::make_call(Runtime::MAKESLICE, loc, 3, type_arg,
-				len_arg, cap_arg);
+
+      Runtime::Function code = Runtime::MAKESLICE;
+      if (!len_small || !cap_small)
+	code = Runtime::MAKESLICE64;
+      call = Runtime::make_call(code, loc, 3, type_arg, len_arg, cap_arg);
     }
   else if (is_map)
     {
@@ -7744,11 +7769,14 @@ Builtin_call_expression::flatten_append(Gogo* gogo, Named_object* function,
 
 // Return whether an expression has an integer value.  Report an error
 // if not.  This is used when handling calls to the predeclared make
-// function.
+// function.  Set *SMALL if the value is known to fit in type "int".
 
 bool
-Builtin_call_expression::check_int_value(Expression* e, bool is_length)
+Builtin_call_expression::check_int_value(Expression* e, bool is_length,
+					 bool *small)
 {
+  *small = false;
+
   Numeric_constant nc;
   if (e->numeric_constant_value(&nc))
     {
@@ -7784,11 +7812,22 @@ Builtin_call_expression::check_int_value(Expression* e, bool is_length)
 	  return false;
 	}
 
+      *small = true;
       return true;
     }
 
   if (e->type()->integer_type() != NULL)
-    return true;
+    {
+      int ebits = e->type()->integer_type()->bits();
+      int intbits = Type::lookup_integer_type("int")->integer_type()->bits();
+
+      // We can treat ebits == intbits as small even for an unsigned
+      // integer type, because we will convert the value to int and
+      // then reject it in the runtime if it is negative.
+      *small = ebits <= intbits;
+
+      return true;
+    }
 
   go_error_at(e->location(), "non-integer %s argument to make",
 	      is_length ? "len" : "cap");
@@ -12440,6 +12479,17 @@ Struct_construction_expression::do_is_static_initializer() const
       if (*pv != NULL && !(*pv)->is_static_initializer())
 	return false;
     }
+
+  const Struct_field_list* fields = this->type_->struct_type()->fields();
+  for (Struct_field_list::const_iterator pf = fields->begin();
+       pf != fields->end();
+       ++pf)
+    {
+      // There are no constant constructors for interfaces.
+      if (pf->type()->interface_type() != NULL)
+	return false;
+    }
+
   return true;
 }
 
@@ -12530,7 +12580,7 @@ Struct_construction_expression::do_flatten(Gogo*, Named_object*,
     return this;
 
   // If this is a constant struct, we don't need temporaries.
-  if (this->is_constant_struct())
+  if (this->is_constant_struct() || this->is_static_initializer())
     return this;
 
   Location loc = this->location();
@@ -12681,6 +12731,11 @@ Array_construction_expression::do_is_static_initializer() const
 {
   if (this->vals() == NULL)
     return true;
+
+  // There are no constant constructors for interfaces.
+  if (this->type_->array_type()->element_type()->interface_type() != NULL)
+    return false;
+
   for (Expression_list::const_iterator pv = this->vals()->begin();
        pv != this->vals()->end();
        ++pv)
@@ -12745,7 +12800,7 @@ Array_construction_expression::do_flatten(Gogo*, Named_object*,
     return this;
 
   // If this is a constant array, we don't need temporaries.
-  if (this->is_constant_array())
+  if (this->is_constant_array() || this->is_static_initializer())
     return this;
 
   Location loc = this->location();

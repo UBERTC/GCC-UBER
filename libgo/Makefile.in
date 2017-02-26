@@ -146,6 +146,7 @@ am__installdirs = "$(DESTDIR)$(toolexeclibdir)" \
 	"$(DESTDIR)$(toolexeclibgoruntimedir)" \
 	"$(DESTDIR)$(toolexeclibgosyncdir)" \
 	"$(DESTDIR)$(toolexeclibgotestingdir)" \
+	"$(DESTDIR)$(toolexeclibgotestinginternaldir)" \
 	"$(DESTDIR)$(toolexeclibgotextdir)" \
 	"$(DESTDIR)$(toolexeclibgotexttemplatedir)" \
 	"$(DESTDIR)$(toolexeclibgounicodedir)"
@@ -168,9 +169,9 @@ LTLIBRARIES = $(toolexeclib_LTLIBRARIES)
 am__DEPENDENCIES_2 = $(addsuffix .lo,$(PACKAGES)) bytes/index.lo \
 	reflect/makefunc_ffi_c.lo strings/index.lo \
 	$(am__DEPENDENCIES_1) syscall/errno.lo syscall/signame.lo \
-	syscall/wait.lo $(golang_org_x_net_route_lo) \
-	log/syslog/syslog_c.lo runtime/internal/atomic_c.lo \
-	sync/atomic_c.lo
+	syscall/wait.lo $(golang_org_x_net_lif_lo) \
+	$(golang_org_x_net_route_lo) log/syslog/syslog_c.lo \
+	runtime/internal/atomic_c.lo sync/atomic_c.lo
 am__DEPENDENCIES_3 =
 am__DEPENDENCIES_4 = $(am__DEPENDENCIES_2) \
 	../libbacktrace/libbacktrace.la $(am__DEPENDENCIES_3) \
@@ -265,7 +266,8 @@ DATA = $(noinst_DATA) $(toolexeclibgo_DATA) \
 	$(toolexeclibgonetrpc_DATA) $(toolexeclibgoos_DATA) \
 	$(toolexeclibgopath_DATA) $(toolexeclibgoregexp_DATA) \
 	$(toolexeclibgoruntime_DATA) $(toolexeclibgosync_DATA) \
-	$(toolexeclibgotesting_DATA) $(toolexeclibgotext_DATA) \
+	$(toolexeclibgotesting_DATA) \
+	$(toolexeclibgotestinginternal_DATA) $(toolexeclibgotext_DATA) \
 	$(toolexeclibgotexttemplate_DATA) $(toolexeclibgounicode_DATA)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
@@ -728,7 +730,8 @@ toolexeclibgoregexp_DATA = \
 toolexeclibgoruntimedir = $(toolexeclibgodir)/runtime
 toolexeclibgoruntime_DATA = \
 	runtime/debug.gox \
-	runtime/pprof.gox
+	runtime/pprof.gox \
+	runtime/trace.gox
 
 toolexeclibgosyncdir = $(toolexeclibgodir)/sync
 toolexeclibgosync_DATA = \
@@ -738,6 +741,10 @@ toolexeclibgotestingdir = $(toolexeclibgodir)/testing
 toolexeclibgotesting_DATA = \
 	testing/iotest.gox \
 	testing/quick.gox
+
+toolexeclibgotestinginternaldir = $(toolexeclibgotestingdir)/internal
+toolexeclibgotestinginternal_DATA = \
+	testing/internal/testdeps.gox
 
 toolexeclibgotextdir = $(toolexeclibgodir)/text
 toolexeclibgotext_DATA = \
@@ -834,6 +841,7 @@ PACKAGES = \
 	archive/zip \
 	bufio \
 	bytes \
+	cmd/internal/browser \
 	compress/bzip2 \
 	compress/flate \
 	compress/gzip \
@@ -851,6 +859,7 @@ PACKAGES = \
 	crypto/ecdsa \
 	crypto/elliptic \
 	crypto/hmac \
+	crypto/internal/cipherhw \
 	crypto/md5 \
 	crypto/rand \
 	crypto/rc4 \
@@ -901,8 +910,16 @@ PACKAGES = \
 	go/scanner \
 	go/token \
 	go/types \
+	golang_org/x/crypto/chacha20poly1305 \
+	golang_org/x/crypto/chacha20poly1305/internal/chacha20 \
+	golang_org/x/crypto/curve25519 \
+	golang_org/x/crypto/poly1305 \
 	golang_org/x/net/http2/hpack \
+	golang_org/x/net/idna \
 	golang_org/x/net/lex/httplex \
+	golang_org/x/text/transform \
+	golang_org/x/text/unicode/norm \
+	golang_org/x/text/width \
 	hash \
 	hash/adler32 \
 	hash/crc32 \
@@ -920,6 +937,7 @@ PACKAGES = \
 	image/png \
 	index/suffixarray \
 	internal/nettrace \
+	internal/pprof/profile \
 	internal/race \
 	internal/singleflight \
 	internal/syscall/unix \
@@ -967,6 +985,8 @@ PACKAGES = \
 	runtime/internal/atomic \
 	runtime/internal/sys \
 	runtime/pprof \
+	runtime/pprof/internal/protopprof \
+	runtime/trace \
 	sort \
 	strconv \
 	strings \
@@ -974,6 +994,7 @@ PACKAGES = \
 	sync/atomic \
 	syscall \
 	testing \
+	testing/internal/testdeps \
 	testing/iotest \
 	testing/quick \
 	text/scanner \
@@ -994,6 +1015,7 @@ libgo_go_objs = \
 	syscall/errno.lo \
 	syscall/signame.lo \
 	syscall/wait.lo \
+	$(golang_org_x_net_lif_lo) \
 	$(golang_org_x_net_route_lo) \
 	log/syslog/syslog_c.lo \
 	$(os_lib_inotify_lo) \
@@ -1156,10 +1178,16 @@ extra_go_files_runtime_internal_sys = version.go
 @HAVE_STAT_TIMESPEC_TRUE@@LIBGO_IS_SOLARIS_TRUE@matchargs_os = --tag=solaristag
 @LIBGO_IS_SOLARIS_FALSE@matchargs_os = 
 @LIBGO_IS_BSD_TRUE@golang_org_x_net_route_lo = \
-@LIBGO_IS_BSD_TRUE@	golang_org/x/net/route/route.lo
+@LIBGO_IS_BSD_TRUE@	golang_org/x/net/route.lo
 
 @LIBGO_IS_BSD_TRUE@golang_org_x_net_route_check = \
 @LIBGO_IS_BSD_TRUE@	golang_org/x/net/route/check
+
+@LIBGO_IS_SOLARIS_TRUE@golang_org_x_net_lif_lo = \
+@LIBGO_IS_SOLARIS_TRUE@	golang_org/x/net/lif.lo
+
+@LIBGO_IS_SOLARIS_TRUE@golang_org_x_net_lif_check = \
+@LIBGO_IS_SOLARIS_TRUE@	golang_org/x/net/lif/check
 
 TEST_PACKAGES = \
 	bufio/check \
@@ -1248,8 +1276,14 @@ TEST_PACKAGES = \
 	go/scanner/check \
 	go/token/check \
 	go/types/check \
+	golang_org/x/crypto/chacha20poly1305/check \
+	golang_org/x/crypto/chacha20poly1305/internal/chacha20/check \
+	golang_org/x/crypto/curve25519/check \
+	golang_org/x/crypto/poly1305/check \
 	golang_org/x/net/http2/hpack/check \
+	golang_org/x/net/idna/check \
 	golang_org/x/net/lex/httplex/check \
+	$(golang_org_x_net_lif_check) \
 	$(golang_org_x_net_route_check) \
 	hash/adler32/check \
 	hash/crc32/check \
@@ -1260,6 +1294,7 @@ TEST_PACKAGES = \
 	image/jpeg/check \
 	image/png/check \
 	index/suffixarray/check \
+	internal/pprof/profile/check \
 	internal/singleflight/check \
 	internal/trace/check \
 	io/ioutil/check \
@@ -1290,9 +1325,10 @@ TEST_PACKAGES = \
 	path/filepath/check \
 	regexp/syntax/check \
 	runtime/debug/check \
-	runtime/pprof/check \
 	runtime/internal/atomic/check \
 	runtime/internal/sys/check \
+	runtime/pprof/check \
+	runtime/pprof/internal/protopprof/check \
 	sync/atomic/check \
 	text/scanner/check \
 	text/tabwriter/check \
@@ -2615,6 +2651,27 @@ uninstall-toolexeclibgotestingDATA:
 	@list='$(toolexeclibgotesting_DATA)'; test -n "$(toolexeclibgotestingdir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(toolexeclibgotestingdir)'; $(am__uninstall_files_from_dir)
+install-toolexeclibgotestinginternalDATA: $(toolexeclibgotestinginternal_DATA)
+	@$(NORMAL_INSTALL)
+	@list='$(toolexeclibgotestinginternal_DATA)'; test -n "$(toolexeclibgotestinginternaldir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(toolexeclibgotestinginternaldir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(toolexeclibgotestinginternaldir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_DATA) $$files '$(DESTDIR)$(toolexeclibgotestinginternaldir)'"; \
+	  $(INSTALL_DATA) $$files "$(DESTDIR)$(toolexeclibgotestinginternaldir)" || exit $$?; \
+	done
+
+uninstall-toolexeclibgotestinginternalDATA:
+	@$(NORMAL_UNINSTALL)
+	@list='$(toolexeclibgotestinginternal_DATA)'; test -n "$(toolexeclibgotestinginternaldir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(toolexeclibgotestinginternaldir)'; $(am__uninstall_files_from_dir)
 install-toolexeclibgotextDATA: $(toolexeclibgotext_DATA)
 	@$(NORMAL_INSTALL)
 	@list='$(toolexeclibgotext_DATA)'; test -n "$(toolexeclibgotextdir)" || list=; \
@@ -2819,7 +2876,7 @@ all-am: Makefile $(LIBRARIES) $(LTLIBRARIES) all-multi $(DATA) \
 		config.h
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(toolexeclibdir)" "$(DESTDIR)$(toolexeclibdir)" "$(DESTDIR)$(toolexeclibgodir)" "$(DESTDIR)$(toolexeclibgoarchivedir)" "$(DESTDIR)$(toolexeclibgocompressdir)" "$(DESTDIR)$(toolexeclibgocontainerdir)" "$(DESTDIR)$(toolexeclibgocryptodir)" "$(DESTDIR)$(toolexeclibgocryptox509dir)" "$(DESTDIR)$(toolexeclibgodatabasedir)" "$(DESTDIR)$(toolexeclibgodatabasesqldir)" "$(DESTDIR)$(toolexeclibgodebugdir)" "$(DESTDIR)$(toolexeclibgoencodingdir)" "$(DESTDIR)$(toolexeclibgoexpdir)" "$(DESTDIR)$(toolexeclibgogodir)" "$(DESTDIR)$(toolexeclibgohashdir)" "$(DESTDIR)$(toolexeclibgohtmldir)" "$(DESTDIR)$(toolexeclibgoimagedir)" "$(DESTDIR)$(toolexeclibgoimagecolordir)" "$(DESTDIR)$(toolexeclibgoindexdir)" "$(DESTDIR)$(toolexeclibgoiodir)" "$(DESTDIR)$(toolexeclibgologdir)" "$(DESTDIR)$(toolexeclibgomathdir)" "$(DESTDIR)$(toolexeclibgomimedir)" "$(DESTDIR)$(toolexeclibgonetdir)" "$(DESTDIR)$(toolexeclibgonethttpdir)" "$(DESTDIR)$(toolexeclibgonetrpcdir)" "$(DESTDIR)$(toolexeclibgoosdir)" "$(DESTDIR)$(toolexeclibgopathdir)" "$(DESTDIR)$(toolexeclibgoregexpdir)" "$(DESTDIR)$(toolexeclibgoruntimedir)" "$(DESTDIR)$(toolexeclibgosyncdir)" "$(DESTDIR)$(toolexeclibgotestingdir)" "$(DESTDIR)$(toolexeclibgotextdir)" "$(DESTDIR)$(toolexeclibgotexttemplatedir)" "$(DESTDIR)$(toolexeclibgounicodedir)"; do \
+	for dir in "$(DESTDIR)$(toolexeclibdir)" "$(DESTDIR)$(toolexeclibdir)" "$(DESTDIR)$(toolexeclibgodir)" "$(DESTDIR)$(toolexeclibgoarchivedir)" "$(DESTDIR)$(toolexeclibgocompressdir)" "$(DESTDIR)$(toolexeclibgocontainerdir)" "$(DESTDIR)$(toolexeclibgocryptodir)" "$(DESTDIR)$(toolexeclibgocryptox509dir)" "$(DESTDIR)$(toolexeclibgodatabasedir)" "$(DESTDIR)$(toolexeclibgodatabasesqldir)" "$(DESTDIR)$(toolexeclibgodebugdir)" "$(DESTDIR)$(toolexeclibgoencodingdir)" "$(DESTDIR)$(toolexeclibgoexpdir)" "$(DESTDIR)$(toolexeclibgogodir)" "$(DESTDIR)$(toolexeclibgohashdir)" "$(DESTDIR)$(toolexeclibgohtmldir)" "$(DESTDIR)$(toolexeclibgoimagedir)" "$(DESTDIR)$(toolexeclibgoimagecolordir)" "$(DESTDIR)$(toolexeclibgoindexdir)" "$(DESTDIR)$(toolexeclibgoiodir)" "$(DESTDIR)$(toolexeclibgologdir)" "$(DESTDIR)$(toolexeclibgomathdir)" "$(DESTDIR)$(toolexeclibgomimedir)" "$(DESTDIR)$(toolexeclibgonetdir)" "$(DESTDIR)$(toolexeclibgonethttpdir)" "$(DESTDIR)$(toolexeclibgonetrpcdir)" "$(DESTDIR)$(toolexeclibgoosdir)" "$(DESTDIR)$(toolexeclibgopathdir)" "$(DESTDIR)$(toolexeclibgoregexpdir)" "$(DESTDIR)$(toolexeclibgoruntimedir)" "$(DESTDIR)$(toolexeclibgosyncdir)" "$(DESTDIR)$(toolexeclibgotestingdir)" "$(DESTDIR)$(toolexeclibgotestinginternaldir)" "$(DESTDIR)$(toolexeclibgotextdir)" "$(DESTDIR)$(toolexeclibgotexttemplatedir)" "$(DESTDIR)$(toolexeclibgounicodedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -2905,7 +2962,9 @@ install-exec-am: install-multi install-toolexeclibLIBRARIES \
 	install-toolexeclibgonetrpcDATA install-toolexeclibgoosDATA \
 	install-toolexeclibgopathDATA install-toolexeclibgoregexpDATA \
 	install-toolexeclibgoruntimeDATA install-toolexeclibgosyncDATA \
-	install-toolexeclibgotestingDATA install-toolexeclibgotextDATA \
+	install-toolexeclibgotestingDATA \
+	install-toolexeclibgotestinginternalDATA \
+	install-toolexeclibgotextDATA \
 	install-toolexeclibgotexttemplateDATA \
 	install-toolexeclibgounicodeDATA
 
@@ -2975,6 +3034,7 @@ uninstall-am: uninstall-toolexeclibLIBRARIES \
 	uninstall-toolexeclibgoruntimeDATA \
 	uninstall-toolexeclibgosyncDATA \
 	uninstall-toolexeclibgotestingDATA \
+	uninstall-toolexeclibgotestinginternalDATA \
 	uninstall-toolexeclibgotextDATA \
 	uninstall-toolexeclibgotexttemplateDATA \
 	uninstall-toolexeclibgounicodeDATA
@@ -3016,7 +3076,9 @@ uninstall-am: uninstall-toolexeclibLIBRARIES \
 	install-toolexeclibgonetrpcDATA install-toolexeclibgoosDATA \
 	install-toolexeclibgopathDATA install-toolexeclibgoregexpDATA \
 	install-toolexeclibgoruntimeDATA install-toolexeclibgosyncDATA \
-	install-toolexeclibgotestingDATA install-toolexeclibgotextDATA \
+	install-toolexeclibgotestingDATA \
+	install-toolexeclibgotestinginternalDATA \
+	install-toolexeclibgotextDATA \
 	install-toolexeclibgotexttemplateDATA \
 	install-toolexeclibgounicodeDATA installcheck installcheck-am \
 	installdirs installdirs-am maintainer-clean \
@@ -3050,6 +3112,7 @@ uninstall-am: uninstall-toolexeclibLIBRARIES \
 	uninstall-toolexeclibgoruntimeDATA \
 	uninstall-toolexeclibgosyncDATA \
 	uninstall-toolexeclibgotestingDATA \
+	uninstall-toolexeclibgotestinginternalDATA \
 	uninstall-toolexeclibgotextDATA \
 	uninstall-toolexeclibgotexttemplateDATA \
 	uninstall-toolexeclibgounicodeDATA
@@ -3316,7 +3379,11 @@ syscall/wait.lo: go/syscall/wait.c runtime.inc
 
 # Build golang_org/x/net/route only on BSD systems.
 
-@LIBGO_IS_BSD_TRUE@$(eval $(call PACKAGE_template,golang_org/x/net/route)
+@LIBGO_IS_BSD_TRUE@$(eval $(call PACKAGE_template,golang_org/x/net/route))
+
+# Build golang_org/x/net/lif only on Solaris systems.
+
+@LIBGO_IS_SOLARIS_TRUE@$(eval $(call PACKAGE_template,golang_org/x/net/lif))
 
 check: check-tail
 check-recursive: check-head

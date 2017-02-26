@@ -102,6 +102,8 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define TARGET_ABM_P(x)	TARGET_ISA_ABM_P(x)
 #define TARGET_SGX	TARGET_ISA_SGX
 #define TARGET_SGX_P(x)	TARGET_ISA_SGX_P(x)
+#define TARGET_RDPID	TARGET_ISA_RDPID
+#define TARGET_RDPID_P(x)	TARGET_ISA_RDPID_P(x)
 #define TARGET_BMI	TARGET_ISA_BMI
 #define TARGET_BMI_P(x)	TARGET_ISA_BMI_P(x)
 #define TARGET_BMI2	TARGET_ISA_BMI2
@@ -166,7 +168,6 @@ see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see
 #define TARGET_MWAITX_P(x)	TARGET_ISA_MWAITX_P(x)
 #define TARGET_PKU	TARGET_ISA_PKU
 #define TARGET_PKU_P(x)	TARGET_ISA_PKU_P(x)
-
 
 #define TARGET_LP64	TARGET_ABI_64
 #define TARGET_LP64_P(x)	TARGET_ABI_64_P(x)
@@ -847,8 +848,8 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
 #define BIGGEST_FIELD_ALIGNMENT 32
 #endif
 #else
-#define ADJUST_FIELD_ALIGN(FIELD, COMPUTED) \
-  x86_field_alignment ((FIELD), (COMPUTED))
+#define ADJUST_FIELD_ALIGN(FIELD, TYPE, COMPUTED) \
+  x86_field_alignment ((TYPE), (COMPUTED))
 #endif
 
 /* If defined, a C expression to compute the alignment given to a
@@ -1211,9 +1212,10 @@ extern const char *host_detect_local_cpu (int argc, const char **argv);
   (CC_REGNO_P (REGNO) ? VOIDmode					\
    : (MODE) == VOIDmode && (NREGS) != 1 ? VOIDmode			\
    : (MODE) == VOIDmode ? choose_hard_reg_mode ((REGNO), (NREGS), false) \
-   : (MODE) == HImode && !(TARGET_PARTIAL_REG_STALL			\
+   : (MODE) == HImode && !((GENERAL_REGNO_P (REGNO)			\
+			    && TARGET_PARTIAL_REG_STALL)		\
 			   || MASK_REGNO_P (REGNO)) ? SImode		\
-   : (MODE) == QImode && !(TARGET_64BIT || QI_REGNO_P (REGNO)		\
+   : (MODE) == QImode && !(ANY_QI_REGNO_P (REGNO)			\
 			   || MASK_REGNO_P (REGNO)) ? SImode		\
    : (MODE))
 
@@ -1377,6 +1379,8 @@ enum reg_class
   reg_class_subset_p ((CLASS), ALL_SSE_REGS)
 #define MMX_CLASS_P(CLASS) \
   ((CLASS) == MMX_REGS)
+#define MASK_CLASS_P(CLASS) \
+  reg_class_subset_p ((CLASS), MASK_REGS)
 #define MAYBE_INTEGER_CLASS_P(CLASS) \
   reg_classes_intersect_p ((CLASS), GENERAL_REGS)
 #define MAYBE_FLOAT_CLASS_P(CLASS) \
@@ -1424,7 +1428,7 @@ enum reg_class
    "FLOAT_INT_SSE_REGS",		\
    "MASK_EVEX_REGS",			\
    "MASK_REGS",				\
-   "MOD4_SSE_REGS"			\
+   "MOD4_SSE_REGS",			\
    "ALL_REGS" }
 
 /* Define which registers fit in which classes.  This is an initializer
@@ -1557,30 +1561,6 @@ enum reg_class
 
 #define INDEX_REG_CLASS INDEX_REGS
 #define BASE_REG_CLASS GENERAL_REGS
-
-/* Place additional restrictions on the register class to use when it
-   is necessary to be able to hold a value of mode MODE in a reload
-   register for which class CLASS would ordinarily be used.
-
-   We avoid classes containing registers from multiple units due to
-   the limitation in ix86_secondary_memory_needed.  We limit these
-   classes to their "natural mode" single unit register class, depending
-   on the unit availability.
-
-   Please note that reg_class_subset_p is not commutative, so these
-   conditions mean "... if (CLASS) includes ALL registers from the
-   register set."  */
-
-#define LIMIT_RELOAD_CLASS(MODE, CLASS)					\
-  (((MODE) == QImode && !TARGET_64BIT					\
-    && reg_class_subset_p (Q_REGS, (CLASS))) ? Q_REGS			\
-   : (((MODE) == SImode || (MODE) == DImode)				\
-      && reg_class_subset_p (GENERAL_REGS, (CLASS))) ? GENERAL_REGS	\
-   : (SSE_FLOAT_MODE_P (MODE) && TARGET_SSE_MATH			\
-      && reg_class_subset_p (SSE_REGS, (CLASS))) ? SSE_REGS		\
-   : (X87_FLOAT_MODE_P (MODE)						\
-      && reg_class_subset_p (FLOAT_REGS, (CLASS))) ? FLOAT_REGS		\
-   : (CLASS))
 
 /* If we are copying between general and FP registers, we need a memory
    location. The same is true for SSE and MMX registers.  */

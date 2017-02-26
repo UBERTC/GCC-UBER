@@ -333,11 +333,11 @@ add_sym (const char *name, gfc_isym_id id, enum klass cl, int actual_ok, bt type
       break;
 
     case SZ_NOTHING:
-      next_sym->name = gfc_get_string (name);
+      next_sym->name = gfc_get_string ("%s", name);
 
       strcpy (buf, "_gfortran_");
       strcat (buf, name);
-      next_sym->lib_name = gfc_get_string (buf);
+      next_sym->lib_name = gfc_get_string ("%s", buf);
 
       next_sym->pure = (cl != CLASS_IMPURE);
       next_sym->elemental = (cl == CLASS_ELEMENTAL);
@@ -884,7 +884,7 @@ find_sym (gfc_intrinsic_sym *start, int n, const char *name)
   /* name may be a user-supplied string, so we must first make sure
      that we're comparing against a pointer into the global string
      table.  */
-  const char *p = gfc_get_string (name);
+  const char *p = gfc_get_string ("%s", name);
 
   while (n > 0)
     {
@@ -1153,7 +1153,7 @@ make_alias (const char *name, int standard)
 
     case SZ_NOTHING:
       next_sym[0] = next_sym[-1];
-      next_sym->name = gfc_get_string (name);
+      next_sym->name = gfc_get_string ("%s", name);
       next_sym->standard = standard;
       next_sym++;
       break;
@@ -4678,6 +4678,27 @@ gfc_intrinsic_func_interface (gfc_expr *expr, int error_flag)
       if (!error_flag)
 	gfc_pop_suppress_errors ();
       return MATCH_ERROR;
+    }
+
+  /* F95, 7.1.6.1: Only transformational functions REPEAT, RESHAPE,
+     SELECTED_INT_KIND, SELECTED_REAL_KIND, TRANSFER, and TRIM are allowed in
+     initialization expressions.  */
+
+  if (gfc_init_expr_flag && isym->transformational)
+    {
+      gfc_isym_id id = isym->id;
+      if (id != GFC_ISYM_REPEAT && id != GFC_ISYM_RESHAPE
+	  && id != GFC_ISYM_SI_KIND && id != GFC_ISYM_SR_KIND
+	  && id != GFC_ISYM_TRANSFER && id != GFC_ISYM_TRIM
+	  && !gfc_notify_std (GFC_STD_F2003, "Transformational function %qs "
+			      "at %L is invalid in an initialization "
+			      "expression", name, &expr->where))
+	{
+	  if (!error_flag)
+	    gfc_pop_suppress_errors ();
+
+	  return MATCH_ERROR;
+	}
     }
 
   gfc_current_intrinsic_where = &expr->where;

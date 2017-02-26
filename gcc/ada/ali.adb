@@ -116,7 +116,6 @@ package body ALI is
       Partition_Elaboration_Policy_Specified := ' ';
       Queuing_Policy_Specified               := ' ';
       SSO_Default_Specified                  := False;
-      Static_Elaboration_Model_Used          := False;
       Task_Dispatching_Policy_Specified      := ' ';
       Unreserve_All_Interrupts_Specified     := False;
       Frontend_Exceptions_Specified          := False;
@@ -718,7 +717,7 @@ package body ALI is
             begin
                loop
                   case Nextc is
-                     when '['   =>
+                     when '[' =>
                         Nested_Brackets := Nested_Brackets + 1;
                      when ']' =>
                         Nested_Brackets := Nested_Brackets - 1;
@@ -1464,19 +1463,19 @@ package body ALI is
                   C := Getc;
 
                   case C is
-                  when 'v' =>
-                     ALIs.Table (Id).Restrictions.Violated (R) := True;
-                     Cumulative_Restrictions.Violated (R) := True;
+                     when 'v' =>
+                        ALIs.Table (Id).Restrictions.Violated (R) := True;
+                        Cumulative_Restrictions.Violated (R) := True;
 
-                  when 'r' =>
-                     ALIs.Table (Id).Restrictions.Set (R) := True;
-                     Cumulative_Restrictions.Set (R) := True;
+                     when 'r' =>
+                        ALIs.Table (Id).Restrictions.Set (R) := True;
+                        Cumulative_Restrictions.Set (R) := True;
 
-                  when 'n' =>
-                     null;
+                     when 'n' =>
+                        null;
 
-                  when others =>
-                     raise Bad_R_Line;
+                     when others =>
+                        raise Bad_R_Line;
                   end case;
                end loop;
 
@@ -1995,14 +1994,6 @@ package body ALI is
          end loop;
 
          Skip_Eol;
-
-         --  Check if static elaboration model used
-
-         if not Units.Table (Units.Last).Dynamic_Elab
-           and then not Units.Table (Units.Last).Internal
-         then
-            Static_Elaboration_Model_Used := True;
-         end if;
 
          C := Getc;
 

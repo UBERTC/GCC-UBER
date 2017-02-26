@@ -236,6 +236,7 @@ dvidir = @dvidir@
 enable_shared = @enable_shared@
 enable_static = @enable_static@
 exec_prefix = @exec_prefix@
+get_gcc_base_ver = @get_gcc_base_ver@
 glibcxx_MOFILES = @glibcxx_MOFILES@
 glibcxx_PCHFLAGS = @glibcxx_PCHFLAGS@
 glibcxx_POFILES = @glibcxx_POFILES@
@@ -300,7 +301,7 @@ toplevel_builddir = @toplevel_builddir@
 toplevel_srcdir = @toplevel_srcdir@
 
 # May be used by various substitution variables.
-gcc_version := $(shell cat $(top_srcdir)/../gcc/BASE-VER)
+gcc_version := $(shell @get_gcc_base_ver@ $(top_srcdir)/../gcc/BASE-VER)
 MAINT_CHARSET = latin1
 mkinstalldirs = $(SHELL) $(toplevel_srcdir)/mkinstalldirs
 PWD_COMMAND = $${PWDCMD-pwd}
@@ -538,11 +539,6 @@ xml_image_generated = \
 	${xml_image_dir}/pbds_tree_text_lor_find.png
 
 xml_images = ${xml_image_basic} ${xml_image_generated}
-xml_extradir = ${glibcxx_srcdir}/doc/html/ext
-xml_extra = \
-	${xml_extradir}/lwg-active.html \
-	${xml_extradir}/lwg-closed.html \
-	${xml_extradir}/lwg-defects.html
 
 xml_noinst = \
 	${xml_dir}/book.txml \
@@ -969,11 +965,7 @@ stamp-html-docbook-images: stamp-html-docbook $(xml_images)
 	$(INSTALL_DATA)	$(xml_images) ${docbook_outdir}/html/images
 	$(STAMP) stamp-html-docbook-images
 
-stamp-html-docbook-lwg: stamp-html-docbook $(xml_extra)
-	$(INSTALL_DATA)	$(xml_extra) ${docbook_outdir}/html/ext
-	$(STAMP) stamp-html-docbook-lwg
-
-stamp-html-docbook-data: stamp-html-docbook-images stamp-html-docbook-lwg
+stamp-html-docbook-data: stamp-html-docbook-images
 	$(STAMP) stamp-html-docbook-data
 
 # HTML, "chunked" into index plus chapters as separate pages

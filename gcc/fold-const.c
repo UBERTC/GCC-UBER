@@ -139,6 +139,7 @@ static tree fold_relational_const (enum tree_code, tree, tree, tree);
 static tree fold_convert_const (enum tree_code, tree, tree);
 static tree fold_view_convert_expr (tree, tree);
 static bool vec_cst_ctor_to_array (tree, tree *);
+static tree fold_negate_expr (location_t, tree);
 
 
 /* Return EXPR_LOCATION of T if it is not UNKNOWN_LOCATION.
@@ -522,7 +523,7 @@ negate_expr_p (tree t)
    returned.  */
 
 static tree
-fold_negate_expr (location_t loc, tree t)
+fold_negate_expr_1 (location_t loc, tree t)
 {
   tree type = TREE_TYPE (t);
   tree tem;
@@ -533,7 +534,7 @@ fold_negate_expr (location_t loc, tree t)
     case BIT_NOT_EXPR:
       if (INTEGRAL_TYPE_P (type))
         return fold_build2_loc (loc, PLUS_EXPR, type, TREE_OPERAND (t, 0),
-                            build_one_cst (type));
+				build_one_cst (type));
       break;
 
     case INTEGER_CST:
@@ -581,14 +582,14 @@ fold_negate_expr (location_t loc, tree t)
     case COMPLEX_EXPR:
       if (negate_expr_p (t))
 	return fold_build2_loc (loc, COMPLEX_EXPR, type,
-			    fold_negate_expr (loc, TREE_OPERAND (t, 0)),
-			    fold_negate_expr (loc, TREE_OPERAND (t, 1)));
+				fold_negate_expr (loc, TREE_OPERAND (t, 0)),
+				fold_negate_expr (loc, TREE_OPERAND (t, 1)));
       break;
 
     case CONJ_EXPR:
       if (negate_expr_p (t))
 	return fold_build1_loc (loc, CONJ_EXPR, type,
-			    fold_negate_expr (loc, TREE_OPERAND (t, 0)));
+				fold_negate_expr (loc, TREE_OPERAND (t, 0)));
       break;
 
     case NEGATE_EXPR:
@@ -605,7 +606,7 @@ fold_negate_expr (location_t loc, tree t)
 	    {
 	      tem = negate_expr (TREE_OPERAND (t, 1));
 	      return fold_build2_loc (loc, MINUS_EXPR, type,
-				  tem, TREE_OPERAND (t, 0));
+				      tem, TREE_OPERAND (t, 0));
 	    }
 
 	  /* -(A + B) -> (-A) - B.  */
@@ -613,7 +614,7 @@ fold_negate_expr (location_t loc, tree t)
 	    {
 	      tem = negate_expr (TREE_OPERAND (t, 0));
 	      return fold_build2_loc (loc, MINUS_EXPR, type,
-				  tem, TREE_OPERAND (t, 1));
+				      tem, TREE_OPERAND (t, 1));
 	    }
 	}
       break;
@@ -623,7 +624,7 @@ fold_negate_expr (location_t loc, tree t)
       if (!HONOR_SIGN_DEPENDENT_ROUNDING (element_mode (type))
 	  && !HONOR_SIGNED_ZEROS (element_mode (type)))
 	return fold_build2_loc (loc, MINUS_EXPR, type,
-			    TREE_OPERAND (t, 1), TREE_OPERAND (t, 0));
+				TREE_OPERAND (t, 1), TREE_OPERAND (t, 0));
       break;
 
     case MULT_EXPR:
@@ -638,11 +639,11 @@ fold_negate_expr (location_t loc, tree t)
 	  tem = TREE_OPERAND (t, 1);
 	  if (negate_expr_p (tem))
 	    return fold_build2_loc (loc, TREE_CODE (t), type,
-				TREE_OPERAND (t, 0), negate_expr (tem));
+				    TREE_OPERAND (t, 0), negate_expr (tem));
 	  tem = TREE_OPERAND (t, 0);
 	  if (negate_expr_p (tem))
 	    return fold_build2_loc (loc, TREE_CODE (t), type,
-				negate_expr (tem), TREE_OPERAND (t, 1));
+				    negate_expr (tem), TREE_OPERAND (t, 1));
 	}
       break;
 
@@ -713,6 +714,19 @@ fold_negate_expr (location_t loc, tree t)
     }
 
   return NULL_TREE;
+}
+
+/* A wrapper for fold_negate_expr_1.  */
+
+static tree
+fold_negate_expr (location_t loc, tree t)
+{
+  tree type = TREE_TYPE (t);
+  STRIP_SIGN_NOPS (t);
+  tree tem = fold_negate_expr_1 (loc, t);
+  if (tem == NULL_TREE)
+    return NULL_TREE;
+  return fold_convert_loc (loc, type, tem);
 }
 
 /* Like fold_negate_expr, but return a NEGATE_EXPR tree, if T can not be
@@ -2722,6 +2736,9 @@ combine_comparisons (location_t loc,
    If OEP_ADDRESS_OF is set, we are actually comparing addresses of objects,
    not values of expressions.
 
+   If OEP_LEXICOGRAPHIC is set, then also handle expressions with side-effects
+   such as MODIFY_EXPR, RETURN_EXPR, as well as STATEMENT_LISTs.
+
    Unless OEP_MATCH_SIDE_EFFECTS is set, the function returns false on
    any operand with side effect.  This is unnecesarily conservative in the
    case we know that arg0 and arg1 are in disjoint code paths (such as in
@@ -3144,7 +3161,7 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 				      TREE_OPERAND (arg1, 0), flags));
 
 	case COND_EXPR:
-	  if (! OP_SAME (1) || ! OP_SAME (2))
+	  if (! OP_SAME (1) || ! OP_SAME_WITH_NULL (2))
 	    return 0;
 	  flags &= ~OEP_ADDRESS_OF;
 	  return OP_SAME (0);
@@ -3153,6 +3170,23 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 	case DOT_PROD_EXPR:
 	case BIT_INSERT_EXPR:
 	  return OP_SAME (0) && OP_SAME (1) && OP_SAME (2);
+
+	case MODIFY_EXPR:
+	case INIT_EXPR:
+	case COMPOUND_EXPR:
+	case PREDECREMENT_EXPR:
+	case PREINCREMENT_EXPR:
+	case POSTDECREMENT_EXPR:
+	case POSTINCREMENT_EXPR:
+	  if (flags & OEP_LEXICOGRAPHIC)
+	    return OP_SAME (0) && OP_SAME (1);
+	  return 0;
+
+	case CLEANUP_POINT_EXPR:
+	case EXPR_STMT:
+	  if (flags & OEP_LEXICOGRAPHIC)
+	    return OP_SAME (0);
+	  return 0;
 
 	default:
 	  return 0;
@@ -3190,7 +3224,7 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 	      cef &= ECF_CONST | ECF_PURE;
 	    else
 	      cef &= ECF_CONST;
-	    if (!cef)
+	    if (!cef && !(flags & OEP_LEXICOGRAPHIC))
 	      return 0;
 	  }
 
@@ -3269,7 +3303,38 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 	    }
 	  return 1;
 	}
+      else if (TREE_CODE (arg0) == STATEMENT_LIST
+	       && (flags & OEP_LEXICOGRAPHIC))
+	{
+	  /* Compare the STATEMENT_LISTs.  */
+	  tree_stmt_iterator tsi1, tsi2;
+	  tree body1 = CONST_CAST_TREE (arg0);
+	  tree body2 = CONST_CAST_TREE (arg1);
+	  for (tsi1 = tsi_start (body1), tsi2 = tsi_start (body2); ;
+	       tsi_next (&tsi1), tsi_next (&tsi2))
+	    {
+	      /* The lists don't have the same number of statements.  */
+	      if (tsi_end_p (tsi1) ^ tsi_end_p (tsi2))
+		return 0;
+	      if (tsi_end_p (tsi1) && tsi_end_p (tsi2))
+		return 1;
+	      if (!operand_equal_p (tsi_stmt (tsi1), tsi_stmt (tsi2),
+				    OEP_LEXICOGRAPHIC))
+		return 0;
+	    }
+	}
       return 0;
+
+    case tcc_statement:
+      switch (TREE_CODE (arg0))
+	{
+	case RETURN_EXPR:
+	  if (flags & OEP_LEXICOGRAPHIC)
+	    return OP_SAME_WITH_NULL (0);
+	  return 0;
+	default:
+	  return 0;
+	 }
 
     default:
       return 0;
@@ -13897,7 +13962,7 @@ fold_build_cleanup_point_expr (tree type, tree expr)
         return expr;
     }
 
-  return build1 (CLEANUP_POINT_EXPR, type, expr);
+  return build1_loc (EXPR_LOCATION (expr), CLEANUP_POINT_EXPR, type, expr);
 }
 
 /* Given a pointer value OP0 and a type TYPE, return a simplified version

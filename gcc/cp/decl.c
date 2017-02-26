@@ -50,6 +50,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "plugin.h"
 #include "cilk.h"
 #include "builtins.h"
+#include "gimplify.h"
 
 /* Possible cases of bad specifiers type used by bad_specifiers. */
 enum bad_spec_place {
@@ -792,14 +793,17 @@ poplevel (int keep, int reverse, int functionbody)
      back ends won't understand OVERLOAD, so we remove them here.
      Because the BLOCK_VARS are (temporarily) shared with
      CURRENT_BINDING_LEVEL->NAMES we must do this fixup after we have
-     popped all the bindings.  */
+     popped all the bindings.  Also remove undeduced 'auto' decls,
+     which LTO doesn't understand, and can't have been used by anything.  */
   if (block)
     {
       tree* d;
 
       for (d = &BLOCK_VARS (block); *d; )
 	{
-	  if (TREE_CODE (*d) == TREE_LIST)
+	  if (TREE_CODE (*d) == TREE_LIST
+	      || (!processing_template_decl
+		  && undeduced_auto_decl (*d)))
 	    *d = TREE_CHAIN (*d);
 	  else
 	    d = &DECL_CHAIN (*d);
@@ -1269,8 +1273,8 @@ check_redeclaration_exception_specification (tree new_decl,
   if (! DECL_IS_BUILTIN (old_decl)
       && !comp_except_specs (new_exceptions, old_exceptions, ce_normal))
     {
-      const char *msg
-	= "declaration of %qF has a different exception specifier";
+      const char *const msg
+	= G_("declaration of %qF has a different exception specifier");
       bool complained = true;
       location_t new_loc = DECL_SOURCE_LOCATION (new_decl);
       if (DECL_IN_SYSTEM_HEADER (old_decl))
@@ -4071,7 +4075,8 @@ cxx_init_decl_processing (void)
   gcc_assert (global_namespace == NULL_TREE);
   global_namespace = build_lang_decl (NAMESPACE_DECL, global_scope_name,
 				      void_type_node);
-  DECL_CONTEXT (global_namespace) = build_translation_unit_decl (NULL_TREE);
+  DECL_CONTEXT (global_namespace)
+    = build_translation_unit_decl (get_identifier (main_input_filename));
   debug_hooks->register_main_translation_unit
     (DECL_CONTEXT (global_namespace));
   TREE_PUBLIC (global_namespace) = 1;
@@ -4563,7 +4568,7 @@ static tree
 push_cp_library_fn (enum tree_code operator_code, tree type,
 		    int ecf_flags)
 {
-  tree fn = build_cp_library_fn (ansi_opname (operator_code),
+  tree fn = build_cp_library_fn (cp_operator_id (operator_code),
 				 operator_code,
 				 type, ecf_flags);
   pushdecl (fn);
@@ -6299,14 +6304,14 @@ check_initializer (tree decl, tree init, int flags, vec<tree, va_gc> **cleanups)
       if (type == error_mark_node)
 	return NULL_TREE;
 
-      if ((type_build_ctor_call (type) || CLASS_TYPE_P (type)
-	   || (DECL_DECOMPOSITION_P (decl) && TREE_CODE (type) == ARRAY_TYPE))
-	  && !(flags & LOOKUP_ALREADY_DIGESTED)
-	  && !(init && BRACE_ENCLOSED_INITIALIZER_P (init)
-	       && CP_AGGREGATE_TYPE_P (type)
-	       && (CLASS_TYPE_P (type)
-		   || !TYPE_NEEDS_CONSTRUCTING (type)
-		   || type_has_extended_temps (type))))
+      if (((type_build_ctor_call (type) || CLASS_TYPE_P (type))
+	   && !(flags & LOOKUP_ALREADY_DIGESTED)
+	   && !(init && BRACE_ENCLOSED_INITIALIZER_P (init)
+		&& CP_AGGREGATE_TYPE_P (type)
+		&& (CLASS_TYPE_P (type)
+		    || !TYPE_NEEDS_CONSTRUCTING (type)
+		    || type_has_extended_temps (type))))
+	  || (DECL_DECOMPOSITION_P (decl) && TREE_CODE (type) == ARRAY_TYPE))
 	{
 	  init_code = build_aggr_init_full_exprs (decl, init, flags);
 
@@ -6658,6 +6663,9 @@ type_dependent_init_p (tree init)
   else if (TREE_CODE (init) == CONSTRUCTOR)
   /* A brace-enclosed initializer, e.g.: int i = { 3 }; ? */
     {
+      if (dependent_type_p (TREE_TYPE (init)))
+	return true;
+
       vec<constructor_elt, va_gc> *elts;
       size_t nelts;
       size_t i;
@@ -6820,7 +6828,8 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
       if (VAR_P (decl) && DECL_DECOMPOSITION_P (decl))
 	adc = adc_decomp_type;
       type = TREE_TYPE (decl) = do_auto_deduction (type, d_init, auto_node,
-						   tf_warning_or_error, adc);
+						   tf_warning_or_error, adc,
+						   NULL_TREE, flags);
       if (type == error_mark_node)
 	return;
       if (TREE_CODE (type) == FUNCTION_TYPE)
@@ -7461,7 +7470,7 @@ cp_finish_decomp (tree decl, tree first, unsigned int count)
 	{
 	  TREE_TYPE (v[i]) = eltype;
 	  layout_decl (v[i], 0);
-	  tree t = dexp;
+	  tree t = unshare_expr (dexp);
 	  t = build4_loc (DECL_SOURCE_LOCATION (v[i]), ARRAY_REF,
 			  eltype, t, size_int (i), NULL_TREE,
 			  NULL_TREE);
@@ -7480,7 +7489,7 @@ cp_finish_decomp (tree decl, tree first, unsigned int count)
 	{
 	  TREE_TYPE (v[i]) = eltype;
 	  layout_decl (v[i], 0);
-	  tree t = dexp;
+	  tree t = unshare_expr (dexp);
 	  t = build1_loc (DECL_SOURCE_LOCATION (v[i]),
 			  i ? IMAGPART_EXPR : REALPART_EXPR, eltype,
 			  t);
@@ -7498,7 +7507,7 @@ cp_finish_decomp (tree decl, tree first, unsigned int count)
 	{
 	  TREE_TYPE (v[i]) = eltype;
 	  layout_decl (v[i], 0);
-	  tree t = dexp;
+	  tree t = unshare_expr (dexp);
 	  convert_vector_to_array_for_subscript (DECL_SOURCE_LOCATION (v[i]),
 						 &t, size_int (i));
 	  t = build4_loc (DECL_SOURCE_LOCATION (v[i]), ARRAY_REF,
@@ -7561,6 +7570,11 @@ cp_finish_decomp (tree decl, tree first, unsigned int count)
       error_at (loc, "cannot decompose non-array non-class type %qT", type);
       goto error_out;
     }
+  else if (LAMBDA_TYPE_P (type))
+    {
+      error_at (loc, "cannot decompose lambda closure type %qT", type);
+      goto error_out;
+    }
   else
     {
       tree btype = find_decomp_class_base (loc, type, NULL_TREE);
@@ -7592,7 +7606,8 @@ cp_finish_decomp (tree decl, tree first, unsigned int count)
 	  continue;
 	else
 	  {
-	    tree tt = finish_non_static_data_member (field, t, NULL_TREE);
+	    tree tt = finish_non_static_data_member (field, unshare_expr (t),
+						     NULL_TREE);
 	    if (REFERENCE_REF_P (tt))
 	      tt = TREE_OPERAND (tt, 0);
 	    TREE_TYPE (v[i]) = TREE_TYPE (tt);
@@ -8723,14 +8738,6 @@ grokfndecl (tree ctype,
 		    "namespace scope", decl);
 	  return NULL_TREE;
 	}
-      tree type = TREE_TYPE (DECL_NAME (decl));
-      if (CP_DECL_CONTEXT (decl) != CP_TYPE_CONTEXT (type))
-	{
-	  error_at (location, "deduction guide %qD must be declared in the "
-		    "same scope as %qT", decl, type);
-	  inform (location_of (type), "  declared here");
-	  return NULL_TREE;
-	}
       if (funcdef_flag)
 	error_at (location,
 		  "deduction guide %qD must not have a function body", decl);
@@ -9751,6 +9758,20 @@ check_special_function_return_type (special_function_kind sfk,
       type = optype;
       break;
 
+    case sfk_deduction_guide:
+      if (type)
+	error ("return type specified for deduction guide");
+      else if (type_quals != TYPE_UNQUALIFIED)
+	error_at (smallest_type_quals_location (type_quals, locations),
+		  "qualifiers are not allowed on declaration of "
+		  "deduction guide");
+      type = make_template_placeholder (CLASSTYPE_TI_TEMPLATE (optype));
+      for (int i = 0; i < ds_last; ++i)
+	if (i != ds_explicit && locations[i])
+	  error_at (locations[i],
+		    "decl-specifier in declaration of deduction guide");
+      break;
+
     default:
       gcc_unreachable ();
     }
@@ -10098,7 +10119,6 @@ grokdeclarator (const cp_declarator *declarator,
 		  {
 		    gcc_assert (flags == NO_SPECIAL);
 		    flags = TYPENAME_FLAG;
-		    ctor_return_type = TREE_TYPE (dname);
 		    sfk = sfk_conversion;
 		    if (is_typename_at_global_scope (dname))
 		      name = identifier_to_locale (IDENTIFIER_POINTER (dname));
@@ -10278,8 +10298,9 @@ grokdeclarator (const cp_declarator *declarator,
 #endif
   typedef_type = type;
 
-
-  if (sfk != sfk_conversion)
+  if (sfk == sfk_conversion || sfk == sfk_deduction_guide)
+    ctor_return_type = TREE_TYPE (dname);
+  else
     ctor_return_type = ctype;
 
   if (sfk != sfk_none)
@@ -10899,12 +10920,13 @@ grokdeclarator (const cp_declarator *declarator,
 			if (!late_return_type)
 			  {
 			    if (dguide_name_p (unqualified_id))
-			      error_at (typespec_loc, "deduction guide for "
-					"%qT must have trailing return type",
-					TREE_TYPE (tmpl));
+			      error_at (declarator->id_loc, "deduction guide "
+					"for %qT must have trailing return "
+					"type", TREE_TYPE (tmpl));
 			    else
-			      error_at (typespec_loc, "deduced class type %qT "
-					"in function return type", type);
+			      error_at (declarator->id_loc, "deduced class "
+					"type %qT in function return type",
+					type);
 			    inform (DECL_SOURCE_LOCATION (tmpl),
 				    "%qD declared here", tmpl);
 			  }
@@ -11031,6 +11053,11 @@ grokdeclarator (const cp_declarator *declarator,
 		  }
 		if (late_return_type_p)
 		  error ("a conversion function cannot have a trailing return type");
+	      }
+	    else if (sfk == sfk_deduction_guide)
+	      {
+		if (explicitp == 1)
+		  explicitp = 2;
 	      }
 
 	    arg_types = grokparms (declarator->u.function.parameters,
@@ -11796,8 +11823,19 @@ grokdeclarator (const cp_declarator *declarator,
 		error ("flexible array member in union");
 		type = error_mark_node;
 	      }
-	    else 
+	    else
 	      {
+		/* Array is a flexible member.  */
+		if (in_system_header_at (input_location))
+		  /* Do not warn on flexible array members in system
+		     headers because glibc uses them.  */;
+		else if (name)
+		  pedwarn (input_location, OPT_Wpedantic,
+			   "ISO C++ forbids flexible array member %<%s%>", name);
+		else
+		  pedwarn (input_location, OPT_Wpedantic,
+			   "ISO C++ forbids flexible array members");
+
 		/* Flexible array member has a null domain.  */
 		type = build_cplus_array_type (TREE_TYPE (type), NULL_TREE);
 	      }
@@ -12032,14 +12070,6 @@ grokdeclarator (const cp_declarator *declarator,
 					    : input_location,
 					    VAR_DECL, unqualified_id, type);
 		set_linkage_for_static_data_member (decl);
-		if (thread_p)
-		  {
-		    CP_DECL_THREAD_LOCAL_P (decl) = true;
-		    if (!processing_template_decl)
-		      set_decl_tls_model (decl, decl_default_tls_model (decl));
-		    if (declspecs->gnu_thread_keyword_p)
-		      SET_DECL_GNU_TLS_P (decl);
-		  }
 		if (concept_p)
 		    error ("static data member %qE declared %<concept%>",
 			   unqualified_id);
@@ -12060,6 +12090,15 @@ grokdeclarator (const cp_declarator *declarator,
 		     definition is provided, unless this is an inline
 		     variable.  */
 		  DECL_EXTERNAL (decl) = 1;
+
+		if (thread_p)
+		  {
+		    CP_DECL_THREAD_LOCAL_P (decl) = true;
+		    if (!processing_template_decl)
+		      set_decl_tls_model (decl, decl_default_tls_model (decl));
+		    if (declspecs->gnu_thread_keyword_p)
+		      SET_DECL_GNU_TLS_P (decl);
+		  }
 	      }
 	    else
 	      {
@@ -12189,6 +12228,8 @@ grokdeclarator (const cp_declarator *declarator,
 	if (decl == NULL_TREE)
 	  return error_mark_node;
 
+	if (explicitp == 2)
+	  DECL_NONCONVERTING_P (decl) = 1;
 	if (staticp == 1)
 	  {
 	    int invalid_static = 0;
@@ -12920,12 +12961,12 @@ grok_op_properties (tree decl, bool complain)
     do
       {
 #define DEF_OPERATOR(NAME, CODE, MANGLING, ARITY, ASSN_P)	\
-	if (ansi_opname (CODE) == name)				\
+	if (cp_operator_id (CODE) == name)			\
 	  {							\
 	    operator_code = (CODE);				\
 	    break;						\
 	  }							\
-	else if (ansi_assopname (CODE) == name)			\
+	else if (cp_assignment_operator_id (CODE) == name)	\
 	  {							\
 	    operator_code = (CODE);				\
 	    DECL_ASSIGNMENT_OPERATOR_P (decl) = 1;		\
@@ -16105,24 +16146,29 @@ fndecl_declared_return_type (tree fn)
   return TREE_TYPE (TREE_TYPE (fn));
 }
 
-/* Returns true iff DECL was declared with an auto return type and it has
+/* Returns true iff DECL was declared with an auto type and it has
    not yet been deduced to a real type.  */
 
 bool
 undeduced_auto_decl (tree decl)
 {
-  if (cxx_dialect < cxx14)
+  if (cxx_dialect < cxx11)
     return false;
   return type_uses_auto (TREE_TYPE (decl));
 }
 
 /* Complain if DECL has an undeduced return type.  */
 
-void
-require_deduced_type (tree decl)
+bool
+require_deduced_type (tree decl, tsubst_flags_t complain)
 {
   if (undeduced_auto_decl (decl))
-    error ("use of %qD before deduction of %<auto%>", decl);
+    {
+      if (complain & tf_error)
+	error ("use of %qD before deduction of %<auto%>", decl);
+      return false;
+    }
+  return true;
 }
 
 #include "gt-cp-decl.h"

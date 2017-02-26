@@ -1015,7 +1015,7 @@ dump_decl_name (cxx_pretty_printer *pp, tree t, int flags)
   if (dguide_name_p (t))
     {
       dump_decl (pp, CLASSTYPE_TI_TEMPLATE (TREE_TYPE (t)),
-		 TFF_PLAIN_IDENTIFIER);
+		 TFF_UNQUALIFIED_NAME);
       return;
     }
 
@@ -2247,7 +2247,8 @@ dump_expr (cxx_pretty_printer *pp, tree t, int flags)
 	else
 	  {
 	    dump_expr (pp, ob, flags | TFF_EXPR_IN_PARENS);
-	    pp_cxx_dot (pp);
+	    if (TREE_CODE (ob) != ARROW_EXPR)
+	      pp_cxx_dot (pp);
 	  }
 	dump_expr (pp, TREE_OPERAND (t, 1), flags & ~TFF_EXPR_IN_PARENS);
       }
@@ -3777,11 +3778,12 @@ qualified_name_lookup_error (tree scope, tree name,
   else if (scope != global_namespace)
     {
       error_at (location, "%qD is not a member of %qD", name, scope);
-      suggest_alternatives_for (location, name);
+      if (!suggest_alternative_in_explicit_scope (location, name, scope))
+	suggest_alternatives_for (location, name, false);
     }
   else
     {
       error_at (location, "%<::%D%> has not been declared", name);
-      suggest_alternatives_for (location, name);
+      suggest_alternatives_for (location, name, true);
     }
 }

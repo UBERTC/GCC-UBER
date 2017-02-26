@@ -3305,7 +3305,6 @@ package body Exp_Ch3 is
             --  Remaining processing depends on type
 
             case Ekind (Subtype_Mark_Id) is
-
                when Array_Kind =>
                   Constrain_Array (S, Check_List);
 
@@ -3327,7 +3326,7 @@ package body Exp_Ch3 is
            Needs_Simple_Initialization (T)
              and then not Is_RTE (T, RE_Tag)
 
-               --  Ada 2005 (AI-251): Check also the tag of abstract interfaces
+             --  Ada 2005 (AI-251): Check also the tag of abstract interfaces
 
              and then not Is_RTE (T, RE_Interface_Tag);
       end Component_Needs_Simple_Initialization;
@@ -4361,13 +4360,7 @@ package body Exp_Ch3 is
       Base     : constant Entity_Id := Base_Type (Typ);
       Comp_Typ : constant Entity_Id := Component_Type (Typ);
 
-      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
-
    begin
-      --  Ensure that all freezing activities are properly flagged as Ghost
-
-      Set_Ghost_Mode_From_Entity (Typ);
-
       if not Is_Bit_Packed_Array (Typ) then
 
          --  If the component contains tasks, so does the array type. This may
@@ -4435,8 +4428,6 @@ package body Exp_Ch3 is
       then
          Build_Array_Init_Proc (Base, N);
       end if;
-
-      Ghost_Mode := Save_Ghost_Mode;
    end Expand_Freeze_Array_Type;
 
    -----------------------------------
@@ -4477,8 +4468,6 @@ package body Exp_Ch3 is
       Typ  : constant Entity_Id := Entity (N);
       Root : constant Entity_Id := Root_Type (Typ);
 
-      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
-
    --  Start of processing for Expand_Freeze_Class_Wide_Type
 
    begin
@@ -4511,15 +4500,10 @@ package body Exp_Ch3 is
          return;
       end if;
 
-      --  Ensure that all freezing activities are properly flagged as Ghost
-
-      Set_Ghost_Mode_From_Entity (Typ);
-
       --  Create the body of TSS primitive Finalize_Address. This automatically
       --  sets the TSS entry for the class-wide type.
 
       Make_Finalize_Address_Body (Typ);
-      Ghost_Mode := Save_Ghost_Mode;
    end Expand_Freeze_Class_Wide_Type;
 
    ------------------------------------
@@ -4529,8 +4513,6 @@ package body Exp_Ch3 is
    procedure Expand_Freeze_Enumeration_Type (N : Node_Id) is
       Typ : constant Entity_Id  := Entity (N);
       Loc : constant Source_Ptr := Sloc (Typ);
-
-      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
 
       Arr           : Entity_Id;
       Ent           : Entity_Id;
@@ -4546,10 +4528,6 @@ package body Exp_Ch3 is
       pragma Warnings (Off, Func);
 
    begin
-      --  Ensure that all freezing activities are properly flagged as Ghost
-
-      Set_Ghost_Mode_From_Entity (Typ);
-
       --  Various optimizations possible if given representation is contiguous
 
       Is_Contiguous := True;
@@ -4612,7 +4590,7 @@ package body Exp_Ch3 is
               Discrete_Subtype_Definitions => New_List (
                 Make_Subtype_Indication (Loc,
                   Subtype_Mark => New_Occurrence_Of (Standard_Natural, Loc),
-                  Constraint =>
+                  Constraint   =>
                     Make_Range_Constraint (Loc,
                       Range_Expression =>
                         Make_Range (Loc,
@@ -4832,11 +4810,10 @@ package body Exp_Ch3 is
          Set_Debug_Info_Off (Fent);
       end if;
 
-      Ghost_Mode := Save_Ghost_Mode;
+      Set_Is_Inlined (Fent);
 
    exception
       when RE_Not_Available =>
-         Ghost_Mode := Save_Ghost_Mode;
          return;
    end Expand_Freeze_Enumeration_Type;
 
@@ -4847,8 +4824,6 @@ package body Exp_Ch3 is
    procedure Expand_Freeze_Record_Type (N : Node_Id) is
       Typ      : constant Node_Id := Entity (N);
       Typ_Decl : constant Node_Id := Parent (Typ);
-
-      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
 
       Comp        : Entity_Id;
       Comp_Typ    : Entity_Id;
@@ -4867,10 +4842,6 @@ package body Exp_Ch3 is
    --  Start of processing for Expand_Freeze_Record_Type
 
    begin
-      --  Ensure that all freezing activities are properly flagged as Ghost
-
-      Set_Ghost_Mode_From_Entity (Typ);
-
       --  Build discriminant checking functions if not a derived type (for
       --  derived types that are not tagged types, always use the discriminant
       --  checking functions of the parent type). However, for untagged types
@@ -5291,8 +5262,6 @@ package body Exp_Ch3 is
             end loop;
          end;
       end if;
-
-      Ghost_Mode := Save_Ghost_Mode;
    end Expand_Freeze_Record_Type;
 
    ------------------------------------
@@ -5496,6 +5465,13 @@ package body Exp_Ch3 is
       --  value, it may be possible to build an equivalent aggregate instead,
       --  and prevent an actual call to the initialization procedure.
 
+      procedure Check_Large_Modular_Array;
+      --  Check that the size of the array can be computed without overflow,
+      --  and generate a Storage_Error otherwise. This is only relevant for
+      --  array types whose index in a (mod 2**64) type, where wrap-around
+      --  arithmetic might yield a meaningless value for the length of the
+      --  array, or its corresponding attribute.
+
       procedure Default_Initialize_Object (After : Node_Id);
       --  Generate all default initialization actions for object Def_Id. Any
       --  new code is inserted after node After.
@@ -5634,6 +5610,61 @@ package body Exp_Ch3 is
       end Build_Equivalent_Aggregate;
 
       -------------------------------
+      -- Check_Large_Modular_Array --
+      -------------------------------
+
+      procedure Check_Large_Modular_Array is
+         Index_Typ : Entity_Id;
+
+      begin
+         if Is_Array_Type (Typ)
+           and then Is_Modular_Integer_Type (Etype (First_Index (Typ)))
+         then
+            --  To prevent arithmetic overflow with large values, we raise
+            --  Storage_Error under the following guard:
+
+            --    (Arr'Last / 2 - Arr'First / 2) > (2 ** 30)
+
+            --  This takes care of the boundary case, but it is preferable to
+            --  use a smaller limit, because even on 64-bit architectures an
+            --  array of more than 2 ** 30 bytes is likely to raise
+            --  Storage_Error.
+
+            Index_Typ := Etype (First_Index (Typ));
+
+            if RM_Size (Index_Typ) = RM_Size (Standard_Long_Long_Integer) then
+               Insert_Action (N,
+                 Make_Raise_Storage_Error (Loc,
+                   Condition =>
+                     Make_Op_Ge (Loc,
+                       Left_Opnd  =>
+                         Make_Op_Subtract (Loc,
+                           Left_Opnd  =>
+                             Make_Op_Divide (Loc,
+                               Left_Opnd  =>
+                                 Make_Attribute_Reference (Loc,
+                                   Prefix         =>
+                                     New_Occurrence_Of (Typ, Loc),
+                                   Attribute_Name => Name_Last),
+                               Right_Opnd =>
+                                 Make_Integer_Literal (Loc, Uint_2)),
+                           Right_Opnd =>
+                             Make_Op_Divide (Loc,
+                               Left_Opnd =>
+                                 Make_Attribute_Reference (Loc,
+                                   Prefix         =>
+                                     New_Occurrence_Of (Typ, Loc),
+                                   Attribute_Name => Name_First),
+                               Right_Opnd =>
+                                 Make_Integer_Literal (Loc, Uint_2))),
+                       Right_Opnd =>
+                         Make_Integer_Literal (Loc, (Uint_2 ** 30))),
+                   Reason    => SE_Object_Too_Large));
+            end if;
+         end if;
+      end Check_Large_Modular_Array;
+
+      -------------------------------
       -- Default_Initialize_Object --
       -------------------------------
 
@@ -5686,6 +5717,15 @@ package body Exp_Ch3 is
          --  Suppress_Initialization has been explicitly given
 
          if Is_Imported (Def_Id) or else Suppress_Initialization (Def_Id) then
+            return;
+
+         --  Nothing to do if the object being initialized is of a task type
+         --  and restriction No_Tasking is in effect, because this is a direct
+         --  violation of the restriction.
+
+         elsif Is_Task_Type (Base_Typ)
+           and then Restriction_Active (No_Tasking)
+         then
             return;
          end if;
 
@@ -6033,6 +6073,8 @@ package body Exp_Ch3 is
          Build_Activation_Chain_Entity (N);
          Build_Master_Entity (Def_Id);
       end if;
+
+      Check_Large_Modular_Array;
 
       --  Default initialization required, and no expression present
 
@@ -7043,6 +7085,10 @@ package body Exp_Ch3 is
    --  for initialization) are chained in the Actions field list of the freeze
    --  node using Append_Freeze_Actions.
 
+   --  WARNING: This routine manages Ghost regions. Return statements must be
+   --  replaced by gotos which jump to the end of the routine and restore the
+   --  Ghost mode.
+
    function Freeze_Type (N : Node_Id) return Boolean is
       procedure Process_RACW_Types (Typ : Entity_Id);
       --  Validate and generate stubs for all RACW types associated with type
@@ -7135,9 +7181,10 @@ package body Exp_Ch3 is
       --  Local variables
 
       Def_Id : constant Entity_Id := Entity (N);
-      Result : Boolean := False;
 
-      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
+      Mode     : Ghost_Mode_Type;
+      Mode_Set : Boolean := False;
+      Result   : Boolean := False;
 
    --  Start of processing for Freeze_Type
 
@@ -7146,7 +7193,8 @@ package body Exp_Ch3 is
       --  now to ensure that any nodes generated during freezing are properly
       --  marked as Ghost.
 
-      Set_Ghost_Mode (N, Def_Id);
+      Set_Ghost_Mode (Def_Id, Mode);
+      Mode_Set := True;
 
       --  Process any remote access-to-class-wide types designating the type
       --  being frozen.
@@ -7474,12 +7522,18 @@ package body Exp_Ch3 is
          Build_Invariant_Procedure_Body (Def_Id);
       end if;
 
-      Ghost_Mode := Save_Ghost_Mode;
+      if Mode_Set then
+         Restore_Ghost_Mode (Mode);
+      end if;
+
       return Result;
 
    exception
       when RE_Not_Available =>
-         Ghost_Mode := Save_Ghost_Mode;
+         if Mode_Set then
+            Restore_Ghost_Mode (Mode);
+         end if;
+
          return False;
    end Freeze_Type;
 

@@ -1,5 +1,6 @@
 // { dg-do run }
 // { dg-shouldfail "asan" }
+// { dg-skip-if "" { *-*-* }  { "*" } { "-O0" } }
 
 int
 main (void)

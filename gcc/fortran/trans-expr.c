@@ -1838,8 +1838,11 @@ gfc_get_tree_for_caf_expr (gfc_expr *expr)
 		     "component at %L is not supported", &expr->where);
       }
 
-  caf_decl = expr->symtree->n.sym->backend_decl;
-  gcc_assert (caf_decl);
+  /* Make sure the backend_decl is present before accessing it.  */
+  caf_decl = expr->symtree->n.sym->backend_decl == NULL_TREE
+      ? gfc_get_symbol_decl (expr->symtree->n.sym)
+      : expr->symtree->n.sym->backend_decl;
+
   if (expr->symtree->n.sym->ts.type == BT_CLASS)
     {
       if (expr->ref && expr->ref->type == REF_ARRAY)
@@ -2274,7 +2277,7 @@ gfc_conv_substring (gfc_se * se, gfc_ref * ref, int kind,
 	msg = xasprintf ("Substring out of bounds: lower bound (%%ld) of '%s' "
 			 "is less than one", name);
       else
-	msg = xasprintf ("Substring out of bounds: lower bound (%%ld)"
+	msg = xasprintf ("Substring out of bounds: lower bound (%%ld) "
 			 "is less than one");
       gfc_trans_runtime_check (true, false, fault, &se->pre, where, msg,
 			       fold_convert (long_integer_type_node,
@@ -2541,8 +2544,10 @@ gfc_conv_variable (gfc_se * se, gfc_expr * expr)
       if (se_expr)
 	se->expr = se_expr;
 
-      /* Procedure actual arguments.  */
-      else if (sym->attr.flavor == FL_PROCEDURE
+      /* Procedure actual arguments.  Look out for temporary variables
+	 with the same attributes as function values.  */
+      else if (!sym->attr.temporary
+	       && sym->attr.flavor == FL_PROCEDURE
 	       && se->expr != current_function_decl)
 	{
 	  if (!sym->attr.dummy && !sym->attr.proc_pointer)
@@ -7511,7 +7516,6 @@ gfc_trans_structure_assign (tree dest, gfc_expr * expr, bool init, bool coarray)
 	  && (!c->expr || c->expr->expr_type == EXPR_NULL))
 	{
 	  tree token, desc, size;
-	  symbol_attribute attr;
 	  bool is_array = cm->ts.type == BT_CLASS
 	      ? CLASS_DATA (cm)->attr.dimension : cm->attr.dimension;
 
@@ -7544,7 +7548,10 @@ gfc_trans_structure_assign (tree dest, gfc_expr * expr, bool init, bool coarray)
 	    }
 	  else
 	    {
-	      desc = gfc_conv_scalar_to_descriptor (&se, field, attr);
+	      desc = gfc_conv_scalar_to_descriptor (&se, field,
+						    cm->ts.type == BT_CLASS
+						    ? CLASS_DATA (cm)->attr
+						    : cm->attr);
 	      size = TYPE_SIZE_UNIT (TREE_TYPE (field));
 	    }
 	  gfc_add_block_to_block (&block, &se.pre);
@@ -9954,13 +9961,16 @@ gfc_trans_assignment_1 (gfc_expr * expr1, gfc_expr * expr2, bool init_flag,
 	  tree cond;
 	  const char* msg;
 
+	  tmp = INDIRECT_REF_P (lse.expr)
+	      ? gfc_build_addr_expr (NULL_TREE, lse.expr) : lse.expr;
+
 	  /* We should only get array references here.  */
-	  gcc_assert (TREE_CODE (lse.expr) == POINTER_PLUS_EXPR
-		      || TREE_CODE (lse.expr) == ARRAY_REF);
+	  gcc_assert (TREE_CODE (tmp) == POINTER_PLUS_EXPR
+		      || TREE_CODE (tmp) == ARRAY_REF);
 
 	  /* 'tmp' is either the pointer to the array(POINTER_PLUS_EXPR)
 	     or the array itself(ARRAY_REF).  */
-	  tmp = TREE_OPERAND (lse.expr, 0);
+	  tmp = TREE_OPERAND (tmp, 0);
 
 	  /* Provide the address of the array.  */
 	  if (TREE_CODE (lse.expr) == ARRAY_REF)

@@ -588,18 +588,25 @@ symtab_node::create_reference (symtab_node *referred_node,
   return ref;
 }
 
-/* If VAL is a reference to a function or a variable, add a reference from
-   this symtab_node to the corresponding symbol table node.  USE_TYPE specify
-   type of the use and STMT the statement (if it exists).  Return the new
-   reference or NULL if none was created.  */
-
 ipa_ref *
-symtab_node::maybe_create_reference (tree val, enum ipa_ref_use use_type,
-				     gimple *stmt)
+symtab_node::maybe_create_reference (tree val, gimple *stmt)
 {
   STRIP_NOPS (val);
-  if (TREE_CODE (val) != ADDR_EXPR)
-    return NULL;
+  ipa_ref_use use_type;
+
+  switch (TREE_CODE (val))
+    {
+    case VAR_DECL:
+      use_type = IPA_REF_LOAD;
+      break;
+    case ADDR_EXPR:
+      use_type = IPA_REF_ADDR;
+      break;
+    default:
+      gcc_assert (!handled_component_p (val));
+      return NULL;
+    }
+
   val = get_base_var (val);
   if (val && VAR_OR_FUNCTION_DECL_P (val))
     {
@@ -883,6 +890,7 @@ symtab_node::dump_base (FILE *f)
     {
       fprintf (f, "  Aux:");
       dump_addr (f, " @", (void *)aux);
+      fprintf (f, "\n");
     }
 
   fprintf (f, "  References: ");
@@ -1989,13 +1997,12 @@ symtab_node::equal_address_to (symtab_node *s2, bool memory_accessed)
   if (rs1 != rs2 && avail1 >= AVAIL_AVAILABLE && avail2 >= AVAIL_AVAILABLE)
     binds_local1 = binds_local2 = true;
 
-  if ((binds_local1 ? rs1 : this)
-       == (binds_local2 ? rs2 : s2))
+  if (binds_local1 && binds_local2 && rs1 == rs2)
     {
       /* We made use of the fact that alias is not weak.  */
-      if (binds_local1 && rs1 != this)
+      if (rs1 != this)
         refuse_visibility_changes = true;
-      if (binds_local2 && rs2 != s2)
+      if (rs2 != s2)
         s2->refuse_visibility_changes = true;
       return 1;
     }
@@ -2218,6 +2225,8 @@ symtab_node::binds_to_current_def_p (symtab_node *ref)
   if (transparent_alias)
     return definition
 	   && get_alias_target()->binds_to_current_def_p (ref);
+  if (lookup_attribute ("ifunc", DECL_ATTRIBUTES (decl)))
+    return false;
   if (decl_binds_to_current_def_p (decl))
     return true;
 

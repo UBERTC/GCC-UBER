@@ -1499,7 +1499,7 @@ gfc_set_constant_character_len (int len, gfc_expr *expr, int check_len)
 
   if (expr->ts.type != BT_CHARACTER)
     return;
- 
+
   if (expr->expr_type != EXPR_CONSTANT)
     {
       gfc_error_now ("CHARACTER length must be a constant at %L", &expr->where);
@@ -2540,7 +2540,6 @@ gfc_match_kind_spec (gfc_typespec *ts, bool kind_expr_only)
   gfc_expr *e;
   match m, n;
   char c;
-  const char *msg;
 
   m = MATCH_NO;
   n = MATCH_YES;
@@ -2598,11 +2597,8 @@ kind_expr:
       goto no_match;
     }
 
-  msg = gfc_extract_int (e, &ts->kind);
-
-  if (msg != NULL)
+  if (gfc_extract_int (e, &ts->kind, 1))
     {
-      gfc_error (msg);
       m = MATCH_ERROR;
       goto no_match;
     }
@@ -2700,7 +2696,7 @@ match_char_kind (int * kind, int * is_iso_c)
   locus where;
   gfc_expr *e;
   match m, n;
-  const char *msg;
+  bool fail;
 
   m = MATCH_NO;
   e = NULL;
@@ -2730,11 +2726,10 @@ match_char_kind (int * kind, int * is_iso_c)
       goto no_match;
     }
 
-  msg = gfc_extract_int (e, kind);
+  fail = gfc_extract_int (e, kind, 1);
   *is_iso_c = e->ts.is_iso_c;
-  if (msg != NULL)
+  if (fail)
     {
-      gfc_error (msg);
       m = MATCH_ERROR;
       goto no_match;
     }
@@ -3302,7 +3297,7 @@ gfc_match_decl_type_spec (gfc_typespec *ts, int implicit_flag)
 
       /* Use upper case to save the actual derived-type symbol.  */
       gfc_get_symbol (dt_name, NULL, &dt_sym);
-      dt_sym->name = gfc_get_string (sym->name);
+      dt_sym->name = gfc_get_string ("%s", sym->name);
       head = sym->generic;
       intr = gfc_get_interface ();
       intr->sym = dt_sym;
@@ -6761,7 +6756,7 @@ gfc_match_end (gfc_statement *st)
   match m;
   gfc_namespace *parent_ns, *ns, *prev_ns;
   gfc_namespace **nsp;
-  bool abreviated_modproc_decl;
+  bool abreviated_modproc_decl = false;
   bool got_matching_end = false;
 
   old_loc = gfc_current_locus;
@@ -6785,15 +6780,17 @@ gfc_match_end (gfc_statement *st)
       state = gfc_state_stack->previous->state;
       block_name = gfc_state_stack->previous->sym == NULL
 		 ? NULL : gfc_state_stack->previous->sym->name;
+      abreviated_modproc_decl = gfc_state_stack->previous->sym
+		&& gfc_state_stack->previous->sym->abr_modproc_decl;
       break;
 
     default:
       break;
     }
 
-  abreviated_modproc_decl
-	= gfc_current_block ()
-	  && gfc_current_block ()->abr_modproc_decl;
+  if (!abreviated_modproc_decl)
+    abreviated_modproc_decl = gfc_current_block ()
+			      && gfc_current_block ()->abr_modproc_decl;
 
   switch (state)
     {
@@ -7571,6 +7568,21 @@ access_attr_decl (gfc_statement st)
 
 	case INTERFACE_GENERIC:
 	case INTERFACE_DTIO:
+
+	  if (type == INTERFACE_DTIO
+	      && gfc_current_ns->proc_name
+	      && gfc_current_ns->proc_name->attr.flavor == FL_MODULE)
+	    {
+	      gfc_find_symbol (name, gfc_current_ns, 0, &sym);
+	      if (sym == NULL)
+		{
+		  gfc_error ("The GENERIC DTIO INTERFACE at %C is not "
+			     "present in the MODULE '%s'",
+			     gfc_current_ns->proc_name->name);
+		  return MATCH_ERROR;
+		}
+	    }
+
 	  if (gfc_get_symbol (name, NULL, &sym))
 	    goto done;
 
@@ -8743,8 +8755,7 @@ gfc_match_structure_decl (void)
   /* Store the actual type symbol for the structure with an upper-case first
      letter (an invalid Fortran identifier).  */
 
-  sprintf (name, gfc_dt_upper_string (name));
-  if (!get_struct_decl (name, FL_STRUCT, &where, &sym))
+  if (!get_struct_decl (gfc_dt_upper_string (name), FL_STRUCT, &where, &sym))
     return MATCH_ERROR;
 
   gfc_new_block = sym;
@@ -8937,7 +8948,7 @@ gfc_match_derived_decl (void)
     {
       /* Use upper case to save the actual derived-type symbol.  */
       gfc_get_symbol (gfc_dt_upper_string (gensym->name), NULL, &sym);
-      sym->name = gfc_get_string (gensym->name);
+      sym->name = gfc_get_string ("%s", gensym->name);
       head = gensym->generic;
       intr = gfc_get_interface ();
       intr->sym = sym;
@@ -9357,7 +9368,7 @@ match_binding_attributes (gfc_typebound_proc* ba, bool generic, bool ppc)
 	      if (m == MATCH_ERROR)
 		goto error;
 	      if (m == MATCH_YES)
-		ba->pass_arg = gfc_get_string (arg);
+		ba->pass_arg = gfc_get_string ("%s", arg);
 	      gcc_assert ((m == MATCH_YES) == (ba->pass_arg != NULL));
 
 	      found_passing = true;

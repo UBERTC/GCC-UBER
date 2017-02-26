@@ -2672,7 +2672,7 @@ static const struct ptt processor_target_table[PROCESSOR_max] =
   {"bdver4", &bdver4_cost, 16, 10, 16, 7, 11},
   {"btver1", &btver1_cost, 16, 10, 16, 7, 11},
   {"btver2", &btver2_cost, 16, 10, 16, 7, 11},
-  {"znver1", &znver1_cost, 16, 10, 16, 7, 11}
+  {"znver1", &znver1_cost, 16, 15, 16, 15, 16}
 };
 
 static unsigned int
@@ -3622,11 +3622,26 @@ dimode_scalar_chain::convert_reg (unsigned regno)
 
       if (scalar_copy)
 	{
-	  rtx vcopy = gen_reg_rtx (V2DImode);
-
 	  start_sequence ();
-	  if (TARGET_INTER_UNIT_MOVES_FROM_VEC)
+	  if (TARGET_SSE4_1)
 	    {
+	      rtx tmp = gen_rtx_PARALLEL (VOIDmode, gen_rtvec (1, const0_rtx));
+	      emit_insn
+		(gen_rtx_SET
+		 (gen_rtx_SUBREG (SImode, scopy, 0),
+		  gen_rtx_VEC_SELECT (SImode,
+				      gen_rtx_SUBREG (V4SImode, reg, 0), tmp)));
+
+	      tmp = gen_rtx_PARALLEL (VOIDmode, gen_rtvec (1, const1_rtx));
+	      emit_insn
+		(gen_rtx_SET
+		 (gen_rtx_SUBREG (SImode, scopy, 4),
+		  gen_rtx_VEC_SELECT (SImode,
+				      gen_rtx_SUBREG (V4SImode, reg, 0), tmp)));
+	    }
+	  else if (TARGET_INTER_UNIT_MOVES_FROM_VEC)
+	    {
+	      rtx vcopy = gen_reg_rtx (V2DImode);
 	      emit_move_insn (vcopy, gen_rtx_SUBREG (V2DImode, reg, 0));
 	      emit_move_insn (gen_rtx_SUBREG (SImode, scopy, 0),
 			      gen_rtx_SUBREG (SImode, vcopy, 0));
@@ -3941,8 +3956,13 @@ timode_scalar_chain::convert_insn (rtx_insn *insn)
 	  /* Since there are no instructions to store 128-bit constant,
 	     temporary register usage is required.  */
 	  rtx tmp = gen_reg_rtx (V1TImode);
+	  start_sequence ();
 	  src = gen_rtx_CONST_VECTOR (V1TImode, gen_rtvec (1, src));
 	  src = validize_mem (force_const_mem (V1TImode, src));
+	  rtx_insn *seq = get_insns ();
+	  end_sequence ();
+	  if (seq)
+	    emit_insn_before (seq, insn);
 	  emit_conversion_insns (gen_rtx_SET (dst, tmp), insn);
 	  dst = tmp;
 	}
@@ -4246,8 +4266,9 @@ ix86_using_red_zone (void)
    responsible for freeing the string.  */
 
 static char *
-ix86_target_string (HOST_WIDE_INT isa, HOST_WIDE_INT isa2, int flags,
-		    int ix86_flags, const char *arch, const char *tune,
+ix86_target_string (HOST_WIDE_INT isa, HOST_WIDE_INT isa2,
+		    int flags, int flags2,
+		    const char *arch, const char *tune,
 		    enum fpmath_unit fpmath, bool add_nl_p)
 {
   struct ix86_target_opts
@@ -4256,73 +4277,79 @@ ix86_target_string (HOST_WIDE_INT isa, HOST_WIDE_INT isa2, int flags,
     HOST_WIDE_INT mask;		/* isa mask options */
   };
 
-  /* This table is ordered so that options like -msse4.2 that imply
-     preceding options while match those first.  */
+  /* This table is ordered so that options like -msse4.2 that imply other
+     ISAs come first.  Target string will be displayed in the same order.  */
+  static struct ix86_target_opts isa2_opts[] =
+  {
+    { "-mrdpid",	OPTION_MASK_ISA_RDPID },
+    { "-msgx",		OPTION_MASK_ISA_SGX },
+    { "-mavx5124vnniw", OPTION_MASK_ISA_AVX5124VNNIW },
+    { "-mavx5124fmaps", OPTION_MASK_ISA_AVX5124FMAPS },
+    { "-mavx512vpopcntdq", OPTION_MASK_ISA_AVX512VPOPCNTDQ }
+  };
   static struct ix86_target_opts isa_opts[] =
   {
-    { "-mfma4",		OPTION_MASK_ISA_FMA4 },
+    { "-mavx512vbmi",	OPTION_MASK_ISA_AVX512VBMI },
+    { "-mavx512ifma",	OPTION_MASK_ISA_AVX512IFMA },
+    { "-mavx512vl",	OPTION_MASK_ISA_AVX512VL },
+    { "-mavx512bw",	OPTION_MASK_ISA_AVX512BW },
+    { "-mavx512dq",	OPTION_MASK_ISA_AVX512DQ },
+    { "-mavx512er",	OPTION_MASK_ISA_AVX512ER },
+    { "-mavx512pf",	OPTION_MASK_ISA_AVX512PF },
+    { "-mavx512cd",	OPTION_MASK_ISA_AVX512CD },
+    { "-mavx512f",	OPTION_MASK_ISA_AVX512F },
+    { "-mavx2",		OPTION_MASK_ISA_AVX2 },
     { "-mfma",		OPTION_MASK_ISA_FMA },
     { "-mxop",		OPTION_MASK_ISA_XOP },
-    { "-mlwp",		OPTION_MASK_ISA_LWP },
-    { "-mavx512f",	OPTION_MASK_ISA_AVX512F },
-    { "-mavx512er",	OPTION_MASK_ISA_AVX512ER },
-    { "-mavx512cd",	OPTION_MASK_ISA_AVX512CD },
-    { "-mavx512pf",	OPTION_MASK_ISA_AVX512PF },
-    { "-mavx512dq",	OPTION_MASK_ISA_AVX512DQ },
-    { "-mavx512bw",	OPTION_MASK_ISA_AVX512BW },
-    { "-mavx512vl",	OPTION_MASK_ISA_AVX512VL },
-    { "-mavx512ifma",	OPTION_MASK_ISA_AVX512IFMA },
-    { "-mavx512vbmi",	OPTION_MASK_ISA_AVX512VBMI },
-    { "-msse4a",	OPTION_MASK_ISA_SSE4A },
+    { "-mfma4",		OPTION_MASK_ISA_FMA4 },
+    { "-mf16c",		OPTION_MASK_ISA_F16C },
+    { "-mavx",		OPTION_MASK_ISA_AVX },
+/*  { "-msse4"		OPTION_MASK_ISA_SSE4 }, */
     { "-msse4.2",	OPTION_MASK_ISA_SSE4_2 },
     { "-msse4.1",	OPTION_MASK_ISA_SSE4_1 },
+    { "-msse4a",	OPTION_MASK_ISA_SSE4A },
     { "-mssse3",	OPTION_MASK_ISA_SSSE3 },
     { "-msse3",		OPTION_MASK_ISA_SSE3 },
+    { "-maes",		OPTION_MASK_ISA_AES },
+    { "-msha",		OPTION_MASK_ISA_SHA },
+    { "-mpclmul",	OPTION_MASK_ISA_PCLMUL },
     { "-msse2",		OPTION_MASK_ISA_SSE2 },
     { "-msse",		OPTION_MASK_ISA_SSE },
-    { "-m3dnow",	OPTION_MASK_ISA_3DNOW },
     { "-m3dnowa",	OPTION_MASK_ISA_3DNOW_A },
+    { "-m3dnow",	OPTION_MASK_ISA_3DNOW },
     { "-mmmx",		OPTION_MASK_ISA_MMX },
+    { "-mrtm",		OPTION_MASK_ISA_RTM },
+    { "-mprfchw",	OPTION_MASK_ISA_PRFCHW },
+    { "-mrdseed",	OPTION_MASK_ISA_RDSEED },
+    { "-madx",		OPTION_MASK_ISA_ADX },
+    { "-mprefetchwt1",	OPTION_MASK_ISA_PREFETCHWT1 },
+    { "-mclflushopt",	OPTION_MASK_ISA_CLFLUSHOPT },
+    { "-mxsaves",	OPTION_MASK_ISA_XSAVES },
+    { "-mxsavec",	OPTION_MASK_ISA_XSAVEC },
+    { "-mxsaveopt",	OPTION_MASK_ISA_XSAVEOPT },
+    { "-mxsave",	OPTION_MASK_ISA_XSAVE },
     { "-mabm",		OPTION_MASK_ISA_ABM },
     { "-mbmi",		OPTION_MASK_ISA_BMI },
     { "-mbmi2",		OPTION_MASK_ISA_BMI2 },
     { "-mlzcnt",	OPTION_MASK_ISA_LZCNT },
-    { "-mhle",		OPTION_MASK_ISA_HLE },
-    { "-mfxsr",		OPTION_MASK_ISA_FXSR },
-    { "-mrdseed",	OPTION_MASK_ISA_RDSEED },
-    { "-mprfchw",	OPTION_MASK_ISA_PRFCHW },
-    { "-madx",		OPTION_MASK_ISA_ADX },
     { "-mtbm",		OPTION_MASK_ISA_TBM },
     { "-mpopcnt",	OPTION_MASK_ISA_POPCNT },
+    { "-mcx16",		OPTION_MASK_ISA_CX16 },
+    { "-msahf",		OPTION_MASK_ISA_SAHF },
     { "-mmovbe",	OPTION_MASK_ISA_MOVBE },
     { "-mcrc32",	OPTION_MASK_ISA_CRC32 },
-    { "-maes",		OPTION_MASK_ISA_AES },
-    { "-msha",		OPTION_MASK_ISA_SHA },
-    { "-mpclmul",	OPTION_MASK_ISA_PCLMUL },
     { "-mfsgsbase",	OPTION_MASK_ISA_FSGSBASE },
     { "-mrdrnd",	OPTION_MASK_ISA_RDRND },
-    { "-mf16c",		OPTION_MASK_ISA_F16C },
-    { "-mrtm",		OPTION_MASK_ISA_RTM },
-    { "-mxsave",	OPTION_MASK_ISA_XSAVE },
-    { "-mxsaveopt",	OPTION_MASK_ISA_XSAVEOPT },
-    { "-mprefetchwt1",	OPTION_MASK_ISA_PREFETCHWT1 },
-    { "-mclflushopt",	OPTION_MASK_ISA_CLFLUSHOPT },
-    { "-mxsavec",	OPTION_MASK_ISA_XSAVEC },
-    { "-mxsaves",	OPTION_MASK_ISA_XSAVES },
-    { "-mmpx",		OPTION_MASK_ISA_MPX },
-    { "-mclwb",		OPTION_MASK_ISA_CLWB },
     { "-mmwaitx",	OPTION_MASK_ISA_MWAITX },
     { "-mclzero",	OPTION_MASK_ISA_CLZERO },
-    { "-mpku",		OPTION_MASK_ISA_PKU }
+    { "-mpku",		OPTION_MASK_ISA_PKU },
+    { "-mlwp",		OPTION_MASK_ISA_LWP },
+    { "-mhle",		OPTION_MASK_ISA_HLE },
+    { "-mfxsr",		OPTION_MASK_ISA_FXSR },
+    { "-mmpx",		OPTION_MASK_ISA_MPX },
+    { "-mclwb",		OPTION_MASK_ISA_CLWB }
   };
-  /* Additional structure for isa flags.  */
-  static struct ix86_target_opts isa_opts2[] =
-  {
-    { "-mavx5124vnniw", OPTION_MASK_ISA_AVX5124VNNIW },
-    { "-mavx5124fmaps", OPTION_MASK_ISA_AVX5124FMAPS },
-    { "-mavx512vpopcntdq", OPTION_MASK_ISA_AVX512VPOPCNTDQ },
-    { "-msgx",		OPTION_MASK_ISA_SGX }
-  };
+
   /* Flag options.  */
   static struct ix86_target_opts flag_opts[] =
   {
@@ -4358,17 +4385,18 @@ ix86_target_string (HOST_WIDE_INT isa, HOST_WIDE_INT isa2, int flags,
   };
 
   /* Additional flag options.  */
-  static struct ix86_target_opts ix86_flag_opts[] =
+  static struct ix86_target_opts flag2_opts[] =
   {
     { "-mgeneral-regs-only",		OPTION_MASK_GENERAL_REGS_ONLY },
   };
 
-  const char *opts[ARRAY_SIZE (isa_opts) + ARRAY_SIZE (isa_opts2)
-		   + ARRAY_SIZE (flag_opts) + ARRAY_SIZE (ix86_flag_opts) + 6][2];
+  const char *opts[ARRAY_SIZE (isa_opts) + ARRAY_SIZE (isa2_opts)
+		   + ARRAY_SIZE (flag_opts) + ARRAY_SIZE (flag2_opts) + 6][2];
 
   char isa_other[40];
-  char target_other[40];
-  char ix86_target_other[40];
+  char isa2_other[40];
+  char flags_other[40];
+  char flags2_other[40];
   unsigned num = 0;
   unsigned i, j;
   char *ret;
@@ -4409,6 +4437,22 @@ ix86_target_string (HOST_WIDE_INT isa, HOST_WIDE_INT isa2, int flags,
     abi = "-m32";
   opts[num++][0] = abi;
 
+  /* Pick out the options in isa2 options.  */
+  for (i = 0; i < ARRAY_SIZE (isa2_opts); i++)
+    {
+      if ((isa2 & isa2_opts[i].mask) != 0)
+	{
+	  opts[num++][0] = isa2_opts[i].option;
+	  isa2 &= ~ isa2_opts[i].mask;
+	}
+    }
+
+  if (isa2 && add_nl_p)
+    {
+      opts[num++][0] = isa2_other;
+      sprintf (isa2_other, "(other isa2: %#" HOST_WIDE_INT_PRINT "x)", isa2);
+    }
+
   /* Pick out the options in isa options.  */
   for (i = 0; i < ARRAY_SIZE (isa_opts); i++)
     {
@@ -4422,18 +4466,7 @@ ix86_target_string (HOST_WIDE_INT isa, HOST_WIDE_INT isa2, int flags,
   if (isa && add_nl_p)
     {
       opts[num++][0] = isa_other;
-      sprintf (isa_other, "(other isa: %#" HOST_WIDE_INT_PRINT "x)",
-	       isa);
-    }
-
-  /* Pick out the options in isa2 options.  */
-  for (i = 0; i < ARRAY_SIZE (isa_opts2); i++)
-    {
-      if ((isa2 & isa_opts2[i].mask) != 0)
-	{
-	  opts[num++][0] = isa_opts2[i].option;
-	  isa &= ~ isa_opts2[i].mask;
-	}
+      sprintf (isa_other, "(other isa: %#" HOST_WIDE_INT_PRINT "x)", isa);
     }
 
   /* Add flag options.  */
@@ -4448,24 +4481,24 @@ ix86_target_string (HOST_WIDE_INT isa, HOST_WIDE_INT isa2, int flags,
 
   if (flags && add_nl_p)
     {
-      opts[num++][0] = target_other;
-      sprintf (target_other, "(other flags: %#x)", flags);
+      opts[num++][0] = flags_other;
+      sprintf (flags_other, "(other flags: %#x)", flags);
     }
 
     /* Add additional flag options.  */
-  for (i = 0; i < ARRAY_SIZE (ix86_flag_opts); i++)
+  for (i = 0; i < ARRAY_SIZE (flag2_opts); i++)
     {
-      if ((ix86_flags & ix86_flag_opts[i].mask) != 0)
+      if ((flags2 & flag2_opts[i].mask) != 0)
 	{
-	  opts[num++][0] = ix86_flag_opts[i].option;
-	  ix86_flags &= ~ ix86_flag_opts[i].mask;
+	  opts[num++][0] = flag2_opts[i].option;
+	  flags2 &= ~ flag2_opts[i].mask;
 	}
     }
 
-  if (ix86_flags && add_nl_p)
+  if (flags2 && add_nl_p)
     {
-      opts[num++][0] = ix86_target_other;
-      sprintf (ix86_target_other, "(other flags: %#x)", ix86_flags);
+      opts[num++][0] = flags2_other;
+      sprintf (flags2_other, "(other flags2: %#x)", flags2);
     }
 
   /* Add -fpmath= option.  */
@@ -6616,65 +6649,71 @@ ix86_valid_target_attribute_inner_p (tree args, char *p_strings[],
     int mask;
   } attrs[] = {
     /* isa options */
-    IX86_ATTR_ISA ("3dnow",	OPT_m3dnow),
-    IX86_ATTR_ISA ("abm",	OPT_mabm),
     IX86_ATTR_ISA ("sgx",	OPT_msgx),
+    IX86_ATTR_ISA ("avx5124fmaps", OPT_mavx5124fmaps),
+    IX86_ATTR_ISA ("avx5124vnniw", OPT_mavx5124vnniw),
+    IX86_ATTR_ISA ("avx512vpopcntdq", OPT_mavx512vpopcntdq),
+
+    IX86_ATTR_ISA ("avx512vbmi", OPT_mavx512vbmi),
+    IX86_ATTR_ISA ("avx512ifma", OPT_mavx512ifma),
+    IX86_ATTR_ISA ("avx512vl",	OPT_mavx512vl),
+    IX86_ATTR_ISA ("avx512bw",	OPT_mavx512bw),
+    IX86_ATTR_ISA ("avx512dq",	OPT_mavx512dq),
+    IX86_ATTR_ISA ("avx512er",	OPT_mavx512er),
+    IX86_ATTR_ISA ("avx512pf",	OPT_mavx512pf),
+    IX86_ATTR_ISA ("avx512cd",	OPT_mavx512cd),
+    IX86_ATTR_ISA ("avx512f",	OPT_mavx512f),
+    IX86_ATTR_ISA ("avx2",	OPT_mavx2),
+    IX86_ATTR_ISA ("fma",	OPT_mfma),
+    IX86_ATTR_ISA ("xop",	OPT_mxop),
+    IX86_ATTR_ISA ("fma4",	OPT_mfma4),
+    IX86_ATTR_ISA ("f16c",	OPT_mf16c),
+    IX86_ATTR_ISA ("avx",	OPT_mavx),
+    IX86_ATTR_ISA ("sse4",	OPT_msse4),
+    IX86_ATTR_ISA ("sse4.2",	OPT_msse4_2),
+    IX86_ATTR_ISA ("sse4.1",	OPT_msse4_1),
+    IX86_ATTR_ISA ("sse4a",	OPT_msse4a),
+    IX86_ATTR_ISA ("ssse3",	OPT_mssse3),
+    IX86_ATTR_ISA ("sse3",	OPT_msse3),
+    IX86_ATTR_ISA ("aes",	OPT_maes),
+    IX86_ATTR_ISA ("sha",	OPT_msha),
+    IX86_ATTR_ISA ("pclmul",	OPT_mpclmul),
+    IX86_ATTR_ISA ("sse2",	OPT_msse2),
+    IX86_ATTR_ISA ("sse",	OPT_msse),
+    IX86_ATTR_ISA ("3dnowa",	OPT_m3dnowa),
+    IX86_ATTR_ISA ("3dnow",	OPT_m3dnow),
+    IX86_ATTR_ISA ("mmx",	OPT_mmmx),
+    IX86_ATTR_ISA ("rtm",	OPT_mrtm),
+    IX86_ATTR_ISA ("prfchw",	OPT_mprfchw),
+    IX86_ATTR_ISA ("rdseed",	OPT_mrdseed),
+    IX86_ATTR_ISA ("adx",	OPT_madx),
+    IX86_ATTR_ISA ("prefetchwt1", OPT_mprefetchwt1),
+    IX86_ATTR_ISA ("clflushopt", OPT_mclflushopt),
+    IX86_ATTR_ISA ("xsaves",	OPT_mxsaves),
+    IX86_ATTR_ISA ("xsavec",	OPT_mxsavec),
+    IX86_ATTR_ISA ("xsaveopt",	OPT_mxsaveopt),
+    IX86_ATTR_ISA ("xsave",	OPT_mxsave),
+    IX86_ATTR_ISA ("abm",	OPT_mabm),
     IX86_ATTR_ISA ("bmi",	OPT_mbmi),
     IX86_ATTR_ISA ("bmi2",	OPT_mbmi2),
     IX86_ATTR_ISA ("lzcnt",	OPT_mlzcnt),
     IX86_ATTR_ISA ("tbm",	OPT_mtbm),
-    IX86_ATTR_ISA ("aes",	OPT_maes),
-    IX86_ATTR_ISA ("sha",	OPT_msha),
-    IX86_ATTR_ISA ("avx",	OPT_mavx),
-    IX86_ATTR_ISA ("avx2",	OPT_mavx2),
-    IX86_ATTR_ISA ("avx512f",	OPT_mavx512f),
-    IX86_ATTR_ISA ("avx512pf",	OPT_mavx512pf),
-    IX86_ATTR_ISA ("avx512er",	OPT_mavx512er),
-    IX86_ATTR_ISA ("avx512cd",	OPT_mavx512cd),
-    IX86_ATTR_ISA ("avx512dq",	OPT_mavx512dq),
-    IX86_ATTR_ISA ("avx512bw",	OPT_mavx512bw),
-    IX86_ATTR_ISA ("avx512vl",	OPT_mavx512vl),
-    IX86_ATTR_ISA ("avx5124fmaps",	OPT_mavx5124fmaps),
-    IX86_ATTR_ISA ("avx5124vnniw",	OPT_mavx5124vnniw),
-    IX86_ATTR_ISA ("avx512vpopcntdq",	OPT_mavx512vpopcntdq),
-    IX86_ATTR_ISA ("mmx",	OPT_mmmx),
-    IX86_ATTR_ISA ("pclmul",	OPT_mpclmul),
     IX86_ATTR_ISA ("popcnt",	OPT_mpopcnt),
+    IX86_ATTR_ISA ("cx16",	OPT_mcx16),
+    IX86_ATTR_ISA ("sahf",	OPT_msahf),
     IX86_ATTR_ISA ("movbe",	OPT_mmovbe),
     IX86_ATTR_ISA ("crc32",	OPT_mcrc32),
-    IX86_ATTR_ISA ("sse",	OPT_msse),
-    IX86_ATTR_ISA ("sse2",	OPT_msse2),
-    IX86_ATTR_ISA ("sse3",	OPT_msse3),
-    IX86_ATTR_ISA ("sse4",	OPT_msse4),
-    IX86_ATTR_ISA ("sse4.1",	OPT_msse4_1),
-    IX86_ATTR_ISA ("sse4.2",	OPT_msse4_2),
-    IX86_ATTR_ISA ("sse4a",	OPT_msse4a),
-    IX86_ATTR_ISA ("ssse3",	OPT_mssse3),
-    IX86_ATTR_ISA ("fma4",	OPT_mfma4),
-    IX86_ATTR_ISA ("fma",	OPT_mfma),
-    IX86_ATTR_ISA ("xop",	OPT_mxop),
-    IX86_ATTR_ISA ("lwp",	OPT_mlwp),
     IX86_ATTR_ISA ("fsgsbase",	OPT_mfsgsbase),
     IX86_ATTR_ISA ("rdrnd",	OPT_mrdrnd),
-    IX86_ATTR_ISA ("f16c",	OPT_mf16c),
-    IX86_ATTR_ISA ("rtm",	OPT_mrtm),
-    IX86_ATTR_ISA ("hle",	OPT_mhle),
-    IX86_ATTR_ISA ("prfchw",	OPT_mprfchw),
-    IX86_ATTR_ISA ("rdseed",	OPT_mrdseed),
-    IX86_ATTR_ISA ("adx",	OPT_madx),
-    IX86_ATTR_ISA ("fxsr",	OPT_mfxsr),
-    IX86_ATTR_ISA ("xsave",	OPT_mxsave),
-    IX86_ATTR_ISA ("xsaveopt",	OPT_mxsaveopt),
-    IX86_ATTR_ISA ("prefetchwt1", OPT_mprefetchwt1),
-    IX86_ATTR_ISA ("clflushopt",	OPT_mclflushopt),
-    IX86_ATTR_ISA ("xsavec",	OPT_mxsavec),
-    IX86_ATTR_ISA ("xsaves",	OPT_mxsaves),
-    IX86_ATTR_ISA ("avx512vbmi",	OPT_mavx512vbmi),
-    IX86_ATTR_ISA ("avx512ifma",	OPT_mavx512ifma),
-    IX86_ATTR_ISA ("clwb",	OPT_mclwb),
     IX86_ATTR_ISA ("mwaitx",	OPT_mmwaitx),
-    IX86_ATTR_ISA ("clzero",    OPT_mclzero),
+    IX86_ATTR_ISA ("clzero",	OPT_mclzero),
     IX86_ATTR_ISA ("pku",	OPT_mpku),
+    IX86_ATTR_ISA ("lwp",	OPT_mlwp),
+    IX86_ATTR_ISA ("hle",	OPT_mhle),
+    IX86_ATTR_ISA ("fxsr",	OPT_mfxsr),
+    IX86_ATTR_ISA ("mpx",	OPT_mmpx),
+    IX86_ATTR_ISA ("clwb",	OPT_mclwb),
+    IX86_ATTR_ISA ("rdpid",	OPT_mrdpid),
 
     /* enum options */
     IX86_ATTR_ENUM ("fpmath=",	OPT_mfpmath_),
@@ -8109,73 +8148,73 @@ ix86_return_pops_args (tree fundecl, tree funtype, int size)
 static bool
 ix86_legitimate_combined_insn (rtx_insn *insn)
 {
+  int i;
+
   /* Check operand constraints in case hard registers were propagated
      into insn pattern.  This check prevents combine pass from
      generating insn patterns with invalid hard register operands.
      These invalid insns can eventually confuse reload to error out
      with a spill failure.  See also PRs 46829 and 46843.  */
-  if ((INSN_CODE (insn) = recog (PATTERN (insn), insn, 0)) >= 0)
+
+  gcc_assert (INSN_CODE (insn) >= 0);
+
+  extract_insn (insn);
+  preprocess_constraints (insn);
+
+  int n_operands = recog_data.n_operands;
+  int n_alternatives = recog_data.n_alternatives;
+  for (i = 0; i < n_operands; i++)
     {
-      int i;
+      rtx op = recog_data.operand[i];
+      machine_mode mode = GET_MODE (op);
+      const operand_alternative *op_alt;
+      int offset = 0;
+      bool win;
+      int j;
 
-      extract_insn (insn);
-      preprocess_constraints (insn);
+      /* A unary operator may be accepted by the predicate, but it
+	 is irrelevant for matching constraints.  */
+      if (UNARY_P (op))
+	op = XEXP (op, 0);
 
-      int n_operands = recog_data.n_operands;
-      int n_alternatives = recog_data.n_alternatives;
-      for (i = 0; i < n_operands; i++)
+      if (SUBREG_P (op))
 	{
-	  rtx op = recog_data.operand[i];
-	  machine_mode mode = GET_MODE (op);
-	  const operand_alternative *op_alt;
-	  int offset = 0;
-	  bool win;
-	  int j;
-
-	  /* A unary operator may be accepted by the predicate, but it
-	     is irrelevant for matching constraints.  */
-	  if (UNARY_P (op))
-	    op = XEXP (op, 0);
-
-	  if (SUBREG_P (op))
-	    {
-	      if (REG_P (SUBREG_REG (op))
-		  && REGNO (SUBREG_REG (op)) < FIRST_PSEUDO_REGISTER)
-		offset = subreg_regno_offset (REGNO (SUBREG_REG (op)),
-					      GET_MODE (SUBREG_REG (op)),
-					      SUBREG_BYTE (op),
-					      GET_MODE (op));
-	      op = SUBREG_REG (op);
-	    }
-
-	  if (!(REG_P (op) && HARD_REGISTER_P (op)))
-	    continue;
-
-	  op_alt = recog_op_alt;
-
-	  /* Operand has no constraints, anything is OK.  */
- 	  win = !n_alternatives;
-
-	  alternative_mask preferred = get_preferred_alternatives (insn);
-	  for (j = 0; j < n_alternatives; j++, op_alt += n_operands)
-	    {
-	      if (!TEST_BIT (preferred, j))
-		continue;
-	      if (op_alt[i].anything_ok
-		  || (op_alt[i].matches != -1
-		      && operands_match_p
-			  (recog_data.operand[i],
-			   recog_data.operand[op_alt[i].matches]))
-		  || reg_fits_class_p (op, op_alt[i].cl, offset, mode))
-		{
-		  win = true;
-		  break;
-		}
-	    }
-
-	  if (!win)
-	    return false;
+	  if (REG_P (SUBREG_REG (op))
+	      && REGNO (SUBREG_REG (op)) < FIRST_PSEUDO_REGISTER)
+	    offset = subreg_regno_offset (REGNO (SUBREG_REG (op)),
+					  GET_MODE (SUBREG_REG (op)),
+					  SUBREG_BYTE (op),
+					  GET_MODE (op));
+	  op = SUBREG_REG (op);
 	}
+
+      if (!(REG_P (op) && HARD_REGISTER_P (op)))
+	continue;
+
+      op_alt = recog_op_alt;
+
+      /* Operand has no constraints, anything is OK.  */
+      win = !n_alternatives;
+
+      alternative_mask preferred = get_preferred_alternatives (insn);
+      for (j = 0; j < n_alternatives; j++, op_alt += n_operands)
+	{
+	  if (!TEST_BIT (preferred, j))
+	    continue;
+	  if (op_alt[i].anything_ok
+	      || (op_alt[i].matches != -1
+		  && operands_match_p
+		  (recog_data.operand[i],
+		   recog_data.operand[op_alt[i].matches]))
+	      || reg_fits_class_p (op, op_alt[i].cl, offset, mode))
+	    {
+	      win = true;
+	      break;
+	    }
+	}
+
+      if (!win)
+	return false;
     }
 
   return true;
@@ -14928,6 +14967,7 @@ ix86_expand_split_stack_prologue (void)
   allocate_rtx = GEN_INT (allocate);
   args_size = crtl->args.size >= 0 ? crtl->args.size : 0;
   call_fusage = NULL_RTX;
+  rtx pop = NULL_RTX;
   if (TARGET_64BIT)
     {
       rtx reg10, reg11;
@@ -15005,13 +15045,20 @@ ix86_expand_split_stack_prologue (void)
     }
   else
     {
-      emit_insn (gen_push (GEN_INT (args_size)));
-      emit_insn (gen_push (allocate_rtx));
+      rtx_insn *insn = emit_insn (gen_push (GEN_INT (args_size)));
+      add_reg_note (insn, REG_ARGS_SIZE, GEN_INT (UNITS_PER_WORD));
+      insn = emit_insn (gen_push (allocate_rtx));
+      add_reg_note (insn, REG_ARGS_SIZE, GEN_INT (2 * UNITS_PER_WORD));
+      pop = GEN_INT (2 * UNITS_PER_WORD);
     }
   call_insn = ix86_expand_call (NULL_RTX, gen_rtx_MEM (QImode, fn),
 				GEN_INT (UNITS_PER_WORD), constm1_rtx,
-				NULL_RTX, false);
+				pop, false);
   add_function_usage_to (call_insn, call_fusage);
+  if (!TARGET_64BIT)
+    add_reg_note (call_insn, REG_ARGS_SIZE, GEN_INT (0));
+  /* Indicate that this function can't jump to non-local gotos.  */
+  make_reg_eh_region_note_nothrow_nononlocal (as_a <rtx_insn *> (call_insn));
 
   /* In order to make call/return prediction work right, we now need
      to execute a return instruction.  See
@@ -17576,7 +17623,7 @@ print_reg (rtx x, int code, FILE *file)
   else
     msize = GET_MODE_SIZE (GET_MODE (x));
 
-  regno = true_regnum (x);
+  regno = REGNO (x);
 
   gcc_assert (regno != ARG_POINTER_REGNUM
 	      && regno != FRAME_POINTER_REGNUM
@@ -17802,8 +17849,8 @@ ix86_print_operand (FILE *file, rtx x, int code)
 	      break;
 
 	    default:
-	      output_operand_lossage
-		("invalid operand size for operand code 'O'");
+	      output_operand_lossage ("invalid operand size for operand "
+				      "code 'O'");
 	      return;
 	    }
 
@@ -17837,15 +17884,14 @@ ix86_print_operand (FILE *file, rtx x, int code)
 		  return;
 
 		default:
-		  output_operand_lossage
-		    ("invalid operand size for operand code 'z'");
+		  output_operand_lossage ("invalid operand size for operand "
+					  "code 'z'");
 		  return;
 		}
 	    }
 
 	  if (GET_MODE_CLASS (GET_MODE (x)) == MODE_FLOAT)
-	    warning
-	      (0, "non-integer operand used with operand code 'z'");
+	    warning (0, "non-integer operand used with operand code 'z'");
 	  /* FALLTHRU */
 
 	case 'Z':
@@ -17907,13 +17953,12 @@ ix86_print_operand (FILE *file, rtx x, int code)
 	    }
 	  else
 	    {
-	      output_operand_lossage
-		("invalid operand type used with operand code 'Z'");
+	      output_operand_lossage ("invalid operand type used with "
+				      "operand code 'Z'");
 	      return;
 	    }
 
-	  output_operand_lossage
-	    ("invalid operand size for operand code 'Z'");
+	  output_operand_lossage ("invalid operand size for operand code 'Z'");
 	  return;
 
 	case 'd':
@@ -18112,7 +18157,12 @@ ix86_print_operand (FILE *file, rtx x, int code)
 	  break;
 
 	case 'K':
-	  gcc_assert (CONST_INT_P (x));
+	  if (!CONST_INT_P (x))
+	    {
+	      output_operand_lossage ("operand is not an integer, invalid "
+				      "operand code 'K'");
+	      return;
+	    }
 
 	  if (INTVAL (x) & IX86_HLE_ACQUIRE)
 #ifdef HAVE_AS_IX86_HLE
@@ -18135,8 +18185,12 @@ ix86_print_operand (FILE *file, rtx x, int code)
 	  return;
 
 	case 'r':
-	  gcc_assert (CONST_INT_P (x));
-	  gcc_assert (INTVAL (x) == ROUND_SAE);
+	  if (!CONST_INT_P (x) || INTVAL (x) != ROUND_SAE)
+	    {
+	      output_operand_lossage ("operand is not a specific integer, "
+				      "invalid operand code 'r'");
+	      return;
+	    }
 
 	  if (ASSEMBLER_DIALECT == ASM_INTEL)
 	    fputs (", ", file);
@@ -18149,7 +18203,12 @@ ix86_print_operand (FILE *file, rtx x, int code)
 	  return;
 
 	case 'R':
-	  gcc_assert (CONST_INT_P (x));
+	  if (!CONST_INT_P (x))
+	    {
+	      output_operand_lossage ("operand is not an integer, invalid "
+				      "operand code 'R'");
+	      return;
+	    }
 
 	  if (ASSEMBLER_DIALECT == ASM_INTEL)
 	    fputs (", ", file);
@@ -18264,7 +18323,7 @@ ix86_print_operand (FILE *file, rtx x, int code)
 	  return;
 
 	default:
-	    output_operand_lossage ("invalid operand code '%c'", code);
+	  output_operand_lossage ("invalid operand code '%c'", code);
 	}
     }
 
@@ -31655,35 +31714,35 @@ ix86_init_mmx_sse_builtins (void)
 
   /* AVX512F */
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_gathersiv16sf",
-	       V16SF_FTYPE_V16SF_PCFLOAT_V16SI_HI_INT,
+	       V16SF_FTYPE_V16SF_PCVOID_V16SI_HI_INT,
 	       IX86_BUILTIN_GATHER3SIV16SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_gathersiv8df",
-	       V8DF_FTYPE_V8DF_PCDOUBLE_V8SI_QI_INT,
+	       V8DF_FTYPE_V8DF_PCVOID_V8SI_QI_INT,
 	       IX86_BUILTIN_GATHER3SIV8DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_gatherdiv16sf",
-	       V8SF_FTYPE_V8SF_PCFLOAT_V8DI_QI_INT,
+	       V8SF_FTYPE_V8SF_PCVOID_V8DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV16SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_gatherdiv8df",
-	       V8DF_FTYPE_V8DF_PCDOUBLE_V8DI_QI_INT,
+	       V8DF_FTYPE_V8DF_PCVOID_V8DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV8DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_gathersiv16si",
-	       V16SI_FTYPE_V16SI_PCINT_V16SI_HI_INT,
+	       V16SI_FTYPE_V16SI_PCVOID_V16SI_HI_INT,
 	       IX86_BUILTIN_GATHER3SIV16SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_gathersiv8di",
-	       V8DI_FTYPE_V8DI_PCINT64_V8SI_QI_INT,
+	       V8DI_FTYPE_V8DI_PCVOID_V8SI_QI_INT,
 	       IX86_BUILTIN_GATHER3SIV8DI);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_gatherdiv16si",
-	       V8SI_FTYPE_V8SI_PCINT_V8DI_QI_INT,
+	       V8SI_FTYPE_V8SI_PCVOID_V8DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV16SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_gatherdiv8di",
-	       V8DI_FTYPE_V8DI_PCINT64_V8DI_QI_INT,
+	       V8DI_FTYPE_V8DI_PCVOID_V8DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV8DI);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_gatheraltsiv8df ",
@@ -31703,100 +31762,100 @@ ix86_init_mmx_sse_builtins (void)
 	       IX86_BUILTIN_GATHER3ALTDIV16SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_scattersiv16sf",
-	       VOID_FTYPE_PFLOAT_HI_V16SI_V16SF_INT,
+	       VOID_FTYPE_PVOID_HI_V16SI_V16SF_INT,
 	       IX86_BUILTIN_SCATTERSIV16SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_scattersiv8df",
-	       VOID_FTYPE_PDOUBLE_QI_V8SI_V8DF_INT,
+	       VOID_FTYPE_PVOID_QI_V8SI_V8DF_INT,
 	       IX86_BUILTIN_SCATTERSIV8DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_scatterdiv16sf",
-	       VOID_FTYPE_PFLOAT_QI_V8DI_V8SF_INT,
+	       VOID_FTYPE_PVOID_QI_V8DI_V8SF_INT,
 	       IX86_BUILTIN_SCATTERDIV16SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_scatterdiv8df",
-	       VOID_FTYPE_PDOUBLE_QI_V8DI_V8DF_INT,
+	       VOID_FTYPE_PVOID_QI_V8DI_V8DF_INT,
 	       IX86_BUILTIN_SCATTERDIV8DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_scattersiv16si",
-	       VOID_FTYPE_PINT_HI_V16SI_V16SI_INT,
+	       VOID_FTYPE_PVOID_HI_V16SI_V16SI_INT,
 	       IX86_BUILTIN_SCATTERSIV16SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_scattersiv8di",
-	       VOID_FTYPE_PLONGLONG_QI_V8SI_V8DI_INT,
+	       VOID_FTYPE_PVOID_QI_V8SI_V8DI_INT,
 	       IX86_BUILTIN_SCATTERSIV8DI);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_scatterdiv16si",
-	       VOID_FTYPE_PINT_QI_V8DI_V8SI_INT,
+	       VOID_FTYPE_PVOID_QI_V8DI_V8SI_INT,
 	       IX86_BUILTIN_SCATTERDIV16SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_scatterdiv8di",
-	       VOID_FTYPE_PLONGLONG_QI_V8DI_V8DI_INT,
+	       VOID_FTYPE_PVOID_QI_V8DI_V8DI_INT,
 	       IX86_BUILTIN_SCATTERDIV8DI);
 
   /* AVX512VL */
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3siv2df",
-	       V2DF_FTYPE_V2DF_PCDOUBLE_V4SI_QI_INT,
+	       V2DF_FTYPE_V2DF_PCVOID_V4SI_QI_INT,
 	       IX86_BUILTIN_GATHER3SIV2DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3siv4df",
-	       V4DF_FTYPE_V4DF_PCDOUBLE_V4SI_QI_INT,
+	       V4DF_FTYPE_V4DF_PCVOID_V4SI_QI_INT,
 	       IX86_BUILTIN_GATHER3SIV4DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3div2df",
-	       V2DF_FTYPE_V2DF_PCDOUBLE_V2DI_QI_INT,
+	       V2DF_FTYPE_V2DF_PCVOID_V2DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV2DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3div4df",
-	       V4DF_FTYPE_V4DF_PCDOUBLE_V4DI_QI_INT,
+	       V4DF_FTYPE_V4DF_PCVOID_V4DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV4DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3siv4sf",
-	       V4SF_FTYPE_V4SF_PCFLOAT_V4SI_QI_INT,
+	       V4SF_FTYPE_V4SF_PCVOID_V4SI_QI_INT,
 	       IX86_BUILTIN_GATHER3SIV4SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3siv8sf",
-	       V8SF_FTYPE_V8SF_PCFLOAT_V8SI_QI_INT,
+	       V8SF_FTYPE_V8SF_PCVOID_V8SI_QI_INT,
 	       IX86_BUILTIN_GATHER3SIV8SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3div4sf",
-	       V4SF_FTYPE_V4SF_PCFLOAT_V2DI_QI_INT,
+	       V4SF_FTYPE_V4SF_PCVOID_V2DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV4SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3div8sf",
-	       V4SF_FTYPE_V4SF_PCFLOAT_V4DI_QI_INT,
+	       V4SF_FTYPE_V4SF_PCVOID_V4DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV8SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3siv2di",
-	       V2DI_FTYPE_V2DI_PCINT64_V4SI_QI_INT,
+	       V2DI_FTYPE_V2DI_PCVOID_V4SI_QI_INT,
 	       IX86_BUILTIN_GATHER3SIV2DI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3siv4di",
-	       V4DI_FTYPE_V4DI_PCINT64_V4SI_QI_INT,
+	       V4DI_FTYPE_V4DI_PCVOID_V4SI_QI_INT,
 	       IX86_BUILTIN_GATHER3SIV4DI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3div2di",
-	       V2DI_FTYPE_V2DI_PCINT64_V2DI_QI_INT,
+	       V2DI_FTYPE_V2DI_PCVOID_V2DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV2DI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3div4di",
-	       V4DI_FTYPE_V4DI_PCINT64_V4DI_QI_INT,
+	       V4DI_FTYPE_V4DI_PCVOID_V4DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV4DI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3siv4si",
-	       V4SI_FTYPE_V4SI_PCINT_V4SI_QI_INT,
+	       V4SI_FTYPE_V4SI_PCVOID_V4SI_QI_INT,
 	       IX86_BUILTIN_GATHER3SIV4SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3siv8si",
-	       V8SI_FTYPE_V8SI_PCINT_V8SI_QI_INT,
+	       V8SI_FTYPE_V8SI_PCVOID_V8SI_QI_INT,
 	       IX86_BUILTIN_GATHER3SIV8SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3div4si",
-	       V4SI_FTYPE_V4SI_PCINT_V2DI_QI_INT,
+	       V4SI_FTYPE_V4SI_PCVOID_V2DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV4SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3div8si",
-	       V4SI_FTYPE_V4SI_PCINT_V4DI_QI_INT,
+	       V4SI_FTYPE_V4SI_PCVOID_V4DI_QI_INT,
 	       IX86_BUILTIN_GATHER3DIV8SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_gather3altsiv4df ",
@@ -31816,67 +31875,67 @@ ix86_init_mmx_sse_builtins (void)
 	       IX86_BUILTIN_GATHER3ALTDIV8SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scattersiv8sf",
-	       VOID_FTYPE_PFLOAT_QI_V8SI_V8SF_INT,
+	       VOID_FTYPE_PVOID_QI_V8SI_V8SF_INT,
 	       IX86_BUILTIN_SCATTERSIV8SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scattersiv4sf",
-	       VOID_FTYPE_PFLOAT_QI_V4SI_V4SF_INT,
+	       VOID_FTYPE_PVOID_QI_V4SI_V4SF_INT,
 	       IX86_BUILTIN_SCATTERSIV4SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scattersiv4df",
-	       VOID_FTYPE_PDOUBLE_QI_V4SI_V4DF_INT,
+	       VOID_FTYPE_PVOID_QI_V4SI_V4DF_INT,
 	       IX86_BUILTIN_SCATTERSIV4DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scattersiv2df",
-	       VOID_FTYPE_PDOUBLE_QI_V4SI_V2DF_INT,
+	       VOID_FTYPE_PVOID_QI_V4SI_V2DF_INT,
 	       IX86_BUILTIN_SCATTERSIV2DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scatterdiv8sf",
-	       VOID_FTYPE_PFLOAT_QI_V4DI_V4SF_INT,
+	       VOID_FTYPE_PVOID_QI_V4DI_V4SF_INT,
 	       IX86_BUILTIN_SCATTERDIV8SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scatterdiv4sf",
-	       VOID_FTYPE_PFLOAT_QI_V2DI_V4SF_INT,
+	       VOID_FTYPE_PVOID_QI_V2DI_V4SF_INT,
 	       IX86_BUILTIN_SCATTERDIV4SF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scatterdiv4df",
-	       VOID_FTYPE_PDOUBLE_QI_V4DI_V4DF_INT,
+	       VOID_FTYPE_PVOID_QI_V4DI_V4DF_INT,
 	       IX86_BUILTIN_SCATTERDIV4DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scatterdiv2df",
-	       VOID_FTYPE_PDOUBLE_QI_V2DI_V2DF_INT,
+	       VOID_FTYPE_PVOID_QI_V2DI_V2DF_INT,
 	       IX86_BUILTIN_SCATTERDIV2DF);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scattersiv8si",
-	       VOID_FTYPE_PINT_QI_V8SI_V8SI_INT,
+	       VOID_FTYPE_PVOID_QI_V8SI_V8SI_INT,
 	       IX86_BUILTIN_SCATTERSIV8SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scattersiv4si",
-	       VOID_FTYPE_PINT_QI_V4SI_V4SI_INT,
+	       VOID_FTYPE_PVOID_QI_V4SI_V4SI_INT,
 	       IX86_BUILTIN_SCATTERSIV4SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scattersiv4di",
-	       VOID_FTYPE_PLONGLONG_QI_V4SI_V4DI_INT,
+	       VOID_FTYPE_PVOID_QI_V4SI_V4DI_INT,
 	       IX86_BUILTIN_SCATTERSIV4DI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scattersiv2di",
-	       VOID_FTYPE_PLONGLONG_QI_V4SI_V2DI_INT,
+	       VOID_FTYPE_PVOID_QI_V4SI_V2DI_INT,
 	       IX86_BUILTIN_SCATTERSIV2DI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scatterdiv8si",
-	       VOID_FTYPE_PINT_QI_V4DI_V4SI_INT,
+	       VOID_FTYPE_PVOID_QI_V4DI_V4SI_INT,
 	       IX86_BUILTIN_SCATTERDIV8SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scatterdiv4si",
-	       VOID_FTYPE_PINT_QI_V2DI_V4SI_INT,
+	       VOID_FTYPE_PVOID_QI_V2DI_V4SI_INT,
 	       IX86_BUILTIN_SCATTERDIV4SI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scatterdiv4di",
-	       VOID_FTYPE_PLONGLONG_QI_V4DI_V4DI_INT,
+	       VOID_FTYPE_PVOID_QI_V4DI_V4DI_INT,
 	       IX86_BUILTIN_SCATTERDIV4DI);
 
   def_builtin (OPTION_MASK_ISA_AVX512VL, "__builtin_ia32_scatterdiv2di",
-	       VOID_FTYPE_PLONGLONG_QI_V2DI_V2DI_INT,
+	       VOID_FTYPE_PVOID_QI_V2DI_V2DI_INT,
 	       IX86_BUILTIN_SCATTERDIV2DI);
   def_builtin (OPTION_MASK_ISA_AVX512F, "__builtin_ia32_scatteraltsiv8df ",
 	       VOID_FTYPE_PDOUBLE_QI_V16SI_V8DF_INT,
@@ -31896,28 +31955,28 @@ ix86_init_mmx_sse_builtins (void)
 
   /* AVX512PF */
   def_builtin (OPTION_MASK_ISA_AVX512PF, "__builtin_ia32_gatherpfdpd",
-	       VOID_FTYPE_QI_V8SI_PCINT64_INT_INT,
+	       VOID_FTYPE_QI_V8SI_PCVOID_INT_INT,
 	       IX86_BUILTIN_GATHERPFDPD);
   def_builtin (OPTION_MASK_ISA_AVX512PF, "__builtin_ia32_gatherpfdps",
-	       VOID_FTYPE_HI_V16SI_PCINT_INT_INT,
+	       VOID_FTYPE_HI_V16SI_PCVOID_INT_INT,
 	       IX86_BUILTIN_GATHERPFDPS);
   def_builtin (OPTION_MASK_ISA_AVX512PF, "__builtin_ia32_gatherpfqpd",
-	       VOID_FTYPE_QI_V8DI_PCINT64_INT_INT,
+	       VOID_FTYPE_QI_V8DI_PCVOID_INT_INT,
 	       IX86_BUILTIN_GATHERPFQPD);
   def_builtin (OPTION_MASK_ISA_AVX512PF, "__builtin_ia32_gatherpfqps",
-	       VOID_FTYPE_QI_V8DI_PCINT_INT_INT,
+	       VOID_FTYPE_QI_V8DI_PCVOID_INT_INT,
 	       IX86_BUILTIN_GATHERPFQPS);
   def_builtin (OPTION_MASK_ISA_AVX512PF, "__builtin_ia32_scatterpfdpd",
-	       VOID_FTYPE_QI_V8SI_PCINT64_INT_INT,
+	       VOID_FTYPE_QI_V8SI_PCVOID_INT_INT,
 	       IX86_BUILTIN_SCATTERPFDPD);
   def_builtin (OPTION_MASK_ISA_AVX512PF, "__builtin_ia32_scatterpfdps",
-	       VOID_FTYPE_HI_V16SI_PCINT_INT_INT,
+	       VOID_FTYPE_HI_V16SI_PCVOID_INT_INT,
 	       IX86_BUILTIN_SCATTERPFDPS);
   def_builtin (OPTION_MASK_ISA_AVX512PF, "__builtin_ia32_scatterpfqpd",
-	       VOID_FTYPE_QI_V8DI_PCINT64_INT_INT,
+	       VOID_FTYPE_QI_V8DI_PCVOID_INT_INT,
 	       IX86_BUILTIN_SCATTERPFQPD);
   def_builtin (OPTION_MASK_ISA_AVX512PF, "__builtin_ia32_scatterpfqps",
-	       VOID_FTYPE_QI_V8DI_PCINT_INT_INT,
+	       VOID_FTYPE_QI_V8DI_PCVOID_INT_INT,
 	       IX86_BUILTIN_SCATTERPFQPS);
 
   /* SHA */
@@ -32021,11 +32080,11 @@ ix86_init_mmx_sse_builtins (void)
 	       IX86_BUILTIN_SBB64);
 
   /* Read/write FLAGS.  */
-  def_builtin (~OPTION_MASK_ISA_64BIT, "__builtin_ia32_readeflags_u32",
+  def_builtin (0, "__builtin_ia32_readeflags_u32",
                UNSIGNED_FTYPE_VOID, IX86_BUILTIN_READ_FLAGS);
   def_builtin (OPTION_MASK_ISA_64BIT, "__builtin_ia32_readeflags_u64",
                UINT64_FTYPE_VOID, IX86_BUILTIN_READ_FLAGS);
-  def_builtin (~OPTION_MASK_ISA_64BIT, "__builtin_ia32_writeeflags_u32",
+  def_builtin (0, "__builtin_ia32_writeeflags_u32",
                VOID_FTYPE_UNSIGNED, IX86_BUILTIN_WRITE_FLAGS);
   def_builtin (OPTION_MASK_ISA_64BIT, "__builtin_ia32_writeeflags_u64",
                VOID_FTYPE_UINT64, IX86_BUILTIN_WRITE_FLAGS);
@@ -35057,10 +35116,10 @@ ix86_expand_args_builtin (const struct builtin_description *d,
     case V4DI_FTYPE_V8DI_INT:
     case QI_FTYPE_V4SF_INT:
     case QI_FTYPE_V2DF_INT:
-    case UQI_FTYPE_UQI_INT:
-    case UHI_FTYPE_UHI_INT:
-    case USI_FTYPE_USI_INT:
-    case UDI_FTYPE_UDI_INT:
+    case UQI_FTYPE_UQI_UQI_CONST:
+    case UHI_FTYPE_UHI_UQI:
+    case USI_FTYPE_USI_UQI:
+    case UDI_FTYPE_UDI_UQI:
       nargs = 2;
       nargs_constant = 1;
       break;
@@ -36669,9 +36728,18 @@ ix86_expand_builtin (tree exp, rtx target, rtx subtarget,
      Originally the builtin was not created if it wasn't applicable to the
      current ISA based on the command line switches.  With function specific
      options, we need to check in the context of the function making the call
-     whether it is supported.  */
-  if ((ix86_builtins_isa[fcode].isa
-       && !(ix86_builtins_isa[fcode].isa & ix86_isa_flags))
+     whether it is supported.  Treat AVX512VL specially.  For other flags,
+     if isa includes more than one ISA bit, treat those are requiring any
+     of them.  For AVX512VL, require both AVX512VL and the non-AVX512VL
+     ISAs.  Similarly for 64BIT, but we shouldn't be building such builtins
+     at all, -m64 is a whole TU option.  */
+  if (((ix86_builtins_isa[fcode].isa
+	& ~(OPTION_MASK_ISA_AVX512VL | OPTION_MASK_ISA_64BIT))
+       && !(ix86_builtins_isa[fcode].isa
+	    & ~(OPTION_MASK_ISA_AVX512VL | OPTION_MASK_ISA_64BIT)
+	    & ix86_isa_flags))
+      || ((ix86_builtins_isa[fcode].isa & OPTION_MASK_ISA_AVX512VL)
+	  && !(ix86_isa_flags & OPTION_MASK_ISA_AVX512VL))
       || (ix86_builtins_isa[fcode].isa2
 	  && !(ix86_builtins_isa[fcode].isa2 & ix86_isa_flags2)))
     {
@@ -37626,15 +37694,99 @@ rdseed_step:
       emit_insn (gen_pop (gen_rtx_REG (word_mode, FLAGS_REG)));
       return 0;
 
+    case IX86_BUILTIN_KTESTC8:
+      icode = CODE_FOR_ktestqi;
+      mode0 = QImode;
+      mode1 = CCCmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KTESTZ8:
+      icode = CODE_FOR_ktestqi;
+      mode0 = QImode;
+      mode1 = CCZmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KTESTC16:
+      icode = CODE_FOR_ktesthi;
+      mode0 = HImode;
+      mode1 = CCCmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KTESTZ16:
+      icode = CODE_FOR_ktesthi;
+      mode0 = HImode;
+      mode1 = CCZmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KTESTC32:
+      icode = CODE_FOR_ktestsi;
+      mode0 = SImode;
+      mode1 = CCCmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KTESTZ32:
+      icode = CODE_FOR_ktestsi;
+      mode0 = SImode;
+      mode1 = CCZmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KTESTC64:
+      icode = CODE_FOR_ktestdi;
+      mode0 = DImode;
+      mode1 = CCCmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KTESTZ64:
+      icode = CODE_FOR_ktestdi;
+      mode0 = DImode;
+      mode1 = CCZmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KORTESTC8:
+      icode = CODE_FOR_kortestqi;
+      mode0 = QImode;
+      mode1 = CCCmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KORTESTZ8:
+      icode = CODE_FOR_kortestqi;
+      mode0 = QImode;
+      mode1 = CCZmode;
+      goto kortest;
+
     case IX86_BUILTIN_KORTESTC16:
-      icode = CODE_FOR_kortestchi;
+      icode = CODE_FOR_kortesthi;
       mode0 = HImode;
       mode1 = CCCmode;
       goto kortest;
 
     case IX86_BUILTIN_KORTESTZ16:
-      icode = CODE_FOR_kortestzhi;
+      icode = CODE_FOR_kortesthi;
       mode0 = HImode;
+      mode1 = CCZmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KORTESTC32:
+      icode = CODE_FOR_kortestsi;
+      mode0 = SImode;
+      mode1 = CCCmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KORTESTZ32:
+      icode = CODE_FOR_kortestsi;
+      mode0 = SImode;
+      mode1 = CCZmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KORTESTC64:
+      icode = CODE_FOR_kortestdi;
+      mode0 = DImode;
+      mode1 = CCCmode;
+      goto kortest;
+
+    case IX86_BUILTIN_KORTESTZ64:
+      icode = CODE_FOR_kortestdi;
+      mode0 = DImode;
       mode1 = CCZmode;
 
     kortest:
@@ -38563,6 +38715,9 @@ s4fma_expand:
 		}
 	      return target;
 	    }
+	    case IX86_BUILTIN_RDPID:
+	      return ix86_expand_special_args_builtin (bdesc_args2 + i, exp,
+						     target);
 	  default:
 	    return ix86_expand_args_builtin (bdesc_args2 + i, exp, target);
 	  }
@@ -39852,18 +40007,18 @@ ix86_class_likely_spilled_p (reg_class_t rclass)
   return false;
 }
 
-/* If we are copying between general and FP registers, we need a memory
-   location. The same is true for SSE and MMX registers.
+/* If we are copying between registers from different register sets
+   (e.g. FP and integer), we may need a memory location.
 
-   To optimize register_move_cost performance, allow inline variant.
-
-   The macro can't work reliably when one of the CLASSES is class containing
-   registers from multiple units (SSE, MMX, integer).  We avoid this by never
-   combining those units in single alternative in the machine description.
+   The function can't work reliably when one of the CLASSES is a class
+   containing registers from multiple sets.  We avoid this by never combining
+   different sets in a single alternative in the machine description.
    Ensure that this constraint holds to avoid unexpected surprises.
 
-   When STRICT is false, we are being called from REGISTER_MOVE_COST, so do not
-   enforce these sanity checks.  */
+   When STRICT is false, we are being called from REGISTER_MOVE_COST,
+   so do not enforce these sanity checks.
+
+   To optimize register_move_cost performance, define inline variant.  */
 
 static inline bool
 inline_secondary_memory_needed (enum reg_class class1, enum reg_class class2,
@@ -39871,12 +40026,15 @@ inline_secondary_memory_needed (enum reg_class class1, enum reg_class class2,
 {
   if (lra_in_progress && (class1 == NO_REGS || class2 == NO_REGS))
     return false;
+
   if (MAYBE_FLOAT_CLASS_P (class1) != FLOAT_CLASS_P (class1)
       || MAYBE_FLOAT_CLASS_P (class2) != FLOAT_CLASS_P (class2)
       || MAYBE_SSE_CLASS_P (class1) != SSE_CLASS_P (class1)
       || MAYBE_SSE_CLASS_P (class2) != SSE_CLASS_P (class2)
       || MAYBE_MMX_CLASS_P (class1) != MMX_CLASS_P (class1)
-      || MAYBE_MMX_CLASS_P (class2) != MMX_CLASS_P (class2))
+      || MAYBE_MMX_CLASS_P (class2) != MMX_CLASS_P (class2)
+      || MAYBE_MASK_CLASS_P (class1) != MASK_CLASS_P (class1)
+      || MAYBE_MASK_CLASS_P (class2) != MASK_CLASS_P (class2))
     {
       gcc_assert (!strict || lra_in_progress);
       return true;
@@ -39886,7 +40044,7 @@ inline_secondary_memory_needed (enum reg_class class1, enum reg_class class2,
     return true;
 
   /* Between mask and general, we have moves no larger than word size.  */
-  if ((MAYBE_MASK_CLASS_P (class1) != MAYBE_MASK_CLASS_P (class2))
+  if ((MASK_CLASS_P (class1) != MASK_CLASS_P (class2))
       && (GET_MODE_SIZE (mode) > UNITS_PER_WORD))
   return true;
 
@@ -41567,10 +41725,9 @@ x86_file_start (void)
 }
 
 int
-x86_field_alignment (tree field, int computed)
+x86_field_alignment (tree type, int computed)
 {
   machine_mode mode;
-  tree type = TREE_TYPE (field);
 
   if (TARGET_64BIT || TARGET_ALIGN_DOUBLE)
     return computed;
@@ -50383,6 +50540,28 @@ ix86_spill_class (reg_class_t rclass, machine_mode mode)
   return NO_REGS;
 }
 
+/* Implement TARGET_MAX_NOCE_IFCVT_SEQ_COST.  Like the default implementation,
+   but returns a lower bound.  */
+
+static unsigned int
+ix86_max_noce_ifcvt_seq_cost (edge e)
+{
+  bool predictable_p = predictable_edge_p (e);
+
+  enum compiler_param param
+    = (predictable_p
+       ? PARAM_MAX_RTL_IF_CONVERSION_PREDICTABLE_COST
+       : PARAM_MAX_RTL_IF_CONVERSION_UNPREDICTABLE_COST);
+
+  /* If we have a parameter set, use that, otherwise take a guess using
+     BRANCH_COST.  */
+  if (global_options_set.x_param_values[param])
+    return PARAM_VALUE (param);
+  else
+    return BRANCH_COST (true, predictable_p) * COSTS_N_INSNS (2);
+}
+
+
 /* Implement targetm.vectorize.init_cost.  */
 
 static void *
@@ -51932,6 +52111,8 @@ ix86_run_selftests (void)
 #undef TARGET_EXPAND_DIVMOD_LIBFUNC
 #define TARGET_EXPAND_DIVMOD_LIBFUNC ix86_expand_divmod_libfunc
 
+#undef TARGET_MAX_NOCE_IFCVT_SEQ_COST
+#define TARGET_MAX_NOCE_IFCVT_SEQ_COST ix86_max_noce_ifcvt_seq_cost
 #if CHECKING_P
 #undef TARGET_RUN_TARGET_SELFTESTS
 #define TARGET_RUN_TARGET_SELFTESTS selftest::ix86_run_selftests

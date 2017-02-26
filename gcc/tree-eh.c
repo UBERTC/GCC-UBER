@@ -2513,7 +2513,8 @@ operation_could_trap_p (enum tree_code op, bool fp_operation, bool honor_trapv,
 
   if (TREE_CODE_CLASS (op) != tcc_comparison
       && TREE_CODE_CLASS (op) != tcc_unary
-      && TREE_CODE_CLASS (op) != tcc_binary)
+      && TREE_CODE_CLASS (op) != tcc_binary
+      && op != FMA_EXPR)
     return false;
 
   return operation_could_trap_helper_p (op, fp_operation, honor_trapv,
@@ -2738,7 +2739,8 @@ stmt_could_throw_1_p (gimple *stmt)
 
   if (TREE_CODE_CLASS (code) == tcc_comparison
       || TREE_CODE_CLASS (code) == tcc_unary
-      || TREE_CODE_CLASS (code) == tcc_binary)
+      || TREE_CODE_CLASS (code) == tcc_binary
+      || code == FMA_EXPR)
     {
       if (is_gimple_assign (stmt)
 	  && TREE_CODE_CLASS (code) == tcc_comparison)
@@ -3248,6 +3250,8 @@ lower_resx (basic_block bb, gresx *stmt,
 	  e = single_succ_edge (bb);
 	  gcc_assert (e->flags & EDGE_EH);
 	  e->flags = (e->flags & ~EDGE_EH) | EDGE_FALLTHRU;
+	  e->probability = REG_BR_PROB_BASE;
+	  e->count = bb->count;
 
 	  /* If there are no more EH users of the landing pad, delete it.  */
 	  FOR_EACH_EDGE (e, ei, e->dest->preds)
@@ -4268,6 +4272,7 @@ cleanup_empty_eh_move_lp (basic_block bb, edge e_out,
   /* Clean up E_OUT for the fallthru.  */
   e_out->flags = (e_out->flags & ~EDGE_EH) | EDGE_FALLTHRU;
   e_out->probability = REG_BR_PROB_BASE;
+  e_out->count = e_out->src->count;
 }
 
 /* A subroutine of cleanup_empty_eh.  Handle more complex cases of

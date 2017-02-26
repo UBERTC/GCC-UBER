@@ -48,6 +48,10 @@ static bool lookup_using_namespace (tree, struct scope_binding *, tree,
 				    tree, int);
 static bool qualified_lookup_using_namespace (tree, tree,
 					      struct scope_binding *, int);
+static void consider_binding_level (tree name, best_match <tree, tree> &bm,
+				    cp_binding_level *lvl,
+				    bool look_within_fields,
+				    enum lookup_name_fuzzy_kind kind);
 static tree lookup_type_current_level (tree);
 static tree push_using_directive (tree);
 static tree lookup_extern_c_fun_in_all_ns (tree);
@@ -87,6 +91,28 @@ get_anonymous_namespace_name (void)
 /* A free list of "binding_entry"s awaiting for re-use.  */
 
 static GTY((deletable)) binding_entry free_binding_entry = NULL;
+
+/* The binding oracle; see cp-tree.h.  */
+
+cp_binding_oracle_function *cp_binding_oracle;
+
+/* If we have a binding oracle, ask it for all namespace-scoped
+   definitions of NAME.  */
+
+static inline void
+query_oracle (tree name)
+{
+  if (!cp_binding_oracle)
+    return;
+
+  /* LOOKED_UP holds the set of identifiers that we have already
+     looked up with the oracle.  */
+  static hash_set<tree> looked_up;
+  if (looked_up.add (name))
+    return;
+
+  cp_binding_oracle (CP_ORACLE_IDENTIFIER, name);
+}
 
 /* Create a binding_entry object for (NAME, TYPE).  */
 
@@ -4121,6 +4147,8 @@ parse_using_directive (tree name_space, tree attribs)
       tree name = get_attribute_name (a);
       if (is_attribute_p ("strong", name))
 	{
+	  warning (OPT_Wdeprecated, "strong using is deprecated; use inline "
+		   "namespaces instead");
 	  if (!toplevel_bindings_p ())
 	    error ("strong using only meaningful at namespace scope");
 	  else if (name_space != error_mark_node)
@@ -4431,10 +4459,13 @@ remove_hidden_names (tree fns)
 
 /* Suggest alternatives for NAME, an IDENTIFIER_NODE for which name
    lookup failed.  Search through all available namespaces and print out
-   possible candidates.  */
+   possible candidates.  If no exact matches are found, and
+   SUGGEST_MISSPELLINGS is true, then also look for near-matches and
+   suggest the best near-match, if there is one.  */
 
 void
-suggest_alternatives_for (location_t location, tree name)
+suggest_alternatives_for (location_t location, tree name,
+			  bool suggest_misspellings)
 {
   vec<tree> candidates = vNULL;
   vec<tree> namespaces_to_search = vNULL;
@@ -4481,13 +4512,16 @@ suggest_alternatives_for (location_t location, tree name)
      or do nothing.  */
   if (candidates.is_empty ())
     {
-      const char *fuzzy_name = lookup_name_fuzzy (name, FUZZY_LOOKUP_NAME);
-      if (fuzzy_name)
+      if (suggest_misspellings)
 	{
-	  gcc_rich_location richloc (location);
-	  richloc.add_fixit_replace (fuzzy_name);
-	  inform_at_rich_loc (&richloc, "suggested alternative: %qs",
-			      fuzzy_name);
+	  const char *fuzzy_name = lookup_name_fuzzy (name, FUZZY_LOOKUP_NAME);
+	  if (fuzzy_name)
+	    {
+	      gcc_rich_location richloc (location);
+	      richloc.add_fixit_replace (fuzzy_name);
+	      inform_at_rich_loc (&richloc, "suggested alternative: %qs",
+				  fuzzy_name);
+	    }
 	}
       return;
     }
@@ -4500,6 +4534,38 @@ suggest_alternatives_for (location_t location, tree name)
     inform (location_of (t), "  %qE", t);
 
   candidates.release ();
+}
+
+/* Look for alternatives for NAME, an IDENTIFIER_NODE for which name
+   lookup failed within the explicitly provided SCOPE.  Suggest the
+   the best meaningful candidates (if any) as a fix-it hint.
+   Return true iff a suggestion was provided.  */
+
+bool
+suggest_alternative_in_explicit_scope (location_t location, tree name,
+				       tree scope)
+{
+  /* Resolve any namespace aliases.  */
+  scope = ORIGINAL_NAMESPACE (scope);
+
+  cp_binding_level *level = NAMESPACE_LEVEL (scope);
+
+  best_match <tree, tree> bm (name);
+  consider_binding_level (name, bm, level, false, FUZZY_LOOKUP_NAME);
+
+  /* See if we have a good suggesion for the user.  */
+  tree best_id = bm.get_best_meaningful_candidate ();
+  if (best_id)
+    {
+      const char *fuzzy_name = IDENTIFIER_POINTER (best_id);
+      gcc_rich_location richloc (location);
+      richloc.add_fixit_replace (fuzzy_name);
+      inform_at_rich_loc (&richloc, "suggested alternative: %qs",
+			  fuzzy_name);
+      return true;
+    }
+
+  return false;
 }
 
 /* Unscoped lookup of a global: iterate over current namespaces,
@@ -4664,6 +4730,8 @@ qualified_lookup_using_namespace (tree name, tree scope,
   timevar_start (TV_NAME_LOOKUP);
   /* Look through namespace aliases.  */
   scope = ORIGINAL_NAMESPACE (scope);
+
+  query_oracle (name);
 
   /* Algorithm: Starting with SCOPE, walk through the set of used
      namespaces.  For each used namespace, look through its inline
@@ -4988,6 +5056,8 @@ lookup_name_real_1 (tree name, int prefer_type, int nonclass, bool block_p,
 {
   cxx_binding *iter;
   tree val = NULL_TREE;
+
+  query_oracle (name);
 
   /* Conversion operators are handled specially because ordinary
      unqualified name lookup will not find template conversion
@@ -6197,6 +6267,7 @@ pushtag (tree name, tree type, tag_scope scope)
   timevar_cond_stop (TV_NAME_LOOKUP, subtime);
   return ret;
 }
+
 
 /* Subroutines for reverting temporarily to top-level for instantiation
    of templates and such.  We actually need to clear out the class- and

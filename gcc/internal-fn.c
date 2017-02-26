@@ -380,6 +380,21 @@ expand_ASAN_MARK (internal_fn, gcall *)
   gcc_unreachable ();
 }
 
+/* This should get expanded in the sanopt pass.  */
+
+static void
+expand_ASAN_POISON (internal_fn, gcall *)
+{
+  gcc_unreachable ();
+}
+
+/* This should get expanded in the sanopt pass.  */
+
+static void
+expand_ASAN_POISON_USE (internal_fn, gcall *)
+{
+  gcc_unreachable ();
+}
 
 /* This should get expanded in the tsan pass.  */
 
@@ -396,86 +411,6 @@ expand_FALLTHROUGH (internal_fn, gcall *call)
 {
   error_at (gimple_location (call),
 	    "invalid use of attribute %<fallthrough%>");
-}
-
-/* Helper function for expand_addsub_overflow.  Return 1
-   if ARG interpreted as signed in its precision is known to be always
-   positive or 2 if ARG is known to be always negative, or 3 if ARG may
-   be positive or negative.  */
-
-static int
-get_range_pos_neg (tree arg)
-{
-  if (arg == error_mark_node)
-    return 3;
-
-  int prec = TYPE_PRECISION (TREE_TYPE (arg));
-  int cnt = 0;
-  if (TREE_CODE (arg) == INTEGER_CST)
-    {
-      wide_int w = wi::sext (arg, prec);
-      if (wi::neg_p (w))
-	return 2;
-      else
-	return 1;
-    }
-  while (CONVERT_EXPR_P (arg)
-	 && INTEGRAL_TYPE_P (TREE_TYPE (TREE_OPERAND (arg, 0)))
-	 && TYPE_PRECISION (TREE_TYPE (TREE_OPERAND (arg, 0))) <= prec)
-    {
-      arg = TREE_OPERAND (arg, 0);
-      /* Narrower value zero extended into wider type
-	 will always result in positive values.  */
-      if (TYPE_UNSIGNED (TREE_TYPE (arg))
-	  && TYPE_PRECISION (TREE_TYPE (arg)) < prec)
-	return 1;
-      prec = TYPE_PRECISION (TREE_TYPE (arg));
-      if (++cnt > 30)
-	return 3;
-    }
-
-  if (TREE_CODE (arg) != SSA_NAME)
-    return 3;
-  wide_int arg_min, arg_max;
-  while (get_range_info (arg, &arg_min, &arg_max) != VR_RANGE)
-    {
-      gimple *g = SSA_NAME_DEF_STMT (arg);
-      if (is_gimple_assign (g)
-	  && CONVERT_EXPR_CODE_P (gimple_assign_rhs_code (g)))
-	{
-	  tree t = gimple_assign_rhs1 (g);
-	  if (INTEGRAL_TYPE_P (TREE_TYPE (t))
-	      && TYPE_PRECISION (TREE_TYPE (t)) <= prec)
-	    {
-	      if (TYPE_UNSIGNED (TREE_TYPE (t))
-		  && TYPE_PRECISION (TREE_TYPE (t)) < prec)
-		return 1;
-	      prec = TYPE_PRECISION (TREE_TYPE (t));
-	      arg = t;
-	      if (++cnt > 30)
-		return 3;
-	      continue;
-	    }
-	}
-      return 3;
-    }
-  if (TYPE_UNSIGNED (TREE_TYPE (arg)))
-    {
-      /* For unsigned values, the "positive" range comes
-	 below the "negative" range.  */
-      if (!wi::neg_p (wi::sext (arg_max, prec), SIGNED))
-	return 1;
-      if (wi::neg_p (wi::sext (arg_min, prec), SIGNED))
-	return 2;
-    }
-  else
-    {
-      if (!wi::neg_p (wi::sext (arg_min, prec), SIGNED))
-	return 1;
-      if (wi::neg_p (wi::sext (arg_max, prec), SIGNED))
-	return 2;
-    }
-  return 3;
 }
 
 /* Return minimum precision needed to represent all values
@@ -1483,8 +1418,8 @@ expand_mul_overflow (location_t loc, tree lhs, tree arg0, tree arg1,
 	  res = expand_expr_real_2 (&ops, NULL_RTX, wmode, EXPAND_NORMAL);
 	  rtx hipart = expand_shift (RSHIFT_EXPR, wmode, res, prec,
 				     NULL_RTX, uns);
-	  hipart = gen_lowpart (mode, hipart);
-	  res = gen_lowpart (mode, res);
+	  hipart = convert_modes (mode, wmode, hipart, uns);
+	  res = convert_modes (mode, wmode, res, uns);
 	  if (uns)
 	    /* For the unsigned multiplication, there was overflow if
 	       HIPART is non-zero.  */
@@ -1517,16 +1452,16 @@ expand_mul_overflow (location_t loc, tree lhs, tree arg0, tree arg1,
 	  unsigned int hprec = GET_MODE_PRECISION (hmode);
 	  rtx hipart0 = expand_shift (RSHIFT_EXPR, mode, op0, hprec,
 				      NULL_RTX, uns);
-	  hipart0 = gen_lowpart (hmode, hipart0);
-	  rtx lopart0 = gen_lowpart (hmode, op0);
+	  hipart0 = convert_modes (hmode, mode, hipart0, uns);
+	  rtx lopart0 = convert_modes (hmode, mode, op0, uns);
 	  rtx signbit0 = const0_rtx;
 	  if (!uns)
 	    signbit0 = expand_shift (RSHIFT_EXPR, hmode, lopart0, hprec - 1,
 				     NULL_RTX, 0);
 	  rtx hipart1 = expand_shift (RSHIFT_EXPR, mode, op1, hprec,
 				      NULL_RTX, uns);
-	  hipart1 = gen_lowpart (hmode, hipart1);
-	  rtx lopart1 = gen_lowpart (hmode, op1);
+	  hipart1 = convert_modes (hmode, mode, hipart1, uns);
+	  rtx lopart1 = convert_modes (hmode, mode, op1, uns);
 	  rtx signbit1 = const0_rtx;
 	  if (!uns)
 	    signbit1 = expand_shift (RSHIFT_EXPR, hmode, lopart1, hprec - 1,
@@ -1717,11 +1652,12 @@ expand_mul_overflow (location_t loc, tree lhs, tree arg0, tree arg1,
 	     if (loxhi >> (bitsize / 2) == 0		 (if uns).  */
 	  rtx hipartloxhi = expand_shift (RSHIFT_EXPR, mode, loxhi, hprec,
 					  NULL_RTX, 0);
-	  hipartloxhi = gen_lowpart (hmode, hipartloxhi);
+	  hipartloxhi = convert_modes (hmode, mode, hipartloxhi, 0);
 	  rtx signbitloxhi = const0_rtx;
 	  if (!uns)
 	    signbitloxhi = expand_shift (RSHIFT_EXPR, hmode,
-					 gen_lowpart (hmode, loxhi),
+					 convert_modes (hmode, mode,
+							loxhi, 0),
 					 hprec - 1, NULL_RTX, 0);
 
 	  do_compare_rtx_and_jump (signbitloxhi, hipartloxhi, NE, true, hmode,
@@ -1731,7 +1667,8 @@ expand_mul_overflow (location_t loc, tree lhs, tree arg0, tree arg1,
 	  /* res = (loxhi << (bitsize / 2)) | (hmode) lo0xlo1;  */
 	  rtx loxhishifted = expand_shift (LSHIFT_EXPR, mode, loxhi, hprec,
 					   NULL_RTX, 1);
-	  tem = convert_modes (mode, hmode, gen_lowpart (hmode, lo0xlo1), 1);
+	  tem = convert_modes (mode, hmode,
+			       convert_modes (hmode, mode, lo0xlo1, 1), 1);
 
 	  tem = expand_simple_binop (mode, IOR, loxhishifted, tem, res,
 				     1, OPTAB_DIRECT);
@@ -1892,7 +1829,7 @@ expand_vector_ubsan_overflow (location_t loc, enum tree_code code, tree lhs,
     {
       optab op;
       lhsr = expand_expr (lhs, NULL_RTX, VOIDmode, EXPAND_WRITE);
-      if (GET_MODE (lhsr) == BLKmode
+      if (!VECTOR_MODE_P (GET_MODE (lhsr))
 	  || (op = optab_for_tree_code (code, TREE_TYPE (arg0),
 					optab_default)) == unknown_optab
 	  || (optab_handler (op, TYPE_MODE (TREE_TYPE (arg0)))
@@ -2458,6 +2395,14 @@ expand_GOACC_LOOP (internal_fn, gcall *)
 
 static void
 expand_GOACC_REDUCTION (internal_fn, gcall *)
+{
+  gcc_unreachable ();
+}
+
+/* This is expanded by oacc_device_lower pass.  */
+
+static void
+expand_GOACC_TILE (internal_fn, gcall *)
 {
   gcc_unreachable ();
 }

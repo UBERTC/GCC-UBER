@@ -6433,6 +6433,31 @@ gfc_is_expandable_expr (gfc_expr *e)
   return false;
 }
 
+
+/* Sometimes variables in specification expressions of the result
+   of module procedures in submodules wind up not being the 'real'
+   dummy.  Find this, if possible, in the namespace of the first
+   formal argument.  */
+
+static void
+fixup_unique_dummy (gfc_expr *e)
+{
+  gfc_symtree *st = NULL;
+  gfc_symbol *s = NULL;
+
+  if (e->symtree->n.sym->ns->proc_name
+      && e->symtree->n.sym->ns->proc_name->formal)
+    s = e->symtree->n.sym->ns->proc_name->formal->sym;
+
+  if (s != NULL)
+    st = gfc_find_symtree (s->ns->sym_root, e->symtree->n.sym->name);
+
+  if (st != NULL
+      && st->n.sym != NULL
+      && st->n.sym->attr.dummy)
+    e->symtree = st;
+}
+
 /* Resolve an expression.  That is, make sure that types of operands agree
    with their operators, intrinsic operators are converted to function calls
    for overloaded types and unresolved function references are resolved.  */
@@ -6456,6 +6481,14 @@ gfc_resolve_expr (gfc_expr *e)
       inquiry_argument = false;
       actual_arg = false;
       first_actual_arg = false;
+    }
+  else if (e->symtree != NULL
+	   && *e->symtree->name == '@'
+	   && e->symtree->n.sym->attr.dummy)
+    {
+      /* Deal with submodule specification expressions that are not
+	 found to be referenced in module.c(read_cleanup).  */
+      fixup_unique_dummy (e);
     }
 
   switch (e->expr_type)
@@ -9158,10 +9191,13 @@ resolve_lock_unlock_event (gfc_code *code)
     return;
 
   /* Check for EVENT WAIT the UNTIL_COUNT.  */
-  if (code->op == EXEC_EVENT_WAIT && code->expr4
-      && (code->expr4->ts.type != BT_INTEGER || code->expr4->rank != 0))
-    gfc_error ("UNTIL_COUNT= argument at %L must be a scalar INTEGER "
-	       "expression", &code->expr4->where);
+  if (code->op == EXEC_EVENT_WAIT && code->expr4)
+    {
+      if (!gfc_resolve_expr (code->expr4) || code->expr4->ts.type != BT_INTEGER
+	  || code->expr4->rank != 0)
+	gfc_error ("UNTIL_COUNT= argument at %L must be a scalar INTEGER "
+		   "expression", &code->expr4->where);
+    }
 }
 
 

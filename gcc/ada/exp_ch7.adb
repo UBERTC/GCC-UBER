@@ -3455,6 +3455,10 @@ package body Exp_Ch7 is
    -- Build_Invariant_Procedure_Body --
    ------------------------------------
 
+   --  WARNING: This routine manages Ghost regions. Return statements must be
+   --  replaced by gotos which jump to the end of the routine and restore the
+   --  Ghost mode.
+
    procedure Build_Invariant_Procedure_Body
      (Typ               : Entity_Id;
       Partial_Invariant : Boolean := False)
@@ -3577,30 +3581,41 @@ package body Exp_Ch7 is
 
          begin
             if Has_Invariants (Comp_Typ) then
-               Proc_Id := Invariant_Procedure (Base_Type (Comp_Typ));
 
-               --  The component type should have an invariant procedure if it
-               --  has invariants of its own or inherits class-wide invariants
-               --  from parent or interface types.
+               --  In GNATprove mode, the component invariants are checked by
+               --  other means. They should not be added to the array type
+               --  invariant procedure, so that the procedure can be used to
+               --  check the array type invariants if any.
 
-               pragma Assert (Present (Proc_Id));
+               if GNATprove_Mode then
+                  null;
 
-               --  Generate:
-               --    <Comp_Typ>Invariant (_object (<Indices>));
+               else
+                  Proc_Id := Invariant_Procedure (Base_Type (Comp_Typ));
 
-               --  Note that the invariant procedure may have a null body if
-               --  assertions are disabled or Assertion_Polity Ignore is in
-               --  effect.
+                  --  The component type should have an invariant procedure
+                  --  if it has invariants of its own or inherits class-wide
+                  --  invariants from parent or interface types.
 
-               if not Has_Null_Body (Proc_Id) then
-                  Append_New_To (Comp_Checks,
-                    Make_Procedure_Call_Statement (Loc,
-                      Name                   =>
-                        New_Occurrence_Of (Proc_Id, Loc),
-                      Parameter_Associations => New_List (
-                        Make_Indexed_Component (Loc,
-                          Prefix      => New_Occurrence_Of (Obj_Id, Loc),
-                          Expressions => New_Copy_List (Indices)))));
+                  pragma Assert (Present (Proc_Id));
+
+                  --  Generate:
+                  --    <Comp_Typ>Invariant (_object (<Indices>));
+
+                  --  Note that the invariant procedure may have a null body if
+                  --  assertions are disabled or Assertion_Policy Ignore is in
+                  --  effect.
+
+                  if not Has_Null_Body (Proc_Id) then
+                     Append_New_To (Comp_Checks,
+                       Make_Procedure_Call_Statement (Loc,
+                         Name                   =>
+                           New_Occurrence_Of (Proc_Id, Loc),
+                         Parameter_Associations => New_List (
+                           Make_Indexed_Component (Loc,
+                             Prefix      => New_Occurrence_Of (Obj_Id, Loc),
+                             Expressions => New_Copy_List (Indices)))));
+                  end if;
                end if;
 
                Produced_Check := True;
@@ -3649,7 +3664,7 @@ package body Exp_Ch7 is
                --    end loop;
 
                --  Note that the invariant procedure may have a null body if
-               --  assertions are disabled or Assertion_Polity Ignore is in
+               --  assertions are disabled or Assertion_Policy Ignore is in
                --  effect.
 
                if Present (Comp_Checks) then
@@ -3741,6 +3756,16 @@ package body Exp_Ch7 is
          --  The partial view of Par_Typ
 
       begin
+         --  Do not process array types because they cannot have true parent
+         --  types. This also prevents the generation of a duplicate invariant
+         --  check when the input type is an array base type because its Etype
+         --  denotes the first subtype, both of which share the same component
+         --  type.
+
+         if Is_Array_Type (T) then
+            return;
+         end if;
+
          --  Climb the parent type chain
 
          Curr_Typ := T;
@@ -3914,33 +3939,44 @@ package body Exp_Ch7 is
             --  this case verify the access value itself.
 
             if Has_Invariants (Comp_Typ) then
-               Proc_Id := Invariant_Procedure (Base_Type (Comp_Typ));
 
-               --  The component type should have an invariant procedure if it
-               --  has invariants of its own or inherits class-wide invariants
-               --  from parent or interface types.
+               --  In GNATprove mode, the component invariants are checked by
+               --  other means. They should not be added to the record type
+               --  invariant procedure, so that the procedure can be used to
+               --  check the record type invariants if any.
 
-               pragma Assert (Present (Proc_Id));
+               if GNATprove_Mode then
+                  null;
 
-               --  Generate:
-               --    <Comp_Typ>Invariant (T (_object).<Comp_Id>);
+               else
+                  Proc_Id := Invariant_Procedure (Base_Type (Comp_Typ));
 
-               --  Note that the invariant procedure may have a null body if
-               --  assertions are disabled or Assertion_Polity Ignore is in
-               --  effect.
+                  --  The component type should have an invariant procedure
+                  --  if it has invariants of its own or inherits class-wide
+                  --  invariants from parent or interface types.
 
-               if not Has_Null_Body (Proc_Id) then
-                  Append_New_To (Comp_Checks,
-                    Make_Procedure_Call_Statement (Loc,
-                      Name                   =>
-                        New_Occurrence_Of (Proc_Id, Loc),
-                      Parameter_Associations => New_List (
-                        Make_Selected_Component (Loc,
-                          Prefix        =>
-                            Unchecked_Convert_To
-                              (T, New_Occurrence_Of (Obj_Id, Loc)),
-                          Selector_Name =>
-                            New_Occurrence_Of (Comp_Id, Loc)))));
+                  pragma Assert (Present (Proc_Id));
+
+                  --  Generate:
+                  --    <Comp_Typ>Invariant (T (_object).<Comp_Id>);
+
+                  --  Note that the invariant procedure may have a null body if
+                  --  assertions are disabled or Assertion_Policy Ignore is in
+                  --  effect.
+
+                  if not Has_Null_Body (Proc_Id) then
+                     Append_New_To (Comp_Checks,
+                       Make_Procedure_Call_Statement (Loc,
+                         Name                   =>
+                           New_Occurrence_Of (Proc_Id, Loc),
+                         Parameter_Associations => New_List (
+                           Make_Selected_Component (Loc,
+                             Prefix        =>
+                               Unchecked_Convert_To
+                                 (T, New_Occurrence_Of (Obj_Id, Loc)),
+                             Selector_Name =>
+                               New_Occurrence_Of (Comp_Id, Loc)))));
+                  end if;
                end if;
 
                Produced_Check           := True;
@@ -4353,9 +4389,8 @@ package body Exp_Ch7 is
 
       --  Local variables
 
-      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
-
       Dummy        : Entity_Id;
+      Mode         : Ghost_Mode_Type;
       Priv_Item    : Node_Id;
       Proc_Body    : Node_Id;
       Proc_Body_Id : Entity_Id;
@@ -4406,6 +4441,11 @@ package body Exp_Ch7 is
          Work_Typ := Corresponding_Concurrent_Type (Work_Typ);
       end if;
 
+      --  The working type may be subject to pragma Ghost. Set the mode now to
+      --  ensure that the invariant procedure is properly marked as Ghost.
+
+      Set_Ghost_Mode (Work_Typ, Mode);
+
       --  The type must either have invariants of its own, inherit class-wide
       --  invariants from parent types or interfaces, or be an array or record
       --  type whose components have invariants.
@@ -4416,7 +4456,7 @@ package body Exp_Ch7 is
       --  inherited by implementing types.
 
       if Is_Interface (Work_Typ) then
-         return;
+         goto Leave;
       end if;
 
       --  Obtain both views of the type
@@ -4445,7 +4485,7 @@ package body Exp_Ch7 is
             --  Nothing to do because the processing of the underlying full
             --  view already checked the invariants of the partial view.
 
-            return;
+            goto Leave;
          end if;
 
          --  Create a declaration for the "partial" invariant procedure if it
@@ -4482,13 +4522,8 @@ package body Exp_Ch7 is
       --  Nothing to do if the invariant procedure already has a body
 
       if Present (Corresponding_Body (Proc_Decl)) then
-         return;
+         goto Leave;
       end if;
-
-      --  The working type may be subject to pragma Ghost. Set the mode now to
-      --  ensure that the invariant procedure is properly marked as Ghost.
-
-      Set_Ghost_Mode_From_Entity (Work_Typ);
 
       --  Emulate the environment of the invariant procedure by installing
       --  its scope and formal parameters. Note that this is not needed, but
@@ -4654,12 +4689,18 @@ package body Exp_Ch7 is
       Set_Corresponding_Spec (Proc_Body, Proc_Id);
 
       --  The body should not be inserted into the tree when the context is
-      --  ASIS, GNATprove or a generic unit because it is not part of the
-      --  template. Note that the body must still be generated in order to
-      --  resolve the invariants.
+      --  ASIS or a generic unit because it is not part of the template. Note
+      --  that the body must still be generated in order to resolve the
+      --  invariants.
 
-      if ASIS_Mode or GNATprove_Mode or Inside_A_Generic then
+      if ASIS_Mode or Inside_A_Generic then
          null;
+
+      --  Semi-insert the body into the tree for GNATprove by setting its
+      --  Parent field. This allows for proper upstream tree traversals.
+
+      elsif GNATprove_Mode then
+         Set_Parent (Proc_Body, Parent (Declaration_Node (Work_Typ)));
 
       --  Otherwise the body is part of the freezing actions of the type
 
@@ -4667,12 +4708,17 @@ package body Exp_Ch7 is
          Append_Freeze_Action (Work_Typ, Proc_Body);
       end if;
 
-      Ghost_Mode := Save_Ghost_Mode;
+   <<Leave>>
+      Restore_Ghost_Mode (Mode);
    end Build_Invariant_Procedure_Body;
 
    -------------------------------------------
    -- Build_Invariant_Procedure_Declaration --
    -------------------------------------------
+
+   --  WARNING: This routine manages Ghost regions. Return statements must be
+   --  replaced by gotos which jump to the end of the routine and restore the
+   --  Ghost mode.
 
    procedure Build_Invariant_Procedure_Declaration
      (Typ               : Entity_Id;
@@ -4680,8 +4726,7 @@ package body Exp_Ch7 is
    is
       Loc : constant Source_Ptr := Sloc (Typ);
 
-      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
-
+      Mode      : Ghost_Mode_Type;
       Proc_Decl : Node_Id;
       Proc_Id   : Entity_Id;
       Proc_Nam  : Name_Id;
@@ -4725,6 +4770,11 @@ package body Exp_Ch7 is
          Work_Typ := Corresponding_Concurrent_Type (Work_Typ);
       end if;
 
+      --  The working type may be subject to pragma Ghost. Set the mode now to
+      --  ensure that the invariant procedure is properly marked as Ghost.
+
+      Set_Ghost_Mode (Work_Typ, Mode);
+
       --  The type must either have invariants of its own, inherit class-wide
       --  invariants from parent or interface types, or be an array or record
       --  type whose components have invariants.
@@ -4735,25 +4785,20 @@ package body Exp_Ch7 is
       --  inherited by implementing types.
 
       if Is_Interface (Work_Typ) then
-         return;
+         goto Leave;
 
       --  Nothing to do if the type already has a "partial" invariant procedure
 
       elsif Partial_Invariant then
          if Present (Partial_Invariant_Procedure (Work_Typ)) then
-            return;
+            goto Leave;
          end if;
 
       --  Nothing to do if the type already has a "full" invariant procedure
 
       elsif Present (Invariant_Procedure (Work_Typ)) then
-         return;
+         goto Leave;
       end if;
-
-      --  The working type may be subject to pragma Ghost. Set the mode now to
-      --  ensure that the invariant procedure is properly marked as Ghost.
-
-      Set_Ghost_Mode_From_Entity (Work_Typ);
 
       --  The caller requests the declaration of the "partial" invariant
       --  procedure.
@@ -4789,13 +4834,6 @@ package body Exp_Ch7 is
 
       if Opt.Generate_SCO then
          Set_Needs_Debug_Info (Proc_Id);
-      end if;
-
-      --  Mark the invariant procedure explicitly as Ghost because it does not
-      --  come from source.
-
-      if Ghost_Mode > None then
-         Set_Is_Ghost_Entity (Proc_Id);
       end if;
 
       --  Obtain all views of the input type
@@ -4855,11 +4893,16 @@ package body Exp_Ch7 is
                     New_Occurrence_Of (Work_Typ, Loc)))));
 
       --  The declaration should not be inserted into the tree when the context
-      --  is ASIS, GNATprove or a generic unit because it is not part of the
-      --  template.
+      --  is ASIS or a generic unit because it is not part of the template.
 
-      if ASIS_Mode or GNATprove_Mode or Inside_A_Generic then
+      if ASIS_Mode or Inside_A_Generic then
          null;
+
+      --  Semi-insert the declaration into the tree for GNATprove by setting
+      --  its Parent field. This allows for proper upstream tree traversals.
+
+      elsif GNATprove_Mode then
+         Set_Parent (Proc_Decl, Parent (Typ_Decl));
 
       --  Otherwise insert the declaration
 
@@ -4868,7 +4911,8 @@ package body Exp_Ch7 is
          Insert_After_And_Analyze (Typ_Decl, Proc_Decl);
       end if;
 
-      Ghost_Mode := Save_Ghost_Mode;
+   <<Leave>>
+      Restore_Ghost_Mode (Mode);
    end Build_Invariant_Procedure_Declaration;
 
    ---------------------
@@ -5835,15 +5879,7 @@ package body Exp_Ch7 is
       Spec_Id : constant Entity_Id := Corresponding_Spec (N);
       Fin_Id  : Entity_Id;
 
-      Save_Ghost_Mode : constant Ghost_Mode_Type := Ghost_Mode;
-
    begin
-      --  The package body is Ghost when the corresponding spec is Ghost. Set
-      --  the mode now to ensure that any nodes generated during expansion are
-      --  properly marked as Ghost.
-
-      Set_Ghost_Mode (N, Spec_Id);
-
       --  This is done only for non-generic packages
 
       if Ekind (Spec_Id) = E_Package then
@@ -5899,8 +5935,6 @@ package body Exp_Ch7 is
             end;
          end if;
       end if;
-
-      Ghost_Mode := Save_Ghost_Mode;
    end Expand_N_Package_Body;
 
    ----------------------------------
@@ -6070,8 +6104,9 @@ package body Exp_Ch7 is
             --  context of a Timed_Entry_Call. In this case we wrap the entire
             --  timed entry call.
 
-            when N_Entry_Call_Statement     |
-                 N_Procedure_Call_Statement =>
+            when N_Entry_Call_Statement
+               | N_Procedure_Call_Statement
+            =>
                if Nkind (Parent (The_Parent)) = N_Entry_Call_Alternative
                  and then Nkind_In (Parent (Parent (The_Parent)),
                                     N_Timed_Entry_Call,
@@ -6086,34 +6121,35 @@ package body Exp_Ch7 is
             --  even if they are not really wrapped. For further details, see
             --  Wrap_Transient_Declaration.
 
-            when N_Object_Declaration          |
-                 N_Object_Renaming_Declaration |
-                 N_Subtype_Declaration         =>
+            when N_Object_Declaration
+               | N_Object_Renaming_Declaration
+               | N_Subtype_Declaration
+            =>
                return The_Parent;
 
             --  The expression itself is to be wrapped if its parent is a
             --  compound statement or any other statement where the expression
             --  is known to be scalar.
 
-            when N_Accept_Alternative               |
-                 N_Attribute_Definition_Clause      |
-                 N_Case_Statement                   |
-                 N_Code_Statement                   |
-                 N_Delay_Alternative                |
-                 N_Delay_Until_Statement            |
-                 N_Delay_Relative_Statement         |
-                 N_Discriminant_Association         |
-                 N_Elsif_Part                       |
-                 N_Entry_Body_Formal_Part           |
-                 N_Exit_Statement                   |
-                 N_If_Statement                     |
-                 N_Iteration_Scheme                 |
-                 N_Terminate_Alternative            =>
+            when N_Accept_Alternative
+               | N_Attribute_Definition_Clause
+               | N_Case_Statement
+               | N_Code_Statement
+               | N_Delay_Alternative
+               | N_Delay_Until_Statement
+               | N_Delay_Relative_Statement
+               | N_Discriminant_Association
+               | N_Elsif_Part
+               | N_Entry_Body_Formal_Part
+               | N_Exit_Statement
+               | N_If_Statement
+               | N_Iteration_Scheme
+               | N_Terminate_Alternative
+            =>
                pragma Assert (Present (P));
                return P;
 
             when N_Attribute_Reference =>
-
                if Is_Procedure_Attribute_Name
                     (Attribute_Name (The_Parent))
                then
@@ -6137,9 +6173,10 @@ package body Exp_Ch7 is
             --  The following nodes contains "dummy calls" which don't need to
             --  be wrapped.
 
-            when N_Parameter_Specification     |
-                 N_Discriminant_Specification  |
-                 N_Component_Declaration       =>
+            when N_Component_Declaration
+               | N_Discriminant_Specification
+               | N_Parameter_Specification
+            =>
                return Empty;
 
             --  The return statement is not to be wrapped when the function
@@ -6164,10 +6201,11 @@ package body Exp_Ch7 is
             --  situation that are not detected yet (such as a dynamic string
             --  in a pragma export)
 
-            when N_Subprogram_Body     |
-                 N_Package_Declaration |
-                 N_Package_Body        |
-                 N_Block_Statement     =>
+            when N_Block_Statement
+               | N_Package_Body
+               | N_Package_Declaration
+               | N_Subprogram_Body
+            =>
                return Empty;
 
             --  Otherwise continue the search
@@ -7664,8 +7702,9 @@ package body Exp_Ch7 is
          when Address_Case =>
             return Make_Finalize_Address_Stmts (Typ);
 
-         when Adjust_Case   |
-              Finalize_Case =>
+         when Adjust_Case
+            | Finalize_Case
+         =>
             return Build_Adjust_Or_Finalize_Statements (Typ);
 
          when Initialize_Case =>

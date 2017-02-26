@@ -1,4 +1,4 @@
-/* Test memcmp builtin expansion for compilation and proper execution.  */
+/* Test strncmp builtin expansion for compilation and proper execution.  */
 /* { dg-do run } */
 /* { dg-options "-O2" } */
 /* { dg-require-effective-target ptr32plus } */
@@ -32,31 +32,32 @@ static void test_strncmp_ ## SZ ## _ ## ALIGN (void) {     		    \
       a[SZ] = 0;							    \
       b[SZ] = 0;					   		    \
       if (!((r1 = strncmp (b, a, SZ)) > 0))   		   		    \
-        {								    \
-	  abort ();							    \
-	}								    \
+	abort ();							    \
       if (!((r1 = strncmp (a, b, SZ)) < 0))			   	    \
-        {								    \
-	  abort ();							    \
-	}                            					    \
+	abort ();							    \
       b[i] = '1';					   		    \
       if (!((r1 = strncmp (a, b, SZ)) == 0))		   		    \
-        {								    \
-	  abort ();							    \
-	}                            					    \
+	abort ();							    \
       for(j = i; j < SZ ; j++)			   		            \
 	{						   		    \
 	  a[j] = '1';            			   		    \
 	  b[j] = '2';			                   		    \
 	}						   		    \
-      if (!((r1 = strncmp(b, a, SZ)) > 0))		   		    \
+      if (!((r1 = strncmp (b, a, SZ)) > 0))		   		    \
+	abort ();							    \
+      if (!((r1 = strncmp (a, b, SZ)) < 0))		   		    \
+	abort ();							    \
+      for(j = 0; j < i ; j++)						    \
         {								    \
-	  abort ();							    \
-	}             							    \
-      if (!((r1 = strncmp(a, b, SZ)) < 0))		   		    \
-        {								    \
-	  abort ();							    \
-	}		   						    \
+	  memset(a, '-', SZ);						    \
+	  memset(b, '-', SZ);						    \
+	  a[j] = '\0';							    \
+	  a[j+1] = '1';							    \
+	  b[j] = '\0';							    \
+	  b[j+1] = '2';							    \
+	  if ((r1 = strncmp (b, a, SZ)) != 0)				    \
+	    abort ();							    \
+	}                                                                   \
       a = three + 4096 - (SZ / 2 + (i & 1) * ALIGN);		   	    \
       b = four + 4096 - (SZ / 2 + (i & 1) * ALIGN);		   	    \
       memset(a, '-', SZ);					   	    \
@@ -66,18 +67,12 @@ static void test_strncmp_ ## SZ ## _ ## ALIGN (void) {     		    \
       a[SZ] = 0;							    \
       b[SZ] = 0;					   		    \
       if (!((r1 = strncmp(b, a, SZ)) > 0))   		   		    \
-        {								    \
-	  abort ();							    \
-	}								    \
+	abort ();							    \
       if (!((r1 = strncmp(a, b, SZ)) < 0))			   	    \
-        {								    \
-	  abort ();							    \
-	}                            					    \
+	abort ();							    \
       b[i] = '1';					   		    \
       if (!((r1 = strncmp(a, b, SZ)) == 0))		   		    \
-        {								    \
-	  abort ();							    \
-	}                            					    \
+	abort ();							    \
     }							                    \
 }                                                                
 
@@ -327,6 +322,11 @@ DEF_TEST(49,2)
 DEF_TEST(49,4)
 DEF_TEST(49,8)
 DEF_TEST(49,16)
+DEF_TEST(100,1)
+DEF_TEST(100,2)
+DEF_TEST(100,4)
+DEF_TEST(100,8)
+DEF_TEST(100,16)
 #else
 DEF_TEST(3,1)
 DEF_TEST(4,1)
@@ -350,6 +350,11 @@ DEF_TEST(32,2)
 DEF_TEST(32,4)
 DEF_TEST(32,8)
 DEF_TEST(32,16)
+DEF_TEST(100,1)
+DEF_TEST(100,2)
+DEF_TEST(100,4)
+DEF_TEST(100,8)
+DEF_TEST(100,16)
 #endif
 
 int

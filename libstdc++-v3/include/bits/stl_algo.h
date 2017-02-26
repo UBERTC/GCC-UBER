@@ -583,6 +583,9 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
 		   _Predicate __pred)
     {
       __first = std::find_if_not(__first, __last, __pred);
+      if (__first == __last)
+	return true;
+      ++__first;
       return std::none_of(__first, __last, __pred);
     }
 

@@ -1045,7 +1045,6 @@ copy_tree_body_r (tree *tp, int *walk_subtrees, void *data)
   copy_body_data *id = (copy_body_data *) data;
   tree fn = id->src_fn;
   tree new_block;
-  bool copied = false;
 
   /* Begin by recognizing trees that we'll completely rewrite for the
      inlining context.  Our output for these trees is completely
@@ -1242,40 +1241,10 @@ copy_tree_body_r (tree *tp, int *walk_subtrees, void *data)
 	  *walk_subtrees = 0;
 	  return NULL;
 	}
-      else if (TREE_CODE (*tp) == COND_EXPR)
-	{
-	  tree cond = TREE_OPERAND (*tp, 0);
-	  walk_tree (&cond, copy_tree_body_r, data, NULL);
-	  tree folded = fold (cond);
-	  if (TREE_CODE (folded) == INTEGER_CST)
-	    {
-	      /* Only copy the taken branch; for a C++ base constructor clone
-		 inherited from a virtual base, copying the other branch leads
-		 to references to parameters that were optimized away.  */
-	      tree branch = (integer_nonzerop (folded)
-			     ? TREE_OPERAND (*tp, 1)
-			     : TREE_OPERAND (*tp, 2));
-	      tree type = TREE_TYPE (*tp);
-	      if (VOID_TYPE_P (type)
-		  || type == TREE_TYPE (branch))
-		{
-		  *tp = branch;
-		  return copy_tree_body_r (tp, walk_subtrees, data);
-		}
-	    }
-	  /* Avoid copying the condition twice.  */
-	  copy_tree_r (tp, walk_subtrees, NULL);
-	  TREE_OPERAND (*tp, 0) = cond;
-	  walk_tree (&TREE_OPERAND (*tp, 1), copy_tree_body_r, data, NULL);
-	  walk_tree (&TREE_OPERAND (*tp, 2), copy_tree_body_r, data, NULL);
-	  *walk_subtrees = 0;
-	  copied = true;
-	}
 
       /* Here is the "usual case".  Copy this tree node, and then
 	 tweak some special cases.  */
-      if (!copied)
-	copy_tree_r (tp, walk_subtrees, NULL);
+      copy_tree_r (tp, walk_subtrees, NULL);
 
       /* If EXPR has block defined, map it to newly constructed block.
          When inlining we want EXPRs without block appear in the block
@@ -4413,6 +4382,7 @@ expand_call_inline (basic_block bb, gimple *stmt, copy_body_data *id)
   bool purge_dead_abnormal_edges;
   gcall *call_stmt;
   unsigned int i;
+  unsigned int prop_mask, src_properties;
 
   /* The gimplifier uses input_location in too many places, such as
      internal_get_tmp_var ().  */
@@ -4617,11 +4587,13 @@ expand_call_inline (basic_block bb, gimple *stmt, copy_body_data *id)
   id->call_stmt = stmt;
 
   /* If the src function contains an IFN_VA_ARG, then so will the dst
-     function after inlining.  */
-  if ((id->src_cfun->curr_properties & PROP_gimple_lva) == 0)
+     function after inlining.  Likewise for IFN_GOMP_USE_SIMT.  */
+  prop_mask = PROP_gimple_lva | PROP_gimple_lomp_dev;
+  src_properties = id->src_cfun->curr_properties & prop_mask;
+  if (src_properties != prop_mask)
     {
       struct function *dst_cfun = DECL_STRUCT_FUNCTION (id->dst_fn);
-      dst_cfun->curr_properties &= ~PROP_gimple_lva;
+      dst_cfun->curr_properties &= src_properties | ~prop_mask;
     }
 
   gcc_assert (!id->src_cfun->after_inlining);
@@ -5446,7 +5418,7 @@ declare_inline_vars (tree block, tree vars)
    but now it will be in the TO_FN.  PARM_TO_VAR means enable PARM_DECL to
    VAR_DECL translation.  */
 
-static tree
+tree
 copy_decl_for_dup_finish (copy_body_data *id, tree decl, tree copy)
 {
   /* Don't generate debug information for the copy if we wouldn't have

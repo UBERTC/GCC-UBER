@@ -670,14 +670,13 @@ package Einfo is
 --       stored in a non-standard way, see body for details.
 
 --    Component_Bit_Offset (Uint11)
---       Defined in record components (E_Component, E_Discriminant) if a
---       component clause applies to the component. First bit position of
---       given component, computed from the first bit and position values
---       given in the component clause. A value of No_Uint means that the
---       value is not yet known. The value can be set by the appearance of
---       an explicit component clause in a record representation clause,
---       or it can be set by the front-end in package Layout, or it can be
---       set by the backend. By the time backend processing is completed,
+--       Defined in record components (E_Component, E_Discriminant). First
+--       bit position of given component, computed from the first bit and
+--       position values given in the component clause. A value of No_Uint
+--       means that the value is not yet known. The value can be set by the
+--       appearance of an explicit component clause in a record representation
+--       clause, or it can be set by the front-end in package Layout, or it can
+--       be set by the backend. By the time backend processing is completed,
 --       this field is always set. A negative value is used to represent
 --       a value which is not known at compile time, and must be computed
 --       at run-time (this happens if fields of a record have variable
@@ -3237,6 +3236,11 @@ package Einfo is
 --       Defined in all entities. Set only in record types to which the
 --       pragma Unchecked_Union has been validly applied.
 
+--    Is_Underlying_Full_View (Flag298)
+--       Defined in all entities. Set for types which represent the true full
+--       view of a private type completed by another private type. For further
+--       details, see attribute Underlying_Full_View.
+
 --    Is_Underlying_Record_View (Flag246) [base type only]
 --       Defined in all entities. Set only in record types that represent the
 --       underlying record view. This view is built for derivations of types
@@ -3648,8 +3652,8 @@ package Einfo is
 --       depends on discriminants. In this case, the Normalized_Position_Max
 --       field represents the maximum possible value of Normalized_Position
 --       assuming min/max values for discriminant subscripts in all fields.
---       This is used by Layout in front end layout mode to properly computed
---       the maximum size such records (needed for allocation purposes when
+--       This is used by Layout in front end layout mode to properly compute
+--       the maximum size of such records (needed for allocation purposes when
 --       there are default discriminants, and also for the 'Size value).
 
 --    Number_Dimensions (synthesized)
@@ -7184,6 +7188,7 @@ package Einfo is
    function Is_Trivial_Subprogram               (Id : E) return B;
    function Is_True_Constant                    (Id : E) return B;
    function Is_Unchecked_Union                  (Id : E) return B;
+   function Is_Underlying_Full_View             (Id : E) return B;
    function Is_Underlying_Record_View           (Id : E) return B;
    function Is_Unimplemented                    (Id : E) return B;
    function Is_Unsigned_Type                    (Id : E) return B;
@@ -7869,6 +7874,7 @@ package Einfo is
    procedure Set_Is_Trivial_Subprogram           (Id : E; V : B := True);
    procedure Set_Is_True_Constant                (Id : E; V : B := True);
    procedure Set_Is_Unchecked_Union              (Id : E; V : B := True);
+   procedure Set_Is_Underlying_Full_View         (Id : E; V : B := True);
    procedure Set_Is_Underlying_Record_View       (Id : E; V : B := True);
    procedure Set_Is_Unimplemented                (Id : E; V : B := True);
    procedure Set_Is_Unsigned_Type                (Id : E; V : B := True);
@@ -8706,6 +8712,7 @@ package Einfo is
    pragma Inline (Is_True_Constant);
    pragma Inline (Is_Type);
    pragma Inline (Is_Unchecked_Union);
+   pragma Inline (Is_Underlying_Full_View);
    pragma Inline (Is_Underlying_Record_View);
    pragma Inline (Is_Unimplemented);
    pragma Inline (Is_Unsigned_Type);
@@ -9181,6 +9188,7 @@ package Einfo is
    pragma Inline (Set_Is_Trivial_Subprogram);
    pragma Inline (Set_Is_True_Constant);
    pragma Inline (Set_Is_Unchecked_Union);
+   pragma Inline (Set_Is_Underlying_Full_View);
    pragma Inline (Set_Is_Underlying_Record_View);
    pragma Inline (Set_Is_Unimplemented);
    pragma Inline (Set_Is_Unsigned_Type);

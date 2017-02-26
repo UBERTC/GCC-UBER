@@ -1103,18 +1103,11 @@ cp_genericize_r (tree *stmt_p, int *walk_subtrees, void *data)
       && omp_var_to_track (stmt))
     omp_cxx_notice_variable (wtd->omp_ctx, stmt);
 
-  /* Don't dereference parms in a thunk, pass the references through. */
-  if ((TREE_CODE (stmt) == CALL_EXPR && CALL_FROM_THUNK_P (stmt))
-      || (TREE_CODE (stmt) == AGGR_INIT_EXPR && AGGR_INIT_FROM_THUNK_P (stmt)))
-    {
-      *walk_subtrees = 0;
-      return NULL;
-    }
-
-  /* Otherwise, do dereference invisible reference parms.  */
+  /* Dereference invisible reference parms.  */
   if (wtd->handle_invisiref_parm_p && is_invisiref_parm (stmt))
     {
       *stmt_p = convert_from_reference (stmt);
+      p_set->add (*stmt_p);
       *walk_subtrees = 0;
       return NULL;
     }
@@ -2365,30 +2358,26 @@ cp_fold (tree x)
       {
 	unsigned i;
 	constructor_elt *p;
-	bool changed = false;
 	vec<constructor_elt, va_gc> *elts = CONSTRUCTOR_ELTS (x);
 	vec<constructor_elt, va_gc> *nelts = NULL;
-	vec_safe_reserve (nelts, vec_safe_length (elts));
 	FOR_EACH_VEC_SAFE_ELT (elts, i, p)
 	  {
 	    tree op = cp_fold (p->value);
-	    constructor_elt e = { p->index, op };
-	    nelts->quick_push (e);
 	    if (op != p->value)
 	      {
 		if (op == error_mark_node)
 		  {
 		    x = error_mark_node;
-		    changed = false;
+		    vec_free (nelts);
 		    break;
 		  }
-		changed = true;
+		if (nelts == NULL)
+		  nelts = elts->copy ();
+		(*nelts)[i].value = op;
 	      }
 	  }
-	if (changed)
+	if (nelts)
 	  x = build_constructor (TREE_TYPE (x), nelts);
-	else
-	  vec_free (nelts);
 	break;
       }
     case TREE_VEC:

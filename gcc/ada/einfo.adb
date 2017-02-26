@@ -614,8 +614,8 @@ package body Einfo is
    --    Is_Ignored_Transient            Flag295
    --    Has_Partial_Visible_Refinement  Flag296
    --    Is_Entry_Wrapper                Flag297
+   --    Is_Underlying_Full_View         Flag298
 
-   --    (unused)                        Flag298
    --    (unused)                        Flag299
    --    (unused)                        Flag300
 
@@ -2093,7 +2093,10 @@ package body Einfo is
 
    function Is_Checked_Ghost_Entity (Id : E) return B is
    begin
-      pragma Assert (Nkind (Id) in N_Entity);
+      --  Allow this attribute to appear on unanalyzed entities
+
+      pragma Assert (Nkind (Id) in N_Entity
+        or else Ekind (Id) = E_Void);
       return Flag277 (Id);
    end Is_Checked_Ghost_Entity;
 
@@ -2280,7 +2283,10 @@ package body Einfo is
 
    function Is_Ignored_Ghost_Entity (Id : E) return B is
    begin
-      pragma Assert (Nkind (Id) in N_Entity);
+      --  Allow this attribute to appear on unanalyzed entities
+
+      pragma Assert (Nkind (Id) in N_Entity
+        or else Ekind (Id) = E_Void);
       return Flag278 (Id);
    end Is_Ignored_Ghost_Entity;
 
@@ -2605,6 +2611,11 @@ package body Einfo is
    begin
       return Flag117 (Implementation_Base_Type (Id));
    end Is_Unchecked_Union;
+
+   function Is_Underlying_Full_View (Id : E) return B is
+   begin
+      return Flag298 (Id);
+   end Is_Underlying_Full_View;
 
    function Is_Underlying_Record_View (Id : E) return B is
    begin
@@ -5161,20 +5172,9 @@ package body Einfo is
 
    procedure Set_Is_Checked_Ghost_Entity (Id : E; V : B := True) is
    begin
-      pragma Assert (Is_Formal (Id)
-        or else Is_Object (Id)
-        or else Is_Package_Or_Generic_Package (Id)
-        or else Is_Subprogram_Or_Generic_Subprogram (Id)
-        or else Is_Type (Id)
-        or else Ekind (Id) = E_Abstract_State
-        or else Ekind (Id) = E_Component
-        or else Ekind (Id) = E_Discriminant
-        or else Ekind (Id) = E_Exception
-        or else Ekind (Id) = E_Package_Body
-        or else Ekind (Id) = E_Subprogram_Body
+      --  Allow this attribute to appear on unanalyzed entities
 
-        --  Allow this attribute to appear on non-analyzed entities
-
+      pragma Assert (Nkind (Id) in N_Entity
         or else Ekind (Id) = E_Void);
       Set_Flag277 (Id, V);
    end Set_Is_Checked_Ghost_Entity;
@@ -5377,20 +5377,9 @@ package body Einfo is
 
    procedure Set_Is_Ignored_Ghost_Entity (Id : E; V : B := True) is
    begin
-      pragma Assert (Is_Formal (Id)
-        or else Is_Object (Id)
-        or else Is_Package_Or_Generic_Package (Id)
-        or else Is_Subprogram_Or_Generic_Subprogram (Id)
-        or else Is_Type (Id)
-        or else Ekind (Id) = E_Abstract_State
-        or else Ekind (Id) = E_Component
-        or else Ekind (Id) = E_Discriminant
-        or else Ekind (Id) = E_Exception
-        or else Ekind (Id) = E_Package_Body
-        or else Ekind (Id) = E_Subprogram_Body
+      --  Allow this attribute to appear on unanalyzed entities
 
-        --  Allow this attribute to appear on non-analyzed entities
-
+      pragma Assert (Nkind (Id) in N_Entity
         or else Ekind (Id) = E_Void);
       Set_Flag278 (Id, V);
    end Set_Is_Ignored_Ghost_Entity;
@@ -5724,6 +5713,12 @@ package body Einfo is
       pragma Assert (Id = Base_Type (Id));
       Set_Flag117 (Id, V);
    end Set_Is_Unchecked_Union;
+
+   procedure Set_Is_Underlying_Full_View (Id : E; V : B := True) is
+   begin
+      pragma Assert (Is_Type (Id));
+      Set_Flag298 (Id, V);
+   end Set_Is_Underlying_Full_View;
 
    procedure Set_Is_Underlying_Record_View (Id : E; V : B := True) is
    begin
@@ -8122,7 +8117,7 @@ package body Einfo is
                when  1 ..  6 => return Uint_128;
                when  7 .. 15 => return 2**10;
                when 16 .. 33 => return 2**14;
-               when others => return No_Uint;
+               when others   => return No_Uint;
             end case;
 
          when AAMP =>
@@ -8157,14 +8152,14 @@ package body Einfo is
                when  7 .. 15 => return UI_From_Int (53);
                when 16 .. 18 => return Uint_64;
                when 19 .. 33 => return UI_From_Int (113);
-               when others => return No_Uint;
+               when others   => return No_Uint;
             end case;
 
          when AAMP =>
             case Digs is
                when  1 ..  6 => return Uint_24;
                when  7 ..  9 => return UI_From_Int (40);
-               when others => return No_Uint;
+               when others   => return No_Uint;
             end case;
       end case;
    end Machine_Mantissa_Value;
@@ -8176,7 +8171,9 @@ package body Einfo is
    function Machine_Radix_Value (Id : E) return U is
    begin
       case Float_Rep (Id) is
-         when IEEE_Binary | AAMP =>
+         when AAMP
+            | IEEE_Binary
+         =>
             return Uint_2;
       end case;
    end Machine_Radix_Value;
@@ -8808,11 +8805,11 @@ package body Einfo is
                        and then Is_Base_Type (Id));
 
       case V is
-         when Calign_Default          =>
+         when Calign_Default =>
             Set_Flag128 (Id, False);
             Set_Flag129 (Id, False);
 
-         when Calign_Component_Size   =>
+         when Calign_Component_Size =>
             Set_Flag128 (Id, False);
             Set_Flag129 (Id, True);
 
@@ -8820,7 +8817,7 @@ package body Einfo is
             Set_Flag128 (Id, True);
             Set_Flag129 (Id, False);
 
-         when Calign_Storage_Unit     =>
+         when Calign_Storage_Unit =>
             Set_Flag128 (Id, True);
             Set_Flag129 (Id, True);
       end case;
@@ -9038,60 +9035,68 @@ package body Einfo is
 
    begin
       case K is
-         when Access_Kind                    =>
+         when Access_Kind =>
             Kind := E_Access_Subtype;
 
-         when E_Array_Type                   |
-              E_Array_Subtype                =>
+         when E_Array_Subtype
+            | E_Array_Type
+         =>
             Kind := E_Array_Subtype;
 
-         when E_Class_Wide_Type              |
-              E_Class_Wide_Subtype           =>
+         when E_Class_Wide_Subtype
+            | E_Class_Wide_Type
+         =>
             Kind := E_Class_Wide_Subtype;
 
-         when E_Decimal_Fixed_Point_Type     |
-              E_Decimal_Fixed_Point_Subtype  =>
+         when E_Decimal_Fixed_Point_Subtype
+            | E_Decimal_Fixed_Point_Type
+         =>
             Kind := E_Decimal_Fixed_Point_Subtype;
 
-         when E_Ordinary_Fixed_Point_Type    |
-              E_Ordinary_Fixed_Point_Subtype =>
+         when E_Ordinary_Fixed_Point_Subtype
+            | E_Ordinary_Fixed_Point_Type
+         =>
             Kind := E_Ordinary_Fixed_Point_Subtype;
 
-         when E_Private_Type                 |
-              E_Private_Subtype              =>
+         when E_Private_Subtype
+            | E_Private_Type
+         =>
             Kind := E_Private_Subtype;
 
-         when E_Limited_Private_Type         |
-              E_Limited_Private_Subtype      =>
+         when E_Limited_Private_Subtype
+            | E_Limited_Private_Type
+         =>
             Kind := E_Limited_Private_Subtype;
 
-         when E_Record_Type_With_Private     |
-              E_Record_Subtype_With_Private  =>
+         when E_Record_Subtype_With_Private
+            | E_Record_Type_With_Private
+         =>
             Kind := E_Record_Subtype_With_Private;
 
-         when E_Record_Type                  |
-              E_Record_Subtype               =>
+         when E_Record_Subtype
+            | E_Record_Type
+         =>
             Kind := E_Record_Subtype;
 
-         when Enumeration_Kind               =>
+         when Enumeration_Kind =>
             Kind := E_Enumeration_Subtype;
 
-         when Float_Kind                     =>
+         when Float_Kind =>
             Kind := E_Floating_Point_Subtype;
 
-         when Signed_Integer_Kind            =>
+         when Signed_Integer_Kind =>
             Kind := E_Signed_Integer_Subtype;
 
-         when Modular_Integer_Kind           =>
+         when Modular_Integer_Kind =>
             Kind := E_Modular_Integer_Subtype;
 
-         when Protected_Kind                 =>
+         when Protected_Kind =>
             Kind := E_Protected_Subtype;
 
-         when Task_Kind                      =>
+         when Task_Kind =>
             Kind := E_Task_Subtype;
 
-         when others                         =>
+         when others =>
             Kind := E_Void;
             raise Program_Error;
       end case;
@@ -9463,6 +9468,7 @@ package body Einfo is
       W ("Is_Trivial_Subprogram",           Flag235 (Id));
       W ("Is_True_Constant",                Flag163 (Id));
       W ("Is_Unchecked_Union",              Flag117 (Id));
+      W ("Is_Underlying_Full_View",         Flag298 (Id));
       W ("Is_Underlying_Record_View",       Flag246 (Id));
       W ("Is_Unimplemented",                Flag284 (Id));
       W ("Is_Unsigned_Type",                Flag144 (Id));
@@ -9599,7 +9605,6 @@ package body Einfo is
       Write_Eol;
 
       case Ekind (Id) is
-
          when Discrete_Kind =>
             Write_Str ("Bounds: Id = ");
 
@@ -9659,7 +9664,8 @@ package body Einfo is
                Write_Eol;
             end if;
 
-         when others => null;
+         when others =>
+            null;
       end case;
    end Write_Entity_Info;
 
@@ -9690,34 +9696,36 @@ package body Einfo is
    procedure Write_Field8_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when Type_Kind                                    =>
+         when Type_Kind =>
             Write_Str ("Associated_Node_For_Itype");
 
-         when E_Package                                    =>
+         when E_Package =>
             Write_Str ("Dependent_Instances");
 
-         when E_Loop                                       =>
+         when E_Loop =>
             Write_Str ("First_Exit_Statement");
 
-         when E_Variable                                   =>
+         when E_Variable =>
             Write_Str ("Hiding_Loop_Variable");
 
-         when Formal_Kind                                  |
-              E_Function                                   |
-              E_Subprogram_Body                            =>
+         when Formal_Kind
+            | E_Function
+            | E_Subprogram_Body
+         =>
             Write_Str ("Mechanism");
 
-         when E_Component                                  |
-              E_Discriminant                               =>
+         when E_Component
+            | E_Discriminant
+         =>
             Write_Str ("Normalized_First_Bit");
 
-         when E_Abstract_State                             =>
+         when E_Abstract_State =>
             Write_Str ("Refinement_Constituents");
 
-         when E_Return_Statement                           =>
+         when E_Return_Statement =>
             Write_Str ("Return_Applies_To");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field8??");
       end case;
    end Write_Field8_Name;
@@ -9729,21 +9737,22 @@ package body Einfo is
    procedure Write_Field9_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when Type_Kind                                    =>
+         when Type_Kind =>
             Write_Str ("Class_Wide_Type");
 
-         when Object_Kind                                  =>
+         when Object_Kind =>
             Write_Str ("Current_Value");
 
-         when E_Function                                   |
-              E_Generic_Function                           |
-              E_Generic_Package                            |
-              E_Generic_Procedure                          |
-              E_Package                                    |
-              E_Procedure                                  =>
+         when E_Function
+            | E_Generic_Function
+            | E_Generic_Package
+            | E_Generic_Procedure
+            | E_Package
+            | E_Procedure
+         =>
             Write_Str ("Renaming_Map");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field9??");
       end case;
    end Write_Field9_Name;
@@ -9755,36 +9764,41 @@ package body Einfo is
    procedure Write_Field10_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when Class_Wide_Kind                              |
-              Incomplete_Kind                              |
-              E_Record_Type                                |
-              E_Record_Subtype                             |
-              Private_Kind                                 |
-              Concurrent_Kind                              =>
+         when Class_Wide_Kind
+            | Incomplete_Kind
+            | E_Record_Type
+            | E_Record_Subtype
+            | Private_Kind
+            | Concurrent_Kind
+         =>
             Write_Str ("Direct_Primitive_Operations");
 
-         when E_In_Parameter                               |
-              E_Constant                                   =>
+         when E_Constant
+            | E_In_Parameter
+         =>
             Write_Str ("Discriminal_Link");
 
-         when Float_Kind                                   =>
+         when Float_Kind =>
             Write_Str ("Float_Rep");
 
-         when E_Function                                   |
-              E_Package                                    |
-              E_Package_Body                               |
-              E_Procedure                                  =>
+         when E_Function
+            | E_Package
+            | E_Package_Body
+            | E_Procedure
+         =>
             Write_Str ("Handler_Records");
 
-         when E_Component                                  |
-              E_Discriminant                               =>
+         when E_Component
+            | E_Discriminant
+         =>
             Write_Str ("Normalized_Position_Max");
 
-         when E_Abstract_State                             |
-              E_Variable                                   =>
+         when E_Abstract_State
+            | E_Variable
+         =>
             Write_Str ("Part_Of_Constituents");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field10??");
       end case;
    end Write_Field10_Name;
@@ -9796,36 +9810,39 @@ package body Einfo is
    procedure Write_Field11_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Block                                      =>
+         when E_Block =>
             Write_Str ("Block_Node");
 
-         when E_Component                                  |
-              E_Discriminant                               =>
+         when E_Component
+            | E_Discriminant
+         =>
             Write_Str ("Component_Bit_Offset");
 
-         when Formal_Kind                                  =>
+         when Formal_Kind =>
             Write_Str ("Entry_Component");
 
-         when E_Enumeration_Literal                        =>
+         when E_Enumeration_Literal =>
             Write_Str ("Enumeration_Pos");
 
-         when Type_Kind                                    |
-              E_Constant                                   =>
+         when Type_Kind
+            | E_Constant
+         =>
             Write_Str ("Full_View");
 
-         when E_Generic_Package                            =>
+         when E_Generic_Package =>
             Write_Str ("Generic_Homonym");
 
-         when E_Variable                                   =>
+         when E_Variable =>
             Write_Str ("Part_Of_References");
 
-         when E_Entry                                      |
-              E_Entry_Family                               |
-              E_Function                                   |
-              E_Procedure                                  =>
+         when E_Entry
+            | E_Entry_Family
+            | E_Function
+            | E_Procedure
+         =>
             Write_Str ("Protected_Body_Subprogram");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field11??");
       end case;
    end Write_Field11_Name;
@@ -9837,32 +9854,34 @@ package body Einfo is
    procedure Write_Field12_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Package                                    =>
+         when E_Package =>
             Write_Str ("Associated_Formal_Package");
 
-         when Entry_Kind                                   =>
+         when Entry_Kind =>
             Write_Str ("Barrier_Function");
 
-         when E_Enumeration_Literal                        =>
+         when E_Enumeration_Literal =>
             Write_Str ("Enumeration_Rep");
 
-         when Type_Kind                                    |
-              E_Component                                  |
-              E_Constant                                   |
-              E_Discriminant                               |
-              E_Exception                                  |
-              E_In_Parameter                               |
-              E_In_Out_Parameter                           |
-              E_Out_Parameter                              |
-              E_Loop_Parameter                             |
-              E_Variable                                   =>
+         when Type_Kind
+            | E_Component
+            | E_Constant
+            | E_Discriminant
+            | E_Exception
+            | E_In_Parameter
+            | E_In_Out_Parameter
+            | E_Out_Parameter
+            | E_Loop_Parameter
+            | E_Variable
+         =>
             Write_Str ("Esize");
 
-         when E_Function                                   |
-              E_Procedure                                  =>
+         when E_Function
+            | E_Procedure
+         =>
             Write_Str ("Next_Inlined_Subprogram");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field12??");
       end case;
    end Write_Field12_Name;
@@ -9874,26 +9893,27 @@ package body Einfo is
    procedure Write_Field13_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Component                                  |
-              E_Discriminant                               =>
+         when E_Component
+            | E_Discriminant
+         =>
             Write_Str ("Component_Clause");
 
-         when E_Function                                   =>
+         when E_Function
+            | E_Procedure
+            | E_Package
+            | Generic_Unit_Kind
+         =>
             Write_Str ("Elaboration_Entity");
 
-         when E_Procedure                                  |
-              E_Package                                    |
-              Generic_Unit_Kind                            =>
-            Write_Str ("Elaboration_Entity");
-
-         when Formal_Kind                                  |
-              E_Variable                                   =>
+         when Formal_Kind
+            | E_Variable
+         =>
             Write_Str ("Extra_Accessibility");
 
-         when Type_Kind                                    =>
+         when Type_Kind =>
             Write_Str ("RM_Size");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field13??");
       end case;
    end Write_Field13_Name;
@@ -9905,29 +9925,33 @@ package body Einfo is
    procedure Write_Field14_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when Type_Kind                                    |
-              Formal_Kind                                  |
-              E_Constant                                   |
-              E_Exception                                  |
-              E_Loop_Parameter                             |
-              E_Variable                                   =>
+         when Type_Kind
+            | Formal_Kind
+            | E_Constant
+            | E_Exception
+            | E_Loop_Parameter
+            | E_Variable
+         =>
             Write_Str ("Alignment");
 
-         when E_Component                                  |
-              E_Discriminant                               =>
+         when E_Component
+            | E_Discriminant
+         =>
             Write_Str ("Normalized_Position");
 
-         when E_Entry                                      |
-              E_Entry_Family                               |
-              E_Function                                   |
-              E_Procedure                                  =>
+         when E_Entry
+            | E_Entry_Family
+            | E_Function
+            | E_Procedure
+         =>
             Write_Str ("Postconditions_Proc");
 
-         when E_Generic_Package                            |
-              E_Package                                    =>
+         when E_Generic_Package
+            | E_Package
+         =>
             Write_Str ("Shadow_Entities");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field14??");
       end case;
    end Write_Field14_Name;
@@ -9939,34 +9963,37 @@ package body Einfo is
    procedure Write_Field15_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Discriminant                               =>
+         when E_Discriminant =>
             Write_Str ("Discriminant_Number");
 
-         when E_Component                                  =>
+         when E_Component =>
             Write_Str ("DT_Entry_Count");
 
-         when E_Function                                   |
-              E_Procedure                                  =>
+         when E_Function
+            | E_Procedure
+         =>
             Write_Str ("DT_Position");
 
-         when Entry_Kind                                   =>
+         when Entry_Kind =>
             Write_Str ("Entry_Parameters_Type");
 
-         when Formal_Kind                                  =>
+         when Formal_Kind =>
             Write_Str ("Extra_Formal");
 
-         when Type_Kind                                    =>
+         when Type_Kind =>
             Write_Str ("Pending_Access_Types");
 
-         when E_Package                                    |
-              E_Package_Body                               =>
+         when E_Package
+            | E_Package_Body
+         =>
             Write_Str ("Related_Instance");
 
-         when E_Constant                                   |
-              E_Variable                                   =>
+         when E_Constant
+            | E_Variable
+         =>
             Write_Str ("Status_Flag_Or_Transient_Decl");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field15??");
       end case;
    end Write_Field15_Name;
@@ -9978,43 +10005,48 @@ package body Einfo is
    procedure Write_Field16_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Record_Type                                |
-              E_Record_Type_With_Private                   =>
+         when E_Record_Type
+            | E_Record_Type_With_Private
+         =>
             Write_Str ("Access_Disp_Table");
 
-         when E_Abstract_State                             =>
+         when E_Abstract_State =>
             Write_Str ("Body_References");
 
-         when E_Record_Subtype                             |
-              E_Class_Wide_Subtype                         =>
+         when E_Class_Wide_Subtype
+            | E_Record_Subtype
+         =>
             Write_Str ("Cloned_Subtype");
 
-         when E_Function                                   |
-              E_Procedure                                  =>
+         when E_Function
+            | E_Procedure
+         =>
             Write_Str ("DTC_Entity");
 
-         when E_Component                                  =>
+         when E_Component =>
             Write_Str ("Entry_Formal");
 
-         when E_Package                                    |
-              E_Generic_Package                            |
-              Concurrent_Kind                              =>
+         when Concurrent_Kind
+            | E_Generic_Package
+            | E_Package
+         =>
             Write_Str ("First_Private_Entity");
 
-         when Enumeration_Kind                             =>
+         when Enumeration_Kind =>
             Write_Str ("Lit_Strings");
 
-         when Decimal_Fixed_Point_Kind                     =>
+         when Decimal_Fixed_Point_Kind =>
             Write_Str ("Scale_Value");
 
-         when E_String_Literal_Subtype                     =>
+         when E_String_Literal_Subtype =>
             Write_Str ("String_Literal_Length");
 
-         when E_Variable                                   |
-              E_Out_Parameter                              =>
+         when E_Out_Parameter
+            | E_Variable
+         =>
             Write_Str ("Unset_Reference");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field16??");
       end case;
    end Write_Field16_Name;
@@ -10026,56 +10058,58 @@ package body Einfo is
    procedure Write_Field17_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when Formal_Kind                                  |
-              E_Constant                                   |
-              E_Generic_In_Out_Parameter                   |
-              E_Variable                                   =>
+         when Formal_Kind
+            | E_Constant
+            | E_Generic_In_Out_Parameter
+            | E_Variable
+         =>
             Write_Str ("Actual_Subtype");
 
-         when Digits_Kind                                  =>
+         when Digits_Kind =>
             Write_Str ("Digits_Value");
 
-         when E_Discriminant                               =>
+         when E_Discriminant =>
             Write_Str ("Discriminal");
 
-         when E_Block                                      |
-              Class_Wide_Kind                              |
-              Concurrent_Kind                              |
-              Private_Kind                                 |
-              E_Entry                                      |
-              E_Entry_Family                               |
-              E_Function                                   |
-              E_Generic_Function                           |
-              E_Generic_Package                            |
-              E_Generic_Procedure                          |
-              E_Loop                                       |
-              E_Operator                                   |
-              E_Package                                    |
-              E_Package_Body                               |
-              E_Procedure                                  |
-              E_Record_Type                                |
-              E_Record_Subtype                             |
-              E_Return_Statement                           |
-              E_Subprogram_Body                            |
-              E_Subprogram_Type                            =>
+         when Class_Wide_Kind
+            | Concurrent_Kind
+            | Private_Kind
+            | E_Block
+            | E_Entry
+            | E_Entry_Family
+            | E_Function
+            | E_Generic_Function
+            | E_Generic_Package
+            | E_Generic_Procedure
+            | E_Loop
+            | E_Operator
+            | E_Package
+            | E_Package_Body
+            | E_Procedure
+            | E_Record_Type
+            | E_Record_Subtype
+            | E_Return_Statement
+            | E_Subprogram_Body
+            | E_Subprogram_Type
+         =>
             Write_Str ("First_Entity");
 
-         when Array_Kind                                   =>
+         when Array_Kind =>
             Write_Str ("First_Index");
 
-         when Enumeration_Kind                             =>
+         when Enumeration_Kind =>
             Write_Str ("First_Literal");
 
-         when Access_Kind                                  =>
+         when Access_Kind =>
             Write_Str ("Master_Id");
 
-         when Modular_Integer_Kind                         =>
+         when Modular_Integer_Kind =>
             Write_Str ("Modulus");
 
-         when E_Component                                  =>
+         when E_Component =>
             Write_Str ("Prival");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field17??");
       end case;
    end Write_Field17_Name;
@@ -10087,60 +10121,65 @@ package body Einfo is
    procedure Write_Field18_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Enumeration_Literal                        |
-              E_Function                                   |
-              E_Operator                                   |
-              E_Procedure                                  =>
+         when E_Enumeration_Literal
+            | E_Function
+            | E_Operator
+            | E_Procedure
+         =>
             Write_Str ("Alias");
 
-         when E_Record_Type                                =>
+         when E_Record_Type =>
             Write_Str ("Corresponding_Concurrent_Type");
 
-         when E_Subprogram_Body                            =>
+         when E_Subprogram_Body =>
             Write_Str ("Corresponding_Protected_Entry");
 
-         when Concurrent_Kind                              =>
+         when Concurrent_Kind =>
             Write_Str ("Corresponding_Record_Type");
 
-         when E_Label                                      |
-              E_Loop                                       |
-              E_Block                                      =>
+         when E_Block
+            | E_Label
+            | E_Loop
+         =>
             Write_Str ("Enclosing_Scope");
 
-         when E_Entry_Index_Parameter                      =>
+         when E_Entry_Index_Parameter =>
             Write_Str ("Entry_Index_Constant");
 
-         when E_Class_Wide_Subtype                         |
-              E_Access_Protected_Subprogram_Type           |
-              E_Anonymous_Access_Protected_Subprogram_Type |
-              E_Access_Subprogram_Type                     |
-              E_Exception_Type                             =>
+         when E_Access_Protected_Subprogram_Type
+            | E_Access_Subprogram_Type
+            | E_Anonymous_Access_Protected_Subprogram_Type
+            | E_Exception_Type
+            | E_Class_Wide_Subtype
+         =>
             Write_Str ("Equivalent_Type");
 
-         when Fixed_Point_Kind                             =>
+         when Fixed_Point_Kind =>
             Write_Str ("Delta_Value");
 
-         when Enumeration_Kind                             =>
+         when Enumeration_Kind =>
             Write_Str ("Lit_Indexes");
 
-         when Incomplete_Or_Private_Kind                   |
-              E_Record_Subtype                             =>
+         when Incomplete_Or_Private_Kind
+            | E_Record_Subtype
+         =>
             Write_Str ("Private_Dependents");
 
-         when Object_Kind                                  =>
-            Write_Str ("Renamed_Object");
-
-         when E_Exception                                  |
-              E_Package                                    |
-              E_Generic_Function                           |
-              E_Generic_Procedure                          |
-              E_Generic_Package                            =>
+         when E_Exception
+            | E_Generic_Function
+            | E_Generic_Package
+            | E_Generic_Procedure
+            | E_Package
+         =>
             Write_Str ("Renamed_Entity");
 
-         when E_String_Literal_Subtype                     =>
+         when Object_Kind =>
+            Write_Str ("Renamed_Object");
+
+         when E_String_Literal_Subtype =>
             Write_Str ("String_Literal_Low_Bound");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field18??");
       end case;
    end Write_Field18_Name;
@@ -10152,52 +10191,57 @@ package body Einfo is
    procedure Write_Field19_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Package                                    |
-              E_Generic_Package                            =>
+         when E_Generic_Package
+            | E_Package
+         =>
             Write_Str ("Body_Entity");
 
-         when E_Discriminant                               =>
+         when E_Discriminant =>
             Write_Str ("Corresponding_Discriminant");
 
-         when Scalar_Kind                                  =>
+         when Scalar_Kind =>
             Write_Str ("Default_Aspect_Value");
 
-         when E_Abstract_State                             |
-              E_Class_Wide_Type                            |
-              E_Incomplete_Type                            =>
+         when E_Array_Type =>
+            Write_Str ("Default_Component_Value");
+
+         when E_Protected_Type =>
+            Write_Str ("Entry_Bodies_Array");
+
+         when E_Function
+            | E_Operator
+            | E_Subprogram_Type
+         =>
+            Write_Str ("Extra_Accessibility_Of_Result");
+
+         when E_Abstract_State
+            | E_Class_Wide_Type
+            | E_Incomplete_Type
+         =>
             Write_Str ("Non_Limited_View");
 
-         when E_Incomplete_Subtype                         =>
+         when E_Incomplete_Subtype =>
             if From_Limited_With (Id) then
                Write_Str ("Non_Limited_View");
             end if;
 
-         when E_Array_Type                                 =>
-            Write_Str ("Default_Component_Value");
-
-         when E_Protected_Type                             =>
-            Write_Str ("Entry_Bodies_Array");
-
-         when E_Function                                   |
-              E_Operator                                   |
-              E_Subprogram_Type                            =>
-            Write_Str ("Extra_Accessibility_Of_Result");
-
-         when E_Record_Type                                =>
+         when E_Record_Type =>
             Write_Str ("Parent_Subtype");
 
-         when E_Constant                                   |
-              E_Variable                                   =>
+         when E_Constant
+            | E_Variable
+         =>
             Write_Str ("Size_Check_Code");
 
-         when E_Package_Body                               |
-              Formal_Kind                                  =>
+         when Formal_Kind
+            | E_Package_Body
+         =>
             Write_Str ("Spec_Entity");
 
-         when Private_Kind                                 =>
+         when Private_Kind =>
             Write_Str ("Underlying_Full_View");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field19??");
       end case;
    end Write_Field19_Name;
@@ -10209,55 +10253,58 @@ package body Einfo is
    procedure Write_Field20_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when Array_Kind                                   =>
+         when Array_Kind =>
             Write_Str ("Component_Type");
 
-         when E_In_Parameter                               |
-              E_Generic_In_Parameter                       =>
+         when E_Generic_In_Parameter
+            | E_In_Parameter
+         =>
             Write_Str ("Default_Value");
 
-         when Access_Kind                                  =>
+         when Access_Kind =>
             Write_Str ("Directly_Designated_Type");
 
-         when E_Component                                  =>
+         when E_Component =>
             Write_Str ("Discriminant_Checking_Func");
 
-         when E_Discriminant                               =>
+         when E_Discriminant =>
             Write_Str ("Discriminant_Default_Value");
 
-         when E_Block                                      |
-              Class_Wide_Kind                              |
-              Concurrent_Kind                              |
-              Private_Kind                                 |
-              E_Entry                                      |
-              E_Entry_Family                               |
-              E_Function                                   |
-              E_Generic_Function                           |
-              E_Generic_Package                            |
-              E_Generic_Procedure                          |
-              E_Loop                                       |
-              E_Operator                                   |
-              E_Package                                    |
-              E_Package_Body                               |
-              E_Procedure                                  |
-              E_Record_Type                                |
-              E_Record_Subtype                             |
-              E_Return_Statement                           |
-              E_Subprogram_Body                            |
-              E_Subprogram_Type                            =>
+         when Class_Wide_Kind
+            | Concurrent_Kind
+            | Private_Kind
+            | E_Block
+            | E_Entry
+            | E_Entry_Family
+            | E_Function
+            | E_Generic_Function
+            | E_Generic_Package
+            | E_Generic_Procedure
+            | E_Loop
+            | E_Operator
+            | E_Package
+            | E_Package_Body
+            | E_Procedure
+            | E_Record_Type
+            | E_Record_Subtype
+            | E_Return_Statement
+            | E_Subprogram_Body
+            | E_Subprogram_Type
+         =>
             Write_Str ("Last_Entity");
 
-         when E_Constant                                   |
-              E_Variable                                   =>
+         when E_Constant
+            | E_Variable
+         =>
             Write_Str ("Prival_Link");
 
-         when Scalar_Kind                                  =>
-            Write_Str ("Scalar_Range");
-
-         when E_Exception                                  =>
+         when E_Exception =>
             Write_Str ("Register_Exception_Call");
 
-         when others                                       =>
+         when Scalar_Kind =>
+            Write_Str ("Scalar_Range");
+
+         when others =>
             Write_Str ("Field20??");
       end case;
    end Write_Field20_Name;
@@ -10269,36 +10316,39 @@ package body Einfo is
    procedure Write_Field21_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when Entry_Kind                                   =>
+         when Entry_Kind =>
             Write_Str ("Accept_Address");
 
-         when E_In_Parameter                               =>
+         when E_In_Parameter =>
             Write_Str ("Default_Expr_Function");
 
-         when Concurrent_Kind                              |
-              Incomplete_Or_Private_Kind                   |
-              Class_Wide_Kind                              |
-              E_Record_Type                                |
-              E_Record_Subtype                             =>
+         when Concurrent_Kind
+            | Incomplete_Or_Private_Kind
+            | Class_Wide_Kind
+            | E_Record_Type
+            | E_Record_Subtype
+         =>
             Write_Str ("Discriminant_Constraint");
 
-         when E_Constant                                   |
-              E_Exception                                  |
-              E_Function                                   |
-              E_Generic_Function                           |
-              E_Procedure                                  |
-              E_Generic_Procedure                          |
-              E_Variable                                   =>
+         when E_Constant
+            | E_Exception
+            | E_Function
+            | E_Generic_Function
+            | E_Generic_Procedure
+            | E_Procedure
+            | E_Variable
+         =>
             Write_Str ("Interface_Name");
 
-         when Array_Kind                                   |
-              Modular_Integer_Kind                         =>
+         when Array_Kind
+            | Modular_Integer_Kind
+         =>
             Write_Str ("Original_Array_Type");
 
-         when Fixed_Point_Kind                             =>
+         when Fixed_Point_Kind =>
             Write_Str ("Small_Value");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field21??");
       end case;
    end Write_Field21_Name;
@@ -10310,54 +10360,57 @@ package body Einfo is
    procedure Write_Field22_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when Access_Kind                                  =>
+         when Access_Kind =>
             Write_Str ("Associated_Storage_Pool");
 
-         when Array_Kind                                   =>
+         when Array_Kind =>
             Write_Str ("Component_Size");
 
-         when E_Record_Type                                =>
+         when E_Record_Type =>
             Write_Str ("Corresponding_Remote_Type");
 
-         when E_Component                                  |
-              E_Discriminant                               =>
+         when E_Component
+            | E_Discriminant
+         =>
             Write_Str ("Original_Record_Component");
 
-         when E_Enumeration_Literal                        =>
+         when E_Enumeration_Literal =>
             Write_Str ("Enumeration_Rep_Expr");
 
-         when E_Record_Type_With_Private                   |
-              E_Record_Subtype_With_Private                |
-              E_Private_Type                               |
-              E_Private_Subtype                            |
-              E_Limited_Private_Type                       |
-              E_Limited_Private_Subtype                    =>
+         when E_Limited_Private_Subtype
+            | E_Limited_Private_Type
+            | E_Private_Subtype
+            | E_Private_Type
+            | E_Record_Subtype_With_Private
+            | E_Record_Type_With_Private
+         =>
             Write_Str ("Private_View");
 
-         when Formal_Kind                                  =>
+         when Formal_Kind =>
             Write_Str ("Protected_Formal");
 
-         when E_Block                                      |
-              E_Entry                                      |
-              E_Entry_Family                               |
-              E_Function                                   |
-              E_Loop                                       |
-              E_Package                                    |
-              E_Package_Body                               |
-              E_Generic_Package                            |
-              E_Generic_Function                           |
-              E_Generic_Procedure                          |
-              E_Procedure                                  |
-              E_Protected_Type                             |
-              E_Return_Statement                           |
-              E_Subprogram_Body                            |
-              E_Task_Type                                  =>
+         when E_Block
+            | E_Entry
+            | E_Entry_Family
+            | E_Function
+            | E_Generic_Function
+            | E_Generic_Package
+            | E_Generic_Procedure
+            | E_Loop
+            | E_Package
+            | E_Package_Body
+            | E_Procedure
+            | E_Protected_Type
+            | E_Return_Statement
+            | E_Subprogram_Body
+            | E_Task_Type
+         =>
             Write_Str ("Scope_Depth_Value");
 
-         when E_Variable                                   =>
+         when E_Variable =>
             Write_Str ("Shared_Var_Procs_Instance");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field22??");
       end case;
    end Write_Field22_Name;
@@ -10369,42 +10422,46 @@ package body Einfo is
    procedure Write_Field23_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Discriminant                               =>
+         when E_Discriminant =>
             Write_Str ("CR_Discriminant");
 
-         when E_Block                                      =>
+         when E_Block =>
             Write_Str ("Entry_Cancel_Parameter");
 
-         when E_Enumeration_Type                           =>
+         when E_Enumeration_Type =>
             Write_Str ("Enum_Pos_To_Rep");
 
-         when Formal_Kind                                  |
-              E_Variable                                   =>
+         when Formal_Kind
+            | E_Variable
+         =>
             Write_Str ("Extra_Constrained");
 
-         when Access_Kind                                  =>
+         when Access_Kind =>
             Write_Str ("Finalization_Master");
 
-         when E_Generic_Function                           |
-              E_Generic_Package                            |
-              E_Generic_Procedure                          =>
+         when E_Generic_Function
+            | E_Generic_Package
+            | E_Generic_Procedure
+         =>
             Write_Str ("Inner_Instances");
 
-         when Array_Kind                                   =>
+         when Array_Kind =>
             Write_Str ("Packed_Array_Impl_Type");
 
-         when Entry_Kind                                   =>
+         when Entry_Kind =>
             Write_Str ("Protection_Object");
 
-         when Concurrent_Kind                              |
-              Incomplete_Or_Private_Kind                   |
-              Class_Wide_Kind                              |
-              E_Record_Type                                |
-              E_Record_Subtype                             =>
+         when Class_Wide_Kind
+            | Concurrent_Kind
+            | Incomplete_Or_Private_Kind
+            | E_Record_Type
+            | E_Record_Subtype
+         =>
             Write_Str ("Stored_Constraint");
 
-         when E_Function                                   |
-              E_Procedure                                  =>
+         when E_Function
+            | E_Procedure
+         =>
             if Present (Scope (Id))
               and then Is_Protected_Type (Scope (Id))
             then
@@ -10413,14 +10470,14 @@ package body Einfo is
                Write_Str ("Generic_Renamings");
             end if;
 
-         when E_Package                                    =>
+         when E_Package =>
             if Is_Generic_Instance (Id) then
                Write_Str ("Generic_Renamings");
             else
                Write_Str ("Limited_View");
             end if;
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field23??");
       end case;
    end Write_Field23_Name;
@@ -10432,20 +10489,22 @@ package body Einfo is
    procedure Write_Field24_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Constant                                   |
-              E_Variable                                   |
-              Type_Kind                                    =>
+         when Type_Kind
+            | E_Constant
+            | E_Variable
+         =>
             Write_Str ("Related_Expression");
 
-         when E_Function                                   |
-              E_Operator                                   |
-              E_Procedure                                  =>
+         when E_Function
+            | E_Operator
+            | E_Procedure
+         =>
             Write_Str ("Subps_Index");
 
-         when E_Package                                    =>
+         when E_Package =>
             Write_Str ("Incomplete_Actuals");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field24???");
       end case;
    end Write_Field24_Name;
@@ -10457,44 +10516,49 @@ package body Einfo is
    procedure Write_Field25_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Generic_Package                            |
-              E_Package                                    =>
+         when E_Generic_Package
+            | E_Package
+         =>
             Write_Str ("Abstract_States");
 
-         when E_Entry                                      |
-              E_Entry_Family                               =>
+         when E_Entry
+            | E_Entry_Family
+         =>
             Write_Str ("Contract_Wrapper");
 
-         when E_Variable                                   =>
+         when E_Variable =>
             Write_Str ("Debug_Renaming_Link");
 
-         when E_Component                                  =>
+         when E_Component =>
             Write_Str ("DT_Offset_To_Top_Func");
 
-         when E_Procedure                                  |
-              E_Function                                   =>
+         when E_Function
+            | E_Procedure
+         =>
             Write_Str ("Interface_Alias");
 
-         when E_Record_Type                                |
-              E_Record_Subtype                             |
-              E_Record_Type_With_Private                   |
-              E_Record_Subtype_With_Private                =>
+         when E_Record_Subtype
+            | E_Record_Subtype_With_Private
+            | E_Record_Type
+            | E_Record_Type_With_Private
+         =>
             Write_Str ("Interfaces");
 
-         when E_Array_Type                                 |
-              E_Array_Subtype                              =>
+         when E_Array_Subtype
+            | E_Array_Type
+         =>
             Write_Str ("Related_Array_Object");
 
-         when Task_Kind                                    =>
-            Write_Str ("Task_Body_Procedure");
-
-         when Discrete_Kind                                =>
+         when Discrete_Kind =>
             Write_Str ("Static_Discrete_Predicate");
 
-         when Real_Kind                                    =>
+         when Real_Kind =>
             Write_Str ("Static_Real_Or_String_Predicate");
 
-         when others                                       =>
+         when Task_Kind =>
+            Write_Str ("Task_Body_Procedure");
+
+         when others =>
             Write_Str ("Field25??");
       end case;
    end Write_Field25_Name;
@@ -10506,32 +10570,38 @@ package body Einfo is
    procedure Write_Field26_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Record_Type                                |
-              E_Record_Type_With_Private                   =>
+         when E_Record_Type
+            | E_Record_Type_With_Private
+         =>
             Write_Str ("Dispatch_Table_Wrappers");
 
-         when E_In_Out_Parameter                           |
-              E_Out_Parameter                              |
-              E_Variable                                   =>
+         when E_In_Out_Parameter
+            | E_Out_Parameter
+            | E_Variable
+         =>
             Write_Str ("Last_Assignment");
 
-         when E_Procedure                                  |
-              E_Function                                   =>
+         when E_Function
+            | E_Procedure
+         =>
             Write_Str ("Overridden_Operation");
 
-         when E_Generic_Package                            |
-              E_Package                                    =>
+         when E_Generic_Package
+            | E_Package
+         =>
             Write_Str ("Package_Instantiation");
 
-         when E_Component                                  |
-              E_Constant                                   =>
+         when E_Component
+            | E_Constant
+         =>
             Write_Str ("Related_Type");
 
-         when Access_Kind                                  |
-              Task_Kind                                    =>
+         when Access_Kind
+            | Task_Kind
+         =>
             Write_Str ("Storage_Size_Variable");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field26??");
       end case;
    end Write_Field26_Name;
@@ -10543,20 +10613,23 @@ package body Einfo is
    procedure Write_Field27_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Package                                    |
-              Type_Kind                                    =>
+         when Type_Kind
+            | E_Package
+         =>
             Write_Str ("Current_Use_Clause");
 
-         when E_Component                                  |
-              E_Constant                                   |
-              E_Variable                                   =>
+         when E_Component
+            | E_Constant
+            | E_Variable
+         =>
             Write_Str ("Related_Type");
 
-         when E_Procedure                                  |
-              E_Function                                   =>
+         when E_Function
+            | E_Procedure
+         =>
             Write_Str ("Wrapped_Entity");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field27??");
       end case;
    end Write_Field27_Name;
@@ -10568,32 +10641,35 @@ package body Einfo is
    procedure Write_Field28_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Entry                                      |
-              E_Entry_Family                               |
-              E_Function                                   |
-              E_Procedure                                  |
-              E_Subprogram_Body                            |
-              E_Subprogram_Type                            =>
+         when E_Entry
+            | E_Entry_Family
+            | E_Function
+            | E_Procedure
+            | E_Subprogram_Body
+            | E_Subprogram_Type
+         =>
             Write_Str ("Extra_Formals");
 
-         when E_Package                                    |
-              E_Package_Body                               =>
+         when E_Package
+            | E_Package_Body
+         =>
             Write_Str ("Finalizer");
 
-         when E_Constant                                   |
-              E_Variable                                   =>
+         when E_Constant
+            | E_Variable
+         =>
             Write_Str ("Initialization_Statements");
 
-         when E_Access_Subprogram_Type                     =>
+         when E_Access_Subprogram_Type =>
             Write_Str ("Original_Access_Type");
 
-         when Task_Kind                                    =>
+         when Task_Kind =>
             Write_Str ("Relative_Deadline_Variable");
 
          when E_Record_Type =>
             Write_Str ("Underlying_Record_View");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field28??");
       end case;
    end Write_Field28_Name;
@@ -10605,20 +10681,22 @@ package body Einfo is
    procedure Write_Field29_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Function                                   |
-              E_Package                                    |
-              E_Procedure                                  |
-              E_Subprogram_Body                            =>
+         when E_Function
+            | E_Package
+            | E_Procedure
+            | E_Subprogram_Body
+         =>
             Write_Str ("Anonymous_Masters");
 
-         when E_Constant                                   |
-              E_Variable                                   =>
+         when E_Constant
+            | E_Variable
+         =>
             Write_Str ("BIP_Initialization_Call");
 
          when Type_Kind =>
             Write_Str ("Subprograms_For_Type");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field29??");
       end case;
    end Write_Field29_Name;
@@ -10630,21 +10708,23 @@ package body Einfo is
    procedure Write_Field30_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Protected_Type                             |
-              E_Task_Type                                  =>
+         when E_Protected_Type
+            | E_Task_Type
+         =>
             Write_Str ("Anonymous_Object");
 
-         when E_Function                                   =>
+         when E_Function =>
             Write_Str ("Corresponding_Equality");
 
-         when E_Constant                                   |
-              E_Variable                                   =>
+         when E_Constant
+            | E_Variable
+         =>
             Write_Str ("Last_Aggregate_Assignment");
 
-         when E_Procedure                                  =>
+         when E_Procedure =>
             Write_Str ("Static_Initialization");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field30??");
       end case;
    end Write_Field30_Name;
@@ -10656,22 +10736,24 @@ package body Einfo is
    procedure Write_Field31_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Procedure                                  |
-              E_Function                                   =>
-            Write_Str ("Thunk_Entity");
-
-         when Type_Kind                                    =>
-            Write_Str ("Derived_Type_Link");
-
-         when E_Constant                                   |
-              E_In_Parameter                               |
-              E_In_Out_Parameter                           |
-              E_Loop_Parameter                             |
-              E_Out_Parameter                              |
-              E_Variable                                   =>
+         when E_Constant
+            | E_In_Parameter
+            | E_In_Out_Parameter
+            | E_Loop_Parameter
+            | E_Out_Parameter
+            | E_Variable
+         =>
             Write_Str ("Activation_Record_Component");
 
-         when others                                       =>
+         when Type_Kind =>
+            Write_Str ("Derived_Type_Link");
+
+         when E_Function
+            | E_Procedure
+         =>
+            Write_Str ("Thunk_Entity");
+
+         when others =>
             Write_Str ("Field31??");
       end case;
    end Write_Field31_Name;
@@ -10683,21 +10765,22 @@ package body Einfo is
    procedure Write_Field32_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Abstract_State                             |
-              E_Constant                                   |
-              E_Variable                                   =>
-            Write_Str ("Encapsulating_State");
-
-         when E_Function                                   =>
-            Write_Str ("Corresponding_Procedure");
-
-         when E_Procedure                                  =>
+         when E_Procedure =>
             Write_Str ("Corresponding_Function");
 
-         when Type_Kind                                    =>
+         when E_Function =>
+            Write_Str ("Corresponding_Procedure");
+
+         when E_Abstract_State
+            | E_Constant
+            | E_Variable
+         =>
+            Write_Str ("Encapsulating_State");
+
+         when Type_Kind =>
             Write_Str ("No_Tagged_Streams_Pragma");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field32??");
       end case;
    end Write_Field32_Name;
@@ -10709,13 +10792,14 @@ package body Einfo is
    procedure Write_Field33_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Constant                                   |
-              E_Variable                                   |
-              Subprogram_Kind                              |
-              Type_Kind                                    =>
+         when Subprogram_Kind
+            | Type_Kind
+            | E_Constant
+            | E_Variable
+         =>
             Write_Str ("Linker_Section_Pragma");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field33??");
       end case;
    end Write_Field33_Name;
@@ -10727,26 +10811,27 @@ package body Einfo is
    procedure Write_Field34_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Constant                                   |
-              E_Entry                                      |
-              E_Entry_Family                               |
-              E_Function                                   |
-              E_Generic_Function                           |
-              E_Generic_Package                            |
-              E_Generic_Procedure                          |
-              E_Operator                                   |
-              E_Package                                    |
-              E_Package_Body                               |
-              E_Procedure                                  |
-              E_Protected_Type                             |
-              E_Subprogram_Body                            |
-              E_Task_Body                                  |
-              E_Task_Type                                  |
-              E_Variable                                   |
-              E_Void                                       =>
+         when E_Constant
+            | E_Entry
+            | E_Entry_Family
+            | E_Function
+            | E_Generic_Function
+            | E_Generic_Package
+            | E_Generic_Procedure
+            | E_Operator
+            | E_Package
+            | E_Package_Body
+            | E_Procedure
+            | E_Protected_Type
+            | E_Subprogram_Body
+            | E_Task_Body
+            | E_Task_Type
+            | E_Variable
+            | E_Void
+         =>
             Write_Str ("Contract");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field34??");
       end case;
    end Write_Field34_Name;
@@ -10758,17 +10843,18 @@ package body Einfo is
    procedure Write_Field35_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Variable                                   =>
+         when E_Variable =>
             Write_Str ("Anonymous_Designated_Type");
 
-         when E_Entry                                      |
-              E_Entry_Family                               =>
+         when E_Entry
+            | E_Entry_Family
+         =>
             Write_Str ("Entry_Max_Queue_Lenghts_Array");
 
-         when Subprogram_Kind                              =>
+         when Subprogram_Kind =>
             Write_Str ("Import_Pragma");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field35??");
       end case;
    end Write_Field35_Name;
@@ -10800,11 +10886,12 @@ package body Einfo is
    procedure Write_Field38_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Function                                   |
-              E_Procedure                                  =>
-            Write_Str ("Class-wide preconditions");
+         when E_Function
+            | E_Procedure
+         =>
+            Write_Str ("Class_Wide_Preconditions");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field38??");
       end case;
    end Write_Field38_Name;
@@ -10816,11 +10903,12 @@ package body Einfo is
    procedure Write_Field39_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Function                                   |
-              E_Procedure                                  =>
-            Write_Str ("Class-wide postcondition");
+         when E_Function
+            | E_Procedure
+         =>
+            Write_Str ("Class_Wide_Postcondition");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field39??");
       end case;
    end Write_Field39_Name;
@@ -10832,25 +10920,26 @@ package body Einfo is
    procedure Write_Field40_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Entry                                      |
-              E_Entry_Family                               |
-              E_Function                                   |
-              E_Generic_Function                           |
-              E_Generic_Package                            |
-              E_Generic_Procedure                          |
-              E_Operator                                   |
-              E_Package                                    |
-              E_Package_Body                               |
-              E_Procedure                                  |
-              E_Protected_Body                             |
-              E_Protected_Type                             |
-              E_Subprogram_Body                            |
-              E_Task_Body                                  |
-              E_Task_Type                                  |
-              E_Variable                                   =>
+         when E_Entry
+            | E_Entry_Family
+            | E_Function
+            | E_Generic_Function
+            | E_Generic_Package
+            | E_Generic_Procedure
+            | E_Operator
+            | E_Package
+            | E_Package_Body
+            | E_Procedure
+            | E_Protected_Body
+            | E_Protected_Type
+            | E_Subprogram_Body
+            | E_Task_Body
+            | E_Task_Type
+            | E_Variable
+         =>
             Write_Str ("SPARK_Pragma");
 
-         when others                                       =>
+         when others =>
             Write_Str ("Field40??");
       end case;
    end Write_Field40_Name;
@@ -10862,18 +10951,20 @@ package body Einfo is
    procedure Write_Field41_Name (Id : Entity_Id) is
    begin
       case Ekind (Id) is
-         when E_Generic_Package                            |
-              E_Package                                    |
-              E_Package_Body                               |
-              E_Protected_Type                             |
-              E_Task_Type                                  =>
-            Write_Str ("SPARK_Aux_Pragma");
-
-         when E_Function                                   |
-              E_Procedure                                  =>
+         when E_Function
+            | E_Procedure
+         =>
             Write_Str ("Original_Protected_Subprogram");
 
-         when others                                       =>
+         when E_Generic_Package
+            | E_Package
+            | E_Package_Body
+            | E_Protected_Type
+            | E_Task_Type
+         =>
+            Write_Str ("SPARK_Aux_Pragma");
+
+         when others =>
             Write_Str ("Field41??");
       end case;
    end Write_Field41_Name;

@@ -688,11 +688,11 @@ package body Exp_Ch9 is
       --  The name of the formal that holds the address of the parameter block
       --  for the call.
 
-      Comp            : Entity_Id;
-      Decl            : Node_Id;
-      Formal          : Entity_Id;
-      New_F           : Entity_Id;
-      Renamed_Formal  : Node_Id;
+      Comp           : Entity_Id;
+      Decl           : Node_Id;
+      Formal         : Entity_Id;
+      New_F          : Entity_Id;
+      Renamed_Formal : Node_Id;
 
    begin
       Formal := First_Formal (Ent);
@@ -2117,7 +2117,7 @@ package body Exp_Ch9 is
                Iface_Op_Param := Next (Iface_Op_Param);
             end if;
 
-            Wrapper_Param  := First (Wrapper_Params);
+            Wrapper_Param := First (Wrapper_Params);
             while Present (Iface_Op_Param)
               and then Present (Wrapper_Param)
             loop
@@ -2599,7 +2599,7 @@ package body Exp_Ch9 is
       ------------------------------
 
       function Convert_Discriminant_Ref (Bound : Node_Id) return Node_Id is
-         B   : Node_Id;
+         B : Node_Id;
 
       begin
          if Is_Entity_Name (Bound)
@@ -3349,10 +3349,14 @@ package body Exp_Ch9 is
          Find_Enclosing_Context (Par, Context, Context_Id, Decls);
       end if;
 
-      --  Do not create a master if one already exists or there is no task
-      --  hierarchy.
+      --  Nothing to do if the context already has a master
 
-      if Has_Master_Entity (Context_Id)
+      if Has_Master_Entity (Context_Id) then
+         return;
+
+      --  Nothing to do if tasks or tasking hierarchies are prohibited
+
+      elsif Restriction_Active (No_Tasking)
         or else Restriction_Active (No_Task_Hierarchy)
       then
          return;
@@ -3425,9 +3429,11 @@ package body Exp_Ch9 is
       Master_Id   : Entity_Id;
 
    begin
-      --  Nothing to do if there is no task hierarchy
+      --  Nothing to do if tasks or tasking hierarchies are prohibited
 
-      if Restriction_Active (No_Task_Hierarchy) then
+      if Restriction_Active (No_Tasking)
+        or else Restriction_Active (No_Task_Hierarchy)
+      then
          return;
       end if;
 
@@ -3882,22 +3888,22 @@ package body Exp_Ch9 is
       Pid       : Node_Id;
       N_Op_Spec : Node_Id) return Node_Id
    is
-      Loc          : constant Source_Ptr := Sloc (N);
-      Op_Spec      : Node_Id;
-      P_Op_Spec    : Node_Id;
-      Uactuals     : List_Id;
-      Pformal      : Node_Id;
-      Unprot_Call  : Node_Id;
-      Sub_Body     : Node_Id;
-      Lock_Name    : Node_Id;
-      Lock_Stmt    : Node_Id;
-      R            : Node_Id;
-      Return_Stmt  : Node_Id := Empty;    -- init to avoid gcc 3 warning
-      Pre_Stmts    : List_Id := No_List;  -- init to avoid gcc 3 warning
-      Stmts        : List_Id;
-      Object_Parm  : Node_Id;
-      Exc_Safe     : Boolean;
-      Lock_Kind    : RE_Id;
+      Loc         : constant Source_Ptr := Sloc (N);
+      Op_Spec     : Node_Id;
+      P_Op_Spec   : Node_Id;
+      Uactuals    : List_Id;
+      Pformal     : Node_Id;
+      Unprot_Call : Node_Id;
+      Sub_Body    : Node_Id;
+      Lock_Name   : Node_Id;
+      Lock_Stmt   : Node_Id;
+      R           : Node_Id;
+      Return_Stmt : Node_Id := Empty;    -- init to avoid gcc 3 warning
+      Pre_Stmts   : List_Id := No_List;  -- init to avoid gcc 3 warning
+      Stmts       : List_Id;
+      Object_Parm : Node_Id;
+      Exc_Safe    : Boolean;
+      Lock_Kind   : RE_Id;
 
    begin
       Op_Spec := Specification (N);
@@ -4137,12 +4143,12 @@ package body Exp_Ch9 is
    ---------------------------------------------
 
    procedure Build_Protected_Subprogram_Call_Cleanup
-     (Op_Spec   : Node_Id;
-      Conc_Typ  : Node_Id;
-      Loc       : Source_Ptr;
-      Stmts     : List_Id)
+     (Op_Spec  : Node_Id;
+      Conc_Typ : Node_Id;
+      Loc      : Source_Ptr;
+      Stmts    : List_Id)
    is
-      Nam       : Node_Id;
+      Nam : Node_Id;
 
    begin
       --  If the associated protected object has entries, a protected
@@ -4518,7 +4524,7 @@ package body Exp_Ch9 is
                      --  If actual is an out parameter of a null-excluding
                      --  access type, there is access check on entry, so set
                      --  Suppress_Assignment_Checks on the generated statement
-                     --  that assigns the actual to the parameter block
+                     --  that assigns the actual to the parameter block.
 
                      Set_Suppress_Assignment_Checks (Last (Stats));
                   end if;
@@ -4620,12 +4626,12 @@ package body Exp_Ch9 is
 
                   --  Some additional statements for protected entry calls
 
-                  --     Protected_Entry_Call (
-                  --       Object => po._object'Access,
-                  --       E => <entry index>;
-                  --       Uninterpreted_Data => P'Address;
-                  --       Mode => Simple_Call;
-                  --       Block => Bnn);
+                  --     Protected_Entry_Call
+                  --       (Object             => po._object'Access,
+                  --        E                  => <entry index>;
+                  --        Uninterpreted_Data => P'Address;
+                  --        Mode               => Simple_Call;
+                  --        Block              => Bnn);
 
                   Call :=
                     Make_Procedure_Call_Statement (Loc,
@@ -4642,9 +4648,10 @@ package body Exp_Ch9 is
                         New_Occurrence_Of (Comm_Name, Loc)));
 
                when System_Tasking_Protected_Objects_Single_Entry =>
-                  --     Protected_Single_Entry_Call (
-                  --       Object => po._object'Access,
-                  --       Uninterpreted_Data => P'Address);
+
+                  --     Protected_Single_Entry_Call
+                  --       (Object             => po._object'Access,
+                  --        Uninterpreted_Data => P'Address);
 
                   Call :=
                     Make_Procedure_Call_Statement (Loc,
@@ -4885,7 +4892,7 @@ package body Exp_Ch9 is
           Identifier   => New_Occurrence_Of (Blkent, Loc),
           Declarations => New_List (
 
-            --  _Chain  : Activation_Chain;
+            --  _Chain : Activation_Chain;
 
             Make_Object_Declaration (Loc,
               Defining_Identifier => Chain,
@@ -4955,7 +4962,7 @@ package body Exp_Ch9 is
           Identifier => New_Occurrence_Of (Blkent, Loc),
           Declarations => New_List (
 
-            --  _Chain  : Activation_Chain;
+            --  _Chain : Activation_Chain;
 
             Make_Object_Declaration (Loc,
               Defining_Identifier => Chain,
@@ -6018,25 +6025,52 @@ package body Exp_Ch9 is
       ---------------------
 
       function Is_Pure_Barrier (N : Node_Id) return Traverse_Result is
+         function Is_Count_Attribute (N : Node_Id) return Boolean;
+         --  Check whether N is part of an expansion of the Count attribute.
+         --  Return True if N represents the expanded function call.
+
+         ------------------------
+         -- Is_Count_Attribute --
+         ------------------------
+
+         function Is_Count_Attribute (N : Node_Id) return Boolean is
+         begin
+            return
+              Nkind (N) = N_Function_Call
+                and then Present (Original_Node (N))
+                and then Nkind (Original_Node (N)) = N_Attribute_Reference
+                and then Attribute_Name (Original_Node (N)) = Name_Count;
+         end Is_Count_Attribute;
+
+      --  Start of processing for Is_Pure_Barrier
+
       begin
          case Nkind (N) is
-            when N_Expanded_Name |
-                 N_Identifier    =>
+            when N_Expanded_Name
+               | N_Identifier
+            =>
                if No (Entity (N)) then
                   return Abandon;
                end if;
 
+               if Present (Parent (N))
+                 and then Is_Count_Attribute (Parent (N))
+               then
+                  return OK;
+               end if;
+
                case Ekind (Entity (N)) is
-                  when E_Constant            |
-                       E_Discriminant        |
-                       E_Named_Integer       |
-                       E_Named_Real          |
-                       E_Enumeration_Literal =>
+                  when E_Constant
+                     | E_Discriminant
+                     | E_Enumeration_Literal
+                     | E_Named_Integer
+                     | E_Named_Real
+                  =>
                      return OK;
 
-                  when E_Component |
-                       E_Variable  =>
-
+                  when E_Component
+                     | E_Variable
+                  =>
                      --  A variable in the protected type is expanded as a
                      --  component.
 
@@ -6048,13 +6082,20 @@ package body Exp_Ch9 is
                      null;
                end case;
 
-            when N_Integer_Literal   |
-                 N_Real_Literal      |
-                 N_Character_Literal =>
+            when N_Function_Call =>
+               if Is_Count_Attribute (N) then
+                  return OK;
+               end if;
+
+            when N_Character_Literal
+               | N_Integer_Literal
+               | N_Real_Literal
+            =>
                return OK;
 
-            when N_Op_Boolean |
-                 N_Op_Not     =>
+            when N_Op_Boolean
+               | N_Op_Not
+            =>
                if Ekind (Entity (N)) = E_Operator then
                   return OK;
                end if;
@@ -6776,7 +6817,7 @@ package body Exp_Ch9 is
          Insert_Before (N, Decl);
          Analyze (Decl);
 
-         --  Rewrite abortable part into a call to this procedure.
+         --  Rewrite abortable part into a call to this procedure
 
          Astats :=
            New_List (
@@ -8428,9 +8469,9 @@ package body Exp_Ch9 is
 
       Op_Body := First (Declarations (N));
 
-      --  The protected body is replaced with the bodies of its
-      --  protected operations, and the declarations for internal objects
-      --  that may have been created for entry family bounds.
+      --  The protected body is replaced with the bodies of its protected
+      --  operations, and the declarations for internal objects that may
+      --  have been created for entry family bounds.
 
       Rewrite (N, Make_Null_Statement (Sloc (N)));
       Analyze (N);
@@ -8551,7 +8592,6 @@ package body Exp_Ch9 is
 
             when others =>
                raise Program_Error;
-
          end case;
 
          Next (Op_Body);
@@ -8590,7 +8630,7 @@ package body Exp_Ch9 is
    --    type poV (discriminants) is record
    --      _Object       : aliased <kind>Protection
    --         [(<entry count> [, <handler count>])];
-   --      [entry_family  : array (bounds) of Void;]
+   --      [entry_family : array (bounds) of Void;]
    --      <private data fields>
    --    end record;
 
@@ -8687,7 +8727,7 @@ package body Exp_Ch9 is
 
       function Static_Component_Size (Comp : Entity_Id) return Boolean;
       --  When compiling under the Ravenscar profile, private components must
-      --  have a static size, or else a protected object  will require heap
+      --  have a static size, or else a protected object will require heap
       --  allocation, violating the corresponding restriction. It is preferable
       --  to make this check here, because it provides a better error message
       --  than the back-end, which refers to the object as a whole.
@@ -8898,17 +8938,17 @@ package body Exp_Ch9 is
 
       --  Local variables
 
-      Body_Arr     : Node_Id;
-      Body_Id      : Entity_Id;
-      Cdecls       : List_Id;
-      Comp         : Node_Id;
-      Expr         : Node_Id;
-      New_Priv     : Node_Id;
-      Obj_Def      : Node_Id;
-      Object_Comp  : Node_Id;
-      Priv         : Node_Id;
-      Rec_Decl     : Node_Id;
-      Sub          : Node_Id;
+      Body_Arr    : Node_Id;
+      Body_Id     : Entity_Id;
+      Cdecls      : List_Id;
+      Comp        : Node_Id;
+      Expr        : Node_Id;
+      New_Priv    : Node_Id;
+      Obj_Def     : Node_Id;
+      Object_Comp : Node_Id;
+      Priv        : Node_Id;
+      Rec_Decl    : Node_Id;
+      Sub         : Node_Id;
 
    --  Start of processing for Expand_N_Protected_Type_Declaration
 
@@ -8990,7 +9030,7 @@ package body Exp_Ch9 is
                   elsif Restriction_Active (No_Implicit_Heap_Allocations) then
                      if not Discriminated_Size (Defining_Identifier (Priv))
                      then
-                        --  Any object of the type will be  non-static.
+                        --  Any object of the type will be non-static
 
                         Error_Msg_N ("component has non-static size??", Priv);
                         Error_Msg_NE
@@ -8998,13 +9038,12 @@ package body Exp_Ch9 is
                            & "violate restriction "
                            & "No_Implicit_Heap_Allocations??", Priv, Prot_Typ);
                      else
-
-                        --  Object will be non-static if discriminants are.
+                        --  Object will be non-static if discriminants are
 
                         Error_Msg_NE
                           ("creation of protected object of type& with "
-                           &  "non-static discriminants  will violate"
-                           & " restriction No_Implicit_Heap_Allocations??",
+                           & "non-static discriminants will violate "
+                           & "restriction No_Implicit_Heap_Allocations??",
                            Priv, Prot_Typ);
                      end if;
 
@@ -9015,7 +9054,7 @@ package body Exp_Ch9 is
                   then
                      if not Discriminated_Size (Defining_Identifier (Priv))
                      then
-                        --  Any object of the type will be  non-static.
+                        --  Any object of the type will be non-static
 
                         Error_Msg_N ("component has non-static size??", Priv);
                         Error_Msg_NE
@@ -9024,11 +9063,11 @@ package body Exp_Ch9 is
                            & "No_Implicit_Protected_Object_Allocations??",
                            Priv, Prot_Typ);
                      else
-                        --  Object will be non-static if discriminants are.
+                        --  Object will be non-static if discriminants are
 
                         Error_Msg_NE
                           ("creation of protected object of type& with "
-                           & "non-static discriminants  will violate "
+                           & "non-static discriminants will violate "
                            & "restriction "
                            & "No_Implicit_Protected_Object_Allocations??",
                            Priv, Prot_Typ);
@@ -12771,7 +12810,6 @@ package body Exp_Ch9 is
 
             when others =>
                raise Program_Error;
-
          end case;
       end loop;
 
@@ -13406,8 +13444,8 @@ package body Exp_Ch9 is
             High := Type_High_Bound (Etype (Index));
             Low  := Type_Low_Bound  (Etype (Index));
 
-            --  In the simple case the entry family is given by a subtype
-            --  mark and the index constant has the same type.
+            --  In the simple case the entry family is given by a subtype mark
+            --  and the index constant has the same type.
 
             if Is_Entity_Name (Original_Node (
                  Discrete_Subtype_Definition (Parent (Index))))
@@ -13652,17 +13690,17 @@ package body Exp_Ch9 is
    function Make_Initialize_Protection
      (Protect_Rec : Entity_Id) return List_Id
    is
-      Loc         : constant Source_Ptr := Sloc (Protect_Rec);
-      P_Arr       : Entity_Id;
-      Pdec        : Node_Id;
-      Ptyp        : constant Node_Id    :=
-                      Corresponding_Concurrent_Type (Protect_Rec);
-      Args        : List_Id;
-      L           : constant List_Id    := New_List;
-      Has_Entry   : constant Boolean    := Has_Entries (Ptyp);
-      Prio_Type   : Entity_Id;
-      Prio_Var    : Entity_Id           := Empty;
-      Restricted  : constant Boolean    := Restricted_Profile;
+      Loc        : constant Source_Ptr := Sloc (Protect_Rec);
+      P_Arr      : Entity_Id;
+      Pdec       : Node_Id;
+      Ptyp       : constant Node_Id    :=
+                     Corresponding_Concurrent_Type (Protect_Rec);
+      Args       : List_Id;
+      L          : constant List_Id    := New_List;
+      Has_Entry  : constant Boolean    := Has_Entries (Ptyp);
+      Prio_Type  : Entity_Id;
+      Prio_Var   : Entity_Id           := Empty;
+      Restricted : constant Boolean    := Restricted_Profile;
 
    begin
       --  We may need two calls to properly initialize the object, one to
@@ -13730,7 +13768,7 @@ package body Exp_Ch9 is
                     Expression
                      (First (Pragma_Argument_Associations (Prio_Clause)));
 
-                  --  Get_Rep_Item returns either priority pragma.
+                  --  Get_Rep_Item returns either priority pragma
 
                   if Pragma_Name (Prio_Clause) = Name_Priority then
                      Prio_Type := RTE (RE_Any_Priority);
@@ -13832,7 +13870,7 @@ package body Exp_Ch9 is
                   Called_Subp := RE_Initialize_Protection;
 
                when others =>
-                     raise Program_Error;
+                  raise Program_Error;
             end case;
 
             --  Entry_Queue_Maxes parameter. This is an access to an array of
@@ -14645,7 +14683,6 @@ package body Exp_Ch9 is
 
          when others =>
             return False;
-
       end case;
    end Trivial_Accept_OK;
 

@@ -1,3 +1,82 @@
+2017-02-16  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/value-unwind.h: New file.
+	* config.host (aarch64*-*-*): Add aarch64/value-unwind.h
+	to tm_file.
+
+2017-02-06  Palmer Dabbelt <palmer@dabbelt.com>
+
+	* config.host: Add RISC-V tuples.
+	* config/riscv/atomic.c: New file.
+	* config/riscv/crti.S: Likewise.
+	* config/riscv/crtn.S: Likewise.
+	* config/riscv/div.S: Likewise.
+	* config/riscv/linux-unwind.h: Likewise.
+	* config/riscv/muldi3.S: Likewise.
+	* config/riscv/multi3.S: Likewise.
+	* config/riscv/save-restore.S: Likewise.
+	* config/riscv/sfp-machine.h: Likewise.
+	* config/riscv/t-elf: Likewise.
+	* config/riscv/t-elf32: Likewise.
+	* config/riscv/t-elf64: Likewise.
+	* config/riscv/t-softfp32: Likewise.
+	* config/riscv/t-softfp64: Likewise.
+
+2017-01-24  Jakub Jelinek  <jakub@redhat.com>
+
+	* soft-fp/op-common.h (_FP_MUL, _FP_FMA, _FP_DIV): Add
+	/* FALLTHRU */ comments.
+
+2017-01-21  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* config/i386/cygming-crtbegin.c (LIBGCJ_SONAME): No longer #define.
+
+2017-01-20  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64-unwind.h: Empty this file on ILP32.
+	* unwind-dw2.c (execute_cfa_program):  Only multiplexing
+	DW_CFA_GNU_window_save for AArch64 and LP64.
+
+2017-01-20  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/linux-unwind.h: Always include aarch64-unwind.h.
+
+2017-01-19  Jiong Wang  <jiong.wang@arm.com>
+
+	* config/aarch64/aarch64-unwind.h: New file.
+	(DWARF_REGNUM_AARCH64_RA_STATE): Define.
+	(MD_POST_EXTRACT_ROOT_ADDR): New target marcro and define it on AArch64.
+	(MD_POST_EXTRACT_FRAME_ADDR): Likewise.
+	(MD_POST_FROB_EH_HANDLER_ADDR): Likewise.
+	(MD_FROB_UPDATE_CONTEXT): Define it on AArch64.
+	(aarch64_post_extract_frame_addr): New function.
+	(aarch64_post_frob_eh_handler_addr): New function.
+	(aarch64_frob_update_context): New function.
+	* config/aarch64/linux-unwind.h: Include aarch64-unwind.h
+	* config.host (aarch64*-*-elf, aarch64*-*-rtems*,
+	aarch64*-*-freebsd*):
+	Initialize md_unwind_header to include aarch64-unwind.h.
+	* unwind-dw2.c (struct _Unwind_Context): Define "RA_A_SIGNED_BIT".
+	(execute_cfa_program): Multiplex DW_CFA_GNU_window_save for
+	__aarch64__.
+	(uw_update_context): Honor MD_POST_EXTRACT_FRAME_ADDR.
+	(uw_init_context_1): Honor MD_POST_EXTRACT_ROOT_ADDR.
+	(uw_frob_return_addr): New function.
+	(uw_install_context): Use uw_frob_return_addr.
+
+2017-01-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/79046
+	* configure.ac: Add GCC_BASE_VER.
+	* Makefile.in (version): Use @get_gcc_base_ver@ instead of cat to get
+	version from BASE-VER file.
+	* configure: Regenerated.
+
+2017-01-13  Joe Seymour  <joe.s@somniumtech.com>
+
+	* config/msp430/t-msp430 (libmul_none.a, libmul_16.a, libmul_32.a,
+	libmul_f5.a): Filter archived prerequisites.
+
 2017-01-10  Andrew Senkevich  <andrew.senkevich@intel.com>
 
 	* config/i386/cpuinfo.h (processor_features): Add

@@ -1,3 +1,15 @@
+2017-02-14  Martin Liska  <mliska@suse.cz>
+
+	* lto.c (do_stream_out): Free LTO file filename string.
+
+2017-01-19  David Malcolm  <dmalcolm@redhat.com>
+
+	* lto-lang.c (builtin_type_for_size): Convert call to
+	lto_type_for_size to one through the langhook.
+	(lto_type_for_size): Move to langhooks.c and rename to
+	lhd_type_for_size.
+	(LANG_HOOKS_TYPE_FOR_SIZE): Don't redefine.
+
 2017-01-11  Jakub Jelinek  <jakub@redhat.com>
 
 	PR middle-end/50199

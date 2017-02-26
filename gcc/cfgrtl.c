@@ -1935,7 +1935,8 @@ rtl_split_edge (edge edge_in)
 	  if (last
 	      && JUMP_P (last)
 	      && edge_in->dest != EXIT_BLOCK_PTR_FOR_FN (cfun)
-	      && extract_asm_operands (PATTERN (last)) != NULL_RTX
+	      && (extract_asm_operands (PATTERN (last))
+		  || JUMP_LABEL (last) == before)
 	      && patch_jump_insn (last, before, bb))
 	    df_set_bb_dirty (edge_in->src);
 	}
@@ -3650,7 +3651,8 @@ relink_block_chain (bool stay_in_cfglayout_mode)
   /* Maybe reset the original copy tables, they are not valid anymore
      when we renumber the basic blocks in compact_blocks.  If we are
      are going out of cfglayout mode, don't re-allocate the tables.  */
-  free_original_copy_tables ();
+  if (original_copy_tables_initialized_p ())
+    free_original_copy_tables ();
   if (stay_in_cfglayout_mode)
     initialize_original_copy_tables ();
 

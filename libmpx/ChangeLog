@@ -1,3 +1,34 @@
+2017-01-30  Jakub Jelinek  <jakub@redhat.com>
+
+	* mpxrt/mpxrt-utils.h (__mpxrt_stop): New prototype.
+
+2017-01-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/79046
+	* mpxrt/Makefile.am (gcc_version): Use @get_gcc_base_ver@ instead
+	of cat to get version from BASE-VER file.
+	* mpxwrap/Makefile.am (gcc_version): Likewise.
+	* mpxrt/Makefile.in: Regenerated.
+	* mpxwrap/Makefile.in: Regenerated.
+
+2017-01-19  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/79046
+	* aclocal.m4: Regenerated.
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+	* mpxrt/Makefile.in: Regenerated.
+	* mpxwrap/Makefile.in: Regenerated.
+
+2017-01-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR other/79046
+	* configure.ac: Add GCC_BASE_VER.
+	* Makefile.am (gcc_version): Use @get_gcc_base_ver@ instead of cat to
+	get version from BASE-VER file.
+	* configure: Regenerated.
+	* Makefile.in: Regenerated.
+
 2016-12-27  H.J. Lu  <hongjiu.lu@intel.com>
 	    Alexander Ivchenko  <alexander.ivchenko@intel.com>
 

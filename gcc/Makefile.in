@@ -517,11 +517,18 @@ CROSS_SYSTEM_HEADER_DIR = @CROSS_SYSTEM_HEADER_DIR@
 # macro is also used in a double-quoted context.
 SYSTEM_HEADER_DIR = `echo @SYSTEM_HEADER_DIR@ | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
 
+# Path to the system headers on the build machine
+ifeq ($(build),$(host))
+BUILD_SYSTEM_HEADER_DIR = $(SYSTEM_HEADER_DIR)
+else
+BUILD_SYSTEM_HEADER_DIR = `echo $(CROSS_SYSTEM_HEADER_DIR) | sed -e :a -e 's,[^/]*/\.\.\/,,' -e ta`
+endif
+
 # Control whether to run fixincludes.
 STMP_FIXINC = @STMP_FIXINC@
 
 # Test to see whether <limits.h> exists in the system header files.
-LIMITS_H_TEST = [ -f $(SYSTEM_HEADER_DIR)/limits.h ]
+LIMITS_H_TEST = [ -f $(BUILD_SYSTEM_HEADER_DIR)/limits.h ]
 
 # Directory for prefix to system directories, for
 # each of $(system_prefix)/usr/include, $(system_prefix)/usr/lib, etc.
@@ -572,7 +579,7 @@ ifeq ($(enable_multiarch),yes)
 else
   ifeq ($(enable_multiarch),auto)
     # SYSTEM_HEADER_DIR is makefile syntax, cannot be evaluated in configure.ac
-    if_multiarch = $(if $(wildcard $(shell echo $(SYSTEM_HEADER_DIR))/../../usr/lib/*/crti.o),$(1))
+    if_multiarch = $(if $(wildcard $(shell echo $(BUILD_SYSTEM_HEADER_DIR))/../../usr/lib/*/crti.o),$(1))
   else
     if_multiarch =
   endif
@@ -674,15 +681,6 @@ man7ext = .7
 objext = .o
 exeext = @host_exeext@
 build_exeext = @build_exeext@
-
-
-# This allows overriding include paths in host specific Makefile
-# (config/i386/x-mingw32 overrides those variables and local_includedir).
-gplusplus_includedir = $(gcc_gxx_include_dir)
-gplusplus_tool_includedir = $(gcc_gxx_include_dir)/$(target_noncanonical)
-gplusplus_backward_includedir = $(gcc_gxx_include_dir)/backward
-native_system_includedir = $(NATIVE_SYSTEM_HEADER_DIR)
-
 
 # Directory in which to put man pages.
 mandir = @mandir@
@@ -865,7 +863,7 @@ else
 REVISION_c  := $(shell cat $(REVISION))
 endif
 
-version     := $(BASEVER_c)
+version     := $(shell @get_gcc_base_ver@ $(BASEVER))
 
 PATCHLEVEL_c := \
   $(shell echo $(BASEVER_c) | sed -e 's/^[0-9]*\.[0-9]*\.\([0-9]*\)$$/\1/')
@@ -1329,7 +1327,7 @@ OBJS = \
 	haifa-sched.o \
 	hash-map-tests.o \
 	hash-set-tests.o \
-	hsa.o \
+	hsa-common.o \
 	hsa-gen.o \
 	hsa-regalloc.o \
 	hsa-brig.o \
@@ -1442,6 +1440,7 @@ OBJS = \
 	rtlhash.o \
 	rtlanal.o \
 	rtlhooks.o \
+	run-rtl-passes.o \
 	sbitmap.o \
 	sched-deps.o \
 	sched-ebb.o \
@@ -2133,7 +2132,8 @@ DRIVER_DEFINES = \
   $(if $(SHLIB),$(if $(filter yes,@enable_shared@),-DENABLE_SHARED_LIBGCC)) \
   -DCONFIGURE_SPECS="\"@CONFIGURE_SPECS@\""
 
-CFLAGS-gcc.o += $(DRIVER_DEFINES)
+CFLAGS-gcc.o += $(DRIVER_DEFINES) -DBASEVER=$(BASEVER_s)
+gcc.o: $(BASEVER)
 
 specs.h : s-specs ; @true
 s-specs : Makefile
@@ -2516,7 +2516,7 @@ GTFILES = $(CPP_ID_DATA_H) $(srcdir)/input.h $(srcdir)/coretypes.h \
   $(srcdir)/sancov.c \
   $(srcdir)/ipa-devirt.c \
   $(srcdir)/internal-fn.h \
-  $(srcdir)/hsa.c \
+  $(srcdir)/hsa-common.c \
   @all_gtfiles@
 
 # Compute the list of GT header files from the corresponding C sources,
@@ -2793,14 +2793,14 @@ CFLAGS-intl.o += -DLOCALEDIR=\"$(localedir)\"
 PREPROCESSOR_DEFINES = \
   -DGCC_INCLUDE_DIR=\"$(libsubdir)/include\" \
   -DFIXED_INCLUDE_DIR=\"$(libsubdir)/include-fixed\" \
-  -DGPLUSPLUS_INCLUDE_DIR=\"$(gplusplus_includedir)\" \
+  -DGPLUSPLUS_INCLUDE_DIR=\"$(gcc_gxx_include_dir)\" \
   -DGPLUSPLUS_INCLUDE_DIR_ADD_SYSROOT=$(gcc_gxx_include_dir_add_sysroot) \
-  -DGPLUSPLUS_TOOL_INCLUDE_DIR=\"$(gplusplus_tool_includedir)\" \
-  -DGPLUSPLUS_BACKWARD_INCLUDE_DIR=\"$(gplusplus_backward_includedir)\" \
+  -DGPLUSPLUS_TOOL_INCLUDE_DIR=\"$(gcc_gxx_include_dir)/$(target_noncanonical)\" \
+  -DGPLUSPLUS_BACKWARD_INCLUDE_DIR=\"$(gcc_gxx_include_dir)/backward\" \
   -DLOCAL_INCLUDE_DIR=\"$(local_includedir)\" \
   -DCROSS_INCLUDE_DIR=\"$(CROSS_SYSTEM_HEADER_DIR)\" \
   -DTOOL_INCLUDE_DIR=\"$(gcc_tooldir)/include\" \
-  -DNATIVE_SYSTEM_HEADER_DIR=\"$(native_system_includedir)\" \
+  -DNATIVE_SYSTEM_HEADER_DIR=\"$(NATIVE_SYSTEM_HEADER_DIR)\" \
   -DPREFIX=\"$(prefix)/\" \
   -DSTANDARD_EXEC_PREFIX=\"$(libdir)/gcc/\" \
   @TARGET_SYSTEM_ROOT_DEFINE@
@@ -2997,11 +2997,11 @@ stmp-fixinc: gsyslimits.h macro_list fixinc_list \
 	    sysroot_headers_suffix=`echo $${ml} | sed -e 's/;.*$$//'`; \
 	    multi_dir=`echo $${ml} | sed -e 's/^[^;]*;//'`; \
 	    fix_dir=include-fixed$${multi_dir}; \
-	    if ! $(inhibit_libc) && test ! -d ${SYSTEM_HEADER_DIR}; then \
+	    if ! $(inhibit_libc) && test ! -d ${BUILD_SYSTEM_HEADER_DIR}; then \
 	      echo The directory that should contain system headers does not exist: >&2 ; \
-	      echo "  ${SYSTEM_HEADER_DIR}" >&2 ; \
+	      echo "  ${BUILD_SYSTEM_HEADER_DIR}" >&2 ; \
 	      tooldir_sysinc=`echo "${gcc_tooldir}/sys-include" | sed -e :a -e "s,[^/]*/\.\.\/,," -e ta`; \
-	      if test "x${SYSTEM_HEADER_DIR}" = "x$${tooldir_sysinc}"; \
+	      if test "x${BUILD_SYSTEM_HEADER_DIR}" = "x$${tooldir_sysinc}"; \
 	      then sleep 1; else exit 1; fi; \
 	    fi; \
 	    $(mkinstalldirs) $${fix_dir}; \
@@ -3012,7 +3012,7 @@ stmp-fixinc: gsyslimits.h macro_list fixinc_list \
 	      export TARGET_MACHINE srcdir SHELL MACRO_LIST && \
 	      cd $(build_objdir)/fixincludes && \
 	      $(SHELL) ./fixinc.sh "$${gcc_dir}/$${fix_dir}" \
-	        $(SYSTEM_HEADER_DIR) $(OTHER_FIXINCLUDES_DIRS) ); \
+	        $(BUILD_SYSTEM_HEADER_DIR) $(OTHER_FIXINCLUDES_DIRS) ); \
 	    rm -f $${fix_dir}/syslimits.h; \
 	    if [ -f $${fix_dir}/limits.h ]; then \
 	      mv $${fix_dir}/limits.h $${fix_dir}/syslimits.h; \
@@ -3812,7 +3812,6 @@ site.exp: ./config.status Makefile
 	  echo "set PLUGINCFLAGS \"$(PLUGINCFLAGS)\"" >> ./site.tmp; \
 	  echo "set GMPINC \"$(GMPINC)\"" >> ./site.tmp; \
 	fi
-	@echo "set ISLVER \"$(ISLVER)\"" >> ./site.tmp
 # If newlib has been configured, we need to pass -B to gcc so it can find
 # newlib's crt0.o if it exists.  This will cause a "path prefix not used"
 # message if it doesn't, but the testsuite is supposed to ignore the message -
