@@ -9321,7 +9321,6 @@ parse_optimize_options (tree args, bool attr_p)
   bool ret = true;
   unsigned opt_argc;
   unsigned i;
-  int saved_flag_strict_aliasing;
   const char **opt_argv;
   struct cl_decoded_option *decoded_options;
   unsigned int decoded_options_count;
@@ -9414,8 +9413,6 @@ parse_optimize_options (tree args, bool attr_p)
   for (i = 1; i < opt_argc; i++)
     opt_argv[i] = (*optimize_args)[i];
 
-  saved_flag_strict_aliasing = flag_strict_aliasing;
-
   /* Now parse the options.  */
   decode_cmdline_options_to_array_default_mask (opt_argc, opt_argv,
 						&decoded_options,
@@ -9425,9 +9422,6 @@ parse_optimize_options (tree args, bool attr_p)
 		  input_location, global_dc);
 
   targetm.override_options_after_change();
-
-  /* Don't allow changing -fstrict-aliasing.  */
-  flag_strict_aliasing = saved_flag_strict_aliasing;
 
   optimize_args->truncate (0);
   return ret;
@@ -10481,7 +10475,9 @@ c_common_mark_addressable_vec (tree t)
 {   
   while (handled_component_p (t))
     t = TREE_OPERAND (t, 0);
-  if (TREE_CODE (t) != VAR_DECL && TREE_CODE (t) != PARM_DECL)
+  if (!VAR_P (t)
+      && TREE_CODE (t) != PARM_DECL
+      && TREE_CODE (t) != COMPOUND_LITERAL_EXPR)
     return;
   TREE_ADDRESSABLE (t) = 1;
 }

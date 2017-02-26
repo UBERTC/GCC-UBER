@@ -1,3 +1,171 @@
+2017-02-24  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/opt63.adb: New test.
+
+2017-02-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-02-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/79261
+	* gcc.target/powerpc/vec-xxpermdi.c: New file.
+
+2017-01-16  Carl Love  <cel@us.ibm.com>
+
+	Backport from mainline commit r245460 on 2017-02-14
+
+	PR 79545
+	* gcc.target/powerpc/vsx-builtin-3.c: Add missing test case for the
+	xvcvsxdsp and xvcvuxdsp instructions.
+
+2017-02-06  Carl Love  <cel@us.ibm.com>
+
+	* gcc.target/powerpc/builtins-3-p8.c:  Add new testfile for missing
+	vec_packs built-in tests.
+
+2017-02-03  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-01-27  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/65484
+	* g++.dg/vect/pr36648.cc: Modify to reflect that the loop is not
+	vectorized on POWER unless hardware misaligned loads are
+	available.
+
+2017-01-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-01-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/79034
+	* g++.dg/torture/pr79034.C: New testcase.
+
+	2016-11-07  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/78224
+	* g++.dg/torture/pr78224.C: New testcase.
+
+2017-01-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-09-27  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77745
+	* g++.dg/torture/pr77745.C: New testcase.
+
+	2016-09-29  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77768
+	* gcc.dg/torture/pr77768.c: New testcase.
+
+2017-01-24  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	Backport from mainline
+	PR target/78041
+	* gcc.target/arm/pr78041.c: New test.
+
+2017-01-24  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-09-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77646
+	* gcc.dg/torture/pr77646.c: New testcase.
+
+	2016-11-05  David Edelsohn  <dje.gcc@gmail.com>
+		Richard Biener  <rguenther@suse.de>
+
+	PR bootstrap/78188
+	PR c++/71848
+	* g++.dg/ipa/pr78188.C: New test.	
+
+	2016-09-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77648
+	* gcc.dg/torture/pr77648-1.c: New testcase.
+	* gcc.dg/torture/pr77648-2.c: Likewise.
+
+2017-01-24  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2016-10-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/77855
+	* gcc.dg/torture/pr77855.c: New testcase.
+
+	2016-09-01  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/77436
+	* gcc.dg/torture/pr77436.c: New testcase.
+
+	2016-09-06  Richard Biener  <rguenther@suse.de>
+
+	PR c/77450
+	* gcc.dg/pr77450.c: New testcase.
+
+	2016-09-19  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/77605
+	* gcc.dg/torture/pr77605.c: New testcase.
+
+	2016-11-02  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/78185
+	* gcc.dg/pr78185.c: New testcase.
+
+	2016-11-16  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/78333
+	* gcc.dg/pr78333.c: New testcase.
+
+2017-01-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-01-23  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	* gcc.dg/lto/pr69188_0.c: Require profiling support for testcase.
+
+2017-01-23  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	PR lto/69188
+	* gcc.dg/lto/pr69188_0.c: New test.
+	* gcc.dg/lto/pr69188_1.c: New test.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-13  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/79043
+	* gcc.c-torture/execute/pr79043.c: New test.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2015-12-01  Jan Hubicka  <hubicka@ucw.cz>
+
+	* gcc.c-torture/execute/alias-1.c: New testcase.
+
+2017-01-20  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-17  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/71207
+	* g++.dg/ipa/pr71207.C: New test.
+
+2017-01-17 Thomas Preud'homme <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2016-12-07 Thomas Preud'homme <thomas.preudhomme@arm.com>
+
+	PR rtl-optimization/78617
+	* gcc.c-torture/execute/pr78617.c: New test.
+
 2017-01-12  Nathan Sidwell  <nathan@acm.org>
 
 	PR c++/77812

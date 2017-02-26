@@ -1,3 +1,111 @@
+2017-02-14  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2017-01-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/69321
+	* include/experimental/any (__any_caster): Avoid instantiating
+	manager function for types that can't be stored in any.
+	* testsuite/experimental/any/misc/any_cast.cc: Test non-copyable type.
+	* testsuite/experimental/any/misc/any_cast_neg.cc: Adjust dg-error.
+
+	Backport from mainline
+	2017-01-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/69301
+	* include/std/atomic (atomic<T>::load, atomic<T>::exchange): Use
+	aligned buffer instead of default-initialized variable.
+	* testsuite/29_atomics/atomic/69301.cc: New test.
+	* include/ext/pointer.h (_Pointer_adapter::operator++(int))
+	(_Pointer_adapter::operator--(int)): Likewise.
+
+	Backport from mainline
+	2017-01-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/78702
+	* include/bits/locale_classes.h (locale::facet::__shim): Change from
+	private to protected.
+	* src/c++11/cxx11-shim_facets.cc (__shim_accessor): Define helper to
+	make locale::facet::__shim accessible.
+
+	Backport from mainline
+	2017-01-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/78134
+	* include/bits/stl_map.h (map::lower_bound, map::upper_bound)
+	(map::equal_range): Fix return type of heterogeneous overloads.
+	* include/bits/stl_multimap.h (multimap::lower_bound)
+	(multimap::upper_bound, multimap::equal_range): Likewise.
+	* include/bits/stl_multiset.h (multiset::lower_bound)
+	(multiset::upper_bound, multiset::equal_range): Likewise.
+	* include/bits/stl_set.h (set::lower_bound, set::upper_bound)
+	(set::equal_range): Likewise.
+	* testsuite/23_containers/map/operations/2.cc: Check return types.
+	* testsuite/23_containers/multimap/operations/2.cc: Likewise.
+	* testsuite/23_containers/multiset/operations/2.cc: Likewise.
+	* testsuite/23_containers/set/operations/2.cc: Likewise.
+
+	Backport from mainline
+	2017-01-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/78273
+	* include/bits/stl_map.h (map::count<_Kt>(const _Kt&)): Don't assume
+	the heterogeneous comparison can only find one match.
+	* include/bits/stl_set.h (set::count<_Kt>(const _Kt&)): Likewise.
+	* testsuite/23_containers/map/operations/2.cc: Test count works with
+	comparison function that just partitions rather than sorting.
+	* testsuite/23_containers/set/operations/2.cc: Likewise.
+
+2017-02-01  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/78346
+	* include/bits/predefined_ops.h (_Iter_equals_iter): Store iterator
+	not its referent.
+	(_Iter_comp_to_iter): Likewise.
+	* testsuite/25_algorithms/search/78346.cc: New test.
+
+	PR libstdc++/79254
+	* include/bits/basic_string.h [_GLIBCXX_USE_CXX11_ABI]
+	(basic_string::operator=(const basic_string&)): If source object is
+	small just deallocate, otherwise perform new allocation before
+	making any changes.
+	* testsuite/21_strings/basic_string/allocator/wchar_t/copy_assign.cc:
+	Test exception-safety of copy assignment when allocator propagates.
+	* testsuite/21_strings/basic_string/allocator/char/copy_assign.cc:
+	Likewise.
+	* testsuite/util/testsuite_allocator.h (uneq_allocator::swap): Make
+	std::swap visible.
+
+2017-01-22  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	Merge from mainline
+	2017-01-01  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/xml/faq.xml: Update address of C++ ABI link.
+	* doc/xml/manual/abi.xml: Ditto.
+	
+2017-01-16  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Backport from mainline
+	2017-01-16  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR libstdc++/78389
+	* include/bits/list.tcc (merge(list&&)): Fix backwards size adjustments.
+	(merge(list&&, _StrictWeakOrdering)): Likewise.
+	* testsuite/23_containers/list/operations/78389.cc: Add
+	better test for the sizes.
+
+2017-01-15  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Backport from mainline
+        2017-01-13  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR libstdc++/78389
+	* include/bits/list.tcc (merge(list&&)):
+	Adjust list sizes if the comparator throws.
+	(merge(list&&, _StrictWeakOrdering)): Likewise.
+	* testsuite/23_containers/list/operations/78389.cc: New.
+
 2017-01-09  Jonathan Wakely  <jwakely@redhat.com>
 
 	* testsuite/30_threads/thread/cons/lwg2097.cc: Compile with
