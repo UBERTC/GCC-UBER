@@ -817,6 +817,25 @@ scop_detection::merge_sese (sese_l first, sese_l second) const
 	 != loop_depth (exit->dest->loop_father))
     return invalid_sese;
 
+  /* For now we just bail out when there is a loop exit in the region
+     that is not also the exit of the region.  We could enlarge the
+     region to cover the loop that region exits to.  See PR79977.  */
+  if (loop_outer (entry->src->loop_father))
+    {
+      vec<edge> exits = get_loop_exit_edges (entry->src->loop_father);
+      for (unsigned i = 0; i < exits.length (); ++i)
+	{
+	  if (exits[i] != exit
+	      && bb_in_region (exits[i]->src, entry->dest, exit->src))
+	    {
+	      DEBUG_PRINT (dp << "[scop-detection-fail] cannot merge seses.\n");
+	      exits.release ();
+	      return invalid_sese;
+	    }
+	}
+      exits.release ();
+    }
+
   /* For now we just want to bail out when exit does not post-dominate entry.
      TODO: We might just add a basic_block at the exit to make exit
      post-dominate entry (the entire region).  */
@@ -905,6 +924,18 @@ scop_detection::build_scop_breadth (sese_l s1, loop_p loop)
 
   sese_l combined = merge_sese (s1, s2);
 
+  /* Combining adjacent loops may add unrelated loops into the
+     region so we have to check all sub-loops of the outer loop
+     that are in the combined region.  */
+  if (combined)
+    for (l = loop_outer (loop)->inner; l; l = l->next)
+      if (bb_in_sese_p (l->header, combined)
+	  && ! loop_is_valid_in_scop (l, combined))
+	{
+	  combined = invalid_sese;
+	  break;
+	}
+
   if (combined)
     s1 = combined;
   else
@@ -931,6 +962,8 @@ scop_detection::can_represent_loop_1 (loop_p loop, sese_l scop)
     && niter_desc.control.no_overflow
     && (niter = number_of_latch_executions (loop))
     && !chrec_contains_undetermined (niter)
+    && !chrec_contains_undetermined (scalar_evolution_in_region (scop,
+								 loop, niter))
     && graphite_can_represent_expr (scop, loop, niter);
 }
 

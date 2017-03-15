@@ -6867,6 +6867,7 @@ cp_parser_postfix_expression (cp_parser *parser, bool address_p, bool cast_p,
 			|| type_dependent_expression_p (fn)
 			|| any_type_dependent_arguments_p (args)))
 		  {
+		    maybe_generic_this_capture (instance, fn);
 		    postfix_expression
 		      = build_nt_call_vec (postfix_expression, args);
 		    release_tree_vector (args);
@@ -34058,13 +34059,6 @@ cp_parser_omp_ordered (cp_parser *parser, cp_token *pragma_tok,
 {
   location_t loc = pragma_tok->location;
 
-  if (context != pragma_stmt && context != pragma_compound)
-    {
-      cp_parser_error (parser, "expected declaration specifiers");
-      cp_parser_skip_to_pragma_eol (parser, pragma_tok);
-      return false;
-    }
-
   if (cp_lexer_next_token_is (parser->lexer, CPP_NAME))
     {
       tree id = cp_lexer_peek_token (parser->lexer)->u.value;
@@ -34957,13 +34951,6 @@ cp_parser_omp_target (cp_parser *parser, cp_token *pragma_tok,
 {
   tree *pc = NULL, stmt;
 
-  if (context != pragma_stmt && context != pragma_compound)
-    {
-      cp_parser_error (parser, "expected declaration specifiers");
-      cp_parser_skip_to_pragma_eol (parser, pragma_tok);
-      return false;
-    }
-
   if (cp_lexer_next_token_is (parser->lexer, CPP_NAME))
     {
       tree id = cp_lexer_peek_token (parser->lexer)->u.value;
@@ -35345,7 +35332,7 @@ cp_parser_oacc_declare (cp_parser *parser, cp_token *pragma_tok)
 	    id = get_identifier ("omp declare target");
 
 	  DECL_ATTRIBUTES (decl)
-			   = tree_cons (id, NULL_TREE, DECL_ATTRIBUTES (decl));
+	    = tree_cons (id, NULL_TREE, DECL_ATTRIBUTES (decl));
 	  if (global_bindings_p ())
 	    {
 	      symtab_node *node = symtab_node::get (decl);
@@ -35885,8 +35872,11 @@ cp_parser_omp_declare_target (cp_parser *parser, cp_token *pragma_tok)
 	}
       if (!at1)
 	{
-	  symtab_node *node = symtab_node::get (t);
 	  DECL_ATTRIBUTES (t) = tree_cons (id, NULL_TREE, DECL_ATTRIBUTES (t));
+	  if (TREE_CODE (t) != FUNCTION_DECL && !is_global_var (t))
+	    continue;
+
+	  symtab_node *node = symtab_node::get (t);
 	  if (node != NULL)
 	    {
 	      node->offloadable = 1;
@@ -37402,12 +37392,16 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
       return true;
 
     case PRAGMA_OMP_ORDERED:
+      if (context != pragma_stmt && context != pragma_compound)
+	goto bad_stmt;
       stmt = push_omp_privatization_clauses (false);
       ret = cp_parser_omp_ordered (parser, pragma_tok, context, if_p);
       pop_omp_privatization_clauses (stmt);
       return ret;
 
     case PRAGMA_OMP_TARGET:
+      if (context != pragma_stmt && context != pragma_compound)
+	goto bad_stmt;
       stmt = push_omp_privatization_clauses (false);
       ret = cp_parser_omp_target (parser, pragma_tok, context, if_p);
       pop_omp_privatization_clauses (stmt);

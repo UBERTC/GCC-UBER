@@ -8136,8 +8136,9 @@ gimplify_adjust_omp_clauses (gimple_seq *pre_p, gimple_seq body, tree *list_p,
 	  if ((ctx->region_type & ORT_TARGET) != 0
 	      && !(n->value & GOVD_SEEN)
 	      && GOMP_MAP_ALWAYS_P (OMP_CLAUSE_MAP_KIND (c)) == 0
-	      && !lookup_attribute ("omp declare target link",
-				    DECL_ATTRIBUTES (decl)))
+	      && (!is_global_var (decl)
+		  || !lookup_attribute ("omp declare target link",
+					DECL_ATTRIBUTES (decl))))
 	    {
 	      remove = true;
 	      /* For struct element mapping, if struct is never referenced
@@ -11156,8 +11157,11 @@ gimplify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
   if (fallback == fb_none && *expr_p && !is_gimple_stmt (*expr_p))
     {
       /* We aren't looking for a value, and we don't have a valid
-	 statement.  If it doesn't have side-effects, throw it away.  */
-      if (!TREE_SIDE_EFFECTS (*expr_p))
+	 statement.  If it doesn't have side-effects, throw it away.
+	 We can also get here with code such as "*&&L;", where L is
+	 a LABEL_DECL that is marked as FORCED_LABEL.  */
+      if (TREE_CODE (*expr_p) == LABEL_DECL
+	  || !TREE_SIDE_EFFECTS (*expr_p))
 	*expr_p = NULL;
       else if (!TREE_THIS_VOLATILE (*expr_p))
 	{
