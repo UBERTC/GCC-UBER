@@ -1138,7 +1138,7 @@ LSYM(Ldv_s):
 #ifdef L_arm_cmpdf2
 
 @ Note: only r0 (return value) and ip are clobbered here.
-
+#if 0
 ARM_FUNC_START gtdf2
 ARM_FUNC_ALIAS gedf2 gtdf2
 	CFI_START_FUNCTION
@@ -1149,10 +1149,12 @@ ARM_FUNC_START ltdf2
 ARM_FUNC_ALIAS ledf2 ltdf2
 	mov	ip, #1
 	b	1f
-
+#endif
 ARM_FUNC_START cmpdf2
+#if 0
 ARM_FUNC_ALIAS nedf2 cmpdf2
 ARM_FUNC_ALIAS eqdf2 cmpdf2
+#endif
 	mov	ip, #1			@ how should we specify unordered here?
 
 1:	str	ip, [sp, #-4]!
@@ -1231,12 +1233,14 @@ ARM_FUNC_ALIAS eqdf2 cmpdf2
 	RET
 
 	CFI_END_FUNCTION
+#if 0
 	FUNC_END gedf2
 	FUNC_END gtdf2
 	FUNC_END ledf2
 	FUNC_END ltdf2
 	FUNC_END nedf2
 	FUNC_END eqdf2
+#endif
 	FUNC_END cmpdf2
 
 ARM_FUNC_START aeabi_cdrcmple
