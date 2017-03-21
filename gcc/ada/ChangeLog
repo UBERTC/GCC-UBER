@@ -1,3 +1,13 @@
+2017-03-08  Thanassis Tsiodras  <ttsiodras@gmail.com>
+
+	PR ada/79903
+	* socket.c (__gnat_gethostbyaddr): Add missing test for __rtems__.
+
+2017-03-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/79945
+	* system-linux-ppc.ads (Default_Bit_Order): Use Standard's setting.
+
 2017-02-24  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gcc-interface/decl.c (gnat_to_gnu_field): Do not remove the wrapper
