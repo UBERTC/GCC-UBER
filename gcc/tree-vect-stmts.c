@@ -1731,7 +1731,7 @@ get_group_load_store_type (gimple *stmt, tree vectype, bool slp,
   bool single_element_p = (stmt == first_stmt
 			   && !GROUP_NEXT_ELEMENT (stmt_info));
   unsigned HOST_WIDE_INT gap = GROUP_GAP (vinfo_for_stmt (first_stmt));
-  int nunits = TYPE_VECTOR_SUBPARTS (vectype);
+  unsigned nunits = TYPE_VECTOR_SUBPARTS (vectype);
 
   /* True if the vectorized statements would access beyond the last
      statement in the group.  */
@@ -1794,9 +1794,13 @@ get_group_load_store_type (gimple *stmt, tree vectype, bool slp,
       /* If there is a gap at the end of the group then these optimizations
 	 would access excess elements in the last iteration.  */
       bool would_overrun_p = (gap != 0);
-      /* If the access is aligned an overrun is fine.  */
+      /* If the access is aligned an overrun is fine, but only if the
+         overrun is not inside an unused vector (if the gap is as large
+	 or larger than a vector).  */
       if (would_overrun_p
-	  && aligned_access_p (STMT_VINFO_DATA_REF (stmt_info)))
+	  && gap < nunits
+	  && aligned_access_p
+		(STMT_VINFO_DATA_REF (vinfo_for_stmt (first_stmt))))
 	would_overrun_p = false;
       if (!STMT_VINFO_STRIDED_P (stmt_info)
 	  && (can_overrun_p || !would_overrun_p)
@@ -3070,8 +3074,8 @@ struct simd_call_arg_info
 {
   tree vectype;
   tree op;
-  enum vect_def_type dt;
   HOST_WIDE_INT linear_step;
+  enum vect_def_type dt;
   unsigned int align;
   bool simd_lane_linear;
 };
@@ -6121,6 +6125,8 @@ vectorizable_store (gimple *stmt, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 	  if (slp)
 	    break;
 	}
+
+      vec_oprnds.release ();
       return true;
     }
 
@@ -6324,7 +6330,7 @@ vectorizable_store (gimple *stmt, gimple_stmt_iterator *gsi, gimple **vec_stmt,
 		   vect_permute_store_chain().  */
 		vec_oprnd = result_chain[i];
 
-	      data_ref = fold_build2 (MEM_REF, TREE_TYPE (vec_oprnd),
+	      data_ref = fold_build2 (MEM_REF, vectype,
 				      dataref_ptr,
 				      dataref_offset
 				      ? dataref_offset
@@ -8957,6 +8963,7 @@ free_stmt_vec_info (gimple *stmt)
 static tree
 get_vectype_for_scalar_type_and_size (tree scalar_type, unsigned size)
 {
+  tree orig_scalar_type = scalar_type;
   machine_mode inner_mode = TYPE_MODE (scalar_type);
   machine_mode simd_mode;
   unsigned int nbytes = GET_MODE_SIZE (inner_mode);
@@ -9016,6 +9023,12 @@ get_vectype_for_scalar_type_and_size (tree scalar_type, unsigned size)
   if (!VECTOR_MODE_P (TYPE_MODE (vectype))
       && !INTEGRAL_MODE_P (TYPE_MODE (vectype)))
     return NULL_TREE;
+
+  /* Re-attach the address-space qualifier if we canonicalized the scalar
+     type.  */
+  if (TYPE_ADDR_SPACE (orig_scalar_type) != TYPE_ADDR_SPACE (vectype))
+    return build_qualified_type
+	     (vectype, KEEP_QUAL_ADDR_SPACE (TYPE_QUALS (orig_scalar_type)));
 
   return vectype;
 }

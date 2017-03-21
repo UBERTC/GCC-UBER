@@ -8048,6 +8048,9 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
 	{
 	  arg = cp_build_indirect_ref (arg, RO_NULL, complain);
 	  val = build2 (MODIFY_EXPR, TREE_TYPE (to), to, arg);
+	  if (cxx_dialect >= cxx14)
+	    /* Handle NSDMI that refer to the object being initialized.  */
+	    replace_placeholders (arg, to);
 	}
       else
 	{
@@ -8773,8 +8776,8 @@ build_new_method_call_1 (tree instance, tree fns, vec<tree, va_gc> **args,
 	      else if (DECL_CONSTRUCTOR_P (current_function_decl)
 		       || DECL_DESTRUCTOR_P (current_function_decl))
 		warning (0, (DECL_CONSTRUCTOR_P (current_function_decl)
-			     ? "pure virtual %q#D called from constructor"
-			     : "pure virtual %q#D called from destructor"),
+			     ? G_("pure virtual %q#D called from constructor")
+			     : G_("pure virtual %q#D called from destructor")),
 			 fn);
 	    }
 
@@ -9671,18 +9674,6 @@ joust (struct z_candidate *cand1, struct z_candidate *cand2, bool warn,
 	return winner;
     }
 
-  /* F1 is generated from a deduction-guide (13.3.1.8) and F2 is not */
-  if (deduction_guide_p (cand1->fn))
-    {
-      gcc_assert (deduction_guide_p (cand2->fn));
-      /* We distinguish between candidates from an explicit deduction guide and
-	 candidates built from a constructor based on DECL_ARTIFICIAL.  */
-      int art1 = DECL_ARTIFICIAL (cand1->fn);
-      int art2 = DECL_ARTIFICIAL (cand2->fn);
-      if (art1 != art2)
-	return art2 - art1;
-    }
-
   /* or, if not that,
      F1 is a non-template function and F2 is a template function
      specialization.  */
@@ -9720,20 +9711,54 @@ joust (struct z_candidate *cand1, struct z_candidate *cand2, bool warn,
 	return winner;
     }
 
-  /* or, if not that, F2 is from a using-declaration, F1 is not, and the
-     conversion sequences are equivalent.
-     (proposed in http://lists.isocpp.org/core/2016/10/1142.php) */
+  /* F1 is generated from a deduction-guide (13.3.1.8) and F2 is not */
+  if (deduction_guide_p (cand1->fn))
+    {
+      gcc_assert (deduction_guide_p (cand2->fn));
+      /* We distinguish between candidates from an explicit deduction guide and
+	 candidates built from a constructor based on DECL_ARTIFICIAL.  */
+      int art1 = DECL_ARTIFICIAL (cand1->fn);
+      int art2 = DECL_ARTIFICIAL (cand2->fn);
+      if (art1 != art2)
+	return art2 - art1;
+
+      if (art1)
+	{
+	  /* Prefer the special copy guide over a declared copy/move
+	     constructor.  */
+	  if (copy_guide_p (cand1->fn))
+	    return 1;
+	  if (copy_guide_p (cand2->fn))
+	    return -1;
+
+	  /* Prefer a candidate generated from a non-template constructor.  */
+	  int tg1 = template_guide_p (cand1->fn);
+	  int tg2 = template_guide_p (cand2->fn);
+	  if (tg1 != tg2)
+	    return tg2 - tg1;
+	}
+    }
+
+  /* F1 is a member of a class D, F2 is a member of a base class B of D, and
+     for all arguments the corresponding parameters of F1 and F2 have the same
+     type (CWG 2273/2277). */
   if (DECL_P (cand1->fn) && DECL_CLASS_SCOPE_P (cand1->fn)
       && !DECL_CONV_FN_P (cand1->fn)
       && DECL_P (cand2->fn) && DECL_CLASS_SCOPE_P (cand2->fn)
       && !DECL_CONV_FN_P (cand2->fn))
     {
-      bool used1 = (DECL_INHERITED_CTOR (cand1->fn)
-		    || (BINFO_TYPE (cand1->access_path)
-			!= DECL_CONTEXT (cand1->fn)));
-      bool used2 = (DECL_INHERITED_CTOR (cand2->fn)
-		    || (BINFO_TYPE (cand2->access_path)
-			!= DECL_CONTEXT (cand2->fn)));
+      tree base1 = DECL_CONTEXT (strip_inheriting_ctors (cand1->fn));
+      tree base2 = DECL_CONTEXT (strip_inheriting_ctors (cand2->fn));
+
+      bool used1 = false;
+      bool used2 = false;
+      if (base1 == base2)
+	/* No difference.  */;
+      else if (DERIVED_FROM_P (base1, base2))
+	used1 = true;
+      else if (DERIVED_FROM_P (base2, base1))
+	used2 = true;
+
       if (int diff = used2 - used1)
 	{
 	  for (i = 0; i < len; ++i)

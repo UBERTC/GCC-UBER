@@ -3182,7 +3182,7 @@ rs6000_init_hard_regno_mode_ok (bool global_init_p)
       else
 	rs6000_constraints[RS6000_CONSTRAINT_ws] = FLOAT_REGS;
 
-      if (TARGET_UPPER_REGS_DF)					/* DImode  */
+      if (TARGET_UPPER_REGS_DI)					/* DImode  */
 	rs6000_constraints[RS6000_CONSTRAINT_wi] = VSX_REGS;
       else
 	rs6000_constraints[RS6000_CONSTRAINT_wi] = FLOAT_REGS;
@@ -4320,9 +4320,9 @@ rs6000_option_override_internal (bool global_init_p)
 
   if (TARGET_UPPER_REGS_DI && !TARGET_VSX)
     {
-      if (rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_DF)
+      if (rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_DI)
 	error ("-mupper-regs-di requires -mvsx");
-      rs6000_isa_flags &= ~OPTION_MASK_UPPER_REGS_DF;
+      rs6000_isa_flags &= ~OPTION_MASK_UPPER_REGS_DI;
     }
 
   if (TARGET_UPPER_REGS_SF && !TARGET_P8_VECTOR)
@@ -4682,6 +4682,14 @@ rs6000_option_override_internal (bool global_init_p)
     {
       if ((rs6000_isa_flags_explicit & OPTION_MASK_FLOAT128_HW) != 0)
 	error ("-mfloat128-hardware requires full ISA 3.0 support");
+
+      rs6000_isa_flags &= ~OPTION_MASK_FLOAT128_HW;
+    }
+
+  if (TARGET_FLOAT128_HW && !TARGET_64BIT)
+    {
+      if ((rs6000_isa_flags_explicit & OPTION_MASK_FLOAT128_HW) != 0)
+	error ("-mfloat128-hardware requires -m64");
 
       rs6000_isa_flags &= ~OPTION_MASK_FLOAT128_HW;
     }
@@ -10420,7 +10428,7 @@ rs6000_gen_le_vsx_permute (rtx source, machine_mode mode)
 {
   /* Use ROTATE instead of VEC_SELECT on IEEE 128-bit floating point, and
      128-bit integers if they are allowed in VSX registers.  */
-  if (FLOAT128_VECTOR_P (mode) || mode == TImode)
+  if (FLOAT128_VECTOR_P (mode) || mode == TImode || mode == V1TImode)
     return gen_rtx_ROTATE (mode, source, GEN_INT (64));
   else
     {
@@ -18526,10 +18534,10 @@ builtin_function_type (machine_mode mode_ret, machine_mode mode_arg0,
       break;
 
       /* unsigned 2 argument functions.  */
-    case ALTIVEC_BUILTIN_VMULEUB_UNS:
-    case ALTIVEC_BUILTIN_VMULEUH_UNS:
-    case ALTIVEC_BUILTIN_VMULOUB_UNS:
-    case ALTIVEC_BUILTIN_VMULOUH_UNS:
+    case ALTIVEC_BUILTIN_VMULEUB:
+    case ALTIVEC_BUILTIN_VMULEUH:
+    case ALTIVEC_BUILTIN_VMULOUB:
+    case ALTIVEC_BUILTIN_VMULOUH:
     case CRYPTO_BUILTIN_VCIPHER:
     case CRYPTO_BUILTIN_VCIPHERLAST:
     case CRYPTO_BUILTIN_VNCIPHER:
@@ -38848,7 +38856,12 @@ rs6000_final_prescan_insn (rtx_insn *insn, rtx *operand ATTRIBUTE_UNUSED,
       if (insn_code_number < 0)
 	return;
 
+      /* get_insn_template can modify recog_data, so save and restore it.  */
+      struct recog_data_d recog_data_save = recog_data;
+      for (int i = 0; i < recog_data.n_operands; i++)
+	recog_data.operand[i] = copy_rtx (recog_data.operand[i]);
       temp = get_insn_template (insn_code_number, insn);
+      recog_data = recog_data_save;
 
       if (get_attr_cell_micro (insn) == CELL_MICRO_ALWAYS)
 	warning_at (location, OPT_mwarn_cell_microcode,

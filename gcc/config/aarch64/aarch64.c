@@ -8748,14 +8748,14 @@ aarch64_validate_mcpu (const char *str, const struct processor **res,
   switch (parse_res)
     {
       case AARCH64_PARSE_MISSING_ARG:
-	error ("missing cpu name in -mcpu=%qs", str);
+	error ("missing cpu name in %<-mcpu=%s%>", str);
 	break;
       case AARCH64_PARSE_INVALID_ARG:
 	error ("unknown value %qs for -mcpu", str);
 	aarch64_print_hint_for_core (str);
 	break;
       case AARCH64_PARSE_INVALID_FEATURE:
-	error ("invalid feature modifier in -mcpu=%qs", str);
+	error ("invalid feature modifier in %<-mcpu=%s%>", str);
 	break;
       default:
 	gcc_unreachable ();
@@ -8782,14 +8782,14 @@ aarch64_validate_march (const char *str, const struct processor **res,
   switch (parse_res)
     {
       case AARCH64_PARSE_MISSING_ARG:
-	error ("missing arch name in -march=%qs", str);
+	error ("missing arch name in %<-march=%s%>", str);
 	break;
       case AARCH64_PARSE_INVALID_ARG:
 	error ("unknown value %qs for -march", str);
 	aarch64_print_hint_for_arch (str);
 	break;
       case AARCH64_PARSE_INVALID_FEATURE:
-	error ("invalid feature modifier in -march=%qs", str);
+	error ("invalid feature modifier in %<-march=%s%>", str);
 	break;
       default:
 	gcc_unreachable ();
@@ -8815,7 +8815,7 @@ aarch64_validate_mtune (const char *str, const struct processor **res)
   switch (parse_res)
     {
       case AARCH64_PARSE_MISSING_ARG:
-	error ("missing cpu name in -mtune=%qs", str);
+	error ("missing cpu name in %<-mtune=%s%>", str);
 	break;
       case AARCH64_PARSE_INVALID_ARG:
 	error ("unknown value %qs for -mtune", str);
@@ -12496,7 +12496,7 @@ aarch64_float_const_representable_p (rtx x)
 
   /* If the low part of the mantissa has bits set we cannot represent
      the value.  */
-  if (w.elt (0) != 0)
+  if (w.ulow () != 0)
     return false;
   /* We have rejected the lower HOST_WIDE_INT, so update our
      understanding of how many bits lie in the mantissa and

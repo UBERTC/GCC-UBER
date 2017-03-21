@@ -2089,13 +2089,13 @@ riscv_emit_float_compare (enum rtx_code *code, rtx *op0, rtx *op1)
 
     case UNLT:
       std::swap (cmp_op0, cmp_op1);
-      /* Fall through.  */
+      gcc_fallthrough ();
 
     UNORDERED_COMPARISON(UNGT, le)
 
     case UNLE:
       std::swap (cmp_op0, cmp_op1);
-      /* Fall through.  */
+      gcc_fallthrough ();
 
     UNORDERED_COMPARISON(UNGE, lt)
 #undef UNORDERED_COMPARISON
@@ -2794,7 +2794,7 @@ riscv_print_operand (FILE *file, rtx op, int letter)
 
     case 'F':
       if (riscv_memmodel_needs_release_fence ((enum memmodel) INTVAL (op)))
-	fputs ("fence rw,w; ", file);
+	fputs ("fence iorw,ow; ", file);
       break;
 
     default:
@@ -3629,16 +3629,6 @@ riscv_class_max_nregs (reg_class_t rclass, enum machine_mode mode)
   return 0;
 }
 
-/* Implement TARGET_PREFERRED_RELOAD_CLASS.  */
-
-static reg_class_t
-riscv_preferred_reload_class (rtx x ATTRIBUTE_UNUSED, reg_class_t rclass)
-{
-  return reg_class_subset_p (FP_REGS, rclass) ? FP_REGS :
-	 reg_class_subset_p (GR_REGS, rclass) ? GR_REGS :
-	 rclass;
-}
-
 /* Implement TARGET_MEMORY_MOVE_COST.  */
 
 static int
@@ -4030,9 +4020,6 @@ riscv_cannot_copy_insn_p (rtx_insn *insn)
 #define TARGET_RTX_COSTS riscv_rtx_costs
 #undef TARGET_ADDRESS_COST
 #define TARGET_ADDRESS_COST riscv_address_cost
-
-#undef  TARGET_PREFERRED_RELOAD_CLASS
-#define TARGET_PREFERRED_RELOAD_CLASS riscv_preferred_reload_class
 
 #undef TARGET_ASM_FILE_START
 #define TARGET_ASM_FILE_START riscv_file_start

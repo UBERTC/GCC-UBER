@@ -2020,7 +2020,7 @@ output_loc_operands (dw_loc_descr_ref loc, int for_eh_or_skip)
 		elt_size /= 2;
 		len *= 2;
 	      }
-	    for (i = 0, p = val2->v.val_vec.array;
+	    for (i = 0, p = (unsigned char *) val2->v.val_vec.array;
 		 i < len;
 		 i++, p += elt_size)
 	      dw2_asm_output_data (elt_size, extract_int (p, elt_size),
@@ -2273,7 +2273,7 @@ output_loc_operands (dw_loc_descr_ref loc, int for_eh_or_skip)
 		  elt_size /= 2;
 		  len *= 2;
 		}
-	      for (i = 0, p = val2->v.val_vec.array;
+	      for (i = 0, p = (unsigned char *) val2->v.val_vec.array;
 		   i < len;
 		   i++, p += elt_size)
 		dw2_asm_output_data (elt_size, extract_int (p, elt_size),
@@ -6633,6 +6633,7 @@ struct checksum_attributes
   dw_attr_node *at_friend;
   dw_attr_node *at_accessibility;
   dw_attr_node *at_address_class;
+  dw_attr_node *at_alignment;
   dw_attr_node *at_allocated;
   dw_attr_node *at_artificial;
   dw_attr_node *at_associated;
@@ -6706,6 +6707,9 @@ collect_checksum_attributes (struct checksum_attributes *attrs, dw_die_ref die)
         case DW_AT_address_class:
           attrs->at_address_class = a;
           break;
+	case DW_AT_alignment:
+	  attrs->at_alignment = a;
+	  break;
         case DW_AT_allocated:
           attrs->at_allocated = a;
           break;
@@ -6912,6 +6916,7 @@ die_checksum_ordered (dw_die_ref die, struct md5_ctx *ctx, int *mark)
   CHECKSUM_ATTR (attrs.at_vtable_elem_location);
   CHECKSUM_ATTR (attrs.at_type);
   CHECKSUM_ATTR (attrs.at_friend);
+  CHECKSUM_ATTR (attrs.at_alignment);
 
   /* Checksum the child DIEs.  */
   c = die->die_child;
@@ -10105,7 +10110,7 @@ output_die (dw_die_ref die)
 		elt_size /= 2;
 		len *= 2;
 	      }
-	    for (i = 0, p = a->dw_attr_val.v.val_vec.array;
+	    for (i = 0, p = (unsigned char *) a->dw_attr_val.v.val_vec.array;
 		 i < len;
 		 i++, p += elt_size)
 	      dw2_asm_output_data (elt_size, extract_int (p, elt_size),

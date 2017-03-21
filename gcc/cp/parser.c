@@ -8228,7 +8228,8 @@ cp_parser_new_expression (cp_parser* parser)
      contain a new-initializer of the form ( assignment-expression )".
      Additionally, consistently with the spirit of DR 1467, we want to accept
      'new auto { 2 }' too.  */
-  else if (type_uses_auto (type)
+  else if ((ret = type_uses_auto (type))
+	   && !CLASS_PLACEHOLDER_TEMPLATE (ret)
 	   && (vec_safe_length (initializer) != 1
 	       || (BRACE_ENCLOSED_INITIALIZER_P ((*initializer)[0])
 		   && CONSTRUCTOR_NELTS ((*initializer)[0]) != 1)))
@@ -35340,8 +35341,8 @@ cp_parser_omp_cancellation_point (cp_parser *parser, cp_token *pragma_tok,
     {
       if (context == pragma_stmt)
 	error_at (pragma_tok->location,
-		  "%<#pragma omp cancellation point%> may only be used in"
-		  " compound statements");
+		  "%<#pragma %s%> may only be used in compound statements",
+		  "omp cancellation point");
       else
 	cp_parser_error (parser, "expected declaration specifiers");
       cp_parser_skip_to_pragma_eol (parser, pragma_tok);
@@ -35634,8 +35635,8 @@ cp_parser_omp_target_enter_data (cp_parser *parser, cp_token *pragma_tok,
   if (context == pragma_stmt)
     {
       error_at (pragma_tok->location,
-		"%<#pragma omp target enter data%> may only be "
-		"used in compound statements");
+		"%<#pragma %s%> may only be used in compound statements",
+		"omp target enter data");
       cp_parser_skip_to_pragma_eol (parser, pragma_tok);
       return NULL_TREE;
     }
@@ -35722,8 +35723,8 @@ cp_parser_omp_target_exit_data (cp_parser *parser, cp_token *pragma_tok,
   if (context == pragma_stmt)
     {
       error_at (pragma_tok->location,
-		"%<#pragma omp target exit data%> may only be "
-		"used in compound statements");
+		"%<#pragma %s%> may only be used in compound statements",
+		"omp target exit data");
       cp_parser_skip_to_pragma_eol (parser, pragma_tok);
       return NULL_TREE;
     }
@@ -35793,8 +35794,8 @@ cp_parser_omp_target_update (cp_parser *parser, cp_token *pragma_tok,
   if (context == pragma_stmt)
     {
       error_at (pragma_tok->location,
-		"%<#pragma omp target update%> may only be "
-		"used in compound statements");
+		"%<#pragma %s%> may only be used in compound statements",
+		"omp target update");
       cp_parser_skip_to_pragma_eol (parser, pragma_tok);
       return false;
     }
@@ -36293,9 +36294,8 @@ cp_parser_oacc_enter_exit_data (cp_parser *parser, cp_token *pragma_tok,
 
   if (strcmp (p, "data") != 0)
     {
-      error_at (loc, enter
-		? "expected %<data%> after %<#pragma acc enter%>"
-		: "expected %<data%> after %<#pragma acc exit%>");
+      error_at (loc, "expected %<data%> after %<#pragma acc %s%>",
+		enter ? "enter" : "exit");
       cp_parser_skip_to_pragma_eol (parser, pragma_tok);
       return NULL_TREE;
     }
@@ -37573,8 +37573,10 @@ cp_finalize_oacc_routine (cp_parser *parser, tree fndecl, bool is_defn)
       if (TREE_USED (fndecl) || (!is_defn && DECL_SAVED_TREE (fndecl)))
 	{
 	  error_at (parser->oacc_routine->loc,
-		    "%<#pragma acc routine%> must be applied before %s",
-		    TREE_USED (fndecl) ? "use" : "definition");
+		    TREE_USED (fndecl)
+		    ? G_("%<#pragma acc routine%> must be applied before use")
+		    : G_("%<#pragma acc routine%> must be applied before "
+			 "definition"));
 	  parser->oacc_routine = NULL;
 	  return;
 	}
@@ -38103,8 +38105,8 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
 	  cp_parser_omp_barrier (parser, pragma_tok);
 	  return false;
 	case pragma_stmt:
-	  error_at (pragma_tok->location, "%<#pragma omp barrier%> may only be "
-		    "used in compound statements");
+	  error_at (pragma_tok->location, "%<#pragma %s%> may only be "
+		    "used in compound statements", "omp barrier");
 	  break;
 	default:
 	  goto bad_stmt;
@@ -38118,8 +38120,8 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
 	  cp_parser_omp_flush (parser, pragma_tok);
 	  return false;
 	case pragma_stmt:
-	  error_at (pragma_tok->location, "%<#pragma omp flush%> may only be "
-		    "used in compound statements");
+	  error_at (pragma_tok->location, "%<#pragma %s%> may only be "
+		    "used in compound statements", "omp flush");
 	  break;
 	default:
 	  goto bad_stmt;
@@ -38134,8 +38136,8 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
 	  return false;
 	case pragma_stmt:
 	  error_at (pragma_tok->location,
-		    "%<#pragma omp taskwait%> may only be "
-		    "used in compound statements");
+		    "%<#pragma %s%> may only be used in compound statements",
+		    "omp taskwait");
 	  break;
 	default:
 	  goto bad_stmt;
@@ -38150,8 +38152,8 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
 	  return false;
 	case pragma_stmt:
 	  error_at (pragma_tok->location,
-		    "%<#pragma omp taskyield%> may only be "
-		    "used in compound statements");
+		    "%<#pragma %s%> may only be used in compound statements",
+		    "omp taskyield");
 	  break;
 	default:
 	  goto bad_stmt;
@@ -38166,8 +38168,8 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
 	  return false;
 	case pragma_stmt:
 	  error_at (pragma_tok->location,
-		    "%<#pragma omp cancel%> may only be "
-		    "used in compound statements");
+		    "%<#pragma %s%> may only be used in compound statements",
+		    "omp cancel");
 	  break;
 	default:
 	  goto bad_stmt;
@@ -38193,8 +38195,9 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
     case PRAGMA_OACC_ENTER_DATA:
       if (context == pragma_stmt)
 	{
-	  cp_parser_error (parser, "%<#pragma acc enter data%> may only be "
-			   "used in compound statements");
+	  error_at (pragma_tok->location,
+		    "%<#pragma %s%> may only be used in compound statements",
+		    "acc enter data");
 	  break;
 	}
       else if (context != pragma_compound)
@@ -38205,8 +38208,9 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
     case PRAGMA_OACC_EXIT_DATA:
       if (context == pragma_stmt)
 	{
-	  cp_parser_error (parser, "%<#pragma acc exit data%> may only be "
-			   "used in compound statements");
+	  error_at (pragma_tok->location,
+		    "%<#pragma %s%> may only be used in compound statements",
+		    "acc exit data");
 	  break;
 	}
       else if (context != pragma_compound)
@@ -38227,8 +38231,9 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
     case PRAGMA_OACC_UPDATE:
       if (context == pragma_stmt)
 	{
-	  cp_parser_error (parser, "%<#pragma acc update%> may only be "
-			   "used in compound statements");
+	  error_at (pragma_tok->location,
+		    "%<#pragma %s%> may only be used in compound statements",
+		    "acc update");
 	  break;
 	}
       else if (context != pragma_compound)
@@ -38239,8 +38244,9 @@ cp_parser_pragma (cp_parser *parser, enum pragma_context context, bool *if_p)
     case PRAGMA_OACC_WAIT:
       if (context == pragma_stmt)
 	{
-	  cp_parser_error (parser, "%<#pragma acc wait%> may only be "
-			   "used in compound statements");
+	  error_at (pragma_tok->location,
+		    "%<#pragma %s%> may only be used in compound statements",
+		    "acc wait");
 	  break;
 	}
       else if (context != pragma_compound)

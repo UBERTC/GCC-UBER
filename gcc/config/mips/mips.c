@@ -8098,6 +8098,9 @@ mips_block_move_loop (rtx dest, rtx src, HOST_WIDE_INT length,
   /* Mop up any left-over bytes.  */
   if (leftover)
     mips_block_move_straight (dest, src, leftover);
+  else
+    /* Temporary fix for PR79150.  */
+    emit_insn (gen_nop ());
 }
 
 /* Expand a movmemsi instruction, which copies LENGTH bytes from
@@ -21630,7 +21633,7 @@ mips_expand_vi_broadcast (machine_mode vmode, rtx target, rtx elt)
 /* Return a const_int vector of VAL with mode MODE.  */
 
 rtx
-mips_gen_const_int_vector (machine_mode mode, int val)
+mips_gen_const_int_vector (machine_mode mode, HOST_WIDE_INT val)
 {
   int nunits = GET_MODE_NUNITS (mode);
   rtvec v = rtvec_alloc (nunits);

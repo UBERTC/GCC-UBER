@@ -1246,7 +1246,7 @@ print_filtered_help (unsigned int include_flags,
 		    }
 		  else
 		    sprintf (new_help + strlen (new_help),
-			     "%#x", * (int *) flag_var);
+			     "%d", * (int *) flag_var);
 		}
 	      else
 		strcat (new_help, option_enabled (i, opts)
@@ -1640,7 +1640,7 @@ parse_sanitizer_options (const char *p, location_t loc, int scode,
 	  if (hint)
 	    error_at (loc,
 		      "unrecognized argument to -f%ssanitize%s= option: %q.*s;"
-		      " did you mean %qs",
+		      " did you mean %qs?",
 		      value ? "" : "no-",
 		      code == OPT_fsanitize_ ? "" : "-recover",
 		      (int) len, p, hint);

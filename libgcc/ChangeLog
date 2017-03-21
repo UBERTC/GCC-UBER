@@ -1,3 +1,32 @@
+2017-03-10  John Marino  <gnugcc@marino.st>
+
+	* config/aarch64/freebsd-unwind.h: New file.
+	* config.host: Add aarch64-*-freebsd unwinder.
+
+2017-03-10  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* config/rs6000/crtrestvr.s: Use .machine altivec.
+	* config/rs6000/crtsavevr.s: Ditto.
+
+2017-03-10  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* configure.ac (test for libgcc_cv_powerpc_float128): Temporarily
+	modify CFLAGS.  Add -mabi=altivec -mvsx -mfloat128.
+	(test for libgcc_cv_powerpc_float128_hw): Add -mpower9-vector and
+	-mfloat128-hardware to the CFLAGS.  Fix syntax error in the C snippet.
+	* configure: Regenerate.
+	* config.in: Regenerate.
+
+2017-03-02  Jonathan Yong <10walls@gmail.com>
+
+	* config/i386/gthr-win32.h: Define NOGDI before
+	windows.h include to prevent w32api CC_NONE macro
+	clash with libgfortran.
+
+2017-03-02  Jonathan Yong <10walls@gmail.com>
+
+	* unwind-seh.c: Suppress warnings for RtlUnwindEx calls.
+
 2017-02-16  Andrew Pinski  <apinski@cavium.com>
 
 	* config/aarch64/value-unwind.h: New file.

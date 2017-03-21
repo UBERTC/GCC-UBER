@@ -4107,7 +4107,7 @@ extract_range_basic (value_range *vr, gimple *stmt)
     }
   /* Handle extraction of the two results (result of arithmetics and
      a flag whether arithmetics overflowed) from {ADD,SUB,MUL}_OVERFLOW
-     internal function.  */
+     internal function.  Similarly from ATOMIC_COMPARE_EXCHANGE.  */
   else if (is_gimple_assign (stmt)
 	   && (gimple_assign_rhs_code (stmt) == REALPART_EXPR
 	       || gimple_assign_rhs_code (stmt) == IMAGPART_EXPR)
@@ -4131,6 +4131,16 @@ extract_range_basic (value_range *vr, gimple *stmt)
 		  break;
 		case IFN_MUL_OVERFLOW:
 		  subcode = MULT_EXPR;
+		  break;
+		case IFN_ATOMIC_COMPARE_EXCHANGE:
+		  if (code == IMAGPART_EXPR)
+		    {
+		      /* This is the boolean return value whether compare and
+			 exchange changed anything or not.  */
+		      set_value_range (vr, VR_RANGE, build_int_cst (type, 0),
+				       build_int_cst (type, 1), NULL);
+		      return;
+		    }
 		  break;
 		default:
 		  break;
@@ -7283,6 +7293,7 @@ stmt_interesting_for_vrp (gimple *stmt)
 	  case IFN_ADD_OVERFLOW:
 	  case IFN_SUB_OVERFLOW:
 	  case IFN_MUL_OVERFLOW:
+	  case IFN_ATOMIC_COMPARE_EXCHANGE:
 	    /* These internal calls return _Complex integer type,
 	       but are interesting to VRP nevertheless.  */
 	    if (lhs && TREE_CODE (lhs) == SSA_NAME)
@@ -8308,6 +8319,7 @@ vrp_visit_stmt (gimple *stmt, edge *taken_edge_p, tree *output_p)
       case IFN_ADD_OVERFLOW:
       case IFN_SUB_OVERFLOW:
       case IFN_MUL_OVERFLOW:
+      case IFN_ATOMIC_COMPARE_EXCHANGE:
 	/* These internal calls return _Complex integer type,
 	   which VRP does not track, but the immediate uses
 	   thereof might be interesting.  */
@@ -10734,8 +10746,32 @@ vrp_fold_stmt (gimple_stmt_iterator *si)
   return simplify_stmt_using_ranges (si);
 }
 
-/* Unwindable const/copy equivalences.  */
-const_and_copies *equiv_stack;
+/* Return the LHS of any ASSERT_EXPR where OP appears as the first
+   argument to the ASSERT_EXPR and in which the ASSERT_EXPR dominates
+   BB.  If no such ASSERT_EXPR is found, return OP.  */
+
+static tree
+lhs_of_dominating_assert (tree op, basic_block bb, gimple *stmt)
+{
+  imm_use_iterator imm_iter;
+  gimple *use_stmt;
+  use_operand_p use_p;
+
+  if (TREE_CODE (op) == SSA_NAME)
+    {
+      FOR_EACH_IMM_USE_FAST (use_p, imm_iter, op)
+	{
+	  use_stmt = USE_STMT (use_p);
+	  if (use_stmt != stmt
+	      && gimple_assign_single_p (use_stmt)
+	      && TREE_CODE (gimple_assign_rhs1 (use_stmt)) == ASSERT_EXPR
+	      && TREE_OPERAND (gimple_assign_rhs1 (use_stmt), 0) == op
+	      && dominated_by_p (CDI_DOMINATORS, bb, gimple_bb (use_stmt)))
+	    return gimple_assign_lhs (use_stmt);
+	}
+    }
+  return op;
+}
 
 /* A trivial wrapper so that we can present the generic jump threading
    code with a simple API for simplifying statements.  STMT is the
@@ -10744,13 +10780,25 @@ const_and_copies *equiv_stack;
 
 static tree
 simplify_stmt_for_jump_threading (gimple *stmt, gimple *within_stmt,
-    class avail_exprs_stack *avail_exprs_stack ATTRIBUTE_UNUSED)
+    class avail_exprs_stack *avail_exprs_stack ATTRIBUTE_UNUSED,
+    basic_block bb)
 {
+  /* First see if the conditional is in the hash table.  */
+  tree cached_lhs = avail_exprs_stack->lookup_avail_expr (stmt, false, true);
+  if (cached_lhs && is_gimple_min_invariant (cached_lhs))
+    return cached_lhs;
+
   if (gcond *cond_stmt = dyn_cast <gcond *> (stmt))
-    return vrp_evaluate_conditional (gimple_cond_code (cond_stmt),
-				     gimple_cond_lhs (cond_stmt),
-				     gimple_cond_rhs (cond_stmt),
-				     within_stmt);
+    {
+      tree op0 = gimple_cond_lhs (cond_stmt);
+      op0 = lhs_of_dominating_assert (op0, bb, stmt);
+
+      tree op1 = gimple_cond_rhs (cond_stmt);
+      op1 = lhs_of_dominating_assert (op1, bb, stmt);
+
+      return vrp_evaluate_conditional (gimple_cond_code (cond_stmt),
+				       op0, op1, within_stmt);
+    }
 
   /* We simplify a switch statement by trying to determine which case label
      will be taken.  If we are successful then we return the corresponding
@@ -10760,6 +10808,8 @@ simplify_stmt_for_jump_threading (gimple *stmt, gimple *within_stmt,
       tree op = gimple_switch_index (switch_stmt);
       if (TREE_CODE (op) != SSA_NAME)
 	return NULL_TREE;
+
+      op = lhs_of_dominating_assert (op, bb, stmt);
 
       value_range *vr = get_value_range (op);
       if ((vr->type != VR_RANGE && vr->type != VR_ANTI_RANGE)
@@ -10831,6 +10881,83 @@ simplify_stmt_for_jump_threading (gimple *stmt, gimple *within_stmt,
   return NULL_TREE;
 }
 
+class vrp_dom_walker : public dom_walker
+{
+public:
+  vrp_dom_walker (cdi_direction direction,
+		  class const_and_copies *const_and_copies,
+		  class avail_exprs_stack *avail_exprs_stack)
+    : dom_walker (direction, true),
+      m_const_and_copies (const_and_copies),
+      m_avail_exprs_stack (avail_exprs_stack),
+      m_dummy_cond (NULL) {}
+
+  virtual edge before_dom_children (basic_block);
+  virtual void after_dom_children (basic_block);
+
+private:
+  class const_and_copies *m_const_and_copies;
+  class avail_exprs_stack *m_avail_exprs_stack;
+
+  gcond *m_dummy_cond;
+};
+
+/* Called before processing dominator children of BB.  We want to look
+   at ASSERT_EXPRs and record information from them in the appropriate
+   tables.
+
+   We could look at other statements here.  It's not seen as likely
+   to significantly increase the jump threads we discover.  */
+
+edge
+vrp_dom_walker::before_dom_children (basic_block bb)
+{
+  gimple_stmt_iterator gsi;
+
+  for (gsi = gsi_start_nondebug_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
+    {
+      gimple *stmt = gsi_stmt (gsi);
+      if (gimple_assign_single_p (stmt)
+         && TREE_CODE (gimple_assign_rhs1 (stmt)) == ASSERT_EXPR)
+	{
+	  tree rhs1 = gimple_assign_rhs1 (stmt);
+	  tree cond = TREE_OPERAND (rhs1, 1);
+	  tree inverted = invert_truthvalue (cond);
+	  vec<cond_equivalence> p;
+	  p.create (3);
+	  record_conditions (&p, cond, inverted);
+	  for (unsigned int i = 0; i < p.length (); i++)
+	    m_avail_exprs_stack->record_cond (&p[i]);
+
+	  tree lhs = gimple_assign_lhs (stmt);
+	  m_const_and_copies->record_const_or_copy (lhs,
+						    TREE_OPERAND (rhs1, 0));
+	  p.release ();
+	  continue;
+	}
+      break;
+    }
+  return NULL;
+}
+
+/* Called after processing dominator children of BB.  This is where we
+   actually call into the threader.  */
+void
+vrp_dom_walker::after_dom_children (basic_block bb)
+{
+  if (!m_dummy_cond)
+    m_dummy_cond = gimple_build_cond (NE_EXPR,
+				      integer_zero_node, integer_zero_node,
+				      NULL, NULL);
+
+  thread_outgoing_edges (bb, m_dummy_cond, m_const_and_copies,
+			 m_avail_exprs_stack,
+			 simplify_stmt_for_jump_threading);
+
+  m_avail_exprs_stack->pop_to_marker ();
+  m_const_and_copies->pop_to_marker ();
+}
+
 /* Blocks which have more than one predecessor and more than
    one successor present jump threading opportunities, i.e.,
    when the block is reached from a specific predecessor, we
@@ -10854,8 +10981,6 @@ simplify_stmt_for_jump_threading (gimple *stmt, gimple *within_stmt,
 static void
 identify_jump_threads (void)
 {
-  basic_block bb;
-  gcond *dummy;
   int i;
   edge e;
 
@@ -10878,69 +11003,15 @@ identify_jump_threads (void)
 
   /* Allocate our unwinder stack to unwind any temporary equivalences
      that might be recorded.  */
-  equiv_stack = new const_and_copies ();
+  const_and_copies *equiv_stack = new const_and_copies ();
 
-  /* To avoid lots of silly node creation, we create a single
-     conditional and just modify it in-place when attempting to
-     thread jumps.  */
-  dummy = gimple_build_cond (EQ_EXPR,
-			     integer_zero_node, integer_zero_node,
-			     NULL, NULL);
+  hash_table<expr_elt_hasher> *avail_exprs
+    = new hash_table<expr_elt_hasher> (1024);
+  avail_exprs_stack *avail_exprs_stack
+    = new class avail_exprs_stack (avail_exprs);
 
-  /* Walk through all the blocks finding those which present a
-     potential jump threading opportunity.  We could set this up
-     as a dominator walker and record data during the walk, but
-     I doubt it's worth the effort for the classes of jump
-     threading opportunities we are trying to identify at this
-     point in compilation.  */
-  FOR_EACH_BB_FN (bb, cfun)
-    {
-      gimple *last;
-
-      /* If the generic jump threading code does not find this block
-	 interesting, then there is nothing to do.  */
-      if (! potentially_threadable_block (bb))
-	continue;
-
-      last = last_stmt (bb);
-
-      /* We're basically looking for a switch or any kind of conditional with
-	 integral or pointer type arguments.  Note the type of the second
-	 argument will be the same as the first argument, so no need to
-	 check it explicitly. 
-
-	 We also handle the case where there are no statements in the
-	 block.  This come up with forwarder blocks that are not
-	 optimized away because they lead to a loop header.  But we do
-	 want to thread through them as we can sometimes thread to the
-	 loop exit which is obviously profitable.  */
-      if (!last
-	  || gimple_code (last) == GIMPLE_SWITCH
-	  || (gimple_code (last) == GIMPLE_COND
-      	      && TREE_CODE (gimple_cond_lhs (last)) == SSA_NAME
-	      && (INTEGRAL_TYPE_P (TREE_TYPE (gimple_cond_lhs (last)))
-		  || POINTER_TYPE_P (TREE_TYPE (gimple_cond_lhs (last))))
-	      && (TREE_CODE (gimple_cond_rhs (last)) == SSA_NAME
-		  || is_gimple_min_invariant (gimple_cond_rhs (last)))))
-	{
-	  edge_iterator ei;
-
-	  /* We've got a block with multiple predecessors and multiple
-	     successors which also ends in a suitable conditional or
-	     switch statement.  For each predecessor, see if we can thread
-	     it to a specific successor.  */
-	  FOR_EACH_EDGE (e, ei, bb->preds)
-	    {
-	      /* Do not thread across edges marked to ignoreor abnormal
-		 edges in the CFG.  */
-	      if (e->flags & (EDGE_IGNORE | EDGE_COMPLEX))
-		continue;
-
-	      thread_across_edge (dummy, e, true, equiv_stack, NULL,
-				  simplify_stmt_for_jump_threading);
-	    }
-	}
-    }
+  vrp_dom_walker walker (CDI_DOMINATORS, equiv_stack, avail_exprs_stack);
+  walker.walk (cfun->cfg->x_entry_block_ptr);
 
   /* Clear EDGE_IGNORE.  */
   FOR_EACH_VEC_ELT (to_remove_edges, i, e)
@@ -10949,19 +11020,8 @@ identify_jump_threads (void)
   /* We do not actually update the CFG or SSA graphs at this point as
      ASSERT_EXPRs are still in the IL and cfg cleanup code does not yet
      handle ASSERT_EXPRs gracefully.  */
-}
-
-/* We identified all the jump threading opportunities earlier, but could
-   not transform the CFG at that time.  This routine transforms the
-   CFG and arranges for the dominator tree to be rebuilt if necessary.
-
-   Note the SSA graph update will occur during the normal TODO
-   processing by the pass manager.  */
-static void
-finalize_jump_threads (void)
-{
-  thread_through_all_blocks (false);
   delete equiv_stack;
+  delete avail_exprs_stack;
 }
 
 /* Free VRP lattice.  */
@@ -11027,10 +11087,6 @@ vrp_finalize (bool warn_array_bounds_p)
 
   if (warn_array_bounds && warn_array_bounds_p)
     check_all_array_refs ();
-
-  /* We must identify jump threading opportunities before we release
-     the datastructures built by VRP.  */
-  identify_jump_threads ();
 }
 
 /* evrp_dom_walker visits the basic blocks in the dominance order and set
@@ -11622,6 +11678,11 @@ execute_vrp (bool warn_array_bounds_p)
   vrp_initialize ();
   ssa_propagate (vrp_visit_stmt, vrp_visit_phi_node);
   vrp_finalize (warn_array_bounds_p);
+
+  /* We must identify jump threading opportunities before we release
+     the datastructures built by VRP.  */
+  identify_jump_threads ();
+
   vrp_free_lattice ();
 
   free_numbers_of_iterations_estimates (cfun);
@@ -11638,7 +11699,13 @@ execute_vrp (bool warn_array_bounds_p)
      duplication and CFG manipulation.  */
   update_ssa (TODO_update_ssa);
 
-  finalize_jump_threads ();
+  /* We identified all the jump threading opportunities earlier, but could
+     not transform the CFG at that time.  This routine transforms the
+     CFG and arranges for the dominator tree to be rebuilt if necessary.
+
+     Note the SSA graph update will occur during the normal TODO
+     processing by the pass manager.  */
+  thread_through_all_blocks (false);
 
   /* Remove dead edges from SWITCH_EXPR optimization.  This leaves the
      CFG in a broken state and requires a cfg_cleanup run.  */

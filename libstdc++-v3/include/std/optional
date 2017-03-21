@@ -76,25 +76,24 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
    *  dereferenced.
    *  @ingroup exceptions
    */
-  class bad_optional_access : public logic_error
+  class bad_optional_access : public exception
   {
-    // XXX See LEWG 72, https://issues.isocpp.org/show_bug.cgi?id=72
   public:
-    bad_optional_access() : logic_error("bad optional access") { }
-    // XXX This constructor is non-standard. Should not be inline
-    explicit bad_optional_access(const char* __arg) : logic_error(__arg) { }
+    bad_optional_access() { }
+    virtual const char* what() const noexcept override
+    {return "bad optional access";}
 
     virtual ~bad_optional_access() noexcept = default;
   };
 
   void
-  __throw_bad_optional_access(const char*)
+  __throw_bad_optional_access()
   __attribute__((__noreturn__));
 
   // XXX Does not belong here.
   inline void
-  __throw_bad_optional_access(const char* __s)
-  { _GLIBCXX_THROW_OR_ABORT(bad_optional_access(__s)); }
+  __throw_bad_optional_access()
+  { _GLIBCXX_THROW_OR_ABORT(bad_optional_access()); }
 
   /**
     * @brief Class template that holds the necessary state for @ref optional
@@ -593,20 +592,22 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
         }
 
       template<typename... _Args>
-	enable_if_t<is_constructible<_Tp, _Args&&...>::value>
+	enable_if_t<is_constructible<_Tp, _Args&&...>::value, _Tp&>
 	emplace(_Args&&... __args)
 	{
 	  this->_M_reset();
 	  this->_M_construct(std::forward<_Args>(__args)...);
+	  return this->_M_get();
 	}
 
       template<typename _Up, typename... _Args>
 	enable_if_t<is_constructible<_Tp, initializer_list<_Up>&,
-				     _Args&&...>::value>
+				     _Args&&...>::value, _Tp&>
 	emplace(initializer_list<_Up> __il, _Args&&... __args)
 	{
 	  this->_M_reset();
 	  this->_M_construct(__il, std::forward<_Args>(__args)...);
+	  return this->_M_get();
 	}
 
       // Destructor is implicit, implemented in _Optional_base.
@@ -669,8 +670,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       {
 	return this->_M_is_engaged()
 	  ?  this->_M_get()
-	  : (__throw_bad_optional_access("Attempt to access value of a "
-		                         "disengaged optional object"),
+	  : (__throw_bad_optional_access(),
 	     this->_M_get());
       }
 
@@ -679,8 +679,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       {
 	return this->_M_is_engaged()
 	  ?  this->_M_get()
-	  : (__throw_bad_optional_access("Attempt to access value of a "
-		                         "disengaged optional object"),
+	  : (__throw_bad_optional_access(),
 	     this->_M_get());
       }
 
@@ -689,8 +688,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       {
 	return this->_M_is_engaged()
 	  ?  std::move(this->_M_get())
-	  : (__throw_bad_optional_access("Attempt to access value of a "
-		                         "disengaged optional object"),
+	  : (__throw_bad_optional_access(),
 	     std::move(this->_M_get()));
       }
 
@@ -699,8 +697,7 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
       {
 	return this->_M_is_engaged()
 	  ?  std::move(this->_M_get())
-	  : (__throw_bad_optional_access("Attempt to access value of a "
-		                         "disengaged optional object"),
+	  : (__throw_bad_optional_access(),
 	     std::move(this->_M_get()));
       }
 
@@ -737,52 +734,52 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     enable_if_t<is_convertible<_Tp, bool>::value, bool>;
 
   // Comparisons between optional values.
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator==(const optional<_Tp>& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() == declval<_Tp>())>
+    operator==(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() == declval<_Up>())>
     {
       return static_cast<bool>(__lhs) == static_cast<bool>(__rhs)
 	     && (!__lhs || *__lhs == *__rhs);
     }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator!=(const optional<_Tp>& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() != declval<_Tp>())>
+    operator!=(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() != declval<_Up>())>
     {
       return static_cast<bool>(__lhs) != static_cast<bool>(__rhs)
 	|| (static_cast<bool>(__lhs) && *__lhs != *__rhs);
     }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator<(const optional<_Tp>& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() < declval<_Tp>())>
+    operator<(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() < declval<_Up>())>
     {
       return static_cast<bool>(__rhs) && (!__lhs || *__lhs < *__rhs);
     }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator>(const optional<_Tp>& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() > declval<_Tp>())>
+    operator>(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() > declval<_Up>())>
     {
       return static_cast<bool>(__lhs) && (!__rhs || *__lhs > *__rhs);
     }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator<=(const optional<_Tp>& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() <= declval<_Tp>())>
+    operator<=(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() <= declval<_Up>())>
     {
       return !__lhs || (static_cast<bool>(__rhs) && *__lhs <= *__rhs);
     }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator>=(const optional<_Tp>& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() >= declval<_Tp>())>
+    operator>=(const optional<_Tp>& __lhs, const optional<_Up>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() >= declval<_Up>())>
     {
       return !__rhs || (static_cast<bool>(__lhs) && *__lhs >= *__rhs);
     }
@@ -849,76 +846,76 @@ _GLIBCXX_BEGIN_NAMESPACE_VERSION
     { return !__rhs; }
 
   // Comparisons with value type.
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator==(const optional<_Tp>& __lhs, const _Tp& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() == declval<_Tp>())>
+    operator==(const optional<_Tp>& __lhs, const _Up& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() == declval<_Up>())>
     { return __lhs && *__lhs == __rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator==(const _Tp& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() == declval<_Tp>())>
+    operator==(const _Up& __lhs, const optional<_Tp>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Up>() == declval<_Tp>())>
     { return __rhs && __lhs == *__rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator!=(const optional<_Tp>& __lhs, const _Tp& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() != declval<_Tp>())>
+    operator!=(const optional<_Tp>& __lhs, const _Up& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() != declval<_Up>())>
     { return !__lhs || *__lhs != __rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator!=(const _Tp& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() != declval<_Tp>())>
+    operator!=(const _Up& __lhs, const optional<_Tp>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Up>() != declval<_Tp>())>
     { return !__rhs || __lhs != *__rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator<(const optional<_Tp>& __lhs, const _Tp& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() < declval<_Tp>())>
+    operator<(const optional<_Tp>& __lhs, const _Up& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() < declval<_Up>())>
     { return !__lhs || *__lhs < __rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator<(const _Tp& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() < declval<_Tp>())>
+    operator<(const _Up& __lhs, const optional<_Tp>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Up>() < declval<_Tp>())>
     { return __rhs && __lhs < *__rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator>(const optional<_Tp>& __lhs, const _Tp& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() > declval<_Tp>())>
+    operator>(const optional<_Tp>& __lhs, const _Up& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() > declval<_Up>())>
     { return __lhs && *__lhs > __rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator>(const _Tp& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() > declval<_Tp>())>
+    operator>(const _Up& __lhs, const optional<_Tp>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Up>() > declval<_Tp>())>
     { return !__rhs || __lhs > *__rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator<=(const optional<_Tp>& __lhs, const _Tp& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() <= declval<_Tp>())>
+    operator<=(const optional<_Tp>& __lhs, const _Up& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() <= declval<_Up>())>
     { return !__lhs || *__lhs <= __rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator<=(const _Tp& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() <= declval<_Tp>())>
+    operator<=(const _Up& __lhs, const optional<_Tp>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Up>() <= declval<_Tp>())>
     { return __rhs && __lhs <= *__rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator>=(const optional<_Tp>& __lhs, const _Tp& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() >= declval<_Tp>())>
+    operator>=(const optional<_Tp>& __lhs, const _Up& __rhs)
+    -> __optional_relop_t<decltype(declval<_Tp>() >= declval<_Up>())>
     { return __lhs && *__lhs >= __rhs; }
 
-  template<typename _Tp>
+  template<typename _Tp, typename _Up>
     constexpr auto
-    operator>=(const _Tp& __lhs, const optional<_Tp>& __rhs)
-    -> __optional_relop_t<decltype(declval<_Tp>() >= declval<_Tp>())>
+    operator>=(const _Up& __lhs, const optional<_Tp>& __rhs)
+    -> __optional_relop_t<decltype(declval<_Up>() >= declval<_Tp>())>
     { return !__rhs || __lhs >= *__rhs; }
 
   // Swap and creation functions.

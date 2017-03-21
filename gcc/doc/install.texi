@@ -3211,6 +3211,14 @@ information have to.
 @item
 @uref{#powerpcle-x-eabi,,powerpcle-*-eabi}
 @item
+@uref{#riscv32-x-elf,,riscv32-*-elf}
+@item
+@uref{#riscv32-x-linux,,riscv32-*-linux}
+@item
+@uref{#riscv64-x-elf,,riscv64-*-elf}
+@item
+@uref{#riscv64-x-linux,,riscv64-*-linux}
+@item
 @uref{#s390-x-linux,,s390-*-linux*}
 @item
 @uref{#s390x-x-linux,,s390x-*-linux*}
@@ -3359,10 +3367,7 @@ Use @samp{configure --target=arc-linux-uclibc --with-cpu=arc700 --enable-languag
 @end html
 @anchor{arm-x-eabi}
 @heading arm-*-eabi
-ARM-family processors.  Subtargets that use the ELF object format
-require GNU binutils 2.13 or newer.  Such subtargets include:
-@code{arm-*-netbsdelf}, @code{arm-*-*linux-*}
-and @code{arm-*-rtemseabi}.
+ARM-family processors.
 
 Building the Ada frontend commonly fails (an infinite loop executing
 @code{xsinfo}) if the host compiler is GNAT 4.8.  Host compilers built from the
@@ -3395,8 +3400,6 @@ can also be obtained from:
 @item
 @uref{http://www.amelek.gda.pl/avr/,,http://www.amelek.gda.pl/avr/}
 @end itemize
-
-We @emph{strongly} recommend using binutils 2.13 or newer.
 
 The following error:
 @smallexample
@@ -3471,9 +3474,6 @@ Mainly for monolithic embedded systems.  Includes a multilib for the
 A GNU/Linux port for the CRIS architecture, currently targeting
 @samp{ETRAX 100 LX} by default.
 @end table
-
-For @code{cris-axis-elf} you need binutils 2.11
-or newer.  For @code{cris-axis-linux-gnu} you need binutils 2.12 or newer.
 
 Pre-packaged tools can be obtained from
 @uref{ftp://ftp.axis.com/@/pub/@/axis/@/tools/@/cris/@/compiler-kit/}.  More
@@ -4125,14 +4125,6 @@ the use of break, use the @option{--with-divide=breaks}
 @command{configure} option when configuring GCC@.  The default is to
 use traps on systems that support them.
 
-The assembler from GNU binutils 2.17 and earlier has a bug in the way
-it sorts relocations for REL targets (o32, o64, EABI).  This can cause
-bad code to be generated for simple C++ programs.  Also the linker
-from GNU binutils versions prior to 2.17 has a bug which causes the
-runtime linker stubs in very large programs to
-be incorrectly generated.  GNU Binutils 2.18 and later (and snapshots
-made after Nov. 9, 2006) should be free from both of these problems.
-
 @html
 <hr />
 @end html
@@ -4207,9 +4199,7 @@ Use the @option{--disable-sjlj-exceptions} and
 You can specify a default version for the @option{-mcpu=@var{cpu_type}}
 switch by using the configure option @option{--with-cpu-@var{cpu_type}}.
 
-You will need
-@uref{ftp://ftp.kernel.org/pub/linux/devel/binutils,,binutils 2.15}
-or newer for a working GCC@.
+You will need GNU binutils 2.15 or newer.
 
 @html
 <hr />
@@ -4301,6 +4291,17 @@ This configuration is intended for embedded systems.
 @heading riscv32-*-elf
 The RISC-V RV32 instruction set.
 This configuration is intended for embedded systems.
+This (and all other RISC-V) targets are supported upstream as of the
+binutils 2.28 release.
+
+@html
+<hr />
+@end html
+@anchor{riscv32-x-linux}
+@heading riscv32-*-linux
+The RISC-V RV32 instruction set running GNU/Linux.
+This (and all other RISC-V) targets are supported upstream as of the
+binutils 2.28 release.
 
 @html
 <hr />
@@ -4309,13 +4310,8 @@ This configuration is intended for embedded systems.
 @heading riscv64-*-elf
 The RISC-V RV64 instruction set.
 This configuration is intended for embedded systems.
-
-@html
-<hr />
-@end html
-@anchor{riscv32-x-linux}
-@heading riscv32-*-linux
-The RISC-V RV32 instruction set running GNU/Linux.
+This (and all other RISC-V) targets are supported upstream as of the
+binutils 2.28 release.
 
 @html
 <hr />
@@ -4323,6 +4319,8 @@ The RISC-V RV32 instruction set running GNU/Linux.
 @anchor{riscv64-x-linux}
 @heading riscv64-*-linux
 The RISC-V RV64 instruction set running GNU/Linux.
+This (and all other RISC-V) targets are supported upstream as of the
+binutils 2.28 release.
 
 @html
 <hr />
@@ -4511,11 +4509,6 @@ This bug is fixed in Sun patch 118683-03 or later.
 @end html
 @anchor{sparc-x-linux}
 @heading sparc-*-linux*
-
-GCC versions 3.0 and higher require binutils 2.11.2 and glibc 2.2.4
-or newer on this platform.  All earlier binutils and glibc
-releases mishandled unaligned relocations on @code{sparc-*-*} targets.
-
 
 @html
 <hr />

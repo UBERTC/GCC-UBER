@@ -776,11 +776,11 @@ process_args (int argc, char **argv)
         case 'd':
           flag_display_progress = 1;
           break;
-	case 'v':
-	  print_version ();
 	case 'x':
 	  flag_hash_filenames = 1;
 	  break;
+	case 'v':
+	  print_version ();
 	  /* print_version will exit.  */
 	default:
 	  print_usage (true);
@@ -1669,7 +1669,10 @@ read_count_file (function_t *fns)
       gcov_sync (base, length);
       if ((error = gcov_is_error ()))
 	{
-	  fnotice (stderr, error < 0 ? "%s:overflowed\n" : "%s:corrupted\n",
+	  fnotice (stderr,
+		   error < 0
+		   ? N_("%s:overflowed\n")
+		   : N_("%s:corrupted\n"),
 		   da_file_name);
 	  goto cleanup;
 	}

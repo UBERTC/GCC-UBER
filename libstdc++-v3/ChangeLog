@@ -1,3 +1,334 @@
+2017-03-20  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/bits/stl_deque.h (deque): Access allocator value_type only if
+	concept checks are enabled.
+	* include/bits/stl_stack.h (stack): Likewise.
+	* include/bits/stl_vector.h (vector): Likewise.
+	* include/bits/stl_list.h (list): Likewise and check
+	_SGIAssignableConcept only in C++03.
+	* include/bits/stl_map.h (map): Likewise.
+	* include/bits/stl_set.h (set): Likewise.
+	* include/bits/stl_multimap.h (multimap): Likewise.
+	* include/bits/stl_multiset.h (multiset): Likewise.
+	* include/bits/stl_queue.h (queue, priority_queue): Likewise.
+
+2017-03-18  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/xml/manual/appendix_contributing.xml: Convert link to
+	ansi.org to https.
+	Update link to the C++ standard at ansi.org.
+
+	* doc/xml/faq.xml: Remove information redundant with the above;
+	instead add a reference.
+
+2017-03-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	* src/c++11/codecvt.cc (range): Add non-type template parameter and
+	define oerloaded operators for reading and writing code units.
+	(range<Elem, false>): Define partial specialization for accessing
+	wide characters in potentially unaligned byte ranges.
+	(ucs2_span(const char16_t*, const char16_t*, ...))
+	(ucs4_span(const char16_t*, const char16_t*, ...)): Change parameters
+	to range<const char16_t, false> in order to avoid unaligned reads.
+	(__codecvt_utf16_base<char16_t>::do_out)
+	(__codecvt_utf16_base<char32_t>::do_out)
+	(__codecvt_utf16_base<wchar_t>::do_out): Use range specialization for
+	unaligned data to avoid unaligned writes.
+	(__codecvt_utf16_base<char16_t>::do_in)
+	(__codecvt_utf16_base<char32_t>::do_in)
+	(__codecvt_utf16_base<wchar_t>::do_in): Likewise for writes. Return
+	error if there are unprocessable trailing bytes.
+	(__codecvt_utf16_base<char16_t>::do_length)
+	(__codecvt_utf16_base<char32_t>::do_length)
+	(__codecvt_utf16_base<wchar_t>::do_length): Pass arguments of type
+	range<const char16_t, false> to span functions.
+	* testsuite/22_locale/codecvt/codecvt_utf16/misaligned.cc: New test.
+
+2017-03-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/79980
+	* src/c++11/codecvt.cc (to_integer(codecvt_mode)): Fix target type.
+
+	PR libstdc++/80041
+	* src/c++11/codecvt.cc (__codecvt_utf16_base<wchar_t>::do_out)
+	(__codecvt_utf16_base<wchar_t>::do_in): Convert char arguments to
+	char16_t to work with UTF-16 instead of UTF-8.
+	* testsuite/22_locale/codecvt/codecvt_utf16/80041.cc: New test.
+
+	* src/c++11/codecvt.cc (codecvt<char16_t, char, mbstate_t>)
+	(codecvt<char32_t, char, mbstate_t>, __codecvt_utf8_base<char16_t>)
+	(__codecvt_utf8_base<char32_t>, __codecvt_utf8_base<wchar_t>)
+	(__codecvt_utf16_base<char16_t>, __codecvt_utf16_base<char32_t>)
+	(__codecvt_utf16_base<wchar_t>, __codecvt_utf8_utf16_base<char16_t>)
+	(__codecvt_utf8_utf16_base<char32_t>)
+	(__codecvt_utf8_utf16_base<wchar_t>): Fix do_encoding() and
+	do_max_length() return values.
+	* testsuite/22_locale/codecvt/codecvt_utf16/members.cc: New test.
+	* testsuite/22_locale/codecvt/codecvt_utf8/members.cc: New test.
+	* testsuite/22_locale/codecvt/codecvt_utf8_utf16/members.cc: New test.
+
+	PR libstdc++/79980
+	* include/bits/locale_conv.h (__do_str_codecvt): Set __count on
+	error path.
+	* src/c++11/codecvt.cc (operator&=, operator|=, operator~): Overloads
+	for manipulating codecvt_mode values.
+	(read_utf16_bom): Compare input to BOM constants instead of integral
+	constants that depend on endianness.  Take mode parameter by
+	reference and adjust it, to distinguish between no BOM present and
+	UTF-16BE BOM present.
+	(ucs4_in, ucs2_span, ucs4_span): Adjust calls to read_utf16_bom.
+	(surrogates): New enumeration type.
+	(utf16_in, utf16_out): Add surrogates parameter to choose between
+	UTF-16 and UCS2 behaviour.
+	(utf16_span, ucs2_span): Use std::min not std::max.
+	(ucs2_out): Use std::min not std::max.  Disallow surrogate pairs.
+	(ucs2_in): Likewise. Adjust calls to read_utf16_bom.
+	* testsuite/22_locale/codecvt/codecvt_utf16/79980.cc: New test.
+	* testsuite/22_locale/codecvt/codecvt_utf8/79980.cc: New test.
+
+	PR libstdc++/79511
+	* src/c++11/codecvt.cc (write_utf16_code_point): Don't write 0xffff
+	as a surrogate pair.
+	(__codecvt_utf8_utf16_base<char32_t>::do_in): Use native endianness
+	for internal representation.
+	(__codecvt_utf8_utf16_base<wchar_t>::do_in): Likewise.
+	* testsuite/22_locale/codecvt/codecvt_utf8_utf16/79511.cc: New test.
+
+	PR libstdc++/80064
+	* include/bits/stl_heap.h (__is_heap, push_heap, __adjust_heap)
+	(pop_heap, make_heap, sort_heap, is_heap_until, is_heap): Cope with
+	invalid instantiations using function types for _Compare argument.
+	* testsuite/25_algorithms/make_heap/80064.cc: New test.
+
+	PR libstdc++/67440
+	* python/libstdcxx/v6/printers.py (find_type): Avoid gdb.Type.name
+	for GDB 7.6 compatibility, use gdb.Type.unqualified instead.
+
+2017-03-15  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Implement LWG 2857, {variant,optional,any}::emplace should
+	return the constructed value.
+	* include/std/any (emplace(_Args&&...)): Change the return type and
+	return a reference to the constructed value.
+	(emplace(initializer_list<_Up>, _Args&&...)): Likewise.
+	* include/std/optional (emplace(_Args&&...)): Likewise.
+	(emplace(initializer_list<_Up>, _Args&&...)): Likewise.
+	* include/std/variant (emplace<_Tp>(_Args&&...)): Likewise.
+	(emplace<_Tp>(initializer_list<_Up>, _Args&&...)): Likewise.
+	(emplace<_Np>(_Args&&...)): Likewise.
+	(emplace<_Np>(initializer_list<_Up>, _Args&&...)): Likewise.
+	* testsuite/20_util/any/assign/emplace.cc: Add tests for
+	checking the return value of emplace.
+	* testsuite/20_util/any/misc/any_cast_neg.cc: Adjust.
+	* testsuite/20_util/optional/assignment/6.cc: Add tests for
+	checking the return value of emplace.
+	* testsuite/20_util/variant/run.cc: Likewise.
+
+2017-03-15  Xi Ruoyao  <ryxi@stu.xidian.edu.cn>
+
+	PR libstdc++/62045
+	* include/ext/pb_ds/qdetail/binary_heap_/binary_heap_.hpp
+	(is_heap): Remove.
+	(push_heap): Remove the wrong checking using is_heap.
+	(make_heap): Remove the assertion using is_heap.
+	* include/ext/pb_ds/detail/binary_heap_/insert_fn_imps.hpp
+	(modify): Ditto.
+	(resize_for_insert_if_needed): Add PB_DS_ASSERT_VALID after
+	calling make_heap.
+
+2017-03-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/62045
+	* testsuite/ext/pb_ds/regression/priority_queue_binary_heap-62045.cc:
+	New test.
+	* testsuite/ext/pb_ds/regression/priority_queues.cc: Fix copy&paste
+	error in comment.
+
+2017-03-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	* acinclude.m4 (GLIBCXX_CHECK_S_ISREG_OR_S_IFREG): Fix typo in
+	comment.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* doc/Makefile.in: Regenerate.
+
+2017-03-14  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/79162
+	* include/bits/basic_string.h [_GLIBCXX_USE_CXX11_ABI]
+	(basic_string<C,T,A>::operator=(basic_string_view<C,T>)): Replace
+	with a constrained template.
+	[!_GLIBCXX_USE_CXX11_ABI]
+	(basic_string<C,T,A>::operator=(basic_string_view<C,T>)): Likewise.
+	* testsuite/21_strings/basic_string/cons/char/79162.cc: New test.
+	* testsuite/21_strings/basic_string/cons/wchar_t/79162.cc: New test.
+
+2017-03-13  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR libstdc++/80034
+	* include/bits/list.tcc (merge(list&&)): Use const for the size_t
+	in the catch-block.
+	(merge(list&&, _StrictWeakOrdering)): Likewise.
+	* testsuite/23_containers/list/operations/80034.cc: New.
+
+2017-03-13  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Implement LWG 2806, Base class of bad_optional_access.
+	* include/std/optional (bad_optional_access):
+	Derive from std::exception.
+	(bad_optional_access::bad_optional_access): Adjust.
+	(bad_optional_access::what): New.
+	(__throw_bad_optional_access(const char*)):
+	Remove the parameter and adjust calls.
+	* testsuite/20_util/optional/cons/value_neg.cc: Adjust.
+	* testsuite/20_util/optional/typedefs.cc: Likewise.
+
+2017-03-12  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Implement LWG 2934, optional<const T> doesn't compare with T.
+	* include/std/optional
+	(operator==(const optional<_Tp>&, const optional<_Tp>&)):
+	Turn into operator==(const optional<_Tp>&, const optional<_Up>&).
+	(operator!=(const optional<_Tp>&, const optional<_Tp>&)):
+	Turn into operator!=(const optional<_Tp>&, const optional<_Up>&).
+	(operator<(const optional<_Tp>&, const optional<_Tp>&)):
+	Turn into operator<(const optional<_Tp>&, const optional<_Up>&.
+	(operator>(const optional<_Tp>&, const optional<_Tp>&)):
+	Turn into operator>(const optional<_Tp>&, const optional<_Up>&.
+	(operator<=(const optional<_Tp>&, const optional<_Tp>&)):
+	Turn into operator<=(const optional<_Tp>&, const optional<_Up>&).
+	(operator>=(const optional<_Tp>&, const optional<_Tp>&)):
+	Turn into operator>=(const optional<_Tp>&, const optional<_Up>&).
+	(operator==(const optional<_Tp>&, const _Tp&)):
+	Turn into operator==(const optional<_Tp>&, const _Up&).
+	(operator==(const _Tp&, const optional<_Tp>&)):
+	Turn into operator==(const _Up&, const optional<_Tp>&).
+	(operator!=(const optional<_Tp>&, const _Tp&)):
+	Turn into operator!=(const optional<_Tp>&, const _Up&).
+	(operator!=(const _Tp&, const optional<_Tp>&)):
+	Turn into operator!=(const _Up&, const optional<_Tp>&).
+	(operator<(const optional<_Tp>&, const _Tp&)):
+	Turn into operator<(const optional<_Tp>&, const _Up&).
+	(operator<(const _Tp&, const optional<_Tp>&)):
+	Turn into operator<(const _Up&, const optional<_Tp>&).
+	(operator>(const optional<_Tp>&, const _Tp&)):
+	Turn into operator>(const optional<_Tp>&, const _Up&).
+	(operator>(const _Tp&, const optional<_Tp>&)):
+	Turn into operator>(const _Up&, const optional<_Tp>&).
+	(operator<=(const optional<_Tp>&, const _Tp&)):
+	Turn into operator<=(const optional<_Tp>&, const _Up&).
+	(operator<=(const _Tp&, const optional<_Tp>&)):
+	Turn into operator<=(const _Up&, const optional<_Tp>&).
+	(operator>=(const optional<_Tp>&, const _Tp&)):
+	Turn into operator>=(const optional<_Tp>&, const _Up&).
+	(operator>=(const _Tp&, const optional<_Tp>&)):
+	Turn into operator>=(const _Up&, const optional<_Tp>&).
+	* testsuite/20_util/optional/relops/7.cc: New.
+
+2017-03-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/17_intro/names.cc: Undefine macros that clash with
+	identifiers in AIX system headers.
+
+	* include/bits/invoke.h (__invoke): Use __invoke_result instead of
+	result_of, and __is_nothrow_invocable instead of
+	__is_nothrow_callable.
+	* include/bits/shared_ptr_base.h (__shared_ptr): Use __is_invocable
+	instead of __is_callable.
+	* include/std/functional (invoke): use invoke_result_t instead of
+	result_of_t and is_nothrow_invocable instead of is_nothrow_callable.
+	(_Not_fn): Use __invoke_result instead of result_of.
+	* include/std/type_traits (__result_of_memobj, __result_of_memfun):
+	Remove partial specializations for reference_wrapper types.
+	(__result_of_impl): Use __inv_unwrap to strip reference_wrapper.
+	(__invoke_result): Define replacement for result_of and then use it to
+	define result_of.
+	(__is_callable_impl, __is_callable, __is_nothrow_callable): Replace
+	with __is_invocable_impl, __is_invocable, and __is_nothrow_invocable
+	respectively.
+	(invoke_result, invoke_result_t): Define for C++17.
+	(is_callable, is_nothrow_callable): Replace with is_invocable,
+	is_invocable_r, is_nothrow_invocable, and is_nothrow_invocable_r.
+	(is_callable_v, is_nothrow_callable_v): Replace with is_invocable_v,
+	is_invocable_r_v, is_nothrow_invocable_v, and is_nothrow_invocable_r_v.
+	* include/std/variant (hash<variant<T...>>): Use is_nothrow_invocable_v
+	instead of is_nothrow_callable_v.
+	* testsuite/20_util/function_objects/invoke/59768.cc: Remove unused
+	main function.
+	* testsuite/20_util/function_objects/not_fn/1.cc: Use is_invocable
+	instead of is_callable.
+	* testsuite/20_util/is_callable/*: Rename directory and adjust tests
+	to use new traits.
+	* testsuite/20_util/is_nothrow_callable/*: Likewise.
+	* testsuite/20_util/optional/hash.cc: Use is_invocable_v instead of
+	is_callable.
+	* testsuite/20_util/variant/hash.cc: Likewise.
+
+2017-03-10  George Lander  <george.lander@arm.com>
+
+	* acinclude.m4 (glibcxx_cv_obsolete_isnan): Define
+	_GLIBCXX_INCLUDE_NEXT_C_HEADERS before including math.h.
+	* configure: Regenerate.
+
+2017-03-09  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/functional (_Not_fn): Define macro to simplify
+	repetitive function definitions.
+
+	* doc/xml/manual/status_cxx2017.xml: Document std::byte support.
+	* include/c_global/cstddef (std::byte): Define for C++17.
+	* testsuite/18_support/byte/global_neg.cc: New test.
+	* testsuite/18_support/byte/ops.cc: New test.
+	* testsuite/18_support/byte/requirements.cc: New test.
+
+2017-03-05  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/status_cxx2017.xml: Document P0156R2 status.
+	* doc/html/*: Regenerate.
+	* include/std/mutex (scoped_lock): Implement new C++17 template.
+	* testsuite/30_threads/scoped_lock/cons/1.cc: New test.
+	* testsuite/30_threads/scoped_lock/requirements/
+	explicit_instantiation.cc: New test.
+	* testsuite/30_threads/scoped_lock/requirements/typedefs.cc: New test.
+
+2017-03-02  Gerald Pfeifer  <gerald@pfeifer.com>
+	    François Dumont  <frs.dumont@gmail.com>
+	    Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/debug_mode.xml: Update and simplify note
+	on link- and run-time coexistence.
+
+2017-03-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/17_intro/headers/names.cc: Rename to ...
+	* testsuite/17_intro/names.cc: ... here.
+
+	PR libstdc++/79789
+	* include/bits/hashtable_policy.h (__clp2): Use reserved names for
+	parameters and local variables.
+	* include/bits/ios_base.h (make_error_code, make_error_condition):
+	Likewise.
+	* include/bits/list.tcc (list::sort): Likewise.
+	* include/bits/mask_array.h (mask_array): Likewise.
+	* include/bits/regex.h (regex_token_iterator): Likewise.
+	* include/bits/slice_array.h (slice_array): Likewise.
+	* include/bits/stl_algo.h (__sample): Likewise.
+	* include/std/memory (undeclare_no_pointers): Likewise.
+	* include/std/type_traits (is_callable_v, is_nothrow_callable_v):
+	Likewise.
+	* libsupc++/exception_ptr.h (__dest_thunk): Likewise.
+	* testsuite/17_intro/headers/names.cc: New test.
+
+	PR libstdc++/79798
+	* include/std/functional (bind::_Res_type_impl): Fix incorrect use of
+	result_of that loses top-level cv-qualifiers.
+	* testsuite/20_util/bind/79798.cc: New test.
+
+2017-03-01  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/xml/manual/documentation_hacking.xml: Tweak link to
+	doxygen.org.
+
 2017-02-23  Jonathan Wakely  <jwakely@redhat.com>
 
 	* include/experimental/iterator: Include <iterator>.
@@ -34,7 +365,7 @@
 	Tweak link description.
 
 2017-02-18  Gerald Pfeifer  <gerald@pfeifer.com>
-	
+
 	* doc/xml/manual/profile_mode.xml: Fix link.
 
 2017-02-16  Gerald Pfeifer  <gerald@pfeifer.com>
@@ -101,9 +432,9 @@
 
 	* include/bits/atomic_base.h: Re-indent.
 
-2017-02-10  Gerald Pfeifer  <gerald@pfeifer.com> 
+2017-02-10  Gerald Pfeifer  <gerald@pfeifer.com>
 
-	* doc/xml/manual/profile_mode.xml: Update a paper reference. 
+	* doc/xml/manual/profile_mode.xml: Update a paper reference.
 
 2017-02-08  Gerald Pfeifer  <gerald@pfeifer.com>
 
@@ -123,16 +454,16 @@
 	* doc/html/*: Regenerate.
 
 2017-02-08  Gerald Pfeifer  <gerald@pfeifer.com>
-	
+
 	* doc/xml/manual/profile_mode.xml: Unbreak link to
 	"Optimizing Sorting with Machine Learning Algorithms".
 
 2017-02-08  Gerald Pfeifer  <gerald@pfeifer.com>
-	
+
 	* src/c++11/snprintf_lite.cc (__err): Update bug reporting URL.
 
 2017-02-08  Gerald Pfeifer  <gerald@pfeifer.com>
-	
+
 	* doc/xml/manual/abi.xml: Update link to "Sun Studio 11: C++
 	Migration Guide".
 
@@ -397,7 +728,7 @@
 	* doc/xml/manual/debug.xml: code.google.com uses https now.
 
 2017-01-22  Gerald Pfeifer  <gerald@pfeifer.com>
-	
+
 	* doc/xml/manual/test.xml: Fix link into gccint online manual.
 
 2017-01-21  Ville Voutilainen  <ville.voutilainen@gmail.com>
@@ -618,7 +949,7 @@
 2017-01-17  Joshua Conner  <joshconner@google.com>
 
 	* crossconfig.m4: Add fuchsia OS.
-	* configure: Regenerate. 
+	* configure: Regenerate.
 
 2017-01-17  Jonathan Wakely  <jwakely@redhat.com>
 
@@ -1098,7 +1429,7 @@
 
 	* doc/xml/faq.xml: Update address of C++ ABI link.
 	* doc/xml/manual/abi.xml: Ditto.
-	
+
 2017-01-01  Jakub Jelinek  <jakub@redhat.com>
 
 	Update copyright years.

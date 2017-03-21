@@ -45,6 +45,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "lto-section-names.h"
 #include "gomp-constants.h"
 #include "gimple-pretty-print.h"
+#include "intl.h"
 
 /* Describe the OpenACC looping structure of a function.  The entire
    function is held in a 'NULL' loop.  */
@@ -1117,9 +1118,9 @@ oacc_loop_fixed_partitions (oacc_loop *loop, unsigned outer_mask)
 	  if (noisy)
 	    error_at (loop->loc,
 		      seq_par
-		      ? "%<seq%> overrides other OpenACC loop specifiers"
-		      : "%<auto%> conflicts with other OpenACC loop "
-		      "specifiers");
+		      ? G_("%<seq%> overrides other OpenACC loop specifiers")
+		      : G_("%<auto%> conflicts with other OpenACC loop "
+			   "specifiers"));
 	  maybe_auto = false;
 	  loop->flags &= ~OLF_AUTO;
 	  if (seq_par)
@@ -1149,14 +1150,20 @@ oacc_loop_fixed_partitions (oacc_loop *loop, unsigned outer_mask)
 	  if (outer)
 	    {
 	      error_at (loop->loc,
-			"%s uses same OpenACC parallelism as containing loop",
-			loop->routine ? "routine call" : "inner loop");
+			loop->routine
+			? G_("routine call uses same OpenACC parallelism"
+			     " as containing loop")
+			: G_("inner loop uses same OpenACC parallelism"
+			     " as containing loop"));
 	      inform (outer->loc, "containing loop here");
 	    }
 	  else
 	    error_at (loop->loc,
-		      "%s uses OpenACC parallelism disallowed by containing "
-		      "routine", loop->routine ? "routine call" : "loop");
+		      loop->routine
+		      ? G_("routine call uses OpenACC parallelism disallowed"
+			   " by containing routine")
+		      : G_("loop uses OpenACC parallelism disallowed"
+			   " by containing routine"));
 
 	  if (loop->routine)
 	    inform (DECL_SOURCE_LOCATION (loop->routine),
@@ -1321,8 +1328,11 @@ oacc_loop_auto_partitions (oacc_loop *loop, unsigned outer_mask,
       loop->mask |= this_mask;
       if (!loop->mask && noisy)
 	warning_at (loop->loc, 0,
-		    "insufficient partitioning available"
-		    " to parallelize%s loop", tiling ? " tile" : "");
+		    tiling
+		    ? G_("insufficient partitioning available"
+			 " to parallelize tile loop")
+		    : G_("insufficient partitioning available"
+			 " to parallelize loop"));
     }
 
   if (assign && dump_file)
@@ -1625,7 +1635,7 @@ const pass_data pass_data_oacc_device_lower =
 {
   GIMPLE_PASS, /* type */
   "oaccdevlow", /* name */
-  OPTGROUP_OPENMP, /* optinfo_flags */
+  OPTGROUP_OMP, /* optinfo_flags */
   TV_NONE, /* tv_id */
   PROP_cfg, /* properties_required */
   0 /* Possibly PROP_gimple_eomp.  */, /* properties_provided */
@@ -1727,7 +1737,7 @@ const pass_data pass_data_omp_device_lower =
 {
   GIMPLE_PASS, /* type */
   "ompdevlow", /* name */
-  OPTGROUP_OPENMP, /* optinfo_flags */
+  OPTGROUP_OMP, /* optinfo_flags */
   TV_NONE, /* tv_id */
   PROP_cfg, /* properties_required */
   PROP_gimple_lomp_dev, /* properties_provided */
@@ -1771,7 +1781,7 @@ const pass_data pass_data_omp_target_link =
 {
   GIMPLE_PASS,			/* type */
   "omptargetlink",		/* name */
-  OPTGROUP_OPENMP,		/* optinfo_flags */
+  OPTGROUP_OMP,			/* optinfo_flags */
   TV_NONE,			/* tv_id */
   PROP_ssa,			/* properties_required */
   0,				/* properties_provided */

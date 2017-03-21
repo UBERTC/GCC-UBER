@@ -5238,13 +5238,15 @@ start_decl_1 (tree decl, bool initialized)
   else if (aggregate_definition_p && !complete_p)
     {
       if (type_uses_auto (type))
-	gcc_unreachable ();
+	gcc_assert (CLASS_PLACEHOLDER_TEMPLATE (type));
       else
-	error ("aggregate %q#D has incomplete type and cannot be defined",
-	       decl);
-      /* Change the type so that assemble_variable will give
-	 DECL an rtl we can live with: (mem (const_int 0)).  */
-      type = TREE_TYPE (decl) = error_mark_node;
+	{
+	  error ("aggregate %q#D has incomplete type and cannot be defined",
+		 decl);
+	  /* Change the type so that assemble_variable will give
+	     DECL an rtl we can live with: (mem (const_int 0)).  */
+	  type = TREE_TYPE (decl) = error_mark_node;
+	}
     }
 
   /* Create a new scope to hold this declaration if necessary.
@@ -6816,14 +6818,17 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
 	      return;
 	    }
 
-	  gcc_unreachable ();
+	  gcc_assert (CLASS_PLACEHOLDER_TEMPLATE (auto_node));
 	}
       d_init = init;
-      if (TREE_CODE (d_init) == TREE_LIST
-	  && !CLASS_PLACEHOLDER_TEMPLATE (auto_node))
-	d_init = build_x_compound_expr_from_list (d_init, ELK_INIT,
-						  tf_warning_or_error);
-      d_init = resolve_nondeduced_context (d_init, tf_warning_or_error);
+      if (d_init)
+	{
+	  if (TREE_CODE (d_init) == TREE_LIST
+	      && !CLASS_PLACEHOLDER_TEMPLATE (auto_node))
+	    d_init = build_x_compound_expr_from_list (d_init, ELK_INIT,
+						      tf_warning_or_error);
+	  d_init = resolve_nondeduced_context (d_init, tf_warning_or_error);
+	}
       enum auto_deduction_context adc = adc_variable_type;
       if (VAR_P (decl) && DECL_DECOMPOSITION_P (decl))
 	adc = adc_decomp_type;
@@ -7224,8 +7229,9 @@ find_decomp_class_base (location_t loc, tree type, tree ret)
 	error_at (loc, "cannot decompose non-public member %qD of %qT",
 		  field, type);
 	inform (DECL_SOURCE_LOCATION (field),
-		TREE_PRIVATE (field) ? "declared private here"
-		: "declared protected here");
+		TREE_PRIVATE (field)
+		? G_("declared private here")
+		: G_("declared protected here"));
 	return error_mark_node;
       }
     else
@@ -7433,9 +7439,6 @@ cp_finish_decomp (tree decl, tree first, unsigned int count)
 
   if (TREE_CODE (type) == REFERENCE_TYPE)
     {
-      /* If e is a constant reference, use the referent directly.  */
-      if (DECL_INITIAL (decl))
-	dexp = DECL_INITIAL (decl);
       dexp = convert_from_reference (dexp);
       type = TREE_TYPE (type);
     }
@@ -8052,6 +8055,7 @@ expand_static_init (tree decl, tree init)
 	       } catch {
 		 if (!flag) __cxa_guard_abort (&guard);
 	       }
+	     }
 	   }
 
 	 Note that the `flag' variable is only set to 1 *after* the
@@ -8770,13 +8774,13 @@ grokfndecl (tree ctype,
 	  if (long_long_unsigned_p)
 	    {
 	      if (cpp_interpret_int_suffix (parse_in, suffix, strlen (suffix)))
-		warning (0, "integer suffix %<%s%>"
+		warning (0, "integer suffix %qs"
 			    " shadowed by implementation", suffix);
 	    }
 	  else if (long_double_p)
 	    {
 	      if (cpp_interpret_float_suffix (parse_in, suffix, strlen (suffix)))
-		warning (0, "floating point suffix %<%s%>"
+		warning (0, "floating point suffix %qs"
 			    " shadowed by implementation", suffix);
 	    }
 	}
@@ -11000,8 +11004,8 @@ grokdeclarator (const cp_declarator *declarator,
 		  {
 		    maybe_warn_cpp0x (CPP0X_REF_QUALIFIER);
 		    error ((flags == DTOR_FLAG)
-			   ? "destructors may not be ref-qualified"
-			   : "constructors may not be ref-qualified");
+			   ? G_("destructors may not be ref-qualified")
+			   : G_("constructors may not be ref-qualified"));
 		    rqual = REF_QUAL_NONE;
 		  }
 
@@ -11361,9 +11365,9 @@ grokdeclarator (const cp_declarator *declarator,
       else if (TREE_CODE (type) == FUNCTION_TYPE)
 	{
 	  if (current_class_type
-	      && (!friendp || funcdef_flag))
+	      && (!friendp || funcdef_flag || initialized))
 	    {
-	      error (funcdef_flag
+	      error (funcdef_flag || initialized
 		     ? G_("cannot define member function %<%T::%s%> "
 			  "within %<%T%>")
 		     : G_("cannot declare member function %<%T::%s%> "
@@ -11395,7 +11399,8 @@ grokdeclarator (const cp_declarator *declarator,
 
   if (declarator
       && declarator->kind == cdk_id
-      && declarator->std_attributes)
+      && declarator->std_attributes
+      && attrlist != NULL)
     /* [dcl.meaning]/1: The optional attribute-specifier-seq following
        a declarator-id appertains to the entity that is declared.  */
     *attrlist = chainon (*attrlist, declarator->std_attributes);
@@ -11831,7 +11836,7 @@ grokdeclarator (const cp_declarator *declarator,
 		     headers because glibc uses them.  */;
 		else if (name)
 		  pedwarn (input_location, OPT_Wpedantic,
-			   "ISO C++ forbids flexible array member %<%s%>", name);
+			   "ISO C++ forbids flexible array member %qs", name);
 		else
 		  pedwarn (input_location, OPT_Wpedantic,
 			   "ISO C++ forbids flexible array members");
@@ -12321,19 +12326,12 @@ grokdeclarator (const cp_declarator *declarator,
 
     if (VAR_P (decl) && !initialized)
       if (tree auto_node = type_uses_auto (type))
-	{
-	  location_t loc = declspecs->locations[ds_type_spec];
-	  if (tree tmpl = CLASS_PLACEHOLDER_TEMPLATE (auto_node))
-	    {
-	      error_at (loc, "invalid use of template-name %qE without an "
-			"argument list", tmpl);
-	      inform (loc, "class template argument deduction "
-		      "requires an initializer");
-	    }
-	  else
+	if (!CLASS_PLACEHOLDER_TEMPLATE (auto_node))
+	  {
+	    location_t loc = declspecs->locations[ds_type_spec];
 	    error_at (loc, "declaration of %q#D has no initializer", decl);
-	  TREE_TYPE (decl) = error_mark_node;
-	}
+	    TREE_TYPE (decl) = error_mark_node;
+	  }
 
     if (storage_class == sc_extern && initialized && !funcdef_flag)
       {
@@ -13811,6 +13809,9 @@ xref_basetypes (tree ref, tree base_list)
 
   if (max_vbases)
     {
+      /* An aggregate can't have virtual base classes.  */
+      CLASSTYPE_NON_AGGREGATE (ref) = true;
+
       vec_alloc (CLASSTYPE_VBASECLASSES (ref), max_vbases);
 
       if (max_dvbases)
@@ -14078,6 +14079,12 @@ start_enum (tree name, tree enumtype, tree underlying_type,
 	{
 	  enumtype = cxx_make_type (ENUMERAL_TYPE);
 	  enumtype = pushtag (name, enumtype, /*tag_scope=*/ts_current);
+
+	  /* std::byte aliases anything.  */
+	  if (enumtype != error_mark_node
+	      && TYPE_CONTEXT (enumtype) == std_node
+	      && !strcmp ("byte", TYPE_NAME_STRING (enumtype)))
+	    TYPE_ALIAS_SET (enumtype) = 0;
 	}
       else
 	  enumtype = xref_tag (enum_type, name, /*tag_scope=*/ts_current,
@@ -14323,9 +14330,12 @@ finish_enum_value_list (tree enumtype)
       input_location = saved_location;
 
       /* Do not clobber shared ints.  */
-      value = copy_node (value);
+      if (value != error_mark_node)
+	{
+	  value = copy_node (value);
 
-      TREE_TYPE (value) = enumtype;
+	  TREE_TYPE (value) = enumtype;
+	}
       DECL_INITIAL (decl) = value;
     }
 
@@ -14483,9 +14493,10 @@ build_enumerator (tree name, tree value, tree enumtype, tree attributes,
 			    }
 			  if (type && cxx_dialect < cxx11
 			      && itk > itk_unsigned_long)
-			    pedwarn (input_location, OPT_Wlong_long, pos ? "\
-incremented enumerator value is too large for %<unsigned long%>" :  "\
-incremented enumerator value is too large for %<long%>");
+			    pedwarn (input_location, OPT_Wlong_long,
+				     pos ? G_("\
+incremented enumerator value is too large for %<unsigned long%>") : G_("\
+incremented enumerator value is too large for %<long%>"));
 			}
 		      if (type == NULL_TREE)
 			overflowed = true;

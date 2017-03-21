@@ -1867,11 +1867,15 @@ process_alt_operands (int only_alternative)
   /* LOSERS counts the operands that don't fit this alternative and
      would require loading.  */
   int losers;
+  int addr_losers;
   /* REJECT is a count of how undesirable this alternative says it is
      if any reloading is required.  If the alternative matches exactly
      then REJECT is ignored, but otherwise it gets this much counted
      against it in addition to the reloading needed.  */
   int reject;
+  /* This is defined by '!' or '?' alternative constraint and added to
+     reject.  But in some cases it can be ignored.  */
+  int static_reject;
   int op_reject;
   /* The number of elements in the following array.  */
   int early_clobbered_regs_num;
@@ -1948,7 +1952,8 @@ process_alt_operands (int only_alternative)
       if (!TEST_BIT (preferred, nalt))
 	continue;
 
-      overall = losers = reject = reload_nregs = reload_sum = 0;
+      overall = losers = addr_losers = 0;
+      static_reject = reject = reload_nregs = reload_sum = 0;
       for (nop = 0; nop < n_operands; nop++)
 	{
 	  int inc = (curr_static_id
@@ -1956,8 +1961,9 @@ process_alt_operands (int only_alternative)
 	  if (lra_dump_file != NULL && inc != 0)
 	    fprintf (lra_dump_file,
 		     "            Staticly defined alt reject+=%d\n", inc);
-	  reject += inc;
+	  static_reject += inc;
 	}
+      reject += static_reject;
       early_clobbered_regs_num = 0;
 
       for (nop = 0; nop < n_operands; nop++)
@@ -2704,6 +2710,18 @@ process_alt_operands (int only_alternative)
 		       nop);
 		  reject++;
 		}
+
+	      if (MEM_P (op) && offmemok)
+		addr_losers++;
+	      else if (curr_static_id->operand[nop].type == OP_INOUT)
+		{
+		  if (lra_dump_file != NULL)
+		    fprintf
+		      (lra_dump_file,
+		       "            %d Input/Output reload: reject+=%d\n",
+		       nop, LRA_LOSER_COST_FACTOR);
+		  reject += LRA_LOSER_COST_FACTOR;
+		}
 	    }
 
 	  if (early_clobber_p && ! scratch_p)
@@ -2718,7 +2736,8 @@ process_alt_operands (int only_alternative)
 	     Should we update the cost (may be approximately) here
 	     because of early clobber register reloads or it is a rare
 	     or non-important thing to be worth to do it.  */
-	  overall = losers * LRA_LOSER_COST_FACTOR + reject;
+	  overall = (losers * LRA_LOSER_COST_FACTOR + reject
+		     - (addr_losers == losers ? static_reject : 0));
 	  if ((best_losers == 0 || losers != 0) && best_overall < overall)
             {
               if (lra_dump_file != NULL)
@@ -2742,6 +2761,7 @@ process_alt_operands (int only_alternative)
 	  if (early_clobber_p && operand_reg[nop] != NULL_RTX)
 	    early_clobbered_nops[early_clobbered_regs_num++] = nop;
 	}
+
       if (curr_insn_set != NULL_RTX && n_operands == 2
 	  /* Prevent processing non-move insns.  */
 	  && (GET_CODE (SET_SRC (curr_insn_set)) == SUBREG
@@ -2753,9 +2773,17 @@ process_alt_operands (int only_alternative)
 		   || reg_in_class_p (no_subreg_reg_operand[1], curr_alt[0])))
 	      || (! curr_alt_win[0] && curr_alt_win[1]
 		  && REG_P (no_subreg_reg_operand[1])
+		  /* Check that we reload memory not the memory
+		     address.  */
+		  && ! (curr_alt_offmemok[0]
+			&& MEM_P (no_subreg_reg_operand[0]))
 		  && reg_in_class_p (no_subreg_reg_operand[1], curr_alt[0]))
 	      || (curr_alt_win[0] && ! curr_alt_win[1]
 		  && REG_P (no_subreg_reg_operand[0])
+		  /* Check that we reload memory not the memory
+		     address.  */
+		  && ! (curr_alt_offmemok[1]
+			&& MEM_P (no_subreg_reg_operand[1]))
 		  && reg_in_class_p (no_subreg_reg_operand[0], curr_alt[1])
 		  && (! CONST_POOL_OK_P (curr_operand_mode[1],
 					 no_subreg_reg_operand[1])
@@ -2768,8 +2796,11 @@ process_alt_operands (int only_alternative)
 		  && GET_CODE (no_subreg_reg_operand[1]) != PLUS)))
 	{
 	  /* We have a move insn and a new reload insn will be similar
-	     to the current insn.  We should avoid such situation as it
-	     results in LRA cycling.  */
+	     to the current insn.  We should avoid such situation as
+	     it results in LRA cycling.  */
+	  if (lra_dump_file != NULL)
+	    fprintf (lra_dump_file,
+		     "            Cycle danger: overall += LRA_MAX_REJECT\n");
 	  overall += LRA_MAX_REJECT;
 	}
       ok_p = true;

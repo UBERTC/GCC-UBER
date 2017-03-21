@@ -83,6 +83,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "selftest.h"
 #include "selftest-rtl.h"
 #include "print-rtl.h"
+#include "intl.h"
 
 /* This file should be included last.  */
 #include "target-def.h"
@@ -5265,11 +5266,11 @@ ix86_option_override_internal (bool main_args_p,
       else if (!strcmp (opts->x_ix86_tune_string, "x86-64"))
         warning (OPT_Wdeprecated,
 		 main_args_p
-		 ? "%<-mtune=x86-64%> is deprecated; use %<-mtune=k8%> "
-		   "or %<-mtune=generic%> instead as appropriate"
-		 : "%<target(\"tune=x86-64\")%> is deprecated; use "
-		   "%<target(\"tune=k8\")%> or %<target(\"tune=generic\")%> "
-		   "instead as appropriate");
+		 ? G_("%<-mtune=x86-64%> is deprecated; use %<-mtune=k8%> "
+		      "or %<-mtune=generic%> instead as appropriate")
+		 : G_("%<target(\"tune=x86-64\")%> is deprecated; use "
+		      "%<target(\"tune=k8\")%> or %<target(\"tune=generic\")%>"
+		      " instead as appropriate"));
     }
   else
     {
@@ -5418,17 +5419,19 @@ ix86_option_override_internal (bool main_args_p,
 	if (!strcmp (opts->x_ix86_arch_string, "generic"))
 	  {
 	    error (main_args_p
-		  ? "%<generic%> CPU can be used only for %<-mtune=%> switch"
-		  : "%<generic%> CPU can be used only for "
-		    "%<target(\"tune=\")%> attribute");
+		   ? G_("%<generic%> CPU can be used only for %<-mtune=%> "
+			"switch")
+		   : G_("%<generic%> CPU can be used only for "
+			"%<target(\"tune=\")%> attribute"));
 	    return false;
 	  }
 	else if (!strcmp (opts->x_ix86_arch_string, "intel"))
 	  {
 	    error (main_args_p
-		  ? "%<intel%> CPU can be used only for %<-mtune=%> switch"
-		  : "%<intel%> CPU can be used only for "
-		    "%<target(\"tune=\")%> attribute");
+		   ? G_("%<intel%> CPU can be used only for %<-mtune=%> "
+			"switch")
+		   : G_("%<intel%> CPU can be used only for "
+			"%<target(\"tune=\")%> attribute"));
 	    return false;
 	  }
 
@@ -5656,8 +5659,8 @@ ix86_option_override_internal (bool main_args_p,
   if (i == pta_size)
     {
       error (main_args_p
-	     ? "bad value (%qs) for %<-march=%> switch"
-	     : "bad value (%qs) for %<target(\"arch=\")%> attribute",
+	     ? G_("bad value (%qs) for %<-march=%> switch")
+	     : G_("bad value (%qs) for %<target(\"arch=\")%> attribute"),
 	     opts->x_ix86_arch_string);
 
       auto_vec <const char *> candidates;
@@ -5674,16 +5677,16 @@ ix86_option_override_internal (bool main_args_p,
       if (hint)
 	inform (input_location,
 		main_args_p
-		? "valid arguments to %<-march=%> switch are: "
-		  "%s; did you mean %qs?"
-		: "valid arguments to %<target(\"arch=\")%> attribute are: "
-		  "%s; did you mean %qs?", s, hint);
+		? G_("valid arguments to %<-march=%> switch are: "
+		     "%s; did you mean %qs?")
+		: G_("valid arguments to %<target(\"arch=\")%> attribute are: "
+		     "%s; did you mean %qs?"), s, hint);
       else
 	inform (input_location,
 		main_args_p
-		? "valid arguments to %<-march=%> switch are: %s"
-		: "valid arguments to %<target(\"arch=\")%> attribute are: %s",
-		s);
+		? G_("valid arguments to %<-march=%> switch are: %s")
+		: G_("valid arguments to %<target(\"arch=\")%> attribute "
+		     "are: %s"), s);
       XDELETEVEC (s);
     }
 
@@ -5729,8 +5732,8 @@ ix86_option_override_internal (bool main_args_p,
   if (ix86_tune_specified && i == pta_size)
     {
       error (main_args_p
-	     ? "bad value (%qs) for %<-mtune=%> switch"
-	     : "bad value (%qs) for %<target(\"tune=\")%> attribute",
+	     ? G_("bad value (%qs) for %<-mtune=%> switch")
+	     : G_("bad value (%qs) for %<target(\"tune=\")%> attribute"),
 	     opts->x_ix86_tune_string);
 
       auto_vec <const char *> candidates;
@@ -5745,16 +5748,16 @@ ix86_option_override_internal (bool main_args_p,
       if (hint)
 	inform (input_location,
 		main_args_p
-		? "valid arguments to %<-mtune=%> switch are: "
-		  "%s; did you mean %qs?"
-		: "valid arguments to %<target(\"tune=\")%> attribute are: "
-		  "%s; did you mean %qs?", s, hint);
+		? G_("valid arguments to %<-mtune=%> switch are: "
+		     "%s; did you mean %qs?")
+		: G_("valid arguments to %<target(\"tune=\")%> attribute are: "
+		     "%s; did you mean %qs?"), s, hint);
       else
 	inform (input_location,
 		main_args_p
-		? "valid arguments to %<-mtune=%> switch are: %s"
-		: "valid arguments to %<target(\"tune=\")%> attribute are: %s",
-		s);
+		? G_("valid arguments to %<-mtune=%> switch are: %s")
+		: G_("valid arguments to %<target(\"tune=\")%> attribute "
+		     "are: %s"), s);
       XDELETEVEC (s);
     }
 
@@ -5856,8 +5859,9 @@ ix86_option_override_internal (bool main_args_p,
 
       if (TARGET_RTD_P (opts->x_target_flags))
 	warning (0,
-		 main_args_p ? "%<-mrtd%> is ignored in 64bit mode"
-			     : "%<target(\"rtd\")%> is ignored in 64bit mode");
+		 main_args_p
+		 ? G_("%<-mrtd%> is ignored in 64bit mode")
+		 : G_("%<target(\"rtd\")%> is ignored in 64bit mode"));
     }
   else
     {
@@ -5979,8 +5983,8 @@ ix86_option_override_internal (bool main_args_p,
   if (TARGET_SSEREGPARM_P (opts->x_target_flags)
       && ! TARGET_SSE_P (opts->x_ix86_isa_flags))
     error (main_args_p
-	   ? "%<-msseregparm%> used without SSE enabled"
-	   : "%<target(\"sseregparm\")%> used without SSE enabled");
+	   ? G_("%<-msseregparm%> used without SSE enabled")
+	   : G_("%<target(\"sseregparm\")%> used without SSE enabled"));
 
   if (opts_set->x_ix86_fpmath)
     {
@@ -6047,10 +6051,11 @@ ix86_option_override_internal (bool main_args_p,
       if (opts_set->x_target_flags & MASK_ACCUMULATE_OUTGOING_ARGS)
 	warning (0,
 		 main_args_p
-		 ? "stack probing requires %<-maccumulate-outgoing-args%> "
-		   "for correctness"
-		 : "stack probing requires "
-		   "%<target(\"accumulate-outgoing-args\")%> for correctness");
+		 ? G_("stack probing requires %<-maccumulate-outgoing-args%> "
+		      "for correctness")
+		 : G_("stack probing requires "
+		      "%<target(\"accumulate-outgoing-args\")%> for "
+		      "correctness"));
       opts->x_target_flags |= MASK_ACCUMULATE_OUTGOING_ARGS;
     }
 
@@ -6062,9 +6067,10 @@ ix86_option_override_internal (bool main_args_p,
       if (opts_set->x_target_flags & MASK_ACCUMULATE_OUTGOING_ARGS)
 	warning (0,
 		 main_args_p
-		 ? "fixed ebp register requires %<-maccumulate-outgoing-args%>"
-		 : "fixed ebp register requires "
-		   "%<target(\"accumulate-outgoing-args\")%>");
+		 ? G_("fixed ebp register requires "
+		      "%<-maccumulate-outgoing-args%>")
+		 : G_("fixed ebp register requires "
+		      "%<target(\"accumulate-outgoing-args\")%>"));
       opts->x_target_flags |= MASK_ACCUMULATE_OUTGOING_ARGS;
     }
 
@@ -7969,8 +7975,14 @@ ix86_function_regparm (const_tree type, const_tree decl)
 		local_regparm = 2;
 
 	      /* Save a register for the split stack.  */
-	      if (local_regparm == 3 && flag_split_stack)
-		local_regparm = 2;
+	      if (flag_split_stack)
+		{
+		  if (local_regparm == 3)
+		    local_regparm = 2;
+		  else if (local_regparm == 2
+			   && DECL_STATIC_CHAIN (target->decl))
+		    local_regparm = 1;
+		}
 
 	      /* Each fixed register usage increases register pressure,
 		 so less registers should be used for argument passing.
@@ -13048,10 +13060,10 @@ ix86_minimum_incoming_stack_boundary (bool sibcall)
 {
   unsigned int incoming_stack_boundary;
 
-  /* Stack of interrupt handler is always aligned to MIN_STACK_BOUNDARY.
-   */
+  /* Stack of interrupt handler is aligned to 128 bits in 64bit
+     mode.  */
   if (cfun->machine->func_type != TYPE_NORMAL)
-    incoming_stack_boundary = MIN_STACK_BOUNDARY;
+    incoming_stack_boundary = TARGET_64BIT ? 128 : MIN_STACK_BOUNDARY;
   /* Prefer the one specified at command line. */
   else if (ix86_user_incoming_stack_boundary)
     incoming_stack_boundary = ix86_user_incoming_stack_boundary;
@@ -17640,13 +17652,16 @@ print_reg (rtx x, int code, FILE *file)
 
   switch (msize)
     {
-    case 8:
-    case 4:
-      if (LEGACY_INT_REGNO_P (regno))
-	putc (msize == 8 && TARGET_64BIT ? 'r' : 'e', file);
-      /* FALLTHRU */
     case 16:
     case 12:
+    case 8:
+      if (GENERAL_REGNO_P (regno) && msize > GET_MODE_SIZE (word_mode))
+	warning (0, "unsupported size for integer register");
+      /* FALLTHRU */
+    case 4:
+      if (LEGACY_INT_REGNO_P (regno))
+	putc (msize > 4 && TARGET_64BIT ? 'r' : 'e', file);
+      /* FALLTHRU */
     case 2:
     normal:
       reg = hi_reg_name[regno];
@@ -17654,6 +17669,8 @@ print_reg (rtx x, int code, FILE *file)
     case 1:
       if (regno >= ARRAY_SIZE (qi_reg_name))
 	goto normal;
+      if (!ANY_QI_REGNO_P (regno))
+	error ("unsupported size for integer register");
       reg = qi_reg_name[regno];
       break;
     case 0:
@@ -18228,7 +18245,8 @@ ix86_print_operand (FILE *file, rtx x, int code)
 	      fputs ("{rz-sae}", file);
 	      break;
 	    default:
-	      gcc_unreachable ();
+	      output_operand_lossage ("operand is not a specific integer, "
+				      "invalid operand code 'R'");
 	    }
 
 	  if (ASSEMBLER_DIALECT == ASM_ATT)
@@ -30455,7 +30473,7 @@ ix86_local_alignment (tree exp, machine_mode mode,
 		  != TYPE_MAIN_VARIANT (va_list_type_node)))
 	  && TYPE_SIZE (type)
 	  && TREE_CODE (TYPE_SIZE (type)) == INTEGER_CST
-	  && wi::geu_p (TYPE_SIZE (type), 16)
+	  && wi::geu_p (TYPE_SIZE (type), 128)
 	  && align < 128)
 	return 128;
     }
@@ -34237,6 +34255,8 @@ ix86_expand_multi_arg_builtin (enum insn_code icode, tree exp, rtx target,
       || GET_MODE (target) != tmode
       || !insn_data[icode].operand[0].predicate (target, tmode))
     target = gen_reg_rtx (tmode);
+  else if (memory_operand (target, tmode))
+    num_memory++;
 
   gcc_assert (nargs <= 4);
 
@@ -35522,6 +35542,8 @@ ix86_expand_args_builtin (const struct builtin_description *d,
 	  || GET_MODE (target) != tmode
 	  || !insn_p->operand[0].predicate (target, tmode))
 	target = gen_reg_rtx (tmode);
+      else if (memory_operand (target, tmode))
+	num_memory++;
       real_target = target;
     }
   else
@@ -42555,10 +42577,16 @@ ix86_vector_duplicate_value (machine_mode mode, rtx target, rtx val)
   if (recog_memoized (insn) < 0)
     {
       rtx_insn *seq;
+      machine_mode innermode = GET_MODE_INNER (mode);
+      rtx reg;
+
       /* If that fails, force VAL into a register.  */
 
       start_sequence ();
-      XEXP (dup, 0) = force_reg (GET_MODE_INNER (mode), val);
+      reg = force_reg (innermode, val);
+      if (GET_MODE (reg) != innermode)
+	reg = gen_lowpart (innermode, reg);
+      XEXP (dup, 0) = reg;
       seq = get_insns ();
       end_sequence ();
       if (seq)

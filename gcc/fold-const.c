@@ -1249,7 +1249,7 @@ const_binop (enum tree_code code, tree arg1, tree arg2)
 	      return NULL_TREE;
 	    wide_int w2 = arg2;
 	    f2.data.high = w2.elt (1);
-	    f2.data.low = w2.elt (0);
+	    f2.data.low = w2.ulow ();
 	    f2.mode = SImode;
 	  }
 	  break;
@@ -3862,6 +3862,31 @@ make_bit_field_ref (location_t loc, tree inner, tree orig_inner, tree type,
 {
   tree result, bftype;
 
+  /* Attempt not to lose the access path if possible.  */
+  if (TREE_CODE (orig_inner) == COMPONENT_REF)
+    {
+      tree ninner = TREE_OPERAND (orig_inner, 0);
+      machine_mode nmode;
+      HOST_WIDE_INT nbitsize, nbitpos;
+      tree noffset;
+      int nunsignedp, nreversep, nvolatilep = 0;
+      tree base = get_inner_reference (ninner, &nbitsize, &nbitpos,
+				       &noffset, &nmode, &nunsignedp,
+				       &nreversep, &nvolatilep);
+      if (base == inner
+	  && noffset == NULL_TREE
+	  && nbitsize >= bitsize
+	  && nbitpos <= bitpos
+	  && bitpos + bitsize <= nbitpos + nbitsize
+	  && !reversep
+	  && !nreversep
+	  && !nvolatilep)
+	{
+	  inner = ninner;
+	  bitpos -= nbitpos;
+	}
+    }
+
   alias_set_type iset = get_alias_set (orig_inner);
   if (iset == 0 && get_alias_set (inner) != iset)
     inner = fold_build2 (MEM_REF, TREE_TYPE (inner),
@@ -4133,7 +4158,11 @@ decode_field_reference (location_t loc, tree *exp_, HOST_WIDE_INT *pbitsize,
 			       punsignedp, preversep, pvolatilep);
   if ((inner == exp && and_mask == 0)
       || *pbitsize < 0 || offset != 0
-      || TREE_CODE (inner) == PLACEHOLDER_EXPR)
+      || TREE_CODE (inner) == PLACEHOLDER_EXPR
+      /* Reject out-of-bound accesses (PR79731).  */
+      || (! AGGREGATE_TYPE_P (TREE_TYPE (inner))
+	  && compare_tree_int (TYPE_SIZE (TREE_TYPE (inner)),
+			       *pbitpos + *pbitsize) < 0))
     return 0;
 
   *exp_ = exp;
@@ -14221,7 +14250,7 @@ round_up_loc (location_t loc, tree value, unsigned int divisor)
 
 	  overflow_p = TREE_OVERFLOW (value);
 	  val += divisor - 1;
-	  val &= - (int) divisor;
+	  val &= (int) -divisor;
 	  if (val == 0)
 	    overflow_p = true;
 
