@@ -1,3 +1,45 @@
+2017-03-21  Pat Haugen  <pthaugen@us.ibm.com>
+
+	Backport from mainline:
+	2017-03-17  Pat Haugen  <pthaugen@us.ibm.com>
+
+	* gcc.target/powerpc/pr79951.c: New.
+
+2017-03-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80019
+	* gcc.target/i386/pr80019.c: New test.
+
+2017-03-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2017-03-01  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/79439
+	* gcc.target/powerpc/pr79439.c: New test.
+
+2017-03-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/79514
+	* gcc.target/i386/pr79514.c: New test.
+
+2017-03-01  Pat Haugen  <pthaugen@us.ibm.com>
+
+	Backport from mainline:
+	2017-03-01  Pat Haugen  <pthaugen@us.ibm.com>
+
+	* gcc.target/powerpc/pr79544.c: Add test for vec_vsrad and fix up
+	scan string.
+
+	2017-02-27  Pat Haugen  <pthaugen@us.ibm.com>
+
+	PR target/79544
+	* gcc.target/powerpc/pr79544.c: New.
+
+2017-02-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/sparc/20170228-1.c: New test.
+
 2017-02-24  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gnat.dg/opt63.adb: New test.
