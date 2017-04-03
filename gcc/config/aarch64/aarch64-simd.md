@@ -1629,7 +1629,7 @@
   [(set (match_operand:VMUL 0 "register_operand" "=w")
     (fma:VMUL
       (vec_duplicate:VMUL
-	  (match_operand:<VEL> 1 "register_operand" "w"))
+	  (match_operand:<VEL> 1 "register_operand" "<h_con>"))
       (match_operand:VMUL 2 "register_operand" "w")
       (match_operand:VMUL 3 "register_operand" "0")))]
   "TARGET_SIMD"
@@ -1708,7 +1708,7 @@
       (neg:VMUL
         (match_operand:VMUL 2 "register_operand" "w"))
       (vec_duplicate:VMUL
-	(match_operand:<VEL> 1 "register_operand" "w"))
+	(match_operand:<VEL> 1 "register_operand" "<h_con>"))
       (match_operand:VMUL 3 "register_operand" "0")))]
   "TARGET_SIMD"
   "fmls\t%0.<Vtype>, %2.<Vtype>, %1.<Vetype>[0]"
@@ -3126,7 +3126,7 @@
 	(unspec:VHSDF
 	 [(match_operand:VHSDF 1 "register_operand" "w")
 	  (vec_duplicate:VHSDF
-	    (match_operand:<VEL> 2 "register_operand" "w"))]
+	    (match_operand:<VEL> 2 "register_operand" "<h_con>"))]
 	 UNSPEC_FMULX))]
   "TARGET_SIMD"
   "fmulx\t%0.<Vtype>, %1.<Vtype>, %2.<Vetype>[0]";
