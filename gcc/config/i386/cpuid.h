@@ -63,7 +63,7 @@
 #define bit_MMXEXT	(1 << 22)
 #define bit_LM		(1 << 29)
 #define bit_3DNOWP	(1 << 30)
-#define bit_3DNOW	(1 << 31)
+#define bit_3DNOW	(1u << 31)
 
 /* Extended Features (%eax == 7) */
 /* %ebx */
@@ -86,7 +86,7 @@
 #define bit_AVX512CD	(1 << 28)
 #define bit_SHA		(1 << 29)
 #define bit_AVX512BW	(1 << 30)
-#define bit_AVX512VL	(1 << 31)
+#define bit_AVX512VL	(1u << 31)
 
 /* %ecx */
 #define bit_PREFETCHWT1	  (1 << 0)

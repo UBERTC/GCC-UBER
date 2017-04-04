@@ -1,3 +1,201 @@
+2017-04-03  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-04-03  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/80246
+	* gcc.target/powerpc/dfp-builtin-1.c: Require hard_dfp, not
+	powerpc_vsx_ok.
+	(std, ld): Limit scan-assembler-times check to lp64.
+	(stwu, stw, lwz): Add scan-assembler-times check for ilp32.
+	* gcc.target/powerpc/dfp-builtin-2.c: Require hard_dfp, not
+	powerpc_vsx_ok.
+
+	PR target/80246
+	* gcc.target/powerpc/pr80246.c: Require hard_dfp.
+
+2017-03-30  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-03-30  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/80246
+	* gcc.target/powerpc/dfp-builtin-1.c: Remove unneeded dg-skip-if for
+	Darwin and SPE.
+	(dxex, dxexq): Update return type.
+	(diex, diexq): Update argument type.
+	* gcc.target/powerpc/pr80246.c: New test.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-02-22  Martin Liska  <mliska@suse.cz>
+
+	PR lto/79587
+	* gcc.dg/tree-prof/pr79587.c: New test.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	PR target/79906
+	* g++.dg/ext/mv8.C: Add power* targets.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-21  Martin Liska  <mliska@suse.cz>
+
+	* gcc.target/i386/pr65044.c: Add '.' in order to catch
+	apostrophes.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-20  Martin Liska  <mliska@suse.cz>
+
+	PR middle-end/79753
+	* gcc.target/i386/mpx/pr79753.c: New test.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-20  Martin Liska  <mliska@suse.cz>
+
+	PR target/79769
+	PR target/79770
+	* g++.dg/pr79769.C: New test.
+	* gcc.target/i386/mpx/pr79770.c: New test.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-13  Martin Liska  <mliska@suse.cz>
+
+	PR middle-end/78339
+	* gcc.target/i386/mpx/pr78339.c: New test.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-06-13  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/71458
+	* gcc.target/i386/pr71458.c: New test.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-09  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/79631
+	* gcc.target/i386/mpx/pr79631.c: New test.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-09  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/79761
+	* g++.dg/pr79761.C: New test.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-03  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/79803
+	* gcc.dg/tree-ssa/pr79803.c: New test.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-03  Martin Liska  <mliska@suse.cz>
+
+	PR rtl-optimization/79574
+	* gcc.dg/pr79574-2.c: New test.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-02-17  Martin Liska  <mliska@suse.cz>
+
+	PR rtl-optimization/79574
+	* gcc.dg/pr79574.c: New test.
+
+2017-03-21  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/79548
+	* g++.dg/warn/Wunused-var-26.C: New test.
+
+2017-03-21  Pat Haugen  <pthaugen@us.ibm.com>
+
+	Backport from mainline:
+	2017-03-17  Pat Haugen  <pthaugen@us.ibm.com>
+
+	* gcc.target/powerpc/pr79951.c: New.
+
+2017-03-15  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80019
+	* gcc.target/i386/pr80019.c: New test.
+
+2017-03-10  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2017-03-01  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/79439
+	* gcc.target/powerpc/pr79439.c: New test.
+
+2017-03-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/79514
+	* gcc.target/i386/pr79514.c: New test.
+
+2017-03-01  Pat Haugen  <pthaugen@us.ibm.com>
+
+	Backport from mainline:
+	2017-03-01  Pat Haugen  <pthaugen@us.ibm.com>
+
+	* gcc.target/powerpc/pr79544.c: Add test for vec_vsrad and fix up
+	scan string.
+
+	2017-02-27  Pat Haugen  <pthaugen@us.ibm.com>
+
+	PR target/79544
+	* gcc.target/powerpc/pr79544.c: New.
+
+2017-02-28  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.target/sparc/20170228-1.c: New test.
+
+2017-02-24  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/opt63.adb: New test.
+
+2017-02-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-02-17  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/79261
+	* gcc.target/powerpc/vec-xxpermdi.c: New file.
+
+2017-01-16  Carl Love  <cel@us.ibm.com>
+
+	Backport from mainline commit r245460 on 2017-02-14
+
+	PR 79545
+	* gcc.target/powerpc/vsx-builtin-3.c: Add missing test case for the
+	xvcvsxdsp and xvcvuxdsp instructions.
+
+2017-02-06  Carl Love  <cel@us.ibm.com>
+
+	* gcc.target/powerpc/builtins-3-p8.c:  Add new testfile for missing
+	vec_packs built-in tests.
+
 2017-02-03  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
 
 	Backport from mainline
