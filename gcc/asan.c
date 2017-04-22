@@ -1868,7 +1868,8 @@ instrument_derefs (gimple_stmt_iterator *iter, tree t,
       tree repr = DECL_BIT_FIELD_REPRESENTATIVE (TREE_OPERAND (t, 1));
       instrument_derefs (iter, build3 (COMPONENT_REF, TREE_TYPE (repr),
 				       TREE_OPERAND (t, 0), repr,
-				       NULL_TREE), location, is_store);
+				       TREE_OPERAND (t, 2)),
+			 location, is_store);
       return;
     }
 
@@ -2756,10 +2757,13 @@ asan_store_shadow_bytes (gimple_stmt_iterator *iter, location_t loc,
 
   unsigned char c = (char) is_clobber ? ASAN_STACK_MAGIC_USE_AFTER_SCOPE : 0;
   unsigned HOST_WIDE_INT val = 0;
+  unsigned last_pos = size;
+  if (last_chunk_size && !is_clobber)
+    last_pos = BYTES_BIG_ENDIAN ? 0 : size - 1;
   for (unsigned i = 0; i < size; ++i)
     {
       unsigned char shadow_c = c;
-      if (i == size - 1 && last_chunk_size && !is_clobber)
+      if (i == last_pos)
 	shadow_c = last_chunk_size;
       val |= (unsigned HOST_WIDE_INT) shadow_c << (BITS_PER_UNIT * i);
     }

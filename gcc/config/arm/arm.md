@@ -11832,12 +11832,15 @@
 
 ;; Patterns in ldmstm.md don't cover more than 4 registers. This pattern covers
 ;; large lists without explicit writeback generated for APCS_FRAME epilogue.
+;; The operands are validated through the load_multiple_operation
+;; match_parallel predicate rather than through constraints so enable it only
+;; after reload.
 (define_insn "*load_multiple"
   [(match_parallel 0 "load_multiple_operation"
     [(set (match_operand:SI 2 "s_register_operand" "=rk")
           (mem:SI (match_operand:SI 1 "s_register_operand" "rk")))
         ])]
-  "TARGET_32BIT"
+  "TARGET_32BIT && reload_completed"
   "*
   {
     arm_output_multireg_pop (operands, /*return_pc=*/false,
@@ -12006,7 +12009,7 @@
 
 (define_insn "<mrc>"
   [(set (match_operand:SI 0 "s_register_operand" "=r")
-	(unspec_volatile [(match_operand:SI 1 "immediate_operand" "n")
+	(unspec_volatile:SI [(match_operand:SI 1 "immediate_operand" "n")
 			  (match_operand:SI 2 "immediate_operand" "n")
 			  (match_operand:SI 3 "immediate_operand" "n")
 			  (match_operand:SI 4 "immediate_operand" "n")
@@ -12041,7 +12044,7 @@
 
 (define_insn "<mrrc>"
   [(set (match_operand:DI 0 "s_register_operand" "=r")
-	(unspec_volatile [(match_operand:SI 1 "immediate_operand" "n")
+	(unspec_volatile:DI [(match_operand:SI 1 "immediate_operand" "n")
 			  (match_operand:SI 2 "immediate_operand" "n")
 			  (match_operand:SI 3 "immediate_operand" "n")] MRRCI))]
   "arm_coproc_builtin_available (VUNSPEC_<MRRC>)"

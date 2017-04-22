@@ -1424,8 +1424,23 @@ cgraph_edge::redirect_call_stmt_to_callee (void)
       if (skip_bounds)
 	new_stmt = chkp_copy_call_skip_bounds (new_stmt);
 
+      tree old_fntype = gimple_call_fntype (e->call_stmt);
       gimple_call_set_fndecl (new_stmt, e->callee->decl);
-      gimple_call_set_fntype (new_stmt, gimple_call_fntype (e->call_stmt));
+      cgraph_node *origin = e->callee;
+      while (origin->clone_of)
+	origin = origin->clone_of;
+
+      if ((origin->former_clone_of
+	   && old_fntype == TREE_TYPE (origin->former_clone_of))
+	  || old_fntype == TREE_TYPE (origin->decl))
+	gimple_call_set_fntype (new_stmt, TREE_TYPE (e->callee->decl));
+      else
+	{
+	  bitmap skip = e->callee->clone.combined_args_to_skip;
+	  tree t = cgraph_build_function_type_skip_args (old_fntype, skip,
+							 false);
+	  gimple_call_set_fntype (new_stmt, t);
+	}
 
       if (gimple_vdef (new_stmt)
 	  && TREE_CODE (gimple_vdef (new_stmt)) == SSA_NAME)
@@ -2108,6 +2123,8 @@ cgraph_node::dump (FILE *f)
     fprintf (f, " only_called_at_exit");
   if (tm_clone)
     fprintf (f, " tm_clone");
+  if (calls_comdat_local)
+    fprintf (f, " calls_comdat_local");
   if (icf_merged)
     fprintf (f, " icf_merged");
   if (merged_comdat)

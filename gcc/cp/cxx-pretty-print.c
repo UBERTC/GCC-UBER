@@ -1112,6 +1112,7 @@ cxx_pretty_printer::expression (tree t)
     case SIZEOF_EXPR:
     case ALIGNOF_EXPR:
     case NOEXCEPT_EXPR:
+    case UNARY_PLUS_EXPR:
       unary_expression (t);
       break;
 
@@ -2584,6 +2585,9 @@ pp_cxx_trait_expression (cxx_pretty_printer *pp, tree t)
       break;
     case CPTK_IS_ABSTRACT:
       pp_cxx_ws_string (pp, "__is_abstract");
+      break;
+    case CPTK_IS_AGGREGATE:
+      pp_cxx_ws_string (pp, "__is_aggregate");
       break;
     case CPTK_IS_BASE_OF:
       pp_cxx_ws_string (pp, "__is_base_of");

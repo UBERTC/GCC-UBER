@@ -3122,6 +3122,9 @@ FP or VSX register to perform ISA 2.07 float ops or NO_REGS.
 @item wz
 Floating point register if the LFIWZX instruction is enabled or NO_REGS.
 
+@item wA
+Address base register if 64-bit instructions are enabled or NO_REGS.
+
 @item wB
 Signed 5-bit constant integer that can be loaded into an altivec register.
 
@@ -3728,7 +3731,7 @@ Any kind of immediate operand, unless it matches the S0 constraint.
 Memory location with B base register, but not using a long offset.
 
 @item W
-A memory operand with an address that can't be used in an unaligned access.
+A memory operand with an address that cannot be used in an unaligned access.
 
 @end ifset
 @item Z

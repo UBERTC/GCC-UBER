@@ -6765,7 +6765,7 @@ convert_like_real (conversion *convs, tree expr, tree fn, int argnum,
       if (complain & tf_error)
 	{
 	  /* Call build_user_type_conversion again for the error.  */
-	  build_user_type_conversion (totype, convs->u.expr, LOOKUP_NORMAL,
+	  build_user_type_conversion (totype, convs->u.expr, LOOKUP_IMPLICIT,
 				      complain);
 	  if (fn)
 	    inform (DECL_SOURCE_LOCATION (fn),
@@ -8048,9 +8048,8 @@ build_over_call (struct z_candidate *cand, int flags, tsubst_flags_t complain)
 	{
 	  arg = cp_build_indirect_ref (arg, RO_NULL, complain);
 	  val = build2 (MODIFY_EXPR, TREE_TYPE (to), to, arg);
-	  if (cxx_dialect >= cxx14)
-	    /* Handle NSDMI that refer to the object being initialized.  */
-	    replace_placeholders (arg, to);
+	  /* Handle NSDMI that refer to the object being initialized.  */
+	  replace_placeholders (arg, to);
 	}
       else
 	{

@@ -676,7 +676,7 @@ gfc_match_use (void)
 	      || strcmp (new_use->local_name, use_list->module_name) == 0)
 	    {
 	      gfc_error ("The name %qs at %C has already been used as "
-			 "an external module name.", use_list->module_name);
+			 "an external module name", use_list->module_name);
 	      goto cleanup;
 	    }
 	  break;
@@ -740,6 +740,13 @@ gfc_match_submodule (void)
 
   if (!gfc_notify_std (GFC_STD_F2008, "SUBMODULE declaration at %C"))
     return MATCH_ERROR;
+
+  if (gfc_current_state () != COMP_NONE)
+    {
+      gfc_error ("SUBMODULE declaration at %C cannot appear within "
+		 "another scoping unit");
+      return MATCH_ERROR;
+    }
 
   gfc_new_block = NULL;
   gcc_assert (module_list == NULL);
@@ -4285,31 +4292,6 @@ mio_symbol (gfc_symbol *sym)
 
 /************************* Top level subroutines *************************/
 
-/* Given a root symtree node and a symbol, try to find a symtree that
-   references the symbol that is not a unique name.  */
-
-static gfc_symtree *
-find_symtree_for_symbol (gfc_symtree *st, gfc_symbol *sym)
-{
-  gfc_symtree *s = NULL;
-
-  if (st == NULL)
-    return s;
-
-  s = find_symtree_for_symbol (st->right, sym);
-  if (s != NULL)
-    return s;
-  s = find_symtree_for_symbol (st->left, sym);
-  if (s != NULL)
-    return s;
-
-  if (st->n.sym == sym && !check_unique_name (st->name))
-    return st;
-
-  return s;
-}
-
-
 /* A recursive function to look for a specific symbol by name and by
    module.  Whilst several symtrees might point to one symbol, its
    is sufficient for the purposes here than one exist.  Note that
@@ -5111,16 +5093,6 @@ read_module (void)
 	{
 	  info->u.rsym.referenced = 1;
 	  continue;
-	}
-
-      /* If possible recycle the symtree that references the symbol.
-	 If a symtree is not found and the module does not import one,
-	 a unique-name symtree is found by read_cleanup.  */
-      st = find_symtree_for_symbol (gfc_current_ns->sym_root, sym);
-      if (st != NULL)
-	{
-	  info->u.rsym.symtree = st;
-	  info->u.rsym.referenced = 1;
 	}
     }
 

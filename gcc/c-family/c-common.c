@@ -403,6 +403,7 @@ const struct c_common_resword c_common_reswords[] =
   { "__inline",		RID_INLINE,	0 },
   { "__inline__",	RID_INLINE,	0 },
   { "__is_abstract",	RID_IS_ABSTRACT, D_CXXONLY },
+  { "__is_aggregate",	RID_IS_AGGREGATE, D_CXXONLY },
   { "__is_base_of",	RID_IS_BASE_OF, D_CXXONLY },
   { "__is_class",	RID_IS_CLASS,	D_CXXONLY },
   { "__is_empty",	RID_IS_EMPTY,	D_CXXONLY },
@@ -2178,10 +2179,6 @@ c_common_type_for_mode (machine_mode mode, int unsignedp)
       return (unsignedp ? int_n_trees[i].unsigned_type
 	      : int_n_trees[i].signed_type);
 
-  if (mode == TYPE_MODE (widest_integer_literal_type_node))
-    return unsignedp ? widest_unsigned_literal_type_node
-		     : widest_integer_literal_type_node;
-
   if (mode == QImode)
     return unsignedp ? unsigned_intQI_type_node : intQI_type_node;
 
@@ -2411,8 +2408,6 @@ c_common_signed_or_unsigned_type (int unsignedp, tree type)
       return (unsignedp ? int_n_trees[i].unsigned_type
 	      : int_n_trees[i].signed_type);
 
-  if (type1 == widest_integer_literal_type_node || type1 == widest_unsigned_literal_type_node)
-    return unsignedp ? widest_unsigned_literal_type_node : widest_integer_literal_type_node;
 #if HOST_BITS_PER_WIDE_INT >= 64
   if (type1 == intTI_type_node || type1 == unsigned_intTI_type_node)
     return unsignedp ? unsigned_intTI_type_node : intTI_type_node;
@@ -2532,10 +2527,6 @@ c_common_signed_or_unsigned_type (int unsignedp, tree type)
 	&& TYPE_PRECISION (type) == int_n_data[i].bitsize)
       return (unsignedp ? int_n_trees[i].unsigned_type
 	      : int_n_trees[i].signed_type);
-
-  if (TYPE_OK (widest_integer_literal_type_node))
-    return (unsignedp ? widest_unsigned_literal_type_node
-	    : widest_integer_literal_type_node);
 
 #if HOST_BITS_PER_WIDE_INT >= 64
   if (TYPE_OK (intTI_type_node))
@@ -4163,17 +4154,16 @@ c_common_nodes_and_builtins (void)
 #endif
 
   /* Create the widest literal types.  */
-  widest_integer_literal_type_node
-    = make_signed_type (HOST_BITS_PER_WIDE_INT * 2);
-  lang_hooks.decls.pushdecl (build_decl (UNKNOWN_LOCATION,
-					 TYPE_DECL, NULL_TREE,
-					 widest_integer_literal_type_node));
-
-  widest_unsigned_literal_type_node
-    = make_unsigned_type (HOST_BITS_PER_WIDE_INT * 2);
-  lang_hooks.decls.pushdecl (build_decl (UNKNOWN_LOCATION,
-					 TYPE_DECL, NULL_TREE,
-					 widest_unsigned_literal_type_node));
+  if (targetm.scalar_mode_supported_p (TImode))
+    {
+      widest_integer_literal_type_node = intTI_type_node;
+      widest_unsigned_literal_type_node = unsigned_intTI_type_node;
+    }
+  else
+    {
+      widest_integer_literal_type_node = intDI_type_node;
+      widest_unsigned_literal_type_node = unsigned_intDI_type_node;
+    }
 
   signed_size_type_node = c_common_signed_type (size_type_node);
 
@@ -6396,7 +6386,6 @@ complete_array_type (tree *ptype, tree initial_value, bool do_default)
 {
   tree maxindex, type, main_type, elt, unqual_elt;
   int failure = 0, quals;
-  hashval_t hashcode = 0;
   bool overflow_p = false;
 
   maxindex = size_zero_node;
@@ -6490,13 +6479,15 @@ complete_array_type (tree *ptype, tree initial_value, bool do_default)
   TYPE_DOMAIN (main_type)
     = build_range_type (TREE_TYPE (maxindex),
 			build_int_cst (TREE_TYPE (maxindex), 0), maxindex);
+  TYPE_TYPELESS_STORAGE (main_type) = TYPE_TYPELESS_STORAGE (type);
   layout_type (main_type);
 
   /* Make sure we have the canonical MAIN_TYPE. */
-  hashcode = iterative_hash_object (TYPE_HASH (unqual_elt), hashcode);
-  hashcode = iterative_hash_object (TYPE_HASH (TYPE_DOMAIN (main_type)),
-				    hashcode);
-  main_type = type_hash_canon (hashcode, main_type);
+  inchash::hash hstate;
+  hstate.add_object (TYPE_HASH (unqual_elt));
+  hstate.add_object (TYPE_HASH (TYPE_DOMAIN (main_type)));
+  hstate.add_flag (TYPE_TYPELESS_STORAGE (main_type));
+  main_type = type_hash_canon (hstate.end (), main_type);
 
   /* Fix the canonical type.  */
   if (TYPE_STRUCTURAL_EQUALITY_P (TREE_TYPE (main_type))
@@ -6507,7 +6498,8 @@ complete_array_type (tree *ptype, tree initial_value, bool do_default)
 	       != TYPE_DOMAIN (main_type)))
     TYPE_CANONICAL (main_type)
       = build_array_type (TYPE_CANONICAL (TREE_TYPE (main_type)),
-			  TYPE_CANONICAL (TYPE_DOMAIN (main_type)));
+			  TYPE_CANONICAL (TYPE_DOMAIN (main_type)),
+			  TYPE_TYPELESS_STORAGE (main_type));
   else
     TYPE_CANONICAL (main_type) = main_type;
 
@@ -6542,7 +6534,8 @@ c_common_mark_addressable_vec (tree t)
       && TREE_CODE (t) != PARM_DECL
       && TREE_CODE (t) != COMPOUND_LITERAL_EXPR)
     return;
-  TREE_ADDRESSABLE (t) = 1;
+  if (!VAR_P (t) || !DECL_HARD_REGISTER (t))
+    TREE_ADDRESSABLE (t) = 1;
 }
 
 
@@ -7476,7 +7469,12 @@ set_underlying_type (tree x)
       tt = build_variant_type_copy (tt);
       TYPE_STUB_DECL (tt) = TYPE_STUB_DECL (DECL_ORIGINAL_TYPE (x));
       TYPE_NAME (tt) = x;
-      TREE_USED (tt) = TREE_USED (x);
+
+      /* Mark the type as used only when its type decl is decorated
+	 with attribute unused.  */
+      if (lookup_attribute ("unused", DECL_ATTRIBUTES (x)))
+	TREE_USED (tt) = 1;
+
       TREE_TYPE (x) = tt;
     }
 }

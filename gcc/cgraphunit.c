@@ -1806,6 +1806,10 @@ cgraph_node::expand_thunk (bool output_asm_thunks, bool force_gimple_thunk)
 	for (; i < nargs; i++, arg = DECL_CHAIN (arg))
 	  {
 	    tree tmp = arg;
+	    if (VECTOR_TYPE_P (TREE_TYPE (arg))
+		|| TREE_CODE (TREE_TYPE (arg)) == COMPLEX_TYPE)
+	      DECL_GIMPLE_REG_P (arg) = 1;
+
 	    if (!is_gimple_val (arg))
 	      {
 		tmp = create_tmp_reg (TYPE_MAIN_VARIANT
@@ -2493,7 +2497,7 @@ symbol_table::compile (void)
   bitmap_obstack_release (NULL);
   mark_functions_to_output ();
 
-  /* When weakref support is missing, we autmatically translate all
+  /* When weakref support is missing, we automatically translate all
      references to NODE to references to its ultimate alias target.
      The renaming mechanizm uses flag IDENTIFIER_TRANSPARENT_ALIAS and
      TREE_CHAIN.

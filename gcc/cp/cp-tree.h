@@ -346,8 +346,7 @@ identifier_p (tree t)
 }
 
 /* In an IDENTIFIER_NODE, nonzero if this identifier is actually a
-   keyword.  C_RID_CODE (node) is then the RID_* value of the keyword,
-   and C_RID_YYCODE is the token number wanted by Yacc.  */
+   keyword.  C_RID_CODE (node) is then the RID_* value of the keyword.  */
 
 #define C_IS_RESERVED_WORD(ID) TREE_LANG_FLAG_5 (ID)
 
@@ -729,6 +728,7 @@ enum cp_trait_kind
   CPTK_HAS_UNIQUE_OBJ_REPRESENTATIONS,
   CPTK_HAS_VIRTUAL_DESTRUCTOR,
   CPTK_IS_ABSTRACT,
+  CPTK_IS_AGGREGATE,
   CPTK_IS_BASE_OF,
   CPTK_IS_CLASS,
   CPTK_IS_EMPTY,
@@ -4677,7 +4677,7 @@ enum cp_lvalue_kind_flags {
   clk_none = 0,     /* Things that are not an lvalue.  */
   clk_ordinary = 1, /* An ordinary lvalue.  */
   clk_rvalueref = 2,/* An xvalue (rvalue formed using an rvalue reference) */
-  clk_class = 4,    /* A prvalue of class-type.  */
+  clk_class = 4,    /* A prvalue of class or array type.  */
   clk_bitfield = 8, /* An lvalue for a bit-field.  */
   clk_packed = 16   /* An lvalue for a packed field.  */
 };
@@ -6716,7 +6716,7 @@ extern void cxx_print_error_function		(diagnostic_context *,
 						 struct diagnostic_info *);
 
 /* in typeck.c */
-extern bool cxx_mark_addressable		(tree);
+extern bool cxx_mark_addressable		(tree, bool = false);
 extern int string_conv_p			(const_tree, const_tree, int);
 extern tree cp_truthvalue_conversion		(tree);
 extern tree condition_conversion		(tree);

@@ -2968,7 +2968,7 @@ check_explicit_specialization (tree declarator,
 
       /* Figure out what exactly is being specialized at this point.
 	 Note that for an explicit instantiation, even one for a
-	 member function, we cannot tell apriori whether the
+	 member function, we cannot tell a priori whether the
 	 instantiation is for a member template, or just a member
 	 function of a template class.  Even if a member template is
 	 being instantiated, the member template arguments may be
@@ -3997,10 +3997,10 @@ canonical_type_parameter (tree type)
   tree list;
   int idx = TEMPLATE_TYPE_IDX (type);
   if (!canonical_template_parms)
-    vec_alloc (canonical_template_parms, idx+1);
+    vec_alloc (canonical_template_parms, idx + 1);
 
-  while (canonical_template_parms->length () <= (unsigned)idx)
-    vec_safe_push (canonical_template_parms, NULL_TREE);
+  if (canonical_template_parms->length () <= (unsigned) idx)
+    vec_safe_grow_cleared (canonical_template_parms, idx + 1);
 
   list = (*canonical_template_parms)[idx];
   while (list && !comptypes (type, TREE_VALUE (list), COMPARE_STRUCTURAL))
@@ -4011,8 +4011,7 @@ canonical_type_parameter (tree type)
   else
     {
       (*canonical_template_parms)[idx]
-		= tree_cons (NULL_TREE, type,
-			     (*canonical_template_parms)[idx]);
+	= tree_cons (NULL_TREE, type, (*canonical_template_parms)[idx]);
       return type;
     }
 }
@@ -5982,7 +5981,7 @@ convert_nontype_argument_function (tree type, tree expr,
     return error_mark_node;
 
   if (value_dependent_expression_p (fn))
-    return fn;
+    goto accept;
 
   fn_no_ptr = strip_fnptr_conv (fn);
   if (TREE_CODE (fn_no_ptr) == ADDR_EXPR)
@@ -6031,6 +6030,7 @@ convert_nontype_argument_function (tree type, tree expr,
       return NULL_TREE;
     }
 
+ accept:
   if (TREE_CODE (type) == REFERENCE_TYPE)
     fn = build_address (fn);
   if (!same_type_ignoring_top_level_qualifiers_p (type, TREE_TYPE (fn)))
@@ -8682,9 +8682,9 @@ lookup_template_class_1 (tree d1, tree arglist, tree in_decl, tree context,
 	  || !PRIMARY_TEMPLATE_P (gen_tmpl)
 	  || currently_open_class (template_type))
 	{
-	  tree tinfo = TYPE_TEMPLATE_INFO_MAYBE_ALIAS (template_type);
+	  tree tinfo = TYPE_TEMPLATE_INFO (template_type);
 
-	  if (comp_template_args (TI_ARGS (tinfo), arglist))
+	  if (tinfo && comp_template_args (TI_ARGS (tinfo), arglist))
 	    return template_type;
 	}
 
@@ -14413,6 +14413,8 @@ tsubst_init (tree init, tree decl, tree args,
 			       complain);
       if (TREE_CODE (init) == AGGR_INIT_EXPR)
 	init = get_target_expr_sfinae (init, complain);
+      if (TREE_CODE (init) == TARGET_EXPR)
+	TARGET_EXPR_DIRECT_INIT_P (init) = true;
     }
 
   return init;
@@ -14567,7 +14569,7 @@ tsubst_copy (tree t, tree args, tsubst_flags_t complain, tree in_decl)
 	    {
 	      /* First try name lookup to find the instantiation.  */
 	      r = lookup_name (DECL_NAME (t));
-	      if (r)
+	      if (r && !is_capture_proxy (r))
 		{
 		  /* Make sure that the one we found is the one we want.  */
 		  tree ctx = DECL_CONTEXT (t);
@@ -19694,9 +19696,10 @@ try_one_overload (tree tparms,
 	     is equivalent to the corresponding explicitly specified argument.
 	     We may have deduced more arguments than were explicitly specified,
 	     and that's OK.  */
-	  gcc_assert (ARGUMENT_PACK_INCOMPLETE_P (oldelt));
-	  gcc_assert (ARGUMENT_PACK_ARGS (oldelt)
-		      == ARGUMENT_PACK_EXPLICIT_ARGS (oldelt));
+
+	  /* We used to assert ARGUMENT_PACK_INCOMPLETE_P (oldelt) here, but
+	     that's wrong if we deduce the same argument pack from multiple
+	     function arguments: it's only incomplete the first time.  */
 
 	  tree explicit_pack = ARGUMENT_PACK_ARGS (oldelt);
 	  tree deduced_pack = ARGUMENT_PACK_ARGS (elt);
@@ -23575,6 +23578,12 @@ value_dependent_expression_p (tree expression)
 	      || type_dependent_expression_p (DECL_INITIAL (expression))
 	      || value_dependent_expression_p (DECL_INITIAL (expression))))
 	return true;
+      if (DECL_HAS_VALUE_EXPR_P (expression))
+	{
+	  tree value_expr = DECL_VALUE_EXPR (expression);
+	  if (type_dependent_expression_p (value_expr))
+	    return true;
+	}
       return false;
 
     case DYNAMIC_CAST_EXPR:
@@ -24954,6 +24963,8 @@ rewrite_template_parm (tree olddecl, unsigned index, unsigned level,
       newidx = TEMPLATE_TYPE_PARM_INDEX (newtype)
 	= build_template_parm_index (index, level, level,
 				     newdecl, newtype);
+      TEMPLATE_PARM_PARAMETER_PACK (newidx)
+	= TEMPLATE_PARM_PARAMETER_PACK (oldidx);
       TYPE_STUB_DECL (newtype) = TYPE_NAME (newtype) = newdecl;
       TYPE_CANONICAL (newtype) = canonical_type_parameter (newtype);
 
@@ -25001,11 +25012,11 @@ rewrite_template_parm (tree olddecl, unsigned index, unsigned level,
       SET_DECL_TEMPLATE_PARM_P (newconst);
       newidx = build_template_parm_index (index, level, level,
 					  newconst, newtype);
+      TEMPLATE_PARM_PARAMETER_PACK (newidx)
+	= TEMPLATE_PARM_PARAMETER_PACK (oldidx);
       DECL_INITIAL (newdecl) = DECL_INITIAL (newconst) = newidx;
     }
 
-  TEMPLATE_PARM_PARAMETER_PACK (newidx)
-    = TEMPLATE_PARM_PARAMETER_PACK (oldidx);
   return newdecl;
 }
 

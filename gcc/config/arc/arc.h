@@ -61,7 +61,8 @@ along with GCC; see the file COPYING3.  If not see
 %{mmac-d16:-D__Xxmac_d16} %{mmac-24:-D__Xxmac_24} \
 %{mdsp-packa:-D__Xdsp_packa} %{mcrc:-D__Xcrc} %{mdvbf:-D__Xdvbf} \
 %{mtelephony:-D__Xtelephony} %{mxy:-D__Xxy} %{mmul64: -D__Xmult32} \
-%{mlock:-D__Xlock} %{mswape:-D__Xswape} %{mrtsc:-D__Xrtsc}"
+%{mlock:-D__Xlock} %{mswape:-D__Xswape} %{mrtsc:-D__Xrtsc} \
+%(subtarget_cpp_spec)"
 
 #undef CC1_SPEC
 #define CC1_SPEC "\
@@ -72,6 +73,27 @@ extern const char *arc_cpu_to_as (int argc, const char **argv);
 
 #define EXTRA_SPEC_FUNCTIONS			\
   { "cpu_to_as", arc_cpu_to_as },
+
+/* This macro defines names of additional specifications to put in the specs
+   that can be used in various specifications like CC1_SPEC.  Its definition
+   is an initializer with a subgrouping for each command option.
+
+   Each subgrouping contains a string constant, that defines the
+   specification name, and a string constant that used by the GCC driver
+   program.
+
+   Do not define this macro if it does not need to do anything.  */
+#define EXTRA_SPECS				      \
+  { "subtarget_cpp_spec",	SUBTARGET_CPP_SPEC }, \
+  SUBTARGET_EXTRA_SPECS
+
+#ifndef SUBTARGET_EXTRA_SPECS
+#define SUBTARGET_EXTRA_SPECS
+#endif
+
+#ifndef SUBTARGET_CPP_SPEC
+#define SUBTARGET_CPP_SPEC ""
+#endif
 
 #undef ASM_SPEC
 #define ASM_SPEC  "%{mbig-endian|EB:-EB} %{EL} "			\
@@ -1493,10 +1515,11 @@ extern enum arc_function_type arc_compute_function_type (struct function *);
 /* Called by crtstuff.c to make calls to function FUNCTION that are defined in
    SECTION_OP, and then to switch back to text section.  */
 #undef CRT_CALL_STATIC_FUNCTION
-#define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC) \
-    asm (SECTION_OP "\n\t"				\
-	"bl @" USER_LABEL_PREFIX #FUNC "\n"		\
-	TEXT_SECTION_ASM_OP);
+#define CRT_CALL_STATIC_FUNCTION(SECTION_OP, FUNC)		\
+  asm (SECTION_OP "\n\t"					\
+       "add r12,pcl,@" USER_LABEL_PREFIX #FUNC "@pcl\n\t"	\
+       "jl  [r12]\n"						\
+       TEXT_SECTION_ASM_OP);
 
 /* This macro expands to the name of the scratch register r12, used for
    temporary calculations according to the ABI.  */
@@ -1558,11 +1581,6 @@ extern enum arc_function_type arc_compute_function_type (struct function *);
 #define IS_ASM_LOGICAL_LINE_SEPARATOR(C,STR) ((C) == '`')
 
 #define INIT_EXPANDERS arc_init_expanders ()
-
-#define CFA_FRAME_BASE_OFFSET(FUNDECL) (-arc_decl_pretend_args ((FUNDECL)))
-
-#define ARG_POINTER_CFA_OFFSET(FNDECL) \
-  (FIRST_PARM_OFFSET (FNDECL) + arc_decl_pretend_args ((FNDECL)))
 
 enum
 {

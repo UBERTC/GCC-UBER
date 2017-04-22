@@ -1,3 +1,251 @@
+2017-04-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/abi.xml: Rephrase one of the references to the
+	Itanium C++ ABI.
+	* doc/xml/manual/test.xml: Document DejaGnu 1.5.3 requirement.
+	* doc/html/*: Regenerate.
+
+	* libsupc++/new: Update comment on #endif directive.
+
+	PR libstdc++/80448
+	* include/experimental/bits/fs_dir.h (directory_iterator)
+	(recursive_directory_iterator): Remove noexcept from defaulted
+	constructors.
+
+	PR libstdc++/80446
+	* include/std/type_traits (is_aggregate): Change __has_builtin checks.
+	* libsupc++/new (launder): Likewise.
+
+2017-04-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/functional (default_searcher, __boyer_moore_array_base)
+	(__is_std_equal_to, __boyer_moore_base_t, boyer_moore_searcher)
+	(boyer_moore_horspool_searcher): Remove redundant namespace
+	qualification.
+	(default_searcher::operator()): Construct return value early and
+	advance second member in-place.
+	(boyer_moore_horspool_searcher::operator()): Increment random access
+	iterator directly instead of using std::next.
+	(boyer_moore_searcher::operator()): Fix return value.
+	* testsuite/20_util/function_objects/searchers.cc: Check both parts
+	of return values.
+
+2017-04-12  Gerald Pfeifer  <gerald@pfeifer.com>
+
+	* doc/xml/faq.xml: Update reference link to C++ ABI for Itanium.
+	* doc/xml/manual/abi.xml. Ditto (thrice).
+
+2017-04-03  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/status_cxx2017.xml: Remove duplicate table entry.
+	* doc/html/*: Regenerate.
+
+	* testsuite/20_util/reference_wrapper/invoke.cc: Uncomment tests
+	that no longer fail.
+
+	* include/bits/ios_base.h: Correct comment.
+	* testsuite/util/testsuite_hooks.h: Likewise.
+
+	* doc/xml/manual/status_cxx2017.xml: Update C++17 status table.
+	* doc/xml/manual/appendix_contributing.xml (contrib.organization): Add
+	directories for debug, parallel and profile headers.
+	* doc/html/*: Regenerate.
+
+	* include/bits/char_traits.h (__gnu_cxx::char_traits): Add
+	_GLIBCXX14_CONSTEXPR on assign, compare, find, and length.
+	(std::char_traits<char>, std::char_traits<wchar_t>): Add
+	_GLIBCXX17_CONSTEXPR on assign.
+	(std::char_traits<char16_t>, std::char_traits<char32_t>): Add
+	_GLIBCXX17_CONSTEXPR on assign, compare, find, and length.
+	* testsuite/21_strings/char_traits/requirements/
+	constexpr_functions_c++17.cc: New test.
+
+2017-04-03  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	PR libstdc++/79141
+	* include/bits/stl_pair.h (__nonesuch_no_braces): New.
+	(operator=(typename conditional<
+	__and_<is_copy_assignable<_T1>,
+	is_copy_assignable<_T2>>::value,
+	const pair&, const __nonesuch&>::type)): Change __nonesuch
+	to __nonesuch_no_braces.
+	(operator=(typename conditional<
+	__not_<__and_<is_copy_assignable<_T1>,
+	is_copy_assignable<_T2>>>::value,
+	const pair&, const __nonesuch&>::type)): Likewise.
+	(operator=(typename conditional<
+	__and_<is_move_assignable<_T1>,
+	is_move_assignable<_T2>>::value,
+	pair&&, __nonesuch&&>::type)): Likewise.
+	* testsuite/20_util/pair/79141.cc: New.
+
+2017-04-03  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Implement std::is_aggregate.
+	* include/std/type_traits (is_aggregate, is_aggregate_v): New.
+	* testsuite/20_util/is_aggregate/requirements/explicit_instantiation.cc:
+	New.
+	* testsuite/20_util/is_aggregate/requirements/typedefs.cc: Likewise.
+	* testsuite/20_util/is_aggregate/value.cc: Likewise.
+
+2017-03-29  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Adjust optional's pretty printer for LWG 2900.
+	* python/libstdcxx/v6/printers.py (StdExpOptionalPrinter.__init__):
+	Look at the nested payload in case of non-experimental optional.
+
+2017-03-29  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Implement LWG 2900, The copy and move constructors
+	of optional are not constexpr.
+	* include/std/optional (_Optional_payload): New.
+	(_Optional_base): Remove the bool parameter.
+	(_Optional_base<_Tp, false>): Remove.
+	(_Optional_base()): Adjust.
+	(_Optional_base(nullopt_t)): Likewise.
+	(_Optional_base(in_place_t, _Args&&...)): Likewise.
+	(_Optional_base(in_place_t, initializer_list<_Up>, _Args&&...)):
+	Likewise.
+	(_Optional_base(const _Optional_base&)): Likewise.
+	(_Optional_base(_Optional_base&&)): Likewise.
+	(operator=(const _Optional_base&)): Likewise.
+	(operator=(_Optional_base&&)): Likewise.
+	(~_Optional_base()): Remove.
+	(_M_is_engaged()): Adjust.
+	(_M_get()): Likewise.
+	(_M_construct(_Args&&...)): Likewise.
+	(_M_destruct()): Likewise.
+	(_M_reset()): Likewise.
+	(_Optional_base::_Empty_byte): Remove.
+	(_Optional_base::_M_empty): Remove.
+	(_Optional_base::_M_payload): Adjust.
+	* testsuite/20_util/optional/cons/value_neg.cc: Adjust.
+	* testsuite/20_util/optional/constexpr/cons/value.cc: Add tests.
+
+2017-03-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80137
+	* include/bits/random.tcc (generate_canonical): Use std::nextafter
+	or numeric_limits::epsilon() to reduce out-of-range values.
+	* testsuite/26_numerics/random/uniform_real_distribution/operators/
+	64351.cc: Verify complexity requirement is met.
+
+	* doc/xml/manual/abi.xml: Add xml:id anchor.
+	* doc/xml/manual/using.xml (manual.intro.using.macros): Document
+	_GLIBCXX_RELEASE. Link to new anchor for __GLIBCXX__ notes.
+	(concurrency.io.structure): Add markup.
+	* doc/html/*: Regenerate.
+
+	PR libstdc++/80229
+	* include/bits/shared_ptr_base.h
+	(__shared_ptr::_M_enable_shared_from_this_with): Change parameters to
+	non-const and then use remove_cv to get unqualified type.
+	* testsuite/20_util/enable_shared_from_this/members/const.cc: Don't
+	cast away constness on object created const.
+	* testsuite/20_util/shared_ptr/cons/80229.cc: New test.
+
+2017-03-26  Markus Trippelsdorf  <markus@trippelsdorf.de>
+
+	PR libstdc++/80183
+	* include/bits/stl_tree.h:
+	(_Rb_tree_header::_M_move_data(_Rb_tree_header&)): Also save _M_color.
+
+2017-03-23  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/23_containers/array/tuple_interface/
+	tuple_element_debug_neg.cc: Adjust dg-error.
+	* testsuite/23_containers/list/operations/78389.cc: Fix less-than to
+	define a valid strict weak ordering.
+	* testsuite/23_containers/priority_queue/67085.cc: Disable test for
+	Debug Mode, due to debug checks making extra copies of predicate.
+	* testsuite/ext/pb_ds/regression/priority_queue_binary_heap-62045.cc:
+	Likewise.
+
+	* doc/xml/faq.xml: Add link.
+	* doc/xml/manual/backwards_compatibility.xml: Remove outdated
+	information on pre-ISO headers. Replace broken link to C++ FAQ Lite.
+	* doc/xml/manual/io.xml: Update broken link.
+	* doc/html/*: Regenerate.
+
+2017-03-23  Daniel Kruegler  <daniel.kruegler@gmail.com>
+
+	Implement LWG 2686, Why is std::hash specialized for error_code,
+	but not error_condition?
+	* include/std/system_error (hash<error_condition>): Define for C++17.
+	* testsuite/20_util/hash/operators/size_t.cc (hash<error_condition>):
+	Instantiate test for error_condition.
+	* testsuite/20_util/hash/requirements/explicit_instantiation.cc
+	(hash<error_condition>): Instantiate hash<error_condition>.
+
+	* include/bits/c++config (_GLIBCXX17_INLINE): Define.
+	* include/bits/regex_constants.h (All std::regex_constants constants):
+	Add _GLIBCXX17_INLINE as per P0607R0.
+	* include/bits/std_mutex.h (defer_lock, try_to_lock, adopt_lock):
+	Likewise.
+	* include/bits/stl_pair.h (piecewise_construct): Likewise.
+	* include/bits/uses_allocator.h (allocator_arg, uses_allocator_v)
+	(__is_uses_allocator_constructible_v)
+	(__is_nothrow_uses_allocator_constructible_v): Likewise.
+	* include/std/chrono (treat_as_floating_point_v): Likewise.
+	* include/std/functional (is_bind_expression_v, is_placeholder_v):
+	Likewise.
+	* include/std/optional (nullopt): Likewise.
+	* include/std/ratio (ratio_equal_v, ratio_not_equal_v, ratio_less_v)
+	ratio_less_equal_v, ratio_greater_v, ratio_greater_equal_v): Likewise.
+	* include/std/system_error (is_error_code_enum_v)
+	(is_error_condition_enum_v): Likewise.
+	* include/std/tuple (tuple_size_v, ignore): Likewise.
+	(ignore): Declare ignore constexpr as per LWG 2773, declare assignment
+	constexpr as per LWG 2933.
+	* include/std/type_traits (All variable templates): Add
+	_GLIBCXX17_INLINE as per P0607R0.
+	* include/std/variant (variant_size_v, variant_npos, __index_of_v)
+	(__tuple_count_v, __exactly_once): Likewise.
+	* testsuite/18_support/headers/new/synopsis.cc
+	(hardware_destructive_interference_size)
+	(hardware_constructive_interference_size): Likewise for commented-out
+	variables.
+	* testsuite/20_util/tuple/creation_functions/constexpr.cc: Add new
+	test function for constexpr std::ignore (LWG 2773).
+	* testsuite/20_util/tuple/creation_functions/constexpr_cpp14.cc: New
+	test for LWG 2933.
+
+2017-03-22  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/shared_ptr.h (shared_ptr, weak_ptr): Add deduction
+	guides for C++17.
+	* include/bits/std_function.h (function): Likewise.
+	* include/bits/stl_pair.h (pair): Likewise.
+	* include/debug/array (__gnu_debug::array): Likewise.
+	* include/std/array (array): Likewise.
+	* include/std/functional (make_default_searcher)
+	(make_boyer_moore_searcher, make_boyer_moore_horspool_searcher):
+	Remove generator functions.
+	* include/std/tuple (tuple): Add deduction guides.
+	* include/std/valarray (valarray): Likewise.
+	* testsuite/20_util/function_objects/searchers.cc: Adjust to use
+	class template argument deduction instead of generator functions.
+	* testsuite/20_util/function/cons/deduction.cc: New test.
+	* testsuite/20_util/optional/cons/deduction_guide.cc: Rename to ...
+	* testsuite/20_util/optional/cons/deduction.cc: ... here.
+	* testsuite/20_util/pair/cons/deduction.cc: New test.
+	* testsuite/20_util/shared_ptr/cons/deduction.cc: New test.
+	* testsuite/20_util/tuple/cons/deduction.cc: New test.
+	* testsuite/20_util/tuple/element_access/get_neg.cc: Adjust dg-error.
+	* testsuite/20_util/unique_ptr/cons/deduction_neg.cc: New test.
+	* testsuite/20_util/weak_ptr/cons/deduction.cc: New test.
+	* testsuite/23_containers/array/cons/deduction.cc: New test.
+	* testsuite/23_containers/array/cons/deduction_neg.cc: New test.
+	* testsuite/23_containers/array/tuple_interface/get_debug_neg.cc:
+	Adjust dg-error.
+	* testsuite/23_containers/array/tuple_interface/get_neg.cc: Likewise.
+	* testsuite/23_containers/array/tuple_interface/tuple_element_neg.cc:
+	Likewise.
+	* testsuite/26_numerics/valarray/deduction.cc: New test.
+	* testsuite/30_threads/lock_guard/cons/deduction.cc: New test.
+	* testsuite/30_threads/scoped_lock/cons/deduction.cc: New test.
+	* testsuite/30_threads/unique_lock/cons/deduction.cc: New test.
+
 2017-03-20  François Dumont  <fdumont@gcc.gnu.org>
 
 	* include/bits/stl_deque.h (deque): Access allocator value_type only if

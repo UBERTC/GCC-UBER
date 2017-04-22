@@ -148,6 +148,11 @@
       {
 	rtx x = XEXP (op, 1);
 
+	if ((GET_CODE (XEXP (op, 0)) == MULT)
+	    && REG_P (XEXP (XEXP (op, 0), 0))
+	    && CONSTANT_P (x))
+	  return 1;
+
 	if (GET_CODE (x) == CONST)
 	  {
 	    x = XEXP (x, 0);
@@ -313,7 +318,7 @@
       /* (subreg (mem ...) ...) can occur here if the inner part was once a
 	 pseudo-reg and is now a stack slot.  */
       if (GET_CODE (SUBREG_REG (op)) == MEM)
-	return move_double_src_operand (SUBREG_REG (op), mode);
+	return address_operand (XEXP (SUBREG_REG (op), 0), mode);
       else
 	return register_operand (op, mode);
     case MEM :

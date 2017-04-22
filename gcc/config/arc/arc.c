@@ -5509,13 +5509,9 @@ arc_mode_dependent_address_p (const_rtx addr, addr_space_t)
 {
   /* SYMBOL_REF is not mode dependent: it is either a small data reference,
      which is valid for loads and stores, or a limm offset, which is valid for
-     loads.  */
-  /* Scaled indices are scaled by the access mode; likewise for scaled
-     offsets, which are needed for maximum offset stores.  */
+     loads.  Scaled indices are scaled by the access mode.  */
   if (GET_CODE (addr) == PLUS
-      && (GET_CODE (XEXP ((addr), 0)) == MULT
-	  || (CONST_INT_P (XEXP ((addr), 1))
-	      && !SMALL_INT (INTVAL (XEXP ((addr), 1))))))
+      && GET_CODE (XEXP ((addr), 0)) == MULT)
     return true;
   return false;
 }
@@ -6573,8 +6569,6 @@ arc_reorg (void)
 	  rtx_insn *lp_simple = NULL;
 	  rtx_insn *next = NULL;
 	  rtx op0 = XEXP (XVECEXP (PATTERN (insn), 0, 1), 0);
-	  HOST_WIDE_INT loop_end_id
-	    = -INTVAL (XEXP (XVECEXP (PATTERN (insn), 0, 4), 0));
 	  int seen_label = 0;
 
 	  for (lp = prev;
@@ -6585,6 +6579,9 @@ arc_reorg (void)
 	  if (!lp || !NONJUMP_INSN_P (lp)
 	      || dead_or_set_regno_p (lp, LP_COUNT))
 	    {
+	      HOST_WIDE_INT loop_end_id
+		= INTVAL (XEXP (XVECEXP (PATTERN (insn), 0, 4), 0));
+
 	      for (prev = next = insn, lp = NULL ; prev || next;)
 		{
 		  if (prev)
@@ -9342,17 +9339,6 @@ arc_text_label (rtx_insn *label)
   return false;
 }
 
-/* Return the size of the pretend args for DECL.  */
-
-int
-arc_decl_pretend_args (tree decl)
-{
-  /* struct function is in DECL_STRUCT_FUNCTION (decl), but no
-     pretend_args there...  See PR38391.  */
-  gcc_assert (decl == current_function_decl);
-  return crtl->args.pretend_args_size;
-}
-
 /* Without this, gcc.dg/tree-prof/bb-reorg.c fails to assemble
   when compiling with -O2 -freorder-blocks-and-partition -fprofile-use
   -D_PROFILE_USE; delay branch scheduling then follows a crossing jump
@@ -9381,9 +9367,10 @@ arc_can_follow_jump (const rtx_insn *follower, const rtx_insn *followee)
    Return true if REGNO should be added to the deemed uses of the epilogue.
 
    We use the return address
-   arc_return_address_regs[arc_compute_function_type (cfun)] .
-   But also, we have to make sure all the register restore instructions
-   are known to be live in interrupt functions.  */
+   arc_return_address_regs[arc_compute_function_type (cfun)].  But
+   also, we have to make sure all the register restore instructions
+   are known to be live in interrupt functions, plus the blink
+   register if it is clobbered by the isr.  */
 
 bool
 arc_epilogue_uses (int regno)
@@ -9396,7 +9383,8 @@ arc_epilogue_uses (int regno)
 	{
 	  if (!fixed_regs[regno])
 	    return true;
-	  return regno == arc_return_address_regs[cfun->machine->fn_type];
+	  return ((regno == arc_return_address_regs[cfun->machine->fn_type])
+		  || (regno == RETURN_ADDR_REGNUM));
 	}
       else
 	return regno == RETURN_ADDR_REGNUM;

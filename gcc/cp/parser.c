@@ -1584,7 +1584,7 @@ make_ptrmem_declarator (cp_cv_quals cv_qualifiers, tree class_type,
 }
 
 /* Make a declarator for the function given by TARGET, with the
-   indicated PARMS.  The CV_QUALIFIERS aply to the function, as in
+   indicated PARMS.  The CV_QUALIFIERS apply to the function, as in
    "const"-qualified member function.  The EXCEPTION_SPECIFICATION
    indicates what exceptions can be thrown.  */
 
@@ -5121,6 +5121,7 @@ cp_parser_primary_expression (cp_parser *parser,
 	case RID_HAS_UNIQUE_OBJ_REPRESENTATIONS:
 	case RID_HAS_VIRTUAL_DESTRUCTOR:
 	case RID_IS_ABSTRACT:
+	case RID_IS_AGGREGATE:
 	case RID_IS_BASE_OF:
 	case RID_IS_CLASS:
 	case RID_IS_EMPTY:
@@ -9610,6 +9611,9 @@ cp_parser_trait_expr (cp_parser* parser, enum rid keyword)
       break;
     case RID_IS_ABSTRACT:
       kind = CPTK_IS_ABSTRACT;
+      break;
+    case RID_IS_AGGREGATE:
+      kind = CPTK_IS_AGGREGATE;
       break;
     case RID_IS_BASE_OF:
       kind = CPTK_IS_BASE_OF;
@@ -24842,8 +24846,12 @@ cp_parser_std_attribute_list (cp_parser *parser, tree attr_ns)
 	    error_at (token->location,
 		      "expected attribute before %<...%>");
 	  else
-	    TREE_VALUE (attribute)
-	      = make_pack_expansion (TREE_VALUE (attribute));
+	    {
+	      tree pack = make_pack_expansion (TREE_VALUE (attribute));
+	      if (pack == error_mark_node)
+		return error_mark_node;
+	      TREE_VALUE (attribute) = pack;
+	    }
 	  token = cp_lexer_peek_token (parser->lexer);
 	}
       if (token->type != CPP_COMMA)

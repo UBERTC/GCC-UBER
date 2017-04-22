@@ -4944,14 +4944,14 @@ find_func_aliases (struct function *fn, gimple *origt)
 	    make_escape_constraint (build_fold_addr_expr (op));
 
 	  /* The asm may read global memory, so outputs may point to
-	     any global memory.  */
+	     any global or escaped memory.  */
 	  if (op)
 	    {
 	      auto_vec<ce_s, 2> lhsc;
 	      struct constraint_expr rhsc, *lhsp;
 	      unsigned j;
 	      get_constraint_for (op, &lhsc);
-	      rhsc.var = nonlocal_id;
+	      rhsc.var = escaped_id;
 	      rhsc.offset = 0;
 	      rhsc.type = SCALAR;
 	      FOR_EACH_VEC_ELT (lhsc, j, lhsp)
@@ -7615,7 +7615,9 @@ struct pt_solution ipa_escaped_pt
 static bool
 associate_varinfo_to_alias (struct cgraph_node *node, void *data)
 {
-  if ((node->alias || node->thunk.thunk_p)
+  if ((node->alias
+       || (node->thunk.thunk_p
+	   && ! node->global.inlined_to))
       && node->analyzed)
     insert_vi_for_tree (node->decl, (varinfo_t)data);
   return false;

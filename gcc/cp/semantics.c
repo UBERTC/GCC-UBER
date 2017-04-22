@@ -3157,6 +3157,7 @@ finish_template_type (tree name, tree args, int entering_scope)
   if (flag_concepts
       && entering_scope
       && CLASS_TYPE_P (type)
+      && CLASSTYPE_TEMPLATE_INFO (type)
       && dependent_type_p (type)
       && PRIMARY_TEMPLATE_P (CLASSTYPE_TI_TEMPLATE (type)))
     type = fixup_template_type (type);
@@ -6416,9 +6417,9 @@ finish_omp_clauses (tree clauses, enum c_omp_region_type ort)
 	  else
 	    {
 	      t = mark_rvalue_use (t);
-	      t = maybe_constant_value (t);
 	      if (!processing_template_decl)
 		{
+		  t = maybe_constant_value (t);
 		  if (TREE_CODE (t) != INTEGER_CST
 		      || tree_int_cst_sgn (t) != 1)
 		    {
@@ -6586,9 +6587,9 @@ finish_omp_clauses (tree clauses, enum c_omp_region_type ort)
 	  else
 	    {
 	      t = mark_rvalue_use (t);
-	      t = maybe_constant_value (t);
 	      if (!processing_template_decl)
 		{
+		  t = maybe_constant_value (t);
 		  if (TREE_CODE (t) != INTEGER_CST
 		      || tree_int_cst_sgn (t) != 1)
 		    {
@@ -9144,7 +9145,10 @@ trait_expr_value (cp_trait_kind kind, tree type1, tree type2)
       return type_has_unique_obj_representations (type1);
 
     case CPTK_IS_ABSTRACT:
-      return (ABSTRACT_CLASS_TYPE_P (type1));
+      return ABSTRACT_CLASS_TYPE_P (type1);
+
+    case CPTK_IS_AGGREGATE:
+      return CP_AGGREGATE_TYPE_P (type1);
 
     case CPTK_IS_BASE_OF:
       return (NON_UNION_CLASS_TYPE_P (type1) && NON_UNION_CLASS_TYPE_P (type2)
@@ -9152,34 +9156,34 @@ trait_expr_value (cp_trait_kind kind, tree type1, tree type2)
 		  || DERIVED_FROM_P (type1, type2)));
 
     case CPTK_IS_CLASS:
-      return (NON_UNION_CLASS_TYPE_P (type1));
+      return NON_UNION_CLASS_TYPE_P (type1);
 
     case CPTK_IS_EMPTY:
-      return (NON_UNION_CLASS_TYPE_P (type1) && CLASSTYPE_EMPTY_P (type1));
+      return NON_UNION_CLASS_TYPE_P (type1) && CLASSTYPE_EMPTY_P (type1);
 
     case CPTK_IS_ENUM:
-      return (type_code1 == ENUMERAL_TYPE);
+      return type_code1 == ENUMERAL_TYPE;
 
     case CPTK_IS_FINAL:
-      return (CLASS_TYPE_P (type1) && CLASSTYPE_FINAL (type1));
+      return CLASS_TYPE_P (type1) && CLASSTYPE_FINAL (type1);
 
     case CPTK_IS_LITERAL_TYPE:
-      return (literal_type_p (type1));
+      return literal_type_p (type1);
 
     case CPTK_IS_POD:
-      return (pod_type_p (type1));
+      return pod_type_p (type1);
 
     case CPTK_IS_POLYMORPHIC:
-      return (CLASS_TYPE_P (type1) && TYPE_POLYMORPHIC_P (type1));
+      return CLASS_TYPE_P (type1) && TYPE_POLYMORPHIC_P (type1);
 
     case CPTK_IS_SAME_AS:
       return same_type_p (type1, type2);
 
     case CPTK_IS_STD_LAYOUT:
-      return (std_layout_type_p (type1));
+      return std_layout_type_p (type1);
 
     case CPTK_IS_TRIVIAL:
-      return (trivial_type_p (type1));
+      return trivial_type_p (type1);
 
     case CPTK_IS_TRIVIALLY_ASSIGNABLE:
       return is_trivially_xible (MODIFY_EXPR, type1, type2);
@@ -9188,10 +9192,10 @@ trait_expr_value (cp_trait_kind kind, tree type1, tree type2)
       return is_trivially_xible (INIT_EXPR, type1, type2);
 
     case CPTK_IS_TRIVIALLY_COPYABLE:
-      return (trivially_copyable_p (type1));
+      return trivially_copyable_p (type1);
 
     case CPTK_IS_UNION:
-      return (type_code1 == UNION_TYPE);
+      return type_code1 == UNION_TYPE;
 
     default:
       gcc_unreachable ();
@@ -9253,6 +9257,7 @@ finish_trait_expr (cp_trait_kind kind, tree type1, tree type2)
     case CPTK_HAS_UNIQUE_OBJ_REPRESENTATIONS:
     case CPTK_HAS_VIRTUAL_DESTRUCTOR:
     case CPTK_IS_ABSTRACT:
+    case CPTK_IS_AGGREGATE:
     case CPTK_IS_EMPTY:
     case CPTK_IS_FINAL:
     case CPTK_IS_LITERAL_TYPE:

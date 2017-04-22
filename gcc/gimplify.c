@@ -493,7 +493,9 @@ is_gimple_mem_rhs_or_call (tree t)
   if (is_gimple_reg_type (TREE_TYPE (t)))
     return is_gimple_val (t);
   else
-    return (is_gimple_val (t) || is_gimple_lvalue (t)
+    return (is_gimple_val (t)
+	    || is_gimple_lvalue (t)
+	    || TREE_CLOBBER_P (t)
 	    || TREE_CODE (t) == CALL_EXPR);
 }
 
@@ -5098,6 +5100,14 @@ gimplify_modify_expr_rhs (tree *expr_p, tree *from_p, tree *to_p,
 	      if (ret != GS_ERROR)
 		ret = GS_OK;
 
+	      /* If we are going to write RESULT more than once, clear
+		 TREE_READONLY flag, otherwise we might incorrectly promote
+		 the variable to static const and initialize it at compile
+		 time in one of the branches.  */
+	      if (VAR_P (result)
+		  && TREE_TYPE (TREE_OPERAND (cond, 1)) != void_type_node
+		  && TREE_TYPE (TREE_OPERAND (cond, 2)) != void_type_node)
+		TREE_READONLY (result) = 0;
 	      if (TREE_TYPE (TREE_OPERAND (cond, 1)) != void_type_node)
 		TREE_OPERAND (cond, 1)
 		  = build2 (code, void_type_node, result,
@@ -6304,7 +6314,7 @@ gimple_push_cleanup (tree var, tree cleanup, bool eh_only, gimple_seq *pre_p,
   if (seen_error ())
     return;
 
-  if (gimple_conditional_context () && ! force_uncond)
+  if (gimple_conditional_context ())
     {
       /* If we're in a conditional context, this is more complex.  We only
 	 want to run the cleanup if we actually ran the initialization that
@@ -6326,22 +6336,31 @@ gimple_push_cleanup (tree var, tree cleanup, bool eh_only, gimple_seq *pre_p,
 	   }
 	   val
       */
-      tree flag = create_tmp_var (boolean_type_node, "cleanup");
-      gassign *ffalse = gimple_build_assign (flag, boolean_false_node);
-      gassign *ftrue = gimple_build_assign (flag, boolean_true_node);
+      if (force_uncond)
+	{
+	  gimplify_stmt (&cleanup, &cleanup_stmts);
+	  wce = gimple_build_wce (cleanup_stmts);
+	  gimplify_seq_add_stmt (&gimplify_ctxp->conditional_cleanups, wce);
+	}
+      else
+	{
+	  tree flag = create_tmp_var (boolean_type_node, "cleanup");
+	  gassign *ffalse = gimple_build_assign (flag, boolean_false_node);
+	  gassign *ftrue = gimple_build_assign (flag, boolean_true_node);
 
-      cleanup = build3 (COND_EXPR, void_type_node, flag, cleanup, NULL);
-      gimplify_stmt (&cleanup, &cleanup_stmts);
-      wce = gimple_build_wce (cleanup_stmts);
+	  cleanup = build3 (COND_EXPR, void_type_node, flag, cleanup, NULL);
+	  gimplify_stmt (&cleanup, &cleanup_stmts);
+	  wce = gimple_build_wce (cleanup_stmts);
 
-      gimplify_seq_add_stmt (&gimplify_ctxp->conditional_cleanups, ffalse);
-      gimplify_seq_add_stmt (&gimplify_ctxp->conditional_cleanups, wce);
-      gimplify_seq_add_stmt (pre_p, ftrue);
+	  gimplify_seq_add_stmt (&gimplify_ctxp->conditional_cleanups, ffalse);
+	  gimplify_seq_add_stmt (&gimplify_ctxp->conditional_cleanups, wce);
+	  gimplify_seq_add_stmt (pre_p, ftrue);
 
-      /* Because of this manipulation, and the EH edges that jump
-	 threading cannot redirect, the temporary (VAR) will appear
-	 to be used uninitialized.  Don't warn.  */
-      TREE_NO_WARNING (var) = 1;
+	  /* Because of this manipulation, and the EH edges that jump
+	     threading cannot redirect, the temporary (VAR) will appear
+	     to be used uninitialized.  Don't warn.  */
+	  TREE_NO_WARNING (var) = 1;
+	}
     }
   else
     {
@@ -6786,6 +6805,16 @@ device_resident_p (tree decl)
   return false;
 }
 
+/* Return true if DECL has an ACC DECLARE attribute.  */
+
+static bool
+is_oacc_declared (tree decl)
+{
+  tree t = TREE_CODE (decl) == MEM_REF ? TREE_OPERAND (decl, 0) : decl;
+  tree declared = lookup_attribute ("oacc declare target", DECL_ATTRIBUTES (t));
+  return declared != NULL_TREE;
+}
+
 /* Determine outer default flags for DECL mentioned in an OMP region
    but not declared in an enclosing clause.
 
@@ -6820,9 +6849,9 @@ omp_default_clause (struct gimplify_omp_ctx *ctx, tree decl,
 	else
 	  gcc_unreachable ();
 	
-	error ("%qE not specified in enclosing %s",
+	error ("%qE not specified in enclosing %qs",
 	       DECL_NAME (lang_hooks.decls.omp_report_decl (decl)), rtype);
-	error_at (ctx->location, "enclosing %s", rtype);
+	error_at (ctx->location, "enclosing %qs", rtype);
       }
       /* FALLTHRU */
     case OMP_CLAUSE_DEFAULT_SHARED:
@@ -6886,6 +6915,7 @@ oacc_default_clause (struct gimplify_omp_ctx *ctx, tree decl, unsigned flags)
 {
   const char *rkind;
   bool on_device = false;
+  bool declared = is_oacc_declared (decl);
   tree type = TREE_TYPE (decl);
 
   if (lang_hooks.decls.omp_privatize_by_reference (decl))
@@ -6916,7 +6946,7 @@ oacc_default_clause (struct gimplify_omp_ctx *ctx, tree decl, unsigned flags)
 
     case ORT_ACC_PARALLEL:
       {
-	if (on_device || AGGREGATE_TYPE_P (type))
+	if (on_device || AGGREGATE_TYPE_P (type) || declared)
 	  /* Aggregates default to 'present_or_copy'.  */
 	  flags |= GOVD_MAP;
 	else
@@ -7345,6 +7375,7 @@ gimplify_scan_omp_clauses (tree *list_p, gimple_seq *pre_p,
       case OMP_TARGET_DATA:
       case OMP_TARGET_ENTER_DATA:
       case OMP_TARGET_EXIT_DATA:
+      case OACC_DECLARE:
       case OACC_HOST_DATA:
 	ctx->target_firstprivatize_array_bases = true;
       default:
@@ -9230,18 +9261,26 @@ gimplify_oacc_declare (tree *expr_p, gimple_seq *pre_p)
 {
   tree expr = *expr_p;
   gomp_target *stmt;
-  tree clauses, t;
+  tree clauses, t, decl;
 
   clauses = OACC_DECLARE_CLAUSES (expr);
 
   gimplify_scan_omp_clauses (&clauses, pre_p, ORT_TARGET_DATA, OACC_DECLARE);
+  gimplify_adjust_omp_clauses (pre_p, NULL, &clauses, OACC_DECLARE);
 
   for (t = clauses; t; t = OMP_CLAUSE_CHAIN (t))
     {
-      tree decl = OMP_CLAUSE_DECL (t);
+      decl = OMP_CLAUSE_DECL (t);
 
       if (TREE_CODE (decl) == MEM_REF)
-	continue;
+	decl = TREE_OPERAND (decl, 0);
+
+      if (VAR_P (decl) && !is_oacc_declared (decl))
+	{
+	  tree attr = get_identifier ("oacc declare target");
+	  DECL_ATTRIBUTES (decl) = tree_cons (attr, NULL_TREE,
+					      DECL_ATTRIBUTES (decl));
+	}
 
       if (VAR_P (decl)
 	  && !is_global_var (decl)
@@ -9257,7 +9296,8 @@ gimplify_oacc_declare (tree *expr_p, gimple_seq *pre_p)
 	    }
 	}
 
-      omp_add_variable (gimplify_omp_ctxp, decl, GOVD_SEEN);
+      if (gimplify_omp_ctxp)
+	omp_add_variable (gimplify_omp_ctxp, decl, GOVD_SEEN);
     }
 
   stmt = gimple_build_omp_target (NULL, GF_OMP_TARGET_KIND_OACC_DECLARE,

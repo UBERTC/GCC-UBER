@@ -2321,7 +2321,7 @@ check_inquiry (gfc_expr *e, int not_restricted)
 		|| ap->expr->symtree->n.sym->ts.deferred))
 	  {
 	    gfc_error ("Assumed or deferred character length variable %qs "
-			" in constant expression at %L",
+			"in constant expression at %L",
 			ap->expr->symtree->n.sym->name,
 			&ap->expr->where);
 	      return MATCH_ERROR;
@@ -2792,7 +2792,7 @@ external_spec_function (gfc_expr *e)
   /* F08:7.1.11.6. */
   if (f->attr.recursive
       && !gfc_notify_std (GFC_STD_F2003,
-			  "Specification function '%s' "
+			  "Specification function %qs "
 			  "at %L cannot be RECURSIVE",  f->name, &e->where))
       return false;
 
@@ -3591,28 +3591,44 @@ gfc_check_pointer_assign (gfc_expr *lvalue, gfc_expr *rvalue)
       if (!s1 && comp1 && comp1->attr.subroutine && s2 && s2->attr.function)
 	{
 	  gfc_error ("Interface mismatch in procedure pointer assignment "
-		     "at %L: '%s' is not a subroutine", &rvalue->where, name);
+		     "at %L: %qs is not a subroutine", &rvalue->where, name);
 	  return false;
+	}
+
+      /* F08:7.2.2.4 (4)  */
+      if (s2 && gfc_explicit_interface_required (s2, err, sizeof(err)))
+	{
+	  if (comp1 && !s1)
+	    {
+	      gfc_error ("Explicit interface required for component %qs at %L: %s",
+			 comp1->name, &lvalue->where, err);
+	      return false;
+	    }
+	  else if (s1->attr.if_source == IFSRC_UNKNOWN)
+	    {
+	      gfc_error ("Explicit interface required for %qs at %L: %s",
+			 s1->name, &lvalue->where, err);
+	      return false;
+	    }
+	}
+      if (s1 && gfc_explicit_interface_required (s1, err, sizeof(err)))
+	{
+	  if (comp2 && !s2)
+	    {
+	      gfc_error ("Explicit interface required for component %qs at %L: %s",
+			 comp2->name, &rvalue->where, err);
+	      return false;
+	    }
+	  else if (s2->attr.if_source == IFSRC_UNKNOWN)
+	    {
+	      gfc_error ("Explicit interface required for %qs at %L: %s",
+			 s2->name, &rvalue->where, err);
+	      return false;
+	    }
 	}
 
       if (s1 == s2 || !s1 || !s2)
 	return true;
-
-      /* F08:7.2.2.4 (4)  */
-      if (s1->attr.if_source == IFSRC_UNKNOWN
-	  && gfc_explicit_interface_required (s2, err, sizeof(err)))
-	{
-	  gfc_error ("Explicit interface required for %qs at %L: %s",
-		     s1->name, &lvalue->where, err);
-	  return false;
-	}
-      if (s2->attr.if_source == IFSRC_UNKNOWN
-	  && gfc_explicit_interface_required (s1, err, sizeof(err)))
-	{
-	  gfc_error ("Explicit interface required for %qs at %L: %s",
-		     s2->name, &rvalue->where, err);
-	  return false;
-	}
 
       if (!gfc_compare_interfaces (s1, s2, name, 0, 1,
 				   err, sizeof(err), NULL, NULL))

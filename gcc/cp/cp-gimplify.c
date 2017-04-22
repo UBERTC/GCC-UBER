@@ -496,9 +496,8 @@ cp_gimplify_init_expr (tree *expr_p)
 	    TREE_TYPE (from) = void_type_node;
 	}
 
-      if (cxx_dialect >= cxx14 && TREE_CODE (sub) == CONSTRUCTOR)
-	/* Handle aggregate NSDMI.  */
-	replace_placeholders (sub, to);
+      /* Handle aggregate NSDMI.  */
+      replace_placeholders (sub, to);
 
       if (t == sub)
 	break;
@@ -1130,6 +1129,19 @@ cp_genericize_r (tree *stmt_p, int *walk_subtrees, void *data)
 	}
     }
 
+  if (TREE_CODE (stmt) == INTEGER_CST
+      && TREE_CODE (TREE_TYPE (stmt)) == REFERENCE_TYPE
+      && (flag_sanitize & (SANITIZE_NULL | SANITIZE_ALIGNMENT))
+      && !wtd->no_sanitize_p)
+    {
+      ubsan_maybe_instrument_reference (stmt_p);
+      if (*stmt_p != stmt)
+	{
+	  *walk_subtrees = 0;
+	  return NULL_TREE;
+	}
+    }
+
   /* Other than invisiref parms, don't walk the same tree twice.  */
   if (p_set->contains (stmt))
     {
@@ -1477,7 +1489,7 @@ cp_genericize_r (tree *stmt_p, int *walk_subtrees, void *data)
       if ((flag_sanitize & (SANITIZE_NULL | SANITIZE_ALIGNMENT))
 	  && TREE_CODE (stmt) == NOP_EXPR
 	  && TREE_CODE (TREE_TYPE (stmt)) == REFERENCE_TYPE)
-	ubsan_maybe_instrument_reference (stmt);
+	ubsan_maybe_instrument_reference (stmt_p);
       else if (TREE_CODE (stmt) == CALL_EXPR)
 	{
 	  tree fn = CALL_EXPR_FN (stmt);
@@ -2056,6 +2068,14 @@ cp_fold (tree x)
   code = TREE_CODE (x);
   switch (code)
     {
+    case CLEANUP_POINT_EXPR:
+      /* Strip CLEANUP_POINT_EXPR if the expression doesn't have side
+	 effects.  */
+      r = cp_fold_rvalue (TREE_OPERAND (x, 0));
+      if (!TREE_SIDE_EFFECTS (r))
+	x = r;
+      break;
+
     case SIZEOF_EXPR:
       x = fold_sizeof_expr (x);
       break;

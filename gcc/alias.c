@@ -613,6 +613,10 @@ component_uses_parent_alias_set_from (const_tree t)
 {
   const_tree found = NULL_TREE;
 
+  if (AGGREGATE_TYPE_P (TREE_TYPE (t))
+      && TYPE_TYPELESS_STORAGE (TREE_TYPE (t)))
+    return const_cast <tree> (t);
+
   while (handled_component_p (t))
     {
       switch (TREE_CODE (t))
@@ -882,6 +886,10 @@ get_alias_set (tree t)
   /* Variant qualifiers don't affect the alias set, so get the main
      variant.  */
   t = TYPE_MAIN_VARIANT (t);
+
+  if (AGGREGATE_TYPE_P (t)
+      && TYPE_TYPELESS_STORAGE (t))
+    return 0;
 
   /* Always use the canonical type as well.  If this is a type that
      requires structural comparisons to identify compatible types
@@ -2157,7 +2165,7 @@ base_alias_check (rtx x, rtx x_base, rtx y, rtx y_base,
   /* The base addresses are different expressions.  If they are not accessed
      via AND, there is no conflict.  We can bring knowledge of object
      alignment into play here.  For example, on alpha, "char a, b;" can
-     alias one another, though "char a; long b;" cannot.  AND addesses may
+     alias one another, though "char a; long b;" cannot.  AND addresses may
      implicitly alias surrounding objects; i.e. unaligned access in DImode
      via AND address can alias all surrounding object types except those
      with aligment 8 or higher.  */
