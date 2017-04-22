@@ -1,13 +1,74 @@
+2017-04-21  Janus Weil  <janus@gcc.gnu.org>
+
+	PR fortran/80392
+	* gfortran.dg/proc_ptr_comp_49.f90: New test case.
+
+2017-04-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/pr79804.c: Add additional dg-error directive.
+
+2017-04-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/79547
+	* gcc.dg/tree-ssa/strlen-2.c: New testcase.
+
+2017-04-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/78847
+	* g++.dg/tree-ssa/pr78847.C: New testcase.
+
+2017-04-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/80468
+	* gcc.dg/pr80468.c: New test.
+
+2017-04-21  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/66278
+	* gcc.dg/vect/pr66278.c: New test.
+
+2017-04-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80237
+	* gcc.dg/tree-ssa/tailcall-9.c: New testcase.
+	* gcc.dg/tree-ssa/ldist-pr45948.c: Remove undefined behavior,
+	adjust expected optimizations.
+
+2016-04-21  Richard Biener  <rguenther@suse.de>
+
+	* gcc.dg/vect/no-scevccp-outer-13.c: Adjust to prevent unrolling
+	of inner loops.
+	* gcc.dg/vect/no-scevccp-outer-7.c: Likewise.
+	* gcc.dg/vect/vect-104.c: Likewise.
+
 2017-04-21  Eric Botcazou  <ebotcazou@adacore.com>
 
 	PR tree-optimization/80426
 	* gcc.c-torture/execute/20170429-1.c: Rename into...
 	* gcc.c-torture/execute/20170419-1.c: ...this.
 
+2017-04-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/79804
+	* gcc.target/i386/pr79804.c: New test.
+
+2017-04-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78090
+	* gcc.target/i386/conversion-2.c: Remove obsolete test.
+
+2017-04-20  David Edelsohn  <dje.gcc@gmail.com>
+
+	* g++/opt/pr80436.C: XFAIL on AIX.
+
 2017-04-20  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR c++/80473
 	* g++.dg/diagnostic/pr80473.C: New test.
+
+2017-04-20  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	* g++.dg/warn/Wextra-semi.C: New test.
 
 2017-04-20  Jakub Jelinek  <jakub@redhat.com>
 

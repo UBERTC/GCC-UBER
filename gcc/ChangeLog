@@ -1,22 +1,109 @@
+2017-04-21  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (*extzvqi_mem_rex64): Move above *extzv<mode>.
+	Remove UNSPEC_NOREX_MEM tag.  Update corresponding peephole2 pattern.
+	(*insvqi_1_mem_rex64): Move above insv<mode>_1.  Remove
+	UNSPEC_NOREX_MEM tag.  Update corresponding peephole2 pattern.
+	(UNSPEC_NOREX_MEM): Remove definition.
+
+2017-04-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/79547
+	* tree-ssa-structalias.c (find_func_aliases_for_builtin_call):
+	Handle strlen, strcmp, strncmp, strcasecmp, strncasecmp, memcmp,
+	bcmp, strspn, strcspn, __builtin_object_size and __builtin_constant_p
+	without any constraints.
+
+2017-04-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/78847
+	* fold-const.c (split_tree): Handle POINTER_PLUS_EXPR.
+
+2017-04-21  Richard Biener  <rguenther@suse.de>
+
+	* tree.h (build_qualified_type): Annotate with CXX_MEM_STAT_INFO.
+	(build_distinct_type_copy): Likewise.
+	(build_variant_type_copy): Likewise.
+	* tree.c (build_qualified_type): Pass down mem-stat info.
+	(build_distinct_type_copy): Likewise.
+	(build_variant_type_copy): Likewise.
+
+2017-04-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80237
+	* tree-ssa-pre.c (find_leader_in_sets): Add third set argument,
+	defaulted to NULL.
+	(phi_translate_1): Also allow a leader in AVAIL_OUT of pred
+	for a simplified result.
+
+2016-04-21  Richard Biener  <rguenther@suse.de>
+
+	* tree-ssa-loop-ivcanon.c (constant_after_peeling): Do not require
+	sth as strict as a simple_iv but a chrec without symbols and an
+	operand defined in the loop we are peeling (and not some subloop).
+	(propagate_constants_for_unrolling): Propagate all constants.
+
+2017-04-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/79804
+	* config/i386/i386.c (print_reg): Remove assert for disalowed
+	regno values, call output_operand_lossage instead.
+
+2017-04-20  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/78090
+	* config/i386/constraints.md (Yc): New register constraint.
+	* config/i386/i386.md (*float<SWI48:mode><MODEF:mode>2_mixed):
+	Use Yc constraint for alternative 2 of operand 0.  Remove
+	preferred_for_speed attribute.
+
 2017-04-20  Alexander Monakov  <amonakov@ispras.ru>
 
-	Backport from mainline
-	2017-04-20  Alexander Monakov  <amonakov@ispras.ru>
+	* omp-low.c (lower_lastprivate_clauses): Correct handling of linear and
+	lastprivate clauses in SIMT case.
 
-	* omp-low.c (lower_lastprivate_clauses): Correct handling of linear
-	and lastprivate clauses in SIMT case.
+2017-04-20  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	* doc/invoke.texi (-Wextra-semi): Document new warning option.
+
+2017-04-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/57796
+	* tree-vect-stmts.c (vect_model_store_cost): Cost scatters
+	as N scalar stores.
+	(vect_model_load_cost): Cost gathers as N scalar loads.
+
+2017-04-20  Richard Biener  <rguenther@suse.de>
+
+	* ggc-page.c (ggc_allocated_p): Rename to ...
+	(safe_lookup_page_table_entry): ... this and return the lookup
+	result.
+	(gt_ggc_m_S): Use safe_lookup_page_table_entry.
+
+2017-04-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80453
+	* tree-ssa-sccvn.h (struct vn_phi_s): Add cclhs and ccrhs members.
+	* tree-ssa-sccvn.c (cond_stmts_equal_p): Use recorded lhs and rhs
+	from the conditions.
+	(vn_phi_eq): Pass them down.
+	(vn_phi_lookup): Record them.
+	(vn_phi_insert): Likewise.
 
 2017-04-20  Matthew Fortune  <matthew.fortune@imgtec.com>
-
-	Backport from mainline
-	2017-04-20  Matthew Fortune  <matthew.fortune@imgtec.com>
 
 	* config/mips/mips.c (mips_expand_vec_perm_const): Re-fix
 	uninitialized variable warning to avoid buffer overrun.
 
+2017-04-20  Alexander Monakov  <amonakov@ispras.ru>
+
+	PR other/71250
+	* doc/invoke.texi (-Wmissing-field-initializers): Mention that warning
+	is suppressed for '{ 0 }' in C.
+
 2017-04-20  Jakub Jelinek  <jakub@redhat.com>
 
-	* DEV-PHASE: Set to prerelease.
+	* BASE-VER: Set to 8.0.0.
 
 2017-04-20  Thomas Preud'homme  <thomas.preudhomme@arm.com>
 
@@ -37,7 +124,7 @@
 	(build_array_type): Likewise.  Add typeless_storage argument.
 
 2017-04-19  Eric Botcazou  <ebotcazou@adacore.com>
-            Jakub Jelinek  <jakub@redhat.com>
+	    Jakub Jelinek  <jakub@redhat.com>
 
 	PR tree-optimization/80426
 	* tree-vrp.c (extract_range_from_binary_expr_1): For an additive
@@ -79,7 +166,7 @@
 	are only used in debug insns.
 
 2017-04-19  Eric Botcazou  <ebotcazou@adacore.com>
-            Vladimir Makarov  <vmakarov@redhat.com>
+	    Vladimir Makarov  <vmakarov@redhat.com>
 
 	* config/sparc/predicates.md (input_operand): Add comment.  Return
 	true for any memory operand when LRA is in progress.
@@ -246,7 +333,7 @@
 
 2017-04-12  Jan Hubicka  <hubicka@ucw.cz>
 
-	PR lto/69953 
+	PR lto/69953
 	* ipa-visibility.c (non_local_p): Fix typos.
 	(localize_node): When localizing symbol in same comdat group,
 	dissolve the group only when we know external symbols are going

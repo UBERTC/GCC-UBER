@@ -1,3 +1,61 @@
+2017-04-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80316
+	* include/std/future (_State_baseV2::_Setter::operator()): Remove
+	_S_check calls that are done after the pointer to the shared state is
+	already dereferenced.
+	(_State_baseV2::_Setter<_Res, void>): Define specialization for void
+	as partial specialization so it can be defined within the definition
+	of _State_baseV2.
+	(_State_baseV2::__setter): Call _S_check.
+	(_State_baseV2::__setter(promise<void>*)): Add overload for use by
+	promise<void>::set_value and promise<void>::set_value_at_thread_exit.
+	(promise<T>, promise<T&>, promise<void>): Make _State a friend.
+	(_State_baseV2::_Setter<void, void>): Remove explicit specialization.
+	(promise<void>::set_value, promise<void>::set_value_at_thread_exit):
+	Use new __setter overload.
+	* testsuite/30_threads/promise/members/at_thread_exit2.cc: New test.
+	* testsuite/30_threads/promise/members/set_exception.cc: Test
+	promise<T&> and promise<void> specializations.
+	* testsuite/30_threads/promise/members/set_exception2.cc: Likewise.
+	Test for no_state error condition.
+	* testsuite/30_threads/promise/members/set_value2.cc: Likewise.
+
+	* include/backward/auto_ptr.h: Ignore deprecated warnings from use
+	of auto_ptr.
+	* include/bits/shared_ptr.h: Likewise.
+	* include/bits/shared_ptr_base.h: Likewise.
+	* include/bits/unique_ptr.h: Likewise.
+	* libstdc++-v3/testsuite/20_util/default_delete/48631_neg.cc: Adjust
+	dg-error lineno.
+	* libstdc++-v3/testsuite/20_util/default_delete/void_neg.cc: Likewise.
+	* libstdc++-v3/testsuite/20_util/unique_ptr/assign/48635_neg.cc:
+	Likewise.
+	* libstdc++-v3/testsuite/20_util/unique_ptr/cons/cv_qual_neg.cc:
+	Likewise.
+
+2017-04-20  Edward Smith-Rowland  <3dw4rd@verizon.net>
+
+	PR libstdc++/68397 std::tr1::expint fails ... long double arguments.
+	* include/tr1/exp_integral.tcc: Increase iteration limits.
+	* testsuite/tr1/5_numerical_facilities/special_functions/15_expint/
+	pr68397.cc: New test.
+	* testsuite/special_functions/14_expint/pr68397.cc: New test.
+
+2017-04-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/79862
+	* include/std/atomic [!_GLIBCXX_USE_C99_STDINT_TR1] (atomic_int8_t)
+	(atomic_uint8_t, atomic_int16_t, atomic_uint16_t, atomic_int32_t,
+	(atomic_uint32_t, atomic_int64_t, atomic_uint64_t)
+	(atomic_int_least8_t, atomic_uint_least8_t, atomic_int_least16_t)
+	(atomic_uint_least16_t, atomic_int_least32_t, atomic_uint_least32_t)
+	(atomic_int_least64_t, atomic_uint_least64_t, atomic_int_fast8_t)
+	(atomic_uint_fast8_t, atomic_int_fast16_t, atomic_uint_fast16_t)
+	(atomic_int_fast32_t, atomic_uint_fast32_t, atomic_int_fast64_t)
+	(atomic_uint_fast64_t, atomic_intmax_t, atomic_uintmax_t): Don't
+	define.
+
 2017-04-19  Jonathan Wakely  <jwakely@redhat.com>
 
 	* doc/xml/manual/abi.xml: Rephrase one of the references to the

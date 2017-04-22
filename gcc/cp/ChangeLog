@@ -1,8 +1,25 @@
+2017-04-21  Jason Merrill  <jason@redhat.com>
+
+	PR c++/80179 - ICE with initialized flexible array member.
+	* constexpr.c (verify_ctor_sanity): Handle flexible array members.
+
+2017-04-21  Richard Biener  <rguenther@suse.de>
+
+	* cp-tree.h (copy_decl): Annotate with CXX_MEM_STAT_INFO.
+	(copy_type): Likewise.
+	* lex.c (copy_decl): Pass down mem-stat info.
+	(copy_type): Likewise.
+
 2017-04-20  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR c++/80473
 	* init.c (build_new_1): Suppress notes about over-aligned new when
 	the warning is suppressed.
+
+2017-04-20  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	* parser.c (cp_parser_member_declaration): Add warning with fixit
+	information for extra semicolon after in-class function definition.
 
 2017-04-20  Jakub Jelinek  <jakub@redhat.com>
 
