@@ -1,3 +1,246 @@
+2017-04-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from mainline
+	+2015-11-23  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	PR target/68390
+	* config/arm/arm.c (arm_function_ok_for_sibcall): Get function type
+	for indirect function call.
+
+2017-04-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-04-11  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/80376
+	PR target/80315
+	* config/rs6000/rs6000.c (rs6000_expand_unop_builtin): Return
+	CONST0_RTX (mode) rather than const0_rtx where appropriate.
+	(rs6000_expand_binop_builtin): Likewise.
+	(rs6000_expand_ternop_builtin): Likewise; also add missing
+	vsx_xxpermdi_* variants; also fix typo (arg1 => arg2) for
+	vshasigma built-ins.
+	* doc/extend.texi: Document that vec_xxpermdi's third argument
+	must be a constant.
+
+2017-04-11  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from GCC 6
+	2017-04-06  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR target/80082
+	* config/arm/arm-protos.h (FL_LPAE): Define macro.
+	(FL_FOR_ARCH7VE): Add FL_LPAE.
+	(arm_arch_lpae): Declare extern.
+	* config/arm/arm.c (arm_arch_lpae): Declare.
+	(arm_option_override): Define arm_arch_lpae.
+	* config/arm/arm.h (TARGET_HAVE_LPAE): Redefine in term of
+	arm_arch_lpae.
+
+2017-04-11  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	2017-03-30  Martin Jambor  <mjambor@suse.cz>
+
+        PR ipa/77333
+        * cgraph.h (cgraph_build_function_type_skip_args): Declare.
+        * cgraph.c (redirect_call_stmt_to_callee): Set gimple fntype so that
+        it reflects the signature changes performed at the callee side.
+        * cgraphclones.c (build_function_type_skip_args): Make public, renamed
+        to cgraph_build_function_type_skip_args.
+        (build_function_decl_skip_args): Adjust call to the above function.
+
+2017-04-11  Bin Cheng  <bin.cheng@arm.com>
+
+	Backport from mainline
+	2016-02-10  Bin Cheng  <bin.cheng@arm.com>
+
+	PR tree-optimization/68021
+	* tree-ssa-loop-ivopts.c (get_computation_aff): Set ratio to 1 if
+	when computing the value of biv cand by itself.
+
+2017-04-08  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2017-04-08  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/aarch64/aarch64-freebsd.h: Define MCOUNT_NAME.
+	Add comment for WCHAR_T.
+
+2017-04-07  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2017-04-07  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/aarch64/aarch64-freebsd.h: Define WCHAR_T.
+
+2017-04-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-04-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/79733
+	* config/i386/i386.c (ix86_expand_builtin)
+	<case IX86_BUILTIN_KORTEST{C,Z}16>: Determine insn operand
+	mode from insn data. Convert operands to insn operand mode.
+	Copy operands that don't satisfy insn predicate to a register.
+
+2017-03-30  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-03-30  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/80246
+	* config/rs6000/dfp.md (dfp_dxex_<mode>): Update mode of operand 0.
+	(dfp_diex_<mode>): Update mode of operand 1.
+	* doc/extend.texi (dxex, dxexq): Document change to return type.
+	(diex, diexq): Document change to argument type.
+
+2017-03-25  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80180
+	* config/i386/i386.c (ix86_expand_builtin)
+	<IX86_BUILTIN_RDSEED{16,32,64}_STEP>: Do not expand arg0 between
+	flags reg setting and flags reg using instructions.
+	<IX86_BUILTIN_RDRAND{16,32,64}_STEP>: Ditto.  Use non-flags reg
+	clobbering instructions to zero extend op2.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-02-22  Martin Liska  <mliska@suse.cz>
+
+	PR lto/79587
+	* data-streamer-in.c (streamer_read_gcov_count): Remove assert.
+	* data-streamer-out.c (streamer_write_gcov_count_stream):
+	Likewise.
+	* value-prof.c (stream_out_histogram_value): Make assert more
+	precise based on type of counter.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	PR target/79906
+	* config/rs6000/rs6000.c (rs6000_inner_target_options): Show
+	error message instead of an ICE.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-21  Martin Liska  <mliska@suse.cz>
+
+	PR gcov-profile/80081
+	* Makefile.in: Add gcov-dump and fix installation of gcov-tool.
+	* doc/gcc.texi: Include gcov-dump stuff.
+	* doc/gcov-dump.texi: New file.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-20  Martin Liska  <mliska@suse.cz>
+
+	PR middle-end/79753
+	* tree-chkp.c (chkp_build_returned_bound): Do not build
+	returned bounds for a LHS that's not a BOUNDED_P type.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-20  Martin Liska  <mliska@suse.cz>
+
+	PR target/79769
+	PR target/79770
+	* tree-chkp.c (chkp_find_bounds_1): Handle REAL_CST,
+	COMPLEX_CST and VECTOR_CST.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-14  Martin Liska  <mliska@suse.cz>
+
+	PR middle-end/79831
+	* doc/invoke.texi (-Wchkp): Document the option.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-13  Martin Liska  <mliska@suse.cz>
+
+	PR middle-end/78339
+	* ipa-pure-const.c (warn_function_noreturn): If the declarations
+	is a CHKP clone, use original declaration.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-06-13  Martin Liska  <mliska@suse.cz>
+
+	PR target/65705
+	PR target/69804
+	PR sanitizer/71458
+
+	* toplev.c (process_options): Enable MPX with LSAN and UBSAN.
+	* tree-chkp.c (chkp_walk_pointer_assignments): Verify that
+	FIELD != NULL.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-09  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/79631
+	* tree-chkp-opt.c (chkp_is_constant_addr): Call
+	tree_int_cst_sign_bit just for INTEGER constants.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-09  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/79761
+	* tree-chkp.c (chkp_get_bound_for_parm): Get bounds for a param.
+	(chkp_find_bounds_1): Remove gcc_unreachable.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-03  Martin Liska  <mliska@suse.cz>
+
+	PR tree-optimization/79803
+	* tree-ssa-loop-prefetch.c (tree_ssa_prefetch_arrays): Remove
+	assert.
+	(pass_loop_prefetch::execute): Disabled optimization if an
+	assumption about L1 cache size is not met.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-03  Martin Liska  <mliska@suse.cz>
+
+	PR rtl-optimization/79574
+	* gcse.c (struct gcse_expr): Use HOST_WIDE_INT instead of int.
+	(hash_scan_set): Likewise.
+	(dump_hash_table): Likewise.
+	(hoist_code): Likewise.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-02-17  Martin Liska  <mliska@suse.cz>
+
+	PR rtl-optimization/79574
+	* gcse.c (want_to_gcse_p): Prevent integer overflow.
+
+2017-03-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-02-17  Martin Liska  <mliska@suse.cz>
+
+	PR rtl-optimization/79577
+	* params.def (selsched-max-sched-times): Increase minimum to 1.
+
 2017-03-21  Pat Haugen  <pthaugen@us.ibm.com>
 
 	Backport from mainline:
