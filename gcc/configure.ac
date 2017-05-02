@@ -929,7 +929,7 @@ AC_ARG_WITH(specs,
 )
 AC_SUBST(CONFIGURE_SPECS)
 
-ACX_PKGVERSION([GCC])
+ACX_PKGVERSION([Linaro GCC `cat $srcdir/LINARO-VERSION`])
 ACX_BUGURL([https://gcc.gnu.org/bugs/])
 
 # Sanity check enable_languages in case someone does not run the toplevel

@@ -53,18 +53,41 @@ parse_basever (int *major, int *minor, int *patchlevel)
     *patchlevel = s_patchlevel;
 }
 
+/* Parse a LINAROVER version string of the format "M.m-year.month[-spin][~dev]"
+   to create Linaro release number YYYYMM and spin version.  */
+static void
+parse_linarover (int *release, int *spin)
+{
+  static int s_year = -1, s_month, s_spin;
+
+  if (s_year == -1)
+    if (sscanf (LINAROVER, "%*[^-]-%d.%d-%d", &s_year, &s_month, &s_spin) != 3)
+      {
+	sscanf (LINAROVER, "%*[^-]-%d.%d", &s_year, &s_month);
+	s_spin = 0;
+      }
+
+  if (release)
+    *release = s_year * 100 + s_month;
+
+  if (spin)
+    *spin = s_spin;
+}
 
 /* Define __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__ and __VERSION__.  */
 static void
 define__GNUC__ (cpp_reader *pfile)
 {
-  int major, minor, patchlevel;
+  int major, minor, patchlevel, linaro_release, linaro_spin;
 
   parse_basever (&major, &minor, &patchlevel);
+  parse_linarover (&linaro_release, &linaro_spin);
   cpp_define_formatted (pfile, "__GNUC__=%d", major);
   cpp_define_formatted (pfile, "__GNUC_MINOR__=%d", minor);
   cpp_define_formatted (pfile, "__GNUC_PATCHLEVEL__=%d", patchlevel);
   cpp_define_formatted (pfile, "__VERSION__=\"%s\"", version_string);
+  cpp_define_formatted (pfile, "__LINARO_RELEASE__=%d", linaro_release);
+  cpp_define_formatted (pfile, "__LINARO_SPIN__=%d", linaro_spin);
   cpp_define_formatted (pfile, "__ATOMIC_RELAXED=%d", MEMMODEL_RELAXED);
   cpp_define_formatted (pfile, "__ATOMIC_SEQ_CST=%d", MEMMODEL_SEQ_CST);
   cpp_define_formatted (pfile, "__ATOMIC_ACQUIRE=%d", MEMMODEL_ACQUIRE);

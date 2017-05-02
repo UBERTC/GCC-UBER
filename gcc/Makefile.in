@@ -845,10 +845,12 @@ BASEVER     := $(srcdir)/BASE-VER  # 4.x.y
 DEVPHASE    := $(srcdir)/DEV-PHASE # experimental, prerelease, ""
 DATESTAMP   := $(srcdir)/DATESTAMP # YYYYMMDD or empty
 REVISION    := $(srcdir)/REVISION  # [BRANCH revision XXXXXX]
+LINAROVER   := $(srcdir)/LINARO-VERSION # M.x-YYYY.MM[-S][~dev]
 
 BASEVER_c   := $(shell cat $(BASEVER))
 DEVPHASE_c  := $(shell cat $(DEVPHASE))
 DATESTAMP_c := $(shell cat $(DATESTAMP))
+LINAROVER_c := $(shell cat $(LINAROVER))
 
 ifeq (,$(wildcard $(REVISION)))
 REVISION_c  :=
@@ -875,6 +877,7 @@ DATESTAMP_s := \
   "\"$(if $(DEVPHASE_c)$(filter-out 0,$(PATCHLEVEL_c)), $(DATESTAMP_c))\""
 PKGVERSION_s:= "\"@PKGVERSION@\""
 BUGURL_s    := "\"@REPORT_BUGS_TO@\""
+LINAROVER_s := "\"$(LINAROVER_c)\""
 
 PKGVERSION  := @PKGVERSION@
 BUGURL_TEXI := @REPORT_BUGS_TEXI@
@@ -2801,8 +2804,9 @@ PREPROCESSOR_DEFINES = \
   -DSTANDARD_EXEC_PREFIX=\"$(libdir)/gcc/\" \
   @TARGET_SYSTEM_ROOT_DEFINE@
 
-CFLAGS-cppbuiltin.o += $(PREPROCESSOR_DEFINES) -DBASEVER=$(BASEVER_s)
-cppbuiltin.o: $(BASEVER)
+CFLAGS-cppbuiltin.o += $(PREPROCESSOR_DEFINES) -DBASEVER=$(BASEVER_s) \
+	-DLINAROVER=$(LINAROVER_s)
+cppbuiltin.o: $(BASEVER) $(LINAROVER)
 
 CFLAGS-cppdefault.o += $(PREPROCESSOR_DEFINES)
 

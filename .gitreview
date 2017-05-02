@@ -1,0 +1,5 @@
+[gerrit]
+host=review.linaro.org
+port=29418
+project=toolchain/gcc
+defaultbranch=linaro-local/gcc-7-integration-branch

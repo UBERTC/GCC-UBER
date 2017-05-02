@@ -1717,7 +1717,8 @@ Optional Packages:
   --with-stabs            arrange to use stabs instead of host debug format
   --with-dwarf2           force the default debug format to be DWARF 2
   --with-specs=SPECS      add SPECS to driver command-line processing
-  --with-pkgversion=PKG   Use PKG in the version string in place of "GCC"
+  --with-pkgversion=PKG   Use PKG in the version string in place of "Linaro
+                          GCC `cat $srcdir/LINARO-VERSION`"
   --with-bugurl=URL       Direct users to URL to report a bug
   --with-multilib-list    select multilibs (AArch64, SH and x86-64 only)
   --with-gnu-ld           assume the C compiler uses GNU ld default=no
@@ -7637,7 +7638,7 @@ if test "${with_pkgversion+set}" = set; then :
       *)   PKGVERSION="($withval) " ;;
      esac
 else
-  PKGVERSION="(GCC) "
+  PKGVERSION="(Linaro GCC `cat $srcdir/LINARO-VERSION`) "
 
 fi
 
@@ -18433,7 +18434,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 18436 "configure"
+#line 18437 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18539,7 +18540,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 18542 "configure"
+#line 18543 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
