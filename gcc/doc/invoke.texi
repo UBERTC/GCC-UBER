@@ -634,6 +634,7 @@ Objective-C and Objective-C++ Dialects}.
 -mslow-flash-data @gol
 -masm-syntax-unified @gol
 -mrestrict-it @gol
+-mpure-code @gol
 -mcmse}
 
 @emph{AVR Options}
@@ -14373,6 +14374,14 @@ Print CPU tuning information as comment in assembler file.  This is
 an option used only for regression testing of the compiler and not
 intended for ordinary use in compiling code.  This option is disabled
 by default.
+
+@item -mpure-code
+@opindex mpure-code
+Do not allow constant data to be placed in code sections.
+Additionally, when compiling for ELF object format give all text sections the
+ELF processor-specific section attribute @code{SHF_ARM_PURECODE}.  This option
+is only available when generating non-pic code for M-profile targets with the
+MOVT instruction.
 
 @item -mcmse
 @opindex mcmse
