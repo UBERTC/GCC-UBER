@@ -1,3 +1,126 @@
+2016-05-08  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	PR target/69868 + swap optimization backports
+	* config/rs6000/rs6000.c (swap_web_entry): Enlarge
+	special_handling bitfield.
+	(special_handling_values): Add SH_XXPERMDI, SH_CONCAT, SH_VPERM,
+	and SH_VPERM_COMP.
+	(const_load_sequence_p): New.
+	(load_comp_mask_p): New.
+	(v2df_reduction_p): New.
+	(rtx_is_swappable_p): Perform special handling for XXPERMDI and
+	for reductions.
+	(insn_is_swappable_p): Perform special handling for VEC_CONCAT,
+	V2DF reductions, and various permutes.
+	(adjust_xxpermdi): New.
+	(adjust_concat): New.
+	(find_swapped_load_and_const_vector): New.
+	(replace_const_vector_in_load): New.
+	(adjust_vperm): New.
+	(adjust_vperm_comp): New.
+	(handle_special_swappables): Call adjust_xxpermdi, adjust_concat,
+	adjust_vperm, and adjust_vperm_comp.
+	(replace_swap_with_copy): Allow vector NOT operations to also be
+	replaced by copies.
+	(dump_swap_insn_table): Handle new special handling values.
+
+2017-05-03  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/68491
+	* config/i386/cpuid.h (__get_cpuid): Always return 0 when
+	__get_cpuid_max returns 0.
+
+2017-04-21  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from mainline
+	+2015-11-23  Kugan Vivekanandarajah  <kuganv@linaro.org>
+
+	PR target/68390
+	* config/arm/arm.c (arm_function_ok_for_sibcall): Get function type
+	for indirect function call.
+
+2017-04-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-04-11  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/80376
+	PR target/80315
+	* config/rs6000/rs6000.c (rs6000_expand_unop_builtin): Return
+	CONST0_RTX (mode) rather than const0_rtx where appropriate.
+	(rs6000_expand_binop_builtin): Likewise.
+	(rs6000_expand_ternop_builtin): Likewise; also add missing
+	vsx_xxpermdi_* variants; also fix typo (arg1 => arg2) for
+	vshasigma built-ins.
+	* doc/extend.texi: Document that vec_xxpermdi's third argument
+	must be a constant.
+
+2017-04-11  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from GCC 6
+	2017-04-06  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	PR target/80082
+	* config/arm/arm-protos.h (FL_LPAE): Define macro.
+	(FL_FOR_ARCH7VE): Add FL_LPAE.
+	(arm_arch_lpae): Declare extern.
+	* config/arm/arm.c (arm_arch_lpae): Declare.
+	(arm_option_override): Define arm_arch_lpae.
+	* config/arm/arm.h (TARGET_HAVE_LPAE): Redefine in term of
+	arm_arch_lpae.
+
+2017-04-11  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	2017-03-30  Martin Jambor  <mjambor@suse.cz>
+
+        PR ipa/77333
+        * cgraph.h (cgraph_build_function_type_skip_args): Declare.
+        * cgraph.c (redirect_call_stmt_to_callee): Set gimple fntype so that
+        it reflects the signature changes performed at the callee side.
+        * cgraphclones.c (build_function_type_skip_args): Make public, renamed
+        to cgraph_build_function_type_skip_args.
+        (build_function_decl_skip_args): Adjust call to the above function.
+
+2017-04-11  Bin Cheng  <bin.cheng@arm.com>
+
+	Backport from mainline
+	2016-02-10  Bin Cheng  <bin.cheng@arm.com>
+
+	PR tree-optimization/68021
+	* tree-ssa-loop-ivopts.c (get_computation_aff): Set ratio to 1 if
+	when computing the value of biv cand by itself.
+
+2017-04-08  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2017-04-08  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/aarch64/aarch64-freebsd.h: Define MCOUNT_NAME.
+	Add comment for WCHAR_T.
+
+2017-04-07  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	Backport from mainline
+	2017-04-07  Andreas Tobler  <andreast@gcc.gnu.org>
+
+	* config/aarch64/aarch64-freebsd.h: Define WCHAR_T.
+
+2017-04-07  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-04-06  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/79733
+	* config/i386/i386.c (ix86_expand_builtin)
+	<case IX86_BUILTIN_KORTEST{C,Z}16>: Determine insn operand
+	mode from insn data. Convert operands to insn operand mode.
+	Copy operands that don't satisfy insn predicate to a register.
+
 2017-03-30  Peter Bergner  <bergner@vnet.ibm.com>
 
 	Backport from mainline

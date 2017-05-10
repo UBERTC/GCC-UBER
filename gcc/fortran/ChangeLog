@@ -1,3 +1,28 @@
+2017-05-01  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80392
+	* trans-types.c (gfc_get_derived_type): Prevent an infinite loop when
+	building a derived type that includes a procedure pointer component
+	with a polymorphic result.
+
+2017-04-21  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80361
+	* class.c (generate_finalization_wrapper): Give the finalization wrapper
+	the recursive attribute.
+
+2017-04-14  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	Backport from trunk
+	2015-11-18  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/59910
+	PR fortran/80388
+	* primary.c (gfc_match_structure_constructor): Reduce a structure
+	constructor in a DATA statement.
+
 2017-02-07  Steven G. Kargl  <kargl@gcc.gnu.org>
 
 	* trans-types.c	(gfc_get_int_kind_from_width_isofortranen):  Choose
