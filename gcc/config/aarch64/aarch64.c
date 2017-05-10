@@ -193,10 +193,10 @@ static const struct aarch64_flag_desc aarch64_tuning_flags[] =
 static const struct cpu_addrcost_table generic_addrcost_table =
 {
     {
-      0, /* hi  */
+      1, /* hi  */
       0, /* si  */
       0, /* di  */
-      0, /* ti  */
+      1, /* ti  */
     },
   0, /* pre_modify  */
   0, /* post_modify  */
@@ -538,8 +538,8 @@ static const struct tune_params generic_tunings =
   2, /* issue_rate  */
   (AARCH64_FUSE_AES_AESMC), /* fusible_ops  */
   8,	/* function_align.  */
-  8,	/* jump_align.  */
-  4,	/* loop_align.  */
+  4,	/* jump_align.  */
+  8,	/* loop_align.  */
   2,	/* int_reassoc_width.  */
   4,	/* fp_reassoc_width.  */
   1,	/* vec_reassoc_width.  */
@@ -547,7 +547,7 @@ static const struct tune_params generic_tunings =
   2,	/* min_div_recip_mul_df.  */
   0,	/* max_case_values.  */
   0,	/* cache_line_size.  */
-  tune_params::AUTOPREFETCHER_OFF,	/* autoprefetcher_model.  */
+  tune_params::AUTOPREFETCHER_WEAK,	/* autoprefetcher_model.  */
   (AARCH64_EXTRA_TUNE_NONE)	/* tune_flags.  */
 };
 
