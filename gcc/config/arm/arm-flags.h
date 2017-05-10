@@ -38,7 +38,7 @@
 #define FL_STRONG     (1U << 8)		/* StrongARM.  */
 #define FL_ARCH5E     (1U << 9)		/* DSP extensions to v5.  */
 #define FL_XSCALE     (1U << 10)	/* XScale.  */
-/* spare	      (1U << 11) */
+#define FL_LPAE       (1U << 11)	/* ARMv7-A LPAE.  */
 #define FL_ARCH6      (1U << 12)	/* Architecture rel 6.  Adds
 					   media instructions.  */
 #define FL_VFPV2      (1U << 13)	/* Vector Floating Point V2.  */
@@ -96,7 +96,7 @@
 #define FL_FOR_ARCH6M		(FL_FOR_ARCH6 & ~FL_NOTM)
 #define FL_FOR_ARCH7		((FL_FOR_ARCH6T2 & ~FL_NOTM) | FL_ARCH7)
 #define FL_FOR_ARCH7A		(FL_FOR_ARCH7 | FL_NOTM | FL_ARCH6K)
-#define FL_FOR_ARCH7VE		(FL_FOR_ARCH7A | FL_THUMB_DIV | FL_ARM_DIV)
+#define FL_FOR_ARCH7VE		(FL_FOR_ARCH7A | FL_THUMB_DIV | FL_ARM_DIV | FL_LPAE)
 #define FL_FOR_ARCH7R		(FL_FOR_ARCH7A | FL_THUMB_DIV)
 #define FL_FOR_ARCH7M		(FL_FOR_ARCH7 | FL_THUMB_DIV)
 #define FL_FOR_ARCH7EM		(FL_FOR_ARCH7M | FL_ARCH7EM)

@@ -65,6 +65,7 @@
 #include "builtins.h"
 #include "context.h"
 #include "tree-pass.h"
+#include "except.h"
 #if TARGET_XCOFF
 #include "xcoffout.h"  /* get declarations of xcoff_*_section_name */
 #endif
@@ -13286,7 +13287,7 @@ rs6000_expand_unop_builtin (enum insn_code icode, tree exp, rtx target)
 	  || INTVAL (op0) < -16)
 	{
 	  error ("argument 1 must be a 5-bit signed literal");
-	  return const0_rtx;
+	  return CONST0_RTX (tmode);
 	}
     }
 
@@ -13389,7 +13390,7 @@ rs6000_expand_binop_builtin (enum insn_code icode, tree exp, rtx target)
 	  || TREE_INT_CST_LOW (arg1) & ~0x1f)
 	{
 	  error ("argument 2 must be a 5-bit unsigned literal");
-	  return const0_rtx;
+	  return CONST0_RTX (tmode);
 	}
     }
   else if (icode == CODE_FOR_dfptstsfi_eq_dd
@@ -14181,13 +14182,18 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
 	  || TREE_INT_CST_LOW (arg2) & ~0xf)
 	{
 	  error ("argument 3 must be a 4-bit unsigned literal");
-	  return const0_rtx;
+	  return CONST0_RTX (tmode);
 	}
     }
   else if (icode == CODE_FOR_vsx_xxpermdi_v2df
            || icode == CODE_FOR_vsx_xxpermdi_v2di
            || icode == CODE_FOR_vsx_xxpermdi_v2df_be
            || icode == CODE_FOR_vsx_xxpermdi_v2di_be
+           || icode == CODE_FOR_vsx_xxpermdi_v1ti
+           || icode == CODE_FOR_vsx_xxpermdi_v4sf
+           || icode == CODE_FOR_vsx_xxpermdi_v4si
+           || icode == CODE_FOR_vsx_xxpermdi_v8hi
+           || icode == CODE_FOR_vsx_xxpermdi_v16qi
            || icode == CODE_FOR_vsx_xxsldwi_v16qi
            || icode == CODE_FOR_vsx_xxsldwi_v8hi
            || icode == CODE_FOR_vsx_xxsldwi_v4si
@@ -14201,7 +14207,7 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
 	  || TREE_INT_CST_LOW (arg2) & ~0x3)
 	{
 	  error ("argument 3 must be a 2-bit unsigned literal");
-	  return const0_rtx;
+	  return CONST0_RTX (tmode);
 	}
     }
   else if (icode == CODE_FOR_vsx_set_v2df
@@ -14221,7 +14227,7 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
 	  || TREE_INT_CST_LOW (arg2) & ~0x1)
 	{
 	  error ("argument 3 must be a 1-bit unsigned literal");
-	  return const0_rtx;
+	  return CONST0_RTX (tmode);
 	}
     }
   else if (icode == CODE_FOR_dfp_ddedpd_dd
@@ -14233,7 +14239,7 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
 	  || TREE_INT_CST_LOW (arg2) & ~0x3)
 	{
 	  error ("argument 1 must be 0 or 2");
-	  return const0_rtx;
+	  return CONST0_RTX (tmode);
 	}
     }
   else if (icode == CODE_FOR_dfp_denbcd_dd
@@ -14245,7 +14251,7 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
 	  || TREE_INT_CST_LOW (arg0) & ~0x1)
 	{
 	  error ("argument 1 must be a 1-bit unsigned literal");
-	  return const0_rtx;
+	  return CONST0_RTX (tmode);
 	}
     }
   else if (icode == CODE_FOR_dfp_dscli_dd
@@ -14259,7 +14265,7 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
 	  || TREE_INT_CST_LOW (arg1) & ~0x3f)
 	{
 	  error ("argument 2 must be a 6-bit unsigned literal");
-	  return const0_rtx;
+	  return CONST0_RTX (tmode);
 	}
     }
   else if (icode == CODE_FOR_crypto_vshasigmaw
@@ -14271,14 +14277,14 @@ rs6000_expand_ternop_builtin (enum insn_code icode, tree exp, rtx target)
       if (TREE_CODE (arg1) != INTEGER_CST || wi::geu_p (arg1, 2))
 	{
 	  error ("argument 2 must be 0 or 1");
-	  return const0_rtx;
+	  return CONST0_RTX (tmode);
 	}
 
       STRIP_NOPS (arg2);
-      if (TREE_CODE (arg2) != INTEGER_CST || wi::geu_p (arg1, 16))
+      if (TREE_CODE (arg2) != INTEGER_CST || wi::geu_p (arg2, 16))
 	{
 	  error ("argument 3 must be in the range 0..15");
-	  return const0_rtx;
+	  return CONST0_RTX (tmode);
 	}
     }
 
@@ -28914,6 +28920,8 @@ rs6000_expand_split_stack_prologue (void)
      split_stack_return use r0.  */
   use_reg (&call_fusage, r0);
   add_function_usage_to (insn, call_fusage);
+  /* Indicate that this function can't jump to non-local gotos.  */
+  make_reg_eh_region_note_nothrow_nononlocal (insn);
   emit_insn (gen_frame_load (r0, r1, info->lr_save_offset));
   insn = emit_move_insn (lr, r0);
   add_reg_note (insn, REG_CFA_RESTORE, lr);
@@ -29966,7 +29974,7 @@ static int load_store_pendulum;
 static int divide_cnt;
 /* The following variable helps pair and alternate vector and vector load
    insns during scheduling.  */
-static int vec_load_pendulum;
+static int vec_pairing;
 
 
 /* Power4 load update and store update instructions are cracked into a
@@ -30923,7 +30931,7 @@ power9_sched_reorder2 (rtx_insn **ready, int lastpos)
   int pos;
   int i;
   rtx_insn *tmp;
-  enum attr_type type;
+  enum attr_type type, type2;
 
   type = get_attr_type (last_scheduled_insn);
 
@@ -30956,183 +30964,114 @@ power9_sched_reorder2 (rtx_insn **ready, int lastpos)
       /* Last insn was the 2nd divide or not a divide, reset the counter.  */
       divide_cnt = 0;
 
-      /* Power9 can execute 2 vector operations and 2 vector loads in a single
-	 cycle.  So try to pair up and alternate groups of vector and vector
-	 load instructions.
+      /* The best dispatch throughput for vector and vector load insns can be
+	 achieved by interleaving a vector and vector load such that they'll
+	 dispatch to the same superslice. If this pairing cannot be achieved
+	 then it is best to pair vector insns together and vector load insns
+	 together.
 
-	 To aid this formation, a counter is maintained to keep track of
-	 vec/vecload insns issued.  The value of vec_load_pendulum maintains
-	 the current state with the following values:
+	 To aid in this pairing, vec_pairing maintains the current state with
+	 the following values:
 
-	     0  : Initial state, no vec/vecload group has been started.
+	     0  : Initial state, no vecload/vector pairing has been started.
 
-	     -1 : 1 vector load has been issued and another has been found on
-		  the ready list and moved to the end.
-
-	     -2 : 2 vector loads have been issued and a vector operation has
-		  been found and moved to the end of the ready list.
-
-	     -3 : 2 vector loads and a vector insn have been issued and a
-		  vector operation has been found and moved to the end of the
-		  ready list.
-
-	     1  : 1 vector insn has been issued and another has been found and
-		  moved to the end of the ready list.
-
-	     2  : 2 vector insns have been issued and a vector load has been
-		  found and moved to the end of the ready list.
-
-	     3  : 2 vector insns and a vector load have been issued and another
-		  vector load has been found and moved to the end of the ready
-		  list.	 */
+	     1  : A vecload or vector insn has been issued and a candidate for
+		  pairing has been found and moved to the end of the ready
+		  list.  */
       if (type == TYPE_VECLOAD)
 	{
 	  /* Issued a vecload.  */
-	  if (vec_load_pendulum == 0)
+	  if (vec_pairing == 0)
 	    {
-	      /* We issued a single vecload, look for another and move it to
-		 the end of the ready list so it will be scheduled next.
-		 Set pendulum if found.  */
+	      int vecload_pos = -1;
+	      /* We issued a single vecload, look for a vector insn to pair it
+		 with.  If one isn't found, try to pair another vecload.  */
 	      pos = lastpos;
 	      while (pos >= 0)
 		{
-		  if (recog_memoized (ready[pos]) >= 0
-		      && get_attr_type (ready[pos]) == TYPE_VECLOAD)
+		  if (recog_memoized (ready[pos]) >= 0)
 		    {
-		      tmp = ready[pos];
-		      for (i = pos; i < lastpos; i++)
-			ready[i] = ready[i + 1];
-		      ready[lastpos] = tmp;
-		      vec_load_pendulum = -1;
-		      return cached_can_issue_more;
+		      type2 = get_attr_type (ready[pos]);
+		      if (is_power9_pairable_vec_type (type2))
+			{
+			  /* Found a vector insn to pair with, move it to the
+			     end of the ready list so it is scheduled next.  */
+			  tmp = ready[pos];
+			  for (i = pos; i < lastpos; i++)
+			    ready[i] = ready[i + 1];
+			  ready[lastpos] = tmp;
+			  vec_pairing = 1;
+			  return cached_can_issue_more;
+			}
+		      else if (type2 == TYPE_VECLOAD && vecload_pos == -1)
+			/* Remember position of first vecload seen.  */
+			vecload_pos = pos;
 		    }
 		  pos--;
 		}
-	    }
-	  else if (vec_load_pendulum == -1)
-	    {
-	      /* This is the second vecload we've issued, search the ready
-	         list for a vector operation so we can try to schedule a
-	         pair of those next.  If found move to the end of the ready
-	         list so it is scheduled next and set the pendulum.  */
-	      pos = lastpos;
-	      while (pos >= 0)
+	      if (vecload_pos >= 0)
 		{
-		  if (recog_memoized (ready[pos]) >= 0
-		      && is_power9_pairable_vec_type (
-			   get_attr_type (ready[pos])))
-		    {
-		      tmp = ready[pos];
-		      for (i = pos; i < lastpos; i++)
-			ready[i] = ready[i + 1];
-		      ready[lastpos] = tmp;
-		      vec_load_pendulum = -2;
-		      return cached_can_issue_more;
-		    }
-		  pos--;
-		}
-	    }
-	  else if (vec_load_pendulum == 2)
-	    {
-	      /* Two vector ops have been issued and we've just issued a
-		 vecload, look for another vecload and move to end of ready
-		 list if found.  */
-	      pos = lastpos;
-	      while (pos >= 0)
-	        {
-		  if (recog_memoized (ready[pos]) >= 0
-		      && get_attr_type (ready[pos]) == TYPE_VECLOAD)
-		    {
-		      tmp = ready[pos];
-		      for (i = pos; i < lastpos; i++)
-			ready[i] = ready[i + 1];
-		      ready[lastpos] = tmp;
-		      /* Set pendulum so that next vecload will be seen as
-			 finishing a group, not start of one.  */
-		      vec_load_pendulum = 3;
-		      return cached_can_issue_more;
-		    }
-		  pos--;
+		  /* Didn't find a vector to pair with but did find a vecload,
+		     move it to the end of the ready list.  */
+		  tmp = ready[vecload_pos];
+		  for (i = vecload_pos; i < lastpos; i++)
+		    ready[i] = ready[i + 1];
+		  ready[lastpos] = tmp;
+		  vec_pairing = 1;
+		  return cached_can_issue_more;
 		}
 	    }
 	}
       else if (is_power9_pairable_vec_type (type))
 	{
 	  /* Issued a vector operation.  */
-	  if (vec_load_pendulum == 0)
-	    /* We issued a single vec op, look for another and move it
-	       to the end of the ready list so it will be scheduled next.
-	       Set pendulum if found.  */
+	  if (vec_pairing == 0)
 	    {
+	      int vec_pos = -1;
+	      /* We issued a single vector insn, look for a vecload to pair it
+		 with.  If one isn't found, try to pair another vector.  */
 	      pos = lastpos;
 	      while (pos >= 0)
 		{
-		  if (recog_memoized (ready[pos]) >= 0
-		      && is_power9_pairable_vec_type (
-			   get_attr_type (ready[pos])))
+		  if (recog_memoized (ready[pos]) >= 0)
 		    {
-		      tmp = ready[pos];
-		      for (i = pos; i < lastpos; i++)
-			ready[i] = ready[i + 1];
-		      ready[lastpos] = tmp;
-		      vec_load_pendulum = 1;
-		      return cached_can_issue_more;
+		      type2 = get_attr_type (ready[pos]);
+		      if (type2 == TYPE_VECLOAD)
+			{
+			  /* Found a vecload insn to pair with, move it to the
+			     end of the ready list so it is scheduled next.  */
+			  tmp = ready[pos];
+			  for (i = pos; i < lastpos; i++)
+			    ready[i] = ready[i + 1];
+			  ready[lastpos] = tmp;
+			  vec_pairing = 1;
+			  return cached_can_issue_more;
+			}
+		      else if (is_power9_pairable_vec_type (type2)
+			       && vec_pos == -1)
+			/* Remember position of first vector insn seen.  */
+			vec_pos = pos;
 		    }
 		  pos--;
 		}
-	    }
-	  else if (vec_load_pendulum == 1)
-	    {
-	      /* This is the second vec op we've issued, search the ready
-		 list for a vecload operation so we can try to schedule a
-		 pair of those next.  If found move to the end of the ready
-		 list so it is scheduled next and set the pendulum.  */
-	      pos = lastpos;
-	      while (pos >= 0)
+	      if (vec_pos >= 0)
 		{
-		  if (recog_memoized (ready[pos]) >= 0
-		      && get_attr_type (ready[pos]) == TYPE_VECLOAD)
-		    {
-		      tmp = ready[pos];
-		      for (i = pos; i < lastpos; i++)
-			ready[i] = ready[i + 1];
-		      ready[lastpos] = tmp;
-		      vec_load_pendulum = 2;
-		      return cached_can_issue_more;
-		    }
-		  pos--;
-		}
-	    }
-	  else if (vec_load_pendulum == -2)
-	    {
-	      /* Two vecload ops have been issued and we've just issued a
-		 vec op, look for another vec op and move to end of ready
-	  	 list if found.  */
-	      pos = lastpos;
-	      while (pos >= 0)
-		{
-		  if (recog_memoized (ready[pos]) >= 0
-		      && is_power9_pairable_vec_type (
-			   get_attr_type (ready[pos])))
-		    {
-		      tmp = ready[pos];
-		      for (i = pos; i < lastpos; i++)
-			ready[i] = ready[i + 1];
-		      ready[lastpos] = tmp;
-		      /* Set pendulum so that next vec op will be seen as
-			 finishing a group, not start of one.  */
-		      vec_load_pendulum = -3;
-		      return cached_can_issue_more;
-		    }
-		  pos--;
+		  /* Didn't find a vecload to pair with but did find a vector
+		     insn, move it to the end of the ready list.  */
+		  tmp = ready[vec_pos];
+		  for (i = vec_pos; i < lastpos; i++)
+		    ready[i] = ready[i + 1];
+		  ready[lastpos] = tmp;
+		  vec_pairing = 1;
+		  return cached_can_issue_more;
 		}
 	    }
 	}
 
-      /* We've either finished a vec/vecload group, couldn't find an insn to
-	 continue the current group, or the last insn had nothing to do with
-	 with a group.  In any case, reset the pendulum.  */
-      vec_load_pendulum = 0;
+      /* We've either finished a vec/vecload pair, couldn't find an insn to
+	 continue the current pair, or the last insn had nothing to do with
+	 with pairing.  In any case, reset the state.  */
+      vec_pairing = 0;
     }
 
   return cached_can_issue_more;
@@ -32047,7 +31986,7 @@ rs6000_sched_init (FILE *dump ATTRIBUTE_UNUSED,
   last_scheduled_insn = NULL;
   load_store_pendulum = 0;
   divide_cnt = 0;
-  vec_load_pendulum = 0;
+  vec_pairing = 0;
 }
 
 /* The following function is called at the end of scheduling BB.
@@ -32094,7 +32033,7 @@ struct rs6000_sched_context
   rtx_insn *last_scheduled_insn;
   int load_store_pendulum;
   int divide_cnt;
-  int vec_load_pendulum;
+  int vec_pairing;
 };
 
 typedef struct rs6000_sched_context rs6000_sched_context_def;
@@ -32120,7 +32059,7 @@ rs6000_init_sched_context (void *_sc, bool clean_p)
       sc->last_scheduled_insn = NULL;
       sc->load_store_pendulum = 0;
       sc->divide_cnt = 0;
-      sc->vec_load_pendulum = 0;
+      sc->vec_pairing = 0;
     }
   else
     {
@@ -32128,7 +32067,7 @@ rs6000_init_sched_context (void *_sc, bool clean_p)
       sc->last_scheduled_insn = last_scheduled_insn;
       sc->load_store_pendulum = load_store_pendulum;
       sc->divide_cnt = divide_cnt;
-      sc->vec_load_pendulum = vec_load_pendulum;
+      sc->vec_pairing = vec_pairing;
     }
 }
 
@@ -32144,7 +32083,7 @@ rs6000_set_sched_context (void *_sc)
   last_scheduled_insn = sc->last_scheduled_insn;
   load_store_pendulum = sc->load_store_pendulum;
   divide_cnt = sc->divide_cnt;
-  vec_load_pendulum = sc->vec_load_pendulum;
+  vec_pairing = sc->vec_pairing;
 }
 
 /* Free _SC.  */

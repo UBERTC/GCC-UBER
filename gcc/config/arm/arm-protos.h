@@ -440,6 +440,9 @@ extern int arm_arch_thumb2;
 extern int arm_arch_arm_hwdiv;
 extern int arm_arch_thumb_hwdiv;
 
+/* Nonzero if this chip supports the Large Physical Address Extension.  */
+extern int arm_arch_lpae;
+
 /* Nonzero if chip disallows volatile memory access in IT block.  */
 extern int arm_arch_no_volatile_ce;
 
