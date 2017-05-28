@@ -1614,8 +1614,13 @@ reduced_constant_expression_p (tree t)
       /* And we need to handle PTRMEM_CST wrapped in a CONSTRUCTOR.  */
       tree elt; unsigned HOST_WIDE_INT idx;
       FOR_EACH_CONSTRUCTOR_VALUE (CONSTRUCTOR_ELTS (t), idx, elt)
-	if (!reduced_constant_expression_p (elt))
-	  return false;
+	{
+	  if (!elt)
+	    /* We're in the middle of initializing this element.  */
+	    return false;
+	  if (!reduced_constant_expression_p (elt))
+	    return false;
+	}
       return true;
 
     default:
@@ -3007,12 +3012,10 @@ cxx_eval_indirect_ref (const constexpr_ctx *ctx, tree t,
   if (*non_constant_p)
     return t;
 
-  /* If we're pulling out the value of an empty base, make sure
-     that the whole object is constant and then return an empty
+  /* If we're pulling out the value of an empty base, just return an empty
      CONSTRUCTOR.  */
   if (empty_base && !lval)
     {
-      VERIFY_CONSTANT (r);
       r = build_constructor (TREE_TYPE (t), NULL);
       TREE_CONSTANT (r) = true;
     }
@@ -3283,11 +3286,12 @@ cxx_eval_store_expression (const constexpr_ctx *ctx, tree t,
 	 wants to modify it.  */
       if (*valp == NULL_TREE)
 	{
-	  *valp = new_ctx.ctor = build_constructor (type, NULL);
-	  CONSTRUCTOR_NO_IMPLICIT_ZERO (new_ctx.ctor) = no_zero_init;
+	  *valp = build_constructor (type, NULL);
+	  CONSTRUCTOR_NO_IMPLICIT_ZERO (*valp) = no_zero_init;
 	}
-      else
-	new_ctx.ctor = *valp;
+      else if (TREE_CODE (*valp) == PTRMEM_CST)
+	*valp = cplus_expand_constant (*valp);
+      new_ctx.ctor = *valp;
       new_ctx.object = target;
     }
 
@@ -4984,10 +4988,40 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
     case DELETE_EXPR:
     case VEC_DELETE_EXPR:
     case THROW_EXPR:
+    case OMP_PARALLEL:
+    case OMP_TASK:
+    case OMP_FOR:
+    case OMP_DISTRIBUTE:
+    case OMP_TASKLOOP:
+    case OMP_TEAMS:
+    case OMP_TARGET_DATA:
+    case OMP_TARGET:
+    case OMP_SECTIONS:
+    case OMP_ORDERED:
+    case OMP_CRITICAL:
+    case OMP_SINGLE:
+    case OMP_SECTION:
+    case OMP_MASTER:
+    case OMP_TASKGROUP:
+    case OMP_TARGET_UPDATE:
+    case OMP_TARGET_ENTER_DATA:
+    case OMP_TARGET_EXIT_DATA:
     case OMP_ATOMIC:
     case OMP_ATOMIC_READ:
     case OMP_ATOMIC_CAPTURE_OLD:
     case OMP_ATOMIC_CAPTURE_NEW:
+    case OACC_PARALLEL:
+    case OACC_KERNELS:
+    case OACC_DATA:
+    case OACC_HOST_DATA:
+    case OACC_LOOP:
+    case OACC_CACHE:
+    case OACC_DECLARE:
+    case OACC_ENTER_DATA:
+    case OACC_EXIT_DATA:
+    case OACC_UPDATE:
+    case CILK_SIMD:
+    case CILK_FOR:
       /* GCC internal stuff.  */
     case VA_ARG_EXPR:
     case OBJ_TYPE_REF:
@@ -4996,7 +5030,8 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
     case AT_ENCODE_EXPR:
     fail:
       if (flags & tf_error)
-        error ("expression %qE is not a constant-expression", t);
+	error_at (EXPR_LOC_OR_LOC (t, input_location),
+		  "expression %qE is not a constant-expression", t);
       return false;
 
     case TYPEID_EXPR:

@@ -1760,7 +1760,7 @@ instrument_object_size (gimple_stmt_iterator *gsi, bool is_lhs)
 	{
 	  tree repr = DECL_BIT_FIELD_REPRESENTATIVE (TREE_OPERAND (t, 1));
 	  t = build3 (COMPONENT_REF, TREE_TYPE (repr), TREE_OPERAND (t, 0),
-		      repr, NULL_TREE);
+		      repr, TREE_OPERAND (t, 2));
 	}
       break;
     case ARRAY_REF:
@@ -1794,7 +1794,11 @@ instrument_object_size (gimple_stmt_iterator *gsi, bool is_lhs)
   bool decl_p = DECL_P (inner);
   tree base;
   if (decl_p)
-    base = inner;
+    {
+      if (DECL_REGISTER (inner))
+	return;
+      base = inner;
+    }
   else if (TREE_CODE (inner) == MEM_REF)
     base = TREE_OPERAND (inner, 0);
   else
