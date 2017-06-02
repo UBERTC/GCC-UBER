@@ -1,3 +1,52 @@
+2017-05-22  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc-interface/decl.c (gnat_to_gnu_entity): Skip regular processing
+	for Itypes that are E_Access_Subtype.
+	<E_Access_Subtype>: Use the DECL of the base type directly.
+
+2017-05-17  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/80784
+	Backport from mainline
+
+	2017-05-02  Ed Schonberg  <schonberg@adacore.com>
+
+	* exp_ch3.adb (Freeze_Type): Do not generate an invariant
+	procedure body for a local (sub)type declaration within a
+	predicate function. Invariant checks do not apply to these, and
+	the expansion of the procedure will happen in the wrong scope,
+	leading to misplaced freeze nodes.
+
+2017-05-12  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* system-linux-arm.ads (Memory_Size): Use Long_Integer'Size
+	instead of Word_Size.
+
+	Revert
+	2017-03-28  Andreas Schwab  <schwab@suse.de>
+
+	PR ada/80117
+	* system-linux-aarch64-ilp32.ads: New file.
+	* gcc-interface/Makefile.in (LIBGNAT_TARGET_PAIRS_COMMON): Rename
+	from LIBGNAT_TARGET_PAIRS.
+	(LIBGNAT_TARGET_PAIRS_32, LIBGNAT_TARGET_PAIRS_64): Define.
+	(LIBGNAT_TARGET_PAIRS): Use LIBGNAT_TARGET_PAIRS_COMMON, and
+	LIBGNAT_TARGET_PAIRS_64 or LIBGNAT_TARGET_PAIRS_32 for -mabi=lp64
+	or -mabi=ilp32, resp.
+
+2017-05-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	Back port from mainline
+	2017-05-10  H.J. Lu  <hongjiu.lu@intel.com>
+
+	PR ada/80626
+	* system-linux-x86.ads (Memory_Size): Use Long_Integer'Size
+	instead of Word_Size.
+
+2017-05-02  Release Manager
+
+	* GCC 7.1.0 released.
+
 2017-04-04  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
 
 	* system-linux-s390.ads: Use Long_Integer'Size to define

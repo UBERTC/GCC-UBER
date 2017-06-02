@@ -5873,6 +5873,10 @@ rs6000_density_test (rs6000_cost_data *data)
 
 /* Implement targetm.vectorize.init_cost.  */
 
+/* For each vectorized loop, this var holds TRUE iff a non-memory vector
+   instruction is needed by the vectorization.  */
+static bool rs6000_vect_nonmem;
+
 static void *
 rs6000_init_cost (struct loop *loop_info)
 {
@@ -5881,6 +5885,7 @@ rs6000_init_cost (struct loop *loop_info)
   data->cost[vect_prologue] = 0;
   data->cost[vect_body]     = 0;
   data->cost[vect_epilogue] = 0;
+  rs6000_vect_nonmem = false;
   return data;
 }
 
@@ -5907,6 +5912,15 @@ rs6000_add_stmt_cost (void *data, int count, enum vect_cost_for_stmt kind,
 
       retval = (unsigned) (count * stmt_cost);
       cost_data->cost[where] += retval;
+
+      /* Check whether we're doing something other than just a copy loop.
+	 Not all such loops may be profitably vectorized; see
+	 rs6000_finish_cost.  */
+      if ((kind == vec_to_scalar || kind == vec_perm
+	   || kind == vec_promote_demote || kind == vec_construct
+	   || kind == scalar_to_vec)
+	  || (where == vect_body && kind == vector_stmt))
+	rs6000_vect_nonmem = true;
     }
 
   return retval;
@@ -5922,6 +5936,19 @@ rs6000_finish_cost (void *data, unsigned *prologue_cost,
 
   if (cost_data->loop_info)
     rs6000_density_test (cost_data);
+
+  /* Don't vectorize minimum-vectorization-factor, simple copy loops
+     that require versioning for any reason.  The vectorization is at
+     best a wash inside the loop, and the versioning checks make
+     profitability highly unlikely and potentially quite harmful.  */
+  if (cost_data->loop_info)
+    {
+      loop_vec_info vec_info = loop_vec_info_for_loop (cost_data->loop_info);
+      if (!rs6000_vect_nonmem
+	  && LOOP_VINFO_VECT_FACTOR (vec_info) == 2
+	  && LOOP_REQUIRES_VERSIONING (vec_info))
+	cost_data->cost[vect_body] += 10000;
+    }
 
   *prologue_cost = cost_data->cost[vect_prologue];
   *body_cost     = cost_data->cost[vect_body];
@@ -18182,6 +18209,17 @@ altivec_init_builtins (void)
 		   void_ftype_v8hi_long_pvoid, VSX_BUILTIN_ST_ELEMREV_V8HI);
       def_builtin ("__builtin_vsx_st_elemrev_v16qi",
 		   void_ftype_v16qi_long_pvoid, VSX_BUILTIN_ST_ELEMREV_V16QI);
+    }
+  else
+    {
+      rs6000_builtin_decls[(int)VSX_BUILTIN_LD_ELEMREV_V8HI]
+	= rs6000_builtin_decls[(int)VSX_BUILTIN_LXVW4X_V8HI];
+      rs6000_builtin_decls[(int)VSX_BUILTIN_LD_ELEMREV_V16QI]
+	= rs6000_builtin_decls[(int)VSX_BUILTIN_LXVW4X_V16QI];
+      rs6000_builtin_decls[(int)VSX_BUILTIN_ST_ELEMREV_V8HI]
+	= rs6000_builtin_decls[(int)VSX_BUILTIN_STXVW4X_V8HI];
+      rs6000_builtin_decls[(int)VSX_BUILTIN_ST_ELEMREV_V16QI]
+	= rs6000_builtin_decls[(int)VSX_BUILTIN_STXVW4X_V16QI];
     }
 
   def_builtin ("__builtin_vec_vsx_ld", opaque_ftype_long_pcvoid,

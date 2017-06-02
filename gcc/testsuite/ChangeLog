@@ -1,3 +1,283 @@
+2017-05-31  Martin Jambor  <mjambor@suse.cz>
+
+        Backport from mainline
+        2017-04-24  Martin Jambor  <mjambor@suse.cz>
+
+        PR tree-optimization/80293
+        * g++.dg/tree-ssa/pr80293.C: New test.
+
+2017-05-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* gcc.target/s390/pr80725.c: New test.
+
+2017-05-26  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2017-05-17  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/80659
+	* gcc.dg/asan/pr80659.c: New test.
+
+2017-05-26  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2017-05-26  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/80875
+	* c-c++-common/ubsan/pr80875.c: New test.
+
+2017-05-25  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from trunk
+	2017-05-18  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/80510
+	* gcc.target/powerpc/pr80510-1.c: New test.
+	* gcc.target/powerpc/pr80510-2.c: Likewise.
+
+	Backport from trunk
+	2017-05-09  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/68163
+	* gcc.target/powerpc/pr68163.c: New test.
+
+2017-05-23  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/80741
+	* gfortran.dg/read_4.f90: New test.
+
+2017-05-23  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/80333
+	* gfortran.dg/dtio_30.f03: New test.
+
+2017-05-23  Sheldon Lobo  <sheldon.lobo@oracle.com>
+
+	Backport from mainline
+	2017-05-18  Sheldon Lobo  <sheldon.lobo@oracle.com>
+
+	* gcc.target/sparc/niagara7-align.c: New test.
+
+2017-05-23  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/80333
+	* gfortran.dg/dtio_30.f03: New test.
+
+2017-05-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/p8-vec-xl-xst.c: Fix target string to
+	LE-only.
+
+2017-05-22  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	* gnat.dg/specs/not_null1.ads: New test.
+
+2017-05-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80799
+	* g++.dg/other/i386-11.C: New test.
+
+2017-05-17  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR libgfortran/80727
+	* gfortran.dg/read_3.f90: New test.
+
+2017-05-17  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/78659
+	* gfortran.dg/namelist_91.f90: New test.
+	* gfortran.dg/namelist_92.f90: New test.
+	* gfortran.dg/namelist_93.f90: New test.
+	* gfortran.dg/namelist_94.f90: New test.
+
+2017-05-15  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/80752
+	gfortran.dg/pr80752.f90: New test.
+
+2017-05-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-11  Uros Bizjak  <ubizjak@gmail.com>
+		    Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/80706
+	* gcc.target/i386/pr80706.c: New test.
+
+	2017-05-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/pr22152.c: Fix undefined testcase.
+	Remove unnecessary loop.  Run on 32-bit targets only.
+
+2017-05-13  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/versioned-copy-loop.c: New file.
+
+2017-05-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/p8-vec-xl-xst.c: New file.
+
+2017-05-09  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from mainline
+	2017-05-05  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/79038
+	PR target/79202
+	PR target/79203
+	* gcc.target/powerpc/ppc-round3.c: New test.
+	* gcc.target/powerpc/ppc-round2.c: Update expected code.
+
+2017-05-05  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80121
+	* gfortran.dg/intent_out_9.f90: New test case.
+
+2017-05-05  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80392
+	* gfortran.dg/proc_ptr_comp_49.f90: New test case.
+
+2017-05-04  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	Backport from mainline
+	PR fortran/80484
+	* gfortran.dg/dtio_29.f03: New test.
+
+2017-05-03  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-04-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80492
+	* gcc.dg/pr80492.c: New testcase.
+
+	2017-04-27  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/80539
+	* gcc.dg/torture/pr80539.c: New testcase.
+
+2017-05-03  Jakub Jelinek <jakub@redhat.com>
+
+	Backported from mainline
+	2017-04-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/80468
+	* gcc.dg/pr80468.c: New test.
+
+2017-05-02  Release Manager
+
+	* GCC 7.1.0 released.
+
+2017-05-02  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80591
+	* gcc.dg/torture/pr80591.c: New testcase.
+
+2017-04-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/80534
+	* g++.dg/other/pr80534-1.C: New test.
+	* g++.dg/other/pr80534-2.C: New test.
+
+	PR target/77728
+	* g++.dg/abi/pr77728-2.C: Don't expect -Wpsabi notes.
+
+2017-04-25  Martin Sebor  <msebor@redhat.com>
+
+	PR tree-optimization/80497
+	* gcc.dg/tree-ssa/builtin-sprintf-warn-17.c: New test.
+
+2017-04-25  Marek Polacek  <polacek@redhat.com>
+
+	2017-04-25  Marek Polacek  <polacek@redhat.com>
+	Backport from mainline
+
+	PR sanitizer/80349
+	* g++.dg/ubsan/pr80349-2.C: New test.
+
+2017-04-25  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/77728
+	* g++.dg/abi/pr77728-1.C: New test.
+
+2017-04-25  Bill Seurer  <seurer@linux.vnet.ibm.com>
+
+	Backport from mainline
+	PR target/80482
+	* gcc.target/powerpc/vec-constvolatile.c: New test.
+
+2017-04-25  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/77728
+	* g++.dg/abi/pr77728-2.C: New test.
+
+2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+        PR target/80464
+        * gfortran.fortran-torture/compile/pr80464.f90: New test.
+
+2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+        PR target/79895
+        * gcc.target/s390/pr79895.c: New test.
+
+2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from maineline
+	2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+        PR target/80080
+        * gcc.target/s390/md/atomic_compare_exchange-1.c: New test.
+        * gcc.target/s390/md/atomic_compare_exchange-1.inc: New test.
+        * gcc.target/s390/md/atomic_exchange-1.inc: New test.
+
+2017-04-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/80501
+	* gcc.c-torture/execute/pr80501.c: New test.
+
+	PR rtl-optimization/80500
+	* gcc.dg/pr80500.c: New test.
+
+2017-04-24  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-24  Martin Liska  <mliska@suse.cz>
+
+	PR middle-end/79931
+	* g++.dg/ipa/pr79931.C: New test.
+
 2017-04-21  Eric Botcazou  <ebotcazou@adacore.com>
 
 	PR tree-optimization/80426

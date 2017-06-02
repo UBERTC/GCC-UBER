@@ -1,3 +1,28 @@
+2017-05-26  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-05-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/80809
+	* testsuite/libgomp.c/pr80809-2.c: New test.
+	* testsuite/libgomp.c/pr80809-3.c: New test.
+
+	PR middle-end/80809
+	* testsuite/libgomp.c/pr80809-1.c: New test.
+
+	PR middle-end/80853
+	* testsuite/libgomp.c/pr80853.c: New test.
+
+2017-05-02  Release Manager
+
+	* GCC 7.1.0 released.
+
+2017-04-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/80531
+	* configure.tgt (*-*-aix*): Add -frandom-seed=$@ to XCFLAGS to avoid
+	bootstrap compare failures.
+
 2017-04-20  Alexander Monakov  <amonakov@ispras.ru>
 
 	Backport from mainline

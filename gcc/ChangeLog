@@ -1,3 +1,513 @@
+2017-05-31  Martin Jambor  <mjambor@suse.cz>
+
+        Backport from mainline
+        2017-04-24  Martin Jambor  <mjambor@suse.cz>
+
+        PR tree-optimization/80293
+        * tree-sra.c (scalarizable_type_p): New parameter const_decl, make
+        char arrays not totally scalarizable if it is false.
+        (analyze_all_variable_accesses): Pass correct value in the new
+        parameter.  Add a statistics counter.
+
+2017-05-30  Max Filippov  <jcmvbkbc@gmail.com>
+
+	Backport from mainline
+	2017-05-29  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/xtensa/xtensa.c (xtensa_emit_call): Use
+	HOST_WIDE_INT_PRINT_HEX instead of 0x%lx format string.
+	(print_operand): Use HOST_WIDE_INT_PRINT_DEC instead of %ld
+	format string.
+
+2017-05-29  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/install.texi (Options specification): Restore entry of
+	--enable-sjlj-exceptions.
+
+2017-05-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR target/80725
+	* config/s390/s390.c (s390_check_qrst_address): Check incoming
+	address against address_operand predicate.
+	* config/s390/s390.md ("*indirect_jump"): Swap alternatives.
+
+2017-05-28  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (*movdi_internal): Remove SSE4
+	alternative 18 (?r, *v).  Update insn attributes.
+	(*movsi_internal): Remove SSE4 alternative 13 (?r, *v).
+	Update insn attributes.
+	(*zero_extendsidi2): Remove SSE4 alternative (?r, *x).
+	Update insn attributes.
+	* config/i386/sse.md (vec_extract<ssevecmodelower>_0): Remove SSE4
+	alternative 1 (r, v). Remove isa attribute.
+	* config/i386/i386.c (dimode_scalar_chain::make_vector_copies):
+	Always move value through stack for !TARGET_INTER_UNIT_MOVES_TO_VEC
+	and !TARGET_INTER_UNIT_MOVES_TO_VEC targets.
+
+	2017-05-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (*movsi_internal): Split (?rm,*y) alternative
+	to (?r,*Yn) and (?m,*y) alternatives, and (?*y,rm) to (?*Ym,r)
+	and (?*y,m).  Update insn attributes.
+
+2017-05-26  Sheldon Lobo  <smlobo@sheldon.us.oracle.com>
+
+	Backported from mainline
+	2017-05-24  Sheldon Lobo  <smlobo@sheldon.us.oracle.com>
+
+	* config/sparc/sparc.md (length): Return the correct value for -mflat
+	sibcalls to match output_sibcall.
+
+2017-05-26  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2017-05-26  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/80875
+	* fold-const.c (fold_binary_loc) <case MULT_EXPR>: Check if OP1
+	can be negated.
+
+2017-05-26  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-05-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/80809
+	* omp-low.c (finish_taskreg_remap): New function.
+	(finish_taskreg_scan): If unit size of ctx->record_type
+	is non-constant, unshare the size expression and replace
+	decls in it with possible outer var refs.
+
+	PR middle-end/80809
+	* gimplify.c (omp_add_variable): For GOVD_DEBUG_PRIVATE use
+	GOVD_SHARED rather than GOVD_PRIVATE with it.
+	(gimplify_adjust_omp_clauses_1, gimplify_adjust_omp_clauses): Expect
+	GOVD_SHARED rather than GOVD_PRIVATE with GOVD_DEBUG_PRIVATE.
+
+	PR middle-end/80853
+	* omp-low.c (lower_reduction_clauses): Pass OMP_CLAUSE_PRIVATE
+	as last argument to build_outer_var_ref for pointer bases of array
+	section reductions.
+
+2017-05-25  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from trunk
+	2017-05-18  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/80510
+	* config/rs6000/predicates.md (simple_offsettable_mem_operand):
+	New predicate.
+
+	* config/rs6000/rs6000.md (ALTIVEC_DFORM): New iterator.
+	(define_peephole2 for Altivec d-form load): Add peepholes to catch
+	cases where the register allocator uses a move and an offsettable
+	memory operation to/from a FPR register on ISA 2.06/2.07.
+	(define_peephole2 for Altivec d-form store): Likewise.
+
+	Backport from trunk
+	2017-05-09  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/68163
+	* config/rs6000/rs6000.md (f32_lr): Delete mode attributes that
+	are now unused after splitting mov{sf,sd}_hardfloat.
+	(f32_lr2): Likewise.
+	(f32_lm): Likewise.
+	(f32_lm2): Likewise.
+	(f32_li): Likewise.
+	(f32_li2): Likewise.
+	(f32_lv): Likewise.
+	(f32_sr): Likewise.
+	(f32_sr2): Likewise.
+	(f32_sm): Likewise.
+	(f32_sm2): Likewise.
+	(f32_si): Likewise.
+	(f32_si2): Likewise.
+	(f32_sv): Likewise.
+	(f32_dm): Likewise.
+	(f32_vsx): Likewise.
+	(f32_av): Likewise.
+	(mov<mode>_hardfloat): Split into separate movsf and movsd pieces.
+	For movsf, order stores so the VSX stores occur before the GPR
+	store which encourages the register allocator to use a traditional
+	FPR instead of a GPR.  For movsd, order the stores so that the GPR
+	store comes before the VSX stores to allow the power6 to work.
+	This is due to the power6 not having a 32-bit integer store
+	instruction from a FPR.
+	(movsf_hardfloat): Likewise.
+	(movsd_hardfloat): Likewise.
+
+2017-05-25  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	Backport from mainlin
+	PR rtl-optimization/80754
+	* lra-remat.c (do_remat): Add overlap checks for dst_regno.
+
+2017-05-25  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	Backport from mainline
+	PR target/80671
+	* config/aarch64/cortex-a57-fma-steering.c (merge_forest):
+	Move member access before delete.
+
+2017-05-23  Sheldon Lobo  <sheldon.lobo@oracle.com>
+
+	Backport from mainline
+	2017-05-18  Sheldon Lobo  <sheldon.lobo@oracle.com>
+
+	* config/sparc/sparc.c (sparc_option_override): Set function
+	alignment for -mcpu=niagara7 to 64 to match the I$ line.
+	* config/sparc/sparc.h (BRANCH_COST): Set the SPARC M7 branch
+	latency to 1.
+	* config/sparc/sparc.h (BRANCH_COST): Set the SPARC T4 branch
+	latency to 2.
+	* config/sparc/sol2.h: Fix a ASM_CPU32_DEFAULT_SPEC typo.
+
+2017-05-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80799
+	* config/i386/mmx.md (*mov<mode>_internal): Enable
+	alternatives 11, 12, 13 and 14 also for 32bit targets.
+	Remove alternatives 15, 16, 17 and 18.
+	* config/i386/sse.md (vec_concatv2di): Change
+	alternative (!x, *y) to (x, ?!*Yn).
+
+2017-05-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80706
+	* config/i386/sync.md (UNSPEC_LDX_ATOMIC): New unspec.
+	(UNSPEC_STX_ATOMIC): Ditto.
+	(loaddi_via_sse): New insn.
+	(storedi_via_sse): Ditto.
+	(atomic_loaddi_fpu): Emit loaddi_via_sse and storedi_via_sse.
+	Update corresponding peephole2 patterns.
+	(atomic_storedi_fpu): Ditto.
+
+2017-05-13  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.c (rs6000_vect_nonmem): New static var.
+	(rs6000_init_cost): Initialize rs6000_vect_nonmem.
+	(rs6000_add_stmt_cost): Update rs6000_vect_nonmem.
+	(rs6000_finish_cost): Avoid vectorizing simple copy loops with
+	VF=2 that require versioning.
+
+2017-05-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.c (altivec_init_builtins): Define POWER8
+	built-ins for vec_xl and vec_xst with short and char pointer
+	arguments.
+
+2017-05-10  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/80090
+	* config/pa/pa.c (pa_assemble_integer): When outputting a SYMBOL_REF,
+	handle calling assemble_external ourself.
+
+	PR target/79027
+	* config/pa/pa.c (pa_cannot_change_mode_class): Reject changes to/from
+	modes with zero size.  Enhance comment.
+
+2017-05-09  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from mainline
+	2017-05-05  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/79038
+	PR target/79202
+	PR target/79203
+	* config/rs6000/rs6000.md (u code attribute): Add FIX and
+	UNSIGNED_FIX.
+	(extendsi<mode>2): Add support for doing sign extension via
+	VUPKHSW and XXPERMDI if the value is in Altivec registers and we
+	don't have ISA 3.0 instructions.
+	(extendsi<mode>2 splitter): Likewise.
+	(fix_trunc<mode>si2): If we are at ISA 2.07 (VSX small integer),
+	generate the normal insns since SImode can now go in vector
+	registers.  Disallow the special UNSPECs needed for previous
+	machines to hide SImode being used.  Add new insns
+	fctiw{,w}_<mode>_smallint if SImode can go in vector registers.
+	(fix_trunc<mode>si2_stfiwx): Likewise.
+	(fix_trunc<mode>si2_internal): Likewise.
+	(fixuns_trunc<mode>si2): Likewise.
+	(fixuns_trunc<mode>si2_stfiwx): Likewise.
+	(fctiw<u>z_<mode>_smallint): Likewise.
+	(fctiw<u>z_<mode>_mem): New combiner pattern to prevent conversion
+	of floating point to 32-bit integer from doing a direct move to
+	the GPR registers to do a store.
+	(fctiwz_<mode>): Break long line.
+
+2017-05-08  Tamar Christina  <tamar.christina@arm.com>
+
+	PR middle-end/79665
+	* expr.c (expand_expr_real_2): Move TRUNC_MOD_EXPR, FLOOR_MOD_EXPR,
+	CEIL_MOD_EXPR, ROUND_MOD_EXPR cases.
+
+2017-05-03  Jan Beulich  <jbeulich@suse.com>
+
+	Backport from mainline
+	2017-05-01  Jan Beulich  <jbeulich@suse.com>
+
+	* config/i386/sse.md (xop_vpermil2<mode>3): Do not allow operand
+	swapping, add (x,x,m,x,n) alternative.
+
+2017-05-03  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-04-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80453
+	* tree-ssa-sccvn.h (struct vn_phi_s): Add cclhs and ccrhs members.
+	* tree-ssa-sccvn.c (cond_stmts_equal_p): Use recorded lhs and rhs
+	from the conditions.
+	(vn_phi_eq): Pass them down.
+	(vn_phi_lookup): Record them.
+	(vn_phi_insert): Likewise.
+
+	2017-04-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80492
+	* alias.c (compare_base_decls): Handle registers with asm
+	specification conservatively.
+
+	2017-04-27  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/80539
+	* tree-chrec.c (chrec_fold_plus_poly_poly): Deal with not
+	being in loop-closed SSA form conservatively.
+	(chrec_fold_multiply_poly_poly): Likewise.
+
+2017-05-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/68491
+	* config/i386/cpuid.h (__get_cpuid): Always return 0 when
+	__get_cpuid_max returns 0.
+	(__get_cpuid_count): Ditto.
+
+2017-05-02  Jakub Jelinek <jakub@redhat.com>
+
+	Backported from mainline
+	2017-04-25 Jakub Jelinek <jakub@redhat.com>
+
+	* Makefile.in (s-options): Invoke opt-gather.awk with LC_ALL=C in the
+	environment.
+
+2017-05-02  Jakub Jelinek  <jakub@redhat.com>
+
+	* BASE-VER: Set to 7.1.1.
+
+2017-05-02  Release Manager
+
+	* GCC 7.1.0 released.
+
+2017-05-02  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80591
+	Revert
+	2017-04-10  Richard Biener  <rguenther@suse.de>
+
+	* tree-ssa-structalias.c (find_func_aliases): Properly handle
+	asm inputs.
+
+2017-04-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR bootstrap/80531
+	* cgraph.h (symtab_node::debug_symtab): No longer inline.
+	* symtab.c (symtab_node::debug_symtab): Move definition here.
+
+2017-04-27  Richard Earnshaw  <rearnsha@arm.com>
+
+	PR target/80530
+	* config/aarch64/aarch64.c (aarch64_emit_approx_sqrt): Ensure
+	that the logic for permitting reciprocal estimates matches that
+	in use_rsqrt_p.
+
+2017-04-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/80534
+	* tree.c (type_cache_hasher::equal): Only compare
+	TYPE_TYPELESS_STORAGE flag on non-aggregate element types.
+	(build_array_type_1): Only hash TYPE_TYPELESS_STORAGE flag on
+	non-aggregate element types.
+	* tree.h (TYPE_TYPELESS_STORAGE): Fix comment typo, add more details
+	about the flag on ARRAY_TYPEs in the comment, formatting fix.
+
+	PR target/79430
+	* reg-stack.c (emit_swap_insn): If i1src mentions the stack pointer,
+	punt if tmp contains autoinc of stack pointer.
+
+	PR target/77728
+	* config/aarch64/aarch64.c (struct aarch64_fn_arg_alignment): Remove.
+	(aarch64_function_arg_alignment): Return unsigned int again, but still
+	ignore TYPE_FIELDS chain decls other than FIELD_DECLs.
+	(aarch64_layout_arg): Adjust aarch64_function_arg_alignment caller.
+	Don't emit -Wpsabi note.
+	(aarch64_function_arg_boundary): Likewise.
+	(aarch64_gimplify_va_arg_expr): Adjust aarch64_function_arg_alignment
+	caller.
+
+2017-04-25  Martin Sebor  <msebor@redhat.com>
+
+	PR tree-optimization/80497
+	* gimple-ssa-sprintf.c (get_int_range): Avoid assuming all integer
+	constants are representable in HOST_WIDE_INT.
+	(parse_directive): Ditto.
+
+2017-04-25  Marek Polacek  <polacek@redhat.com>
+
+	2017-04-25  Marek Polacek  <polacek@redhat.com>
+	Backport from mainline
+
+	PR sanitizer/80349
+	* fold-const.c (fold_binary_loc) <case BIT_IOR_EXPR>: Convert arg0's
+	first argument to type.
+
+2017-04-25  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/77728
+	* config/arm/arm.c: Include gimple.h.
+	(aapcs_layout_arg): Emit -Wpsabi note if arm_needs_doubleword_align
+	returns negative, increment ncrn only if it returned positive.
+	(arm_needs_doubleword_align): Return int instead of bool,
+	ignore DECL_ALIGN of non-FIELD_DECL TYPE_FIELDS chain
+	members, but if there is any such non-FIELD_DECL
+	> PARM_BOUNDARY aligned decl, return -1 instead of false.
+	(arm_function_arg): Emit -Wpsabi note if arm_needs_doubleword_align
+	returns negative, increment nregs only if it returned positive.
+	(arm_setup_incoming_varargs): Likewise.
+	(arm_function_arg_boundary): Emit -Wpsabi note if
+	arm_needs_doubleword_align returns negative, return
+	DOUBLEWORD_ALIGNMENT only if it returned positive.
+
+2017-04-25  Bill Seurer  <seurer@linux.vnet.ibm.com>
+
+	Backport from mainline
+	PR target/80482
+	* config/rs6000/rs6000-c.c (altivec_resolve_overloaded_builtin): Change
+	type checks to test for compatibility instead of equality.
+
+2017-04-25  Ramana Radhakrishnan  <ramana.radhakrishnan@arm.com>
+	    Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/77728
+	* config/aarch64/aarch64.c (struct aarch64_fn_arg_alignment): New
+	type.
+	(aarch64_function_arg_alignment): Return aarch64_fn_arg_alignment
+	struct.  Ignore DECL_ALIGN of decls other than FIELD_DECL for
+	the alignment computation, but return their maximum in warn_alignment.
+	(aarch64_layout_arg): Adjust aarch64_function_arg_alignment caller.
+	Emit a -Wpsabi note if warn_alignment is 16 bytes, but alignment
+	is smaller.
+	(aarch64_function_arg_boundary): Likewise.  Simplify using MIN/MAX.
+	(aarch64_gimplify_va_arg_expr): Adjust aarch64_function_arg_alignment
+	caller.
+
+2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+        PR target/80464
+        * config/s390/vector.md: Split MEM->GPR vector moves for
+        non-s_operand addresses.
+
+2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+        PR target/79895
+        * config/s390/predicates.md (reload_const_wide_int_operand): New
+        predicate.
+        * config/s390/s390.md ("movti"): Remove d/P alternative.
+        ("movti_bigconst"): New pattern definition.
+
+2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from maineline
+	2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+        PR target/80080
+        * s390-protos.h (s390_expand_cs_hqi): Removed.
+        (s390_expand_cs, s390_expand_atomic_exchange_tdsi): New prototypes.
+        * config/s390/s390.c (s390_emit_compare_and_swap): Handle all integer
+        modes as well as CCZ1mode and CCZmode.
+        (s390_expand_atomic_exchange_tdsi, s390_expand_atomic): Adapt to new
+        signature of s390_emit_compare_and_swap.
+        (s390_expand_cs_hqi): Likewise, make static.
+        (s390_expand_cs_tdsi): Generate an explicit compare before trying
+        compare-and-swap, in some cases.
+        (s390_expand_cs): Wrapper function.
+        (s390_expand_atomic_exchange_tdsi): New backend specific expander for
+        atomic_exchange.
+        (s390_match_ccmode_set): Allow CCZmode <-> CCZ1 mode.
+        * config/s390/s390.md ("atomic_compare_and_swap<mode>"): Merge the
+        patterns for small and large integers.  Forbid symref memory operands.
+        Move expander to s390.c.  Require cc register.
+        ("atomic_compare_and_swap<DGPR:mode><CCZZ1:mode>_internal")
+        ("*atomic_compare_and_swap<TDI:mode><CCZZ1:mode>_1")
+        ("*atomic_compare_and_swapdi<CCZZ1:mode>_2")
+        ("*atomic_compare_and_swapsi<CCZZ1:mode>_3"): Use s_operand to forbid
+        symref memory operands.  Remove CC mode and call s390_match_ccmode
+        instead.
+        ("atomic_exchange<mode>"): Allow and implement all integer modes.
+
+2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+        * config/s390/s390.md (define_peephole2): New peephole to help
+        combining the load-and-test pattern with volatile memory.
+
+
+2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
+
+        * config/s390/s390.md ("cstorecc4"): Use load-on-condition and deal
+        with CCZmode for TARGET_Z196.
+
+2017-04-25  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/80501
+	* combine.c (make_compound_operation_int): Set subreg_code to SET
+	even for AND with mask of the sign bit of mode.
+
+	PR rtl-optimization/80500
+	* loop-unroll.c (combine_var_copies_in_loop_exit): Call copy_rtx on
+	sum's initial value.
+
+2017-04-24  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-24  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR middle-end/79931
+	* ipa-devirt.c (dump_possible_polymorphic_call_targets): Fix ICE.
+
 2017-04-20  Alexander Monakov  <amonakov@ispras.ru>
 
 	Backport from mainline
