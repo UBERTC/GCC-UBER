@@ -233,6 +233,8 @@ mark_stmt_if_obviously_necessary (gimple *stmt, bool aggressive)
 	    case BUILT_IN_CALLOC:
 	    case BUILT_IN_ALLOCA:
 	    case BUILT_IN_ALLOCA_WITH_ALIGN:
+	    case BUILT_IN_STRDUP:
+	    case BUILT_IN_STRNDUP:
 	      return;
 
 	    default:;
