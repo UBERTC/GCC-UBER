@@ -1,3 +1,208 @@
+2017-06-09  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/70601
+	* gfortran.dg/proc_ptr_comp_50.f90: New test.
+
+2017-06-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/81006
+	* c-c++-common/gomp/pr81006.c: New test.
+
+	PR c++/81011
+	* g++.dg/gomp/pr81011.C: New test.
+
+2017-06-06  David S. Miller  <davem@davemloft.net>
+
+	* gcc.target/sparc/sparc-ret-3.c: New test.
+
+2017-06-06  Toma Tabacu  <toma.tabacu@imgtec.com>
+
+	Backported from mainline
+	2017-03-09  Toma Tabacu  <toma.tabacu@imgtec.com>
+
+	* g++.dg/lto/pr69589_0.C: Add dg-require-effective-target for
+	rdynamic.
+	* lib/target-supports.exp (check_effective_target_rdynamic):
+	New proc.
+
+2017-05-03  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/65542
+	Backport from trunk
+	* gfortran.dg/spread_init_expr_2.f90:  New test case.
+
+2017-06-02  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/80904
+	Backport from trunk
+	* gfortran.dg/matmul_bounds_12.f90:  New test.
+
+2017-05-26  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-24  Martin Liska  <mliska@suse.cz>
+
+	PR middle-end/79931
+	* g++.dg/ipa/pr79931.C: New test.
+
+2017-05-26  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-11  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/80212
+	* g++.dg/ipa/pr80212.C: New test.
+
+2017-05-26  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-11  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/70878
+	* gcc.dg/ubsan/pr70878.c: New test.
+
+2017-05-26  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-10  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/80350
+	* c-c++-common/ubsan/pr80350.c: New test.
+
+2017-05-26  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-06  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/80166
+	* gcc.dg/asan/pr80166.c: New test.
+
+2017-05-26  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-28  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/80205
+	* g++.dg/ipa/pr80205.C: New test.
+
+2017-05-26  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-03-28  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/80104
+	* gcc.dg/ipa/pr80104.c: New test.
+
+2017-05-23  Sheldon Lobo  <sheldon.lobo@oracle.com>
+
+	Backport from mainline
+	2017-05-18  Sheldon Lobo  <sheldon.lobo@oracle.com>
+
+	* gcc.target/sparc/niagara7-align.c: New test.
+
+2017-05-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-22  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/p8-vec-xl-xst.c: Fix target string to
+	LE-only.
+
+2017-05-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80799
+	* g++.dg/other/i386-11.C: New test.
+
+2017-05-15  Steven G. Kargl  <kargl@gcc.gnu.org>
+
+	PR fortran/80752
+	* gfortran.dg/pr80752.f90: New test.
+
+2017-05-15  Richard Biener  <rguenther@suse.de>
+
+	Revert backport of
+	PR middle-end/80222
+	* g++.dg/pr80222.C: New testcase.
+
+2017-05-13  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/versioned-copy-loop.c: New file.
+
+2017-05-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* gcc.target/powerpc/p8-vec-xl-xst.c: New file.
+
+2017-05-10  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-03-17  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/80075
+	* g++.dg/torture/pr80075.C: New testcase.
+
+	2017-03-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80122
+	* gcc.dg/torture/pr80122.c: New testcase.
+
+	2017-03-24  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80167
+	* gcc.dg/graphite/pr80167.c: New testcase.
+
+	2017-03-27  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/80171
+	* g++.dg/torture/pr80171.C: New testcase.
+
+2017-05-09  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-03-28  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/80222
+	* g++.dg/pr80222.C: New testcase.
+
+	2017-04-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80262
+	* gcc.target/i386/pr80262.c: New testcase.
+
+	2017-04-03  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80275
+	* g++.dg/opt/pr80275.C: New testcase.
+
+	2017-04-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80334
+	* g++.dg/torture/pr80334.C: New testcase.
+
+	2017-04-10  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/80362
+	* gcc.dg/torture/pr80362.c: New testcase.
+
+	2017-04-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80492
+	* gcc.dg/pr80492.c: New testcase.
+
+	2017-04-27  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/80539
+	* gcc.dg/torture/pr80539.c: New testcase.
+
 2017-05-09  Jakub Jelinek  <jakub@redhat.com>
 
 	PR testsuite/80678
@@ -183,8 +388,8 @@
 	Backport from mainline
 	2017-03-30  Martin Jambor  <mjambor@suse.cz>
 
-        PR ipa/77333
-        * g++.dg/ipa/pr77333.C: New test.
+	PR ipa/77333
+	* g++.dg/ipa/pr77333.C: New test.
 
 2017-04-06  Uros Bizjak  <ubizjak@gmail.com>
 
