@@ -13508,13 +13508,12 @@
   "#")
 
 (define_insn "*vec_extract<ssevecmodelower>_0"
-  [(set (match_operand:SWI48 0 "nonimmediate_operand"	       "=r ,r,v ,m")
+  [(set (match_operand:SWI48 0 "nonimmediate_operand"	       "=r ,v ,m")
 	(vec_select:SWI48
-	  (match_operand:<ssevecmode> 1 "nonimmediate_operand" "mYj,v,vm,v")
+	  (match_operand:<ssevecmode> 1 "nonimmediate_operand" "mYj,vm,v")
 	  (parallel [(const_int 0)])))]
   "TARGET_SSE && !(MEM_P (operands[0]) && MEM_P (operands[1]))"
-  "#"
-  [(set_attr "isa" "*,sse4,*,*")])
+  "#")
 
 (define_insn "*vec_extractv2di_0_sse"
   [(set (match_operand:DI 0 "nonimmediate_operand"     "=v,m")
@@ -13842,10 +13841,10 @@
 ;; movd instead of movq is required to handle broken assemblers.
 (define_insn "vec_concatv2di"
   [(set (match_operand:V2DI 0 "register_operand"
-	  "=Yr,*x,x ,v ,Yi,v ,!x,x,v ,x,x,v")
+	  "=Yr,*x,x ,v ,Yi,v ,x    ,x,v ,x,x,v")
 	(vec_concat:V2DI
 	  (match_operand:DI 1 "nonimmediate_operand"
-	  "  0, 0,x ,Yv,r ,vm,*y,0,Yv,0,0,v")
+	  "  0, 0,x ,Yv,r ,vm,?!*Yn,0,Yv,0,0,v")
 	  (match_operand:DI 2 "vector_move_operand"
 	  "*rm,rm,rm,rm,C ,C ,C ,x,Yv,x,m,m")))]
   "TARGET_SSE"

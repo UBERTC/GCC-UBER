@@ -1,3 +1,54 @@
+2017-06-07  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81002
+	* include/bits/regex_compiler.h (__compile_nfa): Add template argument
+	list to specify traits type.
+	* testsuite/28_regex/basic_regex/ctors/basic/iter.cc: New.
+
+2017-05-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80796
+	* include/bits/stl_algo.h (search): Add new overload for C++17.
+	* testsuite/25_algorithms/search/searcher.cc: New.
+
+2017-05-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80478
+	* include/std/functional (_Mem_fn_traits_base): Add specializations
+	for noexcept member function types.
+	* testsuite/20_util/function_objects/mem_fn/80478.cc: New test.
+
+2017-05-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/policy_data_structures.xml: Fix typo.
+	* doc/xml/manual/test_policy_data_structures.xml: Likewise.
+	* doc/html/*: Regenerate.
+
+	* doc/xml/manual/abi.xml: Document latest library versions.
+	* doc/xml/manual/build_hacking.xml: Document requirement to update
+	abi.xml when bumping library versions.
+	* doc/html/*: Regenerate.
+
+2017-05-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80761
+	* include/bits/node_handle.h (_Node_insert_return): Reorder members.
+	(tuple_size, tuple_element): Remove partial specializations.
+	* include/bits/stl_tree.h (_Rb_tree::insert_return_type): Use
+	const_iterator for std::set.
+	* testsuite/23_containers/map/modifiers/extract.cc: New.
+	* testsuite/23_containers/set/modifiers/extract.cc: New.
+	* testsuite/23_containers/unordered_map/modifiers/extract.cc: New.
+	* testsuite/23_containers/unordered_set/modifiers/extract.cc: New.
+
+2017-05-12  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/78939
+	* include/std/utility (tuple_size<cv T>) [__cplusplus > 201402L]:
+	Only define partial specializations when tuple_size<T>::value is
+	valid.
+	* testsuite/20_util/tuple/78939.cc: New.
+
 2017-05-02  Release Manager
 
 	* GCC 7.1.0 released.

@@ -1,3 +1,344 @@
+2017-06-14  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/sparc/sparc.h (MASK_ISA): Add MASK_LEON and MASK_LEON3.
+	(MASK_FEATURES): New macro.
+	* config/sparc/sparc.c (sparc_option_override): Remove the special
+	handling of -mfpu and generalize it to all MASK_FEATURES switches.
+
+2017-06-14  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/sparc/driver-sparc.c (cpu_names): Add SPARC-T5 entry.
+
+2017-06-12  David S. Miller  <davem@davemloft.net>
+
+	PR target/80968
+	* config/sparc/sparc.md (return expander): Emit frame blockage if
+	function uses alloca.
+
+2017-06-08  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81015
+	Revert:
+	2016-12-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/59874
+	* config/i386/i386.md (*ctzhi2): New insn_and_split pattern.
+	(*clzhi2): Ditto.
+
+2017-06-08  David Edelsohn  <dje.gcc@gmail.com>
+
+	Backport from mainline
+	2017-06-02  David Edelsohn  <dje.gcc@gmail.com>
+
+	* dwarf2out.c (DWARF_INITIAL_LENGTH_SIZE_STR): New.
+	(dl_section_ref): New.
+	(dwarf2out_finish): Copy debug_line_section_label to dl_section_ref.
+	On AIX, append an expression to subtract the size of the
+	section length to dl_section_ref.
+
+2017-06-07  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-05-02  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80549
+	* tree-cfgcleanup.c (mfb_keep_latches): New helper.
+	(cleanup_tree_cfg_noloop): Create forwarders to known loop
+	headers if they do not have a preheader.
+
+	2017-05-26  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80842
+	* tree-ssa-ccp.c (set_lattice_value): Always meet with the old
+	value.
+
+	2017-05-31  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80906
+	* graphite-isl-ast-to-gimple.c (copy_loop_close_phi_nodes): Get
+	and pass through iv_map.
+	(copy_bb_and_scalar_dependences): Adjust.
+	(translate_pending_phi_nodes): Likewise.
+	(copy_loop_close_phi_args): Handle code-generating IVs instead
+	of ICEing.
+
+	2017-05-11  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80705
+	* tree-vect-data-refs.c (vect_analyze_data_refs): DECL_NONALIASED
+	bases are not vectorizable.
+
+2017-06-06  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from mainline
+	2017-05-19  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/80718
+	* config/rs6000/vsx.md (vsx_splat_<mode>, VSX_D iterator): Prefer
+	VSX registers over GPRs, particularly on ISA 2.07 which does not
+	have the MTVSRDD instruction.
+
+2017-06-06  David S. Miller  <davem@davemloft.net>
+
+	PR target/80968
+	* config/sparc/sparc.c (sparc_expand_prologue): Emit frame
+	blockage if function uses alloca.
+
+2017-06-05  Volker Reichelt  <v.reichelt@netcologne.de>
+
+	* doc/invoke.texi (-Wduplicated-branches): Add to warning list.
+
+2017-06-02  Prakhar Bahuguna  <prakhar.bahuguna@arm.com>
+
+	Backport from mainline
+	2017-05-05  Andre Vieira  <andre.simoesdiasvieira@arm.com>
+		    Prakhar Bahuguna  <prakhar.bahuguna@arm.com>
+
+	PR target/71607
+	* config/arm/arm.md (use_literal_pool): Remove.
+	(64-bit immediate split): No longer takes cost into consideration
+	if arm_disable_literal_pool is enabled.
+	* config/arm/arm.c (arm_tls_referenced_p): Add diagnostic if TLS is
+	used when arm_disable_literal_pool is enabled.
+	(arm_max_const_double_inline_cost): Remove use of
+	arm_disable_literal_pool.
+	(push_minipool_fix): Add assert.
+	(arm_reorg): Add return if arm_disable_literal_pool is enabled.
+	* config/arm/vfp.md (no_literal_pool_df_immediate): New.
+	(no_literal_pool_sf_immediate): New.
+
+2017-06-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR rtl-optimization/80903
+	* loop-doloop.c (add_test): Unshare sequence.
+
+2017-05-31  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	2017-04-24  Martin Jambor  <mjambor@suse.cz>
+
+	PR tree-optimization/80293
+	* tree-sra.c (scalarizable_type_p): New parameter const_decl, make
+	char arrays not totally scalarizable if it is false.
+	(analyze_all_variable_accesses): Pass correct value in the new
+	parameter.  Add a statistics counter.
+
+2017-05-30  Max Filippov  <jcmvbkbc@gmail.com>
+
+	Backport from mainline
+	2017-05-29  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/xtensa/xtensa.c (xtensa_emit_call): Use
+	HOST_WIDE_INT_PRINT_HEX instead of 0x%lx format string.
+	(print_operand): Use HOST_WIDE_INT_PRINT_DEC instead of %ld
+	format string.
+
+2017-05-29  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/install.texi (Options specification): Restore entry of
+	--enable-sjlj-exceptions.
+
+2017-05-29  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-24  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR target/80725
+	* config/s390/s390.c (s390_check_qrst_address): Check incoming
+	address against address_operand predicate.
+	* config/s390/s390.md ("*indirect_jump"): Swap alternatives.
+
+2017-05-28  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (*movdi_internal): Remove SSE4
+	alternative 18 (?r, *v).  Update insn attributes.
+	(*movsi_internal): Remove SSE4 alternative 13 (?r, *v).
+	Update insn attributes.
+	(*zero_extendsidi2): Remove SSE4 alternative (?r, *x).
+	Update insn attributes.
+	* config/i386/sse.md (vec_extract<ssevecmodelower>_0): Remove SSE4
+	alternative 1 (r, v). Remove isa attribute.
+	* config/i386/i386.c (dimode_scalar_chain::make_vector_copies):
+	Always move value through stack for !TARGET_INTER_UNIT_MOVES_TO_VEC
+	and !TARGET_INTER_UNIT_MOVES_TO_VEC targets.
+
+	2017-05-16  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.md (*movsi_internal): Split (?rm,*y) alternative
+	to (?r,*Yn) and (?m,*y) alternatives, and (?*y,rm) to (?*Ym,r)
+	and (?*y,m).  Update insn attributes.
+
+2017-05-26  Sheldon Lobo  <smlobo@sheldon.us.oracle.com>
+
+	Backported from mainline
+	2017-05-24  Sheldon Lobo  <smlobo@sheldon.us.oracle.com>
+
+	* config/sparc/sparc.md (length): Return the correct value for -mflat
+	sibcalls to match output_sibcall.
+
+2017-05-26  Marek Polacek  <polacek@redhat.com>
+
+	Backported from mainline
+	2017-05-26  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/80875
+	* fold-const.c (fold_binary_loc) <case MULT_EXPR>: Check if OP1
+	can be negated.
+
+2017-05-26  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-05-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/80809
+	* omp-low.c (finish_taskreg_remap): New function.
+	(finish_taskreg_scan): If unit size of ctx->record_type
+	is non-constant, unshare the size expression and replace
+	decls in it with possible outer var refs.
+
+	PR middle-end/80809
+	* gimplify.c (omp_add_variable): For GOVD_DEBUG_PRIVATE use
+	GOVD_SHARED rather than GOVD_PRIVATE with it.
+	(gimplify_adjust_omp_clauses_1, gimplify_adjust_omp_clauses): Expect
+	GOVD_SHARED rather than GOVD_PRIVATE with GOVD_DEBUG_PRIVATE.
+
+	PR middle-end/80853
+	* omp-low.c (lower_reduction_clauses): Pass OMP_CLAUSE_PRIVATE
+	as last argument to build_outer_var_ref for pointer bases of array
+	section reductions.
+
+2017-05-25  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from trunk
+	2017-05-18  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/80510
+	* config/rs6000/predicates.md (simple_offsettable_mem_operand):
+	New predicate.
+
+	* config/rs6000/rs6000.md (ALTIVEC_DFORM): New iterator.
+	(define_peephole2 for Altivec d-form load): Add peepholes to catch
+	cases where the register allocator uses a move and an offsettable
+	memory operation to/from a FPR register on ISA 2.06/2.07.
+	(define_peephole2 for Altivec d-form store): Likewise.
+
+	Backport from trunk
+	2017-05-09  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/68163
+	* config/rs6000/rs6000.md (f32_lr): Delete mode attributes that
+	are now unused after splitting mov{sf,sd}_hardfloat.
+	(f32_lr2): Likewise.
+	(f32_lm): Likewise.
+	(f32_lm2): Likewise.
+	(f32_li): Likewise.
+	(f32_li2): Likewise.
+	(f32_lv): Likewise.
+	(f32_sr): Likewise.
+	(f32_sr2): Likewise.
+	(f32_sm): Likewise.
+	(f32_sm2): Likewise.
+	(f32_si): Likewise.
+	(f32_si2): Likewise.
+	(f32_sv): Likewise.
+	(f32_dm): Likewise.
+	(f32_vsx): Likewise.
+	(f32_av): Likewise.
+	(mov<mode>_hardfloat): Split into separate movsf and movsd pieces.
+	For movsf, order stores so the VSX stores occur before the GPR
+	store which encourages the register allocator to use a traditional
+	FPR instead of a GPR.  For movsd, order the stores so that the GPR
+	store comes before the VSX stores to allow the power6 to work.
+	This is due to the power6 not having a 32-bit integer store
+	instruction from a FPR.
+	(movsf_hardfloat): Likewise.
+	(movsd_hardfloat): Likewise.
+
+2017-05-25  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	Backport from mainlin
+	PR rtl-optimization/80754
+	* lra-remat.c (do_remat): Add overlap checks for dst_regno.
+
+2017-05-25  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	Backport from mainline
+	PR target/80671
+	* config/aarch64/cortex-a57-fma-steering.c (merge_forest):
+	Move member access before delete.
+
+2017-05-23  Sheldon Lobo  <sheldon.lobo@oracle.com>
+
+	Backport from mainline
+	2017-05-18  Sheldon Lobo  <sheldon.lobo@oracle.com>
+
+	* config/sparc/sparc.c (sparc_option_override): Set function
+	alignment for -mcpu=niagara7 to 64 to match the I$ line.
+	* config/sparc/sparc.h (BRANCH_COST): Set the SPARC M7 branch
+	latency to 1.
+	* config/sparc/sparc.h (BRANCH_COST): Set the SPARC T4 branch
+	latency to 2.
+	* config/sparc/sol2.h: Fix a ASM_CPU32_DEFAULT_SPEC typo.
+
+2017-05-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80799
+	* config/i386/mmx.md (*mov<mode>_internal): Enable
+	alternatives 11, 12, 13 and 14 also for 32bit targets.
+	Remove alternatives 15, 16, 17 and 18.
+	* config/i386/sse.md (vec_concatv2di): Change
+	alternative (!x, *y) to (x, ?!*Yn).
+
+2017-05-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-05-11  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80706
+	* config/i386/sync.md (UNSPEC_LDX_ATOMIC): New unspec.
+	(UNSPEC_STX_ATOMIC): Ditto.
+	(loaddi_via_sse): New insn.
+	(storedi_via_sse): Ditto.
+	(atomic_loaddi_fpu): Emit loaddi_via_sse and storedi_via_sse.
+	Update corresponding peephole2 patterns.
+	(atomic_storedi_fpu): Ditto.
+
+2017-05-13  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.c (rs6000_vect_nonmem): New static var.
+	(rs6000_init_cost): Initialize rs6000_vect_nonmem.
+	(rs6000_add_stmt_cost): Update rs6000_vect_nonmem.
+	(rs6000_finish_cost): Avoid vectorizing simple copy loops with
+	VF=2 that require versioning.
+
+2017-05-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	* config/rs6000/rs6000.c (altivec_init_builtins): Define POWER8
+	built-ins for vec_xl and vec_xst with short and char pointer
+	arguments.
+
+2017-05-10  John David Anglin  <danglin@gcc.gnu.org>
+
+	PR target/80090
+	* config/pa/pa.c (pa_assemble_integer): When outputting a SYMBOL_REF,
+	handle calling assemble_external ourself.
+
+	PR target/79027
+	* config/pa/pa.c (pa_cannot_change_mode_class): Reject changes to/from
+	modes with zero size.  Enhance comment.
+
 2017-05-09  Michael Meissner  <meissner@linux.vnet.ibm.com>
 
 	Back port from mainline
@@ -201,58 +542,58 @@
 	Backport from mainline
 	2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
 
-        PR target/80464
-        * config/s390/vector.md: Split MEM->GPR vector moves for
-        non-s_operand addresses.
+	PR target/80464
+	* config/s390/vector.md: Split MEM->GPR vector moves for
+	non-s_operand addresses.
 
 2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
 
 	Backport from mainline
 	2017-04-25  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
 
-        PR target/79895
-        * config/s390/predicates.md (reload_const_wide_int_operand): New
-        predicate.
-        * config/s390/s390.md ("movti"): Remove d/P alternative.
-        ("movti_bigconst"): New pattern definition.
+	PR target/79895
+	* config/s390/predicates.md (reload_const_wide_int_operand): New
+	predicate.
+	* config/s390/s390.md ("movti"): Remove d/P alternative.
+	("movti_bigconst"): New pattern definition.
 
 2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
 
 	Backport from maineline
 	2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
 
-        PR target/80080
-        * s390-protos.h (s390_expand_cs_hqi): Removed.
-        (s390_expand_cs, s390_expand_atomic_exchange_tdsi): New prototypes.
-        * config/s390/s390.c (s390_emit_compare_and_swap): Handle all integer
-        modes as well as CCZ1mode and CCZmode.
-        (s390_expand_atomic_exchange_tdsi, s390_expand_atomic): Adapt to new
-        signature of s390_emit_compare_and_swap.
-        (s390_expand_cs_hqi): Likewise, make static.
-        (s390_expand_cs_tdsi): Generate an explicit compare before trying
-        compare-and-swap, in some cases.
-        (s390_expand_cs): Wrapper function.
-        (s390_expand_atomic_exchange_tdsi): New backend specific expander for
-        atomic_exchange.
-        (s390_match_ccmode_set): Allow CCZmode <-> CCZ1 mode.
-        * config/s390/s390.md ("atomic_compare_and_swap<mode>"): Merge the
-        patterns for small and large integers.  Forbid symref memory operands.
-        Move expander to s390.c.  Require cc register.
-        ("atomic_compare_and_swap<DGPR:mode><CCZZ1:mode>_internal")
-        ("*atomic_compare_and_swap<TDI:mode><CCZZ1:mode>_1")
-        ("*atomic_compare_and_swapdi<CCZZ1:mode>_2")
-        ("*atomic_compare_and_swapsi<CCZZ1:mode>_3"): Use s_operand to forbid
-        symref memory operands.  Remove CC mode and call s390_match_ccmode
-        instead.
-        ("atomic_exchange<mode>"): Allow and implement all integer modes.
+	PR target/80080
+	* s390-protos.h (s390_expand_cs_hqi): Removed.
+	(s390_expand_cs, s390_expand_atomic_exchange_tdsi): New prototypes.
+	* config/s390/s390.c (s390_emit_compare_and_swap): Handle all integer
+	modes as well as CCZ1mode and CCZmode.
+	(s390_expand_atomic_exchange_tdsi, s390_expand_atomic): Adapt to new
+	signature of s390_emit_compare_and_swap.
+	(s390_expand_cs_hqi): Likewise, make static.
+	(s390_expand_cs_tdsi): Generate an explicit compare before trying
+	compare-and-swap, in some cases.
+	(s390_expand_cs): Wrapper function.
+	(s390_expand_atomic_exchange_tdsi): New backend specific expander for
+	atomic_exchange.
+	(s390_match_ccmode_set): Allow CCZmode <-> CCZ1 mode.
+	* config/s390/s390.md ("atomic_compare_and_swap<mode>"): Merge the
+	patterns for small and large integers.  Forbid symref memory operands.
+	Move expander to s390.c.  Require cc register.
+	("atomic_compare_and_swap<DGPR:mode><CCZZ1:mode>_internal")
+	("*atomic_compare_and_swap<TDI:mode><CCZZ1:mode>_1")
+	("*atomic_compare_and_swapdi<CCZZ1:mode>_2")
+	("*atomic_compare_and_swapsi<CCZZ1:mode>_3"): Use s_operand to forbid
+	symref memory operands.  Remove CC mode and call s390_match_ccmode
+	instead.
+	("atomic_exchange<mode>"): Allow and implement all integer modes.
 
 2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
 
 	Backport from mainline
 	2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
 
-        * config/s390/s390.md (define_peephole2): New peephole to help
-        combining the load-and-test pattern with volatile memory.
+	* config/s390/s390.md (define_peephole2): New peephole to help
+	combining the load-and-test pattern with volatile memory.
 
 
 2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
@@ -260,8 +601,8 @@
 	Backport from mainline
 	2017-04-25  Dominik Vogt  <vogt@linux.vnet.ibm.com>
 
-        * config/s390/s390.md ("cstorecc4"): Use load-on-condition and deal
-        with CCZmode for TARGET_Z196.
+	* config/s390/s390.md ("cstorecc4"): Use load-on-condition and deal
+	with CCZmode for TARGET_Z196.
 
 2017-04-25  Jakub Jelinek  <jakub@redhat.com>
 
@@ -320,7 +661,7 @@
 	(build_array_type): Likewise.  Add typeless_storage argument.
 
 2017-04-19  Eric Botcazou  <ebotcazou@adacore.com>
-            Jakub Jelinek  <jakub@redhat.com>
+	    Jakub Jelinek  <jakub@redhat.com>
 
 	PR tree-optimization/80426
 	* tree-vrp.c (extract_range_from_binary_expr_1): For an additive
@@ -362,7 +703,7 @@
 	are only used in debug insns.
 
 2017-04-19  Eric Botcazou  <ebotcazou@adacore.com>
-            Vladimir Makarov  <vmakarov@redhat.com>
+	    Vladimir Makarov  <vmakarov@redhat.com>
 
 	* config/sparc/predicates.md (input_operand): Add comment.  Return
 	true for any memory operand when LRA is in progress.
