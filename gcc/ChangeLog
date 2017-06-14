@@ -1,3 +1,128 @@
+2017-06-09  David S. Miller  <davem@davemloft.net>
+
+	PR target/80968
+	* config/sparc/sparc.c (sparc_flat_expand_epilogue): Don't
+        emit frame blockage here.
+	(sparc_expand_epilogue): Do it here.
+	* config/sparc/sparc.md (return expander): Emit frame blockage
+	for alloca here too.
+
+2017-06-06  David S. Miller  <davem@davemloft.net>
+
+	PR target/80968
+	* config/sparc/sparc.c (sparc_expand_prologue): Emit frame
+	blockage if function uses alloca.
+
+2017-06-06  Toma Tabacu  <toma.tabacu@imgtec.com>
+
+	Backported from mainline
+	2017-03-09  Toma Tabacu  <toma.tabacu@imgtec.com>
+
+	* doc/sourcebuild.texi (Effective-Target Keywords, Other attributes):
+	Document rdynamic.
+
+2017-06-01  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-08-19  Jakub Jelinek  <jakub@redhat.com>
+
+	* config/i386/rdseedintrin.h (_rdseed16_step, _rdseed32_step,
+	_rdseed64_step): Uglify argument names and/or local variable names
+	in inline functions.
+	* config/i386/rtmintrin.h (_xabort): Likewise.
+	* config/i386/avx512vlintrin.h (_mm256_ternarylogic_epi64,
+	_mm256_mask_ternarylogic_epi64, _mm256_maskz_ternarylogic_epi64,
+	_mm256_ternarylogic_epi32, _mm256_mask_ternarylogic_epi32,
+	_mm256_maskz_ternarylogic_epi32, _mm_ternarylogic_epi64,
+	_mm_mask_ternarylogic_epi64, _mm_maskz_ternarylogic_epi64,
+	_mm_ternarylogic_epi32, _mm_mask_ternarylogic_epi32,
+	_mm_maskz_ternarylogic_epi32): Likewise.
+	* config/i386/lwpintrin.h (__llwpcb, __lwpval32, __lwpval64,
+	__lwpins32, __lwpins64): Likewise.
+	* config/i386/avx2intrin.h (_mm_i32gather_pd, _mm_mask_i32gather_pd,
+	_mm256_i32gather_pd, _mm256_mask_i32gather_pd, _mm_i64gather_pd,
+	_mm_mask_i64gather_pd, _mm256_i64gather_pd, _mm256_mask_i64gather_pd,
+	_mm_i32gather_ps, _mm_mask_i32gather_ps, _mm256_i32gather_ps,
+	_mm256_mask_i32gather_ps, _mm_i64gather_ps, _mm_mask_i64gather_ps,
+	_mm256_i64gather_ps, _mm256_mask_i64gather_ps, _mm_i32gather_epi64,
+	_mm_mask_i32gather_epi64, _mm256_i32gather_epi64,
+	_mm256_mask_i32gather_epi64, _mm_i64gather_epi64,
+	_mm_mask_i64gather_epi64, _mm256_i64gather_epi64,
+	_mm256_mask_i64gather_epi64, _mm_i32gather_epi32,
+	_mm_mask_i32gather_epi32, _mm256_i32gather_epi32,
+	_mm256_mask_i32gather_epi32, _mm_i64gather_epi32,
+	_mm_mask_i64gather_epi32, _mm256_i64gather_epi32,
+	_mm256_mask_i64gather_epi32): Likewise.
+	* config/i386/pmm_malloc.h (_mm_malloc, _mm_free): Likewise.
+	* config/i386/ia32intrin.h (__writeeflags): Likewise.
+	* config/i386/pkuintrin.h (_wrpkru): Likewise.
+	* config/i386/avx512pfintrin.h (_mm512_mask_prefetch_i32gather_pd,
+	_mm512_mask_prefetch_i32gather_ps, _mm512_mask_prefetch_i64gather_pd,
+	_mm512_mask_prefetch_i64gather_ps, _mm512_prefetch_i32scatter_pd,
+	_mm512_prefetch_i32scatter_ps, _mm512_mask_prefetch_i32scatter_pd,
+	_mm512_mask_prefetch_i32scatter_ps, _mm512_prefetch_i64scatter_pd,
+	_mm512_prefetch_i64scatter_ps, _mm512_mask_prefetch_i64scatter_pd,
+	_mm512_mask_prefetch_i64scatter_ps): Likewise.
+	* config/i386/gmm_malloc.h (_mm_malloc, _mm_free): Likewise.
+	* config/i386/avx512fintrin.h (_mm512_ternarylogic_epi64,
+	_mm512_mask_ternarylogic_epi64, _mm512_maskz_ternarylogic_epi64,
+	_mm512_ternarylogic_epi32, _mm512_mask_ternarylogic_epi32,
+	_mm512_maskz_ternarylogic_epi32, _mm512_i32gather_ps,
+	_mm512_mask_i32gather_ps, _mm512_i32gather_pd, _mm512_i64gather_ps,
+	_mm512_i64gather_pd, _mm512_i32gather_epi32, _mm512_i32gather_epi64,
+	_mm512_i64gather_epi32, _mm512_i64gather_epi64): Likewise.
+
+2017-05-30  Max Filippov  <jcmvbkbc@gmail.com>
+
+	Backport from mainline
+	2017-05-29  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/xtensa/xtensa.c (xtensa_emit_call): Use
+	HOST_WIDE_INT_PRINT_HEX instead of 0x%lx format string.
+	(print_operand): Use HOST_WIDE_INT_PRINT_DEC instead of %ld
+	format string.
+
+2017-05-30  Max Filippov  <jcmvbkbc@gmail.com>
+
+	Backport from mainline
+	2016-11-29  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/xtensa/xtensa.c (hwloop_optimize): Don't emit zero
+	overhead loop start between a call and its CALL_ARG_LOCATION
+	note.
+
+2017-05-30  Max Filippov  <jcmvbkbc@gmail.com>
+
+	Backport from mainline
+	2016-11-01  Max Filippov  <jcmvbkbc@gmail.com>
+
+	* config/xtensa/xtensa-protos.h
+	(xtensa_use_return_instruction_p): New prototype.
+	* config/xtensa/xtensa.c (xtensa_current_frame_size,
+	xtensa_callee_save_size): Remove.
+	(struct machine_function): Add new fields: current_frame_size,
+	callee_save_size, frame_laid_out and epilogue_done.
+	(compute_frame_size, xtensa_expand_prologue,
+	xtensa_expand_epilogue): Replace xtensa_callee_save_size with
+	cfun->machine->callee_save_size and xtensa_current_frame_size
+	with cfun->machine->current_frame_size.
+	(compute_frame_size): Update cfun->machine->frame_laid_out and
+	don't update frame layout after reload completion.
+	(xtensa_expand_epilogue): Set cfun->machine->epilogue_done
+	instead of zeroing xtensa_current_frame_size.
+	(xtensa_use_return_instruction_p): New function.
+	* config/xtensa/xtensa.h (xtensa_current_frame_size): Remove
+	declaration.
+	(INITIAL_ELIMINATION_OFFSET): Use return value of
+	compute_frame_size instead of xtensa_current_frame_size value.
+	* config/xtensa/xtensa.md ("return" pattern): Use new predicate
+	function xtensa_use_return_instruction_p instead of inline code.
+
+2017-05-29  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* doc/install.texi (Options specification): Move entry of
+	--enable-sjlj-exceptions.
+
 2017-05-26  Sheldon Lobo  <smlobo@sheldon.us.oracle.com>
 
 	Backported from mainline
