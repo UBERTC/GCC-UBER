@@ -631,6 +631,7 @@ gfc_match_use (void)
 
 	case INTERFACE_USER_OP:
 	case INTERFACE_GENERIC:
+	case INTERFACE_DTIO:
 	  m = gfc_match (" =>");
 
 	  if (type == INTERFACE_USER_OP && m == MATCH_YES
@@ -6975,7 +6976,7 @@ gfc_use_module (gfc_use_list *module)
   for (p = gfc_state_stack; p; p = p->previous)
     if ((p->state == COMP_MODULE || p->state == COMP_SUBMODULE)
 	 && strcmp (p->sym->name, module_name) == 0)
-      gfc_fatal_error ("Can't USE the same %smodule we're building!",
+      gfc_fatal_error ("Can't USE the same %smodule we're building",
 		       p->state == COMP_SUBMODULE ? "sub" : "");
 
   init_pi_tree ();

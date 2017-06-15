@@ -1811,6 +1811,16 @@ AC_ARG_ENABLE(secureplt,
 		[enable -msecure-plt by default for PowerPC])],
 [], [])
 
+AC_ARG_ENABLE(mingw-wildcard,
+[AS_HELP_STRING([--enable-mingw-wildcard],
+		[Set whether to expand wildcard on command-line.
+		 Default to platform configuration])],
+[],[enable_mingw_wildcard=platform])
+AS_IF([test x"$enable_mingw_wildcard" != xplatform ],
+      [AC_DEFINE_UNQUOTED(MINGW_DOWILDCARD,
+		 $(test x"$enable_mingw_wildcard" = xno; echo $?),
+		 [Value to set mingw's _dowildcard to.])])
+
 AC_ARG_ENABLE(leading-mingw64-underscores,
   AS_HELP_STRING([--enable-leading-mingw64-underscores],
                  [enable leading underscores on 64 bit mingw targets]),
@@ -1998,41 +2008,29 @@ done
 CROSS=						AC_SUBST(CROSS)
 ALL=all.internal				AC_SUBST(ALL)
 SYSTEM_HEADER_DIR='$(NATIVE_SYSTEM_HEADER_DIR)'	AC_SUBST(SYSTEM_HEADER_DIR)
+BUILD_SYSTEM_HEADER_DIR=$SYSTEM_HEADER_DIR	AC_SUBST(BUILD_SYSTEM_HEADER_DIR)
 
-if test "x$with_build_sysroot" != x; then
-  build_system_header_dir=$with_build_sysroot'$${sysroot_headers_suffix}$(NATIVE_SYSTEM_HEADER_DIR)'
-else
-  # This value is used, even on a native system, because 
-  # CROSS_SYSTEM_HEADER_DIR is just 
-  # $(TARGET_SYSTEM_ROOT)$(NATIVE_SYSTEM_HEADER_DIR).
-  build_system_header_dir='$(CROSS_SYSTEM_HEADER_DIR)'
-fi
+if test x$host != x$target || test "x$TARGET_SYSTEM_ROOT" != x ||
+   test x$build != x$host || test "x$with_build_sysroot" != x; then
+  if test "x$with_build_sysroot" != x; then
+    BUILD_SYSTEM_HEADER_DIR=$with_build_sysroot'$${sysroot_headers_suffix}$(NATIVE_SYSTEM_HEADER_DIR)'
+  else
+    BUILD_SYSTEM_HEADER_DIR='$(CROSS_SYSTEM_HEADER_DIR)'
+  fi
 
-if test x$host != x$target
-then
-	CROSS="-DCROSS_DIRECTORY_STRUCTURE"
-	ALL=all.cross
-	SYSTEM_HEADER_DIR=$build_system_header_dir
-	case $target in
-		*-*-mingw*)
-			if test "x$with_headers" = x; then
-				with_headers=yes
-			fi
-			;;
-		*)
-			;;
-	esac
-elif test "x$TARGET_SYSTEM_ROOT" != x; then
-        SYSTEM_HEADER_DIR=$build_system_header_dir 
-fi
+  if test x$host != x$target
+  then
+    CROSS="-DCROSS_DIRECTORY_STRUCTURE"
+    ALL=all.cross
+    SYSTEM_HEADER_DIR=$BUILD_SYSTEM_HEADER_DIR
+  elif test "x$TARGET_SYSTEM_ROOT" != x; then
+    SYSTEM_HEADER_DIR='$(CROSS_SYSTEM_HEADER_DIR)'
+  fi
 
-if test x$host != x$target || test "x$TARGET_SYSTEM_ROOT" != x; then
-  if test "x$with_headers" != x && test "x$with_headers" != xyes; then
-    target_header_dir=$with_headers
+  if test "x$with_build_sysroot" != "x"; then
+    target_header_dir="${with_build_sysroot}${native_system_header_dir}"
   elif test "x$with_sysroot" = x; then
     target_header_dir="${test_exec_prefix}/${target_noncanonical}/sys-include"
-  elif test "x$with_build_sysroot" != "x"; then
-    target_header_dir="${with_build_sysroot}${native_system_header_dir}"
   elif test "x$with_sysroot" = xyes; then
     target_header_dir="${test_exec_prefix}/${target_noncanonical}/sys-root${native_system_header_dir}"
   else
@@ -3818,6 +3816,42 @@ AS_HELP_STRING([--disable-fix-cortex-a53-843419],
       [-mrmw], [.text],,
       [AC_DEFINE(HAVE_AS_AVR_MRMW_OPTION, 1,
 		[Define if your avr assembler supports -mrmw option.])])
+
+    # Check how default linker description file implements .rodata for
+    # avrxmega3 (PR21472).  avr-gcc assumes .rodata is *not* loaded to
+    # RAM so avr-gcc skips __do_copy_data for .rodata objects.
+    AC_MSG_CHECKING(binutils for avrxmega3 .rodata support)
+    cat > conftest.s <<EOF
+        .section .rodata,"a",@progbits
+        .global xxvaryy
+    ;; avr-nm should print "... R xxvaryy", not "... D xxvaryy".
+    xxvaryy:
+        .word 1
+EOF
+    rm -f conftest.nm
+    AC_TRY_COMMAND([$gcc_cv_as -mmcu=avrxmega3 conftest.s -o conftest.o])
+    AC_TRY_COMMAND([$gcc_cv_ld -mavrxmega3 conftest.o -o conftest.elf])
+    AC_TRY_COMMAND([$gcc_cv_nm conftest.elf > conftest.nm])
+    if test -f conftest.nm
+    then
+	if grep ' R xxvaryy' conftest.nm > /dev/null; then
+	    AC_MSG_RESULT(yes)
+	    rm -f conftest.s conftest.o conftest.elf conftest.nm
+	else
+	    AC_MSG_RESULT(no: avrxmega3 .rodata located in RAM)
+	    echo "$as_me: nm output was" >&AS_MESSAGE_LOG_FD
+	    cat conftest.nm >&AS_MESSAGE_LOG_FD
+	    rm -f conftest.s conftest.o conftest.elf conftest.nm
+	    avr_ld_ver="`$gcc_cv_ld -v | sed -e 's:^.* ::'`"
+	    AC_MSG_ERROR([[support for avrxmega3 needs Binutils 2.29 or higher (have $avr_ld_ver)]])
+	fi
+    else
+	AC_MSG_RESULT(test failed)
+	echo "$as_me: failed program was" >&AS_MESSAGE_LOG_FD
+	cat conftest.s >&AS_MESSAGE_LOG_FD
+	rm -f conftest.s conftest.o conftest.elf
+	AC_MSG_ERROR([[see `config.log' for details]])
+    fi
     ;;
 
   cris-*-*)

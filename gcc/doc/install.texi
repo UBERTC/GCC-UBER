@@ -1047,6 +1047,11 @@ and for cross builds configured with @option{--with-sysroot}, and without
 More documentation about multiarch can be found at
 @uref{https://wiki.debian.org/Multiarch}.
 
+@item --enable-sjlj-exceptions
+Force use of the @code{setjmp}/@code{longjmp}-based scheme for exceptions.
+@samp{configure} ordinarily picks the correct value based on the platform.
+Only use this option if you are sure you need a different setting.
+
 @item --enable-vtable-verify
 Specify whether to enable or disable the vtable verification feature.
 Enabling this feature causes libstdc++ to be built with its virtual calls
@@ -1092,14 +1097,18 @@ for each target is given below.
 
 @table @code
 @item arm*-*-*
-@var{list} is one of@code{default}, @code{aprofile} or @code{rmprofile}.
-Specifying @code{default} is equivalent to omitting this option, ie. only the
-default runtime library will be enabled.  Specifying @code{aprofile} or
-@code{rmprofile} builds multilibs for a combination of ISA, architecture,
-FPU available and floating-point ABI.
+@var{list} is a comma separated list of @code{aprofile} and @code{rmprofile}
+to build multilibs for A or R and M architecture profiles respectively.  Note
+that, due to some limitation of the current multilib framework, using the
+combined @code{aprofile,rmprofile} multilibs selects in some cases a less
+optimal multilib than when using the multilib profile for the architecture
+targetted.  The special value @code{default} is also accepted and is equivalent
+to omitting the option, ie. only the default run-time library will be enabled.
 
 The table below gives the combination of ISAs, architectures, FPUs and
 floating-point ABIs for which multilibs are built for each accepted value.
+The union of these options is considered when specifying both @code{aprofile}
+and @code{rmprofile}.
 
 @multitable @columnfractions .15 .28 .30
 @item Option @tab aprofile @tab rmprofile
@@ -1617,14 +1626,17 @@ their runtime libraries should be built.  For a list of valid values for
 grep ^language= */config-lang.in
 @end smallexample
 Currently, you can use any of the following:
-@code{all}, @code{ada}, @code{c}, @code{c++}, @code{fortran},
+@code{all}, @code{default}, @code{ada}, @code{c}, @code{c++}, @code{fortran},
 @code{go}, @code{jit}, @code{lto}, @code{objc}, @code{obj-c++}.
 Building the Ada compiler has special requirements, see below.
-If you do not pass this flag, or specify the option @code{all}, then all
+If you do not pass this flag, or specify the option @code{default}, then the
 default languages available in the @file{gcc} sub-tree will be configured.
 Ada, Go, Jit, and Objective-C++ are not default languages.  LTO is not a
 default language, but is built by default because @option{--enable-lto} is
-enabled by default.  The other languages are default languages.
+enabled by default.  The other languages are default languages.  If
+@code{all} is specified, then all available languages are built.  An
+exception is @code{jit} language, which requires
+@option{--enable-host-shared} to be included with @code{all}.
 
 @item --enable-stage1-languages=@var{lang1},@var{lang2},@dots{}
 Specify that a particular subset of compilers and their runtime
@@ -3069,6 +3081,15 @@ Solaris 2 (SPARC, Intel):
 
 @item
 @uref{http://jupiterrise.com/tgcware/,,TGCware}
+@end itemize
+
+@item
+macOS:
+@itemize
+@item
+The @uref{https://brew.sh,,Homebrew} package manager;
+@item
+@uref{https://www.macports.org,,MacPorts}.
 @end itemize
 
 @item

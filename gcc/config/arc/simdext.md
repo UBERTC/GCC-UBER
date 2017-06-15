@@ -1356,7 +1356,7 @@
    }")
 
 (define_insn_and_split "*movv2hi_insn"
-  [(set (match_operand:V2HI 0 "nonimmediate_operand" "=r,r,r,m")
+  [(set (match_operand:V2HI 0 "move_dest_operand" "=r,r,r,m")
 	(match_operand:V2HI 1 "general_operand"       "i,r,m,r"))]
   "(register_operand (operands[0], V2HImode)
     || register_operand (operands[1], V2HImode))"
@@ -1580,7 +1580,7 @@
 	   (SE:SI (vec_select:HI (match_dup 1) (parallel [(const_int 1)])))
 	   (SE:SI (vec_select:HI (match_dup 2) (parallel [(const_int 1)])))))))]
   "TARGET_PLUS_DMPY"
-  "dmpy<V_US_suffix>%? %0, %1, %2"
+  "dmpyh<V_US_suffix>%? %0, %1, %2"
   [(set_attr "length" "4")
    (set_attr "type" "multi")
    (set_attr "predicable" "yes,no")

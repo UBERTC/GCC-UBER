@@ -3005,6 +3005,8 @@ dt_node::gen_kids_1 (FILE *f, int indent, bool gimple,
       expr *e = as_a <expr *> (preds[i]->op);
       predicate_id *p = as_a <predicate_id *> (e->operation);
       preds[i]->get_name (kid_opname);
+      fprintf_indent (f, indent, "{\n");
+      indent += 2;
       fprintf_indent (f, indent, "tree %s_pops[%d];\n", kid_opname, p->nargs);
       fprintf_indent (f, indent, "if (%s_%s (%s, %s_pops%s))\n",
 	       gimple ? "gimple" : "tree",
@@ -3020,6 +3022,8 @@ dt_node::gen_kids_1 (FILE *f, int indent, bool gimple,
 	}
       preds[i]->gen_kids (f, indent + 4, gimple);
       fprintf (f, "}\n");
+      indent -= 2;
+      fprintf_indent (f, indent, "}\n");
     }
 
   for (unsigned i = 0; i < others.length (); ++i)
@@ -3187,7 +3191,7 @@ dt_simplify::gen_1 (FILE *f, int indent, bool gimple, operand *result)
 	}
     }
 
-  fprintf_indent (f, indent, "if (dump_file && (dump_flags & TDF_DETAILS)) "
+  fprintf_indent (f, indent, "if (dump_file && (dump_flags & TDF_FOLDING)) "
 	   "fprintf (dump_file, \"Applying pattern ");
   output_line_directive (f,
 			 result ? result->location : s->match->location, true);

@@ -4978,14 +4978,14 @@ find_func_aliases (struct function *fn, gimple *origt)
 	    make_escape_constraint (build_fold_addr_expr (op));
 
 	  /* The asm may read global memory, so outputs may point to
-	     any global or escaped memory.  */
+	     any global memory.  */
 	  if (op)
 	    {
 	      auto_vec<ce_s, 2> lhsc;
 	      struct constraint_expr rhsc, *lhsp;
 	      unsigned j;
 	      get_constraint_for (op, &lhsc);
-	      rhsc.var = escaped_id;
+	      rhsc.var = nonlocal_id;
 	      rhsc.offset = 0;
 	      rhsc.type = SCALAR;
 	      FOR_EACH_VEC_ELT (lhsc, j, lhsp)
@@ -7453,7 +7453,7 @@ compute_dependence_clique (void)
 		    {
 		      fprintf (dump_file, "found restrict pointed-to "
 			       "for ");
-		      print_generic_expr (dump_file, ptr, 0);
+		      print_generic_expr (dump_file, ptr);
 		      fprintf (dump_file, " but not exclusively\n");
 		    }
 		  restrict_var = NULL;
@@ -7800,7 +7800,7 @@ ipa_pta_execute (void)
 
   if (dump_file && (dump_flags & TDF_DETAILS))
     {
-      symtab_node::dump_table (dump_file);
+      symtab->dump (dump_file);
       fprintf (dump_file, "\n");
     }
 

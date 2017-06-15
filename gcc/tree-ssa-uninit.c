@@ -279,20 +279,22 @@ warn_uninitialized_vars (bool warn_possibly_uninitialized)
 	      ao_ref ref;
 	      ao_ref_init (&ref, rhs);
 
-	      /* Do not warn if it can be initialized outside this function.  */
+	      /* Do not warn if the base was marked so or this is a
+	         hard register var.  */
 	      tree base = ao_ref_base (&ref);
-	      if (!VAR_P (base)
-		  || DECL_HARD_REGISTER (base)
-		  || is_global_var (base)
+	      if ((VAR_P (base)
+		   && DECL_HARD_REGISTER (base))
 		  || TREE_NO_WARNING (base))
 		continue;
 
 	      /* Do not warn if the access is fully outside of the
 	         variable.  */
-	      if (ref.size != -1
+	      if (DECL_P (base)
+		  && ref.size != -1
 		  && ref.max_size == ref.size
 		  && (ref.offset + ref.size <= 0
 		      || (ref.offset >= 0
+			  && DECL_SIZE (base)
 			  && TREE_CODE (DECL_SIZE (base)) == INTEGER_CST
 			  && compare_tree_int (DECL_SIZE (base),
 					       ref.offset) <= 0)))
@@ -305,11 +307,12 @@ warn_uninitialized_vars (bool warn_possibly_uninitialized)
 		  && oracle_cnt > vdef_cnt * 2)
 		limit = 32;
 	      check_defs_data data;
+	      bool fentry_reached = false;
 	      data.found_may_defs = false;
 	      use = gimple_vuse (stmt);
 	      int res = walk_aliased_vdefs (&ref, use,
 					    check_defs, &data, NULL,
-					    NULL, limit);
+					    &fentry_reached, limit);
 	      if (res == -1)
 		{
 		  oracle_cnt += limit;
@@ -317,6 +320,16 @@ warn_uninitialized_vars (bool warn_possibly_uninitialized)
 		}
 	      oracle_cnt += res;
 	      if (data.found_may_defs)
+		continue;
+	      /* Do not warn if it can be initialized outside this function.
+	         If we did not reach function entry then we found killing
+		 clobbers on all paths to entry.  */
+	      if (fentry_reached
+		  /* ???  We'd like to use ref_may_alias_global_p but that
+		     excludes global readonly memory and thus we get bougs
+		     warnings from p = cond ? "a" : "b" for example.  */
+		  && (!VAR_P (base)
+		      || is_global_var (base)))
 		continue;
 
 	      /* We didn't find any may-defs so on all paths either
@@ -795,7 +808,7 @@ collect_phi_def_edges (gphi *phi, basic_block cd_root,
 	  if (dump_file && (dump_flags & TDF_DETAILS))
 	    {
 	      fprintf (dump_file, "\n[CHECK] Found def edge %d in ", (int) i);
-	      print_gimple_stmt (dump_file, phi, 0, 0);
+	      print_gimple_stmt (dump_file, phi, 0);
 	    }
 	  edges->safe_push (opnd_edge);
 	}
@@ -813,7 +826,7 @@ collect_phi_def_edges (gphi *phi, basic_block cd_root,
 		{
 		  fprintf (dump_file, "\n[CHECK] Found def edge %d in ",
 			   (int) i);
-		  print_gimple_stmt (dump_file, phi, 0, 0);
+		  print_gimple_stmt (dump_file, phi, 0);
 		}
 	      edges->safe_push (opnd_edge);
 	    }
@@ -886,7 +899,7 @@ dump_predicates (gimple *usestmt, pred_chain_union preds, const char *msg)
   size_t i, j;
   pred_chain one_pred_chain = vNULL;
   fprintf (dump_file, "%s", msg);
-  print_gimple_stmt (dump_file, usestmt, 0, 0);
+  print_gimple_stmt (dump_file, usestmt, 0);
   fprintf (dump_file, "is guarded by :\n\n");
   size_t num_preds = preds.length ();
   /* Do some dumping here:  */
@@ -902,9 +915,9 @@ dump_predicates (gimple *usestmt, pred_chain_union preds, const char *msg)
 	  pred_info one_pred = one_pred_chain[j];
 	  if (one_pred.invert)
 	    fprintf (dump_file, " (.NOT.) ");
-	  print_generic_expr (dump_file, one_pred.pred_lhs, 0);
+	  print_generic_expr (dump_file, one_pred.pred_lhs);
 	  fprintf (dump_file, " %s ", op_symbol_code (one_pred.cond_code));
-	  print_generic_expr (dump_file, one_pred.pred_rhs, 0);
+	  print_generic_expr (dump_file, one_pred.pred_rhs);
 	  if (j < np - 1)
 	    fprintf (dump_file, " (.AND.) ");
 	  else
@@ -2459,7 +2472,7 @@ find_uninit_use (gphi *phi, unsigned uninit_opnds,
       if (dump_file && (dump_flags & TDF_DETAILS))
 	{
 	  fprintf (dump_file, "[CHECK]: Found unguarded use: ");
-	  print_gimple_stmt (dump_file, use_stmt, 0, 0);
+	  print_gimple_stmt (dump_file, use_stmt, 0);
 	}
       /* Found one real use, return.  */
       if (gimple_code (use_stmt) != GIMPLE_PHI)
@@ -2475,7 +2488,7 @@ find_uninit_use (gphi *phi, unsigned uninit_opnds,
 	  if (dump_file && (dump_flags & TDF_DETAILS))
 	    {
 	      fprintf (dump_file, "[WORKLIST]: Update worklist with phi: ");
-	      print_gimple_stmt (dump_file, use_stmt, 0, 0);
+	      print_gimple_stmt (dump_file, use_stmt, 0);
 	    }
 
 	  worklist->safe_push (as_a<gphi *> (use_stmt));
@@ -2517,7 +2530,7 @@ warn_uninitialized_phi (gphi *phi, vec<gphi *> *worklist,
   if (dump_file && (dump_flags & TDF_DETAILS))
     {
       fprintf (dump_file, "[CHECK]: examining phi: ");
-      print_gimple_stmt (dump_file, phi, 0, 0);
+      print_gimple_stmt (dump_file, phi, 0);
     }
 
   /* Now check if we have any use of the value without proper guard.  */
@@ -2619,7 +2632,7 @@ pass_late_warn_uninitialized::execute (function *fun)
 		if (dump_file && (dump_flags & TDF_DETAILS))
 		  {
 		    fprintf (dump_file, "[WORKLIST]: add to initial list: ");
-		    print_gimple_stmt (dump_file, phi, 0, 0);
+		    print_gimple_stmt (dump_file, phi, 0);
 		  }
 		break;
 	      }

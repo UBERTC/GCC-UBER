@@ -32,6 +32,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-inline.h"
 #include "ubsan.h"
 #include "gimple-fold.h"
+#include "timevar.h"
 
 static bool verify_constant (tree, bool, bool *, bool *);
 #define VERIFY_CONSTANT(X)						\
@@ -209,16 +210,17 @@ is_valid_constexpr_fn (tree fun, bool complain)
 	    }
 	}
 
-      if (DECL_NONSTATIC_MEMBER_FUNCTION_P (fun)
+      /* C++14 DR 1684 removed this restriction.  */
+      if (cxx_dialect < cxx14
+	  && DECL_NONSTATIC_MEMBER_FUNCTION_P (fun)
 	  && !CLASSTYPE_LITERAL_P (DECL_CONTEXT (fun)))
 	{
 	  ret = false;
-	  if (complain)
-	    {
-	      error ("enclosing class of constexpr non-static member "
-		     "function %q+#D is not a literal type", fun);
-	      explain_non_literal_class (DECL_CONTEXT (fun));
-	    }
+	  if (complain
+	      && pedwarn (DECL_SOURCE_LOCATION (fun), OPT_Wpedantic,
+			  "enclosing class of constexpr non-static member "
+			  "function %q+#D is not a literal type", fun))
+	    explain_non_literal_class (DECL_CONTEXT (fun));
 	}
     }
   else if (CLASSTYPE_VBASECLASSES (DECL_CONTEXT (fun)))
@@ -4397,7 +4399,8 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 	if (TREE_CODE (op) == PTRMEM_CST && tcode == NOP_EXPR)
 	  {
 	    if (same_type_ignoring_top_level_qualifiers_p (type,
-							   TREE_TYPE (op)))
+							   TREE_TYPE (op))
+		|| can_convert_qual (type, op))
 	      return cp_fold_convert (type, op);
 	    else
 	      {
@@ -4606,6 +4609,8 @@ static tree
 cxx_eval_outermost_constant_expr (tree t, bool allow_non_constant,
 				  bool strict = true, tree object = NULL_TREE)
 {
+  auto_timevar time (TV_CONSTEXPR);
+
   bool non_constant_p = false;
   bool overflow_p = false;
   hash_map<tree,tree> map;
@@ -5292,7 +5297,7 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
       {
         tree x = TREE_OPERAND (t, 0);
         STRIP_NOPS (x);
-        if (is_this_parameter (x))
+        if (is_this_parameter (x) && !is_capture_proxy (x))
 	  {
 	    if (DECL_CONTEXT (x)
 		&& !DECL_DECLARED_CONSTEXPR_P (DECL_CONTEXT (x)))

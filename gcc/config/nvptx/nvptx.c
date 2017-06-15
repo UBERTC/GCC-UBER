@@ -328,6 +328,14 @@ maybe_split_mode (machine_mode mode)
   return VOIDmode;
 }
 
+/* Return true if mode should be treated as two registers.  */
+
+static bool
+split_mode_p (machine_mode mode)
+{
+  return maybe_split_mode (mode) != VOIDmode;
+}
+
 /* Output a register, subreg, or register pair (with optional
    enclosing braces).  */
 
@@ -1277,7 +1285,7 @@ nvptx_declare_function_name (FILE *file, const char *name, const_tree decl)
 	  machine_mode mode = PSEUDO_REGNO_MODE (i);
 	  machine_mode split = maybe_split_mode (mode);
 
-	  if (split != VOIDmode)
+	  if (split_mode_p (mode))
 	    mode = split;
 	  fprintf (file, "\t.reg%s ", nvptx_ptx_type_from_mode (mode, true));
 	  output_reg (file, i, split, -2);
@@ -2396,10 +2404,8 @@ nvptx_print_operand (FILE *file, rtx x, int code)
       if (x_code == SUBREG)
 	{
 	  mode = GET_MODE (SUBREG_REG (x));
-	  if (mode == TImode)
-	    mode = DImode;
-	  else if (COMPLEX_MODE_P (mode))
-	    mode = GET_MODE_INNER (mode);
+	  if (split_mode_p (mode))
+	    mode = maybe_split_mode (mode);
 	}
       fprintf (file, "%s", nvptx_ptx_type_from_mode (mode, code == 't'));
       break;
@@ -2500,7 +2506,7 @@ nvptx_print_operand (FILE *file, rtx x, int code)
 	    machine_mode inner_mode = GET_MODE (inner_x);
 	    machine_mode split = maybe_split_mode (inner_mode);
 
-	    if (split != VOIDmode
+	    if (split_mode_p (inner_mode)
 		&& (GET_MODE_SIZE (inner_mode) == GET_MODE_SIZE (mode)))
 	      output_reg (file, REGNO (inner_x), split);
 	    else
@@ -5322,6 +5328,13 @@ nvptx_goacc_reduction (gcall *call)
     }
 }
 
+static bool
+nvptx_cannot_force_const_mem (machine_mode mode ATTRIBUTE_UNUSED,
+			      rtx x ATTRIBUTE_UNUSED)
+{
+  return true;
+}
+
 #undef TARGET_OPTION_OVERRIDE
 #define TARGET_OPTION_OVERRIDE nvptx_option_override
 
@@ -5435,6 +5448,9 @@ nvptx_goacc_reduction (gcall *call)
 
 #undef TARGET_GOACC_REDUCTION
 #define TARGET_GOACC_REDUCTION nvptx_goacc_reduction
+
+#undef TARGET_CANNOT_FORCE_CONST_MEM
+#define TARGET_CANNOT_FORCE_CONST_MEM nvptx_cannot_force_const_mem
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

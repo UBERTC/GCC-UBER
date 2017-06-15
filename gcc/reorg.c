@@ -1694,9 +1694,8 @@ own_thread_p (rtx thread, rtx label, int allow_fallthrough)
 }
 
 /* Called when INSN is being moved from a location near the target of a jump.
-   We leave a marker of the form (use (INSN)) immediately in front
-   of WHERE for mark_target_live_regs.  These markers will be deleted when
-   reorg finishes.
+   We leave a marker of the form (use (INSN)) immediately in front of WHERE
+   for mark_target_live_regs.  These markers will be deleted at the end.
 
    We used to try to update the live status of registers if WHERE is at
    the start of a basic block, but that can't work since we may remove a
@@ -1705,16 +1704,10 @@ own_thread_p (rtx thread, rtx label, int allow_fallthrough)
 static void
 update_block (rtx_insn *insn, rtx_insn *where)
 {
-  /* Ignore if this was in a delay slot and it came from the target of
-     a branch.  */
-  if (INSN_FROM_TARGET_P (insn))
-    return;
-
   emit_insn_before (gen_rtx_USE (VOIDmode, insn), where);
 
   /* INSN might be making a value live in a block where it didn't use to
      be.  So recompute liveness information for this block.  */
-
   incr_ticks_for_insn (insn);
 }
 
@@ -3351,16 +3344,16 @@ relax_delay_slots (rtx_insn *first)
 	  && simplejump_or_return_p (trial_seq->insn (0))
 	  && redundant_insn (trial_seq->insn (1), insn, vNULL))
 	{
-	  target_label = JUMP_LABEL (trial_seq->insn (0));
-	  if (ANY_RETURN_P (target_label))
-	    target_label = find_end_label (target_label);
+	  rtx temp_label = JUMP_LABEL (trial_seq->insn (0));
+	  if (ANY_RETURN_P (temp_label))
+	    temp_label = find_end_label (temp_label);
 	  
-	  if (target_label
+	  if (temp_label
 	      && redirect_with_delay_slots_safe_p (delay_jump_insn,
-						   target_label, insn))
+						   temp_label, insn))
 	    {
 	      update_block (trial_seq->insn (1), insn);
-	      reorg_redirect_jump (delay_jump_insn, target_label);
+	      reorg_redirect_jump (delay_jump_insn, temp_label);
 	      next = insn;
 	      continue;
 	    }

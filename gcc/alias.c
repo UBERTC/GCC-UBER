@@ -2046,6 +2046,18 @@ compare_base_decls (tree base1, tree base2)
   if (base1 == base2)
     return 1;
 
+  /* If we have two register decls with register specification we
+     cannot decide unless their assembler name is the same.  */
+  if (DECL_REGISTER (base1)
+      && DECL_REGISTER (base2)
+      && DECL_ASSEMBLER_NAME_SET_P (base1)
+      && DECL_ASSEMBLER_NAME_SET_P (base2))
+    {
+      if (DECL_ASSEMBLER_NAME (base1) == DECL_ASSEMBLER_NAME (base2))
+	return 1;
+      return -1;
+    }
+
   /* Declarations of non-automatic variables may have aliases.  All other
      decls are unique.  */
   if (!decl_in_symtab_p (base1)
@@ -3209,6 +3221,10 @@ memory_modified_in_insn_p (const_rtx mem, const_rtx insn)
 {
   if (!INSN_P (insn))
     return false;
+  /* Conservatively assume all non-readonly MEMs might be modified in
+     calls.  */
+  if (CALL_P (insn))
+    return true;
   memory_modified = false;
   note_stores (PATTERN (insn), memory_modified_1, CONST_CAST_RTX(mem));
   return memory_modified;

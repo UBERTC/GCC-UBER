@@ -56,6 +56,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "ipa-chkp.h"
 #include "tree-cfg.h"
 #include "fold-const-call.h"
+#include "asan.h"
 
 /* Return true when DECL can be referenced from current unit.
    FROM_DECL (if non-null) specify constructor of variable DECL was taken from.
@@ -161,8 +162,8 @@ can_refer_decl_in_current_unit_p (tree decl, tree from_decl)
    is in SSA form, a SSA name is created.  Otherwise a temporary register
    is made.  */
 
-static tree
-create_tmp_reg_or_ssa_name (tree type, gimple *stmt = NULL)
+tree
+create_tmp_reg_or_ssa_name (tree type, gimple *stmt)
 {
   if (gimple_in_ssa_p (cfun))
     return make_ssa_name (type, stmt);
@@ -1235,7 +1236,7 @@ get_range_strlen (tree arg, tree length[2], bitmap *visited, int type,
 		 the NUL.
 		 Set *FLEXP to true if the array whose bound is being
 		 used is at the end of a struct.  */
-	      if (array_at_struct_end_p (arg, true))
+	      if (array_at_struct_end_p (arg))
 		*flexp = true;
 
 	      arg = TREE_OPERAND (arg, 1);
@@ -2670,11 +2671,9 @@ gimple_fold_builtin_sprintf_chk (gimple_stmt_iterator *gsi,
    ORIG may be null if this is a 2-argument call.  We don't attempt to
    simplify calls with more than 3 arguments.
 
-   Return NULL_TREE if no simplification was possible, otherwise return the
-   simplified form of the call as a tree.  If IGNORED is true, it means that
-   the caller does not use the returned value of the function.  */
+   Return true if simplification was possible, otherwise false.  */
 
-static bool
+bool
 gimple_fold_builtin_sprintf (gimple_stmt_iterator *gsi)
 {
   gimple *stmt = gsi_stmt (*gsi);
@@ -2795,11 +2794,9 @@ gimple_fold_builtin_sprintf (gimple_stmt_iterator *gsi)
    FMT, and ORIG.  ORIG may be null if this is a 3-argument call.  We don't
    attempt to simplify calls with more than 4 arguments.
 
-   Return NULL_TREE if no simplification was possible, otherwise return the
-   simplified form of the call as a tree.  If IGNORED is true, it means that
-   the caller does not use the returned value of the function.  */
+   Return true if simplification was possible, otherwise false.  */
 
-static bool
+bool
 gimple_fold_builtin_snprintf (gimple_stmt_iterator *gsi)
 {
   gcall *stmt = as_a <gcall *> (gsi_stmt (*gsi));
@@ -3251,6 +3248,28 @@ gimple_fold_builtin_acc_on_device (gimple_stmt_iterator *gsi, tree arg0)
   return true;
 }
 
+/* Fold realloc (0, n) -> malloc (n).  */
+
+static bool
+gimple_fold_builtin_realloc (gimple_stmt_iterator *gsi)
+{
+  gimple *stmt = gsi_stmt (*gsi);
+  tree arg = gimple_call_arg (stmt, 0);
+  tree size = gimple_call_arg (stmt, 1);
+
+  if (operand_equal_p (arg, null_pointer_node, 0))
+    {
+      tree fn_malloc = builtin_decl_implicit (BUILT_IN_MALLOC);
+      if (fn_malloc)
+	{
+	  gcall *repl = gimple_build_call (fn_malloc, 1, size);
+	  replace_call_with_call_and_fold (gsi, repl);
+	  return true;
+	}
+    }
+  return false;
+}
+
 /* Fold the non-target builtin at *GSI and return whether any simplification
    was made.  */
 
@@ -3362,10 +3381,7 @@ gimple_fold_builtin (gimple_stmt_iterator *gsi)
     case BUILT_IN_SNPRINTF_CHK:
     case BUILT_IN_VSNPRINTF_CHK:
       return gimple_fold_builtin_snprintf_chk (gsi, fcode);
-    case BUILT_IN_SNPRINTF:
-      return gimple_fold_builtin_snprintf (gsi);
-    case BUILT_IN_SPRINTF:
-      return gimple_fold_builtin_sprintf (gsi);
+
     case BUILT_IN_FPRINTF:
     case BUILT_IN_FPRINTF_UNLOCKED:
     case BUILT_IN_VFPRINTF:
@@ -3409,6 +3425,9 @@ gimple_fold_builtin (gimple_stmt_iterator *gsi)
     case BUILT_IN_ACC_ON_DEVICE:
       return gimple_fold_builtin_acc_on_device (gsi,
 						gimple_call_arg (stmt, 0));
+    case BUILT_IN_REALLOC:
+      return gimple_fold_builtin_realloc (gsi);
+
     default:;
     }
 
@@ -3461,7 +3480,7 @@ optimize_atomic_compare_exchange_p (gimple *stmt)
   if (gimple_call_num_args (stmt) != 6
       || !flag_inline_atomics
       || !optimize
-      || (flag_sanitize & (SANITIZE_THREAD | SANITIZE_ADDRESS)) != 0
+      || sanitize_flags_p (SANITIZE_THREAD | SANITIZE_ADDRESS)
       || !gimple_call_builtin_p (stmt, BUILT_IN_NORMAL)
       || !gimple_vdef (stmt)
       || !gimple_vuse (stmt))
@@ -5723,7 +5742,7 @@ gimple_fold_stmt_to_constant_1 (gimple *stmt, tree (*valueize) (tree),
 	      fprintf (dump_file, "Match-and-simplified ");
 	      print_gimple_expr (dump_file, stmt, 0, TDF_SLIM);
 	      fprintf (dump_file, " to ");
-	      print_generic_expr (dump_file, res, 0);
+	      print_generic_expr (dump_file, res);
 	      fprintf (dump_file, "\n");
 	    }
 	  return res;

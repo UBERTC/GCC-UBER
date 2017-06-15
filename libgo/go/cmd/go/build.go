@@ -2692,6 +2692,8 @@ func (tools gccgoToolchain) gc(b *builder, p *Package, archive, obj string, asmh
 	ofile = obj + out
 	gcargs := []string{"-g"}
 	gcargs = append(gcargs, b.gccArchArgs()...)
+	gcargs = append(gcargs, "-fdebug-prefix-map="+b.work+"=/tmp/go-build")
+	gcargs = append(gcargs, "-gno-record-gcc-switches")
 	if pkgpath := gccgoPkgpath(p); pkgpath != "" {
 		gcargs = append(gcargs, "-fgo-pkgpath="+pkgpath)
 	}
@@ -2707,14 +2709,14 @@ func (tools gccgoToolchain) gc(b *builder, p *Package, archive, obj string, asmh
 
 	for _, path := range p.Imports {
 		// If this is a new vendor path, add it to the list of importArgs
-		if i := strings.LastIndex(path, "/vendor"); i >= 0 {
+		if i := strings.LastIndex(path, "/vendor/"); i >= 0 {
 			for _, dir := range savedirs {
 				// Check if the vendor path is already included in dir
-				if strings.HasSuffix(dir, path[:i+len("/vendor")]) {
+				if strings.HasSuffix(dir, path[:i+len("/vendor/")]) {
 					continue
 				}
 				// Make sure this vendor path is not already in the list for importArgs
-				vendorPath := dir + "/" + path[:i+len("/vendor")]
+				vendorPath := dir + "/" + path[:i+len("/vendor/")]
 				for _, imp := range importArgs {
 					if imp == "-I" {
 						continue
@@ -2788,7 +2790,12 @@ func (gccgoToolchain) pack(b *builder, p *Package, objDir, afile string, ofiles 
 	for _, f := range ofiles {
 		absOfiles = append(absOfiles, mkAbs(objDir, f))
 	}
-	return b.run(p.Dir, p.ImportPath, nil, "ar", "rc", mkAbs(objDir, afile), absOfiles)
+	absAfile := mkAbs(objDir, afile)
+	// Try with D modifier first, then without if that fails.
+	if b.run(p.Dir, p.ImportPath, nil, "ar", "rcD", absAfile, absOfiles) != nil {
+		return b.run(p.Dir, p.ImportPath, nil, "ar", "rc", absAfile, absOfiles)
+	}
+	return nil
 }
 
 func (tools gccgoToolchain) link(b *builder, root *action, out string, allactions []*action, mainpkg string, ofiles []string, buildmode, desc string) error {
@@ -3080,6 +3087,12 @@ func (tools gccgoToolchain) cc(b *builder, p *Package, objdir, ofile, cfile stri
 		defs = append(defs, "-fsplit-stack")
 	}
 	defs = tools.maybePIC(defs)
+	if b.gccSupportsFlag("-fdebug-prefix-map=a=b") {
+		defs = append(defs, "-fdebug-prefix-map="+b.work+"=/tmp/go-build")
+	}
+	if b.gccSupportsFlag("-gno-record-gcc-switches") {
+		defs = append(defs, "-gno-record-gcc-switches")
+	}
 	return b.run(p.Dir, p.ImportPath, nil, envList("CC", defaultCC), "-Wall", "-g",
 		"-I", objdir, "-I", inc, "-o", ofile, defs, "-c", cfile)
 }
@@ -3133,6 +3146,26 @@ func (b *builder) ccompile(p *Package, outfile string, flags []string, file stri
 	desc := p.ImportPath
 	output, err := b.runOut(p.Dir, desc, nil, compiler, flags, "-o", outfile, "-c", file)
 	if len(output) > 0 {
+		// On FreeBSD 11, when we pass -g to clang 3.8 it
+		// invokes its internal assembler with -dwarf-version=2.
+		// When it sees .section .note.GNU-stack, it warns
+		// "DWARF2 only supports one section per compilation unit".
+		// This warning makes no sense, since the section is empty,
+		// but it confuses people.
+		// We work around the problem by detecting the warning
+		// and dropping -g and trying again.
+		if bytes.Contains(output, []byte("DWARF2 only supports one section per compilation unit")) {
+			newFlags := make([]string, 0, len(flags))
+			for _, f := range flags {
+				if !strings.HasPrefix(f, "-g") {
+					newFlags = append(newFlags, f)
+				}
+			}
+			if len(newFlags) < len(flags) {
+				return b.ccompile(p, outfile, newFlags, file, compiler)
+			}
+		}
+
 		b.showOutput(p.Dir, desc, b.processOutput(output))
 		if err != nil {
 			err = errPrintedOutput

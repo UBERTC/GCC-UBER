@@ -496,7 +496,6 @@ static const struct default_options default_options_table[] =
     { OPT_LEVELS_2_PLUS, OPT_fschedule_insns2, NULL, 1 },
 #endif
     { OPT_LEVELS_2_PLUS, OPT_fstrict_aliasing, NULL, 1 },
-    { OPT_LEVELS_2_PLUS, OPT_fstrict_overflow, NULL, 1 },
     { OPT_LEVELS_2_PLUS_SPEED_ONLY, OPT_freorder_blocks_algorithm_, NULL,
       REORDER_BLOCKS_ALGORITHM_STC },
     { OPT_LEVELS_2_PLUS, OPT_freorder_functions, NULL, 1 },
@@ -864,19 +863,6 @@ finish_options (struct gcc_options *opts, struct gcc_options *opts_set,
       opts->x_flag_reorder_blocks = 1;
     }
 
-  /* Disable -freorder-blocks-and-partition when -fprofile-use is not in
-     effect. Function splitting was not actually being performed in that case,
-     as probably_never_executed_bb_p does not distinguish any basic blocks as
-     being cold vs hot when there is no profile data. Leaving it enabled,
-     however, causes the assembly code generator to create (empty) cold
-     sections and labels, leading to unnecessary size overhead.  */
-  if (opts->x_flag_reorder_blocks_and_partition
-      && !opts_set->x_flag_profile_use)
-    opts->x_flag_reorder_blocks_and_partition = 0;
-
-  if (opts->x_flag_reorder_blocks_and_partition
-      && !opts_set->x_flag_reorder_functions)
-    opts->x_flag_reorder_functions = 1;
 
   /* Pipelining of outer loops is only possible when general pipelining
      capabilities are requested.  */
@@ -927,6 +913,20 @@ finish_options (struct gcc_options *opts, struct gcc_options *opts_set,
 	  opts->x_flag_split_stack = 0;
 	}
     }
+
+  /* If stack splitting is turned on, and the user did not explicitly
+     request function partitioning, turn off partitioning, as it
+     confuses the linker when trying to handle partitioned split-stack
+     code that calls a non-split-stack functions.  But if partitioning
+     was turned on explicitly just hope for the best.  */
+  if (opts->x_flag_split_stack
+      && opts->x_flag_reorder_blocks_and_partition
+      && !opts_set->x_flag_reorder_blocks_and_partition)
+    opts->x_flag_reorder_blocks_and_partition = 0;
+
+  if (opts->x_flag_reorder_blocks_and_partition
+      && !opts_set->x_flag_reorder_functions)
+    opts->x_flag_reorder_functions = 1;
 
   /* Tune vectorization related parametees according to cost model.  */
   if (opts->x_flag_vect_cost_model == VECT_COST_MODEL_CHEAP)
@@ -984,10 +984,7 @@ finish_options (struct gcc_options *opts, struct gcc_options *opts_set,
 
   /* Aggressive compiler optimizations may cause false negatives.  */
   if (opts->x_flag_sanitize & ~(SANITIZE_LEAK | SANITIZE_UNREACHABLE))
-    {
-      opts->x_flag_aggressive_loop_optimizations = 0;
-      opts->x_flag_strict_overflow = 0;
-    }
+    opts->x_flag_aggressive_loop_optimizations = 0;
 
   /* Enable -fsanitize-address-use-after-scope if address sanitizer is
      enabled.  */
@@ -1659,6 +1656,37 @@ parse_sanitizer_options (const char *p, location_t loc, int scode,
   return flags;
 }
 
+/* Parse string values of no_sanitize attribute passed in VALUE.
+   Values are separated with comma.  Wrong argument is stored to
+   WRONG_ARGUMENT variable.  */
+
+unsigned int
+parse_no_sanitize_attribute (char *value, char **wrong_argument)
+{
+  unsigned int flags = 0;
+  unsigned int i;
+  char *q = strtok (value, ",");
+
+  while (q != NULL)
+    {
+      for (i = 0; sanitizer_opts[i].name != NULL; ++i)
+	if (strcmp (sanitizer_opts[i].name, q) == 0)
+	  {
+	    flags |= sanitizer_opts[i].flag;
+	    if (sanitizer_opts[i].flag == SANITIZE_UNDEFINED)
+	      flags |= SANITIZE_UNDEFINED_NONDEFAULT;
+	    break;
+	  }
+
+      if (sanitizer_opts[i].name == NULL)
+	*wrong_argument = q;
+
+      q = strtok (NULL, ",");
+    }
+
+  return flags;
+}
+
 /* Handle target- and language-independent options.  Return zero to
    generate an "unknown option" message.  Only options that need
    extra handling need to be listed here; if you simply want
@@ -1895,11 +1923,11 @@ common_handle_option (struct gcc_options *opts,
     case OPT_fsanitize_recover:
       if (value)
 	opts->x_flag_sanitize_recover
-	  |= (SANITIZE_UNDEFINED | SANITIZE_NONDEFAULT)
+	  |= (SANITIZE_UNDEFINED | SANITIZE_UNDEFINED_NONDEFAULT)
 	     & ~(SANITIZE_UNREACHABLE | SANITIZE_RETURN);
       else
 	opts->x_flag_sanitize_recover
-	  &= ~(SANITIZE_UNDEFINED | SANITIZE_NONDEFAULT);
+	  &= ~(SANITIZE_UNDEFINED | SANITIZE_UNDEFINED_NONDEFAULT);
       break;
 
     case OPT_O:

@@ -423,10 +423,15 @@ extern enum cmodel sparc_cmodel;
 #define WCHAR_TYPE_SIZE 16
 
 /* Mask of all CPU selection flags.  */
-#define MASK_ISA					\
-  (MASK_SPARCLITE + MASK_SPARCLET			\
+#define MASK_ISA						\
+  (MASK_SPARCLITE + MASK_SPARCLET + MASK_LEON + MASK_LEON3	\
    + MASK_V8 + MASK_V9 + MASK_DEPRECATED_V8_INSNS)
 
+/* Mask of all CPU feature flags.  */
+#define MASK_FEATURES						\
+  (MASK_FPU + MASK_HARD_QUAD + MASK_VIS + MASK_VIS2 + MASK_VIS3	\
+   + MASK_VIS4 + MASK_CBCOND + MASK_FMAF + MASK_POPC + MASK_SUBXC)
+ 
 /* TARGET_HARD_MUL: Use 32-bit hardware multiply instructions but not %y.  */
 #define TARGET_HARD_MUL				\
   (TARGET_SPARCLITE || TARGET_SPARCLET		\
@@ -1566,7 +1571,10 @@ do {									   \
    and annulled branches insert 4 bubbles.
 
    On Niagara-2 and Niagara-3, a not-taken branch costs 1 cycle whereas
-   a taken branch costs 6 cycles.  */
+   a taken branch costs 6 cycles.
+
+   The T4 Supplement specifies the branch latency at 2 cycles.
+   The M7 Supplement specifies the branch latency at 1 cycle. */
 
 #define BRANCH_COST(speed_p, predictable_p) \
 	((sparc_cpu == PROCESSOR_V9 \
@@ -1579,7 +1587,11 @@ do {									   \
 	 : ((sparc_cpu == PROCESSOR_NIAGARA2 \
 	     || sparc_cpu == PROCESSOR_NIAGARA3) \
 	    ? 5 \
-	 : 3))))
+	 : (sparc_cpu == PROCESSOR_NIAGARA4 \
+	    ? 2 \
+	 : (sparc_cpu == PROCESSOR_NIAGARA7 \
+	    ? 1 \
+	 : 3))))))
 
 /* Control the assembler format that we output.  */
 

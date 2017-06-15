@@ -1,3 +1,503 @@
+2017-06-15  François Dumont  <fdumont@gcc.gnu.org>
+
+	* src/c++98/tree.cc  [!_GLIBCXX_INLINE_VERSION]
+	(_Rb_tree_rotate_left, _Rb_tree_rotate_right): Delete.
+
+2017-06-15  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	* testsuite: Add dg-require-effective-target pthread to -pthread
+	tests.
+	Remove explicit target lists from dg-do and dg-options.
+
+	* testsuite/30_threads/async/forced_unwind.cc: Remove explit
+	target list from dg-options.
+	* testsuite/30_threads/packaged_task/forced_unwind.cc: Likewise.
+
+	* 30_threads/shared_mutex/cons/1.cc: Likewise.
+	Pass -pthread for all targets.
+	* 30_threads/shared_mutex/try_lock/1.cc: Likewise.
+	* 30_threads/shared_mutex/try_lock/2.cc: Likewise.
+	* 30_threads/shared_mutex/unlock/1.cc: Likewise.
+
+	* testsuite/30_threads/this_thread/57060.cc: Require c++11 via
+	dg-require-effective-target.
+
+2017-06-14  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/test.xml: Correct instructions on running tests.
+	* testsuite/21_strings/basic_string/cons/char/deduction.cc: Adjust to
+	pass when -D_GLIBCXX_USE_CXX11_ABI=0 added to RUNTESTFLAGS.
+	* testsuite/21_strings/basic_string/cons/wchar_t/deduction.cc:
+	Likewise.
+	* testsuite/27_io/basic_ios/copyfmt/char/1.cc: Likewise.
+	* testsuite/27_io/basic_ios/exceptions/char/1.cc: Likewise.
+	* testsuite/27_io/basic_istream/extractors_arithmetic/char/
+	exceptions_failbit.cc: Likewise.
+	* testsuite/27_io/basic_istream/extractors_arithmetic/wchar_t/
+	exceptions_failbit.cc: Likewise.
+	* testsuite/27_io/basic_istream/extractors_other/char/
+	exceptions_null.cc: Likewise.
+	* testsuite/27_io/basic_istream/extractors_other/wchar_t/
+	exceptions_null.cc: Likewise.
+	* testsuite/27_io/basic_istream/sentry/char/12297.cc: Likewise.
+	* testsuite/27_io/basic_istream/sentry/wchar_t/12297.cc: Likewise.
+	* testsuite/27_io/basic_ostream/inserters_other/char/
+	exceptions_null.cc: Likewise.
+	* testsuite/27_io/basic_ostream/inserters_other/wchar_t/
+	exceptions_null.cc: Likewise.
+	* testsuite/27_io/ios_base/storage/2.cc: Likewise.
+
+2017-06-12  Pedro Alves  <palves@redhat.com>
+
+	* doc/xml/manual/status_cxx2017.xml: Update C++17 constexpr
+	char_traits status.
+	* doc/html/*: Regenerate.
+
+	* include/bits/char_traits.h (_GLIBCXX_ALWAYS_INLINE): Define if
+	not already defined.
+	(__cpp_lib_constexpr_char_traits): Uncomment.
+	(__constant_string_p, __constant_char_array_p): New.
+	(std::char_traits<char>, std::char_traits<wchar_t>): Add
+	_GLIBCXX17_CONSTEXPR on compare, length and find and use
+	__constant_string_p, __constant_char_array_p and
+	__builtin_constant_p to defer to __gnu_cxx::char_traits at compile
+	time.
+
+	* testsuite/21_strings/char_traits/requirements/
+	constexpr_functions_c++17.cc: Uncomment
+	__cpp_lib_constexpr_char_traits tests.  Uncomment
+	test_compare<char>, test_length<char>, test_find<char>,
+	test_compare<wchar_t>, test_length<wchar_t> and test_find<wchar_t>
+	static_assert tests.
+
+2017-06-12  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/bits/stl_tree.h (_Rb_tree_impl()): Restore _Node_allocator
+	default init.
+	* testsuite/util/testsuite_allocator.h
+	(__gnu_test::default_init_allocator<>) New.
+	* testsuite/23_containers/set/allocator/default_init.cc: New.
+	* testsuite/23_containers/map/allocator/default_init.cc: New.
+
+2017-06-12  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/55917
+	* src/c++11/thread.cc (execute_native_thread_routine): Remove
+	try-block so that exceptions propagate out of the thread and terminate
+	is called by the exception-handling runtime.
+	(execute_native_thread_routine_compat): Likewise.
+	* testsuite/30_threads/thread/cons/terminate.cc: New.
+
+2017-06-09  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/intro.xml: Document LWG 2802, 2873 and 2942 changes.
+	* include/bits/shared_ptr.h (shared_ptr): Use rvalues for deleters
+	(LWG 2802).
+	* include/bits/shared_ptr_base.h (_Sp_ebo_helper, _Sp_counted_deleter
+	(_Sp_counted_deleter::_Impl, __shared_count, __shared_ptr): Likewise.
+	* testsuite/20_util/shared_ptr/cons/lwg2802.cc: New.
+
+	* include/bits/forward_list.h (forward_list): Add deduction guide.
+	* include/bits/stl_deque.h (deque): Likewise.
+	* include/bits/stl_list.h (list): Likewise.
+	* include/bits/stl_vector.h (vector): Likewise.
+	* testsuite/23_containers/deque/cons/deduction.cc: New.
+	* testsuite/23_containers/forward_list/cons/deduction.cc: New.
+	* testsuite/23_containers/list/cons/deduction.cc: New.
+	* testsuite/23_containers/vector/cons/deduction.cc: New.
+
+2017-06-08  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81017
+	* include/bits/std_function.h (function::function(function&&))
+	(function::operator=(funtion&&)): Add noexcept.
+	* testsuite/20_util/function/assign/move.cc: Check for noexcept.
+	* testsuite/20_util/function/cons/move.cc: Likewise.
+
+2017-06-07  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/regex.h (basic_regex): Add deduction guide from P0433.
+	* testsuite/28_regex/basic_regex/ctors/deduction.cc: New.
+
+	PR libstdc++/81002
+	* include/bits/regex.h (basic_regex): Adjust call to __compile_nfa
+	so iterator type is deduced.
+	* include/bits/regex_compiler.h (__compile_nfa): Reorder template
+	parameters to allow iterator type to be deduced.
+	* testsuite/28_regex/basic_regex/ctors/basic/iter.cc: New.
+
+	* include/bits/alloc_traits.h (__is_allocator, _RequireAllocator):
+	New trait and alias for detecting Allocator-like types.
+	* include/bits/basic_string.h (basic_string): Add deduction guide
+	from P0433.
+	* include/ext/alloc_traits.h (__gnu_cxx::__alloc_traits): Add template
+	parameter with default template argument that causes substitution
+	failures for types that cannot be allocators.
+	* testsuite/21_strings/basic_string/cons/char/deduction.cc: New.
+	* testsuite/21_strings/basic_string/cons/wchar_t/deduction.cc: New.
+
+2017-06-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80939
+	* include/std/variant (__erased_ctor, __erased_assign, __erased_swap)
+	(__erased_hash): Remove constexpr specifier and qualify calls to
+	__ref_cast.
+	(__erased_dtor): Remove constexpr specifier and use _Destroy.
+
+2017-06-05  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/stl_iterator_base_funcs.h
+	(__advance<_RandomAccessIterator, _Distance>): Optimize for next/prev
+	cases where incrementing or decrementing a single step.
+
+	* include/bits/shared_ptr_base.h (__shared_ptr::owner_before)
+	(__weak_ptr::owner_before, _Sp_owner_less::operator()): Add noexcept
+	specifiers as per LWG 2873 and LWG 2942.
+	* testsuite/20_util/owner_less/noexcept.cc: New.
+	* testsuite/20_util/shared_ptr/observers/owner_before.cc: Test
+	noexcept guarantees.
+	* testsuite/20_util/weak_ptr/observers/owner_before.cc: Likewise.
+
+2017-06-03  Andreas Schwab  <schwab@linux-m68k.org>
+
+	* config/abi/post/powerpc-linux-gnu/baseline_symbols.txt: Update.
+
+2017-06-03  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* src/filesystem/dir.cc (fs::_Dir::advance): Use std::exchange.
+
+2017-06-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80624
+	* doc/xml/manual/status_cxx2011.xml: Document to_int_type behaviour.
+	* include/bits/char_traits.h (char_traits<char16_t>::to_int_type):
+	Transform eof value to U+FFFD.
+	* testsuite/21_strings/char_traits/requirements/char16_t/eof.cc: New.
+	* testsuite/27_io/basic_streambuf/sgetc/char16_t/80624.cc: New.
+	* testsuite/27_io/basic_streambuf/sputc/char16_t/80624.cc: New.
+
+	* libsupc++/Makefile.am: Remove custom targets for files that need to
+	be compiled as C++11 or C++14.
+	* libsupc++/Makefile.in: Regenerate.
+	* libsupc++/del_ops.cc: Use pragma to disable -Wsized-deallocation
+	warnings.
+	* libsupc++/del_opvs.cc: Likewise.
+
+2017-06-02  Richard Biener  <rguenther@suse.de>
+	Markus Eisenmann  <meisenmann.lba@fh-salzburg.ac.at>
+
+	PR libstdc++/80721
+	* libsupc++/eh_alloc.cc (pool::free): Keep list properly
+	sorted and add missing freelist item merging cases.
+
+2017-06-01  Rainer Orth  <ro@CeBiTec.Uni-Bielefeld.DE>
+
+	(GLIBCXX_CROSSCONFIG): Handle *-solaris* like *-linux* etc.
+	Remove *-solaris* section.
+	* configure: Regenerate.
+
+2017-05-31  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80893
+	* include/bits/stl_bvector.h (vector<bool>::_M_initialize): Avoid
+	null pointer dereference when size is zero.
+	* testsuite/23_containers/vector/bool/80893.cc: New.
+	* testsuite/util/testsuite_allocator.h (PointerBase::PointerBase):
+	Add non-explicit constructor from nullptr.
+	(PointerBase::derived() const): Add const-qualified overload.
+
+2017-05-20  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/80737
+	* include/std/variant(variant::variant): SFINAE on is_same first.
+	* testsuite/20_util/variant/any.cc: test case.
+
+2017-05-24  Jonathan Wakely  <jwakely@redhat.com>
+
+	* src/c++11/random.cc (random_device::_M_getentropy): Use __CHAR_BIT__
+	instead of fixed number of bits.
+
+2017-05-24  Andreas Schwab  <schwab@suse.de>
+
+	* config/abi/post/ia64-linux-gnu/baseline_symbols.txt: Update.
+	* config/abi/post/m68k-linux-gnu/baseline_symbols.txt: Likewise.
+
+2017-05-23  Xi Ruoyao  <ryxi@stu.xidian.edu.cn>
+	    Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/67578
+	* acinclude.m4: Bump libtool_VERSION.
+	* config/abi/pre/gnu.ver: Create GLIBCXX_3.4.24 with new symbol.
+	* config.h.in: Regenerate.
+	* configure: Regenerate.
+	* configure.ac: Add test for <linux/random.h>.
+	* doc/xml/manual/abi.xml: Document new library version.
+	* include/bits/random.h (random_device::entropy)
+	[_GLIBCXX_USE_RANDOM_TR1]: Add call to new _M_getentropy member.
+	(random_device::_M_getentropy): Declare.
+	* src/c++11/random.cc (random_device::_M_getentropy): Define.
+	* testsuite/util/testsuite_abi.cc: Add GLIBCXX_3.4.24 to known
+	versions, and make it the latest version.
+
+2017-05-23  Xi Ruoyao  <ryxi@stu.xidian.edu.cn>
+
+	PR libstdc++/67214
+	* include/bits/locale_facets.tcc (num_get::_M_extract_int): Add
+	explicit conversion to avoid signed overflow.
+
+2017-05-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80796
+	* include/bits/stl_algo.h (search): Add new overload for C++17.
+	* testsuite/25_algorithms/search/searcher.cc: New.
+
+2017-05-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80478
+	* include/std/functional (_Mem_fn_traits_base): Add specializations
+	for noexcept member function types.
+	* testsuite/20_util/function_objects/mem_fn/80478.cc: New test.
+
+2017-05-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/policy_data_structures.xml: Fix typo.
+	* doc/xml/manual/test_policy_data_structures.xml: Likewise.
+	* doc/html/*: Regenerate.
+
+	* doc/xml/manual/abi.xml: Document latest library versions.
+	* doc/xml/manual/build_hacking.xml: Document requirement to update
+	abi.xml when bumping library versions.
+	* doc/html/*: Regenerate.
+
+2017-05-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/refwrap.h: Fix Doxygen warning.
+	* include/bits/specfun.h: Likewise.
+	* include/bits/std_function.h: Likewise.
+	* include/bits/stl_algo.h (set_union, set_intersection)
+	(set_difference, set_symmetric_difference): Add Doxygen @param tags
+	for output iterator parameters.
+	* include/bits/stl_iterator.h (inserter): Add Doxygen @param tag for
+	iterator parameter.
+	* include/std/mutex (try_lock, lock): Change Mutex to Lockable in
+	Doxygen comments.
+
+2017-05-17  Ville Voutilainen  <ville.voutilainen@gmail.com>
+
+	Implement new C++ intrinsics __is_assignable and __is_constructible.
+	* include/std/type_traits (__do_is_static_castable_impl): Remove.
+	(__is_static_castable_impl, __is_static_castable_safe): Likewise.
+	(__is_static_castable, __do_is_direct_constructible_impl): Likewise.
+	(__is_direct_constructible_impl): Likewise.
+	(__is_direct_constructible_new_safe): Likewise.
+	(__is_base_to_derived_ref, __is_lvalue_to_rvalue_ref): Likewise.
+	(__is_direct_constructible_ref_cast): Likewise.
+	(__is_direct_constructible_new, __is_direct_constructible): Likewise.
+	(__do_is_nary_constructible_impl): Likewise.
+	(__is_nary_constructible_impl, __is_nary_constructible): Likewise.
+	(__is_constructible_impl): Likewise.
+	(is_constructible): Call the intrinsic.
+	(__is_assignable_helper): Remove.
+	(is_assignable): Call the intrinsic.
+	(is_trivially_constructible): Likewise.
+	(__is_trivially_copy_constructible_impl): New.
+	(is_trivially_copy_constructible): Use it.
+	(__is_trivially_move_constructible_impl): New.
+	(is_trivially_move_constructible): Use it.
+	(is_trivially_assignable): Call the intrinsic.
+	(__is_trivially_copy_assignable_impl): New.
+	(is_trivially_copy_assignable): Use it.
+	(__is_trivially_move_assignable_impl): New.
+	(is_trivially_move_assignable): Use it.
+	(testsuite/20_util/declval/requirements/1_neg.cc): Adjust.
+	(testsuite/20_util/is_trivially_copy_assignable/value.cc):
+	Add test for void.
+	(testsuite/20_util/is_trivially_copy_constructible/value.cc): Likewise.
+	(testsuite/20_util/is_trivially_move_assignable/value.cc): Likewise.
+	(testsuite/20_util/is_trivially_move_constructible/value.cc): Likewise.
+	(testsuite/20_util/make_signed/requirements/typedefs_neg.cc): Adjust.
+	(testsuite/20_util/make_unsigned/requirements/typedefs_neg.cc):
+	Likewise.
+
+2017-05-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/experimental/source_location/1.cc: Change expected result
+	for source_location::current() used in default member initializer.
+
+	* doc/xml/manual/status_cxx2017.xml: Update status table.
+	* doc/html/*: Regenerate.
+	* include/Makefile.am: Add new header.
+	* include/Makefile.in: Regenerate.
+	* include/experimental/source_location: New header implementing N4519.
+	* testsuite/experimental/source_location/1.cc: New test.
+
+	PR libstdc++/80285
+	* include/bits/shared_ptr_base.h [!__cpp_rtti] (type_info): Declare
+	outside versioned namespace.
+
+	* configure: Regenerate.
+
+2017-05-16  Marc Glisse  <marc.glisse@inria.fr>
+
+	* include/std/optional (_Optional_base::_M_get): Check precondition.
+	* testsuite/20_util/optional/cons/value_neg.cc: Update line numbers.
+
+2017-05-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/appendix_contributing.xml: Link to test docs and
+	note higher DejaGnu version requirement.
+	* doc/html/*: Regenerate.
+
+	* doc/xml/manual/appendix_contributing.xml: Link to the list of bad
+	identifiers.
+	* doc/html/*: Regenerate.
+
+2017-05-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80761
+	* include/bits/node_handle.h (_Node_insert_return): Reorder members.
+	(tuple_size, tuple_element): Remove partial specializations.
+	* include/bits/stl_tree.h (_Rb_tree::insert_return_type): Use
+	const_iterator for std::set.
+	* testsuite/23_containers/map/modifiers/extract.cc: New.
+	* testsuite/23_containers/set/modifiers/extract.cc: New.
+	* testsuite/23_containers/unordered_map/modifiers/extract.cc: New.
+	* testsuite/23_containers/unordered_set/modifiers/extract.cc: New.
+
+2017-05-12  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/78939
+	* include/std/utility (tuple_size<cv T>): Only define partial
+	specializations when tuple_size<T>::value is valid.
+	* testsuite/20_util/tuple/78939.cc: New.
+	* testsuite/20_util/tuple/cv_tuple_size_neg.cc: New.
+
+2017-05-11  François Dumont  <fdumont@gcc.gnu.org>
+
+	* include/bits/stl_tree.h [_GLIBCXX_INLINE_VERSION]
+	(_Rb_tree_impl<>): Remove _Is_pod_comparator
+	template parameter.
+
+	* include/debug/formatter.h [_GLIBCXX_INLINE_VERSION]
+	(__gnu_debug::_Error_formatter::_Parameter::_M_print_field): Remove.
+	(__gnu_debug::_Error_formatter::_Parameter::_M_print_description):
+	Remove.
+	(__gnu_debug::_Error_formatter::_M_format_word): Remove.
+	(__gnu_debug::_Error_formatter::_M_print_word): Remove.
+	(__gnu_debug::_Error_formatter::_M_print_string): Remove.
+	(__gnu_debug::_Error_formatter::_M_get_max_length): Remove.
+	* src/c++11/debug.cc: Adapt.
+	* config/abi/pre/gnu-versioned-namespace.ver: Adapt.
+
+2017-05-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/allocator.xml: Fix ViewCVS URLs.
+	* doc/xml/manual/mt_allocator.xml: Likewise.
+	* doc/html/*: Regenerate.
+
+	PR libstdc++/80285
+	* include/bits/shared_ptr_base.h (_Sp_make_shared_tag::_S_ti): Define
+	function to get unique fake std::type_info reference.
+	(_Sp_counted_ptr_inplace::_M_get_deleter) [!__cpp_rtti]: Compare to
+	_S_ti() fake reference.
+	(__shared_ptr(_Sp_make_shared_tag, const Alloc&, Args&&...)): Share
+	single implementation with or without RTTI enable.
+	[!__cpp_rtti]: Pass fake reference to _M_get_deleter.
+	* testsuite/20_util/shared_ptr/creation/alloc.cc: Change expected
+	allocation and deallocation counts.
+	* testsuite/20_util/shared_ptr/creation/single_allocation.cc: New.
+	* testsuite/20_util/shared_ptr/creation/single_allocation_no_rtti.cc:
+	New.
+
+2017-05-10  François Dumont  <fdumont@gcc.gnu.org>
+
+	Bump version namespace.
+	* config/abi/pre/gnu-versioned-namespace.ver: Bump version namespace
+	from __7 to __8. Bump GLIBCXX_7.0 to GLIBCXX_8.0.
+	* acinclude.m4 (libtool_VERSION): Bump to 8:0:0.
+	* include/bits/c++config: Adapt.
+	* include/bits/regex.h: Adapt.
+	* include/experimental/bits/fs_fwd.h: Adapt.
+	* include/experimental/bits/lfts_config.h: Adapt.
+	* include/std/variant: Adapt.
+	* python/libstdcxx/v6/printers.py: Adapt.
+	* testsuite/libstdc++-prettyprinters/48362.cc: Adapt.
+
+	* include/bits/stl_algobase.h (std::__iter_swap<false>): Remove
+	_GLIBCXX_MOVE usage.
+
+2017-05-09  Jason Merrill  <jason@redhat.com>
+
+	* testsuite/24_iterators/container_access.cc (test03): Make il3 static.
+
+2017-05-08  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/optional: Use a separate static_assert per condition.
+	* testsuite/20_util/optional/cons/value_neg.cc: Update dg-error line
+	numbers.
+
+	* doc/xml/manual/mt_allocator.xml: Clarify deallocation behaviour.
+	* doc/html/*: Regenerate.
+
+2017-05-02  Hugo Beauzée-Luyssen <hugo@beauzee.fr>
+
+	PR libstdc++/69506
+	* config/os/mingw32-w64/os_defines.h (_GLIBCXX_USE_WEAK_REF): Define.
+
+2017-04-29  François Dumont  <fdumont@gcc.gnu.org>
+
+	* testsuite/libstdc++-prettyprinters/48362.cc: Replace a regexp-test
+	by a note-test.
+
+2017-04-28  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80553
+	* include/bits/stl_construct.h (_Destroy, _Destroy_n): Add static
+	assertions to ensure type is destructible.
+	(destroy_at, destroy, destroy_n): Move from stl_uninitialized.h.
+	* include/bits/stl_uninitialized.h (destroy_at, destroy, destroy_n):
+	Move to stl_construct.h.
+	* testsuite/20_util/specialized_algorithms/memory_management_tools/
+	destroy_neg.cc: New test.
+	* testsuite/23_containers/vector/cons/destructible_neg.cc: New test.
+
+	* testsuite/17_intro/headers/c++1998/stdc++_assert_neg.cc: Remove
+	superfluous "" in dg-error.
+
+2017-04-28  Tom de Vries  <tom@codesourcery.com>
+
+	* testsuite/17_intro/headers/c++1998/stdc++_assert_neg.cc: Remove
+	superfluous '{ target *-*-* }' in dg-(error|warning|message|bogus).
+
+2017-04-27  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/ext/pb_ds/detail/list_update_map_/iterators_fn_imps.hpp
+	(PB_DS_CLASS_C_DEC::end()): Remove redundant const in cast type.
+	* testsuite/util/testsuite_rng.h (twister_rand_gen::get_prob()):
+	Likewise.
+
+2017-04-26  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/23_containers/deque/allocator/move_assign-2.cc: Improve
+	comment. Ensure first test works because allocator type propagates and
+	not because is_always_equal is true.
+	* testsuite/23_containers/vector/52591.cc: Likewise. Restore original
+	testcase that instantiates the move-assignment operator.
+
+2017-04-24  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80506
+	* include/bits/random.tcc (gamma_distribution::operator()): Fix magic
+	number used in loop condition.
+
+	PR libstdc++/80504
+	* include/bits/refwrap.h (ref, cref): Qualify calls.
+	* testsuite/20_util/reference_wrapper/80504.cc: New test.
+
+	PR libstdc++/80493
+	* include/experimental/optional (optional::swap): Fix exception
+	specification.
+
 2017-04-21  Jonathan Wakely  <jwakely@redhat.com>
 
 	PR libstdc++/80316

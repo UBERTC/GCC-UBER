@@ -367,6 +367,7 @@ add_test (rtx cond, edge *e, basic_block dest)
     }
 
   seq = get_insns ();
+  unshare_all_rtl_in_chain (seq);
   end_sequence ();
 
   /* There always is at least the jump insn in the sequence.  */
@@ -505,7 +506,7 @@ doloop_modify (struct loop *loop, struct niter_desc *desc,
       redirect_edge_and_branch_force (single_succ_edge (preheader), new_preheader);
       set_immediate_dominator (CDI_DOMINATORS, new_preheader, preheader);
 
-      set_zero->count = 0;
+      set_zero->count = profile_count::uninitialized ();
       set_zero->frequency = 0;
 
       te = single_succ_edge (preheader);

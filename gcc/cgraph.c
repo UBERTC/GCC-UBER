@@ -51,7 +51,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "symbol-summary.h"
 #include "tree-vrp.h"
 #include "ipa-prop.h"
-#include "ipa-inline.h"
+#include "ipa-fnsummary.h"
 #include "cfgloop.h"
 #include "gimple-pretty-print.h"
 #include "tree-dfa.h"
@@ -500,6 +500,8 @@ cgraph_node::create (tree decl)
 
   node->decl = decl;
 
+  node->count = profile_count::uninitialized ();
+
   if ((flag_openacc || flag_openmp)
       && lookup_attribute ("omp declare target", DECL_ATTRIBUTES (decl)))
     {
@@ -539,12 +541,12 @@ cgraph_node::get_create (tree decl)
       node->decl->decl_with_vis.symtab_node = node;
       if (dump_file)
 	fprintf (dump_file, "Introduced new external node "
-		 "(%s/%i) and turned into root of the clone tree.\n",
-		 node->name (), node->order);
+		 "(%s) and turned into root of the clone tree.\n",
+		 node->dump_name ());
     }
   else if (dump_file)
     fprintf (dump_file, "Introduced new external node "
-	     "(%s/%i).\n", node->name (), node->order);
+	     "(%s).\n", node->dump_name ());
   return node;
 }
 
@@ -808,7 +810,7 @@ cgraph_edge::set_call_stmt (gcall *new_stmt, bool update_speculative)
 
 cgraph_edge *
 symbol_table::create_edge (cgraph_node *caller, cgraph_node *callee,
-			   gcall *call_stmt, gcov_type count, int freq,
+			   gcall *call_stmt, profile_count count, int freq,
 			   bool indir_unknown_callee)
 {
   cgraph_edge *edge;
@@ -849,10 +851,9 @@ symbol_table::create_edge (cgraph_node *caller, cgraph_node *callee,
   edge->lto_stmt_uid = 0;
 
   edge->count = count;
-  gcc_assert (count >= 0);
   edge->frequency = freq;
-  gcc_assert (freq >= 0);
-  gcc_assert (freq <= CGRAPH_FREQ_MAX);
+  gcc_checking_assert (freq >= 0);
+  gcc_checking_assert (freq <= CGRAPH_FREQ_MAX);
 
   edge->call_stmt = call_stmt;
   push_cfun (DECL_STRUCT_FUNCTION (caller->decl));
@@ -894,7 +895,7 @@ symbol_table::create_edge (cgraph_node *caller, cgraph_node *callee,
 
 cgraph_edge *
 cgraph_node::create_edge (cgraph_node *callee,
-			  gcall *call_stmt, gcov_type count, int freq)
+			  gcall *call_stmt, profile_count count, int freq)
 {
   cgraph_edge *edge = symtab->create_edge (this, callee, call_stmt, count,
 					   freq, false);
@@ -931,7 +932,7 @@ cgraph_allocate_init_indirect_info (void)
 
 cgraph_edge *
 cgraph_node::create_indirect_edge (gcall *call_stmt, int ecf_flags,
-				   gcov_type count, int freq,
+				   profile_count count, int freq,
 				   bool compute_indirect_info)
 {
   cgraph_edge *edge = symtab->create_edge (this, NULL, call_stmt,
@@ -1047,7 +1048,7 @@ cgraph_edge::remove (void)
    Return direct edge created.  */
 
 cgraph_edge *
-cgraph_edge::make_speculative (cgraph_node *n2, gcov_type direct_count,
+cgraph_edge::make_speculative (cgraph_node *n2, profile_count direct_count,
 			       int direct_frequency)
 {
   cgraph_node *n = caller;
@@ -1055,12 +1056,8 @@ cgraph_edge::make_speculative (cgraph_node *n2, gcov_type direct_count,
   cgraph_edge *e2;
 
   if (dump_file)
-    {
-      fprintf (dump_file, "Indirect call -> speculative call"
-	       " %s/%i => %s/%i\n",
-	       xstrdup_for_dump (n->name ()), n->order,
-	       xstrdup_for_dump (n2->name ()), n2->order);
-    }
+    fprintf (dump_file, "Indirect call -> speculative call %s => %s\n",
+	     n->dump_name (), n2->dump_name ());
   speculative = true;
   e2 = n->create_edge (n2, call_stmt, direct_count, direct_frequency);
   initialize_inline_failed (e2);
@@ -1163,22 +1160,18 @@ cgraph_edge::resolve_speculation (tree callee_decl)
 	{
 	  if (callee_decl)
 	    {
-	      fprintf (dump_file, "Speculative indirect call %s/%i => %s/%i has "
+	      fprintf (dump_file, "Speculative indirect call %s => %s has "
 		       "turned out to have contradicting known target ",
-		       xstrdup_for_dump (edge->caller->name ()),
-		       edge->caller->order,
-		       xstrdup_for_dump (e2->callee->name ()),
-		       e2->callee->order);
-	      print_generic_expr (dump_file, callee_decl, 0);
+		       edge->caller->dump_name (),
+		       e2->callee->dump_name ());
+	      print_generic_expr (dump_file, callee_decl);
 	      fprintf (dump_file, "\n");
 	    }
 	  else
 	    {
-	      fprintf (dump_file, "Removing speculative call %s/%i => %s/%i\n",
-		       xstrdup_for_dump (edge->caller->name ()),
-		       edge->caller->order,
-		       xstrdup_for_dump (e2->callee->name ()),
-		       e2->callee->order);
+	      fprintf (dump_file, "Removing speculative call %s => %s\n",
+		       edge->caller->dump_name (),
+		       e2->callee->dump_name ());
 	    }
 	}
     }
@@ -1295,12 +1288,10 @@ cgraph_edge::redirect_call_stmt_to_callee (void)
 						  true))
 	{
 	  if (dump_file)
-	    fprintf (dump_file, "Not expanding speculative call of %s/%i -> %s/%i\n"
+	    fprintf (dump_file, "Not expanding speculative call of %s -> %s\n"
 		     "Type mismatch.\n",
-		     xstrdup_for_dump (e->caller->name ()),
-		     e->caller->order,
-		     xstrdup_for_dump (e->callee->name ()),
-		     e->callee->order);
+		     e->caller->dump_name (),
+		     e->callee->dump_name ());
 	  e = e->resolve_speculation ();
 	  /* We are producing the final function body and will throw away the
 	     callgraph edges really soon.  Reset the counts/frequencies to
@@ -1313,21 +1304,21 @@ cgraph_edge::redirect_call_stmt_to_callee (void)
       else
 	{
 	  if (dump_file)
-	    fprintf (dump_file,
-		     "Expanding speculative call of %s/%i -> %s/%i count: "
-		     "%" PRId64"\n",
-		     xstrdup_for_dump (e->caller->name ()),
-		     e->caller->order,
-		     xstrdup_for_dump (e->callee->name ()),
-		     e->callee->order,
-		     (int64_t)e->count);
+	    {
+	      fprintf (dump_file,
+		       "Expanding speculative call of %s -> %s count: ",
+		       e->caller->dump_name (),
+		       e->callee->dump_name ());
+	      e->count.dump (dump_file);
+	      fprintf (dump_file, "\n");
+	    }
 	  gcc_assert (e2->speculative);
 	  push_cfun (DECL_STRUCT_FUNCTION (e->caller->decl));
 	  new_stmt = gimple_ic (e->call_stmt,
 				dyn_cast<cgraph_node *> (ref->referred),
-				e->count || e2->count
-				?  RDIV (e->count * REG_BR_PROB_BASE,
-					 e->count + e2->count)
+				e->count > profile_count::zero ()
+				|| e2->count > profile_count::zero ()
+				? e->count.probability_in (e->count + e2->count)
 				: e->frequency || e2->frequency
 				? RDIV (e->frequency * REG_BR_PROB_BASE,
 					e->frequency + e2->frequency)
@@ -1399,9 +1390,8 @@ cgraph_edge::redirect_call_stmt_to_callee (void)
 
   if (symtab->dump_file)
     {
-      fprintf (symtab->dump_file, "updating call of %s/%i -> %s/%i: ",
-	       xstrdup_for_dump (e->caller->name ()), e->caller->order,
-	       xstrdup_for_dump (e->callee->name ()), e->callee->order);
+      fprintf (symtab->dump_file, "updating call of %s -> %s: ",
+	       e->caller->dump_name (), e->callee->dump_name ());
       print_gimple_stmt (symtab->dump_file, e->call_stmt, 0, dump_flags);
       if (e->callee->clone.combined_args_to_skip)
 	{
@@ -1604,7 +1594,7 @@ cgraph_update_edges_for_call_stmt_node (cgraph_node *node,
     {
       cgraph_edge *e = node->get_edge (old_stmt);
       cgraph_edge *ne = NULL;
-      gcov_type count;
+      profile_count count;
       int frequency;
 
       if (e)
@@ -2046,8 +2036,12 @@ cgraph_edge::dump_edge_flags (FILE *f)
     fprintf (f, "(call_stmt_cannot_inline_p) ");
   if (indirect_inlining_edge)
     fprintf (f, "(indirect_inlining) ");
-  if (count)
-    fprintf (f, "(%" PRId64"x) ", (int64_t)count);
+  if (count.initialized_p ())
+    {
+      fprintf (f, "(");
+      count.dump (f);
+      fprintf (f, ")");
+    }
   if (frequency)
     fprintf (f, "(%.2f per call) ", frequency / (double)CGRAPH_FREQ_BASE);
   if (can_throw_external)
@@ -2064,15 +2058,11 @@ cgraph_node::dump (FILE *f)
   dump_base (f);
 
   if (global.inlined_to)
-    fprintf (f, "  Function %s/%i is inline copy in %s/%i\n",
-	     xstrdup_for_dump (name ()),
-	     order,
-	     xstrdup_for_dump (global.inlined_to->name ()),
-	     global.inlined_to->order);
+    fprintf (f, "  Function %s is inline copy in %s\n",
+	     dump_name (),
+	     global.inlined_to->dump_name ());
   if (clone_of)
-    fprintf (f, "  Clone of %s/%i\n",
-	     clone_of->asm_name (),
-	     clone_of->order);
+    fprintf (f, "  Clone of %s\n", clone_of->dump_asm_name ());
   if (symtab->function_flags_ready)
     fprintf (f, "  Availability: %s\n",
 	     cgraph_availability_names [get_availability ()]);
@@ -2088,14 +2078,12 @@ cgraph_node::dump (FILE *f)
       if (vi->prev != NULL)
 	{
 	  fprintf (f, "prev: ");
-	  fprintf (f, "%s/%i ", vi->prev->this_node->asm_name (),
-		   vi->prev->this_node->order);
+	  fprintf (f, "%s ", vi->prev->this_node->dump_asm_name ());
 	}
       if (vi->next != NULL)
 	{
 	  fprintf (f, "next: ");
-	  fprintf (f, "%s/%i ", vi->next->this_node->asm_name (),
-		   vi->next->this_node->order);
+	  fprintf (f, "%s ", vi->next->this_node->dump_asm_name ());
 	}
       if (vi->dispatcher_resolver != NULL_TREE)
 	fprintf (f, "dispatcher: %s",
@@ -2104,9 +2092,11 @@ cgraph_node::dump (FILE *f)
       fprintf (f, "\n");
     }
   fprintf (f, "  Function flags:");
-  if (count)
-    fprintf (f, " executed %" PRId64"x",
-	     (int64_t)count);
+  if (count.initialized_p ())
+    {
+      fprintf (f, " count: ");
+      count.dump (f);
+    }
   if (origin)
     fprintf (f, " nested in: %s", origin->asm_name ());
   if (gimple_has_body_p (decl))
@@ -2182,21 +2172,52 @@ cgraph_node::dump (FILE *f)
   
   fprintf (f, "  Called by: ");
 
+  profile_count sum = profile_count::zero ();
   for (edge = callers; edge; edge = edge->next_caller)
     {
-      fprintf (f, "%s/%i ", edge->caller->asm_name (),
-	       edge->caller->order);
+      fprintf (f, "%s ", edge->caller->dump_name ());
       edge->dump_edge_flags (f);
+      if (edge->count.initialized_p ())
+	sum += edge->count;
     }
 
   fprintf (f, "\n  Calls: ");
   for (edge = callees; edge; edge = edge->next_callee)
     {
-      fprintf (f, "%s/%i ", edge->callee->asm_name (),
-	       edge->callee->order);
+      fprintf (f, "%s ", edge->callee->dump_name ());
       edge->dump_edge_flags (f);
     }
   fprintf (f, "\n");
+
+  if (count.initialized_p ())
+    {
+      bool ok = true;
+      bool min = false;
+      ipa_ref *ref;
+
+      FOR_EACH_ALIAS (this, ref)
+	if (dyn_cast <cgraph_node *> (ref->referring)->count.initialized_p ())
+	  sum += dyn_cast <cgraph_node *> (ref->referring)->count;
+  
+      if (global.inlined_to
+	  || (symtab->state < EXPANSION
+	      && ultimate_alias_target () == this && only_called_directly_p ()))
+	ok = !count.differs_from_p (sum);
+      else if (count > profile_count::from_gcov_type (100)
+	       && count < sum.apply_scale (99, 100))
+	ok = false, min = true;
+      if (!ok)
+	{
+	  fprintf (f, "   Invalid sum of caller counts ");
+	  sum.dump (f);
+	  if (min)
+	    fprintf (f, ", should be at most ");
+	  else
+	    fprintf (f, ", should be ");
+	  count.dump (f);
+	  fprintf (f, "\n");
+	}
+    }
 
   for (edge = indirect_calls; edge; edge = edge->next_callee)
     {
@@ -2741,10 +2762,7 @@ cgraph_edge::cannot_lead_to_return_p (void)
 bool
 cgraph_edge::maybe_hot_p (void)
 {
-  /* TODO: Export profile_status from cfun->cfg to cgraph_node.  */
-  if (profile_info
-      && opt_for_fn (caller->decl, flag_branch_probabilities)
-      && !maybe_hot_count_p (NULL, count))
+  if (!maybe_hot_count_p (NULL, count))
     return false;
   if (caller->frequency == NODE_FREQUENCY_UNLIKELY_EXECUTED
       || (callee
@@ -2757,6 +2775,10 @@ cgraph_edge::maybe_hot_p (void)
   if (opt_for_fn (caller->decl, optimize_size))
     return false;
   if (caller->frequency == NODE_FREQUENCY_HOT)
+    return true;
+  /* If profile is now known yet, be conservative.
+     FIXME: this predicate is used by early inliner and can do better there.  */
+  if (symtab->state < IPA_SSA)
     return true;
   if (caller->frequency == NODE_FREQUENCY_EXECUTED_ONCE
       && frequency < CGRAPH_FREQ_BASE * 3 / 2)
@@ -3652,7 +3674,7 @@ cgraph_node::get_body (void)
       opt_pass *saved_current_pass = current_pass;
       FILE *saved_dump_file = dump_file;
       const char *saved_dump_file_name = dump_file_name;
-      int saved_dump_flags = dump_flags;
+      dump_flags_t saved_dump_flags = dump_flags;
       dump_file_name = NULL;
       dump_file = NULL;
 

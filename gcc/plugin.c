@@ -617,6 +617,7 @@ try_init_one_plugin (struct plugin_name_args *plugin)
 
   if ((err = dlerror ()) != NULL)
     {
+      dlclose(dl_handle);
       error ("cannot find %s in plugin %s\n%s", str_plugin_init_func_name,
              plugin->full_name, err);
       return false;
@@ -625,10 +626,12 @@ try_init_one_plugin (struct plugin_name_args *plugin)
   /* Call the plugin-provided initialization routine with the arguments.  */
   if ((*plugin_init) (plugin, &gcc_version))
     {
+      dlclose(dl_handle);
       error ("fail to initialize plugin %s", plugin->full_name);
       return false;
     }
-
+  /* leak dl_handle on purpose to ensure the plugin is loaded for the
+     entire run of the compiler. */
   return true;
 }
 
@@ -853,16 +856,6 @@ warn_if_plugins (void)
       dump_active_plugins (stderr);
     }
 
-}
-
-/* Likewise, as a callback from the diagnostics code.  */
-
-void
-plugins_internal_error_function (diagnostic_context *context ATTRIBUTE_UNUSED,
-				 const char *msgid ATTRIBUTE_UNUSED,
-				 va_list *ap ATTRIBUTE_UNUSED)
-{
-  warn_if_plugins ();
 }
 
 /* The default version check. Compares every field in VERSION. */

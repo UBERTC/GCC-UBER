@@ -514,6 +514,8 @@ const struct c_common_resword c_common_reswords[] =
   { "volatile",		RID_VOLATILE,	0 },
   { "wchar_t",		RID_WCHAR,	D_CXXONLY },
   { "while",		RID_WHILE,	0 },
+  { "__is_assignable", RID_IS_ASSIGNABLE, D_CXXONLY },
+  { "__is_constructible", RID_IS_CONSTRUCTIBLE, D_CXXONLY },
 
   /* C++ transactional memory.  */
   { "synchronized",	RID_SYNCHRONIZED, D_CXX_OBJC | D_TRANSMEM },
@@ -1225,16 +1227,24 @@ int_safely_convertible_to_real_p (const_tree from_type, const_tree to_type)
    can return SAFE_CONVERSION (zero) in that case.  Function can produce
    signedness warnings if PRODUCE_WARNS is true.
 
+   RESULT, when non-null is the result of the conversion.  When constant
+   it is included in the text of diagnostics.
+
    Function allows conversions from complex constants to non-complex types,
    provided that imaginary part is zero and real part can be safely converted
    to TYPE.  */
 
 enum conversion_safety
-unsafe_conversion_p (location_t loc, tree type, tree expr, bool produce_warns)
+unsafe_conversion_p (location_t loc, tree type, tree expr, tree result,
+		     bool produce_warns)
 {
   enum conversion_safety give_warning = SAFE_CONVERSION; /* is 0 or false */
   tree expr_type = TREE_TYPE (expr);
-  loc = expansion_point_location_if_in_system_header (loc);
+
+  bool cstresult = (result
+		    && TREE_CODE_CLASS (TREE_CODE (result)) == tcc_constant);
+
+    loc = expansion_point_location_if_in_system_header (loc);
 
   if (TREE_CODE (expr) == REAL_CST || TREE_CODE (expr) == INTEGER_CST)
     {
@@ -1260,14 +1270,31 @@ unsafe_conversion_p (location_t loc, tree type, tree expr, bool produce_warns)
 	      && tree_int_cst_sgn (expr) < 0)
 	    {
 	      if (produce_warns)
-		warning_at (loc, OPT_Wsign_conversion, "negative integer"
-			    " implicitly converted to unsigned type");
+		{
+		  if (cstresult)
+		    warning_at (loc, OPT_Wsign_conversion,
+				"unsigned conversion from %qT to %qT "
+				"changes value from %qE to %qE",
+				expr_type, type, expr, result);
+		  else
+		    warning_at (loc, OPT_Wsign_conversion,
+				"unsigned conversion from %qT to %qT "
+				"changes the value of %qE",
+				expr_type, type, expr);
+		}
 	    }
 	  else if (!TYPE_UNSIGNED (type) && TYPE_UNSIGNED (expr_type))
 	    {
-	      if (produce_warns)
-		warning_at (loc, OPT_Wsign_conversion, "conversion of unsigned"
-			    " constant value to negative integer");
+	      if (cstresult)
+		warning_at (loc, OPT_Wsign_conversion,
+			    "signed conversion from %qT to %qT changes "
+			    "value from %qE to %qE",
+			    expr_type, type, expr, result);
+	      else
+		warning_at (loc, OPT_Wsign_conversion,
+			    "signed conversion from %qT to %qT changes "
+			    "the value of %qE",
+			    expr_type, type, expr);
 	    }
 	  else
 	    give_warning = UNSAFE_OTHER;
@@ -1306,7 +1333,7 @@ unsafe_conversion_p (location_t loc, tree type, tree expr, bool produce_warns)
 	   with different type of EXPR, but it is still safe, because when EXPR
 	   is a constant, it's type is not used in text of generated warnings
 	   (otherwise they could sound misleading).  */
-	return unsafe_conversion_p (loc, type, TREE_REALPART (expr),
+	return unsafe_conversion_p (loc, type, TREE_REALPART (expr), result,
 				    produce_warns);
       /* Conversion from complex constant with non-zero imaginary part.  */
       else
@@ -1326,9 +1353,10 @@ unsafe_conversion_p (location_t loc, tree type, tree expr, bool produce_warns)
 		 Possible solution: add a separate function for checking
 		 constants and combine result of two calls appropriately.  */
 	      enum conversion_safety re_safety =
-		  unsafe_conversion_p (loc, type, TREE_REALPART (expr), false);
+		  unsafe_conversion_p (loc, type, TREE_REALPART (expr),
+				       result, false);
 	      enum conversion_safety im_safety =
-		  unsafe_conversion_p (loc, type, imag_part, false);
+		unsafe_conversion_p (loc, type, imag_part, result, false);
 
 	      /* Merge the results into appropriate single warning.  */
 
@@ -2110,7 +2138,7 @@ c_common_type_for_size (unsigned int bits, int unsignedp)
   if (bits <= TYPE_PRECISION (intDI_type_node))
     return unsignedp ? unsigned_intDI_type_node : intDI_type_node;
 
-  return 0;
+  return NULL_TREE;
 }
 
 /* Return a fixed-point type that has at least IBIT ibits and FBIT fbits
@@ -2136,7 +2164,7 @@ c_common_fixed_point_type_for_size (unsigned int ibit, unsigned int fbit,
       sorry ("GCC cannot support operators with integer types and "
 	     "fixed-point types that have too many integral and "
 	     "fractional bits together");
-      return 0;
+      return NULL_TREE;
     }
 
   return c_common_type_for_mode (mode, satp);
@@ -2357,7 +2385,7 @@ c_common_type_for_mode (machine_mode mode, int unsignedp)
 	&& !!unsignedp == !!TYPE_UNSIGNED (TREE_VALUE (t)))
       return TREE_VALUE (t);
 
-  return 0;
+  return NULL_TREE;
 }
 
 tree
@@ -2589,7 +2617,7 @@ c_register_builtin_type (tree type, const char* name)
   DECL_ARTIFICIAL (decl) = 1;
   if (!TYPE_NAME (type))
     TYPE_NAME (type) = decl;
-  pushdecl (decl);
+  lang_hooks.decls.pushdecl (decl);
 
   registered_builtin_types = tree_cons (0, type, registered_builtin_types);
 }
@@ -2688,7 +2716,7 @@ expr_original_type (tree expr)
 
    LOC is the location of the comparison.
 
-   If this function returns nonzero, it means that the comparison has
+   If this function returns non-NULL_TREE, it means that the comparison has
    a constant value.  What this function returns is an expression for
    that value.  */
 
@@ -2942,7 +2970,7 @@ shorten_compare (location_t loc, tree *op0_ptr, tree *op1_ptr,
   else if (real1 && real2
 	   && (DECIMAL_FLOAT_MODE_P (TYPE_MODE (TREE_TYPE (primop0)))
 	       || DECIMAL_FLOAT_MODE_P (TYPE_MODE (TREE_TYPE (primop1)))))
-    return 0;
+    return NULL_TREE;
 
   else if (real1 && real2
 	   && (TYPE_PRECISION (TREE_TYPE (primop0))
@@ -2987,7 +3015,7 @@ shorten_compare (location_t loc, tree *op0_ptr, tree *op1_ptr,
       if (!real1 && !real2 && integer_zerop (primop1)
 	  && TYPE_UNSIGNED (*restype_ptr))
 	{
-	  tree value = 0;
+	  tree value = NULL_TREE;
 	  /* All unsigned values are >= 0, so we warn.  However,
 	     if OP0 is a constant that is >= 0, the signedness of
 	     the comparison isn't an issue, so suppress the
@@ -3020,7 +3048,7 @@ shorten_compare (location_t loc, tree *op0_ptr, tree *op1_ptr,
 	      break;
 	    }
 
-	  if (value != 0)
+	  if (value != NULL_TREE)
 	    {
 	      /* Don't forget to evaluate PRIMOP0 if it has side effects.  */
 	      if (TREE_SIDE_EFFECTS (primop0))
@@ -3036,7 +3064,7 @@ shorten_compare (location_t loc, tree *op0_ptr, tree *op1_ptr,
 
   *restype_ptr = truthvalue_type_node;
 
-  return 0;
+  return NULL_TREE;
 }
 
 /* Return a tree for the sum or difference (RESULTCODE says which)
@@ -3161,24 +3189,6 @@ c_wrap_maybe_const (tree expr, bool non_const)
     TREE_NO_WARNING (expr) = 1;
   protected_set_expr_location (expr, loc);
 
-  return expr;
-}
-
-/* Wrap a SAVE_EXPR around EXPR, if appropriate.  Like save_expr, but
-   for C folds the inside expression and wraps a C_MAYBE_CONST_EXPR
-   around the SAVE_EXPR if needed so that c_fully_fold does not need
-   to look inside SAVE_EXPRs.  */
-
-tree
-c_save_expr (tree expr)
-{
-  bool maybe_const = true;
-  if (c_dialect_cxx ())
-    return save_expr (expr);
-  expr = c_fully_fold (expr, false, &maybe_const);
-  expr = save_expr (expr);
-  if (!maybe_const)
-    expr = c_wrap_maybe_const (expr, true);
   return expr;
 }
 
@@ -3436,7 +3446,7 @@ c_common_truthvalue_conversion (location_t location, tree expr)
 
   if (TREE_CODE (TREE_TYPE (expr)) == COMPLEX_TYPE)
     {
-      tree t = (in_late_binary_op ? save_expr (expr) : c_save_expr (expr));
+      tree t = save_expr (expr);
       expr = (build_binary_op
 	      (EXPR_LOCATION (expr),
 	       (TREE_SIDE_EFFECTS (expr)
@@ -3508,67 +3518,6 @@ c_apply_type_quals_to_decl (int type_quals, tree decl)
     }
 }
 
-struct c_type_hasher : ggc_ptr_hash<tree_node>
-{
-  static hashval_t hash (tree);
-  static bool equal (tree, tree);
-};
-
-/* Hash function for the problem of multiple type definitions in
-   different files.  This must hash all types that will compare
-   equal via comptypes to the same value.  In practice it hashes
-   on some of the simple stuff and leaves the details to comptypes.  */
-
-hashval_t
-c_type_hasher::hash (tree t)
-{
-  int n_elements;
-  int shift, size;
-  tree t2;
-  switch (TREE_CODE (t))
-    {
-    /* For pointers, hash on pointee type plus some swizzling.  */
-    case POINTER_TYPE:
-      return hash (TREE_TYPE (t)) ^ 0x3003003;
-    /* Hash on number of elements and total size.  */
-    case ENUMERAL_TYPE:
-      shift = 3;
-      t2 = TYPE_VALUES (t);
-      break;
-    case RECORD_TYPE:
-      shift = 0;
-      t2 = TYPE_FIELDS (t);
-      break;
-    case QUAL_UNION_TYPE:
-      shift = 1;
-      t2 = TYPE_FIELDS (t);
-      break;
-    case UNION_TYPE:
-      shift = 2;
-      t2 = TYPE_FIELDS (t);
-      break;
-    default:
-      gcc_unreachable ();
-    }
-  /* FIXME: We want to use a DECL_CHAIN iteration method here, but
-     TYPE_VALUES of ENUMERAL_TYPEs is stored as a TREE_LIST.  */
-  n_elements = list_length (t2);
-  /* We might have a VLA here.  */
-  if (TREE_CODE (TYPE_SIZE (t)) != INTEGER_CST)
-    size = 0;
-  else
-    size = TREE_INT_CST_LOW (TYPE_SIZE (t));
-  return ((size << 24) | (n_elements << shift));
-}
-
-bool
-c_type_hasher::equal (tree t1, tree t2)
-{
-  return lang_hooks.types_compatible_p (t1, t2);
-}
-
-static GTY(()) hash_table<c_type_hasher> *type_hash_table;
-
 /* Return the typed-based alias set for T, which may be an expression
    or a type.  Return -1 if we don't do anything special.  */
 
@@ -3606,60 +3555,6 @@ c_common_get_alias_set (tree t)
       if (t1 != t)
 	return get_alias_set (t1);
     }
-
-  /* Handle the case of multiple type nodes referring to "the same" type,
-     which occurs with IMA.  These share an alias set.  FIXME:  Currently only
-     C90 is handled.  (In C99 type compatibility is not transitive, which
-     complicates things mightily. The alias set splay trees can theoretically
-     represent this, but insertion is tricky when you consider all the
-     different orders things might arrive in.) */
-
-  if (c_language != clk_c || flag_isoc99)
-    return -1;
-
-  /* Save time if there's only one input file.  */
-  if (num_in_fnames == 1)
-    return -1;
-
-  /* Pointers need special handling if they point to any type that
-     needs special handling (below).  */
-  if (TREE_CODE (t) == POINTER_TYPE)
-    {
-      tree t2;
-      /* Find bottom type under any nested POINTERs.  */
-      for (t2 = TREE_TYPE (t);
-	   TREE_CODE (t2) == POINTER_TYPE;
-	   t2 = TREE_TYPE (t2))
-	;
-      if (!RECORD_OR_UNION_TYPE_P (t2)
-	  && TREE_CODE (t2) != ENUMERAL_TYPE)
-	return -1;
-      if (TYPE_SIZE (t2) == 0)
-	return -1;
-    }
-  /* These are the only cases that need special handling.  */
-  if (!RECORD_OR_UNION_TYPE_P (t)
-      && TREE_CODE (t) != ENUMERAL_TYPE
-      && TREE_CODE (t) != POINTER_TYPE)
-    return -1;
-  /* Undefined? */
-  if (TYPE_SIZE (t) == 0)
-    return -1;
-
-  /* Look up t in hash table.  Only one of the compatible types within each
-     alias set is recorded in the table.  */
-  if (!type_hash_table)
-    type_hash_table = hash_table<c_type_hasher>::create_ggc (1021);
-  tree *slot = type_hash_table->find_slot (t, INSERT);
-  if (*slot != NULL)
-    {
-      TYPE_ALIAS_SET (t) = TYPE_ALIAS_SET ((tree)*slot);
-      return TYPE_ALIAS_SET ((tree)*slot);
-    }
-  else
-    /* Our caller will assign and record (in t) a new alias set; all we need
-       to do is remember t in the hash table.  */
-    *slot = t;
 
   return -1;
 }
@@ -4761,17 +4656,17 @@ c_promoting_integer_type_p (const_tree t)
       return TYPE_PRECISION (t) < TYPE_PRECISION (integer_type_node);
 
     case BOOLEAN_TYPE:
-      return 1;
+      return true;
 
     default:
-      return 0;
+      return false;
     }
 }
 
 /* Return 1 if PARMS specifies a fixed number of parameters
    and none of their types is affected by default promotions.  */
 
-int
+bool
 self_promoting_args_p (const_tree parms)
 {
   const_tree t;
@@ -4782,19 +4677,19 @@ self_promoting_args_p (const_tree parms)
       if (type == error_mark_node)
 	continue;
 
-      if (TREE_CHAIN (t) == 0 && type != void_type_node)
-	return 0;
+      if (TREE_CHAIN (t) == NULL_TREE && type != void_type_node)
+	return false;
 
-      if (type == 0)
-	return 0;
+      if (type == NULL_TREE)
+	return false;
 
       if (TYPE_MAIN_VARIANT (type) == float_type_node)
-	return 0;
+	return false;
 
       if (c_promoting_integer_type_p (type))
-	return 0;
+	return false;
     }
-  return 1;
+  return true;
 }
 
 /* Recursively remove any '*' or '&' operator from TYPE.  */
@@ -5710,7 +5605,7 @@ check_function_arguments_recurse (void (*callback)
 	    format_num = tree_to_uhwi (format_num_expr);
 
 	    for (inner_arg = first_call_expr_arg (param, &iter), i = 1;
-		 inner_arg != 0;
+		 inner_arg != NULL_TREE;
 		 inner_arg = next_call_expr_arg (&iter), i++)
 	      if (i == format_num)
 		{
@@ -5971,8 +5866,8 @@ check_builtin_function_arguments (location_t loc, vec<location_t> arg_loc,
 int
 field_decl_cmp (const void *x_p, const void *y_p)
 {
-  const tree *const x = (const tree *const) x_p;
-  const tree *const y = (const tree *const) y_p;
+  const tree *const x = (const tree *) x_p;
+  const tree *const y = (const tree *) y_p;
 
   if (DECL_NAME (*x) == DECL_NAME (*y))
     /* A nontype is "greater" than a type.  */
@@ -5997,8 +5892,8 @@ pointer operator in resort_data.  */
 static int
 resort_field_decl_cmp (const void *x_p, const void *y_p)
 {
-  const tree *const x = (const tree *const) x_p;
-  const tree *const y = (const tree *const) y_p;
+  const tree *const x = (const tree *) x_p;
+  const tree *const y = (const tree *) y_p;
 
   if (DECL_NAME (*x) == DECL_NAME (*y))
     /* A nontype is "greater" than a type.  */
@@ -6224,7 +6119,7 @@ c_cpp_error (cpp_reader *pfile ATTRIBUTE_UNUSED, int level, int reason,
 				  richloc, dlevel);
   diagnostic_override_option_index (&diagnostic,
                                     c_option_controlling_cpp_error (reason));
-  ret = report_diagnostic (&diagnostic);
+  ret = diagnostic_report_diagnostic (global_dc, &diagnostic);
   if (level == CPP_DL_WARNING_SYSHDR)
     global_dc->dc_warn_system_headers = save_warn_system_headers;
   return ret;
@@ -6483,11 +6378,8 @@ complete_array_type (tree *ptype, tree initial_value, bool do_default)
   layout_type (main_type);
 
   /* Make sure we have the canonical MAIN_TYPE. */
-  inchash::hash hstate;
-  hstate.add_object (TYPE_HASH (unqual_elt));
-  hstate.add_object (TYPE_HASH (TYPE_DOMAIN (main_type)));
-  hstate.add_flag (TYPE_TYPELESS_STORAGE (main_type));
-  main_type = type_hash_canon (hstate.end (), main_type);
+  hashval_t hashcode = type_hash_canon_hash (main_type);
+  main_type = type_hash_canon (hashcode, main_type);
 
   /* Fix the canonical type.  */
   if (TYPE_STRUCTURAL_EQUALITY_P (TREE_TYPE (main_type))
@@ -7788,7 +7680,8 @@ scalar_to_vector (location_t loc, enum tree_code code, tree op0, tree op1,
 	if (TREE_CODE (type0) == INTEGER_TYPE
 	    && TREE_CODE (TREE_TYPE (type1)) == INTEGER_TYPE)
 	  {
-	    if (unsafe_conversion_p (loc, TREE_TYPE (type1), op0, false))
+	    if (unsafe_conversion_p (loc, TREE_TYPE (type1), op0,
+				     NULL_TREE, false))
 	      {
 		if (complain)
 		  error_at (loc, "conversion of scalar %qT to vector %qT "
@@ -7836,7 +7729,8 @@ scalar_to_vector (location_t loc, enum tree_code code, tree op0, tree op1,
 	if (TREE_CODE (type0) == INTEGER_TYPE
 	    && TREE_CODE (TREE_TYPE (type1)) == INTEGER_TYPE)
 	  {
-	    if (unsafe_conversion_p (loc, TREE_TYPE (type1), op0, false))
+	    if (unsafe_conversion_p (loc, TREE_TYPE (type1), op0,
+				     NULL_TREE, false))
 	      {
 		if (complain)
 		  error_at (loc, "conversion of scalar %qT to vector %qT "
@@ -7851,7 +7745,8 @@ scalar_to_vector (location_t loc, enum tree_code code, tree op0, tree op1,
 		     || TREE_CODE (type0) == INTEGER_TYPE)
 		 && SCALAR_FLOAT_TYPE_P (TREE_TYPE (type1)))
 	  {
-	    if (unsafe_conversion_p (loc, TREE_TYPE (type1), op0, false))
+	    if (unsafe_conversion_p (loc, TREE_TYPE (type1), op0,
+				     NULL_TREE, false))
 	      {
 		if (complain)
 		  error_at (loc, "conversion of scalar %qT to vector %qT "

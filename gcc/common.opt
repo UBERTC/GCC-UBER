@@ -224,7 +224,7 @@ unsigned int flag_sanitize
 
 ; What sanitizers should recover from errors
 Variable
-unsigned int flag_sanitize_recover = (SANITIZE_UNDEFINED | SANITIZE_NONDEFAULT | SANITIZE_KERNEL_ADDRESS) & ~(SANITIZE_UNREACHABLE | SANITIZE_RETURN)
+unsigned int flag_sanitize_recover = (SANITIZE_UNDEFINED | SANITIZE_UNDEFINED_NONDEFAULT | SANITIZE_KERNEL_ADDRESS) & ~(SANITIZE_UNREACHABLE | SANITIZE_RETURN)
 
 fsanitize-coverage=trace-pc
 Common Report Var(flag_sanitize_coverage)
@@ -910,6 +910,10 @@ Driver Undocumented
 ;     and introduces new inheriting constructor handling.
 ;     Default in G++ 7.
 ;
+; 12: Corrects the calling convention for classes with only deleted copy/move
+;     constructors.
+;     Default in G++ 8.
+;
 ; Additional positive integers will be assigned as new versions of
 ; the ABI become the default version of the ABI.
 fabi-version=
@@ -1225,7 +1229,7 @@ Enum(diagnostic_color_rule) String(auto) Value(DIAGNOSTICS_COLOR_AUTO)
 
 fdiagnostics-parseable-fixits
 Common Var(flag_diagnostics_parseable_fixits)
-Print fixit hints in machine-readable form.
+Print fix-it hints in machine-readable form.
 
 fdiagnostics-generate-patch
 Common Var(flag_diagnostics_generate_patch)
@@ -1965,6 +1969,10 @@ fprofile
 Common Report Var(profile_flag)
 Enable basic program profiling code.
 
+fprofile-abs-path
+Common Report Var(profile_abs_path_flag)
+Generate absolute source path names for gcov.
+
 fprofile-arcs
 Common Report Var(profile_arc_flag)
 Insert arc-based program profiling code.
@@ -2342,8 +2350,8 @@ Common Report Var(flag_strict_aliasing) Optimization
 Assume strict aliasing rules apply.
 
 fstrict-overflow
-Common Report Var(flag_strict_overflow) Optimization
-Treat signed overflow as undefined.
+Common NegativeAlias Alias(fwrapv)
+Treat signed overflow as undefined.  Negated as -fwrapv.
 
 fsync-libcalls
 Common Report Var(flag_sync_libcalls) Init(1)
@@ -2492,7 +2500,7 @@ flow and turn the statement with erroneous or undefined behavior into a trap.
 
 fisolate-erroneous-paths-attribute
 Common Report Var(flag_isolate_erroneous_paths_attribute) Optimization
-Detect paths that trigger erroneous or undefined behavior due a null value
+Detect paths that trigger erroneous or undefined behavior due to a null value
 being used in a way forbidden by a returns_nonnull or nonnull
 attribute.  Isolate those paths from the main control flow and turn the
 statement with erroneous or undefined behavior into a trap.

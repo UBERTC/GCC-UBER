@@ -30,6 +30,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimplify.h"
 #include "c-family/c-ubsan.h"
 #include "intl.h"
+#include "asan.h"
 
 static bool begin_init_stmts (tree *, tree *);
 static tree finish_init_stmts (bool, tree, tree);
@@ -45,6 +46,8 @@ static void expand_cleanup_for_base (tree, tree);
 static tree dfs_initialize_vtbl_ptrs (tree, void *);
 static tree build_field_list (tree, tree, int *);
 static int diagnose_uninitialized_cst_or_ref_member_1 (tree, tree, bool, bool);
+
+static GTY(()) tree fn;
 
 /* We are about to generate some complex initialization code.
    Conceptually, it is all a single expression.  However, we may want
@@ -2063,7 +2066,7 @@ build_offset_ref (tree type, tree member, bool address_p,
       if (TREE_CODE (t) != TEMPLATE_ID_EXPR && !really_overloaded_fn (t))
 	{
 	  /* Get rid of a potential OVERLOAD around it.  */
-	  t = OVL_CURRENT (t);
+	  t = OVL_FIRST (t);
 
 	  /* Unique functions are handled easily.  */
 
@@ -2402,10 +2405,15 @@ diagnose_uninitialized_cst_or_ref_member (tree type, bool using_new, bool compla
 tree
 throw_bad_array_new_length (void)
 {
-  tree fn = get_identifier ("__cxa_throw_bad_array_new_length");
-  if (!get_global_value_if_present (fn, &fn))
-    fn = push_throw_library_fn (fn, build_function_type_list (sizetype,
-							      NULL_TREE));
+  if (!fn)
+    {
+      tree name = get_identifier ("__cxa_throw_bad_array_new_length");
+
+      fn = IDENTIFIER_GLOBAL_VALUE (name);
+      if (!fn)
+	fn = push_throw_library_fn
+	  (name, build_function_type_list (sizetype, NULL_TREE));
+    }
 
   return build_cxx_call (fn, 0, NULL, tf_warning_or_error);
 }
@@ -3904,8 +3912,7 @@ finish_length_check (tree atype, tree iterator, tree obase, unsigned n)
 	}
       /* Don't check an array new when -fno-exceptions.  */
     }
-  else if (flag_sanitize & SANITIZE_BOUNDS
-	   && do_ubsan_in_current_function ())
+  else if (sanitize_flags_p (SANITIZE_BOUNDS))
     {
       /* Make sure the last element of the initializer is in bounds. */
       finish_expr_stmt
@@ -4905,3 +4912,5 @@ build_vec_delete (tree base, tree maxindex,
 
   return rval;
 }
+
+#include "gt-cp-init.h"

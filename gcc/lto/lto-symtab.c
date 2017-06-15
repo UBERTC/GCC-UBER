@@ -45,11 +45,10 @@ lto_cgraph_replace_node (struct cgraph_node *node,
 
   if (symtab->dump_file)
     {
-      fprintf (symtab->dump_file, "Replacing cgraph node %s/%i by %s/%i"
+      fprintf (symtab->dump_file, "Replacing cgraph node %s by %s"
  	       " for symbol %s\n",
-	       node->name (), node->order,
-	       prevailing_node->name (),
-	       prevailing_node->order,
+	       node->dump_name (),
+	       prevailing_node->dump_name (),
 	       IDENTIFIER_POINTER ((*targetm.asm_out.mangle_assembler_name)
 		 (IDENTIFIER_POINTER (DECL_ASSEMBLER_NAME (node->decl)))));
     }
@@ -952,6 +951,42 @@ lto_symtab_merge_symbols (void)
 	      gcc_assert (node->weakref);
 	      if (tgt)
 		node->resolve_alias (tgt, true);
+	    }
+	  /* If the symbol was preempted outside IR, see if we want to get rid
+	     of the definition.  */
+	  if (node->analyzed
+	      && !DECL_EXTERNAL (node->decl)
+	      && (node->resolution == LDPR_PREEMPTED_REG
+		  || node->resolution == LDPR_RESOLVED_IR
+		  || node->resolution == LDPR_RESOLVED_EXEC
+		  || node->resolution == LDPR_RESOLVED_DYN))
+	    {
+	      DECL_EXTERNAL (node->decl) = 1;
+	      /* If alias to local symbol was preempted by external definition,
+		 we know it is not pointing to the local symbol.  Remove it.  */
+	      if (node->alias
+		  && !node->weakref
+		  && !node->transparent_alias
+		  && node->get_alias_target ()->binds_to_current_def_p ())
+		{
+		  node->alias = false;
+		  node->remove_all_references ();
+		  node->definition = false;
+		  node->analyzed = false;
+		  node->cpp_implicit_alias = false;
+		}
+	      else if (!node->alias
+		       && node->definition
+		       && node->get_availability () <= AVAIL_INTERPOSABLE)
+		{
+		  if ((cnode = dyn_cast <cgraph_node *> (node)) != NULL)
+		    cnode->reset ();
+		  else
+		    {
+		      node->analyzed = node->definition = false;
+		      node->remove_all_references ();
+		    }
+		}
 	    }
 
 	  if (!(cnode = dyn_cast <cgraph_node *> (node))

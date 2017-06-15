@@ -1035,6 +1035,95 @@ DEFINE_INT_AND_FLOAT_ROUND_FN (RINT)
 	&& wi::neg_p (@1, TYPE_SIGN (TREE_TYPE (@1))))
     (cmp @2 @0))))))
 
+/* X / 4 < Y / 4 iff X < Y when the division is known to be exact.  */
+(for cmp (simple_comparison)
+ (simplify
+  (cmp (exact_div @0 INTEGER_CST@2) (exact_div @1 @2))
+  (if (wi::gt_p(@2, 0, TYPE_SIGN (TREE_TYPE (@2))))
+   (cmp @0 @1))))
+
+/* X + Z < Y + Z is the same as X < Y when there is no overflow.  */
+(for op (lt le ge gt)
+ (simplify
+  (op (plus:c @0 @2) (plus:c @1 @2))
+  (if (ANY_INTEGRAL_TYPE_P (TREE_TYPE (@0))
+       && TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (@0)))
+   (op @0 @1))))
+/* For equality and subtraction, this is also true with wrapping overflow.  */
+(for op (eq ne minus)
+ (simplify
+  (op (plus:c @0 @2) (plus:c @1 @2))
+  (if (ANY_INTEGRAL_TYPE_P (TREE_TYPE (@0))
+       && (TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (@0))
+	   || TYPE_OVERFLOW_WRAPS (TREE_TYPE (@0))))
+   (op @0 @1))))
+
+/* X - Z < Y - Z is the same as X < Y when there is no overflow.  */
+(for op (lt le ge gt)
+ (simplify
+  (op (minus @0 @2) (minus @1 @2))
+  (if (ANY_INTEGRAL_TYPE_P (TREE_TYPE (@0))
+       && TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (@0)))
+   (op @0 @1))))
+/* For equality and subtraction, this is also true with wrapping overflow.  */
+(for op (eq ne minus)
+ (simplify
+  (op (minus @0 @2) (minus @1 @2))
+  (if (ANY_INTEGRAL_TYPE_P (TREE_TYPE (@0))
+       && (TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (@0))
+	   || TYPE_OVERFLOW_WRAPS (TREE_TYPE (@0))))
+   (op @0 @1))))
+
+/* Z - X < Z - Y is the same as Y < X when there is no overflow.  */
+(for op (lt le ge gt)
+ (simplify
+  (op (minus @2 @0) (minus @2 @1))
+  (if (ANY_INTEGRAL_TYPE_P (TREE_TYPE (@0))
+       && TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (@0)))
+   (op @1 @0))))
+/* For equality and subtraction, this is also true with wrapping overflow.  */
+(for op (eq ne minus)
+ (simplify
+  (op (minus @2 @0) (minus @2 @1))
+  (if (ANY_INTEGRAL_TYPE_P (TREE_TYPE (@0))
+       && (TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (@0))
+	   || TYPE_OVERFLOW_WRAPS (TREE_TYPE (@0))))
+   (op @1 @0))))
+
+/* X == C - X can never be true if C is odd.  */
+(for cmp (eq ne)
+ (simplify
+  (cmp:c (convert? @0) (convert1? (minus INTEGER_CST@1 (convert2? @0))))
+  (if (TREE_INT_CST_LOW (@1) & 1)
+   { constant_boolean_node (cmp == NE_EXPR, type); })))
+
+/* Arguments on which one can call get_nonzero_bits to get the bits
+   possibly set.  */
+(match with_possible_nonzero_bits
+ INTEGER_CST@0)
+(match with_possible_nonzero_bits
+ SSA_NAME@0
+ (if (INTEGRAL_TYPE_P (TREE_TYPE (@0)) || POINTER_TYPE_P (TREE_TYPE (@0)))))
+/* Slightly extended version, do not make it recursive to keep it cheap.  */
+(match (with_possible_nonzero_bits2 @0)
+ with_possible_nonzero_bits@0)
+(match (with_possible_nonzero_bits2 @0)
+ (bit_and:c with_possible_nonzero_bits@0 @2))
+
+/* Same for bits that are known to be set, but we do not have
+   an equivalent to get_nonzero_bits yet.  */
+(match (with_certain_nonzero_bits2 @0)
+ INTEGER_CST@0)
+(match (with_certain_nonzero_bits2 @0)
+ (bit_ior @1 INTEGER_CST@0))
+
+/* X == C (or X & Z == Y | C) is impossible if ~nonzero(X) & C != 0.  */
+(for cmp (eq ne)
+ (simplify
+  (cmp:c (with_possible_nonzero_bits2 @0) (with_certain_nonzero_bits2 @1))
+  (if ((~get_nonzero_bits (@0) & @1) != 0)
+   { constant_boolean_node (cmp == NE_EXPR, type); })))
+
 /* ((X inner_op C0) outer_op C1)
    With X being a tree where value_range has reasoned certain bits to always be
    zero throughout its computed value range,
@@ -1743,13 +1832,16 @@ DEFINE_INT_AND_FLOAT_ROUND_FN (RINT)
        && TYPE_PRECISION (type) == TYPE_PRECISION (TREE_TYPE (@0)))
    (convert @0)))
 
-/* Strip inner integral conversions that do not change precision or size.  */
+/* Strip inner integral conversions that do not change precision or size, or
+   zero-extend while keeping the same size (for bool-to-char).  */
 (simplify
   (view_convert (convert@0 @1))
   (if ((INTEGRAL_TYPE_P (TREE_TYPE (@0)) || POINTER_TYPE_P (TREE_TYPE (@0)))
        && (INTEGRAL_TYPE_P (TREE_TYPE (@1)) || POINTER_TYPE_P (TREE_TYPE (@1)))
-       && (TYPE_PRECISION (TREE_TYPE (@0)) == TYPE_PRECISION (TREE_TYPE (@1)))
-       && (TYPE_SIZE (TREE_TYPE (@0)) == TYPE_SIZE (TREE_TYPE (@1))))
+       && TYPE_SIZE (TREE_TYPE (@0)) == TYPE_SIZE (TREE_TYPE (@1))
+       && (TYPE_PRECISION (TREE_TYPE (@0)) == TYPE_PRECISION (TREE_TYPE (@1))
+	   || (TYPE_PRECISION (TREE_TYPE (@0)) > TYPE_PRECISION (TREE_TYPE (@1))
+	       && TYPE_UNSIGNED (TREE_TYPE (@1)))))
    (view_convert @1)))
 
 /* Re-association barriers around constants and other re-association
@@ -2578,7 +2670,12 @@ DEFINE_INT_AND_FLOAT_ROUND_FN (RINT)
 	 (if (GENERIC)
 	  (truth_andif
 	   (ge @0 { build_real (TREE_TYPE (@0), dconst0); })
-	   (cmp @0 { build_real (TREE_TYPE (@0), c2); }))))))))))))
+	   (cmp @0 { build_real (TREE_TYPE (@0), c2); })))))))))
+   /* Transform sqrt(x) cmp sqrt(y) -> x cmp y.  */
+   (simplify
+    (cmp (sq @0) (sq @1))
+      (if (! HONOR_NANS (@0))
+	(cmp @0 @1))))))
 
 /* Fold A /[ex] B CMP C to A CMP B * C.  */
 (for cmp (eq ne)
@@ -2643,6 +2740,34 @@ DEFINE_INT_AND_FLOAT_ROUND_FN (RINT)
   (if (INTEGRAL_TYPE_P (TREE_TYPE (@0))
        || VECTOR_INTEGER_TYPE_P (TREE_TYPE (@0)))
    { constant_boolean_node (false, type); })))
+
+/* A & (2**N - 1) <= 2**K - 1 -> A & (2**N - 2**K) == 0
+   A & (2**N - 1) >  2**K - 1 -> A & (2**N - 2**K) != 0
+
+   Note that comparisons
+     A & (2**N - 1) <  2**K   -> A & (2**N - 2**K) == 0
+     A & (2**N - 1) >= 2**K   -> A & (2**N - 2**K) != 0
+   will be canonicalized to above so there's no need to
+   consider them here.
+ */
+
+(for cmp (le gt)
+     eqcmp (eq ne)
+ (simplify
+  (cmp (bit_and@0 @1 INTEGER_CST@2) INTEGER_CST@3)
+  (if (INTEGRAL_TYPE_P (TREE_TYPE (@0)))
+   (with
+    {
+     tree ty = TREE_TYPE (@0);
+     unsigned prec = TYPE_PRECISION (ty);
+     wide_int mask = wi::to_wide (@2, prec);
+     wide_int rhs = wi::to_wide (@3, prec);
+     signop sgn = TYPE_SIGN (ty);
+    }
+    (if ((mask & (mask + 1)) == 0 && wi::gt_p (rhs, 0, sgn)
+	 && (rhs & (rhs + 1)) == 0 && wi::ge_p (mask, rhs, sgn))
+      (eqcmp (bit_and @1 { wide_int_to_tree (ty, mask - rhs); })
+	     { build_zero_cst (ty); }))))))
 
 /* -A CMP -B -> B CMP A.  */
 (for cmp (tcc_comparison)

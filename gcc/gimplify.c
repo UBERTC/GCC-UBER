@@ -56,7 +56,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "gimple-low.h"
 #include "cilk.h"
 #include "gomp-constants.h"
-#include "tree-dump.h"
+#include "splay-tree.h"
 #include "gimple-walk.h"
 #include "langhooks-def.h"	/* FIXME: for lhd_set_decl_assembler_name */
 #include "builtins.h"
@@ -98,6 +98,9 @@ enum gimplify_omp_var_data
 
   /* Flag for GOVD_MAP, if it is a forced mapping.  */
   GOVD_MAP_FORCE = 262144,
+
+  /* Flag for GOVD_MAP: must be present already.  */
+  GOVD_MAP_FORCE_PRESENT = 524288,
 
   GOVD_DATA_SHARE_CLASS = (GOVD_SHARED | GOVD_PRIVATE | GOVD_FIRSTPRIVATE
 			   | GOVD_LASTPRIVATE | GOVD_REDUCTION | GOVD_LINEAR
@@ -3071,6 +3074,19 @@ maybe_fold_stmt (gimple_stmt_iterator *gsi)
   return fold_stmt (gsi);
 }
 
+/* Add a gimple call to __builtin_cilk_detach to GIMPLE sequence PRE_P,
+   with the pointer to the proper cilk frame.  */
+static void
+gimplify_cilk_detach (gimple_seq *pre_p)
+{
+  tree frame = cfun->cilk_frame_decl;
+  tree ptrf = build1 (ADDR_EXPR, cilk_frame_ptr_type_decl,
+		      frame);
+  gcall *detach = gimple_build_call (cilk_detach_fndecl, 1,
+				     ptrf);
+  gimplify_seq_add_stmt(pre_p, detach);
+}
+
 /* Gimplify the CALL_EXPR node *EXPR_P into the GIMPLE sequence PRE_P.
    WANT_VALUE is true if the result of the call is desired.  */
 
@@ -3107,6 +3123,9 @@ gimplify_call_expr (tree *expr_p, gimple_seq *pre_p, bool want_value)
 			EXPR_LOCATION (*expr_p));
 	  vargs.quick_push (CALL_EXPR_ARG (*expr_p, i));
 	}
+
+      if (EXPR_CILK_SPAWN (*expr_p))
+        gimplify_cilk_detach (pre_p);
       gimple *call = gimple_build_call_internal_vec (ifn, vargs);
       gimplify_seq_add_stmt (pre_p, call);
       return GS_ALL_DONE;
@@ -3338,6 +3357,8 @@ gimplify_call_expr (tree *expr_p, gimple_seq *pre_p, bool want_value)
       call = gimple_build_call_from_tree (*expr_p);
       gimple_call_set_fntype (call, TREE_TYPE (fnptrtype));
       notice_special_calls (call);
+      if (EXPR_CILK_SPAWN (*expr_p))
+        gimplify_cilk_detach (pre_p);
       gimplify_seq_add_stmt (pre_p, call);
       gsi = gsi_last (*pre_p);
       maybe_fold_stmt (&gsi);
@@ -5559,7 +5580,8 @@ gimplify_modify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
       && DECL_IGNORED_P (*from_p)
       && DECL_P (*to_p)
       && !DECL_IGNORED_P (*to_p)
-      && decl_function_context (*to_p) == current_function_decl)
+      && decl_function_context (*to_p) == current_function_decl
+      && decl_function_context (*from_p) == current_function_decl)
     {
       if (!DECL_NAME (*from_p) && DECL_NAME (*to_p))
 	DECL_NAME (*from_p)
@@ -5620,6 +5642,9 @@ gimplify_modify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
 	   SSA name w/o a definition.  We may have uses in the GIMPLE IL.
 	   ???  This doesn't make it a default-def.  */
 	SSA_NAME_DEF_STMT (*to_p) = gimple_build_nop ();
+
+      if (EXPR_CILK_SPAWN (*from_p))
+        gimplify_cilk_detach (pre_p);
       assign = call_stmt;
     }
   else
@@ -6669,7 +6694,7 @@ omp_add_variable (struct gimplify_omp_ctx *ctx, tree decl, unsigned int flags)
 	 of PRIVATE.  The sharing would take place via the pointer variable
 	 which we remapped above.  */
       if (flags & GOVD_SHARED)
-	flags = GOVD_PRIVATE | GOVD_DEBUG_PRIVATE
+	flags = GOVD_SHARED | GOVD_DEBUG_PRIVATE
 		| (flags & (GOVD_SEEN | GOVD_EXPLICIT));
 
       /* We're going to make use of the TYPE_SIZE_UNIT at least in the
@@ -6931,30 +6956,44 @@ oacc_default_clause (struct gimplify_omp_ctx *ctx, tree decl, unsigned flags)
 
   switch (ctx->region_type)
     {
-    default:
-      gcc_unreachable ();
-
     case ORT_ACC_KERNELS:
-      /* Scalars are default 'copy' under kernels, non-scalars are default
-	 'present_or_copy'.  */
-      flags |= GOVD_MAP;
-      if (!AGGREGATE_TYPE_P (type))
-	flags |= GOVD_MAP_FORCE;
-
       rkind = "kernels";
+
+      if (AGGREGATE_TYPE_P (type))
+	{
+	  /* Aggregates default to 'present_or_copy', or 'present'.  */
+	  if (ctx->default_kind != OMP_CLAUSE_DEFAULT_PRESENT)
+	    flags |= GOVD_MAP;
+	  else
+	    flags |= GOVD_MAP | GOVD_MAP_FORCE_PRESENT;
+	}
+      else
+	/* Scalars default to 'copy'.  */
+	flags |= GOVD_MAP | GOVD_MAP_FORCE;
+
       break;
 
     case ORT_ACC_PARALLEL:
-      {
-	if (on_device || AGGREGATE_TYPE_P (type) || declared)
-	  /* Aggregates default to 'present_or_copy'.  */
-	  flags |= GOVD_MAP;
-	else
-	  /* Scalars default to 'firstprivate'.  */
-	  flags |= GOVD_FIRSTPRIVATE;
-	rkind = "parallel";
-      }
+      rkind = "parallel";
+
+      if (on_device || declared)
+	flags |= GOVD_MAP;
+      else if (AGGREGATE_TYPE_P (type))
+	{
+	  /* Aggregates default to 'present_or_copy', or 'present'.  */
+	  if (ctx->default_kind != OMP_CLAUSE_DEFAULT_PRESENT)
+	    flags |= GOVD_MAP;
+	  else
+	    flags |= GOVD_MAP | GOVD_MAP_FORCE_PRESENT;
+	}
+      else
+	/* Scalars default to 'firstprivate'.  */
+	flags |= GOVD_FIRSTPRIVATE;
+
       break;
+
+    default:
+      gcc_unreachable ();
     }
 
   if (DECL_ARTIFICIAL (decl))
@@ -6966,6 +7005,8 @@ oacc_default_clause (struct gimplify_omp_ctx *ctx, tree decl, unsigned flags)
 	     DECL_NAME (lang_hooks.decls.omp_report_decl (decl)), rkind);
       inform (ctx->location, "enclosing OpenACC %qs construct", rkind);
     }
+  else if (ctx->default_kind == OMP_CLAUSE_DEFAULT_PRESENT)
+    ; /* Handled above.  */
   else
     gcc_checking_assert (ctx->default_kind == OMP_CLAUSE_DEFAULT_SHARED);
 
@@ -8576,7 +8617,7 @@ gimplify_adjust_omp_clauses_1 (splay_tree_node n, void *data)
     return 0;
   if (flags & GOVD_DEBUG_PRIVATE)
     {
-      gcc_assert ((flags & GOVD_DATA_SHARE_CLASS) == GOVD_PRIVATE);
+      gcc_assert ((flags & GOVD_DATA_SHARE_CLASS) == GOVD_SHARED);
       private_debug = true;
     }
   else if (flags & GOVD_MAP)
@@ -8683,11 +8724,30 @@ gimplify_adjust_omp_clauses_1 (splay_tree_node n, void *data)
     }
   else if (code == OMP_CLAUSE_MAP)
     {
-      int kind = (flags & GOVD_MAP_TO_ONLY
-		  ? GOMP_MAP_TO
-		  : GOMP_MAP_TOFROM);
-      if (flags & GOVD_MAP_FORCE)
-	kind |= GOMP_MAP_FLAG_FORCE;
+      int kind;
+      /* Not all combinations of these GOVD_MAP flags are actually valid.  */
+      switch (flags & (GOVD_MAP_TO_ONLY
+		       | GOVD_MAP_FORCE
+		       | GOVD_MAP_FORCE_PRESENT))
+	{
+	case 0:
+	  kind = GOMP_MAP_TOFROM;
+	  break;
+	case GOVD_MAP_FORCE:
+	  kind = GOMP_MAP_TOFROM | GOMP_MAP_FLAG_FORCE;
+	  break;
+	case GOVD_MAP_TO_ONLY:
+	  kind = GOMP_MAP_TO;
+	  break;
+	case GOVD_MAP_TO_ONLY | GOVD_MAP_FORCE:
+	  kind = GOMP_MAP_TO | GOMP_MAP_FLAG_FORCE;
+	  break;
+	case GOVD_MAP_FORCE_PRESENT:
+	  kind = GOMP_MAP_FORCE_PRESENT;
+	  break;
+	default:
+	  gcc_unreachable ();
+	}
       OMP_CLAUSE_SET_MAP_KIND (clause, kind);
       if (DECL_SIZE (decl)
 	  && TREE_CODE (DECL_SIZE (decl)) != INTEGER_CST)
@@ -8819,7 +8879,7 @@ gimplify_adjust_omp_clauses (gimple_seq *pre_p, gimple_seq body, tree *list_p,
 		{
 		  gcc_assert ((n->value & GOVD_DEBUG_PRIVATE) == 0
 			      || ((n->value & GOVD_DATA_SHARE_CLASS)
-				  == GOVD_PRIVATE));
+				  == GOVD_SHARED));
 		  OMP_CLAUSE_SET_CODE (c, OMP_CLAUSE_PRIVATE);
 		  OMP_CLAUSE_PRIVATE_DEBUG (c) = 1;
 		}
@@ -12196,7 +12256,7 @@ gimplify_expr (tree *expr_p, gimple_seq *pre_p, gimple_seq *post_p,
       if (!(fallback & fb_mayfail))
 	{
 	  fprintf (stderr, "gimplification failed:\n");
-	  print_generic_expr (stderr, *expr_p, 0);
+	  print_generic_expr (stderr, *expr_p);
 	  debug_tree (*expr_p);
 	  internal_error ("gimplification failed");
 	}
@@ -12587,7 +12647,7 @@ gimplify_function_tree (tree fndecl)
       && !needs_to_live_in_memory (ret))
     DECL_GIMPLE_REG_P (ret) = 1;
 
-  if (asan_sanitize_use_after_scope () && !asan_no_sanitize_address_p ())
+  if (asan_sanitize_use_after_scope () && sanitize_flags_p (SANITIZE_ADDRESS))
     asan_poisoned_variables = new hash_set<tree> ();
   bind = gimplify_body (fndecl, true);
   if (asan_poisoned_variables)
@@ -12654,8 +12714,7 @@ gimplify_function_tree (tree fndecl)
       bind = new_bind;
     }
 
-  if ((flag_sanitize & SANITIZE_THREAD) != 0
-      && !lookup_attribute ("no_sanitize_thread", DECL_ATTRIBUTES (fndecl)))
+  if (sanitize_flags_p (SANITIZE_THREAD))
     {
       gcall *call = gimple_build_call_internal (IFN_TSAN_FUNC_EXIT, 0);
       gimple *tf = gimple_build_try (seq, call, GIMPLE_TRY_FINALLY);
@@ -12672,7 +12731,7 @@ gimplify_function_tree (tree fndecl)
 
   pop_cfun ();
 
-  dump_function (TDI_generic, fndecl);
+  dump_function (TDI_gimple, fndecl);
 }
 
 /* Return a dummy expression of type TYPE in order to keep going after an

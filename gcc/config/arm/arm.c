@@ -64,6 +64,7 @@
 #include "rtl-iter.h"
 #include "optabs-libfuncs.h"
 #include "gimplify.h"
+#include "gimple.h"
 
 /* This file should be included last.  */
 #include "target-def.h"
@@ -81,9 +82,10 @@ struct four_ints
 
 /* Forward function declarations.  */
 static bool arm_const_not_ok_for_debug_p (rtx);
-static bool arm_needs_doubleword_align (machine_mode, const_tree);
+static int arm_needs_doubleword_align (machine_mode, const_tree);
 static int arm_compute_static_chain_stack_bytes (void);
 static arm_stack_offsets *arm_get_frame_offsets (void);
+static void arm_compute_frame_layout (void);
 static void arm_add_gc_roots (void);
 static int arm_gen_constant (enum rtx_code, machine_mode, rtx,
 			     unsigned HOST_WIDE_INT, rtx, rtx, int, int);
@@ -128,7 +130,7 @@ static void push_minipool_fix (rtx_insn *, HOST_WIDE_INT, rtx *,
 static void arm_reorg (void);
 static void note_invalid_constants (rtx_insn *, HOST_WIDE_INT, int);
 static unsigned long arm_compute_save_reg0_reg12_mask (void);
-static unsigned long arm_compute_save_reg_mask (void);
+static unsigned long arm_compute_save_core_reg_mask (void);
 static unsigned long arm_isr_value (tree);
 static unsigned long arm_compute_func_type (void);
 static tree arm_handle_fndecl_attribute (tree *, tree, tree, int, bool *);
@@ -678,6 +680,9 @@ static const struct attribute_spec arm_attribute_table[] =
 
 #undef TARGET_SCALAR_MODE_SUPPORTED_P
 #define TARGET_SCALAR_MODE_SUPPORTED_P arm_scalar_mode_supported_p
+
+#undef TARGET_COMPUTE_FRAME_LAYOUT
+#define TARGET_COMPUTE_FRAME_LAYOUT arm_compute_frame_layout
 
 #undef TARGET_FRAME_POINTER_REQUIRED
 #define TARGET_FRAME_POINTER_REQUIRED arm_frame_pointer_required
@@ -2089,28 +2094,6 @@ const struct tune_params arm_xgene1_tune =
   tune_params::SCHED_AUTOPREF_OFF
 };
 
-const struct tune_params arm_qdf24xx_tune =
-{
-  &qdf24xx_extra_costs,
-  NULL,                                         /* Scheduler cost adjustment.  */
-  arm_default_branch_cost,
-  &arm_default_vec_cost,			/* Vectorizer costs.  */
-  1,						/* Constant limit.  */
-  2,						/* Max cond insns.  */
-  8,						/* Memset max inline.  */
-  4,						/* Issue rate.  */
-  ARM_PREFETCH_BENEFICIAL (0, -1, 64),
-  tune_params::PREF_CONST_POOL_FALSE,
-  tune_params::PREF_LDRD_TRUE,
-  tune_params::LOG_OP_NON_SHORT_CIRCUIT_TRUE,	/* Thumb.  */
-  tune_params::LOG_OP_NON_SHORT_CIRCUIT_TRUE,	/* ARM.  */
-  tune_params::DISPARAGE_FLAGS_ALL,
-  tune_params::PREF_NEON_64_FALSE,
-  tune_params::PREF_NEON_STRINGOPS_TRUE,
-  FUSE_OPS (tune_params::FUSE_MOVW_MOVT),
-  tune_params::SCHED_AUTOPREF_FULL
-};
-
 /* Branches can be dual-issued on Cortex-A5, so conditional execution is
    less appealing.  Set max_insns_skipped to a low value.  */
 
@@ -2832,16 +2815,16 @@ arm_option_check_internal (struct gcc_options *opts)
       flag_pic = 0;
     }
 
-  /* We only support -mslow-flash-data on armv7-m targets.  */
-  if (target_slow_flash_data
-      && ((!(arm_arch7 && !arm_arch_notm) && !arm_arch7em)
-	  || (TARGET_THUMB1_P (flags) || flag_pic || TARGET_NEON)))
-    error ("-mslow-flash-data only supports non-pic code on armv7-m targets");
-
-  /* We only support pure-code on Thumb-2 M-profile targets.  */
-  if (target_pure_code
-      && (!arm_arch_thumb2 || arm_arch_notm || flag_pic || TARGET_NEON))
-    error ("-mpure-code only supports non-pic code on armv7-m targets");
+  /* We only support -mpure-code and -mslow-flash-data on M-profile targets
+     with MOVT.  */
+  if ((target_pure_code || target_slow_flash_data)
+      && (!TARGET_HAVE_MOVT || arm_arch_notm || flag_pic || TARGET_NEON))
+    {
+      const char *flag = (target_pure_code ? "-mpure-code" :
+					     "-mslow-flash-data");
+      error ("%s only supports non-pic code on M-profile targets with the "
+	     "MOVT instruction", flag);
+    }
 
 }
 
@@ -4030,6 +4013,10 @@ use_simple_return_p (void)
 {
   arm_stack_offsets *offsets;
 
+  /* Note this function can be called before or after reload.  */
+  if (!reload_completed)
+    arm_compute_frame_layout ();
+
   offsets = arm_get_frame_offsets ();
   return offsets->outgoing_args != 0;
 }
@@ -4076,7 +4063,7 @@ const_ok_for_arm (HOST_WIDE_INT i)
 	       || (i & ~0xfc000003) == 0))
 	return TRUE;
     }
-  else
+  else if (TARGET_THUMB2)
     {
       HOST_WIDE_INT v;
 
@@ -4090,6 +4077,14 @@ const_ok_for_arm (HOST_WIDE_INT i)
       v = i & 0xff00;
       v |= v << 16;
       if (i == v)
+	return TRUE;
+    }
+  else if (TARGET_HAVE_MOVT)
+    {
+      /* Thumb-1 Targets with MOVT.  */
+      if (i > 0xffff)
+	return FALSE;
+      else
 	return TRUE;
     }
 
@@ -6349,8 +6344,20 @@ aapcs_layout_arg (CUMULATIVE_ARGS *pcum, machine_mode mode,
   /* C3 - For double-word aligned arguments, round the NCRN up to the
      next even number.  */
   ncrn = pcum->aapcs_ncrn;
-  if ((ncrn & 1) && arm_needs_doubleword_align (mode, type))
-    ncrn++;
+  if (ncrn & 1)
+    {
+      int res = arm_needs_doubleword_align (mode, type);
+      /* Only warn during RTL expansion of call stmts, otherwise we would
+	 warn e.g. during gimplification even on functions that will be
+	 always inlined, and we'd warn multiple times.  Don't warn when
+	 called in expand_function_start either, as we warn instead in
+	 arm_function_arg_boundary in that case.  */
+      if (res < 0 && warn_psabi && currently_expanding_gimple_stmt)
+	inform (input_location, "parameter passing for argument of type "
+		"%qT changed in GCC 7.1", type);
+      else if (res > 0)
+	ncrn++;
+    }
 
   nregs = ARM_NUM_REGS2(mode, type);
 
@@ -6455,12 +6462,16 @@ arm_init_cumulative_args (CUMULATIVE_ARGS *pcum, tree fntype,
     }
 }
 
-/* Return true if mode/type need doubleword alignment.  */
-static bool
+/* Return 1 if double word alignment is required for argument passing.
+   Return -1 if double word alignment used to be required for argument
+   passing before PR77728 ABI fix, but is not required anymore.
+   Return 0 if double word alignment is not required and wasn't requried
+   before either.  */
+static int
 arm_needs_doubleword_align (machine_mode mode, const_tree type)
 {
   if (!type)
-    return PARM_BOUNDARY < GET_MODE_ALIGNMENT (mode);
+    return GET_MODE_ALIGNMENT (mode) > PARM_BOUNDARY;
 
   /* Scalar and vector types: Use natural alignment, i.e. of base type.  */
   if (!AGGREGATE_TYPE_P (type))
@@ -6470,12 +6481,21 @@ arm_needs_doubleword_align (machine_mode mode, const_tree type)
   if (TREE_CODE (type) == ARRAY_TYPE)
     return TYPE_ALIGN (TREE_TYPE (type)) > PARM_BOUNDARY;
 
+  int ret = 0;
   /* Record/aggregate types: Use greatest member alignment of any member.  */ 
   for (tree field = TYPE_FIELDS (type); field; field = DECL_CHAIN (field))
     if (DECL_ALIGN (field) > PARM_BOUNDARY)
-      return true;
+      {
+	if (TREE_CODE (field) == FIELD_DECL)
+	  return 1;
+	else
+	  /* Before PR77728 fix, we were incorrectly considering also
+	     other aggregate fields, like VAR_DECLs, TYPE_DECLs etc.
+	     Make sure we can warn about that with -Wpsabi.  */
+	  ret = -1;
+      }
 
-  return false;
+  return ret;
 }
 
 
@@ -6532,10 +6552,15 @@ arm_function_arg (cumulative_args_t pcum_v, machine_mode mode,
     }
 
   /* Put doubleword aligned quantities in even register pairs.  */
-  if (pcum->nregs & 1
-      && ARM_DOUBLEWORD_ALIGN
-      && arm_needs_doubleword_align (mode, type))
-    pcum->nregs++;
+  if ((pcum->nregs & 1) && ARM_DOUBLEWORD_ALIGN)
+    {
+      int res = arm_needs_doubleword_align (mode, type);
+      if (res < 0 && warn_psabi)
+	inform (input_location, "parameter passing for argument of type "
+		"%qT changed in GCC 7.1", type);
+      else if (res > 0)
+	pcum->nregs++;
+    }
 
   /* Only allow splitting an arg between regs and memory if all preceding
      args were allocated to regs.  For args passed by reference we only count
@@ -6554,9 +6579,15 @@ arm_function_arg (cumulative_args_t pcum_v, machine_mode mode,
 static unsigned int
 arm_function_arg_boundary (machine_mode mode, const_tree type)
 {
-  return (ARM_DOUBLEWORD_ALIGN && arm_needs_doubleword_align (mode, type)
-	  ? DOUBLEWORD_ALIGNMENT
-	  : PARM_BOUNDARY);
+  if (!ARM_DOUBLEWORD_ALIGN)
+    return PARM_BOUNDARY;
+
+  int res = arm_needs_doubleword_align (mode, type);
+  if (res < 0 && warn_psabi)
+    inform (input_location, "parameter passing for argument of type %qT "
+	    "changed in GCC 7.1", type);
+
+  return res > 0 ? DOUBLEWORD_ALIGNMENT : PARM_BOUNDARY;
 }
 
 static int
@@ -7699,6 +7730,32 @@ arm_legitimate_address_outer_p (machine_mode mode, rtx x, RTX_CODE outer,
   return 0;
 }
 
+/* Return true if we can avoid creating a constant pool entry for x.  */
+static bool
+can_avoid_literal_pool_for_label_p (rtx x)
+{
+  /* Normally we can assign constant values to target registers without
+     the help of constant pool.  But there are cases we have to use constant
+     pool like:
+     1) assign a label to register.
+     2) sign-extend a 8bit value to 32bit and then assign to register.
+
+     Constant pool access in format:
+     (set (reg r0) (mem (symbol_ref (".LC0"))))
+     will cause the use of literal pool (later in function arm_reorg).
+     So here we mark such format as an invalid format, then the compiler
+     will adjust it into:
+     (set (reg r0) (symbol_ref (".LC0")))
+     (set (reg r0) (mem (reg r0))).
+     No extra register is required, and (mem (reg r0)) won't cause the use
+     of literal pools.  */
+  if (arm_disable_literal_pool && GET_CODE (x) == SYMBOL_REF
+      && CONSTANT_POOL_ADDRESS_P (x))
+    return 1;
+  return 0;
+}
+
+
 /* Return nonzero if X is a valid Thumb-2 address operand.  */
 static int
 thumb2_legitimate_address_p (machine_mode mode, rtx x, int strict_p)
@@ -7762,23 +7819,7 @@ thumb2_legitimate_address_p (machine_mode mode, rtx x, int strict_p)
 		  && thumb2_legitimate_index_p (mode, xop0, strict_p)));
     }
 
-  /* Normally we can assign constant values to target registers without
-     the help of constant pool.  But there are cases we have to use constant
-     pool like:
-     1) assign a label to register.
-     2) sign-extend a 8bit value to 32bit and then assign to register.
-
-     Constant pool access in format:
-     (set (reg r0) (mem (symbol_ref (".LC0"))))
-     will cause the use of literal pool (later in function arm_reorg).
-     So here we mark such format as an invalid format, then the compiler
-     will adjust it into:
-     (set (reg r0) (symbol_ref (".LC0")))
-     (set (reg r0) (mem (reg r0))).
-     No extra register is required, and (mem (reg r0)) won't cause the use
-     of literal pools.  */
-  else if (arm_disable_literal_pool && code == SYMBOL_REF
-	   && CONSTANT_POOL_ADDRESS_P (x))
+  else if (can_avoid_literal_pool_for_label_p (x))
     return 0;
 
   else if (GET_MODE_CLASS (mode) != MODE_FLOAT
@@ -8057,6 +8098,9 @@ thumb1_index_register_rtx_p (rtx x, int strict_p)
 int
 thumb1_legitimate_address_p (machine_mode mode, rtx x, int strict_p)
 {
+  if (TARGET_HAVE_MOVT && can_avoid_literal_pool_for_label_p (x))
+    return 0;
+
   /* ??? Not clear if this is right.  Experiment.  */
   if (GET_MODE_SIZE (mode) < 4
       && !(reload_in_progress || reload_completed)
@@ -8633,7 +8677,16 @@ arm_tls_referenced_p (rtx x)
     {
       const_rtx x = *iter;
       if (GET_CODE (x) == SYMBOL_REF && SYMBOL_REF_TLS_MODEL (x) != 0)
-	return true;
+	{
+	  /* ARM currently does not provide relocations to encode TLS variables
+	     into AArch32 instructions, only data, so there is no way to
+	     currently implement these if a literal pool is disabled.  */
+	  if (arm_disable_literal_pool)
+	    sorry ("accessing thread-local storage is not currently supported "
+		   "with -mpure-code or -mslow-flash-data");
+
+	  return true;
+	}
 
       /* Don't recurse into UNSPEC_TLS looking for TLS symbols; these are
 	 TLS offsets, not real symbol references.  */
@@ -8669,6 +8722,7 @@ thumb_legitimate_constant_p (machine_mode mode ATTRIBUTE_UNUSED, rtx x)
   return (CONST_INT_P (x)
 	  || CONST_DOUBLE_P (x)
 	  || CONSTANT_ADDRESS_P (x)
+	  || (TARGET_HAVE_MOVT && GET_CODE (x) == SYMBOL_REF)
 	  || flag_pic);
 }
 
@@ -9261,6 +9315,10 @@ arm_rtx_costs_internal (rtx x, enum rtx_code code, enum rtx_code outer_code,
 	*cost += COSTS_N_INSNS (speed_p ? extra_cost->mult[0].idiv : 0);
       else
 	*cost = LIBCALL_COST (2);
+
+      /* Make the cost of sdiv more expensive so when both sdiv and udiv are
+	 possible udiv is prefered.  */
+      *cost += (code == DIV ? COSTS_N_INSNS (1) : 0);
       return false;	/* All arguments must be in registers.  */
 
     case MOD:
@@ -9283,7 +9341,9 @@ arm_rtx_costs_internal (rtx x, enum rtx_code code, enum rtx_code outer_code,
 
     /* Fall-through.  */
     case UMOD:
-      *cost = LIBCALL_COST (2);
+      /* Make the cost of sdiv more expensive so when both sdiv and udiv are
+	 possible udiv is prefered.  */
+      *cost = LIBCALL_COST (2) + (code == MOD ? COSTS_N_INSNS (1) : 0);
       return false;	/* All arguments must be in registers.  */
 
     case ROTATE:
@@ -16340,6 +16400,7 @@ static void
 push_minipool_fix (rtx_insn *insn, HOST_WIDE_INT address, rtx *loc,
 		   machine_mode mode, rtx value)
 {
+  gcc_assert (!arm_disable_literal_pool);
   Mfix * fix = (Mfix *) obstack_alloc (&minipool_obstack, sizeof (* fix));
 
   fix->insn = insn;
@@ -16391,10 +16452,6 @@ push_minipool_fix (rtx_insn *insn, HOST_WIDE_INT address, rtx *loc,
 int
 arm_max_const_double_inline_cost ()
 {
-  /* Let the value get synthesized to avoid the use of literal pools.  */
-  if (arm_disable_literal_pool)
-    return 99;
-
   return ((optimize_size || arm_ld_sched) ? 3 : 4);
 }
 
@@ -16836,9 +16893,10 @@ compute_not_to_clear_mask (tree arg_type, rtx arg_rtx, int regno,
   return not_to_clear_mask;
 }
 
-/* Saves callee saved registers, clears callee saved registers and caller saved
-   registers not used to pass arguments before a cmse_nonsecure_call.  And
-   restores the callee saved registers after.  */
+/* Clears caller saved registers not used to pass arguments before a
+   cmse_nonsecure_call.  Saving, clearing and restoring of callee saved
+   registers is done in __gnu_cmse_nonsecure_call libcall.
+   See libgcc/config/arm/cmse_nonsecure_call.S.  */
 
 static void
 cmse_nonsecure_call_clear_caller_saved (void)
@@ -17340,6 +17398,11 @@ arm_reorg (void)
      been split at this point.  */
   if (!optimize)
     split_all_insns_noflow ();
+
+  /* Make sure we do not attempt to create a literal pool even though it should
+     no longer be necessary to create any.  */
+  if (arm_disable_literal_pool)
+    return ;
 
   minipool_fix_head = minipool_fix_tail = NULL;
 
@@ -18939,7 +19002,7 @@ output_ascii_pseudo_op (FILE *stream, const unsigned char *p, int len)
        && reg >= FIRST_HI_REGNUM && reg <= LAST_HI_REGNUM))
 
 /* Compute the register save mask for registers 0 through 12
-   inclusive.  This code is used by arm_compute_save_reg_mask.  */
+   inclusive.  This code is used by arm_compute_save_core_reg_mask ().  */
 
 static unsigned long
 arm_compute_save_reg0_reg12_mask (void)
@@ -19066,12 +19129,12 @@ arm_compute_static_chain_stack_bytes (void)
   return 0;
 }
 
-/* Compute a bit mask of which registers need to be
+/* Compute a bit mask of which core registers need to be
    saved on the stack for the current function.
-   This is used by arm_get_frame_offsets, which may add extra registers.  */
+   This is used by arm_compute_frame_layout, which may add extra registers.  */
 
 static unsigned long
-arm_compute_save_reg_mask (void)
+arm_compute_save_core_reg_mask (void)
 {
   unsigned int save_reg_mask = 0;
   unsigned long func_type = arm_current_func_type ();
@@ -19153,10 +19216,10 @@ arm_compute_save_reg_mask (void)
   return save_reg_mask;
 }
 
-/* Compute a bit mask of which registers need to be
+/* Compute a bit mask of which core registers need to be
    saved on the stack for the current function.  */
 static unsigned long
-thumb1_compute_save_reg_mask (void)
+thumb1_compute_save_core_reg_mask (void)
 {
   unsigned long mask;
   unsigned reg;
@@ -20692,7 +20755,7 @@ any_sibcall_could_use_r3 (void)
   eliminating some of the registers.
 
   The values returned by this function must reflect the behavior
-  of arm_expand_prologue() and arm_compute_save_reg_mask().
+  of arm_expand_prologue () and arm_compute_save_core_reg_mask ().
 
   The sign of the number returned reflects the direction of stack
   growth, so the values are positive for all eliminations except
@@ -20702,12 +20765,25 @@ any_sibcall_could_use_r3 (void)
   alignment.  */
 
 
+/* Return cached stack offsets.  */
+
+static arm_stack_offsets *
+arm_get_frame_offsets (void)
+{
+  struct arm_stack_offsets *offsets;
+
+  offsets = &cfun->machine->stack_offsets;
+
+  return offsets;
+}
+
+
 /* Calculate stack offsets.  These are used to calculate register elimination
    offsets and in prologue/epilogue code.  Also calculates which registers
    should be saved.  */
 
-static arm_stack_offsets *
-arm_get_frame_offsets (void)
+static void
+arm_compute_frame_layout (void)
 {
   struct arm_stack_offsets *offsets;
   unsigned long func_type;
@@ -20717,9 +20793,6 @@ arm_get_frame_offsets (void)
   int i;
 
   offsets = &cfun->machine->stack_offsets;
-
-  if (reload_completed)
-    return offsets;
 
   /* Initially this is the size of the local variables.  It will translated
      into an offset once we have determined the size of preceding data.  */
@@ -20738,7 +20811,7 @@ arm_get_frame_offsets (void)
     {
       unsigned int regno;
 
-      offsets->saved_regs_mask = arm_compute_save_reg_mask ();
+      offsets->saved_regs_mask = arm_compute_save_core_reg_mask ();
       core_saved = bit_count (offsets->saved_regs_mask) * 4;
       saved = core_saved;
 
@@ -20764,7 +20837,7 @@ arm_get_frame_offsets (void)
     }
   else /* TARGET_THUMB1 */
     {
-      offsets->saved_regs_mask = thumb1_compute_save_reg_mask ();
+      offsets->saved_regs_mask = thumb1_compute_save_core_reg_mask ();
       core_saved = bit_count (offsets->saved_regs_mask) * 4;
       saved = core_saved;
       if (TARGET_BACKTRACE)
@@ -20785,7 +20858,7 @@ arm_get_frame_offsets (void)
     {
       offsets->outgoing_args = offsets->soft_frame;
       offsets->locals_base = offsets->soft_frame;
-      return offsets;
+      return;
     }
 
   /* Ensure SFP has the correct alignment.  */
@@ -20861,8 +20934,6 @@ arm_get_frame_offsets (void)
 	offsets->outgoing_args += 4;
       gcc_assert (!(offsets->outgoing_args & 7));
     }
-
-  return offsets;
 }
 
 
@@ -21496,7 +21567,7 @@ arm_expand_prologue (void)
 	{
 	  /* If no coprocessor registers are being pushed and we don't have
 	     to worry about a frame pointer then push extra registers to
-	     create the stack frame.  This is done is a way that does not
+	     create the stack frame.  This is done in a way that does not
 	     alter the frame layout, so is independent of the epilogue.  */
 	  int n;
 	  int frame;
@@ -26520,8 +26591,15 @@ arm_setup_incoming_varargs (cumulative_args_t pcum_v,
   if (pcum->pcs_variant <= ARM_PCS_AAPCS_LOCAL)
     {
       nregs = pcum->aapcs_ncrn;
-      if ((nregs & 1) && arm_needs_doubleword_align (mode, type))
-	nregs++;
+      if (nregs & 1)
+	{
+	  int res = arm_needs_doubleword_align (mode, type);
+	  if (res < 0 && warn_psabi)
+	    inform (input_location, "parameter passing for argument of "
+		    "type %qT changed in GCC 7.1", type);
+	  else if (res > 0)
+	    nregs++;
+	}
     }
   else
     nregs = pcum->nregs;
@@ -28196,17 +28274,32 @@ arm_expand_compare_and_swap (rtx operands[])
       gcc_unreachable ();
     }
 
-  switch (mode)
+  if (TARGET_THUMB1)
     {
-    case QImode: gen = gen_atomic_compare_and_swapqi_1; break;
-    case HImode: gen = gen_atomic_compare_and_swaphi_1; break;
-    case SImode: gen = gen_atomic_compare_and_swapsi_1; break;
-    case DImode: gen = gen_atomic_compare_and_swapdi_1; break;
-    default:
-      gcc_unreachable ();
+      switch (mode)
+	{
+	case QImode: gen = gen_atomic_compare_and_swapt1qi_1; break;
+	case HImode: gen = gen_atomic_compare_and_swapt1hi_1; break;
+	case SImode: gen = gen_atomic_compare_and_swapt1si_1; break;
+	case DImode: gen = gen_atomic_compare_and_swapt1di_1; break;
+	default:
+	  gcc_unreachable ();
+	}
+    }
+  else
+    {
+      switch (mode)
+	{
+	case QImode: gen = gen_atomic_compare_and_swap32qi_1; break;
+	case HImode: gen = gen_atomic_compare_and_swap32hi_1; break;
+	case SImode: gen = gen_atomic_compare_and_swap32si_1; break;
+	case DImode: gen = gen_atomic_compare_and_swap32di_1; break;
+	default:
+	  gcc_unreachable ();
+	}
     }
 
-  bdst = TARGET_THUMB1 ? bval : gen_rtx_REG (CCmode, CC_REGNUM);
+  bdst = TARGET_THUMB1 ? bval : gen_rtx_REG (CC_Zmode, CC_REGNUM);
   emit_insn (gen (bdst, rval, mem, oldval, newval, is_weak, mod_s, mod_f));
 
   if (mode == QImode || mode == HImode)
