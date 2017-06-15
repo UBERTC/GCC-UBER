@@ -1,3 +1,144 @@
+2017-06-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/81006
+	* semantics.c (handle_omp_array_sections_1): Convert TYPE_MAX_VALUE
+	to sizetype before size_binop.
+
+2017-05-30  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-04-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/80363
+	* error.c (dump_expr): Handle VEC_COND_EXPR like COND_EXPR.
+
+	2017-04-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/80176
+	* tree.c (lvalue_kind): For COMPONENT_REF with BASELINK second
+	operand, if it is a static member function, recurse on the
+	BASELINK.
+
+	2017-03-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/80141
+	* semantics.c (finish_omp_clause) <case OMP_CLAUSE_SIMDLEN,
+	case OMP_CLAUSE_ALIGNED>: Call maybe_constant_value only when not
+	processing_template_decl.
+
+	2017-03-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/79896
+	* decl.c (finish_enum_value_list): If value is error_mark_node,
+	don't copy it and change its type.
+	* init.c (constant_value_1): Return error_mark_node if DECL_INITIAL
+	of CONST_DECL is error_mark_node.
+
+	2017-02-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/79664
+	* parser.c (cp_parser_omp_teams, cp_parser_omp_target): Use
+	SET_EXPR_LOCATION on OMP_TARGET/OMP_TEAMS tree.
+	* constexpr.c (potential_constant_expression_1): Handle
+	OMP_*, OACC_* and CILK_* trees.
+
+	2017-02-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/79512
+	* parser.c (cp_parser_omp_target): For -fopenmp-simd
+	ignore #pragma omp target even when not followed by identifier.
+
+	2017-01-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/78341
+	* parser.c (cp_parser_std_attribute_spec): Remove over-eager
+	assertion.  Formatting fix.
+
+	2017-01-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/78949
+	* typeck.c (cp_build_unary_op): Call mark_rvalue_use on arg if it has
+	vector type.
+
+	2016-12-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/78649
+	* pt.c (tsubst_init): Don't call build_value_init if decl's type
+	is error_mark_node.
+
+	2016-11-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/77739
+	* cp-gimplify.c (cp_gimplify_tree) <case VEC_INIT_EXPR>: Pass
+	false as handle_invisiref_parm_p to cp_genericize_tree.
+	(struct cp_genericize_data): Add handle_invisiref_parm_p field.
+	(cp_genericize_r): Don't wrap is_invisiref_parm into references
+	if !wtd->handle_invisiref_parm_p.
+	(cp_genericize_tree): Add handle_invisiref_parm_p argument,
+	set wtd.handle_invisiref_parm_p to it.
+	(cp_genericize): Pass true as handle_invisiref_parm_p to
+	cp_genericize_tree.  Formatting fix.
+
+	2016-11-18  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/77285
+	* mangle.c (mangle_tls_init_fn, mangle_tls_wrapper_fn): Call
+	check_abi_tags.
+
+	2016-10-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/78089
+	* parser.c (cp_parser_postfix_expression): Replace return statement in
+	the first switch with setting postfix_expression to the return
+	expression and break;.
+
+	2016-09-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/77467
+	* constexpr.c (enum constexpr_switch_state): New.
+	(struct constexpr_ctx): Add css_state field.
+	(label_matches): Add CTX and STMT arguments, remove I and
+	DEFAULT_LABEL.  For CASE_LABEL_EXPR assert ctx->css_state != NULL,
+	handle default labels according to css_state.
+	(cxx_eval_statement_list): Remove statement skipping, label_matches
+	and default_label handling code.
+	(cxx_eval_loop_expr): Exit after first iteration even if
+	switches (jump_target).
+	(cxx_eval_switch_expr): Set up css_state field in ctx, if default
+	label has been seen in the body, but no cases matched, evaluate
+	the body second time.
+	(cxx_eval_constant_expression): Handle stmt skipping and label_matches
+	here.  Handle PREDICT_EXPR.  For MODIFY_EXPR or INIT_EXPR, assert
+	statement is not skipped.  For COND_EXPR during skipping, don't
+	evaluate condition, just the then block and if still skipping at the
+	end also the else block.
+	(cxx_eval_outermost_constant_expr): Adjust constexpr_ctx initializer.
+	(is_sub_constant_expr): Likewise.
+
+	2016-09-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/77722
+	* cp-gimplify.c (cp_ubsan_maybe_instrument_return): Instrument also
+	functions that have just a STATEMENT_LIST instead of BIND_EXPR, or
+	BIND_EXPR with some statement rather than STATEMENT_LIST as body.
+
+	2016-09-20  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/77637
+	* parser.c (cp_parser_std_attribute_list): Reject ... without
+	preceding attribute.
+
+	2016-09-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/77375
+	* class.c (check_bases): Set CLASSTYPE_HAS_MUTABLE if any
+	TYPE_HAS_MUTABLE_P for any bases.
+
+	2016-08-11  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/72868
+	* constexpr.c (label_matches): Handle case range expressions.
+
 2017-01-12  Nathan Sidwell  <nathan@acm.org>
 
 	PR c++/77812

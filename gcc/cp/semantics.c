@@ -4410,9 +4410,9 @@ handle_omp_array_sections_1 (tree c, tree t, vec<tree> &types,
 	  && TREE_CODE (TYPE_MAX_VALUE (TYPE_DOMAIN (type)))
 			== INTEGER_CST)
 	{
-	  tree size = size_binop (PLUS_EXPR,
-				  TYPE_MAX_VALUE (TYPE_DOMAIN (type)),
-				  size_one_node);
+	  tree size
+	    = fold_convert (sizetype, TYPE_MAX_VALUE (TYPE_DOMAIN (type)));
+	  size = size_binop (PLUS_EXPR, size, size_one_node);
 	  if (TREE_CODE (low_bound) == INTEGER_CST)
 	    {
 	      if (tree_int_cst_lt (size, low_bound))
@@ -5546,9 +5546,9 @@ finish_omp_clauses (tree clauses)
 	  else
 	    {
 	      t = mark_rvalue_use (t);
-	      t = maybe_constant_value (t);
 	      if (!processing_template_decl)
 		{
+		  t = maybe_constant_value (t);
 		  if (TREE_CODE (t) != INTEGER_CST
 		      || tree_int_cst_sgn (t) != 1)
 		    {
@@ -5726,9 +5726,9 @@ finish_omp_clauses (tree clauses)
 	  else
 	    {
 	      t = mark_rvalue_use (t);
-	      t = maybe_constant_value (t);
 	      if (!processing_template_decl)
 		{
+		  t = maybe_constant_value (t);
 		  if (TREE_CODE (t) != INTEGER_CST
 		      || tree_int_cst_sgn (t) != 1)
 		    {

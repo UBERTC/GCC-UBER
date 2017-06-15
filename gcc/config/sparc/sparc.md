@@ -328,7 +328,8 @@
 	     (const_int 2)
 	     (const_int 1))
 	 (eq_attr "type" "sibcall")
-	   (if_then_else (eq_attr "leaf_function" "true")
+	   (if_then_else (ior (eq_attr "leaf_function" "true")
+	                      (eq_attr "flat" "true"))
 	     (if_then_else (eq_attr "empty_delay_slot" "true")
 	       (const_int 3)
 	       (const_int 2))
@@ -6367,7 +6368,10 @@
 (define_expand "return"
   [(return)]
   "sparc_can_use_return_insn_p ()"
-  "")
+{
+  if (cfun->calls_alloca)
+    emit_insn (gen_frame_blockage ());
+})
 
 (define_insn "*return_internal"
   [(return)]

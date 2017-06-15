@@ -5894,7 +5894,10 @@ cp_parser_postfix_expression (cp_parser *parser, bool address_p, bool cast_p,
 	   can be used in constant-expressions.  */
 	if (!cast_valid_in_integral_constant_expression_p (type)
 	    && cp_parser_non_integral_constant_expression (parser, NIC_CAST))
-	  return error_mark_node;
+	  {
+	    postfix_expression = error_mark_node;
+	    break;
+	  }
 
 	switch (keyword)
 	  {
@@ -5966,7 +5969,7 @@ cp_parser_postfix_expression (cp_parser *parser, bool address_p, bool cast_p,
 	parser->type_definition_forbidden_message = saved_message;
 	/* `typeid' may not appear in an integral constant expression.  */
 	if (cp_parser_non_integral_constant_expression (parser, NIC_TYPEID))
-	  return error_mark_node;
+	  postfix_expression = error_mark_node;
       }
       break;
 
@@ -6045,23 +6048,28 @@ cp_parser_postfix_expression (cp_parser *parser, bool address_p, bool cast_p,
 		    /*cast_p=*/false, /*allow_expansion_p=*/true,
 		    /*non_constant_p=*/NULL);
 	if (vec == NULL)
-	  return error_mark_node;
+	  {
+	    postfix_expression = error_mark_node;
+	    break;
+	  }
 
 	FOR_EACH_VEC_ELT (*vec, i, p)
 	  mark_exp_read (p);
 
 	if (vec->length () == 2)
-	  return build_x_vec_perm_expr (loc, (*vec)[0], NULL_TREE, (*vec)[1],
-					 tf_warning_or_error);
+	  postfix_expression
+	    = build_x_vec_perm_expr (loc, (*vec)[0], NULL_TREE, (*vec)[1],
+				     tf_warning_or_error);
 	else if (vec->length () == 3)
-	  return build_x_vec_perm_expr (loc, (*vec)[0], (*vec)[1], (*vec)[2],
-					 tf_warning_or_error);
+	  postfix_expression
+	    = build_x_vec_perm_expr (loc, (*vec)[0], (*vec)[1], (*vec)[2],
+				     tf_warning_or_error);
 	else
-	{
-	  error_at (loc, "wrong number of arguments to "
-	      "%<__builtin_shuffle%>");
-	  return error_mark_node;
-	}
+	  {
+	    error_at (loc, "wrong number of arguments to "
+			   "%<__builtin_shuffle%>");
+	    postfix_expression = error_mark_node;
+	  }
 	break;
       }
 
@@ -22528,8 +22536,12 @@ cp_parser_std_attribute_list (cp_parser *parser)
       if (token->type == CPP_ELLIPSIS)
 	{
 	  cp_lexer_consume_token (parser->lexer);
-	  TREE_VALUE (attribute)
-	    = make_pack_expansion (TREE_VALUE (attribute));
+	  if (attribute == NULL_TREE)
+	    error_at (token->location,
+		      "expected attribute before %<...%>");
+	  else
+	    TREE_VALUE (attribute)
+	      = make_pack_expansion (TREE_VALUE (attribute));
 	  token = cp_lexer_peek_token (parser->lexer);
 	}
       if (token->type != CPP_COMMA)
@@ -22598,11 +22610,7 @@ cp_parser_std_attribute_spec (cp_parser *parser)
 
       if (!cp_parser_parse_definitely (parser))
 	{
-	  gcc_assert (alignas_expr == error_mark_node
-		      || alignas_expr == NULL_TREE);
-
-	  alignas_expr =
-	    cp_parser_assignment_expression (parser);
+	  alignas_expr = cp_parser_assignment_expression (parser);
 	  if (alignas_expr == error_mark_node)
 	    cp_parser_skip_to_end_of_statement (parser);
 	  if (alignas_expr == NULL_TREE
@@ -31392,6 +31400,7 @@ cp_parser_omp_teams (cp_parser *parser, cp_token *pragma_tok,
 	  OMP_TEAMS_CLAUSES (ret) = clauses;
 	  OMP_TEAMS_BODY (ret) = body;
 	  OMP_TEAMS_COMBINED (ret) = 1;
+	  SET_EXPR_LOCATION (ret, loc);
 	  return add_stmt (ret);
 	}
     }
@@ -31413,6 +31422,7 @@ cp_parser_omp_teams (cp_parser *parser, cp_token *pragma_tok,
   TREE_TYPE (stmt) = void_type_node;
   OMP_TEAMS_CLAUSES (stmt) = clauses;
   OMP_TEAMS_BODY (stmt) = cp_parser_omp_structured_block (parser);
+  SET_EXPR_LOCATION (stmt, loc);
 
   return add_stmt (stmt);
 }
@@ -31537,6 +31547,7 @@ cp_parser_omp_target (cp_parser *parser, cp_token *pragma_tok,
 	  TREE_TYPE (stmt) = void_type_node;
 	  OMP_TARGET_CLAUSES (stmt) = cclauses[C_OMP_CLAUSE_SPLIT_TARGET];
 	  OMP_TARGET_BODY (stmt) = body;
+	  SET_EXPR_LOCATION (stmt, pragma_tok->location);
 	  add_stmt (stmt);
 	  return true;
 	}
@@ -31558,6 +31569,11 @@ cp_parser_omp_target (cp_parser *parser, cp_token *pragma_tok,
 	}
     }
 
+  if (!flag_openmp)  /* flag_openmp_simd  */
+    {
+      cp_parser_skip_to_pragma_eol (parser, pragma_tok);
+      return false;
+    }
   tree stmt = make_node (OMP_TARGET);
   TREE_TYPE (stmt) = void_type_node;
 

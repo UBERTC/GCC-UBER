@@ -1,3 +1,52 @@
+2017-06-09  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/70601
+	* trans-expr.c (gfc_conv_procedure_call): Fix detection of allocatable
+	function results.
+
+2017-05-30  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2016-12-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/78866
+	* openmp.c (resolve_omp_clauses): Diagnose assumed size arrays in
+	OpenMP map, to and from clauses.
+	* trans-openmp.c: Include diagnostic-core.h, temporarily redefining
+	GCC_DIAG_STYLE to __gcc_tdiag__.
+	(gfc_omp_finish_clause): Diagnose implicitly mapped assumed size
+	arrays.
+
+	2016-09-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/77666
+	* trans-openmp.c (gfc_omp_private_outer_ref): Return true even for
+	references to allocatable arrays.
+
+	2016-09-08  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/77500
+	* trans-openmp.c (gfc_trans_omp_atomic): For atomic write or
+	swap, don't try to look through GFC_ISYM_CONVERSION.  In other cases,
+	check that value.function.isym is non-NULL before dereferencing it.
+
+2017-05-10  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-03-06  Richard Biener  <rguenther@suse.de>
+
+	PR fortran/79894
+	* trans.c (gfc_add_modify_loc): Weaken assert.
+
+2017-05-01  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/80392
+	* trans-types.c (gfc_get_derived_type): Prevent an infinite loop when
+	building a derived type that includes a procedure pointer component
+	with a polymorphic result.
+
 2017-04-21  Janus Weil  <janus@gcc.gnu.org>
 
 	Backport from trunk

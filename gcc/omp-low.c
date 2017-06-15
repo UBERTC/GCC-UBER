@@ -1166,7 +1166,8 @@ build_receiver_ref (tree var, bool by_ref, omp_context *ctx)
    this is some variable.  */
 
 static tree
-build_outer_var_ref (tree var, omp_context *ctx)
+build_outer_var_ref (tree var, omp_context *ctx,
+		     enum omp_clause_code code = OMP_CLAUSE_ERROR)
 {
   tree x;
 
@@ -1175,7 +1176,7 @@ build_outer_var_ref (tree var, omp_context *ctx)
   else if (is_variable_sized (var))
     {
       x = TREE_OPERAND (DECL_VALUE_EXPR (var), 0);
-      x = build_outer_var_ref (x, ctx);
+      x = build_outer_var_ref (x, ctx, code);
       x = build_simple_mem_ref (x);
     }
   else if (is_taskreg_ctx (ctx))
@@ -1183,11 +1184,17 @@ build_outer_var_ref (tree var, omp_context *ctx)
       bool by_ref = use_pointer_for_field (var, NULL);
       x = build_receiver_ref (var, by_ref, ctx);
     }
-  else if (gimple_code (ctx->stmt) == GIMPLE_OMP_FOR
-	   && gimple_omp_for_kind (ctx->stmt) & GF_OMP_FOR_SIMD)
+  else if ((gimple_code (ctx->stmt) == GIMPLE_OMP_FOR
+	    && gimple_omp_for_kind (ctx->stmt) & GF_OMP_FOR_SIMD)
+	   || (code == OMP_CLAUSE_PRIVATE
+	       && (gimple_code (ctx->stmt) == GIMPLE_OMP_FOR
+		   || gimple_code (ctx->stmt) == GIMPLE_OMP_SECTIONS
+		   || gimple_code (ctx->stmt) == GIMPLE_OMP_SINGLE)))
     {
-      /* #pragma omp simd isn't a worksharing construct, and can reference even
-	 private vars in its linear etc. clauses.  */
+      /* #pragma omp simd isn't a worksharing construct, and can reference
+	 even private vars in its linear etc. clauses.
+	 Similarly for OMP_CLAUSE_PRIVATE with outer ref, that can refer
+	 to private vars in all worksharing constructs.  */
       x = NULL_TREE;
       if (ctx->outer && is_taskreg_ctx (ctx))
 	x = lookup_decl (var, ctx->outer);
@@ -2371,9 +2378,11 @@ scan_omp_task (gimple_stmt_iterator *gsi, omp_context *outer_ctx)
   tree name, t;
   gomp_task *stmt = as_a <gomp_task *> (gsi_stmt (*gsi));
 
-  /* Ignore task directives with empty bodies.  */
+  /* Ignore task directives with empty bodies, unless they have depend
+     clause.  */
   if (optimize > 0
-      && empty_body_p (gimple_omp_body (stmt)))
+      && empty_body_p (gimple_omp_body (stmt))
+      && !find_omp_clause (gimple_omp_task_clauses (stmt), OMP_CLAUSE_DEPEND))
     {
       gsi_replace (gsi, gimple_build_nop (), false);
       return;
@@ -3546,7 +3555,9 @@ lower_rec_simd_input_clauses (tree new_var, omp_context *ctx, int &max_vf,
 	{
 	  tree c = find_omp_clause (gimple_omp_for_clauses (ctx->stmt),
 				    OMP_CLAUSE_SAFELEN);
-	  if (c && TREE_CODE (OMP_CLAUSE_SAFELEN_EXPR (c)) != INTEGER_CST)
+	  if (c
+	      && (TREE_CODE (OMP_CLAUSE_SAFELEN_EXPR (c)) != INTEGER_CST
+		  || tree_int_cst_sgn (OMP_CLAUSE_SAFELEN_EXPR (c)) != 1))
 	    max_vf = 1;
 	  else if (c && compare_tree_int (OMP_CLAUSE_SAFELEN_EXPR (c),
 					  max_vf) == -1)
@@ -3884,7 +3895,7 @@ lower_rec_input_clauses (tree clauses, gimple_seq *ilist, gimple_seq *dlist,
 		  if (is_task_ctx (ctx))
 		    x = build_receiver_ref (var, false, ctx);
 		  else
-		    x = build_outer_var_ref (var, ctx);
+		    x = build_outer_var_ref (var, ctx, OMP_CLAUSE_PRIVATE);
 		}
 	      else
 		x = NULL;
@@ -12944,7 +12955,9 @@ simd_clone_adjust_argument_types (struct cgraph_node *node)
 
 	  if (node->definition)
 	    node->simdclone->args[i].simd_array
-	      = create_tmp_simd_array (IDENTIFIER_POINTER (DECL_NAME (parm)),
+	      = create_tmp_simd_array (DECL_NAME (parm)
+				       ? IDENTIFIER_POINTER (DECL_NAME (parm))
+				       : NULL,
 				       parm_type, node->simdclone->simdlen);
 	}
       adjustments.safe_push (adj);

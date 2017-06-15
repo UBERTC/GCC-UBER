@@ -365,6 +365,10 @@ get_ubsan_type_info_for_type (tree type)
     return 0;
 }
 
+/* Counters for internal labels.  ubsan_ids[0] for Lubsan_type,
+   ubsan_ids[1] for Lubsan_data labels.  */
+static GTY(()) unsigned int ubsan_ids[2];
+
 /* Helper routine that returns ADDR_EXPR of a VAR_DECL of a type
    descriptor.  It first looks into the hash table; if not found,
    create the VAR_DECL, put it into the hash table and return the
@@ -512,10 +516,9 @@ ubsan_type_descriptor (tree type, enum ubsan_print_style pstyle)
   TREE_STATIC (str) = 1;
 
   char tmp_name[32];
-  static unsigned int type_var_id_num;
-  ASM_GENERATE_INTERNAL_LABEL (tmp_name, "Lubsan_type", type_var_id_num++);
+  ASM_GENERATE_INTERNAL_LABEL (tmp_name, "Lubsan_type", ubsan_ids[0]++);
   decl = build_decl (UNKNOWN_LOCATION, VAR_DECL, get_identifier (tmp_name),
-			  dtype);
+		     dtype);
   TREE_STATIC (decl) = 1;
   TREE_PUBLIC (decl) = 0;
   DECL_ARTIFICIAL (decl) = 1;
@@ -615,8 +618,7 @@ ubsan_create_data (const char *name, int loccnt, const location_t *ploc, ...)
 
   /* Now, fill in the type.  */
   char tmp_name[32];
-  static unsigned int ubsan_var_id_num;
-  ASM_GENERATE_INTERNAL_LABEL (tmp_name, "Lubsan_data", ubsan_var_id_num++);
+  ASM_GENERATE_INTERNAL_LABEL (tmp_name, "Lubsan_data", ubsan_ids[1]++);
   tree var = build_decl (UNKNOWN_LOCATION, VAR_DECL, get_identifier (tmp_name),
 			 ret);
   TREE_STATIC (var) = 1;
@@ -1772,7 +1774,7 @@ instrument_object_size (gimple_stmt_iterator *gsi, bool is_lhs)
 	{
 	  tree repr = DECL_BIT_FIELD_REPRESENTATIVE (TREE_OPERAND (t, 1));
 	  t = build3 (COMPONENT_REF, TREE_TYPE (repr), TREE_OPERAND (t, 0),
-		      repr, NULL_TREE);
+		      repr, TREE_OPERAND (t, 2));
 	}
       break;
     case ARRAY_REF:
@@ -1806,7 +1808,11 @@ instrument_object_size (gimple_stmt_iterator *gsi, bool is_lhs)
   bool decl_p = DECL_P (inner);
   tree base;
   if (decl_p)
-    base = inner;
+    {
+      if (DECL_REGISTER (inner))
+	return;
+      base = inner;
+    }
   else if (TREE_CODE (inner) == MEM_REF)
     base = TREE_OPERAND (inner, 0);
   else

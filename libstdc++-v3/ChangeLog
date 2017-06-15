@@ -1,3 +1,167 @@
+2017-06-07  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81002
+	* include/bits/regex_compiler.h (__compile_nfa): Add template argument
+	list to specify traits type.
+	* testsuite/28_regex/basic_regex/ctors/basic/iter.cc: New.
+
+2017-05-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/22_locale/codecvt/codecvt_utf16/79980.cc: Replace
+	effective-target with dg-options directive.
+	* testsuite/22_locale/codecvt/codecvt_utf16/80041.cc: Likewise.
+	* testsuite/22_locale/codecvt/codecvt_utf16/members.cc: Likewise.
+	* testsuite/22_locale/codecvt/codecvt_utf16/misaligned.cc: Likewise.
+	* testsuite/22_locale/codecvt/codecvt_utf8/79980.cc: Likewise.
+	* testsuite/22_locale/codecvt/codecvt_utf8/members.cc: Likewise.
+	* testsuite/22_locale/codecvt/codecvt_utf8_utf16/79511.cc: Likewise.
+	* testsuite/22_locale/codecvt/codecvt_utf8_utf16/members.cc: Likewise.
+
+	Backport from mainline
+	2016-08-02  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/18_support/bad_exception/23591_thread-1.c: Skip test if
+	options are present that aren't valid for C.
+	* testsuite/abi/header_cxxabi.c: Likewise.
+
+	Backport from mainline
+	2017-04-24  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80504
+	* include/std/functional (ref, cref): Qualify calls.
+	* testsuite/20_util/reference_wrapper/80504.cc: New test.
+
+	Backport from mainline
+	2017-04-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/80448
+	* include/experimental/bits/fs_dir.h (directory_iterator)
+	(recursive_directory_iterator): Remove noexcept from defaulted
+	constructors.
+
+	Backport from mainline
+	2017-04-03  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/20_util/reference_wrapper/invoke.cc: Uncomment tests
+	that no longer fail.
+
+	Backport from mainline
+	2017-04-03  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/bits/ios_base.h: Correct comment.
+	* testsuite/util/testsuite_hooks.h: Likewise.
+
+	Backport from mainline
+	2017-03-16  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/67440
+	* python/libstdcxx/v6/printers.py (find_type): Avoid gdb.Type.name
+	for GDB 7.6 compatibility, use gdb.Type.unqualified instead.
+
+	Backport from mainline
+	2017-01-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/69699
+	* doc/xml/manual/abi.xml (abi.versioning.history): Explain why the
+	_GLIBCXX__ macro is not useful. Remove redundant date information
+	and link to the GCC release timeline.
+	(abi.versioning.active): Move partial sentence into the previous
+	paragraph.
+	* doc/html/*: Regenerate.
+
+	Backport from mainline
+	2016-12-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/71444
+	* config/os/mingw32-w64/error_constants.h
+	(address_family_not_supported, address_in_use, address_not_available)
+	(already_connected, connection_aborted, connection_already_in_progress)
+	connection_refused, connection_reset, cross_device_link)
+	(destination_address_required, host_unreachable, message_size)
+	(network_down, network_reset, network_unreachable, no_buffer_space)
+	(no_protocol_option, not_a_socket, not_connected, operation_canceled)
+	(operation_in_progress, operation_not_supported, protocol_error)
+	(protocol_not_supported, too_many_links, too_many_symbolic_link_levels)
+	(value_too_large, wrong_protocol_type): Define.
+	(bad_message, identifier_removed, no_link, no_message_available)
+	(no_message, no_stream_resources, not_a_stream, owner_dead)
+	(state_not_recoverable, stream_timeout, text_file_busy): Define
+	conditionally.
+	* testsuite/19_diagnostics/headers/system_error/errc_std_c++0x.cc:
+	Guard test for no_message with _GLIBCXX_HAVE_ENOMSG.
+
+	Backport from mainline
+	2016-11-09  Tim Shen  <timshen@google.com>
+
+	PR libstdc++/78236
+	* libstdc++-v3/include/bits/regex.h (regex_iterator::regex_iterator()):
+	Define end() as _M_pregex == nullptr.
+	* libstdc++-v3/include/bits/regex.tcc (regex_iterator::operator==(),
+	regex_iterator::operator++()): Fix operator==() and operator++() to
+	look at null-ness of _M_pregex on both sides.
+	* testsuite/28_regex/regression.cc: New testcase.
+
+	Backport from mainline
+	2016-12-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/59170
+	* python/libstdcxx/v6/printers.py (StdListIteratorPrinter.to_string)
+	(StdSlistIteratorPrinter.to_string, StdVectorIteratorPrinter.to_string)
+	(StdRbtreeIteratorPrinter.to_string)
+	(StdDequeIteratorPrinter.to_string): Add check for value-initialized
+	iterators.
+	* testsuite/libstdc++-prettyprinters/simple.cc: Test them.
+	* testsuite/libstdc++-prettyprinters/simple11.cc: Likewise.
+
+	Backport from mainline
+	2016-12-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/59161
+	* python/libstdcxx/v6/printers.py (StdListIteratorPrinter.to_string)
+	(StdSlistIteratorPrinter.to_string, StdVectorIteratorPrinter.to_string)
+	(StdRbtreeIteratorPrinter.to_string, StdDequeIteratorPrinter.to_string)
+	(StdDebugIteratorPrinter.to_string): Return string instead of
+	gdb.Value.
+	* testsuite/libstdc++-prettyprinters/59161.cc: New test.
+
+	Backport from mainline
+	2016-10-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	* python/libstdcxx/v6/printers.py (build_libstdcxx_dictionary):
+	Register printer for std::__cxx11::list.
+	* python/libstdcxx/v6/xmethods.py (ListMethodsMatcher.match): Match
+	std::__cxx11::list as well as std::list.
+
+2017-05-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2017-03-15  Xi Ruoyao  <ryxi@stu.xidian.edu.cn>
+
+	PR libstdc++/62045
+	* include/ext/pb_ds/detail/binary_heap_/binary_heap_.hpp
+	(is_heap): Remove.
+	(push_heap): Remove the wrong checking using is_heap.
+	(make_heap): Remove the assertion using is_heap.
+	* include/ext/pb_ds/detail/binary_heap_/insert_fn_imps.hpp
+	(modify): Ditto.
+	(resize_for_insert_if_needed): Add PB_DS_ASSERT_VALID after
+	calling make_heap.
+
+	Backport from mainline
+	2017-03-15  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/62045
+	* testsuite/ext/pb_ds/regression/priority_queue_binary_heap-62045.cc:
+	New test.
+	* testsuite/ext/pb_ds/regression/priority_queues.cc: Fix copy&paste
+	error in comment.
+
+	Backport from mainline
+	2015-11-17  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/66059
+	* include/std/utility (_Build_index_tuple): Optimise.
+
 2017-03-17  Jonathan Wakely  <jwakely@redhat.com>
 
 	Backport from mainline
