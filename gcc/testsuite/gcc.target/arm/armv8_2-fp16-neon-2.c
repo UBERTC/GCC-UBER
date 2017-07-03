@@ -1,9 +1,10 @@
 /* { dg-do compile }  */
 /* { dg-require-effective-target arm_v8_2a_fp16_neon_ok }  */
-/* { dg-options "-O2" }  */
+/* { dg-options "-O2 -ffast-math" }  */
 /* { dg-add-options arm_v8_2a_fp16_neon }  */
 
-/* Test instructions generated for the FP16 vector intrinsics.  */
+/* Test instructions generated for the FP16 vector intrinsics with
+   -ffast-math */
 
 #include <arm_neon.h>
 
