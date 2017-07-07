@@ -2039,7 +2039,7 @@ static cp_expr cp_parser_id_expression
 static cp_expr cp_parser_unqualified_id
   (cp_parser *, bool, bool, bool, bool);
 static tree cp_parser_nested_name_specifier_opt
-  (cp_parser *, bool, bool, bool, bool);
+  (cp_parser *, bool, bool, bool, bool, bool = false);
 static tree cp_parser_nested_name_specifier
   (cp_parser *, bool, bool, bool, bool);
 static tree cp_parser_qualifying_entity
@@ -2983,7 +2983,9 @@ cp_parser_check_for_invalid_template_id (cp_parser* parser,
 
   if (cp_lexer_next_token_is (parser->lexer, CPP_LESS))
     {
-      if (TYPE_P (type))
+      if (TREE_CODE (type) == TYPE_DECL)
+	type = TREE_TYPE (type);
+      if (TYPE_P (type) && !template_placeholder_p (type))
 	error_at (location, "%qT is not a template", type);
       else if (identifier_p (type))
 	{
@@ -5406,16 +5408,21 @@ cp_parser_id_expression (cp_parser *parser,
 
   /* Look for the optional `::' operator.  */
   global_scope_p
-    = (cp_parser_global_scope_opt (parser, /*current_scope_valid_p=*/false)
-       != NULL_TREE);
+    = (!template_keyword_p
+       && (cp_parser_global_scope_opt (parser,
+				       /*current_scope_valid_p=*/false)
+	   != NULL_TREE));
+
   /* Look for the optional nested-name-specifier.  */
   nested_name_specifier_p
     = (cp_parser_nested_name_specifier_opt (parser,
 					    /*typename_keyword_p=*/false,
 					    check_dependency_p,
 					    /*type_p=*/false,
-					    declarator_p)
+					    declarator_p,
+					    template_keyword_p)
        != NULL_TREE);
+
   /* If there is a nested-name-specifier, then we are looking at
      the first qualified-id production.  */
   if (nested_name_specifier_p)
@@ -5860,7 +5867,8 @@ cp_parser_nested_name_specifier_opt (cp_parser *parser,
 				     bool typename_keyword_p,
 				     bool check_dependency_p,
 				     bool type_p,
-				     bool is_declaration)
+				     bool is_declaration,
+				     bool template_keyword_p /* = false */)
 {
   bool success = false;
   cp_token_position start = 0;
@@ -5878,7 +5886,6 @@ cp_parser_nested_name_specifier_opt (cp_parser *parser,
       tree new_scope;
       tree old_scope;
       tree saved_qualifying_scope;
-      bool template_keyword_p;
 
       /* Spot cases that cannot be the beginning of a
 	 nested-name-specifier.  */
@@ -5950,8 +5957,6 @@ cp_parser_nested_name_specifier_opt (cp_parser *parser,
 	 first time through the loop.  */
       if (success)
 	template_keyword_p = cp_parser_optional_template_keyword (parser);
-      else
-	template_keyword_p = false;
 
       /* Save the old scope since the name lookup we are about to do
 	 might destroy it.  */
@@ -9447,10 +9452,14 @@ cp_parser_constant_expression (cp_parser* parser,
       /* Require an rvalue constant expression here; that's what our
 	 callers expect.  Reference constant expressions are handled
 	 separately in e.g. cp_parser_template_argument.  */
-      bool is_const = potential_rvalue_constant_expression (expression);
+      tree decay = expression;
+      if (TREE_TYPE (expression)
+	  && TREE_CODE (TREE_TYPE (expression)) == ARRAY_TYPE)
+	decay = build_address (expression);
+      bool is_const = potential_rvalue_constant_expression (decay);
       parser->non_integral_constant_expression_p = !is_const;
       if (!is_const && !allow_non_constant_p)
-	require_potential_rvalue_constant_expression (expression);
+	require_potential_rvalue_constant_expression (decay);
     }
   if (allow_non_constant_p)
     *non_constant_p = parser->non_integral_constant_expression_p;
@@ -15710,15 +15719,19 @@ cp_parser_template_name (cp_parser* parser,
 	 no point in doing name-lookup, so we just return IDENTIFIER.
 	 But, if the qualifying scope is non-dependent then we can
 	 (and must) do name-lookup normally.  */
-      if (template_keyword_p
-	  && (!parser->scope
-	      || (TYPE_P (parser->scope)
-		  && dependent_type_p (parser->scope))))
+      if (template_keyword_p)
 	{
-	  /* We're optimizing away the call to cp_parser_lookup_name, but we
-	     still need to do this.  */
-	  parser->context->object_type = NULL_TREE;
-	  return identifier;
+	  tree scope = (parser->scope ? parser->scope
+			: parser->context->object_type);
+	  if (scope && TYPE_P (scope)
+	      && (!CLASS_TYPE_P (scope)
+		  || (check_dependency_p && dependent_type_p (scope))))
+	    {
+	      /* We're optimizing away the call to cp_parser_lookup_name, but
+		 we still need to do this.  */
+	      parser->context->object_type = NULL_TREE;
+	      return identifier;
+	    }
 	}
     }
 
@@ -16942,7 +16955,7 @@ cp_parser_simple_type_specifier (cp_parser* parser,
       /* There is no valid C++ program where a non-template type is
 	 followed by a "<".  That usually indicates that the user
 	 thought that the type was a template.  */
-      cp_parser_check_for_invalid_template_id (parser, TREE_TYPE (type),
+      cp_parser_check_for_invalid_template_id (parser, type,
 					       none_type,
 					       token->location);
     }
