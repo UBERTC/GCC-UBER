@@ -1319,7 +1319,6 @@ aarch64_load_symref_appropriately (rtx dest, rtx imm,
 
 	    if (mode != GET_MODE (gp_rtx))
              gp_rtx = gen_lowpart (mode, gp_rtx);
-
 	  }
 
 	if (mode == ptr_mode)

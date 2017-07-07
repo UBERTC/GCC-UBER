@@ -4422,6 +4422,9 @@ process_command (unsigned int decoded_options_count,
 		       output_file);
     }
 
+  if (output_file != NULL && output_file[0] == '\0')
+    fatal_error (input_location, "output filename may not be empty");
+
   /* If -save-temps=obj and -o name, create the prefix to use for %b.
      Otherwise just make -save-temps=obj the same as -save-temps=cwd.  */
   if (save_temps_flag == SAVE_TEMPS_OBJ && save_temps_prefix != NULL)
@@ -7916,7 +7919,7 @@ driver::maybe_print_and_exit () const
     {
       printf (_("%s %s%s\n"), progname, pkgversion_string,
 	      version_string);
-      printf ("Copyright %s 2016 Free Software Foundation, Inc.\n",
+      printf ("Copyright %s 2017 Free Software Foundation, Inc.\n",
 	      _("(C)"));
       fputs (_("This is free software; see the source for copying conditions.  There is NO\n\
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n"),

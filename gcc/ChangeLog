@@ -1,3 +1,427 @@
+2017-07-06  Andrew Pinski  <apinski@cavium.com>
+
+	* config/aarch64/aarch64.c (aarch64_load_symref_appropriately):
+	Access the lower part of RTX appropriately.
+
+2017-07-04  Richard Biener  <rguenther@suse.de>
+
+	* BASE-VER: Bump to 6.4.1.
+
+2017-07-04  Release Manager
+
+	* GCC 6.4.0 released.
+
+2017-07-03  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backport from trunk:
+
+	2017-06-15  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	* config/rs6000/rs6000.md (add<mode>3): Use reg_or_subregno instead
+	of REGNO.
+
+2017-06-30  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-06-23  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/80510
+	* config/rs6000/rs6000.md (ALTIVEC_DFORM): Do not allow DImode in
+	32-bit, since indexed is not valid for DImode.
+	(mov<mode>_hardfloat32): Reorder ISA 2.07 load/stores before ISA
+	3.0 d-form load/stores to be the same as mov<mode>_hardfloat64.
+	(define_peephole2 for Altivec d-form load): Add 32-bit support.
+	(define_peephole2 for Altivec d-form store): Likewise.
+
+2017-06-27  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backports from trunk:
+
+	2016-08-15  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR rtl-optimization/73650
+	* lra-constraints.c (simple_move_p): If the insn is multiple_sets
+	it is not a simple move.
+
+	2017-01-20  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR target/61729
+	PR target/77850
+	* config/rs6000/rs6000.c (rs6000_gimplify_va_arg): Adjust address to
+	read from, for big endian.
+
+	2017-04-04  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR rtl-optimization/60818
+	* simplify-rtx.c (simplify_binary_operation_1): Do not replace
+	a compare of comparisons with the thing compared if this results
+	in a different machine mode.
+
+	2017-04-12  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR target/80382
+	* config/rs6000/sync.md (atomic_load<mode>, atomic_store<mode): Test
+	for quad_address_p for TImode, instead of just not indexed_address.
+
+	2017-04-19  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR rtl-optimization/80429
+	* ira.c (split_live_ranges_for_shrink_wrap): Don't split regs that
+	are only used in debug insns.
+
+	2017-05-17  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR middle-end/80692
+	* real.c (do_compare): Give decimal_do_compare preference over
+	comparing just the signs.
+
+	2017-05-31  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR target/80618
+	* config/rs6000/vector.md (*vector_uneq<mode>): Write the nor in the
+	splitter result in the canonical way.
+
+	2017-06-09  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR target/80966
+	* config/rs6000/rs6000.c (rs6000_emit_allocate_stack): Assert that
+	gen_add3_insn did not fail.
+	* config/rs6000/rs6000.md (add<mode>3): If asked to add a constant to
+	r0, construct that number in a temporary reg and add that reg to r0.
+	If asked to put the result in r0 as well, fail.
+
+	2017-06-23  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR middle-end/80902
+	* builtins.c (expand_builtin_atomic_fetch_op): If emitting code after
+	a call, force the call to not be a tail call.
+
+2017-06-23  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2017-05-04  Prakhar Bahuguna  <prakhar.bahuguna@arm.com>
+
+	* config/arm/arm-builtins.c (arm_init_builtins): Rename
+	__builtin_arm_ldfscr to __builtin_arm_get_fpscr, and rename
+	__builtin_arm_stfscr to __builtin_arm_set_fpscr.
+
+2017-06-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-02-17  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/79552
+	* tree-ssa-structalias.c (visit_loadstore): Properly verify
+	default defs.
+
+	2016-04-18  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/43434
+	* tree-ssa-structalias.c (struct vls_data): New.
+	(visit_loadstore): Handle all pointer-based accesses.
+	(compute_dependence_clique): Compute a bitmap of restrict tags
+	assigned bases and pass it to visit_loadstore.
+
+2017-06-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-06-21  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/81130
+	* gimplify.c (omp_add_variable): Don't force GOVD_SEEN for types
+	with ctors/dtors if GOVD_SHARED is set.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-05-31  Martin Liska  <mliska@suse.cz>
+
+	PR target/79155
+	* config/i386/cpuid.h: Fix typo in a comment in cpuid.h.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-05-30  Martin Liska  <mliska@suse.cz>
+
+	PR other/80909
+	* auto-profile.c (get_function_decl_from_block): Fix
+	parenthesis.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-05-26  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/80663
+	* params.def: Bound partial-inlining-entry-probability param.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-05-16  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/79849.
+	PR ipa/79850.
+	* ipa-devirt.c (warn_types_mismatch): Fix typo.
+	(odr_types_equivalent_p): Likewise.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-05-15  Martin Liska  <mliska@suse.cz>
+
+	PR driver/31468
+	* gcc.c (process_command): Do not allow empty argument of -o option.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-05-02  Martin Liska  <mliska@suse.cz>
+
+	* doc/gcov.texi: Add missing preposition.
+	* gcov.c (function_info::function_info): Properly fill up
+	all member variables.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-05-02  Martin Liska  <mliska@suse.cz>
+
+	PR other/80589
+	* common.opt: Fix typo.
+	* doc/invoke.texi: Likewise.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-28  Martin Liska  <mliska@suse.cz>
+
+	* doc/gcov.texi: Enhance documentation of gcov.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-28  Martin Liska  <mliska@suse.cz>
+
+	* doc/gcov.texi: Sort options in alphabetic order.
+	* doc/gcov-dump.texi: Likewise.
+	* doc/gcov-tool.texi: Likewise.
+	* gcov.c (print_usage): Likewise.
+	* gcov-dump.c (print_usage): Likewise.
+	* gcov-tool.c (print_merge_usage_message): Likewise.
+	(print_rewrite_usage_message): Likewise.
+	(print_overlap_usage_message): Likewise.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-28  Martin Liska  <mliska@suse.cz>
+
+	PR gcov-profile/53915
+	* gcov.c (format_gcov): Print 'NAN %' when top > bottom.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-28  Martin Liska  <mliska@suse.cz>
+
+	PR driver/56469
+	* coverage.c (coverage_remove_note_file): New function.
+	* coverage.h: Declare the function.
+	* toplev.c (finalize): Clean if an error has been seen.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-04-12  Jan Hubicka  <hubicka@ucw.cz>
+
+	PR lto/69953
+	* ipa-visibility.c (non_local_p): Fix typos.
+	(localize_node): When localizing symbol in same comdat group,
+	dissolve the group only when we know external symbols are going
+	to be privatized.
+	(function_and_variable_visibility): Do not localize DECL_EXTERNAL.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-17  Nathan Sidwell  <nathan@acm.org>
+
+	* ipa-visibility.c (localize_node): New function, broken out of ...
+	(function_and_variable_visibility): ... here. Call it.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-01-06  Nathan Sidwell  <nathan@acm.org>
+
+	* ipa-visibility.c (function_and_variable_visibility): Reformat
+	comments and long lines.  Remove extrneous if.
+	* symtab.c (symtab_node::make_decl_local): Fix code format.
+	(symtab_node::set_section_for_node): Fix comment typo.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2016-10-20  Martin Liska  <mliska@suse.cz>
+
+	PR lto/78049
+	* lto-streamer-in.c (fixup_call_stmt_edges_1): Replace value
+	comparison with STMT_UID_NOT_IN_RANGE.
+	(fixup_call_stmt_edges): Do not fixup edges of a thunk in
+	LTRANS.
+
+2017-06-22  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-05-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/80809
+	* omp-low.c (finish_taskreg_remap): New function.
+	(finish_taskreg_scan): If unit size of ctx->record_type
+	is non-constant, unshare the size expression and replace
+	decls in it with possible outer var refs.
+
+	PR middle-end/80809
+	* gimplify.c (omp_add_variable): For GOVD_DEBUG_PRIVATE use
+	GOVD_SHARED rather than GOVD_PRIVATE with it.
+	(gimplify_adjust_omp_clauses_1, gimplify_adjust_omp_clauses): Expect
+	GOVD_SHARED rather than GOVD_PRIVATE with GOVD_DEBUG_PRIVATE.
+
+	PR middle-end/80853
+	* omp-low.c (lower_reduction_clauses): Pass OMP_CLAUSE_PRIVATE
+	as last argument to build_outer_var_ref for pointer bases of array
+	section reductions.
+
+2017-06-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-04-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/80453
+	* tree-ssa-sccvn.h (struct vn_phi_s): Add cclhs and ccrhs members.
+	* tree-ssa-sccvn.c (cond_stmts_equal_p): Use recorded lhs and rhs
+	from the conditions.
+	(vn_phi_eq): Pass them down.
+	(vn_phi_lookup): Record them.
+	(vn_phi_insert): Likewise.
+
+	2017-04-07  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/80341
+	* tree.c (get_unwidened): Also handle ! for_type case for
+	INTEGER_CSTs.
+	* convert.c (do_narrow): Split out from ...
+	(convert_to_integer_1): ... here.  Do not pass final truncation
+	type to get_unwidened for TRUNC_DIV_EXPR.
+
+	2017-04-04  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/80281
+	* match.pd (A + (-B) -> A - B): Make sure to preserve unsigned
+	arithmetic done for the negate or the plus.  Simplify.
+	(A - (-B) -> A + B): Likewise.
+	* fold-const.c (split_tree): Make sure to not negate pointers.
+
+2017-06-22  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-01-30  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/79256
+	* targhooks.c (default_builtin_vector_alignment_reachable): Honor
+	BIGGEST_FIELD_ALIGNMENT and ADJUST_FIELD_ALIGN to fix up bogus
+	alignment on TYPE.
+	* tree.c (build_aligned_type): Set TYPE_USER_ALIGN.
+
+	2017-01-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69264
+	* target.def (vector_alignment_reachable): Improve documentation.
+	* doc/tm.texi: Regenerate.
+	* targhooks.c (default_builtin_vector_alignment_reachable): Simplify
+	and add a comment.
+	* tree-vect-data-refs.c (vect_supportable_dr_alignment): Revert
+	earlier changes with respect to TYPE_USER_ALIGN.
+	(vector_alignment_reachable_p): Likewise.  Improve dumping.
+
+	2017-02-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/69823
+	* graphite-scop-detection.c (scop_detection::harmful_loop_in_region):
+	Properly enumerate all BBs in the region.  Use auto_vec.
+
+2017-06-21  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from mainline
+	2017-05-19  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/80718
+	* config/rs6000/vsx.md (vsx_splat_<mode>, VSX_D iterator): Prefer
+	VSX registers over GPRs, particularly on ISA 2.07 which does not
+	have the MTVSRDD instruction.
+
+	Back port from mainline
+	2017-05-18  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/80510
+	* config/rs6000/predicates.md (simple_offsettable_mem_operand):
+	New predicate.
+
+	* config/rs6000/rs6000.md (ALTIVEC_DFORM): New iterator.
+	(define_peephole2 for Altivec d-form load): Add peepholes to catch
+	cases where the register allocator uses a move and an offsettable
+	memory operation to/from a FPR register on ISA 2.06/2.07.
+	(define_peephole2 for Altivec d-form store): Likewise.
+
+	Back port from mainline
+	2017-05-09  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/68163
+	* config/rs6000/rs6000.md (f32_lr): Delete mode attributes that
+	are now unused after splitting mov{sf,sd}_hardfloat.
+	(f32_lr2): Likewise.
+	(f32_lm): Likewise.
+	(f32_lm2): Likewise.
+	(f32_li): Likewise.
+	(f32_li2): Likewise.
+	(f32_lv): Likewise.
+	(f32_sr): Likewise.
+	(f32_sr2): Likewise.
+	(f32_sm): Likewise.
+	(f32_sm2): Likewise.
+	(f32_si): Likewise.
+	(f32_si2): Likewise.
+	(f32_sv): Likewise.
+	(f32_dm): Likewise.
+	(f32_vsx): Likewise.
+	(f32_av): Likewise.
+	(mov<mode>_hardfloat): Split into separate movsf and movsd pieces.
+	For movsf, order stores so the VSX stores occur before the GPR
+	store which encourages the register allocator to use a traditional
+	FPR instead of a GPR.  For movsd, order the stores so that the GPR
+	store comes before the VSX stores to allow the power6 to work.
+	This is due to the power6 not having a 32-bit integer store
+	instruction from a FPR.
+	(movsf_hardfloat): Likewise.
+	(movsd_hardfloat): Likewise.
+
+2017-06-21  Jeff Law  <law@redhat.com>
+
+	* config/darwin-driver.c (darwin_driver_init): Const-correctness
+	fixes for first_period and second_period variables.
+
+2017-06-19  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	Backport from mainline
+	2017-06-16  James Greenhalgh  <james.greenhalgh@arm.com>
+
+	PR target/71778
+	* config/arm/arm-builtins.c (arm_expand_builtin_args): Return TARGET
+	if given a non-constant argument for an intrinsic which requires a
+	constant.
+
+2017-06-15  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR rtl-optimization/80474
+	* reorg.c (update_block): Do not ignore instructions in a delay slot.
+
+2017-06-14  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/sparc/driver-sparc.c (cpu_names): Add SPARC-T5 entry.
+
 2017-06-09  David S. Miller  <davem@davemloft.net>
 
 	PR target/80968
