@@ -132,9 +132,9 @@ print_usage (void)
   printf ("Usage: gcov-dump [OPTION] ... gcovfiles\n");
   printf ("Print coverage file contents\n");
   printf ("  -h, --help           Print this help\n");
-  printf ("  -v, --version        Print version number\n");
   printf ("  -l, --long           Dump record contents too\n");
   printf ("  -p, --positions      Dump record positions\n");
+  printf ("  -v, --version        Print version number\n");
   printf ("  -w, --working-sets   Dump working set computed from summary\n");
   printf ("\nFor bug reporting instructions, please see:\n%s.\n",
 	   bug_report_url);
@@ -144,7 +144,7 @@ static void
 print_version (void)
 {
   printf ("gcov-dump %s%s\n", pkgversion_string, version_string);
-  printf ("Copyright (C) 2016 Free Software Foundation, Inc.\n");
+  printf ("Copyright (C) 2017 Free Software Foundation, Inc.\n");
   printf ("This is free software; see the source for copying conditions.\n"
   	  "There is NO warranty; not even for MERCHANTABILITY or \n"
 	  "FITNESS FOR A PARTICULAR PURPOSE.\n\n");
