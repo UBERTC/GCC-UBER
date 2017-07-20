@@ -1,3 +1,74 @@
+2017-07-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81471
+	* gcc.target/i386/pr81471.c: New test.
+
+2017-07-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-07-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81375
+	* gcc.target/i386/pr81375.c: New test.
+
+	Backport from mainline
+	2017-07-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81300
+	* gcc.target/i386/pr81300.c: New test.
+
+2017-07-03  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	* gcc.target/arm/fpscr.c: Require arm_vfp_ok instead of arm_fp_ok and
+	add -mfpu=vfp -mfloat-abi=softfp instead of fp_ok options.
+
+2017-07-03  Tom de Vries  <tom@codesourcery.com>
+
+	backport from mainline:
+	PR tree-optimization/81192
+	2017-07-03  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/pr81192.c: New test.
+
+2017-06-27  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Revert:
+	Backport from trunk:
+
+	2017-06-09  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR target/80966
+	* gcc.target/powerpc/stack-limit.c: New testcase.
+
+2017-06-27  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	Backports from trunk:
+
+	2017-05-17  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR middle-end/80692
+	* gcc.c-torture/execute/pr80692.c: New testcase.
+
+	2017-06-09  Segher Boessenkool  <segher@kernel.crashing.org>
+	PR target/80966
+	* gcc.target/powerpc/stack-limit.c: New testcase.
+
+2017-06-23  Thomas Preud'homme  <thomas.preudhomme@arm.com>
+
+	Backport from mainline
+	2017-05-04  Prakhar Bahuguna  <prakhar.bahuguna@arm.com>
+
+	* gcc.target/arm/fpscr.c: New file.
+
+2017-06-22  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-05-26  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/80663
+	* g++.dg/ipa/pr80212.C: Remove the test as it does not longer
+	split at the problematic spot.
+	* gcc.dg/ipa/pr48195.c: Change 101 to 100 as 101 is no longer
+	a valid value of the param.
+
 2017-06-09  Janus Weil  <janus@gcc.gnu.org>
 
 	Backport from trunk
