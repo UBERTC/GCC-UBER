@@ -1393,6 +1393,21 @@ cxx_eval_internal_function (const constexpr_ctx *ctx, tree t,
   return t;
 }
 
+/* Clean CONSTRUCTOR_NO_IMPLICIT_ZERO from CTOR and its sub-aggregates.  */
+
+static void
+clear_no_implicit_zero (tree ctor)
+{
+  if (CONSTRUCTOR_NO_IMPLICIT_ZERO (ctor))
+    {
+      CONSTRUCTOR_NO_IMPLICIT_ZERO (ctor) = false;
+      tree elt; unsigned HOST_WIDE_INT idx;
+      FOR_EACH_CONSTRUCTOR_VALUE (CONSTRUCTOR_ELTS (ctor), idx, elt)
+	if (TREE_CODE (elt) == CONSTRUCTOR)
+	  clear_no_implicit_zero (elt);
+    }
+}
+
 /* Subroutine of cxx_eval_constant_expression.
    Evaluate the call expression tree T in the context of OLD_CALL expression
    evaluation.  */
@@ -1696,7 +1711,7 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
 
   /* The result of a constexpr function must be completely initialized.  */
   if (TREE_CODE (result) == CONSTRUCTOR)
-    CONSTRUCTOR_NO_IMPLICIT_ZERO (result) = false;
+    clear_no_implicit_zero (result);
 
   pop_cx_call_context ();
   return unshare_constructor (result);
@@ -4021,6 +4036,13 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
       break;
 
     case DECL_EXPR:
+      if (!potential_constant_expression (t))
+	{
+	  if (!ctx->quiet)
+	    require_potential_constant_expression (t);
+	  *non_constant_p = true;
+	  break;
+	}
       {
 	r = DECL_EXPR_DECL (t);
 	if (AGGREGATE_TYPE_P (TREE_TYPE (r))
@@ -5293,7 +5315,7 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
       {
         tree x = TREE_OPERAND (t, 0);
         STRIP_NOPS (x);
-        if (is_this_parameter (x))
+        if (is_this_parameter (x) && !is_capture_proxy (x))
 	  {
 	    if (DECL_CONTEXT (x)
 		&& !DECL_DECLARED_CONSTEXPR_P (DECL_CONTEXT (x)))
