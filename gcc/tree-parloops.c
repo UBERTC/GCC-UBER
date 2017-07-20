@@ -1824,7 +1824,7 @@ try_transform_to_exit_first_loop_alt (struct loop *loop,
   /* Figure out whether nit + 1 overflows.  */
   if (TREE_CODE (nit) == INTEGER_CST)
     {
-      if (!tree_int_cst_equal (nit, TYPE_MAXVAL (nit_type)))
+      if (!tree_int_cst_equal (nit, TYPE_MAX_VALUE (nit_type)))
 	{
 	  alt_bound = fold_build2_loc (UNKNOWN_LOCATION, PLUS_EXPR, nit_type,
 				       nit, build_one_cst (nit_type));
@@ -1869,7 +1869,7 @@ try_transform_to_exit_first_loop_alt (struct loop *loop,
     return false;
 
   /* Check if nit + 1 overflows.  */
-  widest_int type_max = wi::to_widest (TYPE_MAXVAL (nit_type));
+  widest_int type_max = wi::to_widest (TYPE_MAX_VALUE (nit_type));
   if (nit_max >= type_max)
     return false;
 
@@ -2115,10 +2115,12 @@ create_parallel_loop (struct loop *loop, tree loop_fn, tree data,
   gcc_assert (exit == single_dom_exit (loop));
 
   guard = make_edge (for_bb, ex_bb, 0);
+  /* FIXME: What is the probability?  */
+  guard->probability = profile_probability::guessed_never ();
   /* Split the latch edge, so LOOPS_HAVE_SIMPLE_LATCHES is still valid.  */
   loop->latch = split_edge (single_succ_edge (loop->latch));
   single_pred_edge (loop->latch)->flags = 0;
-  end = make_edge (single_pred (loop->latch), ex_bb, EDGE_FALLTHRU);
+  end = make_single_succ_edge (single_pred (loop->latch), ex_bb, EDGE_FALLTHRU);
   rescan_loop_exit (end, true, false);
 
   for (gphi_iterator gpi = gsi_start_phis (ex_bb);
@@ -2249,7 +2251,6 @@ gen_parallel_loop (struct loop *loop,
   gimple_seq stmts;
   edge entry, exit;
   struct clsn_data clsn_data;
-  unsigned prob;
   location_t loc;
   gimple *cond_stmt;
   unsigned int m_p_thread=2;
@@ -2356,10 +2357,11 @@ gen_parallel_loop (struct loop *loop,
       initialize_original_copy_tables ();
 
       /* We assume that the loop usually iterates a lot.  */
-      prob = 4 * REG_BR_PROB_BASE / 5;
       loop_version (loop, many_iterations_cond, NULL,
-		    prob, REG_BR_PROB_BASE - prob,
-		    prob, REG_BR_PROB_BASE - prob, true);
+		    profile_probability::likely (),
+		    profile_probability::unlikely (),
+		    profile_probability::likely (),
+		    profile_probability::unlikely (), true);
       update_ssa (TODO_update_ssa);
       free_original_copy_tables ();
     }
@@ -2436,8 +2438,7 @@ gen_parallel_loop (struct loop *loop,
 
   /* Free loop bound estimations that could contain references to
      removed statements.  */
-  FOR_EACH_LOOP (loop, 0)
-    free_numbers_of_iterations_estimates_loop (loop);
+  free_numbers_of_iterations_estimates (cfun);
 }
 
 /* Returns true when LOOP contains vector phi nodes.  */
@@ -3133,6 +3134,8 @@ oacc_entry_exit_single_gang (bitmap in_loop_bbs, vec<basic_block> region_bbs,
 	    gsi_insert_after (&gsi2, cond, GSI_NEW_STMT);
 
 	    edge e3 = make_edge (bb, bb3, EDGE_FALSE_VALUE);
+	    /* FIXME: What is the probability?  */
+	    e3->probability = profile_probability::guessed_never ();
 	    e->flags = EDGE_TRUE_VALUE;
 
 	    tree vdef = gimple_vdef (stmt);

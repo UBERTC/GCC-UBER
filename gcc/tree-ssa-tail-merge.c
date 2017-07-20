@@ -207,6 +207,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-eh.h"
 #include "tree-cfgcleanup.h"
 
+const int ignore_edge_flags = EDGE_DFS_BACK | EDGE_EXECUTABLE;
+
 /* Describes a group of bbs with the same successors.  The successor bbs are
    cached in succs, and the successor edge flags are cached in succ_flags.
    If a bb has the EDGE_TRUE/FALSE_VALUE flags swapped compared to succ_flags,
@@ -479,6 +481,8 @@ same_succ_hash (const same_succ *e)
   hstate.add_int (size);
   BB_SIZE (bb) = size;
 
+  hstate.add_int (bb->loop_father->num);
+
   for (i = 0; i < e->succ_flags.length (); ++i)
     {
       flags = e->succ_flags[i];
@@ -566,6 +570,9 @@ same_succ::equal (const same_succ *e1, const same_succ *e2)
   bb2 = BASIC_BLOCK_FOR_FN (cfun, first2);
 
   if (BB_SIZE (bb1) != BB_SIZE (bb2))
+    return 0;
+
+  if (bb1->loop_father != bb2->loop_father)
     return 0;
 
   gsi1 = gsi_start_nondebug_bb (bb1);
@@ -695,22 +702,14 @@ find_same_succ_bb (basic_block bb, same_succ **same_p)
   edge_iterator ei;
   edge e;
 
-  if (bb == NULL
-      /* Be conservative with loop structure.  It's not evident that this test
-	 is sufficient.  Before tail-merge, we've just called
-	 loop_optimizer_finalize, and LOOPS_MAY_HAVE_MULTIPLE_LATCHES is now
-	 set, so there's no guarantee that the loop->latch value is still valid.
-	 But we assume that, since we've forced LOOPS_HAVE_SIMPLE_LATCHES at the
-	 start of pre, we've kept that property intact throughout pre, and are
-	 keeping it throughout tail-merge using this test.  */
-      || bb->loop_father->latch == bb)
+  if (bb == NULL)
     return;
   bitmap_set_bit (same->bbs, bb->index);
   FOR_EACH_EDGE (e, ei, bb->succs)
     {
       int index = e->dest->index;
       bitmap_set_bit (same->succs, index);
-      same_succ_edge_flags[index] = e->flags;
+      same_succ_edge_flags[index] = (e->flags & ~ignore_edge_flags);
     }
   EXECUTE_IF_SET_IN_BITMAP (same->succs, 0, j, bj)
     same->succ_flags.safe_push (same_succ_edge_flags[j]);
@@ -809,6 +808,9 @@ static void
 same_succ_flush_bb (basic_block bb)
 {
   same_succ *same = BB_SAME_SUCC (bb);
+  if (! same)
+    return;
+
   BB_SAME_SUCC (bb) = NULL;
   if (bitmap_single_bit_set_p (same->bbs))
     same_succ_htab->remove_elt_with_hash (same, same->hashval);
@@ -1555,29 +1557,52 @@ replace_block_by (basic_block bb1, basic_block bb2)
 		   pred_edge, UNKNOWN_LOCATION);
     }
 
-  bb2->frequency += bb1->frequency;
-  if (bb2->frequency > BB_FREQ_MAX)
-    bb2->frequency = BB_FREQ_MAX;
-
   bb2->count += bb1->count;
 
   /* Merge the outgoing edge counts from bb1 onto bb2.  */
   profile_count out_sum = profile_count::zero ();
+  int out_freq_sum = 0;
+
+  /* Recompute the edge probabilities from the new merged edge count.
+     Use the sum of the new merged edge counts computed above instead
+     of bb2's merged count, in case there are profile count insanities
+     making the bb count inconsistent with the edge weights.  */
+  FOR_EACH_EDGE (e1, ei, bb1->succs)
+    {
+      if (e1->count.initialized_p ())
+	out_sum += e1->count;
+      out_freq_sum += EDGE_FREQUENCY (e1);
+    }
+  FOR_EACH_EDGE (e1, ei, bb2->succs)
+    {
+      if (e1->count.initialized_p ())
+	out_sum += e1->count;
+      out_freq_sum += EDGE_FREQUENCY (e1);
+    }
+
   FOR_EACH_EDGE (e1, ei, bb1->succs)
     {
       e2 = find_edge (bb2, e1->dest);
       gcc_assert (e2);
       e2->count += e1->count;
+      if (out_sum > 0 && e2->count.initialized_p ())
+	{
+	  e2->probability = e2->count.probability_in (bb2->count);
+	}
+      else if (bb1->frequency && bb2->frequency)
+	e2->probability = e1->probability;
+      else if (bb2->frequency && !bb1->frequency)
+	;
+      else if (out_freq_sum)
+	e2->probability = profile_probability::from_reg_br_prob_base
+		(GCOV_COMPUTE_SCALE (EDGE_FREQUENCY (e1)
+				     + EDGE_FREQUENCY (e2),
+				     out_freq_sum));
       out_sum += e2->count;
     }
-  /* Recompute the edge probabilities from the new merged edge count.
-     Use the sum of the new merged edge counts computed above instead
-     of bb2's merged count, in case there are profile count insanities
-     making the bb count inconsistent with the edge weights.  */
-  FOR_EACH_EDGE (e2, ei, bb2->succs)
-    {
-      e2->probability = e2->count.probability_in (out_sum);
-    }
+  bb2->frequency += bb1->frequency;
+  if (bb2->frequency > BB_FREQ_MAX)
+    bb2->frequency = BB_FREQ_MAX;
 
   /* Move over any user labels from bb1 after the bb2 labels.  */
   gimple_stmt_iterator gsi1 = gsi_start_bb (bb1);

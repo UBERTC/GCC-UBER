@@ -5056,7 +5056,7 @@ lower_oacc_reductions (location_t loc, tree clauses, tree level, bool inner,
 
 	/* Determine position in reduction buffer, which may be used
 	   by target.  */
-	enum machine_mode mode = TYPE_MODE (TREE_TYPE (var));
+	machine_mode mode = TYPE_MODE (TREE_TYPE (var));
 	unsigned align = GET_MODE_ALIGNMENT (mode) /  BITS_PER_UNIT;
 	offset = (offset + align - 1) & ~(align - 1);
 	tree off = build_int_cst (sizetype, offset);
@@ -6320,7 +6320,11 @@ lower_omp_ordered_clauses (gimple_stmt_iterator *gsi_p, gomp_ordered *ord_stmt,
     return;
 
   wide_int *folded_deps = XALLOCAVEC (wide_int, 2 * len - 1);
-  memset (folded_deps, 0, sizeof (*folded_deps) * (2 * len - 1));
+
+  /* wide_int is not a POD so it must be default-constructed.  */
+  for (unsigned i = 0; i != 2 * len - 1; ++i)
+    new (static_cast<void*>(folded_deps + i)) wide_int ();
+
   tree folded_dep = NULL_TREE;
   /* TRUE if the first dimension's offset is negative.  */
   bool neg_offset_p = false;

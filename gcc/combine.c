@@ -1213,8 +1213,10 @@ combine_instructions (rtx_insn *f, unsigned int nregs)
 	      INSN_COST (insn) = insn_rtx_cost (PATTERN (insn),
 	      					optimize_this_for_speed_p);
 	    if (dump_file)
-	      fprintf (dump_file, "insn_cost %d: %d\n",
-		       INSN_UID (insn), INSN_COST (insn));
+	      {
+		fprintf (dump_file, "insn_cost %d for ", INSN_COST (insn));
+		dump_insn_slim (dump_file, insn);
+	      }
 	  }
     }
 
@@ -6582,7 +6584,7 @@ simplify_if_then_else (rtx x)
       && (i = exact_log2 (UINTVAL (true_rtx) & GET_MODE_MASK (mode))) >= 0)
     {
       rtx val = XEXP (cond, 0);
-      enum machine_mode val_mode = GET_MODE (val);
+      machine_mode val_mode = GET_MODE (val);
       if (val_mode == mode)
         return val;
       else if (GET_MODE_PRECISION (val_mode) < GET_MODE_PRECISION (mode))
@@ -7954,18 +7956,9 @@ make_compound_operation_int (machine_mode mode, rtx *x_ptr,
 				     XEXP (inner_x0, 1),
 				     i, 1, 0, in_code == COMPARE);
 
-	  if (new_rtx)
-	    {
-	      /* If we narrowed the mode when dropping the subreg, then
-		 we must zero-extend to keep the semantics of the AND.  */
-	      if (GET_MODE_SIZE (inner_mode) >= GET_MODE_SIZE (mode))
-		;
-	      else if (SCALAR_INT_MODE_P (inner_mode))
-		new_rtx = simplify_gen_unary (ZERO_EXTEND, mode,
-					      new_rtx, inner_mode);
-	      else
-		new_rtx = NULL;
-	    }
+	  /* If we narrowed the mode when dropping the subreg, then we lose.  */
+	  if (GET_MODE_SIZE (inner_mode) < GET_MODE_SIZE (mode))
+	    new_rtx = NULL;
 
 	  /* If that didn't give anything, see if the AND simplifies on
 	     its own.  */

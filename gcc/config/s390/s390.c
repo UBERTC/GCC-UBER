@@ -1179,6 +1179,23 @@ s390_label_align (rtx_insn *label)
   return align_labels_log;
 }
 
+static GTY(()) rtx got_symbol;
+
+/* Return the GOT table symbol.  The symbol will be created when the
+   function is invoked for the first time.  */
+
+static rtx
+s390_got_symbol (void)
+{
+  if (!got_symbol)
+    {
+      got_symbol = gen_rtx_SYMBOL_REF (Pmode, "_GLOBAL_OFFSET_TABLE_");
+      SYMBOL_REF_FLAGS (got_symbol) = SYMBOL_FLAG_LOCAL;
+    }
+
+  return got_symbol;
+}
+
 static machine_mode
 s390_libgcc_cmp_return_mode (void)
 {
@@ -3397,6 +3414,48 @@ s390_rtx_costs (rtx x, machine_mode mode, int outer_code,
       *total = 0;
       return true;
 
+    case SET:
+      {
+	/* Without this a conditional move instruction would be
+	   accounted as 3 * COSTS_N_INSNS (set, if_then_else,
+	   comparison operator).  That's a bit pessimistic.  */
+
+	if (!TARGET_Z196 || GET_CODE (SET_SRC (x)) != IF_THEN_ELSE)
+	  return false;
+
+	rtx cond = XEXP (SET_SRC (x), 0);
+
+	if (!CC_REG_P (XEXP (cond, 0)) || !CONST_INT_P (XEXP (cond, 1)))
+	  return false;
+
+	/* It is going to be a load/store on condition.  Make it
+	   slightly more expensive than a normal load.  */
+	*total = COSTS_N_INSNS (1) + 1;
+
+	rtx dst = SET_DEST (x);
+	rtx then = XEXP (SET_SRC (x), 1);
+	rtx els = XEXP (SET_SRC (x), 2);
+
+	/* It is a real IF-THEN-ELSE.  An additional move will be
+	   needed to implement that.  */
+	if (reload_completed
+	    && !rtx_equal_p (dst, then)
+	    && !rtx_equal_p (dst, els))
+	  *total += COSTS_N_INSNS (1) / 2;
+
+	/* A minor penalty for constants we cannot directly handle.  */
+	if ((CONST_INT_P (then) || CONST_INT_P (els))
+	    && (!TARGET_Z13 || MEM_P (dst)
+		|| (CONST_INT_P (then) && !satisfies_constraint_K (then))
+		|| (CONST_INT_P (els) && !satisfies_constraint_K (els))))
+	  *total += COSTS_N_INSNS (1) / 2;
+
+	/* A store on condition can only handle register src operands.  */
+	if (MEM_P (dst) && (!REG_P (then) || !REG_P (els)))
+	  *total += COSTS_N_INSNS (1) / 2;
+
+	return true;
+      }
     case IOR:
       /* risbg */
       if (GET_CODE (XEXP (x, 0)) == AND
@@ -4496,6 +4555,26 @@ s390_load_address (rtx dst, rtx src)
     emit_insn (gen_force_la_31 (dst, src));
 }
 
+/* Return true if it ok to use SYMBOL_REF in a relative address.  */
+
+bool
+s390_rel_address_ok_p (rtx symbol_ref)
+{
+  tree decl;
+
+  if (symbol_ref == s390_got_symbol () || CONSTANT_POOL_ADDRESS_P (symbol_ref))
+    return true;
+
+  decl = SYMBOL_REF_DECL (symbol_ref);
+
+  if (!flag_pic || SYMBOL_REF_LOCAL_P (symbol_ref))
+    return (s390_pic_data_is_text_relative
+	    || (decl
+		&& TREE_CODE (decl) == FUNCTION_DECL));
+
+  return false;
+}
+
 /* Return a legitimate reference for ORIG (an address) using the
    register REG.  If REG is 0, a new pseudo is generated.
 
@@ -4533,7 +4612,7 @@ legitimize_pic_address (rtx orig, rtx reg)
     }
 
   if ((GET_CODE (addr) == LABEL_REF
-       || (GET_CODE (addr) == SYMBOL_REF && SYMBOL_REF_LOCAL_P (addr))
+       || (SYMBOL_REF_P (addr) && s390_rel_address_ok_p (addr))
        || (GET_CODE (addr) == UNSPEC &&
 	   (XINT (addr, 1) == UNSPEC_GOTENT
 	    || (TARGET_CPU_ZARCH && XINT (addr, 1) == UNSPEC_PLT))))
@@ -5312,8 +5391,6 @@ s390_expand_movmem (rtx dst, rtx src, rtx len)
 void
 s390_expand_setmem (rtx dst, rtx len, rtx val)
 {
-  const int very_unlikely = REG_BR_PROB_BASE / 100 - 1;
-
   if (GET_CODE (len) == CONST_INT && INTVAL (len) <= 0)
     return;
 
@@ -5387,7 +5464,7 @@ s390_expand_setmem (rtx dst, rtx len, rtx val)
       convert_move (count, len, 1);
       emit_cmp_and_jump_insns (count, const0_rtx,
 			       EQ, NULL_RTX, mode, 1, zerobyte_end_label,
-			       very_unlikely);
+			       profile_probability::very_unlikely ());
 
       /* We need to make a copy of the target address since memset is
 	 supposed to return it unmodified.  We have to make it here
@@ -5404,7 +5481,8 @@ s390_expand_setmem (rtx dst, rtx len, rtx val)
 	  dstp1 = adjust_address (dst, VOIDmode, 1);
 	  emit_cmp_and_jump_insns (count,
 				   const1_rtx, EQ, NULL_RTX, mode, 1,
-				   onebyte_end_label, very_unlikely);
+				   onebyte_end_label,
+				   profile_probability::very_unlikely ());
 	}
 
       /* There is one unconditional (mvi+mvc)/xc after the loop
@@ -5642,8 +5720,6 @@ s390_emit_ccraw_jump (HOST_WIDE_INT mask, enum rtx_code comparison, rtx label)
 void
 s390_expand_vec_strlen (rtx target, rtx string, rtx alignment)
 {
-  int very_unlikely = REG_BR_PROB_BASE / 100 - 1;
-  int very_likely = REG_BR_PROB_BASE - 1;
   rtx highest_index_to_load_reg = gen_reg_rtx (Pmode);
   rtx str_reg = gen_reg_rtx (V16QImode);
   rtx str_addr_base_reg = gen_reg_rtx (Pmode);
@@ -5714,7 +5790,8 @@ s390_expand_vec_strlen (rtx target, rtx string, rtx alignment)
 				  GEN_INT (VSTRING_FLAG_ZS | VSTRING_FLAG_CS)));
 
   add_int_reg_note (s390_emit_ccraw_jump (8, NE, loop_start_label),
-		    REG_BR_PROB, very_likely);
+		    REG_BR_PROB,
+		    profile_probability::very_likely ().to_reg_br_prob_note ());
   emit_insn (gen_vec_extractv16qi (len, result_reg, GEN_INT (7)));
 
   /* If the string pointer wasn't aligned we have loaded less then 16
@@ -5734,8 +5811,8 @@ s390_expand_vec_strlen (rtx target, rtx string, rtx alignment)
     emit_insn (gen_movsicc (str_idx_reg, cond,
 			    highest_index_to_load_reg, str_idx_reg));
 
-  add_int_reg_note (s390_emit_jump (is_aligned_label, cond), REG_BR_PROB,
-		    very_unlikely);
+  add_reg_br_prob_note (s390_emit_jump (is_aligned_label, cond),
+		        profile_probability::very_unlikely ());
 
   expand_binop (Pmode, add_optab, str_idx_reg,
 		GEN_INT (-16), str_idx_reg, 1, OPTAB_DIRECT);
@@ -5751,7 +5828,6 @@ s390_expand_vec_strlen (rtx target, rtx string, rtx alignment)
 void
 s390_expand_vec_movstr (rtx result, rtx dst, rtx src)
 {
-  int very_unlikely = REG_BR_PROB_BASE / 100 - 1;
   rtx temp = gen_reg_rtx (Pmode);
   rtx src_addr = XEXP (src, 0);
   rtx dst_addr = XEXP (dst, 0);
@@ -5828,7 +5904,8 @@ s390_expand_vec_movstr (rtx result, rtx dst, rtx src)
   emit_insn (gen_vec_vfenesv16qi (vpos, vsrc, vsrc,
 				  GEN_INT (VSTRING_FLAG_ZS | VSTRING_FLAG_CS)));
   add_int_reg_note (s390_emit_ccraw_jump (8, EQ, done_label),
-		    REG_BR_PROB, very_unlikely);
+		    REG_BR_PROB, profile_probability::very_unlikely ()
+				  .to_reg_br_prob_note ());
 
   emit_move_insn (gen_rtx_MEM (V16QImode,
 			       gen_rtx_PLUS (Pmode, dst_addr_reg, offset)),
@@ -6851,7 +6928,6 @@ s390_expand_cs_tdsi (machine_mode mode, rtx btarget, rtx vtarget, rtx mem,
 
   if (do_const_opt)
     {
-      const int very_unlikely = REG_BR_PROB_BASE / 100 - 1;
       rtx cc = gen_rtx_REG (CCZmode, CC_REGNUM);
 
       skip_cs_label = gen_label_rtx ();
@@ -6872,7 +6948,8 @@ s390_expand_cs_tdsi (machine_mode mode, rtx btarget, rtx vtarget, rtx mem,
 	  emit_insn (gen_rtx_SET (cc, gen_rtx_COMPARE (CCZmode, output, cmp)));
 	}
       s390_emit_jump (skip_cs_label, gen_rtx_NE (VOIDmode, cc, const0_rtx));
-      add_int_reg_note (get_last_insn (), REG_BR_PROB, very_unlikely);
+      add_reg_br_prob_note (get_last_insn (), 
+		            profile_probability::very_unlikely ());
       /* If the jump is not taken, OUTPUT is the expected value.  */
       cmp = output;
       /* Reload newval to a register manually, *after* the compare and jump
@@ -10791,7 +10868,6 @@ restore_gprs (rtx base, int offset, int first, int last)
 
 /* Return insn sequence to load the GOT register.  */
 
-static GTY(()) rtx got_symbol;
 rtx_insn *
 s390_load_got (void)
 {
@@ -10803,23 +10879,17 @@ s390_load_got (void)
      aren't usable.  */
   rtx got_rtx = gen_rtx_REG (Pmode, 12);
 
-  if (!got_symbol)
-    {
-      got_symbol = gen_rtx_SYMBOL_REF (Pmode, "_GLOBAL_OFFSET_TABLE_");
-      SYMBOL_REF_FLAGS (got_symbol) = SYMBOL_FLAG_LOCAL;
-    }
-
   start_sequence ();
 
   if (TARGET_CPU_ZARCH)
     {
-      emit_move_insn (got_rtx, got_symbol);
+      emit_move_insn (got_rtx, s390_got_symbol ());
     }
   else
     {
       rtx offset;
 
-      offset = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, got_symbol),
+      offset = gen_rtx_UNSPEC (Pmode, gen_rtvec (1, s390_got_symbol ()),
 			       UNSPEC_LTREL_OFFSET);
       offset = gen_rtx_CONST (Pmode, offset);
       offset = force_const_mem (Pmode, offset);
@@ -11607,7 +11677,8 @@ s390_expand_split_stack_prologue (void)
       LABEL_NUSES (call_done)++;
 
       /* Mark the jump as very unlikely to be taken.  */
-      add_int_reg_note (insn, REG_BR_PROB, REG_BR_PROB_BASE / 100);
+      add_reg_br_prob_note (insn, 
+		            profile_probability::very_unlikely ());
 
       if (cfun->machine->split_stack_varargs_pointer != NULL_RTX)
 	{
@@ -14910,6 +14981,9 @@ s390_option_override (void)
      is beneficial on s390, we enable it if available.  */
   if (flag_prefetch_loop_arrays < 0 && HAVE_prefetch && optimize >= 3)
     flag_prefetch_loop_arrays = 1;
+
+  if (!s390_pic_data_is_text_relative && !flag_pic)
+    error ("-mno-pic-data-is-text-relative cannot be used without -fpic/-fPIC");
 
   if (TARGET_TPF)
     {

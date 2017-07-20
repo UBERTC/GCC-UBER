@@ -159,6 +159,10 @@ public:
   /* Time benefit and size cost that specializing the function for this value
      can bring about in it's callees (transitively).  */
   int prop_time_benefit, prop_size_cost;
+
+  ipcp_value_base ()
+    : local_time_benefit (0), local_size_cost (0),
+      prop_time_benefit (0), prop_size_cost (0) {}
 };
 
 /* Describes one particular value stored in struct ipcp_lattice.  */
@@ -187,6 +191,10 @@ public:
   int dfs, low_link;
   /* True if this valye is currently on the topo-sort stack.  */
   bool on_stack;
+
+  ipcp_value()
+    : sources (0), next (0), scc_next (0), topo_next (0),
+      spec_node (0), dfs (0), low_link (0), on_stack (false) {}
 
   void add_source (cgraph_edge *cs, ipcp_value *src_val, int src_idx,
 		   HOST_WIDE_INT offset);
@@ -1471,8 +1479,7 @@ allocate_and_init_ipcp_value (tree source)
 {
   ipcp_value<tree> *val;
 
-  val = ipcp_cst_values_pool.allocate ();
-  memset (val, 0, sizeof (*val));
+  val = new (ipcp_cst_values_pool.allocate ()) ipcp_value<tree>();
   val->value = source;
   return val;
 }
@@ -1486,8 +1493,8 @@ allocate_and_init_ipcp_value (ipa_polymorphic_call_context source)
   ipcp_value<ipa_polymorphic_call_context> *val;
 
   // TODO
-  val = ipcp_poly_ctx_values_pool.allocate ();
-  memset (val, 0, sizeof (*val));
+  val = new (ipcp_poly_ctx_values_pool.allocate ())
+    ipcp_value<ipa_polymorphic_call_context>();
   val->value = source;
   return val;
 }
@@ -2624,7 +2631,8 @@ good_cloning_opportunity_p (struct cgraph_node *node, int time_benefit,
   struct ipa_node_params *info = IPA_NODE_REF (node);
   if (max_count > profile_count::zero ())
     {
-      int factor = RDIV (count_sum.probability_in (max_count)
+      int factor = RDIV (count_sum.probability_in
+				 (max_count).to_reg_br_prob_base ()
 		         * 1000, REG_BR_PROB_BASE);
       int64_t evaluation = (((int64_t) time_benefit * factor)
 				    / size_cost);

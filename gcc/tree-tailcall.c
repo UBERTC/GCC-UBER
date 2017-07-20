@@ -421,6 +421,7 @@ find_tail_calls (basic_block bb, struct tailcall **ret)
       if (gimple_code (stmt) == GIMPLE_LABEL
 	  || gimple_code (stmt) == GIMPLE_RETURN
 	  || gimple_code (stmt) == GIMPLE_NOP
+	  || gimple_code (stmt) == GIMPLE_PREDICT
 	  || gimple_clobber_p (stmt)
 	  || is_gimple_debug (stmt))
 	continue;
@@ -555,6 +556,7 @@ find_tail_calls (basic_block bb, struct tailcall **ret)
 
       if (gimple_code (stmt) == GIMPLE_LABEL
 	  || gimple_code (stmt) == GIMPLE_NOP
+	  || gimple_code (stmt) == GIMPLE_PREDICT
 	  || gimple_clobber_p (stmt)
 	  || is_gimple_debug (stmt))
 	continue;
@@ -570,6 +572,11 @@ find_tail_calls (basic_block bb, struct tailcall **ret)
       else if (ret == TRY_MOVE)
 	{
 	  if (! tail_recursion)
+	    return;
+	  /* Do not deal with checking dominance, the real fix is to
+	     do path isolation for the transform phase anyway, removing
+	     the need to compute the accumulators with new stmts.  */
+	  if (abb != bb)
 	    return;
 	  for (unsigned opno = 1; opno < gimple_num_ops (stmt); ++opno)
 	    {

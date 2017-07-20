@@ -678,7 +678,7 @@
 		 (match_operand:VCVTF 2 "register_operand" "w")
 		 (match_operand:VCVTF 3 "register_operand" "0")))]
   "TARGET_NEON && TARGET_FMA && flag_unsafe_math_optimizations"
-  "vfma%?.<V_if_elem>\\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
+  "vfma.<V_if_elem>\\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
   [(set_attr "type" "neon_fp_mla_s<q>")]
 )
 
@@ -688,7 +688,7 @@
 		 (match_operand:VCVTF 2 "register_operand" "w")
 		 (match_operand:VCVTF 3 "register_operand" "0")))]
   "TARGET_NEON && TARGET_FMA"
-  "vfma%?.<V_if_elem>\\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
+  "vfma.<V_if_elem>\\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
   [(set_attr "type" "neon_fp_mla_s<q>")]
 )
 
@@ -720,7 +720,7 @@
 		   (match_operand:VCVTF 2 "register_operand" "w")
 		   (match_operand:VCVTF 3 "register_operand" "0")))]
   "TARGET_NEON && TARGET_FMA && flag_unsafe_math_optimizations"
-  "vfms%?.<V_if_elem>\\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
+  "vfms.<V_if_elem>\\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
   [(set_attr "type" "neon_fp_mla_s<q>")]
 )
 
@@ -731,7 +731,7 @@
     (match_operand:VCVTF 2 "register_operand" "w")
     (match_operand:VCVTF 3 "register_operand" "0")))]
  "TARGET_NEON && TARGET_FMA"
- "vfms%?.<V_if_elem>\\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
+ "vfms.<V_if_elem>\\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
  [(set_attr "type" "neon_fp_mla_s<q>")]
 )
 
@@ -751,8 +751,8 @@
         (unspec:VCVTF [(match_operand:VCVTF 1
 		         "s_register_operand" "w")]
 		NEON_VRINT))]
-  "TARGET_NEON && TARGET_FPU_ARMV8"
-  "vrint<nvrint_variant>%?.f32\\t%<V_reg>0, %<V_reg>1"
+  "TARGET_NEON && TARGET_VFP5"
+  "vrint<nvrint_variant>.f32\\t%<V_reg>0, %<V_reg>1"
   [(set_attr "type" "neon_fp_round_<V_elem_ch><q>")]
 )
 
@@ -761,7 +761,7 @@
 	(FIXUORS:<V_cmp_result> (unspec:VCVTF
 			       [(match_operand:VCVTF 1 "register_operand" "w")]
 			       NEON_VCVT)))]
-  "TARGET_NEON && TARGET_FPU_ARMV8"
+  "TARGET_NEON && TARGET_VFP5"
   "vcvt<nvrint_variant>.<su>32.f32\\t%<V_reg>0, %<V_reg>1"
   [(set_attr "type" "neon_fp_to_int_<V_elem_ch><q>")
    (set_attr "predicable" "no")]
@@ -2901,7 +2901,7 @@
 	(unspec:VCVTF [(match_operand:VCVTF 1 "s_register_operand" "w")
 		       (match_operand:VCVTF 2 "s_register_operand" "w")]
 		       VMAXMINFNM))]
-  "TARGET_NEON && TARGET_FPU_ARMV8"
+  "TARGET_NEON && TARGET_VFP5"
   "<fmaxmin_op>.<V_s_elem>\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
   [(set_attr "type" "neon_fp_minmax_s<q>")]
 )
@@ -2912,7 +2912,7 @@
 	(unspec:VCVTF [(match_operand:VCVTF 1 "s_register_operand" "w")
 		       (match_operand:VCVTF 2 "s_register_operand" "w")]
 		       VMAXMINFNM))]
-  "TARGET_NEON && TARGET_FPU_ARMV8"
+  "TARGET_NEON && TARGET_VFP5"
   "<fmaxmin_op>.<V_s_elem>\t%<V_reg>0, %<V_reg>1, %<V_reg>2"
   [(set_attr "type" "neon_fp_minmax_s<q>")]
 )

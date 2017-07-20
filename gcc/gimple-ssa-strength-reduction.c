@@ -482,6 +482,36 @@ find_phi_def (tree base)
   return c->cand_num;
 }
 
+/* Determine whether all uses of NAME are directly or indirectly
+   used by STMT.  That is, we want to know whether if STMT goes
+   dead, the definition of NAME also goes dead.  */
+static bool
+uses_consumed_by_stmt (tree name, gimple *stmt, unsigned recurse = 0)
+{
+  gimple *use_stmt;
+  imm_use_iterator iter;
+  bool retval = true;
+
+  FOR_EACH_IMM_USE_STMT (use_stmt, iter, name)
+    {
+      if (use_stmt == stmt || is_gimple_debug (use_stmt))
+	continue;
+
+      if (!is_gimple_assign (use_stmt)
+	  || !gimple_get_lhs (use_stmt)
+	  || !is_gimple_reg (gimple_get_lhs (use_stmt))
+	  || recurse >= 10
+	  || !uses_consumed_by_stmt (gimple_get_lhs (use_stmt), stmt,
+				     recurse + 1))
+	{
+	  retval = false;
+	  BREAK_FROM_IMM_USE_STMT (iter);
+	}
+    }
+
+  return retval;
+}
+
 /* Helper routine for find_basis_for_candidate.  May be called twice:
    once for the candidate's base expr, and optionally again either for
    the candidate's phi definition or for a CAND_REF's alternative base
@@ -558,7 +588,8 @@ find_basis_for_candidate (slsr_cand_t c)
 
 	  /* If we found a hidden basis, estimate additional dead-code
 	     savings if the phi and its feeding statements can be removed.  */
-	  if (basis && has_single_use (gimple_phi_result (phi_cand->cand_stmt)))
+	  tree feeding_var = gimple_phi_result (phi_cand->cand_stmt);
+	  if (basis && uses_consumed_by_stmt (feeding_var, c->cand_stmt))
 	    c->dead_savings += phi_cand->dead_savings;
 	}
     }
@@ -789,7 +820,7 @@ slsr_process_phi (gphi *phi, bool speed)
 
 	  /* Gather potential dead code savings if the phi statement
 	     can be removed later on.  */
-	  if (has_single_use (arg))
+	  if (uses_consumed_by_stmt (arg, phi))
 	    {
 	      if (gimple_code (arg_stmt) == GIMPLE_PHI)
 		savings += arg_cand->dead_savings;
@@ -2051,13 +2082,14 @@ replace_mult_candidate (slsr_cand_t c, tree basis_name, widest_int bump)
      types but allows for safe negation without twisted logic.  */
   if (wi::fits_shwi_p (bump)
       && bump.to_shwi () != HOST_WIDE_INT_MIN
-      /* It is not useful to replace casts, copies, or adds of
+      /* It is not useful to replace casts, copies, negates, or adds of
 	 an SSA name and a constant.  */
       && cand_code != SSA_NAME
       && !CONVERT_EXPR_CODE_P (cand_code)
       && cand_code != PLUS_EXPR
       && cand_code != POINTER_PLUS_EXPR
-      && cand_code != MINUS_EXPR)
+      && cand_code != MINUS_EXPR
+      && cand_code != NEGATE_EXPR)
     {
       enum tree_code code = PLUS_EXPR;
       tree bump_tree;
@@ -2479,7 +2511,9 @@ replace_uncond_cands_and_profitable_phis (slsr_cand_t c)
 {
   if (phi_dependent_cand_p (c))
     {
-      if (c->kind == CAND_MULT)
+      /* A multiply candidate with a stride of 1 is just an artifice
+	 of a copy or cast; there is no value in replacing it.  */
+      if (c->kind == CAND_MULT && wi::to_widest (c->stride) != 1)
 	{
 	  /* A candidate dependent upon a phi will replace a multiply by 
 	     a constant with an add, and will insert at most one add for
@@ -2725,8 +2759,9 @@ phi_incr_cost (slsr_cand_t c, const widest_int &incr, gimple *phi,
 	  if (gimple_code (arg_def) == GIMPLE_PHI)
 	    {
 	      int feeding_savings = 0;
+	      tree feeding_var = gimple_phi_result (arg_def);
 	      cost += phi_incr_cost (c, incr, arg_def, &feeding_savings);
-	      if (has_single_use (gimple_phi_result (arg_def)))
+	      if (uses_consumed_by_stmt (feeding_var, phi))
 		*savings += feeding_savings;
 	    }
 	  else
@@ -2739,7 +2774,7 @@ phi_incr_cost (slsr_cand_t c, const widest_int &incr, gimple *phi,
 		  tree basis_lhs = gimple_assign_lhs (basis->cand_stmt);
 		  tree lhs = gimple_assign_lhs (arg_cand->cand_stmt);
 		  cost += add_cost (true, TYPE_MODE (TREE_TYPE (basis_lhs)));
-		  if (has_single_use (lhs))
+		  if (uses_consumed_by_stmt (lhs, phi))
 		    *savings += stmt_cost (arg_cand->cand_stmt, true);
 		}
 	    }
@@ -2816,7 +2851,7 @@ lowest_cost_path (int cost_in, int repl_savings, slsr_cand_t c,
       gimple *phi = lookup_cand (c->def_phi)->cand_stmt;
       local_cost += phi_incr_cost (c, incr, phi, &savings);
 
-      if (has_single_use (gimple_phi_result (phi)))
+      if (uses_consumed_by_stmt (gimple_phi_result (phi), c->cand_stmt))
 	local_cost -= savings;
     }
 
@@ -2860,7 +2895,7 @@ total_savings (int repl_savings, slsr_cand_t c, const widest_int &incr,
       gimple *phi = lookup_cand (c->def_phi)->cand_stmt;
       savings -= phi_incr_cost (c, incr, phi, &phi_savings);
 
-      if (has_single_use (gimple_phi_result (phi)))
+      if (uses_consumed_by_stmt (gimple_phi_result (phi), c->cand_stmt))
 	savings += phi_savings;
     }
 

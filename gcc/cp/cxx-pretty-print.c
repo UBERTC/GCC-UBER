@@ -88,14 +88,6 @@ pp_cxx_separate_with (cxx_pretty_printer *pp, int c)
 
 /* Expressions.  */
 
-static inline bool
-is_destructor_name (tree name)
-{
-  return name == complete_dtor_identifier
-    || name == base_dtor_identifier
-    || name == deleting_dtor_identifier;
-}
-
 /* conversion-function-id:
       operator conversion-type-id
 
@@ -159,19 +151,10 @@ pp_cxx_unqualified_id (cxx_pretty_printer *pp, tree t)
     case IDENTIFIER_NODE:
       if (t == NULL)
 	pp->translate_string ("<unnamed>");
-      else if (IDENTIFIER_TYPENAME_P (t))
+      else if (IDENTIFIER_CONV_OP_P (t))
 	pp_cxx_conversion_function_id (pp, t);
       else
-	{
-	  if (is_destructor_name (t))
-	    {
-	      pp_complement (pp);
-	      /* FIXME: Why is this necessary? */
-	      if (TREE_TYPE (t))
-		t = constructor_name (TREE_TYPE (t));
-	    }
-	  pp_cxx_tree_identifier (pp, t);
-	}
+	pp_cxx_tree_identifier (pp, t);
       break;
 
     case TEMPLATE_ID_EXPR:

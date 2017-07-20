@@ -1,3 +1,46 @@
+2017-07-18  Nathan Sidwell  <nathan@acm.org>
+
+	* trans.c (gfc_build_array_ref): Use TYPE_MAX_VALUE.
+
+2017-07-09  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/81341
+	* class.c (class_array_ref_detected): Remove a redundant
+	condition.
+
+2017-07-06  Harald Anlauf  <anlauf@gmx.de>
+
+	PR fortran/70071
+	* array.c (gfc_ref_dimen_size): Handle bad subscript triplets.
+
+2017-07-03  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/79866
+	* resolve.c (resolve_symbol): Fix typo.
+
+2017-07-03  Dominique d'Humieres  <dominiq@lps.ens.fr>
+
+	PR fortran/79843
+	* symbol.c (check_conflict): Add missing "conflicts".
+
+2017-06-29  Cesar Philippidis  <cesar@codesourcery.com>
+
+	PR fortran/77765
+	* openmp.c (gfc_match_oacc_routine): Check if proc_name exist before
+	comparing the routine name against it.
+
+2017-06-27  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/80164
+	* trans-stmt.c (gfc_trans_call): If no code expr, use code->loc
+	as warning/error locus.
+
+2017-06-24  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/81160
+	* arith.c (wprecision_int_real): Set return value before
+	mpz_clear and then return after it.
+
 2017-06-15  Janus Weil  <janus@gcc.gnu.org>
 
 	PR fortran/80983

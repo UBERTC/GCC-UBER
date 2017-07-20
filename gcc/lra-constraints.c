@@ -1841,7 +1841,7 @@ reg_in_class_p (rtx reg, enum reg_class cl)
 static bool
 prohibited_class_reg_set_mode_p (enum reg_class rclass,
 				 HARD_REG_SET &set,
-				 enum machine_mode mode)
+				 machine_mode mode)
 {
   HARD_REG_SET temp;
   
@@ -5725,7 +5725,7 @@ process_invariant_for_inheritance (rtx dst_reg, rtx invariant_rtx)
   int insn_regno;
   bool succ_p = false;
   int dst_regno = REGNO (dst_reg);
-  enum machine_mode dst_mode = GET_MODE (dst_reg);
+  machine_mode dst_mode = GET_MODE (dst_reg);
   enum reg_class cl = lra_get_allocno_class (dst_regno), insn_reg_cl;
 
   invariant_ptr = insert_invariant (invariant_rtx);
@@ -6482,7 +6482,8 @@ lra_inheritance (void)
 	  e = find_fallthru_edge (bb->succs);
 	  if (! e)
 	    break;
-	  if (e->probability < EBB_PROBABILITY_CUTOFF)
+	  if (e->probability.initialized_p ()
+	      && e->probability.to_reg_br_prob_base () < EBB_PROBABILITY_CUTOFF)
 	    break;
 	  bb = bb->next_bb;
 	}

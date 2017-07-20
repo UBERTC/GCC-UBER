@@ -133,11 +133,16 @@
 #define vec_doublel __builtin_vec_doublel
 #define vec_doubleh __builtin_vec_doubleh
 #define vec_expte __builtin_vec_expte
+#define vec_float __builtin_vec_float
+#define vec_float2 __builtin_vec_float2
+#define vec_floate __builtin_vec_floate
+#define vec_floato __builtin_vec_floato
 #define vec_floor __builtin_vec_floor
 #define vec_loge __builtin_vec_loge
 #define vec_madd __builtin_vec_madd
 #define vec_madds __builtin_vec_madds
 #define vec_mtvscr __builtin_vec_mtvscr
+#define vec_reve __builtin_vec_vreve
 #define vec_vmaxfp __builtin_vec_vmaxfp
 #define vec_vmaxsw __builtin_vec_vmaxsw
 #define vec_vmaxsh __builtin_vec_vmaxsh
@@ -177,8 +182,18 @@
 #define vec_rlnm(a,b,c) (__builtin_vec_rlnm((a),((b)<<8)|(c)))
 #define vec_rsqrt __builtin_vec_rsqrt
 #define vec_rsqrte __builtin_vec_rsqrte
+#define vec_signed __builtin_vec_vsigned
+#define vec_signed2 __builtin_vec_vsigned2
+#define vec_signede __builtin_vec_vsignede
+#define vec_signedo __builtin_vec_vsignedo
+#define vec_unsigned __builtin_vec_vunsigned
+#define vec_unsigned2 __builtin_vec_vunsigned2
+#define vec_unsignede __builtin_vec_vunsignede
+#define vec_unsignedo __builtin_vec_vunsignedo
 #define vec_vsubfp __builtin_vec_vsubfp
 #define vec_subc __builtin_vec_subc
+#define vec_sube __builtin_vec_sube
+#define vec_subec __builtin_vec_subec
 #define vec_vsubsws __builtin_vec_vsubsws
 #define vec_vsubshs __builtin_vec_vsubshs
 #define vec_vsubsbs __builtin_vec_vsubsbs
@@ -403,6 +418,8 @@
 
 #ifdef __POWER9_VECTOR__
 /* Vector additions added in ISA 3.0.  */
+#define vec_pack_to_short_fp32 __builtin_vec_convert_4f32_8i16
+#define vec_parity_lsbb __builtin_vec_vparity_lsbb
 #define vec_vctz __builtin_vec_vctz
 #define vec_cnttz __builtin_vec_vctz
 #define vec_vctzb __builtin_vec_vctzb

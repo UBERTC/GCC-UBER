@@ -3608,12 +3608,12 @@ rs6000_init_hard_regno_mode_ok (bool global_init_p)
 	  CODE_FOR_fusion_gpr_di_df_store },
       };
 
-      enum machine_mode cur_pmode = Pmode;
+      machine_mode cur_pmode = Pmode;
       size_t i;
 
       for (i = 0; i < ARRAY_SIZE (addis_insns); i++)
 	{
-	  enum machine_mode xmode = addis_insns[i].mode;
+	  machine_mode xmode = addis_insns[i].mode;
 	  enum rs6000_reload_reg_type rtype = addis_insns[i].rtype;
 
 	  if (addis_insns[i].pmode != cur_pmode)
@@ -10399,7 +10399,7 @@ rs6000_offsettable_memref_p (rtx op, machine_mode reg_mode)
  
 static int
 rs6000_reassociation_width (unsigned int opc ATTRIBUTE_UNUSED,
-                            enum machine_mode mode)
+                            machine_mode mode)
 {
   switch (rs6000_cpu)
     {
@@ -24860,8 +24860,8 @@ rs6000_invalid_binary_op (int op ATTRIBUTE_UNUSED,
 			  const_tree type1,
 			  const_tree type2)
 {
-  enum machine_mode mode1 = TYPE_MODE (type1);
-  enum machine_mode mode2 = TYPE_MODE (type2);
+  machine_mode mode1 = TYPE_MODE (type1);
+  machine_mode mode2 = TYPE_MODE (type2);
 
   /* For complex modes, use the inner type.  */
   if (COMPLEX_MODE_P (mode1))
@@ -25333,7 +25333,8 @@ output_cbranch (rtx op, const char *label, int reversed, rtx_insn *insn)
   if (note != NULL_RTX)
     {
       /* PROB is the difference from 50%.  */
-      int prob = XINT (note, 0) - REG_BR_PROB_BASE / 2;
+      int prob = profile_probability::from_reg_br_prob_note (XINT (note, 0))
+		   .to_reg_br_prob_base () - REG_BR_PROB_BASE / 2;
 
       /* Only hint for highly probable/improbable branches on newer cpus when
 	 we have real profile data, as static prediction overrides processor
@@ -26123,10 +26124,9 @@ rs6000_split_signbit (rtx dest, rtx src)
 static void
 emit_unlikely_jump (rtx cond, rtx label)
 {
-  int very_unlikely = REG_BR_PROB_BASE / 100 - 1;
   rtx x = gen_rtx_IF_THEN_ELSE (VOIDmode, cond, label, pc_rtx);
   rtx_insn *insn = emit_jump_insn (gen_rtx_SET (pc_rtx, x));
-  add_int_reg_note (insn, REG_BR_PROB, very_unlikely);
+  add_reg_br_prob_note (insn, profile_probability::very_unlikely ());
 }
 
 /* A subroutine of the atomic operation splitters.  Emit a load-locked
@@ -32192,8 +32192,7 @@ rs6000_expand_split_stack_prologue (void)
   insn = emit_jump_insn (gen_rtx_SET (pc_rtx, jump));
   JUMP_LABEL (insn) = ok_label;
   /* Mark the jump as very likely to be taken.  */
-  add_int_reg_note (insn, REG_BR_PROB,
-		    REG_BR_PROB_BASE - REG_BR_PROB_BASE / 100);
+  add_reg_br_prob_note (insn, profile_probability::very_likely ());
 
   lr = gen_rtx_REG (Pmode, LR_REGNO);
   insn = emit_move_insn (r0, lr);
@@ -41284,7 +41283,7 @@ fusion_p9_p (rtx addis_reg,		/* register set via addis.  */
 	     rtx src)			/* source (register or memory).  */
 {
   rtx addr, mem, offset;
-  enum machine_mode mode = GET_MODE (src);
+  machine_mode mode = GET_MODE (src);
 
   /* Validate arguments.  */
   if (!base_reg_operand (addis_reg, GET_MODE (addis_reg)))
@@ -41458,7 +41457,7 @@ expand_fusion_p9_store (rtx *operands)
 const char *
 emit_fusion_p9_load (rtx reg, rtx mem, rtx tmp_reg)
 {
-  enum machine_mode mode = GET_MODE (reg);
+  machine_mode mode = GET_MODE (reg);
   rtx hi;
   rtx lo;
   rtx addr;
@@ -41551,7 +41550,7 @@ emit_fusion_p9_load (rtx reg, rtx mem, rtx tmp_reg)
 const char *
 emit_fusion_p9_store (rtx mem, rtx reg, rtx tmp_reg)
 {
-  enum machine_mode mode = GET_MODE (reg);
+  machine_mode mode = GET_MODE (reg);
   rtx hi;
   rtx lo;
   rtx addr;

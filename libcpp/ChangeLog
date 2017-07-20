@@ -1,3 +1,36 @@
+2017-07-07  David Malcolm  <dmalcolm@redhat.com>
+
+	PR c++/79300
+	* line-map.c (linemap_macro_loc_to_def_point): Preserve range
+	information for macro expansions by delaying resolving ad-hoc
+	locations until within the loop.
+
+2017-07-06  David Malcolm  <dmalcolm@redhat.com>
+
+	PR c++/79300
+	* include/line-map.h (enum location_aspect): New enum.
+	(linemap_client_expand_location_to_spelling_point): Add
+	enum location_aspect param.
+	* line-map.c (rich_location::get_expanded_location): Update for
+	new param of linemap_client_expand_location_to_spelling_point.
+	(rich_location::maybe_add_fixit): Likewise.
+	(fixit_hint::affects_line_p): Likewise.
+
+2017-06-21  Jakub Jelinek  <jakub@redhat.com>
+
+	* line-map.c (location_adhoc_data_update): Perform addition in
+	uintptr_t type rather than char * type.  Read *data using
+	ptrdiff_t type instead of int64_t.
+	(get_combined_adhoc_loc): Change offset type to ptrdiff_t from
+	int64_t.
+
+2017-06-20  David Malcolm  <dmalcolm@redhat.com>
+
+	* include/line-map.h (class rich_location): Document that attempts
+	to delete or replace a range *affecting* multiple lines will fail.
+	* line-map.c (rich_location::maybe_add_fixit): Implement this
+	restriction.
+
 2017-06-09  David Malcolm  <dmalcolm@redhat.com>
 
 	* include/line-map.h

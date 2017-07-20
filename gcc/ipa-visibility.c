@@ -97,7 +97,8 @@ non_local_p (struct cgraph_node *node, void *data ATTRIBUTE_UNUSED)
 	   && !DECL_EXTERNAL (node->decl)
 	   && !node->externally_visible
 	   && !node->used_from_other_partition
-	   && !node->in_other_partition);
+	   && !node->in_other_partition
+	   && node->get_availability () >= AVAIL_AVAILABLE);
 }
 
 /* Return true when function can be marked local.  */
@@ -621,9 +622,12 @@ function_and_variable_visibility (bool whole_program)
       int flags = flags_from_decl_or_type (node->decl);
 
       /* Optimize away PURE and CONST constructors and destructors.  */
-      if (optimize
+      if (node->analyzed
+	  && (DECL_STATIC_CONSTRUCTOR (node->decl)
+	      || DECL_STATIC_DESTRUCTOR (node->decl))
 	  && (flags & (ECF_CONST | ECF_PURE))
-	  && !(flags & ECF_LOOPING_CONST_OR_PURE))
+	  && !(flags & ECF_LOOPING_CONST_OR_PURE)
+	  && opt_for_fn (node->decl, optimize))
 	{
 	  DECL_STATIC_CONSTRUCTOR (node->decl) = 0;
 	  DECL_STATIC_DESTRUCTOR (node->decl) = 0;
@@ -875,7 +879,7 @@ static unsigned int
 whole_program_function_and_variable_visibility (void)
 {
   function_and_variable_visibility (flag_whole_program);
-  if (optimize)
+  if (optimize || in_lto_p)
     ipa_discover_readonly_nonaddressable_vars ();
   return 0;
 }

@@ -89,6 +89,37 @@ operator_name_info_t assignment_operator_name_info[(int) MAX_TREE_CODES];
 #include "operators.def"
 #undef DEF_OPERATOR
 
+/* Get the name of the kind of identifier T.  */
+
+const char *
+get_identifier_kind_name (tree id)
+{
+  /* Keep in sync with cp_id_kind enumeration.  */
+  static const char *const names[cik_max] = {
+    "normal", "keyword", "constructor", "destructor",
+    "assign-op", "op-assign-op", "simple-op", "conv-op", };
+
+  unsigned kind = 0;
+  kind |= IDENTIFIER_KIND_BIT_2 (id) << 2;
+  kind |= IDENTIFIER_KIND_BIT_1 (id) << 1;
+  kind |= IDENTIFIER_KIND_BIT_0 (id) << 0;
+
+  return names[kind];
+}
+
+/* Set the identifier kind, which we expect to currently be zero.  */
+
+void
+set_identifier_kind (tree id, cp_identifier_kind kind)
+{
+  gcc_checking_assert (!IDENTIFIER_KIND_BIT_2 (id)
+		       & !IDENTIFIER_KIND_BIT_1 (id)
+		       & !IDENTIFIER_KIND_BIT_0 (id));
+  IDENTIFIER_KIND_BIT_2 (id) |= (kind >> 2) & 1;
+  IDENTIFIER_KIND_BIT_1 (id) |= (kind >> 1) & 1;
+  IDENTIFIER_KIND_BIT_0 (id) |= (kind >> 0) & 1;
+}
+
 static void
 init_operators (void)
 {
@@ -96,22 +127,26 @@ init_operators (void)
   char buffer[256];
   struct operator_name_info_t *oni;
 
-#define DEF_OPERATOR(NAME, CODE, MANGLING, ARITY, ASSN_P)		    \
-  sprintf (buffer, ISALPHA (NAME[0]) ? "operator %s" : "operator%s", NAME); \
-  identifier = get_identifier (buffer);					    \
-  IDENTIFIER_OPNAME_P (identifier) = 1;					    \
-									    \
-  oni = (ASSN_P								    \
-	 ? &assignment_operator_name_info[(int) CODE]			    \
-	 : &operator_name_info[(int) CODE]);				    \
-  oni->identifier = identifier;						    \
-  oni->name = NAME;							    \
-  oni->mangled_name = MANGLING;						    \
+#define DEF_OPERATOR(NAME, CODE, MANGLING, ARITY, KIND)			\
+  sprintf (buffer, "operator%s%s", !NAME[0]				\
+	   || NAME[0] == '_' || ISALPHA (NAME[0]) ? " " : "", NAME);	\
+  identifier = get_identifier (buffer);					\
+									\
+  if (KIND != cik_simple_op || !IDENTIFIER_ANY_OP_P (identifier))	\
+    set_identifier_kind (identifier, KIND);				\
+  									\
+  oni = (KIND == cik_assign_op						\
+	 ? &assignment_operator_name_info[(int) CODE]			\
+	 : &operator_name_info[(int) CODE]);				\
+  oni->identifier = identifier;						\
+  oni->name = NAME;							\
+  oni->mangled_name = MANGLING;						\
   oni->arity = ARITY;
 
 #include "operators.def"
 #undef DEF_OPERATOR
 
+  operator_name_info[(int) TYPE_EXPR] = operator_name_info[(int) CAST_EXPR];
   operator_name_info[(int) ERROR_MARK].identifier
     = get_identifier ("<invalid operator>");
 
@@ -123,6 +158,7 @@ init_operators (void)
 
   operator_name_info [(int) INIT_EXPR].name
     = operator_name_info [(int) MODIFY_EXPR].name;
+
   operator_name_info [(int) EXACT_DIV_EXPR].name = "(ceiling /)";
   operator_name_info [(int) CEIL_DIV_EXPR].name = "(ceiling /)";
   operator_name_info [(int) FLOOR_DIV_EXPR].name = "(floor /)";
@@ -130,26 +166,20 @@ init_operators (void)
   operator_name_info [(int) CEIL_MOD_EXPR].name = "(ceiling %)";
   operator_name_info [(int) FLOOR_MOD_EXPR].name = "(floor %)";
   operator_name_info [(int) ROUND_MOD_EXPR].name = "(round %)";
+
   operator_name_info [(int) ABS_EXPR].name = "abs";
   operator_name_info [(int) TRUTH_AND_EXPR].name = "strict &&";
   operator_name_info [(int) TRUTH_OR_EXPR].name = "strict ||";
   operator_name_info [(int) RANGE_EXPR].name = "...";
   operator_name_info [(int) UNARY_PLUS_EXPR].name = "+";
 
-  assignment_operator_name_info [(int) EXACT_DIV_EXPR].name
-    = "(exact /=)";
-  assignment_operator_name_info [(int) CEIL_DIV_EXPR].name
-    = "(ceiling /=)";
-  assignment_operator_name_info [(int) FLOOR_DIV_EXPR].name
-    = "(floor /=)";
-  assignment_operator_name_info [(int) ROUND_DIV_EXPR].name
-    = "(round /=)";
-  assignment_operator_name_info [(int) CEIL_MOD_EXPR].name
-    = "(ceiling %=)";
-  assignment_operator_name_info [(int) FLOOR_MOD_EXPR].name
-    = "(floor %=)";
-  assignment_operator_name_info [(int) ROUND_MOD_EXPR].name
-    = "(round %=)";
+  assignment_operator_name_info [(int) EXACT_DIV_EXPR].name = "(exact /=)";
+  assignment_operator_name_info [(int) CEIL_DIV_EXPR].name = "(ceiling /=)";
+  assignment_operator_name_info [(int) FLOOR_DIV_EXPR].name = "(floor /=)";
+  assignment_operator_name_info [(int) ROUND_DIV_EXPR].name = "(round /=)";
+  assignment_operator_name_info [(int) CEIL_MOD_EXPR].name = "(ceiling %=)";
+  assignment_operator_name_info [(int) FLOOR_MOD_EXPR].name = "(floor %=)";
+  assignment_operator_name_info [(int) ROUND_MOD_EXPR].name = "(round %=)";
 }
 
 /* Initialize the reserved words.  */
@@ -184,7 +214,7 @@ init_reswords (void)
       C_SET_RID_CODE (id, c_common_reswords[i].rid);
       ridpointers [(int) c_common_reswords[i].rid] = id;
       if (! (c_common_reswords[i].disable & mask))
-	C_IS_RESERVED_WORD (id) = 1;
+	set_identifier_kind (id, cik_keyword);
     }
 
   for (i = 0; i < NUM_INT_N_ENTS; i++)
@@ -193,7 +223,7 @@ init_reswords (void)
       sprintf (name, "__int%d", int_n_data[i].bitsize);
       id = get_identifier (name);
       C_SET_RID_CODE (id, RID_FIRST_INT_N + i);
-      C_IS_RESERVED_WORD (id) = 1;
+      set_identifier_kind (id, cik_keyword);
     }
 }
 
@@ -431,7 +461,7 @@ unqualified_name_lookup_error (tree name, location_t loc)
   if (loc == UNKNOWN_LOCATION)
     loc = EXPR_LOC_OR_LOC (name, input_location);
 
-  if (IDENTIFIER_OPNAME_P (name))
+  if (IDENTIFIER_ANY_OP_P (name))
     {
       if (name != cp_operator_id (ERROR_MARK))
 	error_at (loc, "%qD not defined", name);
@@ -499,6 +529,74 @@ unqualified_fn_lookup_error (cp_expr name_expr)
     }
 
   return unqualified_name_lookup_error (name, loc);
+}
+
+struct conv_type_hasher : ggc_ptr_hash<tree_node>
+{
+  static hashval_t hash (tree);
+  static bool equal (tree, tree);
+};
+
+/* This hash table maps TYPEs to the IDENTIFIER for a conversion
+   operator to TYPE.  The nodes are IDENTIFIERs whose TREE_TYPE is the
+   TYPE.  */
+
+static GTY (()) hash_table<conv_type_hasher> *conv_type_names;
+
+/* Hash a node (VAL1) in the table.  */
+
+hashval_t
+conv_type_hasher::hash (tree val)
+{
+  return (hashval_t) TYPE_UID (TREE_TYPE (val));
+}
+
+/* Compare VAL1 (a node in the table) with VAL2 (a TYPE).  */
+
+bool
+conv_type_hasher::equal (tree val1, tree val2)
+{
+  return TREE_TYPE (val1) == val2;
+}
+
+/* Return an identifier for a conversion operator to TYPE.  We can
+   get from the returned identifier to the type.  */
+
+tree
+make_conv_op_name (tree type)
+{
+  tree *slot;
+  tree identifier;
+
+  if (type == error_mark_node)
+    return error_mark_node;
+
+  if (conv_type_names == NULL)
+    conv_type_names = hash_table<conv_type_hasher>::create_ggc (31);
+
+  slot = conv_type_names->find_slot_with_hash (type,
+					       (hashval_t) TYPE_UID (type),
+					       INSERT);
+  identifier = *slot;
+  if (!identifier)
+    {
+      char buffer[64];
+
+       /* Create a unique name corresponding to TYPE.  */
+      sprintf (buffer, "operator %lu",
+	       (unsigned long) conv_type_names->elements ());
+      identifier = get_identifier (buffer);
+      *slot = identifier;
+
+      /* Hang TYPE off the identifier so it can be found easily later
+	 when performing conversions.  */
+      TREE_TYPE (identifier) = type;
+
+      /* Set the identifier kind so we know later it's a conversion.  */
+      set_identifier_kind (identifier, cik_conv_op);
+    }
+
+  return identifier;
 }
 
 /* Wrapper around build_lang_decl_loc(). Should gradually move to
@@ -711,21 +809,21 @@ copy_type (tree type MEM_STAT_DECL)
 static bool
 maybe_add_lang_type_raw (tree t)
 {
-  bool add = (RECORD_OR_UNION_CODE_P (TREE_CODE (t))
-	      || TREE_CODE (t) == BOUND_TEMPLATE_TEMPLATE_PARM);
-  if (add)
-    {
-      TYPE_LANG_SPECIFIC (t)
-	= (struct lang_type *) (ggc_internal_cleared_alloc
-				(sizeof (struct lang_type)));
+  if (!(RECORD_OR_UNION_CODE_P (TREE_CODE (t))
+	|| TREE_CODE (t) == BOUND_TEMPLATE_TEMPLATE_PARM))
+    return false;
+  
+  TYPE_LANG_SPECIFIC (t)
+    = (struct lang_type *) (ggc_internal_cleared_alloc
+			    (sizeof (struct lang_type)));
 
-      if (GATHER_STATISTICS)
-	{
-	  tree_node_counts[(int)lang_type] += 1;
-	  tree_node_sizes[(int)lang_type] += sizeof (struct lang_type);
-	}
+  if (GATHER_STATISTICS)
+    {
+      tree_node_counts[(int)lang_type] += 1;
+      tree_node_sizes[(int)lang_type] += sizeof (struct lang_type);
     }
-  return add;
+
+  return true;
 }
 
 tree
@@ -769,3 +867,5 @@ in_main_input_context (void)
   else
     return filename_cmp (main_input_filename, LOCATION_FILE (input_location)) == 0;
 }
+
+#include "gt-cp-lex.h"

@@ -1155,7 +1155,7 @@ try_redirect_by_replacing_jump (edge e, basic_block target, bool in_cfglayout)
   else
     e->flags = 0;
 
-  e->probability = REG_BR_PROB_BASE;
+  e->probability = profile_probability::always ();
   e->count = src->count;
 
   if (e->dest != target)
@@ -1504,12 +1504,10 @@ force_nonfallthru_and_redirect (edge e, basic_block target, rtx jump_label)
 	{
 	  int prob = XINT (note, 0);
 
-	  b->probability = prob;
-	  b->count = e->count.apply_probability (prob);
+	  b->probability = profile_probability::from_reg_br_prob_note (prob);
+	  b->count = e->count.apply_probability (b->probability);
 	  e->probability -= e->probability;
 	  e->count -= b->count;
-	  if (e->probability < 0)
-	    e->probability = 0;
 	}
     }
 
@@ -1618,7 +1616,7 @@ force_nonfallthru_and_redirect (edge e, basic_block target, rtx jump_label)
     {
       rtx_insn *new_head;
       profile_count count = e->count;
-      int probability = e->probability;
+      profile_probability probability = e->probability;
       /* Create the new structures.  */
 
       /* If the old block ended with a tablejump, skip its table
@@ -1646,7 +1644,7 @@ force_nonfallthru_and_redirect (edge e, basic_block target, rtx jump_label)
 
       /* Redirect old edge.  */
       redirect_edge_pred (e, jump_block);
-      e->probability = REG_BR_PROB_BASE;
+      e->probability = profile_probability::always ();
 
       /* If e->src was previously region crossing, it no longer is
          and the reg crossing note should be removed.  */
@@ -1656,7 +1654,7 @@ force_nonfallthru_and_redirect (edge e, basic_block target, rtx jump_label)
 	 add also edge from asm goto bb to target.  */
       if (asm_goto_edge)
 	{
-	  new_edge->probability /= 2;
+	  new_edge->probability = new_edge->probability.apply_scale (1, 2);
 	  new_edge->count = new_edge->count.apply_scale (1, 2);
 	  jump_block->count = jump_block->count.apply_scale (1, 2);
 	  jump_block->frequency /= 2;
@@ -2251,12 +2249,13 @@ void
 update_br_prob_note (basic_block bb)
 {
   rtx note;
-  if (!JUMP_P (BB_END (bb)))
+  if (!JUMP_P (BB_END (bb)) || !BRANCH_EDGE (bb)->probability.initialized_p ())
     return;
   note = find_reg_note (BB_END (bb), REG_BR_PROB, NULL_RTX);
-  if (!note || XINT (note, 0) == BRANCH_EDGE (bb)->probability)
+  if (!note
+      || XINT (note, 0) == BRANCH_EDGE (bb)->probability.to_reg_br_prob_note ())
     return;
-  XINT (note, 0) = BRANCH_EDGE (bb)->probability;
+  XINT (note, 0) = BRANCH_EDGE (bb)->probability.to_reg_br_prob_note ();
 }
 
 /* Get the last insn associated with block BB (that includes barriers and
@@ -2447,11 +2446,22 @@ rtl_verify_edges (void)
 	  && EDGE_COUNT (bb->succs) >= 2
 	  && any_condjump_p (BB_END (bb)))
 	{
-	  if (XINT (note, 0) != BRANCH_EDGE (bb)->probability
-	      && profile_status_for_fn (cfun) != PROFILE_ABSENT)
+	  if (!BRANCH_EDGE (bb)->probability.initialized_p ())
+	    {
+	      if (profile_status_for_fn (cfun) != PROFILE_ABSENT)
+		{
+		  error ("verify_flow_info: "
+			 "REG_BR_PROB is set but cfg probability is not");
+		  err = 1;
+		}
+	    }
+	  else if (XINT (note, 0)
+	           != BRANCH_EDGE (bb)->probability.to_reg_br_prob_note ()
+	           && profile_status_for_fn (cfun) != PROFILE_ABSENT)
 	    {
 	      error ("verify_flow_info: REG_BR_PROB does not match cfg %i %i",
-		     XINT (note, 0), BRANCH_EDGE (bb)->probability);
+		     XINT (note, 0),
+		     BRANCH_EDGE (bb)->probability.to_reg_br_prob_note ());
 	      err = 1;
 	    }
 	}
@@ -3143,7 +3153,7 @@ purge_dead_edges (basic_block bb)
       /* Redistribute probabilities.  */
       if (single_succ_p (bb))
 	{
-	  single_succ_edge (bb)->probability = REG_BR_PROB_BASE;
+	  single_succ_edge (bb)->probability = profile_probability::always ();
 	  single_succ_edge (bb)->count = bb->count;
 	}
       else
@@ -3154,8 +3164,9 @@ purge_dead_edges (basic_block bb)
 
 	  b = BRANCH_EDGE (bb);
 	  f = FALLTHRU_EDGE (bb);
-	  b->probability = XINT (note, 0);
-	  f->probability = REG_BR_PROB_BASE - b->probability;
+	  b->probability = profile_probability::from_reg_br_prob_note
+					 (XINT (note, 0));
+	  f->probability = b->probability.invert ();
 	  b->count = bb->count.apply_probability (b->probability);
 	  f->count = bb->count.apply_probability (f->probability);
 	}
@@ -3208,7 +3219,7 @@ purge_dead_edges (basic_block bb)
 
   gcc_assert (single_succ_p (bb));
 
-  single_succ_edge (bb)->probability = REG_BR_PROB_BASE;
+  single_succ_edge (bb)->probability = profile_probability::always ();
   single_succ_edge (bb)->count = bb->count;
 
   if (dump_file)
@@ -3781,7 +3792,8 @@ fixup_reorder_chain (void)
 		  rtx note = find_reg_note (bb_end_jump, REG_BR_PROB, 0);
 
 		  if (note
-		      && XINT (note, 0) < REG_BR_PROB_BASE / 2
+		      && profile_probability::from_reg_br_prob_note
+				 (XINT (note, 0)) < profile_probability::even ()
 		      && invert_jump (bb_end_jump,
 				      (e_fall->dest
 				       == EXIT_BLOCK_PTR_FOR_FN (cfun)
@@ -4891,7 +4903,9 @@ rtl_flow_call_edges_add (sbitmap blocks)
 		    blocks_split++;
 		}
 
-	      make_edge (bb, EXIT_BLOCK_PTR_FOR_FN (cfun), EDGE_FAKE);
+	      edge ne = make_edge (bb, EXIT_BLOCK_PTR_FOR_FN (cfun), EDGE_FAKE);
+	      ne->probability = profile_probability::guessed_never ();
+	      ne->count = profile_count::guessed_zero ();
 	    }
 
 	  if (insn == BB_HEAD (bb))
@@ -4931,7 +4945,8 @@ rtl_lv_add_condition_to_bb (basic_block first_head ,
   start_sequence ();
   op0 = force_operand (op0, NULL_RTX);
   op1 = force_operand (op1, NULL_RTX);
-  do_compare_rtx_and_jump (op0, op1, comp, 0, mode, NULL_RTX, NULL, label, -1);
+  do_compare_rtx_and_jump (op0, op1, comp, 0, mode, NULL_RTX, NULL, label,
+			   profile_probability::uninitialized ());
   jump = get_last_insn ();
   JUMP_LABEL (jump) = label;
   LABEL_NUSES (label)++;

@@ -5652,7 +5652,7 @@ cp_build_addr_expr_1 (tree arg, bool strict_lvalue, tsubst_flags_t complain)
   arg = mark_lvalue_use (arg);
   argtype = lvalue_type (arg);
 
-  gcc_assert (!identifier_p (arg) || !IDENTIFIER_OPNAME_P (arg));
+  gcc_assert (!(identifier_p (arg) && IDENTIFIER_ANY_OP_P (arg)));
 
   if (TREE_CODE (arg) == COMPONENT_REF && type_unknown_p (arg)
       && !really_overloaded_fn (arg))
@@ -6681,7 +6681,7 @@ maybe_warn_about_useless_cast (tree type, tree expr, tsubst_flags_t complain)
 	       ? xvalue_p (expr) : lvalue_p (expr))
 	   && same_type_p (TREE_TYPE (expr), TREE_TYPE (type)))
 	  || same_type_p (TREE_TYPE (expr), type))
-	warning (OPT_Wuseless_cast, "useless cast to type %qT", type);
+	warning (OPT_Wuseless_cast, "useless cast to type %q#T", type);
     }
 }
 
@@ -8590,9 +8590,10 @@ convert_for_assignment (tree type, tree rhs,
 	      if (rhstype == unknown_type_node)
 		{
 		  tree r = instantiate_type (type, rhs, tf_warning_or_error);
-		  /* -fpermissive might allow this.  */
+		  /* -fpermissive might allow this; recurse.  */
 		  if (!seen_error ())
-		    return r;
+		    return convert_for_assignment (type, r, errtype, fndecl,
+						   parmnum, complain, flags);
 		}
 	      else if (fndecl)
 		error ("cannot convert %qH to %qI for argument %qP to %qD",

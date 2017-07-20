@@ -4962,6 +4962,24 @@ expand_builtin_alloca (tree exp)
   return result;
 }
 
+/* Emit a call to __asan_allocas_unpoison call in EXP.  Replace second argument
+   of the call with virtual_stack_dynamic_rtx because in asan pass we emit a
+   dummy value into second parameter relying on this function to perform the
+   change.  See motivation for this in comment to handle_builtin_stack_restore
+   function.  */
+
+static rtx
+expand_asan_emit_allocas_unpoison (tree exp)
+{
+  tree arg0 = CALL_EXPR_ARG (exp, 0);
+  rtx top = expand_expr (arg0, NULL_RTX, ptr_mode, EXPAND_NORMAL);
+  rtx bot = convert_memory_address (ptr_mode, virtual_stack_dynamic_rtx);
+  rtx ret = init_one_libfunc ("__asan_allocas_unpoison");
+  ret = emit_library_call_value (ret, NULL_RTX, LCT_NORMAL, ptr_mode, 2, top,
+				 ptr_mode, bot, ptr_mode);
+  return ret;
+}
+
 /* Expand a call to bswap builtin in EXP.
    Return NULL_RTX if a normal call should be emitted rather than expanding the
    function in-line.  If convenient, the result should be placed in TARGET.
@@ -6079,6 +6097,12 @@ expand_builtin_atomic_fetch_op (machine_mode mode, tree exp, rtx target,
   gcc_assert (TREE_OPERAND (addr, 0) == fndecl);
   TREE_OPERAND (addr, 0) = builtin_decl_explicit (ext_call);
 
+  /* If we will emit code after the call, the call can not be a tail call.
+     If it is emitted as a tail call, a barrier is emitted after it, and
+     then all trailing code is removed.  */
+  if (!ignore)
+    CALL_EXPR_TAILCALL (exp) = 0;
+
   /* Expand the call here so we can emit trailing code.  */
   ret = expand_call (exp, target, ignore);
 
@@ -6756,6 +6780,9 @@ expand_builtin (tree exp, rtx target, rtx subtarget, machine_mode mode,
       if (target)
 	return target;
       break;
+
+    case BUILT_IN_ASAN_ALLOCAS_UNPOISON:
+      return expand_asan_emit_allocas_unpoison (exp);
 
     case BUILT_IN_STACK_SAVE:
       return expand_stack_save ();
@@ -8733,13 +8760,12 @@ fold_builtin_FILE (location_t loc)
 static inline tree
 fold_builtin_FUNCTION ()
 {
-  if (current_function_decl)
-    {
-      const char *name = IDENTIFIER_POINTER (DECL_NAME (current_function_decl));
-      return build_string_literal (strlen (name) + 1, name);
-    }
+  const char *name = "";
 
-  return build_string_literal (1, "");
+  if (current_function_decl)
+    name = lang_hooks.decl_printable_name (current_function_decl, 0);
+
+  return build_string_literal (strlen (name) + 1, name);
 }
 
 /* Fold a call to __builtin_LINE to an integer constant.  */
@@ -9034,7 +9060,6 @@ fold_builtin_3 (location_t loc, tree fndecl,
 	return do_mpfr_remquo (arg0, arg1, arg2);
     break;
 
-    case BUILT_IN_BCMP:
     case BUILT_IN_MEMCMP:
       return fold_builtin_memcmp (loc, arg0, arg1, arg2);;
 

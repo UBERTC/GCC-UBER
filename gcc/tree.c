@@ -5162,8 +5162,6 @@ free_lang_data_in_type (tree type)
 	  /* C++ FE uses TREE_PURPOSE to store initial values.  */
 	  TREE_PURPOSE (p) = NULL;
 	}
-      /* Java uses TYPE_MINVAL for TYPE_ARGUMENT_SIGNATURE.  */
-      TYPE_MINVAL (type) = NULL;
     }
   if (TREE_CODE (type) == METHOD_TYPE)
     {
@@ -5174,8 +5172,6 @@ free_lang_data_in_type (tree type)
 	  /* C++ FE uses TREE_PURPOSE to store initial values.  */
 	  TREE_PURPOSE (p) = NULL;
 	}
-      /* Java uses TYPE_MINVAL for TYPE_ARGUMENT_SIGNATURE.  */
-      TYPE_MINVAL (type) = NULL;
     }
 
   /* Remove members that are not actually FIELD_DECLs from the field
@@ -5637,9 +5633,9 @@ find_decls_types_r (tree *tp, int *ws, void *data)
 	 them and thus do not and want not to reach unused pointer types
 	 this way.  */
       if (!POINTER_TYPE_P (t))
-	fld_worklist_push (TYPE_MINVAL (t), fld);
+	fld_worklist_push (TYPE_MIN_VALUE_RAW (t), fld);
       if (!RECORD_OR_UNION_TYPE_P (t))
-	fld_worklist_push (TYPE_MAXVAL (t), fld);
+	fld_worklist_push (TYPE_MAX_VALUE_RAW (t), fld);
       fld_worklist_push (TYPE_MAIN_VARIANT (t), fld);
       /* Do not walk TYPE_NEXT_VARIANT.  We do not stream it and thus
          do not and want not to reach unused variants this way.  */
@@ -5661,16 +5657,7 @@ find_decls_types_r (tree *tp, int *ws, void *data)
 	  tree tem;
 	  FOR_EACH_VEC_ELT (*BINFO_BASE_BINFOS (TYPE_BINFO (t)), i, tem)
 	    fld_worklist_push (TREE_TYPE (tem), fld);
-	  tem = BINFO_VIRTUALS (TYPE_BINFO (t));
-	  if (tem
-	      /* The Java FE overloads BINFO_VIRTUALS for its own purpose.  */
-	      && TREE_CODE (tem) == TREE_LIST)
-	    do
-	      {
-		fld_worklist_push (TREE_VALUE (tem), fld);
-		tem = TREE_CHAIN (tem);
-	      }
-	    while (tem);
+	  fld_worklist_push (BINFO_VIRTUALS (TYPE_BINFO (t)), fld);
 	}
       if (RECORD_OR_UNION_TYPE_P (t))
 	{
@@ -5983,8 +5970,10 @@ free_lang_data (void)
   free_lang_data_in_cgraph ();
 
   /* Create gimple variants for common types.  */
-  fileptr_type_node = ptr_type_node;
-  const_tm_ptr_type_node = const_ptr_type_node;
+  for (unsigned i = 0;
+       i < sizeof (builtin_structptr_types) / sizeof (builtin_structptr_type);
+       ++i)
+    builtin_structptr_types[i].node = builtin_structptr_types[i].base;
 
   /* Reset some langhooks.  Do not reset types_compatible_p, it may
      still be used indirectly via the get_alias_set langhook.  */
@@ -10449,8 +10438,10 @@ build_common_tree_nodes (bool signed_char)
   ptr_type_node = build_pointer_type (void_type_node);
   const_ptr_type_node
     = build_pointer_type (build_type_variant (void_type_node, 1, 0));
-  fileptr_type_node = ptr_type_node;
-  const_tm_ptr_type_node = const_ptr_type_node;
+  for (unsigned i = 0;
+       i < sizeof (builtin_structptr_types) / sizeof (builtin_structptr_type);
+       ++i)
+    builtin_structptr_types[i].node = builtin_structptr_types[i].base;
 
   pointer_sized_int_node = build_nonstandard_integer_type (POINTER_SIZE, 1);
 
@@ -10795,7 +10786,7 @@ build_common_builtin_nodes (void)
 			ECF_PURE | ECF_NOTHROW | ECF_LEAF);
 
   /* If there's a possibility that we might use the ARM EABI, build the
-    alternate __cxa_end_cleanup node used to resume from C++ and Java.  */
+    alternate __cxa_end_cleanup node used to resume from C++.  */
   if (targetm.arm_eabi_unwinder)
     {
       ftype = build_function_type_list (void_type_node, NULL_TREE);
@@ -13983,7 +13974,7 @@ verify_type (const_tree t)
    }
 
 
-  /* Check various uses of TYPE_MINVAL.  */
+  /* Check various uses of TYPE_MIN_VALUE_RAW.  */
   if (RECORD_OR_UNION_TYPE_P (t))
     {
       /* FIXME: C FE uses TYPE_VFIELD to record C_TYPE_INCOMPLETE_VARS
@@ -14024,15 +14015,6 @@ verify_type (const_tree t)
 	  useless_type_conversion_p (const_cast <tree> (t),
 				     TREE_TYPE (TYPE_MIN_VALUE (t))
 	 but does not for C sizetypes in LTO.  */
-    }
-  /* Java uses TYPE_MINVAL for TYPE_ARGUMENT_SIGNATURE.  */
-  else if (TYPE_MINVAL (t)
-	   && ((TREE_CODE (t) != METHOD_TYPE && TREE_CODE (t) != FUNCTION_TYPE)
-	       || in_lto_p))
-    {
-      error ("TYPE_MINVAL non-NULL");
-      debug_tree (TYPE_MINVAL (t));
-      error_found = true;
     }
 
   /* Check various uses of TYPE_MAXVAL.  */
@@ -14087,10 +14069,10 @@ verify_type (const_tree t)
 	  error_found = true;
         } 
     }
-  else if (TYPE_MAXVAL (t))
+  else if (TYPE_MAX_VALUE_RAW (t))
     {
-      error ("TYPE_MAXVAL non-NULL");
-      debug_tree (TYPE_MAXVAL (t));
+      error ("TYPE_MAX_VALUE_RAW non-NULL");
+      debug_tree (TYPE_MAX_VALUE_RAW (t));
       error_found = true;
     }
 
@@ -14103,14 +14085,6 @@ verify_type (const_tree t)
 	{
 	  error ("TYPE_BINFO is not TREE_BINFO");
 	  debug_tree (TYPE_BINFO (t));
-	  error_found = true;
-	}
-      /* FIXME: Java builds invalid empty binfos that do not have
-         TREE_TYPE set.  */
-      else if (TREE_TYPE (TYPE_BINFO (t)) != TYPE_MAIN_VARIANT (t) && 0)
-	{
-	  error ("TYPE_BINFO type is not TYPE_MAIN_VARIANT");
-	  debug_tree (TREE_TYPE (TYPE_BINFO (t)));
 	  error_found = true;
 	}
     }
@@ -14266,20 +14240,6 @@ verify_type (const_tree t)
     {
       error ("TYPE_STRING_FLAG is set on wrong type code");
       error_found = true;
-    }
-  else if (TYPE_STRING_FLAG (t))
-    {
-      const_tree b = t;
-      if (TREE_CODE (b) == ARRAY_TYPE)
-	b = TREE_TYPE (t);
-      /* Java builds arrays with TYPE_STRING_FLAG of promoted_char_type
-	 that is 32bits.  */
-      if (TREE_CODE (b) != INTEGER_TYPE)
-	{
-	  error ("TYPE_STRING_FLAG is set on type that does not look like "
-		 "char nor array of chars");
-	  error_found = true;
-	}
     }
   
   /* ipa-devirt makes an assumption that TYPE_METHOD_BASETYPE is always
@@ -14543,6 +14503,20 @@ get_nonnull_args (const_tree fntype)
 
   return argmap;
 }
+
+/* List of pointer types used to declare builtins before we have seen their
+   real declaration.
+
+   Keep the size up to date in tree.h !  */
+const builtin_structptr_type builtin_structptr_types[6] = 
+{
+  { fileptr_type_node, ptr_type_node, "FILE" },
+  { const_tm_ptr_type_node, const_ptr_type_node, "tm" },
+  { fenv_t_ptr_type_node, ptr_type_node, "fenv_t" },
+  { const_fenv_t_ptr_type_node, const_ptr_type_node, "fenv_t" },
+  { fexcept_t_ptr_type_node, ptr_type_node, "fexcept_t" },
+  { const_fexcept_t_ptr_type_node, const_ptr_type_node, "fexcept_t" }
+};
 
 #if CHECKING_P
 

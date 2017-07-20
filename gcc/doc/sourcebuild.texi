@@ -1582,6 +1582,12 @@ Test system supports executing NEON v2 instructions.
 ARM Target supports @code{-mfpu=neon -mfloat-abi=softfp} or compatible
 options.  Some multilibs may be incompatible with these options.
 
+@item arm_neon_ok_no_float_abi
+@anchor{arm_neon_ok_no_float_abi}
+ARM Target supports NEON with @code{-mfpu=neon}, but without any
+-mfloat-abi= option.  Some multilibs may be incompatible with this
+option.
+
 @item arm_neonv2_ok
 @anchor{arm_neonv2_ok}
 ARM Target supports @code{-mfpu=neon-vfpv4 -mfloat-abi=softfp} or compatible
@@ -2097,11 +2103,10 @@ Target supports section anchors.
 Target defaults to short enums.
 
 @item stack_size
-Target has limited stack size.  The stack size limit can be obtained using
-@code{[dg-effective-target-value stack_size]}.  For example:
-@smallexample
-/* @{ dg-additional-options "-DSTACK_SIZE=[dg-effective-target-value stack_size]" @{ target @{ stack_size @} @} @} */
-@end smallexample
+@anchor{stack_size_et}
+Target has limited stack size.  The stack size limit can be obtained using the
+STACK_SIZE macro defined by @ref{stack_size_ao,,@code{dg-add-options} feature
+@code{stack_size}}.
 
 @item static
 Target supports @option{-static}.
@@ -2282,6 +2287,12 @@ compliance mode.
 @code{mips16} function attributes.
 Only MIPS targets support this feature, and only then in certain modes.
 
+@item stack_size
+@anchor{stack_size_ao}
+Add the flags needed to define macro STACK_SIZE and set it to the stack size
+limit associated with the @ref{stack_size_et,,@code{stack_size} effective
+target}.
+
 @item tls
 Add the target-specific flags needed to use thread-local storage.
 @end table
@@ -2299,6 +2310,11 @@ the codeset to convert to.
 @item dg-require-profiling @var{profopt}
 Skip the test if the target does not support profiling with option
 @var{profopt}.
+
+@item dg-require-stack-check @var{check}
+Skip the test if the target does not support the @code{-fstack-check}
+option.  If @var{check} is @code{""}, support for @code{-fstack-check}
+is checked, for @code{-fstack-check=("@var{check}")} otherwise.
 
 @item dg-require-visibility @var{vis}
 Skip the test if the target does not support the @code{visibility} attribute.

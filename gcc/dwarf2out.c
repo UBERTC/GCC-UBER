@@ -5049,16 +5049,6 @@ is_cxx (const_tree decl)
   return is_cxx ();
 }
 
-/* Return TRUE if the language is Java.  */
-
-static inline bool
-is_java (void)
-{
-  unsigned int lang = get_AT_unsigned (comp_unit_die (), DW_AT_language);
-
-  return lang == DW_LANG_Java;
-}
-
 /* Return TRUE if the language is Fortran.  */
 
 static inline bool
@@ -10756,8 +10746,8 @@ output_pubname (dw_offset die_offset, pubname_entry *entry)
         case DW_TAG_enumerator:
           GDB_INDEX_SYMBOL_KIND_SET_VALUE(flags,
                                           GDB_INDEX_SYMBOL_KIND_VARIABLE);
-          if (!is_cxx () && !is_java ())
-            GDB_INDEX_SYMBOL_STATIC_SET_VALUE(flags, 1);
+	  if (!is_cxx ())
+	    GDB_INDEX_SYMBOL_STATIC_SET_VALUE(flags, 1);
           break;
         case DW_TAG_subprogram:
           GDB_INDEX_SYMBOL_KIND_SET_VALUE(flags,
@@ -10785,7 +10775,7 @@ output_pubname (dw_offset die_offset, pubname_entry *entry)
         case DW_TAG_union_type:
         case DW_TAG_enumeration_type:
           GDB_INDEX_SYMBOL_KIND_SET_VALUE(flags, GDB_INDEX_SYMBOL_KIND_TYPE);
-          if (!is_cxx () && !is_java ())
+	  if (!is_cxx ())
 	    GDB_INDEX_SYMBOL_STATIC_SET_VALUE(flags, 1);
           break;
         default:
@@ -19830,7 +19820,6 @@ lower_bound_default (void)
     case DW_LANG_C_plus_plus_14:
     case DW_LANG_ObjC:
     case DW_LANG_ObjC_plus_plus:
-    case DW_LANG_Java:
       return 0;
     case DW_LANG_Fortran77:
     case DW_LANG_Fortran90:
@@ -19846,7 +19835,6 @@ lower_bound_default (void)
     case DW_LANG_Ada83:
     case DW_LANG_Cobol74:
     case DW_LANG_Cobol85:
-    case DW_LANG_Pascal83:
     case DW_LANG_Modula2:
     case DW_LANG_PLI:
       return dwarf_version >= 4 ? 1 : -1;
@@ -23305,46 +23293,6 @@ gen_field_die (tree decl, struct vlr_context *ctx, dw_die_ref context_die)
   equate_decl_number_to_die (decl, decl_die);
 }
 
-#if 0
-/* Don't generate either pointer_type DIEs or reference_type DIEs here.
-   Use modified_type_die instead.
-   We keep this code here just in case these types of DIEs may be needed to
-   represent certain things in other languages (e.g. Pascal) someday.  */
-
-static void
-gen_pointer_type_die (tree type, dw_die_ref context_die)
-{
-  dw_die_ref ptr_die
-    = new_die (DW_TAG_pointer_type, scope_die_for (type, context_die), type);
-
-  equate_type_number_to_die (type, ptr_die);
-  add_type_attribute (ptr_die, TREE_TYPE (type), TYPE_UNQUALIFIED, false,
-		      context_die);
-  add_AT_unsigned (mod_type_die, DW_AT_byte_size, PTR_SIZE);
-}
-
-/* Don't generate either pointer_type DIEs or reference_type DIEs here.
-   Use modified_type_die instead.
-   We keep this code here just in case these types of DIEs may be needed to
-   represent certain things in other languages (e.g. Pascal) someday.  */
-
-static void
-gen_reference_type_die (tree type, dw_die_ref context_die)
-{
-  dw_die_ref ref_die, scope_die = scope_die_for (type, context_die);
-
-  if (TYPE_REF_IS_RVALUE (type) && dwarf_version >= 4)
-    ref_die = new_die (DW_TAG_rvalue_reference_type, scope_die, type);
-  else
-    ref_die = new_die (DW_TAG_reference_type, scope_die, type);
-
-  equate_type_number_to_die (type, ref_die);
-  add_type_attribute (ref_die, TREE_TYPE (type), TYPE_UNQUALIFIED, false,
-		      context_die);
-  add_AT_unsigned (mod_type_die, DW_AT_byte_size, PTR_SIZE);
-}
-#endif
-
 /* Generate a DIE for a pointer to a member type.  TYPE can be an
    OFFSET_TYPE, for a pointer to data member, or a RECORD_TYPE, for a
    pointer to member function.  */
@@ -23576,8 +23524,6 @@ gen_compile_unit_die (const char *filename)
     }
   else if (strcmp (language_string, "GNU F77") == 0)
     language = DW_LANG_Fortran77;
-  else if (strcmp (language_string, "GNU Pascal") == 0)
-    language = DW_LANG_Pascal83;
   else if (dwarf_version >= 3 || !dwarf_strict)
     {
       if (strcmp (language_string, "GNU Ada") == 0)
@@ -23593,8 +23539,6 @@ gen_compile_unit_die (const char *filename)
 		language = DW_LANG_Fortran08;
 	    }
 	}
-      else if (strcmp (language_string, "GNU Java") == 0)
-	language = DW_LANG_Java;
       else if (strcmp (language_string, "GNU Objective-C") == 0)
 	language = DW_LANG_ObjC;
       else if (strcmp (language_string, "GNU Objective-C++") == 0)
@@ -24206,10 +24150,6 @@ gen_member_die (tree type, dw_die_ref context_die)
       {
 	/* Don't include clones in the member list.  */
 	if (DECL_ABSTRACT_ORIGIN (member))
-	  continue;
-	/* Nor constructors for anonymous classes.  */
-	if (DECL_ARTIFICIAL (member)
-	    && dwarf2_name (member, 0) == NULL)
 	  continue;
 
 	child = lookup_decl_die (member);
@@ -25289,14 +25229,6 @@ gen_decl_die (tree decl, tree origin, struct vlr_context *ctx,
       break;
 
     case FUNCTION_DECL:
-      /* Don't output any DIEs to represent mere function declarations,
-	 unless they are class members or explicit block externs.  */
-      if (DECL_INITIAL (decl_or_origin) == NULL_TREE
-          && DECL_FILE_SCOPE_P (decl_or_origin)
-	  && (current_function_decl == NULL_TREE
-	      || DECL_ARTIFICIAL (decl_or_origin)))
-	break;
-
 #if 0
       /* FIXME */
       /* This doesn't work because the C frontend sets DECL_ABSTRACT_ORIGIN
@@ -25501,11 +25433,6 @@ dwarf2out_early_global_decl (tree decl)
       tree save_fndecl = current_function_decl;
       if (TREE_CODE (decl) == FUNCTION_DECL)
 	{
-	  /* No cfun means the symbol has no body, so there's nothing
-	     to emit.  */
-	  if (!DECL_STRUCT_FUNCTION (decl))
-	    goto early_decl_exit;
-
 	  /* For nested functions, make sure we have DIEs for the parents first
 	     so that all nested DIEs are generated at the proper scope in the
 	     first shot.  */
@@ -25522,7 +25449,6 @@ dwarf2out_early_global_decl (tree decl)
       if (TREE_CODE (decl) == FUNCTION_DECL)
 	current_function_decl = save_fndecl;
     }
- early_decl_exit:
   symtab->global_info_ready = save;
 }
 
@@ -25761,42 +25687,6 @@ dwarf2out_decl (tree decl)
       return;
 
     case FUNCTION_DECL:
-      /* What we would really like to do here is to filter out all mere
-	 file-scope declarations of file-scope functions which are never
-	 referenced later within this translation unit (and keep all of ones
-	 that *are* referenced later on) but we aren't clairvoyant, so we have
-	 no idea which functions will be referenced in the future (i.e. later
-	 on within the current translation unit). So here we just ignore all
-	 file-scope function declarations which are not also definitions.  If
-	 and when the debugger needs to know something about these functions,
-	 it will have to hunt around and find the DWARF information associated
-	 with the definition of the function.
-
-	 We can't just check DECL_EXTERNAL to find out which FUNCTION_DECL
-	 nodes represent definitions and which ones represent mere
-	 declarations.  We have to check DECL_INITIAL instead. That's because
-	 the C front-end supports some weird semantics for "extern inline"
-	 function definitions.  These can get inlined within the current
-	 translation unit (and thus, we need to generate Dwarf info for their
-	 abstract instances so that the Dwarf info for the concrete inlined
-	 instances can have something to refer to) but the compiler never
-	 generates any out-of-lines instances of such things (despite the fact
-	 that they *are* definitions).
-
-	 The important point is that the C front-end marks these "extern
-	 inline" functions as DECL_EXTERNAL, but we need to generate DWARF for
-	 them anyway. Note that the C++ front-end also plays some similar games
-	 for inline function definitions appearing within include files which
-	 also contain `#pragma interface' pragmas.
-
-	 If we are called from dwarf2out_abstract_function output a DIE
-	 anyway.  We can end up here this way with early inlining and LTO
-	 where the inlined function is output in a different LTRANS unit
-	 or not at all.  */
-      if (DECL_INITIAL (decl) == NULL_TREE
-	  && ! DECL_ABSTRACT_P (decl))
-	return;
-
       /* If we're a nested function, initially use a parent of NULL; if we're
 	 a plain function, this will be fixed up in decls_for_scope.  If
 	 we're a method, it will be ignored, since we already have a DIE.  */

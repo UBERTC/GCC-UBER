@@ -1,3 +1,69 @@
+2017-07-18  Nathan Sidwell  <nathan@acm.org>
+
+	* c-warn.c (warn_for_memset): Use TYPE_{MIN,MAX}_VALUE.
+
+2017-07-14  David Malcolm  <dmalcolm@redhat.com>
+
+	* c-common.c (try_to_locate_new_include_insertion_point): New
+	function.
+	(per_file_includes_t): New typedef.
+	(added_includes_t): New typedef.
+	(added_includes): New variable.
+	(maybe_add_include_fixit): New function.
+	* c-common.h (maybe_add_include_fixit): New decl.
+
+2017-07-10  Martin Sebor  <msebor@redhat.com>
+
+	PR other/81345
+	* c.opt (-Wstringop-overflow): Set defaults in LangEnabledBy.
+
+2017-07-06  David Malcolm  <dmalcolm@redhat.com>
+
+	* c-common.c (selftest::c_family_tests): New.
+	* c-common.h (selftest::run_c_tests): Move decl to c/c-lang.h.
+	(selftest::c_family_tests): New decl.
+
+2017-07-04  Marek Polacek  <polacek@redhat.com>
+
+	PR c/81231
+	* c-common.c (sync_resolve_size): Give error for pointers to incomplete
+	types.
+
+2017-07-04  Marek Polacek  <polacek@redhat.com>
+
+	* c-warn.c (warn_if_unused_value): Remove WITH_CLEANUP_EXPR handling.
+
+2017-06-28  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/81128
+	* c-attribs.c (handle_alias_ifunc_attribute): Append ifunc alias
+	to a function declaration.
+
+2017-06-28  Martin Liska  <mliska@suse.cz>
+
+	PR driver/79659
+	* c.opt: Add IntegerRange to various options.
+
+2017-06-26  Marek Polacek  <polacek@redhat.com>
+
+	PR c/80116
+	* c-common.h (warn_for_multistatement_macros): Declare.
+	* c-warn.c: Include "c-family/c-indentation.h".
+	(warn_for_multistatement_macros): New function.
+	* c.opt (Wmultistatement-macros): New option.
+	* c-indentation.c (guard_tinfo_to_string): No longer static.
+	Change the parameter type to "enum rid".  Handle RID_SWITCH.
+	* c-indentation.h (guard_tinfo_to_string): Declare.
+
+2017-06-23  Marc Glisse  <marc.glisse@inria.fr>
+
+	* c-common.c (c_common_nodes_and_builtins): Use builtin_structptr_types.
+
+2017-06-15  Martin Sebor  <msebor@redhat.com>
+
+	PR c++/80560
+	* c.opt (-Wclass-memaccess): New option.
+
 2017-06-14  Boris Kolpackov  <boris@codesynthesis.com>
 
 	* c-opts.c (c_common_finish): Handle '-' special value to -MF.

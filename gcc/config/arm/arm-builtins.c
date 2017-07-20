@@ -27,6 +27,7 @@
 #include "gimple-expr.h"
 #include "memmodel.h"
 #include "tm_p.h"
+#include "profile-count.h"
 #include "optabs.h"
 #include "emit-rtl.h"
 #include "recog.h"
@@ -807,7 +808,7 @@ arm_mangle_builtin_type (const_tree type)
 }
 
 static tree
-arm_simd_builtin_std_type (enum machine_mode mode,
+arm_simd_builtin_std_type (machine_mode mode,
 			   enum arm_type_qualifiers q)
 {
 #define QUAL_TYPE(M)  \
@@ -845,7 +846,7 @@ arm_simd_builtin_std_type (enum machine_mode mode,
 }
 
 static tree
-arm_lookup_simd_builtin_type (enum machine_mode mode,
+arm_lookup_simd_builtin_type (machine_mode mode,
 			      enum arm_type_qualifiers q)
 {
   int i;
@@ -867,8 +868,7 @@ arm_lookup_simd_builtin_type (enum machine_mode mode,
 }
 
 static tree
-arm_simd_builtin_type (enum machine_mode mode,
-			   bool unsigned_p, bool poly_p)
+arm_simd_builtin_type (machine_mode mode, bool unsigned_p, bool poly_p)
 {
   if (poly_p)
     return arm_lookup_simd_builtin_type (mode, qualifier_poly);
@@ -942,7 +942,7 @@ arm_init_simd_builtin_types (void)
   for (i = 0; i < nelts; i++)
     {
       tree eltype = arm_simd_types[i].eltype;
-      enum machine_mode mode = arm_simd_types[i].mode;
+      machine_mode mode = arm_simd_types[i].mode;
 
       if (arm_simd_types[i].itype == NULL)
 	arm_simd_types[i].itype =
@@ -1876,7 +1876,7 @@ arm_init_builtins (void)
      arm_init_neon_builtins which uses it.  */
   arm_init_fp16_builtins ();
 
-  if (TARGET_HARD_FLOAT)
+  if (TARGET_MAYBE_HARD_FLOAT)
     {
       arm_init_neon_builtins ();
       arm_init_vfp_builtins ();
@@ -1885,7 +1885,7 @@ arm_init_builtins (void)
 
   arm_init_acle_builtins ();
 
-  if (TARGET_HARD_FLOAT)
+  if (TARGET_MAYBE_HARD_FLOAT)
     {
       tree ftype_set_fpscr
 	= build_function_type_list (void_type_node, unsigned_type_node, NULL);
@@ -2232,7 +2232,7 @@ arm_expand_builtin_args (rtx target, machine_mode map_mode, int fcode,
 	      gcc_assert (argc > 0);
 	      if (CONST_INT_P (op[argc]))
 		{
-		  enum machine_mode vmode = mode[argc - 1];
+		  machine_mode vmode = mode[argc - 1];
 		  neon_lane_bounds (op[argc], 0, GET_MODE_NUNITS (vmode), exp);
 		}
 	      /* If the lane index isn't a constant then the next
@@ -2245,7 +2245,12 @@ constant_arg:
 		{
 		  error ("%Kargument %d must be a constant immediate",
 			 exp, argc + 1);
-		  return const0_rtx;
+		  /* We have failed to expand the pattern, and are safely
+		     in to invalid code.  But the mid-end will still try to
+		     build an assignment for this node while it expands,
+		     before stopping for the error, just pass it back
+		     TARGET to ensure a valid assignment.  */
+		  return target;
 		}
 	      break;
 
@@ -3093,7 +3098,7 @@ arm_builtin_vectorized_function (unsigned int fn, tree type_out, tree type_in)
    NULL_TREE is returned if no such builtin is available.  */
 #undef ARM_CHECK_BUILTIN_MODE
 #define ARM_CHECK_BUILTIN_MODE(C)    \
-  (TARGET_FPU_ARMV8   \
+  (TARGET_VFP5   \
    && flag_unsafe_math_optimizations \
    && ARM_CHECK_BUILTIN_MODE_1 (C))
 

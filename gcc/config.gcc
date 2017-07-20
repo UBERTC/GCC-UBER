@@ -454,8 +454,10 @@ powerpc*-*-*spe*)
 	;;
 powerpc*-*-*)
 	cpu_type=rs6000
+	extra_objs="rs6000-string.o rs6000-p8swap.o"
 	extra_headers="ppc-asm.h altivec.h htmintrin.h htmxlintrin.h"
-	extra_headers="${extra_headers} bmi2intrin.h bmiintrin.h x86intrin.h"
+	extra_headers="${extra_headers} bmi2intrin.h bmiintrin.h"
+	extra_headers="${extra_headers} mmintrin.h x86intrin.h"
 	extra_headers="${extra_headers} ppu_intrinsics.h spu2vmx.h vec_types.h si2vmx.h"
 	extra_headers="${extra_headers} paired.h"
 	case x$with_cpu in
@@ -471,6 +473,7 @@ riscv*)
 	;;
 rs6000*-*-*)
 	extra_options="${extra_options} g.opt fused-madd.opt rs6000/rs6000-tables.opt"
+	extra_objs="rs6000-string.o rs6000-p8swap.o"
 	;;
 sparc*-*-*)
 	cpu_type=sparc
@@ -792,22 +795,8 @@ case ${target} in
   gas=yes
   gnu_ld=yes
   use_gcc_stdint=wrap
-
-  # NetBSD 2.0 and later get POSIX threads enabled by default.
-  # Allow them to be explicitly enabled on any other version.
   case ${enable_threads} in
-    "")
-      case ${target} in
-        *-*-netbsd[2-9]* | *-*-netbsdelf[2-9]*)
-          thread_file='posix'
-          tm_defines="${tm_defines} NETBSD_ENABLE_PTHREADS"
-          ;;
-      esac
-      ;;
-    yes | posix)
-      thread_file='posix'
-      tm_defines="${tm_defines} NETBSD_ENABLE_PTHREADS"
-      ;;
+    "" | yes | posix) thread_file='posix' ;;
   esac
 
   # NetBSD 2.0 and later provide __cxa_atexit(), which we use by
@@ -923,6 +912,11 @@ case ${target} in
     no) ;;
     "" | yes | vxworks) thread_file='vxworks' ;;
     *) echo 'Unknown thread configuration for VxWorks'; exit 1 ;;
+  esac
+  case $target in
+    *-*-vxworks7*)
+      tm_defines="$tm_defines TARGET_VXWORKS7=1"
+      ;;
   esac
   ;;
 *-*-elf|arc*-*-elf*)
@@ -1052,7 +1046,7 @@ arc*-*-elf*)
 	big*)	tm_file="arc/big.h ${tm_file}"
 	esac
 	;;
-arc*-*-linux-uclibc*)
+arc*-*-linux*)
 	tm_file="arc/arc-arch.h dbxelf.h elfos.h gnu-user.h linux.h linux-android.h glibc-stdint.h arc/linux.h ${tm_file}"
 	tmake_file="${tmake_file} arc/t-arc"
 	extra_gcc_objs="driver-arc.o"
@@ -1090,7 +1084,7 @@ arm*-*-freebsd*)                # ARM FreeBSD EABI
 	tm_file="${tm_file} arm/bpabi.h arm/freebsd.h arm/aout.h arm/arm.h"
 	case $target in
 	armv6*-*-freebsd*)
-	    target_cpu_cname="arm1176jzfs"
+	    target_cpu_cname="arm1176jzf-s"
 	    tm_defines="${tm_defines} TARGET_FREEBSD_ARMv6=1"
             if test $fbsd_major -ge 11; then
                tm_defines="${tm_defines} TARGET_FREEBSD_ARM_HARD_FLOAT=1"
@@ -1161,8 +1155,8 @@ arm*-*-eabi* | arm*-*-symbianelf* | arm*-*-rtems* | arm*-*-fuchsia*)
 	  ;;
 	arm*-*-fuchsia*)
 	  tm_file="${tm_file} fuchsia.h arm/fuchsia-elf.h glibc-stdint.h"
-	  tmake_file="${tmake_file} arm/t-bpabi"
-	  target_cpu_cname="genericv7a"
+	  tmake_file="${tmake_file} arm/t-bpabi arm/t-fuchsia"
+	  target_cpu_cname="generic-armv7-a"
 	  ;;
 	arm*-*-rtems*)
 	  tm_file="${tm_file} rtems.h arm/rtems.h newlib-stdint.h"
@@ -1674,8 +1668,15 @@ i[34567]86-*-solaris2* | x86_64-*-solaris2.1[0-9]*)
 		esac
 	fi
 	;;
-i[4567]86-wrs-vxworks|i[4567]86-wrs-vxworksae)
-	tm_file="${tm_file} i386/unix.h i386/att.h elfos.h vx-common.h"
+i[4567]86-wrs-vxworks|i[4567]86-wrs-vxworksae|i[4567]86-wrs-vxworks7|x86_64-wrs-vxworks7)
+	tm_file="${tm_file} i386/unix.h i386/att.h elfos.h"
+	case ${target} in
+	  x86_64-*)
+	    need_64bit_isa=yes
+	    tm_file="${tm_file} i386/x86-64.h"
+	    ;;
+	esac
+	tm_file="${tm_file} vx-common.h"
 	case ${target} in
 	  *-vxworksae*)
 	    tm_file="${tm_file} vxworksae.h i386/vxworks.h i386/vxworksae.h"
@@ -3099,6 +3100,16 @@ powerpc*-*-* | rs6000-*-*)
 	tm_file="${tm_file} ${cpu_type}/option-defaults.h"
 esac
 
+# non-glibc systems
+case ${target} in
+*-linux-musl*)
+	tmake_file="${tmake_file} t-musl"
+	;;
+*-linux-uclibc*)
+	tmake_file="${tmake_file} t-uclibc"
+	;;
+esac
+
 # Build mkoffload tool
 case ${target} in
 *-intelmic-* | *-intelmicemul-*)
@@ -3857,11 +3868,15 @@ case "${target}" in
 				    echo "Error: You cannot use any of --with-arch/cpu/fpu/float/mode with --with-multilib-list=${with_multilib_list}" 1>&2
 				    exit 1
 				fi
-
+				# But pass the default value for float-abi
+				# through to the multilib selector
+				with_float="soft"
 				tmake_file="${tmake_file} ${tmake_profile_file}"
 				TM_MULTILIB_CONFIG="$with_multilib_list"
 			fi
 		fi
+		target_cpu_cname=${target_cpu_cname:-arm6}
+		with_cpu=${with_cpu:-$target_cpu_cname}
 		;;
 
 	fr*-*-*linux*)
@@ -4408,7 +4423,7 @@ case "${target}" in
 			| sparclite | f930 | f934 | sparclite86x \
 			| sparclet | tsc701 \
 			| v9 | ultrasparc | ultrasparc3 | niagara | niagara2 \
-			| niagara3 | niagara4 | niagara7)
+			| niagara3 | niagara4 | niagara7 | m8)
 				# OK
 				;;
 			*)
@@ -4495,11 +4510,12 @@ case ${target} in
 		;;
 
 	arm*-*-*)
-		if test x$target_cpu_cname = x
+		if test x$with_cpu = x
 		then
-			target_cpu_default2=TARGET_CPU_arm6
+			echo "Don't know the target cpu" 1>&2
+			exit 1
 		else
-			target_cpu_default2=TARGET_CPU_$target_cpu_cname
+			target_cpu_default2="\\\"$with_cpu\\\""
 		fi
 		;;
 

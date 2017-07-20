@@ -3569,8 +3569,8 @@ if test $in_tree_ld = yes ; then
   fi
 elif test x$gcc_cv_ld != x; then
   # Check if linker supports -Bstatic/-Bdynamic option
-  if $gcc_cv_ld --help 2>/dev/null | grep -- -Bstatic > /dev/null \
-     && $gcc_cv_ld --help 2>/dev/null | grep -- -Bdynamic > /dev/null; then
+  if $gcc_cv_ld --help 2>&1 | grep -- -Bstatic > /dev/null \
+     && $gcc_cv_ld --help 2>&1 | grep -- -Bdynamic > /dev/null; then
       gcc_cv_ld_static_dynamic=yes
   else
     case "$target" in
@@ -3614,7 +3614,7 @@ if test x"$demangler_in_ld" = xyes; then
     fi
   elif test x$gcc_cv_ld != x -a x"$gnu_ld" = xyes; then
     # Check if the GNU linker supports --demangle option
-    if $gcc_cv_ld --help 2>/dev/null | grep no-demangle > /dev/null; then
+    if $gcc_cv_ld --help 2>&1 | grep no-demangle > /dev/null; then
       gcc_cv_ld_demangle=yes
     fi
   fi
@@ -3817,6 +3817,16 @@ AS_HELP_STRING([--disable-fix-cortex-a53-843419],
       [AC_DEFINE(HAVE_AS_AVR_MRMW_OPTION, 1,
 		[Define if your avr assembler supports -mrmw option.])])
 
+    gcc_GAS_CHECK_FEATURE([__gcc_isr pseudo instruction],
+      gcc_cv_as_avr_mgccisr,,
+      [-mgcc-isr], [.text
+      		    __gcc_isr 1
+      		    __gcc_isr 2
+      		    __gcc_isr 0,r24
+      		   ],,
+      [AC_DEFINE(HAVE_AS_AVR_MGCCISR_OPTION, 1,
+		[Define if your avr assembler supports -mgcc-isr option.])])
+
     # Check how default linker description file implements .rodata for
     # avrxmega3 (PR21472).  avr-gcc assumes .rodata is *not* loaded to
     # RAM so avr-gcc skips __do_copy_data for .rodata objects.
@@ -3832,26 +3842,26 @@ EOF
     AC_TRY_COMMAND([$gcc_cv_as -mmcu=avrxmega3 conftest.s -o conftest.o])
     AC_TRY_COMMAND([$gcc_cv_ld -mavrxmega3 conftest.o -o conftest.elf])
     AC_TRY_COMMAND([$gcc_cv_nm conftest.elf > conftest.nm])
-    if test -f conftest.nm
+    if test -s conftest.nm
     then
 	if grep ' R xxvaryy' conftest.nm > /dev/null; then
 	    AC_MSG_RESULT(yes)
-	    rm -f conftest.s conftest.o conftest.elf conftest.nm
+	    AC_DEFINE(HAVE_LD_AVR_AVRXMEGA3_RODATA_IN_FLASH, 1,
+		[Define if your default avr linker script for avrxmega3 leaves .rodata in flash.])
 	else
 	    AC_MSG_RESULT(no: avrxmega3 .rodata located in RAM)
 	    echo "$as_me: nm output was" >&AS_MESSAGE_LOG_FD
 	    cat conftest.nm >&AS_MESSAGE_LOG_FD
-	    rm -f conftest.s conftest.o conftest.elf conftest.nm
 	    avr_ld_ver="`$gcc_cv_ld -v | sed -e 's:^.* ::'`"
-	    AC_MSG_ERROR([[support for avrxmega3 needs Binutils 2.29 or higher (have $avr_ld_ver)]])
+	    AC_MSG_WARN([[support for avrxmega3 .rodata in flash needs Binutils 2.29 or higher (have $avr_ld_ver)]])
 	fi
     else
 	AC_MSG_RESULT(test failed)
 	echo "$as_me: failed program was" >&AS_MESSAGE_LOG_FD
 	cat conftest.s >&AS_MESSAGE_LOG_FD
-	rm -f conftest.s conftest.o conftest.elf
-	AC_MSG_ERROR([[see `config.log' for details]])
+	AC_MSG_WARN([[see `config.log' for details]])
     fi
+    rm -f conftest.s conftest.o conftest.elf conftest.nm
     ;;
 
   cris-*-*)
@@ -4002,6 +4012,18 @@ foo:
        fpadd8 %f0, %f2, %f4],,
       [AC_DEFINE(HAVE_AS_SPARC5_VIS4, 1,
                 [Define if your assembler supports SPARC5 and VIS 4.0 instructions.])])
+
+    gcc_GAS_CHECK_FEATURE([SPARC6 instructions],
+      gcc_cv_as_sparc_sparc6,,
+      [-xarch=sparc6],
+      [.text
+       .register %g2, #scratch
+       .register %g3, #scratch
+       .align 4
+       rd %entropy, %g1
+       fpsll64x %f0, %f2, %f4],,
+      [AC_DEFINE(HAVE_AS_SPARC6, 1,
+                [Define if your assembler supports SPARC6 instructions.])])
 
     gcc_GAS_CHECK_FEATURE([LEON instructions],
       gcc_cv_as_sparc_leon,,
@@ -4985,7 +5007,7 @@ if test $in_tree_ld = yes ; then
 elif test x$gcc_cv_ld != x; then
   if echo "$ld_ver" | grep GNU > /dev/null; then
     # Check if linker supports --eh-frame-hdr option
-    if $gcc_cv_ld --help 2>/dev/null | grep eh-frame-hdr > /dev/null; then
+    if $gcc_cv_ld --help 2>&1 | grep eh-frame-hdr > /dev/null; then
       gcc_cv_ld_eh_frame_hdr=yes
     fi
   else
@@ -5085,7 +5107,7 @@ if test $in_tree_ld = yes ; then
   fi
 elif test x$gcc_cv_ld != x; then
   # Check if linker supports -pie option
-  if $gcc_cv_ld --help 2>/dev/null | grep -- -pie > /dev/null; then
+  if $gcc_cv_ld --help 2>&1 | grep -- -pie > /dev/null; then
     gcc_cv_ld_pie=yes
     case "$target" in
       *-*-solaris2*)
@@ -5411,19 +5433,19 @@ if test $in_tree_ld = yes ; then
     gcc_cv_ld_as_needed=yes
   fi
 elif test x$gcc_cv_ld != x; then
-	# Check if linker supports --as-needed and --no-as-needed options
-	if $gcc_cv_ld --help 2>/dev/null | grep as-needed > /dev/null; then
-		gcc_cv_ld_as_needed=yes
-	else
-	  case "$target" in
-	    # Solaris 2 ld always supports -z ignore/-z record.
-	    *-*-solaris2*)
-	      gcc_cv_ld_as_needed=yes
-	      gcc_cv_ld_as_needed_option="-z ignore"
-	      gcc_cv_ld_no_as_needed_option="-z record"
-	      ;;
-	  esac
-	fi
+  # Check if linker supports --as-needed and --no-as-needed options
+  if $gcc_cv_ld --help 2>&1 | grep as-needed > /dev/null; then
+    gcc_cv_ld_as_needed=yes
+  fi
+  case "$target:$gnu_ld" in
+    *-*-solaris2*:no)
+      # Solaris 2 ld always supports -z ignore/-z record.  Prefer the native
+      # forms.
+      gcc_cv_ld_as_needed=yes
+      gcc_cv_ld_as_needed_option="-z ignore"
+      gcc_cv_ld_no_as_needed_option="-z record"
+      ;;
+  esac
 fi
 # --as-needed/-z ignore can only be used if libgcc_s.so.1 uses
 # dl_iterate_phdr, i.e. since Solaris 11.
@@ -5663,7 +5685,7 @@ AC_CACHE_CHECK(linker --build-id support,
       gcc_cv_ld_buildid=yes
     fi
   elif test x$gcc_cv_ld != x; then
-    if $gcc_cv_ld --help 2>/dev/null | grep build-id > /dev/null; then
+    if $gcc_cv_ld --help 2>&1 | grep build-id > /dev/null; then
       gcc_cv_ld_buildid=yes
     fi
   fi])
@@ -5718,7 +5740,7 @@ AC_CACHE_CHECK(linker --sysroot support,
         gcc_cv_ld_sysroot=yes
       fi
   elif test x$gcc_cv_ld != x; then 
-    if $gcc_cv_ld --help 2>/dev/null | grep sysroot > /dev/null; then
+    if $gcc_cv_ld --help 2>&1 | grep sysroot > /dev/null; then
       gcc_cv_ld_sysroot=yes
     fi
   fi])
@@ -6392,7 +6414,7 @@ if test x"$ld_is_gold" = xno; then
     fi
   elif test x$gcc_cv_ld != x; then
     # Check if linker supports -a bndplt option
-    if $gcc_cv_ld --help 2>/dev/null | grep -- '-z bndplt' > /dev/null; then
+    if $gcc_cv_ld --help 2>&1 | grep -- '-z bndplt' > /dev/null; then
       ld_bndplt_support=yes
     fi
   fi
@@ -6413,7 +6435,7 @@ if test x"$ld_is_gold" = xno; then
     fi
   elif test x$gcc_cv_ld != x; then
     # Check if linker supports --push-state/--pop-state options
-    if $gcc_cv_ld --help 2>/dev/null | grep -- '--push-state' > /dev/null; then
+    if $gcc_cv_ld --help 2>&1 | grep -- '--push-state' > /dev/null; then
       ld_pushpopstate_support=yes
     fi
   fi

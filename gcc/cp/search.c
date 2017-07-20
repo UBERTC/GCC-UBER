@@ -507,10 +507,13 @@ current_scope (void)
 	      && same_type_p (DECL_FRIEND_CONTEXT (current_function_decl),
 			      current_class_type))))
     return current_function_decl;
+
   if (current_class_type)
     return current_class_type;
+
   if (current_function_decl)
     return current_function_decl;
+
   return current_namespace;
 }
 
@@ -1187,7 +1190,7 @@ lookup_field_r (tree binfo, void *data)
 
  done:
   /* Don't look for constructors or destructors in base classes.  */
-  if (IDENTIFIER_CTOR_OR_DTOR_P (lfi->name))
+  if (IDENTIFIER_CDTOR_P (lfi->name))
     return dfs_skip_bases;
   return NULL_TREE;
 }
@@ -1352,7 +1355,7 @@ lookup_member (tree xbasetype, tree name, int protect, bool want_type,
 
   if (rval && is_overloaded_fn (rval))
     rval = build_baselink (rval_binfo, basetype_path, rval,
-			   (IDENTIFIER_TYPENAME_P (name)
+			   (IDENTIFIER_CONV_OP_P (name)
 			   ? TREE_TYPE (name): NULL_TREE));
   return rval;
 }
@@ -1592,10 +1595,10 @@ lookup_fnfields_idx_nolazy (tree type, tree name)
   /* and destructors are second.  */
   if (name == dtor_identifier)
     {
-      fn = CLASSTYPE_DESTRUCTORS (type);
+      fn = CLASSTYPE_DESTRUCTOR (type);
       return fn ? CLASSTYPE_DESTRUCTOR_SLOT : -1;
     }
-  if (IDENTIFIER_TYPENAME_P (name))
+  if (IDENTIFIER_CONV_OP_P (name))
     return lookup_conversion_operator (type, TREE_TYPE (name));
 
   /* Skip the conversion operators.  */
@@ -1645,7 +1648,7 @@ lookup_fnfields_idx_nolazy (tree type, tree name)
 /* TYPE is a class type. Return the index of the fields within
    the method vector with name NAME, or -1 if no such field exists.  */
 
-int
+static int
 lookup_fnfields_1 (tree type, tree name)
 {
   if (!CLASS_TYPE_P (type))
@@ -1653,9 +1656,7 @@ lookup_fnfields_1 (tree type, tree name)
 
   if (COMPLETE_TYPE_P (type))
     {
-      if ((name == ctor_identifier
-	   || name == base_ctor_identifier
-	   || name == complete_ctor_identifier))
+      if (IDENTIFIER_CTOR_P (name))
 	{
 	  if (CLASSTYPE_LAZY_DEFAULT_CTOR (type))
 	    lazily_declare_fn (sfk_constructor, type);
@@ -1671,12 +1672,11 @@ lookup_fnfields_1 (tree type, tree name)
 	  if (CLASSTYPE_LAZY_MOVE_ASSIGN (type))
 	    lazily_declare_fn (sfk_move_assignment, type);
 	}
-      else if ((name == dtor_identifier
-		|| name == base_dtor_identifier
-		|| name == complete_dtor_identifier
-		|| name == deleting_dtor_identifier)
-	       && CLASSTYPE_LAZY_DESTRUCTOR (type))
-	lazily_declare_fn (sfk_destructor, type);
+      else if (IDENTIFIER_DTOR_P (name))
+	{
+	  if (CLASSTYPE_LAZY_DESTRUCTOR (type))
+	    lazily_declare_fn (sfk_destructor, type);
+	}
     }
 
   return lookup_fnfields_idx_nolazy (type, name);
@@ -1705,20 +1705,29 @@ lookup_fnfields_slot_nolazy (tree type, tree name)
   return (*CLASSTYPE_METHOD_VEC (type))[ix];
 }
 
-/* Like lookup_fnfields_1, except that the name is extracted from
-   FUNCTION, which is a FUNCTION_DECL or a TEMPLATE_DECL.  */
+/* Collect all the conversion operators of KLASS.  */
 
-int
-class_method_index_for_fn (tree class_type, tree function)
+tree
+lookup_all_conversions (tree klass)
 {
-  gcc_assert (DECL_DECLARES_FUNCTION_P (function));
+  tree lkp = NULL_TREE;
 
-  return lookup_fnfields_1 (class_type,
-			    DECL_CONSTRUCTOR_P (function) ? ctor_identifier :
-			    DECL_DESTRUCTOR_P (function) ? dtor_identifier :
-			    DECL_NAME (function));
+  if (vec<tree, va_gc> *methods = CLASSTYPE_METHOD_VEC (klass))
+    {
+      tree ovl;
+      for (int idx = CLASSTYPE_FIRST_CONVERSION_SLOT;
+	   methods->iterate (idx, &ovl); ++idx)
+	{
+	  if (!DECL_CONV_FN_P (OVL_FIRST (ovl)))
+	    /* There are no more conversion functions.  */
+	    break;
+
+	  lkp = lookup_add (ovl, lkp);
+	}
+    }
+
+  return lkp;
 }
-
 
 /* DECL is the result of a qualified name lookup.  QUALIFYING_SCOPE is
    the class or namespace used to qualify the name.  CONTEXT_CLASS is
@@ -2974,6 +2983,28 @@ binfo_via_virtual (tree binfo, tree limit)
 	return binfo;
     }
   return NULL_TREE;
+}
+
+/* BINFO is for a base class in some hierarchy.  Return true iff it is a
+   direct base.  */
+
+bool
+binfo_direct_p (tree binfo)
+{
+  tree d_binfo = BINFO_INHERITANCE_CHAIN (binfo);
+  if (BINFO_INHERITANCE_CHAIN (d_binfo))
+    /* A second inheritance chain means indirect.  */
+    return false;
+  if (!BINFO_VIRTUAL_P (binfo))
+    /* Non-virtual, so only one inheritance chain means direct.  */
+    return true;
+  /* A virtual base looks like a direct base, so we need to look through the
+     direct bases to see if it's there.  */
+  tree b_binfo;
+  for (int i = 0; BINFO_BASE_ITERATE (d_binfo, i, b_binfo); ++i)
+    if (b_binfo == binfo)
+      return true;
+  return false;
 }
 
 /* BINFO is a base binfo in the complete type BINFO_TYPE (HERE).

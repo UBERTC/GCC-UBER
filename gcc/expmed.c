@@ -363,9 +363,9 @@ check_reverse_float_storage_order_support (void)
    useful if X is a CONST_INT.  */
 
 rtx
-flip_storage_order (enum machine_mode mode, rtx x)
+flip_storage_order (machine_mode mode, rtx x)
 {
-  enum machine_mode int_mode;
+  machine_mode int_mode;
   rtx result;
 
   if (mode == QImode)
@@ -5905,7 +5905,8 @@ emit_store_flag_force (rtx target, enum rtx_code code, rtx op0, rtx op1,
     {
       label = gen_label_rtx ();
       do_compare_rtx_and_jump (target, const0_rtx, EQ, unsignedp, mode,
-			       NULL_RTX, NULL, label, -1);
+			       NULL_RTX, NULL, label,
+			       profile_probability::uninitialized ());
       emit_move_insn (target, trueval);
       emit_label (label);
       return target;
@@ -5943,7 +5944,7 @@ emit_store_flag_force (rtx target, enum rtx_code code, rtx op0, rtx op1,
   emit_move_insn (target, trueval);
   label = gen_label_rtx ();
   do_compare_rtx_and_jump (op0, op1, code, unsignedp, mode, NULL_RTX, NULL,
-			   label, -1);
+			   label, profile_probability::uninitialized ());
 
   emit_move_insn (target, falseval);
   emit_label (label);
@@ -5961,5 +5962,5 @@ do_cmp_and_jump (rtx arg1, rtx arg2, enum rtx_code op, machine_mode mode,
 {
   int unsignedp = (op == LTU || op == LEU || op == GTU || op == GEU);
   do_compare_rtx_and_jump (arg1, arg2, op, unsignedp, mode, NULL_RTX,
-			   NULL, label, -1);
+			   NULL, label, profile_probability::uninitialized ());
 }

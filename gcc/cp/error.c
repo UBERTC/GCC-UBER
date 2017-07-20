@@ -1051,7 +1051,7 @@ dump_decl_name (cxx_pretty_printer *pp, tree t, int flags)
 {
   /* These special cases are duplicated here so that other functions
      can feed identifiers to error and get them demangled properly.  */
-  if (IDENTIFIER_TYPENAME_P (t))
+  if (IDENTIFIER_CONV_OP_P (t))
     {
       pp_cxx_ws_string (pp, "operator");
       /* Not exactly IDENTIFIER_TYPE_VALUE.  */
@@ -2664,7 +2664,6 @@ dump_expr (cxx_pretty_printer *pp, tree t, int flags)
       break;
 
     case TRY_CATCH_EXPR:
-    case WITH_CLEANUP_EXPR:
     case CLEANUP_POINT_EXPR:
       dump_expr (pp, TREE_OPERAND (t, 0), flags);
       break;
@@ -3173,10 +3172,6 @@ type_to_string (tree typ, int verbose)
       if (len == aka_len && memcmp (p, p+aka_start, len) == 0)
 	p[len] = '\0';
     }
-
-  if (typ && TYPE_P (typ) && TREE_CODE (typ) == ENUMERAL_TYPE)
-    pp_string (cxx_pp, M_(" {enum}"));
-
   return pp_ggc_formatted_text (cxx_pp);
 }
 

@@ -1668,18 +1668,34 @@ number_of_iterations_cond (struct loop *loop,
 	exit_must_be_taken = true;
     }
 
-  /* We can handle the case when neither of the sides of the comparison is
-     invariant, provided that the test is NE_EXPR.  This rarely occurs in
-     practice, but it is simple enough to manage.  */
+  /* We can handle cases which neither of the sides of the comparison is
+     invariant:
+
+       {iv0.base, iv0.step} cmp_code {iv1.base, iv1.step}
+     as if:
+       {iv0.base, iv0.step - iv1.step} cmp_code {iv1.base, 0}
+
+     provided that either below condition is satisfied:
+
+       a) the test is NE_EXPR;
+       b) iv0.step - iv1.step is positive integer.
+
+     This rarely occurs in practice, but it is simple enough to manage.  */
   if (!integer_zerop (iv0->step) && !integer_zerop (iv1->step))
     {
       tree step_type = POINTER_TYPE_P (type) ? sizetype : type;
-      if (code != NE_EXPR)
+      tree step = fold_binary_to_constant (MINUS_EXPR, step_type,
+					   iv0->step, iv1->step);
+
+      /* No need to check sign of the new step since below code takes care
+	 of this well.  */
+      if (code != NE_EXPR && TREE_CODE (step) != INTEGER_CST)
 	return false;
 
-      iv0->step = fold_binary_to_constant (MINUS_EXPR, step_type,
-					   iv0->step, iv1->step);
-      iv0->no_overflow = false;
+      iv0->step = step;
+      if (!POINTER_TYPE_P (type))
+	iv0->no_overflow = false;
+
       iv1->step = build_int_cst (step_type, 0);
       iv1->no_overflow = true;
     }
@@ -2362,9 +2378,9 @@ number_of_iterations_exit (struct loop *loop, edge exit,
     return true;
 
   if (warn)
-    warning_at (gimple_location_safe (stmt),
-		OPT_Wunsafe_loop_optimizations,
-		"missed loop optimization, the loop counter may overflow");
+    dump_printf_loc (MSG_MISSED_OPTIMIZATION, gimple_location_safe (stmt),
+		     "missed loop optimization: niters analysis ends up "
+		     "with assumptions.\n");
 
   return false;
 }
@@ -3786,8 +3802,8 @@ maybe_lower_iteration_bound (struct loop *loop)
 /* Records estimates on numbers of iterations of LOOP.  If USE_UNDEFINED_P
    is true also use estimates derived from undefined behavior.  */
 
-static void
-estimate_numbers_of_iterations_loop (struct loop *loop)
+void
+estimate_numbers_of_iterations (struct loop *loop)
 {
   vec<edge> exits;
   tree niter, type;
@@ -3876,7 +3892,7 @@ estimated_loop_iterations (struct loop *loop, widest_int *nit)
   /* When SCEV information is available, try to update loop iterations
      estimate.  Otherwise just return whatever we recorded earlier.  */
   if (scev_initialized_p ())
-    estimate_numbers_of_iterations_loop (loop);
+    estimate_numbers_of_iterations (loop);
 
   return (get_estimated_loop_iterations (loop, nit));
 }
@@ -3912,7 +3928,7 @@ max_loop_iterations (struct loop *loop, widest_int *nit)
   /* When SCEV information is available, try to update loop iterations
      estimate.  Otherwise just return whatever we recorded earlier.  */
   if (scev_initialized_p ())
-    estimate_numbers_of_iterations_loop (loop);
+    estimate_numbers_of_iterations (loop);
 
   return get_max_loop_iterations (loop, nit);
 }
@@ -3947,7 +3963,7 @@ likely_max_loop_iterations (struct loop *loop, widest_int *nit)
   /* When SCEV information is available, try to update loop iterations
      estimate.  Otherwise just return whatever we recorded earlier.  */
   if (scev_initialized_p ())
-    estimate_numbers_of_iterations_loop (loop);
+    estimate_numbers_of_iterations (loop);
 
   return get_likely_max_loop_iterations (loop, nit);
 }
@@ -4051,7 +4067,7 @@ estimated_stmt_executions (struct loop *loop, widest_int *nit)
 /* Records estimates on numbers of iterations of loops.  */
 
 void
-estimate_numbers_of_iterations (void)
+estimate_numbers_of_iterations (function *fn)
 {
   struct loop *loop;
 
@@ -4059,10 +4075,8 @@ estimate_numbers_of_iterations (void)
      loop iteration estimates.  */
   fold_defer_overflow_warnings ();
 
-  FOR_EACH_LOOP (loop, 0)
-    {
-      estimate_numbers_of_iterations_loop (loop);
-    }
+  FOR_EACH_LOOP_FN (fn, loop, 0)
+    estimate_numbers_of_iterations (loop);
 
   fold_undefer_and_ignore_overflow_warnings ();
 }
@@ -4235,7 +4249,7 @@ loop_exits_before_overflow (tree base, tree step,
 
   valid_niter = fold_build2 (FLOOR_DIV_EXPR, unsigned_type, delta, step_abs);
 
-  estimate_numbers_of_iterations_loop (loop);
+  estimate_numbers_of_iterations (loop);
 
   if (max_loop_iterations (loop, &niter)
       && wi::fits_to_tree_p (niter, TREE_TYPE (valid_niter))
@@ -4502,7 +4516,7 @@ scev_probably_wraps_p (tree var, tree base, tree step,
 /* Frees the information on upper bounds on numbers of iterations of LOOP.  */
 
 void
-free_numbers_of_iterations_estimates_loop (struct loop *loop)
+free_numbers_of_iterations_estimates (struct loop *loop)
 {
   struct control_iv *civ;
   struct nb_iter_bound *bound;
@@ -4534,9 +4548,7 @@ free_numbers_of_iterations_estimates (function *fn)
   struct loop *loop;
 
   FOR_EACH_LOOP_FN (fn, loop, 0)
-    {
-      free_numbers_of_iterations_estimates_loop (loop);
-    }
+    free_numbers_of_iterations_estimates (loop);
 }
 
 /* Substitute value VAL for ssa name NAME inside expressions held

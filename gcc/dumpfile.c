@@ -26,6 +26,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "diagnostic-core.h"
 #include "dumpfile.h"
 #include "context.h"
+#include "profile-count.h"
 #include "tree-cfg.h"
 #include "langhooks.h"
 
@@ -110,9 +111,9 @@ static const struct dump_option_value_info dump_options[] =
   {"missed", MSG_MISSED_OPTIMIZATION},
   {"note", MSG_NOTE},
   {"optall", MSG_ALL},
-  {"all", ~(TDF_RAW | TDF_SLIM | TDF_LINENO | TDF_GRAPH | TDF_STMTADDR
-	    | TDF_RHS_ONLY | TDF_NOUID | TDF_ENUMERATE_LOCALS | TDF_SCEV
-	    | TDF_GIMPLE)},
+  {"all", dump_flags_t (~(TDF_RAW | TDF_SLIM | TDF_LINENO | TDF_GRAPH
+			| TDF_STMTADDR | TDF_RHS_ONLY | TDF_NOUID
+			| TDF_ENUMERATE_LOCALS | TDF_SCEV | TDF_GIMPLE))},
   {NULL, 0}
 };
 
@@ -187,9 +188,16 @@ dump_register (const char *suffix, const char *swtch, const char *glob,
       m_extra_dump_files = XRESIZEVEC (struct dump_file_info,
 				       m_extra_dump_files,
 				       m_extra_dump_files_alloced);
+
+      /* Construct a new object in the space allocated above.  */
+      new (m_extra_dump_files + count) dump_file_info ();
+    }
+  else
+    {
+      /* Zero out the already constructed object.  */
+      m_extra_dump_files[count] = dump_file_info ();
     }
 
-  memset (&m_extra_dump_files[count], 0, sizeof (struct dump_file_info));
   m_extra_dump_files[count].suffix = suffix;
   m_extra_dump_files[count].swtch = swtch;
   m_extra_dump_files[count].glob = glob;

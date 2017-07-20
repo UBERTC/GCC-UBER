@@ -1261,9 +1261,9 @@ write_template_prefix (const tree node)
 static void
 write_unqualified_id (tree identifier)
 {
-  if (IDENTIFIER_TYPENAME_P (identifier))
+  if (IDENTIFIER_CONV_OP_P (identifier))
     write_conversion_operator_name (TREE_TYPE (identifier));
-  else if (IDENTIFIER_OPNAME_P (identifier))
+  else if (IDENTIFIER_ANY_OP_P (identifier))
     {
       int i;
       const char *mangled_name = NULL;
@@ -1459,11 +1459,6 @@ static void
 write_source_name (tree identifier)
 {
   MANGLE_TRACE_TREE ("source-name", identifier);
-
-  /* Never write the whole template-id name including the template
-     arguments; we only want the template name.  */
-  if (IDENTIFIER_TEMPLATE (identifier))
-    identifier = IDENTIFIER_TEMPLATE (identifier);
 
   write_unsigned_number (IDENTIFIER_LENGTH (identifier));
   write_identifier (IDENTIFIER_POINTER (identifier));
@@ -2100,6 +2095,11 @@ write_type (tree type)
 	  || TREE_CODE (t) == METHOD_TYPE)
 	{
 	  t = build_ref_qualified_type (t, type_memfn_rqual (type));
+	  if (flag_noexcept_type)
+	    {
+	      tree r = TYPE_RAISES_EXCEPTIONS (type);
+	      t = build_exception_variant (t, r);
+	    }
 	  if (abi_version_at_least (8)
 	      || type == TYPE_MAIN_VARIANT (type))
 	    /* Avoid adding the unqualified function type as a substitution.  */
@@ -2820,14 +2820,16 @@ write_template_args (tree args)
 static void
 write_member_name (tree member)
 {
-  if (abi_version_at_least (11) && IDENTIFIER_OPNAME_P (member))
-    {
-      write_string ("on");
-      if (abi_warn_or_compat_version_crosses (11))
-	G.need_abi_warning = 1;
-    }
   if (identifier_p (member))
-    write_unqualified_id (member);
+    {
+      if (abi_version_at_least (11) && IDENTIFIER_ANY_OP_P (member))
+	{
+	  write_string ("on");
+	  if (abi_warn_or_compat_version_crosses (11))
+	    G.need_abi_warning = 1;
+	}
+      write_unqualified_id (member);
+    }
   else if (DECL_P (member))
     write_unqualified_name (member);
   else if (TREE_CODE (member) == TEMPLATE_ID_EXPR)
@@ -3045,7 +3047,7 @@ write_expression (tree expr)
       /* An operator name appearing as a dependent name needs to be
 	 specially marked to disambiguate between a use of the operator
 	 name and a use of the operator in an expression.  */
-      if (IDENTIFIER_OPNAME_P (expr))
+      if (IDENTIFIER_ANY_OP_P (expr))
 	write_string ("on");
       write_unqualified_id (expr);
     }
@@ -3053,7 +3055,7 @@ write_expression (tree expr)
     {
       tree fn = TREE_OPERAND (expr, 0);
       fn = OVL_NAME (fn);
-      if (IDENTIFIER_OPNAME_P (fn))
+      if (IDENTIFIER_ANY_OP_P (fn))
 	write_string ("on");
       write_unqualified_id (fn);
       write_template_args (TREE_OPERAND (expr, 1));
@@ -4172,76 +4174,6 @@ mangle_thunk (tree fn_decl, const int this_adjusting, tree fixed_offset,
   if (DEBUG_MANGLE)
     fprintf (stderr, "mangle_thunk = %s\n\n", IDENTIFIER_POINTER (result));
   return result;
-}
-
-struct conv_type_hasher : ggc_ptr_hash<tree_node>
-{
-  static hashval_t hash (tree);
-  static bool equal (tree, tree);
-};
-
-/* This hash table maps TYPEs to the IDENTIFIER for a conversion
-   operator to TYPE.  The nodes are IDENTIFIERs whose TREE_TYPE is the
-   TYPE.  */
-
-static GTY (()) hash_table<conv_type_hasher> *conv_type_names;
-
-/* Hash a node (VAL1) in the table.  */
-
-hashval_t
-conv_type_hasher::hash (tree val)
-{
-  return (hashval_t) TYPE_UID (TREE_TYPE (val));
-}
-
-/* Compare VAL1 (a node in the table) with VAL2 (a TYPE).  */
-
-bool
-conv_type_hasher::equal (tree val1, tree val2)
-{
-  return TREE_TYPE (val1) == val2;
-}
-
-/* Return an identifier for the mangled unqualified name for a
-   conversion operator to TYPE.  This mangling is not specified by the
-   ABI spec; it is only used internally.  */
-
-tree
-mangle_conv_op_name_for_type (const tree type)
-{
-  tree *slot;
-  tree identifier;
-
-  if (type == error_mark_node)
-    return error_mark_node;
-
-  if (conv_type_names == NULL)
-    conv_type_names = hash_table<conv_type_hasher>::create_ggc (31);
-
-  slot = conv_type_names->find_slot_with_hash (type,
-					       (hashval_t) TYPE_UID (type),
-					       INSERT);
-  identifier = *slot;
-  if (!identifier)
-    {
-      char buffer[64];
-
-       /* Create a unique name corresponding to TYPE.  */
-      sprintf (buffer, "operator %lu",
-	       (unsigned long) conv_type_names->elements ());
-      identifier = get_identifier (buffer);
-      *slot = identifier;
-
-      /* Hang TYPE off the identifier so it can be found easily later
-	 when performing conversions.  */
-      TREE_TYPE (identifier) = type;
-
-      /* Set bits on the identifier so we know later it's a conversion.  */
-      IDENTIFIER_OPNAME_P (identifier) = 1;
-      IDENTIFIER_TYPENAME_P (identifier) = 1;
-    }
-
-  return identifier;
 }
 
 /* Handle ABI backwards compatibility for past bugs where we didn't call
