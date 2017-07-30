@@ -1,3 +1,105 @@
+2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* config/rs6000/ppc-auxv.h (PPC_FEATURE2_DARN): New define.
+	(PPC_FEATURE2_SCV): Likewise.
+	* config/rs6000/rs6000.c (cpu_supports_info): Use them.
+
+2017-07-28  Bin Cheng  <bin.cheng@arm.com>
+
+	Backport from mainline r250496
+	2017-07-25  Bin Cheng  <bin.cheng@arm.com>
+
+	PR target/81414
+	* config/aarch64/cortex-a57-fma-steering.c (analyze): Skip fmul/fmac
+	instructions if no du chain is found.
+
+2017-07-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81555
+	PR tree-optimization/81556
+	* tree-ssa-reassoc.c (rewrite_expr_tree): Add NEXT_CHANGED argument,
+	if true, force CHANGED for the recursive invocation.
+	(reassociate_bb): Remember original length of ops array, pass
+	len != orig_len as NEXT_CHANGED in rewrite_expr_tree call.
+
+2017-07-26  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline r235874
+	2016-05-04  Alan Modra  <amodra@gmail.com>
+
+	* config/rs6000/rs6000.c (rs6000_elf_output_toc_section_asm_op):
+	Align .toc.
+
+2017-07-26  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2016-06-15 trunk r237486.
+	Backport from 2017-07-12 trunk r250156.
+
+	PR target/79883
+	PR target/67353
+	* config/avr/avr.c (avr_set_current_function): Warn misspelled ISR
+	only if -Wmisspelled-isr is on.  In diagnostic messages: Quote
+	keywords and (parts of) identifiers.
+	[WITH_AVRLIBC]: Warn functions named "ISR", "SIGNAL" or "INTERUPT".
+	* doc/invoke.texi (AVR Options) <-Wmisspelled-isr>: Decument.
+
+2017-07-26  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2017-07-05 trunk r249995.
+
+	PR target/81305
+	* config/avr/avr.c (avr_out_movhi_mr_r_xmega) [CONSTANT_ADDRESS_P]:
+	Don't depend on "optimize > 0".
+	(out_movhi_r_mr, out_movqi_mr_r): Same.
+	(out_movhi_mr_r, out_movqi_r_mr): Same.
+	(avr_address_cost) [CONSTANT_ADDRESS_P]: Don't depend cost for
+	io_address_operand on "optimize > 0".
+
+2017-07-26  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2017-07-12 trunk r250151.
+
+	PR target/81407
+	* config/avr/avr.c (avr_encode_section_info)
+	[progmem && !TREE_READONLY]: Error if progmem object needs
+	constructing.
+
+2017-07-26  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2017-07-26 gcc-7-branch r250562.
+
+	PR 81487
+	* hsa-brig.c (brig_init): Use xasprintf instead of asprintf.
+	* tree-ssa-structalias.c (alias_get_name): Same.
+
+2017-07-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-14  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/81162
+	* gimple-ssa-strength-reduction.c (replace_mult_candidate): Don't
+	replace a negate with an add.
+
+2017-07-25  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from trunk r247719.
+
+	2017-05-06  Richard Sandiford  <richard.sandiford@linaro.org>
+
+	PR rtl-optimization/75964
+	* simplify-rtx.c (simplify_const_relational_operation): Remove
+	invalid handling of comparisons of integer ABS.
+
+2017-07-24  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80569
+	* config/i386/i386.c (ix86_option_override_internal): Disable
+	BMI, BMI2 and TBM instructions for -m16.
+
 2017-07-18  Uros Bizjak  <ubizjak@gmail.com>
 
 	PR target/81471

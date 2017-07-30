@@ -1,3 +1,57 @@
+2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* gcc.target/powerpc/cpu-builtin-1.c (darn, scv): Add tests.
+
+2017-07-28  Bin Cheng  <bin.cheng@arm.com>
+
+	Backport from mainline r250496
+	2017-07-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/81414
+	* gcc.target/aarch64/pr81414.C: New.
+
+2017-07-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81555
+	PR tree-optimization/81556
+	* gcc.c-torture/execute/pr81555.c: New test.
+	* gcc.c-torture/execute/pr81556.c: New test.
+
+2017-07-26  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2017-07-05 trunk r249995, r249996.
+
+	PR target/81305
+	* gcc.target/avr/isr-test.h: New file.
+	* gcc.target/avr/torture/isr-01-simple.c: New test.
+	* gcc.target/avr/torture/isr-02-call.c: New test.
+	* gcc.target/avr/torture/isr-03-fixed.c: New test.
+
+2017-07-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-14  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/81162
+	* gcc.dg/ubsan/pr81162.c: New file.
+
+2017-07-25  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from trunk r247719.
+
+	2017-05-06  Richard Sandiford  <richard.sandiford@linaro.org>
+
+	PR rtl-optimization/75964
+	* gcc.dg/torture/pr75964.c: New test.
+
+2017-07-24  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80569
+	* gcc.target/i386/pr80569.c: New test.
+
 2017-07-18  Uros Bizjak  <ubizjak@gmail.com>
 
 	PR target/81471
