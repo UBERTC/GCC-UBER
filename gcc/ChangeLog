@@ -1,3 +1,285 @@
+2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* config/rs6000/ppc-auxv.h (PPC_FEATURE2_DARN): New define.
+	(PPC_FEATURE2_SCV): Likewise.
+	* config/rs6000/rs6000.c (cpu_supports_info): Use them.
+
+2017-07-28  David Edelsohn  <dje.gcc@gmail.com>
+
+	Backport from mainline
+	2017-07-25  David Edelsohn  <dje.gcc@gmail.com>
+
+	* dwarf2asm.c (dw2_asm_output_nstring): Encode double quote
+	character for AIX.
+	* dwarf2out.c (output_macinfo): Copy debug_line_section_label
+	to dl_section_ref.  On AIX, append an expression to subtract
+	the size of the section length to dl_section_ref.
+
+2017-07-28  Bin Cheng  <bin.cheng@arm.com>
+
+	Backport from mainline r250496
+	2017-07-25  Bin Cheng  <bin.cheng@arm.com>
+
+	PR target/81414
+	* config/aarch64/cortex-a57-fma-steering.c (analyze): Skip fmul/fmac
+	instructions if no du chain is found.
+
+2017-07-28  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2017-07-28  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config.gcc (powerpc-*-rtems*): Remove rs6000/eabi.h.  Add
+	rs6000/biarch64.h.
+	* config/rs6000/rtems.h (ASM_DECLARE_FUNCTION_SIZE): New macro.
+	(ASM_OUTPUT_SPECIAL_POOL_ENTRY_P): Likewise.
+	(CRT_CALL_STATIC_FUNCTION): Likewise.
+	(ASM_DEFAULT_SPEC): New define.
+	(ASM_SPEC32): Likewise.
+	(ASM_SPEC64): Likewise.
+	(ASM_SPEC_COMMON): Likewise.
+	(ASM_SPEC): Likewise.
+	(INVALID_64BIT): Likewise.
+	(LINK_OS_DEFAULT_SPEC): Likewise.
+	(LINK_OS_SPEC32): Likewise.
+	(LINK_OS_SPEC64): Likewise.
+	(POWERPC_LINUX): Likewise.
+	(PTRDIFF_TYPE): Likewise.
+	(RESTORE_FP_PREFIX): Likewise.
+	(RESTORE_FP_SUFFIX): Likewise.
+	(SAVE_FP_PREFIX): Likewise.
+	(SAVE_FP_SUFFIX): Likewise.
+	(SIZE_TYPE): Likewise.
+	(SUBSUBTARGET_OVERRIDE_OPTIONS): Likewise.
+	(TARGET_64BIT): Likewise.
+	(TARGET_64BIT): Likewise.
+	(TARGET_AIX): Likewise.
+	(WCHAR_TYPE_SIZE): Likewise.
+	(WCHAR_TYPE): Undefine.
+	(TARGET_OS_CPP_BUILTINS): Add 64-bit PowerPC defines.
+	(CPP_OS_DEFAULT_SPEC): Use previous CPP_OS_RTEMS_SPEC.
+	(CPP_OS_RTEMS_SPEC): Delete.
+	(SUBSUBTARGET_EXTRA_SPECS): Remove cpp_os_rtems.  Add
+	asm_spec_common, asm_spec32, asm_spec64, link_os_spec32, and
+	link_os_spec64.
+	* config/rs6000/t-rtems: Add mcpu=e6500/m64 multilibs.
+
+2017-07-28  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2017-07-27  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config.gcc (riscv*-*-elf*): Add (riscv*-*-rtems*).
+	* config/riscv/rtems.h: New file.
+
+2017-07-27  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* config/sparc/sparc.c (sparc_option_override): Set MASK_FSMULD flag
+	earlier and only if MASK_FPU is set.  Adjust formatting.
+
+2017-07-27  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-27  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR target/81534
+	* config/s390/s390.md ("*atomic_compare_and_swap<mode>_1")
+	("*atomic_compare_and_swapdi_2", "*atomic_compare_and_swapsi_3"):
+	Change s_operand to memory_operand.
+
+2017-07-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81555
+	PR tree-optimization/81556
+	* tree-ssa-reassoc.c (rewrite_expr_tree): Add NEXT_CHANGED argument,
+	if true, force CHANGED for the recursive invocation.
+	(reassociate_bb): Remember original length of ops array, pass
+	len != orig_len as NEXT_CHANGED in rewrite_expr_tree call.
+
+2017-07-27  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-07-17  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/81302
+	* opts.c (finish_options): Do not allow -fgnu-tm
+	w/ -fsanitize={kernel-,}address.  Say sorry.
+
+2017-07-27  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-07-26  Martin Liska  <mliska@suse.cz>
+
+	PR sanitize/81186
+	* function.c (expand_function_start): Make expansion of
+	nonlocal_goto_save_area after parm_birth_insn.
+
+2017-07-27  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-06-30  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/81021
+	* tree-eh.c (lower_resx): Call BUILT_IN_ASAN_HANDLE_NO_RETURN
+	before BUILT_IN_UNWIND_RESUME when ASAN is used.
+
+2017-07-27  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-06-28  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/81224
+	* asan.c (instrument_derefs): Bail out inner references
+	that are hard register variables.
+
+2017-07-26  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2017-07-26  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/sparc/sparc.c (dump_target_flag_bits): Dump MASK_FSMULD.
+	(sparc_option_override): Honour MASK_FSMULD.
+	* config/sparc/sparc.h (MASK_FEATURES): Add MASK_FSMULD.
+	* config/sparc/sparc.md (muldf3_extend): Use TARGET_FSMULD.
+	* config/sparc/sparc.opt (mfsmuld): New option.
+	* doc/invoke.texi (mfsmuld): Document option.
+
+2017-07-26  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2017-07-25 trunk r250499.
+
+	PR 81487
+	* hsa-brig.c (brig_init): Use xasprintf instead of asprintf.
+	* gimple-pretty-print.c (dump_probability): Same.
+	* tree-ssa-structalias.c (alias_get_name): Same.
+
+2017-07-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-06-18  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/81410
+	* tree-vect-stmts.c (vectorizable_load): Properly adjust for
+	the gap in the ! slp_perm SLP case after each group.
+
+	2017-07-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/81455
+	* tree-ssa-loop-unswitch.c (find_loop_guard): Make sure to
+	not walk in cycles when looking for guards.
+
+	2017-07-25  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/81505
+	* fold-const.c (fold_negate_const): TREE_OVERFLOW should be
+	sticky.
+
+	2017-06-28  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/81175
+	* config/i386/i386.c (ix86_init_mmx_sse_builtins): Use def_builtin
+	rather than def_builtin_pure for __builtin_ia32_gatherpf*.
+
+	2017-06-26  Richard Biener  <rguenther@suse.de>
+
+	PR target/81175
+	* config/i386/i386.c (ix86_init_mmx_sse_builtins):
+	Use def_builtin_pure for all gather builtins.
+
+	2017-06-21  Marc Glisse  <marc.glisse@inria.fr>
+
+	* config/i386/i386.c (struct builtin_isa): New field pure_p.
+	Reorder for compactness.
+	(def_builtin, def_builtin2, ix86_add_new_builtins): Handle pure_p.
+	(def_builtin_pure, def_builtin_pure2): New functions.
+	(ix86_init_mmx_sse_builtins) [__builtin_ia32_stmxcsr]: Mark as pure.
+
+2017-07-26  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2017-07-26  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config/sparc/sparc.c (sparc_option_override): Remove MASK_FPU
+	from all CPU target flags enable members.
+
+2017-07-26  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2017-07-25  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	PR libgcc/61152
+	* config/aarch64/rtems.h: Add GCC Runtime Library Exception.
+	Format changes.
+	* config/arm/rtems.h: Likewise.
+	* config/bfin/rtems.h: Likewise.
+	* config/i386/rtemself.h: Likewise.
+	* config/lm32/rtems.h: Likewise.
+	* config/m32c/rtems.h: Likewise.
+	* config/m68k/rtemself.h: Likewise.
+	* config/microblaze/rtems.h: Likewise.
+	* config/mips/rtems.h: Likewise.
+	* config/moxie/rtems.h: Likewise.
+	* config/nios2/rtems.h: Likewise.
+	* config/rs6000/rtems.h: Likewise.
+	* config/rtems.h: Likewise.
+	* config/sh/rtems.h: Likewise.
+	* config/sh/rtemself.h: Likewise.
+	* config/sparc/rtemself.h: Likewise.
+
+2017-07-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-14  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/81162
+	* gimple-ssa-strength-reduction.c (replace_mult_candidate): Don't
+	replace a negate with an add.
+
+2017-07-25  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2017-07-12 trunk r250151.
+
+	PR target/81407
+	* config/avr/avr.c (avr_encode_section_info)
+	[progmem && !TREE_READONLY]: Error if progmem object needs
+	constructing.
+
+2017-07-25  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	PR target/79041
+	* config/aarch64/aarch64.c (aarch64_classify_symbol):
+	Avoid SYMBOL_SMALL_ABSOLUTE for literals with pc-relative literals.
+
+2017-07-25  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from trunk r247719.
+
+	2017-05-06  Richard Sandiford  <richard.sandiford@linaro.org>
+
+	PR rtl-optimization/75964
+	* simplify-rtx.c (simplify_const_relational_operation): Remove
+	invalid handling of comparisons of integer ABS.
+
+2017-07-25  Bin Cheng  <bin.cheng@arm.com>
+
+	Backport from 2017-07-20 trunk r250384.
+
+	PR tree-optimization/81388
+	Revert r238585:
+	2016-07-21  Bin Cheng  <bin.cheng@arm.com>
+
+	* tree-ssa-loop-niter.c (number_of_iterations_lt_to_ne): Clean up
+	by removing computation of may_be_zero.
+
+2017-07-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80569
+	* config/i386/i386.c (ix86_option_override_internal): Disable
+	BMI, BMI2 and TBM instructions for -m16.
+
 2017-07-19  Michael Meissner  <meissner@linux.vnet.ibm.com>
 
 	Back port from trunk
