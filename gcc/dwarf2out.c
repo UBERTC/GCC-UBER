@@ -2680,7 +2680,7 @@ static bool dwarf2out_ignore_block (const_tree);
 static void dwarf2out_early_global_decl (tree);
 static void dwarf2out_late_global_decl (tree);
 static void dwarf2out_type_decl (tree, int);
-static void dwarf2out_imported_module_or_decl (tree, tree, tree, bool);
+static void dwarf2out_imported_module_or_decl (tree, tree, tree, bool, bool);
 static void dwarf2out_imported_module_or_decl_1 (tree, tree, tree,
 						 dw_die_ref);
 static void dwarf2out_abstract_function (tree);
@@ -2764,7 +2764,7 @@ const struct gcc_debug_hooks dwarf2_lineno_debug_hooks =
   debug_nothing_tree,		         /* early_global_decl */
   debug_nothing_tree,		         /* late_global_decl */
   debug_nothing_tree_int,		 /* type_decl */
-  debug_nothing_tree_tree_tree_bool,	 /* imported_module_or_decl */
+  debug_nothing_tree_tree_tree_bool_bool,/* imported_module_or_decl */
   debug_nothing_tree,		         /* deferred_inline_function */
   debug_nothing_tree,		         /* outlining_inline_function */
   debug_nothing_rtx_code_label,	         /* label */
@@ -11697,7 +11697,7 @@ output_file_names (void)
       output_line_string (str_form, filename0, "File Entry", 0);
 
       /* Include directory index.  */
-      if (dwarf_version >= 5 && idx_form != DW_FORM_udata)
+      if (idx_form != DW_FORM_udata)
 	dw2_asm_output_data (idx_form == DW_FORM_data1 ? 1 : 2,
 			     0, NULL);
       else
@@ -24032,7 +24032,8 @@ gen_member_die (tree type, dw_die_ref context_die)
 {
   tree member;
   tree binfo = TYPE_BINFO (type);
-  dw_die_ref child;
+
+  gcc_assert (TYPE_MAIN_VARIANT (type) == type);
 
   /* If this is not an incomplete type, output descriptions of each of its
      members. Note that as we output the DIEs necessary to represent the
@@ -24069,13 +24070,16 @@ gen_member_die (tree type, dw_die_ref context_die)
 	   && (lang_hooks.decls.decl_dwarf_attribute (member, DW_AT_inline)
 	       != -1));
 
+      /* Ignore clones.  */
+      if (DECL_ABSTRACT_ORIGIN (member))
+	continue;
+
       /* If we thought we were generating minimal debug info for TYPE
 	 and then changed our minds, some of the member declarations
 	 may have already been defined.  Don't define them again, but
 	 do put them in the right order.  */
 
-      child = lookup_decl_die (member);
-      if (child)
+      if (dw_die_ref child = lookup_decl_die (member))
 	{
 	  /* Handle inline static data members, which only have in-class
 	     declarations.  */
@@ -24103,6 +24107,7 @@ gen_member_die (tree type, dw_die_ref context_die)
 		  static_inline_p = false;
 		}
 	    }
+
 	  if (child->die_tag == DW_TAG_variable
 	      && child->die_parent == comp_unit_die ()
 	      && ref == NULL)
@@ -24141,23 +24146,6 @@ gen_member_die (tree type, dw_die_ref context_die)
 	  DECL_EXTERNAL (member) = old_extern;
 	}
     }
-
-  /* We do not keep type methods in type variants.  */
-  gcc_assert (TYPE_MAIN_VARIANT (type) == type);
-  /* Now output info about the function members (if any).  */
-  if (TYPE_METHODS (type) != error_mark_node)
-    for (member = TYPE_METHODS (type); member; member = DECL_CHAIN (member))
-      {
-	/* Don't include clones in the member list.  */
-	if (DECL_ABSTRACT_ORIGIN (member))
-	  continue;
-
-	child = lookup_decl_die (member);
-	if (child)
-	  splice_child_die (context_die, child);
-	else
-	  gen_decl_die (member, NULL, NULL, context_die);
-      }
 }
 
 /* Generate a DIE for a structure or union type.  If TYPE_DECL_SUPPRESS_DEBUG
@@ -25178,6 +25166,11 @@ gen_namespace_die (tree decl, dw_die_ref context_die)
       add_AT_die_ref (namespace_die, DW_AT_import, origin_die);
       equate_decl_number_to_die (decl, namespace_die);
     }
+  if ((dwarf_version >= 5 || !dwarf_strict)
+      && lang_hooks.decls.decl_dwarf_attribute (decl,
+						DW_AT_export_symbols) == 1)
+    add_AT_flag (namespace_die, DW_AT_export_symbols, 1);
+
   /* Bypass dwarf2_name's check for DECL_NAMELESS.  */
   if (want_pubnames ())
     add_pubname_string (lang_hooks.dwarf_name (decl, 1), namespace_die);
@@ -25591,11 +25584,13 @@ dwarf2out_imported_module_or_decl_1 (tree decl,
 /* Output debug information for imported module or decl DECL.
    NAME is non-NULL name in context if the decl has been renamed.
    CHILD is true if decl is one of the renamed decls as part of
-   importing whole module.  */
+   importing whole module.
+   IMPLICIT is set if this hook is called for an implicit import
+   such as inline namespace.  */
 
 static void
 dwarf2out_imported_module_or_decl (tree decl, tree name, tree context,
-				   bool child)
+				   bool child, bool implicit)
 {
   /* dw_die_ref at_import_die;  */
   dw_die_ref scope_die;
@@ -25604,6 +25599,16 @@ dwarf2out_imported_module_or_decl (tree decl, tree name, tree context,
     return;
 
   gcc_assert (decl);
+
+  /* For DWARF5, just DW_AT_export_symbols on the DW_TAG_namespace
+     should be enough, for DWARF4 and older even if we emit as extension
+     DW_AT_export_symbols add the implicit DW_TAG_imported_module anyway
+     for the benefit of consumers unaware of DW_AT_export_symbols.  */
+  if (implicit
+      && dwarf_version >= 5
+      && lang_hooks.decls.decl_dwarf_attribute (decl,
+						DW_AT_export_symbols) == 1)
+    return;
 
   set_early_dwarf s;
 
@@ -26987,6 +26992,7 @@ output_macinfo (void)
   macinfo_entry *ref;
   vec<macinfo_entry, va_gc> *files = NULL;
   macinfo_hash_type *macinfo_htab = NULL;
+  char dl_section_ref[MAX_ARTIFICIAL_LABEL_BYTES];
 
   if (! length)
     return;
@@ -26996,6 +27002,12 @@ output_macinfo (void)
 	      && (int) DW_MACINFO_undef == (int) DW_MACRO_undef
 	      && (int) DW_MACINFO_start_file == (int) DW_MACRO_start_file
 	      && (int) DW_MACINFO_end_file == (int) DW_MACRO_end_file);
+
+  /* AIX Assembler inserts the length, so adjust the reference to match the
+     offset expected by debuggers.  */
+  strcpy (dl_section_ref, debug_line_section_label);
+  if (XCOFF_DEBUGGING_INFO)
+    strcat (dl_section_ref, DWARF_INITIAL_LENGTH_SIZE_STR);
 
   /* For .debug_macro emit the section header.  */
   if (!dwarf_strict || dwarf_version >= 5)
@@ -27007,7 +27019,7 @@ output_macinfo (void)
       else
 	dw2_asm_output_data (1, 2, "Flags: 32-bit, lineptr present");
       dw2_asm_output_offset (DWARF_OFFSET_SIZE,
-                             (!dwarf_split_debug_info ? debug_line_section_label
+                             (!dwarf_split_debug_info ? dl_section_ref
                               : debug_skeleton_line_section_label),
                              debug_line_section, NULL);
     }

@@ -1302,16 +1302,15 @@ connect_traces (int n_traces, struct trace *traces)
 		      }
 		  }
 
-	      if (crtl->has_bb_partition)
-		try_copy = false;
-
 	      /* Copy tiny blocks always; copy larger blocks only when the
 		 edge is traversed frequently enough.  */
 	      if (try_copy
+		  && BB_PARTITION (best->src) == BB_PARTITION (best->dest)
 		  && copy_bb_p (best->dest,
 				optimize_edge_for_speed_p (best)
 				&& EDGE_FREQUENCY (best) >= freq_threshold
-				&& best->count >= count_threshold))
+				&& (!best->count.initialized_p ()
+				    || best->count >= count_threshold)))
 		{
 		  basic_block new_bb;
 
@@ -1666,6 +1665,12 @@ find_rarely_executed_basic_blocks_and_crossing_edges (void)
                                           &bbs_in_hot_partition);
       if (cold_bb_count)
         sanitize_hot_paths (false, cold_bb_count, &bbs_in_hot_partition);
+
+      hash_set <basic_block> set;
+      find_bbs_reachable_by_hot_paths (&set);
+      FOR_EACH_BB_FN (bb, cfun)
+	if (!set.contains (bb))
+	  BB_SET_PARTITION (bb, BB_COLD_PARTITION);
     }
 
   /* The format of .gcc_except_table does not allow landing pads to

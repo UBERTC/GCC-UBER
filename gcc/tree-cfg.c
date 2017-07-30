@@ -1701,8 +1701,9 @@ group_case_labels_stmt (gswitch *stmt)
       gcc_assert (base_case);
       base_bb = label_to_block (CASE_LABEL (base_case));
 
-      /* Discard cases that have the same destination as the default case.  */
-      if (base_bb == default_bb)
+      /* Discard cases that have the same destination as the default case or
+	 whose destiniation blocks have already been removed as unreachable.  */
+      if (base_bb == NULL || base_bb == default_bb)
 	{
 	  i++;
 	  continue;
@@ -3053,7 +3054,9 @@ verify_expr (tree *tp, int *walk_subtrees, void *data ATTRIBUTE_UNUSED)
 	  tree t1 = TREE_OPERAND (t, 1);
 	  tree t2 = TREE_OPERAND (t, 2);
 	  if (!tree_fits_uhwi_p (t1)
-	      || !tree_fits_uhwi_p (t2))
+	      || !tree_fits_uhwi_p (t2)
+	      || !types_compatible_p (bitsizetype, TREE_TYPE (t1))
+	      || !types_compatible_p (bitsizetype, TREE_TYPE (t2)))
 	    {
 	      error ("invalid position or size operand to BIT_FIELD_REF");
 	      return t;
@@ -4247,6 +4250,7 @@ verify_gimple_assign_ternary (gassign *stmt)
 	  return true;
 	}
       if (! tree_fits_uhwi_p (rhs3)
+	  || ! types_compatible_p (bitsizetype, TREE_TYPE (rhs3))
 	  || ! tree_fits_uhwi_p (TYPE_SIZE (rhs2_type)))
 	{
 	  error ("invalid position or size in BIT_INSERT_EXPR");

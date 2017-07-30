@@ -947,11 +947,27 @@ vect_build_slp_tree (vec_info *vinfo,
      the recursion.  */
   if (gimple_code (stmt) == GIMPLE_PHI)
     {
+      vect_def_type def_type = STMT_VINFO_DEF_TYPE (vinfo_for_stmt (stmt));
       /* Induction from different IVs is not supported.  */
-      if (STMT_VINFO_DEF_TYPE (vinfo_for_stmt (stmt)) == vect_induction_def)
-	FOR_EACH_VEC_ELT (stmts, i, stmt)
-	  if (stmt != stmts[0])
-	    return NULL;
+      if (def_type == vect_induction_def)
+	{
+	  FOR_EACH_VEC_ELT (stmts, i, stmt)
+	    if (stmt != stmts[0])
+	      return NULL;
+	}
+      else
+	{
+	  /* Else def types have to match.  */
+	  FOR_EACH_VEC_ELT (stmts, i, stmt)
+	    {
+	      /* But for reduction chains only check on the first stmt.  */
+	      if (GROUP_FIRST_ELEMENT (vinfo_for_stmt (stmt))
+		  && GROUP_FIRST_ELEMENT (vinfo_for_stmt (stmt)) != stmt)
+		continue;
+	      if (STMT_VINFO_DEF_TYPE (vinfo_for_stmt (stmt)) != def_type)
+		return NULL;
+	    }
+	}
       node = vect_create_new_slp_node (stmts);
       return node;
     }
@@ -2439,7 +2455,7 @@ destroy_bb_vec_info (bb_vec_info bb_vinfo)
    the subtree. Return TRUE if the operations are supported.  */
 
 static bool
-vect_slp_analyze_node_operations (slp_tree node)
+vect_slp_analyze_node_operations (slp_tree node, slp_instance node_instance)
 {
   bool dummy;
   int i, j;
@@ -2450,7 +2466,7 @@ vect_slp_analyze_node_operations (slp_tree node)
     return true;
 
   FOR_EACH_VEC_ELT (SLP_TREE_CHILDREN (node), i, child)
-    if (!vect_slp_analyze_node_operations (child))
+    if (!vect_slp_analyze_node_operations (child, node_instance))
       return false;
 
   stmt = SLP_TREE_SCALAR_STMTS (node)[0];
@@ -2507,7 +2523,7 @@ vect_slp_analyze_node_operations (slp_tree node)
     if (SLP_TREE_DEF_TYPE (child) != vect_internal_def)
       STMT_VINFO_DEF_TYPE (vinfo_for_stmt (SLP_TREE_SCALAR_STMTS (child)[0]))
 	= SLP_TREE_DEF_TYPE (child);
-  bool res = vect_analyze_stmt (stmt, &dummy, node);
+  bool res = vect_analyze_stmt (stmt, &dummy, node, node_instance);
   /* Restore def-types.  */
   FOR_EACH_VEC_ELT (SLP_TREE_CHILDREN (node), j, child)
     if (SLP_TREE_DEF_TYPE (child) != vect_internal_def)
@@ -2535,7 +2551,8 @@ vect_slp_analyze_operations (vec<slp_instance> slp_instances, void *data)
 
   for (i = 0; slp_instances.iterate (i, &instance); )
     {
-      if (!vect_slp_analyze_node_operations (SLP_INSTANCE_TREE (instance)))
+      if (!vect_slp_analyze_node_operations (SLP_INSTANCE_TREE (instance),
+					     instance))
         {
 	  dump_printf_loc (MSG_NOTE, vect_location,
 			   "removing SLP instance operations starting from: ");

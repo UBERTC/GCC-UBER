@@ -57,6 +57,11 @@
        (ior (match_operand 0 "register_operand")
 	    (match_test "op == const0_rtx"))))
 
+(define_predicate "aarch64_reg_or_fp_float"
+  (ior (match_operand 0 "register_operand")
+	(and (match_code "const_double")
+	     (match_test "aarch64_float_const_rtx_p (op)"))))
+
 (define_predicate "aarch64_reg_or_fp_zero"
   (ior (match_operand 0 "register_operand")
 	(and (match_code "const_double")
@@ -113,6 +118,10 @@
 (define_predicate "aarch64_logical_operand"
   (ior (match_operand 0 "register_operand")
        (match_operand 0 "aarch64_logical_immediate")))
+
+(define_predicate "aarch64_mov_imm_operand"
+  (and (match_code "const_int")
+       (match_test "aarch64_move_imm (INTVAL (op), mode)")))
 
 (define_predicate "aarch64_logical_and_immediate"
   (and (match_code "const_int")

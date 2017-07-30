@@ -1,3 +1,39 @@
+2017-07-29  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* c-ada-spec.c (dump_generic_ada_node): Take into account signedness
+	for enumeral types.
+	(print_ada_declaration): Add missing guard for record types.
+
+2017-07-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c/45784
+	* c-omp.c (c_finish_omp_for): If the condition is wrapped in
+	rhs of COMPOUND_EXPR(s), skip them and readd their lhs into
+	new COMPOUND_EXPRs around the rhs of the comparison.
+
+2017-07-27  Marek Polacek  <polacek@redhat.com>
+
+	PR c/81417
+	* c-warn.c (warn_for_sign_compare): Tweak the warning message.  Print
+	the types.
+
+2017-07-27  Jakub Jelinek  <jakub@redhat.com>
+
+	* c-attribs.c (c_common_attribute_table): Add noipa attribute.
+	(handle_noipa_attribute): New function.
+
+2017-07-07  Torsten Duwe  <duwe@suse.de>
+
+	* c-attribs.c (c_common_attribute_table): Add entry for
+	"patchable_function_entry".
+
+2017-07-20  Nathan Sidwell  <nathan@acm.org>
+
+	Remove TYPE_METHODS.
+	* c-ada-spec.c (is_tagged_type, has_nontrivial_methods,
+	dump_ada_template, print_ada_methods,
+	print_ada_declaration): Member fns are on TYPE_FIELDS.
+
 2017-07-18  Nathan Sidwell  <nathan@acm.org>
 
 	* c-warn.c (warn_for_memset): Use TYPE_{MIN,MAX}_VALUE.

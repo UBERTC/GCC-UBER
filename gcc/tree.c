@@ -997,7 +997,7 @@ allocate_decl_uid (void)
    Achoo!  I got a code in the node.  */
 
 tree
-make_node_stat (enum tree_code code MEM_STAT_DECL)
+make_node (enum tree_code code MEM_STAT_DECL)
 {
   tree t;
   enum tree_code_class type = TREE_CODE_CLASS (code);
@@ -1128,7 +1128,7 @@ free_node (tree node)
    TREE_CHAIN, if it has one, is zero and it has a fresh uid.  */
 
 tree
-copy_node_stat (tree node MEM_STAT_DECL)
+copy_node (tree node MEM_STAT_DECL)
 {
   tree t;
   enum tree_code code = TREE_CODE (node);
@@ -1681,7 +1681,7 @@ cst_and_fits_in_hwi (const_tree x)
 /* Build a newly constructed VECTOR_CST node of length LEN.  */
 
 tree
-make_vector_stat (unsigned len MEM_STAT_DECL)
+make_vector (unsigned len MEM_STAT_DECL)
 {
   tree t;
   unsigned length = (len - 1) * sizeof (tree) + sizeof (struct tree_vector);
@@ -1700,7 +1700,7 @@ make_vector_stat (unsigned len MEM_STAT_DECL)
    are in a list pointed to by VALS.  */
 
 tree
-build_vector_stat (tree type, tree *vals MEM_STAT_DECL)
+build_vector (tree type, tree *vals MEM_STAT_DECL)
 {
   int over = 0;
   unsigned cnt = 0;
@@ -2193,7 +2193,7 @@ build_zero_cst (tree type)
 /* Build a BINFO with LEN language slots.  */
 
 tree
-make_tree_binfo_stat (unsigned base_binfos MEM_STAT_DECL)
+make_tree_binfo (unsigned base_binfos MEM_STAT_DECL)
 {
   tree t;
   size_t length = (offsetof (struct tree_binfo, base_binfos)
@@ -2235,7 +2235,7 @@ build_case_label (tree low_value, tree high_value, tree label_decl)
    The latter determines the length of the HOST_WIDE_INT vector.  */
 
 tree
-make_int_cst_stat (int len, int ext_len MEM_STAT_DECL)
+make_int_cst (int len, int ext_len MEM_STAT_DECL)
 {
   tree t;
   int length = ((ext_len - 1) * sizeof (HOST_WIDE_INT)
@@ -2265,7 +2265,7 @@ make_int_cst_stat (int len, int ext_len MEM_STAT_DECL)
 /* Build a newly constructed TREE_VEC node of length LEN.  */
 
 tree
-make_tree_vec_stat (int len MEM_STAT_DECL)
+make_tree_vec (int len MEM_STAT_DECL)
 {
   tree t;
   size_t length = (len - 1) * sizeof (tree) + sizeof (struct tree_vec);
@@ -2283,7 +2283,7 @@ make_tree_vec_stat (int len MEM_STAT_DECL)
 /* Grow a TREE_VEC node to new length LEN.  */
 
 tree
-grow_tree_vec_stat (tree v, int len MEM_STAT_DECL)
+grow_tree_vec (tree v, int len MEM_STAT_DECL)
 {
   gcc_assert (TREE_CODE (v) == TREE_VEC);
 
@@ -2868,9 +2868,9 @@ nreverse (tree t)
    purpose and value fields are PARM and VALUE.  */
 
 tree
-build_tree_list_stat (tree parm, tree value MEM_STAT_DECL)
+build_tree_list (tree parm, tree value MEM_STAT_DECL)
 {
-  tree t = make_node_stat (TREE_LIST PASS_MEM_STAT);
+  tree t = make_node (TREE_LIST PASS_MEM_STAT);
   TREE_PURPOSE (t) = parm;
   TREE_VALUE (t) = value;
   return t;
@@ -2879,7 +2879,7 @@ build_tree_list_stat (tree parm, tree value MEM_STAT_DECL)
 /* Build a chain of TREE_LIST nodes from a vector.  */
 
 tree
-build_tree_list_vec_stat (const vec<tree, va_gc> *vec MEM_STAT_DECL)
+build_tree_list_vec (const vec<tree, va_gc> *vec MEM_STAT_DECL)
 {
   tree ret = NULL_TREE;
   tree *pp = &ret;
@@ -2887,7 +2887,7 @@ build_tree_list_vec_stat (const vec<tree, va_gc> *vec MEM_STAT_DECL)
   tree t;
   FOR_EACH_VEC_SAFE_ELT (vec, i, t)
     {
-      *pp = build_tree_list_stat (NULL, t PASS_MEM_STAT);
+      *pp = build_tree_list (NULL, t PASS_MEM_STAT);
       pp = &TREE_CHAIN (*pp);
     }
   return ret;
@@ -2898,7 +2898,7 @@ build_tree_list_vec_stat (const vec<tree, va_gc> *vec MEM_STAT_DECL)
    and whose TREE_CHAIN is CHAIN.  */
 
 tree 
-tree_cons_stat (tree purpose, tree value, tree chain MEM_STAT_DECL)
+tree_cons (tree purpose, tree value, tree chain MEM_STAT_DECL)
 {
   tree node;
 
@@ -4365,20 +4365,20 @@ do { tree _node = (NODE); \
    enough for all extant tree codes.  */
 
 tree
-build0_stat (enum tree_code code, tree tt MEM_STAT_DECL)
+build0 (enum tree_code code, tree tt MEM_STAT_DECL)
 {
   tree t;
 
   gcc_assert (TREE_CODE_LENGTH (code) == 0);
 
-  t = make_node_stat (code PASS_MEM_STAT);
+  t = make_node (code PASS_MEM_STAT);
   TREE_TYPE (t) = tt;
 
   return t;
 }
 
 tree
-build1_stat (enum tree_code code, tree type, tree node MEM_STAT_DECL)
+build1 (enum tree_code code, tree type, tree node MEM_STAT_DECL)
 {
   int length = sizeof (struct tree_exp);
   tree t;
@@ -4454,9 +4454,9 @@ build1_stat (enum tree_code code, tree type, tree node MEM_STAT_DECL)
   } while (0)
 
 tree
-build2_stat (enum tree_code code, tree tt, tree arg0, tree arg1 MEM_STAT_DECL)
+build2 (enum tree_code code, tree tt, tree arg0, tree arg1 MEM_STAT_DECL)
 {
-  bool constant, read_only, side_effects;
+  bool constant, read_only, side_effects, div_by_zero;
   tree t;
 
   gcc_assert (TREE_CODE_LENGTH (code) == 2);
@@ -4474,7 +4474,7 @@ build2_stat (enum tree_code code, tree tt, tree arg0, tree arg1 MEM_STAT_DECL)
     gcc_assert (POINTER_TYPE_P (tt) && POINTER_TYPE_P (TREE_TYPE (arg0))
 		&& ptrofftype_p (TREE_TYPE (arg1)));
 
-  t = make_node_stat (code PASS_MEM_STAT);
+  t = make_node (code PASS_MEM_STAT);
   TREE_TYPE (t) = tt;
 
   /* Below, we automatically set TREE_SIDE_EFFECTS and TREE_READONLY for the
@@ -4488,6 +4488,23 @@ build2_stat (enum tree_code code, tree tt, tree arg0, tree arg1 MEM_STAT_DECL)
 	      || TREE_CODE_CLASS (code) == tcc_binary);
   read_only = 1;
   side_effects = TREE_SIDE_EFFECTS (t);
+
+  switch (code)
+    {
+    case TRUNC_DIV_EXPR:
+    case CEIL_DIV_EXPR:
+    case FLOOR_DIV_EXPR:
+    case ROUND_DIV_EXPR:
+    case EXACT_DIV_EXPR:
+    case CEIL_MOD_EXPR:
+    case FLOOR_MOD_EXPR:
+    case ROUND_MOD_EXPR:
+    case TRUNC_MOD_EXPR:
+      div_by_zero = integer_zerop (arg1);
+      break;
+    default:
+      div_by_zero = false;
+    }
 
   PROCESS_ARG (0);
   PROCESS_ARG (1);
@@ -4505,7 +4522,8 @@ build2_stat (enum tree_code code, tree tt, tree arg0, tree arg1 MEM_STAT_DECL)
   else
     {
       TREE_READONLY (t) = read_only;
-      TREE_CONSTANT (t) = constant;
+      /* Don't mark X / 0 as constant.  */
+      TREE_CONSTANT (t) = constant && !div_by_zero;
       TREE_THIS_VOLATILE (t)
 	= (TREE_CODE_CLASS (code) == tcc_reference
 	   && arg0 && TREE_THIS_VOLATILE (arg0));
@@ -4516,8 +4534,8 @@ build2_stat (enum tree_code code, tree tt, tree arg0, tree arg1 MEM_STAT_DECL)
 
 
 tree
-build3_stat (enum tree_code code, tree tt, tree arg0, tree arg1,
-	     tree arg2 MEM_STAT_DECL)
+build3 (enum tree_code code, tree tt, tree arg0, tree arg1,
+	tree arg2 MEM_STAT_DECL)
 {
   bool constant, read_only, side_effects;
   tree t;
@@ -4525,7 +4543,7 @@ build3_stat (enum tree_code code, tree tt, tree arg0, tree arg1,
   gcc_assert (TREE_CODE_LENGTH (code) == 3);
   gcc_assert (TREE_CODE_CLASS (code) != tcc_vl_exp);
 
-  t = make_node_stat (code PASS_MEM_STAT);
+  t = make_node (code PASS_MEM_STAT);
   TREE_TYPE (t) = tt;
 
   read_only = 1;
@@ -4557,15 +4575,15 @@ build3_stat (enum tree_code code, tree tt, tree arg0, tree arg1,
 }
 
 tree
-build4_stat (enum tree_code code, tree tt, tree arg0, tree arg1,
-	     tree arg2, tree arg3 MEM_STAT_DECL)
+build4 (enum tree_code code, tree tt, tree arg0, tree arg1,
+	tree arg2, tree arg3 MEM_STAT_DECL)
 {
   bool constant, read_only, side_effects;
   tree t;
 
   gcc_assert (TREE_CODE_LENGTH (code) == 4);
 
-  t = make_node_stat (code PASS_MEM_STAT);
+  t = make_node (code PASS_MEM_STAT);
   TREE_TYPE (t) = tt;
 
   side_effects = TREE_SIDE_EFFECTS (t);
@@ -4584,15 +4602,15 @@ build4_stat (enum tree_code code, tree tt, tree arg0, tree arg1,
 }
 
 tree
-build5_stat (enum tree_code code, tree tt, tree arg0, tree arg1,
-	     tree arg2, tree arg3, tree arg4 MEM_STAT_DECL)
+build5 (enum tree_code code, tree tt, tree arg0, tree arg1,
+	tree arg2, tree arg3, tree arg4 MEM_STAT_DECL)
 {
   bool constant, read_only, side_effects;
   tree t;
 
   gcc_assert (TREE_CODE_LENGTH (code) == 5);
 
-  t = make_node_stat (code PASS_MEM_STAT);
+  t = make_node (code PASS_MEM_STAT);
   TREE_TYPE (t) = tt;
 
   side_effects = TREE_SIDE_EFFECTS (t);
@@ -4722,12 +4740,12 @@ build_nt_call_vec (tree fn, vec<tree, va_gc> *args)
    Other slots are initialized to 0 or null pointers.  */
 
 tree
-build_decl_stat (location_t loc, enum tree_code code, tree name,
+build_decl (location_t loc, enum tree_code code, tree name,
     		 tree type MEM_STAT_DECL)
 {
   tree t;
 
-  t = make_node_stat (code PASS_MEM_STAT);
+  t = make_node (code PASS_MEM_STAT);
   DECL_SOURCE_LOCATION (t) = loc;
 
 /*  if (type == error_mark_node)
@@ -5217,13 +5235,15 @@ free_lang_data_in_type (tree type)
       if (TYPE_VFIELD (type) && TREE_CODE (TYPE_VFIELD (type)) != FIELD_DECL)
         TYPE_VFIELD (type) = NULL_TREE;
 
-      /* Remove TYPE_METHODS list.  While it would be nice to keep it
- 	 to enable ODR warnings about different method lists, doing so
-	 seems to impractically increase size of LTO data streamed.
-	 Keep the information if TYPE_METHODS was non-NULL. This is used
-	 by function.c and pretty printers.  */
-      if (TYPE_METHODS (type))
-        TYPE_METHODS (type) = error_mark_node;
+      /* Splice out FUNCTION_DECLS and TEMPLATE_DECLS from
+	 TYPE_FIELDS.  So LTO doesn't grow.  */
+      for (tree probe, *prev= &TYPE_FIELDS (type); (probe = *prev); )
+	if (TREE_CODE (probe) == FUNCTION_DECL
+	    || TREE_CODE (probe) == TEMPLATE_DECL)
+	  *prev = probe;
+	else
+	  prev = &DECL_CHAIN (probe);
+
       if (TYPE_BINFO (type))
 	{
 	  free_lang_data_in_binfo (TYPE_BINFO (type));
@@ -5418,9 +5438,10 @@ free_lang_data_in_decl (tree decl)
 	 At this point, it is not needed anymore.  */
       DECL_SAVED_TREE (decl) = NULL_TREE;
 
-      /* Clear the abstract origin if it refers to a method.  Otherwise
-         dwarf2out.c will ICE as we clear TYPE_METHODS and thus the
-	 origin will not be output correctly.  */
+      /* Clear the abstract origin if it refers to a method.
+         Otherwise dwarf2out.c will ICE as we splice functions out of
+         TYPE_FIELDS and thus the origin will not be output
+         correctly.  */
       if (DECL_ABSTRACT_ORIGIN (decl)
 	  && DECL_CONTEXT (DECL_ABSTRACT_ORIGIN (decl))
 	  && RECORD_OR_UNION_TYPE_P
@@ -6663,7 +6684,7 @@ build_aligned_type (tree type, unsigned int align)
 tree
 build_distinct_type_copy (tree type MEM_STAT_DECL)
 {
-  tree t = copy_node_stat (type PASS_MEM_STAT);
+  tree t = copy_node (type PASS_MEM_STAT);
 
   TYPE_POINTER_TO (t) = 0;
   TYPE_REFERENCE_TO (t) = 0;
@@ -6678,12 +6699,6 @@ build_distinct_type_copy (tree type MEM_STAT_DECL)
   /* Make it its own variant.  */
   TYPE_MAIN_VARIANT (t) = t;
   TYPE_NEXT_VARIANT (t) = 0;
-
-  /* We do not record methods in type copies nor variants
-     so we do not need to keep them up to date when new method
-     is inserted.  */
-  if (RECORD_OR_UNION_TYPE_P (t))
-    TYPE_METHODS (t) = NULL_TREE;
 
   /* Note that it is now possible for TYPE_MIN_VALUE to be a value
      whose TREE_TYPE is not t.  This can also happen in the Ada
@@ -11233,7 +11248,7 @@ build_omp_clause (location_t loc, enum omp_clause_code code)
    object is initialized to zeros.  */
 
 tree
-build_vl_exp_stat (enum tree_code code, int len MEM_STAT_DECL)
+build_vl_exp (enum tree_code code, int len MEM_STAT_DECL)
 {
   tree t;
   int length = (len - 1) * sizeof (tree) + sizeof (struct tree_exp);
@@ -13410,8 +13425,6 @@ verify_type_variant (const_tree t, tree tv)
      - aggregates may have new TYPE_FIELDS list that list variants of
        the main variant TYPE_FIELDS.
      - vector types may differ by TYPE_VECTOR_OPAQUE
-     - TYPE_METHODS is always NULL for variant types and maintained for
-       main variant only.
    */
 
   /* Convenience macro for matching individual fields.  */
@@ -13512,12 +13525,6 @@ verify_type_variant (const_tree t, tree tv)
     }
   if (TREE_CODE (t) == METHOD_TYPE)
     verify_variant_match (TYPE_METHOD_BASETYPE);
-  if (RECORD_OR_UNION_TYPE_P (t) && TYPE_METHODS (t))
-    {
-      error ("type variant has TYPE_METHODS");
-      debug_tree (tv);
-      return false;
-    }
   if (TREE_CODE (t) == OFFSET_TYPE)
     verify_variant_match (TYPE_OFFSET_BASETYPE);
   if (TREE_CODE (t) == ARRAY_TYPE)
@@ -14020,14 +14027,6 @@ verify_type (const_tree t)
   /* Check various uses of TYPE_MAXVAL.  */
   if (RECORD_OR_UNION_TYPE_P (t))
     {
-      if (TYPE_METHODS (t) && TREE_CODE (TYPE_METHODS (t)) != FUNCTION_DECL
-	  && TREE_CODE (TYPE_METHODS (t)) != TEMPLATE_DECL
-	  && TYPE_METHODS (t) != error_mark_node)
-	{
-	  error ("TYPE_METHODS is not FUNCTION_DECL, TEMPLATE_DECL nor error_mark_node");
-	  debug_tree (TYPE_METHODS (t));
-	  error_found = true;
-	}
     }
   else if (TREE_CODE (t) == FUNCTION_TYPE || TREE_CODE (t) == METHOD_TYPE)
     {
@@ -14157,6 +14156,8 @@ verify_type (const_tree t)
 	  else if (TREE_CODE (fld) == TEMPLATE_DECL)
 	    ;
 	  else if (TREE_CODE (fld) == USING_DECL)
+	    ;
+	  else if (TREE_CODE (fld) == FUNCTION_DECL)
 	    ;
 	  else
 	    {

@@ -2122,8 +2122,6 @@ extern machine_mode element_mode (const_tree t);
 
 #define TYPE_MAX_VALUE(NODE) \
   (NUMERICAL_TYPE_CHECK (NODE)->type_non_common.maxval)
-#define TYPE_METHODS(NODE)				\
-  (RECORD_OR_UNION_CHECK (NODE)->type_non_common.maxval)
 #define TYPE_METHOD_BASETYPE(NODE)			\
   (FUNC_OR_METHOD_CHECK (NODE)->type_non_common.maxval)
 #define TYPE_OFFSET_BASETYPE(NODE)			\
@@ -3891,8 +3889,7 @@ extern int allocate_decl_uid (void);
    The TREE_CODE is the only argument.  Contents are initialized
    to zero except for a few of the common fields.  */
 
-extern tree make_node_stat (enum tree_code MEM_STAT_DECL);
-#define make_node(t) make_node_stat (t MEM_STAT_INFO)
+extern tree make_node (enum tree_code CXX_MEM_STAT_INFO);
 
 /* Free tree node.  */
 
@@ -3900,8 +3897,7 @@ extern void free_node (tree);
 
 /* Make a copy of a node, with all the same contents.  */
 
-extern tree copy_node_stat (tree MEM_STAT_DECL);
-#define copy_node(t) copy_node_stat (t MEM_STAT_INFO)
+extern tree copy_node (tree CXX_MEM_STAT_INFO);
 
 /* Make a copy of a chain of TREE_LIST nodes.  */
 
@@ -3912,109 +3908,86 @@ extern tree copy_list (tree);
 extern tree build_case_label (tree, tree, tree);
 
 /* Make a BINFO.  */
-extern tree make_tree_binfo_stat (unsigned MEM_STAT_DECL);
-#define make_tree_binfo(t) make_tree_binfo_stat (t MEM_STAT_INFO)
+extern tree make_tree_binfo (unsigned CXX_MEM_STAT_INFO);
 
 /* Make an INTEGER_CST.  */
 
-extern tree make_int_cst_stat (int, int MEM_STAT_DECL);
-#define make_int_cst(LEN, EXT_LEN) \
-  make_int_cst_stat (LEN, EXT_LEN MEM_STAT_INFO)
+extern tree make_int_cst (int, int CXX_MEM_STAT_INFO);
 
 /* Make a TREE_VEC.  */
 
-extern tree make_tree_vec_stat (int MEM_STAT_DECL);
-#define make_tree_vec(t) make_tree_vec_stat (t MEM_STAT_INFO)
+extern tree make_tree_vec (int CXX_MEM_STAT_INFO);
 
 /* Grow a TREE_VEC.  */
 
-extern tree grow_tree_vec_stat (tree v, int MEM_STAT_DECL);
-#define grow_tree_vec(v, t) grow_tree_vec_stat (v, t MEM_STAT_INFO)
+extern tree grow_tree_vec (tree v, int CXX_MEM_STAT_INFO);
 
 /* Construct various types of nodes.  */
 
 extern tree build_nt (enum tree_code, ...);
 extern tree build_nt_call_vec (tree, vec<tree, va_gc> *);
 
-extern tree build0_stat (enum tree_code, tree MEM_STAT_DECL);
-#define build0(c,t) build0_stat (c,t MEM_STAT_INFO)
-extern tree build1_stat (enum tree_code, tree, tree MEM_STAT_DECL);
-#define build1(c,t1,t2) build1_stat (c,t1,t2 MEM_STAT_INFO)
-extern tree build2_stat (enum tree_code, tree, tree, tree MEM_STAT_DECL);
-#define build2(c,t1,t2,t3) build2_stat (c,t1,t2,t3 MEM_STAT_INFO)
-extern tree build3_stat (enum tree_code, tree, tree, tree, tree MEM_STAT_DECL);
-#define build3(c,t1,t2,t3,t4) build3_stat (c,t1,t2,t3,t4 MEM_STAT_INFO)
-extern tree build4_stat (enum tree_code, tree, tree, tree, tree,
-			 tree MEM_STAT_DECL);
-#define build4(c,t1,t2,t3,t4,t5) build4_stat (c,t1,t2,t3,t4,t5 MEM_STAT_INFO)
-extern tree build5_stat (enum tree_code, tree, tree, tree, tree, tree,
-			 tree MEM_STAT_DECL);
-#define build5(c,t1,t2,t3,t4,t5,t6) build5_stat (c,t1,t2,t3,t4,t5,t6 MEM_STAT_INFO)
+extern tree build0 (enum tree_code, tree CXX_MEM_STAT_INFO);
+extern tree build1 (enum tree_code, tree, tree CXX_MEM_STAT_INFO);
+extern tree build2 (enum tree_code, tree, tree, tree CXX_MEM_STAT_INFO);
+extern tree build3 (enum tree_code, tree, tree, tree, tree CXX_MEM_STAT_INFO);
+extern tree build4 (enum tree_code, tree, tree, tree, tree,
+		    tree CXX_MEM_STAT_INFO);
+extern tree build5 (enum tree_code, tree, tree, tree, tree, tree,
+		    tree CXX_MEM_STAT_INFO);
 
 /* _loc versions of build[1-5].  */
 
 static inline tree
-build1_stat_loc (location_t loc, enum tree_code code, tree type,
-		 tree arg1 MEM_STAT_DECL)
+build1_loc (location_t loc, enum tree_code code, tree type,
+	    tree arg1 CXX_MEM_STAT_INFO)
 {
-  tree t = build1_stat (code, type, arg1 PASS_MEM_STAT);
+  tree t = build1 (code, type, arg1 PASS_MEM_STAT);
   if (CAN_HAVE_LOCATION_P (t))
     SET_EXPR_LOCATION (t, loc);
   return t;
 }
-#define build1_loc(l,c,t1,t2) build1_stat_loc (l,c,t1,t2 MEM_STAT_INFO)
 
 static inline tree
-build2_stat_loc (location_t loc, enum tree_code code, tree type, tree arg0,
-		 tree arg1 MEM_STAT_DECL)
+build2_loc (location_t loc, enum tree_code code, tree type, tree arg0,
+	    tree arg1 CXX_MEM_STAT_INFO)
 {
-  tree t = build2_stat (code, type, arg0, arg1 PASS_MEM_STAT);
+  tree t = build2 (code, type, arg0, arg1 PASS_MEM_STAT);
   if (CAN_HAVE_LOCATION_P (t))
     SET_EXPR_LOCATION (t, loc);
   return t;
 }
-#define build2_loc(l,c,t1,t2,t3) build2_stat_loc (l,c,t1,t2,t3 MEM_STAT_INFO)
 
 static inline tree
-build3_stat_loc (location_t loc, enum tree_code code, tree type, tree arg0,
-		 tree arg1, tree arg2 MEM_STAT_DECL)
+build3_loc (location_t loc, enum tree_code code, tree type, tree arg0,
+	    tree arg1, tree arg2 CXX_MEM_STAT_INFO)
 {
-  tree t = build3_stat (code, type, arg0, arg1, arg2 PASS_MEM_STAT);
+  tree t = build3 (code, type, arg0, arg1, arg2 PASS_MEM_STAT);
   if (CAN_HAVE_LOCATION_P (t))
     SET_EXPR_LOCATION (t, loc);
   return t;
 }
-#define build3_loc(l,c,t1,t2,t3,t4) \
-  build3_stat_loc (l,c,t1,t2,t3,t4 MEM_STAT_INFO)
 
 static inline tree
-build4_stat_loc (location_t loc, enum tree_code code, tree type, tree arg0,
-		 tree arg1, tree arg2, tree arg3 MEM_STAT_DECL)
+build4_loc (location_t loc, enum tree_code code, tree type, tree arg0,
+	    tree arg1, tree arg2, tree arg3 CXX_MEM_STAT_INFO)
 {
-  tree t = build4_stat (code, type, arg0, arg1, arg2, arg3 PASS_MEM_STAT);
+  tree t = build4 (code, type, arg0, arg1, arg2, arg3 PASS_MEM_STAT);
   if (CAN_HAVE_LOCATION_P (t))
     SET_EXPR_LOCATION (t, loc);
   return t;
 }
-#define build4_loc(l,c,t1,t2,t3,t4,t5) \
-  build4_stat_loc (l,c,t1,t2,t3,t4,t5 MEM_STAT_INFO)
 
 static inline tree
-build5_stat_loc (location_t loc, enum tree_code code, tree type, tree arg0,
-		 tree arg1, tree arg2, tree arg3, tree arg4 MEM_STAT_DECL)
+build5_loc (location_t loc, enum tree_code code, tree type, tree arg0,
+	    tree arg1, tree arg2, tree arg3, tree arg4 CXX_MEM_STAT_INFO)
 {
-  tree t = build5_stat (code, type, arg0, arg1, arg2, arg3,
+  tree t = build5 (code, type, arg0, arg1, arg2, arg3,
 			arg4 PASS_MEM_STAT);
   if (CAN_HAVE_LOCATION_P (t))
     SET_EXPR_LOCATION (t, loc);
   return t;
 }
-#define build5_loc(l,c,t1,t2,t3,t4,t5,t6) \
-  build5_stat_loc (l,c,t1,t2,t3,t4,t5,t6 MEM_STAT_INFO)
-
-extern tree build_var_debug_value_stat (tree, tree MEM_STAT_DECL);
-#define build_var_debug_value(t1,t2) \
-  build_var_debug_value_stat (t1,t2 MEM_STAT_INFO)
 
 /* Constructs double_int from tree CST.  */
 
@@ -4029,10 +4002,8 @@ extern tree force_fit_type (tree, const wide_int_ref &, int, bool);
 extern tree build_int_cst (tree, HOST_WIDE_INT);
 extern tree build_int_cstu (tree type, unsigned HOST_WIDE_INT cst);
 extern tree build_int_cst_type (tree, HOST_WIDE_INT);
-extern tree make_vector_stat (unsigned MEM_STAT_DECL);
-#define make_vector(n) make_vector_stat (n MEM_STAT_INFO)
-extern tree build_vector_stat (tree, tree * MEM_STAT_DECL);
-#define build_vector(t,v) build_vector_stat (t, v MEM_STAT_INFO)
+extern tree make_vector (unsigned CXX_MEM_STAT_INFO);
+extern tree build_vector (tree, tree * CXX_MEM_STAT_INFO);
 extern tree build_vector_from_ctor (tree, vec<constructor_elt, va_gc> *);
 extern tree build_vector_from_val (tree, tree);
 extern void recompute_constructor_flags (tree);
@@ -4050,21 +4021,17 @@ extern tree build_minus_one_cst (tree);
 extern tree build_all_ones_cst (tree);
 extern tree build_zero_cst (tree);
 extern tree build_string (int, const char *);
-extern tree build_tree_list_stat (tree, tree MEM_STAT_DECL);
-#define build_tree_list(t, q) build_tree_list_stat (t, q MEM_STAT_INFO)
-extern tree build_tree_list_vec_stat (const vec<tree, va_gc> *MEM_STAT_DECL);
-#define build_tree_list_vec(v) build_tree_list_vec_stat (v MEM_STAT_INFO)
-extern tree build_decl_stat (location_t, enum tree_code,
-			     tree, tree MEM_STAT_DECL);
+extern tree build_tree_list (tree, tree CXX_MEM_STAT_INFO);
+extern tree build_tree_list_vec (const vec<tree, va_gc> * CXX_MEM_STAT_INFO);
+extern tree build_decl (location_t, enum tree_code,
+			tree, tree CXX_MEM_STAT_INFO);
 extern tree build_fn_decl (const char *, tree);
-#define build_decl(l,c,t,q) build_decl_stat (l, c, t, q MEM_STAT_INFO)
 extern tree build_translation_unit_decl (tree);
 extern tree build_block (tree, tree, tree, tree);
 extern tree build_empty_stmt (location_t);
 extern tree build_omp_clause (location_t, enum omp_clause_code);
 
-extern tree build_vl_exp_stat (enum tree_code, int MEM_STAT_DECL);
-#define build_vl_exp(c, n) build_vl_exp_stat (c, n MEM_STAT_INFO)
+extern tree build_vl_exp (enum tree_code, int CXX_MEM_STAT_INFO);
 
 extern tree build_call_nary (tree, tree, int, ...);
 extern tree build_call_valist (tree, tree, int, va_list);
@@ -4364,8 +4331,7 @@ extern tree chainon (tree, tree);
 
 /* Make a new TREE_LIST node from specified PURPOSE, VALUE and CHAIN.  */
 
-extern tree tree_cons_stat (tree, tree, tree MEM_STAT_DECL);
-#define tree_cons(t,q,w) tree_cons_stat (t,q,w MEM_STAT_INFO)
+extern tree tree_cons (tree, tree, tree CXX_MEM_STAT_INFO);
 
 /* Return the last tree node in a chain.  */
 

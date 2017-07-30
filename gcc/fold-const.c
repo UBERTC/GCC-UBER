@@ -3184,9 +3184,18 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 	  flags &= ~OEP_ADDRESS_OF;
 	  return OP_SAME (0);
 
+	case BIT_INSERT_EXPR:
+	  /* BIT_INSERT_EXPR has an implict operand as the type precision
+	     of op1.  Need to check to make sure they are the same.  */
+	  if (TREE_CODE (TREE_OPERAND (arg0, 1)) == INTEGER_CST
+	      && TREE_CODE (TREE_OPERAND (arg1, 1)) == INTEGER_CST
+	      && TYPE_PRECISION (TREE_TYPE (TREE_OPERAND (arg0, 1)))
+		 != TYPE_PRECISION (TREE_TYPE (TREE_OPERAND (arg1, 1))))
+	    return false;
+	  /* FALLTHRU */
+
 	case VEC_COND_EXPR:
 	case DOT_PROD_EXPR:
-	case BIT_INSERT_EXPR:
 	  return OP_SAME (0) && OP_SAME (1) && OP_SAME (2);
 
 	case MODIFY_EXPR:
@@ -3927,7 +3936,7 @@ make_bit_field_ref (location_t loc, tree inner, tree orig_inner, tree type,
     bftype = build_nonstandard_integer_type (bitsize, 0);
 
   result = build3_loc (loc, BIT_FIELD_REF, bftype, inner,
-		       size_int (bitsize), bitsize_int (bitpos));
+		       bitsize_int (bitsize), bitsize_int (bitpos));
   REF_REVERSE_STORAGE_ORDER (result) = reversep;
 
   if (bftype != type)
@@ -4850,21 +4859,21 @@ build_range_check (location_t loc, tree type, tree exp, int in_p,
 
   if (low == 0)
     return fold_build2_loc (loc, LE_EXPR, type, exp,
-			fold_convert_loc (loc, etype, high));
+			    fold_convert_loc (loc, etype, high));
 
   if (high == 0)
     return fold_build2_loc (loc, GE_EXPR, type, exp,
-			fold_convert_loc (loc, etype, low));
+			    fold_convert_loc (loc, etype, low));
 
   if (operand_equal_p (low, high, 0))
     return fold_build2_loc (loc, EQ_EXPR, type, exp,
-			fold_convert_loc (loc, etype, low));
+			    fold_convert_loc (loc, etype, low));
 
   if (TREE_CODE (exp) == BIT_AND_EXPR
       && maskable_range_p (low, high, etype, &mask, &value))
     return fold_build2_loc (loc, EQ_EXPR, type,
 			    fold_build2_loc (loc, BIT_AND_EXPR, etype,
-					      exp, mask),
+					     exp, mask),
 			    value);
 
   if (integer_zerop (low))
@@ -4896,7 +4905,7 @@ build_range_check (location_t loc, tree type, tree exp, int in_p,
 	      exp = fold_convert_loc (loc, etype, exp);
 	    }
 	  return fold_build2_loc (loc, GT_EXPR, type, exp,
-			      build_int_cst (etype, 0));
+				  build_int_cst (etype, 0));
 	}
     }
 
@@ -4906,24 +4915,14 @@ build_range_check (location_t loc, tree type, tree exp, int in_p,
   if (etype == NULL_TREE)
     return NULL_TREE;
 
+  if (POINTER_TYPE_P (etype))
+    etype = unsigned_type_for (etype);
+
   high = fold_convert_loc (loc, etype, high);
   low = fold_convert_loc (loc, etype, low);
   exp = fold_convert_loc (loc, etype, exp);
 
   value = const_binop (MINUS_EXPR, high, low);
-
-
-  if (POINTER_TYPE_P (etype))
-    {
-      if (value != 0 && !TREE_OVERFLOW (value))
-	{
-	  low = fold_build1_loc (loc, NEGATE_EXPR, TREE_TYPE (low), low);
-          return build_range_check (loc, type,
-			     	    fold_build_pointer_plus_loc (loc, exp, low),
-			            1, build_int_cst (etype, 0), value);
-	}
-      return 0;
-    }
 
   if (value != 0 && !TREE_OVERFLOW (value))
     return build_range_check (loc, type,
@@ -12196,8 +12195,8 @@ debug_fold_checksum (const_tree t)
    expression with code CODE of type TYPE with an operand OP0.  */
 
 tree
-fold_build1_stat_loc (location_t loc,
-		      enum tree_code code, tree type, tree op0 MEM_STAT_DECL)
+fold_build1_loc (location_t loc,
+		 enum tree_code code, tree type, tree op0 MEM_STAT_DECL)
 {
   tree tem;
 #ifdef ENABLE_FOLD_CHECKING
@@ -12213,7 +12212,7 @@ fold_build1_stat_loc (location_t loc,
 
   tem = fold_unary_loc (loc, code, type, op0);
   if (!tem)
-    tem = build1_stat_loc (loc, code, type, op0 PASS_MEM_STAT);
+    tem = build1_loc (loc, code, type, op0 PASS_MEM_STAT);
 
 #ifdef ENABLE_FOLD_CHECKING
   md5_init_ctx (&ctx);
@@ -12233,7 +12232,7 @@ fold_build1_stat_loc (location_t loc,
    OP0 and OP1.  */
 
 tree
-fold_build2_stat_loc (location_t loc,
+fold_build2_loc (location_t loc,
 		      enum tree_code code, tree type, tree op0, tree op1
 		      MEM_STAT_DECL)
 {
@@ -12259,7 +12258,7 @@ fold_build2_stat_loc (location_t loc,
 
   tem = fold_binary_loc (loc, code, type, op0, op1);
   if (!tem)
-    tem = build2_stat_loc (loc, code, type, op0, op1 PASS_MEM_STAT);
+    tem = build2_loc (loc, code, type, op0, op1 PASS_MEM_STAT);
 
 #ifdef ENABLE_FOLD_CHECKING
   md5_init_ctx (&ctx);
@@ -12286,7 +12285,7 @@ fold_build2_stat_loc (location_t loc,
    type TYPE with operands OP0, OP1, and OP2.  */
 
 tree
-fold_build3_stat_loc (location_t loc, enum tree_code code, tree type,
+fold_build3_loc (location_t loc, enum tree_code code, tree type,
 		      tree op0, tree op1, tree op2 MEM_STAT_DECL)
 {
   tree tem;
@@ -12319,7 +12318,7 @@ fold_build3_stat_loc (location_t loc, enum tree_code code, tree type,
   gcc_assert (TREE_CODE_CLASS (code) != tcc_vl_exp);
   tem = fold_ternary_loc (loc, code, type, op0, op1, op2);
   if (!tem)
-    tem = build3_stat_loc (loc, code, type, op0, op1, op2 PASS_MEM_STAT);
+    tem = build3_loc (loc, code, type, op0, op1, op2 PASS_MEM_STAT);
 
 #ifdef ENABLE_FOLD_CHECKING
   md5_init_ctx (&ctx);
@@ -13693,8 +13692,8 @@ fold_negate_const (tree arg0, tree type)
 	bool overflow;
 	wide_int val = wi::neg (arg0, &overflow);
 	t = force_fit_type (type, val, 1,
-			    (overflow | TREE_OVERFLOW (arg0))
-			    && !TYPE_UNSIGNED (type));
+			    (overflow && ! TYPE_UNSIGNED (type))
+			    || TREE_OVERFLOW (arg0));
 	break;
       }
 

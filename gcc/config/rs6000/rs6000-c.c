@@ -575,40 +575,6 @@ rs6000_target_modify_macros (bool define_p, HOST_WIDE_INT flags,
      2. If TARGET_ALTIVEC is turned off.  */
   if ((flags & OPTION_MASK_CRYPTO) != 0)
     rs6000_define_or_undefine_macro (define_p, "__CRYPTO__");
-  /* Note that the OPTION_MASK_UPPER_REGS_DF flag is automatically
-     turned on in the following conditions:
-     1. If TARGET_UPPER_REGS is explicitly turned on and
-	TARGET_VSX is turned on and OPTION_MASK_UPPER_REGS_DF is not
-	explicitly turned off.  Hereafter, the
-	OPTION_MASK_UPPER_REGS_DF flag is considered to have been
-	explicitly set.
-     Note that the OPTION_MASK_UPPER_REGS_DF flag is automatically
-     turned off in the following conditions:
-     1. If TARGET_UPPER_REGS is explicitly turned off and TARGET_VSX
-	is turned on and OPTION_MASK_UPPER_REGS_DF is not explicitly
-	turned on.  Hereafter, the OPTION_MASK_UPPER_REGS_DF flag is
-	considered to have been explicitly cleared.
-     2. If TARGET_UPPER_REGS_DF is turned on but TARGET_VSX is turned
-	off.  */
-  if ((flags & OPTION_MASK_UPPER_REGS_DF) != 0)
-    rs6000_define_or_undefine_macro (define_p, "__UPPER_REGS_DF__");
-  /* Note that the OPTION_MASK_UPPER_REGS_SF flag is automatically
-     turned on in the following conditions:
-     1. If TARGET_UPPER_REGS is explicitly turned on and
-	TARGET_P8_VECTOR is on and OPTION_MASK_UPPER_REGS_SF is not
-	turned off explicitly.  Hereafter, the
-	OPTION_MASK_UPPER_REGS_SF flag is considered to have been
-	explicitly set.
-     Note that the OPTION_MASK_UPPER_REGS_SF flag is automatically
-     turned off in the following conditions:
-     1. If TARGET_UPPER_REGS is explicitly turned off and
-	TARGET_P8_VECTOR is on and OPTION_MASK_UPPER_REGS_SF is not
-	turned off explicitly.  Hereafter, the
-	OPTION_MASK_UPPER_REGS_SF flag is considered to have been
-	explicitly cleared.
-     2. If TARGET_P8_VECTOR is off.  */
-  if ((flags & OPTION_MASK_UPPER_REGS_SF) != 0)
-    rs6000_define_or_undefine_macro (define_p, "__UPPER_REGS_SF__");
 
   /* options from the builtin masks.  */
   /* Note that RS6000_BTM_PAIRED is enabled only if
@@ -2232,9 +2198,9 @@ const struct altivec_builtin_types altivec_overloaded_builtins[] = {
     RS6000_BTI_unsigned_V4SI, RS6000_BTI_unsigned_V8HI, RS6000_BTI_unsigned_V8HI, 0 },
   { ALTIVEC_BUILTIN_VEC_MULE, ALTIVEC_BUILTIN_VMULESH,
     RS6000_BTI_V4SI, RS6000_BTI_V8HI, RS6000_BTI_V8HI, 0 },
-  { ALTIVEC_BUILTIN_VEC_MULE, ALTIVEC_BUILTIN_VMULESH,
+  { ALTIVEC_BUILTIN_VEC_MULE, ALTIVEC_BUILTIN_VMULESW,
     RS6000_BTI_V2DI, RS6000_BTI_V4SI, RS6000_BTI_V4SI, 0 },
-  { ALTIVEC_BUILTIN_VEC_MULE, ALTIVEC_BUILTIN_VMULEUH,
+  { ALTIVEC_BUILTIN_VEC_MULE, ALTIVEC_BUILTIN_VMULEUW,
     RS6000_BTI_unsigned_V2DI, RS6000_BTI_unsigned_V4SI,
     RS6000_BTI_unsigned_V4SI, 0 },
   { ALTIVEC_BUILTIN_VEC_VMULEUB, ALTIVEC_BUILTIN_VMULEUB,
@@ -2251,9 +2217,9 @@ const struct altivec_builtin_types altivec_overloaded_builtins[] = {
     RS6000_BTI_V8HI, RS6000_BTI_V16QI, RS6000_BTI_V16QI, 0 },
   { ALTIVEC_BUILTIN_VEC_MULO, ALTIVEC_BUILTIN_VMULOUH,
     RS6000_BTI_unsigned_V4SI, RS6000_BTI_unsigned_V8HI, RS6000_BTI_unsigned_V8HI, 0 },
-  { ALTIVEC_BUILTIN_VEC_MULO, ALTIVEC_BUILTIN_VMULOSH,
+  { ALTIVEC_BUILTIN_VEC_MULO, ALTIVEC_BUILTIN_VMULOSW,
     RS6000_BTI_V2DI, RS6000_BTI_V4SI, RS6000_BTI_V4SI, 0 },
-  { ALTIVEC_BUILTIN_VEC_MULO, ALTIVEC_BUILTIN_VMULOUH,
+  { ALTIVEC_BUILTIN_VEC_MULO, ALTIVEC_BUILTIN_VMULOUW,
     RS6000_BTI_unsigned_V2DI, RS6000_BTI_unsigned_V4SI,
     RS6000_BTI_unsigned_V4SI, 0 },
   { ALTIVEC_BUILTIN_VEC_MULO, ALTIVEC_BUILTIN_VMULOSH,
@@ -5183,6 +5149,11 @@ const struct altivec_builtin_types altivec_overloaded_builtins[] = {
     RS6000_BTI_INTDI, RS6000_BTI_V16QI, RS6000_BTI_UINTSI, 0 },
   { P9V_BUILTIN_VEC_VEXTRACT4B, P9V_BUILTIN_VEXTRACT4B,
     RS6000_BTI_INTDI, RS6000_BTI_unsigned_V16QI, RS6000_BTI_UINTSI, 0 },
+
+  { P9V_BUILTIN_VEC_VEXTRACT_FP_FROM_SHORTH, P9V_BUILTIN_VEXTRACT_FP_FROM_SHORTH,
+    RS6000_BTI_V4SF, RS6000_BTI_unsigned_V8HI, 0, 0 },
+  { P9V_BUILTIN_VEC_VEXTRACT_FP_FROM_SHORTL, P9V_BUILTIN_VEXTRACT_FP_FROM_SHORTL,
+    RS6000_BTI_V4SF, RS6000_BTI_unsigned_V8HI, 0, 0 },
 
   { P9V_BUILTIN_VEC_VEXTULX, P9V_BUILTIN_VEXTUBLX,
     RS6000_BTI_INTQI, RS6000_BTI_UINTSI,

@@ -1521,6 +1521,7 @@ const struct sanitizer_opts_s sanitizer_opts[] =
 		 true),
   SANITIZER_OPT (object-size, SANITIZE_OBJECT_SIZE, true),
   SANITIZER_OPT (vptr, SANITIZE_VPTR, true),
+  SANITIZER_OPT (pointer-overflow, SANITIZE_POINTER_OVERFLOW, true),
   SANITIZER_OPT (all, ~0U, true),
 #undef SANITIZER_OPT
   { NULL, 0U, 0UL, false }
@@ -2205,6 +2206,33 @@ common_handle_option (struct gcc_options *opts,
 	 is done.  */
       if (!opts_set->x_flag_ipa_reference)
         opts->x_flag_ipa_reference = false;
+      break;
+
+    case OPT_fpatchable_function_entry_:
+      {
+	char *patch_area_arg = xstrdup (arg);
+	char *comma = strchr (patch_area_arg, ',');
+	if (comma)
+	  {
+	    *comma = '\0';
+	    function_entry_patch_area_size = 
+	      integral_argument (patch_area_arg);
+	    function_entry_patch_area_start =
+	      integral_argument (comma + 1);
+	  }
+	else
+	  {
+	    function_entry_patch_area_size =
+	      integral_argument (patch_area_arg);
+	    function_entry_patch_area_start = 0;
+	  }
+	if (function_entry_patch_area_size < 0
+	    || function_entry_patch_area_start < 0
+	    || function_entry_patch_area_size 
+		< function_entry_patch_area_start)
+	  error ("invalid arguments for %<-fpatchable_function_entry%>");
+	free (patch_area_arg);
+      }
       break;
 
     case OPT_ftree_vectorize:

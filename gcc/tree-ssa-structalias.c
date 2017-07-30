@@ -2827,7 +2827,6 @@ alias_get_name (tree decl)
 {
   const char *res = NULL;
   char *temp;
-  int num_printed = 0;
 
   if (!dump_file)
     return "NULL";
@@ -2836,14 +2835,11 @@ alias_get_name (tree decl)
     {
       res = get_name (decl);
       if (res)
-	num_printed = asprintf (&temp, "%s_%u", res, SSA_NAME_VERSION (decl));
+	temp = xasprintf ("%s_%u", res, SSA_NAME_VERSION (decl));
       else
-	num_printed = asprintf (&temp, "_%u", SSA_NAME_VERSION (decl));
-      if (num_printed > 0)
-	{
-	  res = ggc_strdup (temp);
-	  free (temp);
-	}
+	temp = xasprintf ("_%u", SSA_NAME_VERSION (decl));
+      res = ggc_strdup (temp);
+      free (temp);
     }
   else if (DECL_P (decl))
     {
@@ -2854,12 +2850,9 @@ alias_get_name (tree decl)
 	  res = get_name (decl);
 	  if (!res)
 	    {
-	      num_printed = asprintf (&temp, "D.%u", DECL_UID (decl));
-	      if (num_printed > 0)
-		{
-		  res = ggc_strdup (temp);
-		  free (temp);
-		}
+	      temp = xasprintf ("D.%u", DECL_UID (decl));
+	      res = ggc_strdup (temp);
+	      free (temp);
 	    }
 	}
     }
@@ -7771,7 +7764,8 @@ refered_from_nonlocal_fn (struct cgraph_node *node, void *data)
   bool *nonlocal_p = (bool *)data;
   *nonlocal_p |= (node->used_from_other_partition
 		  || node->externally_visible
-		  || node->force_output);
+		  || node->force_output
+		  || lookup_attribute ("noipa", DECL_ATTRIBUTES (node->decl)));
   return false;
 }
 
@@ -7831,7 +7825,9 @@ ipa_pta_execute (void)
 	 constraints for parameters.  */
       bool nonlocal_p = (node->used_from_other_partition
 			 || node->externally_visible
-			 || node->force_output);
+			 || node->force_output
+			 || lookup_attribute ("noipa",
+					      DECL_ATTRIBUTES (node->decl)));
       node->call_for_symbol_thunks_and_aliases (refered_from_nonlocal_fn,
 						&nonlocal_p, true);
 

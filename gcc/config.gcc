@@ -798,14 +798,7 @@ case ${target} in
   case ${enable_threads} in
     "" | yes | posix) thread_file='posix' ;;
   esac
-
-  # NetBSD 2.0 and later provide __cxa_atexit(), which we use by
-  # default (unless overridden by --disable-__cxa_atexit).
-  case ${target} in
-    *-*-netbsd[2-9]* | *-*-netbsdelf[2-9]*)
-      default_use_cxa_atexit=yes
-      ;;
-  esac
+  default_use_cxa_atexit=yes
   ;;
 *-*-openbsd*)
   tmake_file="t-openbsd"
@@ -2048,7 +2041,7 @@ riscv*-*-linux*)
 	# automatically detect that GAS supports it, yet we require it.
 	gcc_cv_initfini_array=yes
 	;;
-riscv*-*-elf*)
+riscv*-*-elf* | riscv*-*-rtems*)
 	tm_file="elfos.h newlib-stdint.h ${tm_file} riscv/elf.h"
 	case "x${enable_multilib}" in
 	xno) ;;
@@ -2061,6 +2054,11 @@ riscv*-*-elf*)
 	# Force .init_array support.  The configure script cannot always
 	# automatically detect that GAS supports it, yet we require it.
 	gcc_cv_initfini_array=yes
+	case ${target} in
+	riscv*-*-rtems*)
+	  tm_file="${tm_file} rtems.h riscv/rtems.h"
+	  ;;
+	esac
 	;;
 mips*-*-netbsd*)			# NetBSD/mips, either endian.
 	target_cpu_default="MASK_ABICALLS"
@@ -2432,7 +2430,7 @@ powerpc-*-rtems*spe*)
 	tmake_file="${tmake_file} powerpcspe/t-fprules powerpcspe/t-rtems powerpcspe/t-ppccomm"
 	;;
 powerpc-*-rtems*)
-	tm_file="${tm_file} dbxelf.h elfos.h freebsd-spec.h newlib-stdint.h rs6000/sysv4.h rs6000/eabi.h rs6000/rtems.h rtems.h"
+	tm_file="rs6000/biarch64.h ${tm_file} dbxelf.h elfos.h freebsd-spec.h newlib-stdint.h rs6000/sysv4.h rs6000/rtems.h rtems.h"
 	extra_options="${extra_options} rs6000/sysv4.opt"
 	tmake_file="${tmake_file} rs6000/t-fprules rs6000/t-rtems rs6000/t-ppccomm"
 	;;

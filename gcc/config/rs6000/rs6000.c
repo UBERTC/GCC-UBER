@@ -143,10 +143,6 @@ typedef struct GTY(()) machine_function
   /* Offset from virtual_stack_vars_rtx to the start of the ABI_V4
      varargs save area.  */
   HOST_WIDE_INT varargs_save_offset;
-  /* Temporary stack slot to use for SDmode copies.  This slot is
-     64-bits wide and is allocated early enough so that the offset
-     does not overflow the 16-bit load/store offset field.  */
-  rtx sdmode_stack_slot;
   /* Alternative internal arg pointer for -fsplit-stack.  */
   rtx split_stack_arg_pointer;
   bool split_stack_argp_used;
@@ -379,7 +375,9 @@ static const struct
   { "tar",		PPC_FEATURE2_HAS_TAR,		1 },
   { "vcrypto",		PPC_FEATURE2_HAS_VEC_CRYPTO,	1 },
   { "arch_3_00",	PPC_FEATURE2_ARCH_3_00,		1 },
-  { "ieee128",		PPC_FEATURE2_HAS_IEEE128,	1 }
+  { "ieee128",		PPC_FEATURE2_HAS_IEEE128,	1 },
+  { "darn",		PPC_FEATURE2_DARN,		1 },
+  { "scv",		PPC_FEATURE2_SCV,		1 }
 };
 
 /* On PowerPC, we have a limited number of target clones that we care about
@@ -1872,12 +1870,6 @@ static const struct attribute_spec rs6000_attribute_table[] =
 #undef TARGET_BUILTIN_RECIPROCAL
 #define TARGET_BUILTIN_RECIPROCAL rs6000_builtin_reciprocal
 
-#undef TARGET_EXPAND_TO_RTL_HOOK
-#define TARGET_EXPAND_TO_RTL_HOOK rs6000_alloc_sdmode_stack_slot
-
-#undef TARGET_INSTANTIATE_DECLS
-#define TARGET_INSTANTIATE_DECLS rs6000_instantiate_decls
-
 #undef TARGET_SECONDARY_RELOAD
 #define TARGET_SECONDARY_RELOAD rs6000_secondary_reload
 
@@ -1886,9 +1878,6 @@ static const struct attribute_spec rs6000_attribute_table[] =
 
 #undef TARGET_MODE_DEPENDENT_ADDRESS_P
 #define TARGET_MODE_DEPENDENT_ADDRESS_P rs6000_mode_dependent_address_p
-
-#undef TARGET_LRA_P
-#define TARGET_LRA_P rs6000_lra_p
 
 #undef TARGET_COMPUTE_PRESSURE_CLASSES
 #define TARGET_COMPUTE_PRESSURE_CLASSES rs6000_compute_pressure_classes
@@ -2104,14 +2093,11 @@ rs6000_hard_regno_mode_ok (int regno, machine_mode mode)
 	  if(GET_MODE_SIZE (mode) == UNITS_PER_FP_WORD)
 	    return 1;
 
-	  if (TARGET_VSX_SMALL_INTEGER)
-	    {
-	      if (mode == SImode)
-		return 1;
+	  if (TARGET_P8_VECTOR && (mode == SImode))
+	    return 1;
 
-	      if (TARGET_P9_VECTOR && (mode == HImode || mode == QImode))
-		return 1;
-	    }
+	  if (TARGET_P9_VECTOR && (mode == QImode || mode == HImode))
+	    return 1;
 	}
 
       if (PAIRED_SIMD_REGNO_P (regno) && TARGET_PAIRED_FLOAT
@@ -2793,8 +2779,6 @@ rs6000_debug_reg_global (void)
   if (TARGET_LINK_STACK)
     fprintf (stderr, DEBUG_FMT_S, "link_stack", "true");
 
-  fprintf (stderr, DEBUG_FMT_S, "lra", TARGET_LRA ? "true" : "false");
-
   if (TARGET_P8_FUSION)
     {
       char options[80];
@@ -2907,9 +2891,7 @@ rs6000_setup_reg_addr_masks (void)
 		  && !VECTOR_MODE_P (m2)
 		  && !FLOAT128_VECTOR_P (m2)
 		  && !complex_p
-		  && !small_int_vsx_p
-		  && (m2 != DFmode || !TARGET_UPPER_REGS_DF)
-		  && (m2 != SFmode || !TARGET_UPPER_REGS_SF))
+		  && !small_int_vsx_p)
 		{
 		  addr_mask |= RELOAD_REG_PRE_INCDEC;
 
@@ -3218,22 +3200,12 @@ rs6000_init_hard_regno_mode_ok (bool global_init_p)
       rs6000_constraints[RS6000_CONSTRAINT_wa] = VSX_REGS;
       rs6000_constraints[RS6000_CONSTRAINT_wd] = VSX_REGS;	/* V2DFmode  */
       rs6000_constraints[RS6000_CONSTRAINT_wf] = VSX_REGS;	/* V4SFmode  */
+      rs6000_constraints[RS6000_CONSTRAINT_ws] = VSX_REGS;	/* DFmode  */
+      rs6000_constraints[RS6000_CONSTRAINT_wv] = ALTIVEC_REGS;	/* DFmode  */
+      rs6000_constraints[RS6000_CONSTRAINT_wi] = VSX_REGS;	/* DImode  */
 
       if (TARGET_VSX_TIMODE)
 	rs6000_constraints[RS6000_CONSTRAINT_wt] = VSX_REGS;	/* TImode  */
-
-      if (TARGET_UPPER_REGS_DF)					/* DFmode  */
-	{
-	  rs6000_constraints[RS6000_CONSTRAINT_ws] = VSX_REGS;
-	  rs6000_constraints[RS6000_CONSTRAINT_wv] = ALTIVEC_REGS;
-	}
-      else
-	rs6000_constraints[RS6000_CONSTRAINT_ws] = FLOAT_REGS;
-
-      if (TARGET_UPPER_REGS_DI)					/* DImode  */
-	rs6000_constraints[RS6000_CONSTRAINT_wi] = VSX_REGS;
-      else
-	rs6000_constraints[RS6000_CONSTRAINT_wi] = FLOAT_REGS;
     }
 
   /* Add conditional constraints based on various options, to allow us to
@@ -3263,7 +3235,7 @@ rs6000_init_hard_regno_mode_ok (bool global_init_p)
       rs6000_constraints[RS6000_CONSTRAINT_wA] = BASE_REGS;
     }
 
-  if (TARGET_P8_VECTOR && TARGET_UPPER_REGS_SF)			/* SFmode  */
+  if (TARGET_P8_VECTOR)						/* SFmode  */
     {
       rs6000_constraints[RS6000_CONSTRAINT_wu] = ALTIVEC_REGS;
       rs6000_constraints[RS6000_CONSTRAINT_wy] = VSX_REGS;
@@ -3303,7 +3275,7 @@ rs6000_init_hard_regno_mode_ok (bool global_init_p)
     rs6000_constraints[RS6000_CONSTRAINT_we] = VSX_REGS;
 
   /* Support small integers in VSX registers.  */
-  if (TARGET_VSX_SMALL_INTEGER)
+  if (TARGET_P8_VECTOR)
     {
       rs6000_constraints[RS6000_CONSTRAINT_wH] = ALTIVEC_REGS;
       rs6000_constraints[RS6000_CONSTRAINT_wI] = FLOAT_REGS;
@@ -3458,18 +3430,14 @@ rs6000_init_hard_regno_mode_ok (bool global_init_p)
 	    }
 	}
 
-      if (TARGET_UPPER_REGS_DF)
-	reg_addr[DFmode].scalar_in_vmx_p = true;
+      reg_addr[DFmode].scalar_in_vmx_p = true;
+      reg_addr[DImode].scalar_in_vmx_p = true;
 
-      if (TARGET_UPPER_REGS_DI)
-	reg_addr[DImode].scalar_in_vmx_p = true;
-
-      if (TARGET_UPPER_REGS_SF)
-	reg_addr[SFmode].scalar_in_vmx_p = true;
-
-      if (TARGET_VSX_SMALL_INTEGER)
+      if (TARGET_P8_VECTOR)
 	{
+	  reg_addr[SFmode].scalar_in_vmx_p = true;
 	  reg_addr[SImode].scalar_in_vmx_p = true;
+
 	  if (TARGET_P9_VECTOR)
 	    {
 	      reg_addr[HImode].scalar_in_vmx_p = true;
@@ -4277,18 +4245,10 @@ rs6000_option_override_internal (bool global_init_p)
 	{
 	  if (cpu_index == PROCESSOR_POWER9)
 	    {
-	      /* legacy behavior: allow -mcpu-power9 with certain
+	      /* legacy behavior: allow -mcpu=power9 with certain
 		 capabilities explicitly disabled.  */
 	      rs6000_isa_flags |= (ISA_3_0_MASKS_SERVER & ~ignore_masks);
-	      /* However, reject this automatic fix if certain
-		 capabilities required for TARGET_P9_MINMAX support
-		 have been explicitly disabled.  */
-	      if (((OPTION_MASK_VSX | OPTION_MASK_UPPER_REGS_SF
-		    | OPTION_MASK_UPPER_REGS_DF) & rs6000_isa_flags)
-		  != (OPTION_MASK_VSX | OPTION_MASK_UPPER_REGS_SF
-		      | OPTION_MASK_UPPER_REGS_DF))
-		error ("-mpower9-minmax incompatible with explicitly disabled options");
-		}
+	    }
 	  else
 	    error ("Power9 target option is incompatible with -mcpu=<xxx> for "
 		   "<xxx> less than power9");
@@ -4372,73 +4332,6 @@ rs6000_option_override_internal (bool global_init_p)
       if (rs6000_isa_flags_explicit & OPTION_MASK_DFP)
 	error ("-mhard-dfp requires -mhard-float");
       rs6000_isa_flags &= ~OPTION_MASK_DFP;
-    }
-
-  /* Allow an explicit -mupper-regs to set -mupper-regs-df, -mupper-regs-di,
-     and -mupper-regs-sf, depending on the cpu, unless the user explicitly also
-     set the individual option.  */
-  if (TARGET_UPPER_REGS > 0)
-    {
-      if (TARGET_VSX
-	  && !(rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_DF))
-	{
-	  rs6000_isa_flags |= OPTION_MASK_UPPER_REGS_DF;
-	  rs6000_isa_flags_explicit |= OPTION_MASK_UPPER_REGS_DF;
-	}
-      if (TARGET_VSX
-	  && !(rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_DI))
-	{
-	  rs6000_isa_flags |= OPTION_MASK_UPPER_REGS_DI;
-	  rs6000_isa_flags_explicit |= OPTION_MASK_UPPER_REGS_DI;
-	}
-      if (TARGET_P8_VECTOR
-	  && !(rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_SF))
-	{
-	  rs6000_isa_flags |= OPTION_MASK_UPPER_REGS_SF;
-	  rs6000_isa_flags_explicit |= OPTION_MASK_UPPER_REGS_SF;
-	}
-    }
-  else if (TARGET_UPPER_REGS == 0)
-    {
-      if (TARGET_VSX
-	  && !(rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_DF))
-	{
-	  rs6000_isa_flags &= ~OPTION_MASK_UPPER_REGS_DF;
-	  rs6000_isa_flags_explicit |= OPTION_MASK_UPPER_REGS_DF;
-	}
-      if (TARGET_VSX
-	  && !(rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_DI))
-	{
-	  rs6000_isa_flags &= ~OPTION_MASK_UPPER_REGS_DI;
-	  rs6000_isa_flags_explicit |= OPTION_MASK_UPPER_REGS_DI;
-	}
-      if (TARGET_P8_VECTOR
-	  && !(rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_SF))
-	{
-	  rs6000_isa_flags &= ~OPTION_MASK_UPPER_REGS_SF;
-	  rs6000_isa_flags_explicit |= OPTION_MASK_UPPER_REGS_SF;
-	}
-    }
-
-  if (TARGET_UPPER_REGS_DF && !TARGET_VSX)
-    {
-      if (rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_DF)
-	error ("-mupper-regs-df requires -mvsx");
-      rs6000_isa_flags &= ~OPTION_MASK_UPPER_REGS_DF;
-    }
-
-  if (TARGET_UPPER_REGS_DI && !TARGET_VSX)
-    {
-      if (rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_DI)
-	error ("-mupper-regs-di requires -mvsx");
-      rs6000_isa_flags &= ~OPTION_MASK_UPPER_REGS_DI;
-    }
-
-  if (TARGET_UPPER_REGS_SF && !TARGET_P8_VECTOR)
-    {
-      if (rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_SF)
-	error ("-mupper-regs-sf requires -mpower8-vector");
-      rs6000_isa_flags &= ~OPTION_MASK_UPPER_REGS_SF;
     }
 
   /* The quad memory instructions only works in 64-bit mode. In 32-bit mode,
@@ -4649,53 +4542,10 @@ rs6000_option_override_internal (bool global_init_p)
 	}
     }
 
-  if (TARGET_P9_DFORM_SCALAR && !TARGET_UPPER_REGS_DF)
-    {
-      /* We prefer to not mention undocumented options in
-	 error messages.  However, if users have managed to select
-	 power9-dform without selecting upper-regs-df, they
-	 already know about undocumented flags.  */
-      if (rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_DF)
-	error ("-mpower9-dform requires -mupper-regs-df");
-      rs6000_isa_flags &= ~OPTION_MASK_P9_DFORM_SCALAR;
-    }
-
-  if (TARGET_P9_DFORM_SCALAR && !TARGET_UPPER_REGS_SF)
-    {
-      if (rs6000_isa_flags_explicit & OPTION_MASK_UPPER_REGS_SF)
-	error ("-mpower9-dform requires -mupper-regs-sf");
-      rs6000_isa_flags &= ~OPTION_MASK_P9_DFORM_SCALAR;
-    }
-
-  /* Enable LRA by default.  */
-  if ((rs6000_isa_flags_explicit & OPTION_MASK_LRA) == 0)
-    rs6000_isa_flags |= OPTION_MASK_LRA;
-
-  /* There have been bugs with -mvsx-timode that don't show up with -mlra,
-     but do show up with -mno-lra.  Given -mlra will become the default once
-     PR 69847 is fixed, turn off the options with problems by default if
-     -mno-lra was used, and warn if the user explicitly asked for the option.
-
-     Enable -mpower9-dform-vector by default if LRA and other power9 options.
-     Enable -mvsx-timode by default if LRA and VSX.  */
-  if (!TARGET_LRA)
-    {
-      if (TARGET_VSX_TIMODE)
-	{
-	  if ((rs6000_isa_flags_explicit & OPTION_MASK_VSX_TIMODE) != 0)
-	    warning (0, "-mvsx-timode might need -mlra");
-
-	  else
-	    rs6000_isa_flags &= ~OPTION_MASK_VSX_TIMODE;
-	}
-    }
-
-  else
-    {
-      if (TARGET_VSX && !TARGET_VSX_TIMODE
-	  && (rs6000_isa_flags_explicit & OPTION_MASK_VSX_TIMODE) == 0)
-	rs6000_isa_flags |= OPTION_MASK_VSX_TIMODE;
-    }
+  /* Enable -mvsx-timode by default if VSX.  */
+  if (TARGET_VSX && !TARGET_VSX_TIMODE
+      && (rs6000_isa_flags_explicit & OPTION_MASK_VSX_TIMODE) == 0)
+    rs6000_isa_flags |= OPTION_MASK_VSX_TIMODE;
 
   /* Set -mallow-movmisalign to explicitly on if we have full ISA 2.07
      support. If we only have ISA 2.06 support, and the user did not specify
@@ -4735,20 +4585,6 @@ rs6000_option_override_internal (bool global_init_p)
 
 	  rs6000_isa_flags &= ~OPTION_MASK_EFFICIENT_UNALIGNED_VSX;
 	}
-    }
-
-  /* Check whether we should allow small integers into VSX registers.  We
-     require direct move to prevent the register allocator from having to move
-     variables through memory to do moves.  SImode can be used on ISA 2.07,
-     while HImode and QImode require ISA 3.0.  */
-  if (TARGET_VSX_SMALL_INTEGER
-      && (!TARGET_DIRECT_MOVE || !TARGET_P8_VECTOR || !TARGET_UPPER_REGS_DI))
-    {
-      if (rs6000_isa_flags_explicit & OPTION_MASK_VSX_SMALL_INTEGER)
-	error ("-mvsx-small-integer requires -mpower8-vector, "
-	       "-mupper-regs-di, and -mdirect-move");
-
-      rs6000_isa_flags &= ~OPTION_MASK_VSX_SMALL_INTEGER;
     }
 
   /* Set long double size before the IEEE 128-bit tests.  */
@@ -5757,7 +5593,7 @@ rs6000_builtin_vectorization_cost (enum vect_cost_for_stmt type_of_cost,
 	    if (TARGET_P9_VECTOR)
 	      return TYPE_VECTOR_SUBPARTS (vectype) - 1 + 2;
 	    else
-	      return TYPE_VECTOR_SUBPARTS (vectype) - 1 + 11;
+	      return TYPE_VECTOR_SUBPARTS (vectype) - 1 + 5;
 	  }
 	else
 	  /* V2DFmode doesn't need a direct move.  */
@@ -7443,8 +7279,7 @@ rs6000_expand_vector_set (rtx target, rtx val, int elt)
       else if (mode == V2DImode)
 	insn = gen_vsx_set_v2di (target, target, val, elt_rtx);
 
-      else if (TARGET_P9_VECTOR && TARGET_VSX_SMALL_INTEGER
-	       && TARGET_UPPER_REGS_DI && TARGET_POWERPC64)
+      else if (TARGET_P9_VECTOR && TARGET_POWERPC64)
 	{
 	  if (mode == V4SImode)
 	    insn = gen_vsx_set_v4si_p9 (target, target, val, elt_rtx);
@@ -8785,14 +8620,6 @@ legitimate_indexed_address_p (rtx x, int strict)
   op0 = XEXP (x, 0);
   op1 = XEXP (x, 1);
 
-  /* Recognize the rtl generated by reload which we know will later be
-     replaced with proper base and index regs.  */
-  if (!strict
-      && reload_in_progress
-      && (REG_P (op0) || GET_CODE (op0) == PLUS)
-      && REG_P (op1))
-    return true;
-
   return (REG_P (op0) && REG_P (op1)
 	  && ((INT_REG_OK_FOR_BASE_P (op0, strict)
 	       && INT_REG_OK_FOR_INDEX_P (op1, strict))
@@ -10036,9 +9863,7 @@ rs6000_debug_legitimate_address_p (machine_mode mode, rtx x,
 	   ret ? "true" : "false",
 	   GET_MODE_NAME (mode),
 	   reg_ok_strict,
-	   (reload_completed
-	    ? "after"
-	    : (reload_in_progress ? "progress" : "before")),
+	   (reload_completed ? "after" : "before"),
 	   GET_RTX_NAME (GET_CODE (x)));
   debug_rtx (x);
 
@@ -10440,9 +10265,6 @@ rs6000_emit_set_long_const (rtx dest, HOST_WIDE_INT c)
 static void
 rs6000_eliminate_indexed_memrefs (rtx operands[2])
 {
-  if (reload_in_progress)
-    return;
-
   if (GET_CODE (operands[0]) == MEM
       && GET_CODE (XEXP (operands[0], 0)) != REG
       && ! legitimate_constant_pool_address_p (XEXP (operands[0], 0),
@@ -10501,19 +10323,30 @@ rs6000_const_vec (machine_mode mode)
   return v;
 }
 
-/* Generate a permute rtx that represents an lxvd2x, stxvd2x, or xxpermdi
-   for a VSX load or store operation.  */
-rtx
-rs6000_gen_le_vsx_permute (rtx source, machine_mode mode)
+/* Emit an lxvd2x, stxvd2x, or xxpermdi instruction for a VSX load or
+   store operation.  */
+void
+rs6000_emit_le_vsx_permute (rtx dest, rtx source, machine_mode mode)
 {
-  /* Use ROTATE instead of VEC_SELECT on IEEE 128-bit floating point, and
-     128-bit integers if they are allowed in VSX registers.  */
-  if (FLOAT128_VECTOR_P (mode) || mode == TImode || mode == V1TImode)
-    return gen_rtx_ROTATE (mode, source, GEN_INT (64));
+  /* Scalar permutations are easier to express in integer modes rather than
+     floating-point modes, so cast them here.  We use V1TImode instead
+     of TImode to ensure that the values don't go through GPRs.  */
+  if (FLOAT128_VECTOR_P (mode))
+    {
+      dest = gen_lowpart (V1TImode, dest);
+      source = gen_lowpart (V1TImode, source);
+      mode = V1TImode;
+    }
+
+  /* Use ROTATE instead of VEC_SELECT if the mode contains only a single
+     scalar.  */
+  if (mode == TImode || mode == V1TImode)
+    emit_insn (gen_rtx_SET (dest, gen_rtx_ROTATE (mode, source,
+						  GEN_INT (64))));
   else
     {
       rtx par = gen_rtx_PARALLEL (VOIDmode, rs6000_const_vec (mode));
-      return gen_rtx_VEC_SELECT (mode, source, par);
+      emit_insn (gen_rtx_SET (dest, gen_rtx_VEC_SELECT (mode, source, par)));
     }
 }
 
@@ -10523,8 +10356,6 @@ rs6000_gen_le_vsx_permute (rtx source, machine_mode mode)
 void
 rs6000_emit_le_vsx_load (rtx dest, rtx source, machine_mode mode)
 {
-  rtx tmp, permute_mem, permute_reg;
-
   /* Use V2DImode to do swaps of types with 128-bit scalare parts (TImode,
      V1TImode).  */
   if (mode == TImode || mode == V1TImode)
@@ -10534,11 +10365,9 @@ rs6000_emit_le_vsx_load (rtx dest, rtx source, machine_mode mode)
       source = adjust_address (source, V2DImode, 0);
     }
 
-  tmp = can_create_pseudo_p () ? gen_reg_rtx_and_attrs (dest) : dest;
-  permute_mem = rs6000_gen_le_vsx_permute (source, mode);
-  permute_reg = rs6000_gen_le_vsx_permute (tmp, mode);
-  emit_insn (gen_rtx_SET (tmp, permute_mem));
-  emit_insn (gen_rtx_SET (dest, permute_reg));
+  rtx tmp = can_create_pseudo_p () ? gen_reg_rtx_and_attrs (dest) : dest;
+  rs6000_emit_le_vsx_permute (tmp, source, mode);
+  rs6000_emit_le_vsx_permute (dest, tmp, mode);
 }
 
 /* Emit a little-endian store to vector memory location DEST from VSX
@@ -10547,12 +10376,10 @@ rs6000_emit_le_vsx_load (rtx dest, rtx source, machine_mode mode)
 void
 rs6000_emit_le_vsx_store (rtx dest, rtx source, machine_mode mode)
 {
-  rtx tmp, permute_src, permute_tmp;
-
-  /* This should never be called during or after reload, because it does
+  /* This should never be called during or after LRA, because it does
      not re-permute the source register.  It is intended only for use
      during expand.  */
-  gcc_assert (!reload_in_progress && !lra_in_progress && !reload_completed);
+  gcc_assert (!lra_in_progress && !reload_completed);
 
   /* Use V2DImode to do swaps of types with 128-bit scalar parts (TImode,
      V1TImode).  */
@@ -10563,11 +10390,9 @@ rs6000_emit_le_vsx_store (rtx dest, rtx source, machine_mode mode)
       source = gen_lowpart (V2DImode, source);
     }
 
-  tmp = can_create_pseudo_p () ? gen_reg_rtx_and_attrs (source) : source;
-  permute_src = rs6000_gen_le_vsx_permute (source, mode);
-  permute_tmp = rs6000_gen_le_vsx_permute (tmp, mode);
-  emit_insn (gen_rtx_SET (tmp, permute_src));
-  emit_insn (gen_rtx_SET (dest, permute_tmp));
+  rtx tmp = can_create_pseudo_p () ? gen_reg_rtx_and_attrs (source) : source;
+  rs6000_emit_le_vsx_permute (tmp, source, mode);
+  rs6000_emit_le_vsx_permute (dest, tmp, mode);
 }
 
 /* Emit a sequence representing a little-endian VSX load or store,
@@ -10646,8 +10471,7 @@ valid_sf_si_move (rtx dest, rtx src, machine_mode mode)
 static bool
 rs6000_emit_move_si_sf_subreg (rtx dest, rtx source, machine_mode mode)
 {
-  if (TARGET_DIRECT_MOVE_64BIT && !reload_in_progress && !reload_completed
-      && !lra_in_progress
+  if (TARGET_DIRECT_MOVE_64BIT && !lra_in_progress && !reload_completed
       && (!SUBREG_P (dest) || !sf_subreg_operand (dest, mode))
       && SUBREG_P (source) && sf_subreg_operand (source, mode))
     {
@@ -10681,10 +10505,10 @@ rs6000_emit_move (rtx dest, rtx source, machine_mode mode)
   if (TARGET_DEBUG_ADDR)
     {
       fprintf (stderr,
-	       "\nrs6000_emit_move: mode = %s, reload_in_progress = %d, "
+	       "\nrs6000_emit_move: mode = %s, lra_in_progress = %d, "
 	       "reload_completed = %d, can_create_pseudos = %d.\ndest:\n",
 	       GET_MODE_NAME (mode),
-	       reload_in_progress,
+	       lra_in_progress,
 	       reload_completed,
 	       can_create_pseudo_p ());
       debug_rtx (dest);
@@ -10758,12 +10582,6 @@ rs6000_emit_move (rtx dest, rtx source, machine_mode mode)
       operands[1] = tmp;
     }
 
-  /* Handle the case where reload calls us with an invalid address.  */
-  if (reload_in_progress && mode == Pmode
-      && (! general_operand (operands[1], mode)
-	  || ! nonimmediate_operand (operands[0], mode)))
-    goto emit_set;
-
   /* 128-bit constant floating-point values on Darwin should really be loaded
      as two parts.  However, this premature splitting is a problem when DFmode
      values can go into Altivec registers.  */
@@ -10780,11 +10598,6 @@ rs6000_emit_move (rtx dest, rtx source, machine_mode mode)
 			DFmode);
       return;
     }
-
-  if (reload_in_progress && cfun->machine->sdmode_stack_slot != NULL_RTX)
-    cfun->machine->sdmode_stack_slot =
-      eliminate_regs (cfun->machine->sdmode_stack_slot, VOIDmode, NULL_RTX);
-
 
   /* Transform (p0:DD, (SUBREG:DD p1:SD)) to ((SUBREG:SD p0:DD),
      p1:SD) if p1 is not of floating point class and p0 is spilled as
@@ -10890,57 +10703,6 @@ rs6000_emit_move (rtx dest, rtx source, machine_mode mode)
 	}
       else if (INT_REGNO_P (regno))
 	emit_insn (gen_movsd_hardfloat (operands[0], operands[1]));
-      else
-	gcc_unreachable();
-      return;
-    }
-
-  if (reload_in_progress
-      && mode == SDmode
-      && cfun->machine->sdmode_stack_slot != NULL_RTX
-      && MEM_P (operands[0])
-      && rtx_equal_p (operands[0], cfun->machine->sdmode_stack_slot)
-      && REG_P (operands[1]))
-    {
-      if (FP_REGNO_P (REGNO (operands[1])))
-	{
-	  rtx mem = adjust_address_nv (operands[0], DDmode, 0);
-	  mem = eliminate_regs (mem, VOIDmode, NULL_RTX);
-	  emit_insn (gen_movsd_store (mem, operands[1]));
-	}
-      else if (INT_REGNO_P (REGNO (operands[1])))
-	{
-	  rtx mem = operands[0];
-	  if (BYTES_BIG_ENDIAN)
-	    mem = adjust_address_nv (mem, mode, 4);
-	  mem = eliminate_regs (mem, VOIDmode, NULL_RTX);
-	  emit_insn (gen_movsd_hardfloat (mem, operands[1]));
-	}
-      else
-	gcc_unreachable();
-      return;
-    }
-  if (reload_in_progress
-      && mode == SDmode
-      && REG_P (operands[0])
-      && MEM_P (operands[1])
-      && cfun->machine->sdmode_stack_slot != NULL_RTX
-      && rtx_equal_p (operands[1], cfun->machine->sdmode_stack_slot))
-    {
-      if (FP_REGNO_P (REGNO (operands[0])))
-	{
-	  rtx mem = adjust_address_nv (operands[1], DDmode, 0);
-	  mem = eliminate_regs (mem, VOIDmode, NULL_RTX);
-	  emit_insn (gen_movsd_load (operands[0], mem));
-	}
-      else if (INT_REGNO_P (REGNO (operands[0])))
-	{
-	  rtx mem = operands[1];
-	  if (BYTES_BIG_ENDIAN)
-	    mem = adjust_address_nv (mem, mode, 4);
-	  mem = eliminate_regs (mem, VOIDmode, NULL_RTX);
-	  emit_insn (gen_movsd_hardfloat (operands[0], mem));
-	}
       else
 	gcc_unreachable();
       return;
@@ -11104,10 +10866,9 @@ rs6000_emit_move (rtx dest, rtx source, machine_mode mode)
 
 	  /* If we are to limit the number of things we put in the TOC and
 	     this is a symbol plus a constant we can add in one insn,
-	     just put the symbol in the TOC and add the constant.  Don't do
-	     this if reload is in progress.  */
+	     just put the symbol in the TOC and add the constant.  */
 	  if (GET_CODE (operands[1]) == CONST
-	      && TARGET_NO_SUM_IN_TOC && ! reload_in_progress
+	      && TARGET_NO_SUM_IN_TOC
 	      && GET_CODE (XEXP (operands[1], 0)) == PLUS
 	      && add_operand (XEXP (XEXP (operands[1], 0), 1), mode)
 	      && (GET_CODE (XEXP (XEXP (operands[1], 0), 0)) == LABEL_REF
@@ -11153,10 +10914,9 @@ rs6000_emit_move (rtx dest, rtx source, machine_mode mode)
   /* Above, we may have called force_const_mem which may have returned
      an invalid address.  If we can, fix this up; otherwise, reload will
      have to deal with it.  */
-  if (GET_CODE (operands[1]) == MEM && ! reload_in_progress)
+  if (GET_CODE (operands[1]) == MEM)
     operands[1] = validize_mem (operands[1]);
 
- emit_set:
   emit_insn (gen_rtx_SET (operands[0], operands[1]));
 }
 
@@ -18065,8 +17825,10 @@ builtin_function_type (machine_mode mode_ret, machine_mode mode_arg0,
       /* unsigned 2 argument functions.  */
     case ALTIVEC_BUILTIN_VMULEUB:
     case ALTIVEC_BUILTIN_VMULEUH:
+    case ALTIVEC_BUILTIN_VMULEUW:
     case ALTIVEC_BUILTIN_VMULOUB:
     case ALTIVEC_BUILTIN_VMULOUH:
+    case ALTIVEC_BUILTIN_VMULOUW:
     case CRYPTO_BUILTIN_VCIPHER:
     case CRYPTO_BUILTIN_VCIPHERLAST:
     case CRYPTO_BUILTIN_VNCIPHER:
@@ -19347,42 +19109,6 @@ mems_ok_for_quad_peep (rtx mem1, rtx mem2)
   return 1;
 }
 
-
-rtx
-rs6000_secondary_memory_needed_rtx (machine_mode mode)
-{
-  static bool eliminated = false;
-  rtx ret;
-
-  if (mode != SDmode || TARGET_NO_SDMODE_STACK)
-    ret = assign_stack_local (mode, GET_MODE_SIZE (mode), 0);
-  else
-    {
-      rtx mem = cfun->machine->sdmode_stack_slot;
-      gcc_assert (mem != NULL_RTX);
-
-      if (!eliminated)
-	{
-	  mem = eliminate_regs (mem, VOIDmode, NULL_RTX);
-	  cfun->machine->sdmode_stack_slot = mem;
-	  eliminated = true;
-	}
-      ret = mem;
-    }
-
-  if (TARGET_DEBUG_ADDR)
-    {
-      fprintf (stderr, "\nrs6000_secondary_memory_needed_rtx, mode %s, rtx:\n",
-	       GET_MODE_NAME (mode));
-      if (!ret)
-	fprintf (stderr, "\tNULL_RTX\n");
-      else
-	debug_rtx (ret);
-    }
-
-  return ret;
-}
-
 /* Return the mode to be used for memory when a secondary memory
    location is needed.  For SDmode values we need to use DDmode, in
    all other cases we can use the same mode.  */
@@ -19392,36 +19118,6 @@ rs6000_secondary_memory_needed_mode (machine_mode mode)
   if (lra_in_progress && mode == SDmode)
     return DDmode;
   return mode;
-}
-
-static tree
-rs6000_check_sdmode (tree *tp, int *walk_subtrees, void *data ATTRIBUTE_UNUSED)
-{
-  /* Don't walk into types.  */
-  if (*tp == NULL_TREE || *tp == error_mark_node || TYPE_P (*tp))
-    {
-      *walk_subtrees = 0;
-      return NULL_TREE;
-    }
-
-  switch (TREE_CODE (*tp))
-    {
-    case VAR_DECL:
-    case PARM_DECL:
-    case FIELD_DECL:
-    case RESULT_DECL:
-    case SSA_NAME:
-    case REAL_CST:
-    case MEM_REF:
-    case VIEW_CONVERT_EXPR:
-      if (TYPE_MODE (TREE_TYPE (*tp)) == SDmode)
-	return *tp;
-      break;
-    default:
-      break;
-    }
-
-  return NULL_TREE;
 }
 
 /* Classify a register type.  Because the FMRGOW/FMRGEW instructions only work
@@ -19444,7 +19140,7 @@ register_to_reg_type (rtx reg, bool *is_altivec)
   regno = REGNO (reg);
   if (regno >= FIRST_PSEUDO_REGISTER)
     {
-      if (!lra_in_progress && !reload_in_progress && !reload_completed)
+      if (!lra_in_progress && !reload_completed)
 	return PSEUDO_REG_TYPE;
 
       regno = true_regnum (reg);
@@ -19817,7 +19513,7 @@ rs6000_secondary_reload_simple_move (enum rs6000_reg_type to_type,
 	}
 
       /* ISA 2.07: MTVSRWZ or  MFVSRWZ.  */
-      if (TARGET_VSX_SMALL_INTEGER)
+      if (TARGET_P8_VECTOR)
 	{
 	  if (mode == SImode)
 	    return true;
@@ -20521,64 +20217,6 @@ rs6000_secondary_reload_gpr (rtx reg, rtx mem, rtx scratch, bool store_p)
   return;
 }
 
-/* Allocate a 64-bit stack slot to be used for copying SDmode values through if
-   this function has any SDmode references.  If we are on a power7 or later, we
-   don't need the 64-bit stack slot since the LFIWZX and STIFWX instructions
-   can load/store the value.  */
-
-static void
-rs6000_alloc_sdmode_stack_slot (void)
-{
-  tree t;
-  basic_block bb;
-  gimple_stmt_iterator gsi;
-
-  gcc_assert (cfun->machine->sdmode_stack_slot == NULL_RTX);
-  /* We use a different approach for dealing with the secondary
-     memory in LRA.  */
-  if (ira_use_lra_p)
-    return;
-
-  if (TARGET_NO_SDMODE_STACK)
-    return;
-
-  FOR_EACH_BB_FN (bb, cfun)
-    for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
-      {
-	tree ret = walk_gimple_op (gsi_stmt (gsi), rs6000_check_sdmode, NULL);
-	if (ret)
-	  {
-	    rtx stack = assign_stack_local (DDmode, GET_MODE_SIZE (DDmode), 0);
-	    cfun->machine->sdmode_stack_slot = adjust_address_nv (stack,
-								  SDmode, 0);
-	    return;
-	  }
-      }
-
-  /* Check for any SDmode parameters of the function.  */
-  for (t = DECL_ARGUMENTS (cfun->decl); t; t = DECL_CHAIN (t))
-    {
-      if (TREE_TYPE (t) == error_mark_node)
-	continue;
-
-      if (TYPE_MODE (TREE_TYPE (t)) == SDmode
-	  || TYPE_MODE (DECL_ARG_TYPE (t)) == SDmode)
-	{
-	  rtx stack = assign_stack_local (DDmode, GET_MODE_SIZE (DDmode), 0);
-	  cfun->machine->sdmode_stack_slot = adjust_address_nv (stack,
-								SDmode, 0);
-	  return;
-	}
-    }
-}
-
-static void
-rs6000_instantiate_decls (void)
-{
-  if (cfun->machine->sdmode_stack_slot != NULL_RTX)
-    instantiate_decl_rtl (cfun->machine->sdmode_stack_slot);
-}
-
 /* Given an rtx X being reloaded into a reg required to be
    in class CLASS, return the class of reg to actually use.
    In general this is just CLASS; but on some machines
@@ -20651,7 +20289,6 @@ rs6000_preferred_reload_class (rtx x, enum reg_class rclass)
 	      /* ISA 3.0 can load -128..127 using the XXSPLTIB instruction and
 		 a sign extend in the Altivec registers.  */
 	      if (IN_RANGE (value, -128, 127) && TARGET_P9_VECTOR
-		  && TARGET_VSX_SMALL_INTEGER
 		  && (rclass == ALTIVEC_REGS || rclass == VSX_REGS))
 		return ALTIVEC_REGS;
 	    }
@@ -23607,10 +23244,9 @@ static rtx
 rs6000_pre_atomic_barrier (rtx mem, enum memmodel model)
 {
   rtx addr = XEXP (mem, 0);
-  int strict_p = (reload_in_progress || reload_completed);
 
-  if (!legitimate_indirect_address_p (addr, strict_p)
-      && !legitimate_indexed_address_p (addr, strict_p))
+  if (!legitimate_indirect_address_p (addr, reload_completed)
+      && !legitimate_indexed_address_p (addr, reload_completed))
     {
       addr = force_reg (Pmode, addr);
       mem = replace_equiv_address_nv (mem, addr);
@@ -33337,7 +32973,7 @@ rs6000_machopic_legitimize_pic_address (rtx orig, machine_mode mode,
 {
   rtx base, offset;
 
-  if (reg == NULL && ! reload_in_progress && ! reload_completed)
+  if (reg == NULL && !reload_completed)
     reg = gen_reg_rtx (Pmode);
 
   if (GET_CODE (orig) == CONST)
@@ -33363,7 +32999,7 @@ rs6000_machopic_legitimize_pic_address (rtx orig, machine_mode mode,
 	{
 	  if (SMALL_INT (offset))
 	    return plus_constant (Pmode, base, INTVAL (offset));
-	  else if (! reload_in_progress && ! reload_completed)
+	  else if (!reload_completed)
 	    offset = force_reg (Pmode, offset);
 	  else
 	    {
@@ -35999,14 +35635,6 @@ rs6000_libcall_value (machine_mode mode)
   return gen_rtx_REG (mode, regno);
 }
 
-
-/* Return true if we use LRA instead of reload pass.  */
-static bool
-rs6000_lra_p (void)
-{
-  return TARGET_LRA;
-}
-
 /* Compute register pressure classes.  We implement the target hook to avoid
    IRA picking something like NON_SPECIAL_REGS as a pressure class, which can
    lead to incorrect estimates of number of available registers and therefor
@@ -36358,11 +35986,7 @@ static struct rs6000_opt_mask const rs6000_opt_masks[] =
   { "string",			OPTION_MASK_STRING,		false, true  },
   { "toc-fusion",		OPTION_MASK_TOC_FUSION,		false, true  },
   { "update",			OPTION_MASK_NO_UPDATE,		true , true  },
-  { "upper-regs-di",		OPTION_MASK_UPPER_REGS_DI,	false, true  },
-  { "upper-regs-df",		OPTION_MASK_UPPER_REGS_DF,	false, true  },
-  { "upper-regs-sf",		OPTION_MASK_UPPER_REGS_SF,	false, true  },
   { "vsx",			OPTION_MASK_VSX,		false, true  },
-  { "vsx-small-integer",	OPTION_MASK_VSX_SMALL_INTEGER,	false, true  },
   { "vsx-timode",		OPTION_MASK_VSX_TIMODE,		false, true  },
 #ifdef OPTION_MASK_64BIT
 #if TARGET_AIX_OS
@@ -37624,7 +37248,7 @@ rs6000_allocate_stack_temp (machine_mode mode,
 {
   rtx stack = assign_stack_temp (mode, GET_MODE_SIZE (mode));
   rtx addr = XEXP (stack, 0);
-  int strict_p = (reload_in_progress || reload_completed);
+  int strict_p = reload_completed;
 
   if (!legitimate_indirect_address_p (addr, strict_p))
     {
@@ -37646,13 +37270,12 @@ rs6000_allocate_stack_temp (machine_mode mode,
 rtx
 rs6000_address_for_fpconvert (rtx x)
 {
-  int strict_p = (reload_in_progress || reload_completed);
   rtx addr;
 
   gcc_assert (MEM_P (x));
   addr = XEXP (x, 0);
-  if (! legitimate_indirect_address_p (addr, strict_p)
-      && ! legitimate_indexed_address_p (addr, strict_p))
+  if (! legitimate_indirect_address_p (addr, reload_completed)
+      && ! legitimate_indexed_address_p (addr, reload_completed))
     {
       if (GET_CODE (addr) == PRE_INC || GET_CODE (addr) == PRE_DEC)
 	{
@@ -37690,10 +37313,9 @@ rs6000_address_for_altivec (rtx x)
   if (!altivec_indexed_or_indirect_operand (x, GET_MODE (x)))
     {
       rtx addr = XEXP (x, 0);
-      int strict_p = (reload_in_progress || reload_completed);
 
-      if (!legitimate_indexed_address_p (addr, strict_p)
-	  && !legitimate_indirect_address_p (addr, strict_p))
+      if (!legitimate_indexed_address_p (addr, reload_completed)
+	  && !legitimate_indirect_address_p (addr, reload_completed))
 	addr = copy_to_mode_reg (Pmode, addr);
 
       addr = gen_rtx_AND (Pmode, addr, GEN_INT (-16));

@@ -6284,6 +6284,12 @@ ix86_option_override_internal (bool main_args_p,
     opts->x_ix86_isa_flags
       |= OPTION_MASK_ISA_LZCNT & ~opts->x_ix86_isa_flags_explicit;
 
+  /* Disable BMI, BMI2 and TBM instructions for -m16.  */
+  if (TARGET_16BIT_P(opts->x_ix86_isa_flags))
+    opts->x_ix86_isa_flags
+      &= ~((OPTION_MASK_ISA_BMI | OPTION_MASK_ISA_BMI2 | OPTION_MASK_ISA_TBM)
+	   & ~opts->x_ix86_isa_flags_explicit);
+
   /* Validate -mpreferred-stack-boundary= value or default it to
      PREFERRED_STACK_BOUNDARY_DEFAULT.  */
   ix86_preferred_stack_boundary = PREFERRED_STACK_BOUNDARY_DEFAULT;
@@ -13096,24 +13102,26 @@ choose_baseaddr_len (unsigned int regno, HOST_WIDE_INT offset)
   return len;
 }
 
-/* Determine if the stack pointer is valid for accessing the cfa_offset.  */
+/* Determine if the stack pointer is valid for accessing the cfa_offset.
+   The register is saved at CFA - CFA_OFFSET.  */
 
 static inline bool
 sp_valid_at (HOST_WIDE_INT cfa_offset)
 {
   const struct machine_frame_state &fs = cfun->machine->fs;
   return fs.sp_valid && !(fs.sp_realigned
-			  && cfa_offset < fs.sp_realigned_offset);
+			  && cfa_offset <= fs.sp_realigned_offset);
 }
 
-/* Determine if the frame pointer is valid for accessing the cfa_offset.  */
+/* Determine if the frame pointer is valid for accessing the cfa_offset.
+   The register is saved at CFA - CFA_OFFSET.  */
 
 static inline bool
 fp_valid_at (HOST_WIDE_INT cfa_offset)
 {
   const struct machine_frame_state &fs = cfun->machine->fs;
   return fs.fp_valid && !(fs.sp_valid && fs.sp_realigned
-			  && cfa_offset >= fs.sp_realigned_offset);
+			  && cfa_offset > fs.sp_realigned_offset);
 }
 
 /* Choose a base register based upon alignment requested, speed and/or
@@ -13588,8 +13596,7 @@ ix86_minimum_incoming_stack_boundary (bool sibcall)
 {
   unsigned int incoming_stack_boundary;
 
-  /* Stack of interrupt handler is aligned to 128 bits in 64bit
-     mode.  */
+  /* Stack of interrupt handler is aligned to 128 bits in 64bit mode.  */
   if (cfun->machine->func_type != TYPE_NORMAL)
     incoming_stack_boundary = TARGET_64BIT ? 128 : MIN_STACK_BOUNDARY;
   /* Prefer the one specified at command line. */
@@ -16181,9 +16188,9 @@ ix86_decompose_address (rtx addr, struct ix86_address *out)
 
   /* Allow arg pointer and stack pointer as index if there is not scaling.  */
   if (base_reg && index_reg && scale == 1
-      && (index_reg == arg_pointer_rtx
-	  || index_reg == frame_pointer_rtx
-	  || (REG_P (index_reg) && REGNO (index_reg) == STACK_POINTER_REGNUM)))
+      && (REGNO (index_reg) == ARG_POINTER_REGNUM
+	  || REGNO (index_reg) == FRAME_POINTER_REGNUM
+	  || REGNO (index_reg) == SP_REG))
     {
       std::swap (base, index);
       std::swap (base_reg, index_reg);
@@ -16191,14 +16198,11 @@ ix86_decompose_address (rtx addr, struct ix86_address *out)
 
   /* Special case: %ebp cannot be encoded as a base without a displacement.
      Similarly %r13.  */
-  if (!disp
-      && base_reg
-      && (base_reg == hard_frame_pointer_rtx
-	  || base_reg == frame_pointer_rtx
-	  || base_reg == arg_pointer_rtx
-	  || (REG_P (base_reg)
-	      && (REGNO (base_reg) == HARD_FRAME_POINTER_REGNUM
-		  || REGNO (base_reg) == R13_REG))))
+  if (!disp && base_reg
+      && (REGNO (base_reg) == ARG_POINTER_REGNUM
+	  || REGNO (base_reg) == FRAME_POINTER_REGNUM
+	  || REGNO (base_reg) == BP_REG
+	  || REGNO (base_reg) == R13_REG))
     disp = const0_rtx;
 
   /* Special case: on K6, [%esi] makes the instruction vector decoded.
@@ -16207,7 +16211,7 @@ ix86_decompose_address (rtx addr, struct ix86_address *out)
      to test cfun for being non-NULL. */
   if (TARGET_K6 && cfun && optimize_function_for_speed_p (cfun)
       && base_reg && !index_reg && !disp
-      && REG_P (base_reg) && REGNO (base_reg) == SI_REG)
+      && REGNO (base_reg) == SI_REG)
     disp = const0_rtx;
 
   /* Special case: encode reg+reg instead of reg*2.  */
@@ -44118,6 +44122,26 @@ ix86_expand_vector_init_general (bool mmx_ok, machine_mode mode,
       ix86_expand_vector_init_concat (mode, target, ops, n);
       return;
 
+    case V2TImode:
+      for (i = 0; i < 2; i++)
+	ops[i] = gen_lowpart (V2DImode, XVECEXP (vals, 0, i));
+      op0 = gen_reg_rtx (V4DImode);
+      ix86_expand_vector_init_concat (V4DImode, op0, ops, 2);
+      emit_move_insn (target, gen_lowpart (GET_MODE (target), op0));
+      return;
+
+    case V4TImode:
+      for (i = 0; i < 4; i++)
+	ops[i] = gen_lowpart (V2DImode, XVECEXP (vals, 0, i));
+      ops[4] = gen_reg_rtx (V4DImode);
+      ix86_expand_vector_init_concat (V4DImode, ops[4], ops, 2);
+      ops[5] = gen_reg_rtx (V4DImode);
+      ix86_expand_vector_init_concat (V4DImode, ops[5], ops + 2, 2);
+      op0 = gen_reg_rtx (V8DImode);
+      ix86_expand_vector_init_concat (V8DImode, op0, ops + 4, 2);
+      emit_move_insn (target, gen_lowpart (GET_MODE (target), op0));
+      return;
+
     case V32QImode:
       half_mode = V16QImode;
       goto half;
@@ -44659,6 +44683,8 @@ ix86_expand_vector_extract (bool mmx_ok, rtx target, rtx vec, int elt)
 
     case V2DFmode:
     case V2DImode:
+    case V2TImode:
+    case V4TImode:
       use_vec_extr = true;
       break;
 
