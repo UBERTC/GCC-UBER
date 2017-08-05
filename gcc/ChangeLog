@@ -1,3 +1,94 @@
+2017-08-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/79499
+	* function.c (thread_prologue_and_epilogue_insns): Determine blocks
+	for find_many_sub_basic_blocks bitmap by looking up BLOCK_FOR_INSN
+	of first NONDEBUG_INSN_P in each of the split_prologue_seq and
+	prologue_seq sequences - if any.
+
+2017-08-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81641
+	* config/i386/i386.c (ix86_print_operand_address_as): For -masm=intel
+	print "ds:" only for immediates in generic address space.
+
+2017-08-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/81622
+	* config/rs6000/rs6000-c.c (altivec_resolve_overloaded_builtin): For
+	__builtin_vec_cmpne verify both arguments are compatible vectors
+	before looking at TYPE_MODE on the element type.  For __builtin_vec_ld
+	verify arg1_type is a pointer or array type.  For __builtin_vec_st,
+	move computation of aligned to after checking the argument types.
+	Formatting fixes.
+
+2017-08-01  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-07-26  Martin Liska  <mliska@suse.cz>
+
+	PR gcov-profile/81561
+	* gcov.c (unblock): Make unblocking safe as we need to preserve
+	index correspondence of blocks and block_lists.
+
+2017-08-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71752
+	PR tree-optimization/81633
+	* tree-vect-slp.c (vect_get_slp_defs): Handle null operands
+	in the original suggested way.
+
+2017-08-01  Richard Sandiford  <richard.sandiford@linaro.org>
+
+	PR tree-optimization/80769
+	* tree-ssa-strlen.c (strinfo): Document that "stmt" is also used
+	for malloc and calloc.  Document the new invariant that all related
+	strinfos have delayed lengths or none do.
+	(get_next_strinfo): New function.
+	(verify_related_strinfos): Move earlier in file.
+	(set_endptr_and_length): New function, split out from...
+	(get_string_length): ...here.  Also set the lengths of related
+	strinfos.
+
+2017-08-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81588
+	* tree-ssa-reassoc.c (optimize_range_tests_var_bound): If
+	ranges[i].in_p, invert comparison code ccode.  For >/>=,
+	swap rhs1 and rhs2 and comparison code unconditionally,
+	for </<= don't do that.  Don't swap rhs1/rhs2 again if
+	ranges[i].in_p, instead invert comparison code ccode if
+	opcode or oe->rank is BIT_IOR_EXPR.
+
+2017-07-31  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-31  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	* config.gcc: Add z14.
+	* config/s390/driver-native.c (s390_host_detect_local_cpu): Add
+	CPU model numbers for z13s and z14.
+	* config/s390/s390-c.c (s390_resolve_overloaded_builtin): Replace
+	arch12 with z14.
+	* config/s390/s390-opts.h (enum processor_type): Rename
+	PROCESSOR_ARCH12 to PROCESSOR_3906_Z14.
+	* config/s390/s390.c (processor_table): Add field for CPU name to
+	be passed to Binutils.
+	(s390_asm_output_machine_for_arch): Use the new field in
+	processor_table for Binutils.
+	(s390_expand_builtin): Replace arch12 with z14.
+	(s390_issue_rate): Rename PROCESSOR_ARCH12 to PROCESSOR_3906_Z14.
+	(s390_get_sched_attrmask): Likewise.
+	(s390_get_unit_mask): Likewise.
+	* config/s390/s390.opt: Add z14 to processor_type enum.
+
+2017-07-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/81604
+	* ubsan.c (ubsan_type_descriptor): For UBSAN_PRINT_ARRAY don't
+	change type to the element type, instead add eltype variable and
+	use it where we are interested in the element type.
+
 2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
 
 	Backport from mainline

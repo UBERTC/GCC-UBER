@@ -1,3 +1,52 @@
+2017-08-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/funcspec-56.inc (no_3dnowa): Properly
+	test "no-3dnowa" target attribute.
+
+2017-08-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81655
+	PR tree-optimization/81588
+	* gcc.dg/tree-ssa/pr81588.c: Use -mbranch-cost=2 where possible,
+	don't run the test on branch-cost=1 targets.
+
+	PR middle-end/79499
+	* gcc.dg/pr79499.c: New test.
+
+2017-08-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81641
+	* gcc.target/i386/pr81641.c: New test.
+
+2017-08-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/81622
+	* gcc.target/powerpc/pr81622.c: New test.
+
+2017-08-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71752
+	PR tree-optimization/81633
+	* gcc.dg/vect/pr81633.c: New testcase.
+
+2017-08-01  Richard Sandiford  <richard.sandiford@linaro.org>
+
+	PR tree-optimization/80769
+	* gcc.dg/strlenopt-31.c: New test.
+	* gcc.dg/strlenopt-31g.c: Likewise.
+
+2017-08-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81588
+	* gcc.dg/tree-ssa/pr81588.c: New test.
+	* gcc.dg/pr81588.c: New test.
+	* gcc.c-torture/execute/pr81588.c: New test.
+
+2017-07-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/81604
+	* c-c++-common/ubsan/pr81604.c: New test.
+
 2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
 
 	Backport from mainline
