@@ -1,3 +1,30 @@
+2017-08-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* c-ada-spec.c (has_static_fields): Look only into fields.
+	(dump_generic_ada_node): Small tweak.
+	(dump_nested_types): Look only into fields.
+	(print_ada_declaration): Look only into methods.  Small tweak.
+	(print_ada_struct_decl): Look only into fields.  Use DECL_VIRTUAL_P.
+
+2017-08-01  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* c-ada-spec.c (print_generic_ada_decl): Pass correctly-typed constant.
+	(dump_ada_function_declaration): Likewise.
+	(dump_generic_ada_node): Likewise.
+	(print_ada_declaration): Add support for const-qualified variables.
+
+2017-07-31  Martin Liska  <mliska@suse.cz>
+
+	PR sanitize/81530
+	* c-ubsan.c (ubsan_maybe_instrument_array_ref):
+	Guard condition with flag_sanitize_p also with current_function_decl
+	non-null equality.
+	(ubsan_maybe_instrument_reference_or_call): Likewise.
+
+2017-07-30  Uros Bizjak  <ubizjak@gmail.com>
+
+	* c-format.c (asm_fprintf_char_table): Add 'z' to format_chars.
+
 2017-07-29  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* c-ada-spec.c (dump_generic_ada_node): Take into account signedness

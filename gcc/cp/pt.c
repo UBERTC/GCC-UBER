@@ -15105,6 +15105,8 @@ tsubst_copy (tree t, tree args, tsubst_flags_t complain, tree in_decl)
       return tsubst_binary_left_fold (t, args, complain, in_decl);
     case BINARY_RIGHT_FOLD_EXPR:
       return tsubst_binary_right_fold (t, args, complain, in_decl);
+    case PREDICT_EXPR:
+      return t;
 
     default:
       /* We shouldn't get here, but keep going if !flag_checking.  */
@@ -25450,11 +25452,7 @@ do_class_deduction (tree ptype, tree tmpl, tree init, int flags,
       if (gtype)
 	{
 	  tree guide = build_deduction_guide (gtype, outer_args, complain);
-	  if ((flags & LOOKUP_ONLYCONVERTING)
-	      && DECL_NONCONVERTING_P (STRIP_TEMPLATE (guide)))
-	    elided = true;
-	  else
-	    cands = lookup_add (guide, cands);
+	  cands = lookup_add (guide, cands);
 	}
     }
 
@@ -25463,6 +25461,12 @@ do_class_deduction (tree ptype, tree tmpl, tree init, int flags,
       error ("cannot deduce template arguments for copy-initialization"
 	     " of %qT, as it has no non-explicit deduction guides or "
 	     "user-declared constructors", type);
+      return error_mark_node;
+    }
+  else if (!cands && call == error_mark_node)
+    {
+      error ("cannot deduce template arguments of %qT, as it has no viable "
+	     "deduction guides", type);
       return error_mark_node;
     }
 

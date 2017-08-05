@@ -94,6 +94,7 @@ static rtx legitimize_pe_coff_extern_decl (rtx, bool);
 static rtx legitimize_pe_coff_symbol (rtx, bool);
 static void ix86_print_operand_address_as (FILE *, rtx, addr_space_t, bool);
 static bool ix86_save_reg (unsigned int, bool, bool);
+static bool ix86_function_naked (const_tree);
 
 #ifndef CHECK_STACK_LIMIT
 #define CHECK_STACK_LIMIT (-1)
@@ -2491,9 +2492,7 @@ public:
     unsigned last_reg = m->call_ms2sysv_extra_regs + MIN_REGS - 1;
 
     gcc_assert (m->call_ms2sysv_extra_regs <= MAX_EXTRA_REGS);
-    return m_regs[last_reg].offset
-	   + (m->call_ms2sysv_pad_out ? 8 : 0)
-	   + STUB_INDEX_OFFSET;
+    return m_regs[last_reg].offset + STUB_INDEX_OFFSET;
   }
 
   /* Returns the offset for the base pointer used by the stub.  */
@@ -7522,6 +7521,10 @@ ix86_set_func_type (tree fndecl)
       if (lookup_attribute ("interrupt",
 			    TYPE_ATTRIBUTES (TREE_TYPE (fndecl))))
 	{
+	  if (ix86_function_naked (fndecl))
+	    error_at (DECL_SOURCE_LOCATION (fndecl),
+		      "interrupt and naked attributes are not compatible");
+
 	  int nargs = 0;
 	  for (tree arg = DECL_ARGUMENTS (fndecl);
 	       arg;
@@ -7928,6 +7931,9 @@ ix86_function_ok_for_sibcall (tree decl, tree exp)
   tree type, decl_or_type;
   rtx a, b;
   bool bind_global = decl && !targetm.binds_local_p (decl);
+
+  if (ix86_function_naked (current_function_decl))
+    return false;
 
   /* Sibling call isn't OK if there are no caller-saved registers
      since all registers must be preserved before return.  */
@@ -8748,6 +8754,15 @@ ix86_function_ms_hook_prologue (const_tree fn)
   return false;
 }
 
+static bool
+ix86_function_naked (const_tree fn)
+{
+  if (fn && lookup_attribute ("naked", DECL_ATTRIBUTES (fn)))
+    return true;
+
+  return false;
+}
+
 /* Write the extra assembler code needed to declare a function properly.  */
 
 void
@@ -8777,16 +8792,15 @@ ix86_asm_output_function_label (FILE *asm_out_file, const char *fname,
       if (TARGET_64BIT)
 	{
 	  /* leaq [%rsp + 0], %rsp  */
-	  asm_fprintf (asm_out_file, ASM_BYTE
-		       "0x48, 0x8d, 0xa4, 0x24, 0x00, 0x00, 0x00, 0x00\n");
+	  fputs (ASM_BYTE "0x48, 0x8d, 0xa4, 0x24, 0x00, 0x00, 0x00, 0x00\n",
+		 asm_out_file);
 	}
       else
 	{
           /* movl.s %edi, %edi
 	     push   %ebp
 	     movl.s %esp, %ebp */
-	  asm_fprintf (asm_out_file, ASM_BYTE
-		       "0x8b, 0xff, 0x55, 0x8b, 0xec\n");
+	  fputs (ASM_BYTE "0x8b, 0xff, 0x55, 0x8b, 0xec\n", asm_out_file);
 	}
     }
 }
@@ -10422,25 +10436,22 @@ ix86_function_arg (cumulative_args_t cum_v, machine_mode omode,
 	{
 	  /* This is the pointer argument.  */
 	  gcc_assert (TYPE_MODE (type) == Pmode);
-	  if (cfun->machine->func_type == TYPE_INTERRUPT)
-	    /* -WORD(AP) in the current frame in interrupt handler.  */
-	    arg = plus_constant (Pmode, arg_pointer_rtx,
-				 -UNITS_PER_WORD);
-	  else
-	    /* (AP) in the current frame in exception handler.  */
-	    arg = arg_pointer_rtx;
+	  /* It is at -WORD(AP) in the current frame in interrupt and
+	     exception handlers.  */
+	  arg = plus_constant (Pmode, arg_pointer_rtx, -UNITS_PER_WORD);
 	}
       else
 	{
 	  gcc_assert (cfun->machine->func_type == TYPE_EXCEPTION
 		      && TREE_CODE (type) == INTEGER_TYPE
 		      && TYPE_MODE (type) == word_mode);
-	  /* The integer argument is the error code at -WORD(AP) in
-	     the current frame in exception handler.  */
+	  /* The error code is the word-mode integer argument at
+	     -2 * WORD(AP) in the current frame of the exception
+	     handler.  */
 	  arg = gen_rtx_MEM (word_mode,
 			     plus_constant (Pmode,
 					    arg_pointer_rtx,
-					    -UNITS_PER_WORD));
+					    -2 * UNITS_PER_WORD));
 	}
       return arg;
     }
@@ -12253,6 +12264,9 @@ ix86_can_use_return_insn_p (void)
 {
   struct ix86_frame frame;
 
+  if (ix86_function_naked (current_function_decl))
+    return false;
+
   /* Don't use `ret' instruction in interrupt handler.  */
   if (! reload_completed
       || frame_pointer_needed
@@ -12849,13 +12863,12 @@ ix86_compute_frame_layout (void)
 	{
 	  unsigned count = xlogue_layout::count_stub_managed_regs ();
 	  m->call_ms2sysv_extra_regs = count - xlogue_layout::MIN_REGS;
+	  m->call_ms2sysv_pad_in = 0;
 	}
     }
 
   frame->nregs = ix86_nsaved_regs ();
   frame->nsseregs = ix86_nsaved_sseregs ();
-  m->call_ms2sysv_pad_in = 0;
-  m->call_ms2sysv_pad_out = 0;
 
   /* 64-bit MS ABI seem to require stack alignment to be always 16,
      except for function prologues, leaf functions and when the defult
@@ -12915,8 +12928,8 @@ ix86_compute_frame_layout (void)
 	  the registers need to be saved before allocating the frame.  */
        && flag_stack_check != STATIC_BUILTIN_STACK_CHECK);
 
-  /* Skip return address.  */
-  offset = UNITS_PER_WORD;
+  /* Skip return address and error code in exception handler.  */
+  offset = INCOMING_FRAME_SP_OFFSET;
 
   /* Skip pushed static chain.  */
   if (ix86_static_chain_on_stack)
@@ -12957,16 +12970,7 @@ ix86_compute_frame_layout (void)
       gcc_assert (!frame->nsseregs);
 
       m->call_ms2sysv_pad_in = !!(offset & UNITS_PER_WORD);
-
-      /* Select an appropriate layout for incoming stack offset.  */
-      const struct xlogue_layout &xlogue = xlogue_layout::get_instance ();
-
-      if ((offset + xlogue.get_stack_space_used ()) & UNITS_PER_WORD)
-	m->call_ms2sysv_pad_out = 1;
-
-      offset += xlogue.get_stack_space_used ();
-      gcc_assert (!(offset & 0xf));
-      frame->outlined_save_offset = offset;
+      offset += xlogue_layout::get_instance ().get_stack_space_used ();
     }
 
   /* Align and set SSE register save area.  */
@@ -12994,6 +12998,7 @@ ix86_compute_frame_layout (void)
 
   /* Align start of frame for local function.  */
   if (stack_realign_fp
+      || m->call_ms2sysv
       || offset != frame->sse_reg_save_offset
       || size != 0
       || !crtl->is_leaf
@@ -14331,6 +14336,9 @@ ix86_expand_prologue (void)
   bool sse_registers_saved;
   rtx static_chain = NULL_RTX;
 
+  if (ix86_function_naked (current_function_decl))
+    return;
+
   ix86_finalize_stack_realign_flags ();
 
   /* DRAP should not coexist with stack_realign_fp */
@@ -15188,6 +15196,13 @@ ix86_expand_epilogue (int style)
   bool using_drap;
   bool restore_stub_is_tail = false;
 
+  if (ix86_function_naked (current_function_decl))
+    {
+      /* The program should not reach this point.  */
+      emit_insn (gen_ud2 ());
+      return;
+    }
+
   ix86_finalize_stack_realign_flags ();
   frame = m->frame;
 
@@ -15221,8 +15236,9 @@ ix86_expand_epilogue (int style)
   m->fs.red_zone_offset = 0;
   if (ix86_using_red_zone () && crtl->args.pops_args < 65536)
     {
-      /* The red-zone begins below the return address.  */
-      m->fs.red_zone_offset = RED_ZONE_SIZE + UNITS_PER_WORD;
+      /* The red-zone begins below return address and error code in
+	 exception handler.  */
+      m->fs.red_zone_offset = RED_ZONE_SIZE + INCOMING_FRAME_SP_OFFSET;
 
       /* When the register save area is in the aligned portion of
          the stack, determine the maximum runtime displacement that
@@ -15517,18 +15533,7 @@ ix86_expand_epilogue (int style)
     }
 
   if (cfun->machine->func_type != TYPE_NORMAL)
-    {
-      /* Return with the "IRET" instruction from interrupt handler.
-	 Pop the 'ERROR_CODE' off the stack before the 'IRET'
-	 instruction in exception handler.  */
-      if (cfun->machine->func_type == TYPE_EXCEPTION)
-	{
-	  rtx r = plus_constant (Pmode, stack_pointer_rtx,
-				 UNITS_PER_WORD);
-	  emit_insn (gen_rtx_SET (stack_pointer_rtx, r));
-	}
-      emit_jump_insn (gen_interrupt_return ());
-    }
+    emit_jump_insn (gen_interrupt_return ());
   else if (crtl->args.pops_args && crtl->args.size)
     {
       rtx popc = GEN_INT (crtl->args.pops_args);
@@ -19434,7 +19439,7 @@ ix86_print_operand_address_as (FILE *file, rtx addr,
       /* Displacement only requires special attention.  */
       if (CONST_INT_P (disp))
 	{
-	  if (ASSEMBLER_DIALECT == ASM_INTEL && parts.seg == ADDR_SPACE_GENERIC)
+	  if (ASSEMBLER_DIALECT == ASM_INTEL && ADDR_SPACE_GENERIC_P (as))
 	    fputs ("ds:", file);
 	  fprintf (file, HOST_WIDE_INT_PRINT_DEC, INTVAL (disp));
 	}
@@ -31665,6 +31670,21 @@ ix86_trampoline_init (rtx m_tramp, tree fndecl, rtx chain_value)
   emit_library_call (gen_rtx_SYMBOL_REF (Pmode, "__enable_execute_stack"),
 		     LCT_NORMAL, VOIDmode, 1, XEXP (m_tramp, 0), Pmode);
 #endif
+}
+
+static bool
+ix86_allocate_stack_slots_for_args (void)
+{
+  /* Naked functions should not allocate stack slots for arguments.  */
+  return !ix86_function_naked (current_function_decl);
+}
+
+static bool
+ix86_warn_func_return (tree decl)
+{
+  /* Naked functions are implemented entirely in assembly, including the
+     return sequence, so suppress warnings about this.  */
+  return !ix86_function_naked (decl);
 }
 
 /* The following file contains several enumerations and data structures
@@ -44295,6 +44315,34 @@ ix86_expand_vector_init (bool mmx_ok, rtx target, rtx vals)
   int i;
   rtx x;
 
+  /* Handle first initialization from vector elts.  */
+  if (n_elts != XVECLEN (vals, 0))
+    {
+      rtx subtarget = target;
+      x = XVECEXP (vals, 0, 0);
+      gcc_assert (GET_MODE_INNER (GET_MODE (x)) == inner_mode);
+      if (GET_MODE_NUNITS (GET_MODE (x)) * 2 == n_elts)
+	{
+	  rtx ops[2] = { XVECEXP (vals, 0, 0), XVECEXP (vals, 0, 1) };
+	  if (inner_mode == QImode || inner_mode == HImode)
+	    {
+	      mode = mode_for_vector (SImode,
+				      n_elts * GET_MODE_SIZE (inner_mode) / 4);
+	      inner_mode
+		= mode_for_vector (SImode,
+				   n_elts * GET_MODE_SIZE (inner_mode) / 8);
+	      ops[0] = gen_lowpart (inner_mode, ops[0]);
+	      ops[1] = gen_lowpart (inner_mode, ops[1]);
+	      subtarget = gen_reg_rtx (mode);
+	    }
+	  ix86_expand_vector_init_concat (mode, subtarget, ops, 2);
+	  if (subtarget != target)
+	    emit_move_insn (target, gen_lowpart (GET_MODE (target), subtarget));
+	  return;
+	}
+      gcc_unreachable ();
+    }
+
   for (i = 0; i < n_elts; ++i)
     {
       x = XVECEXP (vals, 0, i);
@@ -46500,6 +46548,8 @@ static const struct attribute_spec ix86_attribute_table[] =
     ix86_handle_interrupt_attribute, false },
   { "no_caller_saved_registers", 0, 0, false, true, true,
     ix86_handle_no_caller_saved_registers_attribute, false },
+  { "naked", 0, 0, true, false, false,
+    ix86_handle_fndecl_attribute, false },
 
   /* End element.  */
   { NULL,        0, 0, false, false, false, NULL, false }
@@ -52709,6 +52759,8 @@ ix86_run_selftests (void)
 #define TARGET_SETUP_INCOMING_VARARGS ix86_setup_incoming_varargs
 #undef TARGET_MUST_PASS_IN_STACK
 #define TARGET_MUST_PASS_IN_STACK ix86_must_pass_in_stack
+#undef TARGET_ALLOCATE_STACK_SLOTS_FOR_ARGS
+#define TARGET_ALLOCATE_STACK_SLOTS_FOR_ARGS ix86_allocate_stack_slots_for_args
 #undef TARGET_FUNCTION_ARG_ADVANCE
 #define TARGET_FUNCTION_ARG_ADVANCE ix86_function_arg_advance
 #undef TARGET_FUNCTION_ARG
@@ -52735,6 +52787,9 @@ ix86_run_selftests (void)
 #define TARGET_TRAMPOLINE_INIT ix86_trampoline_init
 #undef TARGET_RETURN_POPS_ARGS
 #define TARGET_RETURN_POPS_ARGS ix86_return_pops_args
+
+#undef TARGET_WARN_FUNC_RETURN
+#define TARGET_WARN_FUNC_RETURN ix86_warn_func_return
 
 #undef TARGET_LEGITIMATE_COMBINED_INSN
 #define TARGET_LEGITIMATE_COMBINED_INSN ix86_legitimate_combined_insn

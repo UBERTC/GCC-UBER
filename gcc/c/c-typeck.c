@@ -9824,6 +9824,7 @@ c_finish_goto_label (location_t loc, tree label)
     return NULL_TREE;
   TREE_USED (decl) = 1;
   {
+    add_stmt (build_predict_expr (PRED_GOTO, NOT_TAKEN));
     tree t = build1 (GOTO_EXPR, void_type_node, decl);
     SET_EXPR_LOCATION (t, loc);
     return add_stmt (t);
@@ -11838,6 +11839,7 @@ build_binary_op (location_t location, enum tree_code code,
 
   if (sanitize_flags_p ((SANITIZE_SHIFT
 			 | SANITIZE_DIVIDE | SANITIZE_FLOAT_DIVIDE))
+      && current_function_decl != NULL_TREE
       && (doing_div_or_mod || doing_shift)
       && !require_constant_value)
     {

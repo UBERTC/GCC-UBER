@@ -435,7 +435,7 @@ enum rs6000_reg_type {
   ALTIVEC_REG_TYPE,
   FPR_REG_TYPE,
   SPR_REG_TYPE,
-  CR_REG_TYPE,
+  CR_REG_TYPE
 };
 
 /* Map register class to register type.  */
@@ -4250,7 +4250,7 @@ rs6000_option_override_internal (bool global_init_p)
 	      rs6000_isa_flags |= (ISA_3_0_MASKS_SERVER & ~ignore_masks);
 	    }
 	  else
-	    error ("Power9 target option is incompatible with -mcpu=<xxx> for "
+	    error ("power9 target option is incompatible with -mcpu=<xxx> for "
 		   "<xxx> less than power9");
 	}
       else if ((ISA_3_0_MASKS_SERVER & rs6000_isa_flags_explicit)
@@ -14452,6 +14452,58 @@ altivec_expand_lv_builtin (enum insn_code icode, tree exp, rtx target, bool blk)
 }
 
 static rtx
+altivec_expand_xl_be_builtin (enum insn_code icode, tree exp, rtx target, bool blk)
+{
+  rtx pat, addr;
+  tree arg0 = CALL_EXPR_ARG (exp, 0);
+  tree arg1 = CALL_EXPR_ARG (exp, 1);
+  machine_mode tmode = insn_data[icode].operand[0].mode;
+  machine_mode mode0 = Pmode;
+  machine_mode mode1 = Pmode;
+  rtx op0 = expand_normal (arg0);
+  rtx op1 = expand_normal (arg1);
+
+  if (icode == CODE_FOR_nothing)
+    /* Builtin not supported on this processor.  */
+    return 0;
+
+  /* If we got invalid arguments bail out before generating bad rtl.  */
+  if (arg0 == error_mark_node || arg1 == error_mark_node)
+    return const0_rtx;
+
+  if (target == 0
+      || GET_MODE (target) != tmode
+      || ! (*insn_data[icode].operand[0].predicate) (target, tmode))
+	  target = gen_reg_rtx (tmode);
+
+  op1 = copy_to_mode_reg (mode1, op1);
+
+  if (op0 == const0_rtx)
+    addr = gen_rtx_MEM (blk ? BLKmode : tmode, op1);
+  else
+    {
+      op0 = copy_to_mode_reg (mode0, op0);
+      addr = gen_rtx_MEM (blk ? BLKmode : tmode,
+                          gen_rtx_PLUS (Pmode, op1, op0));
+    }
+
+  pat = GEN_FCN (icode) (target, addr);
+  if (!pat)
+    return 0;
+
+  emit_insn (pat);
+  /*  Reverse element order of elements if in LE mode */
+  if (!VECTOR_ELT_ORDER_BIG)
+    {
+      rtx sel = swap_selector_for_mode (tmode);
+      rtx vperm = gen_rtx_UNSPEC (tmode, gen_rtvec (3, target, target, sel),
+				  UNSPEC_VPERM);
+      emit_insn (gen_rtx_SET (target, vperm));
+    }
+  return target;
+}
+
+static rtx
 paired_expand_stv_builtin (enum insn_code icode, tree exp)
 {
   tree arg0 = CALL_EXPR_ARG (exp, 0);
@@ -15843,6 +15895,50 @@ altivec_expand_builtin (tree exp, rtx target, bool *expandedp)
       /* Fall through.  */
     }
 
+  /* XL_BE  We initialized them to always load in big endian order.  */
+  switch (fcode)
+    {
+    case VSX_BUILTIN_XL_BE_V2DI:
+      {
+        enum insn_code code = CODE_FOR_vsx_load_v2di;
+        return altivec_expand_xl_be_builtin (code, exp, target, false);
+      }
+      break;
+    case VSX_BUILTIN_XL_BE_V4SI:
+      {
+        enum insn_code code = CODE_FOR_vsx_load_v4si;
+        return altivec_expand_xl_be_builtin (code, exp, target, false);
+      }
+      break;
+    case VSX_BUILTIN_XL_BE_V8HI:
+      {
+        enum insn_code code = CODE_FOR_vsx_load_v8hi;
+        return altivec_expand_xl_be_builtin (code, exp, target, false);
+      }
+      break;
+    case VSX_BUILTIN_XL_BE_V16QI:
+      {
+        enum insn_code code = CODE_FOR_vsx_load_v16qi;
+        return altivec_expand_xl_be_builtin (code, exp, target, false);
+       }
+      break;
+    case VSX_BUILTIN_XL_BE_V2DF:
+      {
+        enum insn_code code = CODE_FOR_vsx_load_v2df;
+        return altivec_expand_xl_be_builtin (code, exp, target, false);
+      }
+      break;
+    case VSX_BUILTIN_XL_BE_V4SF:
+      {
+        enum insn_code code = CODE_FOR_vsx_load_v4sf;
+        return altivec_expand_xl_be_builtin (code, exp, target, false);
+      }
+      break;
+    default:
+      break;
+      /* Fall through.  */
+    }
+
   *expandedp = false;
   return NULL_RTX;
 }
@@ -15964,45 +16060,45 @@ rs6000_invalid_builtin (enum rs6000_builtins fncode)
 
   gcc_assert (name != NULL);
   if ((fnmask & RS6000_BTM_CELL) != 0)
-    error ("Builtin function %s is only valid for the cell processor", name);
+    error ("builtin function %s is only valid for the cell processor", name);
   else if ((fnmask & RS6000_BTM_VSX) != 0)
-    error ("Builtin function %s requires the -mvsx option", name);
+    error ("builtin function %s requires the -mvsx option", name);
   else if ((fnmask & RS6000_BTM_HTM) != 0)
-    error ("Builtin function %s requires the -mhtm option", name);
+    error ("builtin function %s requires the -mhtm option", name);
   else if ((fnmask & RS6000_BTM_ALTIVEC) != 0)
-    error ("Builtin function %s requires the -maltivec option", name);
+    error ("builtin function %s requires the -maltivec option", name);
   else if ((fnmask & RS6000_BTM_PAIRED) != 0)
-    error ("Builtin function %s requires the -mpaired option", name);
+    error ("builtin function %s requires the -mpaired option", name);
   else if ((fnmask & (RS6000_BTM_DFP | RS6000_BTM_P8_VECTOR))
 	   == (RS6000_BTM_DFP | RS6000_BTM_P8_VECTOR))
-    error ("Builtin function %s requires the -mhard-dfp and"
+    error ("builtin function %s requires the -mhard-dfp and"
 	   " -mpower8-vector options", name);
   else if ((fnmask & RS6000_BTM_DFP) != 0)
-    error ("Builtin function %s requires the -mhard-dfp option", name);
+    error ("builtin function %s requires the -mhard-dfp option", name);
   else if ((fnmask & RS6000_BTM_P8_VECTOR) != 0)
-    error ("Builtin function %s requires the -mpower8-vector option", name);
+    error ("builtin function %s requires the -mpower8-vector option", name);
   else if ((fnmask & (RS6000_BTM_P9_VECTOR | RS6000_BTM_64BIT))
 	   == (RS6000_BTM_P9_VECTOR | RS6000_BTM_64BIT))
-    error ("Builtin function %s requires the -mcpu=power9 and"
+    error ("builtin function %s requires the -mcpu=power9 and"
 	   " -m64 options", name);
   else if ((fnmask & RS6000_BTM_P9_VECTOR) != 0)
-    error ("Builtin function %s requires the -mcpu=power9 option", name);
+    error ("builtin function %s requires the -mcpu=power9 option", name);
   else if ((fnmask & (RS6000_BTM_P9_MISC | RS6000_BTM_64BIT))
 	   == (RS6000_BTM_P9_MISC | RS6000_BTM_64BIT))
-    error ("Builtin function %s requires the -mcpu=power9 and"
+    error ("builtin function %s requires the -mcpu=power9 and"
 	   " -m64 options", name);
   else if ((fnmask & RS6000_BTM_P9_MISC) == RS6000_BTM_P9_MISC)
-    error ("Builtin function %s requires the -mcpu=power9 option", name);
+    error ("builtin function %s requires the -mcpu=power9 option", name);
   else if ((fnmask & (RS6000_BTM_HARD_FLOAT | RS6000_BTM_LDBL128))
 	   == (RS6000_BTM_HARD_FLOAT | RS6000_BTM_LDBL128))
-    error ("Builtin function %s requires the -mhard-float and"
+    error ("builtin function %s requires the -mhard-float and"
 	   " -mlong-double-128 options", name);
   else if ((fnmask & RS6000_BTM_HARD_FLOAT) != 0)
-    error ("Builtin function %s requires the -mhard-float option", name);
+    error ("builtin function %s requires the -mhard-float option", name);
   else if ((fnmask & RS6000_BTM_FLOAT128) != 0)
-    error ("Builtin function %s requires the -mfloat128 option", name);
+    error ("builtin function %s requires the -mfloat128 option", name);
   else
-    error ("Builtin function %s is not supported with the current options",
+    error ("builtin function %s is not supported with the current options",
 	   name);
 }
 
@@ -17303,6 +17399,19 @@ altivec_init_builtins (void)
   def_builtin ("__builtin_vsx_st_elemrev_v4si", void_ftype_v4si_long_pvoid,
 	       VSX_BUILTIN_ST_ELEMREV_V4SI);
 
+  def_builtin ("__builtin_vsx_le_be_v8hi", v8hi_ftype_long_pcvoid,
+		   VSX_BUILTIN_XL_BE_V8HI);
+  def_builtin ("__builtin_vsx_le_be_v4si", v4si_ftype_long_pcvoid,
+		   VSX_BUILTIN_XL_BE_V4SI);
+  def_builtin ("__builtin_vsx_le_be_v2di", v2di_ftype_long_pcvoid,
+		   VSX_BUILTIN_XL_BE_V2DI);
+  def_builtin ("__builtin_vsx_le_be_v4sf", v4sf_ftype_long_pcvoid,
+		   VSX_BUILTIN_XL_BE_V4SF);
+  def_builtin ("__builtin_vsx_le_be_v2df", v2df_ftype_long_pcvoid,
+		   VSX_BUILTIN_XL_BE_V2DF);
+  def_builtin ("__builtin_vsx_le_be_v16qi", v16qi_ftype_long_pcvoid,
+		   VSX_BUILTIN_XL_BE_V16QI);
+
   if (TARGET_P9_VECTOR)
     {
       def_builtin ("__builtin_vsx_ld_elemrev_v8hi", v8hi_ftype_long_pcvoid,
@@ -17332,6 +17441,8 @@ altivec_init_builtins (void)
 	       VSX_BUILTIN_VEC_ST);
   def_builtin ("__builtin_vec_xl", opaque_ftype_long_pcvoid,
 	       VSX_BUILTIN_VEC_XL);
+  def_builtin ("__builtin_vec_xl_be", opaque_ftype_long_pcvoid,
+	       VSX_BUILTIN_VEC_XL_BE);
   def_builtin ("__builtin_vec_xst", void_ftype_opaque_long_pvoid,
 	       VSX_BUILTIN_VEC_XST);
 
@@ -32161,7 +32272,7 @@ rs6000_trampoline_init (rtx m_tramp, tree fndecl, rtx cxt)
 	rtx fnmem, fn_reg, toc_reg;
 
 	if (!TARGET_POINTERS_TO_NESTED_FUNCTIONS)
-	  error ("You cannot take the address of a nested function if you use "
+	  error ("you cannot take the address of a nested function if you use "
 		 "the -mno-pointers-to-nested-functions option.");
 
 	fnmem = gen_const_mem (Pmode, force_reg (Pmode, fnaddr));

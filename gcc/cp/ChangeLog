@@ -1,3 +1,45 @@
+2017-08-04  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/79790
+	* pt.c (do_class_deduction): Handle the case of no viable implicit
+	deduction guides; simplify the code generating implicit deduction
+	guides.
+
+2017-08-03  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/71440
+	* typeck.c (build_x_unary_op): Avoid pretty-printing constructor /
+	destructor as expressions.
+
+2017-08-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/81640
+	* call.c (build_user_type_conversion_1): Only call
+	lookup_fnfields_slot if totype is CLASS_TYPE_P.
+
+2017-07-31  Jason Merrill  <jason@redhat.com>
+
+	* decl.c (declare_global_var): Set DECL_CONTEXT.
+
+2017-07-31  Jan Hubicka <hubicka@ucw.cz>
+	    Martin Liska  <mliska@suse.cz>
+
+	* pt.c (tsubst_copy): Copy PREDICT_EXPR.
+	* semantics.c (finish_goto_stmt): Build gimple predict
+	stament.
+	* constexpr.c (potential_constant_expression_1): Handle
+	PREDICT_EXPR.
+
+2017-07-31  Martin Liska  <mliska@suse.cz>
+
+	PR sanitize/81530
+	* cp-gimplify.c (cp_genericize): Guard condition with flag_sanitize_p
+	also with current_function_decl non-null equality.
+	* cp-ubsan.c (cp_ubsan_instrument_vptr_p): Likewise.
+	* decl.c (compute_array_index_type): Likewise.
+	* init.c (finish_length_check): Likewise.
+	* typeck.c (cp_build_binary_op): Likewise.
+
 2017-07-29  Jakub Jelinek  <jakub@redhat.com>
 
 	* cp-objcp-common.c (cp_decl_dwarf_attribute): Handle

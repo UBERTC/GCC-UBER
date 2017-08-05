@@ -180,6 +180,10 @@ nvptx_option_override (void)
   if (!global_options_set.x_flag_no_common)
     flag_no_common = 1;
 
+  /* The patch area requires nops, which we don't have.  */
+  if (function_entry_patch_area_size > 0)
+    sorry ("not generating patch area, nops not supported");
+
   /* Assumes that it will see only hard registers.  */
   flag_var_tracking = 0;
 
@@ -5072,7 +5076,9 @@ nvptx_lockless_update (location_t loc, gimple_stmt_iterator *gsi,
   *gsi = gsi_for_stmt (gsi_stmt (*gsi));
 
   post_edge->flags ^= EDGE_TRUE_VALUE | EDGE_FALLTHRU;
+  post_edge->probability = profile_probability::even ();
   edge loop_edge = make_edge (loop_bb, loop_bb, EDGE_FALSE_VALUE);
+  loop_edge->probability = profile_probability::even ();
   set_immediate_dominator (CDI_DOMINATORS, loop_bb, pre_bb);
   set_immediate_dominator (CDI_DOMINATORS, post_bb, loop_bb);
 
@@ -5145,7 +5151,9 @@ nvptx_lockfull_update (location_t loc, gimple_stmt_iterator *gsi,
   
   /* Create the lock loop ... */
   locked_edge->flags ^= EDGE_TRUE_VALUE | EDGE_FALLTHRU;
-  make_edge (lock_bb, lock_bb, EDGE_FALSE_VALUE);
+  locked_edge->probability = profile_probability::even ();
+  edge loop_edge = make_edge (lock_bb, lock_bb, EDGE_FALSE_VALUE);
+  loop_edge->probability = profile_probability::even ();
   set_immediate_dominator (CDI_DOMINATORS, lock_bb, entry_bb);
   set_immediate_dominator (CDI_DOMINATORS, update_bb, lock_bb);
 
