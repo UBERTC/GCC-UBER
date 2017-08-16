@@ -1,3 +1,129 @@
+2017-08-14  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/71570
+	* g++.dg/cpp0x/lambda/lambda-ice17.C: New.
+
+2017-08-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81641
+	* gcc.target/i386/pr81641.c: New test.
+
+2017-07-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/81604
+	* c-c++-common/ubsan/pr81604.c: New test.
+
+2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* gcc.target/powerpc/cpu-builtin-1.c (darn, scv): Add tests.
+
+2017-07-28  Bin Cheng  <bin.cheng@arm.com>
+
+	Backport from mainline r250496
+	2017-07-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/81414
+	* gcc.target/aarch64/pr81414.C: New.
+
+2017-07-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81555
+	PR tree-optimization/81556
+	* gcc.c-torture/execute/pr81555.c: New test.
+	* gcc.c-torture/execute/pr81556.c: New test.
+
+2017-07-26  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2017-07-05 trunk r249995, r249996.
+
+	PR target/81305
+	* gcc.target/avr/isr-test.h: New file.
+	* gcc.target/avr/torture/isr-01-simple.c: New test.
+	* gcc.target/avr/torture/isr-02-call.c: New test.
+	* gcc.target/avr/torture/isr-03-fixed.c: New test.
+
+2017-07-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-14  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/81162
+	* gcc.dg/ubsan/pr81162.c: New file.
+
+2017-07-25  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from trunk r247719.
+
+	2017-05-06  Richard Sandiford  <richard.sandiford@linaro.org>
+
+	PR rtl-optimization/75964
+	* gcc.dg/torture/pr75964.c: New test.
+
+2017-07-24  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80569
+	* gcc.target/i386/pr80569.c: New test.
+
+2017-07-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81471
+	* gcc.target/i386/pr81471.c: New test.
+
+2017-07-14  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+
+	Backports from trunk:
+
+	2017-01-23  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+	PR target/66669
+	* gcc.dg/loop-8.c: Modify dg-skip-if directive to exclude this
+	test on powerpc targets.
+
+	2017-02-08  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+	PR target/68972
+	* g++.dg/cpp1y/vla-initlist1.C: Add dg-skip-if directive to
+	disable this test on power architecture.
+
+	2017-03-23  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+	* gcc.target/powerpc/p9-options-1.c: New test.
+
+	2017-03-27  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+	PR target/80103
+	* gcc.target/powerpc/pr80103-1.c: New test.
+
+	2017-05-08  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+	PR target/80101
+	* gcc.target/powerpc/pr80101-1.c: New test.
+
+	2017-07-05  Kelvin Nilsen  <kelvin@gcc.gnu.org>
+	PR target/80103
+	* gcc.target/powerpc/pr80103-1.c (b): Correct spelling of
+	__attribute__.
+
+2017-07-14  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-07-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81375
+	* gcc.target/i386/pr81375.c: New test.
+
+	Backport from mainline
+	2017-07-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81300
+	* gcc.target/i386/pr81300.c: New test.
+
+2017-07-13  Tom de Vries  <tom@codesourcery.com>
+
+	backport from mainline:
+	PR tree-optimization/81192
+	2017-07-03  Tom de Vries  <tom@codesourcery.com>
+
+	* gcc.dg/pr81192.c: New test.
+
 2017-07-06  Andrew Pinski  <apinski@cavium.com>
 
 	* gcc.target/aarch64/pr71112.c : New Testcase.
