@@ -2051,13 +2051,14 @@ replace_mult_candidate (slsr_cand_t c, tree basis_name, widest_int bump)
      types but allows for safe negation without twisted logic.  */
   if (wi::fits_shwi_p (bump)
       && bump.to_shwi () != HOST_WIDE_INT_MIN
-      /* It is not useful to replace casts, copies, or adds of
+      /* It is not useful to replace casts, copies, negates, or adds of
 	 an SSA name and a constant.  */
       && cand_code != SSA_NAME
       && !CONVERT_EXPR_CODE_P (cand_code)
       && cand_code != PLUS_EXPR
       && cand_code != POINTER_PLUS_EXPR
-      && cand_code != MINUS_EXPR)
+      && cand_code != MINUS_EXPR
+      && cand_code != NEGATE_EXPR)
     {
       enum tree_code code = PLUS_EXPR;
       tree bump_tree;
@@ -2192,8 +2193,6 @@ create_add_on_incoming_edge (slsr_cand_t c, tree basis_name,
 			     widest_int increment, edge e, location_t loc,
 			     bool known_stride)
 {
-  basic_block insert_bb;
-  gimple_stmt_iterator gsi;
   tree lhs, basis_type;
   gassign *new_stmt, *cast_stmt = NULL;
 
@@ -2262,39 +2261,25 @@ create_add_on_incoming_edge (slsr_cand_t c, tree basis_name,
       }
     }
 
-  insert_bb = single_succ_p (e->src) ? e->src : split_edge (e);
-  gsi = gsi_last_bb (insert_bb);
-
-  if (!gsi_end_p (gsi) && stmt_ends_bb_p (gsi_stmt (gsi)))
+  if (cast_stmt)
     {
-      gsi_insert_before (&gsi, new_stmt, GSI_SAME_STMT);
-      if (cast_stmt)
-	{
-	  gsi_insert_before (&gsi, cast_stmt, GSI_SAME_STMT);
-	  gimple_set_location (cast_stmt, loc);
-	}
-    }
-  else
-    {
-      if (cast_stmt)
-	{
-	  gsi_insert_after (&gsi, cast_stmt, GSI_NEW_STMT);
-	  gimple_set_location (cast_stmt, loc);
-	}
-      gsi_insert_after (&gsi, new_stmt, GSI_NEW_STMT);
+      gimple_set_location (cast_stmt, loc);
+      gsi_insert_on_edge (e, cast_stmt);
     }
 
   gimple_set_location (new_stmt, loc);
+  gsi_insert_on_edge (e, new_stmt);
 
   if (dump_file && (dump_flags & TDF_DETAILS))
     {
       if (cast_stmt)
 	{
-	  fprintf (dump_file, "Inserting cast in block %d: ",
-		   insert_bb->index);
+	  fprintf (dump_file, "Inserting cast on edge %d->%d: ",
+		   e->src->index, e->dest->index);
 	  print_gimple_stmt (dump_file, cast_stmt, 0, 0);
 	}
-      fprintf (dump_file, "Inserting in block %d: ", insert_bb->index);
+      fprintf (dump_file, "Inserting in block %d: ", e->src->index,
+	       e->dest->index);
       print_gimple_stmt (dump_file, new_stmt, 0, 0);
     }
 
@@ -3735,6 +3720,10 @@ analyze_candidates_and_replace (void)
 	  free (incr_vec);
 	}
     }
+
+  /* For conditional candidates, we may have uncommitted insertions
+     on edges to clean up.  */
+  gsi_commit_edge_inserts ();
 }
 
 namespace {

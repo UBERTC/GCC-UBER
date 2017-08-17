@@ -1,3 +1,268 @@
+2017-08-16  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-08-08  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/81354
+	* g++.dg/torture/pr81354.C: New file.
+
+2017-08-15  Joseph Myers  <joseph@codesourcery.com>
+
+	PR target/78460
+	PR target/67712
+	* gcc.c-torture/compile/string-large-1.c: New test.
+
+2017-08-14  Release Manager
+
+	* GCC 7.2.0 released.
+
+2017-08-08  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/81766
+	* gcc.target/i386/pr81766.c: New testcase.
+
+2017-08-02  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/funcspec-56.inc (no_3dnowa): Properly
+	test "no-3dnowa" target attribute.
+
+2017-08-02  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81655
+	PR tree-optimization/81588
+	* gcc.dg/tree-ssa/pr81588.c: Use -mbranch-cost=2 where possible,
+	don't run the test on branch-cost=1 targets.
+
+	PR middle-end/79499
+	* gcc.dg/pr79499.c: New test.
+
+2017-08-01  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81641
+	* gcc.target/i386/pr81641.c: New test.
+
+2017-08-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/81622
+	* gcc.target/powerpc/pr81622.c: New test.
+
+2017-08-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/71752
+	PR tree-optimization/81633
+	* gcc.dg/vect/pr81633.c: New testcase.
+
+2017-08-01  Richard Sandiford  <richard.sandiford@linaro.org>
+
+	PR tree-optimization/80769
+	* gcc.dg/strlenopt-31.c: New test.
+	* gcc.dg/strlenopt-31g.c: Likewise.
+
+2017-08-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81588
+	* gcc.dg/tree-ssa/pr81588.c: New test.
+	* gcc.dg/pr81588.c: New test.
+	* gcc.c-torture/execute/pr81588.c: New test.
+
+2017-07-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/81604
+	* c-c++-common/ubsan/pr81604.c: New test.
+
+2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-28  Peter Bergner  <bergner@vnet.ibm.com>
+
+	* gcc.target/powerpc/cpu-builtin-1.c (darn, scv): Add tests.
+
+2017-07-28  Bin Cheng  <bin.cheng@arm.com>
+
+	Backport from mainline r250496
+	2017-07-25  Kyrylo Tkachov  <kyrylo.tkachov@arm.com>
+
+	PR target/81414
+	* gcc.target/aarch64/pr81414.C: New.
+
+2017-07-27  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-27  Andreas Krebbel  <krebbel@linux.vnet.ibm.com>
+
+	PR target/81534
+	* gcc.target/s390/pr81534.c: New test.
+
+2017-07-27  Paolo Carlini  <paolo.carlini@oracle.com>
+
+	PR c++/71570
+	* g++.dg/cpp0x/lambda/lambda-ice17.C: New.
+
+2017-07-27  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81555
+	PR tree-optimization/81556
+	* gcc.c-torture/execute/pr81555.c: New test.
+	* gcc.c-torture/execute/pr81556.c: New test.
+
+2017-07-27  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-07-26  Martin Liska  <mliska@suse.cz>
+
+	PR sanitize/81186
+	* gcc.dg/asan/pr81186.c: New test.
+
+2017-07-27  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-06-30  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/81021
+	* g++.dg/asan/pr81021.C: New test.
+
+2017-07-27  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-06-28  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/81224
+	* gcc.dg/asan/pr81224.c: New test.
+
+2017-07-26  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	PR target/79041
+	* gcc.target/aarch64/pr79041-2.c: Don't run in ILP32.
+
+2017-07-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-06-18  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/81410
+	* gcc.dg/vect/pr81410.c: New testcase.
+
+	2017-07-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/81455
+	* gcc.dg/pr81455.c: New testcase.
+
+	2017-07-25  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/81505
+	* gcc.dg/ubsan/pr81505.c: New testcase.
+
+	2017-07-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/81175
+	* gcc.target/i386/pr69255-2.c (foo): Use the return value of the
+	gather.
+
+	2017-06-26  Richard Biener  <rguenther@suse.de>
+
+	PR target/81175
+	* gfortran.dg/pr81175.f: New testcase.
+
+	2017-06-21  Marc Glisse  <marc.glisse@inria.fr>
+ 
+ 	* gcc.dg/tree-ssa/addadd.c: Un-XFAIL.
+ 	* gcc.dg/tree-ssa/addadd-2.c: New file.
+
+2016-07-25  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2016-07-14  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/81162
+	* gcc.dg/ubsan/pr81162.c: New file.
+
+2017-07-25  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	PR target/79041
+	* gcc.target/aarch64/pr79041-2.c: New test.
+
+2017-07-25  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from trunk r247719.
+
+	2017-05-06  Richard Sandiford  <richard.sandiford@linaro.org>
+
+	PR rtl-optimization/75964
+	* gcc.dg/torture/pr75964.c: New test.
+
+2017-07-25  Bin Cheng  <bin.cheng@arm.com>
+
+	Backport from 2017-07-20 trunk r250384.
+
+	PR tree-optimization/81388
+	* gcc.dg/tree-ssa/pr81388-1.c: New test.
+	* gcc.dg/tree-ssa/pr81388-2.c: New test.
+
+2017-07-23  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/80569
+	* gcc.target/i386/pr80569.c: New test.
+
+2017-07-19  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2017-07-12  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/81193
+	* gcc.target/powerpc/cpu-builtin-1.c: Change test to use #ifdef
+	__BUILTIN_CPU_SUPPORTS to see if the GLIBC is new enough that
+	__builtin_cpu_is and __builtin_cpu_supports are supported.
+
+2017-07-18  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81471
+	* gcc.target/i386/pr81471.c: New test.
+
+2017-07-17  Jakub Jelinek  <jakub@redhat.com>
+
+	PR tree-optimization/81428
+	* gcc.dg/fixed-point/pr81428.c: New test.
+
+	PR tree-optimization/81365
+	* g++.dg/torture/pr81365.C: New test.
+
+	Backported from mainline
+	2017-07-04  Jakub Jelinek  <jakub@redhat.com>
+
+	PR c++/81258
+	* g++.dg/cpp1z/decomp21.C (foo): Adjust expected diagnostics.
+	* g++.dg/cpp1z/decomp30.C: New test.
+
+	2017-06-30  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/81225
+	* gcc.target/i386/pr81225.c: New test.
+
+2017-07-16  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/opt65.adb: New test.
+
+2017-07-10  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81375
+	* gcc.target/i386/pr81375.c: New test.
+
+2017-07-07  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-07-07  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/81348
+	* gcc.target/powerpc/pr81348.c: New test.
+
+2017-07-07  Jose E. Marchesi  <jose.marchesi@oracle.com>
+
+	* gcc.target/sparc/dictunpack.c: New file.
+	* gcc.target/sparc/fpcmpdeshl.c: Likewise.
+	* gcc.target/sparc/fpcmpshl.c: Likewise.
+	* gcc.target/sparc/fpcmpurshl.c: Likewise.
+	* gcc.target/sparc/fpcmpushl.c: Likewise.
+
 2017-07-05  Georg-Johann Lay  <avr@gjlay.de>
 
 	Backport from 2017-07-05 trunk r249995, r249996.
