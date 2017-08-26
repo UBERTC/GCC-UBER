@@ -1,3 +1,59 @@
+2017-08-21  Jerry DeLisle  <jvdelisle@gcc.gnu.org>
+
+	PR fortran/81296
+	* trans-io.c (get_dtio_proc): Add check for format label and set
+	formatted flag accordingly. Reorganize the code a little.
+
+2017-08-16  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/81116
+	* frontend-passes.c (realloc_string_callback): If expression is a
+	concatenation, also check for dependency.
+	(constant_string_length): Check for presence of symtree.
+
+2017-08-13  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	* gfortran.texi: Document format of unformatted sequential files.
+
+2017-08-11  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	* invoke.texi:  Actually commit change about -Ofast.
+
+2017-08-11  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/60355
+	* resolve.c (resolve_symbol): Adjust (and reformat)
+	comment.  Perform check if a BIND(C) is declared
+	at module level regardless of whether it is typed
+	implicitly or not.
+
+2017-08-10  Fritz Reese <fritzoreese@gmail.com>
+
+	* options.c (set_dec_flags): Only set legacy standards when value
+	is not zero.
+
+2017-08-10  Fritz Reese <fritzoreese@gmail.com>
+
+	* options.c (set_dec_flags, gfc_post_options): Only set flag_d_lines
+	with -fdec when not set by user.
+
+2017-08-10  Fritz Reese <fritzoreese@gmail.com>
+
+	* decl.c (attr_seen): New static variable.
+	* decl.c (variable_decl): Match %FILL in STRUCTURE body.
+	* gfortran.texi: Update documentation.
+
+2017-08-08  Martin Liska  <mliska@suse.cz>
+
+	* trans-types.c: Include header files.
+
+2017-08-07  Thomas Koenig  <tkoenig@gcc.gnu.org>
+
+	PR fortran/68829
+	PR fortran/81701
+	* options.c: Make -Ofast honor -fmax-stack-var-size.
+	* invoke.texi: Document change.
+
 2017-08-01  Thomas König  <tkoenig@gcc.gnu.org>
 
 	PR fortran/79312

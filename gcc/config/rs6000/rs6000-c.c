@@ -430,8 +430,8 @@ rs6000_target_modify_macros (bool define_p, HOST_WIDE_INT flags,
     rs6000_define_or_undefine_macro (define_p, "_ARCH_PWR7");
   /* Note that the OPTION_MASK_DIRECT_MOVE flag is automatically
      turned on in the following condition:
-     1. TARGET_P9_DFORM_SCALAR or TARGET_P9_DFORM_VECTOR are enabled
-        and OPTION_MASK_DIRECT_MOVE is not explicitly disabled.
+     1. TARGET_P8_VECTOR is enabled and OPTION_MASK_DIRECT_MOVE is not
+        explicitly disabled.
         Hereafter, the OPTION_MASK_DIRECT_MOVE flag is considered to
         have been turned on explicitly.
      Note that the OPTION_MASK_DIRECT_MOVE flag is automatically
@@ -545,8 +545,7 @@ rs6000_target_modify_macros (bool define_p, HOST_WIDE_INT flags,
         also considered to have been turned off explicitly.
      Note that the OPTION_MASK_P9_VECTOR is automatically turned on
      in the following conditions:
-     1. If TARGET_P9_DFORM_SCALAR or TARGET_P9_DFORM_VECTOR and
-        OPTION_MASK_P9_VECTOR was not turned off explicitly.
+     1. If TARGET_P9_MINMAX was turned on explicitly.
         Hereafter, THE OPTION_MASK_P9_VECTOR flag is considered to
         have been turned on explicitly.  */
   if ((flags & OPTION_MASK_P9_VECTOR) != 0)
@@ -5812,7 +5811,7 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
 	 types.  */
       if (nargs != 2)
 	{
-	  error ("vec_mul only accepts 2 arguments");
+	  error ("builtin %qs only accepts 2 arguments", "vec_mul");
 	  return error_mark_node;
 	}
 
@@ -5863,7 +5862,7 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
 	 for it (prior to power 9).  */
       if (nargs != 2)
 	{
-	  error ("vec_cmpne only accepts 2 arguments");
+	  error ("builtin %qs only accepts 2 arguments", "vec_cmpne");
 	  return error_mark_node;
 	}
 
@@ -5936,7 +5935,7 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
 	{
 	  const char *name = fcode == ALTIVEC_BUILTIN_VEC_ADDE ?
 	    "vec_adde": "vec_sube";
-	  error ("%s only accepts 3 arguments", name);
+	  error ("builtin %qs only accepts 3 arguments", name);
 	  return error_mark_node;
 	}
 
@@ -6019,7 +6018,7 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
 	{
 	  const char *name = fcode == ALTIVEC_BUILTIN_VEC_ADDEC ?
 	    "vec_addec": "vec_subec";
-	  error ("%s only accepts 3 arguments", name);
+	  error ("builtin %qs only accepts 3 arguments", name);
 	  return error_mark_node;
 	}
 
@@ -6126,19 +6125,14 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
       vec<constructor_elt, va_gc> *vec;
       const char *name = fcode == ALTIVEC_BUILTIN_VEC_SPLATS ? "vec_splats": "vec_promote";
 
-      if (nargs == 0)
-	{
-	  error ("%s only accepts %d arguments", name, (fcode == ALTIVEC_BUILTIN_VEC_PROMOTE)+1 );
-	  return error_mark_node;
-	}
       if (fcode == ALTIVEC_BUILTIN_VEC_SPLATS && nargs != 1)
 	{
-	  error ("%s only accepts 1 argument", name);
+	  error ("builtin %qs only accepts 1 argument", name);
 	  return error_mark_node;
 	}
       if (fcode == ALTIVEC_BUILTIN_VEC_PROMOTE && nargs != 2)
 	{
-	  error ("%s only accepts 2 arguments", name);
+	  error ("builtin %qs only accepts 2 arguments", name);
 	  return error_mark_node;
 	}
       /* Ignore promote's element argument.  */
@@ -6204,7 +6198,7 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
       /* No second argument. */
       if (nargs != 2)
 	{
-	  error ("vec_extract only accepts 2 arguments");
+	  error ("builtin %qs only accepts 2 arguments", "vec_extract");
 	  return error_mark_node;
 	}
 
@@ -6373,7 +6367,7 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
       /* No second or third arguments. */
       if (nargs != 3)
 	{
-	  error ("vec_insert only accepts 3 arguments");
+	  error ("builtin %qs only accepts 3 arguments", "vec_insert");
 	  return error_mark_node;
 	}
 
@@ -6698,7 +6692,7 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
 
 	if (nargs != 2)
 	  {
-	    error ("__builtin_cmpb only accepts 2 arguments");
+	    error ("builtin %qs only accepts 2 arguments", "__builtin_cmpb");
 	    return error_mark_node;
 	  }
 
@@ -6739,7 +6733,8 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
 
 	if (nargs != 2)
 	  {
-	    error ("scalar_insert_exp only accepts 2 arguments");
+	    error ("builtin %qs only accepts 2 arguments",
+		   "scalar_insert_exp");
 	    return error_mark_node;
 	  }
 
@@ -6802,15 +6797,15 @@ altivec_resolve_overloaded_builtin (location_t loc, tree fndecl,
     if (unsupported_builtin)
       {
 	const char *name = rs6000_overloaded_builtin_name (fcode);
-	error ("builtin function %s not supported in this compiler configuration",
-	       name);
+	error ("builtin function %qs not supported in this compiler "
+	       "configuration", name);
 	return error_mark_node;
       }
   }
  bad:
   {
     const char *name = rs6000_overloaded_builtin_name (fcode);
-    error ("invalid parameter combination for AltiVec intrinsic %s", name);
+    error ("invalid parameter combination for AltiVec intrinsic %qs", name);
     return error_mark_node;
   }
 }

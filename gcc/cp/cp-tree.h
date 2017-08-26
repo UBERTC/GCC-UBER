@@ -125,6 +125,7 @@ enum cp_tree_index
     CPTI_TYPE_INFO_PTR_TYPE,
     CPTI_ABORT_FNDECL,
     CPTI_AGGR_TAG,
+    CPTI_CONV_OP_MARKER,
 
     CPTI_CTOR_IDENTIFIER,
     CPTI_COMPLETE_CTOR_IDENTIFIER,
@@ -133,6 +134,7 @@ enum cp_tree_index
     CPTI_COMPLETE_DTOR_IDENTIFIER,
     CPTI_BASE_DTOR_IDENTIFIER,
     CPTI_DELETING_DTOR_IDENTIFIER,
+    CPTI_CONV_OP_IDENTIFIER,
     CPTI_DELTA_IDENTIFIER,
     CPTI_IN_CHARGE_IDENTIFIER,
     CPTI_VTT_PARM_IDENTIFIER,
@@ -199,6 +201,7 @@ extern GTY(()) tree cp_global_trees[CPTI_MAX];
 #define global_type_node		cp_global_trees[CPTI_GLOBAL_TYPE]
 #define const_type_info_type_node	cp_global_trees[CPTI_CONST_TYPE_INFO_TYPE]
 #define type_info_ptr_type		cp_global_trees[CPTI_TYPE_INFO_PTR_TYPE]
+#define conv_op_marker			cp_global_trees[CPTI_CONV_OP_MARKER]
 #define abort_fndecl			cp_global_trees[CPTI_ABORT_FNDECL]
 #define current_aggr			cp_global_trees[CPTI_AGGR_TAG]
 #define nullptr_node			cp_global_trees[CPTI_NULLPTR]
@@ -239,6 +242,10 @@ extern GTY(()) tree cp_global_trees[CPTI_MAX];
 /* The name of a destructor that destroys virtual base classes, and
    then deletes the entire object.  */
 #define deleting_dtor_identifier	cp_global_trees[CPTI_DELETING_DTOR_IDENTIFIER]
+/* The name used for conversion operators -- but note that actual
+   conversion functions use special identifiers outside the identifier
+   table.  */
+#define conv_op_identifier		cp_global_trees[CPTI_CONV_OP_IDENTIFIER]
 
 /* The name of the identifier used internally to represent operator CODE.  */
 #define cp_operator_id(CODE) \
@@ -471,9 +478,10 @@ extern GTY(()) tree cp_global_trees[CPTI_MAX];
      At present, only the six low-order bits are used.
 
    TYPE_LANG_SLOT_1
-     For an ENUMERAL_TYPE, this is ENUM_TEMPLATE_INFO.
-     For a FUNCTION_TYPE or METHOD_TYPE, this is TYPE_RAISES_EXCEPTIONS
-     For a POINTER_TYPE (to a METHOD_TYPE), this is TYPE_PTRMEMFUNC_TYPE
+     For a FUNCTION_TYPE or METHOD_TYPE, this is TYPE_RAISES_EXCEPTIONS.
+     For a POINTER_TYPE (to a METHOD_TYPE), this is TYPE_PTRMEMFUNC_TYPE.
+     For an ENUMERAL_TYPE, BOUND_TEMPLATE_TEMPLATE_PARM_TYPE,
+     RECORD_TYPE or UNION_TYPE this is TYPE_TEMPLATE_INFO,
 
   BINFO_VIRTUALS
      For a binfo, this is a TREE_LIST.  There is an entry for each
@@ -2001,7 +2009,6 @@ struct GTY(()) lang_type {
   vec<tree, va_gc> * GTY((reorder ("resort_type_method_vec"))) methods;
   tree key_method;
   tree decl_list;
-  tree template_info;
   tree befriending_classes;
   /* In a RECORD_TYPE, information specific to Objective-C++, such
      as a list of adopted protocols or a pointer to a corresponding
@@ -2147,10 +2154,6 @@ struct GTY(()) lang_type {
    The TREE_PURPOSE of each TREE_LIST is NULL_TREE for a friend,
    and the RECORD_TYPE for the class template otherwise.  */
 #define CLASSTYPE_DECL_LIST(NODE) (LANG_TYPE_CLASS_CHECK (NODE)->decl_list)
-
-/* The first slot in the CLASSTYPE_METHOD_VEC where conversion
-   operators can appear.  */
-#define CLASSTYPE_FIRST_CONVERSION_SLOT 0
 
 /* A FUNCTION_DECL or OVERLOAD for the constructors for NODE.  These
    are the constructors that take an in-charge parameter.  */
@@ -3276,31 +3279,22 @@ extern void decl_shadowed_for_var_insert (tree, tree);
 
 /* Template information for a RECORD_TYPE or UNION_TYPE.  */
 #define CLASSTYPE_TEMPLATE_INFO(NODE) \
-  (LANG_TYPE_CLASS_CHECK (RECORD_OR_UNION_CHECK (NODE))->template_info)
-
-/* Template information for an ENUMERAL_TYPE.  Although an enumeration may
-   not be a primary template, it may be declared within the scope of a
-   primary template and the enumeration constants may depend on
-   non-type template parameters.  */
-#define ENUM_TEMPLATE_INFO(NODE) \
-  (TYPE_LANG_SLOT_1 (ENUMERAL_TYPE_CHECK (NODE)))
+  (TYPE_LANG_SLOT_1 (RECORD_OR_UNION_CHECK (NODE)))
 
 /* Template information for a template template parameter.  */
 #define TEMPLATE_TEMPLATE_PARM_TEMPLATE_INFO(NODE) \
-  (LANG_TYPE_CLASS_CHECK (BOUND_TEMPLATE_TEMPLATE_PARM_TYPE_CHECK (NODE)) \
-   ->template_info)
+  (TYPE_LANG_SLOT_1 (BOUND_TEMPLATE_TEMPLATE_PARM_TYPE_CHECK (NODE)))
 
 /* Template information for an ENUMERAL_, RECORD_, UNION_TYPE, or
    BOUND_TEMPLATE_TEMPLATE_PARM type.  This ignores any alias
-   templateness of NODE.  */
+   templateness of NODE.  It'd be nice if this could unconditionally
+   access the slot, rather than return NULL if given a
+   non-templatable type.  */
 #define TYPE_TEMPLATE_INFO(NODE)					\
   (TREE_CODE (NODE) == ENUMERAL_TYPE					\
-   ? ENUM_TEMPLATE_INFO (NODE)						\
-   : (TREE_CODE (NODE) == BOUND_TEMPLATE_TEMPLATE_PARM			\
-      ? TEMPLATE_TEMPLATE_PARM_TEMPLATE_INFO (NODE)			\
-      : (CLASS_TYPE_P (NODE)						\
-	 ? CLASSTYPE_TEMPLATE_INFO (NODE)				\
-	 : NULL_TREE)))
+   || TREE_CODE (NODE) == BOUND_TEMPLATE_TEMPLATE_PARM			\
+   || RECORD_OR_UNION_TYPE_P (NODE)					\
+   ? TYPE_LANG_SLOT_1 (NODE) : NULL_TREE)
 
 /* Template information (if any) for an alias type.  */
 #define TYPE_ALIAS_TEMPLATE_INFO(NODE)					\
@@ -3320,10 +3314,9 @@ extern void decl_shadowed_for_var_insert (tree, tree);
    UNION_TYPE to VAL.  */
 #define SET_TYPE_TEMPLATE_INFO(NODE, VAL)				\
   (TREE_CODE (NODE) == ENUMERAL_TYPE					\
-   ? (ENUM_TEMPLATE_INFO (NODE) = (VAL))				\
-   : ((CLASS_TYPE_P (NODE) && !TYPE_ALIAS_P (NODE))			\
-      ? (CLASSTYPE_TEMPLATE_INFO (NODE) = (VAL))			\
-      : (DECL_TEMPLATE_INFO (TYPE_NAME (NODE)) = (VAL))))
+   || (CLASS_TYPE_P (NODE) && !TYPE_ALIAS_P (NODE))			\
+   ? (TYPE_LANG_SLOT_1 (NODE) = (VAL))				\
+   : (DECL_TEMPLATE_INFO (TYPE_NAME (NODE)) = (VAL)))
 
 #define TI_TEMPLATE(NODE) TREE_TYPE (TEMPLATE_INFO_CHECK (NODE))
 #define TI_ARGS(NODE) TREE_CHAIN (TEMPLATE_INFO_CHECK (NODE))
@@ -5296,7 +5289,7 @@ enum overload_flags { NO_SPECIAL = 0, DTOR_FLAG, TYPENAME_FLAG };
    (Normally, these entities are registered in the symbol table, but
    not found by lookup.)  */
 #define LOOKUP_HIDDEN (LOOKUP_PREFER_NAMESPACES << 1)
-/* Prefer that the lvalue be treated as an rvalue.  */
+/* We're trying to treat an lvalue as an rvalue.  */
 #define LOOKUP_PREFER_RVALUE (LOOKUP_HIDDEN << 1)
 /* We're inside an init-list, so narrowing conversions are ill-formed.  */
 #define LOOKUP_NO_NARROWING (LOOKUP_PREFER_RVALUE << 1)
@@ -6081,6 +6074,7 @@ extern void push_switch				(tree);
 extern void pop_switch				(void);
 extern tree make_lambda_name			(void);
 extern int decls_match				(tree, tree);
+extern bool maybe_version_functions		(tree, tree);
 extern tree duplicate_decls			(tree, tree, bool);
 extern tree declare_local_label			(tree);
 extern tree define_label			(location_t, tree);
@@ -6297,7 +6291,7 @@ extern tree get_type_value			(tree);
 extern tree build_zero_init			(tree, tree, bool);
 extern tree build_value_init			(tree, tsubst_flags_t);
 extern tree build_value_init_noctor		(tree, tsubst_flags_t);
-extern tree get_nsdmi				(tree, bool);
+extern tree get_nsdmi				(tree, bool, tsubst_flags_t);
 extern tree build_offset_ref			(tree, tree, bool,
 						 tsubst_flags_t);
 extern tree throw_bad_array_new_length		(void);
@@ -6355,7 +6349,7 @@ extern bool trivial_fn_p			(tree);
 extern tree forward_parm			(tree);
 extern bool is_trivially_xible			(enum tree_code, tree, tree);
 extern bool is_xible				(enum tree_code, tree, tree);
-extern tree get_defaulted_eh_spec		(tree);
+extern tree get_defaulted_eh_spec		(tree, tsubst_flags_t = tf_warning_or_error);
 extern void after_nsdmi_defaulted_late_checks   (tree);
 extern bool maybe_explain_implicit_delete	(tree);
 extern void explain_implicit_non_constexpr	(tree);
@@ -6385,6 +6379,7 @@ extern tree cp_convert_range_for (tree, tree, tree, tree, unsigned int, bool);
 extern bool parsing_nsdmi (void);
 extern bool parsing_default_capturing_generic_lambda_in_template (void);
 extern void inject_this_parameter (tree, cp_cv_quals);
+extern location_t defarg_location (tree);
 
 /* in pt.c */
 extern bool check_template_shadow		(tree);
@@ -6448,7 +6443,7 @@ extern int more_specialized_fn			(tree, tree, int);
 extern void do_decl_instantiation		(tree, tree);
 extern void do_type_instantiation		(tree, tree, tsubst_flags_t);
 extern bool always_instantiate_p		(tree);
-extern void maybe_instantiate_noexcept		(tree);
+extern bool maybe_instantiate_noexcept		(tree, tsubst_flags_t = tf_warning_or_error);
 extern tree instantiate_decl			(tree, bool, bool);
 extern int comp_template_parms			(const_tree, const_tree);
 extern bool builtin_pack_fn_p			(tree);
@@ -6571,11 +6566,7 @@ extern tree lookup_base                         (tree, tree, base_access,
 extern tree dcast_base_hint			(tree, tree);
 extern int accessible_p				(tree, tree, bool);
 extern int accessible_in_template_p		(tree, tree);
-extern tree lookup_field_1			(tree, tree, bool);
 extern tree lookup_field			(tree, tree, int, bool);
-extern tree lookup_fnfields_slot		(tree, tree);
-extern tree lookup_fnfields_slot_nolazy		(tree, tree);
-extern tree lookup_all_conversions		(tree);
 extern tree lookup_fnfields			(tree, tree, int);
 extern tree lookup_member			(tree, tree, int, bool,
 						 tsubst_flags_t,
@@ -6586,8 +6577,6 @@ extern int look_for_overrides			(tree, tree);
 extern void get_pure_virtuals			(tree);
 extern void maybe_suppress_debug_info		(tree);
 extern void note_debug_info_needed		(tree);
-extern void print_search_statistics		(void);
-extern void reinit_search_statistics		(void);
 extern tree current_scope			(void);
 extern int at_function_scope_p			(void);
 extern bool at_class_scope_p			(void);
@@ -7166,7 +7155,7 @@ extern tree split_nonconstant_init		(tree, tree);
 extern bool check_narrowing			(tree, tree, tsubst_flags_t);
 extern tree digest_init				(tree, tree, tsubst_flags_t);
 extern tree digest_init_flags			(tree, tree, int, tsubst_flags_t);
-extern tree digest_nsdmi_init		        (tree, tree);
+extern tree digest_nsdmi_init		        (tree, tree, tsubst_flags_t);
 extern tree build_scoped_ref			(tree, tree, tree *);
 extern tree build_x_arrow			(location_t, tree,
 						 tsubst_flags_t);

@@ -79,6 +79,8 @@ along with GCC; see the file COPYING3.  If not see
 #include "tree-vrp.h"
 #include "tree-ssanames.h"
 #include "selftest.h"
+#include "stringpool.h"
+#include "attribs.h"
 
 /* Nonzero if we are folding constants inside an initializer; zero
    otherwise.  */
@@ -111,7 +113,6 @@ static tree negate_expr (tree);
 static tree associate_trees (location_t, tree, tree, enum tree_code, tree);
 static enum comparison_code comparison_to_compcode (enum tree_code);
 static enum tree_code compcode_to_comparison (enum comparison_code);
-static int operand_equal_for_comparison_p (tree, tree, tree);
 static int twoval_comparison_p (tree, tree *, tree *, int *);
 static tree eval_subst (location_t, tree, tree, tree, tree, tree);
 static tree optimize_bit_field_compare (location_t, enum tree_code,
@@ -3363,60 +3364,27 @@ operand_equal_p (const_tree arg0, const_tree arg1, unsigned int flags)
 #undef OP_SAME_WITH_NULL
 }
 
-/* Similar to operand_equal_p, but see if ARG0 might have been made by
-   shorten_compare from ARG1 when ARG1 was being compared with OTHER.
+/* Similar to operand_equal_p, but strip nops first.  */
 
-   When in doubt, return 0.  */
-
-static int
-operand_equal_for_comparison_p (tree arg0, tree arg1, tree other)
+static bool
+operand_equal_for_comparison_p (tree arg0, tree arg1)
 {
-  int unsignedp1, unsignedpo;
-  tree primarg0, primarg1, primother;
-  unsigned int correct_width;
-
   if (operand_equal_p (arg0, arg1, 0))
-    return 1;
+    return true;
 
   if (! INTEGRAL_TYPE_P (TREE_TYPE (arg0))
       || ! INTEGRAL_TYPE_P (TREE_TYPE (arg1)))
-    return 0;
+    return false;
 
   /* Discard any conversions that don't change the modes of ARG0 and ARG1
      and see if the inner values are the same.  This removes any
      signedness comparison, which doesn't matter here.  */
-  primarg0 = arg0, primarg1 = arg1;
-  STRIP_NOPS (primarg0);
-  STRIP_NOPS (primarg1);
-  if (operand_equal_p (primarg0, primarg1, 0))
-    return 1;
+  STRIP_NOPS (arg0);
+  STRIP_NOPS (arg1);
+  if (operand_equal_p (arg0, arg1, 0))
+    return true;
 
-  /* Duplicate what shorten_compare does to ARG1 and see if that gives the
-     actual comparison operand, ARG0.
-
-     First throw away any conversions to wider types
-     already present in the operands.  */
-
-  primarg1 = get_narrower (arg1, &unsignedp1);
-  primother = get_narrower (other, &unsignedpo);
-
-  correct_width = TYPE_PRECISION (TREE_TYPE (arg1));
-  if (unsignedp1 == unsignedpo
-      && TYPE_PRECISION (TREE_TYPE (primarg1)) < correct_width
-      && TYPE_PRECISION (TREE_TYPE (primother)) < correct_width)
-    {
-      tree type = TREE_TYPE (arg0);
-
-      /* Make sure shorter operand is extended the right way
-	 to match the longer operand.  */
-      primarg1 = fold_convert (signed_or_unsigned_type_for
-			       (unsignedp1, TREE_TYPE (primarg1)), primarg1);
-
-      if (operand_equal_p (arg0, fold_convert (type, primarg1), 0))
-	return 1;
-    }
-
-  return 0;
+  return false;
 }
 
 /* See if ARG is an expression that is either a comparison or is performing
@@ -5298,7 +5266,7 @@ fold_cond_expr_with_comparison (location_t loc, tree type,
      expressions will be false, so all four give B.  The min()
      and max() versions would give a NaN instead.  */
   if (!HONOR_SIGNED_ZEROS (element_mode (type))
-      && operand_equal_for_comparison_p (arg01, arg2, arg00)
+      && operand_equal_for_comparison_p (arg01, arg2)
       /* Avoid these transformations if the COND_EXPR may be used
 	 as an lvalue in the C++ front-end.  PR c++/19199.  */
       && (in_gimple_form
@@ -6670,8 +6638,7 @@ fold_single_bit_test_into_sign_test (location_t loc,
       if (arg00 != NULL_TREE
 	  /* This is only a win if casting to a signed type is cheap,
 	     i.e. when arg00's type is not a partial mode.  */
-	  && TYPE_PRECISION (TREE_TYPE (arg00))
-	     == GET_MODE_PRECISION (TYPE_MODE (TREE_TYPE (arg00))))
+	  && type_has_mode_precision_p (TREE_TYPE (arg00)))
 	{
 	  tree stype = signed_type_for (TREE_TYPE (arg00));
 	  return fold_build2_loc (loc, code == EQ_EXPR ? GE_EXPR : LT_EXPR,
@@ -11355,8 +11322,7 @@ fold_ternary_loc (location_t loc, enum tree_code code, tree type,
 
          Also try swapping the arguments and inverting the conditional.  */
       if (COMPARISON_CLASS_P (arg0)
-	  && operand_equal_for_comparison_p (TREE_OPERAND (arg0, 0),
-					     arg1, TREE_OPERAND (arg0, 1))
+	  && operand_equal_for_comparison_p (TREE_OPERAND (arg0, 0), arg1)
 	  && !HONOR_SIGNED_ZEROS (element_mode (arg1)))
 	{
 	  tem = fold_cond_expr_with_comparison (loc, type, arg0, op1, op2);
@@ -11365,9 +11331,7 @@ fold_ternary_loc (location_t loc, enum tree_code code, tree type,
 	}
 
       if (COMPARISON_CLASS_P (arg0)
-	  && operand_equal_for_comparison_p (TREE_OPERAND (arg0, 0),
-					     op2,
-					     TREE_OPERAND (arg0, 1))
+	  && operand_equal_for_comparison_p (TREE_OPERAND (arg0, 0), op2)
 	  && !HONOR_SIGNED_ZEROS (element_mode (op2)))
 	{
 	  location_t loc0 = expr_location_or (arg0, loc);
@@ -14107,20 +14071,19 @@ fold_indirect_ref_1 (location_t loc, tree type, tree op0)
 		   && type == TREE_TYPE (op00type))
 	    {
 	      tree type_domain = TYPE_DOMAIN (op00type);
-	      tree min = TYPE_MIN_VALUE (type_domain);
-	      if (min && TREE_CODE (min) == INTEGER_CST)
+	      tree min = size_zero_node;
+	      if (type_domain && TYPE_MIN_VALUE (type_domain))
+		min = TYPE_MIN_VALUE (type_domain);
+	      offset_int off = wi::to_offset (op01);
+	      offset_int el_sz = wi::to_offset (TYPE_SIZE_UNIT (type));
+	      offset_int remainder;
+	      off = wi::divmod_trunc (off, el_sz, SIGNED, &remainder);
+	      if (remainder == 0 && TREE_CODE (min) == INTEGER_CST)
 		{
-		  offset_int off = wi::to_offset (op01);
-		  offset_int el_sz = wi::to_offset (TYPE_SIZE_UNIT (type));
-		  offset_int remainder;
-		  off = wi::divmod_trunc (off, el_sz, SIGNED, &remainder);
-		  if (remainder == 0)
-		    {
-		      off = off + wi::to_offset (min);
-		      op01 = wide_int_to_tree (sizetype, off);
-		      return build4_loc (loc, ARRAY_REF, type, op00, op01,
-					 NULL_TREE, NULL_TREE);
-		    }
+		  off = off + wi::to_offset (min);
+		  op01 = wide_int_to_tree (sizetype, off);
+		  return build4_loc (loc, ARRAY_REF, type, op00, op01,
+				     NULL_TREE, NULL_TREE);
 		}
 	    }
 	}

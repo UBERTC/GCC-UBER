@@ -1089,6 +1089,229 @@ lookup_arg_dependent (tree name, tree fns, vec<tree, va_gc> *args)
   return fns;
 }
 
+/* FNS is an overload set of conversion functions.  Return the
+   overloads converting to TYPE.  */
+
+static tree
+extract_conversion_operator (tree fns, tree type)
+{
+  tree convs = NULL_TREE;
+  tree tpls = NULL_TREE;
+
+  for (ovl_iterator iter (fns); iter; ++iter)
+    {
+      if (same_type_p (DECL_CONV_FN_TYPE (*iter), type))
+	convs = lookup_add (*iter, convs);
+
+      if (TREE_CODE (*iter) == TEMPLATE_DECL)
+	tpls = lookup_add (*iter, tpls);
+    }
+
+  if (!convs)
+    convs = tpls;
+
+  return convs;
+}
+
+/* TYPE is a class type. Return the member functions in the method
+   vector with name NAME.  Does not lazily declare implicitly-declared
+   member functions.  */
+
+tree
+lookup_fnfields_slot_nolazy (tree type, tree name)
+{
+  vec<tree, va_gc> *method_vec = CLASSTYPE_METHOD_VEC (type);
+  if (!method_vec)
+    return NULL_TREE;
+
+  /* Conversion operators can only be found by the marker conversion
+     operator name.  */
+  bool conv_op = IDENTIFIER_CONV_OP_P (name);
+  tree lookup = conv_op ? conv_op_identifier : name;
+  tree val = NULL_TREE;
+  tree fns;
+
+  /* If the type is complete, use binary search.  */
+  if (COMPLETE_TYPE_P (type))
+    {
+      int lo = 0;
+      int hi = method_vec->length ();
+      while (lo < hi)
+	{
+	  int i = (lo + hi) / 2;
+
+	  fns = (*method_vec)[i];
+	  tree fn_name = OVL_NAME (fns);
+	  if (fn_name > lookup)
+	    hi = i;
+	  else if (fn_name < lookup)
+	    lo = i + 1;
+	  else
+	    {
+	      val = fns;
+	      break;
+	    }
+	}
+    }
+  else
+    for (int i = 0; vec_safe_iterate (method_vec, i, &fns); ++i)
+      {
+	if (OVL_NAME (fns) == lookup)
+	  {
+	    val = fns;
+	    break;
+	  }
+      }
+
+  /* Extract the conversion operators asked for, unless the general
+     conversion operator was requested.   */
+  if (val && conv_op)
+    {
+      gcc_checking_assert (OVL_FUNCTION (val) == conv_op_marker);
+      val = OVL_CHAIN (val);
+      if (tree type = TREE_TYPE (name))
+	val = extract_conversion_operator (val, type);
+    }
+
+  return val;
+}
+
+/* Do a 1-level search for NAME as a member of TYPE.  The caller must
+   figure out whether it can access this field.  (Since it is only one
+   level, this is reasonable.)  */
+
+tree
+lookup_field_1 (tree type, tree name, bool want_type)
+{
+  tree field;
+
+  gcc_assert (identifier_p (name) && RECORD_OR_UNION_TYPE_P (type));
+
+  if (CLASSTYPE_SORTED_FIELDS (type))
+    {
+      tree *fields = &CLASSTYPE_SORTED_FIELDS (type)->elts[0];
+      int lo = 0, hi = CLASSTYPE_SORTED_FIELDS (type)->len;
+      int i;
+
+      while (lo < hi)
+	{
+	  i = (lo + hi) / 2;
+
+	  if (DECL_NAME (fields[i]) > name)
+	    hi = i;
+	  else if (DECL_NAME (fields[i]) < name)
+	    lo = i + 1;
+	  else
+	    {
+	      field = NULL_TREE;
+
+	      /* We might have a nested class and a field with the
+		 same name; we sorted them appropriately via
+		 field_decl_cmp, so just look for the first or last
+		 field with this name.  */
+	      if (want_type)
+		{
+		  do
+		    field = fields[i--];
+		  while (i >= lo && DECL_NAME (fields[i]) == name);
+		  if (!DECL_DECLARES_TYPE_P (field))
+		    field = NULL_TREE;
+		}
+	      else
+		{
+		  do
+		    field = fields[i++];
+		  while (i < hi && DECL_NAME (fields[i]) == name);
+		}
+
+	      if (field)
+	      	{
+	      	  field = strip_using_decl (field);
+	      	  if (is_overloaded_fn (field))
+	      	    field = NULL_TREE;
+	      	}
+
+	      return field;
+	    }
+	}
+      return NULL_TREE;
+    }
+
+  field = TYPE_FIELDS (type);
+
+  for (field = TYPE_FIELDS (type); field; field = DECL_CHAIN (field))
+    {
+      tree decl = field;
+
+      if (DECL_DECLARES_FUNCTION_P (decl))
+	/* Functions are kep separately, at the moment.  */
+	continue;
+
+      gcc_assert (DECL_P (field));
+      if (DECL_NAME (field) == NULL_TREE
+	  && ANON_AGGR_TYPE_P (TREE_TYPE (field)))
+	{
+	  tree temp = lookup_field_1 (TREE_TYPE (field), name, want_type);
+	  if (temp)
+	    return temp;
+	}
+
+      if (TREE_CODE (decl) == USING_DECL
+	  && DECL_NAME (decl) == name)
+	{
+	  decl = strip_using_decl (decl);
+	  if (is_overloaded_fn (decl))
+	    continue;
+	}
+
+      if (DECL_NAME (decl) == name
+	  && (!want_type || DECL_DECLARES_TYPE_P (decl)))
+	return decl;
+    }
+
+  /* We used to special-case vptr_identifier.  Make sure it's not
+     special any more.  */
+  gcc_assert (name != vptr_identifier || !TYPE_VFIELD (type));
+
+  return NULL_TREE;
+}
+
+/* TYPE is a class type. Return the overloads in
+   the method vector with name NAME.  Lazily create ctors etc.  */
+
+tree
+lookup_fnfields_slot (tree type, tree name)
+{
+  type = complete_type (type);
+
+  if (COMPLETE_TYPE_P (type))
+    {
+      if (IDENTIFIER_CTOR_P (name))
+	{
+	  if (CLASSTYPE_LAZY_DEFAULT_CTOR (type))
+	    lazily_declare_fn (sfk_constructor, type);
+	  if (CLASSTYPE_LAZY_COPY_CTOR (type))
+	    lazily_declare_fn (sfk_copy_constructor, type);
+	  if (CLASSTYPE_LAZY_MOVE_CTOR (type))
+	    lazily_declare_fn (sfk_move_constructor, type);
+	}
+      else if (name == cp_assignment_operator_id (NOP_EXPR))
+	{
+	  if (CLASSTYPE_LAZY_COPY_ASSIGN (type))
+	    lazily_declare_fn (sfk_copy_assignment, type);
+	  if (CLASSTYPE_LAZY_MOVE_ASSIGN (type))
+	    lazily_declare_fn (sfk_move_assignment, type);
+	}
+      else if (IDENTIFIER_DTOR_P (name))
+	{
+	  if (CLASSTYPE_LAZY_DESTRUCTOR (type))
+	    lazily_declare_fn (sfk_destructor, type);
+	}
+    }
+
+  return lookup_fnfields_slot_nolazy (type, name);
+}
+
 /* Compute the chain index of a binding_entry given the HASH value of its
    name and the total COUNT of chains.  COUNT is assumed to be a power
    of 2.  */
@@ -3319,7 +3542,7 @@ do_pushdecl_with_scope (tree x, cp_binding_level *level, bool is_friend)
   current_function_decl = function_decl;
   return x;
 }
- 
+
 /* Inject X into the local scope just before the function parms.  */
 
 tree
@@ -4838,34 +5061,34 @@ get_std_name_hint (const char *name)
   return NULL;
 }
 
-/* Subroutine of suggest_alternative_in_explicit_scope, for use when we have no
-   suggestions to offer.
-   If SCOPE is the "std" namespace, then suggest pertinent header
-   files for NAME.  */
+/* If SCOPE is the "std" namespace, then suggest pertinent header
+   files for NAME at LOCATION.
+   Return true iff a suggestion was offered.  */
 
-static void
+static bool
 maybe_suggest_missing_header (location_t location, tree name, tree scope)
 {
   if (scope == NULL_TREE)
-    return;
+    return false;
   if (TREE_CODE (scope) != NAMESPACE_DECL)
-    return;
+    return false;
   /* We only offer suggestions for the "std" namespace.  */
   if (scope != std_node)
-    return;
+    return false;
   gcc_assert (TREE_CODE (name) == IDENTIFIER_NODE);
 
   const char *name_str = IDENTIFIER_POINTER (name);
   const char *header_hint = get_std_name_hint (name_str);
-  if (header_hint)
-    {
-      gcc_rich_location richloc (location);
-      maybe_add_include_fixit (&richloc, header_hint);
-      inform_at_rich_loc (&richloc,
-			  "%<std::%s%> is defined in header %qs;"
-			  " did you forget to %<#include %s%>?",
-			  name_str, header_hint, header_hint);
-    }
+  if (!header_hint)
+    return false;
+
+  gcc_rich_location richloc (location);
+  maybe_add_include_fixit (&richloc, header_hint);
+  inform_at_rich_loc (&richloc,
+		      "%<std::%s%> is defined in header %qs;"
+		      " did you forget to %<#include %s%>?",
+		      name_str, header_hint, header_hint);
+  return true;
 }
 
 /* Look for alternatives for NAME, an IDENTIFIER_NODE for which name
@@ -4879,6 +5102,9 @@ suggest_alternative_in_explicit_scope (location_t location, tree name,
 {
   /* Resolve any namespace aliases.  */
   scope = ORIGINAL_NAMESPACE (scope);
+
+  if (maybe_suggest_missing_header (location, name, scope))
+    return true;
 
   cp_binding_level *level = NAMESPACE_LEVEL (scope);
 
@@ -4895,8 +5121,6 @@ suggest_alternative_in_explicit_scope (location_t location, tree name,
 			  fuzzy_name);
       return true;
     }
-  else
-    maybe_suggest_missing_header (location, name, scope);
 
   return false;
 }
