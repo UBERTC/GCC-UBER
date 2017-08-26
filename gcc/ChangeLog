@@ -1,3 +1,95 @@
+2017-08-23  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-08-17  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/72804
+	* config/rs6000/vsx.md (*vsx_le_permute_<mode>): Add support for
+	operands residing in integer registers.
+	(*vsx_le_perm_load_<mode>): Likewise.
+	(*vsx_le_perm_store_<mode>): Likewise.
+	(define_peephole2): Add peepholes to optimize the above.
+
+2017-08-22  Peter Bergner  <bergner@vnet.ibm.com>
+
+	Backport from mainline
+	2017-08-17  Peter Bergner  <bergner@vnet.ibm.com>
+
+	PR target/80210
+	* config/rs6000/rs6000.c (rs6000_activate_target_options): New function.
+	(rs6000_set_current_function): Rewrite function to use it.
+
+2017-08-22  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	Backport from mainline
+	2017-08-22  Sebastian Huber  <sebastian.huber@embedded-brains.de>
+
+	* config.gcc (powerpc-*-rtems*): Add rs6000/linux64.opt.
+	* config/rs6000/rtems.h (ASM_PREFERRED_EH_DATA_FORMAT): New define.
+	(DOT_SYMBOLS): Likewise.
+	(MINIMAL_TOC_SECTION_ASM_OP): Likewise.
+	(RELOCATABLE_NEEDS_FIXUP): Likewise.
+	(RS6000_ABI_NAME): Likewise.
+	(TARGET_CMODEL): Likewise.
+	(TOC_SECTION_ASM_OP): Likewise.
+	(SET_CMODEL): New macro.
+	(SUBSUBTARGET_OVERRIDE_OPTIONS): Evaluate cmodel options.
+
+2017-08-22  Georg-Johann Lay  <avr@gjlay.de>
+
+	Backport from 2017-08-22 trunk r251256.
+
+	PR target/81910
+	* config/avr/avr.c (avr_handle_addr_attribute): Early return if
+	not VAR_P. Filter attribute warnings with OPT_Wattributes.
+	(avr_attribute_table) <io, io_low, address>: Initialize
+	.decl_required with true.
+
+2017-08-21  Georg-Johann Lay  <avr@gjlay.de>
+
+	PR target/79883
+	* config/avr/avr.c (avr_set_current_function): Typo in diagnostic.
+
+2017-08-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	PR target/81894
+	* doc/extend.texi (x86 Built-in Functions): Correct the name of
+	__builtin_ia32_lzcnt_u16.
+
+2017-08-17  Uros Bizjak  <ubizjak@gmail.com>
+
+	Backport from mainline
+	2017-08-17  Maxim Ostapenko  <m.ostapenko@samsung.com>
+
+	PR target/81861
+	* config/i386/i386.c (ix86_option_override_internal): Save target
+	specific options after ix86_stack_protector_guard_reg was changed.
+
+2017-08-16  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-08-08  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/81354
+	* gimple-ssa-strength-reduction.c (create_add_on_incoming_edge):
+	Insert on edges rather than explicitly creating landing pads.
+	(analyze_candidates_and_replace): Commit edge inserts.
+
+2017-08-15  Joseph Myers  <joseph@codesourcery.com>
+
+	PR target/78460
+	PR target/67712
+	* config/sh/sh-mem.cc (sh_expand_cmpnstr): Only unroll for
+	constant count if that count is less than 32.
+
+2017-08-14  Richard Biener  <rguenther@suse.de>
+
+	* BASE-VER: Set to 7.2.1.
+
+2017-08-14  Release Manager
+
+	* GCC 7.2.0 released.
+
 2017-08-08  Richard Biener  <rguenther@suse.de>
 
 	PR middle-end/81766
