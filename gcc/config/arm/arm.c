@@ -7866,6 +7866,8 @@ arm_legitimate_index_p (machine_mode mode, rtx index, RTX_CODE outer,
 	{
 	  HOST_WIDE_INT val = INTVAL (index);
 
+	  /* Assume we emit ldrd or 2x ldr if !TARGET_LDRD.
+	     If vldr is selected it uses arm_coproc_mem_operand.  */
 	  if (TARGET_LDRD)
 	    return val > -256 && val < 256;
 	  else
@@ -7993,11 +7995,13 @@ thumb2_legitimate_index_p (machine_mode mode, rtx index, int strict_p)
       if (code == CONST_INT)
 	{
 	  HOST_WIDE_INT val = INTVAL (index);
-	  /* ??? Can we assume ldrd for thumb2?  */
-	  /* Thumb-2 ldrd only has reg+const addressing modes.  */
-	  /* ldrd supports offsets of +-1020.
-	     However the ldr fallback does not.  */
-	  return val > -256 && val < 256 && (val & 3) == 0;
+	  /* Thumb-2 ldrd only has reg+const addressing modes.
+	     Assume we emit ldrd or 2x ldr if !TARGET_LDRD.
+	     If vldr is selected it uses arm_coproc_mem_operand.  */
+	  if (TARGET_LDRD)
+	    return IN_RANGE (val, -1020, 1020) && (val & 3) == 0;
+	  else
+	    return IN_RANGE (val, -255, 4095 - 4);
 	}
       else
 	return 0;
