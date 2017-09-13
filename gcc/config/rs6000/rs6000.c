@@ -5766,8 +5766,20 @@ rs6000_builtin_vectorization_cost (enum vect_cost_for_stmt type_of_cost,
 	if (SCALAR_FLOAT_TYPE_P (elem_type)
 	    && TYPE_PRECISION (elem_type) == 32)
 	  return 5;
+	/* On POWER9, integer vector types are built up in GPRs and then
+           use a direct move (2 cycles).  For POWER8 this is even worse,
+           as we need two direct moves and a merge, and the direct moves
+	   are five cycles.  */
+	else if (INTEGRAL_TYPE_P (elem_type))
+	  {
+	    if (TARGET_P9_VECTOR)
+	      return TYPE_VECTOR_SUBPARTS (vectype) - 1 + 2;
+	    else
+	      return TYPE_VECTOR_SUBPARTS (vectype) - 1 + 5;
+	  }
 	else
-	  return max (2, TYPE_VECTOR_SUBPARTS (vectype) - 1);
+	  /* V2DFmode doesn't need a direct move.  */
+	  return 2;
 
       default:
         gcc_unreachable ();
@@ -39555,23 +39567,30 @@ rs6000_pragma_target_parse (tree args, tree pop_target)
 /* Remember the last target of rs6000_set_current_function.  */
 static GTY(()) tree rs6000_previous_fndecl;
 
+/* Restore target's globals from NEW_TREE and invalidate the
+   rs6000_previous_fndecl cache.  */
+
+static void
+rs6000_activate_target_options (tree new_tree)
+{
+  cl_target_option_restore (&global_options, TREE_TARGET_OPTION (new_tree));
+  if (TREE_TARGET_GLOBALS (new_tree))
+    restore_target_globals (TREE_TARGET_GLOBALS (new_tree));
+  else if (new_tree == target_option_default_node)
+    restore_target_globals (&default_target_globals);
+  else
+    TREE_TARGET_GLOBALS (new_tree) = save_target_globals_default_opts ();
+  rs6000_previous_fndecl = NULL_TREE;
+}
+
 /* Establish appropriate back-end context for processing the function
    FNDECL.  The argument might be NULL to indicate processing at top
    level, outside of any function scope.  */
 static void
 rs6000_set_current_function (tree fndecl)
 {
-  tree old_tree = (rs6000_previous_fndecl
-		   ? DECL_FUNCTION_SPECIFIC_TARGET (rs6000_previous_fndecl)
-		   : NULL_TREE);
-
-  tree new_tree = (fndecl
-		   ? DECL_FUNCTION_SPECIFIC_TARGET (fndecl)
-		   : NULL_TREE);
-
   if (TARGET_DEBUG_TARGET)
     {
-      bool print_final = false;
       fprintf (stderr, "\n==================== rs6000_set_current_function");
 
       if (fndecl)
@@ -39584,58 +39603,60 @@ rs6000_set_current_function (tree fndecl)
 	fprintf (stderr, ", prev_fndecl (%p)", (void *)rs6000_previous_fndecl);
 
       fprintf (stderr, "\n");
+    }
+
+  /* Only change the context if the function changes.  This hook is called
+     several times in the course of compiling a function, and we don't want to
+     slow things down too much or call target_reinit when it isn't safe.  */
+  if (fndecl == rs6000_previous_fndecl)
+    return;
+
+  tree old_tree;
+  if (rs6000_previous_fndecl == NULL_TREE)
+    old_tree = target_option_current_node;
+  else if (DECL_FUNCTION_SPECIFIC_TARGET (rs6000_previous_fndecl))
+    old_tree = DECL_FUNCTION_SPECIFIC_TARGET (rs6000_previous_fndecl);
+  else
+    old_tree = target_option_default_node;
+
+  tree new_tree;
+  if (fndecl == NULL_TREE)
+    {
+      if (old_tree != target_option_current_node)
+	new_tree = target_option_current_node;
+      else
+	new_tree = NULL_TREE;
+    }
+  else
+    {
+      new_tree = DECL_FUNCTION_SPECIFIC_TARGET (fndecl);
+      if (new_tree == NULL_TREE)
+	new_tree = target_option_default_node;
+    }
+
+  if (TARGET_DEBUG_TARGET)
+    {
       if (new_tree)
 	{
 	  fprintf (stderr, "\nnew fndecl target specific options:\n");
 	  debug_tree (new_tree);
-	  print_final = true;
 	}
 
       if (old_tree)
 	{
 	  fprintf (stderr, "\nold fndecl target specific options:\n");
 	  debug_tree (old_tree);
-	  print_final = true;
 	}
 
-      if (print_final)
+      if (old_tree != NULL_TREE || new_tree != NULL_TREE)
 	fprintf (stderr, "--------------------\n");
     }
 
-  /* Only change the context if the function changes.  This hook is called
-     several times in the course of compiling a function, and we don't want to
-     slow things down too much or call target_reinit when it isn't safe.  */
-  if (fndecl && fndecl != rs6000_previous_fndecl)
-    {
-      rs6000_previous_fndecl = fndecl;
-      if (old_tree == new_tree)
-	;
+  if (new_tree && old_tree != new_tree)
+    rs6000_activate_target_options (new_tree);
 
-      else if (new_tree && new_tree != target_option_default_node)
-	{
-	  cl_target_option_restore (&global_options,
-				    TREE_TARGET_OPTION (new_tree));
-	  if (TREE_TARGET_GLOBALS (new_tree))
-	    restore_target_globals (TREE_TARGET_GLOBALS (new_tree));
-	  else
-	    TREE_TARGET_GLOBALS (new_tree)
-	      = save_target_globals_default_opts ();
-	}
-
-      else if (old_tree && old_tree != target_option_default_node)
-	{
-	  new_tree = target_option_current_node;
-	  cl_target_option_restore (&global_options,
-				    TREE_TARGET_OPTION (new_tree));
-	  if (TREE_TARGET_GLOBALS (new_tree))
-	    restore_target_globals (TREE_TARGET_GLOBALS (new_tree));
-	  else if (new_tree == target_option_default_node)
-	    restore_target_globals (&default_target_globals);
-	  else
-	    TREE_TARGET_GLOBALS (new_tree)
-	      = save_target_globals_default_opts ();
-	}
-    }
+  if (fndecl)
+    rs6000_previous_fndecl = fndecl;
 }
 
 
@@ -42693,9 +42714,10 @@ alignment_mask (rtx_insn *insn)
 }
 
 /* Given INSN that's a load or store based at BASE_REG, look for a
-   feeding computation that aligns its address on a 16-byte boundary.  */
+   feeding computation that aligns its address on a 16-byte boundary.
+   Return the rtx and its containing AND_INSN.  */
 static rtx
-find_alignment_op (rtx_insn *insn, rtx base_reg)
+find_alignment_op (rtx_insn *insn, rtx base_reg, rtx_insn **and_insn)
 {
   df_ref base_use;
   struct df_insn_info *insn_info = DF_INSN_INFO_GET (insn);
@@ -42716,8 +42738,8 @@ find_alignment_op (rtx_insn *insn, rtx base_reg)
       if (DF_REF_IS_ARTIFICIAL (base_def_link->ref))
 	break;
 
-      rtx_insn *and_insn = DF_REF_INSN (base_def_link->ref);
-      and_operation = alignment_mask (and_insn);
+      *and_insn = DF_REF_INSN (base_def_link->ref);
+      and_operation = alignment_mask (*and_insn);
       if (and_operation != 0)
 	break;
     }
@@ -42739,7 +42761,8 @@ recombine_lvx_pattern (rtx_insn *insn, del_info *to_delete)
   rtx mem = XEXP (SET_SRC (body), 0);
   rtx base_reg = XEXP (mem, 0);
 
-  rtx and_operation = find_alignment_op (insn, base_reg);
+  rtx_insn *and_insn;
+  rtx and_operation = find_alignment_op (insn, base_reg, &and_insn);
 
   if (and_operation != 0)
     {
@@ -42763,7 +42786,21 @@ recombine_lvx_pattern (rtx_insn *insn, del_info *to_delete)
 	  to_delete[INSN_UID (swap_insn)].replace = true;
 	  to_delete[INSN_UID (swap_insn)].replace_insn = swap_insn;
 
-	  XEXP (mem, 0) = and_operation;
+	  /* However, first we must be sure that we make the
+	     base register from the AND operation available
+	     in case the register has been overwritten.  Copy
+	     the base register to a new pseudo and use that
+	     as the base register of the AND operation in
+	     the new LVX instruction.  */
+	  rtx and_base = XEXP (and_operation, 0);
+	  rtx new_reg = gen_reg_rtx (GET_MODE (and_base));
+	  rtx copy = gen_rtx_SET (new_reg, and_base);
+	  rtx_insn *new_insn = emit_insn_after (copy, and_insn);
+	  set_block_for_insn (new_insn, BLOCK_FOR_INSN (and_insn));
+	  df_insn_rescan (new_insn);
+
+	  XEXP (mem, 0) = gen_rtx_AND (GET_MODE (and_base), new_reg,
+				       XEXP (and_operation, 1));
 	  SET_SRC (body) = mem;
 	  INSN_CODE (insn) = -1; /* Force re-recognition.  */
 	  df_insn_rescan (insn);
@@ -42786,7 +42823,8 @@ recombine_stvx_pattern (rtx_insn *insn, del_info *to_delete)
   rtx mem = SET_DEST (body);
   rtx base_reg = XEXP (mem, 0);
 
-  rtx and_operation = find_alignment_op (insn, base_reg);
+  rtx_insn *and_insn;
+  rtx and_operation = find_alignment_op (insn, base_reg, &and_insn);
 
   if (and_operation != 0)
     {
@@ -42814,7 +42852,21 @@ recombine_stvx_pattern (rtx_insn *insn, del_info *to_delete)
 	  to_delete[INSN_UID (swap_insn)].replace = true;
 	  to_delete[INSN_UID (swap_insn)].replace_insn = swap_insn;
 
-	  XEXP (mem, 0) = and_operation;
+	  /* However, first we must be sure that we make the
+	     base register from the AND operation available
+	     in case the register has been overwritten.  Copy
+	     the base register to a new pseudo and use that
+	     as the base register of the AND operation in
+	     the new STVX instruction.  */
+	  rtx and_base = XEXP (and_operation, 0);
+	  rtx new_reg = gen_reg_rtx (GET_MODE (and_base));
+	  rtx copy = gen_rtx_SET (new_reg, and_base);
+	  rtx_insn *new_insn = emit_insn_after (copy, and_insn);
+	  set_block_for_insn (new_insn, BLOCK_FOR_INSN (and_insn));
+	  df_insn_rescan (new_insn);
+
+	  XEXP (mem, 0) = gen_rtx_AND (GET_MODE (and_base), new_reg,
+				       XEXP (and_operation, 1));
 	  SET_SRC (body) = src_reg;
 	  INSN_CODE (insn) = -1; /* Force re-recognition.  */
 	  df_insn_rescan (insn);

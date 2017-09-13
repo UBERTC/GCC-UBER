@@ -85,6 +85,9 @@ along with GCC; see the file COPYING3.  If not see
 #include "print-rtl.h"
 #include "intl.h"
 #include "ifcvt.h"
+#include "symbol-summary.h"
+#include "ipa-prop.h"
+#include "ipa-inline.h"
 
 /* This file should be included last.  */
 #include "target-def.h"
@@ -6288,12 +6291,6 @@ ix86_option_override_internal (bool main_args_p,
   gcc_assert ((opts->x_target_flags & MASK_LONG_DOUBLE_64) == 0
 	      || (opts->x_target_flags & MASK_LONG_DOUBLE_128) == 0);
 
-  /* Save the initial options in case the user does function specific
-     options.  */
-  if (main_args_p)
-    target_option_default_node = target_option_current_node
-      = build_target_option_node (opts);
-
   /* Handle stack protector */
   if (!opts_set->x_ix86_stack_protector_guard)
     opts->x_ix86_stack_protector_guard
@@ -6313,6 +6310,12 @@ ix86_option_override_internal (bool main_args_p,
       ix86_parse_stringop_strategy_string (str, true);
       free (str);
     }
+
+  /* Save the initial options in case the user does function specific
+     options.  */
+  if (main_args_p)
+    target_option_default_node = target_option_current_node
+      = build_target_option_node (opts);
 
   return true;
 }
@@ -7114,7 +7117,14 @@ ix86_can_inline_p (tree caller, tree callee)
       else if (caller_opts->tune != callee_opts->tune)
 	ret = false;
 
-      else if (caller_opts->x_ix86_fpmath != callee_opts->x_ix86_fpmath)
+      else if (caller_opts->x_ix86_fpmath != callee_opts->x_ix86_fpmath
+	       /* If the calle doesn't use FP expressions differences in
+		  ix86_fpmath can be ignored.  We are called from FEs
+		  for multi-versioning call optimization, so beware of
+		  inline_summaries not available.  */
+	       && (! inline_summaries
+		   || inline_summaries->get
+			(cgraph_node::get (callee))->fp_expressions))
 	ret = false;
 
       else if (caller_opts->branch_cost != callee_opts->branch_cost)
