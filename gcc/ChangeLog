@@ -1,3 +1,99 @@
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-08-11  Martin Liska  <mliska@suse.cz>
+
+	PR tree-opt/79987
+	* tree-chkp.c (chkp_get_bounds_for_decl_addr): Do not instrument
+	variables of void type.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-06-28  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/81224
+	* asan.c (instrument_derefs): Bail out inner references
+	that are hard register variables.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-08-30  Martin Liska  <mliska@suse.cz>
+
+	PR inline-asm/82001
+	* ipa-icf-gimple.c (func_checker::compare_tree_list_operand):
+	Rename to ...
+	(func_checker::compare_asm_inputs_outputs): ... this function.
+	(func_checker::compare_gimple_asm): Use the function to compare
+	also ASM constrains.
+	* ipa-icf-gimple.h: Rename the function.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-08-10  Martin Liska  <mliska@suse.cz>
+
+	PR c++/81355
+	* c-attribs.c (handle_target_attribute):
+	Report warning for an empty string argument of target attribute.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-08-08  Martin Liska  <mliska@suse.cz>
+
+	PR tree-opt/81696
+	* ipa-icf-gimple.c (func_checker::compare_cst_or_decl): Consider
+	LABEL_DECLs that can be from a different function.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-06-28  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/81128
+	* ipa-visibility.c (non_local_p): Handle visibility.
+
+2017-09-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-09-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/81833
+	* config/rs6000/altivec.md (altivec_vsum2sws): Convert from a
+	define_insn to a define_expand.
+	(altivec_vsum2sws_direct): New define_insn.
+	(altivec_vsumsws): Convert from a define_insn to a define_expand.
+
+2017-09-11  Max Filippov  <jcmvbkbc@gmail.com>
+
+	Backport from mainline
+	PR target/82181
+	* config/xtensa/xtensa.c (xtensa_mem_offset): Check that both
+	words of DImode object are reachable by xtensa_uimm8x4 access.
+
+2017-09-06  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline:
+	2017-08-30  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/81987
+	* gimple-ssa-strength-reduction.c (insert_initializers): Don't
+	insert an initializer in a location not dominated by the stride
+	definition.
+
+2017-09-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-08-29  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+		    Jakub Jelinek  <jakub@redhat.com>
+		    Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/81503
+	* gimple-ssa-strength-reduction.c (replace_mult_candidate): Ensure
+	folded constant fits in the target type; reorder tests for clarity.
+
 2017-08-22  Peter Bergner  <bergner@vnet.ibm.com>
 
 	Backport from mainline
