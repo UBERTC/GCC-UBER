@@ -1477,7 +1477,7 @@ Pragma_to_gnu (Node_Id gnat_node)
 	else
 	  option_index = 0;
 
-	set_default_handlers (&handlers);
+	set_default_handlers (&handlers, NULL);
 	control_warning_option (option_index, (int) kind, arg, imply, location,
 				lang_mask, &handlers, &global_options,
 				&global_options_set, global_dc);
@@ -4058,8 +4058,6 @@ node_has_volatile_full_access (Node_Id gnat_node)
     case N_Identifier:
     case N_Expanded_Name:
       gnat_entity = Entity (gnat_node);
-      if (Ekind (gnat_entity) != E_Variable)
-	break;
       return Is_Volatile_Full_Access (gnat_entity)
 	     || Is_Volatile_Full_Access (Etype (gnat_entity));
 
@@ -4326,11 +4324,11 @@ Call_to_gnu (Node_Id gnat_node, tree *gnu_result_type_p, tree gnu_target,
 	  parameters.
 
        2. There is no target and the call is made for neither an object nor a
-	  renaming declaration, nor a return statement, and the return type has
-	  variable size, because in this case the gimplifier cannot create the
-	  temporary, or more generally is simply an aggregate type, because the
-	  gimplifier would create the temporary in the outermost scope instead
-	  of locally.
+	  renaming declaration, nor a return statement, nor an allocator, and
+	  the return type has variable size because in this case the gimplifier
+	  cannot create the temporary, or more generally is simply an aggregate
+	  type, because the gimplifier would then create the temporary in the
+	  outermost scope instead of locally.
 
        3. There is a target and it is a slice or an array with fixed size,
 	  and the return type has variable size, because the gimplifier
@@ -4349,6 +4347,8 @@ Call_to_gnu (Node_Id gnat_node, tree *gnu_result_type_p, tree gnu_target,
 	      && Nkind (Parent (gnat_node)) != N_Object_Declaration
 	      && Nkind (Parent (gnat_node)) != N_Object_Renaming_Declaration
 	      && Nkind (Parent (gnat_node)) != N_Simple_Return_Statement
+	      && !(Nkind (Parent (gnat_node)) == N_Qualified_Expression
+		   && Nkind (Parent (Parent (gnat_node))) == N_Allocator)
 	      && AGGREGATE_TYPE_P (gnu_result_type)
 	      && !TYPE_IS_FAT_POINTER_P (gnu_result_type))
 	  || (gnu_target
@@ -9702,7 +9702,14 @@ pos_to_constructor (Node_Id gnat_expr, tree gnu_array_type,
 				       gnat_component_type);
       else
 	{
-	  gnu_expr = gnat_to_gnu (gnat_expr);
+	  /* If the expression is a conversion to an unconstrained array type,
+	     skip it to avoid spilling to memory.  */
+	  if (Nkind (gnat_expr) == N_Type_Conversion
+	      && Is_Array_Type (Etype (gnat_expr))
+	      && !Is_Constrained (Etype (gnat_expr)))
+	    gnu_expr = gnat_to_gnu (Expression (gnat_expr));
+	  else
+	    gnu_expr = gnat_to_gnu (gnat_expr);
 
 	  /* Before assigning the element to the array, make sure it is
 	     in range.  */
