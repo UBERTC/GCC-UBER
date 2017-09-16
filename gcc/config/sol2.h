@@ -375,7 +375,7 @@ along with GCC; see the file COPYING3.  If not see
 #ifdef USE_EH_FRAME_HDR_FOR_STATIC
 #define LINK_EH_SPEC "--eh-frame-hdr "
 #else
-#define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+#define LINK_EH_SPEC "%{!static|static-pie:--eh-frame-hdr} "
 #endif
 #endif /* HAVE_LD_EH_FRAME && TARGET_DL_ITERATE_PHDR */
 #endif

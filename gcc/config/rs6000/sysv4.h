@@ -764,11 +764,11 @@ ENDIAN_SELECT(" -mbig", " -mlittle", DEFAULT_ASM_ENDIAN)
   "%{shared:; \
      pg|p|profile:gcrt1.o%s; \
      static:crt1.o%s; \
-     " PIE_SPEC ":Scrt1.o%s; \
+     static-pie|" PIE_SPEC ":Scrt1.o%s; \
      :crt1.o%s} \
    %{mnewlib:ecrti.o%s;:crti.o%s} \
    %{static:crtbeginT.o%s; \
-     shared|" PIE_SPEC ":crtbeginS.o%s; \
+     shared|static-pie|" PIE_SPEC ":crtbeginS.o%s; \
      :crtbegin.o%s} \
    %{fvtable-verify=none:%s; \
      fvtable-verify=preinit:vtv_start_preinit.o%s; \
@@ -782,7 +782,7 @@ ENDIAN_SELECT(" -mbig", " -mlittle", DEFAULT_ASM_ENDIAN)
      fvtable-verify=preinit:vtv_end_preinit.o%s; \
      fvtable-verify=std:vtv_end.o%s} \
    %{static:crtend.o%s; \
-     shared|" PIE_SPEC ":crtendS.o%s; \
+     shared|static-pie|" PIE_SPEC ":crtendS.o%s; \
      :crtend.o%s} \
    %{mnewlib:ecrtn.o%s;:crtn.o%s} \
    " CRTOFFLOADEND
@@ -819,7 +819,7 @@ ENDIAN_SELECT(" -mbig", " -mlittle", DEFAULT_ASM_ENDIAN)
 # ifdef USE_EH_FRAME_HDR_FOR_STATIC
 #  define LINK_EH_SPEC "--eh-frame-hdr "
 # else
-#  define LINK_EH_SPEC "%{!static:--eh-frame-hdr} "
+# define LINK_EH_SPEC "%{!static|static-pie:--eh-frame-hdr} "
 # endif
 #endif
 
