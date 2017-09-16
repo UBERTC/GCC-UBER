@@ -1559,6 +1559,8 @@ omp_copy_decl (tree var, copy_body_data *cb)
 
   if (TREE_CODE (var) == LABEL_DECL)
     {
+      if (FORCED_LABEL (var) || DECL_NONLOCAL (var))
+	return var;
       new_var = create_artificial_label (DECL_SOURCE_LOCATION (var));
       DECL_CONTEXT (new_var) = current_function_decl;
       insert_decl_map (&ctx->cb, var, new_var);
@@ -10651,24 +10653,28 @@ expand_omp_simd (struct omp_region *region, struct omp_for_data *fd)
 	      tree itype2 = TREE_TYPE (fd->loops[i - 1].v);
 	      if (POINTER_TYPE_P (itype2))
 		itype2 = signed_type_for (itype2);
+	      t = fold_convert (itype2, fd->loops[i - 1].step);
+	      t = force_gimple_operand_gsi (&gsi, t, true, NULL_TREE, true,
+					    GSI_SAME_STMT);
 	      t = build3 (COND_EXPR, itype2,
 			  build2 (fd->loops[i].cond_code, boolean_type_node,
 				  fd->loops[i].v,
 				  fold_convert (itype, fd->loops[i].n2)),
-			  build_int_cst (itype2, 0),
-			  fold_convert (itype2, fd->loops[i - 1].step));
+			  build_int_cst (itype2, 0), t);
 	      if (POINTER_TYPE_P (TREE_TYPE (fd->loops[i - 1].v)))
 		t = fold_build_pointer_plus (fd->loops[i - 1].v, t);
 	      else
 		t = fold_build2 (PLUS_EXPR, itype2, fd->loops[i - 1].v, t);
 	      expand_omp_build_assign (&gsi, fd->loops[i - 1].v, t);
 
+	      t = fold_convert (itype, fd->loops[i].n1);
+	      t = force_gimple_operand_gsi (&gsi, t, true, NULL_TREE, true,
+					    GSI_SAME_STMT);
 	      t = build3 (COND_EXPR, itype,
 			  build2 (fd->loops[i].cond_code, boolean_type_node,
 				  fd->loops[i].v,
 				  fold_convert (itype, fd->loops[i].n2)),
-			  fd->loops[i].v,
-			  fold_convert (itype, fd->loops[i].n1));
+			  fd->loops[i].v, t);
 	      expand_omp_build_assign (&gsi, fd->loops[i].v, t);
 	    }
 	}
@@ -15175,10 +15181,14 @@ lower_omp_for (gimple_stmt_iterator *gsi_p, omp_context *ctx)
       rhs_p = gimple_omp_for_initial_ptr (stmt, i);
       if (!is_gimple_min_invariant (*rhs_p))
 	*rhs_p = get_formal_tmp_var (*rhs_p, &body);
+      else if (TREE_CODE (*rhs_p) == ADDR_EXPR)
+	recompute_tree_invariant_for_addr_expr (*rhs_p);
 
       rhs_p = gimple_omp_for_final_ptr (stmt, i);
       if (!is_gimple_min_invariant (*rhs_p))
 	*rhs_p = get_formal_tmp_var (*rhs_p, &body);
+      else if (TREE_CODE (*rhs_p) == ADDR_EXPR)
+	recompute_tree_invariant_for_addr_expr (*rhs_p);
 
       rhs_p = &TREE_OPERAND (gimple_omp_for_incr (stmt, i), 1);
       if (!is_gimple_min_invariant (*rhs_p))
@@ -18027,7 +18037,7 @@ diagnose_sb_0 (gimple_stmt_iterator *gsi_p,
     }
   if (kind == NULL)
     {
-      gcc_checking_assert (flag_openmp);
+      gcc_checking_assert (flag_openmp || flag_openmp_simd);
       kind = "OpenMP";
     }
 
@@ -18446,7 +18456,7 @@ public:
   /* opt_pass methods: */
   virtual bool gate (function *)
   {
-    return flag_cilkplus || flag_openacc || flag_openmp;
+    return flag_cilkplus || flag_openacc || flag_openmp || flag_openmp_simd;
   }
   virtual unsigned int execute (function *)
     {
