@@ -1764,9 +1764,14 @@ handle_alias_ifunc_attribute (bool is_alias, tree *node, tree name, tree args,
 	TREE_STATIC (decl) = 1;
 
       if (!is_alias)
-	/* ifuncs are also aliases, so set that attribute too.  */
-	DECL_ATTRIBUTES (decl)
-	  = tree_cons (get_identifier ("alias"), args, DECL_ATTRIBUTES (decl));
+	{
+	  /* ifuncs are also aliases, so set that attribute too.  */
+	  DECL_ATTRIBUTES (decl)
+	    = tree_cons (get_identifier ("alias"), args,
+			 DECL_ATTRIBUTES (decl));
+	  DECL_ATTRIBUTES (decl) = tree_cons (get_identifier ("ifunc"),
+					      NULL, DECL_ATTRIBUTES (decl));
+	}
     }
   else
     {
@@ -3028,6 +3033,19 @@ handle_target_attribute (tree *node, tree name, tree args, int flags,
   else if (! targetm.target_option.valid_attribute_p (*node, name, args,
 						      flags))
     *no_add_attrs = true;
+
+  /* Check that there's no empty string in values of the attribute.  */
+  for (tree t = args; t != NULL_TREE; t = TREE_CHAIN (t))
+    {
+      tree value = TREE_VALUE (t);
+      if (TREE_CODE (value) == STRING_CST
+	  && TREE_STRING_LENGTH (value) == 1
+	  && TREE_STRING_POINTER (value)[0] == '\0')
+	{
+	  warning (OPT_Wattributes, "empty string in attribute %<target%>");
+	  *no_add_attrs = true;
+	}
+    }
 
   return NULL_TREE;
 }

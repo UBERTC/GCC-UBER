@@ -1,3 +1,217 @@
+2017-09-13  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2017-09-04  Daniel Kruegler  <daniel.kruegler@gmail.com>
+
+	PR libstdc++/79162
+	Implement LWG 2946, LWG 2758's resolution missed further corrections
+	* include/bits/basic_string.h (basic_string::compare): Add missing
+	required noexcept specifications.
+	(basic_string): Introduce internal _S_to_string_view and __sv_wrapper
+	for implicit string_view conversion.
+	(basic_string::basic_string): Fix explicit string_view conversion by
+	implicit conversion using _S_to_string_view and __sv_wrapper.
+	(basic_string): Introduce internal basic_string(__sv_wrapper, Alloc)
+	constructor.
+	(basic_string): Fix operator=(T) template by operator=(const T&)
+	template for uncopyable types (PR 79162).
+	(basic_string::operator+=, basic_string::append, basic_string::assign)
+	(basic_string::insert, basic_string::replace, basic_string::find)
+	(basic_string::rfind, basic_string::find_first_of)
+	(basic_string::find_last_of, basic_string::find_first_not_of)
+	(basic_string::find_last_not_of, basic_string::compare): Replace
+	__sv_type argument by template const T& (LWG 2946) and correct
+	documentation describing __sv_type argument.
+	(basic_string::find, basic_string::rfind, basic_string::find_first_of)
+	(basic_string::find_last_of, basic_string::find_first_not_of)
+	(basic_string::find_last_not_of, basic_string::compare): Replace
+	unconditional noexcept specification by conditional noexcept
+	specification to partially balance the removal of noexcept by LWG 2946.
+	* testsuite/21_strings/basic_string/79162.cc: New.
+	* testsuite/21_strings/basic_string/lwg2946.cc: New.
+
+2017-09-13  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81468
+	* include/std/chrono (time_point(const time_point<_Dur2>&)): Add
+	missing constraint from LWG DR 1177.
+	* testsuite/20_util/duration/cons/dr1177.cc: New.
+	* testsuite/20_util/time_point/cons/81468.cc: New.
+	* testsuite/20_util/duration/literals/range.cc: Update dg-error line.
+
+	* doc/doxygen/mainpage.html: Fix broken URLs.
+
+	PR libstdc++/81835
+	* doc/xml/manual/extensions.xml: Replace unstable URL.
+	* doc/html/manual/ext_demangling.html: Regenerate.
+	* libsupc++/cxxabi.h (__cxa_demangle): Fix broken URL.
+
+2017-09-12  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2017-09-12  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/70483
+	* include/experimental/bits/string_view.tcc (basic_string_view::find)
+	(basic_string_view::rfind, basic_string_view::find_first_of)
+	(basic_string_view::find_last_of, basic_string_view::find_first_not_of)
+	(basic_string_view::find_last_not_of): Add constexpr specifier.
+	* include/experimental/string_view (basic_string_view::remove_prefix)
+	(basic_string_view::remove_suffix, basic_string_view::swap)
+	(basic_string_view::compare, basic_string_view::find)
+	(basic_string_view::rfind, basic_string_view::find_first_of)
+	(basic_string_view::find_last_of, basic_string_view::find_first_not_of)
+	(basic_string_view::find_last_not_of, operator==, operator!=)
+	(operator<, operator>, operator<=, operator>=): Likewise.
+	* testsuite/experimental/string_view/operations/compare/char/70483.cc:
+	New.
+
+	Backport from mainline
+	2017-09-11  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/70483
+	* include/bits/string_view.tcc (basic_string_view::find)
+	(basic_string_view::rfind, basic_string_view::find_first_of)
+	(basic_string_view::find_last_of, basic_string_view::find_first_not_of)
+	(basic_string_view::find_last_not_of): Add constexpr specifier.
+	* include/std/string_view (basic_string_view::operator=)
+	(basic_string_view::rbegin, basic_string_view::rend)
+	(basic_string_view::crbegin, basic_string_view::crend)
+	(basic_string_view::remove_prefix, basic_string_view::remove_suffix)
+	(basic_string_view::swap, basic_string_view::compare)
+	(basic_string_view::find, basic_string_view::rfind)
+	(basic_string_view::find_first_of, basic_string_view::find_last_of)
+	(basic_string_view::find_first_not_of)
+	(basic_string_view::find_last_not_of, basic_string_view::_M_check)
+	(basic_string_view::_M_limit, operator==, operator!=, operator<)
+	(operator>, operator<=, operator>=): Likewise.
+	* testsuite/21_strings/basic_string_view/modifiers/remove_prefix/
+	char/1.cc: Repeat tests in constexpr context.
+	* testsuite/21_strings/basic_string_view/modifiers/remove_prefix/
+	wchar_t/1.cc: Likewise.
+	* testsuite/21_strings/basic_string_view/modifiers/remove_suffix/
+	char/1.cc: Likewise.
+	* testsuite/21_strings/basic_string_view/modifiers/remove_suffix/
+	wchar_t/1.cc: Likewise.
+	* testsuite/21_strings/basic_string_view/operations/find/char/1.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string_view/operations/find/char/2.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string_view/operations/find/char/3.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string_view/operations/find/wchar_t/1.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string_view/operations/find/wchar_t/2.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string_view/operations/find/wchar_t/3.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string_view/operators/char/2.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string_view/operators/wchar_t/2.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string_view/range_access/char/1.cc: Test
+	cbegin, cend, rbegin, rend, crbegin and crend.
+	* testsuite/21_strings/basic_string_view/range_access/wchar_t/1.cc:
+	Likewise.
+	* testsuite/21_strings/basic_string_view/operations/compare/char/1.cc:
+	Remove trailing whitespace.
+	* testsuite/21_strings/basic_string_view/operations/compare/wchar_t/
+	1.cc: Likewise.
+	* testsuite/21_strings/basic_string_view/modifiers/swap/char/1.cc:
+	New.
+	* testsuite/21_strings/basic_string_view/modifiers/swap/wchar_t/1.cc:
+	New.
+	* testsuite/21_strings/basic_string_view/operations/compare/char/2.cc:
+	New.
+	* testsuite/21_strings/basic_string_view/operations/compare/wchar_t/
+	2.cc: New.
+
+	Backport from mainline
+	2017-06-12  Pedro Alves  <palves@redhat.com>
+
+	* doc/xml/manual/status_cxx2017.xml: Update C++17 constexpr
+	char_traits status.
+	* doc/html/*: Regenerate.
+
+	* include/bits/char_traits.h (_GLIBCXX_ALWAYS_INLINE): Define if
+	not already defined.
+	(__cpp_lib_constexpr_char_traits): Uncomment.
+	(__constant_string_p, __constant_char_array_p): New.
+	(std::char_traits<char>, std::char_traits<wchar_t>): Add
+	_GLIBCXX17_CONSTEXPR on compare, length and find and use
+	__constant_string_p, __constant_char_array_p and
+	__builtin_constant_p to defer to __gnu_cxx::char_traits at compile
+	time.
+
+	* testsuite/21_strings/char_traits/requirements/
+	constexpr_functions_c++17.cc: Uncomment
+	__cpp_lib_constexpr_char_traits tests.  Uncomment
+	test_compare<char>, test_length<char>, test_find<char>,
+	test_compare<wchar_t>, test_length<wchar_t> and test_find<wchar_t>
+	static_assert tests.
+
+2017-09-04  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2017-08-31  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR c++/82039
+	* include/ext/new_allocator.h (__gnu_cxx::new_allocator::allocate):
+	Adjust null pointer constant to avoid warning.
+
+	Backport from mainline
+	2017-08-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81912
+	* include/bits/stl_iterator_base_types.h (__iterator_category): Add
+	constexpr for C++11 and later.
+	* testsuite/24_iterators/container_access.cc: Add target selector.
+	* testsuite/24_iterators/range_access.cc: Fix clause number in
+	comment.
+	* testsuite/24_iterators/range_access_cpp14.cc: Likewise.
+	* testsuite/24_iterators/range_access_cpp17.cc: New.
+
+	Backport from mainline
+	2017-08-09  Jonathan Wakely  <jwakely@redhat.com>
+
+	* include/std/type_traits (_GLIBCXX_NO_BUILTIN_HAS_UNIQ_OBJ_REP):
+	Replace with _GLIBCXX_HAVE_BUILTIN_HAS_UNIQ_OBJ_REP and use
+	__is_identifier to set it.
+
+	Backport from mainline
+	2017-08-09  Katsuhiko Nishimra  <ktns.87@gmail.com>
+
+	* include/std/type_traits (_GLIBCXX_HAVE_BUILTIN_IS_AGGREGATE): Use
+	__is_identifier instead of __has_builtin.
+
+	Backport from mainline
+	2017-08-18  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81891
+	* include/bits/hashtable.h (_Hashtable(_InputIterator, _InputIterator,
+	size_type, const _H1&, const _H2&, const _Hash&, const _Equal&,
+	const _ExtractKey&, const allocator_type&)): Let destructor do clean
+	up if an exception is thrown.
+	* testsuite/23_containers/unordered_map/cons/81891.cc: New.
+
+	Backport from mainline
+	2017-07-31  Marek Polacek  <polacek@redhat.com>
+
+	PR libstdc++/81599
+	* include/bits/stl_stack.h: Fix typo.
+
+	Backport from mainline
+	2017-07-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/81338
+	* include/bits/basic_string.h [_GLIBCXX_USE_CXX11_ABI] (basic_string):
+	Declare basic_stringbuf to be a friend.
+	* include/bits/sstream.tcc (basic_stringbuf::overflow)
+	[_GLIBCXX_USE_CXX11_ABI]: Use unused capacity before reallocating.
+	* include/std/sstream (basic_stringbuf::__xfer_bufptrs): Update string
+	length to buffer length.
+	* testsuite/27_io/basic_stringstream/assign/81338.cc: New.
+
 2017-08-20  John David Anglin  <danglin@gcc.gnu.org>
 
 	PR testsuite/81056

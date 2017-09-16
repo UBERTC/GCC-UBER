@@ -1,3 +1,281 @@
+2017-09-15  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-09-14  Jakub Jelinek  <jakub@redhat.com>
+ 
+	PR target/81325
+	* g++.dg/cpp0x/pr81325.C: New test.
+
+	2017-09-12  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/82112
+	* gcc.target/powerpc/pr82112.c: New test.
+	* g++.dg/ext/altivec-18.C: New test.
+
+	PR target/82112
+	* c-c++-common/pr82112.c: New test.
+	* gcc.dg/pr82112.c: New test.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-09-12  Martin Liska  <mliska@suse.cz>
+
+	PR testsuite/82114
+	* gcc.dg/gimplefe-14.c (main): Add handling of case 0.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-08-30  Martin Liska  <mliska@suse.cz>
+
+	PR inline-asm/82001
+	* gcc.dg/ipa/pr82001.c: New test.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-08-10  Martin Liska  <mliska@suse.cz>
+
+	PR c++/81355
+	* g++.dg/other/pr81355.C: New test.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-08-08  Martin Liska  <mliska@suse.cz>
+
+	PR tree-opt/81696
+	* gcc.dg/ipa/pr81696.c: New test.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-07-19  Martin Liska  <mliska@suse.cz>
+
+	PR sanitizer/63361
+	* c-c++-common/ubsan/float-cast-overflow-1.c: Add either
+	-ffloat-store or -mieee for targets that need it.
+
+2017-09-15  Martin Liska  <mliska@suse.cz>
+
+	Backport from mainline
+	2017-06-28  Martin Liska  <mliska@suse.cz>
+
+	PR ipa/81128
+	* gcc.target/i386/pr81128.c: New test.
+
+2017-09-12  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-09-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/81833
+	* gcc.target/powerpc/pr81833-1.c: New file.
+	* gcc.target/powerpc/pr81833-2.c: New file.
+
+2017-09-10  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-05-11  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR target/80695
+	* gcc.target/powerpc/pr80695-p8.c: New file.
+	* gcc.target/powerpc/pr80695-p9.c: New file.
+
+2017-09-10  Eric Botcazou  <ebotcazou@adacore.com>
+
+	PR ada/79441
+	* gnat.dg/pack9.adb: Robustify.
+
+2017-09-10  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR c++/81852
+	* g++.dg/cpp1y/feat-cxx11.C: Check __cpp_threadsafe_static_init.
+	* g++.dg/cpp1y/feat-cxx14.C: Likewise.
+	* g++.dg/cpp1y/feat-cxx98.C: Likewise.
+	* g++.dg/cpp1y/feat-neg.C: Likewise.
+	* g++.dg/cpp1z/feat-cxx1z.C: Likewise.
+
+2017-09-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/specs/atomic3.ads: New test.
+
+2017-09-09  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/specs/vfa.ads: Rename into...
+	* gnat.dg/specs/vfa1.ads: ...this.
+	* gnat.dg/specs/vfa2.ads: New test.
+
+2017-09-08  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gcc.dg/pr81988.c: New test.
+
+2017-09-07  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-09-05  Jakub Jelinek  <jakub@redhat.com>
+
+	PR middle-end/81768
+	* gcc.dg/gomp/pr81768-2.c: New test.
+
+	PR middle-end/81768
+	* gcc.dg/gomp/pr81768-1.c: New test.
+
+	2017-09-01  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/81923
+	* gcc.dg/asan/pr81923.c: New test.
+
+	2017-08-03  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/81621
+	* gcc.dg/pr81621.c: New test.
+
+	PR driver/81650
+	* gcc.dg/pr81650.c: New test.
+
+	PR middle-end/81052
+	* c-c++-common/pr81052.c: New test.
+
+2017-09-06  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline:
+	2017-08-30  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	PR tree-optimization/81987
+	* g++.dg/torture/pr81987.C: New file.
+
+2017-09-06  Jakub Jelinek  <jakub@redhat.com>
+
+	PR testsuite/82120
+	* gcc.dg/tree-ssa/pr81588.c: Don't run on logical_op_short_circuit
+	targets except for those where -mbranch-cost=2 is supported.
+
+2017-09-05  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+
+	Backport from mainline
+	2017-08-29  Bill Schmidt  <wschmidt@linux.vnet.ibm.com>
+		    Jakub Jelinek  <jakub@redhat.com>
+		    Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/81503
+	* gcc.c-torture/execute/pr81503.c: New file.
+
+2017-09-05  Pierre-Marie de Rodat  <derodat@adacore.com>
+
+	Backport from trunk
+	PR ada/79542
+	* gnat.dg/debug13.ads, gnat.dg/debug13.adb: New testcase.
+
+2017-09-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/incomplete5.ad[sb]: New test.
+	* gnat.dg/incomplete5_pkg.ad[sb]: New helper.
+
+2017-09-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* gnat.dg/specs/uc2.ads: New test.
+
+2017-09-05  Eric Botcazou  <ebotcazou@adacore.com>
+
+	* testsuite/gnat.dg/array29.ad[sb]: New test.
+
+2017-09-04  Uros Bizjak  <ubizjak@gmail.com>
+
+	* gcc.target/i386/mpx/mpx-os-support.h: New file.
+	* gcc.target/i386/mpx/mpx-check.h: Include mpx-os-support.h.
+	(check_osxsave): New function.
+	(main): Use __get_cpuid_count and return NORUNRES on failure.
+	Use check_osxsave.
+	* gcc.target/i386/mpx/va-arg-pack-1-lbv.c (foo1): Use
+	__builtin_va_arg_pack instead of __va_arg_pack.
+	* gcc.target/i386/mpx/va-arg-pack-1-nov.c (foo1): Ditto.
+	* gcc.target/i386/mpx/va-arg-pack-1-ubv.c (foo1): Ditto.
+	* gcc.target/i386/mpx/va-arg-pack-2-lbv.c (foo1): Ditto.
+	* gcc.target/i386/mpx/va-arg-pack-2-nov.c (foo1): Ditto.
+	* gcc.target/i386/mpx/va-arg-pack-2-ubv.c (foo1): Ditto.
+
+2017-09-02  Janus Weil  <janus@gcc.gnu.org>
+
+	Backport from trunk
+	PR fortran/81770
+	* gfortran.dg/warn_target_lifetime_3.f90: Fix a typo.
+	* gfortran.dg/warn_target_lifetime_4.f90: New testcase.
+
+2017-08-29  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	Back port from trunk
+	2017-08-07  Michael Meissner  <meissner@linux.vnet.ibm.com>
+
+	PR target/81593
+	* gcc.target/powerpc/vec-setup.h: New tests to test various
+	combinations of setting up vectors of 2 double word elements.
+	* gcc.target/powerpc/vec-setup-long.c: Likewise.
+	* gcc.target/powerpc/vec-setup-double.c: Likewise.
+	* gcc.target/powerpc/vec-setup-be-long.c: Likewise.
+	* gcc.target/powerpc/vec-setup-be-double.c: Likewise.
+	* gcc.target/powerpc/vsx-extract-6.c: New tests for optimzing
+	vector inserts from vector extracts.
+	* gcc.target/powerpc/vsx-extract-7.c: Likewise.
+
+2017-08-29  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-08-28  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/81977
+	* g++.dg/torture/pr81977.C: New testcase.
+
+2017-08-28  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-06-14  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/81088
+	* c-c++-common/ubsan/pr81088.c: New testcase.
+
+	2017-06-13  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/81065
+	* c-c++-common/ubsan/pr81065.c: New testcase.
+
+	2017-06-08  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitize/80932
+	* c-c++-common/ubsan/pr80932.c: Test with ints, not with long ints.
+
+	2017-06-07  Marek Polacek  <polacek@redhat.com>
+
+	PR sanitizer/80932
+	* c-c++-common/ubsan/pr80932.c: New test.
+
+2017-08-28  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-08-21  Richard Biener  <rguenther@suse.de>
+
+	PR middle-end/81884
+	* g++.dg/torture/pr81884.C: New testcase.
+
+2017-08-28  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-08-01  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/81181
+	* gcc.dg/torture/pr81181.c: New testcase.
+
+	2017-08-08  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/81723
+	* gfortran.dg/pr81723.f: New testcase.
+
+	2017-08-24  Richard Biener  <rguenther@suse.de>
+
+	PR target/81921
+	* gcc/testsuite/gcc.target/i386/pr81921.c: New testcase.
+
 2017-05-19  Uros Bizjak  <ubizjak@gmail.com>
 
 	Backport from mainline
