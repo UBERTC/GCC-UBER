@@ -1974,6 +1974,9 @@ static const struct attribute_spec rs6000_attribute_table[] =
 
 #undef TARGET_CAN_CHANGE_MODE_CLASS
 #define TARGET_CAN_CHANGE_MODE_CLASS rs6000_can_change_mode_class
+
+#undef TARGET_CONSTANT_ALIGNMENT
+#define TARGET_CONSTANT_ALIGNMENT rs6000_constant_alignment
 
 
 /* Processor table.  */
@@ -15568,6 +15571,9 @@ altivec_expand_builtin (tree exp, rtx target, bool *expandedp)
     case P9V_BUILTIN_STXVL:
       return altivec_expand_stxvl_builtin (CODE_FOR_stxvl, exp);
 
+    case P9V_BUILTIN_XST_LEN_R:
+      return altivec_expand_stxvl_builtin (CODE_FOR_xst_len_r, exp);
+
     case VSX_BUILTIN_STXVD2X_V1TI:
       return altivec_expand_stv_builtin (CODE_FOR_vsx_store_v1ti, exp);
     case VSX_BUILTIN_STXVD2X_V2DF:
@@ -16157,6 +16163,25 @@ rs6000_fold_builtin (tree fndecl, int n_args ATTRIBUTE_UNUSED,
 #endif
 }
 
+/*  Helper function to sort out which built-ins may be valid without having
+    a LHS.  */
+static bool
+rs6000_builtin_valid_without_lhs (enum rs6000_builtins fn_code)
+{
+  switch (fn_code)
+    {
+    case ALTIVEC_BUILTIN_STVX_V16QI:
+    case ALTIVEC_BUILTIN_STVX_V8HI:
+    case ALTIVEC_BUILTIN_STVX_V4SI:
+    case ALTIVEC_BUILTIN_STVX_V4SF:
+    case ALTIVEC_BUILTIN_STVX_V2DI:
+    case ALTIVEC_BUILTIN_STVX_V2DF:
+      return true;
+    default:
+      return false;
+    }
+}
+
 /* Fold a machine-dependent built-in in GIMPLE.  (For folding into
    a constant, use rs6000_fold_builtin.)  */
 
@@ -16184,8 +16209,9 @@ rs6000_gimple_fold_builtin (gimple_stmt_iterator *gsi)
   if (!rs6000_fold_gimple)
     return false;
 
-  /* Generic solution to prevent gimple folding of code without a LHS.  */
-  if (!gimple_call_lhs (stmt))
+  /* Prevent gimple folding for code that does not have a LHS, unless it is
+   allowed per the rs6000_builtin_valid_without_lhs helper function.  */
+  if (!gimple_call_lhs (stmt) && !rs6000_builtin_valid_without_lhs (fn_code))
     return false;
 
   switch (fn_code)
@@ -16545,6 +16571,95 @@ rs6000_gimple_fold_builtin (gimple_stmt_iterator *gsi)
 	gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
 	update_call_from_tree (gsi, res);
 	return true;
+      }
+    /* Vector loads.  */
+    case ALTIVEC_BUILTIN_LVX_V16QI:
+    case ALTIVEC_BUILTIN_LVX_V8HI:
+    case ALTIVEC_BUILTIN_LVX_V4SI:
+    case ALTIVEC_BUILTIN_LVX_V4SF:
+    case ALTIVEC_BUILTIN_LVX_V2DI:
+    case ALTIVEC_BUILTIN_LVX_V2DF:
+      {
+	 arg0 = gimple_call_arg (stmt, 0);  // offset
+	 arg1 = gimple_call_arg (stmt, 1);  // address
+	 /* Do not fold for -maltivec=be on LE targets.  */
+	 if (VECTOR_ELT_ORDER_BIG && !BYTES_BIG_ENDIAN)
+	    return false;
+	 lhs = gimple_call_lhs (stmt);
+	 location_t loc = gimple_location (stmt);
+	 /* Since arg1 may be cast to a different type, just use ptr_type_node
+	    here instead of trying to enforce TBAA on pointer types.  */
+	 tree arg1_type = ptr_type_node;
+	 tree lhs_type = TREE_TYPE (lhs);
+	 /* POINTER_PLUS_EXPR wants the offset to be of type 'sizetype'.  Create
+	    the tree using the value from arg0.  The resulting type will match
+	    the type of arg1.  */
+	 gimple_seq stmts = NULL;
+	 tree temp_offset = gimple_convert (&stmts, loc, sizetype, arg0);
+	 tree temp_addr = gimple_build (&stmts, loc, POINTER_PLUS_EXPR,
+				       arg1_type, arg1, temp_offset);
+	 /* Mask off any lower bits from the address.  */
+	 tree aligned_addr = gimple_build (&stmts, loc, BIT_AND_EXPR,
+					  arg1_type, temp_addr,
+					  build_int_cst (arg1_type, -16));
+	 gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
+	 /* Use the build2 helper to set up the mem_ref.  The MEM_REF could also
+	    take an offset, but since we've already incorporated the offset
+	    above, here we just pass in a zero.  */
+	 gimple *g;
+	 g = gimple_build_assign (lhs, build2 (MEM_REF, lhs_type, aligned_addr,
+						build_int_cst (arg1_type, 0)));
+	 gimple_set_location (g, loc);
+	 gsi_replace (gsi, g, true);
+	 return true;
+      }
+    /* Vector stores.  */
+    case ALTIVEC_BUILTIN_STVX_V16QI:
+    case ALTIVEC_BUILTIN_STVX_V8HI:
+    case ALTIVEC_BUILTIN_STVX_V4SI:
+    case ALTIVEC_BUILTIN_STVX_V4SF:
+    case ALTIVEC_BUILTIN_STVX_V2DI:
+    case ALTIVEC_BUILTIN_STVX_V2DF:
+      {
+	 /* Do not fold for -maltivec=be on LE targets.  */
+	 if (VECTOR_ELT_ORDER_BIG && !BYTES_BIG_ENDIAN)
+	    return false;
+	 arg0 = gimple_call_arg (stmt, 0); /* Value to be stored.  */
+	 arg1 = gimple_call_arg (stmt, 1); /* Offset.  */
+	 tree arg2 = gimple_call_arg (stmt, 2); /* Store-to address.  */
+	 location_t loc = gimple_location (stmt);
+	 tree arg0_type = TREE_TYPE (arg0);
+	 /* Use ptr_type_node (no TBAA) for the arg2_type.
+	  FIXME: (Richard)  "A proper fix would be to transition this type as
+	  seen from the frontend to GIMPLE, for example in a similar way we
+	  do for MEM_REFs by piggy-backing that on an extra argument, a
+	  constant zero pointer of the alias pointer type to use (which would
+	  also serve as a type indicator of the store itself).  I'd use a
+	  target specific internal function for this (not sure if we can have
+	  those target specific, but I guess if it's folded away then that's
+	  fine) and get away with the overload set."
+	  */
+	 tree arg2_type = ptr_type_node;
+	 /* POINTER_PLUS_EXPR wants the offset to be of type 'sizetype'.  Create
+	    the tree using the value from arg0.  The resulting type will match
+	    the type of arg2.  */
+	 gimple_seq stmts = NULL;
+	 tree temp_offset = gimple_convert (&stmts, loc, sizetype, arg1);
+	 tree temp_addr = gimple_build (&stmts, loc, POINTER_PLUS_EXPR,
+				       arg2_type, arg2, temp_offset);
+	 /* Mask off any lower bits from the address.  */
+	 tree aligned_addr = gimple_build (&stmts, loc, BIT_AND_EXPR,
+					  arg2_type, temp_addr,
+					  build_int_cst (arg2_type, -16));
+	 gsi_insert_seq_before (gsi, stmts, GSI_SAME_STMT);
+	/* The desired gimple result should be similar to:
+	 MEM[(__vector floatD.1407 *)_1] = vf1D.2697;  */
+	 gimple *g;
+	 g = gimple_build_assign (build2 (MEM_REF, arg0_type, aligned_addr,
+					   build_int_cst (arg2_type, 0)), arg0);
+	 gimple_set_location (g, loc);
+	 gsi_replace (gsi, g, true);
+	 return true;
       }
     default:
 	if (TARGET_DEBUG_BUILTIN)
@@ -17517,8 +17632,12 @@ altivec_init_builtins (void)
   def_builtin ("__builtin_vec_stvrxl", void_ftype_v16qi_long_pvoid, ALTIVEC_BUILTIN_VEC_STVRXL);
 
   if (TARGET_P9_VECTOR)
-    def_builtin ("__builtin_altivec_stxvl", void_ftype_v16qi_pvoid_long,
-		 P9V_BUILTIN_STXVL);
+    {
+      def_builtin ("__builtin_altivec_stxvl", void_ftype_v16qi_pvoid_long,
+		   P9V_BUILTIN_STXVL);
+      def_builtin ("__builtin_xst_len_r", void_ftype_v16qi_pvoid_long,
+		   P9V_BUILTIN_XST_LEN_R);
+    }
 
   /* Add the DST variants.  */
   d = bdesc_dst;
@@ -25009,24 +25128,23 @@ debug_stack_info (rs6000_stack_t *info)
 rtx
 rs6000_return_addr (int count, rtx frame)
 {
-  /* Currently we don't optimize very well between prolog and body
-     code and for PIC code the code can be actually quite bad, so
-     don't try to be too clever here.  */
+  /* We can't use get_hard_reg_initial_val for LR when count == 0 if LR
+     is trashed by the prologue, as it is for PIC on ABI_V4 and Darwin.  */
   if (count != 0
       || ((DEFAULT_ABI == ABI_V4 || DEFAULT_ABI == ABI_DARWIN) && flag_pic))
     {
       cfun->machine->ra_needs_full_frame = 1;
 
-      return
-	gen_rtx_MEM
-	  (Pmode,
-	   memory_address
-	   (Pmode,
-	    plus_constant (Pmode,
-			   copy_to_reg
-			   (gen_rtx_MEM (Pmode,
-					 memory_address (Pmode, frame))),
-			   RETURN_ADDRESS_OFFSET)));
+      if (count == 0)
+	/* FRAME is set to frame_pointer_rtx by the generic code, but that
+	   is good for loading 0(r1) only when !FRAME_GROWS_DOWNWARD.  */
+	frame = stack_pointer_rtx;
+      rtx prev_frame_addr = memory_address (Pmode, frame);
+      rtx prev_frame = copy_to_reg (gen_rtx_MEM (Pmode, prev_frame_addr));
+      rtx lr_save_off = plus_constant (Pmode,
+				       prev_frame, RETURN_ADDRESS_OFFSET);
+      rtx lr_save_addr = memory_address (Pmode, lr_save_off);
+      return gen_rtx_MEM (Pmode, lr_save_addr);
     }
 
   cfun->machine->ra_need_lr = 1;
@@ -25417,6 +25535,221 @@ rs6000_emit_stack_tie (rtx fp, bool hard_frame_needed)
   emit_insn (gen_stack_tie (gen_rtx_PARALLEL (VOIDmode, p)));
 }
 
+/* Allocate SIZE_INT bytes on the stack using a store with update style insn
+   and set the appropriate attributes for the generated insn.  Return the
+   first insn which adjusts the stack pointer or the last insn before
+   the stack adjustment loop. 
+
+   SIZE_INT is used to create the CFI note for the allocation.
+
+   SIZE_RTX is an rtx containing the size of the adjustment.  Note that
+   since stacks grow to lower addresses its runtime value is -SIZE_INT.
+
+   ORIG_SP contains the backchain value that must be stored at *sp.  */
+
+static rtx_insn *
+rs6000_emit_allocate_stack_1 (HOST_WIDE_INT size_int, rtx orig_sp)
+{
+  rtx_insn *insn;
+
+  rtx size_rtx = GEN_INT (-size_int);
+  if (size_int > 32767)
+    {
+      rtx tmp_reg = gen_rtx_REG (Pmode, 0);
+      /* Need a note here so that try_split doesn't get confused.  */
+      if (get_last_insn () == NULL_RTX)
+	emit_note (NOTE_INSN_DELETED);
+      insn = emit_move_insn (tmp_reg, size_rtx);
+      try_split (PATTERN (insn), insn, 0);
+      size_rtx = tmp_reg;
+    }
+  
+  if (Pmode == SImode)
+    insn = emit_insn (gen_movsi_update_stack (stack_pointer_rtx,
+					      stack_pointer_rtx,
+					      size_rtx,
+					      orig_sp));
+  else
+    insn = emit_insn (gen_movdi_di_update_stack (stack_pointer_rtx,
+						 stack_pointer_rtx,
+						 size_rtx,
+						 orig_sp));
+  rtx par = PATTERN (insn);
+  gcc_assert (GET_CODE (par) == PARALLEL);
+  rtx set = XVECEXP (par, 0, 0);
+  gcc_assert (GET_CODE (set) == SET);
+  rtx mem = SET_DEST (set);
+  gcc_assert (MEM_P (mem));
+  MEM_NOTRAP_P (mem) = 1;
+  set_mem_alias_set (mem, get_frame_alias_set ());
+
+  RTX_FRAME_RELATED_P (insn) = 1;
+  add_reg_note (insn, REG_FRAME_RELATED_EXPR,
+		gen_rtx_SET (stack_pointer_rtx,
+			     gen_rtx_PLUS (Pmode,
+					   stack_pointer_rtx,
+					   GEN_INT (-size_int))));
+
+  /* Emit a blockage to ensure the allocation/probing insns are
+     not optimized, combined, removed, etc.  Add REG_STACK_CHECK
+     note for similar reasons.  */
+  if (flag_stack_clash_protection)
+    {
+      add_reg_note (insn, REG_STACK_CHECK, const0_rtx);
+      emit_insn (gen_blockage ());
+    }
+
+  return insn;
+}
+
+static HOST_WIDE_INT
+get_stack_clash_protection_probe_interval (void)
+{
+  return (HOST_WIDE_INT_1U
+	  << PARAM_VALUE (PARAM_STACK_CLASH_PROTECTION_PROBE_INTERVAL));
+}
+
+static HOST_WIDE_INT
+get_stack_clash_protection_guard_size (void)
+{
+  return (HOST_WIDE_INT_1U
+	  << PARAM_VALUE (PARAM_STACK_CLASH_PROTECTION_GUARD_SIZE));
+}
+
+/* Allocate ORIG_SIZE bytes on the stack and probe the newly
+   allocated space every STACK_CLASH_PROTECTION_PROBE_INTERVAL bytes.
+
+   COPY_REG, if non-null, should contain a copy of the original
+   stack pointer at exit from this function.
+
+   This is subtly different than the Ada probing in that it tries hard to
+   prevent attacks that jump the stack guard.  Thus it is never allowed to
+   allocate more than STACK_CLASH_PROTECTION_PROBE_INTERVAL bytes of stack
+   space without a suitable probe.  */
+static rtx_insn *
+rs6000_emit_probe_stack_range_stack_clash (HOST_WIDE_INT orig_size,
+					   rtx copy_reg)
+{
+  rtx orig_sp = copy_reg;
+
+  HOST_WIDE_INT probe_interval = get_stack_clash_protection_probe_interval ();
+
+  /* Round the size down to a multiple of PROBE_INTERVAL.  */
+  HOST_WIDE_INT rounded_size = ROUND_DOWN (orig_size, probe_interval);
+
+  /* If explicitly requested,
+       or the rounded size is not the same as the original size
+       or the the rounded size is greater than a page,
+     then we will need a copy of the original stack pointer.  */
+  if (rounded_size != orig_size
+      || rounded_size > probe_interval
+      || copy_reg)
+    {
+      /* If the caller did not request a copy of the incoming stack
+	 pointer, then we use r0 to hold the copy.  */
+      if (!copy_reg)
+	orig_sp = gen_rtx_REG (Pmode, 0);
+      emit_move_insn (orig_sp, stack_pointer_rtx);
+    }
+
+  /* There's three cases here.
+
+     One is a single probe which is the most common and most efficiently
+     implemented as it does not have to have a copy of the original
+     stack pointer if there are no residuals.
+
+     Second is unrolled allocation/probes which we use if there's just
+     a few of them.  It needs to save the original stack pointer into a
+     temporary for use as a source register in the allocation/probe.
+
+     Last is a loop.  This is the most uncommon case and least efficient.  */
+  rtx_insn *retval = NULL;
+  if (rounded_size == probe_interval)
+    {
+      retval = rs6000_emit_allocate_stack_1 (probe_interval, stack_pointer_rtx);
+
+      dump_stack_clash_frame_info (PROBE_INLINE, rounded_size != orig_size);
+    }
+  else if (rounded_size <= 8 * probe_interval)
+    {
+      /* The ABI requires using the store with update insns to allocate
+	 space and store the backchain into the stack
+
+	 So we save the current stack pointer into a temporary, then
+	 emit the store-with-update insns to store the saved stack pointer
+	 into the right location in each new page.  */
+      for (int i = 0; i < rounded_size; i += probe_interval)
+	{
+	  rtx_insn *insn
+	    = rs6000_emit_allocate_stack_1 (probe_interval, orig_sp);
+
+	  /* Save the first stack adjustment in RETVAL.  */
+	  if (i == 0)
+	    retval = insn;
+	}
+
+      dump_stack_clash_frame_info (PROBE_INLINE, rounded_size != orig_size);
+    }
+  else
+    {
+      /* Compute the ending address.  */
+      rtx end_addr
+	= copy_reg ? gen_rtx_REG (Pmode, 0) : gen_rtx_REG (Pmode, 12);
+      rtx rs = GEN_INT (-rounded_size);
+      rtx_insn *insn;
+      if (add_operand (rs, Pmode))
+	insn = emit_insn (gen_add3_insn (end_addr, stack_pointer_rtx, rs));
+      else
+	{
+	  emit_move_insn (end_addr, GEN_INT (-rounded_size));
+	  insn = emit_insn (gen_add3_insn (end_addr, end_addr,
+					   stack_pointer_rtx));
+	  /* Describe the effect of INSN to the CFI engine.  */
+	  add_reg_note (insn, REG_FRAME_RELATED_EXPR,
+			gen_rtx_SET (end_addr,
+				     gen_rtx_PLUS (Pmode, stack_pointer_rtx,
+						   rs)));
+	}
+      RTX_FRAME_RELATED_P (insn) = 1;
+
+      /* Emit the loop.  */
+      if (TARGET_64BIT)
+	retval = emit_insn (gen_probe_stack_rangedi (stack_pointer_rtx,
+						     stack_pointer_rtx, orig_sp,
+						     end_addr));
+      else
+	retval = emit_insn (gen_probe_stack_rangesi (stack_pointer_rtx,
+						     stack_pointer_rtx, orig_sp,
+						     end_addr));
+      RTX_FRAME_RELATED_P (retval) = 1;
+      /* Describe the effect of INSN to the CFI engine.  */
+      add_reg_note (retval, REG_FRAME_RELATED_EXPR,
+		    gen_rtx_SET (stack_pointer_rtx, end_addr));
+
+      /* Emit a blockage to ensure the allocation/probing insns are
+	 not optimized, combined, removed, etc.  Other cases handle this
+	 within their call to rs6000_emit_allocate_stack_1.  */
+      emit_insn (gen_blockage ());
+
+      dump_stack_clash_frame_info (PROBE_LOOP, rounded_size != orig_size);
+    }
+
+  if (orig_size != rounded_size)
+    {
+      /* Allocate (and implicitly probe) any residual space.   */
+      HOST_WIDE_INT residual = orig_size - rounded_size;
+
+      rtx_insn *insn = rs6000_emit_allocate_stack_1 (residual, orig_sp);
+
+      /* If the residual was the only allocation, then we can return the
+	 allocating insn.  */
+      if (!retval)
+	retval = insn;
+    }
+
+  return retval;
+}
+
 /* Emit the correct code for allocating stack space, as insns.
    If COPY_REG, make sure a copy of the old frame is left there.
    The generated code may use hard register 0 as a temporary.  */
@@ -25428,7 +25761,6 @@ rs6000_emit_allocate_stack (HOST_WIDE_INT size, rtx copy_reg, int copy_off)
   rtx stack_reg = gen_rtx_REG (Pmode, STACK_POINTER_REGNUM);
   rtx tmp_reg = gen_rtx_REG (Pmode, 0);
   rtx todec = gen_int_mode (-size, Pmode);
-  rtx par, set, mem;
 
   if (INTVAL (todec) != -size)
     {
@@ -25468,6 +25800,23 @@ rs6000_emit_allocate_stack (HOST_WIDE_INT size, rtx copy_reg, int copy_off)
 	warning (0, "stack limit expression is not supported");
     }
 
+  if (flag_stack_clash_protection)
+    {
+      if (size < get_stack_clash_protection_guard_size ())
+	dump_stack_clash_frame_info (NO_PROBE_SMALL_FRAME, true);
+      else
+	{
+	  rtx_insn *insn = rs6000_emit_probe_stack_range_stack_clash (size,
+								      copy_reg);
+
+	  /* If we asked for a copy with an offset, then we still need add in
+	     the offset.  */
+	  if (copy_reg && copy_off)
+	    emit_insn (gen_add3_insn (copy_reg, copy_reg, GEN_INT (copy_off)));
+	  return insn;
+	}
+    }
+
   if (copy_reg)
     {
       if (copy_off != 0)
@@ -25476,38 +25825,11 @@ rs6000_emit_allocate_stack (HOST_WIDE_INT size, rtx copy_reg, int copy_off)
 	emit_move_insn (copy_reg, stack_reg);
     }
 
-  if (size > 32767)
-    {
-      /* Need a note here so that try_split doesn't get confused.  */
-      if (get_last_insn () == NULL_RTX)
-	emit_note (NOTE_INSN_DELETED);
-      insn = emit_move_insn (tmp_reg, todec);
-      try_split (PATTERN (insn), insn, 0);
-      todec = tmp_reg;
-    }
-  
-  insn = emit_insn (TARGET_32BIT
-		    ? gen_movsi_update_stack (stack_reg, stack_reg,
-					      todec, stack_reg)
-		    : gen_movdi_di_update_stack (stack_reg, stack_reg,
-						 todec, stack_reg));
   /* Since we didn't use gen_frame_mem to generate the MEM, grab
      it now and set the alias set/attributes. The above gen_*_update
      calls will generate a PARALLEL with the MEM set being the first
      operation. */
-  par = PATTERN (insn);
-  gcc_assert (GET_CODE (par) == PARALLEL);
-  set = XVECEXP (par, 0, 0);
-  gcc_assert (GET_CODE (set) == SET);
-  mem = SET_DEST (set);
-  gcc_assert (MEM_P (mem));
-  MEM_NOTRAP_P (mem) = 1;
-  set_mem_alias_set (mem, get_frame_alias_set ());
-
-  RTX_FRAME_RELATED_P (insn) = 1;
-  add_reg_note (insn, REG_FRAME_RELATED_EXPR,
-		gen_rtx_SET (stack_reg, gen_rtx_PLUS (Pmode, stack_reg,
-						      GEN_INT (-size))));
+  insn = rs6000_emit_allocate_stack_1 (size, stack_reg);
   return insn;
 }
 
@@ -25589,9 +25911,9 @@ rs6000_emit_probe_stack_range (HOST_WIDE_INT first, HOST_WIDE_INT size)
 	 until it is equal to ROUNDED_SIZE.  */
 
       if (TARGET_64BIT)
-	emit_insn (gen_probe_stack_rangedi (r12, r12, r0));
+	emit_insn (gen_probe_stack_rangedi (r12, r12, stack_pointer_rtx, r0));
       else
-	emit_insn (gen_probe_stack_rangesi (r12, r12, r0));
+	emit_insn (gen_probe_stack_rangesi (r12, r12, stack_pointer_rtx, r0));
 
 
       /* Step 4: probe at FIRST + SIZE if we cannot assert at compile-time
@@ -25603,10 +25925,10 @@ rs6000_emit_probe_stack_range (HOST_WIDE_INT first, HOST_WIDE_INT size)
 }
 
 /* Probe a range of stack addresses from REG1 to REG2 inclusive.  These are
-   absolute addresses.  */
+   addresses, not offsets.  */
 
-const char *
-output_probe_stack_range (rtx reg1, rtx reg2)
+static const char *
+output_probe_stack_range_1 (rtx reg1, rtx reg2)
 {
   static int labelno = 0;
   char loop_lab[32];
@@ -25671,6 +25993,63 @@ interesting_frame_related_regno (unsigned int regno)
      Since global regs won't be seen as needing to be saved, both of
      these conditions are covered by save_reg_p.  */
   return save_reg_p (regno);
+}
+
+/* Probe a range of stack addresses from REG1 to REG3 inclusive.  These are
+   addresses, not offsets.
+
+   REG2 contains the backchain that must be stored into *sp at each allocation.
+
+   This is subtly different than the Ada probing above in that it tries hard
+   to prevent attacks that jump the stack guard.  Thus, it is never allowed
+   to allocate more than PROBE_INTERVAL bytes of stack space without a
+   suitable probe.  */
+
+static const char *
+output_probe_stack_range_stack_clash (rtx reg1, rtx reg2, rtx reg3)
+{
+  static int labelno = 0;
+  char loop_lab[32];
+  rtx xops[3];
+
+  HOST_WIDE_INT probe_interval = get_stack_clash_protection_probe_interval ();
+
+  ASM_GENERATE_INTERNAL_LABEL (loop_lab, "LPSRL", labelno++);
+
+  ASM_OUTPUT_INTERNAL_LABEL (asm_out_file, loop_lab);
+
+  /* This allocates and probes.  */
+  xops[0] = reg1;
+  xops[1] = reg2;
+  xops[2] = GEN_INT (-probe_interval);
+  if (TARGET_64BIT)
+    output_asm_insn ("stdu %1,%2(%0)", xops);
+  else
+    output_asm_insn ("stwu %1,%2(%0)", xops);
+
+  /* Jump to LOOP_LAB if TEST_ADDR != LAST_ADDR.  */
+  xops[0] = reg1;
+  xops[1] = reg3;
+  if (TARGET_64BIT)
+    output_asm_insn ("cmpd 0,%0,%1", xops);
+  else
+    output_asm_insn ("cmpw 0,%0,%1", xops);
+
+  fputs ("\tbne 0,", asm_out_file);
+  assemble_name_raw (asm_out_file, loop_lab);
+  fputc ('\n', asm_out_file);
+
+  return "";
+}
+
+/* Wrapper around the output_probe_stack_range routines.  */
+const char *
+output_probe_stack_range (rtx reg1, rtx reg2, rtx reg3)
+{
+  if (flag_stack_clash_protection)
+    return output_probe_stack_range_stack_clash (reg1, reg2, reg3);
+  else
+    return output_probe_stack_range_1 (reg1, reg3);
 }
 
 /* Add to 'insn' a note which is PATTERN (INSN) but with REG replaced
@@ -26724,12 +27103,12 @@ rs6000_emit_prologue (void)
 
       if (crtl->is_leaf && !cfun->calls_alloca)
 	{
-	  if (size > PROBE_INTERVAL && size > STACK_CHECK_PROTECT)
-	    rs6000_emit_probe_stack_range (STACK_CHECK_PROTECT,
-					   size - STACK_CHECK_PROTECT);
+	  if (size > PROBE_INTERVAL && size > get_stack_check_protect ())
+	    rs6000_emit_probe_stack_range (get_stack_check_protect (),
+					   size - get_stack_check_protect ());
 	}
       else if (size > 0)
-	rs6000_emit_probe_stack_range (STACK_CHECK_PROTECT, size);
+	rs6000_emit_probe_stack_range (get_stack_check_protect (), size);
     }
 
   if (TARGET_FIX_AND_CONTINUE)
@@ -27285,6 +27664,13 @@ rs6000_emit_prologue (void)
 	    cr_off += reg_size;
 	  }
     }
+
+  /* If we are emitting stack probes, but allocate no stack, then
+     just note that in the dump file.  */
+  if (flag_stack_clash_protection
+      && dump_file
+      && !info->push_p)
+    dump_stack_clash_frame_info (NO_PROBE_NO_FRAME, false);
 
   /* Update stack and set back pointer unless this is V.4,
      for which it was done previously.  */
@@ -35553,8 +35939,7 @@ rs6000_expand_vec_perm_const (rtx operands[4])
 /* Test whether a constant permutation is supported.  */
 
 static bool
-rs6000_vectorize_vec_perm_const_ok (machine_mode vmode,
-				    const unsigned char *sel)
+rs6000_vectorize_vec_perm_const_ok (machine_mode vmode, vec_perm_indices sel)
 {
   /* AltiVec (and thus VSX) can handle arbitrary permutations.  */
   if (TARGET_ALTIVEC)
@@ -39087,6 +39472,17 @@ rs6000_optab_supported_p (int op, machine_mode mode1, machine_mode,
     default:
       return true;
     }
+}
+
+/* Implement TARGET_CONSTANT_ALIGNMENT.  */
+
+static HOST_WIDE_INT
+rs6000_constant_alignment (const_tree exp, HOST_WIDE_INT align)
+{
+  if (TREE_CODE (exp) == STRING_CST
+      && (STRICT_ALIGNMENT || !optimize_size))
+    return MAX (align, BITS_PER_WORD);
+  return align;
 }
 
 struct gcc_target targetm = TARGET_INITIALIZER;

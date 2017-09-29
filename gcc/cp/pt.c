@@ -9494,6 +9494,32 @@ in_template_function (void)
   return ret;
 }
 
+/* Returns true iff we are currently within a template other than a generic
+   lambda.  We test this by finding the outermost closure type and checking
+   whether it is dependent.  */
+
+bool
+processing_nonlambda_template (void)
+{
+  if (!processing_template_decl)
+    return false;
+
+  tree outer_closure = NULL_TREE;
+  for (tree t = current_class_type; t;
+       t = decl_type_context (TYPE_MAIN_DECL (t)))
+    {
+      if (LAMBDA_TYPE_P (t))
+	outer_closure = t;
+      else
+	break;
+    }
+
+  if (outer_closure)
+    return dependent_type_p (outer_closure);
+  else
+    return true;
+}
+
 /* Returns true if T depends on any template parameter with level LEVEL.  */
 
 bool
@@ -15986,7 +16012,8 @@ tsubst_expr (tree t, tree args, tsubst_flags_t complain, tree in_decl,
 	  {
 	    /* We're in tsubst_lambda_expr, we've already inserted a new
 	       capture proxy, so look it up and register it.  */
-	    tree inst = lookup_name (DECL_NAME (decl));
+	    tree inst = lookup_name_real (DECL_NAME (decl), 0, 0,
+					  /*block_p=*/true, 0, LOOKUP_HIDDEN);
 	    gcc_assert (inst != decl && is_capture_proxy (inst));
 	    register_local_specialization (inst, decl);
 	    break;
@@ -16906,9 +16933,9 @@ tsubst_lambda_expr (tree t, tree args, tsubst_flags_t complain, tree in_decl)
       if (nested)
 	push_function_context ();
 
-      tree body = start_lambda_function (fn, r);
-
       local_specialization_stack s (lss_copy);
+
+      tree body = start_lambda_function (fn, r);
 
       register_parameter_specializations (oldfn, fn);
 
@@ -18136,11 +18163,7 @@ tsubst_copy_and_build (tree t,
 	      r = build_cxx_call (wrap, 0, NULL, tf_warning_or_error);
 	  }
 	else if (outer_automatic_var_p (r))
-	  {
-	    r = process_outer_var_ref (r, complain);
-	    if (is_capture_proxy (r) && !DECL_PACK_P (t))
-	      register_local_specialization (r, t);
-	  }
+	  r = process_outer_var_ref (r, complain);
 
 	if (TREE_CODE (TREE_TYPE (t)) != REFERENCE_TYPE)
 	  /* If the original type was a reference, we'll be wrapped in

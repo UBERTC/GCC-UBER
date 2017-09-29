@@ -2783,21 +2783,23 @@ The @code{ifunc} attribute is used to mark a function as an indirect
 function using the STT_GNU_IFUNC symbol type extension to the ELF
 standard.  This allows the resolution of the symbol value to be
 determined dynamically at load time, and an optimized version of the
-routine can be selected for the particular processor or other system
+routine to be selected for the particular processor or other system
 characteristics determined then.  To use this attribute, first define
 the implementation functions available, and a resolver function that
 returns a pointer to the selected implementation function.  The
 implementation functions' declarations must match the API of the
-function being implemented, the resolver's declaration is be a
-function returning pointer to void function returning void:
+function being implemented.  The resolver should be declared to
+be a function taking no arguments and returning a pointer to
+a function of the same type as the implementation.  For example:
 
 @smallexample
 void *my_memcpy (void *dst, const void *src, size_t len)
 @{
   @dots{}
+  return dst;
 @}
 
-static void (*resolve_memcpy (void)) (void)
+static void * (*resolve_memcpy (void))(void *, const void *, size_t)
 @{
   return my_memcpy; // we'll just always select this routine
 @}
@@ -9683,6 +9685,7 @@ For mixed operations between a scalar @code{s} and a vector @code{v},
 @code{s && v} is equivalent to @code{s?v!=0:0} (the evaluation is
 short-circuit) and @code{v && s} is equivalent to @code{v!=0 & (s?-1:0)}.
 
+@findex __builtin_shuffle
 Vector shuffling is available using functions
 @code{__builtin_shuffle (vec, mask)} and
 @code{__builtin_shuffle (vec0, vec1, mask)}.
@@ -15650,6 +15653,8 @@ vector unsigned short vec_xl_len (unsigned short *addr, size_t len);
 vector double vec_xl_len (double *addr, size_t len);
 vector float vec_xl_len (float *addr, size_t len);
 
+vector unsigned char vec_xl_len_r (unsigned char *addr, size_t len);
+
 void vec_xst_len (vector signed char data, signed char *addr, size_t len);
 void vec_xst_len (vector unsigned char data, unsigned char *addr, size_t len);
 void vec_xst_len (vector signed int data, signed int *addr, size_t len);
@@ -15662,6 +15667,8 @@ void vec_xst_len (vector unsigned short data, unsigned short *addr, size_t len);
 void vec_xst_len (vector signed __int128 data, signed __int128 *addr, size_t len);
 void vec_xst_len (vector double data, double *addr, size_t len);
 void vec_xst_len (vector float data, float *addr, size_t len);
+
+void vec_xst_len_r (vector unsigned char data, unsigned char *addr, size_t len);
 
 signed char vec_xlx (unsigned int index, vector signed char data);
 unsigned char vec_xlx (unsigned int index, vector unsigned char data);
@@ -19913,8 +19920,11 @@ AMD Family 15h Bulldozer version 4.
 @item btver2
 AMD Family 16h CPU.
 
-@item znver1
+@item amdfam17h
 AMD Family 17h CPU.
+
+@item znver1
+AMD Family 17h Zen version 1.
 @end table
 
 Here is an example:

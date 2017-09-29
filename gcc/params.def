@@ -213,6 +213,16 @@ DEFPARAM(PARAM_STACK_FRAME_GROWTH,
 	 "Maximal stack frame growth due to inlining (in percent).",
 	 1000, 0, 0)
 
+DEFPARAM(PARAM_STACK_CLASH_PROTECTION_GUARD_SIZE,
+	 "stack-clash-protection-guard-size",
+	 "Size of the stack guard expressed as a power of two.",
+	 12, 12, 30)
+
+DEFPARAM(PARAM_STACK_CLASH_PROTECTION_PROBE_INTERVAL,
+	 "stack-clash-protection-probe-interval",
+	 "Interval in which to probe the stack expressed as a power of two.",
+	 12, 10, 16)
+
 /* The GCSE optimization will be disabled if it would require
    significantly more memory than this value.  */
 DEFPARAM(PARAM_MAX_GCSE_MEMORY,
@@ -863,14 +873,7 @@ DEFPARAM (PARAM_LOOP_BLOCK_TILE_SIZE,
 DEFPARAM (PARAM_GRAPHITE_MAX_NB_SCOP_PARAMS,
 	  "graphite-max-nb-scop-params",
 	  "maximum number of parameters in a SCoP.",
-	  7, 0, 0)
-
-/* Maximal number of basic blocks in the functions analyzed by Graphite.  */
-
-DEFPARAM (PARAM_GRAPHITE_MAX_BBS_PER_FUNCTION,
-	  "graphite-max-bbs-per-function",
-	  "maximum number of basic blocks per function to be analyzed by Graphite.",
-	  100, 0, 0)
+	  10, 0, 0)
 
 /* Maximal number of array references in a scop.  */
 

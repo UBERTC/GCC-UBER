@@ -94,9 +94,6 @@ typedef struct sese_info_t
   /* Parameters to be renamed.  */
   parameter_rename_map_t *parameter_rename_map;
 
-  /* Loops completely contained in this SESE.  */
-  vec<loop_p> loop_nest;
-
   /* Basic blocks contained in this SESE.  */
   vec<basic_block> bbs;
 
@@ -233,7 +230,6 @@ typedef struct ifsese_s {
   sese_info_p false_region;
 } *ifsese;
 
-extern void if_region_set_false_region (ifsese, sese_info_p);
 extern ifsese move_sese_in_condition (sese_info_p);
 extern void set_ifsese_condition (ifsese, tree);
 extern edge get_true_edge_from_guard_bb (basic_block);

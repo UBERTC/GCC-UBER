@@ -2643,6 +2643,53 @@ recording::function_type::dereference ()
   return NULL;
 }
 
+/* Implementation of virtual hook recording::type::is_same_type_as for
+   recording::function_type.
+
+   We override this to avoid requiring identity of function pointer types,
+   so that if client code has obtained the same signature in
+   different ways (e.g. via gcc_jit_context_new_function_ptr_type
+   vs gcc_jit_function_get_address), the different function_type
+   instances are treated as compatible.
+
+   We can't use type::accepts_writes_from for this as we need a stronger
+   notion of "sameness": if we have a fn_ptr type that has args that are
+   themselves fn_ptr types, then those args still need to match exactly.
+
+   Alternatively, we could consolidate attempts to create identical
+   function_type instances so that pointer equality works, but that runs
+   into issues about the lifetimes of the cache (w.r.t. nested contexts).  */
+
+bool
+recording::function_type::is_same_type_as (type *other)
+{
+  gcc_assert (other);
+
+  function_type *other_fn_type = other->dyn_cast_function_type ();
+  if (!other_fn_type)
+    return false;
+
+  /* Everything must match.  */
+
+  if (!m_return_type->is_same_type_as (other_fn_type->m_return_type))
+    return false;
+
+  if (m_param_types.length () != other_fn_type->m_param_types.length ())
+    return false;
+
+  unsigned i;
+  type *param_type;
+  FOR_EACH_VEC_ELT (m_param_types, i, param_type)
+    if (!param_type->is_same_type_as (other_fn_type->m_param_types[i]))
+      return false;
+
+  if (m_is_variadic != other_fn_type->m_is_variadic)
+    return false;
+
+  /* Passed all tests.  */
+  return true;
+}
+
 /* Implementation of pure virtual hook recording::memento::replay_into
    for recording::function_type.  */
 
@@ -3452,7 +3499,8 @@ recording::function::function (context *ctxt,
   m_is_variadic (is_variadic),
   m_builtin_id (builtin_id),
   m_locals (),
-  m_blocks ()
+  m_blocks (),
+  m_fn_ptr_type (NULL)
 {
   for (int i = 0; i< num_params; i++)
     {
@@ -3723,6 +3771,35 @@ recording::function::dump_to_dot (const char *path)
   pp_printf (pp, "}\n");
   pp_flush (pp);
   fclose (fp);
+}
+
+/* Implements the post-error-checking part of
+   gcc_jit_function_get_address.  */
+
+recording::rvalue *
+recording::function::get_address (recording::location *loc)
+{
+  /* Lazily create and cache the function pointer type.  */
+  if (!m_fn_ptr_type)
+    {
+      /* Make a recording::function_type for this function.  */
+      auto_vec <recording::type *> param_types (m_params.length ());
+      unsigned i;
+      recording::param *param;
+      FOR_EACH_VEC_ELT (m_params, i, param)
+	param_types.safe_push (param->get_type ());
+      recording::function_type *fn_type
+	= m_ctxt->new_function_type (m_return_type,
+				     m_params.length (),
+				     param_types.address (),
+				     m_is_variadic);
+      m_fn_ptr_type = fn_type->get_pointer ();
+    }
+  gcc_assert (m_fn_ptr_type);
+
+  rvalue *result = new function_pointer (get_context (), loc, this, m_fn_ptr_type);
+  m_ctxt->record (result);
+  return result;
 }
 
 /* Implementation of recording::memento::make_debug_string for
@@ -5397,6 +5474,51 @@ recording::get_address_of_lvalue::write_reproducer (reproducer &r)
 	   "                                %s); /* gcc_jit_location *loc */\n",
 	   id,
 	   r.get_identifier_as_lvalue (m_lvalue),
+	   r.get_identifier (m_loc));
+}
+
+/* The implementation of class gcc::jit::recording::function_pointer.  */
+
+/* Implementation of pure virtual hook recording::memento::replay_into
+   for recording::function_pointer.  */
+
+void
+recording::function_pointer::replay_into (replayer *r)
+{
+  set_playback_obj (
+    m_fn->playback_function ()->
+      get_address (playback_location (r, m_loc)));
+}
+
+void
+recording::function_pointer::visit_children (rvalue_visitor *)
+{
+  /* Empty.  */
+}
+
+/* Implementation of recording::memento::make_debug_string for
+   getting the address of an lvalue.  */
+
+recording::string *
+recording::function_pointer::make_debug_string ()
+{
+  return string::from_printf (m_ctxt,
+			      "%s",
+			      m_fn->get_debug_string ());
+}
+
+/* Implementation of recording::memento::write_reproducer for
+   function_pointer.  */
+
+void
+recording::function_pointer::write_reproducer (reproducer &r)
+{
+  const char *id = r.make_identifier (this, "address_of");
+  r.write ("  gcc_jit_rvalue *%s =\n"
+	   "    gcc_jit_function_get_address (%s, /* gcc_jit_function *fn */\n"
+	   "                                  %s); /* gcc_jit_location *loc */\n",
+	   id,
+	   r.get_identifier (m_fn),
 	   r.get_identifier (m_loc));
 }
 
