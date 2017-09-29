@@ -1,3 +1,73 @@
+2017-09-21  Jonathan Wakely  <jwakely@redhat.com>
+
+	* testsuite/25_algorithms/clamp/1.cc: Fix order of arguments and
+	expected results when using predicate defining reverse order.
+	* testsuite/25_algorithms/clamp/constexpr.cc: Likewise.
+
+2017-09-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	Backport from mainline
+	2017-06-14  Jonathan Wakely  <jwakely@redhat.com>
+
+	* doc/xml/manual/test.xml: Correct instructions on running tests.
+	* testsuite/27_io/basic_ios/copyfmt/char/1.cc: Adjust to pass when
+	-D_GLIBCXX_USE_CXX11_ABI=0 added to RUNTESTFLAGS.
+	* testsuite/27_io/basic_ios/exceptions/char/1.cc: Likewise.
+	* testsuite/27_io/basic_istream/extractors_arithmetic/char/
+	exceptions_failbit.cc: Likewise.
+	* testsuite/27_io/basic_istream/extractors_arithmetic/wchar_t/
+	exceptions_failbit.cc: Likewise.
+	* testsuite/27_io/basic_istream/extractors_other/char/
+	exceptions_null.cc: Likewise.
+	* testsuite/27_io/basic_istream/extractors_other/wchar_t/
+	exceptions_null.cc: Likewise.
+	* testsuite/27_io/basic_istream/sentry/char/12297.cc: Likewise.
+	* testsuite/27_io/basic_istream/sentry/wchar_t/12297.cc: Likewise.
+	* testsuite/27_io/basic_ostream/inserters_other/char/
+	exceptions_null.cc: Likewise.
+	* testsuite/27_io/basic_ostream/inserters_other/wchar_t/
+	exceptions_null.cc: Likewise.
+	* testsuite/27_io/ios_base/storage/2.cc: Likewise.
+
+	PR libstdc++/79162
+	* include/bits/basic_string.h [!_GLIBCXX_USE_CXX11_ABI]
+	(basic_string::_If_sv): Remove from the overload set when the
+	argument is derived from basic_string.
+
+	PR libstdc++/79162
+	* include/bits/basic_string.h (basic_string::_If_sv): Remove from the
+	overload set when the argument is derived from basic_string.
+	* testsuite/21_strings/basic_string/cons/char/moveable2_c++17.cc: New
+	test.
+	* testsuite/21_strings/basic_string/cons/wchar_t/moveable2_c++17.cc:
+	New test.
+
+	* testsuite/24_iterators/range_access_cpp17.cc: Fix order of dg-do
+	and dg-options directives. Fix invalid test.
+
+	Backport from mainline
+	2017-09-20  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/82262
+	* include/std/optional (__optional_hash_call_base): Add template
+	parameter for remove_const_t<_Tp> and use it consistently.
+	* testsuite/20_util/optional/hash.cc: Test optional<const T>.
+
+	Backport from mainline
+	2017-09-19  Jonathan Wakely  <jwakely@redhat.com>
+
+	PR libstdc++/82254
+	* include/std/type_traits (__is_invocable): Add partial specialization
+	for INVOKE<void> case and remove is_void<R> check from partial
+	specialization for INVOKE<R> case.
+	(__is_nt_invocable_impl): New helper for is_nothrow_invocable_r.
+	(is_nothrow_invocable_r): Use __is_nt_invocable_impl.
+	* testsuite/20_util/is_nothrow_invocable/value.cc: Add tests for
+	conversions that can throw or fail to convert. Use static assert
+	strings to explain negative results.
+	* testsuite/20_util/is_nothrow_invocable/value_ext.cc: Use
+	is_nothrow_constructible in is_nt_invocable_conv.
+
 2017-09-13  Jonathan Wakely  <jwakely@redhat.com>
 
 	Backport from mainline
