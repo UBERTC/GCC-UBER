@@ -32836,6 +32836,9 @@ sorted_attr_string (tree arglist)
     {
       const char *str = TREE_STRING_POINTER (TREE_VALUE (arg));
       size_t len = strlen (str);
+      /* Skip empty string.  */
+      if (len == 0)
+	continue;
       str_len_sum += len + 1;
       if (arg != arglist)
 	argnum++;
@@ -32850,9 +32853,19 @@ sorted_attr_string (tree arglist)
     {
       const char *str = TREE_STRING_POINTER (TREE_VALUE (arg));
       size_t len = strlen (str);
+      /* Skip empty string.  */
+      if (len == 0)
+	continue;
       memcpy (attr_str + str_len_sum, str, len);
       attr_str[str_len_sum + len] = TREE_CHAIN (arg) ? ',' : '\0';
       str_len_sum += len + 1;
+    }
+
+  /* Strip ',' character at the end.  */
+  if (str_len_sum > 0 && attr_str[str_len_sum - 1] == ',')
+    {
+      attr_str[str_len_sum - 1] = '\0';
+      str_len_sum--;
     }
 
   /* Replace "=,-" with "_".  */
@@ -33474,6 +33487,7 @@ fold_builtin_cpu (tree fndecl, tree *args)
     M_INTEL_KNL,
     M_AMD_BTVER1,
     M_AMD_BTVER2,    
+    M_AMDFAM17H,
     M_CPU_SUBTYPE_START,
     M_INTEL_COREI7_NEHALEM,
     M_INTEL_COREI7_WESTMERE,
@@ -33528,6 +33542,7 @@ fold_builtin_cpu (tree fndecl, tree *args)
       {"bdver3", M_AMDFAM15H_BDVER3},
       {"bdver4", M_AMDFAM15H_BDVER4},
       {"btver2", M_AMD_BTVER2},
+      {"amdfam17h", M_AMDFAM17H},
       {"znver1", M_AMDFAM17H_ZNVER1},
     };
 

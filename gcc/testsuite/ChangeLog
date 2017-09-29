@@ -1,3 +1,73 @@
+2017-09-27  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r249639.
+	2017-06-26  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* lib/target-supports.exp
+	(check_effective_target_arm_neon_ok_nocache): Add flags with
+	-mfloat-abi=hard. Include arm_neon.h.
+	(check_effective_target_arm_neon_ok_no_float_abi_nocache): New.
+	(check_effective_target_arm_neon_ok_no_float_abi): New.
+	* gcc.target/arm/lto/pr65837_0.c: Require
+	arm_neon_ok_no_float_abi. Add -mfpu=neon to dg-lto-options.
+	* gcc.target/arm/lto/pr65837-attr_0.c: Require
+	arm_neon_ok_no_float_abi. Remove dg-suppress-ld-options.
+
+2017-09-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-09-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82244
+	* gcc.dg/torture/pr82244.c: New testcase.
+
+	2017-09-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82276
+	PR tree-optimization/82244
+	* gcc.dg/torture/pr82276.c: New testcase.
+
+	2017-09-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82264
+	* gcc.dg/torture/pr82264.c: New testcase.
+
+	2017-09-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82285
+	* gcc.dg/torture/pr82285.c: New testcase.
+
+	2017-09-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82291
+	* gcc.dg/torture/pr82291.c: New testcase.
+
+2017-09-22  Jakub Jelinek  <jakub@redhat.com>
+
+	PR sanitizer/81929
+	* g++.dg/ubsan/pr81929.C: New test.
+
+2017-09-19  Martin Liska  <mliska@suse.cz>
+
+	Revert backport:
+	2017-08-10  Martin Liska  <mliska@suse.cz>
+
+	PR c++/81355
+	* g++.dg/other/pr81355.C: New test.
+
+2017-09-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-09-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82084
+	* g++.dg/torture/pr82084.C: New testcase.
+
+	2017-09-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82108
+	* gcc.dg/vect/pr82108.c: New testcase.
+
 2017-09-15  Jakub Jelinek  <jakub@redhat.com>
 
 	Backported from mainline

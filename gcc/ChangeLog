@@ -1,3 +1,108 @@
+2017-09-28  Krister Walfridsson  <krister.walfridsson@gmail.com>
+
+	Backport from mainline
+	2017-05-14  Krister Walfridsson  <krister.walfridsson@gmail.com>
+
+	PR target/80600
+	* config/netbsd.h (NETBSD_LIBGCC_SPEC): Always add -lgcc.
+
+2017-09-27  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	Backport from trunk r249639.
+ 	2017-06-26  Christophe Lyon  <christophe.lyon@linaro.org>
+
+	* doc/sourcebuild.texi (ARM-specific attributes): Document new
+	arm_neon_ok_no_float_abi effective target.
+
+2017-09-26  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-09-19  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82244
+	* tree-vrp.c (remove_range_assertions): Do not propagate
+	a constant to abnormals but replace the assert with a copy.
+
+	2017-09-21  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82276
+	PR tree-optimization/82244
+	* tree-vrp.c (build_assert_expr_for): Set
+	SSA_NAME_OCCURS_IN_ABNORMAL_PHI if the variable we assert on
+	has it set.
+	(remove_range_assertions): Revert earlier change.
+
+	2017-09-20  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82264
+	* tree-ssa-sccvn.c (vn_phi_eq): Use safe_dyn_cast to check
+	for GIMPLE_CONDs.
+	(vn_phi_lookup): Likewise.
+	(vn_phi_insert): Likewise.
+	* is-a.h (safe_dyn_cast): New.
+
+	2017-09-25  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82285
+	* tree-vect-patterns.c (vect_recog_bool_pattern): Also handle
+	enumeral types.
+
+	2017-09-22  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82291
+	* tree-if-conv.c (predicate_mem_writes): Make sure to
+	remove writes in blocks predicated with false.
+
+2017-09-21  Alan Modra  <amodra@gmail.com>
+
+	PR target/81996
+	* gcc/config/rs6000/rs6000.c (rs6000_return_addr): Use
+	stack_pointer_rtx for count 0.  Update comments.  Break up
+	large rtl expression.
+
+2017-09-21  Wilco Dijkstra  <wdijkstr@arm.com>
+
+	PR target/71951
+	* config/aarch64/aarch64.h (LIBGCC2_UNWIND_ATTRIBUTE): Define.
+
+2017-09-19  Uros Bizjak  <ubizjak@gmail.com>
+
+	* config/i386/i386.c (fold_builtin_cpu): Add M_AMDFAM17H
+	to processor_model and "amdfam17h" to arch_names_table.
+	* doc/extend.texi (__builtin_cpu_is): Document amdfam17h CPU name.
+
+2017-09-19  Martin Liska  <mliska@suse.cz>
+
+	PR c++/81355
+	* config/i386/i386.c (sorted_attr_string): Skip empty strings.
+
+2017-09-19  Martin Liska  <mliska@suse.cz>
+
+	Revert backport:
+	2017-08-10  Martin Liska  <mliska@suse.cz>
+
+	PR c++/81355
+	* c-attribs.c (handle_target_attribute):
+	Report warning for an empty string argument of target attribute.
+
+2017-09-18  Richard Biener  <rguenther@suse.de>
+
+	Backport from mainline
+	2017-09-04  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82084
+	* fold-const.h (can_native_encode_string_p): Declare.
+	* fold-const.c (can_native_encode_string_p): Factor out from ...
+	(native_encode_string): ... here.
+	* tree-vect-stmts.c (vectorizable_store): Call it to avoid
+	vectorizing stores from constants we later cannot handle.
+
+	2017-09-06  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/82108
+	* tree-vect-stmts.c (vectorizable_load): Fix pointer adjustment
+	for gap in the non-permutation SLP case.
+
 2017-09-15  Jakub Jelinek  <jakub@redhat.com>
 
 	Backported from mainline
