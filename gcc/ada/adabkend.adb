@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---                     Copyright (C) 2001-2017, AdaCore                     --
+--                     Copyright (C) 2001-2018, AdaCore                     --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -59,8 +59,8 @@ package body Adabkend is
 
       --  The front end leaves the Current_Error_Node at a location that is
       --  meaningless and confusing when emitting bug boxes from the back end.
-      --  By resetting it here we default to "No source file position
-      --  information available" message on back end crashes.
+      --  Reset the global variable in order to emit "No source file position
+      --  information available" messages on back end crashes.
 
       Current_Error_Node := Empty;
 

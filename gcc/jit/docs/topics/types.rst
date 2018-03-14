@@ -1,4 +1,4 @@
-.. Copyright (C) 2014-2017 Free Software Foundation, Inc.
+.. Copyright (C) 2014-2018 Free Software Foundation, Inc.
    Originally contributed by David Malcolm <dmalcolm@redhat.com>
 
    This is free software: you can redistribute it and/or modify it
@@ -176,6 +176,9 @@ Vector types
    .. code-block:: c
 
       #ifdef LIBGCCJIT_HAVE_gcc_jit_type_get_vector
+
+   Vector rvalues can be generated using
+   :func:`gcc_jit_context_new_rvalue_from_vector`.
 
 
 Structures and unions

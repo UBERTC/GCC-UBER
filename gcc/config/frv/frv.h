@@ -1,5 +1,5 @@
 /* Target macros for the FRV port of GCC.
-   Copyright (C) 1999-2017 Free Software Foundation, Inc.
+   Copyright (C) 1999-2018 Free Software Foundation, Inc.
    Contributed by Red Hat Inc.
 
    This file is part of GCC.
@@ -965,14 +965,6 @@ typedef struct frv_stack {
 /* Define this macro to nonzero if the addresses of local variable slots
    are at negative offsets from the frame pointer.  */
 #define FRAME_GROWS_DOWNWARD 1
-
-/* Offset from the frame pointer to the first local variable slot to be
-   allocated.
-
-   If `FRAME_GROWS_DOWNWARD', find the next slot's offset by subtracting the
-   first slot's length from `STARTING_FRAME_OFFSET'.  Otherwise, it is found by
-   adding the length of the first slot to the value `STARTING_FRAME_OFFSET'.  */
-#define STARTING_FRAME_OFFSET 0
 
 /* Offset from the stack pointer register to the first location at which
    outgoing arguments are placed.  If not specified, the default value of zero

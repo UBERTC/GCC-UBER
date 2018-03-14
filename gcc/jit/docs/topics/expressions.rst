@@ -1,4 +1,4 @@
-.. Copyright (C) 2014-2017 Free Software Foundation, Inc.
+.. Copyright (C) 2014-2018 Free Software Foundation, Inc.
    Originally contributed by David Malcolm <dmalcolm@redhat.com>
 
    This is free software: you can redistribute it and/or modify it
@@ -125,6 +125,30 @@ Simple expressions
    The parameter ``value`` must be non-NULL.  The call takes a copy of the
    underlying string, so it is valid to pass in a pointer to an on-stack
    buffer.
+
+Vector expressions
+******************
+
+.. function:: gcc_jit_rvalue * \
+              gcc_jit_context_new_rvalue_from_vector (gcc_jit_context *ctxt, \
+                                                      gcc_jit_location *loc, \
+                                                      gcc_jit_type *vec_type, \
+                                                      size_t num_elements, \
+                                                      gcc_jit_rvalue **elements)
+
+   Build a vector rvalue from an array of elements.
+
+   "vec_type" should be a vector type, created using
+   :func:`gcc_jit_type_get_vector`.
+
+   "num_elements" should match that of the vector type.
+
+   This entrypoint was added in :ref:`LIBGCCJIT_ABI_10`; you can test for
+   its presence using
+
+   .. code-block:: c
+
+      #ifdef LIBGCCJIT_HAVE_gcc_jit_context_new_rvalue_from_vector
 
 Unary Operations
 ****************

@@ -1,5 +1,5 @@
 /* Prototypes for exported functions defined in mmix.c
-   Copyright (C) 2000-2017 Free Software Foundation, Inc.
+   Copyright (C) 2000-2018 Free Software Foundation, Inc.
    Contributed by Hans-Peter Nilsson (hp@bitrange.com)
 
 This file is part of GCC.
@@ -21,7 +21,6 @@ along with GCC; see the file COPYING3.  If not see
 extern void mmix_init_expanders (void);
 extern int mmix_eh_return_data_regno (int);
 extern int mmix_initial_elimination_offset (int, int);
-extern int mmix_starting_frame_offset (void);
 extern int mmix_function_arg_regno_p (int, int);
 extern void mmix_function_profiler (FILE *, int);
 extern int mmix_reversible_cc_mode (machine_mode);

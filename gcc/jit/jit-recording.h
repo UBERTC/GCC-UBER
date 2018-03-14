@@ -1,5 +1,5 @@
 /* Internals of libgccjit: classes for recording calls made to the JIT API.
-   Copyright (C) 2013-2017 Free Software Foundation, Inc.
+   Copyright (C) 2013-2018 Free Software Foundation, Inc.
    Contributed by David Malcolm <dmalcolm@redhat.com>.
 
 This file is part of GCC.
@@ -147,6 +147,11 @@ public:
 
   rvalue *
   new_string_literal (const char *value);
+
+  rvalue *
+  new_rvalue_from_vector (location *loc,
+			  vector_type *type,
+			  rvalue **elements);
 
   rvalue *
   new_unary_op (location *loc,
@@ -486,6 +491,7 @@ public:
   virtual function_type *dyn_cast_function_type () { return NULL; }
   virtual function_type *as_a_function_type() { gcc_unreachable (); return NULL; }
   virtual struct_ *dyn_cast_struct () { return NULL; }
+  virtual vector_type *dyn_cast_vector_type () { return NULL; }
 
   /* Is it typesafe to copy to this type from rtype?  */
   virtual bool accepts_writes_from (type *rtype)
@@ -690,15 +696,18 @@ private:
 };
 
 /* Result of "gcc_jit_type_get_vector".  */
-class memento_of_get_vector : public decorated_type
+class vector_type : public decorated_type
 {
 public:
-  memento_of_get_vector (type *other_type, size_t num_units)
+  vector_type (type *other_type, size_t num_units)
   : decorated_type (other_type),
     m_num_units (num_units) {}
 
-  /* Strip off the alignment, giving the underlying type.  */
-  type *unqualified () FINAL OVERRIDE { return m_other_type; }
+  size_t get_num_units () const { return m_num_units; }
+
+  vector_type *dyn_cast_vector_type () FINAL OVERRIDE { return this; }
+
+  type *get_element_type () { return m_other_type; }
 
   void replay_into (replayer *) FINAL OVERRIDE;
 
@@ -923,10 +932,6 @@ public:
 private:
   string * make_debug_string () FINAL OVERRIDE;
   void write_reproducer (reproducer &r) FINAL OVERRIDE;
-
-private:
-  location *m_loc;
-  string *m_name;
 };
 
 /* An abstract base class for operations that visit all rvalues within an
@@ -1356,6 +1361,31 @@ private:
 
 private:
   string *m_value;
+};
+
+class memento_of_new_rvalue_from_vector : public rvalue
+{
+public:
+  memento_of_new_rvalue_from_vector (context *ctxt,
+				     location *loc,
+				     vector_type *type,
+				     rvalue **elements);
+
+  void replay_into (replayer *r) FINAL OVERRIDE;
+
+  void visit_children (rvalue_visitor *) FINAL OVERRIDE;
+
+private:
+  string * make_debug_string () FINAL OVERRIDE;
+  void write_reproducer (reproducer &r) FINAL OVERRIDE;
+  enum precedence get_precedence () const FINAL OVERRIDE
+  {
+    return PRECEDENCE_PRIMARY;
+  }
+
+private:
+  vector_type *m_vector_type;
+  auto_vec<rvalue *> m_elements;
 };
 
 class unary_op : public rvalue

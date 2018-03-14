@@ -1,5 +1,5 @@
 /* Definitions of target machine GNU compiler.  IA-64 version.
-   Copyright (C) 1999-2017 Free Software Foundation, Inc.
+   Copyright (C) 1999-2018 Free Software Foundation, Inc.
    Contributed by James E. Wilson <wilson@cygnus.com> and
    		  David Mosberger <davidm@hpl.hp.com>.
 
@@ -38,6 +38,9 @@ do {						\
 	builtin_define("__itanium__");		\
 	if (TARGET_BIG_ENDIAN)			\
 	  builtin_define("__BIG_ENDIAN__");	\
+	builtin_define("__SIZEOF_FPREG__=16");	\
+	builtin_define("__SIZEOF_FLOAT80__=16");\
+	builtin_define("__SIZEOF_FLOAT128__=16");\
 } while (0)
 
 #ifndef SUBTARGET_EXTRA_SPECS
@@ -779,10 +782,6 @@ enum reg_class
    are at negative offsets from the frame pointer.  */
 #define FRAME_GROWS_DOWNWARD 0
 
-/* Offset from the frame pointer to the first local variable slot to
-   be allocated.  */
-#define STARTING_FRAME_OFFSET 0
-
 /* Offset from the stack pointer register to the first location at which
    outgoing arguments are placed.  If not specified, the default value of zero
    is used.  This is the proper value for most machines.  */
@@ -1474,7 +1473,7 @@ do {									\
 /* Likewise.  */
 
 
-/* Macros for SDB and Dwarf Output.  */
+/* Macros for Dwarf Output.  */
 
 /* Define this macro if GCC should produce dwarf version 2 format debugging
    output in response to the `-g' option.  */

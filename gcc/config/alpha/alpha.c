@@ -1,5 +1,5 @@
 /* Subroutines used for code generation on the DEC Alpha.
-   Copyright (C) 1992-2017 Free Software Foundation, Inc.
+   Copyright (C) 1992-2018 Free Software Foundation, Inc.
    Contributed by Richard Kenner (kenner@vlsi1.ultra.nyu.edu)
 
 This file is part of GCC.
@@ -18,6 +18,8 @@ You should have received a copy of the GNU General Public License
 along with GCC; see the file COPYING3.  If not see
 <http://www.gnu.org/licenses/>.  */
 
+
+#define IN_TARGET_CODE 1
 
 #include "config.h"
 #include "system.h"
@@ -1433,8 +1435,8 @@ alpha_rtx_costs (rtx x, machine_mode mode, int outer_code, int opno, int *total,
     case MINUS:
       if (float_mode_p)
 	*total = cost_data->fp_add;
-      else if (GET_CODE (XEXP (x, 0)) == MULT
-	       && const48_operand (XEXP (XEXP (x, 0), 1), VOIDmode))
+      else if (GET_CODE (XEXP (x, 0)) == ASHIFT
+	       && const23_operand (XEXP (XEXP (x, 0), 1), VOIDmode))
 	{
 	  *total = (rtx_cost (XEXP (XEXP (x, 0), 0), mode,
 			      (enum rtx_code) outer_code, opno, speed)
@@ -2910,8 +2912,8 @@ alpha_split_conditional_move (enum rtx_code code, rtx dest, rtx cond,
       || (code == GE || code == GT))
     {
       code = reverse_condition (code);
-      diff = t, t = f, f = diff;
-      diff = t - f;
+      std::swap (t, f);
+      diff = -diff;
     }
 
   subtarget = target = dest;
@@ -2961,8 +2963,8 @@ alpha_split_conditional_move (enum rtx_code code, rtx dest, rtx cond,
 	  add_op = GEN_INT (f);
 	  if (sext_add_operand (add_op, mode))
 	    {
-	      tmp = gen_rtx_MULT (DImode, copy_rtx (subtarget),
-				  GEN_INT (diff));
+	      tmp = gen_rtx_ASHIFT (DImode, copy_rtx (subtarget),
+				    GEN_INT (exact_log2 (diff)));
 	      tmp = gen_rtx_PLUS (DImode, tmp, add_op);
 	      emit_insn (gen_rtx_SET (target, tmp));
 	    }
@@ -6078,10 +6080,8 @@ alpha_stdarg_optimize_hook (struct stdarg_info *si, const gimple *stmt)
 	  else if (code2 == COMPONENT_REF
 		   && (code1 == MINUS_EXPR || code1 == PLUS_EXPR))
 	    {
-	      gimple *tem = arg1_stmt;
+	      std::swap (arg1_stmt, arg2_stmt);
 	      code2 = code1;
-	      arg1_stmt = arg2_stmt;
-	      arg2_stmt = tem;
 	    }
 	  else
 	    goto escapes;
@@ -7507,10 +7507,11 @@ common_object_handler (tree *node, tree name ATTRIBUTE_UNUSED,
 
 static const struct attribute_spec vms_attribute_table[] =
 {
-  /* { name, min_len, max_len, decl_req, type_req, fn_type_req, handler,
-       affects_type_identity } */
-  { COMMON_OBJECT,   0, 1, true,  false, false, common_object_handler, false },
-  { NULL,            0, 0, false, false, false, NULL, false }
+  /* { name, min_len, max_len, decl_req, type_req, fn_type_req,
+       affects_type_identity, handler, exclude } */
+  { COMMON_OBJECT,   0, 1, true,  false, false, false, common_object_handler,
+    NULL },
+  { NULL,            0, 0, false, false, false, false, NULL, NULL }
 };
 
 void
@@ -9405,14 +9406,6 @@ alpha_pad_function_end (void)
 	       || find_reg_note (insn, REG_NORETURN, NULL_RTX)))
         continue;
 
-      /* Make sure we do not split a call and its corresponding
-	 CALL_ARG_LOCATION note.  */
-      next = NEXT_INSN (insn);
-      if (next == NULL)
-	continue;
-      if (NOTE_P (next) && NOTE_KIND (next) == NOTE_INSN_CALL_ARG_LOCATION)
-	insn = next;
-
       next = next_active_insn (insn);
       if (next)
 	{
@@ -9831,9 +9824,7 @@ alpha_canonicalize_comparison (int *code, rtx *op0, rtx *op1,
       && (*code == GE || *code == GT || *code == GEU || *code == GTU)
       && (REG_P (*op1) || *op1 == const0_rtx))
     {
-      rtx tem = *op0;
-      *op0 = *op1;
-      *op1 = tem;
+      std::swap (*op0, *op1);
       *code = (int)swap_condition ((enum rtx_code)*code);
     }
 

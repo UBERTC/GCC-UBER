@@ -1,5 +1,5 @@
 /* Definitions of target machine for GNU compiler for TILEPro.
-   Copyright (C) 2011-2017 Free Software Foundation, Inc.
+   Copyright (C) 2011-2018 Free Software Foundation, Inc.
    Contributed by Walter Lee (walt@tilera.com)
 
    This file is part of GCC.
@@ -205,7 +205,6 @@ enum reg_class
 
 #define STACK_GROWS_DOWNWARD 1
 #define FRAME_GROWS_DOWNWARD 1
-#define STARTING_FRAME_OFFSET 0
 
 #define DYNAMIC_CHAIN_ADDRESS(FRAME) \
   plus_constant (Pmode, (FRAME), UNITS_PER_WORD)

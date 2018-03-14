@@ -1,4 +1,4 @@
-/* Copyright (C) 2006-2017 Free Software Foundation, Inc.
+/* Copyright (C) 2006-2018 Free Software Foundation, Inc.
 
    This file is free software; you can redistribute it and/or modify it under
    the terms of the GNU General Public License as published by the Free
@@ -13,6 +13,8 @@
    You should have received a copy of the GNU General Public License
    along with GCC; see the file COPYING3.  If not see
    <http://www.gnu.org/licenses/>.  */
+
+#define IN_TARGET_CODE 1
 
 #include "config.h"
 #include "system.h"
@@ -1903,8 +1905,6 @@ rtx
 spu_const (machine_mode mode, HOST_WIDE_INT val)
 {
   rtx inner;
-  rtvec v;
-  int units, i;
 
   gcc_assert (GET_MODE_CLASS (mode) == MODE_INT
 	      || GET_MODE_CLASS (mode) == MODE_FLOAT
@@ -1923,14 +1923,7 @@ spu_const (machine_mode mode, HOST_WIDE_INT val)
   else 
     inner = hwint_to_const_double (GET_MODE_INNER (mode), val);
 
-  units = GET_MODE_NUNITS (mode);
-
-  v = rtvec_alloc (units);
-
-  for (i = 0; i < units; ++i)
-    RTVEC_ELT (v, i) = inner;
-
-  return gen_rtx_CONST_VECTOR (mode, v);
+  return gen_const_vec_duplicate (mode, inner);
 }
 
 /* Create a MODE vector constant from 4 ints. */
@@ -2038,8 +2031,9 @@ pad_bb(void)
   for (; insn; insn = next_insn)
     {
       next_insn = next_active_insn (insn);
-      if (INSN_CODE (insn) == CODE_FOR_iprefetch
-	  || INSN_CODE (insn) == CODE_FOR_hbr)
+      if (INSN_P (insn)
+          && (INSN_CODE (insn) == CODE_FOR_iprefetch
+	      || INSN_CODE (insn) == CODE_FOR_hbr))
 	{
 	  if (hbr_insn)
 	    {
@@ -2057,7 +2051,7 @@ pad_bb(void)
 	    }
 	  hbr_insn = insn;
 	}
-      if (INSN_CODE (insn) == CODE_FOR_blockage && next_insn)
+      if (INSN_P (insn) && INSN_CODE (insn) == CODE_FOR_blockage && next_insn)
 	{
 	  if (GET_MODE (insn) == TImode)
 	    PUT_MODE (next_insn, TImode);
@@ -6640,6 +6634,8 @@ spu_builtin_vectorization_cost (enum vect_cost_for_stmt type_of_cost,
         return 2;
 
       case unaligned_load:
+      case vector_gather_load:
+      case vector_scatter_store:
         return 2;
 
       case cond_branch_taken:
@@ -7189,9 +7185,21 @@ spu_can_change_mode_class (machine_mode from, machine_mode to, reg_class_t)
 /* Implement TARGET_TRULY_NOOP_TRUNCATION.  */
 
 static bool
-spu_truly_noop_truncation (unsigned int outprec, unsigned int inprec)
+spu_truly_noop_truncation (poly_uint64 outprec, poly_uint64 inprec)
 {
   return inprec <= 32 && outprec <= inprec;
+}
+
+/* Implement TARGET_STATIC_RTX_ALIGNMENT.
+
+   Make all static objects 16-byte aligned.  This allows us to assume
+   they are also padded to 16 bytes, which means we can use a single
+   load or store instruction to access them.  */
+
+static HOST_WIDE_INT
+spu_static_rtx_alignment (machine_mode mode)
+{
+  return MAX (GET_MODE_ALIGNMENT (mode), 128);
 }
 
 /* Implement TARGET_CONSTANT_ALIGNMENT.
@@ -7209,13 +7217,13 @@ spu_constant_alignment (const_tree, HOST_WIDE_INT align)
 /*  Table of machine attributes.  */
 static const struct attribute_spec spu_attribute_table[] =
 {
-  /* { name, min_len, max_len, decl_req, type_req, fn_type_req, handler,
-       affects_type_identity } */
-  { "naked",          0, 0, true,  false, false, spu_handle_fndecl_attribute,
-    false },
-  { "spu_vector",     0, 0, false, true,  false, spu_handle_vector_attribute,
-    false },
-  { NULL,             0, 0, false, false, false, NULL, false }
+  /* { name, min_len, max_len, decl_req, type_req, fn_type_req,
+       affects_type_identity, handler, exclude } */
+  { "naked",          0, 0, true,  false, false, false,
+    spu_handle_fndecl_attribute, NULL },
+  { "spu_vector",     0, 0, false, true,  false, false,
+    spu_handle_vector_attribute, NULL },
+  { NULL,             0, 0, false, false, false, false, NULL, NULL }
 };
 
 /*  TARGET overrides.  */
@@ -7445,6 +7453,8 @@ static const struct attribute_spec spu_attribute_table[] =
 #undef TARGET_TRULY_NOOP_TRUNCATION
 #define TARGET_TRULY_NOOP_TRUNCATION spu_truly_noop_truncation
 
+#undef TARGET_STATIC_RTX_ALIGNMENT
+#define TARGET_STATIC_RTX_ALIGNMENT spu_static_rtx_alignment
 #undef TARGET_CONSTANT_ALIGNMENT
 #define TARGET_CONSTANT_ALIGNMENT spu_constant_alignment
 

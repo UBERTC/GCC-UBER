@@ -1,5 +1,5 @@
 /* Natural loop discovery code for GNU compiler.
-   Copyright (C) 2000-2017 Free Software Foundation, Inc.
+   Copyright (C) 2000-2018 Free Software Foundation, Inc.
 
 This file is part of GCC.
 
@@ -296,13 +296,25 @@ establish_preds (struct loop *loop, struct loop *father)
 
 /* Add LOOP to the loop hierarchy tree where FATHER is father of the
    added loop.  If LOOP has some children, take care of that their
-   pred field will be initialized correctly.  */
+   pred field will be initialized correctly.  If AFTER is non-null
+   then it's expected it's a pointer into FATHERs inner sibling
+   list and LOOP is added behind AFTER, otherwise it's added in front
+   of FATHERs siblings.  */
 
 void
-flow_loop_tree_node_add (struct loop *father, struct loop *loop)
+flow_loop_tree_node_add (struct loop *father, struct loop *loop,
+			 struct loop *after)
 {
-  loop->next = father->inner;
-  father->inner = loop;
+  if (after)
+    {
+      loop->next = after->next;
+      after->next = loop;
+    }
+  else
+    {
+      loop->next = father->inner;
+      father->inner = loop;
+    }
 
   establish_preds (loop, father);
 }
@@ -599,15 +611,15 @@ find_subloop_latch_edge_by_profile (vec<edge> latches)
 
   FOR_EACH_VEC_ELT (latches, i, e)
     {
-      if (e->count > mcount)
+      if (e->count ()> mcount)
 	{
 	  me = e;
-	  mcount = e->count;
+	  mcount = e->count();
 	}
-      tcount += e->count;
+      tcount += e->count();
     }
 
-  if (!tcount.initialized_p () || tcount < HEAVY_EDGE_MIN_SAMPLES
+  if (!tcount.initialized_p () || !(tcount.ipa () > HEAVY_EDGE_MIN_SAMPLES)
       || (tcount - mcount).apply_scale (HEAVY_EDGE_RATIO, 1) > tcount)
     return NULL;
 
@@ -1713,11 +1725,18 @@ loop_preheader_edge (const struct loop *loop)
   edge e;
   edge_iterator ei;
 
-  gcc_assert (loops_state_satisfies_p (LOOPS_HAVE_PREHEADERS));
+  gcc_assert (loops_state_satisfies_p (LOOPS_HAVE_PREHEADERS)
+	      && ! loops_state_satisfies_p (LOOPS_MAY_HAVE_MULTIPLE_LATCHES));
 
   FOR_EACH_EDGE (e, ei, loop->header->preds)
     if (e->src != loop->latch)
       break;
+
+  if (! e)
+    {
+      gcc_assert (! loop_outer (loop));
+      return single_succ_edge (ENTRY_BLOCK_PTR_FOR_FN (cfun));
+    }
 
   return e;
 }

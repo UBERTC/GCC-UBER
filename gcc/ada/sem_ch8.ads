@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---          Copyright (C) 1992-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -53,17 +53,15 @@ package Sem_Ch8 is
    procedure Analyze_Package_Renaming           (N : Node_Id);
    procedure Analyze_Subprogram_Renaming        (N : Node_Id);
 
-   procedure Analyze_Use_Package (N     : Node_Id;
-                                  Chain : Boolean := True);
-   --  Analyze a use package clause and control (through the Chain
-   --  parameter) whether to add N to the use clause chain for the name
-   --  denoted within use clause N in case we are reanalyzing a use clause
-   --  because of stack manipulation.
+   procedure Analyze_Use_Package (N : Node_Id; Chain : Boolean := True);
+   --  Analyze a use package clause and control (through the Chain parameter)
+   --  whether to add N to the use clause chain for the name denoted within
+   --  use clause N in case we are reanalyzing a use clause because of stack
+   --  manipulation.
 
-   procedure Analyze_Use_Type (N     : Node_Id;
-                               Chain : Boolean := True);
-   --  Similar to Analyze_Use_Package except the Chain parameter applies
-   --  to the type within N's subtype mark Current_Use_Clause.
+   procedure Analyze_Use_Type (N : Node_Id; Chain : Boolean := True);
+   --  Similar to Analyze_Use_Package except the Chain parameter applies to the
+   --  type within N's subtype mark Current_Use_Clause.
 
    procedure End_Scope;
    --  Called at end of scope. On exit from blocks and bodies (subprogram,

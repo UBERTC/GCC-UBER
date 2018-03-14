@@ -1,5 +1,5 @@
 # configure.ac -- Backtrace configure script.
-# Copyright (C) 2012-2017 Free Software Foundation, Inc.
+# Copyright (C) 2012-2018 Free Software Foundation, Inc.
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -129,6 +129,12 @@ else
   if test "$libbacktrace_cv_c_random_seed_string" = "yes"; then
     EXTRA_FLAGS="$EXTRA_FLAGS -frandom-seed=\$@"
   fi
+fi
+
+if test -n "${with_target_subdir}"; then
+  # Add CET specific flags is Intel CET is enabled.
+  GCC_CET_FLAGS(CET_FLAGS)
+  EXTRA_FLAGS="$EXTRA_FLAGS $CET_FLAGS"
 fi
 AC_SUBST(EXTRA_FLAGS)
 
@@ -387,6 +393,21 @@ fi
 if test "$have_getexecname" = "yes"; then
   AC_DEFINE(HAVE_GETEXECNAME, 1, [Define if getexecname is available.])
 fi
+
+# Check for the clock_gettime function.
+AC_CHECK_FUNCS(clock_gettime)
+clock_gettime_link=
+# At least for glibc, clock_gettime is in librt.  But don't
+# pull that in if it still doesn't give us the function we want.  This
+# test is copied from libgomp, and modified to not link in -lrt as
+# we're using this for test timing only.
+if test "$ac_cv_func_clock_gettime" = no; then
+  AC_CHECK_LIB(rt, clock_gettime,
+    [CLOCK_GETTIME_LINK=-lrt
+     AC_DEFINE(HAVE_CLOCK_GETTIME, 1,
+	       [Define to 1 if you have the `clock_gettime' function.])])
+fi
+AC_SUBST(CLOCK_GETTIME_LINK)
 
 dnl Test whether the compiler supports the -pthread option.
 AC_CACHE_CHECK([whether -pthread is supported],

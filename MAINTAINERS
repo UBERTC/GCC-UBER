@@ -37,11 +37,15 @@ Note that while global reviewers can approve changes to any part of
 the compiler or associated libraries, they still need approval for
 their own patches from other maintainers or reviewers.
 
+Also note that maintainership of any area covers changes to web pages,
+docs, and the testsuite related to that.
+
 			CPU Port Maintainers	(CPU alphabetical order)
 
 aarch64 port		Richard Earnshaw	<richard.earnshaw@arm.com>
 aarch64 port		James Greenhalgh	<james.greenhalgh@arm.com>
 aarch64 port		Marcus Shawcroft	<marcus.shawcroft@arm.com>
+aarch64 SVE port	Richard Sandiford	<richard.sandiford@arm.com>
 alpha port		Richard Henderson	<rth@twiddle.net>
 arc port		Joern Rennecke		<gnu@amylaar.uk>
 arm port		Nick Clifton		<nickc@redhat.com>
@@ -90,8 +94,9 @@ pdp11 port		Paul Koning		<ni1d@arrl.net>
 picochip port		Daniel Towner		<dant@picochip.com>
 powerpcspe port		Andrew Jenner		<andrew@codesourcery.com>
 riscv port		Kito Cheng		<kito.cheng@gmail.com>
-riscv port		Palmer Dabbelt		<palmer@dabbelt.com>
+riscv port		Palmer Dabbelt		<palmer@sifive.com>
 riscv port		Andrew Waterman		<andrew@sifive.com>
+riscv port		Jim Wilson		<jimw@sifive.com>
 rl78 port		DJ Delorie		<dj@redhat.com>
 rs6000/powerpc port	David Edelsohn		<dje.gcc@gmail.com>
 rs6000/powerpc port	Segher Boessenkool	<segher@kernel.crashing.org>
@@ -355,6 +360,7 @@ Ian Dall					<ian@beware.dropbear.id.au>
 David Daney					<david.daney@caviumnetworks.com>
 Robin Dapp					<rdapp@linux.vnet.ibm.com>
 Simon Dardis					<simon.dardis@imgtec.com>
+Sudakshina Das					<sudi.das@arm.com>
 Bud Davis					<jmdavis@link.com>
 Chris Demetriou					<cgd@google.com>
 Sameera Deshpande				<sameera.deshpande@arm.com>
@@ -449,7 +455,9 @@ Jeff Knaggs					<jknaggs@redhat.com>
 Michael Koch					<konqueror@gmx.de>
 Nicolas Koenig					<koenigni@student.ethz.ch>
 Kaz Kojima					<kkojima@gcc.gnu.org>
+Boris Kolpackov                                 <boris@codesynthesis.com>
 Dave Korn					<dave.korn.cygwin@gmail.com>
+Julia Koval					<julia.koval@intel.com>
 Matt Kraai					<kraai@ftbfs.org>
 Jan Kratochvil					<jan.kratochvil@redhat.com>
 Louis Krupp					<louis.krupp@zoho.com>
@@ -509,7 +517,7 @@ James A. Morrison				<phython@gcc.gnu.org>
 Brooks Moses					<bmoses@google.com>
 Dirk Mueller					<dmueller@suse.de>
 Phil Muldoon					<pmuldoon@redhat.com>
-Steven Munroe					<munroesj@linux.vnet.ibm.com>
+Steven Munroe					<munroesj52@gmail.com>
 Szabolcs Nagy					<szabolcs.nagy@arm.com>
 Quentin Neill					<quentin.neill.gnu@gmail.com>
 Adam Nemet					<adambnemet@gmail.com>
@@ -529,10 +537,13 @@ Patrick Palka					<ppalka@gcc.gnu.org>
 Devang Patel					<dpatel@apple.com>
 Andris Pavenis					<andris.pavenis@iki.fi>
 Fernando Pereira				<pronesto@gmail.com>
+Sebastian Perta					<sebastian.perta@renesas.com>
+Sebastian Peryt					<sebastian.peryt@intel.com>
 Kaushik Phatak					<kaushik.phatak@kpitcummins.com>
 Nicolas Pitre					<nico@cam.org>
 Paul Pluzhnikov					<ppluzhnikov@google.com>
 Antoniu Pop					<antoniu.pop@gmail.com>
+Siddhesh Poyarekar				<siddhesh@sourceware.org>
 Vidya Praveen					<vidyapraveen@arm.com>
 Thomas Preud'homme				<thomas.preudhomme@arm.com>
 Vladimir Prus					<vladimir@codesourcery.com>
@@ -600,6 +611,7 @@ Ilya Tocar					<tocarip@gmail.com>
 Philipp Tomsich					<philipp.tomsich@theobroma-systems.com>
 Konrad Trifunovic				<konrad.trifunovic@inria.fr>
 Markus Trippelsdorf				<markus@trippelsdorf.de>
+Igor Tsimbalist					<igor.v.tsimbalist@intel.com>
 Martin Uecker					<uecker@eecs.berkeley.edu>
 David Ung					<davidu@mips.com>
 Neil Vachharajani				<nvachhar@gmail.com>
@@ -636,6 +648,7 @@ David Yuste					<david.yuste@gmail.com>
 Kirill Yukhin					<kirill.yukhin@gmail.com>
 Adhemerval Zanella				<azanella@linux.vnet.ibm.com>
 Yufeng Zhang					<yufeng.zhang@arm.com>
+Qing Zhao					<qing.zhao@oracle.com>
 Shujing Zhao					<pearly.zhao@oracle.com>
 Jon Ziegler					<jonz@apple.com>
 Roman Zippel					<zippel@linux-m68k.org>
