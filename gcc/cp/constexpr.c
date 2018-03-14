@@ -1274,6 +1274,8 @@ cxx_bind_parameters_in_call (const constexpr_ctx *ctx, tree t,
 
       if (!*non_constant_p)
 	{
+	  /* Don't share a CONSTRUCTOR that might be changed.  */
+	  arg = unshare_constructor (arg);
 	  /* Make sure the binding has the same type as the parm.  But
 	     only for constant args.  */
 	  if (TREE_CODE (type) != REFERENCE_TYPE)
@@ -1558,7 +1560,7 @@ cxx_eval_call_expression (const constexpr_ctx *ctx, tree t,
   tree result = NULL_TREE;
 
   constexpr_call *entry = NULL;
-  if (depth_ok && !non_constant_args)
+  if (depth_ok && !non_constant_args && ctx->strict)
     {
       new_call.hash = iterative_hash_template_arg
 	(new_call.bindings, constexpr_fundef_hasher::hash (new_call.fundef));
@@ -2042,6 +2044,45 @@ cxx_eval_conditional_expression (const constexpr_ctx *ctx, tree t,
 				       lval,
 				       non_constant_p, overflow_p,
 				       jump_target);
+}
+
+/* Subroutine of cxx_eval_constant_expression.
+   Attempt to evaluate vector condition expressions.  Unlike
+   cxx_eval_conditional_expression, VEC_COND_EXPR acts like a normal
+   ternary arithmetics operation, where all 3 arguments have to be
+   evaluated as constants and then folding computes the result from
+   them.  */
+
+static tree
+cxx_eval_vector_conditional_expression (const constexpr_ctx *ctx, tree t,
+					bool *non_constant_p, bool *overflow_p)
+{
+  tree arg1 = cxx_eval_constant_expression (ctx, TREE_OPERAND (t, 0),
+					    /*lval*/false,
+					    non_constant_p, overflow_p);
+  VERIFY_CONSTANT (arg1);
+  tree arg2 = cxx_eval_constant_expression (ctx, TREE_OPERAND (t, 1),
+					    /*lval*/false,
+					    non_constant_p, overflow_p);
+  VERIFY_CONSTANT (arg2);
+  tree arg3 = cxx_eval_constant_expression (ctx, TREE_OPERAND (t, 2),
+					    /*lval*/false,
+					    non_constant_p, overflow_p);
+  VERIFY_CONSTANT (arg3);
+  location_t loc = EXPR_LOCATION (t);
+  tree type = TREE_TYPE (t);
+  tree r = fold_ternary_loc (loc, VEC_COND_EXPR, type, arg1, arg2, arg3);
+  if (r == NULL_TREE)
+    {
+      if (arg1 == TREE_OPERAND (t, 0)
+	  && arg2 == TREE_OPERAND (t, 1)
+	  && arg3 == TREE_OPERAND (t, 2))
+	r = t;
+      else
+	r = build3_loc (loc, VEC_COND_EXPR, type, arg1, arg2, arg3);
+    }
+  VERIFY_CONSTANT (r);
+  return r;
 }
 
 /* Returns less than, equal to, or greater than zero if KEY is found to be
@@ -2856,9 +2897,8 @@ cxx_eval_vec_init_1 (const constexpr_ctx *ctx, tree atype, tree init,
 	  if (!lvalue_p (init))
 	    eltinit = move (eltinit);
 	  eltinit = force_rvalue (eltinit, tf_warning_or_error);
-	  eltinit = (cxx_eval_constant_expression
-		     (&new_ctx, eltinit, lval,
-		      non_constant_p, overflow_p));
+	  eltinit = cxx_eval_constant_expression (&new_ctx, eltinit, lval,
+						  non_constant_p, overflow_p);
 	}
       if (*non_constant_p && !ctx->quiet)
 	break;
@@ -2871,12 +2911,13 @@ cxx_eval_vec_init_1 (const constexpr_ctx *ctx, tree atype, tree init,
       else
 	CONSTRUCTOR_APPEND_ELT (*p, idx, eltinit);
       /* Reuse the result of cxx_eval_constant_expression call
-	  from the first iteration to all others if it is a constant
-	  initializer that doesn't require relocations.  */
+	 from the first iteration to all others if it is a constant
+	 initializer that doesn't require relocations.  */
       if (reuse
 	  && max > 1
-	  && (initializer_constant_valid_p (eltinit, TREE_TYPE (eltinit))
-	      == null_pointer_node))
+	  && (eltinit == NULL_TREE
+	      || (initializer_constant_valid_p (eltinit, TREE_TYPE (eltinit))
+		  == null_pointer_node)))
 	{
 	  if (new_ctx.ctor != ctx->ctor)
 	    eltinit = new_ctx.ctor;
@@ -2927,9 +2968,9 @@ cxx_eval_vec_init (const constexpr_ctx *ctx, tree t,
 static tree
 cxx_fold_indirect_ref (location_t loc, tree type, tree op0, bool *empty_base)
 {
-  tree sub, subtype;
+  tree sub = op0;
+  tree subtype;
 
-  sub = op0;
   STRIP_NOPS (sub);
   subtype = TREE_TYPE (sub);
   if (!POINTER_TYPE_P (subtype))
@@ -2984,7 +3025,8 @@ cxx_fold_indirect_ref (location_t loc, tree type, tree op0, bool *empty_base)
 	{
 	  tree part_width = TYPE_SIZE (type);
 	  tree index = bitsize_int (0);
-	  return fold_build3_loc (loc, BIT_FIELD_REF, type, op, part_width, index);
+	  return fold_build3_loc (loc, BIT_FIELD_REF, type, op, part_width,
+				  index);
 	}
       /* Also handle conversion to an empty base class, which
 	 is represented with a NOP_EXPR.  */
@@ -3024,19 +3066,31 @@ cxx_fold_indirect_ref (location_t loc, tree type, tree op0, bool *empty_base)
 	  /* ((foo*)&vectorfoo)[1] => BIT_FIELD_REF<vectorfoo,...> */
 	  if (VECTOR_TYPE_P (op00type)
 	      && (same_type_ignoring_top_level_qualifiers_p
-		  (type, TREE_TYPE (op00type))))
+						(type, TREE_TYPE (op00type)))
+	      /* POINTER_PLUS_EXPR second operand is sizetype, unsigned,
+		 but we want to treat offsets with MSB set as negative.
+		 For the code below negative offsets are invalid and
+		 TYPE_SIZE of the element is something unsigned, so
+		 check whether op01 fits into HOST_WIDE_INT, which
+		 implies it is from 0 to INTTYPE_MAXIMUM (HOST_WIDE_INT), and
+		 then just use unsigned HOST_WIDE_INT because we want to treat
+		 the value as unsigned.  */
+	      && tree_fits_shwi_p (op01))
 	    {
-	      HOST_WIDE_INT offset = tree_to_shwi (op01);
 	      tree part_width = TYPE_SIZE (type);
-	      unsigned HOST_WIDE_INT part_widthi = tree_to_shwi (part_width)/BITS_PER_UNIT;
-	      unsigned HOST_WIDE_INT indexi = offset * BITS_PER_UNIT;
-	      tree index = bitsize_int (indexi);
-
-	      if (offset / part_widthi < TYPE_VECTOR_SUBPARTS (op00type))
-		return fold_build3_loc (loc,
-					BIT_FIELD_REF, type, op00,
-					part_width, index);
-
+	      unsigned HOST_WIDE_INT max_offset
+		= (tree_to_uhwi (part_width) / BITS_PER_UNIT
+		   * TYPE_VECTOR_SUBPARTS (op00type));
+	      if (tree_int_cst_sign_bit (op01) == 0
+		  && compare_tree_int (op01, max_offset) == -1)
+		{
+		  unsigned HOST_WIDE_INT offset = tree_to_uhwi (op01);
+		  unsigned HOST_WIDE_INT indexi = offset * BITS_PER_UNIT;
+		  tree index = bitsize_int (indexi);
+		  return fold_build3_loc (loc,
+					  BIT_FIELD_REF, type, op00,
+					  part_width, index);
+		}
 	    }
 	  /* ((foo*)&complexfoo)[1] => __imag__ complexfoo */
 	  else if (TREE_CODE (op00type) == COMPLEX_TYPE
@@ -3093,7 +3147,8 @@ cxx_fold_indirect_ref (location_t loc, tree type, tree op0, bool *empty_base)
     {
       tree type_domain;
       tree min_val = size_zero_node;
-      tree newsub = cxx_fold_indirect_ref (loc, TREE_TYPE (subtype), sub, NULL);
+      tree newsub
+	= cxx_fold_indirect_ref (loc, TREE_TYPE (subtype), sub, NULL);
       if (newsub)
 	sub = newsub;
       else
@@ -4131,7 +4186,16 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 	r = cxx_eval_constant_expression (ctx, TREE_OPERAND (t, 0),
 					  lval,
 					  non_constant_p, overflow_p);
-      *jump_target = t;
+      if (jump_target)
+	*jump_target = t;
+      else
+	{
+	  /* Can happen with ({ return true; }) && false; passed to
+	     maybe_constant_value.  There is nothing to jump over in this
+	     case, and the bug will be diagnosed later.  */
+	  gcc_assert (ctx->quiet);
+	  *non_constant_p = true;
+	}
       break;
 
     case SAVE_EXPR:
@@ -4361,11 +4425,13 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 					      jump_target);
 	  break;
 	}
-      /* FALLTHRU */
-    case VEC_COND_EXPR:
       r = cxx_eval_conditional_expression (ctx, t, lval,
 					   non_constant_p, overflow_p,
 					   jump_target);
+      break;
+    case VEC_COND_EXPR:
+      r = cxx_eval_vector_conditional_expression (ctx, t, non_constant_p,
+						  overflow_p);
       break;
 
     case CONSTRUCTOR:
@@ -4599,6 +4665,10 @@ cxx_eval_constant_expression (const constexpr_ctx *ctx, tree t,
 					jump_target);
       break;
 
+    case USING_STMT:
+      r = void_node;
+      break;
+
     default:
       if (STATEMENT_CODE_P (TREE_CODE (t)))
 	{
@@ -4722,8 +4792,12 @@ cxx_eval_outermost_constant_expr (tree t, bool allow_non_constant,
     return error_mark_node;
   else if (non_constant_p && TREE_CONSTANT (r))
     {
-      /* This isn't actually constant, so unset TREE_CONSTANT.  */
-      if (EXPR_P (r))
+      /* This isn't actually constant, so unset TREE_CONSTANT.
+	 Don't clear TREE_CONSTANT on ADDR_EXPR, as the middle-end requires
+	 it to be set if it is invariant address, even when it is not
+	 a valid C++ constant expression.  Wrap it with a NOP_EXPR
+	 instead.  */
+      if (EXPR_P (r) && TREE_CODE (r) != ADDR_EXPR)
 	r = copy_node (r);
       else if (TREE_CODE (r) == CONSTRUCTOR)
 	r = build1 (VIEW_CONVERT_EXPR, TREE_TYPE (r), r);
@@ -5412,6 +5486,7 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
     case OMP_PARALLEL:
     case OMP_TASK:
     case OMP_FOR:
+    case OMP_SIMD:
     case OMP_DISTRIBUTE:
     case OMP_TASKLOOP:
     case OMP_TEAMS:
@@ -5586,7 +5661,8 @@ potential_constant_expression_1 (tree t, bool want_rval, bool strict,
       return RECUR (TREE_OPERAND (t, 1), want_rval);
 
     case TARGET_EXPR:
-      if (!literal_type_p (TREE_TYPE (t)))
+      if (!TARGET_EXPR_DIRECT_INIT_P (t)
+	  && !literal_type_p (TREE_TYPE (t)))
 	{
 	  if (flags & tf_error)
 	    {

@@ -414,7 +414,6 @@
 (define_insn "*restore_world"
  [(match_parallel 0 "restore_world_operation"
                   [(return)
-		   (use (reg:SI LR_REGNO))
                    (use (match_operand:SI 1 "call_operand" "s"))
                    (clobber (match_operand:SI 2 "gpc_reg_operand" "=r"))])]
  "TARGET_MACHO && (DEFAULT_ABI == ABI_DARWIN) && TARGET_32BIT"
@@ -2117,7 +2116,7 @@
 		   UNSPEC_VPERMR))]
   "TARGET_P9_VECTOR"
   "@
-   vpermr %0,%2,%1,%3
+   vpermr %0,%1,%2,%3
    xxpermr %x0,%x1,%x3"
   [(set_attr "type" "vecperm")
    (set_attr "length" "4")])

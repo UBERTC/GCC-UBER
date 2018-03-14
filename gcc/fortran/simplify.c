@@ -1,5 +1,5 @@
 /* Simplify intrinsic functions at compile-time.
-   Copyright (C) 2000-2017 Free Software Foundation, Inc.
+   Copyright (C) 2000-2018 Free Software Foundation, Inc.
    Contributed by Andy Vaught & Katherine Holcomb
 
 This file is part of GCC.
@@ -25,6 +25,7 @@ along with GCC; see the file COPYING3.  If not see
 #include "gfortran.h"
 #include "arith.h"
 #include "intrinsic.h"
+#include "match.h"
 #include "target-memory.h"
 #include "constructor.h"
 #include "version.h"	/* For version_string.  */
@@ -1990,11 +1991,17 @@ gfc_simplify_cshift (gfc_expr *array, gfc_expr *shift, gfc_expr *dim)
       sz = mpz_get_si (size);
       mpz_clear (size);
 
+      /* Special case: Zero-sized array.  */
+      if (sz == 0)
+	return a;
+
       /* Adjust shft to deal with right or left shifts. */
-      shft = shft < 0 ? 1 - shft : shft;
+      shft = shft % sz;
+      if (shft < 0)
+	shft += sz;
 
       /* Special case: Shift to the original order!  */
-      if (sz == 0 || shft % sz == 0)
+      if (shft % sz == 0)
 	return a;
 
       result = gfc_copy_expr (a);
@@ -4196,10 +4203,23 @@ gfc_simplify_matmul (gfc_expr *matrix_a, gfc_expr *matrix_b)
       || !is_constant_array_expr (matrix_b))
     return NULL;
 
-  gcc_assert (gfc_compare_types (&matrix_a->ts, &matrix_b->ts));
-  result = gfc_get_array_expr (matrix_a->ts.type,
-			       matrix_a->ts.kind,
-			       &matrix_a->where);
+  /* MATMUL should do mixed-mode arithmetic.  Set the result type.  */
+  if (matrix_a->ts.type != matrix_b->ts.type)
+    {
+      gfc_expr e;
+      e.expr_type = EXPR_OP;
+      gfc_clear_ts (&e.ts);
+      e.value.op.op = INTRINSIC_NONE;
+      e.value.op.op1 = matrix_a;
+      e.value.op.op2 = matrix_b;
+      gfc_type_convert_binary (&e, 1);
+      result = gfc_get_array_expr (e.ts.type, e.ts.kind, &matrix_a->where);
+    }
+  else
+    {
+      result = gfc_get_array_expr (matrix_a->ts.type, matrix_a->ts.kind,
+				   &matrix_a->where);
+    }
 
   if (matrix_a->rank == 1 && matrix_b->rank == 2)
     {
@@ -6560,10 +6580,12 @@ gfc_simplify_transfer (gfc_expr *source, gfc_expr *mold, gfc_expr *size)
   unsigned char *buffer;
   size_t result_length;
 
+  if (!gfc_is_constant_expr (source) || !gfc_is_constant_expr (size))
+    return NULL;
 
-  if (!gfc_is_constant_expr (source)
-	|| (gfc_init_expr_flag && !gfc_is_constant_expr (mold))
-	|| !gfc_is_constant_expr (size))
+  if (!gfc_resolve_expr (mold))
+    return NULL;
+  if (gfc_init_expr_flag && !gfc_is_constant_expr (mold))
     return NULL;
 
   if (!gfc_calculate_transfer_sizes (source, mold, size, &source_size, 
@@ -6571,8 +6593,7 @@ gfc_simplify_transfer (gfc_expr *source, gfc_expr *mold, gfc_expr *size)
     return NULL;
 
   /* Calculate the size of the source.  */
-  if (source->expr_type == EXPR_ARRAY
-      && !gfc_array_size (source, &tmp))
+  if (source->expr_type == EXPR_ARRAY && !gfc_array_size (source, &tmp))
     gfc_internal_error ("Failure getting length of a constant array.");
 
   /* Create an empty new expression with the appropriate characteristics.  */
@@ -6580,7 +6601,7 @@ gfc_simplify_transfer (gfc_expr *source, gfc_expr *mold, gfc_expr *size)
 				  &source->where);
   result->ts = mold->ts;
 
-  mold_element = mold->expr_type == EXPR_ARRAY
+  mold_element = (mold->expr_type == EXPR_ARRAY && mold->value.constructor)
 		 ? gfc_constructor_first (mold->value.constructor)->expr
 		 : mold;
 

@@ -621,6 +621,24 @@ determine_versionability (struct cgraph_node *node,
       reason = "calls comdat-local function";
     }
 
+  /* Functions calling BUILT_IN_VA_ARG_PACK and BUILT_IN_VA_ARG_PACK_LEN
+     works only when inlined.  Cloning them may still lead to better code
+     becuase ipa-cp will not give up on cloning further.  If the function is
+     external this however leads to wrong code becuase we may end up producing
+     offline copy of the function.  */
+  if (DECL_EXTERNAL (node->decl))
+    for (cgraph_edge *edge = node->callees; !reason && edge;
+	 edge = edge->next_callee)
+      if (DECL_BUILT_IN (edge->callee->decl)
+	  && DECL_BUILT_IN_CLASS (edge->callee->decl) == BUILT_IN_NORMAL)
+        {
+	  if (DECL_FUNCTION_CODE (edge->callee->decl) == BUILT_IN_VA_ARG_PACK)
+	    reason = "external function which calls va_arg_pack";
+	  if (DECL_FUNCTION_CODE (edge->callee->decl)
+	      == BUILT_IN_VA_ARG_PACK_LEN)
+	    reason = "external function which calls va_arg_pack_len";
+        }
+
   if (reason && dump_file && !node->alias && !node->thunk.thunk_p)
     fprintf (dump_file, "Function %s/%i is not versionable, reason: %s.\n",
 	     node->name (), node->order, reason);
@@ -1224,20 +1242,20 @@ ipa_get_jf_pass_through_result (struct ipa_jump_func *jfunc, tree input)
   if (!is_gimple_ip_invariant (input))
     return NULL_TREE;
 
-  if (TREE_CODE_CLASS (ipa_get_jf_pass_through_operation (jfunc))
-      == tcc_unary)
-    res = fold_unary (ipa_get_jf_pass_through_operation (jfunc),
-		      TREE_TYPE (input), input);
+  tree_code opcode = ipa_get_jf_pass_through_operation (jfunc);
+  if (TREE_CODE_CLASS (opcode) == tcc_comparison)
+    restype = boolean_type_node;
+  else if (expr_type_first_operand_type_p (opcode))
+    restype = TREE_TYPE (input);
   else
-    {
-      if (TREE_CODE_CLASS (ipa_get_jf_pass_through_operation (jfunc))
-	  == tcc_comparison)
-	restype = boolean_type_node;
-      else
-	restype = TREE_TYPE (input);
-      res = fold_binary (ipa_get_jf_pass_through_operation (jfunc), restype,
-			 input, ipa_get_jf_pass_through_operand (jfunc));
-    }
+    return NULL_TREE;
+
+  if (TREE_CODE_CLASS (opcode) == tcc_unary)
+    res = fold_unary (opcode, restype, input);
+  else
+    res = fold_binary (opcode, restype, input,
+		       ipa_get_jf_pass_through_operand (jfunc));
+
   if (res && !is_gimple_ip_invariant (res))
     return NULL_TREE;
 

@@ -4040,21 +4040,20 @@ optimize_bit_field_compare (location_t loc, enum tree_code code,
 		      size_int (nbitsize - lbitsize - lbitpos));
 
   if (! const_p)
-    /* If not comparing with constant, just rework the comparison
-       and return.  */
-    return fold_build2_loc (loc, code, compare_type,
-			fold_build2_loc (loc, BIT_AND_EXPR, unsigned_type,
-				     make_bit_field_ref (loc, linner, lhs,
-							 unsigned_type,
-							 nbitsize, nbitpos,
-							 1, lreversep),
-				     mask),
-			fold_build2_loc (loc, BIT_AND_EXPR, unsigned_type,
-				     make_bit_field_ref (loc, rinner, rhs,
-							 unsigned_type,
-							 nbitsize, nbitpos,
-							 1, rreversep),
-				     mask));
+    {
+      if (nbitpos < 0)
+	return 0;
+
+      /* If not comparing with constant, just rework the comparison
+	 and return.  */
+      tree t1 = make_bit_field_ref (loc, linner, lhs, unsigned_type,
+				    nbitsize, nbitpos, 1, lreversep);
+      t1 = fold_build2_loc (loc, BIT_AND_EXPR, unsigned_type, t1, mask);
+      tree t2 = make_bit_field_ref (loc, rinner, rhs, unsigned_type,
+				    nbitsize, nbitpos, 1, rreversep);
+      t2 = fold_build2_loc (loc, BIT_AND_EXPR, unsigned_type, t2, mask);
+      return fold_build2_loc (loc, code, compare_type, t1, t2);
+    }
 
   /* Otherwise, we are handling the constant case.  See if the constant is too
      big for the field.  Warn and return a tree for 0 (false) if so.  We do
@@ -4084,6 +4083,9 @@ optimize_bit_field_compare (location_t loc, enum tree_code code,
 	  return constant_boolean_node (code == NE_EXPR, compare_type);
 	}
     }
+
+  if (nbitpos < 0)
+    return 0;
 
   /* Single-bit compares should always be against zero.  */
   if (lbitsize == 1 && ! integer_zerop (rhs))
@@ -5858,7 +5860,10 @@ fold_truth_andor_1 (location_t loc, enum tree_code code, tree truth_type,
 	 results.  */
       ll_mask = const_binop (BIT_IOR_EXPR, ll_mask, rl_mask);
       lr_mask = const_binop (BIT_IOR_EXPR, lr_mask, rr_mask);
-      if (lnbitsize == rnbitsize && xll_bitpos == xlr_bitpos)
+      if (lnbitsize == rnbitsize
+	  && xll_bitpos == xlr_bitpos
+	  && lnbitpos >= 0
+	  && rnbitpos >= 0)
 	{
 	  lhs = make_bit_field_ref (loc, ll_inner, ll_arg,
 				    lntype, lnbitsize, lnbitpos,
@@ -5882,10 +5887,14 @@ fold_truth_andor_1 (location_t loc, enum tree_code code, tree truth_type,
 	 Note that we still must mask the lhs/rhs expressions.  Furthermore,
 	 the mask must be shifted to account for the shift done by
 	 make_bit_field_ref.  */
-      if ((ll_bitsize + ll_bitpos == rl_bitpos
-	   && lr_bitsize + lr_bitpos == rr_bitpos)
-	  || (ll_bitpos == rl_bitpos + rl_bitsize
-	      && lr_bitpos == rr_bitpos + rr_bitsize))
+      if (((ll_bitsize + ll_bitpos == rl_bitpos
+	    && lr_bitsize + lr_bitpos == rr_bitpos)
+	   || (ll_bitpos == rl_bitpos + rl_bitsize
+	       && lr_bitpos == rr_bitpos + rr_bitsize))
+	  && ll_bitpos >= 0
+	  && rl_bitpos >= 0
+	  && lr_bitpos >= 0
+	  && rr_bitpos >= 0)
 	{
 	  tree type;
 
@@ -5953,6 +5962,9 @@ fold_truth_andor_1 (location_t loc, enum tree_code code, tree truth_type,
 	  return constant_boolean_node (false, truth_type);
 	}
     }
+
+  if (lnbitpos < 0)
+    return 0;
 
   /* Construct the expression we will return.  First get the component
      reference we will make.  Unless the mask is all ones the width of
@@ -9111,8 +9123,8 @@ expr_not_equal_to (tree t, const wide_int &w)
    return NULL_TREE.  */
 
 tree
-fold_binary_loc (location_t loc,
-	     enum tree_code code, tree type, tree op0, tree op1)
+fold_binary_loc (location_t loc, enum tree_code code, tree type,
+		 tree op0, tree op1)
 {
   enum tree_code_class kind = TREE_CODE_CLASS (code);
   tree arg0, arg1, tem;
@@ -9716,10 +9728,17 @@ fold_binary_loc (location_t loc,
     case MINUS_EXPR:
       /* (-A) - B -> (-B) - A  where B is easily negated and we can swap.  */
       if (TREE_CODE (arg0) == NEGATE_EXPR
-	  && negate_expr_p (op1))
-	return fold_build2_loc (loc, MINUS_EXPR, type,
-				negate_expr (op1),
-				fold_convert_loc (loc, type,
+	  && negate_expr_p (op1)
+	  /* If arg0 is e.g. unsigned int and type is int, then this could
+	     introduce UB, because if A is INT_MIN at runtime, the original
+	     expression can be well defined while the latter is not.
+	     See PR83269.  */
+	  && !(ANY_INTEGRAL_TYPE_P (type)
+	       && TYPE_OVERFLOW_UNDEFINED (type)
+	       && ANY_INTEGRAL_TYPE_P (TREE_TYPE (arg0))
+	       && !TYPE_OVERFLOW_UNDEFINED (TREE_TYPE (arg0))))
+	return fold_build2_loc (loc, MINUS_EXPR, type, negate_expr (op1),
+			        fold_convert_loc (loc, type,
 						  TREE_OPERAND (arg0, 0)));
 
       /* Fold __complex__ ( x, 0 ) - __complex__ ( 0, y ) to
@@ -11225,22 +11244,48 @@ fold_binary_loc (location_t loc,
     } /* switch (code) */
 }
 
+/* Used by contains_label_[p1].  */
+
+struct contains_label_data
+{
+  hash_set<tree> *pset;
+  bool inside_switch_p;
+};
+
 /* Callback for walk_tree, looking for LABEL_EXPR.  Return *TP if it is
-   a LABEL_EXPR; otherwise return NULL_TREE.  Do not check the subtrees
-   of GOTO_EXPR.  */
+   a LABEL_EXPR or CASE_LABEL_EXPR not inside of another SWITCH_EXPR; otherwise
+   return NULL_TREE.  Do not check the subtrees of GOTO_EXPR.  */
 
 static tree
-contains_label_1 (tree *tp, int *walk_subtrees, void *data ATTRIBUTE_UNUSED)
+contains_label_1 (tree *tp, int *walk_subtrees, void *data)
 {
+  contains_label_data *d = (contains_label_data *) data;
   switch (TREE_CODE (*tp))
     {
     case LABEL_EXPR:
       return *tp;
 
+    case CASE_LABEL_EXPR:
+      if (!d->inside_switch_p)
+	return *tp;
+      return NULL_TREE;
+
+    case SWITCH_EXPR:
+      if (!d->inside_switch_p)
+	{
+	  if (walk_tree (&SWITCH_COND (*tp), contains_label_1, data, d->pset))
+	    return *tp;
+	  d->inside_switch_p = true;
+	  if (walk_tree (&SWITCH_BODY (*tp), contains_label_1, data, d->pset))
+	    return *tp;
+	  d->inside_switch_p = false;
+	  *walk_subtrees = 0;
+	}
+      return NULL_TREE;
+
     case GOTO_EXPR:
       *walk_subtrees = 0;
-
-      /* fall through */
+      return NULL_TREE;
 
     default:
       return NULL_TREE;
@@ -11253,8 +11298,9 @@ contains_label_1 (tree *tp, int *walk_subtrees, void *data ATTRIBUTE_UNUSED)
 static bool
 contains_label_p (tree st)
 {
-  return
-   (walk_tree_without_duplicates (&st, contains_label_1 , NULL) != NULL_TREE);
+  hash_set<tree> pset;
+  contains_label_data data = { &pset, false };
+  return walk_tree (&st, contains_label_1, &data, &pset) != NULL_TREE;
 }
 
 /* Fold a ternary expression of code CODE and type TYPE with operands
@@ -14036,6 +14082,7 @@ fold_indirect_ref_1 (location_t loc, tree type, tree op0)
     {
       tree op = TREE_OPERAND (sub, 0);
       tree optype = TREE_TYPE (op);
+
       /* *&CONST_DECL -> to the value of the const decl.  */
       if (TREE_CODE (op) == CONST_DECL)
 	return DECL_INITIAL (op);
@@ -14069,12 +14116,13 @@ fold_indirect_ref_1 (location_t loc, tree type, tree op0)
 	       && type == TREE_TYPE (optype))
 	return fold_build1_loc (loc, REALPART_EXPR, type, op);
       /* *(foo *)&vectorfoo => BIT_FIELD_REF<vectorfoo,...> */
-      else if (TREE_CODE (optype) == VECTOR_TYPE
+      else if (VECTOR_TYPE_P (optype)
 	       && type == TREE_TYPE (optype))
 	{
 	  tree part_width = TYPE_SIZE (type);
 	  tree index = bitsize_int (0);
-	  return fold_build3_loc (loc, BIT_FIELD_REF, type, op, part_width, index);
+	  return fold_build3_loc (loc, BIT_FIELD_REF, type, op, part_width,
+				  index);
 	}
     }
 
@@ -14092,8 +14140,17 @@ fold_indirect_ref_1 (location_t loc, tree type, tree op0)
 	  op00type = TREE_TYPE (op00);
 
 	  /* ((foo*)&vectorfoo)[1] => BIT_FIELD_REF<vectorfoo,...> */
-	  if (TREE_CODE (op00type) == VECTOR_TYPE
-	      && type == TREE_TYPE (op00type))
+	  if (VECTOR_TYPE_P (op00type)
+	      && type == TREE_TYPE (op00type)
+	      /* POINTER_PLUS_EXPR second operand is sizetype, unsigned,
+		 but we want to treat offsets with MSB set as negative.
+		 For the code below negative offsets are invalid and
+		 TYPE_SIZE of the element is something unsigned, so
+		 check whether op01 fits into HOST_WIDE_INT, which
+		 implies it is from 0 to INTTYPE_MAXIMUM (HOST_WIDE_INT), and
+		 then just use unsigned HOST_WIDE_INT because we want to treat
+		 the value as unsigned.  */
+	      && tree_fits_shwi_p (op01))
 	    {
 	      tree part_width = TYPE_SIZE (type);
 	      unsigned HOST_WIDE_INT max_offset

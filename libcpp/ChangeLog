@@ -1,3 +1,33 @@
+2018-03-03  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-01-31  Jakub Jelinek  <jakub@redhat.com>
+
+	PR preprocessor/69869
+	* traditional.c (skip_macro_block_comment): Return bool, true if
+	the macro block comment is unterminated.
+	(copy_comment): Use return value from skip_macro_block_comment instead
+	of always false.
+
+	2018-01-27  Jakub Jelinek  <jakub@redhat.com>
+
+	* include/cpplib.h (enum cpp_builtin_type): Change BT_LAST_USER from
+	BT_FIRST_USER + 31 to BT_FIRST_USER + 63.
+
+2018-01-25  Release Manager
+
+	* GCC 7.3.0 released.
+
+2018-01-05  Michael Weiser  <michael.weiser@gmx.de>
+
+	Backport from trunk
+	2017-12-20  Michael Weiser  <michael.weiser@gmx.de>
+
+	PR preprocessor/83492
+	* lex.c (search_line_fast) [__ARM_NEON && __ARM_64BIT_STATE]:
+	Fix selection of big-endian shift parameters by using
+	__ARM_BIG_ENDIAN.
+
 2017-08-14  Release Manager
 
 	* GCC 7.2.0 released.

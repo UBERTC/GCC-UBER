@@ -5104,7 +5104,8 @@ expand_assignment (tree to, tree from, bool nontemporal)
       else if (GET_CODE (to_rtx) == CONCAT)
 	{
 	  unsigned short mode_bitsize = GET_MODE_BITSIZE (GET_MODE (to_rtx));
-	  if (COMPLEX_MODE_P (TYPE_MODE (TREE_TYPE (from)))
+	  if (TYPE_MODE (TREE_TYPE (from)) == GET_MODE (to_rtx)
+	      && COMPLEX_MODE_P (GET_MODE (to_rtx))
 	      && bitpos == 0
 	      && bitsize == mode_bitsize)
 	    result = store_expr (from, to_rtx, false, nontemporal, reversep);
@@ -5125,17 +5126,56 @@ expand_assignment (tree to, tree from, bool nontemporal)
 				  nontemporal, reversep);
 	  else if (bitpos == 0 && bitsize == mode_bitsize)
 	    {
-	      rtx from_rtx;
 	      result = expand_normal (from);
-	      from_rtx = simplify_gen_subreg (GET_MODE (to_rtx), result,
-					      TYPE_MODE (TREE_TYPE (from)), 0);
-	      emit_move_insn (XEXP (to_rtx, 0),
-			      read_complex_part (from_rtx, false));
-	      emit_move_insn (XEXP (to_rtx, 1),
-			      read_complex_part (from_rtx, true));
+	      if (GET_CODE (result) == CONCAT)
+		{
+		  machine_mode to_mode = GET_MODE_INNER (GET_MODE (to_rtx));
+		  machine_mode from_mode = GET_MODE_INNER (GET_MODE (result));
+		  rtx from_real
+		    = simplify_gen_subreg (to_mode, XEXP (result, 0),
+					   from_mode, 0);
+		  rtx from_imag
+		    = simplify_gen_subreg (to_mode, XEXP (result, 1),
+					   from_mode, 0);
+		  if (!from_real || !from_imag)
+		    goto concat_store_slow;
+		  emit_move_insn (XEXP (to_rtx, 0), from_real);
+		  emit_move_insn (XEXP (to_rtx, 1), from_imag);
+		}
+	      else
+		{
+		  rtx from_rtx
+		    = simplify_gen_subreg (GET_MODE (to_rtx), result,
+					   TYPE_MODE (TREE_TYPE (from)), 0);
+		  if (from_rtx)
+		    {
+		      emit_move_insn (XEXP (to_rtx, 0),
+				      read_complex_part (from_rtx, false));
+		      emit_move_insn (XEXP (to_rtx, 1),
+				      read_complex_part (from_rtx, true));
+		    }
+		  else
+		    {
+		      machine_mode to_mode
+			= GET_MODE_INNER (GET_MODE (to_rtx));
+		      rtx from_real
+			= simplify_gen_subreg (to_mode, result,
+					       TYPE_MODE (TREE_TYPE (from)),
+					       0);
+		      rtx from_imag
+			= simplify_gen_subreg (to_mode, result,
+					       TYPE_MODE (TREE_TYPE (from)),
+					       GET_MODE_SIZE (to_mode));
+		      if (!from_real || !from_imag)
+			goto concat_store_slow;
+		      emit_move_insn (XEXP (to_rtx, 0), from_real);
+		      emit_move_insn (XEXP (to_rtx, 1), from_imag);
+		    }
+		}
 	    }
 	  else
 	    {
+	    concat_store_slow:;
 	      rtx temp = assign_stack_temp (GET_MODE (to_rtx),
 					    GET_MODE_SIZE (GET_MODE (to_rtx)));
 	      write_complex_part (temp, XEXP (to_rtx, 0), false);
@@ -5575,8 +5615,21 @@ store_expr_with_bounds (tree exp, rtx target, int call_param_p,
   if (CONSTANT_P (temp) && GET_MODE (temp) == VOIDmode
       && TREE_CODE (exp) != ERROR_MARK
       && GET_MODE (target) != TYPE_MODE (TREE_TYPE (exp)))
-    temp = convert_modes (GET_MODE (target), TYPE_MODE (TREE_TYPE (exp)),
-			  temp, TYPE_UNSIGNED (TREE_TYPE (exp)));
+    {
+      if (GET_MODE_CLASS (GET_MODE (target))
+	  != GET_MODE_CLASS (TYPE_MODE (TREE_TYPE (exp)))
+	  && GET_MODE_BITSIZE (GET_MODE (target))
+	     == GET_MODE_BITSIZE (TYPE_MODE (TREE_TYPE (exp))))
+	{
+	  rtx t = simplify_gen_subreg (GET_MODE (target), temp,
+				       TYPE_MODE (TREE_TYPE (exp)), 0);
+	  if (t)
+	    temp = t;
+	}
+      if (GET_MODE (temp) == VOIDmode)
+	temp = convert_modes (GET_MODE (target), TYPE_MODE (TREE_TYPE (exp)),
+			      temp, TYPE_UNSIGNED (TREE_TYPE (exp)));
+    }
 
   /* If value was not generated in the target, store it there.
      Convert the value to TARGET's type first if necessary and emit the
@@ -6742,8 +6795,11 @@ store_field (rtx target, HOST_WIDE_INT bitsize, HOST_WIDE_INT bitpos,
     return const0_rtx;
 
   /* If we have nothing to store, do nothing unless the expression has
-     side-effects.  */
-  if (bitsize == 0)
+     side-effects.  Don't do that for zero sized addressable lhs of
+     calls.  */
+  if (bitsize == 0
+      && (!TREE_ADDRESSABLE (TREE_TYPE (exp))
+	  || TREE_CODE (exp) != CALL_EXPR))
     return expand_expr (exp, const0_rtx, VOIDmode, EXPAND_NORMAL);
 
   if (GET_CODE (target) == CONCAT)
@@ -6995,7 +7051,16 @@ get_inner_reference (tree exp, HOST_WIDE_INT *pbitsize,
 	     size.  */
 	mode = TYPE_MODE (DECL_BIT_FIELD_TYPE (field));
       else if (!DECL_BIT_FIELD (field))
-	mode = DECL_MODE (field);
+	{
+	  mode = DECL_MODE (field);
+	  /* For vector fields re-check the target flags, as DECL_MODE
+	     could have been set with different target flags than
+	     the current function has.  */
+	  if (mode == BLKmode
+	      && VECTOR_TYPE_P (TREE_TYPE (field))
+	      && VECTOR_MODE_P (TYPE_MODE_RAW (TREE_TYPE (field))))
+	    mode = TYPE_MODE (TREE_TYPE (field));
+	}
       else if (DECL_MODE (field) == BLKmode)
 	blkmode_bitfield = true;
 
@@ -10797,18 +10862,30 @@ expand_expr_real_1 (tree exp, rtx target, machine_mode tmode,
 	tree fndecl = get_callee_fndecl (exp), attr;
 
 	if (fndecl
+	    /* Don't diagnose the error attribute in thunks, those are
+	       artificially created.  */
+	    && !CALL_FROM_THUNK_P (exp)
 	    && (attr = lookup_attribute ("error",
 					 DECL_ATTRIBUTES (fndecl))) != NULL)
-	  error ("%Kcall to %qs declared with attribute error: %s",
-		 exp, identifier_to_locale (lang_hooks.decl_printable_name (fndecl, 1)),
-		 TREE_STRING_POINTER (TREE_VALUE (TREE_VALUE (attr))));
+	  {
+	    const char *ident = lang_hooks.decl_printable_name (fndecl, 1);
+	    error ("%Kcall to %qs declared with attribute error: %s", exp,
+		   identifier_to_locale (ident),
+		   TREE_STRING_POINTER (TREE_VALUE (TREE_VALUE (attr))));
+	  }
 	if (fndecl
+	    /* Don't diagnose the warning attribute in thunks, those are
+	       artificially created.  */
+	    && !CALL_FROM_THUNK_P (exp)
 	    && (attr = lookup_attribute ("warning",
 					 DECL_ATTRIBUTES (fndecl))) != NULL)
-	  warning_at (tree_nonartificial_location (exp),
-		      0, "%Kcall to %qs declared with attribute warning: %s",
-		      exp, identifier_to_locale (lang_hooks.decl_printable_name (fndecl, 1)),
-		      TREE_STRING_POINTER (TREE_VALUE (TREE_VALUE (attr))));
+	  {
+	    const char *ident = lang_hooks.decl_printable_name (fndecl, 1);
+	    warning_at (tree_nonartificial_location (exp), 0,
+			"%Kcall to %qs declared with attribute warning: %s",
+			exp, identifier_to_locale (ident),
+			TREE_STRING_POINTER (TREE_VALUE (TREE_VALUE (attr))));
+	  }
 
 	/* Check for a built-in function.  */
 	if (fndecl && DECL_BUILT_IN (fndecl))

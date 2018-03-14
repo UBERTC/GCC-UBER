@@ -4562,12 +4562,16 @@ hppa_profile_hook (int label_no)
      lcla2 and load_offset_label_address insn patterns.  */
   rtx reg = gen_reg_rtx (SImode);
   rtx_code_label *label_rtx = gen_label_rtx ();
-  rtx mcount = gen_rtx_MEM (Pmode, gen_rtx_SYMBOL_REF (Pmode, "_mcount"));
   int reg_parm_stack_space = REG_PARM_STACK_SPACE (NULL_TREE);
-  rtx arg_bytes, begin_label_rtx;
+  rtx arg_bytes, begin_label_rtx, mcount, sym;
   rtx_insn *call_insn;
   char begin_label_name[16];
   bool use_mcount_pcrel_call;
+
+  /* Set up call destination.  */
+  sym = gen_rtx_SYMBOL_REF (Pmode, "_mcount");
+  pa_encode_label (sym);
+  mcount = gen_rtx_MEM (Pmode, sym);
 
   /* If we can reach _mcount with a pc-relative call, we can optimize
      loading the address of the current function.  This requires linker
@@ -10511,9 +10515,16 @@ pa_legitimate_address_p (machine_mode mode, rtx x, bool strict)
 
       if (!TARGET_DISABLE_INDEXING
 	  && GET_CODE (index) == MULT
-	  && MODE_OK_FOR_SCALED_INDEXING_P (mode)
+	  /* Only accept base operands with the REG_POINTER flag prior to
+	     reload on targets with non-equivalent space registers.  */
+	  && (TARGET_NO_SPACE_REGS
+	      || (base == XEXP (x, 1)
+		  && (reload_completed
+		      || (reload_in_progress && HARD_REGISTER_P (base))
+		      || REG_POINTER (base))))
 	  && REG_P (XEXP (index, 0))
 	  && GET_MODE (XEXP (index, 0)) == Pmode
+	  && MODE_OK_FOR_SCALED_INDEXING_P (mode)
 	  && (strict ? STRICT_REG_OK_FOR_INDEX_P (XEXP (index, 0))
 		     : REG_OK_FOR_INDEX_P (XEXP (index, 0)))
 	  && GET_CODE (XEXP (index, 1)) == CONST_INT

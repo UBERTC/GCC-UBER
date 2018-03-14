@@ -2589,6 +2589,8 @@ bot_manip (tree* tp, int* walk_subtrees, void* data)
 	{
 	  u = build_cplus_new (TREE_TYPE (t), TREE_OPERAND (t, 1),
 			       tf_warning_or_error);
+	  if (u == error_mark_node)
+	    return u;
 	  if (AGGR_INIT_ZERO_FIRST (TREE_OPERAND (t, 1)))
 	    AGGR_INIT_ZERO_FIRST (TREE_OPERAND (u, 1)) = true;
 	}
@@ -2606,6 +2608,8 @@ bot_manip (tree* tp, int* walk_subtrees, void* data)
 			 (splay_tree_value) TREE_OPERAND (u, 0));
 
       TREE_OPERAND (u, 1) = break_out_target_exprs (TREE_OPERAND (u, 1));
+      if (TREE_OPERAND (u, 1) == error_mark_node)
+	return error_mark_node;
 
       /* Replace the old expression with the new version.  */
       *tp = u;
@@ -2718,7 +2722,8 @@ break_out_target_exprs (tree t)
     target_remap = splay_tree_new (splay_tree_compare_pointers,
 				   /*splay_tree_delete_key_fn=*/NULL,
 				   /*splay_tree_delete_value_fn=*/NULL);
-  cp_walk_tree (&t, bot_manip, target_remap, NULL);
+  if (cp_walk_tree (&t, bot_manip, target_remap, NULL) == error_mark_node)
+    t = error_mark_node;
   cp_walk_tree (&t, bot_replace, target_remap, NULL);
 
   if (!--target_remap_count)
@@ -2804,6 +2809,11 @@ replace_placeholders_r (tree* t, int* walk_subtrees, void* data_)
       {
 	constructor_elt *ce;
 	vec<constructor_elt,va_gc> *v = CONSTRUCTOR_ELTS (*t);
+	if (d->pset->add (*t))
+	  {
+	    *walk_subtrees = false;
+	    return NULL_TREE;
+	  }
 	for (unsigned i = 0; vec_safe_iterate (v, i, &ce); ++i)
 	  {
 	    tree *valp = &ce->value;
@@ -2823,7 +2833,7 @@ replace_placeholders_r (tree* t, int* walk_subtrees, void* data_)
 		  valp = &TARGET_EXPR_INITIAL (*valp);
 	      }
 	    d->obj = subob;
-	    cp_walk_tree (valp, replace_placeholders_r, data_, d->pset);
+	    cp_walk_tree (valp, replace_placeholders_r, data_, NULL);
 	    d->obj = obj;
 	  }
 	*walk_subtrees = false;
@@ -2831,6 +2841,8 @@ replace_placeholders_r (tree* t, int* walk_subtrees, void* data_)
       }
 
     default:
+      if (d->pset->add (*t))
+	*walk_subtrees = false;
       break;
     }
 
@@ -2859,7 +2871,7 @@ replace_placeholders (tree exp, tree obj, bool *seen_p)
   replace_placeholders_t data = { obj, false, &pset };
   if (TREE_CODE (exp) == TARGET_EXPR)
     tp = &TARGET_EXPR_INITIAL (exp);
-  cp_walk_tree (tp, replace_placeholders_r, &data, &pset);
+  cp_walk_tree (tp, replace_placeholders_r, &data, NULL);
   if (seen_p)
     *seen_p = data.seen;
   return exp;
@@ -4216,6 +4228,21 @@ cxx_type_hash_eq (const_tree typea, const_tree typeb)
     return false;
   return comp_except_specs (TYPE_RAISES_EXCEPTIONS (typea),
 			    TYPE_RAISES_EXCEPTIONS (typeb), ce_exact);
+}
+
+/* Copy the language-specific type variant modifiers from TYPEB to TYPEA.  For
+   C++, these are the exception-specifier and ref-qualifier.  */
+
+tree
+cxx_copy_lang_qualifiers (const_tree typea, const_tree typeb)
+{
+  tree type = CONST_CAST_TREE (typea);
+  if (TREE_CODE (type) == FUNCTION_TYPE || TREE_CODE (type) == METHOD_TYPE)
+    {
+      type = build_exception_variant (type, TYPE_RAISES_EXCEPTIONS (typeb));
+      type = build_ref_qualified_type (type, type_memfn_rqual (typeb));
+    }
+  return type;
 }
 
 /* Apply FUNC to all language-specific sub-trees of TP in a pre-order

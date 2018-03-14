@@ -1882,8 +1882,15 @@ gfc_match_associate (void)
       if (gfc_match (" %n => %e", newAssoc->name, &newAssoc->target)
 	    != MATCH_YES)
 	{
-	  gfc_error ("Expected association at %C");
-	  goto assocListError;
+	  /* Have another go, allowing for procedure pointer selectors.  */
+	  gfc_matching_procptr_assignment = 1;
+	  if (gfc_match (" %n => %e", newAssoc->name, &newAssoc->target)
+ 	      != MATCH_YES)
+ 	    {
+ 	      gfc_error ("Expected association at %C");
+ 	      goto assocListError;
+ 	    }
+	  gfc_matching_procptr_assignment = 0;
 	}
       newAssoc->where = gfc_current_locus;
 
@@ -1994,11 +2001,16 @@ gfc_match_type_spec (gfc_typespec *ts)
 {
   match m;
   locus old_locus;
-  char name[GFC_MAX_SYMBOL_LEN + 1];
+  char c, name[GFC_MAX_SYMBOL_LEN + 1];
 
   gfc_clear_ts (ts);
   gfc_gobble_whitespace ();
   old_locus = gfc_current_locus;
+
+  /* If c isn't [a-z], then return immediately.  */
+  c = gfc_peek_ascii_char ();
+  if (!ISALPHA(c))
+    return MATCH_NO;
 
   if (match_derived_type_spec (ts) == MATCH_YES)
     {
@@ -2038,6 +2050,8 @@ gfc_match_type_spec (gfc_typespec *ts)
       ts->type = BT_CHARACTER;
 
       m = gfc_match_char_spec (ts);
+      if (ts->u.cl && ts->u.cl->length)
+	gfc_resolve_expr (ts->u.cl->length);
 
       if (m == MATCH_NO)
 	m = MATCH_YES;
@@ -2045,27 +2059,31 @@ gfc_match_type_spec (gfc_typespec *ts)
       return m;
     }
 
-  if (gfc_match ("logical") == MATCH_YES)
-    {
-      ts->type = BT_LOGICAL;
-      ts->kind = gfc_default_logical_kind;
-      goto kind_selector;
-    }
-
   /* REAL is a real pain because it can be a type, intrinsic subprogram,
      or list item in a type-list of an OpenMP reduction clause.  Need to
      differentiate REAL([KIND]=scalar-int-initialization-expr) from
-     REAL(A,[KIND]) and REAL(KIND,A).  */
+     REAL(A,[KIND]) and REAL(KIND,A).  Logically, when this code was
+     written the use of LOGICAL as a type-spec or intrinsic subprogram 
+     was overlooked.  */
 
   m = gfc_match (" %n", name);
-  if (m == MATCH_YES && strcmp (name, "real") == 0)
+  if (m == MATCH_YES
+      && (strcmp (name, "real") == 0 || strcmp (name, "logical") == 0))
     {
       char c;
       gfc_expr *e;
       locus where;
 
-      ts->type = BT_REAL;
-      ts->kind = gfc_default_real_kind;
+      if (*name == 'r')
+	{
+	  ts->type = BT_REAL;
+	  ts->kind = gfc_default_real_kind;
+	}
+      else
+	{
+	  ts->type = BT_LOGICAL;
+	  ts->kind = gfc_default_logical_kind;
+	}
 
       gfc_gobble_whitespace ();
 
@@ -2097,7 +2115,7 @@ gfc_match_type_spec (gfc_typespec *ts)
 	  c = gfc_next_char ();
 	  if (c == '=')
 	    {
-	      if (strcmp(name, "a") == 0)
+	      if (strcmp(name, "a") == 0 || strcmp(name, "l") == 0)
 		return MATCH_NO;
 	      else if (strcmp(name, "kind") == 0)
 		goto found;
@@ -2137,7 +2155,7 @@ found:
 
 	  gfc_next_char (); /* Burn the ')'. */
 	  ts->kind = (int) mpz_get_si (e->value.integer);
-	  if (gfc_validate_kind (BT_REAL, ts->kind , true) == -1)
+	  if (gfc_validate_kind (ts->type, ts->kind , true) == -1)
 	    {
 	      gfc_error ("Invalid type-spec at %C");
 	      return MATCH_ERROR;
@@ -4393,8 +4411,8 @@ gfc_match_deallocate (void)
 	   && (tail->expr->ref->type == REF_COMPONENT
 	       || tail->expr->ref->type == REF_ARRAY));
       if (sym && sym->ts.type == BT_CLASS)
-	b2 = !(CLASS_DATA (sym)->attr.allocatable
-	       || CLASS_DATA (sym)->attr.class_pointer);
+	b2 = !(CLASS_DATA (sym) && (CLASS_DATA (sym)->attr.allocatable
+	       || CLASS_DATA (sym)->attr.class_pointer));
       else
 	b2 = sym && !(sym->attr.allocatable || sym->attr.pointer
 		      || sym->attr.proc_pointer);
