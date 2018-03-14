@@ -3724,7 +3724,13 @@ curr_insn_transform (bool check_only_p)
 
   curr_insn_set = single_set (curr_insn);
   if (curr_insn_set != NULL_RTX && simple_move_p ())
-    return false;
+    {
+      /* We assume that the corresponding insn alternative has no
+	 earlier clobbers.  If it is not the case, don't define move
+	 cost equal to 2 for the corresponding register classes.  */
+      lra_set_used_insn_alternative (curr_insn, LRA_NON_CLOBBERED_ALT);
+      return false;
+    }
 
   no_input_reloads_p = no_output_reloads_p = false;
   goal_alt_number = -1;
@@ -3832,7 +3838,7 @@ curr_insn_transform (bool check_only_p)
   if (change_p)
     /* If we've changed the instruction then any alternative that
        we chose previously may no longer be valid.  */
-    lra_set_used_insn_alternative (curr_insn, -1);
+    lra_set_used_insn_alternative (curr_insn, LRA_UNKNOWN_ALT);
 
   if (! check_only_p && curr_insn_set != NULL_RTX
       && check_and_process_move (&change_p, &sec_mem_p))
@@ -3840,7 +3846,7 @@ curr_insn_transform (bool check_only_p)
 
  try_swapped:
 
-  reused_alternative_num = check_only_p ? -1 : curr_id->used_insn_alternative;
+  reused_alternative_num = check_only_p ? LRA_UNKNOWN_ALT : curr_id->used_insn_alternative;
   if (lra_dump_file != NULL && reused_alternative_num >= 0)
     fprintf (lra_dump_file, "Reusing alternative %d for insn #%u\n",
 	     reused_alternative_num, INSN_UID (curr_insn));
@@ -4222,8 +4228,9 @@ curr_insn_transform (bool check_only_p)
 	      reg = SUBREG_REG (*loc);
 	      byte = SUBREG_BYTE (*loc);
 	      if (REG_P (reg)
-		  /* Strict_low_part requires reload the register not
-		     the sub-register.	*/
+		  /* Strict_low_part requires reloading the register and not
+		     just the subreg.  Likewise for a strict subreg no wider
+		     than a word for WORD_REGISTER_OPERATIONS targets.  */
 		  && (curr_static_id->operand[i].strict_low
 		      || (GET_MODE_SIZE (mode)
 			  <= GET_MODE_SIZE (GET_MODE (reg))
@@ -4235,7 +4242,11 @@ curr_insn_transform (bool check_only_p)
 			  && (goal_alt[i] == NO_REGS
 			      || (simplify_subreg_regno
 				  (ira_class_hard_regs[goal_alt[i]][0],
-				   GET_MODE (reg), byte, mode) >= 0)))))
+				   GET_MODE (reg), byte, mode) >= 0)))
+		      || (GET_MODE_PRECISION (mode)
+			  < GET_MODE_PRECISION (GET_MODE (reg))
+			  && GET_MODE_SIZE (GET_MODE (reg)) <= UNITS_PER_WORD
+			  && WORD_REGISTER_OPERATIONS)))
 		{
 		  /* An OP_INOUT is required when reloading a subreg of a
 		     mode wider than a word to ensure that data beyond the
@@ -4284,7 +4295,13 @@ curr_insn_transform (bool check_only_p)
 	}
       else if (curr_static_id->operand[i].type == OP_IN
 	       && (curr_static_id->operand[goal_alt_matched[i][0]].type
-		   == OP_OUT))
+		   == OP_OUT
+		   || (curr_static_id->operand[goal_alt_matched[i][0]].type
+		       == OP_INOUT
+		       && (operands_match_p
+			   (*curr_id->operand_loc[i],
+			    *curr_id->operand_loc[goal_alt_matched[i][0]],
+			    -1)))))
 	{
 	  /* generate reloads for input and matched outputs.  */
 	  match_inputs[0] = i;
@@ -4295,9 +4312,14 @@ curr_insn_transform (bool check_only_p)
 			[goal_alt_number * n_operands + goal_alt_matched[i][0]]
 			.earlyclobber);
 	}
-      else if (curr_static_id->operand[i].type == OP_OUT
+      else if ((curr_static_id->operand[i].type == OP_OUT
+		|| (curr_static_id->operand[i].type == OP_INOUT
+		    && (operands_match_p
+			(*curr_id->operand_loc[i],
+			 *curr_id->operand_loc[goal_alt_matched[i][0]],
+			 -1))))
 	       && (curr_static_id->operand[goal_alt_matched[i][0]].type
-		   == OP_IN))
+		    == OP_IN))
 	/* Generate reloads for output and matched inputs.  */
 	match_reload (i, goal_alt_matched[i], outputs, goal_alt[i], &before,
 		      &after, curr_static_id->operand_alternative
@@ -6692,7 +6714,7 @@ remove_inheritance_pseudos (bitmap remove_pseudos)
 			}
 		      lra_push_insn_and_update_insn_regno_info (curr_insn);
 		      lra_set_used_insn_alternative_by_uid
-			(INSN_UID (curr_insn), -1);
+			(INSN_UID (curr_insn), LRA_UNKNOWN_ALT);
 		      done_p = true;
 		      if (lra_dump_file != NULL)
 			{
@@ -6731,7 +6753,7 @@ remove_inheritance_pseudos (bitmap remove_pseudos)
 		     constraints pass.  */
 		  lra_push_insn_and_update_insn_regno_info (curr_insn);
 		  lra_set_used_insn_alternative_by_uid
-		    (INSN_UID (curr_insn), -1);
+		    (INSN_UID (curr_insn), LRA_UNKNOWN_ALT);
 		}
 	      else if (restored_regs_p)
 		/* The instruction has been restored to the form that

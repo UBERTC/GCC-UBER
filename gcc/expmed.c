@@ -2331,9 +2331,8 @@ expand_shift_1 (enum tree_code code, machine_mode mode, rtx shifted,
       && CONST_INT_P (op1)
       && INTVAL (op1) == BITS_PER_UNIT
       && GET_MODE_SIZE (scalar_mode) == 2
-      && optab_handler (bswap_optab, HImode) != CODE_FOR_nothing)
-    return expand_unop (HImode, bswap_optab, shifted, NULL_RTX,
-				  unsignedp);
+      && optab_handler (bswap_optab, mode) != CODE_FOR_nothing)
+    return expand_unop (mode, bswap_optab, shifted, NULL_RTX, unsignedp);
 
   if (op1 == const0_rtx)
     return shifted;
@@ -5886,6 +5885,18 @@ emit_store_flag_force (rtx target, enum rtx_code code, rtx op0, rtx op1,
   tem = emit_store_flag (target, code, op0, op1, mode, unsignedp, normalizep);
   if (tem != 0)
     return tem;
+
+  /* If one operand is constant, make it the second one.  Only do this
+     if the other operand is not constant as well.  */
+
+  if (swap_commutative_operands_p (op0, op1))
+    {
+      std::swap (op0, op1);
+      code = swap_condition (code);
+    }
+
+  if (mode == VOIDmode)
+    mode = GET_MODE (op0);
 
   if (!target)
     target = gen_reg_rtx (word_mode);

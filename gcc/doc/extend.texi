@@ -5540,6 +5540,25 @@ Specify which floating-point unit to use.  You must specify the
 @code{target("fpmath=sse,387")} option as
 @code{target("fpmath=sse+387")} because the comma would separate
 different options.
+
+@item indirect_branch("@var{choice}")
+@cindex @code{indirect_branch} function attribute, x86
+On x86 targets, the @code{indirect_branch} attribute causes the compiler
+to convert indirect call and jump with @var{choice}.  @samp{keep}
+keeps indirect call and jump unmodified.  @samp{thunk} converts indirect
+call and jump to call and return thunk.  @samp{thunk-inline} converts
+indirect call and jump to inlined call and return thunk.
+@samp{thunk-extern} converts indirect call and jump to external call
+and return thunk provided in a separate object file.
+
+@item function_return("@var{choice}")
+@cindex @code{function_return} function attribute, x86
+On x86 targets, the @code{function_return} attribute causes the compiler
+to convert function return with @var{choice}.  @samp{keep} keeps function
+return unmodified.  @samp{thunk} converts function return to call and
+return thunk.  @samp{thunk-inline} converts function return to inlined
+call and return thunk.  @samp{thunk-extern} converts function return to
+external call and return thunk provided in a separate object file.
 @end table
 
 On the x86, the inliner does not inline a
@@ -8759,6 +8778,9 @@ The table below shows the list of supported modifiers and their effects.
 @tab @code{2}
 @end multitable
 
+@code{V} is a special modifier which prints the name of the full integer
+register without @code{%}.
+
 @anchor{x86floatingpointasmoperands}
 @subsubsection x86 Floating-Point @code{asm} Operands
 
@@ -9473,6 +9495,7 @@ For mixed operations between a scalar @code{s} and a vector @code{v},
 @code{s && v} is equivalent to @code{s?v!=0:0} (the evaluation is
 short-circuit) and @code{v && s} is equivalent to @code{v!=0 & (s?-1:0)}.
 
+@findex __builtin_shuffle
 Vector shuffling is available using functions
 @code{__builtin_shuffle (vec, mask)} and
 @code{__builtin_shuffle (vec0, vec1, mask)}.
@@ -18101,14 +18124,11 @@ vector unsigned short vec_vctzh (vector unsigned short);
 vector int vec_vctzw (vector int);
 vector unsigned int vec_vctzw (vector int);
 
-long long vec_vextract4b (const vector signed char, const int);
-long long vec_vextract4b (const vector unsigned char, const int);
-
-vector signed char vec_insert4b (vector int, vector signed char, const int);
+long long vec_extract4b (const vector unsigned char, const int);
+vector unsigned char vec_insert4b (vector signed int, vector unsigned char,
+                                   const int);
 vector unsigned char vec_insert4b (vector unsigned int, vector unsigned char,
                                    const int);
-vector signed char vec_insert4b (long long, vector signed char, const int);
-vector unsigned char vec_insert4b (long long, vector unsigned char, const int);
 
 vector int vec_vprtyb (vector int);
 vector unsigned int vec_vprtyb (vector unsigned int);

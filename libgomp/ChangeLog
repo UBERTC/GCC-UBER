@@ -1,3 +1,51 @@
+2018-03-03  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2018-02-16  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/84418
+	* libgomp.fortran/pr84418-1.f90: New test.
+	* libgomp.fortran/pr84418-2.f90: New test.
+
+	2018-01-29  Christoph Spiel  <cspiel@freenet.de>
+		    Jakub Jelinek  <jakub@redhat.com>
+
+	PR libgomp/84096
+	* omp.h.in (omp_init_nest_lock_with_hint): Use omp_nest_lock_t
+	instead of omp_lock_t.
+
+2018-02-09  Martin Jambor  <mjambor@suse.cz>
+
+	Backport from mainline
+	2018-02-08  Martin Jambor  <mjambor@suse.cz>
+
+	* testsuite/libgomp.hsa.c/staticvar.c: New test.
+
+2018-01-25  Release Manager
+
+	* GCC 7.3.0 released.
+
+2017-12-15  Jakub Jelinek  <jakub@redhat.com>
+
+	Backported from mainline
+	2017-11-24  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/81304
+	* testsuite/libgomp.fortran/pr81304.f90: New test.
+
+	2017-11-23  Jakub Jelinek  <jakub@redhat.com>
+
+	PR fortran/81841
+	* libgomp.fortran/pr81841.f90: New test.
+
+2017-12-10  Tom de Vries  <tom@codesourcery.com>
+
+	backport from trunk:
+	PR c/81875
+	2017-09-16  Tom de Vries  <tom@codesourcery.com>
+
+	* testsuite/libgomp.c/pr81875.c: New test.
+
 2017-09-15  Jakub Jelinek  <jakub@redhat.com>
 
 	Backported from mainline

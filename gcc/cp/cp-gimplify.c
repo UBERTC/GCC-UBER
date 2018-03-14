@@ -1107,6 +1107,14 @@ cp_genericize_r (tree *stmt_p, int *walk_subtrees, void *data)
       && omp_var_to_track (stmt))
     omp_cxx_notice_variable (wtd->omp_ctx, stmt);
 
+  /* Don't dereference parms in a thunk, pass the references through. */
+  if ((TREE_CODE (stmt) == CALL_EXPR && CALL_FROM_THUNK_P (stmt))
+      || (TREE_CODE (stmt) == AGGR_INIT_EXPR && AGGR_INIT_FROM_THUNK_P (stmt)))
+    {
+      *walk_subtrees = 0;
+      return NULL;
+    }
+
   /* Dereference invisible reference parms.  */
   if (wtd->handle_invisiref_parm_p && is_invisiref_parm (stmt))
     {
@@ -2278,13 +2286,6 @@ cp_fold (tree x)
 
     case VEC_COND_EXPR:
     case COND_EXPR:
-
-      /* Don't bother folding a void condition, since it can't produce a
-	 constant value.  Also, some statement-level uses of COND_EXPR leave
-	 one of the branches NULL, so folding would crash.  */
-      if (VOID_TYPE_P (TREE_TYPE (x)))
-	return x;
-
       loc = EXPR_LOCATION (x);
       op0 = cp_fold_rvalue (TREE_OPERAND (x, 0));
       op1 = cp_fold (TREE_OPERAND (x, 1));
@@ -2297,6 +2298,29 @@ cp_fold (tree x)
 	    op1 = cp_truthvalue_conversion (op1);
 	  if (!VOID_TYPE_P (TREE_TYPE (op2)))
 	    op2 = cp_truthvalue_conversion (op2);
+	}
+      else if (VOID_TYPE_P (TREE_TYPE (x)))
+	{
+	  if (TREE_CODE (op0) == INTEGER_CST)
+	    {
+	      /* If the condition is constant, fold can fold away
+		 the COND_EXPR.  If some statement-level uses of COND_EXPR
+		 have one of the branches NULL, avoid folding crash.  */
+	      if (!op1)
+		op1 = build_empty_stmt (loc);
+	      if (!op2)
+		op2 = build_empty_stmt (loc);
+	    }
+	  else
+	    {
+	      /* Otherwise, don't bother folding a void condition, since
+		 it can't produce a constant value.  */
+	      if (op0 != TREE_OPERAND (x, 0)
+		  || op1 != TREE_OPERAND (x, 1)
+		  || op2 != TREE_OPERAND (x, 2))
+		x = build3_loc (loc, code, TREE_TYPE (x), op0, op1, op2);
+	      break;
+	    }
 	}
 
       if (op0 != TREE_OPERAND (x, 0)

@@ -96,7 +96,6 @@ bits_headers = \
 	${bits_srcdir}/boost_concept_check.h \
 	${bits_srcdir}/c++0x_warning.h \
 	${bits_srcdir}/c++14_warning.h \
-	${bits_srcdir}/c++17_warning.h \
 	${bits_srcdir}/char_traits.h \
 	${bits_srcdir}/codecvt.h \
 	${bits_srcdir}/concept_check.h \
@@ -1475,3 +1474,8 @@ $(decimal_headers): ; @:
 $(ext_headers): ; @:
 $(experimental_headers): ; @:
 $(experimental_bits_headers): ; @:
+
+if INCLUDE_DIR_NOTPARALLEL
+# See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81797
+.NOTPARALLEL:
+endif
