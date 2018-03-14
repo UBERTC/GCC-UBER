@@ -1,5 +1,5 @@
 /* Definitions for the Blackfin port.
-   Copyright (C) 2005-2017 Free Software Foundation, Inc.
+   Copyright (C) 2005-2018 Free Software Foundation, Inc.
    Contributed by Analog Devices.
 
    This file is part of GCC.
@@ -251,12 +251,6 @@ extern const char *bfin_library_id_string;
 /* We define a dummy ARGP register; the parameters start at offset 0 from
    it. */
 #define FIRST_PARM_OFFSET(DECL) 0
-
-/* Offset within stack frame to start allocating local variables at.
-   If FRAME_GROWS_DOWNWARD, this is the offset to the END of the
-   first local allocated.  Otherwise, it is the offset to the BEGINNING
-   of the first local allocated.  */
-#define STARTING_FRAME_OFFSET 0
 
 /* Register to use for pushing function arguments.  */
 #define STACK_POINTER_REGNUM REG_P6

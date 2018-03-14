@@ -1,7 +1,7 @@
 /* Definitions of target machine for GNU compiler, Lattice Mico32 architecture.
    Contributed by Jon Beniston <jon@beniston.com>
 
-   Copyright (C) 2009-2017 Free Software Foundation, Inc.
+   Copyright (C) 2009-2018 Free Software Foundation, Inc.
 
    This file is part of GCC.
 
@@ -203,8 +203,6 @@ enum reg_class
 #define FRAME_GROWS_DOWNWARD 1
 
 #define STACK_POINTER_OFFSET (UNITS_PER_WORD)
-
-#define STARTING_FRAME_OFFSET (UNITS_PER_WORD)
 
 #define FIRST_PARM_OFFSET(FNDECL) (UNITS_PER_WORD)
 

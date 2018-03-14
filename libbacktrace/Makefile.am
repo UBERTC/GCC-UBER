@@ -1,5 +1,5 @@
 # Makefile.am -- Backtrace Makefile.
-# Copyright (C) 2012-2017 Free Software Foundation, Inc.
+# Copyright (C) 2012-2018 Free Software Foundation, Inc.
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
@@ -108,6 +108,7 @@ ztest_LDADD = libbacktrace.la
 if HAVE_ZLIB
 ztest_LDADD += -lz
 endif
+ztest_LDADD += $(CLOCK_GETTIME_LINK)
 
 check_PROGRAMS += ztest
 

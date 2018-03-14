@@ -1,5 +1,5 @@
 /* Definitions for GCC.  Part of the machine description for CRIS.
-   Copyright (C) 1998-2017 Free Software Foundation, Inc.
+   Copyright (C) 1998-2018 Free Software Foundation, Inc.
    Contributed by Axis Communications.  Written by Hans-Peter Nilsson.
 
 This file is part of GCC.
@@ -589,10 +589,6 @@ enum reg_class
 #define STACK_GROWS_DOWNWARD 1
 #define FRAME_GROWS_DOWNWARD 1
 
-/* It seems to be indicated in the code (at least 2.1) that this is
-   better a constant, and best 0.  */
-#define STARTING_FRAME_OFFSET 0
-
 #define FIRST_PARM_OFFSET(FNDECL) 0
 
 #define RETURN_ADDR_RTX(COUNT, FRAMEADDR) \
@@ -1002,7 +998,7 @@ enum cris_symbol_type
 /* (no definitions) */
 
 
-/* Node: SDB and DWARF */
+/* Node: DWARF */
 /* (no definitions) */
 
 /* Node: Misc */

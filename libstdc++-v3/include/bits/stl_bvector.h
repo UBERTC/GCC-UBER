@@ -1,6 +1,6 @@
 // vector<bool> specialization -*- C++ -*-
 
-// Copyright (C) 2001-2017 Free Software Foundation, Inc.
+// Copyright (C) 2001-2018 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -417,7 +417,7 @@ _GLIBCXX_BEGIN_NAMESPACE_CONTAINER
 	if (__last._M_offset != 0)
 	  __fill_bvector(__last._M_p, 0, __last._M_offset, __x);
       }
-    else
+    else if (__first._M_offset != __last._M_offset)
       __fill_bvector(__first._M_p, __first._M_offset, __last._M_offset, __x);
   }
 

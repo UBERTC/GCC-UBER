@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 1992-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -65,6 +65,7 @@ package body Ch8 is
 
          Append (Use_Node, Item_List);
          Is_Last := True;
+
       else
          Set_More_Ids (Use_Node);
 
@@ -152,11 +153,12 @@ package body Ch8 is
    --  Error recovery: cannot raise Error_Resync
 
    procedure P_Use_Type_Clause (Item_List : List_Id) is
+      Use_Sloc : constant Source_Ptr := Prev_Token_Ptr;
+
       All_Present : Boolean;
       Is_First    : Boolean := True;
       Is_Last     : Boolean := False;
       Use_Node    : Node_Id;
-      Use_Sloc    : constant Source_Ptr := Prev_Token_Ptr;
 
    begin
       if Token = Tok_All then

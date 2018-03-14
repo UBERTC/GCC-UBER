@@ -1,4 +1,4 @@
-.. Copyright (C) 2015-2017 Free Software Foundation, Inc.
+.. Copyright (C) 2015-2018 Free Software Foundation, Inc.
    Originally contributed by David Malcolm <dmalcolm@redhat.com>
 
    This is free software: you can redistribute it and/or modify it
@@ -163,3 +163,11 @@ entrypoints:
 -------------------
 ``LIBGCCJIT_ABI_9`` covers the addition of
 :func:`gcc_jit_function_get_address`
+
+.. _LIBGCCJIT_ABI_10:
+
+``LIBGCCJIT_ABI_10``
+--------------------
+
+``LIBGCCJIT_ABI_10`` covers the addition of
+:func:`gcc_jit_context_new_rvalue_from_vector`

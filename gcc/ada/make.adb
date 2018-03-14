@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 1992-2017, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2018, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -1772,7 +1772,7 @@ package body Make is
         (Data : out Compilation_Data;
          OK   : out Boolean)
       is
-         Pid       : Process_Id;
+         Pid : Process_Id;
 
       begin
          pragma Assert (Outstanding_Compiles > 0);
@@ -1790,7 +1790,7 @@ package body Make is
 
          for J in Running_Compile'First .. Outstanding_Compiles loop
             if Pid = Running_Compile (J).Pid then
-               Data    := Running_Compile (J);
+               Data := Running_Compile (J);
                --  If a mapping file was used by this compilation, get its file
                --  name for reuse by a subsequent compilation.
 
